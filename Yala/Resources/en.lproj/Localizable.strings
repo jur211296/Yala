@@ -2160,3 +2160,37 @@
 "scheduled.associate.success" = "Expense linked";
 "scheduled.associate.empty" = "No similar expenses found this month";
 "scheduled.associate.already" = "This expense is already linked";
+
+// MARK: - Siri Shortcuts
+"settings.siriShortcuts" = "Siri & Shortcuts";
+"siriShortcuts.title" = "Siri & Shortcuts";
+"siriShortcuts.subtitle" = "Use your voice or quick shortcuts to record expenses instantly.";
+"siriShortcuts.siri.title" = "Record with Siri";
+"siriShortcuts.siri.description" = "Dictate your expense and a draft will be created in your inbox.";
+"siriShortcuts.siri.proNote" = "Requires Yala Pro";
+"siriShortcuts.siri.phrase" = "Create a record in Yala";
+"siriShortcuts.siri.alt1" = "You can also say: \"Log an expense in Yala\"";
+"siriShortcuts.siri.alt2" = "Or: \"Save an expense in Yala\"";
+"siriShortcuts.all.title" = "Other shortcuts";
+"siriShortcuts.shortcut.quick" = "Quick record";
+"siriShortcuts.shortcut.voice" = "Voice input";
+"siriShortcuts.shortcut.image" = "Image input";
+"siriShortcuts.shortcut.applePay" = "Apple Pay";
+"siriShortcuts.shortcut.automation" = "Automation";
+"siriShortcuts.desc.quick" = "Opens the record form with a single tap.";
+"siriShortcuts.desc.voice" = "Dictate the amount and description with your voice.";
+"siriShortcuts.desc.image" = "Scan a receipt or ticket with your camera.";
+"siriShortcuts.desc.applePay" = "Log a payment made with Apple Pay.";
+"siriShortcuts.desc.automation" = "Create automatic records with system shortcuts.";
+"siriShortcuts.phrase.quick" = "Record in Yala";
+"siriShortcuts.phrase.voice" = "Record with voice in Yala";
+"siriShortcuts.phrase.image" = "Record with image in Yala";
+"siriShortcuts.phrase.applePay" = "Record Apple Pay in Yala";
+"siriShortcuts.phrase.automation" = "Record from automation in Yala";
+"siriShortcuts.faq.title" = "FAQ";
+"siriShortcuts.faq.activateQ" = "How do I activate Siri?";
+"siriShortcuts.faq.activateA" = "It's automatic. Just say the phrase to Siri and Yala will process your request.";
+"siriShortcuts.faq.inboxQ" = "Where do my Siri records go?";
+"siriShortcuts.faq.inboxA" = "Records created by Siri arrive in your inbox as drafts for you to review.";
+"siriShortcuts.faq.offlineQ" = "Does it work offline?";
+"siriShortcuts.faq.offlineA" = "Yes, shortcuts work in basic mode without an internet connection.";

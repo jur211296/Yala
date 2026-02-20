@@ -2136,3 +2136,37 @@
 "scheduled.associate.success" = "Gasto vinculado";
 "scheduled.associate.empty" = "No encontramos gastos similares este mes";
 "scheduled.associate.already" = "Este gasto ya está vinculado";
+
+// MARK: - Siri Shortcuts
+"settings.siriShortcuts" = "Siri y Atajos";
+"siriShortcuts.title" = "Siri y Atajos";
+"siriShortcuts.subtitle" = "Usa tu voz o atajos rápidos para registrar gastos al instante.";
+"siriShortcuts.siri.title" = "Registro con Siri";
+"siriShortcuts.siri.description" = "Dicta tu gasto y se creará un borrador en tu bandeja de entrada.";
+"siriShortcuts.siri.proNote" = "Requiere Yala Pro";
+"siriShortcuts.siri.phrase" = "Crea un registro en Yala";
+"siriShortcuts.siri.alt1" = "También puedes decir: \"Anota un gasto en Yala\"";
+"siriShortcuts.siri.alt2" = "O: \"Guarda un gasto en Yala\"";
+"siriShortcuts.all.title" = "Otros atajos";
+"siriShortcuts.shortcut.quick" = "Registro rápido";
+"siriShortcuts.shortcut.voice" = "Entrada por voz";
+"siriShortcuts.shortcut.image" = "Entrada por imagen";
+"siriShortcuts.shortcut.applePay" = "Apple Pay";
+"siriShortcuts.shortcut.automation" = "Automatización";
+"siriShortcuts.desc.quick" = "Abre el formulario de registro con un tap.";
+"siriShortcuts.desc.voice" = "Dicta el monto y la descripción con tu voz.";
+"siriShortcuts.desc.image" = "Escanea un recibo o ticket con la cámara.";
+"siriShortcuts.desc.applePay" = "Registra un pago realizado con Apple Pay.";
+"siriShortcuts.desc.automation" = "Crea registros automáticos con atajos del sistema.";
+"siriShortcuts.phrase.quick" = "Registra en Yala";
+"siriShortcuts.phrase.voice" = "Registra con voz en Yala";
+"siriShortcuts.phrase.image" = "Registra con imagen en Yala";
+"siriShortcuts.phrase.applePay" = "Registra Apple Pay en Yala";
+"siriShortcuts.phrase.automation" = "Registra desde automatización en Yala";
+"siriShortcuts.faq.title" = "Preguntas frecuentes";
+"siriShortcuts.faq.activateQ" = "¿Cómo activo Siri?";
+"siriShortcuts.faq.activateA" = "Es automático. Solo di la frase a Siri y Yala procesará tu solicitud.";
+"siriShortcuts.faq.inboxQ" = "¿Dónde van mis registros de Siri?";
+"siriShortcuts.faq.inboxA" = "Los registros creados por Siri llegan a tu bandeja de entrada como borradores para que los revises.";
+"siriShortcuts.faq.offlineQ" = "¿Funciona sin internet?";
+"siriShortcuts.faq.offlineA" = "Sí, los atajos funcionan en modo básico sin conexión a internet.";

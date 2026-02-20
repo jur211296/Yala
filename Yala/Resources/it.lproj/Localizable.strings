@@ -2177,3 +2177,37 @@
 "scheduled.associate.success" = "Spesa collegata";
 "scheduled.associate.empty" = "Nessuna spesa simile trovata questo mese";
 "scheduled.associate.already" = "Questa spesa è già collegata";
+
+// MARK: - Siri Shortcuts
+"settings.siriShortcuts" = "Siri e Scorciatoie";
+"siriShortcuts.title" = "Siri e Scorciatoie";
+"siriShortcuts.subtitle" = "Usa la tua voce o scorciatoie rapide per registrare le spese all'istante.";
+"siriShortcuts.siri.title" = "Registra con Siri";
+"siriShortcuts.siri.description" = "Detta la tua spesa e verrà creata una bozza nella tua posta in arrivo.";
+"siriShortcuts.siri.proNote" = "Richiede Yala Pro";
+"siriShortcuts.siri.phrase" = "Crea un registro in Yala";
+"siriShortcuts.siri.alt1" = "Puoi anche dire: \"Annota una spesa in Yala\"";
+"siriShortcuts.siri.alt2" = "Oppure: \"Salva una spesa in Yala\"";
+"siriShortcuts.all.title" = "Altre scorciatoie";
+"siriShortcuts.shortcut.quick" = "Registrazione rapida";
+"siriShortcuts.shortcut.voice" = "Inserimento vocale";
+"siriShortcuts.shortcut.image" = "Inserimento da immagine";
+"siriShortcuts.shortcut.applePay" = "Apple Pay";
+"siriShortcuts.shortcut.automation" = "Automazione";
+"siriShortcuts.desc.quick" = "Apre il modulo di registrazione con un tap.";
+"siriShortcuts.desc.voice" = "Detta l'importo e la descrizione con la tua voce.";
+"siriShortcuts.desc.image" = "Scansiona uno scontrino o ricevuta con la fotocamera.";
+"siriShortcuts.desc.applePay" = "Registra un pagamento effettuato con Apple Pay.";
+"siriShortcuts.desc.automation" = "Crea registri automatici con le scorciatoie di sistema.";
+"siriShortcuts.phrase.quick" = "Registra in Yala";
+"siriShortcuts.phrase.voice" = "Registra con voce in Yala";
+"siriShortcuts.phrase.image" = "Registra con immagine in Yala";
+"siriShortcuts.phrase.applePay" = "Registra Apple Pay in Yala";
+"siriShortcuts.phrase.automation" = "Registra da automazione in Yala";
+"siriShortcuts.faq.title" = "Domande frequenti";
+"siriShortcuts.faq.activateQ" = "Come attivo Siri?";
+"siriShortcuts.faq.activateA" = "È automatico. Basta dire la frase a Siri e Yala elaborerà la tua richiesta.";
+"siriShortcuts.faq.inboxQ" = "Dove finiscono i miei registri Siri?";
+"siriShortcuts.faq.inboxA" = "I registri creati da Siri arrivano nella tua posta in arrivo come bozze da verificare.";
+"siriShortcuts.faq.offlineQ" = "Funziona senza internet?";
+"siriShortcuts.faq.offlineA" = "Sì, le scorciatoie funzionano in modalità base senza connessione internet.";

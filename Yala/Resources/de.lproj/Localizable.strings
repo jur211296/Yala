@@ -2175,3 +2175,37 @@
 "scheduled.associate.success" = "Ausgabe verknüpft";
 "scheduled.associate.empty" = "Keine ähnlichen Ausgaben in diesem Monat gefunden";
 "scheduled.associate.already" = "Diese Ausgabe ist bereits verknüpft";
+
+// MARK: - Siri Shortcuts
+"settings.siriShortcuts" = "Siri & Kurzbefehle";
+"siriShortcuts.title" = "Siri & Kurzbefehle";
+"siriShortcuts.subtitle" = "Nutze deine Stimme oder Kurzbefehle, um Ausgaben sofort zu erfassen.";
+"siriShortcuts.siri.title" = "Mit Siri erfassen";
+"siriShortcuts.siri.description" = "Diktiere deine Ausgabe und ein Entwurf wird in deinem Posteingang erstellt.";
+"siriShortcuts.siri.proNote" = "Erfordert Yala Pro";
+"siriShortcuts.siri.phrase" = "Erstelle einen Eintrag in Yala";
+"siriShortcuts.siri.alt1" = "Du kannst auch sagen: \"Notiere eine Ausgabe in Yala\"";
+"siriShortcuts.siri.alt2" = "Oder: \"Speichere eine Ausgabe in Yala\"";
+"siriShortcuts.all.title" = "Weitere Kurzbefehle";
+"siriShortcuts.shortcut.quick" = "Schnellerfassung";
+"siriShortcuts.shortcut.voice" = "Spracheingabe";
+"siriShortcuts.shortcut.image" = "Bildeingabe";
+"siriShortcuts.shortcut.applePay" = "Apple Pay";
+"siriShortcuts.shortcut.automation" = "Automatisierung";
+"siriShortcuts.desc.quick" = "Öffnet das Erfassungsformular mit einem Tap.";
+"siriShortcuts.desc.voice" = "Diktiere Betrag und Beschreibung mit deiner Stimme.";
+"siriShortcuts.desc.image" = "Scanne einen Beleg oder Kassenbon mit der Kamera.";
+"siriShortcuts.desc.applePay" = "Erfasse eine Zahlung mit Apple Pay.";
+"siriShortcuts.desc.automation" = "Erstelle automatische Einträge mit Systembefehlen.";
+"siriShortcuts.phrase.quick" = "Erfasse in Yala";
+"siriShortcuts.phrase.voice" = "Erfasse mit Stimme in Yala";
+"siriShortcuts.phrase.image" = "Erfasse mit Bild in Yala";
+"siriShortcuts.phrase.applePay" = "Erfasse Apple Pay in Yala";
+"siriShortcuts.phrase.automation" = "Erfasse aus Automatisierung in Yala";
+"siriShortcuts.faq.title" = "Häufige Fragen";
+"siriShortcuts.faq.activateQ" = "Wie aktiviere ich Siri?";
+"siriShortcuts.faq.activateA" = "Es ist automatisch. Sage einfach den Befehl zu Siri und Yala verarbeitet deine Anfrage.";
+"siriShortcuts.faq.inboxQ" = "Wo landen meine Siri-Einträge?";
+"siriShortcuts.faq.inboxA" = "Von Siri erstellte Einträge erscheinen als Entwürfe in deinem Posteingang zur Überprüfung.";
+"siriShortcuts.faq.offlineQ" = "Funktioniert es offline?";
+"siriShortcuts.faq.offlineA" = "Ja, Kurzbefehle funktionieren im Basismodus ohne Internetverbindung.";

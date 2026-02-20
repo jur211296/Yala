@@ -2176,3 +2176,37 @@
 "scheduled.associate.success" = "Dépense liée";
 "scheduled.associate.empty" = "Aucune dépense similaire trouvée ce mois-ci";
 "scheduled.associate.already" = "Cette dépense est déjà liée";
+
+// MARK: - Siri Shortcuts
+"settings.siriShortcuts" = "Siri et Raccourcis";
+"siriShortcuts.title" = "Siri et Raccourcis";
+"siriShortcuts.subtitle" = "Utilise ta voix ou des raccourcis rapides pour enregistrer tes dépenses instantanément.";
+"siriShortcuts.siri.title" = "Enregistrer avec Siri";
+"siriShortcuts.siri.description" = "Dicte ta dépense et un brouillon sera créé dans ta boîte de réception.";
+"siriShortcuts.siri.proNote" = "Nécessite Yala Pro";
+"siriShortcuts.siri.phrase" = "Crée un enregistrement dans Yala";
+"siriShortcuts.siri.alt1" = "Tu peux aussi dire : \"Note une dépense dans Yala\"";
+"siriShortcuts.siri.alt2" = "Ou : \"Enregistre une dépense dans Yala\"";
+"siriShortcuts.all.title" = "Autres raccourcis";
+"siriShortcuts.shortcut.quick" = "Enregistrement rapide";
+"siriShortcuts.shortcut.voice" = "Entrée vocale";
+"siriShortcuts.shortcut.image" = "Entrée par image";
+"siriShortcuts.shortcut.applePay" = "Apple Pay";
+"siriShortcuts.shortcut.automation" = "Automatisation";
+"siriShortcuts.desc.quick" = "Ouvre le formulaire d'enregistrement en un tap.";
+"siriShortcuts.desc.voice" = "Dicte le montant et la description avec ta voix.";
+"siriShortcuts.desc.image" = "Scanne un reçu ou ticket avec l'appareil photo.";
+"siriShortcuts.desc.applePay" = "Enregistre un paiement effectué avec Apple Pay.";
+"siriShortcuts.desc.automation" = "Crée des enregistrements automatiques avec les raccourcis système.";
+"siriShortcuts.phrase.quick" = "Enregistre dans Yala";
+"siriShortcuts.phrase.voice" = "Enregistre avec la voix dans Yala";
+"siriShortcuts.phrase.image" = "Enregistre avec image dans Yala";
+"siriShortcuts.phrase.applePay" = "Enregistre Apple Pay dans Yala";
+"siriShortcuts.phrase.automation" = "Enregistre depuis l'automatisation dans Yala";
+"siriShortcuts.faq.title" = "Questions fréquentes";
+"siriShortcuts.faq.activateQ" = "Comment activer Siri ?";
+"siriShortcuts.faq.activateA" = "C'est automatique. Dis simplement la phrase à Siri et Yala traitera ta demande.";
+"siriShortcuts.faq.inboxQ" = "Où vont mes enregistrements Siri ?";
+"siriShortcuts.faq.inboxA" = "Les enregistrements créés par Siri arrivent dans ta boîte de réception comme brouillons à vérifier.";
+"siriShortcuts.faq.offlineQ" = "Ça fonctionne hors ligne ?";
+"siriShortcuts.faq.offlineA" = "Oui, les raccourcis fonctionnent en mode basique sans connexion internet.";

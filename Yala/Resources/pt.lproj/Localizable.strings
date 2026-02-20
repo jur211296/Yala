@@ -2175,3 +2175,37 @@
 "scheduled.associate.success" = "Despesa vinculada";
 "scheduled.associate.empty" = "Nenhuma despesa semelhante encontrada neste mês";
 "scheduled.associate.already" = "Esta despesa já está vinculada";
+
+// MARK: - Siri Shortcuts
+"settings.siriShortcuts" = "Siri e Atalhos";
+"siriShortcuts.title" = "Siri e Atalhos";
+"siriShortcuts.subtitle" = "Usa a tua voz ou atalhos rápidos para registar despesas instantaneamente.";
+"siriShortcuts.siri.title" = "Registar com Siri";
+"siriShortcuts.siri.description" = "Dita a tua despesa e um rascunho será criado na tua caixa de entrada.";
+"siriShortcuts.siri.proNote" = "Requer Yala Pro";
+"siriShortcuts.siri.phrase" = "Cria um registo no Yala";
+"siriShortcuts.siri.alt1" = "Também podes dizer: \"Anota uma despesa no Yala\"";
+"siriShortcuts.siri.alt2" = "Ou: \"Guarda uma despesa no Yala\"";
+"siriShortcuts.all.title" = "Outros atalhos";
+"siriShortcuts.shortcut.quick" = "Registo rápido";
+"siriShortcuts.shortcut.voice" = "Entrada por voz";
+"siriShortcuts.shortcut.image" = "Entrada por imagem";
+"siriShortcuts.shortcut.applePay" = "Apple Pay";
+"siriShortcuts.shortcut.automation" = "Automatização";
+"siriShortcuts.desc.quick" = "Abre o formulário de registo com um toque.";
+"siriShortcuts.desc.voice" = "Dita o valor e a descrição com a tua voz.";
+"siriShortcuts.desc.image" = "Digitaliza um recibo ou talão com a câmara.";
+"siriShortcuts.desc.applePay" = "Regista um pagamento feito com Apple Pay.";
+"siriShortcuts.desc.automation" = "Cria registos automáticos com atalhos do sistema.";
+"siriShortcuts.phrase.quick" = "Regista no Yala";
+"siriShortcuts.phrase.voice" = "Regista com voz no Yala";
+"siriShortcuts.phrase.image" = "Regista com imagem no Yala";
+"siriShortcuts.phrase.applePay" = "Regista Apple Pay no Yala";
+"siriShortcuts.phrase.automation" = "Regista a partir de automatização no Yala";
+"siriShortcuts.faq.title" = "Perguntas frequentes";
+"siriShortcuts.faq.activateQ" = "Como ativo o Siri?";
+"siriShortcuts.faq.activateA" = "É automático. Basta dizer a frase ao Siri e o Yala processará o teu pedido.";
+"siriShortcuts.faq.inboxQ" = "Para onde vão os meus registos do Siri?";
+"siriShortcuts.faq.inboxA" = "Os registos criados pelo Siri chegam à tua caixa de entrada como rascunhos para revisão.";
+"siriShortcuts.faq.offlineQ" = "Funciona sem internet?";
+"siriShortcuts.faq.offlineA" = "Sim, os atalhos funcionam em modo básico sem ligação à internet.";

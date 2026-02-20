@@ -102,6 +102,7 @@ struct ProfileView: View {
         case faq
         case placeholder(String)
         case iCloudSync
+        case siriShortcuts
     }
 
     var body: some View {
@@ -231,6 +232,8 @@ struct ProfileView: View {
                     })
                 case .iCloudSync:
                     iCloudSyncSettingsView()
+                case .siriShortcuts:
+                    SiriShortcutsView()
                 }
             }
             .onAppear {
@@ -671,6 +674,10 @@ struct ProfileView: View {
                     title: BiometricAuthService.shared.biometricType.displayName,
                     iconColor: .green,
                     destination: .biometricSecurity)
+                SubsectionDivider()
+                profileRow(
+                    icon: "mic.badge.plus", title: String(localized: "settings.siriShortcuts"),
+                    iconColor: .blue, destination: .siriShortcuts)
                 SubsectionDivider()
                 Button {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
