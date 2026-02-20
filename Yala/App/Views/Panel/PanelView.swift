@@ -79,6 +79,7 @@ struct PanelView: View {
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
+    @AppStorage("showSiriTip") private var showSiriTip: Bool = true
 
     /// Voice recording sheet
     @State private var showVoiceRecording = false
@@ -275,6 +276,10 @@ struct PanelView: View {
 
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                    if showSiriTip {
+                        SiriTipCard(isVisible: $showSiriTip)
+                    }
+
                     accountsSection
                     totalBalanceSection
                 }
@@ -1406,5 +1411,50 @@ private struct PanelSessionObservers: ViewModifier {
             .onChange(of: sessionState.customDateRange) {
                 recalculateData()
             }
+    }
+}
+
+// MARK: - Siri Tip Card
+
+private struct SiriTipCard: View {
+    @Binding var isVisible: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "mic.badge.plus")
+                .font(.title2)
+                .foregroundStyle(.tint)
+                .frame(width: 36, height: 36)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text("Nuevo: registro con Siri")
+                    .font(DS.Typography.headline)
+
+                Text("Di: \"Crea un registro en Yala\"")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 0)
+
+            Button {
+                dsWithAnimation(reduceMotion) {
+                    isVisible = false
+                }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Cerrar sugerencia de Siri")
+        }
+        .padding(DS.Spacing.lg)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .transition(.asymmetric(
+            insertion: .scale(scale: 0.95).combined(with: .opacity),
+            removal: .scale(scale: 0.95).combined(with: .opacity)
+        ))
     }
 }

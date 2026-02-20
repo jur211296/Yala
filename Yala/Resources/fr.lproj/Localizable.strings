@@ -1423,6 +1423,7 @@
 "inbox.sourceSubscription" = "Abonnement";
 "inbox.sourceApplePay" = "Apple Pay";
 "inbox.sourceAutomation" = "Automatisation";
+"inbox.sourceSiri" = "Siri";
 "inbox.errorNoAccount" = "Select account";
 "inbox.errorNoAmount" = "Specify amount";
 "inbox.errorNoSubcategory" = "Select subcategory";
@@ -1646,6 +1647,22 @@
 "shortcut.automation.error.noCurrency" = "Une devise est requise (ex : USD, PEN, EUR).";
 "shortcut.automation.error.noJSON" = "Les données JSON de la transaction sont requises.";
 "shortcut.automation.success %@ %@" = "Brouillon créé : %@ à %@. Vérifie ta boîte de réception.";
+
+// MARK: - Siri Natural Language Entry
+"shortcut.siriNatural.title" = "Saisie avec Siri";
+"shortcut.siriNatural.description" = "Enregistre des dépenses en langage naturel avec Siri";
+"shortcut.siriNatural.shortTitle" = "Saisie avec Siri";
+"shortcut.siriNatural.param.text" = "Texte";
+"shortcut.siriNatural.dialog.askText" = "Qu'est-ce que tu veux enregistrer ?";
+"shortcut.siriNatural.error.noText" = "Aucun texte fourni pour l'enregistrement.";
+"shortcut.siriNatural.error.parsingFailed" = "Je n'ai pas compris le texte. Essaie quelque chose comme : 50 pour café.";
+"shortcut.siriNatural.error.proRequired" = "Active Yala Pro pour utiliser la saisie avec Siri.";
+"shortcut.siriNatural.success.single %@" = "Brouillon créé : %@. Vérifie ta boîte de réception.";
+"shortcut.siriNatural.success.multiple %lld" = "%lld brouillons créés. Vérifie ta boîte de réception.";
+"shortcut.siriNatural.success.offline %@" = "Brouillon basique créé : %@. Complète les détails dans ta boîte.";
+"shortcut.siriNatural.notification.title" = "Nouveau brouillon depuis Siri";
+"shortcut.siriNatural.notification.body %@" = "Un brouillon a été créé pour : %@. Vérifie ta boîte de réception.";
+"shortcut.siriNatural.notification.bodyOffline" = "Un brouillon basique a été créé (hors ligne). Complète les détails.";
 
 // MARK: - Control Center (iOS 18+)
 // Labels shown in Control Center (keep short - limited space)

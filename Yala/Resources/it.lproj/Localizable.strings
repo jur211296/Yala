@@ -1423,6 +1423,7 @@
 "inbox.sourceSubscription" = "Abbonamento";
 "inbox.sourceApplePay" = "Apple Pay";
 "inbox.sourceAutomation" = "Automazione";
+"inbox.sourceSiri" = "Siri";
 "inbox.errorNoAccount" = "Select account";
 "inbox.errorNoAmount" = "Specify amount";
 "inbox.errorNoSubcategory" = "Select subcategory";
@@ -1646,6 +1647,22 @@
 "shortcut.automation.error.noCurrency" = "È richiesta una valuta (es: USD, PEN, EUR).";
 "shortcut.automation.error.noJSON" = "Sono richiesti i dati JSON della transazione.";
 "shortcut.automation.success %@ %@" = "Bozza creata: %@ a %@. Controlla la tua posta in arrivo.";
+
+// MARK: - Siri Natural Language Entry
+"shortcut.siriNatural.title" = "Voce con Siri";
+"shortcut.siriNatural.description" = "Registra spese con linguaggio naturale tramite Siri";
+"shortcut.siriNatural.shortTitle" = "Voce con Siri";
+"shortcut.siriNatural.param.text" = "Testo";
+"shortcut.siriNatural.dialog.askText" = "Cosa vuoi registrare?";
+"shortcut.siriNatural.error.noText" = "Nessun testo fornito per la registrazione.";
+"shortcut.siriNatural.error.parsingFailed" = "Non ho capito il testo. Prova qualcosa come: 50 per caffè.";
+"shortcut.siriNatural.error.proRequired" = "Attiva Yala Pro per usare la voce con Siri.";
+"shortcut.siriNatural.success.single %@" = "Bozza creata: %@. Controlla la tua posta in arrivo.";
+"shortcut.siriNatural.success.multiple %lld" = "%lld bozze create. Controlla la tua posta in arrivo.";
+"shortcut.siriNatural.success.offline %@" = "Bozza base creata: %@. Completa i dettagli nella posta in arrivo.";
+"shortcut.siriNatural.notification.title" = "Nuova bozza da Siri";
+"shortcut.siriNatural.notification.body %@" = "È stata creata una bozza per: %@. Controlla la tua posta in arrivo.";
+"shortcut.siriNatural.notification.bodyOffline" = "È stata creata una bozza base (offline). Completa i dettagli.";
 
 // MARK: - Control Center (iOS 18+)
 // Labels shown in Control Center (keep short - limited space)

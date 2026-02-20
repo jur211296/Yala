@@ -1423,6 +1423,7 @@
 "inbox.sourceSubscription" = "Subscription";
 "inbox.sourceApplePay" = "Apple Pay";
 "inbox.sourceAutomation" = "Automation";
+"inbox.sourceSiri" = "Siri";
 "inbox.errorNoAccount" = "You must select an account";
 "inbox.errorNoAmount" = "You must specify an amount";
 "inbox.errorNoSubcategory" = "You must select a subcategory";
@@ -1646,6 +1647,22 @@
 "shortcut.automation.error.noAmount" = "An amount greater than zero is required.";
 "shortcut.automation.error.noCurrency" = "A currency is required (e.g., USD, PEN, EUR).";
 "shortcut.automation.success %@ %@" = "Draft created: %@ at %@. Check your inbox to review.";
+
+// MARK: - Siri Natural Language Entry
+"shortcut.siriNatural.title" = "Siri Entry";
+"shortcut.siriNatural.description" = "Record expenses using natural language with Siri";
+"shortcut.siriNatural.shortTitle" = "Siri Entry";
+"shortcut.siriNatural.param.text" = "Text";
+"shortcut.siriNatural.dialog.askText" = "What do you want to record?";
+"shortcut.siriNatural.error.noText" = "No text was provided to record.";
+"shortcut.siriNatural.error.parsingFailed" = "I couldn't understand the text. Try something like: 50 for coffee.";
+"shortcut.siriNatural.error.proRequired" = "Activate Yala Pro to use Siri entry.";
+"shortcut.siriNatural.success.single %@" = "Draft created: %@. Check your inbox to review.";
+"shortcut.siriNatural.success.multiple %lld" = "%lld drafts created. Check your inbox to review.";
+"shortcut.siriNatural.success.offline %@" = "Basic draft created: %@. Complete the details in your inbox.";
+"shortcut.siriNatural.notification.title" = "New draft from Siri";
+"shortcut.siriNatural.notification.body %@" = "A draft was created for: %@. Check your inbox to review.";
+"shortcut.siriNatural.notification.bodyOffline" = "A basic draft was created (offline). Complete the details.";
 
 // MARK: - Control Center (iOS 18+)
 // Labels shown in Control Center (keep short - limited space)

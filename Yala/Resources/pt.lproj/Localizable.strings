@@ -1421,6 +1421,7 @@
 "inbox.sourceSubscription" = "Assinatura";
 "inbox.sourceApplePay" = "Apple Pay";
 "inbox.sourceAutomation" = "Automação";
+"inbox.sourceSiri" = "Siri";
 "inbox.errorNoAccount" = "Select account";
 "inbox.errorNoAmount" = "Specify amount";
 "inbox.errorNoSubcategory" = "Select subcategory";
@@ -1644,6 +1645,22 @@
 "shortcut.automation.error.noCurrency" = "Uma moeda é necessária (ex: USD, PEN, EUR).";
 "shortcut.automation.error.noJSON" = "Os dados JSON da transação são necessários.";
 "shortcut.automation.success %@ %@" = "Rascunho criado: %@ em %@. Verifique sua caixa de entrada.";
+
+// MARK: - Siri Natural Language Entry
+"shortcut.siriNatural.title" = "Registro com Siri";
+"shortcut.siriNatural.description" = "Registre gastos com linguagem natural usando Siri";
+"shortcut.siriNatural.shortTitle" = "Registro com Siri";
+"shortcut.siriNatural.param.text" = "Texto";
+"shortcut.siriNatural.dialog.askText" = "O que você quer registrar?";
+"shortcut.siriNatural.error.noText" = "Nenhum texto fornecido para registrar.";
+"shortcut.siriNatural.error.parsingFailed" = "Não consegui entender o texto. Tente algo como: 50 em café.";
+"shortcut.siriNatural.error.proRequired" = "Ative o Yala Pro para usar registro com Siri.";
+"shortcut.siriNatural.success.single %@" = "Rascunho criado: %@. Verifique sua caixa de entrada.";
+"shortcut.siriNatural.success.multiple %lld" = "%lld rascunhos criados. Verifique sua caixa de entrada.";
+"shortcut.siriNatural.success.offline %@" = "Rascunho básico criado: %@. Complete os detalhes na caixa de entrada.";
+"shortcut.siriNatural.notification.title" = "Novo rascunho do Siri";
+"shortcut.siriNatural.notification.body %@" = "Um rascunho foi criado para: %@. Verifique sua caixa de entrada.";
+"shortcut.siriNatural.notification.bodyOffline" = "Um rascunho básico foi criado (offline). Complete os detalhes.";
 
 // MARK: - Control Center (iOS 18+)
 // Labels shown in Control Center (keep short - limited space)

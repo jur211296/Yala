@@ -1421,6 +1421,7 @@
 "inbox.sourceSubscription" = "Abonnement";
 "inbox.sourceApplePay" = "Apple Pay";
 "inbox.sourceAutomation" = "Automatisierung";
+"inbox.sourceSiri" = "Siri";
 "inbox.errorNoAccount" = "Select account";
 "inbox.errorNoAmount" = "Specify amount";
 "inbox.errorNoSubcategory" = "Select subcategory";
@@ -1644,6 +1645,22 @@
 "shortcut.automation.error.noCurrency" = "Eine Währung ist erforderlich (z.B. USD, PEN, EUR).";
 "shortcut.automation.error.noJSON" = "Transaktions-JSON-Daten sind erforderlich.";
 "shortcut.automation.success %@ %@" = "Entwurf erstellt: %@ bei %@. Überprüfe deinen Posteingang.";
+
+// MARK: - Siri Natural Language Entry
+"shortcut.siriNatural.title" = "Siri-Eintrag";
+"shortcut.siriNatural.description" = "Ausgaben mit natürlicher Sprache über Siri erfassen";
+"shortcut.siriNatural.shortTitle" = "Siri-Eintrag";
+"shortcut.siriNatural.param.text" = "Text";
+"shortcut.siriNatural.dialog.askText" = "Was möchtest du erfassen?";
+"shortcut.siriNatural.error.noText" = "Es wurde kein Text zum Erfassen angegeben.";
+"shortcut.siriNatural.error.parsingFailed" = "Ich konnte den Text nicht verstehen. Versuche etwas wie: 50 für Kaffee.";
+"shortcut.siriNatural.error.proRequired" = "Aktiviere Yala Pro, um Siri-Eintrag zu nutzen.";
+"shortcut.siriNatural.success.single %@" = "Entwurf erstellt: %@. Überprüfe deinen Posteingang.";
+"shortcut.siriNatural.success.multiple %lld" = "%lld Entwürfe erstellt. Überprüfe deinen Posteingang.";
+"shortcut.siriNatural.success.offline %@" = "Einfacher Entwurf erstellt: %@. Vervollständige die Details im Posteingang.";
+"shortcut.siriNatural.notification.title" = "Neuer Entwurf von Siri";
+"shortcut.siriNatural.notification.body %@" = "Ein Entwurf wurde erstellt für: %@. Überprüfe deinen Posteingang.";
+"shortcut.siriNatural.notification.bodyOffline" = "Ein einfacher Entwurf wurde erstellt (offline). Vervollständige die Details.";
 
 // MARK: - Control Center (iOS 18+)
 // Labels shown in Control Center (keep short - limited space)

@@ -2228,6 +2228,9 @@ enum L10n {
         static var sourceAutomation: String {
             ls("inbox.sourceAutomation", comment: "")
         }
+        static var sourceSiri: String {
+            ls("inbox.sourceSiri", comment: "")
+        }
         static var errorNoAccount: String {
             ls("inbox.errorNoAccount", comment: "")
         }
