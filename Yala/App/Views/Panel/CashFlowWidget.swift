@@ -492,6 +492,10 @@ struct CashFlowWidget: View {
 
                     averageLineMarks
                 }  // Close Chart
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Gráfica de flujo de caja")
+                .accessibilityValue(activeChartData.isEmpty ? "Sin datos" :
+                    "Ingresos \(YalaFormatter.currency(value: summary.totalIncome, currencyCode: summary.currencyCode)), Gastos \(YalaFormatter.currency(value: summary.totalExpense, currencyCode: summary.currencyCode))")
                 .chartXScale(domain: dataXDomain)
                 .chartYScale(domain: dataYDomain)
                 .chartXAxis {

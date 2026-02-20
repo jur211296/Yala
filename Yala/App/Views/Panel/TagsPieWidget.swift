@@ -458,6 +458,10 @@ struct TagsPieWidget: View {
                     selectedAngle = nil
                 }
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Gráfica circular de gastos por etiqueta")
+            .accessibilityValue(safeData.isEmpty ? "Sin datos" :
+                "\(safeData.count) etiquetas, total \(formattedCurrency(safeData.reduce(0) { $0 + $1.amount }))")
         }
     }
 

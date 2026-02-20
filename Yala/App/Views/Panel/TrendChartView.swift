@@ -244,6 +244,10 @@ struct TrendChartView: View {
             }
         }
         .chartXSelection(value: $draggingDate)  // Native iOS 17+ selection - works with scroll
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Gráfica de tendencia de \(trendType.displayName)")
+        .accessibilityValue(trendPoints.isEmpty ? "Sin datos" :
+            "\(trendPoints.count) puntos")
         .frame(height: chartHeight)
     }
 

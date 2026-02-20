@@ -586,6 +586,10 @@ struct CategoriesPieWidget: View {
                     selectedAngle = nil
                 }
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Gráfica circular de gastos por categoría")
+            .accessibilityValue(safeData.isEmpty ? "Sin datos" :
+                "\(safeData.count) categorías, total \(formattedCurrency(safeData.reduce(0) { $0 + $1.amount }))")
         }
     }
 

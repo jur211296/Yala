@@ -584,6 +584,10 @@ struct SubcategoriesPieWidget: View {
                     selectedAngle = nil
                 }
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Gráfica circular de gastos por subcategoría")
+            .accessibilityValue(safeData.isEmpty ? "Sin datos" :
+                "\(safeData.count) subcategorías, total \(formattedCurrency(safeData.reduce(0) { $0 + $1.amount }))")
         }
     }
 

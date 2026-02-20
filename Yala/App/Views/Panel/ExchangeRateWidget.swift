@@ -118,6 +118,10 @@ struct ExchangeRateWidget: View {
                 emptyChartView
             } else {
                 chartView(data: data)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Gráfica de tipo de cambio")
+                    .accessibilityValue(data.chartPoints.isEmpty ? "Sin datos" :
+                        "\(data.currentRates.count) divisas")
             }
         } else {
             loadingView
