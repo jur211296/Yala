@@ -1535,6 +1535,9 @@
 "tips.export.detail" = "Téléchargez vos dépenses en CSV ou Excel depuis Réglages > Exporter. Idéal pour l'analyse en tableur ou vos archives.";
 "tips.faceID.title" = "Protégez avec Face ID";
 "tips.faceID.detail" = "Activez le verrouillage biométrique dans Réglages > Sécurité. Vous pouvez choisir de l'activer en quittant l'app ou après un délai.";
+"tips.siri.title" = "Nouveau : enregistrer avec Siri";
+"tips.siri.detail" = "Dis : « Crée un enregistrement dans Yala »";
+"tips.siri.close" = "Fermer la suggestion Siri";
 
 // MARK: - FAQ
 "faq.subtitle" = "Réponses aux questions les plus courantes";

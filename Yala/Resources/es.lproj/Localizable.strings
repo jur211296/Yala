@@ -1513,6 +1513,30 @@
 "subscription.manageInAppStore" = "Administrar en App Store";
 
 // MARK: - Tips & Tricks
+"tips.subtitle" = "Aprovecha Yala al máximo";
+"tips.section.quickEntry" = "Registro rápido";
+"tips.section.organize" = "Organiza tu dinero";
+"tips.section.advanced" = "Trucos avanzados";
+"tips.voice.title" = "Dicta tus gastos";
+"tips.voice.detail" = "Activa la entrada por voz y di algo como \"Almuerzo 35 soles\". Yala entiende montos, fechas y notas de forma natural.";
+"tips.camera.title" = "Escanea recibos y capturas";
+"tips.camera.detail" = "Toma foto de tu recibo o captura del banco. Yala extrae los montos y crea borradores automáticamente.";
+"tips.favorites.title" = "Guarda pagos frecuentes";
+"tips.favorites.detail" = "¿Pagas lo mismo seguido? Guarda un gasto como favorito y la próxima vez regístralo con un solo toque desde el menú +.";
+"tips.budgets.title" = "Crea presupuestos";
+"tips.budgets.detail" = "Define cuánto quieres gastar por categoría cada mes. Yala te avisa cuando estés cerca del límite para no pasarte.";
+"tips.tags.title" = "Etiqueta gastos especiales";
+"tips.tags.detail" = "Usa etiquetas como \"Vacaciones\" o \"Proyecto casa\" para agrupar gastos de distintas categorías y ver cuánto llevas.";
+"tips.filters.title" = "Filtra y compara periodos";
+"tips.filters.detail" = "Usa filtros para ver solo lo que importa: por categoría, etiqueta, cuenta o periodo. Compara mes a mes para detectar cambios.";
+"tips.export.title" = "Exporta tus datos";
+"tips.export.detail" = "Descarga tus gastos en CSV o Excel desde Ajustes > Exportar. Ideal para análisis en hojas de cálculo o para tus archivos.";
+"tips.faceID.title" = "Protege con Face ID";
+"tips.faceID.detail" = "Activa el bloqueo biométrico en Ajustes > Seguridad. Puedes elegir activarlo al salir de la app o después de un tiempo.";
+"tips.siri.title" = "Nuevo: registro con Siri";
+"tips.siri.detail" = "Di: \"Crea un registro en Yala\"";
+"tips.siri.close" = "Cerrar sugerencia de Siri";
+
 // MARK: - Tutorials
 "tutorials.subtitle" = "Aprende a sacarle el máximo provecho a Yala";
 "tutorials.stepsCount" = "%d pasos";

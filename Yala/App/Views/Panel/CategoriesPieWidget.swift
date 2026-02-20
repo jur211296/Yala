@@ -133,27 +133,6 @@ struct CategoriesPieWidget: View {
         }
     }
 
-    // MARK: - Header
-
-    private var headerSection: some View {
-        HStack {
-            Text(L10n.Widget.categories)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-
-            InfoHintButton(
-                title: L10n.WidgetType.categoriesPie,
-                message: L10n.Widget.Hint.categoriesPie
-            )
-
-            Spacer()
-            Image(systemName: "chevron.right")
-                .font(DS.Typography.headline)
-                .foregroundStyle(.secondary)
-        }
-    }
-
     // MARK: - Layouts
 
     private var largeLayout: some View {
@@ -499,6 +478,7 @@ struct CategoriesPieWidget: View {
                                 .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Ver detalles")
                     }
                 }
             }

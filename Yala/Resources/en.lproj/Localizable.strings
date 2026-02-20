@@ -1535,6 +1535,9 @@
 "tips.export.detail" = "Download your expenses in CSV or Excel from Settings > Export. Great for spreadsheet analysis or for your records.";
 "tips.faceID.title" = "Protect with Face ID";
 "tips.faceID.detail" = "Enable biometric lock in Settings > Security. You can choose to activate it when leaving the app or after a set time.";
+"tips.siri.title" = "New: record with Siri";
+"tips.siri.detail" = "Say: \"Create a record in Yala\"";
+"tips.siri.close" = "Close Siri suggestion";
 
 // MARK: - FAQ
 "faq.subtitle" = "Answers to the most common questions";

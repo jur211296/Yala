@@ -1535,6 +1535,9 @@
 "tips.export.detail" = "Scarica le tue spese in CSV o Excel da Impostazioni > Esporta. Ideale per analisi su foglio di calcolo o per i tuoi archivi.";
 "tips.faceID.title" = "Proteggi con Face ID";
 "tips.faceID.detail" = "Attiva il blocco biometrico in Impostazioni > Sicurezza. Puoi scegliere di attivarlo uscendo dall'app o dopo un tempo.";
+"tips.siri.title" = "Nuovo: registra con Siri";
+"tips.siri.detail" = "Di: \"Crea un registro in Yala\"";
+"tips.siri.close" = "Chiudi suggerimento Siri";
 
 // MARK: - FAQ
 "faq.subtitle" = "Risposte alle domande più comuni";

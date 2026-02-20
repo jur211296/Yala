@@ -1533,6 +1533,9 @@
 "tips.export.detail" = "Baixe seus gastos em CSV ou Excel em Ajustes > Exportar. Ideal para análise em planilha ou para seus registros.";
 "tips.faceID.title" = "Proteja com Face ID";
 "tips.faceID.detail" = "Ative o bloqueio biométrico em Ajustes > Segurança. Você pode escolher ativar ao sair do app ou após um tempo.";
+"tips.siri.title" = "Novo: registro com Siri";
+"tips.siri.detail" = "Diga: \"Crie um registro no Yala\"";
+"tips.siri.close" = "Fechar sugestão da Siri";
 
 // MARK: - FAQ
 "faq.subtitle" = "Respostas para as dúvidas mais comuns";
