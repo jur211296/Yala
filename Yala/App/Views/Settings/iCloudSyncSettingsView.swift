@@ -81,7 +81,7 @@ struct iCloudSyncSettingsView: View {
             Spacer()
         }
         .padding(DS.Spacing.lg)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
         .padding(.horizontal, DS.Spacing.lg)
     }

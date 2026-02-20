@@ -21,6 +21,7 @@ struct ProfileView: View {
     @Environment(\.requestReview) private var requestReview
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.yalaTheme) private var theme
 
     @ScaledMetric(relativeTo: .largeTitle) private var avatarIconSize: CGFloat = 40
 
@@ -33,7 +34,6 @@ struct ProfileView: View {
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
     @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
-    @AppStorage("userTheme") private var userTheme: Int = AppTheme.system.rawValue
 
     // Navigation & Sheets
     @State private var navigationPath = NavigationPath()
@@ -102,6 +102,7 @@ struct ProfileView: View {
         case faq
         case placeholder(String)
         case iCloudSync
+        case siriShortcuts
     }
 
     var body: some View {
@@ -121,11 +122,6 @@ struct ProfileView: View {
                         seguridadSection
                         ayudaSection
                         legalSection
-
-                        // Developer section (only in Dev build)
-                        if FeatureGateService.isDevBuild {
-                            developerSection
-                        }
 
                         // Version info
                         Text(L10n.Settings.versionInfo)
@@ -203,7 +199,9 @@ struct ProfileView: View {
                 case .tags:
                     TagsSettingsListView()
                 case .themes:
-                    ThemeSettingsView()
+                    ThemeSettingsView {
+                        dismiss()
+                    }
                 case .personalization:
                     PersonalizationSettingsView()
                 case .currency:
@@ -234,11 +232,9 @@ struct ProfileView: View {
                     })
                 case .iCloudSync:
                     iCloudSyncSettingsView()
+                case .siriShortcuts:
+                    SiriShortcutsView()
                 }
-            }
-            .onChange(of: userTheme) { _, _ in
-                // When theme changes, dismiss ProfileView so it reopens with correct theme
-                dismiss()
             }
             .onAppear {
                 viewModel.setContext(modelContext)
@@ -265,7 +261,7 @@ struct ProfileView: View {
                             LinearGradient(
                                 colors: isProUser
                                     ? DS.Gradients.proBadge
-                                    : [Color.electricIndigo, Color.electricIndigo.opacity(0.6)],
+                                    : [theme.accent, theme.accent.opacity(0.6)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
@@ -285,12 +281,12 @@ struct ProfileView: View {
                     } else {
                         // Custom icon or default
                         Circle()
-                            .fill(Color.electricIndigo.opacity(0.1))
+                            .fill(theme.accent.opacity(0.1))
                             .frame(width: 90, height: 90)
 
                         Image(systemName: userProfileIcon.isEmpty ? "person.fill" : userProfileIcon)
                             .font(.system(size: avatarIconSize))
-                            .foregroundStyle(Color.electricIndigo)
+                            .foregroundStyle(theme.accent)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                     }
 
@@ -298,7 +294,7 @@ struct ProfileView: View {
                     if isProUser {
                         ZStack {
                             Circle()
-                                .fill(Color.yalaCard)
+                                .fill(.thCard)
                             YalaSpark(size: .medium, animated: true)
                         }
                         .frame(width: 28, height: 28)
@@ -323,7 +319,7 @@ struct ProfileView: View {
                 activeSheet = .personalDetails
             }
             .font(DS.Typography.label)
-            .foregroundStyle(Color.electricIndigo)
+            .foregroundStyle(.primary)
 
             // Trial banner
             if isInTrial {
@@ -498,7 +494,7 @@ struct ProfileView: View {
                     } else {
                         Toggle("", isOn: $voiceInputEnabled)
                             .labelsHidden()
-                            .tint(Color.brandPrimary)
+
                             .onChange(of: voiceInputEnabled) { _, isEnabled in
                                 guard isEnabled else { return }
                                 let status = AVAudioApplication.shared.recordPermission
@@ -547,10 +543,10 @@ struct ProfileView: View {
                         HStack(spacing: DS.Spacing.xs) {
                             Text(VoiceLanguage(rawValue: voiceLanguageRaw)?.displayName ?? L10n.VoiceLanguage.system)
                                 .font(DS.Typography.body)
-                                .foregroundStyle(Color.brandPrimary)
+                                .foregroundStyle(.primary)
                             Image(systemName: "chevron.up.chevron.down")
                                 .font(DS.Typography.captionSmall.weight(.medium))
-                                .foregroundStyle(Color.brandPrimary)
+                                .foregroundStyle(.primary)
                         }
                     }
                 }
@@ -602,7 +598,7 @@ struct ProfileView: View {
                 } else {
                     Toggle("", isOn: $imageInputEnabled)
                         .labelsHidden()
-                        .tint(Color.brandPrimary)
+
                         .onChange(of: imageInputEnabled) { _, isEnabled in
                             guard isEnabled else { return }
                             let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
@@ -679,6 +675,10 @@ struct ProfileView: View {
                     iconColor: .green,
                     destination: .biometricSecurity)
                 SubsectionDivider()
+                profileRow(
+                    icon: "mic.badge.plus", title: String(localized: "settings.siriShortcuts"),
+                    iconColor: .blue, destination: .siriShortcuts)
+                SubsectionDivider()
                 Button {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         openURL(url)
@@ -719,7 +719,7 @@ struct ProfileView: View {
                     iconColor: .orange, destination: .faq)
                 SubsectionDivider()
                 Button {
-                    if let url = URL(string: "mailto:admin@yala-app.pe") {
+                    if let url = Self.supportMailURL {
                         openURL(url)
                     }
                 } label: {
@@ -762,40 +762,6 @@ struct ProfileView: View {
         .padding(.horizontal, DS.Spacing.lg)
     }
 
-    // MARK: - Developer Section (Dev Build Only)
-
-    @ViewBuilder
-    private var developerSection: some View {
-        SectionBox(title: "Developer") {
-            VStack(spacing: DS.Spacing.none) {
-                HStack {
-                    YalaSpark(size: .medium, animated: false)
-                        .frame(width: 28)
-
-                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                        Text("Simular Pro")
-                            .font(DS.Typography.body)
-                            .foregroundStyle(Color.yalaPrimaryText)
-                        Text("Activar para probar features Pro")
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer()
-
-                    Toggle("", isOn: Binding(
-                        get: { FeatureGateService.shared.devSimulatePro },
-                        set: { FeatureGateService.shared.devSimulatePro = $0 }
-                    ))
-                    .labelsHidden()
-                    .tint(Color.brandPrimary)
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.md)
-            }
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-    }
 
     // MARK: - Reference Builder
 
@@ -851,6 +817,38 @@ struct ProfileView: View {
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.FormRow.paddingV)
         .contentShape(Rectangle())
+    }
+
+    // MARK: - Support Mail
+
+    private static var supportMailURL: URL? {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        let systemVersion = UIDevice.current.systemVersion
+        let modelName = UIDevice.current.model
+        let themeName = AppTheme(rawValue: UserDefaults.standard.integer(forKey: "userTheme"))?.label ?? "System"
+        let locale = Locale.preferredLanguages.first ?? "?"
+
+        let subject = "Yala - Soporte"
+        let body = """
+        [Describe tu consulta aquí]
+
+        ---
+        App: Yala v\(version) (\(build))
+        iOS: \(systemVersion)
+        Device: \(modelName)
+        Theme: \(themeName)
+        Locale: \(locale)
+        """
+
+        guard var components = URLComponents(string: "mailto:admin@yala-app.pe") else {
+            return nil
+        }
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: subject),
+            URLQueryItem(name: "body", value: body),
+        ]
+        return components.url
     }
 }
 

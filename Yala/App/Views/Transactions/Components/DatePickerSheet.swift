@@ -11,12 +11,13 @@ import SwiftUI
 
 struct DatePickerSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yalaTheme) private var theme
     @Binding var selectedDate: Date
 
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.yalaBackground.ignoresSafeArea()
+                theme.background.ignoresSafeArea()
 
                 VStack {
                     DatePicker(
@@ -51,11 +52,11 @@ struct DatePickerSheet: View {
                             .frame(width: 20, height: 20)
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(Color.electricIndigo)
+
                     .buttonBorderShape(.circle)
                 }
             }
         }
-        .tint(Color.electricIndigo)
+
     }
 }

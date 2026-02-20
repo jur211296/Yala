@@ -77,6 +77,22 @@ struct YalaShortcuts: AppShortcutsProvider {
         )
 
         AppShortcut(
+            intent: SiriNaturalEntryIntent(),
+            phrases: [
+                // Spanish
+                "Crea un registro en \(.applicationName)",
+                "Anota un gasto en \(.applicationName)",
+                "Guarda un gasto en \(.applicationName)",
+                // English
+                "Create an entry in \(.applicationName)",
+                "Log an expense in \(.applicationName)",
+                "Save an expense in \(.applicationName)"
+            ],
+            shortTitle: "shortcut.siriNatural.shortTitle",
+            systemImageName: "text.bubble.fill"
+        )
+
+        AppShortcut(
             intent: AutomationEntryIntent(),
             phrases: [
                 // Spanish

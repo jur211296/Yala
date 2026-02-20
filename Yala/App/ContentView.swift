@@ -18,19 +18,30 @@ struct ContentView: View {
     @State private var splashOpacity: Double = 1
     @State private var showICloudDataFound: Bool = false
     @State private var isWaitingForSync: Bool = false
+    @State private var showSyncBanner: Bool = false
+    @State private var syncDismissTask: Task<Void, Never>?
+    @State private var deduplicationTask: Task<Void, Never>?
+    @State private var wipeGraceTask: Task<Void, Never>?
+    @State private var showRemoteWipeAlert: Bool = false
+    @State private var showProTrialOffer: Bool = false
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.yalaTheme) private var theme
 
-    /// Query to detect existing data (for iCloud sync detection)
+    /// Queries to detect existing data (for iCloud sync detection)
     @Query private var accounts: [Account]
+    @Query private var categories: [Category]
+    @Environment(\.modelContext) private var modelContext
 
     private let authService = BiometricAuthService.shared
 
     /// Minimum splash duration (2.5 seconds to enjoy the animation)
     private let minimumSplashDuration: Double = 2.5
 
-    /// Check if there's existing data (accounts synced from iCloud or local)
+    /// Check if there's existing data (accounts or categories synced from iCloud or local)
     private var hasExistingData: Bool {
-        !accounts.isEmpty
+        !accounts.isEmpty || !categories.isEmpty
     }
 
     var body: some View {
@@ -38,11 +49,29 @@ struct ContentView: View {
             // Main content only when onboarding is done; static background otherwise
             if hasCompletedOnboarding {
                 MainTabView()
+                    .environment(SessionState.shared)
             } else if isWaitingForSync {
                 iCloudSyncWaitingView
             } else {
-                Color.yalaBackground
+                theme.background
                     .ignoresSafeArea()
+            }
+
+            // Sync banner overlay
+            if showSyncBanner {
+                HStack(spacing: DS.Spacing.sm) {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                    Text(L10n.iCloud.syncingBanner)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.sm)
+                .glassEffect()
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .padding(.top, DS.Spacing.xxl)
             }
 
             // Splash screen overlay
@@ -60,11 +89,19 @@ struct ContentView: View {
         .task {
             await checkInitialSyncState()
         }
-        .onChange(of: accounts.count) { _, newCount in
-            // iCloud data arrived while user is in onboarding — notify them
-            if (showOnboarding || isWaitingForSync) && newCount > 0 {
+        .onChange(of: accounts.count + categories.count) { _, newTotal in
+            // R3: Only show "data found" alert on sync-wait screen, NOT mid-onboarding.
+            // If user is mid-onboarding, their explicit choices (currency, period) are better
+            // than auto-detected defaults. CategoryDeduplicationService handles seed overlap.
+            if isWaitingForSync && newTotal > 0 {
                 showICloudDataFound = true
             }
+            // Activate sync banner when data arrives (not during wipe)
+            if newTotal > 0 && !SessionState.shared.isWipingData {
+                withAnimation(.easeInOut) { showSyncBanner = true }
+            }
+            // Auto-dismiss: if no changes for 5 seconds, hide banner
+            scheduleSyncBannerDismiss()
         }
         .onChange(of: hasCompletedOnboarding) { _, newValue in
             // React to data wipe: show onboarding when flag is reset
@@ -72,8 +109,36 @@ struct ContentView: View {
                 showOnboarding = true
             }
         }
+        .onChange(of: hasExistingData) { oldValue, newValue in
+            if oldValue && !newValue && hasCompletedOnboarding {
+                // Data disappeared — debounce 5s before acting (transient CloudKit gap)
+                wipeGraceTask?.cancel()
+                wipeGraceTask = Task {
+                    do {
+                        try await Task.sleep(for: .seconds(5))
+                        // Data still gone after 5s — ask user
+                        showRemoteWipeAlert = true
+                    } catch {
+                        // Cancelled — data reappeared
+                    }
+                }
+            } else if !oldValue && newValue {
+                // Data reappeared — cancel pending wipe grace
+                wipeGraceTask?.cancel()
+                wipeGraceTask = nil
+            }
+        }
+        .alert(L10n.iCloud.remoteWipeTitle, isPresented: $showRemoteWipeAlert) {
+            Button(L10n.iCloud.remoteWipeConfirm, role: .destructive) {
+                hasCompletedOnboarding = false
+            }
+            Button(L10n.iCloud.remoteWipeCancel, role: .cancel) {}
+        } message: {
+            Text(L10n.iCloud.remoteWipeMessage)
+        }
         .alert(L10n.iCloud.dataFoundTitle, isPresented: $showICloudDataFound) {
             Button(L10n.iCloud.dataFoundAction) {
+                PreferenceSyncService.shared.applyDetectedDefaultsIfNeeded()
                 showOnboarding = false
                 hasCompletedOnboarding = true
             }
@@ -88,10 +153,27 @@ struct ContentView: View {
                     showOnboarding = true
                 }
             }
+            .environment(SessionState.shared)
         }
-        .fullScreenCover(isPresented: $showOnboarding) {
+        .fullScreenCover(isPresented: $showOnboarding, onDismiss: {
+            // Show trial offer after onboarding completes (only for eligible non-Pro users)
+            if hasCompletedOnboarding && !FeatureGateService.shared.isProUser {
+                Task {
+                    let eligible = await StoreKitManager.shared.isEligibleForIntroOffer()
+                    if eligible {
+                        showProTrialOffer = true
+                    }
+                }
+            }
+        }) {
             OnboardingView {
                 showOnboarding = false
+            }
+            .environment(SessionState.shared)
+        }
+        .sheet(isPresented: $showProTrialOffer) {
+            ProTrialOfferSheet {
+                showProTrialOffer = false
             }
         }
         // Biometric lock as fullScreenCover (covers everything including sheets)
@@ -100,6 +182,7 @@ struct ContentView: View {
             set: { _ in }  // Dismiss handled by BiometricLockOverlay.authenticate()
         )) {
             BiometricLockOverlay()
+                .environment(SessionState.shared)
         }
         // Inbox alert as fullScreenCover (appears over any sheet)
         .fullScreenCover(isPresented: Binding(
@@ -116,10 +199,14 @@ struct ContentView: View {
                 }
             )
             .background(ClearBackgroundView())
+            .environment(SessionState.shared)
         }
         .onAppear {
-            // Lock on initial launch if biometric is enabled
+            themeManager.systemColorScheme = colorScheme
             authService.lockOnLaunchIfNeeded()
+        }
+        .onChange(of: colorScheme) { _, newScheme in
+            themeManager.systemColorScheme = newScheme
         }
         .onChange(of: scenePhase) { _, newPhase in
             switch newPhase {
@@ -151,6 +238,32 @@ struct ContentView: View {
         }
     }
 
+    /// Schedule one-shot dedup after a delay (at most once per launch)
+    private func scheduleDeduplication() {
+        guard deduplicationTask == nil else { return }
+        deduplicationTask = Task {
+            do {
+                try await Task.sleep(for: .seconds(10))
+                CategoryDeduplicationService.deduplicateSeedCategories(in: modelContext)
+            } catch {
+                // Task cancelled
+            }
+        }
+    }
+
+    /// Schedule sync banner auto-dismiss after 5 seconds of no data changes
+    private func scheduleSyncBannerDismiss() {
+        syncDismissTask?.cancel()
+        syncDismissTask = Task {
+            do {
+                try await Task.sleep(for: .seconds(5))
+                withAnimation(.easeInOut) { showSyncBanner = false }
+            } catch {
+                // Task cancelled — a new change arrived, dismiss rescheduled
+            }
+        }
+    }
+
     /// Whether the device language needs an in-app override
     private var needsLanguageSelection: Bool {
         !LanguageManager.deviceLanguageIsSupported && LanguageManager.overrideLanguage == nil
@@ -168,6 +281,9 @@ struct ContentView: View {
 
         if hasCompletedOnboarding || hasExistingData {
             // Returning user (data from iCloud or previous install)
+            // R6 mitigation: hasCompletedOnboarding is per-device (not synced).
+            // If iCloud data exists but flag is false (reinstall without backup),
+            // auto-promote here. Late arrivals handled by dedup service + onChange.
             if hasExistingData {
                 hasCompletedOnboarding = true
             }
@@ -182,21 +298,28 @@ struct ContentView: View {
         if SwiftDataConfiguration.isICloudAvailable() {
             isWaitingForSync = true
 
-            for _ in 0..<7 { // 7 × 2s = 14s max
+            for _ in 0..<15 { // 15 × 2s = 30s max (CloudKit cold sync can take 30-60s)
                 do {
                     try await Task.sleep(for: .seconds(2))
                 } catch {
                     break // Task cancelled
                 }
-                if hasExistingData {
+                let txCount = (try? modelContext.fetchCount(FetchDescriptor<TransactionItem>())) ?? 0
+                if hasExistingData || txCount > 0 {
                     hasCompletedOnboarding = true
                     isWaitingForSync = false
+                    scheduleDeduplication()
+                    if !SessionState.shared.isWipingData {
+                        withAnimation(.easeInOut) { showSyncBanner = true }
+                        scheduleSyncBannerDismiss()
+                    }
                     return
                 }
             }
 
-            // Timeout: proceed to onboarding
+            // Timeout: proceed to onboarding — schedule dedup for late sync arrival
             isWaitingForSync = false
+            scheduleDeduplication()
         }
 
         if needsLanguageSelection {
@@ -209,13 +332,13 @@ struct ContentView: View {
     /// Inline view shown while waiting for iCloud sync on a new device
     private var iCloudSyncWaitingView: some View {
         ZStack {
-            Color.yalaBackground
+            theme.background
                 .ignoresSafeArea()
 
             VStack(spacing: DS.Spacing.xl) {
                 ProgressView()
                     .scaleEffect(1.5)
-                    .tint(.electricIndigo)
+
 
                 VStack(spacing: DS.Spacing.sm) {
                     Text(L10n.iCloud.syncingData)
@@ -230,6 +353,7 @@ struct ContentView: View {
 
                 Button {
                     isWaitingForSync = false
+                    scheduleDeduplication()
                     if needsLanguageSelection {
                         showLanguageSelection = true
                     } else {
@@ -251,6 +375,7 @@ struct ContentView: View {
 
 struct MainTabView: View {
     @Bindable private var sessionState: SessionState
+    @Environment(\.yalaTheme) private var theme
     @State private var searchText: String = ""
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
 
@@ -301,17 +426,11 @@ struct MainTabView: View {
                     GlobalSearchView()
                 }
             }
-            .tint(Color.electricIndigo)
+            .tint(theme.accent)
             .transaction { $0.animation = nil }
-            .onAppear {
-                // Catch flags set before view mounted (Share Extension cold launch)
-                if sessionState.hasPendingSharedImage && sessionState.selectedMainTab != .panel {
-                    sessionState.selectedMainTab = .panel
-                }
-            }
-            .onChange(of: sessionState.hasPendingSharedImage) { _, hasPending in
-                // Navigate to Panel when shared image is pending (from Share Extension)
-                if hasPending && sessionState.selectedMainTab != .panel {
+            .onChange(of: sessionState.shouldShowSharedImage) { _, shouldShow in
+                // Navigate to Panel when shared image arrives (from Share Extension)
+                if shouldShow && sessionState.selectedMainTab != .panel {
                     sessionState.selectedMainTab = .panel
                 }
             }
@@ -338,6 +457,14 @@ struct MainTabView: View {
                 case .inbox:
                     sessionState.selectedMainTab = .panel
                     sessionState.shouldShowInbox = true
+                case .scheduledPayments:
+                    sessionState.selectedPlanningTab = .scheduledPayments
+                    sessionState.selectedMainTab = .planning
+                case .recordsStandalone:
+                    sessionState.temporaryTab = .records
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        sessionState.selectedMainTab = .records
+                    }
                 }
 
                 // Clear after handling
@@ -412,6 +539,7 @@ enum AppTab: Hashable {
 // MARK: - More View
 
 struct MorePlaceholderView: View {
+    @Environment(\.yalaTheme) private var theme
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
     @State private var showProfile = false
 
@@ -468,7 +596,7 @@ struct MorePlaceholderView: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.yalaCard)
+                    .fill(.thCard)
             )
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
@@ -495,7 +623,7 @@ struct MorePlaceholderView: View {
                     .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
-                            .fill(Color.electricIndigo)
+                            .fill(theme.accent)
                     )
 
                 Text(tab.displayName)
@@ -550,7 +678,7 @@ struct MorePlaceholderView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .fill(Color.yalaCard)
+                .fill(.thCard)
         )
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
@@ -620,6 +748,7 @@ struct GlobalSearchView: View {
 // MARK: - Search Content View
 
 struct SearchContentView: View {
+    @Environment(\.yalaTheme) private var theme
     @Environment(SessionState.self) private var sessionState
     @Binding var searchText: String
     let transactions: [TransactionItem]  // Passed from parent
@@ -788,7 +917,7 @@ struct SearchContentView: View {
                 .padding(.vertical, DS.Spacing.sm)
                 .background(
                     Capsule()
-                        .fill(isSelected ? Color.electricIndigo : Color.clear)
+                        .fill(isSelected ? theme.accent : Color.clear)
                 )
                 .overlay(
                     Capsule()
@@ -825,7 +954,7 @@ struct SearchContentView: View {
                                 Image(systemName: "arrow.right")
                             }
                             .font(DS.Typography.label)
-                            .foregroundStyle(Color.electricIndigo)
+                            .foregroundStyle(theme.accent)
                         }
                     }
                     .padding(.horizontal, DS.Spacing.xl)
@@ -940,7 +1069,7 @@ struct SearchResultRow: View {
     let currencyCode: String
     let onTap: () -> Void
 
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.yalaTheme) private var theme
 
     var body: some View {
         Button {
@@ -1003,9 +1132,9 @@ struct SearchResultRow: View {
 
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: DS.Radius.card)
-            .fill(Color.yalaCard)
+            .fill(.thCard)
             .shadow(
-                color: Color.black.opacity(colorScheme == .dark ? 0.25 : 0.06),
+                color: Color.black.opacity(theme.shadowOpacity),
                 radius: 6,
                 x: 0,
                 y: 3

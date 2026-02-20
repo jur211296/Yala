@@ -11,6 +11,7 @@ import SwiftUI
 struct SubscriptionView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.yalaTheme) private var theme
 
     private var store = StoreKitManager.shared
 
@@ -85,7 +86,9 @@ struct SubscriptionView: View {
                         YalaPrimaryButton(
                             store.isPurchasing
                                 ? L10n.Subscription.processing
-                                : L10n.Subscription.subscribe,
+                                : selectedProductHasFreeTrial
+                                    ? L10n.Subscription.startFreeTrial
+                                    : L10n.Subscription.subscribe,
                             isDisabled: store.isPurchasing || store.products.isEmpty
                         ) {
                             Task { await purchaseSelected() }
@@ -96,7 +99,7 @@ struct SubscriptionView: View {
                         } label: {
                             Text(L10n.Subscription.restore)
                                 .font(DS.Typography.subheadline)
-                                .foregroundStyle(Color.brandPrimary)
+                                .foregroundStyle(.primary)
                         }
                     }
                     .padding(.horizontal, DS.Spacing.lg)
@@ -118,7 +121,7 @@ struct SubscriptionView: View {
                 .padding(.top, DS.Spacing.xxl)
             }
         }
-        .background(Color.yalaBackground)
+        .background(.thBackground)
         .ignoresSafeArea(edges: .top)
     }
 
@@ -212,11 +215,11 @@ struct SubscriptionView: View {
 
                     Text(L10n.Subscription.activeTitle)
                         .font(.title2.bold())
-                        .foregroundStyle(Color.yalaPrimaryText)
+                        .foregroundStyle(.thPrimaryText)
 
                     Text(L10n.Subscription.activeSubtitle)
                         .font(DS.Typography.body)
-                        .foregroundStyle(Color.yalaSecondaryText)
+                        .foregroundStyle(.thSecondaryText)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.top, DS.Spacing.xxxl)
@@ -232,7 +235,7 @@ struct SubscriptionView: View {
                 } label: {
                     Text(L10n.Subscription.manageInAppStore)
                         .font(DS.Typography.bodyBold)
-                        .foregroundStyle(Color.brandPrimary)
+                        .foregroundStyle(.primary)
                 }
                 .manageSubscriptionsSheet(isPresented: $showManageSubscription)
             }
@@ -247,10 +250,11 @@ struct SubscriptionView: View {
             featureRow(icon: "chart.pie.fill", text: L10n.Subscription.featureUnlimitedBudgets, color: .purple)
             featureRow(icon: "waveform.badge.mic", text: L10n.Subscription.featureVoice, color: .hotPink)
             featureRow(icon: "photo.on.rectangle", text: L10n.Subscription.featureImage, color: .teal)
+            featureRow(icon: "paintpalette.fill", text: L10n.Subscription.featureThemes, color: .orange)
             featureRow(icon: "app.fill", text: L10n.Subscription.featurePremiumIcons, color: .pink)
         }
         .padding(.vertical, DS.Spacing.sm)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl)
@@ -272,13 +276,13 @@ struct SubscriptionView: View {
 
             Text(text)
                 .font(DS.Typography.body)
-                .foregroundStyle(Color.yalaPrimaryText)
+                .foregroundStyle(.thPrimaryText)
 
             Spacer()
 
             Image(systemName: "checkmark.circle.fill")
                 .font(DS.Typography.body)
-                .foregroundStyle(Color.brandPrimary)
+                .foregroundStyle(.thAccent)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
@@ -323,7 +327,7 @@ struct SubscriptionView: View {
                     HStack(spacing: DS.Spacing.sm) {
                         Text(planDisplayName(for: product))
                             .font(DS.Typography.headline)
-                            .foregroundStyle(Color.yalaPrimaryText)
+                            .foregroundStyle(.thPrimaryText)
 
                         if let badge {
                             Text(badge)
@@ -343,14 +347,20 @@ struct SubscriptionView: View {
                         }
                     }
 
-                    Text(product.displayPrice + " " + planPeriodLabel(for: product))
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(Color.yalaSecondaryText)
+                    if let trialText = trialDaysText(for: product) {
+                        Text(trialText)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.thAccent)
+                    } else {
+                        Text(product.displayPrice + " " + planPeriodLabel(for: product))
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.thSecondaryText)
+                    }
 
                     if let monthlyEquiv = store.monthlyEquivalent(for: product) {
                         Text(L10n.Subscription.perMonth(monthlyEquiv))
                             .font(DS.Typography.caption)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                     }
                 }
 
@@ -359,7 +369,7 @@ struct SubscriptionView: View {
                 ZStack {
                     Circle()
                         .stroke(
-                            isSelected ? Color.brandPrimary : Color.yalaSecondaryText.opacity(0.3),
+                            isSelected ? Color.brandPrimary : theme.secondaryText.opacity(0.3),
                             lineWidth: 2
                         )
                         .frame(width: 24, height: 24)
@@ -372,7 +382,7 @@ struct SubscriptionView: View {
                 }
             }
             .padding(DS.Spacing.lg)
-            .background(Color.yalaCard)
+            .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -394,13 +404,13 @@ struct SubscriptionView: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(L10n.Subscription.currentPlan)
                         .font(DS.Typography.caption)
-                        .foregroundStyle(Color.yalaSecondaryText)
+                        .foregroundStyle(.thSecondaryText)
 
                     Text(transaction.productID == StoreKitManager.proYearlyID
                         ? L10n.Subscription.planYearly
                         : L10n.Subscription.planMonthly)
                         .font(DS.Typography.headline)
-                        .foregroundStyle(Color.yalaPrimaryText)
+                        .foregroundStyle(.thPrimaryText)
                 }
 
                 Spacer()
@@ -414,16 +424,16 @@ struct SubscriptionView: View {
                 HStack {
                     Text(L10n.Subscription.renewsOn)
                         .font(DS.Typography.subheadline)
-                        .foregroundStyle(Color.yalaSecondaryText)
+                        .foregroundStyle(.thSecondaryText)
                     Spacer()
                     Text(expirationDate.formatted(date: .abbreviated, time: .omitted))
                         .font(DS.Typography.label)
-                        .foregroundStyle(Color.yalaPrimaryText)
+                        .foregroundStyle(.thPrimaryText)
                 }
             }
         }
         .padding(DS.Spacing.lg)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -450,5 +460,37 @@ struct SubscriptionView: View {
         let product = store.products.first { $0.id == selectedPlan }
         guard let product else { return }
         _ = await store.purchase(product)
+    }
+
+    /// Whether the selected product has a free trial introductory offer
+    private var selectedProductHasFreeTrial: Bool {
+        guard let product = store.products.first(where: { $0.id == selectedPlan }),
+              let intro = product.subscription?.introductoryOffer,
+              intro.paymentMode == .freeTrial else { return false }
+        return true
+    }
+
+    /// Extract readable trial duration from a product's introductory offer
+    private func trialDaysText(for product: Product) -> String? {
+        guard let intro = product.subscription?.introductoryOffer,
+              intro.paymentMode == .freeTrial else { return nil }
+        let period = intro.period
+        let days: Int
+        switch period.unit {
+        case .day:
+            days = period.value
+        case .week:
+            days = period.value * 7
+        case .month:
+            days = period.value * 30
+        case .year:
+            days = period.value * 365
+        @unknown default:
+            days = period.value
+        }
+        return L10n.Subscription.trialThenPrice(
+            "\(days)",
+            product.displayPrice + " " + planPeriodLabel(for: product)
+        )
     }
 }

@@ -13,7 +13,7 @@ struct BudgetRowView: View {
     let currencyCode: String
     let onTap: () -> Void
 
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.yalaTheme) private var theme
 
     var body: some View {
         Button(action: onTap) {
@@ -72,7 +72,7 @@ struct BudgetRowView: View {
                     .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
             )
             .shadow(
-                color: Color.black.opacity(colorScheme == .dark ? 0.25 : DS.Opacity.faint),
+                color: Color.black.opacity(theme.shadowOpacity),
                 radius: 6,
                 x: 0,
                 y: 3
@@ -84,7 +84,7 @@ struct BudgetRowView: View {
     // MARK: - Components
 
     private var cardBackground: some View {
-        Color.yalaCard
+        theme.card
     }
 
     private var budgetIcon: some View {

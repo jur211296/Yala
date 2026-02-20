@@ -10,6 +10,7 @@ import SwiftUI
 // MARK: - Selection Chip
 
 struct SelectionChip: View {
+    @Environment(\.yalaTheme) private var theme
     let icon: String
     let text: String
     let isSelected: Bool
@@ -28,18 +29,18 @@ struct SelectionChip: View {
                     .font(DS.Typography.label)
                     .lineLimit(1)
             }
-            .foregroundStyle(isSelected ? (color ?? Color.electricIndigo) : .secondary)
+            .foregroundStyle(isSelected ? (color ?? theme.accent) : .secondary)
             .padding(.horizontal, DS.FormRow.paddingV)
             .padding(.vertical, DS.Spacing.sm)
             .background(
                 Capsule()
                     .fill(
-                        isSelected ? (color ?? Color.electricIndigo).opacity(0.12) : Color.yalaCard)
+                        isSelected ? (color ?? theme.accent).opacity(0.12) : theme.card)
             )
             .overlay(
                 Capsule()
                     .stroke(
-                        isSelected ? (color ?? Color.electricIndigo).opacity(0.3) : Color.clear,
+                        isSelected ? (color ?? theme.accent).opacity(0.3) : Color.clear,
                         lineWidth: 1
                     )
             )

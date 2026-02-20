@@ -24,10 +24,16 @@ final class ReportNotificationService {
 
     private init() {}
 
+    /// Guard flag to prevent concurrent sendDueReports calls (race between bootstrap and becameActive)
+    private var isSendingReports = false
+
     // MARK: - Public Methods
 
     /// Sends report notifications that are due based on their configuration
     func sendDueReports(context: ModelContext) async {
+        guard !isSendingReports else { return }
+        isSendingReports = true
+        defer { isSendingReports = false }
         guard await NotificationService.shared.isAuthorized() else { return }
 
         let reports = fetchActiveReportNotifications(context: context)
@@ -39,7 +45,7 @@ final class ReportNotificationService {
             let data = calculateReportData(config: report.reportConfig, type: report.notificationType, context: context)
 
             await NotificationService.shared.sendNotification(
-                title: report.name,
+                title: report.localizedName,
                 body: formatReportBody(report.reportConfig, reportType: report.notificationType, data: data),
                 deepLink: "statistics"
             )

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct AdjustmentModeSelectorView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yalaTheme) private var theme
     @Binding var selectedAdjustmentMode: AdjustmentMode
 
     var body: some View {
@@ -43,7 +44,7 @@ struct AdjustmentModeSelectorView: View {
 
                                         if mode == selectedAdjustmentMode {
                                             Image(systemName: "checkmark")
-                                                .foregroundStyle(Color.electricIndigo)
+                                                .foregroundStyle(.thAccent)
                                                 .font(DS.Typography.headline)
                                         }
                                     }

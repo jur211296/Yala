@@ -63,17 +63,17 @@ struct CurrencySettingsView: View {
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .font(.system(size: heroIconSize))
-                            .foregroundStyle(Color.brandPrimary)
+                            .foregroundStyle(.thAccent)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Settings.currencyAndExchange)
                             .font(Typography.title2)
-                            .foregroundStyle(Color.yalaPrimaryText)
+                            .foregroundStyle(.thPrimaryText)
 
                         Text(L10n.Settings.currencyDescription)
                             .font(Typography.body)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top, DS.Spacing.xxxl)
@@ -264,7 +264,7 @@ struct CurrencySettingsView: View {
                         HStack {
                             Text(L10n.Common.seeAll)
                                 .font(DS.Typography.body)
-                                .foregroundStyle(Color.electricIndigo)
+                                .foregroundStyle(.primary)
                             Spacer()
                             Image(systemName: "chevron.right")
                                 .font(DS.Typography.caption)

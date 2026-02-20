@@ -43,6 +43,9 @@ final class ScheduledPaymentNotificationService {
             // Use Calendar to compare only day (not hour/minute/second)
             guard Calendar.current.isDateInToday(payment.nextDueDate) else { continue }
 
+            // Skip if this date has been skipped by user
+            guard !payment.isDateSkipped(payment.nextDueDate) else { continue }
+
             // Avoid duplicate notification
             guard !tracker.hasNotifiedForDate(
                 paymentID: payment.id,
@@ -80,6 +83,9 @@ final class ScheduledPaymentNotificationService {
 
             guard daysUntilDue == payment.notifyDaysBefore else { continue }
 
+            // Skip if this date has been skipped by user
+            guard !payment.isDateSkipped(payment.nextDueDate) else { continue }
+
             // Avoid duplicate notification
             guard !tracker.hasNotifiedForDate(
                 paymentID: payment.id,
@@ -110,6 +116,9 @@ final class ScheduledPaymentNotificationService {
             guard calendar.compare(payment.nextDueDate, to: today, toGranularity: .day) == .orderedAscending else {
                 continue
             }
+
+            // Skip if this date has been skipped by user
+            guard !payment.isDateSkipped(payment.nextDueDate) else { continue }
 
             // Avoid duplicate overdue notification
             guard !tracker.hasNotifiedForDate(
@@ -156,7 +165,7 @@ final class ScheduledPaymentNotificationService {
         await NotificationService.shared.sendNotification(
             title: payment.name,
             body: message,
-            deepLink: "planning"
+            deepLink: "scheduledPayments"
         )
     }
 

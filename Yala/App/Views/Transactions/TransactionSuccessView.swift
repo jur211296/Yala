@@ -44,6 +44,7 @@ struct TransactionSuccessView: View {
     let onEdit: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.yalaTheme) private var theme
     @State private var showHero = false
     @State private var showCheckmark = false
     @State private var showAmount = false
@@ -54,7 +55,7 @@ struct TransactionSuccessView: View {
 
     var body: some View {
         ZStack {
-            Color.yalaBackground.ignoresSafeArea()
+            theme.background.ignoresSafeArea()
 
             // Subtle background glow
             RadialGradient(
@@ -166,7 +167,7 @@ struct TransactionSuccessView: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(Color.electricIndigo)
+
                     .controlSize(.large)
 
                     // Secondary: Create another
@@ -175,7 +176,7 @@ struct TransactionSuccessView: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
-                    .tint(Color.electricIndigo)
+
                     .controlSize(.large)
                 }
                 .padding(.horizontal, DS.Spacing.xl)
@@ -276,7 +277,7 @@ struct TransactionSuccessView: View {
         .padding(.vertical, DS.Spacing.sm)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                .fill(Color.yalaCard)
+                .fill(.thCard)
         )
     }
 
@@ -392,7 +393,7 @@ struct TransactionSuccessView: View {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "arrow.down.circle")
                         .font(DS.Typography.subheadline)
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(.thAccent)
                         .frame(width: 20)
 
                     Text(L10n.Transaction.destination)

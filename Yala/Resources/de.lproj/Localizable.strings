@@ -304,6 +304,14 @@
 "scheduled.saveDescription" = "Erstelle eine geplante Zahlung, um dich an diese wiederkehrende Ausgabe oder Einnahme zu erinnern. Du findest sie im Bereich Geplante Zahlungen in deinem Profil, wo du sie jederzeit bearbeiten, aktivieren oder deaktivieren kannst.";
 "scheduled.paid" = "Bezahlt";
 "scheduled.overdue" = "Überfällig";
+"scheduled.skip" = "Überspringen";
+"scheduled.skip.undo" = "Rückgängig";
+"scheduled.skip.confirm.title" = "Dieses Ereignis überspringen?";
+"scheduled.skip.confirm.message" = "Es wird nicht als Ausgabe erfasst. Du kannst dies später rückgängig machen.";
+"scheduled.skip.overdue.title" = "Überfälliges Ereignis überspringen";
+"scheduled.status.skipped" = "Übersprungen";
+"scheduled.status.paid" = "Bezahlt";
+"scheduled.status.overdue" = "Überfällig";
 "scheduled.draftCreatedTitle" = "Du hast ausstehende Zahlungen!";
 "scheduled.draftCreatedMessage" = "%d geplante Zahlungen wurden zu deinem Posteingang hinzugefügt. Schau sie dir an, wenn du bereit bist.";
 "scheduled.viewInbox" = "Posteingang öffnen";
@@ -356,6 +364,9 @@
 "settings.light" = "Hell";
 "settings.dark" = "Dunkel";
 "settings.system" = "System";
+"settings.theme.indigo" = "Indigo";
+"settings.theme.rosa" = "Rosa";
+"settings.theme.teal" = "Teal";
 "settings.defaultCurrency" = "Standardwährung";
 "settings.currentIcon" = "Aktuelles Symbol";
 "settings.resetAllData" = "Alle Daten löschen";
@@ -608,6 +619,7 @@
 "widget.noRecordsForFilters" = "Noch keine Einträge für diesen Zeitraum und diese Filter";
 "widget.recordsWillAppear" = "Wenn du Transaktionen erfasst, erscheinen sie hier.";
 "widget.total" = "Gesamt";
+"widget.average" = "Durchschnitt";
 
 
 "common.uncategorized" = "Nicht kategorisiert";
@@ -1252,6 +1264,14 @@
 "settings.widgetHintsDescription" = "Zeigt Info-Buttons auf Widgets mit Erklärungen zu jedem Diagramm.";
 "settings.showVariations" = "Vergleiche";
 "settings.showVariationsDescription" = "Zeigt prozentuale Veränderungen und Vergleichsdiagramme vs. der Vorperiode.";
+"settings.averageLine" = "Durchschnittslinie";
+"settings.averageLineDescription" = "Zeigt eine Durchschnittslinie in Balkendiagrammen.";
+"settings.averageLine.off" = "Aus";
+"settings.averageLine.total" = "Gesamt";
+"settings.averageLine.segmented" = "Segmentiert";
+"settings.averageLine.offDescription" = "Keine Durchschnittslinie in Diagrammen.";
+"settings.averageLine.totalDescription" = "Eine horizontale Linie mit dem Gesamtdurchschnitt.";
+"settings.averageLine.segmentedDescription" = "Segmente nach Zeitraum mit prozentualer Veränderung.";
 "settings.decimalPlaces" = "Dezimalstellen";
 "settings.decimalPlacesDescription" = "Gilt nur für Summen und Grafiken. Einzelne Datensätze zeigen immer 2 Dezimalstellen.";
 "settings.decimalsNone" = "Keine Dezimalstellen";
@@ -1401,6 +1421,7 @@
 "inbox.sourceSubscription" = "Abonnement";
 "inbox.sourceApplePay" = "Apple Pay";
 "inbox.sourceAutomation" = "Automatisierung";
+"inbox.sourceSiri" = "Siri";
 "inbox.errorNoAccount" = "Select account";
 "inbox.errorNoAmount" = "Specify amount";
 "inbox.errorNoSubcategory" = "Select subcategory";
@@ -1480,7 +1501,7 @@
 "subscription.feature.image" = "Beleg- und Bilderkennung";
 "subscription.feature.reports" = "Erweiterte Berichte und Diagramme";
 "subscription.feature.currencies" = "Alle Währungen und Wechselkurse";
-"subscription.feature.themes" = "Exklusive Designs und Symbole";
+"subscription.feature.themes" = "Personalisierte Themes";
 "subscription.feature.export" = "Export als Excel und CSV";
 "subscription.legalFooter" = "Die Zahlung wird über dein Apple-Konto abgerechnet. Das Abo verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ende des aktuellen Zeitraums gekündigt wird.";
 "subscription.termsLink" = "Nutzungsbedingungen und Datenschutzrichtlinie";
@@ -1624,6 +1645,22 @@
 "shortcut.automation.error.noCurrency" = "Eine Währung ist erforderlich (z.B. USD, PEN, EUR).";
 "shortcut.automation.error.noJSON" = "Transaktions-JSON-Daten sind erforderlich.";
 "shortcut.automation.success %@ %@" = "Entwurf erstellt: %@ bei %@. Überprüfe deinen Posteingang.";
+
+// MARK: - Siri Natural Language Entry
+"shortcut.siriNatural.title" = "Siri-Eintrag";
+"shortcut.siriNatural.description" = "Ausgaben mit natürlicher Sprache über Siri erfassen";
+"shortcut.siriNatural.shortTitle" = "Siri-Eintrag";
+"shortcut.siriNatural.param.text" = "Text";
+"shortcut.siriNatural.dialog.askText" = "Was möchtest du erfassen?";
+"shortcut.siriNatural.error.noText" = "Es wurde kein Text zum Erfassen angegeben.";
+"shortcut.siriNatural.error.parsingFailed" = "Ich konnte den Text nicht verstehen. Versuche etwas wie: 50 für Kaffee.";
+"shortcut.siriNatural.error.proRequired" = "Aktiviere Yala Pro, um Siri-Eintrag zu nutzen.";
+"shortcut.siriNatural.success.single %@" = "Entwurf erstellt: %@. Überprüfe deinen Posteingang.";
+"shortcut.siriNatural.success.multiple %lld" = "%lld Entwürfe erstellt. Überprüfe deinen Posteingang.";
+"shortcut.siriNatural.success.offline %@" = "Einfacher Entwurf erstellt: %@. Vervollständige die Details im Posteingang.";
+"shortcut.siriNatural.notification.title" = "Neuer Entwurf von Siri";
+"shortcut.siriNatural.notification.body %@" = "Ein Entwurf wurde erstellt für: %@. Überprüfe deinen Posteingang.";
+"shortcut.siriNatural.notification.bodyOffline" = "Ein einfacher Entwurf wurde erstellt (offline). Vervollständige die Details.";
 
 // MARK: - Control Center (iOS 18+)
 // Labels shown in Control Center (keep short - limited space)
@@ -1782,6 +1819,11 @@
 "icloud.dataFoundTitle" = "Daten gefunden!";
 "icloud.dataFoundMessage" = "Wir haben deine Daten in iCloud gefunden. Du musst nichts erneut einrichten.";
 "icloud.dataFoundAction" = "Weiter";
+"icloud.syncingBanner" = "Daten aus iCloud werden synchronisiert…";
+"icloud.remoteWipe.title" = "Daten nicht mehr verfügbar";
+"icloud.remoteWipe.message" = "Deine Daten wurden aus iCloud entfernt. Du kannst neu starten oder warten, bis sie wieder synchronisiert werden.";
+"icloud.remoteWipe.confirm" = "Neu starten";
+"icloud.remoteWipe.cancel" = "Weiter warten";
 
 // MARK: - Feature Gate
 
@@ -1791,6 +1833,7 @@
 "featureGate.voiceInput" = "Spracheingabe";
 "featureGate.imageInput" = "Bildeingabe";
 "featureGate.premiumIcons" = "Premium-Symbole";
+"featureGate.proThemes" = "Pro-Designs";
 
 // Titles
 "featureGate.limitReachedTitle" = "Limit erreicht";
@@ -1837,6 +1880,16 @@
 "subscription.downgrade.selectBudgets" = "Wähle %d Budgets zum Behalten";
 "subscription.downgrade.confirm" = "Auswahl bestätigen";
 "subscription.downgrade.reactivate" = "Pro reaktivieren";
+
+// Trial paywall
+"subscription.startFreeTrial" = "Starte deine kostenlose Testphase";
+"subscription.trialThenPrice" = "Kostenlos %@ Tage, dann %@";
+
+// ProTrialOfferSheet
+"subscription.trialOffer.title" = "Teste Yala Pro kostenlos";
+"subscription.trialOffer.subtitle" = "7 Tage mit allen Funktionen. Unverbindlich, jederzeit kündbar.";
+"subscription.trialOffer.startTrial" = "Kostenlose Testphase starten";
+"subscription.trialOffer.maybeLater" = "Vielleicht später";
 
 // MARK: - Shortcut Notifications
 
@@ -2109,3 +2162,50 @@
 "subcategory.accountTransfer" = "Kontoüberweisung";
 "subcategory.balanceAdjustment" = "Saldoanpassung";
 "subcategory.accountTransferOther" = "Kontoüberweisung";
+
+// MARK: - Scheduled Payments UX (M1-M7)
+"scheduled.period.selector.title" = "Monat auswählen";
+"scheduled.summary.paid" = "Bezahlt";
+"scheduled.summary.pending" = "Ausstehend";
+"scheduled.filter.all" = "Alle";
+"scheduled.filter.paid" = "Bezahlt";
+"scheduled.filter.pending" = "Ausstehend";
+"scheduled.associate.title" = "Ausgabe verknüpfen";
+"scheduled.associate.confirm" = "Diese Ausgabe mit der geplanten Zahlung verknüpfen?";
+"scheduled.associate.success" = "Ausgabe verknüpft";
+"scheduled.associate.empty" = "Keine ähnlichen Ausgaben in diesem Monat gefunden";
+"scheduled.associate.already" = "Diese Ausgabe ist bereits verknüpft";
+
+// MARK: - Siri Shortcuts
+"settings.siriShortcuts" = "Siri & Kurzbefehle";
+"siriShortcuts.title" = "Siri & Kurzbefehle";
+"siriShortcuts.subtitle" = "Nutze deine Stimme oder Kurzbefehle, um Ausgaben sofort zu erfassen.";
+"siriShortcuts.siri.title" = "Mit Siri erfassen";
+"siriShortcuts.siri.description" = "Diktiere deine Ausgabe und ein Entwurf wird in deinem Posteingang erstellt.";
+"siriShortcuts.siri.proNote" = "Erfordert Yala Pro";
+"siriShortcuts.siri.phrase" = "Erstelle einen Eintrag in Yala";
+"siriShortcuts.siri.alt1" = "Du kannst auch sagen: \"Notiere eine Ausgabe in Yala\"";
+"siriShortcuts.siri.alt2" = "Oder: \"Speichere eine Ausgabe in Yala\"";
+"siriShortcuts.all.title" = "Weitere Kurzbefehle";
+"siriShortcuts.shortcut.quick" = "Schnellerfassung";
+"siriShortcuts.shortcut.voice" = "Spracheingabe";
+"siriShortcuts.shortcut.image" = "Bildeingabe";
+"siriShortcuts.shortcut.applePay" = "Apple Pay";
+"siriShortcuts.shortcut.automation" = "Automatisierung";
+"siriShortcuts.desc.quick" = "Öffnet das Erfassungsformular mit einem Tap.";
+"siriShortcuts.desc.voice" = "Diktiere Betrag und Beschreibung mit deiner Stimme.";
+"siriShortcuts.desc.image" = "Scanne einen Beleg oder Kassenbon mit der Kamera.";
+"siriShortcuts.desc.applePay" = "Erfasse eine Zahlung mit Apple Pay.";
+"siriShortcuts.desc.automation" = "Erstelle automatische Einträge mit Systembefehlen.";
+"siriShortcuts.phrase.quick" = "Erfasse in Yala";
+"siriShortcuts.phrase.voice" = "Erfasse mit Stimme in Yala";
+"siriShortcuts.phrase.image" = "Erfasse mit Bild in Yala";
+"siriShortcuts.phrase.applePay" = "Erfasse Apple Pay in Yala";
+"siriShortcuts.phrase.automation" = "Erfasse aus Automatisierung in Yala";
+"siriShortcuts.faq.title" = "Häufige Fragen";
+"siriShortcuts.faq.activateQ" = "Wie aktiviere ich Siri?";
+"siriShortcuts.faq.activateA" = "Es ist automatisch. Sage einfach den Befehl zu Siri und Yala verarbeitet deine Anfrage.";
+"siriShortcuts.faq.inboxQ" = "Wo landen meine Siri-Einträge?";
+"siriShortcuts.faq.inboxA" = "Von Siri erstellte Einträge erscheinen als Entwürfe in deinem Posteingang zur Überprüfung.";
+"siriShortcuts.faq.offlineQ" = "Funktioniert es offline?";
+"siriShortcuts.faq.offlineA" = "Ja, Kurzbefehle funktionieren im Basismodus ohne Internetverbindung.";

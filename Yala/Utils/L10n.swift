@@ -1367,6 +1367,9 @@ enum L10n {
         static var light: String { ls("settings.light", comment: "") }
         static var dark: String { ls("settings.dark", comment: "") }
         static var system: String { ls("settings.system", comment: "") }
+        static var themeIndigo: String { ls("settings.theme.indigo", comment: "") }
+        static var themeRosa: String { ls("settings.theme.rosa", comment: "") }
+        static var themeTeal: String { ls("settings.theme.teal", comment: "") }
         static var defaultCurrency: String {
             ls("settings.defaultCurrency", comment: "")
         }
@@ -1461,6 +1464,30 @@ enum L10n {
         }
         static var showVariationsDescription: String {
             ls("settings.showVariationsDescription", comment: "")
+        }
+        static var averageLine: String {
+            ls("settings.averageLine", comment: "")
+        }
+        static var averageLineDescription: String {
+            ls("settings.averageLineDescription", comment: "")
+        }
+        static var averageLineOff: String {
+            ls("settings.averageLine.off", comment: "")
+        }
+        static var averageLineTotal: String {
+            ls("settings.averageLine.total", comment: "")
+        }
+        static var averageLineSegmented: String {
+            ls("settings.averageLine.segmented", comment: "")
+        }
+        static var averageLineOffDescription: String {
+            ls("settings.averageLine.offDescription", comment: "")
+        }
+        static var averageLineTotalDescription: String {
+            ls("settings.averageLine.totalDescription", comment: "")
+        }
+        static var averageLineSegmentedDescription: String {
+            ls("settings.averageLine.segmentedDescription", comment: "")
         }
         static var decimalPlaces: String {
             ls("settings.decimalPlaces", comment: "")
@@ -1717,6 +1744,7 @@ enum L10n {
             ls("widget.recordsWillAppear", comment: "")
         }
         static var total: String { ls("widget.total", comment: "") }
+        static var average: String { ls("widget.average", comment: "") }
 
         // Widget Hints
         enum Hint {
@@ -2200,6 +2228,9 @@ enum L10n {
         static var sourceAutomation: String {
             ls("inbox.sourceAutomation", comment: "")
         }
+        static var sourceSiri: String {
+            ls("inbox.sourceSiri", comment: "")
+        }
         static var errorNoAccount: String {
             ls("inbox.errorNoAccount", comment: "")
         }
@@ -2587,6 +2618,18 @@ enum L10n {
         static var currentPlan: String { ls("subscription.currentPlan", comment: "") }
         static var renewsOn: String { ls("subscription.renewsOn", comment: "") }
         static var manageInAppStore: String { ls("subscription.manageInAppStore", comment: "") }
+        static var startFreeTrial: String { ls("subscription.startFreeTrial", comment: "") }
+        static func trialThenPrice(_ days: String, _ price: String) -> String {
+            String(format: ls("subscription.trialThenPrice", comment: ""), days, price)
+        }
+    }
+
+    // MARK: - Trial Offer
+    enum TrialOffer {
+        static var title: String { ls("subscription.trialOffer.title", comment: "") }
+        static var subtitle: String { ls("subscription.trialOffer.subtitle", comment: "") }
+        static var startTrial: String { ls("subscription.trialOffer.startTrial", comment: "") }
+        static var maybeLater: String { ls("subscription.trialOffer.maybeLater", comment: "") }
     }
 
     enum Tutorials {
@@ -2992,6 +3035,11 @@ enum L10n {
         static var dataFoundTitle: String { ls("icloud.dataFoundTitle", comment: "") }
         static var dataFoundMessage: String { ls("icloud.dataFoundMessage", comment: "") }
         static var dataFoundAction: String { ls("icloud.dataFoundAction", comment: "") }
+        static var syncingBanner: String { ls("icloud.syncingBanner", comment: "") }
+        static var remoteWipeTitle: String { ls("icloud.remoteWipe.title", comment: "") }
+        static var remoteWipeMessage: String { ls("icloud.remoteWipe.message", comment: "") }
+        static var remoteWipeConfirm: String { ls("icloud.remoteWipe.confirm", comment: "") }
+        static var remoteWipeCancel: String { ls("icloud.remoteWipe.cancel", comment: "") }
     }
 
     // MARK: - Shortcut Notifications

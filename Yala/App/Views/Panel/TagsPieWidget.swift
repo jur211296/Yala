@@ -67,7 +67,7 @@ struct TagsPieWidget: View {
             }
         }
         .frame(maxWidth: .infinity, minHeight: 320, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -458,6 +458,10 @@ struct TagsPieWidget: View {
                     selectedAngle = nil
                 }
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Gráfica circular de gastos por etiqueta")
+            .accessibilityValue(safeData.isEmpty ? "Sin datos" :
+                "\(safeData.count) etiquetas, total \(formattedCurrency(safeData.reduce(0) { $0 + $1.amount }))")
         }
     }
 

@@ -120,13 +120,39 @@ enum DueStatus: String, CaseIterable, Identifiable {
 
 struct ScheduledPaymentSummary: Identifiable {
     let payment: ScheduledPayment
+    let dueDate: Date
     let dueStatus: DueStatus
     let daysUntilDue: Int
     let icon: String
     let color: String
+    /// Whether this payment has been paid for the selected month
+    var isPaidForMonth: Bool = false
+    /// Whether this occurrence has been skipped by the user
+    var isSkippedForMonth: Bool = false
 
-    var id: PersistentIdentifier {
-        payment.persistentModelID
+    var id: String {
+        "\(payment.persistentModelID)-\(dueDate.timeIntervalSince1970)"
+    }
+}
+
+// MARK: - Payment Status Filter
+
+enum PaymentStatusFilter: String, CaseIterable, Identifiable {
+    case all
+    case paid
+    case pending
+
+    var id: String { rawValue }
+
+    var localizedName: String {
+        switch self {
+        case .all:
+            return NSLocalizedString("scheduled.filter.all", comment: "")
+        case .paid:
+            return NSLocalizedString("scheduled.filter.paid", comment: "")
+        case .pending:
+            return NSLocalizedString("scheduled.filter.pending", comment: "")
+        }
     }
 }
 

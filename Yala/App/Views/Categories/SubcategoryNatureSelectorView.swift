@@ -44,7 +44,7 @@ struct SubcategoryNatureSelectorView: View {
 
                                         if nature == selectedNature {
                                             Image(systemName: "checkmark")
-                                                .foregroundStyle(Color.electricIndigo)
+                                                .foregroundStyle(.thAccent)
                                                 .font(DS.Typography.headline)
                                         }
                                     }

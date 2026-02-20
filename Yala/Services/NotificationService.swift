@@ -57,6 +57,10 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
                     SessionState.shared.deepLinkDestination = .categories
                 case "inbox":
                     SessionState.shared.deepLinkDestination = .inbox
+                case "scheduledPayments":
+                    SessionState.shared.deepLinkDestination = .scheduledPayments
+                case "recordsStandalone":
+                    SessionState.shared.deepLinkDestination = .recordsStandalone
                 default:
                     #if DEBUG
                     print("NotificationService: Unknown deep link destination: \(destination)")
@@ -125,9 +129,17 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
         // Create content
         let content = UNMutableNotificationContent()
-        content.title = item.name
+        content.title = item.localizedName
         content.body = item.displayText
         content.sound = .default
+
+        // Deep link for static reminder notifications
+        switch item.notificationType {
+        case .endOfDay, .lunchTime, .custom:
+            content.userInfo = ["deepLink": "recordsStandalone"]
+        default:
+            break
+        }
 
         // Check if notification has specific weekdays selected
         let selectedWeekdays = item.selectedWeekdays
@@ -358,6 +370,37 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
+    /// Remove duplicate NotificationItems by typeRaw, keeping the one with isActive = true preference.
+    /// R9: Guards against CloudKit delivering synced notifications between fetch and save in onboarding.
+    @MainActor
+    func deduplicateNotifications(context: ModelContext) {
+        let descriptor = FetchDescriptor<NotificationItem>()
+        guard let all = try? context.fetch(descriptor) else { return }
+
+        let grouped = Dictionary(grouping: all) { $0.typeRaw }
+        var removed = 0
+        for (_, group) in grouped where group.count > 1 {
+            // Keep the active one (or first if both same)
+            let sorted = group.sorted { ($0.isActive ? 1 : 0) > ($1.isActive ? 1 : 0) }
+            for dup in sorted.dropFirst() {
+                context.delete(dup)
+                removed += 1
+            }
+        }
+        if removed > 0 {
+            do {
+                try context.save()
+                #if DEBUG
+                print("NotificationService: Deduplicated \(removed) notification(s)")
+                #endif
+            } catch {
+                #if DEBUG
+                print("NotificationService: Error deduplicating: \(error)")
+                #endif
+            }
+        }
+    }
+
     /// Delete all notifications (used in data wipe)
     @MainActor
     func deleteAllNotifications(context: ModelContext) {
@@ -389,31 +432,3 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     }
 }
 
-// MARK: - Report Content Generation
-
-extension NotificationService {
-    /// Generate report notification content with actual data
-    func generateReportContent(
-        config: ReportConfig,
-        balance: Double,
-        expenses: Double,
-        income: Double,
-        topCategory: String?,
-        currencySymbol: String
-    ) -> String {
-        switch config.dataType {
-        case .balance:
-            return "Saldo: \(currencySymbol)\(String(format: "%.2f", balance))"
-        case .expenses:
-            return "Gastos: \(currencySymbol)\(String(format: "%.2f", expenses))"
-        case .income:
-            return "Ingresos: \(currencySymbol)\(String(format: "%.2f", income))"
-        case .topCategory:
-            if let category = topCategory {
-                return "Tu mayor gasto: \(category)"
-            } else {
-                return "No hay gastos este período"
-            }
-        }
-    }
-}

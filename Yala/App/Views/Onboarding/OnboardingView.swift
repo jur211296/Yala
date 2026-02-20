@@ -14,6 +14,7 @@ struct OnboardingView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.yalaTheme) private var theme
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
     @ScaledMetric(relativeTo: .largeTitle) private var completionIconSize: CGFloat = 56
@@ -80,7 +81,7 @@ struct OnboardingView: View {
                 .padding(.horizontal, DS.Spacing.xl)
                 .padding(.bottom, DS.Spacing.xxxl)
         }
-        .background(Color.yalaBackground)
+        .background(.thBackground)
     }
 
     // MARK: - Progress Indicator
@@ -89,7 +90,7 @@ struct OnboardingView: View {
         HStack(spacing: DS.Spacing.sm) {
             ForEach(0..<totalSteps, id: \.self) { step in
                 Capsule()
-                    .fill(step <= currentStep ? Color.electricIndigo : Color.yalaSecondaryText.opacity(0.2))
+                    .fill(step <= currentStep ? Color.electricIndigo : theme.secondaryText.opacity(0.2))
                     .frame(width: step == currentStep ? 24 : 8, height: 8)
                     .dsAnimation(.spring(response: 0.3), value: currentStep, reduceMotion: reduceMotion)
             }
@@ -130,7 +131,7 @@ struct OnboardingView: View {
                 TextField(L10n.Onboarding.namePlaceholder, text: $userName)
                     .font(DS.Typography.body)
                     .padding(DS.Spacing.md)
-                    .background(Color.yalaCard)
+                    .background(.thCard)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                     .overlay(
                         RoundedRectangle(cornerRadius: DS.Radius.md)
@@ -229,7 +230,7 @@ struct OnboardingView: View {
                     }
                 }
             }
-            .background(Color.yalaCard)
+            .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
         }
     }
@@ -301,7 +302,7 @@ struct OnboardingView: View {
                                 }
                             }
                         }
-                        .background(Color.yalaCard)
+                        .background(.thCard)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                     }
                 }
@@ -428,7 +429,7 @@ struct OnboardingView: View {
                         }
                     }
                     .padding(DS.Spacing.md)
-                    .background(!expensesOnlyMode ? Color.electricIndigo.opacity(0.1) : Color.yalaCard)
+                    .background(!expensesOnlyMode ? Color.electricIndigo.opacity(0.1) : theme.card)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                     .overlay(
                         RoundedRectangle(cornerRadius: DS.Radius.md)
@@ -453,7 +454,7 @@ struct OnboardingView: View {
                         Spacer()
                     }
                     .padding(DS.Spacing.md)
-                    .background(expensesOnlyMode ? Color.electricIndigo.opacity(0.1) : Color.yalaCard)
+                    .background(expensesOnlyMode ? Color.electricIndigo.opacity(0.1) : theme.card)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                     .overlay(
                         RoundedRectangle(cornerRadius: DS.Radius.md)
@@ -530,7 +531,7 @@ struct OnboardingView: View {
                             .foregroundStyle(Color.electricIndigo)
                     }
                     .padding(DS.Spacing.md)
-                    .background(loadSeedCategories ? Color.electricIndigo.opacity(0.1) : Color.yalaCard)
+                    .background(loadSeedCategories ? Color.electricIndigo.opacity(0.1) : theme.card)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                     .overlay(
                         RoundedRectangle(cornerRadius: DS.Radius.md)
@@ -554,7 +555,7 @@ struct OnboardingView: View {
                         Spacer()
                     }
                     .padding(DS.Spacing.md)
-                    .background(loadSeedCategories ? Color.yalaCard : Color.electricIndigo.opacity(0.1))
+                    .background(loadSeedCategories ? theme.card : Color.electricIndigo.opacity(0.1))
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                     .overlay(
                         RoundedRectangle(cornerRadius: DS.Radius.md)
@@ -609,7 +610,7 @@ struct OnboardingView: View {
                                 .foregroundStyle(allNotificationsSelected ? Color.electricIndigo : .secondary)
                         }
                         .padding(DS.Spacing.md)
-                        .background(Color.yalaCard)
+                        .background(.thCard)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                         .overlay(
                             RoundedRectangle(cornerRadius: DS.Radius.md)
@@ -693,7 +694,7 @@ struct OnboardingView: View {
                     .foregroundStyle(isSelected ? Color.electricIndigo : .secondary)
             }
             .padding(DS.Spacing.md)
-            .background(isSelected ? Color.electricIndigo.opacity(0.1) : Color.yalaCard)
+            .background(isSelected ? Color.electricIndigo.opacity(0.1) : theme.card)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.md)
@@ -796,7 +797,7 @@ struct OnboardingView: View {
                     .foregroundStyle(budgetAlertsEnabled ? Color.electricIndigo : .secondary)
             }
             .padding(DS.Spacing.md)
-            .background(budgetAlertsEnabled ? Color.electricIndigo.opacity(0.1) : Color.yalaCard)
+            .background(budgetAlertsEnabled ? Color.electricIndigo.opacity(0.1) : theme.card)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.md)
@@ -939,7 +940,7 @@ struct OnboardingView: View {
             Spacer()
         }
         .padding(DS.Spacing.md)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 
@@ -1029,7 +1030,7 @@ struct OnboardingView: View {
                 }
             }
             .padding(DS.Spacing.md)
-            .background(isSelected ? Color.electricIndigo.opacity(0.1) : Color.yalaCard)
+            .background(isSelected ? Color.electricIndigo.opacity(0.1) : theme.card)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.md)
@@ -1059,7 +1060,7 @@ struct OnboardingView: View {
                 }
             }
             .padding(DS.Spacing.md)
-            .background(isSelected ? Color.electricIndigo.opacity(0.1) : Color.yalaCard)
+            .background(isSelected ? Color.electricIndigo.opacity(0.1) : theme.card)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.md)
@@ -1085,7 +1086,7 @@ struct OnboardingView: View {
                         .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, DS.Spacing.md)
-                        .background(Color.yalaCard)
+                        .background(.thCard)
                         .clipShape(Capsule())
                 }
             }
@@ -1131,31 +1132,32 @@ struct OnboardingView: View {
     }
 
     private func completeOnboarding() {
-        // Save user preferences
-        let defaults = UserDefaults.standard
+        // Save user preferences via PreferenceSyncService (dual-writes to UserDefaults + iCloud KV)
+        let sync = PreferenceSyncService.shared
 
         // User name
         let finalName = userName.trimmingCharacters(in: .whitespacesAndNewlines)
-        defaults.set(finalName.isEmpty ? "Usuario" : finalName, forKey: "userName")
+        sync.set(string: finalName.isEmpty ? "Usuario" : finalName, forKey: "userName")
 
         // Preferred currency
-        defaults.set(selectedCurrency.rawValue, forKey: "defaultCurrencyCode")
+        sync.set(string: selectedCurrency.rawValue, forKey: "defaultCurrencyCode")
 
         // Secondary currencies (store as comma-separated string)
         let secondaryArray = selectedSecondaryCurrencies.map { $0.rawValue }
-        defaults.set(secondaryArray.joined(separator: ","), forKey: "secondaryCurrencies")
+        sync.set(string: secondaryArray.joined(separator: ","), forKey: "secondaryCurrencies")
 
         // Default period
-        defaults.set(selectedPeriod.rawValue, forKey: "defaultPeriod")
+        sync.set(string: selectedPeriod.rawValue, forKey: "defaultPeriod")
 
-        // Expenses-only mode
+        // Expenses-only mode (didSet propagates to app group)
+        sync.set(bool: expensesOnlyMode, forKey: "expensesOnlyMode")
         sessionState.isExpensesOnlyMode = expensesOnlyMode
 
-        // Mark onboarding as complete
-        defaults.set(true, forKey: "hasCompletedOnboarding")
+        // Mark onboarding as complete (NOT synced — per-device)
+        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
 
         // Budget alerts preference
-        defaults.set(budgetAlertsEnabled, forKey: "budgetAlertsEnabled")
+        sync.set(bool: budgetAlertsEnabled, forKey: "budgetAlertsEnabled")
 
         // Apply period to SessionState immediately (since it was created before onboarding)
         sessionState.selectedPeriod = selectedPeriod
@@ -1209,6 +1211,11 @@ struct OnboardingView: View {
     }
 
     private func createSelectedNotifications() {
+        // R9: Guard against duplicate creation if called twice or iCloud delivers mid-save
+        let defaults = UserDefaults.standard
+        if defaults.bool(forKey: "notificationsSeeded") { return }
+        defaults.set(true, forKey: "notificationsSeeded")
+
         // Fetch existing notifications to check by type (avoids duplicates on reinstall with iCloud)
         let descriptor = FetchDescriptor<NotificationItem>()
         let existing: [NotificationItem]

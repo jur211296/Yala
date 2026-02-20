@@ -15,7 +15,7 @@ struct ProfileToolbarButton: View {
 
     @AppStorage("userProfileImageData") private var userProfileImageData: Data?
     @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.yalaTheme) private var theme
 
     private var isProUser: Bool {
         FeatureGateService.shared.isProUser
@@ -67,12 +67,12 @@ struct ProfileToolbarButton: View {
                 // Adaptive background with icon (custom or default)
                 // Light mode: white background / Dark mode: yalaBackground
                 // Icon: electricIndigo in both modes
-                (colorScheme == .dark ? Color.yalaBackground : Color.white)
+                (theme.hasGradient ? Color.white : theme.background)
                     .frame(width: size, height: size)
                     .overlay {
                         Image(systemName: displayIcon)
                             .font(DS.Typography.bodyBold)
-                            .foregroundStyle(Color.electricIndigo)
+                            .foregroundStyle(theme.accent)
                     }
             }
         }
@@ -93,7 +93,7 @@ struct ProfileToolbarButton: View {
                 endPoint: .bottomTrailing
               )
             : LinearGradient(
-                colors: [.electricIndigo, .electricIndigo.opacity(0.6)],
+                colors: [theme.accent, theme.accent.opacity(0.6)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
               )
@@ -104,7 +104,7 @@ struct ProfileToolbarButton: View {
     private var sparkBadge: some View {
         ZStack {
             Circle()
-                .fill(Color.yalaCard)
+                .fill(theme.card)
                 .frame(width: sparkBadgeSize, height: sparkBadgeSize)
 
             YalaSpark(size: .small, animated: false)
@@ -143,5 +143,5 @@ struct ProfileToolbarItem: ToolbarContent {
         }
     }
     .padding()
-    .background(Color.yalaBackground)
+    .background(.thBackground)
 }

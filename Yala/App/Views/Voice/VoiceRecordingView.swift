@@ -112,7 +112,7 @@ struct VoiceRecordingView: View {
             .dsAnimation(.easeInOut(duration: 0.3), value: isPreviewMode, reduceMotion: reduceMotion)
             .dsAnimation(.easeInOut(duration: 0.3), value: isProcessing, reduceMotion: reduceMotion)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.yalaBackground)
+            .background(.thBackground)
             .navigationTitle(L10n.Voice.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -343,7 +343,7 @@ struct VoiceRecordingView: View {
             }
         }
         .padding(DS.Spacing.md)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 
@@ -379,7 +379,7 @@ struct VoiceRecordingView: View {
             }
         }
         .padding(DS.Spacing.md)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 

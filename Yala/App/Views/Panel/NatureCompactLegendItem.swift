@@ -7,6 +7,8 @@ struct NatureCompactLegendItem: View {
     let currencyCode: String
     let onTap: () -> Void
 
+    @Environment(\.yalaTheme) private var theme
+
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: DS.Spacing.xs) {
@@ -26,7 +28,7 @@ struct NatureCompactLegendItem: View {
             }
             .padding(.horizontal, DS.Chip.paddingH)
             .padding(.vertical, DS.Chip.paddingV)
-            .background(isSelected ? Color.yalaBackground : Color.clear)
+            .background(isSelected ? theme.background : Color.clear)
             .clipShape(Capsule())
             .overlay(
                 Capsule()

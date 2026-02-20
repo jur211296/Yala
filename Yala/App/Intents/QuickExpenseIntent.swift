@@ -725,6 +725,12 @@ struct ApplePayTransactionIntent: AppIntent {
 
         let context = container.mainContext
 
+        // Guard: no accounts configured yet
+        let accountCount = (try? context.fetchCount(FetchDescriptor<Account>())) ?? 0
+        guard accountCount > 0 else {
+            return .result(dialog: "shortcut.error.noAccount")
+        }
+
         // Try to find account by detected currency (if unique match)
         var matchedAccount: Account?
         var needsUserInput: [String] = ["subcategory"]
@@ -978,6 +984,12 @@ struct AutomationEntryIntent: AppIntent {
 
         let context = container.mainContext
 
+        // Guard: no accounts configured yet
+        let accountCount = (try? context.fetchCount(FetchDescriptor<Account>())) ?? 0
+        guard accountCount > 0 else {
+            return .result(dialog: "shortcut.error.noAccount")
+        }
+
         // Try to find account by currency (only if unique match)
         var matchedAccount: Account?
         var needsUserInput: [String] = ["subcategory"]
@@ -1049,6 +1061,250 @@ struct AutomationEntryIntent: AppIntent {
         return .result(dialog: "shortcut.automation.success \(formattedAmount) \(noteDisplay)")
     }
 
+}
+
+// MARK: - Siri Natural Language Entry Intent
+
+struct SiriNaturalEntryIntent: AppIntent {
+
+    static var title: LocalizedStringResource = "shortcut.siriNatural.title"
+    static var description = IntentDescription("shortcut.siriNatural.description")
+
+    static var openAppWhenRun: Bool = false
+
+    @Parameter(title: "shortcut.siriNatural.param.text",
+               requestValueDialog: "shortcut.siriNatural.dialog.askText")
+    var text: String?
+
+    // MARK: - Perform
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        // Step 1: Get text (request if not provided via Siri phrase)
+        let finalText: String
+        if let existingText = text, !existingText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            finalText = existingText.trimmingCharacters(in: .whitespacesAndNewlines)
+        } else {
+            let requested = try await $text.requestValue("shortcut.siriNatural.dialog.askText")
+            guard !requested.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                return .result(dialog: "shortcut.siriNatural.error.noText")
+            }
+            finalText = requested.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        // Step 2: Pro gate — LLM parsing requires Pro subscription
+        let isProUser = UserDefaults(suiteName: "group.com.yala.shared")?.bool(forKey: "isProUser") ?? false
+
+        guard isProUser else {
+            return .result(dialog: "shortcut.siriNatural.error.proRequired")
+        }
+
+        // Step 3: Create ModelContainer
+        let container: ModelContainer
+        do {
+            container = try ModelContainer(
+                for: SwiftDataConfiguration.schema,
+                configurations: SwiftDataConfiguration.configuration
+            )
+        } catch {
+            #if DEBUG
+            print("SiriNaturalEntryIntent: Error creating ModelContainer: \(error)")
+            #endif
+            return .result(dialog: "shortcut.error.database")
+        }
+
+        let context = container.mainContext
+
+        // Step 4: Guard — at least 1 account configured
+        let accountCount = (try? context.fetchCount(FetchDescriptor<Account>())) ?? 0
+        guard accountCount > 0 else {
+            return .result(dialog: "shortcut.error.noAccount")
+        }
+
+        // Step 5: Fetch subcategory lists for LLM context
+        let subcategoryDescriptor = FetchDescriptor<Subcategory>(
+            predicate: #Predicate { $0.isVisible },
+            sortBy: [SortDescriptor(\Subcategory.name)]
+        )
+        let allSubcategories = (try? context.fetch(subcategoryDescriptor)) ?? []
+
+        let expenseSubcategories = allSubcategories
+            .filter { !$0.safeCategory.isIncome }
+            .map { $0.name }
+        let incomeSubcategories = allSubcategories
+            .filter { $0.safeCategory.isIncome }
+            .map { $0.name }
+
+        // Step 6: Parse with LLM (with offline fallback)
+        var parsedTransactions: [ParsedTransaction] = []
+        var isOfflineFallback = false
+
+        do {
+            parsedTransactions = try await TranscriptionParserService.shared.parseMultiple(
+                text: finalText,
+                expenseSubcategories: expenseSubcategories,
+                incomeSubcategories: incomeSubcategories
+            )
+        } catch {
+            #if DEBUG
+            print("SiriNaturalEntryIntent: LLM parsing failed: \(error)")
+            #endif
+
+            // Offline fallback: try AmountParser for basic amount extraction
+            isOfflineFallback = true
+            if let parsed = AmountParser.parse(finalText) {
+                let fallbackTransaction = ParsedTransaction(
+                    amount: parsed.amount,
+                    date: nil,
+                    note: finalText,
+                    isExpense: true,
+                    subcategoryHint: nil,
+                    tagHints: [],
+                    currencyHint: nil,
+                    confidence: ParsedTransaction.TransactionConfidence(
+                        amount: parsed.confidence,
+                        date: 0.0,
+                        merchant: 0.0,
+                        subcategory: 0.0,
+                        tags: 0.0
+                    )
+                )
+                parsedTransactions = [fallbackTransaction]
+            }
+        }
+
+        // Guard: at least one parsed result
+        guard !parsedTransactions.isEmpty else {
+            return .result(dialog: "shortcut.siriNatural.error.parsingFailed")
+        }
+
+        // Step 7: Fetch existing pending drafts for deduplication
+        let pendingDescriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.statusRaw == "pending" }
+        )
+        let existingDrafts = (try? context.fetch(pendingDescriptor)) ?? []
+
+        // Step 8: Create InboxDrafts from parsed transactions
+        let merchantService = MerchantMemoryService(modelContext: context)
+        var newDrafts: [InboxDraft] = []
+
+        for parsed in parsedTransactions {
+            var needsUserInput: [String] = []
+
+            // Match account by currency hint
+            var matchedAccount: Account?
+            if let currencyHint = parsed.currencyHint {
+                matchedAccount = findIntentAccount(byCurrency: currencyHint, context: context)
+            }
+            if matchedAccount == nil {
+                needsUserInput.append("account")
+            }
+
+            // Match subcategory by hint
+            var matchedSubcategory: Subcategory?
+            if let subcategoryHint = parsed.subcategoryHint {
+                matchedSubcategory = allSubcategories.first { sub in
+                    sub.name.localizedCaseInsensitiveCompare(subcategoryHint) == .orderedSame
+                }
+            }
+
+            // Fallback: MerchantMemory auto-categorization
+            if matchedSubcategory == nil && !parsed.note.isEmpty {
+                let suggestion = merchantService.suggest(for: parsed.note)
+                switch suggestion {
+                case .autoAssign(let sub):
+                    matchedSubcategory = sub
+                case .suggest(let sub):
+                    matchedSubcategory = sub
+                case .none:
+                    break
+                }
+            }
+
+            if matchedSubcategory == nil {
+                needsUserInput.append("subcategory")
+            }
+
+            // Calculate signed amount
+            let signedAmount: Double?
+            if let amount = parsed.amount {
+                let absValue = abs(NSDecimalNumber(decimal: amount).doubleValue)
+                signedAmount = parsed.isExpense ? -absValue : absValue
+            } else {
+                signedAmount = nil
+                needsUserInput.append("amount")
+            }
+
+            let draft = InboxDraft(
+                note: parsed.note,
+                amount: signedAmount,
+                date: parsed.date,
+                account: matchedAccount,
+                subcategory: matchedSubcategory,
+                sourceType: .siri,
+                rawText: finalText,
+                evidence: parsed.note.isEmpty ? nil : parsed.note,
+                confidenceAmount: parsed.confidence.amount,
+                confidenceDate: parsed.confidence.date,
+                confidenceMerchant: parsed.confidence.merchant,
+                confidenceSubcategory: parsed.confidence.subcategory,
+                needsUserInput: needsUserInput
+            )
+
+            newDrafts.append(draft)
+        }
+
+        // Step 9: Deduplicate against existing pending drafts
+        let uniqueDrafts = DraftDeduplicationService.deduplicate(
+            newDrafts: newDrafts,
+            existingDrafts: existingDrafts
+        )
+
+        guard !uniqueDrafts.isEmpty else {
+            return .result(dialog: "shortcut.siriNatural.error.parsingFailed")
+        }
+
+        // Step 10: Insert and save
+        for draft in uniqueDrafts {
+            context.insert(draft)
+        }
+
+        do {
+            try context.save()
+        } catch {
+            #if DEBUG
+            print("SiriNaturalEntryIntent: Error saving drafts: \(error)")
+            #endif
+            return .result(dialog: "shortcut.error.save")
+        }
+
+        // Step 11: Send notification
+        let firstNote = uniqueDrafts.first?.note ?? finalText
+        let notifTitle = String(localized: "shortcut.siriNatural.notification.title")
+        let notifBody: String
+        if isOfflineFallback {
+            notifBody = String(localized: "shortcut.siriNatural.notification.bodyOffline")
+        } else {
+            notifBody = String(localized: "shortcut.siriNatural.notification.body \(firstNote)")
+        }
+        await NotificationService.shared.sendNotification(
+            title: notifTitle,
+            body: notifBody,
+            deepLink: "inbox"
+        )
+
+        // Step 12: Return confirmation dialog
+        if isOfflineFallback {
+            return .result(dialog: IntentDialog(stringLiteral:
+                String(localized: "shortcut.siriNatural.success.offline \(firstNote)")))
+        } else if uniqueDrafts.count == 1 {
+            return .result(dialog: IntentDialog(stringLiteral:
+                String(localized: "shortcut.siriNatural.success.single \(firstNote)")))
+        } else {
+            return .result(dialog: IntentDialog(stringLiteral:
+                String(localized: "shortcut.siriNatural.success.multiple \(uniqueDrafts.count)")))
+        }
+    }
 }
 
 // MARK: - Shared Intent Helpers

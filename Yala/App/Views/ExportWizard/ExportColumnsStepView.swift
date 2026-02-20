@@ -123,7 +123,7 @@ struct ExportColumnsStepView: View {
             }
             .padding(.vertical, DS.Spacing.md)
         }
-        .toggleStyle(SwitchToggleStyle(tint: Color.brandPrimary))
+        .toggleStyle(.switch)
         .padding(.horizontal, DS.Spacing.lg)
     }
 }

@@ -9,6 +9,7 @@
 import SwiftUI
 
 struct LanguageSelectionView: View {
+    @Environment(\.yalaTheme) private var theme
     @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 56
 
     @State private var selectedLanguage: String = "en"
@@ -65,7 +66,7 @@ struct LanguageSelectionView: View {
             .padding(.horizontal, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxxl)
         }
-        .background(Color.yalaBackground)
+        .background(.thBackground)
     }
 
     private func languageRow(code: String, name: String, flag: String) -> some View {
@@ -89,7 +90,7 @@ struct LanguageSelectionView: View {
                     .foregroundStyle(isSelected ? Color.electricIndigo : .secondary)
             }
             .padding(DS.Spacing.md)
-            .background(isSelected ? Color.electricIndigo.opacity(0.1) : Color.yalaCard)
+            .background(isSelected ? Color.electricIndigo.opacity(0.1) : theme.card)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.md)

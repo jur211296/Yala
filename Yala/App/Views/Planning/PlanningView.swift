@@ -37,6 +37,7 @@ struct PlanningView: View {
     // MARK: - Environment
 
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.yalaTheme) private var theme
 
     // MARK: - State
 
@@ -150,7 +151,7 @@ struct PlanningView: View {
             .foregroundStyle(isSelected ? .white : .primary)
             .background(
                 Capsule()
-                    .fill(isSelected ? Color.electricIndigo : Color.clear)
+                    .fill(isSelected ? theme.accent : Color.clear)
             )
             .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }

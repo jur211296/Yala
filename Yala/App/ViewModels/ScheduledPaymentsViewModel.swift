@@ -62,13 +62,79 @@ final class ScheduledPaymentsViewModel {
     /// View mode for payments tabs (list or calendar) - applies to all tabs
     var paymentsViewMode: PaymentsViewMode = .list
 
-    /// Currently displayed month in calendar view
-    var calendarDisplayedMonth: Date = Date()
+    /// Selected month for both list and calendar views (shared)
+    var selectedMonth: Date = Date()
+
+    /// Whether to show the period selector sheet
+    var showPeriodSelector: Bool = false
 
     // MARK: - Computed Data
 
-    /// Payments grouped by due status
+    /// Payments grouped by due status (filtered by selectedMonth)
     var groupedPayments: [(status: DueStatus, payments: [ScheduledPaymentSummary])] = []
+
+    /// Paid count for each payment in the selected month (paymentID -> count)
+    private(set) var paidStatusForMonth: [String: Int] = [:]
+
+    /// Payment status filter (all/paid/pending)
+    var paymentStatusFilter: PaymentStatusFilter = .all
+
+    /// Smart label for the selected month
+    var monthYearLabel: String {
+        let calendar = Calendar.current
+        let now = Date()
+        if calendar.isDate(selectedMonth, equalTo: now, toGranularity: .month) {
+            return L10n.Period.thisMonth
+        } else if let lastMonth = calendar.date(byAdding: .month, value: -1, to: now),
+                  calendar.isDate(selectedMonth, equalTo: lastMonth, toGranularity: .month) {
+            return L10n.Period.lastMonth
+        } else if let nextMonth = calendar.date(byAdding: .month, value: 1, to: now),
+                  calendar.isDate(selectedMonth, equalTo: nextMonth, toGranularity: .month) {
+            return L10n.Period.nextMonth
+        } else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMMM yyyy"
+            return formatter.string(from: selectedMonth).capitalized
+        }
+    }
+
+    // MARK: - Paid/Pending Totals
+
+    /// All flat summaries from groupedPayments
+    private var allSummaries: [ScheduledPaymentSummary] {
+        groupedPayments.flatMap(\.payments)
+    }
+
+    /// Monthly total of paid payments (excluding income and skipped)
+    var monthlyTotalPaid: Double {
+        allSummaries.filter { $0.isPaidForMonth && !$0.isSkippedForMonth && $0.payment.transactionType != "income" }
+            .reduce(0) { $0 + $1.payment.amount }
+    }
+
+    /// Monthly total of pending (unpaid, non-skipped) payments (excluding income)
+    var monthlyTotalPending: Double {
+        allSummaries.filter { !$0.isPaidForMonth && !$0.isSkippedForMonth && $0.payment.transactionType != "income" }
+            .reduce(0) { $0 + $1.payment.amount }
+    }
+
+    /// Grouped payments filtered by paymentStatusFilter
+    var filteredGroupedPayments: [(status: DueStatus, payments: [ScheduledPaymentSummary])] {
+        if paymentStatusFilter == .all { return groupedPayments }
+
+        return groupedPayments.compactMap { section in
+            let filtered: [ScheduledPaymentSummary]
+            switch paymentStatusFilter {
+            case .paid:
+                filtered = section.payments.filter { $0.isPaidForMonth }
+            case .pending:
+                filtered = section.payments.filter { !$0.isPaidForMonth && !$0.isSkippedForMonth }
+            case .all:
+                filtered = section.payments
+            }
+            guard !filtered.isEmpty else { return nil }
+            return (status: section.status, payments: filtered)
+        }
+    }
 
     // MARK: - Filter Computed Properties
 
@@ -111,6 +177,10 @@ final class ScheduledPaymentsViewModel {
 
         do {
             allPayments = try context.fetch(descriptor)
+            // Clean up skipped dates older than 1 year (prevents unbounded growth via iCloud sync)
+            for payment in allPayments {
+                payment.cleanupOldSkippedDates()
+            }
         } catch {
             #if DEBUG
             print("ScheduledPaymentsViewModel: Error loading payments: \(error)")
@@ -118,12 +188,127 @@ final class ScheduledPaymentsViewModel {
         }
     }
 
+    // MARK: - Skip/Unskip
+
+    func skipOccurrence(payment: ScheduledPayment, date: Date) {
+        payment.skipDate(date)
+        rejectPendingDraft(for: payment)
+        do {
+            try modelContext?.save()
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error saving skip: \(error)")
+            #endif
+        }
+        loadPayments()
+    }
+
+    func unskipOccurrence(payment: ScheduledPayment, date: Date) {
+        payment.unskipDate(date)
+        if let context = modelContext {
+            ScheduledPaymentDraftService.recreateDraftIfNeeded(for: payment, date: date, context: context)
+        }
+        do {
+            try modelContext?.save()
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error saving unskip: \(error)")
+            #endif
+        }
+        loadPayments()
+    }
+
+    private func rejectPendingDraft(for payment: ScheduledPayment) {
+        guard let context = modelContext else { return }
+        let paymentID = payment.id.uuidString
+        do {
+            let descriptor = FetchDescriptor<InboxDraft>(
+                predicate: #Predicate<InboxDraft> { draft in
+                    draft.statusRaw == "pending" && draft.sourceScheduledPaymentID != nil
+                }
+            )
+            let drafts = try context.fetch(descriptor)
+            for draft in drafts where draft.sourceScheduledPaymentID == paymentID {
+                draft.statusRaw = "rejected"
+            }
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error rejecting draft: \(error)")
+            #endif
+        }
+    }
+
+    // MARK: - Paid Status
+
+    /// Batch load paid count for a set of payments in a given month.
+    /// Checks both InboxDraft (approved with sourceScheduledPaymentID) and
+    /// TransactionItem (with scheduledPaymentID).
+    /// Returns dictionary [paymentIDString: paidCount]
+    private func loadPaidStatus(for payments: [ScheduledPayment], month: Date) -> [String: Int] {
+        guard let context = modelContext else { return [:] }
+        let calendar = Calendar.current
+        guard let monthInterval = calendar.dateInterval(of: .month, for: month) else { return [:] }
+
+        var result: [String: Int] = [:]
+        let paymentIDs = Set(payments.map { $0.id.uuidString })
+
+        // Query 1: InboxDrafts approved with sourceScheduledPaymentID
+        do {
+            var draftDescriptor = FetchDescriptor<InboxDraft>(
+                predicate: #Predicate<InboxDraft> { draft in
+                    draft.statusRaw == "approved" && draft.sourceScheduledPaymentID != nil
+                }
+            )
+            draftDescriptor.propertiesToFetch = [\.sourceScheduledPaymentID, \.date]
+            let approvedDrafts = try context.fetch(draftDescriptor)
+
+            for draft in approvedDrafts {
+                guard let spID = draft.sourceScheduledPaymentID, paymentIDs.contains(spID) else { continue }
+                // Check if the approved transaction date is within the month
+                let draftDate = draft.approvedTransaction?.date ?? draft.date ?? draft.createdAt
+                if draftDate >= monthInterval.start && draftDate < monthInterval.end {
+                    result[spID, default: 0] += 1
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error loading draft paid status: \(error)")
+            #endif
+        }
+
+        // Query 2: TransactionItems with scheduledPaymentID
+        do {
+            var txDescriptor = FetchDescriptor<TransactionItem>(
+                predicate: #Predicate<TransactionItem> { tx in
+                    tx.scheduledPaymentID != nil
+                }
+            )
+            txDescriptor.propertiesToFetch = [\.scheduledPaymentID, \.date]
+            let linkedTransactions = try context.fetch(txDescriptor)
+
+            for tx in linkedTransactions {
+                guard let spID = tx.scheduledPaymentID, paymentIDs.contains(spID) else { continue }
+                if tx.date >= monthInterval.start && tx.date < monthInterval.end {
+                    result[spID, default: 0] += 1
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error loading tx paid status: \(error)")
+            #endif
+        }
+
+        return result
+    }
+
     // MARK: - Data Calculation
 
-    /// Calculate and group payments for display
+    /// Calculate and group payments for display, filtered by selectedMonth
     func calculatePaymentData(payments: [ScheduledPayment]) {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
+        let isCurrentMonth = calendar.isDate(selectedMonth, equalTo: today, toGranularity: .month)
+        let isPastMonth = calendar.startOfMonth(for: selectedMonth) < calendar.startOfMonth(for: today)
 
         // Filter by tab (payment category)
         var filtered = payments
@@ -180,29 +365,53 @@ final class ScheduledPaymentsViewModel {
             }
         }
 
-        // Calculate summaries with due status
-        let summaries = filtered.map { payment -> ScheduledPaymentSummary in
-            let dueDate = calendar.startOfDay(for: payment.nextDueDate)
-            let daysUntilDue = calendar.dateComponents([.day], from: today, to: dueDate).day ?? 0
+        // Filter to only payments with occurrences in selectedMonth
+        filtered = filtered.filter { payment in
+            !getPaymentDatesInMonth(payment: payment, month: selectedMonth).isEmpty
+        }
 
-            let dueStatus: DueStatus
-            if daysUntilDue < 0 {
-                dueStatus = .past
-            } else if daysUntilDue == 0 {
-                dueStatus = .today
-            } else {
-                dueStatus = .upcoming
+        // Load paid status for all payments in this month (batch)
+        let paidStatus = loadPaidStatus(for: filtered, month: selectedMonth)
+        paidStatusForMonth = paidStatus
+
+        // Calculate summaries with one entry per occurrence
+        var summaries: [ScheduledPaymentSummary] = []
+        for payment in filtered {
+            let dates = getPaymentDatesInMonth(payment: payment, month: selectedMonth)
+            let paidCount = paidStatus[payment.id.uuidString] ?? 0
+            var remainingPaid = paidCount
+
+            for date in dates.sorted() {
+                let dueStatus: DueStatus
+                if isPastMonth {
+                    dueStatus = .past
+                } else if isCurrentMonth {
+                    let dueDate = calendar.startOfDay(for: date)
+                    let daysUntil = calendar.dateComponents([.day], from: today, to: dueDate).day ?? 0
+                    if daysUntil < 0 { dueStatus = .past }
+                    else if daysUntil == 0 { dueStatus = .today }
+                    else { dueStatus = .upcoming }
+                } else {
+                    dueStatus = .upcoming
+                }
+
+                let daysUntilDue = calendar.dateComponents([.day], from: today, to: date).day ?? 0
+                let (icon, color) = getPaymentDisplayProperties(payment: payment)
+                let isSkipped = payment.isDateSkipped(date)
+                let isPaid = remainingPaid > 0 && !isSkipped
+                if isPaid { remainingPaid -= 1 }
+
+                summaries.append(ScheduledPaymentSummary(
+                    payment: payment,
+                    dueDate: date,
+                    dueStatus: dueStatus,
+                    daysUntilDue: daysUntilDue,
+                    icon: icon,
+                    color: color,
+                    isPaidForMonth: isPaid,
+                    isSkippedForMonth: isSkipped
+                ))
             }
-
-            let (icon, color) = getPaymentDisplayProperties(payment: payment)
-
-            return ScheduledPaymentSummary(
-                payment: payment,
-                dueStatus: dueStatus,
-                daysUntilDue: daysUntilDue,
-                icon: icon,
-                color: color
-            )
         }
 
         // Group by due status
@@ -213,7 +422,7 @@ final class ScheduledPaymentsViewModel {
             .compactMap { status -> (status: DueStatus, payments: [ScheduledPaymentSummary])? in
                 guard let payments = grouped[status], !payments.isEmpty else { return nil }
                 // Sort payments within each status by due date
-                let sortedPayments = payments.sorted { $0.payment.nextDueDate < $1.payment.nextDueDate }
+                let sortedPayments = payments.sorted { $0.dueDate < $1.dueDate }
                 return (status: status, payments: sortedPayments)
             }
             .sorted { $0.status.sortOrder < $1.status.sortOrder }
@@ -261,6 +470,78 @@ final class ScheduledPaymentsViewModel {
     func editPayment(_ payment: ScheduledPayment) {
         editingPayment = payment
         showPaymentEditor = true
+    }
+
+    // MARK: - Transaction Association (M3)
+
+    /// Fetch candidate transactions for manual association with a scheduled payment.
+    /// Filters: same month, same type (income/expense), same account (if set), no existing association.
+    /// Sorted by amount proximity to payment amount.
+    func fetchCandidateTransactions(for payment: ScheduledPayment, month: Date) -> [TransactionItem] {
+        guard let context = modelContext else { return [] }
+        let calendar = Calendar.current
+        guard let monthInterval = calendar.dateInterval(of: .month, for: month) else { return [] }
+
+        let monthStart = monthInterval.start
+        let monthEnd = monthInterval.end
+        do {
+            let descriptor = FetchDescriptor<TransactionItem>(
+                predicate: #Predicate<TransactionItem> { tx in
+                    tx.date >= monthStart && tx.date < monthEnd &&
+                    tx.scheduledPaymentID == nil
+                },
+                sortBy: [SortDescriptor(\.date, order: .reverse)]
+            )
+            var transactions = try context.fetch(descriptor)
+
+            // Filter by transaction type (income matches income, expense matches expense)
+            let isPaymentIncome = payment.transactionType == "income"
+            transactions = transactions.filter { tx in
+                let isTxIncome = tx.category?.isIncome ?? false
+                return isTxIncome == isPaymentIncome
+            }
+
+            // Sort: same currency first, then same account, then amount proximity
+            transactions.sort { tx1, tx2 in
+                let tx1CurrencyMatch = tx1.currencyCode == payment.currencyCode
+                let tx2CurrencyMatch = tx2.currencyCode == payment.currencyCode
+                if tx1CurrencyMatch != tx2CurrencyMatch { return tx1CurrencyMatch }
+
+                if let paymentAccount = payment.account {
+                    let paymentAccountID = paymentAccount.persistentModelID
+                    let tx1AccountMatch = tx1.account?.persistentModelID == paymentAccountID
+                    let tx2AccountMatch = tx2.account?.persistentModelID == paymentAccountID
+                    if tx1AccountMatch != tx2AccountMatch { return tx1AccountMatch }
+                }
+
+                let diff1 = abs(tx1.amount - payment.amount)
+                let diff2 = abs(tx2.amount - payment.amount)
+                return diff1 < diff2
+            }
+
+            return transactions
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error fetching candidate transactions: \(error)")
+            #endif
+            return []
+        }
+    }
+
+    /// Associate a transaction with a scheduled payment
+    func associateTransaction(_ transaction: TransactionItem, to payment: ScheduledPayment) {
+        transaction.scheduledPaymentID = payment.id.uuidString
+
+        guard let context = modelContext else { return }
+        do {
+            try context.save()
+            // Refresh paid status
+            SessionState.shared.dataVersion += 1
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error associating transaction: \(error)")
+            #endif
+        }
     }
 
     // MARK: - Subscriptions Calendar
@@ -468,7 +749,9 @@ final class ScheduledPaymentsViewModel {
             }
         }
 
-        return dates
+        // Filter out dates before payment creation (M4: no backward propagation)
+        let createdDay = calendar.startOfDay(for: payment.createdAt)
+        return dates.filter { $0 >= createdDay }
     }
 
     /// Parse weekdays string "1,3,5" into set of weekday integers
@@ -480,16 +763,16 @@ final class ScheduledPaymentsViewModel {
     /// Move calendar to previous month
     func previousMonth() {
         let calendar = Calendar.current
-        if let newMonth = calendar.date(byAdding: .month, value: -1, to: calendarDisplayedMonth) {
-            calendarDisplayedMonth = newMonth
+        if let newMonth = calendar.date(byAdding: .month, value: -1, to: selectedMonth) {
+            selectedMonth = newMonth
         }
     }
 
     /// Move calendar to next month
     func nextMonth() {
         let calendar = Calendar.current
-        if let newMonth = calendar.date(byAdding: .month, value: 1, to: calendarDisplayedMonth) {
-            calendarDisplayedMonth = newMonth
+        if let newMonth = calendar.date(byAdding: .month, value: 1, to: selectedMonth) {
+            selectedMonth = newMonth
         }
     }
 }

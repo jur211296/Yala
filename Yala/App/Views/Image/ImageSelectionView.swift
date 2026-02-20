@@ -16,6 +16,7 @@ struct ImageSelectionView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(ImageVisionService.self) private var imageVisionService
+    @Environment(\.yalaTheme) private var theme
 
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var selectedImages: [UIImage] = []
@@ -64,7 +65,7 @@ struct ImageSelectionView: View {
             .dsAnimation(.easeInOut(duration: 0.3), value: isCountingDown, reduceMotion: reduceMotion)
             .dsAnimation(.easeInOut(duration: 0.3), value: isProcessing, reduceMotion: reduceMotion)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.yalaBackground)
+            .background(.thBackground)
             .navigationTitle(L10n.Image.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -149,11 +150,10 @@ struct ImageSelectionView: View {
     private func checkForSharedImage() {
         guard let imageURL = sessionState.pendingSharedImageURL else { return }
 
-        // Clear the pending state immediately to prevent double processing
+        // Clear URL immediately to prevent double processing
+        // (shouldShowSharedImage was already reset by the one-shot observer)
         sessionState.pendingSharedImageURL = nil
-        sessionState.hasPendingSharedImage = false
 
-        // Load the image
         Task {
             await loadSharedImage(from: imageURL)
         }
@@ -314,7 +314,7 @@ struct ImageSelectionView: View {
             }
         }
         .padding(DS.Spacing.md)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 
@@ -350,7 +350,7 @@ struct ImageSelectionView: View {
             }
         }
         .padding(DS.Spacing.md)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 
@@ -536,7 +536,7 @@ struct ImageSelectionView: View {
             VStack(spacing: DS.Spacing.sm) {
                 Text("\(draftsCreated)")
                     .font(DS.Typography.amountLarge)
-                    .foregroundStyle(Color.electricIndigo)
+                    .foregroundStyle(.thAccent)
 
                 Text(L10n.Image.transactionsDetectedCount)
                     .font(DS.Typography.subheadline)

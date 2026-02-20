@@ -167,7 +167,7 @@ struct ScheduledPaymentsSettingsView: View {
             .padding(DS.Spacing.md)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.yalaCard)
+                    .fill(.thCard)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)

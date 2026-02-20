@@ -21,7 +21,7 @@ struct PeriodSelectorLabel: View {
         }
         .padding(.horizontal, DS.Spacing.md)
         .padding(.vertical, DS.Spacing.sm)
-        .foregroundStyle(Color.yalaPrimaryText)
+        .foregroundStyle(.thPrimaryText)
         .glassEffect(.regular.interactive(), in: .capsule)
         // Ensure entire capsule is tappable
         .contentShape(Capsule())
@@ -38,5 +38,5 @@ struct PeriodSelectorLabel: View {
         PeriodSelectorLabel(title: "Últimos 30 días")
     }
     .padding()
-    .background(Color.yalaCard)
+    .background(.thCard)
 }

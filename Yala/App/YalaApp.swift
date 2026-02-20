@@ -26,7 +26,7 @@ struct YalaApp: App {
         }
     }()
 
-    @AppStorage("userTheme") private var userThemeRaw: Int = AppTheme.system.rawValue
+    @State private var themeManager = ThemeManager()
 
     /// Bootstrapper centralizado para inicialización y servicios
     private let bootstrapper = AppBootstrapper.shared
@@ -34,7 +34,19 @@ struct YalaApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .preferredColorScheme(AppTheme(rawValue: userThemeRaw)?.colorScheme)
+                .preferredColorScheme(themeManager.userChoice == .system ? nil : themeManager.resolved.baseColorScheme)
+                .tint(themeManager.resolved.accent)
+                .environment(\.yalaTheme, themeManager.resolved)
+                .environment(themeManager)
+                .environment(bootstrapper.sessionState)
+                .environment(bootstrapper.currencyConverter)
+                .environment(bootstrapper.exchangeRateService)
+                .environment(bootstrapper.imageVisionService)
+                .environment(bootstrapper.voiceTranscriptionService)
+                .environment(bootstrapper.transcriptionParserService)
+                .environment(bootstrapper.draftService)
+                .environment(bootstrapper.entityDeletionService)
+                .environment(bootstrapper.transactionService)
                 .task {
                     await bootstrapper.bootstrap(container: sharedModelContainer)
                 }
@@ -50,15 +62,6 @@ struct YalaApp: App {
                 }
         }
         .modelContainer(sharedModelContainer)
-        .environment(bootstrapper.sessionState)
-        .environment(bootstrapper.currencyConverter)
-        .environment(bootstrapper.exchangeRateService)
-        .environment(bootstrapper.imageVisionService)
-        .environment(bootstrapper.voiceTranscriptionService)
-        .environment(bootstrapper.transcriptionParserService)
-        .environment(bootstrapper.draftService)
-        .environment(bootstrapper.entityDeletionService)
-        .environment(bootstrapper.transactionService)
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 bootstrapper.handleBecameActive(context: sharedModelContainer.mainContext)

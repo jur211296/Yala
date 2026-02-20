@@ -9,6 +9,7 @@
 import SwiftUI
 
 struct InboxBulkApproveSuccessView: View {
+    @Environment(\.yalaTheme) private var theme
     @ScaledMetric(relativeTo: .largeTitle) private var checkmarkSize: CGFloat = 40
     @ScaledMetric(relativeTo: .largeTitle) private var countSize: CGFloat = 48
 
@@ -57,7 +58,7 @@ struct InboxBulkApproveSuccessView: View {
             VStack(spacing: DS.Spacing.sm) {
                 Text("\(approvedCount)")
                     .font(.system(size: countSize, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.electricIndigo)
+                    .foregroundStyle(.thAccent)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(approvedCount == 1 ? L10n.Inbox.transactionCreated : L10n.Inbox.transactionsCreated)
@@ -83,7 +84,7 @@ struct InboxBulkApproveSuccessView: View {
             .padding(.bottom, DS.Spacing.xxl)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.yalaBackground)
+        .background(.thBackground)
     }
 }
 

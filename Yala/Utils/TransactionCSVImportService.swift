@@ -806,7 +806,7 @@ enum TransactionCSVImportService {
                         components.second = 0
 
                         var calendar = Calendar(identifier: .gregorian)
-                        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? TimeZone(identifier: "UTC")!
+                        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
 
                         if let date = calendar.date(from: components) {
                             return date

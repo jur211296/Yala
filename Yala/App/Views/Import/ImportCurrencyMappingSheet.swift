@@ -11,6 +11,7 @@ import SwiftUI
 struct ImportCurrencyMappingSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.yalaTheme) private var theme
 
     let detectedCurrencies: Set<String>
     let accounts: [Account]
@@ -63,16 +64,16 @@ struct ImportCurrencyMappingSheet: View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "dollarsign.arrow.circlepath")
                 .font(DS.Typography.amountLarge)
-                .foregroundStyle(Color.brandPrimary)
+                .foregroundStyle(.thAccent)
                 .padding(.bottom, DS.Spacing.sm)
 
             Text(L10n.Import.currenciesDetected(sortedCurrencies.count))
                 .font(Typography.title2)
-                .foregroundStyle(Color.yalaPrimaryText)
+                .foregroundStyle(.thPrimaryText)
 
             Text(L10n.Import.assignAccountPerCurrency)
                 .font(Typography.body)
-                .foregroundStyle(Color.yalaSecondaryText)
+                .foregroundStyle(.thSecondaryText)
                 .multilineTextAlignment(.center)
         }
     }
@@ -118,10 +119,10 @@ struct ImportCurrencyMappingSheet: View {
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                         Text(currencyCode)
                             .font(Typography.bodyBold)
-                            .foregroundStyle(Color.yalaPrimaryText)
+                            .foregroundStyle(.thPrimaryText)
                         Text(info.name.capitalized)
                             .font(Typography.caption)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                     }
 
                     Spacer()
@@ -139,18 +140,18 @@ struct ImportCurrencyMappingSheet: View {
                                 )
                             Text(account.name)
                                 .font(Typography.body)
-                                .foregroundStyle(Color.yalaPrimaryText)
+                                .foregroundStyle(.thPrimaryText)
                                 .lineLimit(1)
                         }
                     } else {
                         Text(L10n.Import.selectAccountForCurrency)
                             .font(Typography.body)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                     }
 
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                         .font(DS.Typography.caption)
-                        .foregroundStyle(Color.yalaSecondaryText)
+                        .foregroundStyle(.thSecondaryText)
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.md)
@@ -167,7 +168,7 @@ struct ImportCurrencyMappingSheet: View {
                     if availableAccounts.isEmpty {
                         Text(L10n.Import.noAccountsForCurrency(currencyCode))
                             .font(Typography.caption)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                             .padding(.vertical, DS.Spacing.md)
                     } else {
                         ForEach(availableAccounts, id: \.id) { account in
@@ -175,7 +176,7 @@ struct ImportCurrencyMappingSheet: View {
                         }
                     }
                 }
-                .background(Color.yalaBackground.opacity(0.5))
+                .background(.thBackground.opacity(0.5))
             }
         }
     }
@@ -202,13 +203,13 @@ struct ImportCurrencyMappingSheet: View {
 
                 Text(account.name)
                     .font(Typography.body)
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
 
                 Spacer()
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Color.brandPrimary)
+                        .foregroundStyle(.thAccent)
                 } else {
                     Image(systemName: "circle")
                         .foregroundStyle(.tertiary)
@@ -237,7 +238,7 @@ struct ImportCurrencyMappingSheet: View {
                 .frame(height: 52)
             }
             .buttonStyle(.borderedProminent)
-            .tint(allCurrenciesAssigned ? Color.brandPrimary : DS.Semantic.disabledForeground)
+            .tint(allCurrenciesAssigned ? theme.accent : DS.Semantic.disabledForeground)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
             .disabled(!allCurrenciesAssigned)
             .accessibilityHint(!allCurrenciesAssigned ? "Asigna todas las divisas" : "")

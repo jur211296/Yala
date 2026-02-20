@@ -26,6 +26,7 @@ struct ImportResult: Identifiable {
 /// This approach avoids the nested sheet presentation bug in SwiftUI
 struct ImportResultOverlay: View {
     @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 80
+    @Environment(\.yalaTheme) private var theme
 
     let result: ImportResult
     let onDismiss: () -> Void
@@ -49,12 +50,12 @@ struct ImportResultOverlay: View {
                 // Title
                 Text(result.isSuccess ? L10n.Import.completed : L10n.Import.importError)
                     .font(Typography.title2)
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
 
                 // Message
                 Text(result.message)
                     .font(Typography.body)
-                    .foregroundStyle(Color.yalaSecondaryText)
+                    .foregroundStyle(.thSecondaryText)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DS.Spacing.xxxl)
 
@@ -69,14 +70,14 @@ struct ImportResultOverlay: View {
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
-                        .background(result.isSuccess ? Color.financeGreen : Color.brandPrimary)
+                        .background(result.isSuccess ? Color.financeGreen : theme.accent)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                 }
                 .padding(.horizontal, DS.Spacing.xxxxl)
                 .padding(.bottom, DS.Spacing.xxxxl)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.yalaCard)
+            .background(.thCard)
         }
     }
 }
@@ -88,6 +89,7 @@ struct ImportIntroSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.yalaTheme) private var theme
     @Environment(ExchangeRateService.self) private var exchangeRateService
     @Environment(SessionState.self) private var sessionState
 
@@ -179,7 +181,7 @@ struct ImportIntroSheet: View {
                             .frame(height: 52)
                         }
                         .buttonStyle(.borderedProminent)
-                        .tint(Color.brandPrimary)
+
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                         .disabled(isImporting)
                         .accessibilityHint(isImporting ? "Importación en proceso" : "")
@@ -260,17 +262,17 @@ struct ImportIntroSheet: View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "square.and.arrow.down")
                 .font(.system(size: heroIconSize))
-                .foregroundStyle(Color.brandPrimary)
+                .foregroundStyle(.thAccent)
                 .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .padding(.bottom, DS.Spacing.sm)
 
             Text(L10n.Import.title)
                 .font(Typography.title2)
-                .foregroundStyle(Color.yalaPrimaryText)
+                .foregroundStyle(.thPrimaryText)
 
             Text(L10n.Import.introDescription)
             .font(Typography.body)
-            .foregroundStyle(Color.yalaSecondaryText)
+            .foregroundStyle(.thSecondaryText)
             .multilineTextAlignment(.center)
         }
         .padding(.top, DS.Spacing.xxxl)
@@ -294,17 +296,17 @@ struct ImportIntroSheet: View {
                 HStack {
                     Text(L10n.Import.downloadTemplate)
                         .font(Typography.bodyLarge)
-                        .foregroundStyle(Color.yalaPrimaryText)
+                        .foregroundStyle(.thPrimaryText)
 
                     Spacer()
 
                     Image(systemName: "arrow.down.circle")
                         .font(DS.Typography.body)
-                        .foregroundStyle(Color.brandPrimary)
+                        .foregroundStyle(.thAccent)
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.FormRow.paddingV)
-                .background(Color.yalaCard)
+                .background(.thCard)
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                 .overlay(
                     RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -314,7 +316,7 @@ struct ImportIntroSheet: View {
 
             Text(L10n.Import.templateDescription)
             .font(Typography.label)
-            .foregroundStyle(Color.yalaSecondaryText)
+            .foregroundStyle(.thSecondaryText)
             .padding(.horizontal, DS.Spacing.xs)
         }
     }
@@ -326,17 +328,17 @@ struct ImportIntroSheet: View {
             HStack {
                 Text(L10n.Import.createCategories)
                     .font(Typography.bodyLarge)
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
 
                 Spacer()
 
                 Toggle("", isOn: $allowCreatingNewCategories)
                     .labelsHidden()
-                    .tint(Color.brandPrimary)
+
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.FormRow.paddingV)
-            .background(Color.yalaCard)
+            .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -345,7 +347,7 @@ struct ImportIntroSheet: View {
 
             Text(L10n.Import.categoriesDescription)
             .font(Typography.label)
-            .foregroundStyle(Color.yalaSecondaryText)
+            .foregroundStyle(.thSecondaryText)
             .padding(.horizontal, DS.Spacing.xs)
         }
     }

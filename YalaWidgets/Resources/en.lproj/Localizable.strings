@@ -33,6 +33,16 @@
 "widget.gallery.topSubcategories" = "Top Subcategories";
 "widget.gallery.topSubcategories.desc" = "Your subcategories with most expenses";
 
+// MARK: - Gallery (Lock Screen accessory widgets)
+"widget.gallery.accessoryBalance" = "Balance";
+"widget.gallery.accessoryBalance.desc" = "Your balance on Lock Screen";
+"widget.gallery.accessoryExpense" = "Expenses";
+"widget.gallery.accessoryExpense.desc" = "Your expenses on Lock Screen";
+"widget.gallery.accessoryBudget" = "Budget";
+"widget.gallery.accessoryBudget.desc" = "Your most used budget";
+"widget.gallery.accessoryPayment" = "Next Payment";
+"widget.gallery.accessoryPayment.desc" = "Your next scheduled payment";
+
 // MARK: - Intent titles and descriptions
 "widget.intent.cashFlow.title" = "Cash Flow";
 "widget.intent.cashFlow.desc" = "Shows your net cash flow";
@@ -54,6 +64,14 @@
 "widget.intent.scheduledPayments.desc" = "Shows your upcoming scheduled payments";
 "widget.intent.latestRecords.title" = "Latest Records";
 "widget.intent.latestRecords.desc" = "Shows your most recent transactions";
+"widget.intent.accessoryBalance.title" = "Balance";
+"widget.intent.accessoryBalance.desc" = "Period balance";
+"widget.intent.accessoryExpense.title" = "Expenses";
+"widget.intent.accessoryExpense.desc" = "Period expenses";
+"widget.intent.accessoryBudget.title" = "Budget";
+"widget.intent.accessoryBudget.desc" = "Most used budget";
+"widget.intent.accessoryPayment.title" = "Next Payment";
+"widget.intent.accessoryPayment.desc" = "Next scheduled payment";
 
 // MARK: - Selection Mode
 "widget.selection.mode.type" = "Show";

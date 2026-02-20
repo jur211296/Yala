@@ -9,6 +9,7 @@ import SwiftUI
 
 struct NotificationEditorSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yalaTheme) private var theme
     @FocusState private var focusedField: Field?
 
     let notification: NotificationItem?
@@ -114,7 +115,7 @@ struct NotificationEditorSheet: View {
                     )
                 }
             }
-            .navigationTitle(notification?.name ?? L10n.Notifications.addNew)
+            .navigationTitle(notification?.localizedName ?? L10n.Notifications.addNew)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -186,7 +187,7 @@ struct NotificationEditorSheet: View {
                         Image(systemName: "pencil.circle.fill")
                             .font(DS.Typography.largeTitle)
                             .foregroundStyle(Color(hex: selectedColorHex))
-                            .background(Circle().fill(Color.yalaBackground).padding(2))
+                            .background(Circle().fill(.thBackground).padding(2))
                     }
                 }
                 .frame(width: 80, height: 80)
@@ -260,7 +261,7 @@ struct NotificationEditorSheet: View {
                     displayedComponents: .hourAndMinute
                 )
                 .labelsHidden()
-                .tint(Color.electricIndigo)
+
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.FormRow.paddingV)
@@ -305,7 +306,7 @@ struct NotificationEditorSheet: View {
                 .frame(width: 36, height: 36)
                 .background(
                     Circle()
-                        .fill(isSelected ? Color.electricIndigo : Color(.tertiarySystemFill))
+                        .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
                 )
         }
         .buttonStyle(.plain)
@@ -362,7 +363,7 @@ struct NotificationEditorSheet: View {
                             if selectedDataType == dataType {
                                 Image(systemName: "checkmark")
                                     .font(DS.Typography.headline)
-                                    .foregroundStyle(Color.electricIndigo)
+                                    .foregroundStyle(.thAccent)
                             }
                         }
                         .padding(.horizontal, DS.Spacing.lg)
@@ -416,7 +417,7 @@ struct NotificationEditorSheet: View {
                 if selectedDayPreference == preference {
                     Image(systemName: "checkmark")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(.thAccent)
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -532,12 +533,12 @@ struct NotificationEditorSheet: View {
                 Text(L10n.Notifications.testNotification)
             }
             .font(DS.Typography.label)
-            .foregroundStyle(Color.electricIndigo)
+            .foregroundStyle(.thAccent)
             .frame(maxWidth: .infinity)
             .padding(.vertical, DS.Spacing.md)
             .background(
                 Capsule()
-                    .fill(Color.electricIndigo.opacity(0.12))
+                    .fill(theme.accent.opacity(0.12))
             )
         }
         .buttonStyle(.plain)
@@ -594,8 +595,8 @@ struct NotificationEditorSheet: View {
             return
         }
 
-        name = notification.name
-        text = notification.text
+        name = notification.localizedName
+        text = notification.localizedText
         scheduledTime = notification.scheduledTime
 
         // Load icon/color for custom notifications

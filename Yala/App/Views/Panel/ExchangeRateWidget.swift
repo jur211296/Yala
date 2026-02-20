@@ -31,11 +31,12 @@ struct ExchangeRateWidget: View {
     }
 
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.yalaTheme) private var theme
     @State private var selectedDate: Date?
     @State private var filteredCurrency: CurrencyCode?
 
     // Colors for currency lines
-    private let currencyAColor = Color.electricIndigo
+    private var currencyAColor: Color { theme.accent }
     private let currencyBColor = Color.hotPink
 
     var body: some View {
@@ -50,7 +51,7 @@ struct ExchangeRateWidget: View {
         }
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.xl)
-                .fill(Color.yalaCard)
+                .fill(.thCard)
         )
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl)
@@ -117,6 +118,10 @@ struct ExchangeRateWidget: View {
                 emptyChartView
             } else {
                 chartView(data: data)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Gráfica de tipo de cambio")
+                    .accessibilityValue(data.chartPoints.isEmpty ? "Sin datos" :
+                        "\(data.currentRates.count) divisas")
             }
         } else {
             loadingView
@@ -208,7 +213,7 @@ struct ExchangeRateWidget: View {
                         AxisValueLabel(anchor: anchor) {
                             Text(smartAxisLabel(for: date, in: data.chartPoints))
                                 .font(DS.Typography.captionSmall)
-                                .foregroundStyle(Color.yalaSecondaryText)
+                                .foregroundStyle(.thSecondaryText)
                         }
                     }
                 }
@@ -216,12 +221,12 @@ struct ExchangeRateWidget: View {
             .chartYAxis {
                 AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
                     AxisGridLine(stroke: StrokeStyle(dash: [5, 5]))
-                        .foregroundStyle(Color.yalaSecondaryText.opacity(0.2))
+                        .foregroundStyle(.thSecondaryText.opacity(0.2))
                     AxisValueLabel {
                         if let doubleValue = value.as(Double.self) {
                             Text(formatRate(doubleValue))
                                 .font(DS.Typography.captionSmall)
-                                .foregroundStyle(Color.yalaSecondaryText)
+                                .foregroundStyle(.thSecondaryText)
                         }
                     }
                 }
@@ -395,7 +400,7 @@ struct ExchangeRateWidget: View {
         VStack(spacing: DS.Spacing.xs) {
             Text(formatTooltipDate(point.date))
                 .font(DS.Typography.captionSmall)
-                .foregroundStyle(Color.yalaSecondaryText)
+                .foregroundStyle(.thSecondaryText)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 ForEach(visibleCurrencies, id: \.rawValue) { currency in
@@ -419,7 +424,7 @@ struct ExchangeRateWidget: View {
         .padding(DS.Spacing.sm)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.sm)
-                .fill(Color.yalaCard)
+                .fill(.thCard)
                 .shadow(color: .black.opacity(0.15), radius: 5, x: 0, y: 2)
         )
         .fixedSize()
@@ -467,7 +472,7 @@ struct ExchangeRateWidget: View {
                 .multilineTextAlignment(.center)
             Text(L10n.ExchangeRate.noSecondaryCurrenciesPath)
                 .font(DS.Typography.labelSmall)
-                .foregroundStyle(Color.electricIndigo)
+                .foregroundStyle(theme.accent)
         }
         .frame(height: 120)
         .frame(maxWidth: .infinity)

@@ -108,6 +108,55 @@ final class ScheduledPayment {
     /// Last date this payment was marked as paid (from inbox approval)
     var lastPaidDate: Date?
 
+    /// Comma-separated ISO dates of skipped occurrences (e.g. "2026-02-18,2026-02-25")
+    var skippedDatesRaw: String = ""
+
+    // MARK: - Skipped Dates
+
+    var skippedDates: Set<String> {
+        guard !skippedDatesRaw.isEmpty else { return [] }
+        return Set(skippedDatesRaw.split(separator: ",").map(String.init))
+    }
+
+    func isDateSkipped(_ date: Date) -> Bool {
+        let key = Self.dateKey(for: date)
+        return skippedDates.contains(key)
+    }
+
+    func skipDate(_ date: Date) {
+        let key = Self.dateKey(for: date)
+        var dates = skippedDates
+        dates.insert(key)
+        skippedDatesRaw = dates.sorted().joined(separator: ",")
+    }
+
+    func unskipDate(_ date: Date) {
+        let key = Self.dateKey(for: date)
+        var dates = skippedDates
+        dates.remove(key)
+        skippedDatesRaw = dates.sorted().joined(separator: ",")
+    }
+
+    /// Remove skipped dates older than 1 year to prevent unbounded growth
+    func cleanupOldSkippedDates() {
+        guard !skippedDatesRaw.isEmpty else { return }
+        let calendar = Calendar.current
+        guard let cutoff = calendar.date(byAdding: .year, value: -1, to: Date()) else { return }
+        let cutoffKey = Self.dateKey(for: cutoff)
+        let dates = skippedDates.filter { $0 >= cutoffKey }
+        skippedDatesRaw = dates.sorted().joined(separator: ",")
+    }
+
+    private static let isoFormatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withFullDate]
+        return f
+    }()
+
+    static func dateKey(for date: Date) -> String {
+        isoFormatter.string(from: Calendar.current.startOfDay(for: date))
+    }
+
     // MARK: - Init
 
     init(

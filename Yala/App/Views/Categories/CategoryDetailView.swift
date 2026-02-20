@@ -193,16 +193,16 @@ struct CategoryDetailView: View {
 
                     // Pencil edit indicator
                     Circle()
-                        .fill(Color.yalaCard)
+                        .fill(.thCard)
                         .frame(width: 24, height: 24)
                         .overlay(
                             Image(systemName: "pencil")
                                 .font(DS.Typography.labelSmall)
-                                .foregroundStyle(Color.electricIndigo)
+                                .foregroundStyle(Color(hex: viewModel.colorHex))
                         )
                         .overlay(
                             Circle()
-                                .stroke(Color.yalaBackground, lineWidth: 2)
+                                .stroke(.thBackground, lineWidth: 2)
                         )
                         .offset(x: 4, y: 4)
                 }
@@ -243,7 +243,7 @@ struct CategoryDetailView: View {
                     Toggle(isOn: $viewModel.isVisible) {
                         Text(L10n.Category.show)
                     }
-                    .tint(Color.electricIndigo)
+
                     .padding()
                     .onChange(of: viewModel.isVisible) { _, newValue in
                         if newValue == false {
@@ -299,7 +299,7 @@ struct CategoryDetailView: View {
                         } label: {
                             Text(isEditingSubcategories ? L10n.Action.done : L10n.Action.edit)
                                 .font(DS.Typography.subheadline)
-                                .foregroundStyle(Color.electricIndigo)
+                                .foregroundStyle(.primary)
                         }
                     }
                 }
@@ -362,7 +362,7 @@ struct CategoryDetailView: View {
                     } label: {
                         HStack(spacing: DS.Spacing.md) {
                             Image(systemName: "plus.circle.fill")
-                                .foregroundStyle(Color.brandPrimary)
+                                .foregroundStyle(.thAccent)
                             Text(L10n.Category.addSubcategory)
                                 .foregroundStyle(.primary)
                             Spacer()
@@ -373,7 +373,7 @@ struct CategoryDetailView: View {
                 }
                 .background(
                     RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                        .fill(Color.yalaCard)
+                        .fill(.thCard)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
                 .overlay(
@@ -432,7 +432,7 @@ struct CategoryDetailView: View {
                     .padding(.vertical, DS.Spacing.xs)
                     .background(
                         RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                            .fill(Color.yalaCard)
+                            .fill(.thCard)
                     )
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
                     .overlay(

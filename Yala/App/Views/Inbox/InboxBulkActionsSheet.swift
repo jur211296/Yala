@@ -196,7 +196,7 @@ struct InboxBulkActionsSheet: View {
                 Text(L10n.Inbox.deleteConfirmMessage(selectedDrafts.count))
             }
         }
-        .tint(Color.electricIndigo)
+
     }
 
     // MARK: - Option Row

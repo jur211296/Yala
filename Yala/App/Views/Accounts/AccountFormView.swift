@@ -103,7 +103,7 @@ struct AccountFormView: View {
             }
         }
 
-        .tint(Color.electricIndigo)
+
         .alert(
             L10n.Account.deleteError,
             isPresented: $viewModel.isShowingDeleteError,
@@ -435,7 +435,7 @@ struct AccountFormView: View {
                 Toggle(isOn: $viewModel.excludeFromStatistics) {
                     Text(L10n.Account.excludeFromStats)
                 }
-                .tint(Color.electricIndigo)
+
                 .padding()
 
                 SubsectionDivider()
@@ -443,7 +443,7 @@ struct AccountFormView: View {
                 Toggle(isOn: $viewModel.isArchived) {
                     Text(L10n.Account.archive)
                 }
-                .tint(Color.electricIndigo)
+
                 .padding()
 
                 if viewModel.isEditing {

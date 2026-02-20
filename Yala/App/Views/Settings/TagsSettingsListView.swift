@@ -12,6 +12,7 @@ struct TagsSettingsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.yalaTheme) private var theme
 
     @State private var viewModel = TagsSettingsListViewModel()
 
@@ -122,7 +123,7 @@ struct TagsSettingsListView: View {
                     }
                     .buttonStyle(.plain)
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
-                    .listRowBackground(Color.yalaCard)
+                    .listRowBackground(theme.card)
                     .listRowSeparator(
                         index == 0 || index == viewModel.orderedActiveTags.count - 1 ? .hidden : .visible,
                         edges: index == 0 ? .top : .bottom)
@@ -135,7 +136,7 @@ struct TagsSettingsListView: View {
             .frame(height: CGFloat(viewModel.orderedActiveTags.count) * 52)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.yalaCard)
+                    .fill(.thCard)
             )
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
@@ -165,7 +166,7 @@ struct TagsSettingsListView: View {
                     }
                     .buttonStyle(.plain)
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
-                    .listRowBackground(Color.yalaCard)
+                    .listRowBackground(theme.card)
                     .listRowSeparator(
                         index == 0 || index == viewModel.inactiveTags.count - 1 ? .hidden : .visible,
                         edges: index == 0 ? .top : .bottom)
@@ -177,7 +178,7 @@ struct TagsSettingsListView: View {
             .frame(height: CGFloat(viewModel.inactiveTags.count) * 52)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.yalaCard)
+                    .fill(.thCard)
             )
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(

@@ -11,6 +11,7 @@ import SwiftUI
 struct SaveAsRecurringSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.yalaTheme) private var theme
 
     @State private var viewModel = SaveAsRecurringViewModel()
 
@@ -302,7 +303,7 @@ struct SaveAsRecurringSheet: View {
             } else {
                 Button(action: onTap) {
                     Text(L10n.Common.select)
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(.thAccent)
                 }
                 .buttonStyle(.plain)
             }
@@ -325,7 +326,7 @@ struct SaveAsRecurringSheet: View {
             if selectedTags.isEmpty {
                 Button { showTagSelector = true } label: {
                     Text(L10n.Common.select)
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(.thAccent)
                 }
                 .buttonStyle(.plain)
             } else {
@@ -420,7 +421,7 @@ struct SaveAsRecurringSheet: View {
                                                 if selectedTags.contains(tag.persistentModelID) {
                                                     Image(systemName: "checkmark")
                                                         .font(DS.Typography.headline)
-                                                        .foregroundStyle(Color.electricIndigo)
+                                                        .foregroundStyle(.thAccent)
                                                 }
                                             }
                                             .padding(.horizontal, DS.Spacing.lg)
@@ -450,7 +451,7 @@ struct SaveAsRecurringSheet: View {
                 }
             }
         }
-        .tint(Color.electricIndigo)
+
         .presentationDetents([.medium, .large])
     }
 
@@ -466,7 +467,7 @@ struct SaveAsRecurringSheet: View {
                     Text(NSLocalizedString("scheduled.is.subscription", comment: ""))
                 }
             }
-            .tint(Color.electricIndigo)
+
             .padding()
         }
     }
@@ -620,7 +621,7 @@ struct SaveAsRecurringSheet: View {
                 .frame(width: 36, height: 36)
                 .background(
                     Circle()
-                        .fill(isSelected ? Color.electricIndigo : Color(.tertiarySystemFill))
+                        .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
                 )
         }
         .buttonStyle(.plain)
@@ -717,7 +718,7 @@ struct SaveAsRecurringSheet: View {
                     Text(NSLocalizedString("scheduled.has.end.date", comment: ""))
                 }
             }
-            .tint(Color.electricIndigo)
+
             .padding()
 
             if hasEndDate {

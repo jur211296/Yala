@@ -11,6 +11,7 @@ import SwiftUI
 struct ScheduledPaymentsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.yalaTheme) private var theme
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
 
@@ -67,11 +68,14 @@ struct ScheduledPaymentsView: View {
         .onChange(of: viewModel.selectedTab) { _, _ in
             refreshData()
         }
+        .onChange(of: viewModel.selectedMonth) { _, _ in
+            refreshData()
+        }
         .onChange(of: sessionState.dataVersion) { _, _ in
             refreshData()
         }
         .navigationDestination(for: PersistentIdentifier.self) { paymentID in
-            ScheduledPaymentDetailDestination(paymentID: paymentID)
+            ScheduledPaymentDetailDestination(paymentID: paymentID, viewModel: viewModel)
         }
     }
 
@@ -103,7 +107,7 @@ struct ScheduledPaymentsView: View {
                         .font(DS.Typography.title)
                         .foregroundStyle(.white)
                         .frame(width: 56, height: 56)
-                        .background(Color.electricIndigo)
+                        .background(theme.accent)
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
@@ -141,12 +145,13 @@ struct ScheduledPaymentsView: View {
 /// Helper view that resolves PersistentIdentifier to ScheduledPayment for navigation
 private struct ScheduledPaymentDetailDestination: View {
     let paymentID: PersistentIdentifier
+    @Bindable var viewModel: ScheduledPaymentsViewModel
 
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         if let payment = modelContext.model(for: paymentID) as? ScheduledPayment {
-            ScheduledPaymentDetailView(payment: payment)
+            ScheduledPaymentDetailView(payment: payment, viewModel: viewModel)
         } else {
             ContentUnavailableView(
                 NSLocalizedString("scheduled.detail.not.found", comment: "Payment not found"),

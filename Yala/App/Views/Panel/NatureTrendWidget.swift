@@ -32,11 +32,20 @@ struct NatureTrendWidget: View {
     var isIncomeMode: Bool = false
 
     private var totalAmount: Double {
-        trendPoints.reduce(0) { $0 + $1.total }
+        guard let nature = selectedNature else {
+            return trendPoints.reduce(0) { $0 + $1.total }
+        }
+        return trendPoints.reduce(0) { $0 + $1.amount(for: nature) }
     }
 
     private var variation: Double? {
-        guard let previous = previousTotalAmount else { return nil }
+        let previousAmount: Double?
+        if let nature = selectedNature {
+            previousAmount = previousAmountByNature[nature]
+        } else {
+            previousAmount = previousTotalAmount
+        }
+        guard let previous = previousAmount else { return nil }
         return PreviousPeriodHelper.calculateVariation(
             currentAmount: totalAmount,
             previousAmount: previous
@@ -104,7 +113,7 @@ struct NatureTrendWidget: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(L10n.Widget.distributionByNature)
                         .font(DS.Typography.headline)
-                        .foregroundStyle(Color.yalaPrimaryText)
+                        .foregroundStyle(.thPrimaryText)
 
                     // Total amount with "vs previous" comparison - only show when NOT in income mode AND has data
                     if !isIncomeMode && !trendPoints.isEmpty {
@@ -114,7 +123,7 @@ struct NatureTrendWidget: View {
                                     value: totalAmount, currencyCode: currencyCode)
                             )
                             .font(DS.Typography.headline)
-                            .foregroundStyle(Color.yalaPrimaryText)
+                            .foregroundStyle(.thPrimaryText)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
 
@@ -122,7 +131,7 @@ struct NatureTrendWidget: View {
                             if let prevAmount = previousTotalAmount {
                                 Text("vs \(YalaFormatter.number(value: prevAmount))")
                                     .font(DS.Typography.caption)
-                                    .foregroundStyle(Color.yalaSecondaryText)
+                                    .foregroundStyle(.thSecondaryText)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.7)
                             }
@@ -201,7 +210,7 @@ struct NatureTrendWidget: View {
         .padding(DS.Card.paddingCompact)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.lg)
-                .fill(Color.yalaCard)
+                .fill(.thCard)
                 .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 4)
         )
     }
@@ -303,6 +312,9 @@ struct NatureTrendWidget: View {
 }
 
 struct NatureTrendChartView: View {
+    @Environment(\.yalaTheme) private var theme
+    @AppStorage("averageLineMode") private var averageLineMode: Int = 1
+
     let points: [NatureTrendPoint]
     let selectedNature: SubcategoryNature?
     let currencyCode: String
@@ -385,6 +397,37 @@ struct NatureTrendChartView: View {
         )
     }
 
+    // MARK: - Average Line Logic
+
+    private var shouldShowTotalAverage: Bool {
+        averageLineMode == 1 && points.count >= 2
+    }
+
+    private var shouldShowSegmentedAverage: Bool {
+        averageLineMode == 2
+    }
+
+    private var totalAverageValue: Double {
+        guard !points.isEmpty else { return 0 }
+        if let nature = selectedNature {
+            let values = points.map { $0.amount(for: nature) }
+            return values.reduce(0, +) / Double(values.count)
+        } else {
+            let values = points.map { $0.total }
+            return values.reduce(0, +) / Double(values.count)
+        }
+    }
+
+    private var averageSegments: [AverageSegment] {
+        let values: [(date: Date, amount: Double)]
+        if let nature = selectedNature {
+            values = points.map { (date: $0.date, amount: $0.amount(for: nature)) }
+        } else {
+            values = points.map { (date: $0.date, amount: $0.total) }
+        }
+        return AverageSegment.compute(from: values, barGrouping: grouping)
+    }
+
     var body: some View {
         let chartUnit = mapGroupingToUnit(grouping)
 
@@ -409,7 +452,7 @@ struct NatureTrendChartView: View {
                         )
                         .foregroundStyle(item.nature.color.gradient)
                         .cornerRadius(DS.Radius.xs)
-                    }
+                                            }
                 } else {
                     BarMark(
                         x: .value("Fecha", item.date, unit: chartUnit),
@@ -417,9 +460,15 @@ struct NatureTrendChartView: View {
                     )
                     .foregroundStyle(item.nature.color.gradient)
                     .cornerRadius(DS.Radius.xs)
-                }
+                                    }
             }
+
+            averageLineMarks
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Gráfica de gastos por naturaleza")
+        .accessibilityValue(points.isEmpty ? "Sin datos" :
+            "\(points.count) periodos")
         .chartXScale(domain: dataXDomain)
         .chartYScale(domain: yDomain)
         .chartForegroundStyleScale([
@@ -437,7 +486,7 @@ struct NatureTrendChartView: View {
 
             AxisMarks(values: centeredDates) { value in
                 AxisGridLine()
-                    .foregroundStyle(Color.yalaSecondaryText.opacity(0.1))
+                    .foregroundStyle(.thSecondaryText.opacity(0.1))
 
                 if let date = value.as(Date.self) {
                     let anchor = SmartAxisHelper.axisLabelAnchor(
@@ -449,7 +498,7 @@ struct NatureTrendChartView: View {
                     AxisValueLabel(anchor: anchor) {
                         Text(smartAxisLabel(for: date))
                             .font(DS.Typography.labelTiny)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                     }
                 }
             }
@@ -458,12 +507,12 @@ struct NatureTrendChartView: View {
         .chartYAxis {
             AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                    .foregroundStyle(Color.yalaSecondaryText.opacity(0.1))
+                    .foregroundStyle(.thSecondaryText.opacity(0.1))
                 if let amount = value.as(Double.self) {
                     AxisValueLabel {
                         Text(formatAxisAmount(amount))
                             .font(DS.Typography.captionSmall)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                     }
                 }
             }
@@ -485,7 +534,7 @@ struct NatureTrendChartView: View {
                 {
                     // Vertical Line
                     Rectangle()
-                        .fill(Color.yalaSecondaryText.opacity(0.3))
+                        .fill(.thSecondaryText.opacity(0.3))
                         .frame(width: 1, height: plotFrame.height)
                         .position(x: xPos + plotFrame.origin.x, y: plotFrame.midY)
 
@@ -493,7 +542,7 @@ struct NatureTrendChartView: View {
                     VStack(spacing: DS.Spacing.xs) {
                         Text(formatDateFull(selectedData.date, grouping: grouping))
                             .font(DS.Typography.captionSmall)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
 
                         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                             if selectedData.essential > 0 {
@@ -529,12 +578,29 @@ struct NatureTrendChartView: View {
                                 .font(DS.Typography.labelTiny)
                                 .foregroundStyle(Color.primary)
                             }
+
+                            // Average line in tooltip
+                            if let avg = tooltipAverage(for: selectedData.date) {
+                                Divider()
+                                HStack {
+                                    Text(L10n.Widget.average)
+                                        .font(DS.Typography.captionSmall)
+                                        .foregroundStyle(Color.secondary)
+                                    Spacer()
+                                    Text(
+                                        YalaFormatter.currency(
+                                            value: avg, currencyCode: currencyCode)
+                                    )
+                                    .font(DS.Typography.labelTiny)
+                                    .foregroundStyle(Color.primary)
+                                }
+                            }
                         }
                     }
                     .padding(DS.Spacing.sm)
                     .background(
                         RoundedRectangle(cornerRadius: DS.Radius.sm)
-                            .fill(Color.yalaCard)
+                            .fill(.thCard)
                             .shadow(color: .black.opacity(0.15), radius: 5, x: 0, y: 2)
                     )
                     .fixedSize()
@@ -544,6 +610,74 @@ struct NatureTrendChartView: View {
                     )
                 }
             }
+        }
+    }
+
+    // MARK: - Average Line Chart Content
+
+    /// Whether bars should be dimmed (segmented average active)
+    private var isSegmentedAverageActive: Bool {
+        shouldShowSegmentedAverage && averageSegments.count >= 2
+    }
+
+    /// Returns the applicable average for a given date, or nil if off
+    private func tooltipAverage(for date: Date) -> Double? {
+        if shouldShowTotalAverage {
+            return totalAverageValue
+        }
+        if isSegmentedAverageActive {
+            return averageSegments.first(where: { date >= $0.startDate && date < $0.endDate })?.average
+        }
+        if averageLineMode == 2 && points.count >= 2 {
+            return totalAverageValue
+        }
+        return nil
+    }
+
+    @ChartContentBuilder
+    private var averageLineMarks: some ChartContent {
+        if shouldShowTotalAverage {
+            RuleMark(y: .value("Avg", totalAverageValue))
+                .foregroundStyle(.thSecondaryText.opacity(0.5))
+                .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                .annotation(position: .top, alignment: .leading) {
+                    Text(formatAxisAmount(totalAverageValue))
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.thSecondaryText)
+                }
+        }
+
+        if shouldShowSegmentedAverage && averageSegments.count >= 2 {
+            ForEach(Array(averageSegments.enumerated()), id: \.offset) { index, segment in
+                RuleMark(
+                    xStart: .value("SegStart", segment.startDate),
+                    xEnd: .value("SegEnd", segment.endDate),
+                    y: .value("Avg", segment.average)
+                )
+                .foregroundStyle(.thSecondaryText.opacity(0.5))
+                .lineStyle(StrokeStyle(lineWidth: 3))
+                .annotation(
+                    position: index.isMultiple(of: 2) ? .top : .bottom,
+                    alignment: .center
+                ) {
+                    Text(formatAxisAmount(segment.average))
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.thSecondaryText)
+                        .padding(.horizontal, DS.Spacing.xs)
+                        .padding(.vertical, DS.Spacing.xxs)
+                        .background(.thCard.opacity(0.85))
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+                }
+            }
+        } else if averageLineMode == 2 && points.count >= 2 {
+            RuleMark(y: .value("Avg", totalAverageValue))
+                .foregroundStyle(.thSecondaryText.opacity(0.5))
+                .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                .annotation(position: .top, alignment: .leading) {
+                    Text(formatAxisAmount(totalAverageValue))
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.thSecondaryText)
+                }
         }
     }
 
@@ -701,6 +835,8 @@ struct LegendItem: View {
     let isSelected: Bool
     let onTap: () -> Void
 
+    @Environment(\.yalaTheme) private var theme
+
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: DS.Spacing.sm) {
@@ -720,7 +856,7 @@ struct LegendItem: View {
                 Spacer()
             }
             .padding(DS.Spacing.sm)
-            .background(isSelected ? Color.yalaBackground : Color.clear)
+            .background(isSelected ? theme.background : Color.clear)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
             .opacity(isSelected ? 1.0 : 0.4)
         }
@@ -743,6 +879,8 @@ struct LegendItem: View {
 // MARK: - Compact Legend Chip for Horizontal Layout
 
 struct CompactLegendChip: View {
+    @Environment(\.yalaTheme) private var theme
+
     let nature: SubcategoryNature
     let amount: Double
     let total: Double
@@ -766,7 +904,7 @@ struct CompactLegendChip: View {
             }
             .padding(.horizontal, DS.Spacing.sm)
             .padding(.vertical, DS.Spacing.xs)
-            .background(isSelected ? Color.yalaBackground.opacity(0.5) : Color.clear)
+            .background(isSelected ? theme.background.opacity(0.5) : Color.clear)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
             .opacity(isSelected ? 1.0 : 0.4)
         }

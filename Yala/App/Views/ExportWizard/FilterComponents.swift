@@ -223,6 +223,7 @@ struct AmountFilterView: View {
 // MARK: - Multi Selection List
 
 struct MultiSelectionList<T: Identifiable & Hashable>: View {
+    @Environment(\.yalaTheme) private var theme
     let title: String
     let items: [T]
     @Binding var selection: Set<T>
@@ -257,7 +258,7 @@ struct MultiSelectionList<T: Identifiable & Hashable>: View {
 
                                         if selection.contains(item) {
                                             Image(systemName: "checkmark")
-                                                .foregroundStyle(Color.brandPrimary)
+                                                .foregroundStyle(theme.accent)
                                                 .font(DS.Typography.headline)
                                         }
                                     }

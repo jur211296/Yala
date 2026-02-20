@@ -22,6 +22,8 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 | StoreKitManager | App/Services/StoreKitManager.swift | Suscripciones StoreKit 2 |
 | MerchantMemoryService | App/Services/MerchantMemoryService.swift | Auto-categorización merchants |
 | iCloudSyncService | Services/iCloudSyncService.swift | Monitor estado sync iCloud |
+| PreferenceSyncService | App/Services/PreferenceSyncService.swift | Sync preferencias via iCloud KV |
+| CategoryDeduplicationService | App/Services/CategoryDeduplicationService.swift | Merge categorías duplicadas post-sync |
 
 ### Key ViewModels (34)
 | ViewModel | Tests |
@@ -228,3 +230,4 @@ Vistas hijas simples reciben datos como `let` parameters del padre.
 
 ## Decisiones Recientes (TTL: hasta cierre de fase)
 [Formato: [FECHA] Decisión breve — se archiva en DECISIONS.md al cerrar fase]
+- [2026-02-18] Skip ocurrencias usa `skippedDatesRaw: String` (comma-separated ISO) en ScheduledPayment — consistente con selectedWeekdays, sin nueva entidad

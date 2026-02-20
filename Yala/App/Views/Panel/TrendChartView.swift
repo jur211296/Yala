@@ -17,6 +17,7 @@ struct TrendChartView: View {
     let period: DetailPeriod
     var chartHeight: CGFloat = 220
 
+    @AppStorage("averageLineMode") private var averageLineMode: Int = 1
     @State private var draggingDate: Date?  // For transient drag state
 
     var body: some View {
@@ -93,7 +94,7 @@ struct TrendChartView: View {
                     .annotation(position: .top, spacing: DS.Spacing.xs) {
                         Text(formattedAmountShort(point.value))
                             .font(DS.Typography.labelTiny)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                     }
                 }
             }
@@ -106,7 +107,7 @@ struct TrendChartView: View {
                 )
                 .interpolationMethod(interpolation)
                 .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
-                .foregroundStyle(Color.yalaSecondaryText)  // Explicit Gray for distinction
+                .foregroundStyle(.thSecondaryText)  // Explicit Gray for distinction
             }
 
             // Single point: LineMark is invisible with 1 point, show a dot instead
@@ -122,16 +123,19 @@ struct TrendChartView: View {
             // Marker for "Today"
             RuleMark(x: .value(L10n.Widget.today, today))
                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))
-                .foregroundStyle(Color.yalaSecondaryText.opacity(0.5))
+                .foregroundStyle(.thSecondaryText.opacity(0.5))
                 .annotation(position: .top, alignment: .center, spacing: DS.Spacing.sm) {
                     Text(L10n.Widget.today)
                         .font(DS.Typography.labelTiny)
-                        .foregroundStyle(Color.yalaPrimaryText)
+                        .foregroundStyle(.thPrimaryText)
                         .padding(.horizontal, DS.Spacing.xs)
                         .padding(.vertical, DS.Spacing.xs)
-                        .background(Color.yalaCard, in: RoundedRectangle(cornerRadius: DS.Radius.xs))
+                        .background(.thCard, in: RoundedRectangle(cornerRadius: DS.Radius.xs))
                         .shadow(radius: 1)
                 }
+
+            // Average line
+            averageLineMarks
 
             // Interaction: Scrubbing Rule Mark
             if let activeDate = draggingDate ?? focusedDate,
@@ -141,7 +145,7 @@ struct TrendChartView: View {
                 // Vertical dashed line
                 RuleMark(x: .value(L10n.Common.selectedDate, activeDate))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
-                    .foregroundStyle(Color.yalaSecondaryText)
+                    .foregroundStyle(.thSecondaryText)
 
                 // Ring Border (Background) at SMOOTHED position
                 PointMark(
@@ -157,7 +161,7 @@ struct TrendChartView: View {
                     y: .value(L10n.Common.selectedValue, selectedPoint.value)
                 )
                 .symbolSize(100)
-                .foregroundStyle(Color.yalaCard)
+                .foregroundStyle(.thCard)
 
                 // Invisible anchor point at top of chart for tooltip
                 PointMark(
@@ -172,16 +176,30 @@ struct TrendChartView: View {
                     VStack(alignment: .center, spacing: DS.Spacing.xs) {
                         Text(periodLabel(for: activeDate))
                             .font(DS.Typography.captionSmall)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                         Text("\(formattedAmount(rawValue)) \(currencyCode)")
                             .font(DS.Typography.labelSmall)
-                            .foregroundStyle(Color.yalaPrimaryText)
+                            .foregroundStyle(.thPrimaryText)
+
+                        // Average in tooltip
+                        if let avg = totalAverageValue {
+                            Divider()
+                            HStack {
+                                Text("x̄")
+                                    .font(DS.Typography.labelTiny)
+                                    .foregroundStyle(.thSecondaryText)
+                                    .frame(width: 10)
+                                Text("\(formattedAmount(avg)) \(currencyCode)")
+                                    .font(DS.Typography.labelTiny)
+                                    .foregroundStyle(.primary)
+                            }
+                        }
                     }
                     .padding(.horizontal, DS.Spacing.sm)
                     .padding(.vertical, DS.Spacing.xs)
                     .background(
                         RoundedRectangle(cornerRadius: DS.Radius.sm)
-                            .fill(Color.yalaCard.opacity(0.95))
+                            .fill(.thCard.opacity(0.95))
                             .shadow(radius: 2)
                     )
                 }
@@ -191,12 +209,12 @@ struct TrendChartView: View {
         .chartYAxis {
             AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                    .foregroundStyle(Color.yalaSecondaryText.opacity(0.1))
+                    .foregroundStyle(.thSecondaryText.opacity(0.1))
                 AxisValueLabel {
                     if let doubleValue = value.as(Double.self) {
                         Text(formatK(doubleValue))
                             .font(DS.Typography.captionSmall)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                     }
                 }
             }
@@ -209,7 +227,7 @@ struct TrendChartView: View {
             // Smart dynamic X-axis labels
             AxisMarks(values: smartAxisDates) { value in
                 AxisGridLine()
-                    .foregroundStyle(Color.yalaSecondaryText.opacity(0.1))
+                    .foregroundStyle(.thSecondaryText.opacity(0.1))
 
                 if let date = value.as(Date.self) {
                     // Use trailing anchor for last label to prevent truncation
@@ -220,12 +238,16 @@ struct TrendChartView: View {
                     AxisValueLabel(anchor: anchor) {
                         Text(smartAxisLabel(for: date))
                             .font(DS.Typography.labelTiny)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                     }
                 }
             }
         }
         .chartXSelection(value: $draggingDate)  // Native iOS 17+ selection - works with scroll
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Gráfica de tendencia de \(trendType.displayName)")
+        .accessibilityValue(trendPoints.isEmpty ? "Sin datos" :
+            "\(trendPoints.count) puntos")
         .frame(height: chartHeight)
     }
 
@@ -365,5 +387,28 @@ struct TrendChartView: View {
             .number
                 .precision(.fractionLength(0))
         )
+    }
+
+    // MARK: - Average Line (balance only, always total — no segmented for line charts)
+
+    /// Total average of raw point values (nil when off or not balance)
+    private var totalAverageValue: Double? {
+        guard trendType == .balance, averageLineMode >= 1, rawPoints.count >= 2 else { return nil }
+        let sum = rawPoints.reduce(0.0) { $0 + $1.value }
+        return sum / Double(rawPoints.count)
+    }
+
+    @ChartContentBuilder
+    private var averageLineMarks: some ChartContent {
+        if let avg = totalAverageValue {
+            RuleMark(y: .value("Avg", avg))
+                .foregroundStyle(.thSecondaryText.opacity(0.5))
+                .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                .annotation(position: .top, alignment: .leading) {
+                    Text(formatK(avg))
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.thSecondaryText)
+                }
+        }
     }
 }

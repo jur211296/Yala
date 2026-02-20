@@ -1,0 +1,109 @@
+{
+  "identifier" : "8A5C5E2A-1234-4567-890A-BCDEF1234567",
+  "type" : "AutoRenewableSubscription",
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  },
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "0",
+    "_developerTeamID" : "",
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      }
+    ],
+    "_timeRate" : 6
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "YalaProGroup",
+      "localizations" : [
+        {
+          "description" : "Yala Pro Subscription",
+          "displayName" : "Yala Pro",
+          "locale" : "en_US"
+        }
+      ],
+      "name" : "Yala Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "monthly_001",
+          "introductoryOffer" : {
+            "displayPrice" : "0",
+            "internalID" : "monthly_intro_001",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
+          "localizations" : [
+            {
+              "description" : "Acceso mensual a todas las funciones Pro",
+              "displayName" : "Yala Pro Mensual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.yala.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Yala Pro Monthly",
+          "subscriptionGroupID" : "YalaProGroup",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "29.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "yearly_001",
+          "introductoryOffer" : {
+            "displayPrice" : "0",
+            "internalID" : "yearly_intro_001",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
+          "localizations" : [
+            {
+              "description" : "Acceso anual a todas las funciones Pro",
+              "displayName" : "Yala Pro Anual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.yala.pro.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Yala Pro Yearly",
+          "subscriptionGroupID" : "YalaProGroup",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ]
+}

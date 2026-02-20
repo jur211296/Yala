@@ -188,7 +188,7 @@ struct BulkEditSheet: View {
                 }
             }
         }
-        .tint(Color.electricIndigo)
+
         .onAppear {
             bulkEditViewModel.setContext(modelContext)
         }
@@ -445,7 +445,7 @@ struct BulkTagEditorSheet: View {
                 }
             }
         }
-        .tint(Color.electricIndigo)
+
     }
 
     // MARK: - Tag Analysis
@@ -528,6 +528,7 @@ struct BulkTagEditorSheet: View {
 // MARK: - Bulk Tag Row
 
 private struct BulkTagRow: View {
+    @Environment(\.yalaTheme) private var theme
     let tag: Tag
     let state: BulkTagEditorSheet.TagState
     let onToggle: () -> Void
@@ -569,7 +570,7 @@ private struct BulkTagRow: View {
             // Checked - tag will be present after save
             Image(systemName: "checkmark.square.fill")
                 .font(DS.Typography.title)
-                .foregroundStyle(Color.electricIndigo)
+                .foregroundStyle(theme.accent)
         case .toRemove, .available:
             // Unchecked - tag will NOT be present after save
             Image(systemName: "square")
@@ -637,7 +638,7 @@ struct BulkNoteEditorSheet: View {
                 }
             }
         }
-        .tint(Color.electricIndigo)
+
     }
 }
 
@@ -701,7 +702,7 @@ struct BulkAmountEditorSheet: View {
                 }
             }
         }
-        .tint(Color.electricIndigo)
+
     }
 }
 

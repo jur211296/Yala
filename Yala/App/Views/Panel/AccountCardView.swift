@@ -10,6 +10,7 @@ import SwiftUI
 // MARK: - Tarjeta de cuenta
 
 struct AccountCardView: View {
+    @Environment(\.yalaTheme) private var theme
 
     let account: Account
     /// Saldo actual de la cuenta en su moneda nativa, ya calculado externamente.
@@ -35,15 +36,15 @@ struct AccountCardView: View {
     }
 
     var body: some View {
-        let backgroundColor =
+        let backgroundColor: Color =
             isSelected
             ? Color(hex: account.colorHex)
-            : Color.yalaCard.opacity(0.95)
+            : theme.card.opacity(0.95)
 
         let foregroundColor: Color =
-            isSelected ? Color.contrastingText(for: backgroundColor) : Color.yalaPrimaryText
+            isSelected ? Color.contrastingText(for: backgroundColor) : theme.primaryText
         let secondaryForeground: Color =
-            isSelected ? foregroundColor.opacity(0.85) : Color.yalaSecondaryText
+            isSelected ? foregroundColor.opacity(0.85) : theme.secondaryText
         let iconBackground =
             isSelected
             ? Color.white.opacity(DS.Opacity.subtle + 0.08)
@@ -95,7 +96,7 @@ struct AccountCardView: View {
                 } label: {
                     Image(systemName: "slider.horizontal.3")
                         .font(DS.Typography.labelTiny)
-                        .foregroundStyle(isSelected ? Color.white : Color.yalaPrimaryText)
+                        .foregroundStyle(isSelected ? Color.white : theme.primaryText)
                         .padding(DS.Spacing.xs)
                         .background(.ultraThinMaterial, in: Circle())
                 }
@@ -143,16 +144,16 @@ struct AddAccountCardView: View {
             VStack(spacing: DS.Spacing.md) {
                 Image(systemName: "plus")
                     .font(DS.Typography.title)
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
 
                 Text(L10n.Account.addAccount)
                     .font(DS.Typography.headline)
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
             }
             .frame(maxWidth: .infinity, minHeight: 96)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(Color.yalaCard.opacity(0.95))
+                    .fill(.thCard.opacity(0.95))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)

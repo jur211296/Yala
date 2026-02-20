@@ -132,32 +132,34 @@ struct UserDataResetView: View {
         onUserDataWiped?()
         dismiss()
 
-        // 3. Wait for SwiftUI to fully unmount the TabView and deactivate @Query observers
+        // 3. Dev-only: reset subscription state BEFORE wipe so UI never sees stale Pro status
+        #if DEBUG
+        StoreKitManager.shared.resetForDevelopment()
+        #endif
+
+        // 4. Wait for SwiftUI to fully unmount the TabView and deactivate @Query observers
         //    This is critical - without this delay, @Query observers may still be active during deletion
         try? await Task.sleep(for: .milliseconds(500))
 
-        // 4. Perform the actual wipe (without auto-seeding categories)
+        // 5. Perform the actual wipe (without auto-seeding categories)
         do {
             try DataWipeService.wipeAllUserData(
                 in: modelContext,
                 reseedInitialData: false
             )
 
-            // 5. Small delay to let SwiftData settle before removing overlay
+            // 6. Small delay to let SwiftData settle before removing overlay
             try? await Task.sleep(for: .milliseconds(200))
 
             isProcessing = false
             sessionState.isWipingData = false
 
-            // 6. Load exchange rates directly after wipe (more reliable than flag mechanism)
+            // 7. Load exchange rates directly after wipe (more reliable than flag mechanism)
             //    We call the service directly using the same context
             try? await Task.sleep(for: .milliseconds(100))
             await exchangeRateService.updateTodayIfNeeded(context: modelContext)
             await exchangeRateService.preloadHistoricalIfNeeded(context: modelContext)
             await TransactionUpdateService.updateProvisionalTransactions(context: modelContext)
-
-            // 7. Trigger widget refresh so Panel recalculates with new data
-            sessionState.needsExchangeRateWidgetRefresh = true
         } catch {
             isProcessing = false
             sessionState.isWipingData = false

@@ -69,6 +69,106 @@ final class BudgetsViewModel {
         self.selectedYear = calendar.component(.year, from: Date())
     }
 
+    // MARK: - Period Navigation
+
+    /// Smart label for the current period (e.g. "Este mes", "Febrero 2026")
+    var periodLabel: String {
+        let calendar = Calendar.current
+
+        switch selectedPeriodType {
+        case .weekly:
+            let currentWeek = calendar.startOfWeek(for: Date())
+
+            if calendar.isDate(selectedWeek, equalTo: currentWeek, toGranularity: .weekOfYear) {
+                return L10n.Period.thisWeek
+            } else if let previousWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: currentWeek),
+                      calendar.isDate(selectedWeek, equalTo: previousWeek, toGranularity: .weekOfYear) {
+                return L10n.Period.lastWeek
+            } else if let nextWeek = calendar.date(byAdding: .weekOfYear, value: 1, to: currentWeek),
+                      calendar.isDate(selectedWeek, equalTo: nextWeek, toGranularity: .weekOfYear) {
+                return L10n.Period.nextWeek
+            } else {
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "d MMM"
+                let start = dateFormatter.string(from: selectedWeek)
+                let end = calendar.date(byAdding: .day, value: 6, to: selectedWeek) ?? selectedWeek
+                let endString = dateFormatter.string(from: end)
+                return "\(start) - \(endString)"
+            }
+
+        case .monthly:
+            let currentMonth = calendar.startOfMonth(for: Date())
+
+            if calendar.isDate(selectedMonth, equalTo: currentMonth, toGranularity: .month) {
+                return L10n.Period.thisMonth
+            } else if let previousMonth = calendar.date(byAdding: .month, value: -1, to: currentMonth),
+                      calendar.isDate(selectedMonth, equalTo: previousMonth, toGranularity: .month) {
+                return L10n.Period.lastMonth
+            } else if let nextMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth),
+                      calendar.isDate(selectedMonth, equalTo: nextMonth, toGranularity: .month) {
+                return L10n.Period.nextMonth
+            } else {
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "MMMM yyyy"
+                return dateFormatter.string(from: selectedMonth).capitalized
+            }
+
+        case .yearly:
+            let currentYear = calendar.component(.year, from: Date())
+
+            if selectedYear == currentYear {
+                return L10n.Period.thisYear
+            } else if selectedYear == currentYear - 1 {
+                return L10n.Period.lastYear
+            } else if selectedYear == currentYear + 1 {
+                return L10n.Period.nextYear
+            } else {
+                return "\(selectedYear)"
+            }
+
+        case .unique:
+            return ""
+        }
+    }
+
+    /// Navigate to the previous period
+    func previousPeriod() {
+        let calendar = Calendar.current
+        switch selectedPeriodType {
+        case .weekly:
+            if let prev = calendar.date(byAdding: .weekOfYear, value: -1, to: selectedWeek) {
+                selectedWeek = prev
+            }
+        case .monthly:
+            if let prev = calendar.date(byAdding: .month, value: -1, to: selectedMonth) {
+                selectedMonth = prev
+            }
+        case .yearly:
+            selectedYear -= 1
+        case .unique:
+            break
+        }
+    }
+
+    /// Navigate to the next period
+    func nextPeriod() {
+        let calendar = Calendar.current
+        switch selectedPeriodType {
+        case .weekly:
+            if let next = calendar.date(byAdding: .weekOfYear, value: 1, to: selectedWeek) {
+                selectedWeek = next
+            }
+        case .monthly:
+            if let next = calendar.date(byAdding: .month, value: 1, to: selectedMonth) {
+                selectedMonth = next
+            }
+        case .yearly:
+            selectedYear += 1
+        case .unique:
+            break
+        }
+    }
+
     // MARK: - Context Injection
 
     func setContext(_ context: ModelContext) {

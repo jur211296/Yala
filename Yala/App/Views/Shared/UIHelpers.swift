@@ -68,6 +68,9 @@ enum AppTheme: Int, CaseIterable, Identifiable {
     case system = 0
     case light = 1
     case dark = 2
+    case indigo = 3
+    case rosa = 4
+    case teal = 5
 
     var id: Int { rawValue }
 
@@ -76,6 +79,9 @@ enum AppTheme: Int, CaseIterable, Identifiable {
         case .system: return L10n.Settings.system
         case .light: return L10n.Settings.light
         case .dark: return L10n.Settings.dark
+        case .indigo: return L10n.Settings.themeIndigo
+        case .rosa: return L10n.Settings.themeRosa
+        case .teal: return L10n.Settings.themeTeal
         }
     }
 
@@ -83,7 +89,26 @@ enum AppTheme: Int, CaseIterable, Identifiable {
         switch self {
         case .system: return nil
         case .light: return .light
+        case .dark, .indigo, .rosa, .teal: return .dark
+        }
+    }
+
+    var yalaTheme: YalaTheme {
+        switch self {
+        case .system: return .light  // ThemeManager resolves system dynamically
+        case .light: return .light
         case .dark: return .dark
+        case .indigo: return .indigo
+        case .rosa: return .rosa
+        case .teal: return .teal
+        }
+    }
+
+    /// Whether this theme requires PRO subscription
+    var isPro: Bool {
+        switch self {
+        case .system, .light, .dark: return false
+        case .indigo, .rosa, .teal: return true
         }
     }
 }
@@ -161,82 +186,8 @@ extension Color {
     /// Optional Nature: Soft rose for discretionary spending
     static let optionalNature = Color(hex: "FB7185")
 
-    /// Tag Chip Color: Darker teal in light mode for visibility, bright cyan in dark mode.
-    static var tagChipColor: Color {
-        #if canImport(UIKit)
-            return Color(
-                UIColor { traitCollection in
-                    return traitCollection.userInterfaceStyle == .dark
-                        ? UIColor(Color.neonCyan)
-                        : UIColor(Color(hex: "0891B2"))  // Darker teal for light mode
-                })
-        #else
-            return Color.neonCyan
-        #endif
-    }
-
-    /// Transfer Color: Dark gray that works in both light and dark mode.
-    static var transferColor: Color {
-        #if canImport(UIKit)
-            return Color(
-                UIColor { traitCollection in
-                    return traitCollection.userInterfaceStyle == .dark
-                        ? UIColor(Color(hex: "64748B"))  // Slate gray for dark mode
-                        : UIColor.label  // Black for light mode
-                })
-        #else
-            return Color.primary
-        #endif
-    }
-
-    /// Toolbar Icon Color: electricIndigo in both modes.
-    static var toolbarIconColor: Color {
-        return Color.electricIndigo
-    }
-
-    // MARK: - Semantic Colors (Adaptive)
-
-    /// Color de fondo principal de la aplicación.
-    /// Light: Blanco muy suave / Dark: Deep Slate.
-    static var yalaBackground: Color {
-        #if canImport(UIKit)
-            return Color(
-                UIColor { traitCollection in
-                    if traitCollection.userInterfaceStyle == .dark {
-                        return UIColor(Color.deepSlate)
-                    }
-                    return UIColor(red: 0.98, green: 0.98, blue: 0.99, alpha: 1.0)
-                })
-        #else
-            return Color.gray.opacity(0.1)  // Fallback
-        #endif
-    }
-
-    /// Color secundario de fondo (para tarjetas o modales).
-    /// Light: Blanco / Dark: Slate muy oscuro + ligero tinte.
-    static var yalaCard: Color {
-        #if canImport(UIKit)
-            return Color(
-                UIColor { traitCollection in
-                    if traitCollection.userInterfaceStyle == .dark {
-                        return UIColor(red: 0.11, green: 0.11, blue: 0.12, alpha: 1.0)  // #1C1C1E
-                    }
-                    return UIColor.white
-                })
-        #else
-            return Color.white  // Fallback
-        #endif
-    }
-
-    /// Color de texto principal.
-    static var yalaPrimaryText: Color {
-        Color.primary
-    }
-
-    /// Color de texto secundario (subtitulos).
-    static var yalaSecondaryText: Color {
-        Color.secondary
-    }
+    // Legacy adaptive colors removed — use ThemeColor (.thBackground, .thCard, etc.)
+    // or @Environment(\.yalaTheme) for raw Color access.
 
     /// Alias para compatibilidad con código existente
     static let financeGreen = Color(red: 0.13, green: 0.75, blue: 0.45)

@@ -386,6 +386,15 @@ struct NatureTrendPoint: Identifiable {
     let unclassified: Double
 
     var total: Double { essential + priority + optional + unclassified }
+
+    func amount(for nature: SubcategoryNature) -> Double {
+        switch nature {
+        case .essential: return essential
+        case .priority: return priority
+        case .optional: return optional
+        case .unclassified: return unclassified
+        }
+    }
 }
 
 enum BalanceStatus {

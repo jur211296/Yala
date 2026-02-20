@@ -65,6 +65,8 @@ enum DeepLinkDestination {
     case planning
     case budgets
     case inbox
+    case scheduledPayments  // Planning > Pagos Planificados
+    case recordsStandalone  // Tab Records (standalone)
 }
 
 /// Global session state to manage synchronization between views
@@ -330,9 +332,9 @@ class SessionState {
 
     // MARK: - Share Extension State
 
-    /// Flag indicating there's a pending shared image to process
-    /// Set by YalaApp when opened via Share Extension URL scheme
-    var hasPendingSharedImage: Bool = false
+    /// Flag to trigger shared image processing (one-shot pattern)
+    /// When true, PanelView opens ImageSelectionView and immediately resets to false
+    var shouldShowSharedImage: Bool = false
 
     /// URL of shared image to process (from Share Extension)
     /// When set, PanelView will open ImageSelectionView with this image

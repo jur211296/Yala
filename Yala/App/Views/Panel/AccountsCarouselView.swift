@@ -2,6 +2,8 @@ import SwiftData
 import SwiftUI
 
 struct AccountsCarouselView: View {
+    @Environment(\.yalaTheme) private var theme
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @Bindable var viewModel: PanelViewModel
     let orderedAccounts: [Account]
     let transactions: [TransactionItem]
@@ -12,10 +14,10 @@ struct AccountsCarouselView: View {
     var body: some View {
         let allCards = orderedAccounts
         let totalCards = allCards.count + 1  // accounts + add button
+        let cardsVisible = DS.Adaptive.isWideScreen(sizeClass) ? 4 : 2
 
-        // Calculate page count: we show 2 cards at a time, scroll 1 at a time
-        // Pages = totalCards - 1 (since last card would show with the previous one)
-        let pageCount = max(1, totalCards - 1)
+        // Calculate page count: we show N cards at a time, scroll 1 at a time
+        let pageCount = max(1, totalCards - (cardsVisible - 1))
 
         let currentPage: Int = {
             guard pageCount > 1 else { return 0 }
@@ -27,7 +29,7 @@ struct AccountsCarouselView: View {
             GeometryReader { geo in
                 let totalWidth = geo.size.width
                 let spacing: CGFloat = DS.Spacing.md
-                let cardWidth = (totalWidth - spacing) / 2
+                let cardWidth = (totalWidth - spacing * CGFloat(cardsVisible - 1)) / CGFloat(cardsVisible)
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(alignment: .top, spacing: spacing) {
@@ -51,8 +53,8 @@ struct AccountsCarouselView: View {
                         Circle()
                             .fill(
                                 page == currentPage
-                                    ? Color.yalaPrimaryText.opacity(0.3)
-                                    : Color.yalaSecondaryText.opacity(0.2)
+                                    ? theme.primaryText.opacity(0.3)
+                                    : theme.secondaryText.opacity(0.2)
                             )
                             .frame(width: 6, height: 6)
                     }

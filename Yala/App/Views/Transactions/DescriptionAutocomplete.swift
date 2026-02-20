@@ -125,7 +125,7 @@ struct AutocompleteSuggestionsView: View {
                             .padding(.vertical, DS.Spacing.sm)
                             .background(
                                 Capsule()
-                                    .fill(Color.yalaCard)
+                                    .fill(.thCard)
                             )
                             .overlay(
                                 Capsule()

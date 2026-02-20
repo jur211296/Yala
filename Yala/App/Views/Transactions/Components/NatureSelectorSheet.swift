@@ -11,12 +11,13 @@ import SwiftUI
 
 struct NatureSelectorSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yalaTheme) private var theme
     @Binding var selectedNature: SubcategoryNature
 
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.yalaBackground.ignoresSafeArea()
+                theme.background.ignoresSafeArea()
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.md) {
@@ -43,13 +44,14 @@ struct NatureSelectorSheet: View {
                 }
             }
         }
-        .tint(Color.electricIndigo)
+
     }
 }
 
 // MARK: - Nature Option Row
 
 private struct NatureOptionRow: View {
+    @Environment(\.yalaTheme) private var theme
     let nature: SubcategoryNature
     let isSelected: Bool
     let onTap: () -> Void
@@ -80,14 +82,14 @@ private struct NatureOptionRow: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(.thAccent)
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.FormRow.paddingV)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                    .fill(isSelected ? nature.color.opacity(0.1) : Color.yalaCard)
+                    .fill(isSelected ? nature.color.opacity(0.1) : theme.card)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)

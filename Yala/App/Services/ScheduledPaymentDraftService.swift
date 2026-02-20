@@ -43,6 +43,12 @@ struct ScheduledPaymentDraftService {
         var draftsCreated = 0
 
         for payment in duePayments {
+            // Skip if this date has been pre-skipped by user
+            if payment.isDateSkipped(payment.nextDueDate) {
+                advanceToNextDueDate(payment: payment)
+                continue
+            }
+
             // Check if draft already exists for this payment
             if hasPendingDraft(for: payment, context: context) {
                 continue
@@ -131,6 +137,55 @@ struct ScheduledPaymentDraftService {
         draft.sourceScheduledPaymentID = payment.id.uuidString
 
         return draft
+    }
+
+    // MARK: - Draft Recreation (Unskip)
+
+    /// Recreate a draft when user unskips a date that is today or in the past.
+    /// Only creates if no pending/approved draft already exists for this payment in that month.
+    static func recreateDraftIfNeeded(for payment: ScheduledPayment, date: Date, context: ModelContext) {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let targetDate = calendar.startOfDay(for: date)
+
+        // Only recreate for dates that are today or past
+        guard targetDate <= today else { return }
+
+        // Don't duplicate if pending draft exists
+        guard !hasPendingDraft(for: payment, context: context) else { return }
+
+        // Check no approved draft exists for this payment in the same month
+        let paymentID = payment.id.uuidString
+        guard let monthInterval = calendar.dateInterval(of: .month, for: date) else { return }
+        let monthStart = monthInterval.start
+        let monthEnd = monthInterval.end
+
+        do {
+            let predicate = #Predicate<InboxDraft> { draft in
+                draft.sourceScheduledPaymentID == paymentID &&
+                (draft.statusRaw == "approved" || draft.statusRaw == "pending")
+            }
+            let descriptor = FetchDescriptor<InboxDraft>(predicate: predicate)
+            let existingDrafts = try context.fetch(descriptor)
+
+            // Check if any existing draft falls within the same month
+            for draft in existingDrafts {
+                let draftDate = draft.date ?? draft.createdAt
+                if draftDate >= monthStart && draftDate < monthEnd {
+                    return // Already has a draft for this month
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error checking existing drafts for unskip: \(error)")
+            #endif
+            return
+        }
+
+        // Create draft with the specific unskipped date (not payment.nextDueDate)
+        let draft = createDraft(from: payment)
+        draft.date = targetDate
+        context.insert(draft)
     }
 
     // MARK: - Next Due Date Calculation

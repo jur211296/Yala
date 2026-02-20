@@ -60,7 +60,6 @@ enum AppIconOption: String, CaseIterable, Identifiable {
 
 struct AppIconSettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("userTheme") private var userThemeRaw: Int = AppTheme.system.rawValue
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
 
@@ -88,17 +87,17 @@ struct AppIconSettingsView: View {
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "app.fill")
                             .font(.system(size: heroIconSize))
-                            .foregroundStyle(Color.brandPrimary)
+                            .foregroundStyle(.thAccent)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Settings.appIcon)
                             .font(.title2.bold())
-                            .foregroundStyle(Color.yalaPrimaryText)
+                            .foregroundStyle(.thPrimaryText)
 
                         Text(L10n.Settings.appIconDescription)
                             .font(DS.Typography.body)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top, DS.Spacing.xxxl)
@@ -200,7 +199,7 @@ struct AppIconSettingsView: View {
                 HStack(spacing: DS.Spacing.xs) {
                     Text(icon.displayName)
                         .font(DS.Typography.label)
-                        .foregroundStyle(isLocked ? Color.yalaSecondaryText : Color.yalaPrimaryText)
+                        .foregroundStyle(isLocked ? .thSecondaryText : .thPrimaryText)
 
                     if icon.isPremium && !isSelected {
                         ProBadge(size: .small)
@@ -209,13 +208,13 @@ struct AppIconSettingsView: View {
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
                             .font(DS.Typography.subheadline)
-                            .foregroundStyle(Color.brandPrimary)
+                            .foregroundStyle(.thAccent)
                     }
                 }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, DS.Spacing.lg)
-            .background(Color.yalaCard)
+            .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.lg)

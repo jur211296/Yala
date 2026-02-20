@@ -25,6 +25,15 @@ final class WidgetConfigManager {
     /// Computed layout rows for the view
     var layoutRows: [WidgetRow] = []
 
+    /// Number of columns (1 = compact/iPhone, 2 = regular/iPad)
+    var columns: Int = 1 {
+        didSet {
+            if oldValue != columns {
+                layoutRows = computeLayoutRows()
+            }
+        }
+    }
+
     // MARK: - Layout Structures
 
     enum WidgetRowType {
@@ -155,14 +164,49 @@ final class WidgetConfigManager {
 
     // MARK: - Layout Computation
 
-    /// Computes layout rows based on current active widgets
+    /// Widget types that always need full width (charts/trends that need horizontal space)
+    private static let fullWidthOnlyTypes: Set<WidgetType> = [
+        .trend, .cashFlow, .expensesByNature, .exchangeRate
+    ]
+
+    /// Computes layout rows based on current active widgets and column count
     private func computeLayoutRows() -> [WidgetRow] {
         let widgets = activeWidgets()
         var rows: [WidgetRow] = []
 
-        for config in widgets {
-            // All widgets (Medium & Large) are Full Width
-            rows.append(WidgetRow(id: UUID(), type: .fullWidth(config)))
+        if columns >= 2 {
+            // iPad: pair compatible widgets side by side
+            // Full width only for types that need horizontal space (trends, charts with bars)
+            var pendingHalf: WidgetConfig?
+            for config in widgets {
+                let needsFullWidth = Self.fullWidthOnlyTypes.contains(config.type)
+
+                if needsFullWidth {
+                    // Flush any pending half-width first
+                    if let pending = pendingHalf {
+                        rows.append(WidgetRow(id: UUID(), type: .halfWidthPair(left: pending, right: nil)))
+                        pendingHalf = nil
+                    }
+                    rows.append(WidgetRow(id: UUID(), type: .fullWidth(config)))
+                } else {
+                    // Pairable widget
+                    if let pending = pendingHalf {
+                        rows.append(WidgetRow(id: UUID(), type: .halfWidthPair(left: pending, right: config)))
+                        pendingHalf = nil
+                    } else {
+                        pendingHalf = config
+                    }
+                }
+            }
+            // Flush remaining unpaired widget
+            if let pending = pendingHalf {
+                rows.append(WidgetRow(id: UUID(), type: .halfWidthPair(left: pending, right: nil)))
+            }
+        } else {
+            // iPhone: all full width
+            for config in widgets {
+                rows.append(WidgetRow(id: UUID(), type: .fullWidth(config)))
+            }
         }
         return rows
     }

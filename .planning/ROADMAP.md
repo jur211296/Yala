@@ -4,14 +4,14 @@
 
 App iOS de finanzas personales. Registrar y entender gastos, cuentas, presupuestos y reportes con claridad.
 
-### V1.0 (Release actual)
-Features completas + preparación para beta pública en TestFlight.
+### V1.0 (Release)
+Features completas + beta pública. Branch: `1.0`
 
-### V1.1 (En desarrollo)
+### V1.1 (Completada — mergeada a 1.0)
 Registro inteligente con IA, iCloud Sync, Widgets iOS, modo Solo Gastos, modelo Pro/Free.
 
-### V1.2 (App Store Release)
-Sistema de temas PRO, Watch, iPad/Mac, Smart Insights y reportes financieros.
+### V1.2 (En desarrollo)
+Sistema de temas PRO, Watch, iPad/Mac, Smart Insights y reportes financieros. Branch: `1.1`
 
 ### V2.0 (Futuro)
 Splitwise, predicciones de saldo, perfiles de usuario y metas de ahorro.
@@ -37,10 +37,10 @@ Splitwise, predicciones de saldo, perfiles de usuario y metas de ahorro.
 ### V1.1
 - [x] **Fase 8: Registro Inteligente** - Entrada de transacciones con IA ✅
 - [x] **Fase 10: Refinamiento & Polish** - Bugs críticos, widgets, consistencia visual, UX (21 items UAT) ✅
-- [ ] **Fase 10.5: Mejoras Pre-Release** - iCloud Sync, Widgets iOS, notificaciones, Pro/Free, auditoría (corrección de bugs en curso)
+- [x] **Fase 10.5: Mejoras Pre-Release** - iCloud Sync, Widgets iOS, notificaciones, Pro/Free, auditoría ✅
 
 ### V1.2 (App Store Release)
-- [ ] **Fase 11: Sistema de Temas Independientes** - Refactor de colores para temas PRO (negro, rosa, cyan)
+- [x] **Fase 11: Sistema de Temas Independientes** - Refactor de colores para temas PRO (indigo, rosa, teal) ✅
 - [ ] **Fase 12: Plataforma Extendida** - Watch, iPad/Mac, Smart Insights, reportes
 
 ### V2.0
@@ -449,9 +449,9 @@ DoD:
 
 **10.5.S: Deep Scan Pre-Launch** (28 issues, 293 archivos escaneados)
 - [x] S.1 Críticos (5): ✅ 171a0ce — DS-1 key legacy, DS-2/DS-3 div/zero, DS-4/DS-5 force unwraps
-- [ ] S.2 Altos (7): Error silenciado en CurrencyConverter/ExchangeRateService (DS-6, DS-7), fetches sin límite (DS-8, DS-9), try? en AudioRecorderService (DS-10), force unwraps en ImportIntroSheet (DS-11) y SharedModels (DS-12)
-- [ ] S.3 Medios (10): .cornerRadius deprecated (DS-13), Calendar extension duplicada (DS-14), @MainActor faltante (DS-15), try? en regex (DS-16), Subcategory.safeCategory (DS-17), DS.Typography/DS.Spacing (DS-18, DS-19), DispatchQueue (DS-20), force unwraps en PreviousPeriodHelper (DS-21) y CSVImport (DS-22)
-- [ ] S.4 Bajos (6): @Relationship inconsistente (DS-23), prints sin #if DEBUG (DS-24), código duplicado (DS-25), @MainActor minor (DS-26), try? en Task.sleep (DS-27), InboxDraft.tags inverse (DS-28)
+- [x] S.2 Altos (7): ✅ da8309e — DS-6/DS-7 error logs, DS-8 aceptado, DS-9 fetch redundante, DS-10 try?→do/catch, DS-11/DS-12 force unwraps
+- [x] S.3 Medios (10): ✅ Resueltos/aceptados — DS-13 false positive, DS-14 Calendar ext (8d2dbce), DS-15 @MainActor (3e80433), DS-16/DS-17 aceptados, DS-18/DS-19 tokens (ba2aca0, 13cff73), DS-20 parcial (0aa5597), DS-21/DS-22 force unwraps (3e80433)
+- [x] S.4 Bajos (6): ✅ Resueltos/aceptados — DS-23 relationships (eac4749), DS-24 prints (f586a15), DS-25 duplicados (fe5b6a7), DS-26/DS-27 aceptados, DS-28 inverse (eac4749)
 
 DoD (actualizado):
 - iCloud Sync funcional con datos privados ✅
@@ -511,11 +511,20 @@ DoD:
 
 Incluye:
 - [ ] Integración con Apple Watch (registro rápido, balance, widgets)
-- [ ] Refinamiento versión iPad/Mac (layouts adaptados, sidebar)
+- [x] Refinamiento versión iPad/Mac (layouts adaptados, sidebar) ✅
 - [ ] Vista de Smart Insights (patrones de gasto, alertas inteligentes)
 - [ ] Integrar Smart Insights a lo largo de la app (contextuales)
 - [ ] Vista de reporte financiero (exportable PDF/Excel)
 - [ ] Filtros avanzados: excluir/incluir en DetailContainerView
+- [ ] Línea promedio en gráficas de barras verticales (CashFlow ingreso/gasto, Naturaleza)
+- [ ] Integración Siri para registro rápido de gastos
+- [ ] Widgets para Lock Screen (WidgetFamily.accessory)
+- [ ] Vista de análisis de presupuesto (detalle, tendencias, proyección)
+- [ ] Split de transacciones (dividir en múltiples partes/personas)
+- [ ] Predicción de saldo en gráfica de tendencias
+- [ ] Perfil para Smart Insights según usuario (ahorrador, justo, sobrado)
+- [ ] Visualizador de ahorros (metas amarradas a cuentas de ahorro)
+- [ ] Tracking de flujo mensual (ingresos vs gastos recurrentes, saldo libre)
 
 DoD:
 - App funcional en Watch con registro y balance
@@ -574,12 +583,12 @@ Ideas capturadas para evaluación posterior:
 |------|--------|--------|-----------|
 | 8 | Registro Inteligente | ✅ Done | 2026-01-27 |
 | 10 | Refinamiento & Polish | ✅ Done | 2026-01-30 |
-| 10.5 | Mejoras Pre-Release | In Progress | - |
+| 10.5 | Mejoras Pre-Release | ✅ Done | 2026-02-13 |
 
 ### V1.2 (App Store)
 | Fase | Nombre | Status | Completed |
 |------|--------|--------|-----------|
-| 11 | Sistema de Temas Independientes | Not started | - |
+| 11 | Sistema de Temas Independientes | ✅ Done | 2026-02-19 |
 | 12 | Plataforma Extendida | Not started | - |
 
 ### V2.0

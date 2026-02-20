@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct BiometricLockOverlay: View {
+    @Environment(\.yalaTheme) private var theme
     private let authService = BiometricAuthService.shared
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 56
@@ -26,16 +27,16 @@ struct BiometricLockOverlay: View {
                 // Lock icon
                 Image(systemName: authService.biometricType.icon)
                     .font(.system(size: heroSize))
-                    .foregroundStyle(Color.brandPrimary)
+                    .foregroundStyle(theme.accent)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
                 Text(L10n.Biometric.locked)
                     .font(.title2.bold())
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
 
                 Text(L10n.Biometric.unlockPrompt)
                     .font(DS.Typography.body)
-                    .foregroundStyle(Color.yalaSecondaryText)
+                    .foregroundStyle(.thSecondaryText)
                     .multilineTextAlignment(.center)
 
                 Spacer()
@@ -53,7 +54,7 @@ struct BiometricLockOverlay: View {
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DS.Spacing.md)
-                    .background(Color.brandPrimary)
+                    .background(theme.accent)
                     .clipShape(Capsule())
                 }
                 .disabled(isAuthenticating)

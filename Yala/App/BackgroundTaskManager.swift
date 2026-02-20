@@ -293,7 +293,7 @@ final class BackgroundTaskManager {
                 continue
             }
 
-            if nextTime == nil || candidate < nextTime! {
+            if nextTime == nil || candidate < (nextTime ?? .distantFuture) {
                 nextTime = candidate
             }
         }

@@ -11,6 +11,7 @@ import SwiftUI
 struct ExportSummaryStepView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.yalaTheme) private var theme
 
     // MARK: - Properties
 
@@ -184,7 +185,7 @@ struct ExportSummaryStepView: View {
             }
             .frame(maxWidth: .infinity)
             .padding()
-            .background(Color.brandPrimary)
+            .background(theme.accent)
             .foregroundStyle(.white)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
         }

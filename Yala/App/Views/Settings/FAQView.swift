@@ -27,11 +27,11 @@ struct FAQView: View {
 
                         Text(L10n.Settings.faq)
                             .font(.title2.bold())
-                            .foregroundStyle(Color.yalaPrimaryText)
+                            .foregroundStyle(.thPrimaryText)
 
                         Text(L10n.FAQ.subtitle)
                             .font(DS.Typography.body)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top, DS.Spacing.xxxl)
@@ -79,10 +79,10 @@ struct FAQView: View {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: icon)
                     .font(DS.Typography.subheadline).fontWeight(.semibold)
-                    .foregroundStyle(Color.yalaSecondaryText)
+                    .foregroundStyle(.thSecondaryText)
                 Text(title)
                     .font(DS.Typography.headline)
-                    .foregroundStyle(Color.yalaSecondaryText)
+                    .foregroundStyle(.thSecondaryText)
                     .textCase(.uppercase)
             }
             .padding(.horizontal, DS.Spacing.xs)
@@ -97,7 +97,7 @@ struct FAQView: View {
                     }
                 }
             }
-            .background(Color.yalaCard)
+            .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -119,20 +119,20 @@ struct FAQView: View {
                 HStack(spacing: DS.Spacing.md) {
                     Text(item.question)
                         .font(DS.Typography.bodyBold)
-                        .foregroundStyle(Color.yalaPrimaryText)
+                        .foregroundStyle(.thPrimaryText)
                         .multilineTextAlignment(.leading)
 
                     Spacer()
 
                     Image(systemName: expandedItem == item ? "chevron.up" : "chevron.down")
                         .font(DS.Typography.labelSmall)
-                        .foregroundStyle(Color.yalaSecondaryText)
+                        .foregroundStyle(.thSecondaryText)
                 }
 
                 if expandedItem == item {
                     Text(item.answer)
                         .font(DS.Typography.subheadline)
-                        .foregroundStyle(Color.yalaSecondaryText)
+                        .foregroundStyle(.thSecondaryText)
                         .padding(.top, DS.Spacing.sm)
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }

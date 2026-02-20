@@ -10,6 +10,7 @@ import SwiftUI
 /// Hoja de selección de cuenta destino para la importación
 struct ImportAccountPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yalaTheme) private var theme
 
     let accounts: [Account]
     @Binding var selectedAccount: Account?
@@ -104,7 +105,7 @@ struct ImportAccountPickerSheet: View {
 
             if selectedAccount == account {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(Color.brandPrimary)
+                    .foregroundStyle(.thAccent)
             } else {
                 Image(systemName: "circle")
                     .foregroundStyle(.tertiary)

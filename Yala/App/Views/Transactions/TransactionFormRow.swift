@@ -49,7 +49,7 @@ struct TransactionFormRow<Trailing: View>: View {
         }
         .padding(.horizontal, DS.FormRow.paddingH)
         .padding(.vertical, DS.FormRow.paddingV)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .contentShape(Rectangle())
     }
 }
@@ -104,7 +104,7 @@ struct AccountFormRow: View {
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
-            .background(Color.yalaCard)
+            .background(.thCard)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -173,7 +173,7 @@ struct SubcategoryFormRow: View {
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
-            .background(Color.yalaCard)
+            .background(.thCard)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -234,7 +234,7 @@ struct DateFormRow: View {
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
-            .background(Color.yalaCard)
+            .background(.thCard)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -303,7 +303,7 @@ struct TagsFormRow: View {
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
-            .background(Color.yalaCard)
+            .background(.thCard)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -328,7 +328,7 @@ struct NoteFormRow: View {
         }
         .padding(.horizontal, DS.FormRow.paddingH)
         .padding(.vertical, DS.FormRow.paddingV)
-        .background(Color.yalaCard)
+        .background(.thCard)
     }
 }
 
@@ -361,8 +361,8 @@ struct NoteFormRow: View {
 
         NoteFormRow(note: .constant(""))
     }
-    .background(Color.yalaCard)
+    .background(.thCard)
     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
     .padding()
-    .background(Color.yalaBackground)
+    .background(.thBackground)
 }

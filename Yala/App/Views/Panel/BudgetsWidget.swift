@@ -47,7 +47,7 @@ struct BudgetsWidget: View {
         }
         .padding(DS.Spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -139,7 +139,7 @@ struct BudgetsWidget: View {
                     } label: {
                         Text(L10n.Budgets.Widget.selectFavorites)
                             .font(DS.Typography.label)
-                            .foregroundStyle(Color.electricIndigo)
+                            .foregroundStyle(.primary)
                     }
                     .buttonStyle(.plain)
                     .padding(.top, DS.Spacing.sm)

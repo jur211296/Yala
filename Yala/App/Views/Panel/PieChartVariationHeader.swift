@@ -70,7 +70,7 @@ struct PieChartVariationHeader: View {
                     if showVariations, let prevAmount = previousAmount {
                         Text("vs \(YalaFormatter.number(value: prevAmount))")
                             .font(DS.Typography.caption)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                     }
@@ -139,7 +139,7 @@ struct PieChartVariationHeader: View {
             comparisonMode: .month
         )
         .padding()
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
 
         // Without previous data (N/A)
@@ -153,9 +153,9 @@ struct PieChartVariationHeader: View {
             comparisonMode: .year
         )
         .padding()
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
     }
     .padding()
-    .background(Color.yalaBackground)
+    .background(.thBackground)
 }

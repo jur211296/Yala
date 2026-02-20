@@ -23,6 +23,12 @@ struct YalaWidgetsBundle: WidgetBundle {
         ScheduledPaymentsWidget()
         BudgetsWidget()
 
+        // Lock Screen widgets (accessory)
+        AccessoryBalanceWidget()
+        AccessoryExpenseWidget()
+        AccessoryBudgetWidget()
+        AccessoryNextPaymentWidget()
+
         // Quick action widgets
         QuickManualEntryWidget()
         QuickVoiceEntryWidget()

@@ -306,6 +306,14 @@
 "scheduled.saveDescription" = "Crea un pago planificado para recordarte de este gasto o ingreso recurrente. Lo encontrarás en la sección de Pagos Planificados desde tu perfil, donde podrás editarlo, activarlo o desactivarlo cuando quieras.";
 "scheduled.paid" = "Pagado";
 "scheduled.overdue" = "Vencido";
+"scheduled.skip" = "Saltar";
+"scheduled.skip.undo" = "Revertir";
+"scheduled.skip.confirm.title" = "¿Saltar esta ocurrencia?";
+"scheduled.skip.confirm.message" = "No se registrará como gasto. Puedes revertirlo después.";
+"scheduled.skip.overdue.title" = "Saltar ocurrencia vencida";
+"scheduled.status.skipped" = "Saltado";
+"scheduled.status.paid" = "Pagado";
+"scheduled.status.overdue" = "Vencido";
 "scheduled.draftCreatedTitle" = "¡Tienes pagos pendientes!";
 "scheduled.draftCreatedMessage" = "Se añadieron %d pagos planificados a tu bandeja. Revísalos cuando quieras.";
 "scheduled.viewInbox" = "Ver bandeja";
@@ -358,6 +366,9 @@
 "settings.light" = "Claro";
 "settings.dark" = "Oscuro";
 "settings.system" = "Sistema";
+"settings.theme.indigo" = "Indigo";
+"settings.theme.rosa" = "Rosa";
+"settings.theme.teal" = "Teal";
 "settings.defaultCurrency" = "Moneda predeterminada";
 "settings.currentIcon" = "Ícono actual";
 "settings.resetAllData" = "Vaciar todos tus datos";
@@ -610,6 +621,7 @@
 "widget.noRecordsForFilters" = "No hay registros para este periodo y filtros";
 "widget.recordsWillAppear" = "Cuando registres movimientos, aparecerán aquí";
 "widget.total" = "Total";
+"widget.average" = "Promedio";
 
 
 "common.uncategorized" = "Sin categoría";
@@ -1252,6 +1264,14 @@
 "settings.widgetHintsDescription" = "Muestra botones de info en los widgets con explicaciones sobre cada gráfica.";
 "settings.showVariations" = "Comparativas";
 "settings.showVariationsDescription" = "Muestra variaciones porcentuales y gráficas comparativas vs el periodo anterior.";
+"settings.averageLine" = "Línea promedio";
+"settings.averageLineDescription" = "Muestra una línea de promedio en las gráficas de barras.";
+"settings.averageLine.off" = "Desactivada";
+"settings.averageLine.total" = "Total";
+"settings.averageLine.segmented" = "Fragmentada";
+"settings.averageLine.offDescription" = "Sin línea de promedio en las gráficas.";
+"settings.averageLine.totalDescription" = "Una línea horizontal con el promedio general.";
+"settings.averageLine.segmentedDescription" = "Segmentos por periodo con variación porcentual.";
 "settings.decimalPlaces" = "Decimales";
 "settings.decimalPlacesDescription" = "Se aplica solo a totales y gráficas. Los registros individuales siempre muestran 2 decimales.";
 "settings.decimalsNone" = "Sin decimales";
@@ -1401,6 +1421,7 @@
 "inbox.sourceSubscription" = "Suscripción";
 "inbox.sourceApplePay" = "Apple Pay";
 "inbox.sourceAutomation" = "Automatización";
+"inbox.sourceSiri" = "Siri";
 "inbox.errorNoAccount" = "Debes seleccionar una cuenta";
 "inbox.errorNoAmount" = "Debes especificar un monto";
 "inbox.errorNoSubcategory" = "Debes seleccionar una subcategoría";
@@ -1480,7 +1501,7 @@
 "subscription.feature.image" = "Escaneo de recibos e imágenes";
 "subscription.feature.reports" = "Reportes y gráficas avanzadas";
 "subscription.feature.currencies" = "Todas las divisas y tipos de cambio";
-"subscription.feature.themes" = "Temas e iconos exclusivos";
+"subscription.feature.themes" = "Temas personalizados";
 "subscription.feature.export" = "Exportación en Excel y CSV";
 "subscription.legalFooter" = "El pago se carga a tu cuenta de Apple. La suscripción se renueva automáticamente a menos que la canceles al menos 24 horas antes del final del periodo actual.";
 "subscription.termsLink" = "Términos de uso y Política de privacidad";
@@ -1789,6 +1810,22 @@
 "shortcut.automation.error.noCurrency" = "Se requiere una divisa (ej: USD, PEN, EUR).";
 "shortcut.automation.success %@ %@" = "Borrador creado: %@ en %@. Revísalo en tu bandeja de entrada.";
 
+// MARK: - Siri Natural Language Entry
+"shortcut.siriNatural.title" = "Registro con Siri";
+"shortcut.siriNatural.description" = "Registra gastos con lenguaje natural usando Siri";
+"shortcut.siriNatural.shortTitle" = "Registro con Siri";
+"shortcut.siriNatural.param.text" = "Texto";
+"shortcut.siriNatural.dialog.askText" = "¿Qué quieres registrar?";
+"shortcut.siriNatural.error.noText" = "No se proporcionó texto para registrar.";
+"shortcut.siriNatural.error.parsingFailed" = "No pude entender el texto. Intenta con algo como: 50 en café.";
+"shortcut.siriNatural.error.proRequired" = "Activa Yala Pro para usar registro con Siri.";
+"shortcut.siriNatural.success.single %@" = "Borrador creado: %@. Revísalo en tu bandeja.";
+"shortcut.siriNatural.success.multiple %lld" = "%lld borradores creados. Revísalos en tu bandeja.";
+"shortcut.siriNatural.success.offline %@" = "Borrador básico creado: %@. Completa los detalles en tu bandeja.";
+"shortcut.siriNatural.notification.title" = "Nuevo borrador desde Siri";
+"shortcut.siriNatural.notification.body %@" = "Se creó un borrador para: %@. Revísalo en tu bandeja.";
+"shortcut.siriNatural.notification.bodyOffline" = "Se creó un borrador básico (sin conexión). Completa los detalles.";
+
 // MARK: - Control Center (iOS 18+)
 // Labels shown in Control Center (keep short - limited space)
 "control.quickExpense.label" = "Gasto rápido";
@@ -1929,6 +1966,11 @@
 "icloud.dataFoundTitle" = "Datos encontrados";
 "icloud.dataFoundMessage" = "Encontramos tus datos en iCloud. No necesitas configurar de nuevo.";
 "icloud.dataFoundAction" = "Continuar";
+"icloud.syncingBanner" = "Sincronizando datos de iCloud…";
+"icloud.remoteWipe.title" = "Datos no disponibles";
+"icloud.remoteWipe.message" = "Tus datos fueron eliminados de iCloud. Puedes empezar de cero o esperar a que vuelvan a sincronizarse.";
+"icloud.remoteWipe.confirm" = "Empezar de cero";
+"icloud.remoteWipe.cancel" = "Seguir esperando";
 
 // MARK: - Feature Gate
 
@@ -1938,6 +1980,7 @@
 "featureGate.voiceInput" = "Registro por voz";
 "featureGate.imageInput" = "Registro por imagen";
 "featureGate.premiumIcons" = "Iconos premium";
+"featureGate.proThemes" = "Temas Pro";
 
 // Titles
 "featureGate.limitReachedTitle" = "Límite alcanzado";
@@ -1984,6 +2027,16 @@
 "subscription.downgrade.selectBudgets" = "Selecciona %d presupuestos para conservar";
 "subscription.downgrade.confirm" = "Confirmar selección";
 "subscription.downgrade.reactivate" = "Reactivar Pro";
+
+// Trial paywall
+"subscription.startFreeTrial" = "Empieza tu prueba gratis";
+"subscription.trialThenPrice" = "Gratis %@ días, luego %@";
+
+// ProTrialOfferSheet
+"subscription.trialOffer.title" = "Prueba Yala Pro gratis";
+"subscription.trialOffer.subtitle" = "7 días con todas las funciones. Sin compromiso, cancela cuando quieras.";
+"subscription.trialOffer.startTrial" = "Empezar prueba gratis";
+"subscription.trialOffer.maybeLater" = "Quizás después";
 
 // MARK: - Shortcut Notifications
 
@@ -2070,3 +2123,50 @@
 "subcategory.accountTransfer" = "Transferencia entre cuentas";
 "subcategory.balanceAdjustment" = "Ajustes de saldo";
 "subcategory.accountTransferOther" = "Transferencia entre cuentas";
+
+// MARK: - Scheduled Payments UX (M1-M7)
+"scheduled.period.selector.title" = "Seleccionar mes";
+"scheduled.summary.paid" = "Pagado";
+"scheduled.summary.pending" = "Pendiente";
+"scheduled.filter.all" = "Todos";
+"scheduled.filter.paid" = "Pagados";
+"scheduled.filter.pending" = "Pendientes";
+"scheduled.associate.title" = "Vincular gasto";
+"scheduled.associate.confirm" = "¿Vincular este gasto al pago planificado?";
+"scheduled.associate.success" = "Gasto vinculado";
+"scheduled.associate.empty" = "No encontramos gastos similares este mes";
+"scheduled.associate.already" = "Este gasto ya está vinculado";
+
+// MARK: - Siri Shortcuts
+"settings.siriShortcuts" = "Siri y Atajos";
+"siriShortcuts.title" = "Siri y Atajos";
+"siriShortcuts.subtitle" = "Usa tu voz o atajos rápidos para registrar gastos al instante.";
+"siriShortcuts.siri.title" = "Registro con Siri";
+"siriShortcuts.siri.description" = "Dicta tu gasto y se creará un borrador en tu bandeja de entrada.";
+"siriShortcuts.siri.proNote" = "Requiere Yala Pro";
+"siriShortcuts.siri.phrase" = "Crea un registro en Yala";
+"siriShortcuts.siri.alt1" = "También puedes decir: \"Anota un gasto en Yala\"";
+"siriShortcuts.siri.alt2" = "O: \"Guarda un gasto en Yala\"";
+"siriShortcuts.all.title" = "Otros atajos";
+"siriShortcuts.shortcut.quick" = "Registro rápido";
+"siriShortcuts.shortcut.voice" = "Entrada por voz";
+"siriShortcuts.shortcut.image" = "Entrada por imagen";
+"siriShortcuts.shortcut.applePay" = "Apple Pay";
+"siriShortcuts.shortcut.automation" = "Automatización";
+"siriShortcuts.desc.quick" = "Abre el formulario de registro con un tap.";
+"siriShortcuts.desc.voice" = "Dicta el monto y la descripción con tu voz.";
+"siriShortcuts.desc.image" = "Escanea un recibo o ticket con la cámara.";
+"siriShortcuts.desc.applePay" = "Registra un pago realizado con Apple Pay.";
+"siriShortcuts.desc.automation" = "Crea registros automáticos con atajos del sistema.";
+"siriShortcuts.phrase.quick" = "Registra en Yala";
+"siriShortcuts.phrase.voice" = "Registra con voz en Yala";
+"siriShortcuts.phrase.image" = "Registra con imagen en Yala";
+"siriShortcuts.phrase.applePay" = "Registra Apple Pay en Yala";
+"siriShortcuts.phrase.automation" = "Registra desde automatización en Yala";
+"siriShortcuts.faq.title" = "Preguntas frecuentes";
+"siriShortcuts.faq.activateQ" = "¿Cómo activo Siri?";
+"siriShortcuts.faq.activateA" = "Es automático. Solo di la frase a Siri y Yala procesará tu solicitud.";
+"siriShortcuts.faq.inboxQ" = "¿Dónde van mis registros de Siri?";
+"siriShortcuts.faq.inboxA" = "Los registros creados por Siri llegan a tu bandeja de entrada como borradores para que los revises.";
+"siriShortcuts.faq.offlineQ" = "¿Funciona sin internet?";
+"siriShortcuts.faq.offlineA" = "Sí, los atajos funcionan en modo básico sin conexión a internet.";

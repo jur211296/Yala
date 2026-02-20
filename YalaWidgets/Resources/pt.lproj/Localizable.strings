@@ -33,6 +33,16 @@
 "widget.gallery.topSubcategories" = "Top Subcategorias";
 "widget.gallery.topSubcategories.desc" = "Suas subcategorias com mais despesas";
 
+// MARK: - Gallery (Lock Screen accessory widgets)
+"widget.gallery.accessoryBalance" = "Saldo";
+"widget.gallery.accessoryBalance.desc" = "Seu saldo na tela de bloqueio";
+"widget.gallery.accessoryExpense" = "Despesas";
+"widget.gallery.accessoryExpense.desc" = "Suas despesas na tela de bloqueio";
+"widget.gallery.accessoryBudget" = "Orçamento";
+"widget.gallery.accessoryBudget.desc" = "Seu orçamento mais utilizado";
+"widget.gallery.accessoryPayment" = "Próximo pagamento";
+"widget.gallery.accessoryPayment.desc" = "Seu próximo pagamento agendado";
+
 // MARK: - Intent titles and descriptions
 "widget.intent.cashFlow.title" = "Fluxo de Caixa";
 "widget.intent.cashFlow.desc" = "Mostra seu fluxo de caixa líquido";
@@ -54,6 +64,14 @@
 "widget.intent.scheduledPayments.desc" = "Mostra seus próximos pagamentos agendados";
 "widget.intent.latestRecords.title" = "Últimos Registros";
 "widget.intent.latestRecords.desc" = "Mostra suas transações mais recentes";
+"widget.intent.accessoryBalance.title" = "Saldo";
+"widget.intent.accessoryBalance.desc" = "Saldo do período";
+"widget.intent.accessoryExpense.title" = "Despesas";
+"widget.intent.accessoryExpense.desc" = "Despesas do período";
+"widget.intent.accessoryBudget.title" = "Orçamento";
+"widget.intent.accessoryBudget.desc" = "Orçamento mais utilizado";
+"widget.intent.accessoryPayment.title" = "Próximo pagamento";
+"widget.intent.accessoryPayment.desc" = "Próximo pagamento agendado";
 
 // MARK: - Selection Mode
 "widget.selection.mode.type" = "Mostrar";

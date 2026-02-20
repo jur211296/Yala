@@ -209,6 +209,10 @@ final class PanelViewModel {
         set { SessionState.shared.selectedSubcategoryIDs = newValue }
     }
 
+    var selectedBudgetID: PersistentIdentifier? {
+        SessionState.shared.selectedBudgetID
+    }
+
     var selectedNature: SubcategoryNature? {
         get { SessionState.shared.selectedNatures.first }
         set {
@@ -950,8 +954,13 @@ final class PanelViewModel {
                 if !calendar.isDate(transaction.date, inSameDayAs: focus) { return false }
             }
 
-            // NOTE: Category and Subcategory filters EXCLUDED here
-            // This allows pie widgets to show ALL categories and apply visual dimming
+            // Category/Subcategory filters excluded for pie dimming behavior,
+            // EXCEPT when filtering comes from a budget selection (must show only budget categories)
+            if selectedBudgetID != nil && !selectedSubcategoryIDs.isEmpty {
+                guard let subID = transaction.subcategory?.persistentModelID,
+                    selectedSubcategoryIDs.contains(subID)
+                else { return false }
+            }
 
             // Nature Filter (still applies to pie charts)
             if let nature = selectedNature {

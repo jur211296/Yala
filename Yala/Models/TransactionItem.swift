@@ -49,6 +49,10 @@ final class TransactionItem {
     /// Override manual de naturaleza (nil = usar la de subcategoría)
     var natureOverride: String?
 
+    // MARK: - Scheduled Payment Link
+    /// ID of the scheduled payment this transaction is associated with (manual association)
+    var scheduledPaymentID: String?
+
     // MARK: - Balance Adjustment Type
     /// Type of balance adjustment transaction: "initial_balance" | "adjustment" | nil (normal)
     var balanceAdjustmentType: String?

@@ -4420,7 +4420,7 @@ Esta sección cubre la validación de los controles de Yala en el Centro de Cont
 
 ---
 
-*Última actualización: 2026-02-11 - Sección 34 (Pantalla Privacy Onboarding)*
+*Última actualización: 2026-02-18 - Sección 37 (Skip de Ocurrencias en Pagos Planificados)*
 *Total escenarios: ~517*
 *Total verificaciones: ~960+*
 
@@ -4489,3 +4489,296 @@ Esta sección cubre la validación de los controles de Yala en el Centro de Cont
 - [ ] Tutoriales muestran strings en español (idioma principal)
 - [ ] Cambiar a inglés muestra strings en English
 - [ ] Los otros 4 idiomas (fr, de, it, pt) muestran placeholder en español
+
+## Sección 36: iCloud Sync + Onboarding (Integridad Multi-Dispositivo)
+
+### 36.1 PreferenceSyncService — Propagación de Preferencias (R2)
+- [ ] Dispositivo A: completar onboarding con MXN, "Este mes", modo solo gastos ON
+- [ ] Dispositivo B: instalar Yala → esperar sync → verificar que MXN, "Este mes" y modo solo gastos se aplican automáticamente
+- [ ] Dispositivo A: cambiar divisa a EUR en Settings → Dispositivo B: verificar que EUR se propaga (puede requerir reabrir app)
+- [ ] Dispositivo B: verificar que `hasCompletedOnboarding` NO se sincroniza (sigue en false hasta que el dispositivo lo marque)
+- [ ] Onboarding escribe 6 keys en iCloud KV: userName, defaultCurrencyCode, defaultPeriod, secondaryCurrencies, budgetAlertsEnabled, expensesOnlyMode
+
+### 36.2 Alerta "Datos encontrados" con Defaults Detectados (R1)
+- [ ] Fresh install con iCloud activo → esperar hasta que aparezca alerta "Datos encontrados"
+- [ ] Tocar "Continuar" → verificar que aterriza en MainTabView con divisa detectada por región (no PEN por defecto)
+- [ ] Verificar que el periodo queda en "Este mes" (no allTime)
+- [ ] Si el usuario ya tenía preferencias en iCloud KV → verificar que se aplican esas en vez de detectar por región
+- [ ] Verificar que SessionState.shared.selectedPeriod refleja el valor correcto tras la alerta
+
+### 36.3 Guardia de Semilla con Flag (R8 — TOCTOU Race)
+- [ ] Fresh install → onboarding con "Usar categorías predeterminadas" → verificar exactamente 11 categorías
+- [ ] Forzar cierre y reabrir → verificar que la semilla NO se ejecuta de nuevo (flag activo)
+- [ ] Data wipe → verificar que flag se limpia → onboarding puede resembrar categorías
+- [ ] Escenario race: instalar en dispositivo B mientras A ya tiene categorías en iCloud → B no debe generar duplicados locales gracias al flag
+
+### 36.4 Deduplicación de Categorías (R4)
+- [ ] Dispositivo A: completar onboarding con categorías semilla
+- [ ] Dispositivo B: completar onboarding con categorías semilla → iCloud entrega categorías de A
+- [ ] Esperar 10 segundos → verificar que solo quedan 11 categorías (sin duplicados)
+- [ ] Verificar que las transacciones existentes se re-parentean al keeper (categoría con más transacciones)
+- [ ] Verificar que subcategorías con iconName coincidente se fusionan correctamente
+- [ ] Verificar que subcategorías sin coincidencia se re-parentean a la categoría keeper
+- [ ] Verificar que presupuestos vinculados a categorías duplicadas se re-parentean
+
+### 36.5 Periodo de Gracia ante Wipe Remoto (R7)
+- [ ] Dispositivo A: data wipe → Dispositivo B: verificar que aparece alerta de confirmación (no onboarding directo)
+- [ ] Alerta muestra título, mensaje, botón destructivo "Empezar de cero" y botón cancelar "Seguir esperando"
+- [ ] Tocar "Seguir esperando" → la app permanece en MainTabView
+- [ ] Tocar "Empezar de cero" → la app muestra onboarding
+- [ ] Gap transitorio de iCloud (datos desaparecen <5s y reaparecen) → NO debe mostrar alerta
+- [ ] Verificar textos de alerta en los 6 idiomas (en, es, de, fr, it, pt)
+
+### 36.6 Bootstrap Order
+- [ ] PreferenceSyncService.bootstrap() se ejecuta ANTES de NotificationService en AppBootstrapper
+- [ ] Verificar con breakpoint o log que el orden es: PreferenceSync → NotificationService → ExchangeRates → ...
+- [ ] Si no hay cuenta iCloud: bootstrap() no crashea (NSUbiquitousKeyValueStore.synchronize() es no-op)
+
+---
+
+## Sección 37: Skip de Ocurrencias en Pagos Planificados
+
+**Precondición:** Al menos 1 pago planificado con frecuencia mensual o semanal, con ocurrencias pasadas y futuras visibles.
+
+### 37.1 Saltar ocurrencia futura
+1. Ir a Planning > Pagos Planificados > detalle de un pago
+2. Tocar una ocurrencia futura (upcoming)
+3. **Verificar:** Aparece confirmationDialog con opción "Saltar"
+4. Confirmar "Saltar"
+5. **Verificar:** La fila muestra badge "Saltado" con estilo dimmeado
+6. **Verificar:** El total pendiente del mes se reduce por el monto saltado
+
+### 37.2 Saltar ocurrencia pasada/vencida
+1. Tocar una ocurrencia pasada (vencida, no pagada)
+2. Confirmar "Saltar"
+3. **Verificar:** Badge "Saltado" visible, fila dimmeada
+4. **Verificar:** La ocurrencia ya no cuenta como "vencida" en totales
+
+### 37.3 Revertir skip (unskip)
+1. Tocar una ocurrencia previamente saltada
+2. **Verificar:** confirmationDialog muestra "Revertir salto"
+3. Confirmar revertir
+4. **Verificar:** Badge "Saltado" desaparece, fila vuelve a estado normal
+5. **Verificar:** Totales se actualizan (pendiente sube, o vuelve a vencido)
+
+### 37.4 Skip y drafts en Inbox
+1. Saltar una ocurrencia que tiene draft pendiente en Inbox
+2. **Verificar:** El draft se rechaza automáticamente
+3. Revertir el skip en una fecha pasada o de hoy
+4. **Verificar:** Se recrea el draft en Inbox
+
+### 37.5 Skip pre-creación de draft
+1. Saltar una ocurrencia futura antes de que llegue su fecha
+2. Esperar a que llegue la fecha (o simular con reloj)
+3. **Verificar:** DraftService NO crea draft para la fecha saltada
+4. **Verificar:** nextDueDate avanza a la siguiente ocurrencia
+
+### 37.6 Filtros y skip
+1. Filtrar por "Pendientes"
+2. **Verificar:** Ocurrencias saltadas NO aparecen en pendientes
+3. Filtrar por "Pagados"
+4. **Verificar:** Ocurrencias saltadas NO aparecen en pagados
+5. Filtrar por "Todos"
+6. **Verificar:** Ocurrencias saltadas SÍ aparecen (dimmeadas con badge)
+
+### 37.7 Widget Panel y skip
+1. Verificar ScheduledPaymentsWidget en Panel
+2. **Verificar:** Items saltados aparecen dimmeados con badge "Saltado"
+3. **Verificar:** Orden: pendientes > pagados > saltados
+
+### 37.8 Vista calendario y skip
+1. Ir a vista calendario de pagos planificados
+2. **Verificar:** Días con ocurrencias saltadas muestran indicador dimmeado
+3. **Verificar:** Lista debajo del calendario muestra badge "Saltado"
+
+### 37.9 Notificaciones y skip
+1. Saltar una ocurrencia
+2. **Verificar:** No se genera notificación para la fecha saltada
+3. Revertir el skip
+4. **Verificar:** La notificación se reprograma si la fecha es futura
+
+### 37.10 Cleanup automático
+1. (Validar con logs) skippedDates mayores a 1 año se limpian en loadPayments()
+2. **Verificar:** Fechas recientes se mantienen intactas
+
+### 37.11 Localización
+- [ ] Verificar textos de skip/unskip en los 6 idiomas (es, en, de, fr, it, pt)
+- [ ] Badge "Saltado"/"Skipped" visible y legible en cada idioma
+
+---
+
+## Sección 38: Sistema de Temas Independientes (Fase 11)
+
+### 38.1 Cambio de tema sin reinicio
+1. Ir a Ajustes → Apariencia
+2. Seleccionar cada tema (System, Light, Dark, Indigo, Rosa, Teal)
+3. **Verificar:** Cambio inmediato sin reiniciar la app
+4. **Verificar:** Sin parpadeo o destrucción de jerarquía de vistas
+
+### 38.2 Tema System sigue esquema del iPhone
+1. Seleccionar tema "System"
+2. Cambiar modo del iPhone (Ajustes → Pantalla → Claro/Oscuro)
+3. **Verificar:** La app cambia automáticamente entre Light y Dark
+4. **Verificar:** No hace falta abrir/cerrar la app
+
+### 38.3 Temas PRO requieren suscripción
+1. Sin suscripción Pro activa, ir a Ajustes → Apariencia
+2. Intentar seleccionar Indigo, Rosa o Teal
+3. **Verificar:** Se muestra sheet de upgrade (UpgradePromptSheet)
+4. **Verificar:** El tema NO se aplica sin suscripción
+5. Con suscripción Pro, seleccionar un tema PRO
+6. **Verificar:** Se aplica correctamente
+
+### 38.4 Colores correctos por tema
+Para cada tema verificar:
+
+| Elemento | Light | Dark | Indigo | Rosa | Cyan |
+|----------|-------|------|--------|------|------|
+| Fondo | Off-white | Negro OLED | Navy | Plum | Deep teal |
+| Cards | Blanco | #1C1C1E | Slate | Plum card | Teal card |
+| Acento | Indigo | Indigo | Indigo | HotPink | Teal |
+| Texto 1º | Dark | Light | White | White | White |
+
+### 38.5 Sheets y modales heredan tema
+1. Seleccionar tema Indigo
+2. Abrir cualquier sheet (nuevo gasto, selector de categoría, etc.)
+3. **Verificar:** El sheet usa los colores del tema activo
+4. **Verificar:** No se ve fondo blanco fugaz al abrir/cerrar
+
+### 38.6 Persistencia entre sesiones
+1. Seleccionar tema Rosa
+2. Cerrar la app completamente (kill)
+3. Reabrir la app
+4. **Verificar:** Se mantiene el tema Rosa
+
+### 38.7 Data wipe resetea a System
+1. Seleccionar un tema PRO (ej: Teal)
+2. Ir a Ajustes → Datos → Borrar todos los datos
+3. Confirmar
+4. **Verificar:** El tema se resetea a System
+
+## Sección 39: Línea Promedio en Gráficas de Barras
+
+### 39.1 Picker en Personalización
+1. Ir a Ajustes → Personalización → sección Indicadores
+2. **Verificar:** Aparece "Línea promedio" con picker segmentado (Desactivada / Total / Fragmentada)
+3. Cambiar entre las 3 opciones
+4. **Verificar:** La selección se persiste al cerrar y reabrir la app
+
+### 39.2 Modo Total — CashFlow solo gastos
+1. Seleccionar "Total" en Personalización
+2. Ir al Panel con periodo que tenga solo gastos (≥2 barras)
+3. **Verificar:** Aparece una línea horizontal discontinua con "x̄ {valor}"
+4. **Verificar:** La línea está al nivel del promedio de las barras
+
+### 39.3 Modo Total — NatureTrend
+1. Seleccionar "Total" en Personalización
+2. Ir al Panel → widget de distribución por naturaleza (modo grande con chart)
+3. **Verificar:** Aparece línea promedio horizontal con "x̄ {valor}"
+4. Filtrar por una naturaleza específica (ej: Esencial)
+5. **Verificar:** La línea se recalcula para esa naturaleza
+
+### 39.4 Modo Total — CashFlow bidireccional NO muestra línea
+1. Seleccionar "Total" en Personalización
+2. Ir al Panel con periodo que tenga ingresos Y gastos (sin filtro de métrico)
+3. **Verificar:** NO aparece ninguna línea promedio
+4. Cambiar a modo waterfall (agrupación diaria, bidireccional)
+5. **Verificar:** NO aparece línea promedio
+
+### 39.5 Sin datos suficientes
+1. Seleccionar "Total" en Personalización
+2. Ir al Panel con periodo que tenga solo 1 data point (ej: este mes con 1 día)
+3. **Verificar:** NO aparece línea promedio (mínimo 2 barras)
+
+### 39.6 Modo Fragmentado — CashFlow solo gastos
+1. Seleccionar "Fragmentada" en Personalización
+2. Ir al Panel con periodo 6M+ y barras mensuales (solo gastos)
+3. **Verificar:** Aparecen segmentos horizontales discontinuos por trimestre
+4. **Verificar:** Cada segmento muestra "x̄ {valor}" y variación % entre segmentos consecutivos
+5. **Verificar:** Variación positiva en color accent (indigo), negativa en accentSecondary (hotPink)
+6. **Verificar:** Labels alternan posición arriba/abajo para evitar solapamiento
+
+### 39.7 Modo Fragmentado — fallback a Total
+1. Seleccionar "Fragmentada" en Personalización
+2. Ir al Panel con periodo corto (ej: 3 meses, barras mensuales → no alcanza para trimestres)
+3. **Verificar:** Se muestra una línea total (fallback) en lugar de segmentos
+
+### 39.8 Modo Fragmentado — barras diarias agrupan por semana
+1. Seleccionar "Fragmentada" en Personalización
+2. Ir al Panel con barras diarias y al menos 2 semanas de datos
+3. **Verificar:** Se agrupan los datos por semana, mostrando un segmento por semana
+
+### 39.9 Modo Fragmentado — barras semanales agrupan por mes
+1. Seleccionar "Fragmentada" en Personalización
+2. Ir al Panel con barras semanales y al menos 2 meses de datos
+3. **Verificar:** Se agrupan los datos por mes, mostrando un segmento por mes
+
+### 39.10 Desactivada — sin línea en ninguna gráfica
+1. Seleccionar "Desactivada" en Personalización
+2. Navegar por Panel y Estadísticas
+3. **Verificar:** Ninguna gráfica de barras muestra línea promedio
+
+### 38.8 Widgets iOS NO se afectan
+1. Tener widgets de Yala en pantalla de inicio
+2. Cambiar el tema de la app a Indigo/Rosa/Teal
+3. **Verificar:** Los widgets mantienen sus colores originales (no cambian)
+
+### 38.9 Sombras adaptativas
+1. En tema Light: verificar sombras sutiles en cards
+2. En tema Dark: verificar sombras más pronunciadas
+3. En temas PRO: verificar sombras intermedias (0.20 opacity)
+
+### 38.10 Gradiente de fondo
+1. En tema Light: verificar gradiente sutil en PanelView
+2. En tema Dark: verificar fondo sólido (sin gradiente)
+3. En temas PRO: verificar fondo sólido (sin gradiente)
+
+### 38.11 ThemeSettingsView diseño
+1. Verificar que los 6 temas aparecen con swatches de colores
+2. Verificar sección "Free" (System, Light, Dark) y "Pro" (Indigo, Rosa, Teal)
+3. Verificar badge "PRO" en temas premium
+4. Verificar checkmark en tema seleccionado
+
+### 38.12 Localización de temas
+- [ ] Verificar nombres de temas en los 6 idiomas (es, en, de, fr, it, pt)
+- [ ] "Indigo", "Rosa", "Teal" como nombres en todos los idiomas
+
+---
+
+## Sección 39: Free Trial UI
+
+### 39.1 Paywall muestra info de trial en plan cards
+- [ ] Abrir SubscriptionView sin suscripción
+- [ ] Verificar que plan cards muestran "Gratis 7 días, luego X/mes" (o /año) cuando hay introductory offer
+- [ ] Texto del trial aparece en color accent (no gris)
+- [ ] Si no hay introductory offer, se muestra el precio normal
+
+### 39.2 Botón de compra cambia con trial
+- [ ] Con introductory offer disponible: botón dice "Empieza tu prueba gratis"
+- [ ] Sin introductory offer: botón dice "Suscribirse"
+- [ ] Durante compra: botón dice "Procesando..."
+
+### 39.3 Sheet post-onboarding aparece correctamente
+- [ ] Resetear `hasCompletedOnboarding` en UserDefaults
+- [ ] Completar onboarding completo
+- [ ] Al dismiss del onboarding, aparece ProTrialOfferSheet
+- [ ] Sheet muestra YalaSpark, título, subtítulo, lista de features, dos botones
+
+### 39.4 Sheet NO aparece si ya es Pro
+- [ ] Con suscripción activa, completar onboarding
+- [ ] Verificar que ProTrialOfferSheet NO se presenta
+
+### 39.5 Flujo "Empezar prueba gratis" abre SubscriptionView
+- [ ] En ProTrialOfferSheet, tap "Empezar prueba gratis"
+- [ ] Sheet se cierra
+- [ ] SubscriptionView se abre como sheet
+- [ ] SubscriptionView muestra info de trial correctamente
+
+### 39.6 "Quizás después" cierra el sheet
+- [ ] En ProTrialOfferSheet, tap "Quizás después"
+- [ ] Sheet se cierra sin abrir SubscriptionView
+- [ ] App funciona normalmente
+
+### 39.7 Localización de trial UI
+- [ ] Verificar strings de trial en los 6 idiomas (es, en, de, fr, it, pt)
+- [ ] Verificar que el formato "%@ días, luego %@" se muestra correctamente

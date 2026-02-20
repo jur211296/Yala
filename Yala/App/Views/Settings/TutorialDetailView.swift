@@ -13,6 +13,7 @@ struct TutorialDetailView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.yalaTheme) private var theme
     @State private var currentPage = 0
 
     private var steps: [TutorialStep] { tutorial.steps }
@@ -85,7 +86,7 @@ struct TutorialDetailView: View {
                 let isEdge = page == 0 || page == totalPages - 1
 
                 Capsule()
-                    .fill(isPast || isCurrent ? Color.electricIndigo : Color.yalaSecondaryText.opacity(0.2))
+                    .fill(isPast || isCurrent ? theme.accent : theme.secondaryText.opacity(0.2))
                     .frame(
                         width: isCurrent ? 24 : (isEdge ? 6 : 8),
                         height: isEdge ? 6 : 8
@@ -114,12 +115,12 @@ struct TutorialDetailView: View {
             VStack(spacing: DS.Spacing.sm) {
                 Text(tutorial.introTitle)
                     .font(DS.Typography.largeTitle)
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
                     .multilineTextAlignment(.center)
 
                 Text(tutorial.introDescription)
                     .font(DS.Typography.body)
-                    .foregroundStyle(Color.yalaSecondaryText)
+                    .foregroundStyle(.thSecondaryText)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -140,12 +141,12 @@ struct TutorialDetailView: View {
             VStack(spacing: DS.Spacing.xs) {
                 Text(step.title)
                     .font(.title3.bold())
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
                     .multilineTextAlignment(.center)
 
                 Text(step.description)
                     .font(DS.Typography.body)
-                    .foregroundStyle(Color.yalaSecondaryText)
+                    .foregroundStyle(.thSecondaryText)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -178,7 +179,7 @@ struct TutorialDetailView: View {
                 .padding(.horizontal, DS.Spacing.lg)
         } else {
             RoundedRectangle(cornerRadius: DS.Radius.lg)
-                .fill(Color.yalaCard)
+                .fill(.thCard)
                 .aspectRatio(1, contentMode: .fit)
                 .overlay(
                     VStack(spacing: DS.Spacing.sm) {
@@ -187,7 +188,7 @@ struct TutorialDetailView: View {
                             .foregroundStyle(tutorial.color.opacity(0.4))
                         Text(tutorial.title)
                             .font(DS.Typography.subheadline)
-                            .foregroundStyle(Color.yalaSecondaryText.opacity(0.6))
+                            .foregroundStyle(.thSecondaryText.opacity(0.6))
                     }
                 )
                 .overlay(
@@ -210,10 +211,10 @@ struct TutorialDetailView: View {
                 } label: {
                     Text(L10n.Tutorials.previous)
                         .font(DS.Typography.bodyBold)
-                        .foregroundStyle(Color.yalaPrimaryText)
+                        .foregroundStyle(.thPrimaryText)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, DS.Spacing.md)
-                        .background(Color.yalaCard)
+                        .background(.thCard)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                         .overlay(
                             RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -232,7 +233,7 @@ struct TutorialDetailView: View {
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DS.Spacing.md)
-                    .background(Color.electricIndigo)
+                    .background(theme.accent)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
             }
         }

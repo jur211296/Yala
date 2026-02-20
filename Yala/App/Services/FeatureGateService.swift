@@ -16,6 +16,7 @@ enum ProFeature: String, CaseIterable {
     case voiceInput
     case imageInput
     case premiumIcons
+    case proThemes
 
     /// Free tier limit for countable features (nil = no limit in free tier)
     var freeLimit: Int? {
@@ -29,7 +30,7 @@ enum ProFeature: String, CaseIterable {
     /// Whether this feature is completely unavailable in Free tier
     var isProOnly: Bool {
         switch self {
-        case .voiceInput, .imageInput, .premiumIcons: return true
+        case .voiceInput, .imageInput, .premiumIcons, .proThemes: return true
         default: return false
         }
     }
@@ -42,6 +43,7 @@ enum ProFeature: String, CaseIterable {
         case .voiceInput: return L10n.FeatureGate.voiceInput
         case .imageInput: return L10n.FeatureGate.imageInput
         case .premiumIcons: return L10n.FeatureGate.premiumIcons
+        case .proThemes: return L10n.FeatureGate.proThemes
         }
     }
 
@@ -53,6 +55,7 @@ enum ProFeature: String, CaseIterable {
         case .voiceInput: return "waveform"
         case .imageInput: return "camera.fill"
         case .premiumIcons: return "app.fill"
+        case .proThemes: return "paintpalette.fill"
         }
     }
 }
@@ -70,51 +73,11 @@ final class FeatureGateService {
 
     private init() {}
 
-    // MARK: - Build Detection
-
-    /// Whether this is the Dev build (bundle ID ends with .dev)
-    static var isDevBuild: Bool {
-        guard let bundleID = Bundle.main.bundleIdentifier else { return false }
-        return bundleID.lowercased().hasSuffix(".dev")
-    }
-
-    // MARK: - Dev Build Toggle
-
-    /// Key for dev build Pro simulation toggle
-    private static let devSimulateProKey = "dev.simulateProUser"
-
-    /// In Dev builds: toggle to simulate Pro (default true)
-    /// This is persisted and can be changed from Settings
-    /// Using stored property so @Observable can track changes
-    private var _devSimulatePro: Bool = {
-        // Default to true (Pro) if key hasn't been set
-        if UserDefaults.standard.object(forKey: devSimulateProKey) == nil {
-            return true
-        }
-        return UserDefaults.standard.bool(forKey: devSimulateProKey)
-    }()
-
-    var devSimulatePro: Bool {
-        get { _devSimulatePro }
-        set {
-            _devSimulatePro = newValue
-            UserDefaults.standard.set(newValue, forKey: Self.devSimulateProKey)
-        }
-    }
-
     // MARK: - Pro Status
 
-    /// Whether the current user has Pro access
-    /// - Dev build: Based on devSimulatePro toggle (default Pro)
-    /// - Production build: Based on real subscription status
+    /// Whether the current user has Pro access (based on real subscription status)
     var isProUser: Bool {
-        // Dev build uses toggle from Settings
-        if Self.isDevBuild {
-            return devSimulatePro
-        }
-
-        // Production build uses real subscription status
-        return StoreKitManager.shared.isProUser
+        StoreKitManager.shared.isProUser
     }
 
     // MARK: - Access Checks
@@ -187,6 +150,9 @@ extension L10n {
         }
         static var premiumIcons: String {
             NSLocalizedString("featureGate.premiumIcons", comment: "Premium icons feature name")
+        }
+        static var proThemes: String {
+            NSLocalizedString("featureGate.proThemes", comment: "Pro themes feature name")
         }
 
         // Titles

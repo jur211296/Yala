@@ -27,6 +27,8 @@ struct PanelView: View {
     }
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.yalaTheme) private var theme
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
     @Environment(ExchangeRateService.self) private var exchangeRateService
@@ -77,6 +79,7 @@ struct PanelView: View {
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
+    @AppStorage("showSiriTip") private var showSiriTip: Bool = true
 
     /// Voice recording sheet
     @State private var showVoiceRecording = false
@@ -141,7 +144,7 @@ struct PanelView: View {
             ZStack(alignment: .topTrailing) {
                 Image(systemName: "tray.fill")
                     .font(DS.Typography.body).fontWeight(.medium)
-                    .foregroundStyle(Color.toolbarIconColor)
+                    .foregroundStyle(.thToolbarIcon)
 
                 // Badge with count
                 if pendingDrafts.count > 0 {
@@ -212,6 +215,7 @@ struct PanelView: View {
             )
         )
         .onAppear {
+            viewModel.widgetConfig.columns = DS.Adaptive.columns(sizeClass)
             viewModel.setContext(
                 modelContext,
                 exchangeRateService: exchangeRateService,
@@ -227,6 +231,9 @@ struct PanelView: View {
                 accountsSortOrderNamesRaw = newOrder
             }
             recalculateData()
+        }
+        .onChange(of: sizeClass) { _, newValue in
+            viewModel.widgetConfig.columns = DS.Adaptive.columns(newValue)
         }
         .modifier(
             PanelDataObservers(
@@ -269,10 +276,14 @@ struct PanelView: View {
 
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                    if showSiriTip {
+                        SiriTipCard(isVisible: $showSiriTip)
+                    }
+
                     accountsSection
                     totalBalanceSection
                 }
-                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.horizontal, DS.Adaptive.horizontalPadding(sizeClass))
                 .padding(.top, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.xxxl)
                 // Force complete re-render when formatting settings change
@@ -294,7 +305,7 @@ struct PanelView: View {
 
     @ViewBuilder
     private var newRecordFAB: some View {
-        let fabBackground = canUseVoiceInput ? Color.electricIndigo : Color.gray.opacity(0.5)
+        let fabBackground = canUseVoiceInput ? theme.accent : Color.gray.opacity(0.5)
         let hasMultipleInputs = (voiceInputEnabled && imageInputEnabled) ||
                                 (voiceInputEnabled && !imageInputEnabled) ||
                                 (!voiceInputEnabled && imageInputEnabled)
@@ -347,7 +358,7 @@ struct PanelView: View {
                         fabMenuButton(
                             icon: "square.and.pencil",
                             text: L10n.Panel.fabManual,
-                            color: .electricIndigo
+                            color: theme.accent
                         ) {
                             dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
                                 showFABMenu = false
@@ -730,17 +741,16 @@ struct PanelView: View {
                         widgetView(for: config)
                             .clipped()  // Prevent content overflow
                     case .halfWidthPair(let left, let right):
-                        HStack(spacing: DS.Spacing.lg) {
+                        HStack(alignment: .top, spacing: DS.Spacing.lg) {
                             widgetView(for: left)
                                 .frame(maxWidth: .infinity)
-                                .clipped()  // Prevent content overflow
+                                .clipped()
 
                             if let right = right {
                                 widgetView(for: right)
                                     .frame(maxWidth: .infinity)
-                                    .clipped()  // Prevent content overflow
+                                    .clipped()
                             } else {
-                                // Spacer for empty slot
                                 Color.clear
                                     .frame(maxWidth: .infinity)
                             }
@@ -1156,15 +1166,10 @@ private struct PanelSheetTriggers: ViewModifier {
                     sessionState.shouldShowInbox = false
                 }
             }
-            .onAppear {
-                // Catch flags set before view mounted (Share Extension cold launch)
-                if sessionState.hasPendingSharedImage && sessionState.pendingSharedImageURL != nil {
+            .onChange(of: sessionState.shouldShowSharedImage) { _, shouldShow in
+                if shouldShow {
                     showImageSelection = true
-                }
-            }
-            .onChange(of: sessionState.hasPendingSharedImage) { _, hasPending in
-                if hasPending && sessionState.pendingSharedImageURL != nil {
-                    showImageSelection = true
+                    sessionState.shouldShowSharedImage = false
                 }
             }
             .onChange(of: sessionState.shouldShowVoiceEntry) { _, shouldShow in
@@ -1406,5 +1411,50 @@ private struct PanelSessionObservers: ViewModifier {
             .onChange(of: sessionState.customDateRange) {
                 recalculateData()
             }
+    }
+}
+
+// MARK: - Siri Tip Card
+
+private struct SiriTipCard: View {
+    @Binding var isVisible: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "mic.badge.plus")
+                .font(.title2)
+                .foregroundStyle(.tint)
+                .frame(width: 36, height: 36)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text("Nuevo: registro con Siri")
+                    .font(DS.Typography.headline)
+
+                Text("Di: \"Crea un registro en Yala\"")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 0)
+
+            Button {
+                dsWithAnimation(reduceMotion) {
+                    isVisible = false
+                }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Cerrar sugerencia de Siri")
+        }
+        .padding(DS.Spacing.lg)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .transition(.asymmetric(
+            insertion: .scale(scale: 0.95).combined(with: .opacity),
+            removal: .scale(scale: 0.95).combined(with: .opacity)
+        ))
     }
 }

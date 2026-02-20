@@ -232,6 +232,10 @@ final class DataWipeService {
         defaults.removeObject(forKey: "hasCompletedOnboarding") // Default: false (triggers onboarding)
         defaults.removeObject(forKey: "secondaryCurrencies")    // Default: "" (no secondary currencies)
 
+        // --- Seed guards ---
+        defaults.removeObject(forKey: "seedCategoriesExecuted") // Allow re-seed after wipe
+        defaults.removeObject(forKey: "notificationsSeeded")    // Allow re-seed after wipe
+
         // --- Legacy (compatibilidad) ---
         defaults.removeObject(forKey: "preferredCurrency")      // Reemplazado por defaultCurrencyCode
 

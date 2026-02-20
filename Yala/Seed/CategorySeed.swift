@@ -327,7 +327,16 @@ private func defaultCategorySeedDefinitions() -> [CategorySeedDefinition] {
 /// - No debe llamarse manualmente desde otros puntos sin revisar impacto.
 func seedCategoriesIfNeeded(in modelContext: ModelContext) {
 
-    // 1. Comprobar si ya existen categorías
+    // 0. Flag guard — prevents TOCTOU race with CloudKit sync
+    let defaults = UserDefaults.standard
+    if defaults.bool(forKey: "seedCategoriesExecuted") {
+        #if DEBUG
+        print("CategorySeed: Semilla ya ejecutada anteriormente (flag).")
+        #endif
+        return
+    }
+
+    // 1. Comprobar si ya existen categorías (secondary defense)
     let existingCategoriesCount: Int
     do {
         let descriptor = FetchDescriptor<Category>()
@@ -347,10 +356,15 @@ func seedCategoriesIfNeeded(in modelContext: ModelContext) {
         #if DEBUG
         print("CategorySeed: Semilla NO ejecutada (ya existen categorías).")
         #endif
+        // Set flag so we don't check the DB again next launch
+        defaults.set(true, forKey: "seedCategoriesExecuted")
         return
     }
 
-    // 2. Ejecutar semilla completa de categorías y subcategorías
+    // 2. Set flag BEFORE inserting — wins race vs CloudKit delivering same categories
+    defaults.set(true, forKey: "seedCategoriesExecuted")
+
+    // 3. Ejecutar semilla completa de categorías y subcategorías
     #if DEBUG
     print("CategorySeed: Ejecutando semilla inicial de categorías por defecto...")
     #endif

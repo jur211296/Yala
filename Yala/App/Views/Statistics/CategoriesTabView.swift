@@ -16,8 +16,10 @@ struct CategoriesTabView: View {
     // MARK: - Environment
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.yalaTheme) private var theme
     @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 48
 
     // MARK: - Settings
@@ -405,14 +407,11 @@ struct CategoriesTabView: View {
 
     /// Comparison mode selector (M/A toggle)
     private var comparisonModeSelector: some View {
-        HStack(spacing: DS.Spacing.none) {
+        HStack(spacing: DS.Spacing.sm) {
             ForEach(ComparisonMode.allCases) { mode in
                 comparisonSelectorButton(for: mode)
             }
         }
-        .padding(DS.Spacing.xxs)
-        .background(Color.yalaSecondaryText.opacity(0.08))
-        .clipShape(Capsule())
     }
 
     private func comparisonSelectorButton(for mode: ComparisonMode) -> some View {
@@ -424,37 +423,45 @@ struct CategoriesTabView: View {
             }
         } label: {
             Text(mode.shortName)
-                .font(DS.Typography.indicator)
-                .padding(.horizontal, DS.Spacing.sm)
-                .padding(.vertical, DS.Spacing.sm)
-                .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
-                .background(
-                    Group {
-                        if isSelected {
-                            Capsule()
-                                .fill(Color.electricIndigo)
-                                .matchedGeometryEffect(
-                                    id: "comparisonSelector", in: comparisonSelectorNamespace)
-                        }
+                .font(DS.Typography.labelSmall)
+                .fontWeight(.semibold)
+                .foregroundStyle(isSelected ? Color.white : theme.secondaryText)
+                .frame(width: 32, height: 32)
+                .background {
+                    if isSelected {
+                        Circle()
+                            .fill(theme.accent)
+                            .matchedGeometryEffect(id: "comparisonSelector", in: comparisonSelectorNamespace)
+                    } else {
+                        Circle()
+                            .fill(.thSecondaryText.opacity(0.08))
                     }
-                )
+                }
         }
         .buttonStyle(.plain)
     }
 
     // MARK: - Charts Carousel
 
-    /// Number of pages in carousel (2 when income mode, 3 otherwise)
+    /// Number of pages in carousel (varies by income mode and iPad layout)
     private var carouselPageCount: Int {
-        isIncomeMode ? 2 : 3
+        let isWide = DS.Adaptive.isWideScreen(sizeClass)
+        if isWide {
+            // iPad: tags moved to nature row, only category + subcategory (or just subcategory in income)
+            return isIncomeMode ? 1 : 2
+        }
+        return isIncomeMode ? 2 : 3
     }
 
+    @ViewBuilder
     private var chartsCarousel: some View {
+        let isWide = DS.Adaptive.isWideScreen(sizeClass)
+
         VStack(spacing: DS.Spacing.sm) {
             GeometryReader { geo in
                 let totalWidth = geo.size.width
                 let spacing: CGFloat = DS.Spacing.md
-                let cardWidth = totalWidth
+                let cardWidth = isWide ? (totalWidth - spacing) / 2 : totalWidth
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(alignment: .top, spacing: spacing) {
@@ -470,10 +477,12 @@ struct CategoriesTabView: View {
                             .frame(width: cardWidth)
                             .id("subcategory")
 
-                        // Tags Chart
-                        tagChartCard
-                            .frame(width: cardWidth)
-                            .id("tags")
+                        // Tags Chart - on iPad, tags moves next to nature
+                        if !isWide {
+                            tagChartCard
+                                .frame(width: cardWidth)
+                                .id("tags")
+                        }
                     }
                     .scrollTargetLayout()
                 }
@@ -483,26 +492,32 @@ struct CategoriesTabView: View {
             }
             .frame(height: 340)
 
-            // Page indicator - dynamic count based on income mode
-            HStack(spacing: DS.Spacing.sm) {
-                ForEach(0..<carouselPageCount, id: \.self) { page in
-                    let pageId = carouselPageIds[page]
-                    Circle()
-                        .fill(
-                            chartsCarouselPosition == pageId
-                                ? Color.yalaPrimaryText.opacity(0.3)
-                                : Color.yalaSecondaryText.opacity(0.2)
-                        )
-                        .frame(width: 6, height: 6)
+            // Page indicator - hide on iPad (multiple charts already visible)
+            if !isWide {
+                HStack(spacing: DS.Spacing.sm) {
+                    ForEach(0..<carouselPageCount, id: \.self) { page in
+                        let pageId = carouselPageIds[page]
+                        Circle()
+                            .fill(
+                                chartsCarouselPosition == pageId
+                                    ? theme.primaryText.opacity(0.3)
+                                    : theme.secondaryText.opacity(0.2)
+                            )
+                            .frame(width: 6, height: 6)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .center)
             }
-            .frame(maxWidth: .infinity, alignment: .center)
         }
     }
 
-    /// IDs for carousel pages based on income mode
+    /// IDs for carousel pages based on income mode and iPad layout
     private var carouselPageIds: [String] {
-        isIncomeMode ? ["subcategory", "tags"] : ["category", "subcategory", "tags"]
+        let isWide = DS.Adaptive.isWideScreen(sizeClass)
+        if isWide {
+            return isIncomeMode ? ["subcategory"] : ["category", "subcategory"]
+        }
+        return isIncomeMode ? ["subcategory", "tags"] : ["category", "subcategory", "tags"]
     }
 
     // MARK: - Category Chart Card
@@ -538,7 +553,7 @@ struct CategoriesTabView: View {
                 )
             }
         }
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -582,7 +597,7 @@ struct CategoriesTabView: View {
                 )
             }
         }
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -623,7 +638,7 @@ struct CategoriesTabView: View {
                 )
             }
         }
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -663,47 +678,57 @@ struct CategoriesTabView: View {
         }
     }
 
+    @ViewBuilder
     private var natureCarousel: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            GeometryReader { geo in
-                let totalWidth = geo.size.width
-                let spacing: CGFloat = DS.Spacing.md
-                let cardWidth = totalWidth
+        let isWide = DS.Adaptive.isWideScreen(sizeClass)
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: spacing) {
-                        // Slide 1: Large (Chart + Legend)
-                        natureWidgetLarge
-                            .frame(width: cardWidth)
-                            .id(0)
+        if isWide {
+            // iPad: tags pie + nature large side by side, no compact nature
+            HStack(alignment: .top, spacing: DS.Spacing.lg) {
+                tagChartCard
+                    .frame(maxWidth: .infinity)
+                natureWidgetLarge
+                    .frame(maxWidth: .infinity)
+            }
+        } else {
+            // iPhone: carousel with large/compact nature slides
+            VStack(spacing: DS.Spacing.sm) {
+                GeometryReader { geo in
+                    let totalWidth = geo.size.width
+                    let spacing: CGFloat = DS.Spacing.md
 
-                        // Slide 2: Medium (Compact Bars)
-                        natureWidgetCompact 
-                            .frame(width: cardWidth)
-                            .id(1)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHStack(alignment: .top, spacing: spacing) {
+                            natureWidgetLarge
+                                .frame(width: totalWidth)
+                                .id(0)
+
+                            natureWidgetCompact
+                                .frame(width: totalWidth)
+                                .id(1)
+                        }
+                        .scrollTargetLayout()
                     }
-                    .scrollTargetLayout()
+                    .scrollTargetBehavior(.viewAligned)
+                    .scrollPosition(id: $natureCarouselIndex)
+                    .frame(width: totalWidth)
                 }
-                .scrollTargetBehavior(.viewAligned)
-                .scrollPosition(id: $natureCarouselIndex)
-                .frame(width: totalWidth)
-            }
-            .frame(height: natureCarouselHeight)
-            .dsAnimation(.easeInOut(duration: 0.3), value: natureCarouselIndex, reduceMotion: reduceMotion)
+                .frame(height: natureCarouselHeight)
+                .dsAnimation(.easeInOut(duration: 0.3), value: natureCarouselIndex, reduceMotion: reduceMotion)
 
-            // Page indicator
-            HStack(spacing: DS.Spacing.sm) {
-                ForEach(0..<2, id: \.self) { page in
-                    Circle()
-                        .fill(
-                            page == (natureCarouselIndex ?? 0)
-                                ? Color.yalaPrimaryText.opacity(0.3)
-                                : Color.yalaSecondaryText.opacity(0.2)
-                        )
-                        .frame(width: 6, height: 6)
+                HStack(spacing: DS.Spacing.sm) {
+                    ForEach(0..<2, id: \.self) { page in
+                        Circle()
+                            .fill(
+                                page == (natureCarouselIndex ?? 0)
+                                    ? theme.primaryText.opacity(0.3)
+                                    : theme.secondaryText.opacity(0.2)
+                            )
+                            .frame(width: 6, height: 6)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .center)
             }
-            .frame(maxWidth: .infinity, alignment: .center)
         }
     }
 
@@ -852,7 +877,7 @@ struct CategoriesTabView: View {
                 }
             }
         }
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -862,14 +887,11 @@ struct CategoriesTabView: View {
     }
 
     private var listViewSelector: some View {
-        HStack(spacing: DS.Spacing.none) {
+        HStack(spacing: DS.Spacing.sm) {
             ForEach(ListViewType.allCases) { viewType in
                 listViewButton(for: viewType)
             }
         }
-        .padding(DS.Spacing.xxs)
-        .background(Color.yalaSecondaryText.opacity(0.08))
-        .clipShape(Capsule())
     }
 
     private func listViewButton(for viewType: ListViewType) -> some View {
@@ -877,8 +899,6 @@ struct CategoriesTabView: View {
         let isLocked = shouldLockToSubcategories
 
         return Button {
-            // Only allow change if not locked to subcategories
-            // OR if trying to switch to subcategories (always allowed)
             guard !isLocked || viewType == .subcategories else { return }
 
             dsWithAnimation(reduceMotion) {
@@ -887,23 +907,23 @@ struct CategoriesTabView: View {
         } label: {
             Image(systemName: viewType.iconName)
                 .font(DS.Typography.labelSmall)
-                .padding(.horizontal, DS.Spacing.sm)
-                .padding(.vertical, DS.Spacing.sm)
-                .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
-                .background(
-                    Group {
-                        if isSelected {
-                            Capsule()
-                                .fill(Color.electricIndigo)
-                                .matchedGeometryEffect(
-                                    id: "listSelector", in: listSelectorNamespace)
-                        }
+                .fontWeight(.semibold)
+                .foregroundStyle(isSelected ? Color.white : theme.secondaryText)
+                .frame(width: 32, height: 32)
+                .background {
+                    if isSelected {
+                        Circle()
+                            .fill(theme.accent)
+                            .matchedGeometryEffect(id: "listSelector", in: listSelectorNamespace)
+                    } else {
+                        Circle()
+                            .fill(.thSecondaryText.opacity(0.08))
                     }
-                )
+                }
         }
         .buttonStyle(.plain)
-        .opacity((isLocked && viewType == .categories) ? 0.4 : 1.0)  // Dim locked button
-        .disabled(isLocked && viewType == .categories)  // Disable locked button
+        .opacity((isLocked && viewType == .categories) ? 0.4 : 1.0)
+        .disabled(isLocked && viewType == .categories)
     }
 
     // MARK: - List View Auto-switching Logic
@@ -1262,7 +1282,7 @@ struct CategoriesTabView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text(L10n.Statistics.latestRecords)
                 .font(DS.Typography.headline)
-                .foregroundStyle(Color.yalaPrimaryText)
+                .foregroundStyle(.thPrimaryText)
 
             if viewModel.recentRecords.isEmpty {
                 emptyRecordsState
@@ -1284,14 +1304,14 @@ struct CategoriesTabView: View {
                     Spacer()
                 }
                 .padding(.vertical, DS.Spacing.md)
-                .foregroundStyle(Color.electricIndigo)
-                .background(Color.electricIndigo.opacity(DS.Opacity.subtle))
+                .foregroundStyle(theme.accent)
+                .background(theme.accent.opacity(DS.Opacity.subtle))
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             }
             .buttonStyle(.plain)
         }
         .padding(DS.Card.padding)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -1442,6 +1462,7 @@ private struct AllCategoriesListContent: View {
     var showVariation: Bool = true
     var onToggleExpanded: (() -> Void)?
     var onSelectCategory: ((PersistentIdentifier) -> Void)?
+    @Environment(\.yalaTheme) private var theme
 
     private var displayedCategories: [CategorySpendingSummary] {
         isExpanded ? categories : Array(categories.prefix(10))
@@ -1485,8 +1506,8 @@ private struct AllCategoriesListContent: View {
                             Spacer()
                         }
                         .padding(.vertical, DS.Spacing.md)
-                        .foregroundStyle(Color.electricIndigo)
-                        .background(Color.electricIndigo.opacity(DS.Opacity.subtle))
+                        .foregroundStyle(theme.accent)
+                        .background((theme.accent).opacity(DS.Opacity.subtle))
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                     }
                     .buttonStyle(.plain)
@@ -1511,6 +1532,7 @@ private struct AllSubcategoriesListContent: View {
     var showVariation: Bool = true
     var onToggleExpanded: (() -> Void)?
     var onSelectSubcategory: ((PersistentIdentifier) -> Void)?
+    @Environment(\.yalaTheme) private var theme
 
     private var displayedSubcategories: [SubcategorySpendingSummary] {
         isExpanded ? subcategories : Array(subcategories.prefix(10))
@@ -1565,8 +1587,8 @@ private struct AllSubcategoriesListContent: View {
                             Spacer()
                         }
                         .padding(.vertical, DS.Spacing.md)
-                        .foregroundStyle(Color.electricIndigo)
-                        .background(Color.electricIndigo.opacity(DS.Opacity.subtle))
+                        .foregroundStyle(theme.accent)
+                        .background((theme.accent).opacity(DS.Opacity.subtle))
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                     }
                     .buttonStyle(.plain)

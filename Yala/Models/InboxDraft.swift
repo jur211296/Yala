@@ -21,6 +21,7 @@ enum DraftSourceType: String, Codable {
     case subscription
     case applePay
     case automation     // External automation (email parsed by AI, etc.)
+    case siri           // Siri natural language entry
 }
 
 enum DraftStatus: String, Codable {
@@ -225,6 +226,7 @@ final class InboxDraft: Identifiable {
         case .subscription: return "creditcard.and.123"
         case .applePay: return "apple.logo"
         case .automation: return "gearshape.fill"
+        case .siri: return "mic.badge.plus"
         }
     }
 

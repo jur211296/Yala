@@ -18,6 +18,7 @@ struct DetailContainerView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.yalaTheme) private var theme
 
     // MARK: - ViewModels
 
@@ -278,7 +279,7 @@ struct DetailContainerView: View {
             .foregroundStyle(isSelected ? .white : .primary)
             .background(
                 Capsule()
-                    .fill(isSelected ? Color.electricIndigo : Color.clear)
+                    .fill(isSelected ? theme.accent : Color.clear)
             )
             .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
@@ -298,7 +299,7 @@ struct DetailContainerView: View {
                     } label: {
                         Image(systemName: "checklist")
                             .font(DS.Typography.body).fontWeight(.medium)
-                            .foregroundStyle(Color.toolbarIconColor)
+                            .foregroundStyle(.thToolbarIcon)
                     }
                 }
 
@@ -312,7 +313,7 @@ struct DetailContainerView: View {
                 } label: {
                     Image(systemName: "line.3.horizontal.decrease")
                         .font(DS.Typography.body).fontWeight(.medium)
-                        .foregroundStyle(Color.toolbarIconColor)
+                        .foregroundStyle(.thToolbarIcon)
                 }
                 .overlay(alignment: .topTrailing) {
                     let showIndicator = (selectedTab == .records && recordsViewModel.activeFilterCount > 0) ||
@@ -358,7 +359,7 @@ struct DetailContainerView: View {
 
     @ViewBuilder
     private var newRecordFAB: some View {
-        let fabBackground = canUseVoiceInput ? Color.electricIndigo : DS.Semantic.disabledForeground.opacity(0.5)
+        let fabBackground = canUseVoiceInput ? theme.accent : DS.Semantic.disabledForeground.opacity(0.5)
         let hasMultipleInputs = (voiceInputEnabled && imageInputEnabled) ||
                                 (voiceInputEnabled && !imageInputEnabled) ||
                                 (!voiceInputEnabled && imageInputEnabled)
@@ -557,7 +558,7 @@ struct DetailContainerView: View {
                 } label: {
                     Image(systemName: "pencil")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(theme.accent)
                         .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.plain)

@@ -110,7 +110,7 @@ struct SubcategorySelectorSheet: View {
                 }
             }
         }
-        .tint(Color.electricIndigo)
+
         .onAppear {
             viewModel.setContext(modelContext, transactionType: transactionType)
         }

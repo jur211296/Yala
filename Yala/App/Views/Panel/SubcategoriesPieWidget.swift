@@ -74,7 +74,7 @@ struct SubcategoriesPieWidget: View {
             }
         }
         .frame(maxWidth: .infinity, minHeight: 320, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -584,6 +584,10 @@ struct SubcategoriesPieWidget: View {
                     selectedAngle = nil
                 }
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Gráfica circular de gastos por subcategoría")
+            .accessibilityValue(safeData.isEmpty ? "Sin datos" :
+                "\(safeData.count) subcategorías, total \(formattedCurrency(safeData.reduce(0) { $0 + $1.amount }))")
         }
     }
 

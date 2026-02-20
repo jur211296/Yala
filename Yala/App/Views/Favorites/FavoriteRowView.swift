@@ -15,7 +15,7 @@ struct FavoriteRowView: View {
     let favorite: FavoritePayment
     let onTap: () -> Void
 
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.yalaTheme) private var theme
 
     var body: some View {
         Button(action: onTap) {
@@ -62,7 +62,7 @@ struct FavoriteRowView: View {
             .background(cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
             .shadow(
-                color: Color.black.opacity(colorScheme == .dark ? 0.25 : DS.Opacity.faint),
+                color: Color.black.opacity(theme.shadowOpacity),
                 radius: 6,
                 x: 0,
                 y: 3
@@ -75,7 +75,7 @@ struct FavoriteRowView: View {
 
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-            .fill(Color.yalaCard)
+            .fill(.thCard)
     }
 
     private var favoriteIcon: some View {

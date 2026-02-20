@@ -16,6 +16,7 @@ struct FavoriteEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.yalaTheme) private var theme
 
     @State private var viewModel = FavoriteEditorViewModel()
 
@@ -61,7 +62,7 @@ struct FavoriteEditorView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.yalaBackground
+                theme.background
                     .ignoresSafeArea()
                     .dismissKeyboardOnTap()
 
@@ -160,7 +161,7 @@ struct FavoriteEditorView: View {
                 }
             )
         }
-        .tint(Color.electricIndigo)
+
         .onAppear {
             viewModel.setContext(modelContext)
             loadFavoriteData()
@@ -338,7 +339,7 @@ struct FavoriteEditorView: View {
                             icon: "number",
                             text: tag.name,
                             isSelected: true,
-                            color: Color.tagChipColor
+                            color: theme.tagChip
                         ) {
                             showTagSelector = true
                         }

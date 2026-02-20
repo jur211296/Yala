@@ -20,16 +20,16 @@ struct TutorialsListView: View {
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "book.fill")
                             .font(DS.Typography.amountLarge)
-                            .foregroundStyle(Color.electricIndigo)
+                            .foregroundStyle(.thAccent)
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Settings.tutorials)
                             .font(.title2.bold())
-                            .foregroundStyle(Color.yalaPrimaryText)
+                            .foregroundStyle(.thPrimaryText)
 
                         Text(L10n.Tutorials.subtitle)
                             .font(DS.Typography.body)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top, DS.Spacing.xxxl)
@@ -65,7 +65,7 @@ struct TutorialsListView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(category.title)
                 .font(DS.Typography.headline)
-                .foregroundStyle(Color.yalaSecondaryText)
+                .foregroundStyle(.thSecondaryText)
                 .textCase(.uppercase)
                 .padding(.horizontal, DS.Spacing.xs)
 
@@ -82,7 +82,7 @@ struct TutorialsListView: View {
                     }
                 }
             }
-            .background(Color.yalaCard)
+            .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.lg)
@@ -108,18 +108,18 @@ struct TutorialsListView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(tutorial.title)
                     .font(DS.Typography.bodyBold)
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
 
                 Text(String(format: L10n.Tutorials.stepsCount, tutorial.steps.count))
                     .font(DS.Typography.labelSmall)
-                    .foregroundStyle(Color.yalaSecondaryText)
+                    .foregroundStyle(.thSecondaryText)
             }
 
             Spacer()
 
             Image(systemName: "chevron.right")
                 .font(DS.Typography.labelSmall)
-                .foregroundStyle(Color.yalaSecondaryText)
+                .foregroundStyle(.thSecondaryText)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)

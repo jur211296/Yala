@@ -17,8 +17,10 @@ struct TrendsTabView: View {
     // MARK: - Environment
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.yalaTheme) private var theme
     @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
 
     // MARK: - Data (passed from parent)
@@ -419,14 +421,11 @@ struct TrendsTabView: View {
     // MARK: - Comparison Mode Selector
 
     private var comparisonModeSelector: some View {
-        HStack(spacing: DS.Spacing.none) {
+        HStack(spacing: DS.Spacing.sm) {
             ForEach(ComparisonMode.allCases) { mode in
                 comparisonSelectorButton(for: mode)
             }
         }
-        .padding(DS.Spacing.xxs)
-        .background(Color.yalaSecondaryText.opacity(0.08))
-        .clipShape(Capsule())
     }
 
     @Namespace private var comparisonNamespace
@@ -441,55 +440,70 @@ struct TrendsTabView: View {
         } label: {
             Text(mode.shortName)
                 .font(DS.Typography.labelSmall)
-                .padding(.horizontal, DS.Chip.paddingH)
-                .padding(.vertical, DS.Spacing.sm)
-                .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
-                .background(
-                    Group {
-                        if isSelected {
-                            Capsule()
-                                .fill(Color.electricIndigo)
-                                .matchedGeometryEffect(id: "comparisonSelector", in: comparisonNamespace)
-                        }
+                .fontWeight(.semibold)
+                .foregroundStyle(isSelected ? Color.white : theme.secondaryText)
+                .frame(width: 32, height: 32)
+                .background {
+                    if isSelected {
+                        Circle()
+                            .fill(theme.accent)
+                            .matchedGeometryEffect(id: "comparisonSelector", in: comparisonNamespace)
+                    } else {
+                        Circle()
+                            .fill(.thSecondaryText.opacity(0.08))
                     }
-                )
+                }
         }
         .buttonStyle(.plain)
     }
 
     // MARK: - Trend Charts Carousel
 
+    @ViewBuilder
     private var trendChartsCarousel: some View {
+        let isWide = DS.Adaptive.isWideScreen(sizeClass)
+        let hasTwoCharts = showVariations && trendsViewModel.detailPeriod != .allTime
+
         VStack(spacing: DS.Spacing.md) {
-            TabView(selection: $trendChartsCarouselPosition) {
-                // Trends Chart Card (Page 0)
-                chartCard
-                    .tag(0)
-
-                // Period Comparison Card (Page 1) - only if not All Time AND showVariations is ON
-                if showVariations && trendsViewModel.detailPeriod != .allTime {
+            if isWide && hasTwoCharts {
+                // iPad: show both charts side by side
+                HStack(alignment: .top, spacing: DS.Spacing.lg) {
+                    chartCard
+                        .frame(maxWidth: .infinity)
                     periodComparisonCard
-                        .tag(1)
+                        .frame(maxWidth: .infinity)
                 }
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .frame(height: 330)
+                .frame(height: 330)
+            } else {
+                // iPhone or single chart: paging TabView
+                TabView(selection: $trendChartsCarouselPosition) {
+                    chartCard
+                        .tag(0)
 
-            // Page indicators (centered) - only show when there are 2 pages
-            if showVariations && trendsViewModel.detailPeriod != .allTime {
-                HStack(spacing: DS.Spacing.sm) {
-                    ForEach(0..<2, id: \.self) { index in
-                        Circle()
-                            .fill(
-                                trendChartsCarouselPosition == index
-                                    ? Color.yalaPrimaryText : Color.yalaSecondaryText.opacity(0.3)
-                            )
-                            .frame(width: 6, height: 6)
-                            .animation(
-                                .easeInOut(duration: 0.2), value: trendChartsCarouselPosition)
+                    if hasTwoCharts {
+                        periodComparisonCard
+                            .tag(1)
                     }
                 }
-                .frame(maxWidth: .infinity)
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .frame(height: 330)
+
+                // Page indicators - only on compact with 2 pages
+                if hasTwoCharts {
+                    HStack(spacing: DS.Spacing.sm) {
+                        ForEach(0..<2, id: \.self) { index in
+                            Circle()
+                                .fill(
+                                    trendChartsCarouselPosition == index
+                                        ? theme.primaryText : theme.secondaryText.opacity(0.3)
+                                )
+                                .frame(width: 6, height: 6)
+                                .animation(
+                                    .easeInOut(duration: 0.2), value: trendChartsCarouselPosition)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
             }
         }
     }
@@ -526,7 +540,7 @@ struct TrendsTabView: View {
 
                             Text(comparisonPeriodText)
                                 .font(DS.Typography.captionSmall)
-                                .foregroundStyle(Color.yalaSecondaryText)
+                                .foregroundStyle(.thSecondaryText)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
                         }
@@ -536,7 +550,7 @@ struct TrendsTabView: View {
                 // Simple title when no data
                 Text(chartTitle)
                     .font(DS.Typography.headline)
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
             }
 
             if hasTrendData {
@@ -558,7 +572,7 @@ struct TrendsTabView: View {
             }
         }
         .padding(DS.Card.padding)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -617,20 +631,20 @@ struct TrendsTabView: View {
                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                         Text(periodComparisonTitle)
                             .font(DS.Typography.headline)
-                            .foregroundStyle(Color.yalaPrimaryText)
+                            .foregroundStyle(.thPrimaryText)
 
                         // KPI value with "vs" previous
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                             Text(currentKPIValue)
                                 .font(DS.Typography.headline)
-                                .foregroundStyle(Color.yalaPrimaryText)
+                                .foregroundStyle(.thPrimaryText)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
 
                             if let prevTotal = previousPeriodTotal {
                                 Text("vs \(YalaFormatter.number(value: prevTotal))")
                                     .font(DS.Typography.caption)
-                                    .foregroundStyle(Color.yalaSecondaryText)
+                                    .foregroundStyle(.thSecondaryText)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.7)
                             }
@@ -652,7 +666,7 @@ struct TrendsTabView: View {
 
                         Text(comparisonPeriodText)
                             .font(DS.Typography.captionSmall)
-                            .foregroundStyle(Color.yalaSecondaryText)
+                            .foregroundStyle(.thSecondaryText)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                     }
@@ -661,7 +675,7 @@ struct TrendsTabView: View {
                 // Simple title when no data
                 Text(periodComparisonTitle)
                     .font(DS.Typography.headline)
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
             }
 
             // Chart or empty state
@@ -689,7 +703,7 @@ struct TrendsTabView: View {
             }
         }
         .padding(DS.Card.padding)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -719,12 +733,12 @@ struct TrendsTabView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             Text(chartTitle)
                 .font(DS.Typography.headline)
-                .foregroundStyle(Color.yalaPrimaryText)
+                .foregroundStyle(.thPrimaryText)
 
             HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                 Text(currentKPIValue)
                     .font(DS.Typography.headline)
-                    .foregroundStyle(Color.yalaPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
 
@@ -733,7 +747,7 @@ struct TrendsTabView: View {
                    let prevTotal = previousPeriodTotal {
                     Text("vs \(YalaFormatter.number(value: prevTotal))")
                         .font(DS.Typography.caption)
-                        .foregroundStyle(Color.yalaSecondaryText)
+                        .foregroundStyle(.thSecondaryText)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                 }
@@ -751,15 +765,11 @@ struct TrendsTabView: View {
     }
 
     private var metricSelector: some View {
-        HStack(spacing: DS.Spacing.none) {
-            // Always show all options - user can switch freely
+        HStack(spacing: DS.Spacing.sm) {
             ForEach(TrendMetric.allCases) { metric in
                 metricButton(for: metric)
             }
         }
-        .padding(DS.Spacing.xxs)
-        .background(Color.yalaSecondaryText.opacity(0.08))
-        .clipShape(Capsule())
         .filterBlockedPopover(
             isPresented: $showFilterBlockedMessage,
             title: L10n.Trend.filterBlockedTitle,
@@ -769,15 +779,12 @@ struct TrendsTabView: View {
 
     private func metricButton(for metric: TrendMetric) -> some View {
         let isSelected = trendsViewModel.selectedMetric == metric
-        // Block balance/income when expense-only filters are active
         let isBlocked = hasExpenseOnlyFilters && metric != .expense
 
         return Button {
             if isBlocked {
-                // Show popover explaining why option is blocked
                 showFilterBlockedMessage = true
             } else {
-                // Set global transaction nature filter - metric auto-adjusts via enforceMetricLock()
                 switch metric {
                 case .balance:
                     sessionState.selectedTransactionNatures.removeAll()
@@ -791,21 +798,21 @@ struct TrendsTabView: View {
                 }
             }
         } label: {
-            // Icon only (compact version for TrendsTabView header)
             Image(systemName: metric.iconName)
                 .font(DS.Typography.labelSmall)
-                .padding(.horizontal, DS.FormRow.paddingV)
-                .padding(.vertical, DS.Spacing.sm)
+                .fontWeight(.semibold)
                 .foregroundStyle(isSelected ? .white : (isBlocked ? metric.color.opacity(0.4) : metric.color))
-                .background(
-                    Group {
-                        if isSelected {
-                            Capsule()
-                                .fill(metric.color)
-                                .matchedGeometryEffect(id: "metricSelector", in: metricNamespace)
-                        }
+                .frame(width: 32, height: 32)
+                .background {
+                    if isSelected {
+                        Circle()
+                            .fill(metric.color)
+                            .matchedGeometryEffect(id: "metricSelector", in: metricNamespace)
+                    } else {
+                        Circle()
+                            .fill(.thSecondaryText.opacity(0.08))
                     }
-                )
+                }
         }
         .buttonStyle(.plain)
     }
@@ -879,7 +886,7 @@ struct TrendsTabView: View {
         .frame(maxWidth: .infinity)
         .frame(height: 200)
         .padding(DS.Card.padding)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -889,14 +896,11 @@ struct TrendsTabView: View {
     }
 
     private var cashFlowViewSelector: some View {
-        HStack(spacing: DS.Spacing.none) {
+        HStack(spacing: DS.Spacing.sm) {
             ForEach(CashFlowViewType.allCases) { viewType in
                 cashFlowViewButton(for: viewType)
             }
         }
-        .padding(DS.Spacing.xxs)
-        .background(Color.yalaSecondaryText.opacity(0.08))
-        .clipShape(Capsule())
     }
 
     private func cashFlowViewButton(for viewType: CashFlowViewType) -> some View {
@@ -905,7 +909,6 @@ struct TrendsTabView: View {
         return Button {
             dsWithAnimation(reduceMotion) {
                 cashFlowViewType = viewType
-                // Reset carousel positions when switching view type
                 if viewType == .byAccount,
                     let firstAccount = sortedAccountIDs(Array(cashFlowByAccount.keys)).first
                 {
@@ -913,7 +916,6 @@ struct TrendsTabView: View {
                 }
                 if viewType == .byCurrency,
                     let firstCurrency = cashFlowByCurrency.keys.sorted(by: { code1, code2 in
-                        // Preferred currency first, then by total amount
                         if code1 == defaultCurrencyCode { return true }
                         if code2 == defaultCurrencyCode { return false }
                         let total1 =
@@ -931,19 +933,19 @@ struct TrendsTabView: View {
         } label: {
             Image(systemName: viewType.iconName)
                 .font(DS.Typography.labelSmall)
-                .padding(.horizontal, DS.Chip.paddingH)
-                .padding(.vertical, DS.Spacing.sm)
-                .foregroundStyle(isSelected ? .white : Color.yalaSecondaryText)
-                .background(
-                    Group {
-                        if isSelected {
-                            Capsule()
-                                .fill(Color.electricIndigo)
-                                .matchedGeometryEffect(
-                                    id: "cashFlowSelector", in: cashFlowSelectorNamespace)
-                        }
+                .fontWeight(.semibold)
+                .foregroundStyle(isSelected ? Color.white : theme.secondaryText)
+                .frame(width: 32, height: 32)
+                .background {
+                    if isSelected {
+                        Circle()
+                            .fill(theme.accent)
+                            .matchedGeometryEffect(id: "cashFlowSelector", in: cashFlowSelectorNamespace)
+                    } else {
+                        Circle()
+                            .fill(.thSecondaryText.opacity(0.08))
                     }
-                )
+                }
         }
         .buttonStyle(.plain)
     }
@@ -985,8 +987,8 @@ struct TrendsTabView: View {
                             Circle()
                                 .fill(
                                     accountCarouselPosition == accountID
-                                        ? Color.yalaPrimaryText.opacity(0.3)
-                                        : Color.yalaSecondaryText.opacity(0.2)
+                                        ? theme.primaryText.opacity(0.3)
+                                        : theme.secondaryText.opacity(0.2)
                                 )
                                 .frame(width: 6, height: 6)
                         }
@@ -1050,8 +1052,8 @@ struct TrendsTabView: View {
                             Circle()
                                 .fill(
                                     currencyCarouselPosition == currencyCode
-                                        ? Color.yalaPrimaryText.opacity(0.3)
-                                        : Color.yalaSecondaryText.opacity(0.2)
+                                        ? theme.primaryText.opacity(0.3)
+                                        : theme.secondaryText.opacity(0.2)
                                 )
                                 .frame(width: 6, height: 6)
                         }
@@ -1132,7 +1134,7 @@ struct TrendsTabView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text(L10n.Statistics.latestRecords)
                 .font(DS.Typography.headline)
-                .foregroundStyle(Color.yalaPrimaryText)
+                .foregroundStyle(.thPrimaryText)
 
             if trendsViewModel.recentRecords.isEmpty {
                 emptyRecordsState
@@ -1155,14 +1157,14 @@ struct TrendsTabView: View {
                     Spacer()
                 }
                 .padding(.vertical, DS.Spacing.md)
-                .foregroundStyle(Color.electricIndigo)
-                .background(Color.electricIndigo.opacity(0.1))
+                .foregroundStyle(theme.accent)
+                .background(theme.accent.opacity(0.1))
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             }
             .buttonStyle(.plain)
         }
         .padding(DS.Card.padding)
-        .background(Color.yalaCard)
+        .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
     }
 

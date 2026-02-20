@@ -5,30 +5,53 @@
 See: .planning/PROJECT.md (updated 2026-01-15)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 11 — Sistema de Temas Independientes (V1.2)
+**Current focus:** Fase 12 — Plataforma Extendida (V1.2)
 
 ## Current Position
 
 Version: 1.2 (en desarrollo)
-Phase: 11 — Sistema de Temas Independientes
-Spec: `.planning/THEME-REFACTOR-PLAN.md`
+Phase: 12 — Plataforma Extendida
+Spec: None
 Plan: None
-Status: **V1.1 CERRADA** — Release preparado (2026-02-13)
-Last activity: 2026-02-13 — Cierre V1.1: fase 10.5 completada, merge 1.1 → 1.0
+Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
+Last activity: 2026-02-19 — Fase 11 cerrada, verificación visual OK
+
+### Branch Strategy
+- **1.0** = Release (V1.0 + V1.1 mergeada)
+- **1.1** = Desarrollo activo (V1.2: Fase 11+)
 
 Progress: V1.0 ████████████████ 100% ✅
 Progress: V1.1 ████████████████ 100% ✅ (Cerrada 2026-02-13)
-Progress: V1.2 ░░░░░░░░░░░░░░░░ 0% (Fase 11 pendiente)
+Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅, Fase 12 pendiente)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-20] 52b572e feat: add Siri & Shortcuts settings screen in Profile
+- [2026-02-20] 7700b2d feat: add Siri natural language intent, .siri source type and tip card
+- [2026-02-20] 50bef88 feat: add Lock Screen widgets (4 accessory widgets)
+- [2026-02-20] d534a4f feat: add VoiceOver accessibility labels to all charts
+- [2026-02-20] 54185b5 fix: resolve pre-launch warnings — legal link and force unwraps
+- [2026-02-20] 4add74e feat: dev-only subscription reset on data wipe for testing
+- [2026-02-20] 4a57873 fix: improve ProTrialOfferSheet layout and show success view after purchase
+- [2026-02-20] 9860a60 feat: add free trial UI — paywall trial info, post-onboarding offer sheet, StoreKit config
+- [2026-02-20] 5c8eb76 fix: dark mode system theme, circular selectors, budget pie filter, support email context
+- [2026-02-19] 5cf0528 fix: localize notification names and texts dynamically
+- [2026-02-19] 44d3b89 feat: add average line to bar and trend charts with personalization picker
+- [2026-02-19] 71d6e92 fix: budget period chevron navigation + duplicate report notification guard
+- [2026-02-19] cbe7678 feat: add theme system with accent color propagation across all views
+- [2026-02-18] d1eab6b fix: widen metric selector touch targets in TrendsTabView
+- [2026-02-18] 6796274 fix: make YalaToolbarButton circular with buttonBorderShape(.circle)
+- [2026-02-18] 599e7b1 feat: add paid status tracking + per-occurrence display for scheduled payments
+- [2026-02-17] 276b1a4 fix: guard iCloud sync UX for medium-severity risks (R3, R5, R6, R9)
+- [2026-02-17] fbbedde fix: guard iCloud sync + onboarding data integrity (R1, R2, R4, R7, R8)
+- [2026-02-17] 24c917a fix: guard App Intents without accounts + expand iCloud sync detection
+- [2026-02-17] 347e36e fix: ensure SessionState environment propagates on Designed for iPad
+- [2026-02-17] 7040290 fix: widget budget filters + NatureTrendWidget KPI (BUG-27, BUG-28)
+- [2026-02-16] e2a69fd feat: add iPad adaptive layout — double column widgets, carousels, trends
+- [2026-02-16] 9c196e5 chore: unify deployment target (26.0) and version (1.0) across all targets
 - [2026-02-13] f586a15 fix: resolve pre-launch warnings — prints, VoiceOver, Dynamic Type, touch targets
-- [2026-02-13] 2b3677d feat: redesign image selection idle screen with hints and examples
-- [2026-02-13] f6ea01b feat: add 2s freeze between video loops and zoom into center content
-- [2026-02-13] b8e3f13 feat: overhaul tutorial system with intro, completion screen and correct step alignment
-- [2026-02-13] 5b9038a fix: align X-axis labels with bar centers and data points in all charts
 - [2026-02-13] d7b2970 fix: show visible point on trend charts when period has single data point
 - [2026-02-12] ed93611 fix: initialize BudgetAlertService context so threshold notifications actually fire
 - [2026-02-12] 9e38af9 fix: preserve specific subcategory selection when opening filters sheet
@@ -347,16 +370,73 @@ Agregado `SortDescriptor(\.createdAt, order: .reverse)` como tiebreaker en 4 Fet
 
 ---
 
-### Después de 10.5: Fase 11 — Sistema de Temas Independientes (V1.2)
+### Bugs pendientes V1.0
 
-**Plan completo:** `.planning/THEME-REFACTOR-PLAN.md`
+- ✅ **BUG-33: YalaSpark se cruza con el título en ProTrialOfferSheet** — Resuelto (4a57873). Layout compactado, botones dentro de ScrollView, SubscriptionSuccessView al suscribir.
 
-Refactorizar el sistema de colores para soportar temas completamente independientes.
-Arquitectura: YalaTheme struct + ThemeColor ShapeStyle + @Observable ThemeManager.
-Elimina el hack de `.id(userThemeRaw)` que reinicia la app al cambiar tema.
-~60-70 archivos a migrar, cambio mecánico (`Color.yalaBackground` → `.thBackground`).
+- ✅ **BUG-25: RecordsStandalone no se refresca al crear/aprobar transacciones** — Corregido en cc565b0. Causa: `loadData()` y `applyFilters()` se ejecutaban síncronamente, filters leían datos stale. Fix: `DispatchQueue.main.async` (patrón DetailContainerView).
 
-### Después de Fase 11: Fase 12 — Plataforma Extendida (V1.2)
+- ✅ **BUG-26: Share Sheet por imagen falla intermitentemente en uso repetido** — Corregido en bd9231a. Migrado de `hasPendingSharedImage` persistente a patrón one-shot `shouldShowSharedImage`. Eliminado double-trigger en `handleBecameActive`, reset inmediato en observer, cleanup de imágenes stale >24h.
+
+- ✅ **BUG-27: Widget WidgetKit de presupuestos no filtra por naturaleza ni tags** — Corregido en 7040290. Agregados filtros de nature y tags a `WidgetDataCache.calculateBudgetSpent()`, migrado matching de subcategory/account de nombre a ID.
+  Síntoma: Si un presupuesto está basado en naturalezas (ej: "Solo gastos fijos"), el widget iOS muestra el total de TODAS las naturalezas en vez del filtrado. La vista Planificación > Presupuestos muestra el número correcto.
+
+  Root cause: `WidgetDataCache.calculateBudgetSpent()` (líneas 422-468) es una copia simplificada de `BudgetsViewModel.getBudgetSpending()` (líneas 198-270) que no se actualizó cuando se agregaron filtros nuevos.
+
+  Filtros comparados:
+  | Filtro | Widget (`WidgetDataCache`) | Vista (`BudgetsViewModel`) |
+  |--------|---------------------------|---------------------------|
+  | Date range | ✓ | ✓ |
+  | Account | ✓ (por nombre ⚠️) | ✓ (por ID) |
+  | Subcategory | ✓ (por nombre ⚠️) | ✓ (por ID) |
+  | **Nature** | **❌ FALTA** | ✓ |
+  | **Tag** | **❌ FALTA** | ✓ |
+  | Income/Expense | ✓ | ✓ |
+
+  Problema adicional: El widget usa comparación por nombre (`$0.name == tx.subcategory?.name`) en vez de por ID (frágil si se renombra una cuenta/subcategoría).
+
+  Archivos:
+  - `Services/WidgetDataCache.swift:422-468` — `calculateBudgetSpent()` (incompleto)
+  - `App/ViewModels/BudgetsViewModel.swift:198-270` — `getBudgetSpending()` (correcto)
+
+  Fix propuesto:
+  1. Agregar filtro de nature a `calculateBudgetSpent()` (parsear `budget.natures` como en BudgetsVM línea 245-252)
+  2. Agregar filtro de tags a `calculateBudgetSpent()`
+  3. Migrar matching de nombre a matching por ID para accounts y subcategories
+
+- ✅ **BUG-28: KPI de NatureTrendWidget en Statistics no refleja filtro de naturaleza** — Corregido en 7040290. `totalAmount` y `variation` en NatureTrendWidget ahora respetan `selectedNature`, usando `amount(for:)` en NatureTrendPoint y `previousAmountByNature` para la variación.
+  Síntoma: Al seleccionar una naturaleza en Statistics > Categories, el KPI del NatureTrendWidget muestra el total de TODAS las naturalezas. En PanelView, el mismo widget muestra el total filtrado correctamente.
+
+  Root cause: `CategoriesTabView` (línea 1022) construye `natureCriteria` con `selectedNatures: []` explícitamente vacío, ignorando el filtro activo. El widget recibe transacciones sin filtrar por naturaleza y el KPI suma todo.
+
+  Flujo PanelView (correcto):
+  - `PanelViewModel.filtered` (línea 742) aplica TODOS los filtros incluyendo nature (líneas 765-772)
+  - `expenseFiltered` → `natureWidgetTxns` → `NatureTrendHelper.calculateTrend()` — datos ya filtrados
+
+  Flujo CategoriesTabView (bug):
+  - `natureCriteria` (línea 1017-1029) excluye nature filter: `selectedNatures: []`
+  - `FilterService.filterForTrends()` devuelve TODAS las naturalezas
+  - `NatureTrendWidget` KPI: `trendPoints.reduce(0) { $0 + $1.total }` — suma todo
+
+  Archivos:
+  - `App/Views/Statistics/CategoriesTabView.swift:1017-1036` — `natureCriteria` con `selectedNatures: []`
+  - `App/ViewModels/PanelViewModel.swift:765-772` — filtro de nature aplicado correctamente
+  - `Widgets/NatureTrendWidget.swift:34-36` — KPI suma todos los trendPoints
+
+  Fix propuesto:
+  - Pasar `selectedNatures` del filtro activo al `natureCriteria` en CategoriesTabView
+  - Mantener el dimming visual para naturalezas no seleccionadas, pero que el KPI refleje solo la seleccionada
+
+### Bugs Pre-Release Pendientes
+
+- ✅ **BUG-29: Selector de mes falta en Presupuestos** — Resuelto (71d6e92): periodNavigationHeader con chevrones idéntico a ScheduledPaymentsListView
+- ✅ **BUG-30: Notificación de resumen del día se envía duplicada** — Resuelto (71d6e92): isSendingReports guard en ReportNotificationService
+
+### Fase 11: Sistema de Temas Independientes (V1.2) — ✅ COMPLETADA (2026-02-19)
+
+Refactorización completa del sistema de colores. 6 temas (3 free + 3 PRO). YalaTheme struct + ThemeColor ShapeStyle + @Observable ThemeManager. Cambio de tema sin reinicio (eliminado `.id(userThemeRaw)`). 0 usos de colores legacy. 12 escenarios QA (Sección 38).
+
+### Siguiente: Fase 12 — Plataforma Extendida (V1.2)
 
 Ver ROADMAP.md para detalles.
 
@@ -448,10 +528,12 @@ Ver ROADMAP.md para detalles.
 
 ## Session Continuity
 
-Last session: 2026-02-13
-Stopped at: Cierre V1.1 — merge 1.1 → 1.0 completado
-Next step: Crear branch 1.2 para Fase 11 (Sistema de Temas)
+Last session: 2026-02-20
+Stopped at: Siri & Shortcuts — intent + settings screen completed
+Next step: Continue Phase 12 items
 Resume context:
-- V1.1 cerrada con 524 commits sobre 1.0
-- Pre-launch checklist pasado, 260 tests OK
-- Siguiente: Fase 11 — Sistema de Temas Independientes (THEME-REFACTOR-PLAN.md)
+- SiriNaturalEntryIntent: LLM parsing (Pro) + AmountParser offline fallback → InboxDraft (7700b2d)
+- SiriShortcutsView: 3 sections (Siri card, 5 shortcuts with descriptions, FAQ) in Profile > Security (52b572e)
+- Siri tip card in PanelView (dismissable, @AppStorage showSiriTip)
+- .siri source type added to DraftSourceType, Inbox views updated
+- Localized in 6 languages (es, en, de, fr, it, pt)

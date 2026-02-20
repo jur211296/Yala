@@ -52,6 +52,9 @@ final class AppBootstrapper {
 
         let context = container.mainContext
 
+        // 0. Sync preferences from iCloud (must be FIRST — other services read these)
+        PreferenceSyncService.shared.bootstrap()
+
         // 1. Initialize notification delegate (must be early for foreground display)
         _ = NotificationService.shared
 
@@ -70,6 +73,9 @@ final class AppBootstrapper {
         // 6. Seed default notifications for existing users
         seedDefaultNotifications(context: context)
 
+        // 6.1. Deduplicate notifications (R9: handles CloudKit race during onboarding)
+        NotificationService.shared.deduplicateNotifications(context: context)
+
         // 6.5. Cancel any old scheduled dynamic notifications (reports)
         // These use background tasks now, not iOS scheduling
         await NotificationService.shared.cancelDynamicNotifications(context: context)
@@ -77,8 +83,11 @@ final class AppBootstrapper {
         // 6.6. Ensure static notifications are scheduled (handles reinstall/update case)
         await ensureNotificationsScheduled(context: context)
 
-        // 7. Check for pending shared images
+        // 7. Check for pending shared images (cold launch without deep link)
         checkForPendingSharedImage()
+
+        // 7.5. Clean up stale pending images (>24h)
+        SharedContainerService.clearOldPendingImages(olderThan: 86400)
 
         // 8. Initialize budget alert service
         budgetAlertService.setContext(context)
@@ -106,7 +115,8 @@ final class AppBootstrapper {
         // Check for pending Control Center action first
         checkForPendingControlAction()
 
-        checkForPendingSharedImage()
+        // Note: shared image check removed here — deep link is the sole trigger
+        // for warm launch. Cold launch is covered by bootstrap() step 7.
         checkForPendingInboxDrafts(context: context)
 
         // Verify and reschedule notifications if needed
@@ -216,8 +226,11 @@ final class AppBootstrapper {
             // Delay to ensure PanelView is mounted and observing before flags are set
             // Covers cold launch from Share Extension where onOpenURL fires before first render
             Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(300))
-                checkForPendingSharedImage()
+                try? await Task.sleep(for: .milliseconds(500))
+                let imageURLs = SharedContainerService.pendingImageURLs()
+                guard let firstImageURL = imageURLs.first else { return }
+                sessionState.pendingSharedImageURL = firstImageURL
+                sessionState.shouldShowSharedImage = true
             }
 
         case "voice-entry":
@@ -417,16 +430,12 @@ final class AppBootstrapper {
         NotificationService.shared.seedDefaultNotificationsIfNeeded(context: context)
     }
 
+    /// Only called from bootstrap() for cold launch without deep link.
     private func checkForPendingSharedImage() {
         let imageURLs = SharedContainerService.pendingImageURLs()
-        guard let firstImageURL = imageURLs.first else {
-            sessionState.hasPendingSharedImage = false
-            sessionState.pendingSharedImageURL = nil
-            return
-        }
-
+        guard let firstImageURL = imageURLs.first else { return }
         sessionState.pendingSharedImageURL = firstImageURL
-        sessionState.hasPendingSharedImage = true
+        sessionState.shouldShowSharedImage = true
     }
 
     // MARK: - Notification Management
