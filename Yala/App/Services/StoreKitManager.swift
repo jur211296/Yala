@@ -108,12 +108,25 @@ final class StoreKitManager {
                 Self.proMonthlyID,
                 Self.proYearlyID,
             ]
+            #if DEBUG
+            print("StoreKitManager: Loading products for IDs: \(productIDs)")
+            #endif
             let storeProducts = try await Product.products(for: productIDs)
+            #if DEBUG
+            print("StoreKitManager: Loaded \(storeProducts.count) products")
+            for p in storeProducts {
+                let intro = p.subscription?.introductoryOffer
+                print("  - \(p.id): \(p.displayPrice), hasIntro: \(intro != nil), period: \(intro?.period.debugDescription ?? "none")")
+            }
+            #endif
             // Sort: yearly first (better value), then monthly
             products = storeProducts.sorted { p1, _ in
                 p1.id == Self.proYearlyID
             }
         } catch {
+            #if DEBUG
+            print("StoreKitManager: Error loading products: \(error)")
+            #endif
             errorMessage = error.localizedDescription
         }
     }
@@ -221,6 +234,20 @@ final class StoreKitManager {
         }
         defaults.set(isProUser, forKey: "isProUser")
         defaults.synchronize()
+    }
+
+    // MARK: - Trial Eligibility
+
+    /// Check if the user is eligible for any introductory offer (free trial)
+    func isEligibleForIntroOffer() async -> Bool {
+        // Ensure products are loaded
+        if products.isEmpty {
+            await loadProducts()
+        }
+        // Check eligibility on any product in the subscription group
+        guard let product = products.first,
+              let subscription = product.subscription else { return false }
+        return await subscription.isEligibleForIntroOffer
     }
 
     // MARK: - Helpers

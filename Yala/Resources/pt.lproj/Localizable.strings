@@ -1500,7 +1500,7 @@
 "subscription.feature.image" = "Digitalização de recibos e imagens";
 "subscription.feature.reports" = "Relatórios e gráficos avançados";
 "subscription.feature.currencies" = "Todas as moedas e taxas de câmbio";
-"subscription.feature.themes" = "Temas e ícones exclusivos";
+"subscription.feature.themes" = "Temas personalizados";
 "subscription.feature.export" = "Exportação em Excel e CSV";
 "subscription.legalFooter" = "O pagamento é cobrado na sua conta Apple. A assinatura se renova automaticamente, a menos que seja cancelada pelo menos 24 horas antes do fim do período atual.";
 "subscription.termsLink" = "Termos de Uso e Política de Privacidade";
@@ -1863,6 +1863,16 @@
 "subscription.downgrade.selectBudgets" = "Selecione %d orçamentos para manter";
 "subscription.downgrade.confirm" = "Confirmar seleção";
 "subscription.downgrade.reactivate" = "Reativar Pro";
+
+// Trial paywall
+"subscription.startFreeTrial" = "Comece seu teste grátis";
+"subscription.trialThenPrice" = "Grátis %@ dias, depois %@";
+
+// ProTrialOfferSheet
+"subscription.trialOffer.title" = "Experimente Yala Pro grátis";
+"subscription.trialOffer.subtitle" = "7 dias com todas as funcionalidades. Sem compromisso, cancele quando quiser.";
+"subscription.trialOffer.startTrial" = "Começar teste grátis";
+"subscription.trialOffer.maybeLater" = "Talvez depois";
 
 // MARK: - Shortcut Notifications
 

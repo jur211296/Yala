@@ -73,51 +73,11 @@ final class FeatureGateService {
 
     private init() {}
 
-    // MARK: - Build Detection
-
-    /// Whether this is the Dev build (bundle ID ends with .dev)
-    static var isDevBuild: Bool {
-        guard let bundleID = Bundle.main.bundleIdentifier else { return false }
-        return bundleID.lowercased().hasSuffix(".dev")
-    }
-
-    // MARK: - Dev Build Toggle
-
-    /// Key for dev build Pro simulation toggle
-    private static let devSimulateProKey = "dev.simulateProUser"
-
-    /// In Dev builds: toggle to simulate Pro (default true)
-    /// This is persisted and can be changed from Settings
-    /// Using stored property so @Observable can track changes
-    private var _devSimulatePro: Bool = {
-        // Default to true (Pro) if key hasn't been set
-        if UserDefaults.standard.object(forKey: devSimulateProKey) == nil {
-            return true
-        }
-        return UserDefaults.standard.bool(forKey: devSimulateProKey)
-    }()
-
-    var devSimulatePro: Bool {
-        get { _devSimulatePro }
-        set {
-            _devSimulatePro = newValue
-            UserDefaults.standard.set(newValue, forKey: Self.devSimulateProKey)
-        }
-    }
-
     // MARK: - Pro Status
 
-    /// Whether the current user has Pro access
-    /// - Dev build: Based on devSimulatePro toggle (default Pro)
-    /// - Production build: Based on real subscription status
+    /// Whether the current user has Pro access (based on real subscription status)
     var isProUser: Bool {
-        // Dev build uses toggle from Settings
-        if Self.isDevBuild {
-            return devSimulatePro
-        }
-
-        // Production build uses real subscription status
-        return StoreKitManager.shared.isProUser
+        StoreKitManager.shared.isProUser
     }
 
     // MARK: - Access Checks

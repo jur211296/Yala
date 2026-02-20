@@ -122,11 +122,6 @@ struct ProfileView: View {
                         ayudaSection
                         legalSection
 
-                        // Developer section (only in Dev build)
-                        if FeatureGateService.isDevBuild {
-                            developerSection
-                        }
-
                         // Version info
                         Text(L10n.Settings.versionInfo)
                             .font(DS.Typography.captionSmall)
@@ -758,40 +753,6 @@ struct ProfileView: View {
         .padding(.horizontal, DS.Spacing.lg)
     }
 
-    // MARK: - Developer Section (Dev Build Only)
-
-    @ViewBuilder
-    private var developerSection: some View {
-        SectionBox(title: "Developer") {
-            VStack(spacing: DS.Spacing.none) {
-                HStack {
-                    YalaSpark(size: .medium, animated: false)
-                        .frame(width: 28)
-
-                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                        Text("Simular Pro")
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.thPrimaryText)
-                        Text("Activar para probar features Pro")
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer()
-
-                    Toggle("", isOn: Binding(
-                        get: { FeatureGateService.shared.devSimulatePro },
-                        set: { FeatureGateService.shared.devSimulatePro = $0 }
-                    ))
-                    .labelsHidden()
-
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.md)
-            }
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-    }
 
     // MARK: - Reference Builder
 

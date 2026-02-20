@@ -86,7 +86,9 @@ struct SubscriptionView: View {
                         YalaPrimaryButton(
                             store.isPurchasing
                                 ? L10n.Subscription.processing
-                                : L10n.Subscription.subscribe,
+                                : selectedProductHasFreeTrial
+                                    ? L10n.Subscription.startFreeTrial
+                                    : L10n.Subscription.subscribe,
                             isDisabled: store.isPurchasing || store.products.isEmpty
                         ) {
                             Task { await purchaseSelected() }
@@ -248,6 +250,7 @@ struct SubscriptionView: View {
             featureRow(icon: "chart.pie.fill", text: L10n.Subscription.featureUnlimitedBudgets, color: .purple)
             featureRow(icon: "waveform.badge.mic", text: L10n.Subscription.featureVoice, color: .hotPink)
             featureRow(icon: "photo.on.rectangle", text: L10n.Subscription.featureImage, color: .teal)
+            featureRow(icon: "paintpalette.fill", text: L10n.Subscription.featureThemes, color: .orange)
             featureRow(icon: "app.fill", text: L10n.Subscription.featurePremiumIcons, color: .pink)
         }
         .padding(.vertical, DS.Spacing.sm)
@@ -344,9 +347,15 @@ struct SubscriptionView: View {
                         }
                     }
 
-                    Text(product.displayPrice + " " + planPeriodLabel(for: product))
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.thSecondaryText)
+                    if let trialText = trialDaysText(for: product) {
+                        Text(trialText)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.thAccent)
+                    } else {
+                        Text(product.displayPrice + " " + planPeriodLabel(for: product))
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.thSecondaryText)
+                    }
 
                     if let monthlyEquiv = store.monthlyEquivalent(for: product) {
                         Text(L10n.Subscription.perMonth(monthlyEquiv))
@@ -451,5 +460,37 @@ struct SubscriptionView: View {
         let product = store.products.first { $0.id == selectedPlan }
         guard let product else { return }
         _ = await store.purchase(product)
+    }
+
+    /// Whether the selected product has a free trial introductory offer
+    private var selectedProductHasFreeTrial: Bool {
+        guard let product = store.products.first(where: { $0.id == selectedPlan }),
+              let intro = product.subscription?.introductoryOffer,
+              intro.paymentMode == .freeTrial else { return false }
+        return true
+    }
+
+    /// Extract readable trial duration from a product's introductory offer
+    private func trialDaysText(for product: Product) -> String? {
+        guard let intro = product.subscription?.introductoryOffer,
+              intro.paymentMode == .freeTrial else { return nil }
+        let period = intro.period
+        let days: Int
+        switch period.unit {
+        case .day:
+            days = period.value
+        case .week:
+            days = period.value * 7
+        case .month:
+            days = period.value * 30
+        case .year:
+            days = period.value * 365
+        @unknown default:
+            days = period.value
+        }
+        return L10n.Subscription.trialThenPrice(
+            "\(days)",
+            product.displayPrice + " " + planPeriodLabel(for: product)
+        )
     }
 }

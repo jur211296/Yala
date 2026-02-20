@@ -95,6 +95,7 @@ struct SubscriptionSuccessView: View {
             unlockedFeatureRow(icon: "chart.pie.fill", text: L10n.Subscription.featureUnlimitedBudgets, color: .purple)
             unlockedFeatureRow(icon: "waveform", text: L10n.Subscription.featureVoice, color: .hotPink)
             unlockedFeatureRow(icon: "photo.on.rectangle", text: L10n.Subscription.featureImage, color: .teal)
+            unlockedFeatureRow(icon: "paintpalette.fill", text: L10n.Subscription.featureThemes, color: .orange)
             unlockedFeatureRow(icon: "app.fill", text: L10n.Subscription.featurePremiumIcons, color: .pink)
         }
         .padding(.horizontal, DS.Spacing.xl)

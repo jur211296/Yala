@@ -2615,6 +2615,18 @@ enum L10n {
         static var currentPlan: String { ls("subscription.currentPlan", comment: "") }
         static var renewsOn: String { ls("subscription.renewsOn", comment: "") }
         static var manageInAppStore: String { ls("subscription.manageInAppStore", comment: "") }
+        static var startFreeTrial: String { ls("subscription.startFreeTrial", comment: "") }
+        static func trialThenPrice(_ days: String, _ price: String) -> String {
+            String(format: ls("subscription.trialThenPrice", comment: ""), days, price)
+        }
+    }
+
+    // MARK: - Trial Offer
+    enum TrialOffer {
+        static var title: String { ls("subscription.trialOffer.title", comment: "") }
+        static var subtitle: String { ls("subscription.trialOffer.subtitle", comment: "") }
+        static var startTrial: String { ls("subscription.trialOffer.startTrial", comment: "") }
+        static var maybeLater: String { ls("subscription.trialOffer.maybeLater", comment: "") }
     }
 
     enum Tutorials {

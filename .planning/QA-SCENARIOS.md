@@ -4742,3 +4742,43 @@ Para cada tema verificar:
 ### 38.12 Localización de temas
 - [ ] Verificar nombres de temas en los 6 idiomas (es, en, de, fr, it, pt)
 - [ ] "Indigo", "Rosa", "Teal" como nombres en todos los idiomas
+
+---
+
+## Sección 39: Free Trial UI
+
+### 39.1 Paywall muestra info de trial en plan cards
+- [ ] Abrir SubscriptionView sin suscripción
+- [ ] Verificar que plan cards muestran "Gratis 7 días, luego X/mes" (o /año) cuando hay introductory offer
+- [ ] Texto del trial aparece en color accent (no gris)
+- [ ] Si no hay introductory offer, se muestra el precio normal
+
+### 39.2 Botón de compra cambia con trial
+- [ ] Con introductory offer disponible: botón dice "Empieza tu prueba gratis"
+- [ ] Sin introductory offer: botón dice "Suscribirse"
+- [ ] Durante compra: botón dice "Procesando..."
+
+### 39.3 Sheet post-onboarding aparece correctamente
+- [ ] Resetear `hasCompletedOnboarding` en UserDefaults
+- [ ] Completar onboarding completo
+- [ ] Al dismiss del onboarding, aparece ProTrialOfferSheet
+- [ ] Sheet muestra YalaSpark, título, subtítulo, lista de features, dos botones
+
+### 39.4 Sheet NO aparece si ya es Pro
+- [ ] Con suscripción activa, completar onboarding
+- [ ] Verificar que ProTrialOfferSheet NO se presenta
+
+### 39.5 Flujo "Empezar prueba gratis" abre SubscriptionView
+- [ ] En ProTrialOfferSheet, tap "Empezar prueba gratis"
+- [ ] Sheet se cierra
+- [ ] SubscriptionView se abre como sheet
+- [ ] SubscriptionView muestra info de trial correctamente
+
+### 39.6 "Quizás después" cierra el sheet
+- [ ] En ProTrialOfferSheet, tap "Quizás después"
+- [ ] Sheet se cierra sin abrir SubscriptionView
+- [ ] App funciona normalmente
+
+### 39.7 Localización de trial UI
+- [ ] Verificar strings de trial en los 6 idiomas (es, en, de, fr, it, pt)
+- [ ] Verificar que el formato "%@ días, luego %@" se muestra correctamente

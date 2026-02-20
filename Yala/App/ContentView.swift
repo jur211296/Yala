@@ -23,6 +23,7 @@ struct ContentView: View {
     @State private var deduplicationTask: Task<Void, Never>?
     @State private var wipeGraceTask: Task<Void, Never>?
     @State private var showRemoteWipeAlert: Bool = false
+    @State private var showProTrialOffer: Bool = false
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ThemeManager.self) private var themeManager
@@ -154,11 +155,26 @@ struct ContentView: View {
             }
             .environment(SessionState.shared)
         }
-        .fullScreenCover(isPresented: $showOnboarding) {
+        .fullScreenCover(isPresented: $showOnboarding, onDismiss: {
+            // Show trial offer after onboarding completes (only for eligible non-Pro users)
+            if hasCompletedOnboarding && !FeatureGateService.shared.isProUser {
+                Task {
+                    let eligible = await StoreKitManager.shared.isEligibleForIntroOffer()
+                    if eligible {
+                        showProTrialOffer = true
+                    }
+                }
+            }
+        }) {
             OnboardingView {
                 showOnboarding = false
             }
             .environment(SessionState.shared)
+        }
+        .sheet(isPresented: $showProTrialOffer) {
+            ProTrialOfferSheet {
+                showProTrialOffer = false
+            }
         }
         // Biometric lock as fullScreenCover (covers everything including sheets)
         .fullScreenCover(isPresented: Binding(
