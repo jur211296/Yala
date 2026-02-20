@@ -27,86 +27,85 @@ struct ProTrialOfferSheet: View {
     @State private var animateHero = false
     @State private var contentOpacity: Double = 0
     @State private var showError = false
+    @State private var showSuccess = false
 
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: DS.Spacing.none) {
-            ScrollView {
-                VStack(spacing: DS.Spacing.lg) {
-                    // Hero spark
-                    ZStack {
-                        YalaSpark(size: .large, animated: false)
-                            .scaleEffect(4.0)
-                            .blur(radius: 25)
-                            .opacity(animateHero ? 0.5 : 0.2)
-
-                        YalaSpark(size: .large, animated: true)
-                            .scaleEffect(3.5)
-                            .shadow(color: Color.orange.opacity(0.5), radius: 8, y: 4)
-                    }
-                    .scaleEffect(animateHero ? 1.0 : 0.8)
-                    .frame(height: 120)
-                    .padding(.top, 40)
-
-                    // Title & subtitle
-                    VStack(spacing: DS.Spacing.md) {
-                        Text(L10n.TrialOffer.title)
-                            .font(DS.Typography.largeTitle)
-                            .foregroundStyle(.thPrimaryText)
-                            .multilineTextAlignment(.center)
-
-                        Text(L10n.TrialOffer.subtitle)
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.thSecondaryText)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding(.horizontal, DS.Spacing.xl)
-
-                    // Features list
-                    featuresList
-                        .opacity(contentOpacity)
-
-                    // Plan selector
-                    if !store.products.isEmpty {
-                        planSelector
-                            .opacity(contentOpacity)
-                    } else {
-                        ProgressView()
-                            .padding(.vertical, DS.Spacing.lg)
-                    }
-                }
-            }
-            .scrollBounceBehavior(.basedOnSize)
-
-            // Bottom fixed area: buttons + legal
+        ScrollView {
             VStack(spacing: DS.Spacing.md) {
-                YalaPrimaryButton(
-                    store.isPurchasing
-                        ? L10n.Subscription.processing
-                        : L10n.Subscription.startFreeTrial,
-                    isDisabled: store.isPurchasing || store.products.isEmpty
-                ) {
-                    Task { await purchaseSelected() }
-                }
+                // Hero spark
+                ZStack {
+                    YalaSpark(size: .large, animated: false)
+                        .scaleEffect(4.0)
+                        .blur(radius: 25)
+                        .opacity(animateHero ? 0.5 : 0.2)
 
-                Button {
-                    onDismiss()
-                } label: {
-                    Text(L10n.TrialOffer.maybeLater)
+                    YalaSpark(size: .large, animated: true)
+                        .scaleEffect(3.5)
+                        .shadow(color: Color.orange.opacity(0.5), radius: 8, y: 4)
+                }
+                .scaleEffect(animateHero ? 1.0 : 0.8)
+                .frame(height: 100)
+                .padding(.top, DS.Spacing.lg)
+
+                // Title & subtitle
+                VStack(spacing: DS.Spacing.sm) {
+                    Text(L10n.TrialOffer.title)
+                        .font(DS.Typography.largeTitle)
+                        .foregroundStyle(.thPrimaryText)
+                        .multilineTextAlignment(.center)
+
+                    Text(L10n.TrialOffer.subtitle)
                         .font(DS.Typography.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.thSecondaryText)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+
+                // Features list
+                featuresList
+                    .opacity(contentOpacity)
+
+                // Plan selector
+                if !store.products.isEmpty {
+                    planSelector
+                        .opacity(contentOpacity)
+                } else {
+                    ProgressView()
+                        .padding(.vertical, DS.Spacing.lg)
                 }
 
-                Text(L10n.Subscription.legalFooter)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.tertiary)
-                    .multilineTextAlignment(.center)
+                // CTA + dismiss + legal (scrolls with content)
+                VStack(spacing: DS.Spacing.md) {
+                    YalaPrimaryButton(
+                        store.isPurchasing
+                            ? L10n.Subscription.processing
+                            : L10n.Subscription.startFreeTrial,
+                        isDisabled: store.isPurchasing || store.products.isEmpty
+                    ) {
+                        Task { await purchaseSelected() }
+                    }
+
+                    Button {
+                        onDismiss()
+                    } label: {
+                        Text(L10n.TrialOffer.maybeLater)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Text(L10n.Subscription.legalFooter)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.tertiary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.sm)
+                .padding(.bottom, DS.Spacing.xl)
             }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.top, DS.Spacing.md)
-            .padding(.bottom, DS.Spacing.xl)
         }
+        .scrollBounceBehavior(.basedOnSize)
         .background(theme.background.ignoresSafeArea())
         .task {
             await store.loadProducts()
@@ -132,8 +131,13 @@ struct ProTrialOfferSheet: View {
         .onChange(of: store.didJustSubscribe) { _, didSubscribe in
             if didSubscribe {
                 store.didJustSubscribe = false
-                onDismiss()
+                showSuccess = true
             }
+        }
+        .fullScreenCover(isPresented: $showSuccess, onDismiss: {
+            onDismiss()
+        }) {
+            SubscriptionSuccessView()
         }
     }
 
@@ -159,28 +163,28 @@ struct ProTrialOfferSheet: View {
     }
 
     private func featureRow(icon: String, text: String, color: Color) -> some View {
-        HStack(spacing: DS.Spacing.md) {
+        HStack(spacing: DS.Spacing.sm) {
             Image(systemName: icon)
-                .font(DS.Typography.labelSmall.weight(.semibold))
+                .font(DS.Typography.caption.weight(.semibold))
                 .foregroundStyle(.white)
-                .frame(width: 30, height: 30)
+                .frame(width: 26, height: 26)
                 .background(
-                    RoundedRectangle(cornerRadius: 7)
+                    RoundedRectangle(cornerRadius: 6)
                         .fill(color)
                 )
 
             Text(text)
-                .font(DS.Typography.body)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.thPrimaryText)
 
             Spacer()
 
             Image(systemName: "checkmark.circle.fill")
-                .font(DS.Typography.body)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.thAccent)
         }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.Spacing.md)
+        .padding(.horizontal, DS.Spacing.md)
+        .padding(.vertical, DS.Spacing.sm)
     }
 
     // MARK: - Plan Selector
