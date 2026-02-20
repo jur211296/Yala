@@ -18,6 +18,7 @@ const langUrls = Object.keys(languages).map(l => ({
 
 const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
 const termsUrl = lang === 'es' ? '/terms' : `/${lang}/terms`;
+const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
 ---
 
 <!-- Header -->
@@ -38,6 +39,16 @@ const termsUrl = lang === 'es' ? '/terms' : `/${lang}/terms`;
       </div>
 
       <div class="flex items-center gap-3">
+        <!-- Mobile Menu Toggle -->
+        <button id="mobile-menu-toggle" class="md:hidden w-9 h-9 rounded-full flex items-center justify-center border border-neutral-700 hover:border-neutral-500 transition-colors" style="background: var(--bg-card);" aria-label="Menu">
+          <svg class="w-4 h-4 text-neutral-400 hamburger-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+          <svg class="w-4 h-4 text-neutral-400 close-icon hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+
         <!-- Language Selector -->
         <div class="relative">
           <button id="lang-toggle" class="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-white px-3 py-2 rounded-full border border-neutral-700 hover:border-neutral-500 transition-colors">
@@ -72,6 +83,18 @@ const termsUrl = lang === 'es' ? '/terms' : `/${lang}/terms`;
     </nav>
   </div>
 </header>
+
+<!-- Mobile Navigation Menu -->
+<div id="mobile-menu" class="fixed inset-x-0 top-16 z-40 hidden md:hidden" style="background: var(--header-bg); border-bottom: 1px solid var(--border-color); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
+  <div class="container-wide py-4 flex flex-col gap-3">
+    <a href="#why" class="text-sm text-neutral-400 hover:text-white transition-colors py-2 mobile-nav-link">{t.navWhy}</a>
+    <a href="#features" class="text-sm text-neutral-400 hover:text-white transition-colors py-2 mobile-nav-link">{t.navFeatures}</a>
+    <a href="#how" class="text-sm text-neutral-400 hover:text-white transition-colors py-2 mobile-nav-link">{t.navHow}</a>
+    <a href="#privacy" class="text-sm text-neutral-400 hover:text-white transition-colors py-2 mobile-nav-link">{t.navPrivacy}</a>
+    <a href="#pricing" class="text-sm text-neutral-400 hover:text-white transition-colors py-2 mobile-nav-link">{t.navPricing}</a>
+    <a href="https://apps.apple.com/app/yala" target="_blank" rel="noopener" class="btn-primary text-sm text-center mt-2">{t.navDownload}</a>
+  </div>
+</div>
 
 <main class="pt-16">
 
@@ -113,8 +136,9 @@ const termsUrl = lang === 'es' ? '/terms' : `/${lang}/terms`;
 
     <!-- Hero Screenshot - Panel Principal -->
     <div class="mt-16 flex justify-center">
-      <div class="w-64 sm:w-72 md:w-80 rounded-[2.5rem] border-4 border-neutral-700 bg-gradient-to-b from-yala-slate to-neutral-900 p-2 shadow-2xl shadow-yala-indigo/20 overflow-hidden animate-float">
-        <img src="/images/screenshots/panel-principal.png" alt="Yala - Panel Principal" class="w-full rounded-[2rem]" />
+      <div class="w-64 sm:w-72 md:w-80 iphone-mockup animate-float">
+        <img src="/images/screenshots/panel-principal-dark.png" alt="Yala - Panel Principal" class="screenshot-dark" />
+        <img src="/images/screenshots/panel-principal-light.png" alt="Yala - Panel Principal" class="screenshot-light" />
       </div>
     </div>
   </section>
@@ -193,9 +217,9 @@ const termsUrl = lang === 'es' ? '/terms' : `/${lang}/terms`;
 
         <!-- Problem Card 3 -->
         <div class="card p-8 animate-on-scroll stagger-3">
-          <div class="w-14 h-14 rounded-2xl bg-nature-priority/10 flex items-center justify-center mb-6">
-            <svg class="w-7 h-7 text-nature-priority" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+          <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6">
+            <svg class="w-7 h-7 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M3 14h18M3 6h18M3 18h18M9 6v12M15 6v12"/>
             </svg>
           </div>
           <h3 class="text-xl font-semibold mb-3">{t.problemCard3Title}</h3>
@@ -334,26 +358,73 @@ const termsUrl = lang === 'es' ? '/terms' : `/${lang}/terms`;
           <p class="text-neutral-400 text-sm">{t.feature4Desc}</p>
         </div>
 
-        <!-- Feature 5 - Multi-cuenta -->
+        <!-- Feature 5 - Widgets iOS -->
         <div class="card p-6 animate-on-scroll stagger-5">
           <div class="w-12 h-12 rounded-xl bg-yala-pink/20 flex items-center justify-center mb-4">
             <svg class="w-6 h-6 text-yala-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
             </svg>
           </div>
           <h3 class="font-semibold mb-1">{t.feature5Title}</h3>
           <p class="text-neutral-400 text-sm">{t.feature5Desc}</p>
         </div>
 
-        <!-- Feature 6 - 50+ divisas -->
+        <!-- Feature 6 - Notificaciones inteligentes -->
         <div class="card p-6 animate-on-scroll stagger-5">
+          <div class="w-12 h-12 rounded-xl bg-nature-essential/20 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-nature-essential" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold mb-1">{t.feature6Title}</h3>
+          <p class="text-neutral-400 text-sm">{t.feature6Desc}</p>
+        </div>
+      </div>
+
+      <!-- 4 More Small Cards Third Row -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto mt-4">
+        <!-- Feature 7 - Multi-cuenta -->
+        <div class="card p-6 animate-on-scroll stagger-1">
+          <div class="w-12 h-12 rounded-xl bg-yala-pink/20 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-yala-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold mb-1">{t.feature7Title}</h3>
+          <p class="text-neutral-400 text-sm">{t.feature7Desc}</p>
+        </div>
+
+        <!-- Feature 8 - 48+ divisas -->
+        <div class="card p-6 animate-on-scroll stagger-2">
           <div class="w-12 h-12 rounded-xl bg-nature-essential/20 flex items-center justify-center mb-4">
             <svg class="w-6 h-6 text-nature-essential" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
           </div>
-          <h3 class="font-semibold mb-1">{t.feature6Title}</h3>
-          <p class="text-neutral-400 text-sm">{t.feature6Desc}</p>
+          <h3 class="font-semibold mb-1">{t.feature8Title}</h3>
+          <p class="text-neutral-400 text-sm">{t.feature8Desc}</p>
+        </div>
+
+        <!-- Feature 9 - Exporta -->
+        <div class="card p-6 animate-on-scroll stagger-3">
+          <div class="w-12 h-12 rounded-xl bg-yala-teal/20 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold mb-1">{t.feature9Title}</h3>
+          <p class="text-neutral-400 text-sm">{t.feature9Desc}</p>
+        </div>
+
+        <!-- Feature 10 - iCloud Sync -->
+        <div class="card p-6 animate-on-scroll stagger-4">
+          <div class="w-12 h-12 rounded-xl bg-yala-indigo/20 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-yala-indigo" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold mb-1">{t.feature10Title}</h3>
+          <p class="text-neutral-400 text-sm">{t.feature10Desc}</p>
         </div>
       </div>
   </section>
@@ -372,8 +443,9 @@ const termsUrl = lang === 'es' ? '/terms' : `/${lang}/terms`;
         <div class="w-16 h-16 rounded-full bg-yala-indigo flex items-center justify-center mx-auto mb-6 text-2xl font-bold step-number">1</div>
         <h3 class="text-xl font-semibold mb-3">{t.howStep1Title}</h3>
         <p class="text-neutral-400 mb-6">{t.howStep1Desc}</p>
-        <div class="w-40 mx-auto rounded-2xl border-2 border-neutral-700 overflow-hidden shadow-lg">
-          <img src="/images/screenshots/paso1.png" alt="Registrar gastos" class="w-full" loading="lazy" />
+        <div class="w-40 mx-auto iphone-mockup-sm">
+          <img src="/images/screenshots/paso1-dark.png" alt="Registrar gastos" class="screenshot-dark" loading="lazy" />
+          <img src="/images/screenshots/paso1-light.png" alt="Registrar gastos" class="screenshot-light" loading="lazy" />
         </div>
       </div>
 
@@ -382,8 +454,9 @@ const termsUrl = lang === 'es' ? '/terms' : `/${lang}/terms`;
         <div class="w-16 h-16 rounded-full bg-yala-indigo flex items-center justify-center mx-auto mb-6 text-2xl font-bold step-number">2</div>
         <h3 class="text-xl font-semibold mb-3">{t.howStep2Title}</h3>
         <p class="text-neutral-400 mb-6">{t.howStep2Desc}</p>
-        <div class="w-40 mx-auto rounded-2xl border-2 border-neutral-700 overflow-hidden shadow-lg">
-          <img src="/images/screenshots/categorias.png" alt="Categorías organizadas" class="w-full" loading="lazy" />
+        <div class="w-40 mx-auto iphone-mockup-sm">
+          <img src="/images/screenshots/categorias-dark.png" alt="Categorías organizadas" class="screenshot-dark" loading="lazy" />
+          <img src="/images/screenshots/categorias-light.png" alt="Categorías organizadas" class="screenshot-light" loading="lazy" />
         </div>
       </div>
 
@@ -392,8 +465,9 @@ const termsUrl = lang === 'es' ? '/terms' : `/${lang}/terms`;
         <div class="w-16 h-16 rounded-full bg-yala-indigo flex items-center justify-center mx-auto mb-6 text-2xl font-bold step-number">3</div>
         <h3 class="text-xl font-semibold mb-3">{t.howStep3Title}</h3>
         <p class="text-neutral-400 mb-6">{t.howStep3Desc}</p>
-        <div class="w-40 mx-auto rounded-2xl border-2 border-neutral-700 overflow-hidden shadow-lg">
-          <img src="/images/screenshots/tendencias.png" alt="Gráficos y tendencias" class="w-full" loading="lazy" />
+        <div class="w-40 mx-auto iphone-mockup-sm">
+          <img src="/images/screenshots/tendencias-dark.png" alt="Gráficos y tendencias" class="screenshot-dark" loading="lazy" />
+          <img src="/images/screenshots/tendencias-light.png" alt="Gráficos y tendencias" class="screenshot-light" loading="lazy" />
         </div>
       </div>
     </div>
@@ -431,8 +505,9 @@ const termsUrl = lang === 'es' ? '/terms' : `/${lang}/terms`;
 
         <!-- Analytics Screenshot - Estadísticas -->
         <div class="animate-on-scroll stagger-2">
-          <div class="max-w-xs mx-auto rounded-[2rem] border-4 border-neutral-700 bg-gradient-to-b from-yala-slate to-neutral-900 p-2 shadow-2xl shadow-yala-indigo/20 overflow-hidden">
-            <img src="/images/screenshots/estadisticas-categorias.png" alt="Estadísticas y análisis" class="w-full rounded-[1.5rem]" loading="lazy" />
+          <div class="max-w-xs mx-auto iphone-mockup">
+            <img src="/images/screenshots/estadisticas-categorias-dark.png" alt="Estadísticas y análisis" class="screenshot-dark" loading="lazy" />
+            <img src="/images/screenshots/estadisticas-categorias-light.png" alt="Estadísticas y análisis" class="screenshot-light" loading="lazy" />
           </div>
         </div>
       </div>
@@ -527,51 +602,69 @@ const termsUrl = lang === 'es' ? '/terms' : `/${lang}/terms`;
         <p class="text-xl text-neutral-400">{t.pricingSubtitle}</p>
       </div>
 
-      <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+      <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
         <!-- Free Plan -->
-        <div class="card p-8 animate-on-scroll stagger-1">
+        <div class="card p-8 animate-on-scroll stagger-1 flex flex-col">
           <h3 class="text-2xl font-bold mb-2">{t.pricingFreeTitle}</h3>
           <div class="flex items-baseline gap-1 mb-6">
             <span class="text-4xl font-bold">{t.pricingFreePrice}</span>
             <span class="text-neutral-500">{t.pricingFreePeriod}</span>
           </div>
-          <ul class="space-y-3 mb-8">
+          <ul class="space-y-3 mb-8 flex-1">
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree1}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree2}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree3}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree4}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-400">{t.pricingFree5}</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-400">{t.pricingFree6}</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-400">{t.pricingFree7}</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-teal flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-400">{t.pricingFree8}</span>
             </li>
           </ul>
           <a href="https://apps.apple.com/app/yala" target="_blank" rel="noopener" class="btn-secondary w-full text-center">{t.pricingFreeCta}</a>
         </div>
 
         <!-- Pro Plan -->
-        <div class="card-glow p-8 border-yala-indigo/50 relative overflow-hidden animate-on-scroll stagger-2">
+        <div class="card-glow p-8 border-yala-indigo/50 relative overflow-hidden animate-on-scroll stagger-2 flex flex-col">
           <div class="absolute top-0 right-0 bg-yala-indigo text-white text-xs font-bold px-4 py-1 rounded-bl-xl">PRO</div>
           <h3 class="text-2xl font-bold mb-2">{t.pricingProTitle}</h3>
           <div class="flex items-baseline gap-1 mb-1">
@@ -579,46 +672,54 @@ const termsUrl = lang === 'es' ? '/terms' : `/${lang}/terms`;
             <span class="text-neutral-500">{t.pricingProPeriod}</span>
           </div>
           <p class="text-sm text-neutral-500 mb-6">{t.pricingProAnnual}</p>
-          <ul class="space-y-3 mb-8">
+          <ul class="space-y-3 mb-8 flex-1">
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span class="text-sm text-neutral-400 italic">{t.pricingPro0}</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro1}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro2}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro3}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro4}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro5}</span>
             </li>
             <li class="flex items-center gap-3">
-              <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
               </svg>
               <span class="text-neutral-300">{t.pricingPro6}</span>
             </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-300">{t.pricingPro7}</span>
+            </li>
           </ul>
           <a href="https://apps.apple.com/app/yala" target="_blank" rel="noopener" class="btn-primary w-full text-center">{t.pricingProCta}</a>
-          <p class="text-center text-sm text-neutral-500 mt-4">{t.pricingProBadge}</p>
         </div>
       </div>
   </section>
@@ -736,7 +837,7 @@ const termsUrl = lang === 'es' ? '/terms' : `/${lang}/terms`;
       <div class="flex items-center gap-6 text-sm">
         <a href={privacyUrl} class="text-neutral-500 hover:text-white transition-colors">{t.footerPrivacy}</a>
         <a href={termsUrl} class="text-neutral-500 hover:text-white transition-colors">{t.footerTerms}</a>
-        <a href="#" class="text-neutral-500 hover:text-white transition-colors">{t.footerHelp}</a>
+        <a href={supportUrl} class="text-neutral-500 hover:text-white transition-colors">{t.footerHelp}</a>
         <a href="mailto:admin@yala-app.pe" class="text-neutral-500 hover:text-white transition-colors">{t.footerContact}</a>
       </div>
 
@@ -778,6 +879,38 @@ const termsUrl = lang === 'es' ? '/terms' : `/${lang}/terms`;
 
   document.addEventListener('click', () => {
     langMenu?.classList.add('hidden');
+  });
+
+  // Mobile Menu Toggle
+  const mobileToggle = document.getElementById('mobile-menu-toggle');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const hamburgerIcon = document.querySelector('.hamburger-icon');
+  const closeIcon = document.querySelector('.close-icon');
+
+  mobileToggle?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = !mobileMenu?.classList.contains('hidden');
+    mobileMenu?.classList.toggle('hidden');
+    hamburgerIcon?.classList.toggle('hidden', !isOpen);
+    closeIcon?.classList.toggle('hidden', isOpen);
+  });
+
+  // Close mobile menu when clicking a nav link
+  document.querySelectorAll('.mobile-nav-link').forEach(link => {
+    link.addEventListener('click', () => {
+      mobileMenu?.classList.add('hidden');
+      hamburgerIcon?.classList.remove('hidden');
+      closeIcon?.classList.add('hidden');
+    });
+  });
+
+  // Close mobile menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!mobileMenu?.contains(e.target as Node) && !mobileToggle?.contains(e.target as Node)) {
+      mobileMenu?.classList.add('hidden');
+      hamburgerIcon?.classList.remove('hidden');
+      closeIcon?.classList.add('hidden');
+    }
   });
 
   // Scroll Animations

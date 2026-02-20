@@ -42,12 +42,50 @@
     @apply max-w-7xl mx-auto px-6;
   }
 
+  /* iPhone Mockup - Black */
+  .iphone-mockup {
+    position: relative;
+    border-radius: 3rem;
+    padding: 0.5rem;
+    background: #1a1a1a;
+    box-shadow:
+      0 0 0 1px #333,
+      0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+  }
+
+  .iphone-mockup img {
+    border-radius: 2.5rem;
+    display: block;
+    width: 100%;
+  }
+
+  /* Small mockup variant */
+  .iphone-mockup-sm {
+    position: relative;
+    border-radius: 1.5rem;
+    padding: 0.3rem;
+    background: #1a1a1a;
+    box-shadow:
+      0 0 0 1px #333,
+      0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+  }
+
+  .iphone-mockup-sm img {
+    border-radius: 1.2rem;
+    display: block;
+    width: 100%;
+  }
+
   /* Logo switching */
   .logo-dark { display: block; }
   .logo-light { display: none; }
 
   body.light .logo-dark { display: none; }
   body.light .logo-light { display: block; }
+
+  /* Screenshot switching — see below @layer for rules */
 
   /* Yala Brand Buttons */
   .btn-primary {
@@ -323,3 +361,10 @@ body.light .bg-yala-cyan\/5 {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Screenshot dark/light switching (outside @layer to avoid Tailwind purge) */
+.screenshot-dark { display: block !important; }
+.screenshot-light { display: none !important; }
+
+body.light .screenshot-dark { display: none !important; }
+body.light .screenshot-light { display: block !important; }
