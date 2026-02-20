@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-20] 54185b5 fix: resolve pre-launch warnings — legal link and force unwraps
 - [2026-02-20] 4add74e feat: dev-only subscription reset on data wipe for testing
 - [2026-02-20] 4a57873 fix: improve ProTrialOfferSheet layout and show success view after purchase
 - [2026-02-20] 9860a60 feat: add free trial UI — paywall trial info, post-onboarding offer sheet, StoreKit config
@@ -524,10 +525,10 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: BUG-33 fixed, trial UI complete, StoreKit flow verified
-Next step: Continue Phase 12 items (Smart Insights, Reports, Lock Screen widgets)
+Stopped at: Pre-launch warnings W1 (legal link) and W2 (force unwraps) fixed
+Next step: Continue Phase 12 items or address W3 (chart a11y) if needed
 Resume context:
+- Pre-launch W1/W2 resolved (54185b5), W3 (chart a11y) deferred
 - Free trial UI complete: paywall trial info, post-onboarding offer sheet, StoreKit config
-- ProTrialOfferSheet: layout compactado, botones dentro de ScrollView, SubscriptionSuccessView al suscribir
-- Dev wipe reset: StoreKitManager.resetForDevelopment() con triple protección (#if DEBUG + .dev bundle + persisted flag)
+- Dev wipe reset: StoreKitManager.resetForDevelopment() con triple protección
 - StoreKit flow verified on device
