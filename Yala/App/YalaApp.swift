@@ -13,7 +13,6 @@ import SwiftUI
 struct YalaApp: App {
 
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.colorScheme) private var colorScheme
 
     /// ModelContainer compartido para toda la app.
     var sharedModelContainer: ModelContainer = {
@@ -35,7 +34,7 @@ struct YalaApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .preferredColorScheme(themeManager.resolved.baseColorScheme)
+                .preferredColorScheme(themeManager.userChoice == .system ? nil : themeManager.resolved.baseColorScheme)
                 .tint(themeManager.resolved.accent)
                 .environment(\.yalaTheme, themeManager.resolved)
                 .environment(themeManager)
@@ -60,9 +59,6 @@ struct YalaApp: App {
                 }
                 .onOpenURL { url in
                     bootstrapper.handleIncomingURL(url)
-                }
-                .onChange(of: colorScheme) { _, newScheme in
-                    themeManager.systemColorScheme = newScheme
                 }
         }
         .modelContainer(sharedModelContainer)

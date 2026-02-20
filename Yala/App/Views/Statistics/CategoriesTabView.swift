@@ -407,14 +407,11 @@ struct CategoriesTabView: View {
 
     /// Comparison mode selector (M/A toggle)
     private var comparisonModeSelector: some View {
-        HStack(spacing: DS.Spacing.none) {
+        HStack(spacing: DS.Spacing.sm) {
             ForEach(ComparisonMode.allCases) { mode in
                 comparisonSelectorButton(for: mode)
             }
         }
-        .padding(DS.Spacing.xxs)
-        .background(.thSecondaryText.opacity(0.08))
-        .clipShape(Capsule())
     }
 
     private func comparisonSelectorButton(for mode: ComparisonMode) -> some View {
@@ -426,20 +423,20 @@ struct CategoriesTabView: View {
             }
         } label: {
             Text(mode.shortName)
-                .font(DS.Typography.indicator)
-                .padding(.horizontal, DS.Spacing.sm)
-                .padding(.vertical, DS.Spacing.sm)
+                .font(DS.Typography.labelSmall)
+                .fontWeight(.semibold)
                 .foregroundStyle(isSelected ? Color.white : theme.secondaryText)
-                .background(
-                    Group {
-                        if isSelected {
-                            Capsule()
-                                .fill(theme.accent)
-                                .matchedGeometryEffect(
-                                    id: "comparisonSelector", in: comparisonSelectorNamespace)
-                        }
+                .frame(width: 32, height: 32)
+                .background {
+                    if isSelected {
+                        Circle()
+                            .fill(theme.accent)
+                            .matchedGeometryEffect(id: "comparisonSelector", in: comparisonSelectorNamespace)
+                    } else {
+                        Circle()
+                            .fill(.thSecondaryText.opacity(0.08))
                     }
-                )
+                }
         }
         .buttonStyle(.plain)
     }
@@ -890,14 +887,11 @@ struct CategoriesTabView: View {
     }
 
     private var listViewSelector: some View {
-        HStack(spacing: DS.Spacing.none) {
+        HStack(spacing: DS.Spacing.sm) {
             ForEach(ListViewType.allCases) { viewType in
                 listViewButton(for: viewType)
             }
         }
-        .padding(DS.Spacing.xxs)
-        .background(.thSecondaryText.opacity(0.08))
-        .clipShape(Capsule())
     }
 
     private func listViewButton(for viewType: ListViewType) -> some View {
@@ -905,8 +899,6 @@ struct CategoriesTabView: View {
         let isLocked = shouldLockToSubcategories
 
         return Button {
-            // Only allow change if not locked to subcategories
-            // OR if trying to switch to subcategories (always allowed)
             guard !isLocked || viewType == .subcategories else { return }
 
             dsWithAnimation(reduceMotion) {
@@ -915,23 +907,23 @@ struct CategoriesTabView: View {
         } label: {
             Image(systemName: viewType.iconName)
                 .font(DS.Typography.labelSmall)
-                .padding(.horizontal, DS.Spacing.sm)
-                .padding(.vertical, DS.Spacing.sm)
+                .fontWeight(.semibold)
                 .foregroundStyle(isSelected ? Color.white : theme.secondaryText)
-                .background(
-                    Group {
-                        if isSelected {
-                            Capsule()
-                                .fill(theme.accent)
-                                .matchedGeometryEffect(
-                                    id: "listSelector", in: listSelectorNamespace)
-                        }
+                .frame(width: 32, height: 32)
+                .background {
+                    if isSelected {
+                        Circle()
+                            .fill(theme.accent)
+                            .matchedGeometryEffect(id: "listSelector", in: listSelectorNamespace)
+                    } else {
+                        Circle()
+                            .fill(.thSecondaryText.opacity(0.08))
                     }
-                )
+                }
         }
         .buttonStyle(.plain)
-        .opacity((isLocked && viewType == .categories) ? 0.4 : 1.0)  // Dim locked button
-        .disabled(isLocked && viewType == .categories)  // Disable locked button
+        .opacity((isLocked && viewType == .categories) ? 0.4 : 1.0)
+        .disabled(isLocked && viewType == .categories)
     }
 
     // MARK: - List View Auto-switching Logic

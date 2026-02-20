@@ -24,6 +24,8 @@ struct ContentView: View {
     @State private var wipeGraceTask: Task<Void, Never>?
     @State private var showRemoteWipeAlert: Bool = false
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(ThemeManager.self) private var themeManager
     @Environment(\.yalaTheme) private var theme
 
     /// Queries to detect existing data (for iCloud sync detection)
@@ -184,8 +186,11 @@ struct ContentView: View {
             .environment(SessionState.shared)
         }
         .onAppear {
-            // Lock on initial launch if biometric is enabled
+            themeManager.systemColorScheme = colorScheme
             authService.lockOnLaunchIfNeeded()
+        }
+        .onChange(of: colorScheme) { _, newScheme in
+            themeManager.systemColorScheme = newScheme
         }
         .onChange(of: scenePhase) { _, newPhase in
             switch newPhase {

@@ -118,15 +118,11 @@ struct TrendWidget: View {
     }
 
     private var metricSelector: some View {
-        HStack(spacing: DS.Spacing.none) {
-            // Always show all options - user can switch freely
+        HStack(spacing: DS.Spacing.sm) {
             ForEach(TrendType.allCases) { type in
                 metricButton(for: type)
             }
         }
-        .padding(DS.Spacing.xxs)
-        .background(.thSecondaryText.opacity(0.08))
-        .clipShape(Capsule())
         .filterBlockedPopover(
             isPresented: $showFilterBlockedMessage,
             title: L10n.Trend.filterBlockedTitle,
@@ -136,15 +132,12 @@ struct TrendWidget: View {
 
     private func metricButton(for type: TrendType) -> some View {
         let isSelected = viewModel.trendType == type
-        // Block balance/income when expense-only filters are active
         let isBlocked = hasExpenseOnlyFilters && type != .expense
 
         return Button {
             if isBlocked {
-                // Show popover explaining why option is blocked
                 showFilterBlockedMessage = true
             } else {
-                // Set global transaction nature filter - metric auto-adjusts via enforceTrendLock()
                 switch type {
                 case .balance:
                     sessionState.selectedTransactionNatures.removeAll()
@@ -155,21 +148,21 @@ struct TrendWidget: View {
                 }
             }
         } label: {
-            // Icon only (compact version like TrendsTabView)
             Image(systemName: type.iconName)
                 .font(DS.Typography.labelSmall)
-                .padding(.horizontal, DS.FormRow.paddingV)
-                .padding(.vertical, DS.Spacing.sm)
+                .fontWeight(.semibold)
                 .foregroundStyle(isSelected ? .white : (isBlocked ? type.color.opacity(0.4) : type.color))
-                .background(
-                    Group {
-                        if isSelected {
-                            Capsule()
-                                .fill(type.color)
-                                .matchedGeometryEffect(id: "metricSelector", in: animationNamespace)
-                        }
+                .frame(width: 32, height: 32)
+                .background {
+                    if isSelected {
+                        Circle()
+                            .fill(type.color)
+                            .matchedGeometryEffect(id: "metricBg", in: animationNamespace)
+                    } else {
+                        Circle()
+                            .fill(.thSecondaryText.opacity(0.08))
                     }
-                )
+                }
         }
         .buttonStyle(.plain)
     }

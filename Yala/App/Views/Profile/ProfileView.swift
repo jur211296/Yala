@@ -717,9 +717,7 @@ struct ProfileView: View {
                     iconColor: .orange, destination: .faq)
                 SubsectionDivider()
                 Button {
-                    if let url = URL(string: "mailto:admin@yala-app.pe") {
-                        openURL(url)
-                    }
+                    openURL(Self.supportMailURL)
                 } label: {
                     settingsRowContent(
                         icon: "envelope.fill", title: L10n.Settings.contact,
@@ -849,6 +847,36 @@ struct ProfileView: View {
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.FormRow.paddingV)
         .contentShape(Rectangle())
+    }
+
+    // MARK: - Support Mail
+
+    private static var supportMailURL: URL {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        let systemVersion = UIDevice.current.systemVersion
+        let modelName = UIDevice.current.model
+        let themeName = AppTheme(rawValue: UserDefaults.standard.integer(forKey: "userTheme"))?.label ?? "System"
+        let locale = Locale.preferredLanguages.first ?? "?"
+
+        let subject = "Yala - Soporte"
+        let body = """
+        [Describe tu consulta aquí]
+
+        ---
+        App: Yala v\(version) (\(build))
+        iOS: \(systemVersion)
+        Device: \(modelName)
+        Theme: \(themeName)
+        Locale: \(locale)
+        """
+
+        var components = URLComponents(string: "mailto:admin@yala-app.pe")!
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: subject),
+            URLQueryItem(name: "body", value: body),
+        ]
+        return components.url!
     }
 }
 

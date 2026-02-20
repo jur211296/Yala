@@ -163,14 +163,11 @@ struct ScheduledPaymentsListView: View {
     }
 
     private var viewModeSelector: some View {
-        HStack(spacing: DS.Spacing.none) {
+        HStack(spacing: DS.Spacing.sm) {
             ForEach(PaymentsViewMode.allCases) { mode in
                 viewModeButton(for: mode)
             }
         }
-        .padding(DS.Spacing.xxs)
-        .background(.thSecondaryText.opacity(0.08))
-        .clipShape(Capsule())
     }
 
     private func viewModeButton(for mode: PaymentsViewMode) -> some View {
@@ -183,18 +180,19 @@ struct ScheduledPaymentsListView: View {
         } label: {
             Image(systemName: mode.iconName)
                 .font(DS.Typography.labelSmall)
-                .padding(.horizontal, DS.Spacing.sm)
-                .padding(.vertical, DS.Spacing.sm)
+                .fontWeight(.semibold)
                 .foregroundStyle(isSelected ? .white : theme.secondaryText)
-                .background(
-                    Group {
-                        if isSelected {
-                            Capsule()
-                                .fill(theme.accent)
-                                .matchedGeometryEffect(id: "viewModeSelector", in: viewModeNamespace)
-                        }
+                .frame(width: 32, height: 32)
+                .background {
+                    if isSelected {
+                        Circle()
+                            .fill(theme.accent)
+                            .matchedGeometryEffect(id: "viewModeSelector", in: viewModeNamespace)
+                    } else {
+                        Circle()
+                            .fill(.thSecondaryText.opacity(0.08))
                     }
-                )
+                }
         }
         .buttonStyle(.plain)
     }

@@ -204,14 +204,11 @@ struct ScheduledPaymentsWidget: View {
     }
 
     private var filterSelector: some View {
-        HStack(spacing: DS.Spacing.none) {
+        HStack(spacing: DS.Spacing.sm) {
             ForEach(ScheduledPaymentsWidgetFilter.allCases) { filterOption in
                 filterButton(for: filterOption)
             }
         }
-        .padding(DS.Spacing.xxs)
-        .background(.thSecondaryText.opacity(0.08))
-        .clipShape(Capsule())
     }
 
     private func filterButton(for filterOption: ScheduledPaymentsWidgetFilter) -> some View {
@@ -224,18 +221,19 @@ struct ScheduledPaymentsWidget: View {
         } label: {
             Image(systemName: filterOption.iconName)
                 .font(DS.Typography.labelSmall)
-                .padding(.horizontal, DS.Spacing.md)
-                .padding(.vertical, DS.Spacing.sm)
+                .fontWeight(.semibold)
                 .foregroundStyle(isSelected ? .white : theme.secondaryText)
-                .background(
-                    Group {
-                        if isSelected {
-                            Capsule()
-                                .fill(theme.accent)
-                                .matchedGeometryEffect(id: "filterSelector", in: filterNamespace)
-                        }
+                .frame(width: 32, height: 32)
+                .background {
+                    if isSelected {
+                        Circle()
+                            .fill(theme.accent)
+                            .matchedGeometryEffect(id: "filterSelector", in: filterNamespace)
+                    } else {
+                        Circle()
+                            .fill(.thSecondaryText.opacity(0.08))
                     }
-                )
+                }
         }
         .buttonStyle(.plain)
     }
