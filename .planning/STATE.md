@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-20] 50bef88 feat: add Lock Screen widgets (4 accessory widgets)
 - [2026-02-20] d534a4f feat: add VoiceOver accessibility labels to all charts
 - [2026-02-20] 54185b5 fix: resolve pre-launch warnings — legal link and force unwraps
 - [2026-02-20] 4add74e feat: dev-only subscription reset on data wipe for testing
@@ -526,10 +527,10 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Pre-launch W3 (chart accessibility) completed — all 8 charts have VoiceOver labels
-Next step: Continue Phase 12 items or next pre-launch warning
+Stopped at: Lock Screen widgets implemented — 4 accessory widgets (2 circular, 2 rectangular)
+Next step: Continue Phase 12 items
 Resume context:
+- Lock Screen widgets: AccessoryBalance, AccessoryExpense, AccessoryBudget, AccessoryNextPayment (50bef88)
 - Pre-launch W1/W2/W3 all resolved (54185b5, d534a4f)
 - Free trial UI complete: paywall trial info, post-onboarding offer sheet, StoreKit config
 - Dev wipe reset: StoreKitManager.resetForDevelopment() con triple protección
-- StoreKit flow verified on device
