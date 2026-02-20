@@ -95,10 +95,16 @@ struct ProTrialOfferSheet: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    Text(L10n.Subscription.legalFooter)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.tertiary)
-                        .multilineTextAlignment(.center)
+                    VStack(spacing: DS.Spacing.xs) {
+                        Text(L10n.Subscription.legalFooter)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.tertiary)
+                            .multilineTextAlignment(.center)
+                        if let url = URL(string: "https://yala-app.pe/terms") {
+                            Link(L10n.Subscription.termsLink, destination: url)
+                                .font(DS.Typography.caption)
+                        }
+                    }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.sm)

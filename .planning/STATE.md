@@ -367,7 +367,7 @@ Agregado `SortDescriptor(\.createdAt, order: .reverse)` como tiebreaker en 4 Fet
 
 ### Bugs pendientes V1.0
 
-- **BUG-33: YalaSpark se cruza con el título en ProTrialOfferSheet** — El spark (scaleEffect 3.5) desborda su frame y se superpone con el texto "Prueba Yala Pro gratis". Necesita `.frame(height:)` mayor o reducir scaleEffect. Archivo: `Yala/App/Views/Subscription/ProTrialOfferSheet.swift`.
+- ✅ **BUG-33: YalaSpark se cruza con el título en ProTrialOfferSheet** — Resuelto (4a57873). Layout compactado, botones dentro de ScrollView, SubscriptionSuccessView al suscribir.
 
 - ✅ **BUG-25: RecordsStandalone no se refresca al crear/aprobar transacciones** — Corregido en cc565b0. Causa: `loadData()` y `applyFilters()` se ejecutaban síncronamente, filters leían datos stale. Fix: `DispatchQueue.main.async` (patrón DetailContainerView).
 
@@ -524,10 +524,10 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: BUG-33 fixed, trial sheet layout improved, dev wipe resets subscription for testing
-Next step: Test StoreKit flow on device, continue Phase 12 items
+Stopped at: BUG-33 fixed, trial UI complete, StoreKit flow verified
+Next step: Continue Phase 12 items (Smart Insights, Reports, Lock Screen widgets)
 Resume context:
+- Free trial UI complete: paywall trial info, post-onboarding offer sheet, StoreKit config
 - ProTrialOfferSheet: layout compactado, botones dentro de ScrollView, SubscriptionSuccessView al suscribir
 - Dev wipe reset: StoreKitManager.resetForDevelopment() con triple protección (#if DEBUG + .dev bundle + persisted flag)
-- devForceFreeTier persisted to UserDefaults, cleared on real purchase
-- StoreKit Configuration.storekit for local testing (monthly $4.99, yearly $29.99, 1 week free trial)
+- StoreKit flow verified on device

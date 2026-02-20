@@ -712,7 +712,9 @@ struct ProfileView: View {
                     iconColor: .orange, destination: .faq)
                 SubsectionDivider()
                 Button {
-                    openURL(Self.supportMailURL)
+                    if let url = Self.supportMailURL {
+                        openURL(url)
+                    }
                 } label: {
                     settingsRowContent(
                         icon: "envelope.fill", title: L10n.Settings.contact,
@@ -812,7 +814,7 @@ struct ProfileView: View {
 
     // MARK: - Support Mail
 
-    private static var supportMailURL: URL {
+    private static var supportMailURL: URL? {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
         let systemVersion = UIDevice.current.systemVersion
@@ -832,12 +834,14 @@ struct ProfileView: View {
         Locale: \(locale)
         """
 
-        var components = URLComponents(string: "mailto:admin@yala-app.pe")!
+        guard var components = URLComponents(string: "mailto:admin@yala-app.pe") else {
+            return nil
+        }
         components.queryItems = [
             URLQueryItem(name: "subject", value: subject),
             URLQueryItem(name: "body", value: body),
         ]
-        return components.url!
+        return components.url
     }
 }
 
