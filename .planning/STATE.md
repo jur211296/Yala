@@ -28,10 +28,11 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-20] 9860a60 feat: add free trial UI — paywall trial info, post-onboarding offer sheet, StoreKit config
+- [2026-02-20] 5c8eb76 fix: dark mode system theme, circular selectors, budget pie filter, support email context
 - [2026-02-19] 5cf0528 fix: localize notification names and texts dynamically
 - [2026-02-19] 44d3b89 feat: add average line to bar and trend charts with personalization picker
 - [2026-02-19] 71d6e92 fix: budget period chevron navigation + duplicate report notification guard
-- [2026-02-19] d744e13 chore: rename cyan theme to teal + clean up completed planning docs
 - [2026-02-19] cbe7678 feat: add theme system with accent color propagation across all views
 - [2026-02-18] d1eab6b fix: widen metric selector touch targets in TrendsTabView
 - [2026-02-18] 6796274 fix: make YalaToolbarButton circular with buttonBorderShape(.circle)
@@ -520,13 +521,12 @@ Ver ROADMAP.md para detalles.
 
 ## Session Continuity
 
-Last session: 2026-02-19
-Stopped at: Fix localización de notificaciones — nombres/textos default se resuelven dinámicamente via L10n
-Next step: Fase 12 — Plataforma Extendida (Watch, iPad/Mac, Smart Insights, reportes)
+Last session: 2026-02-20
+Stopped at: Free Trial UI — ProTrialOfferSheet, SubscriptionView trial info, StoreKit config, eligibility check
+Next step: Fix ProTrialOfferSheet spark/title overlap, test StoreKit flow on device
 Resume context:
-- Average line feature complete: Off/Total/Segmented picker in Personalization
-- Bar charts: total (dashed) + segmented (solid 3pt with labels)
-- Line chart: total only, balance metric only (income/expense acumulativo no aplica)
-- Default: Total enabled for new users
-- AverageSegment.swift helper shared between widgets
-- QA scenarios added (Section 39)
+- ProTrialOfferSheet: spark overlaps title text (needs frame/spacing fix)
+- StoreKit Configuration.storekit added for local testing (monthly $4.99, yearly $29.99, 1 week free trial)
+- devSimulatePro removed — FeatureGateService now always uses real StoreKit status
+- Trial eligibility: isEligibleForIntroOffer() gates sheet display (Apple ID level)
+- "Temas personalizados" added as Pro feature in all 3 subscription views
