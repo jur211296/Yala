@@ -28,6 +28,8 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-20] 4add74e feat: dev-only subscription reset on data wipe for testing
+- [2026-02-20] 4a57873 fix: improve ProTrialOfferSheet layout and show success view after purchase
 - [2026-02-20] 9860a60 feat: add free trial UI — paywall trial info, post-onboarding offer sheet, StoreKit config
 - [2026-02-20] 5c8eb76 fix: dark mode system theme, circular selectors, budget pie filter, support email context
 - [2026-02-19] 5cf0528 fix: localize notification names and texts dynamically
@@ -36,8 +38,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-02-19] cbe7678 feat: add theme system with accent color propagation across all views
 - [2026-02-18] d1eab6b fix: widen metric selector touch targets in TrendsTabView
 - [2026-02-18] 6796274 fix: make YalaToolbarButton circular with buttonBorderShape(.circle)
-- [2026-02-18] 3d552e0 fix: complete skip/unskip with draft recreation + notification guards
-- [2026-02-18] 048edc2 feat: add paid status + per-occurrence rows to ScheduledPaymentsWidget
 - [2026-02-18] 599e7b1 feat: add paid status tracking + per-occurrence display for scheduled payments
 - [2026-02-17] 276b1a4 fix: guard iCloud sync UX for medium-severity risks (R3, R5, R6, R9)
 - [2026-02-17] fbbedde fix: guard iCloud sync + onboarding data integrity (R1, R2, R4, R7, R8)
@@ -367,6 +367,8 @@ Agregado `SortDescriptor(\.createdAt, order: .reverse)` como tiebreaker en 4 Fet
 
 ### Bugs pendientes V1.0
 
+- **BUG-33: YalaSpark se cruza con el título en ProTrialOfferSheet** — El spark (scaleEffect 3.5) desborda su frame y se superpone con el texto "Prueba Yala Pro gratis". Necesita `.frame(height:)` mayor o reducir scaleEffect. Archivo: `Yala/App/Views/Subscription/ProTrialOfferSheet.swift`.
+
 - ✅ **BUG-25: RecordsStandalone no se refresca al crear/aprobar transacciones** — Corregido en cc565b0. Causa: `loadData()` y `applyFilters()` se ejecutaban síncronamente, filters leían datos stale. Fix: `DispatchQueue.main.async` (patrón DetailContainerView).
 
 - ✅ **BUG-26: Share Sheet por imagen falla intermitentemente en uso repetido** — Corregido en bd9231a. Migrado de `hasPendingSharedImage` persistente a patrón one-shot `shouldShowSharedImage`. Eliminado double-trigger en `handleBecameActive`, reset inmediato en observer, cleanup de imágenes stale >24h.
@@ -522,11 +524,10 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Free Trial UI — ProTrialOfferSheet, SubscriptionView trial info, StoreKit config, eligibility check
-Next step: Fix ProTrialOfferSheet spark/title overlap, test StoreKit flow on device
+Stopped at: BUG-33 fixed, trial sheet layout improved, dev wipe resets subscription for testing
+Next step: Test StoreKit flow on device, continue Phase 12 items
 Resume context:
-- ProTrialOfferSheet: spark overlaps title text (needs frame/spacing fix)
-- StoreKit Configuration.storekit added for local testing (monthly $4.99, yearly $29.99, 1 week free trial)
-- devSimulatePro removed — FeatureGateService now always uses real StoreKit status
-- Trial eligibility: isEligibleForIntroOffer() gates sheet display (Apple ID level)
-- "Temas personalizados" added as Pro feature in all 3 subscription views
+- ProTrialOfferSheet: layout compactado, botones dentro de ScrollView, SubscriptionSuccessView al suscribir
+- Dev wipe reset: StoreKitManager.resetForDevelopment() con triple protección (#if DEBUG + .dev bundle + persisted flag)
+- devForceFreeTier persisted to UserDefaults, cleared on real purchase
+- StoreKit Configuration.storekit for local testing (monthly $4.99, yearly $29.99, 1 week free trial)
