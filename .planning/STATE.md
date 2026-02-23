@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-23] f66df45 fix: resolve 5 QA bugs before 1.0 release
 - [2026-02-20] 52b572e feat: add Siri & Shortcuts settings screen in Profile
 - [2026-02-20] 7700b2d feat: add Siri natural language intent, .siri source type and tip card
 - [2026-02-20] 50bef88 feat: add Lock Screen widgets (4 accessory widgets)
@@ -37,7 +38,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-02-20] 4a57873 fix: improve ProTrialOfferSheet layout and show success view after purchase
 - [2026-02-20] 9860a60 feat: add free trial UI — paywall trial info, post-onboarding offer sheet, StoreKit config
 - [2026-02-20] 5c8eb76 fix: dark mode system theme, circular selectors, budget pie filter, support email context
-- [2026-02-19] 5cf0528 fix: localize notification names and texts dynamically
 - [2026-02-19] 44d3b89 feat: add average line to bar and trend charts with personalization picker
 - [2026-02-19] 71d6e92 fix: budget period chevron navigation + duplicate report notification guard
 - [2026-02-19] cbe7678 feat: add theme system with accent color propagation across all views
@@ -429,7 +429,12 @@ Agregado `SortDescriptor(\.createdAt, order: .reverse)` como tiebreaker en 4 Fet
 
 ### Bugs Pre-Release Pendientes
 
-- ✅ **BUG-29: Selector de mes falta en Presupuestos** — Resuelto (71d6e92): periodNavigationHeader con chevrones idéntico a ScheduledPaymentsListView
+- ✅ **BUG-25: Banner de trial en Profile** — Resuelto (f66df45): eliminado TrialBanner + sheet + computed props (trial manejado por Apple)
+- ✅ **BUG-26: Campo alias visible en perfil** — Resuelto (f66df45): ocultado VStack alias en PersonalDetailsView
+- ✅ **BUG-27: "Fecha futura" al editar transacción de hoy** — Resuelto (f66df45): comparación Calendar.day granularity
+- ✅ **BUG-28: Botón "Editar" en success abre transacción vacía** — Resuelto (f66df45): flag isEditingFromSuccess evita reset
+- ✅ **BUG-29: Widget pagos planificados muestra pagados** — Resuelto (f66df45): filtro !isPaid && !isSkipped en getUpcomingPayments
+- ✅ **BUG-29 (prev): Selector de mes falta en Presupuestos** — Resuelto (71d6e92): periodNavigationHeader con chevrones idéntico a ScheduledPaymentsListView
 - ✅ **BUG-30: Notificación de resumen del día se envía duplicada** — Resuelto (71d6e92): isSendingReports guard en ReportNotificationService
 
 ### Fase 11: Sistema de Temas Independientes (V1.2) — ✅ COMPLETADA (2026-02-19)
@@ -528,12 +533,10 @@ Ver ROADMAP.md para detalles.
 
 ## Session Continuity
 
-Last session: 2026-02-20
-Stopped at: Siri & Shortcuts — intent + settings screen completed
-Next step: Continue Phase 12 items
+Last session: 2026-02-23
+Stopped at: 5 QA bugfixes pre-release V1.0 (f66df45)
+Next step: Pending BUG from BUGFIX-TAGS-KPI.md (tags KPI no respeta filtros), then continue Phase 12
 Resume context:
-- SiriNaturalEntryIntent: LLM parsing (Pro) + AmountParser offline fallback → InboxDraft (7700b2d)
-- SiriShortcutsView: 3 sections (Siri card, 5 shortcuts with descriptions, FAQ) in Profile > Security (52b572e)
-- Siri tip card in PanelView (dismissable, @AppStorage showSiriTip)
-- .siri source type added to DraftSourceType, Inbox views updated
-- Localized in 6 languages (es, en, de, fr, it, pt)
+- 5 bugs fixed: trial banner removed, alias hidden, date comparison fixed, edit-from-success flag, paid payments filtered
+- BUGFIX-TAGS-KPI.md has detailed plan for tags KPI filter bug (CategoriesTabView)
+- Branch 1.0 — release branch
