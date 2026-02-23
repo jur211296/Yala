@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-23] 7d5f379 fix: period comparison chart respects currency, amount, and search filters
 - [2026-02-23] 872390a fix: batch 3 — 15 quick fixes for panel, validation, data integrity, and filters
 - [2026-02-23] 2eb7acc fix: transaction save reactivity, locale decimal parsing, and bulk edit data integrity
 - [2026-02-23] fe3142c fix: extract ScheduledPaymentDateCalculator fixing 5 date generation bugs
@@ -538,13 +539,10 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Batch 3 — 15 quick fixes committed (872390a)
-Next step: Continue with batch 4+ bugs from RELEASE-REVIEW.md (BUG-5, BUG-35, BUG-40, BUG-7/8/13 transfers)
+Stopped at: Batch 4 complete — 17 bugs fixed (BUG-5/7/8/11/13/17/18/22/23/31/32/34/35/36/38/39/40)
+Next step: Continue with remaining RELEASE-REVIEW items (HIGH, DS, A11Y, L10N, CODE categories)
 Resume context:
-- Batch 3 fixed: BUG-1/2/3/4/10/12/16/19/20/21/24/30/33/37 + HIGH-10
-- Panel: normalizeCurrencyCode, TagsPie title, transfer colors, locale formatter
-- Validation: DatePicker max date, budget/scheduled payment amount > 0
-- Data integrity: Decimal precision, CurrencyDefaults in transfers, budget alert currency
-- Filters: activeFilterCount delegation, trends chart filters, widget refresh on save
-- Toggles: voice/image reset on permission denied
+- Batch 4 complete: 17 bugs across 28 files, 276 insertions, 146 deletions
+- All 40 BUGs in RELEASE-REVIEW.md now resolved
+- Transfer pair system added (transferPairID on TransactionItem)
 - Branch 1.0 — release branch

@@ -269,6 +269,7 @@
 "import.assignAccountPerCurrency" = "Atribua uma conta para cada moeda encontrada no arquivo.";
 "import.selectAccountForCurrency" = "Selecionar conta";
 "import.currenciesDetected" = "%d moedas detectadas";
+"import.recordsImported" = "%d registros importados com sucesso.";
 "import.recordsImportedMultiCurrency" = "%d registros importados em %d moedas.";
 "import.noAccountsForCurrency" = "Nenhuma conta em %@. Crie uma conta nesta moeda primeiro.";
 "import.noCurrenciesDetected" = "Nenhuma moeda valida detectada no arquivo.";
@@ -1324,6 +1325,7 @@
 "onboarding.periodTitle" = "Período padrão";
 "onboarding.periodSubtitle" = "Qual intervalo de tempo você prefere ver ao abrir o aplicativo?";
 "onboarding.finish" = "Começar";
+"onboarding.defaultAccountName" = "Minha conta";
 "onboarding.categoriesTitle" = "Categorias para começar";
 "onboarding.categoriesSubtitle" = "Preparamos categorias comuns para ajudar a organizar suas despesas desde o primeiro dia.";
 "onboarding.categoriesYes" = "Começar com estas categorias";

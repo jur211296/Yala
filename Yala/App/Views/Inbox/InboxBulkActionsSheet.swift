@@ -179,7 +179,7 @@ struct InboxBulkActionsSheet: View {
             .sheet(isPresented: $showSubcategorySelector) {
                 SubcategorySelectorSheet(
                     selectedSubcategory: $selectedSubcategory,
-                    transactionType: .expense
+                    transactionType: selectedDrafts.allSatisfy({ ($0.amount ?? 0) > 0 }) ? .income : .expense
                 )
                 .onDisappear {
                     if let subcategory = selectedSubcategory {

@@ -188,8 +188,14 @@ struct RecordsStandaloneView: View {
         }
 
         ToolbarItem(placement: .topBarTrailing) {
-            Button(L10n.Export.selectAll) {
-                recordsViewModel.selectAll()
+            let allSelected = recordsViewModel.selectedRecordIDs.count ==
+                recordsViewModel.groupedRecords.flatMap(\.records).count
+            Button(allSelected ? L10n.Export.deselectAll : L10n.Export.selectAll) {
+                if allSelected {
+                    recordsViewModel.deselectAll()
+                } else {
+                    recordsViewModel.selectAll()
+                }
             }
         }
     }

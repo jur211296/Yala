@@ -13,7 +13,7 @@ struct SubscriptionView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
 
-    private var store = StoreKitManager.shared
+    @State private var store = StoreKitManager.shared
 
     @State private var selectedPlan: String = StoreKitManager.proYearlyID
     @State private var showManageSubscription = false

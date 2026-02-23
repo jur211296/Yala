@@ -94,6 +94,8 @@ final class BudgetAlertTracker {
         let threeMonthsAgo = calendar.date(byAdding: .month, value: -3, to: Date()) ?? Date()
         let cutoffYear = calendar.component(.year, from: threeMonthsAgo)
         let cutoffMonth = calendar.component(.month, from: threeMonthsAgo)
+        let cutoffWeek = calendar.component(.weekOfYear, from: threeMonthsAgo)
+        let cutoffYearForWeek = calendar.component(.yearForWeekOfYear, from: threeMonthsAgo)
 
         for key in budgetKeys {
             // Extract period from key (last component after last _)
@@ -102,8 +104,8 @@ final class BudgetAlertTracker {
 
             let period = String(components.last ?? "")
 
-            // Check if it's a year-month pattern (2026-01)
-            if period.count == 7, period.contains("-") {
+            // Monthly: "2026-01"
+            if period.count == 7, period.contains("-"), !period.contains("W") {
                 let parts = period.split(separator: "-")
                 if parts.count == 2,
                    let year = Int(parts[0]),
@@ -111,6 +113,23 @@ final class BudgetAlertTracker {
                     if year < cutoffYear || (year == cutoffYear && month < cutoffMonth) {
                         defaults.removeObject(forKey: key)
                     }
+                }
+            }
+            // Weekly: "2026-W05"
+            else if period.contains("-W") {
+                let parts = period.split(separator: "-W")
+                if parts.count == 2,
+                   let year = Int(parts[0]),
+                   let week = Int(parts[1]) {
+                    if year < cutoffYearForWeek || (year == cutoffYearForWeek && week < cutoffWeek) {
+                        defaults.removeObject(forKey: key)
+                    }
+                }
+            }
+            // Yearly: "2026" (4-digit number, no separators)
+            else if period.count == 4, let year = Int(period) {
+                if year < cutoffYear {
+                    defaults.removeObject(forKey: key)
                 }
             }
         }

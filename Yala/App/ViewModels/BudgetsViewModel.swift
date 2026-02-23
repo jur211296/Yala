@@ -300,44 +300,40 @@ final class BudgetsViewModel {
         transactions: [TransactionItem],
         defaultCurrencyCode: String
     ) -> Double {
-        // Get budget period date interval
         let interval = getBudgetDateInterval(budget: budget)
+        return Self.calculateSpending(budget: budget, transactions: transactions, interval: interval)
+    }
 
-        // Filter transactions by date
-        var filtered = transactions.filter { transaction in
-            interval.contains(transaction.date)
-        }
-
-        // Apply budget filters
+    /// Shared spending calculation used by both BudgetsViewModel and BudgetAlertService.
+    /// Filters transactions by budget criteria and sums expense amounts.
+    static func calculateSpending(
+        budget: Budget,
+        transactions: [TransactionItem],
+        interval: DateInterval
+    ) -> Double {
+        var filtered = transactions.filter { interval.contains($0.date) }
 
         // Account filter
         if let accounts = budget.accounts, !accounts.isEmpty {
             let accountIDs = Set(accounts.map { $0.persistentModelID })
-            filtered = filtered.filter { transaction in
-                if let accountID = transaction.account?.persistentModelID {
-                    return accountIDs.contains(accountID)
-                }
-                return false
+            filtered = filtered.filter { tx in
+                tx.account.map { accountIDs.contains($0.persistentModelID) } ?? false
             }
         }
 
         // Subcategory filter
         if let subcategories = budget.subcategories, !subcategories.isEmpty {
             let subIDs = Set(subcategories.map { $0.persistentModelID })
-            filtered = filtered.filter { transaction in
-                if let subID = transaction.subcategory?.persistentModelID {
-                    return subIDs.contains(subID)
-                }
-                return false
+            filtered = filtered.filter { tx in
+                tx.subcategory.map { subIDs.contains($0.persistentModelID) } ?? false
             }
         }
 
         // Tag filter
         if let budgetTags = budget.tags, !budgetTags.isEmpty {
             let tagIDs = Set(budgetTags.map { $0.persistentModelID })
-            filtered = filtered.filter { transaction in
-                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
-                return !transactionTagIDs.isDisjoint(with: tagIDs)
+            filtered = filtered.filter { tx in
+                !Set((tx.tags ?? []).map { $0.persistentModelID }).isDisjoint(with: tagIDs)
             }
         }
 
@@ -345,28 +341,21 @@ final class BudgetsViewModel {
         if let naturesString = budget.natures, !naturesString.isEmpty {
             let natures = naturesString.split(separator: ",")
                 .compactMap { SubcategoryNature(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
-
-            filtered = filtered.filter { transaction in
-                natures.contains(transaction.effectiveNature)
-            }
+            filtered = filtered.filter { natures.contains($0.effectiveNature) }
         }
 
         // Only count expenses (not income)
-        filtered = filtered.filter { transaction in
-            transaction.category?.isIncome == false
-        }
+        filtered = filtered.filter { $0.category?.isIncome == false }
 
         // Sum amounts based on budget account configuration:
         // - If exactly 1 account: use transaction.amount (same currency as budget)
         // - If 0 or multiple accounts: use amountInPreferredCurrency (normalized)
         let useBudgetCurrency = (budget.accounts?.count ?? 0) == 1
 
-        let total = filtered.reduce(0.0) { sum, transaction in
-            let amount = useBudgetCurrency ? transaction.amount : transaction.amountInPreferredCurrency
+        return filtered.reduce(0.0) { sum, tx in
+            let amount = useBudgetCurrency ? tx.amount : tx.amountInPreferredCurrency
             return sum + abs(amount)
         }
-
-        return total
     }
 
     // MARK: - Budget Status Determination

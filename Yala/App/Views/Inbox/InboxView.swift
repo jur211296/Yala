@@ -100,9 +100,14 @@ struct InboxView: View {
                         }
                     }
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button(L10n.Export.selectAll) {
+                        let allSelected = selectedDraftIDs.count == filteredDrafts.count
+                        Button(allSelected ? L10n.Export.deselectAll : L10n.Export.selectAll) {
                             dsWithAnimation(reduceMotion) {
-                                selectedDraftIDs = Set(filteredDrafts.map { $0.persistentModelID })
+                                if allSelected {
+                                    selectedDraftIDs.removeAll()
+                                } else {
+                                    selectedDraftIDs = Set(filteredDrafts.map { $0.persistentModelID })
+                                }
                             }
                         }
                     }

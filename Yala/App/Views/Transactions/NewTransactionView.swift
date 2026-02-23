@@ -1120,6 +1120,28 @@ struct NewTransactionView: View {
             // Load note
             viewModel.note = tx.note ?? ""
 
+            // If this is a transfer, load the paired transaction
+            if tx.balanceAdjustmentType == "transfer", let pairID = tx.transferPairID {
+                let fetchPairID = pairID
+                let descriptor = FetchDescriptor<TransactionItem>(
+                    predicate: #Predicate { $0.transferPairID == fetchPairID }
+                )
+                if let pairs = try? modelContext.fetch(descriptor) {
+                    let pair = pairs.first { $0.persistentModelID != tx.persistentModelID }
+                    if let pair {
+                        viewModel.transactionType = .transfer
+                        // Determine which is out (negative) and which is in (positive)
+                        let outTx = tx.amount < 0 ? tx : pair
+                        let inTx = tx.amount < 0 ? pair : tx
+                        viewModel.sourceAccount = outTx.account
+                        viewModel.destinationAccount = inTx.account
+                        viewModel.editingTransferPair = (out: outTx, in: inTx)
+                        // Use absolute amount from the outflow side
+                        viewModel.amountString = String(format: "%.2f", abs(outTx.amount))
+                    }
+                }
+            }
+
             // Load exchange rate (for display chip when currency differs from preferred)
             // For non-transfers: shows rate from transaction currency to preferred currency
             if tx.currencyCode != preferredCurrencyCode {
@@ -1197,6 +1219,19 @@ struct NewTransactionView: View {
         DS.Haptic.warning()
 
         do {
+            // If this is a transfer, also delete the paired transaction
+            if transaction.balanceAdjustmentType == "transfer", let pairID = transaction.transferPairID {
+                let fetchPairID = pairID
+                let descriptor = FetchDescriptor<TransactionItem>(
+                    predicate: #Predicate { $0.transferPairID == fetchPairID }
+                )
+                if let pairs = try? modelContext.fetch(descriptor) {
+                    for pair in pairs where pair.persistentModelID != transaction.persistentModelID {
+                        modelContext.delete(pair)
+                    }
+                }
+            }
+
             modelContext.delete(transaction)
             try modelContext.save()
             WidgetDataCache.updateCache(context: modelContext)

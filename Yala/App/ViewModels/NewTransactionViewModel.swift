@@ -673,17 +673,21 @@ final class NewTransactionViewModel {
             context.insert(inTransaction)
         }
 
+        // Link both sides with a shared transfer pair ID
+        let pairID = UUID().uuidString
+        outTransaction.transferPairID = pairID
+        inTransaction.transferPairID = pairID
+
         return (outTransaction, inTransaction)
     }
 
     private func ensureTransferCategory(context: ModelContext) throws -> Subcategory {
-        // Use "Otros" category (from seed) with localized subcategory name
-        let parentCategoryName = "Otros"
+        // Use first expense category with localized subcategory name
         let subcategoryName = L10n.Transfer.categoryName
 
-        // Check if subcategory exists within "Otros"
+        // Check if transfer subcategory already exists in any expense category
         let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == subcategoryName && $0.category?.name == parentCategoryName }
+            predicate: #Predicate { $0.name == subcategoryName && $0.category?.isIncome == false }
         )
 
         let fetchedSubcategories: [Subcategory]
@@ -691,7 +695,7 @@ final class NewTransactionViewModel {
             fetchedSubcategories = try context.fetch(descriptor)
         } catch {
             #if DEBUG
-            print("[NewTransactionViewModel] Error fetching transfer subcategory in Otros: \(error)")
+            print("[NewTransactionViewModel] Error fetching transfer subcategory: \(error)")
             #endif
             fetchedSubcategories = []
         }
@@ -699,28 +703,29 @@ final class NewTransactionViewModel {
             return existing
         }
 
-        // Check if "Otros" category exists (should always exist from seed)
+        // Find first expense category
         let catDescriptor = FetchDescriptor<Category>(
-            predicate: #Predicate { $0.name == parentCategoryName }
+            predicate: #Predicate { $0.isIncome == false },
+            sortBy: [SortDescriptor(\.sortOrder)]
         )
 
-        let fetchedOtrosCategories: [Category]
+        let fetchedExpenseCategories: [Category]
         do {
-            fetchedOtrosCategories = try context.fetch(catDescriptor)
+            fetchedExpenseCategories = try context.fetch(catDescriptor)
         } catch {
             #if DEBUG
-            print("[NewTransactionViewModel] Error fetching Otros category: \(error)")
+            print("[NewTransactionViewModel] Error fetching expense categories: \(error)")
             #endif
-            fetchedOtrosCategories = []
+            fetchedExpenseCategories = []
         }
 
         let category: Category
-        if let existingCat = fetchedOtrosCategories.first {
+        if let existingCat = fetchedExpenseCategories.first {
             category = existingCat
         } else {
-            // Fallback: create "Otros" if somehow missing
+            // Fallback: create expense category if somehow missing
             category = Category(
-                name: parentCategoryName,
+                name: "Otros",
                 colorHex: "#64748B",
                 isIncome: false
             )
@@ -750,14 +755,13 @@ final class NewTransactionViewModel {
         return subcategory
     }
 
-    /// Ensures the "Ingresos/Transferencia entre cuentas" subcategory exists for incoming transfers
+    /// Ensures the income transfer subcategory exists for incoming transfers
     private func ensureIncomeTransferCategory(context: ModelContext) throws -> Subcategory {
-        let parentCategoryName = "Ingresos"
         let subcategoryName = L10n.Transfer.categoryName
 
-        // Check if subcategory exists within "Ingresos"
+        // Check if transfer subcategory already exists in any income category
         let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == subcategoryName && $0.category?.name == parentCategoryName }
+            predicate: #Predicate { $0.name == subcategoryName && $0.category?.isIncome == true }
         )
 
         let fetchedIncomeSubcategories: [Subcategory]
@@ -765,7 +769,7 @@ final class NewTransactionViewModel {
             fetchedIncomeSubcategories = try context.fetch(descriptor)
         } catch {
             #if DEBUG
-            print("[NewTransactionViewModel] Error fetching transfer subcategory in Ingresos: \(error)")
+            print("[NewTransactionViewModel] Error fetching income transfer subcategory: \(error)")
             #endif
             fetchedIncomeSubcategories = []
         }
@@ -773,28 +777,29 @@ final class NewTransactionViewModel {
             return existing
         }
 
-        // Check if "Ingresos" category exists (should always exist from seed)
+        // Find first income category
         let catDescriptor = FetchDescriptor<Category>(
-            predicate: #Predicate { $0.name == parentCategoryName }
+            predicate: #Predicate { $0.isIncome == true },
+            sortBy: [SortDescriptor(\.sortOrder)]
         )
 
-        let fetchedIngresosCategories: [Category]
+        let fetchedIncomeCategories: [Category]
         do {
-            fetchedIngresosCategories = try context.fetch(catDescriptor)
+            fetchedIncomeCategories = try context.fetch(catDescriptor)
         } catch {
             #if DEBUG
-            print("[NewTransactionViewModel] Error fetching Ingresos category: \(error)")
+            print("[NewTransactionViewModel] Error fetching income categories: \(error)")
             #endif
-            fetchedIngresosCategories = []
+            fetchedIncomeCategories = []
         }
 
         let category: Category
-        if let existingCat = fetchedIngresosCategories.first {
+        if let existingCat = fetchedIncomeCategories.first {
             category = existingCat
         } else {
-            // Fallback: create "Ingresos" if somehow missing
+            // Fallback: create income category if somehow missing
             category = Category(
-                name: parentCategoryName,
+                name: "Ingresos",
                 colorHex: "#14B8A6",
                 isIncome: true
             )

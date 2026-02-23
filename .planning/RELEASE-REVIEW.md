@@ -54,7 +54,7 @@
 - **Fix:** Cambiar `Locale.current` → `AppLocale.current`
 
 ### BUG-5: ExchangeRateWidget solo soporta 2 colores de moneda
-- [ ] **Archivo:** `App/Views/Panel/ExchangeRateWidget.swift:39-40`
+- [x] **Archivo:** `App/Views/Panel/ExchangeRateWidget.swift:39-40` — Resuelto (batch 4)
 - **Impacto:** 3ra+ moneda secundaria comparte color con la 2da — ambigüedad visual
 - **Fix:** Array de colores para N monedas o limitar selección visible a 2
 
@@ -297,12 +297,12 @@ Lo siguiente fue verificado y funciona correctamente:
 - **Fix:** Añadir `SessionState.shared.incrementDataVersion()` después de `context.save()`
 
 ### BUG-7: Editar transferencia no carga el par de transacciones
-- [ ] **Archivo:** `App/Views/Transactions/NewTransactionView.swift:1092-1151`
+- [x] **Archivo:** `App/Views/Transactions/NewTransactionView.swift:1092-1151` — Resuelto (batch 4)
 - **Impacto:** Al editar una transferencia desde Records, aparece como gasto/ingreso normal. Guardar rompe el par de transferencia dejando una transacción huérfana
 - **Detalle:** `prefillFromContext()` nunca verifica `balanceAdjustmentType == "transfer"`, no carga `editingTransferPair`, no setea `transactionType = .transfer`
 
 ### BUG-8: Eliminar transferencia solo borra un lado
-- [ ] **Archivo:** `App/Views/Transactions/NewTransactionView.swift:1194-1209`
+- [x] **Archivo:** `App/Views/Transactions/NewTransactionView.swift:1194-1209` — Resuelto (batch 4)
 - **Impacto:** Al borrar una transferencia, solo se elimina outflow O inflow, dejando transacción huérfana
 - **Detalle:** No hay `transferPairID` en TransactionItem para encontrar la pareja
 
@@ -317,7 +317,7 @@ Lo siguiente fue verificado y funciona correctamente:
 - **Fix:** Usar `Decimal(string: viewModel.amountString)` en vez de `Decimal(viewModel.amount)`
 
 ### BUG-11: Categorías de transferencia buscan por nombre hardcoded en español
-- [ ] **Archivo:** `App/ViewModels/NewTransactionViewModel.swift:676-677, 751`
+- [x] **Archivo:** `App/ViewModels/NewTransactionViewModel.swift:676-677, 751` — Resuelto (batch 4)
 - **Impacto:** `ensureTransferCategory()` busca `"Otros"` y `ensureIncomeTransferCategory()` busca `"Ingresos"` como nombres de categoría padre. Falla si usuario renombró categorías o si seed data usa otro idioma
 - **Fix:** Identificar categorías por ID estable, no por nombre
 
@@ -327,7 +327,7 @@ Lo siguiente fue verificado y funciona correctamente:
 - **Fix:** Añadir `in: ...Date()` al DatePicker
 
 ### BUG-13: No hay mecanismo para vincular pares de transferencia
-- [ ] **Archivo:** `Models/TransactionItem.swift`
+- [x] **Archivo:** `Models/TransactionItem.swift` — Resuelto (batch 4, transferPairID)
 - **Impacto:** TransactionItem no tiene `transferPairID`. Imposible encontrar la transacción pareja al editar/borrar
 - **Detalle:** El único marcador es `balanceAdjustmentType = "transfer"`, compartido por ambos lados sin enlace
 
@@ -545,17 +545,17 @@ Lo que funciona correctamente:
 - **Fix:** Preservar signo original: `amount * (transaction.amount < 0 ? -1 : 1)`
 
 ### BUG-16: Period comparison chart ignora filtros de currency/amount/search
-- [x] **Archivo:** `App/Views/Statistics/TrendsTabView.swift:1535-1546` — Resuelto (872390a)
+- [x] **Archivo:** `App/Views/Statistics/TrendsTabView.swift:1535-1546` — Resuelto (7d5f379)
 - **Impacto:** Chart de comparación usa `selectedCurrencies: []`, `amountCondition: .any`, `searchText: ""` hardcodeados. Inconsistente con el trend chart principal que SÍ los respeta
 - **Fix:** Usar valores reales del viewModel
 
 ### BUG-17: No hay "Deselect All" en modo selección
-- [ ] **Archivo:** `App/Views/Records/RecordsStandaloneView.swift`
+- [x] **Archivo:** `App/Views/Records/RecordsStandaloneView.swift` — Resuelto (batch 4)
 - **Impacto:** `deselectAll()` existe en VM (línea 292) pero no hay botón en UI. Usuario debe cancelar y re-entrar
 - **Fix:** Agregar toggle Select All / Deselect All
 
 ### BUG-18: Bulk delete no maneja transferencias (borra solo un lado)
-- [ ] **Archivo:** `App/ViewModels/RecordsViewModel.swift:309-330`
+- [x] **Archivo:** `App/ViewModels/RecordsViewModel.swift:309-330` — Resuelto (batch 4)
 - **Impacto:** Misma raíz que BUG-8 — sin `transferPairID`, no puede encontrar la pareja
 - **Nota:** Compartido con BUG-8/BUG-13 (problema sistémico de transfers)
 
@@ -750,11 +750,11 @@ Lo que funciona correctamente:
 - **Fix:** Usar `budget.currencyCode`
 
 ### BUG-22: BudgetAlertTracker no limpia entries semanales/anuales/únicas
-- [ ] **Archivo:** `Services/BudgetAlertTracker.swift:88-117`
+- [x] **Archivo:** `Services/BudgetAlertTracker.swift:88-117` — Resuelto (batch 4)
 - **Impacto:** Cleanup solo reconoce patterns "yyyy-MM". Keys semanales ("2025-W03"), anuales ("2026") y únicas nunca se limpian → UserDefaults crece indefinidamente
 
 ### BUG-23: Spending calculation duplicada entre BudgetsViewModel y BudgetAlertService
-- [ ] **Archivos:** `App/ViewModels/BudgetsViewModel.swift:354+` y `Services/BudgetAlertService.swift:155-204`
+- [x] **Archivos:** `App/ViewModels/BudgetsViewModel.swift:354+` y `Services/BudgetAlertService.swift:155-204` — Resuelto (batch 4, static shared method)
 - **Impacto:** Comment literal dice "copied from BudgetsViewModel". Si uno cambia, el otro no se actualiza
 - **Fix:** Extraer a función compartida
 
@@ -952,12 +952,12 @@ Lo que funciona correctamente:
 ## 6.1 BUGS
 
 ### BUG-31: Approval logic duplicada — Merchant Memory solo aprende desde EditSheet
-- [ ] **Archivos:** `App/Views/Inbox/InboxDraftEditSheet.swift:900-1005` vs `Services/DraftService.swift:139-217`
+- [x] **Archivos:** `App/Views/Inbox/InboxDraftEditSheet.swift:900-1005` vs `Services/DraftService.swift:139-217` — Resuelto (batch 4)
 - **Impacto:** `createTransactionAndApprove` en EditSheet incluye merchant memory update + nature override que `DraftService.approveDraft` NO tiene. Swipe-approve y bulk-approve no enseñan al sistema de auto-categorización
 - **Fix:** Unificar lógica en DraftService
 
 ### BUG-32: Bulk subcategory selector hardcodeado a `.expense`
-- [ ] **Archivo:** `App/Views/Inbox/InboxBulkActionsSheet.swift:182`
+- [x] **Archivo:** `App/Views/Inbox/InboxBulkActionsSheet.swift:182` — Resuelto (batch 4)
 - **Impacto:** Si drafts seleccionados incluyen ingresos, solo se muestran subcategorías de gastos
 - **Fix:** Detectar tipo mixto o permitir selección por tipo
 
@@ -1118,11 +1118,11 @@ Lo que funciona correctamente:
 ## 8.1 BUGS
 
 ### BUG-34: No se crea cuenta default durante onboarding
-- [ ] **Archivo:** `App/Views/Onboarding/OnboardingView.swift`
+- [x] **Archivo:** `App/Views/Onboarding/OnboardingView.swift` — Resuelto (batch 4)
 - **Impacto:** Usuario llega con 0 cuentas después de completar onboarding. Debe crear una manualmente
 
 ### BUG-35: Timer de SplashScreen nunca se invalida — memory/CPU leak
-- [ ] **Archivo:** `App/Views/SplashScreenView.swift:133`
+- [x] **Archivo:** `App/Views/SplashScreenView.swift:133` — Resuelto (batch 4)
 - **Impacto:** Timer de 50ms sigue disparándose después de que la vista desaparece
 - **Fix:** Guardar en @State e invalidar en .onDisappear
 
@@ -1192,7 +1192,7 @@ Lo que funciona correctamente:
 ## 9.1 BUGS
 
 ### BUG-36: `.swipeActions` en NotificationCard no funciona — está en ScrollView, no List
-- [ ] **Archivo:** `App/Views/Settings/NotificationsSettingsView.swift:387`
+- [x] **Archivo:** `App/Views/Settings/NotificationsSettingsView.swift:387` — Resuelto (batch 4, inline delete button)
 - **Impacto:** Swipe-to-delete de notificaciones custom es completamente no funcional
 - **Fix:** Botón delete explícito o migrar a List
 
@@ -1202,11 +1202,11 @@ Lo que funciona correctamente:
 - **Fix:** Set false cuando `status == .denied`
 
 ### BUG-38: Voice permission request ignora resultado del callback
-- [ ] **Archivo:** `App/Views/Profile/ProfileView.swift:480`
+- [x] **Archivo:** `App/Views/Profile/ProfileView.swift:480` — Resuelto (batch 4)
 - **Detalle:** `AVAudioApplication.requestRecordPermission { _ in }` — resultado descartado
 
 ### BUG-39: Import success message hardcodeado en español
-- [ ] **Archivo:** `App/Views/Import/ImportIntroSheet.swift:616`
+- [x] **Archivo:** `App/Views/Import/ImportIntroSheet.swift:616` — Resuelto (batch 4)
 - **Detalle:** `"\(createdCount) registros importados correctamente."` — bypasea L10n
 
 ---
@@ -1289,7 +1289,7 @@ Lo que funciona correctamente:
 ## 10.1 BUGS
 
 ### BUG-40: StoreKitManager no es reactivo en SubscriptionView
-- [ ] **Archivo:** `App/Views/Settings/SubscriptionView.swift:17`
+- [x] **Archivo:** `App/Views/Settings/SubscriptionView.swift:17` — Resuelto (batch 4)
 - **Detalle:** `private var store = StoreKitManager.shared` — no `@State`, SwiftUI no trackea cambios. Si suscripción se renueva mientras la vista está abierta, no se actualiza
 
 ---

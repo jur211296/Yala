@@ -613,7 +613,7 @@ struct ImportIntroSheet: View {
                 // Create result and dismiss (keep button in "Importando" state until sheet closes)
                 let importResult = ImportResult(
                     isSuccess: true,
-                    message: "\(createdCount) registros importados correctamente.",
+                    message: L10n.Import.recordsImported(createdCount),
                     count: createdCount
                 )
                 #if DEBUG

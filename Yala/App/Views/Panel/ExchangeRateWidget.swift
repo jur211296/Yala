@@ -35,9 +35,12 @@ struct ExchangeRateWidget: View {
     @State private var selectedDate: Date?
     @State private var filteredCurrency: CurrencyCode?
 
-    // Colors for currency lines
-    private var currencyAColor: Color { theme.accent }
-    private let currencyBColor = Color.hotPink
+    // Colors for currency lines (indexed by position)
+    private static let currencyColors: [Color] = [.electricIndigo, .hotPink, .teal, .orange]
+
+    private func colorForIndex(_ index: Int) -> Color {
+        Self.currencyColors[index % Self.currencyColors.count]
+    }
 
     var body: some View {
         VStack(spacing: DS.Spacing.none) {
@@ -170,12 +173,13 @@ struct ExchangeRateWidget: View {
                         // Get original index for consistent colors
                         let originalIndex = activeCurrencies.firstIndex(of: currency) ?? index
                         if let rate = point.rate(for: currency.rawValue) {
+                            let lineColor = colorForIndex(originalIndex)
                             LineMark(
                                 x: .value("Date", point.date),
                                 y: .value("Rate", rate),
                                 series: .value("Currency", currency.rawValue)
                             )
-                            .foregroundStyle(originalIndex == 0 ? currencyAColor : currencyBColor)
+                            .foregroundStyle(lineColor)
                             .lineStyle(StrokeStyle(lineWidth: 2))
                             .interpolationMethod(.monotone)
 
@@ -183,14 +187,14 @@ struct ExchangeRateWidget: View {
                                 x: .value("Date", point.date),
                                 y: .value("Rate", rate)
                             )
-                            .foregroundStyle(originalIndex == 0 ? currencyAColor : currencyBColor)
+                            .foregroundStyle(lineColor)
                             .symbolSize(20)
-                            .annotation(position: originalIndex == 0 ? .top : .bottom, spacing: DS.Spacing.xxs) {
+                            .annotation(position: originalIndex % 2 == 0 ? .top : .bottom, spacing: DS.Spacing.xxs) {
                                 // Only show labels on first, last, and middle points to avoid clutter
                                 if shouldShowLabel(for: point, in: data.chartPoints) {
                                     Text(formatRateCompact(rate))
                                         .font(DS.Typography.captionSmall).fontWeight(.medium)
-                                        .foregroundStyle(originalIndex == 0 ? currencyAColor : currencyBColor)
+                                        .foregroundStyle(lineColor)
                                 }
                             }
                         }
@@ -297,7 +301,7 @@ struct ExchangeRateWidget: View {
             HStack(spacing: DS.Spacing.sm) {
                 ForEach(Array(activeCurrencies.enumerated()), id: \.element.rawValue) { index, currency in
                     if let rate = data.currentRates[currency.rawValue] {
-                        let color = index == 0 ? currencyAColor : currencyBColor
+                        let color = colorForIndex(index)
                         let isSelected = filteredCurrency == nil || filteredCurrency == currency
 
                         Button {
@@ -407,15 +411,16 @@ struct ExchangeRateWidget: View {
                     // Use original index from allActiveCurrencies for consistent colors
                     let originalIndex = allActiveCurrencies.firstIndex(of: currency) ?? 0
                     if let rate = point.rate(for: currency.rawValue) {
+                        let tooltipColor = colorForIndex(originalIndex)
                         HStack(spacing: DS.Spacing.xs) {
                             Circle()
-                                .fill(originalIndex == 0 ? currencyAColor : currencyBColor)
+                                .fill(tooltipColor)
                                 .frame(width: 5, height: 5)
                             Text(
                                 "1 \(currency.rawValue) = \(formatRate(rate)) \(preferredCurrency)"
                             )
                             .font(DS.Typography.labelTiny)
-                            .foregroundStyle(originalIndex == 0 ? currencyAColor : currencyBColor)
+                            .foregroundStyle(tooltipColor)
                         }
                     }
                 }

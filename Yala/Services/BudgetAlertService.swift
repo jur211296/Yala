@@ -151,55 +151,14 @@ final class BudgetAlertService {
         }
     }
 
-    // MARK: - Spending Calculation (copied from BudgetsViewModel)
+    // MARK: - Spending Calculation
 
     private func calculateSpending(
         budget: Budget,
         transactions: [TransactionItem],
         interval: DateInterval
     ) -> Double {
-        var filtered = transactions.filter { interval.contains($0.date) }
-
-        // Account filter
-        if let accounts = budget.accounts, !accounts.isEmpty {
-            let accountIDs = Set(accounts.map { $0.persistentModelID })
-            filtered = filtered.filter { tx in
-                tx.account.map { accountIDs.contains($0.persistentModelID) } ?? false
-            }
-        }
-
-        // Subcategory filter
-        if let subcategories = budget.subcategories, !subcategories.isEmpty {
-            let subIDs = Set(subcategories.map { $0.persistentModelID })
-            filtered = filtered.filter { tx in
-                tx.subcategory.map { subIDs.contains($0.persistentModelID) } ?? false
-            }
-        }
-
-        // Tag filter
-        if let budgetTags = budget.tags, !budgetTags.isEmpty {
-            let tagIDs = Set(budgetTags.map { $0.persistentModelID })
-            filtered = filtered.filter { tx in
-                !Set((tx.tags ?? []).map { $0.persistentModelID }).isDisjoint(with: tagIDs)
-            }
-        }
-
-        // Nature filter
-        if let naturesString = budget.natures, !naturesString.isEmpty {
-            let natures = naturesString.split(separator: ",")
-                .compactMap { SubcategoryNature(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
-            filtered = filtered.filter { natures.contains($0.effectiveNature) }
-        }
-
-        // Only expenses
-        filtered = filtered.filter { $0.category?.isIncome == false }
-
-        // Sum amounts
-        let useBudgetCurrency = (budget.accounts?.count ?? 0) == 1
-        return filtered.reduce(0.0) { sum, tx in
-            let amount = useBudgetCurrency ? tx.amount : tx.amountInPreferredCurrency
-            return sum + abs(amount)
-        }
+        BudgetsViewModel.calculateSpending(budget: budget, transactions: transactions, interval: interval)
     }
 
     // MARK: - Notifications

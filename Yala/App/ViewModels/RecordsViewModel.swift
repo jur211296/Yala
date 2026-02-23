@@ -305,15 +305,41 @@ final class RecordsViewModel: Filterable {
         selectedRecordIDs.removeAll()
     }
 
-    /// Delete selected records
+    /// Delete selected records (including transfer pairs)
     func deleteSelected(context: ModelContext) {
-        // Fetch all transactions matching selected IDs
+        // Collect transfer pair IDs from selected records
+        var transferPairIDs: Set<String> = []
+        var recordsToDelete: [TransactionItem] = []
+
         for group in groupedRecords {
             for record in group.records {
                 if selectedRecordIDs.contains(record.persistentModelID) {
-                    context.delete(record)
+                    recordsToDelete.append(record)
+                    if record.balanceAdjustmentType == "transfer", let pairID = record.transferPairID {
+                        transferPairIDs.insert(pairID)
+                    }
                 }
             }
+        }
+
+        // Delete transfer pairs that weren't already selected
+        if !transferPairIDs.isEmpty {
+            for pairID in transferPairIDs {
+                let fetchPairID = pairID
+                let descriptor = FetchDescriptor<TransactionItem>(
+                    predicate: #Predicate { $0.transferPairID == fetchPairID }
+                )
+                if let pairs = try? context.fetch(descriptor) {
+                    for pair in pairs where !selectedRecordIDs.contains(pair.persistentModelID) {
+                        context.delete(pair)
+                    }
+                }
+            }
+        }
+
+        // Delete selected records
+        for record in recordsToDelete {
+            context.delete(record)
         }
 
         do {

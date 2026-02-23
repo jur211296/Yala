@@ -54,8 +54,12 @@ final class TransactionItem {
     var scheduledPaymentID: String?
 
     // MARK: - Balance Adjustment Type
-    /// Type of balance adjustment transaction: "initial_balance" | "adjustment" | nil (normal)
+    /// Type of balance adjustment transaction: "initial_balance" | "adjustment" | "transfer" | nil (normal)
     var balanceAdjustmentType: String?
+
+    // MARK: - Transfer Pair
+    /// Shared UUID between both sides of a transfer (outflow + inflow)
+    var transferPairID: String?
 
     // MARK: - Metadata
     /// Timestamp de creación del registro (usado para ordenar registros del mismo día)

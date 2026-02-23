@@ -372,6 +372,18 @@ struct NotificationCard: View {
                     .onChange(of: isActive) { _, newValue in
                         onToggle(newValue)
                     }
+
+                // Delete button (only for deletable notifications)
+                if let onDelete = onDelete {
+                    Button(role: .destructive) {
+                        onDelete()
+                    } label: {
+                        Image(systemName: "trash")
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.red.opacity(0.7))
+                    }
+                    .buttonStyle(.plain)
+                }
             }
             .padding(DS.Spacing.lg)
             .background(.thCard)
@@ -384,15 +396,6 @@ struct NotificationCard: View {
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
-        .swipeActions(edge: .trailing) {
-            if let onDelete = onDelete {
-                Button(role: .destructive) {
-                    onDelete()
-                } label: {
-                    Label(L10n.Notifications.delete, systemImage: "trash")
-                }
-            }
-        }
         .onChange(of: notification.isActive) { _, newValue in
             isActive = newValue
         }

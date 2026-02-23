@@ -19,6 +19,7 @@ struct SplashScreenView: View {
     @State private var glowScale: CGFloat = 0.8
     @State private var particles: [Particle] = []
     @State private var isPulsing = false
+    @State private var particleTimer: Timer?
 
     // Particle model
     struct Particle: Identifiable {
@@ -93,6 +94,10 @@ struct SplashScreenView: View {
                     startParticleAnimation(in: geometry.size)
                 }
             }
+            .onDisappear {
+                particleTimer?.invalidate()
+                particleTimer = nil
+            }
         }
     }
 
@@ -130,7 +135,7 @@ struct SplashScreenView: View {
 
     private func startParticleAnimation(in size: CGSize) {
         // Animate particles floating upward
-        Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { timer in
+        particleTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { timer in
             dsWithAnimation(reduceMotion, .linear(duration: 0.05)) {
                 for i in particles.indices {
                     particles[i].y -= particles[i].speed

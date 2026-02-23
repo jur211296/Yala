@@ -1091,6 +1091,9 @@ enum L10n {
         static func currenciesDetected(_ count: Int) -> String {
             String(format: ls("import.currenciesDetected", comment: ""), count)
         }
+        static func recordsImported(_ count: Int) -> String {
+            String(format: ls("import.recordsImported", comment: ""), count)
+        }
         static func recordsImportedMultiCurrency(_ count: Int, _ currencies: Int) -> String {
             String(format: ls("import.recordsImportedMultiCurrency", comment: ""), count, currencies)
         }
@@ -2042,6 +2045,9 @@ enum L10n {
         }
         static var finish: String {
             ls("onboarding.finish", comment: "")
+        }
+        static var defaultAccountName: String {
+            ls("onboarding.defaultAccountName", comment: "")
         }
         static var categoriesTitle: String {
             ls("onboarding.categoriesTitle", comment: "")

@@ -477,7 +477,15 @@ struct ProfileView: View {
                                 guard isEnabled else { return }
                                 let status = AVAudioApplication.shared.recordPermission
                                 if status == .undetermined {
-                                    AVAudioApplication.requestRecordPermission { _ in }
+                                    AVAudioApplication.requestRecordPermission { granted in
+                                        DispatchQueue.main.async {
+                                            if !granted {
+                                                voiceInputEnabled = false
+                                                permissionDeniedType = L10n.Settings.voiceInputEnabled
+                                                showPermissionDeniedAlert = true
+                                            }
+                                        }
+                                    }
                                 } else if status == .denied {
                                     voiceInputEnabled = false
                                     permissionDeniedType = L10n.Settings.voiceInputEnabled

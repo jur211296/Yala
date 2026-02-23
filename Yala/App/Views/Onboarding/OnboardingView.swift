@@ -1162,6 +1162,9 @@ struct OnboardingView: View {
         // Apply period to SessionState immediately (since it was created before onboarding)
         sessionState.selectedPeriod = selectedPeriod
 
+        // Create default account
+        createDefaultAccount()
+
         // Seed categories if user chose to
         if loadSeedCategories {
             seedCategoriesIfNeeded(in: modelContext)
@@ -1175,6 +1178,33 @@ struct OnboardingView: View {
 
         // Notify completion
         onComplete()
+    }
+
+    private func createDefaultAccount() {
+        // Check if any accounts already exist (e.g. from iCloud sync)
+        let descriptor = FetchDescriptor<Account>()
+        let existingCount = (try? modelContext.fetchCount(descriptor)) ?? 0
+        guard existingCount == 0 else { return }
+
+        let account = Account(
+            name: L10n.Onboarding.defaultAccountName,
+            currencyCode: selectedCurrency.rawValue,
+            colorHex: "#6366F1",
+            iconName: "creditcard",
+            type: "checking"
+        )
+        modelContext.insert(account)
+
+        do {
+            try modelContext.save()
+            #if DEBUG
+            print("OnboardingView: Created default account '\(account.name)' (\(account.currencyCode))")
+            #endif
+        } catch {
+            #if DEBUG
+            print("OnboardingView: Error creating default account: \(error)")
+            #endif
+        }
     }
 
     private func loadHistoricalRatesForSecondaryCurrencies() {
