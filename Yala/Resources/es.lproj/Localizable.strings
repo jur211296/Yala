@@ -473,6 +473,7 @@
 // MARK: - Profile
 
 "profile.title" = "Perfil";
+"profile.defaultName" = "Usuario";
 "profile.personalDetails" = "Datos personales";
 "profile.dataManagement" = "Gestión de datos";
 "profile.appearance" = "Apariencia";
@@ -1262,6 +1263,23 @@
 "filters.clear" = "Limpiar";
 "action.close" = "Cerrar";
 
+// MARK: - Accessibility
+"accessibility.closeMenu" = "Cerrar menú";
+"accessibility.newRecord" = "Nuevo registro";
+"accessibility.clearFilters" = "Limpiar filtros";
+"accessibility.cancelRecording" = "Cancelar grabación";
+"accessibility.stopRecording" = "Detener grabación";
+"accessibility.startRecording" = "Iniciar grabación";
+"accessibility.cancelPreview" = "Cancelar vista previa";
+"accessibility.cancelProcessing" = "Cancelar procesamiento";
+"accessibility.cashFlowChart" = "Gráfica de flujo de caja";
+"accessibility.categoryPieChart" = "Gráfica circular de gastos por categoría";
+"accessibility.subcategoryPieChart" = "Gráfica circular de gastos por subcategoría";
+"accessibility.tagPieChart" = "Gráfica circular de gastos por etiqueta";
+"accessibility.widgetFixed" = "Widget fijo, siempre visible";
+"accessibility.favoriteTemplates" = "Plantillas favoritas";
+"accessibility.exceeded" = "Excedido";
+
 // MARK: - Widget Hints
 
 "settings.widgetHints" = "Textos de ayuda";
@@ -1431,6 +1449,7 @@
 "inbox.errorNoAmount" = "Debes especificar un monto";
 "inbox.errorNoSubcategory" = "Debes seleccionar una subcategoría";
 "inbox.errorArchivedAccount" = "Esta cuenta está archivada. Edita el borrador y cambia la cuenta para poder aprobar.";
+"inbox.errorFutureDate" = "No se pueden aprobar transacciones con fecha futura";
 "inbox.duplicateWarningTitle" = "Posible duplicado";
 "inbox.duplicateWarningMessage" = "Ya existe una transacción similar. ¿Crear de todas formas?";
 "inbox.createAnyway" = "Crear de todas formas";

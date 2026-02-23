@@ -149,7 +149,7 @@ struct NewTransactionView: View {
                             .font(DS.Typography.body)
                             .foregroundStyle(Color(UIColor.label))
                     }
-                    .accessibilityLabel("Plantillas favoritas")
+                    .accessibilityLabel(L10n.Accessibility.favoriteTemplates)
                     .tint(Color(UIColor.label))
                 }
             }

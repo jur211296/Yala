@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-23] 48baa83 l10n: batch 6A — migrate hardcoded toolbar labels and model strings to L10n
 - [2026-02-23] 320f5dd fix: batch 5B — 7 medium fixes for N+1 queries, a11y, notifications, and profile storage
 - [2026-02-23] f9755d5 fix: batch 5A — 12 HIGH fixes for validation, performance, data integrity, and UX
 - [2026-02-23] 7d5f379 fix: period comparison chart respects currency, amount, and search filters
@@ -37,7 +38,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-02-23] ed52513 fix: tags KPI respects category/subcategory filters in Statistics
 - [2026-02-23] f66df45 fix: resolve 5 QA bugs before 1.0 release
 - [2026-02-20] 52b572e feat: add Siri & Shortcuts settings screen in Profile
-- [2026-02-20] 7700b2d feat: add Siri natural language intent, .siri source type and tip card
 - [2026-02-20] 50bef88 feat: add Lock Screen widgets (4 accessory widgets)
 - [2026-02-20] d534a4f feat: add VoiceOver accessibility labels to all charts
 - [2026-02-20] 54185b5 fix: resolve pre-launch warnings — legal link and force unwraps
@@ -541,11 +541,12 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Batch 5B complete — 7 medium HIGH fixes (HIGH-1/21, HIGH-11, HIGH-18, HIGH-19, HIGH-25, HIGH-26/4)
-Next step: Mark deferred items [>] in RELEASE-REVIEW.md (HIGH-2/3/12/13/24), then continue with remaining RELEASE-REVIEW items
+Stopped at: Batch 6A complete — L10n toolbar labels + model strings migration (48baa83)
+Next step: Batch 6B — A11Y labels + remaining L10N fixes
 Resume context:
-- Batch 5A: 12 HIGHs (f9755d5), Batch 5B: 7 HIGHs (320f5dd)
-- New files: AmountInputHelper.swift, ProfileImageStorage.swift
-- HIGH-2/3/12/13 deferred post-release (performance/reactivity risk)
-- HIGH-24 deferred (a11y batch scope)
+- Batch 6A: 69 files, "Cerrar"(42)/"Atrás"(26)/"Agregar"(6)/"Todas"(8) → L10n
+- ScheduledPaymentModels 23 NSLocalizedString → L10n.Scheduled.*
+- BudgetsWidget/ScheduledPaymentsWidget 11 NSLocalizedString → L10n
+- Added L10n.Action.close, L10n.Common.ok, L10n.Scheduled.{Recurrence,Category,Status,Filter,Tab,Widget}
+- Plan covers batches 6A→6B→7→8→9A→9B (polish items before V1.0)
 - Branch 1.0 — release branch

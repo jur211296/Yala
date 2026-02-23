@@ -471,6 +471,7 @@
 // MARK: - Profile
 
 "profile.title" = "Profil";
+"profile.defaultName" = "Benutzer";
 "profile.personalDetails" = "Persönliche Daten";
 "profile.dataManagement" = "Datenverwaltung";
 "profile.appearance" = "Erscheinungsbild";
@@ -1262,6 +1263,23 @@
 "filters.clear" = "Löschen";
 "action.close" = "Schließen";
 
+// MARK: - Accessibility
+"accessibility.closeMenu" = "Menü schließen";
+"accessibility.newRecord" = "Neuer Eintrag";
+"accessibility.clearFilters" = "Filter löschen";
+"accessibility.cancelRecording" = "Aufnahme abbrechen";
+"accessibility.stopRecording" = "Aufnahme stoppen";
+"accessibility.startRecording" = "Aufnahme starten";
+"accessibility.cancelPreview" = "Vorschau abbrechen";
+"accessibility.cancelProcessing" = "Verarbeitung abbrechen";
+"accessibility.cashFlowChart" = "Cashflow-Diagramm";
+"accessibility.categoryPieChart" = "Kreisdiagramm der Ausgaben nach Kategorie";
+"accessibility.subcategoryPieChart" = "Kreisdiagramm der Ausgaben nach Unterkategorie";
+"accessibility.tagPieChart" = "Kreisdiagramm der Ausgaben nach Etikett";
+"accessibility.widgetFixed" = "Festes Widget, immer sichtbar";
+"accessibility.favoriteTemplates" = "Favoritenvorlagen";
+"accessibility.exceeded" = "Überschritten";
+
 // MARK: - Widget Hints
 
 "settings.widgetHints" = "Hilfetexte";
@@ -1431,6 +1449,7 @@
 "inbox.errorNoAmount" = "Specify amount";
 "inbox.errorNoSubcategory" = "Select subcategory";
 "inbox.errorArchivedAccount" = "Dieses Konto ist archiviert. Bearbeite den Entwurf und ändere das Konto, um zu genehmigen.";
+"inbox.errorFutureDate" = "Transaktionen mit zukünftigem Datum können nicht genehmigt werden";
 "inbox.duplicateWarningTitle" = "Possible duplicate";
 "inbox.duplicateWarningMessage" = "Similar transaction exists. Create anyway?";
 "inbox.createAnyway" = "Create anyway";

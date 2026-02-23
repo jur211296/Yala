@@ -464,7 +464,7 @@ struct SaveAsRecurringSheet: View {
                     Image(systemName: "arrow.triangle.2.circlepath")
                         .foregroundStyle(.secondary)
                         .frame(width: 24)
-                    Text(NSLocalizedString("scheduled.is.subscription", comment: ""))
+                    Text(L10n.Scheduled.Editor.isSubscription)
                 }
             }
 
@@ -482,11 +482,11 @@ struct SaveAsRecurringSheet: View {
     // MARK: - Recurrence Section
 
     private var recurrenceSection: some View {
-        SectionBox(title: NSLocalizedString("scheduled.editor.recurrence", comment: "")) {
+        SectionBox(title: L10n.Scheduled.Editor.recurrence) {
             VStack(spacing: DS.Spacing.none) {
                 Picker("", selection: $isRecurring) {
-                    Text(NSLocalizedString("scheduled.recurrence.onetime", comment: "")).tag(false)
-                    Text(NSLocalizedString("scheduled.recurrence.recurring", comment: "")).tag(true)
+                    Text(L10n.Scheduled.Editor.onetime).tag(false)
+                    Text(L10n.Scheduled.Editor.recurring).tag(true)
                 }
                 .pickerStyle(.segmented)
                 .padding()
@@ -530,7 +530,7 @@ struct SaveAsRecurringSheet: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
 
-            Text(NSLocalizedString("scheduled.payment.date", comment: ""))
+            Text(L10n.Scheduled.Editor.paymentDate)
                 .foregroundStyle(.primary)
 
             Spacer()
@@ -547,7 +547,7 @@ struct SaveAsRecurringSheet: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
 
-            Text(NSLocalizedString("scheduled.every", comment: ""))
+            Text(L10n.Scheduled.Editor.every)
                 .foregroundStyle(.primary)
 
             Picker("", selection: $recurrenceInterval) {
@@ -578,7 +578,7 @@ struct SaveAsRecurringSheet: View {
                     .foregroundStyle(.secondary)
                     .frame(width: 24)
 
-                Text(NSLocalizedString("scheduled.which.days", comment: ""))
+                Text(L10n.Scheduled.Editor.whichDays)
                     .foregroundStyle(.primary)
             }
 
@@ -593,13 +593,13 @@ struct SaveAsRecurringSheet: View {
 
     private var weekdayOptions: [(value: Int, short: String)] {
         [
-            (1, NSLocalizedString("weekday.short.sunday", comment: "")),
-            (2, NSLocalizedString("weekday.short.monday", comment: "")),
-            (3, NSLocalizedString("weekday.short.tuesday", comment: "")),
-            (4, NSLocalizedString("weekday.short.wednesday", comment: "")),
-            (5, NSLocalizedString("weekday.short.thursday", comment: "")),
-            (6, NSLocalizedString("weekday.short.friday", comment: "")),
-            (7, NSLocalizedString("weekday.short.saturday", comment: ""))
+            (1, L10n.Weekday.shortSunday),
+            (2, L10n.Weekday.shortMonday),
+            (3, L10n.Weekday.shortTuesday),
+            (4, L10n.Weekday.shortWednesday),
+            (5, L10n.Weekday.shortThursday),
+            (6, L10n.Weekday.shortFriday),
+            (7, L10n.Weekday.shortSaturday)
         ]
     }
 
@@ -633,7 +633,7 @@ struct SaveAsRecurringSheet: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
 
-            Text(NSLocalizedString("scheduled.editor.day.of.month", comment: ""))
+            Text(L10n.Scheduled.Editor.dayOfMonth)
                 .foregroundStyle(.primary)
 
             Spacer()
@@ -654,7 +654,7 @@ struct SaveAsRecurringSheet: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
 
-            Text(NSLocalizedString("scheduled.yearly.date", comment: ""))
+            Text(L10n.Scheduled.Editor.yearlyDate)
                 .foregroundStyle(.primary)
 
             Spacer()
@@ -696,7 +696,7 @@ struct SaveAsRecurringSheet: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
 
-            Text(NSLocalizedString("scheduled.start.date", comment: ""))
+            Text(L10n.Scheduled.Editor.startDate)
                 .foregroundStyle(.primary)
 
             Spacer()
@@ -715,7 +715,7 @@ struct SaveAsRecurringSheet: View {
                         .foregroundStyle(.secondary)
                         .frame(width: 24)
 
-                    Text(NSLocalizedString("scheduled.has.end.date", comment: ""))
+                    Text(L10n.Scheduled.Editor.hasEndDate)
                 }
             }
 
@@ -728,7 +728,7 @@ struct SaveAsRecurringSheet: View {
                     Spacer()
                         .frame(width: 24 + DS.Spacing.md)
 
-                    Text(NSLocalizedString("scheduled.end.date", comment: ""))
+                    Text(L10n.Scheduled.Editor.endDate)
                         .foregroundStyle(.primary)
 
                     Spacer()

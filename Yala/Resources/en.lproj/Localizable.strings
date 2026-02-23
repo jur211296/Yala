@@ -473,6 +473,7 @@
 // MARK: - Profile
 
 "profile.title" = "Profile";
+"profile.defaultName" = "User";
 "profile.personalDetails" = "Personal Details";
 "profile.dataManagement" = "Data Management";
 "profile.appearance" = "Appearance";
@@ -1262,6 +1263,23 @@
 "filters.clear" = "Clear";
 "action.close" = "Close";
 
+// MARK: - Accessibility
+"accessibility.closeMenu" = "Close menu";
+"accessibility.newRecord" = "New record";
+"accessibility.clearFilters" = "Clear filters";
+"accessibility.cancelRecording" = "Cancel recording";
+"accessibility.stopRecording" = "Stop recording";
+"accessibility.startRecording" = "Start recording";
+"accessibility.cancelPreview" = "Cancel preview";
+"accessibility.cancelProcessing" = "Cancel processing";
+"accessibility.cashFlowChart" = "Cash flow chart";
+"accessibility.categoryPieChart" = "Expense pie chart by category";
+"accessibility.subcategoryPieChart" = "Expense pie chart by subcategory";
+"accessibility.tagPieChart" = "Expense pie chart by tag";
+"accessibility.widgetFixed" = "Fixed widget, always visible";
+"accessibility.favoriteTemplates" = "Favorite templates";
+"accessibility.exceeded" = "Exceeded";
+
 // MARK: - Widget Hints
 
 "settings.widgetHints" = "Help hints";
@@ -1433,6 +1451,7 @@
 "inbox.errorNoAmount" = "You must specify an amount";
 "inbox.errorNoSubcategory" = "You must select a subcategory";
 "inbox.errorArchivedAccount" = "This account is archived. Edit the draft and change the account to approve.";
+"inbox.errorFutureDate" = "Transactions with a future date cannot be approved";
 "inbox.duplicateWarningTitle" = "Possible duplicate";
 "inbox.duplicateWarningMessage" = "A similar transaction already exists. Create anyway?";
 "inbox.createAnyway" = "Create anyway";

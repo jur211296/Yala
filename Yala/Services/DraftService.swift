@@ -428,7 +428,7 @@ enum DraftServiceError: LocalizedError {
         case .missingSubcategory:
             return L10n.Inbox.errorNoSubcategory
         case .futureDateNotAllowed:
-            return "No se pueden aprobar transacciones con fecha futura"
+            return L10n.Inbox.errorFutureDate
         case .saveFailed(let error):
             return "DraftService: Save failed - \(error.localizedDescription)"
         }

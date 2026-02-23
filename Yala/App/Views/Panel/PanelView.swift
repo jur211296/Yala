@@ -390,7 +390,7 @@ struct PanelView: View {
                 .buttonStyle(.plain)
                 .glassEffect(.regular.interactive())
                 .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
-                .accessibilityLabel(showFABMenu ? "Cerrar menú" : "Nuevo registro")
+                .accessibilityLabel(showFABMenu ? L10n.Accessibility.closeMenu : L10n.Accessibility.newRecord)
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
@@ -414,7 +414,7 @@ struct PanelView: View {
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
             .disabled(!canUseVoiceInput)
-            .accessibilityLabel("Nuevo registro")
+            .accessibilityLabel(L10n.Accessibility.newRecord)
             .accessibilityHint(!canUseVoiceInput ? "Crea al menos una cuenta y una categoría" : "")
         }
     }
@@ -705,7 +705,7 @@ struct PanelView: View {
                                     Image(systemName: "xmark.circle.fill")
                                         .foregroundStyle(.secondary)
                                 }
-                                .accessibilityLabel("Limpiar filtros")
+                                .accessibilityLabel(L10n.Accessibility.clearFilters)
                                 .buttonStyle(.plain)
                             }
                         }

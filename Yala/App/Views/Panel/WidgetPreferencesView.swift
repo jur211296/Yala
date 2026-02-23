@@ -139,7 +139,7 @@ private struct WidgetRow: View {
                 )
                 .labelsHidden()
                 .disabled(config.isLocked)
-                .accessibilityHint(config.isLocked ? "Widget fijo, siempre visible" : "")
+                .accessibilityHint(config.isLocked ? L10n.Accessibility.widgetFixed : "")
                 .opacity(config.isLocked ? 0.6 : 1.0)
 
             }

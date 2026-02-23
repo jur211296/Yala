@@ -501,7 +501,7 @@ struct VoiceRecordingView: View {
                                 .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
                         )
                 }
-                .accessibilityLabel("Cancelar grabación")
+                .accessibilityLabel(L10n.Accessibility.cancelRecording)
 
                 // Stop and enter preview mode
                 Button {
@@ -523,7 +523,7 @@ struct VoiceRecordingView: View {
                         .clipShape(Circle())
                         .shadow(color: Color.hotPink.opacity(0.4), radius: 12, x: 0, y: 6)
                 }
-                .accessibilityLabel("Detener grabación")
+                .accessibilityLabel(L10n.Accessibility.stopRecording)
             } else if isPreviewMode {
                 // Cancel button (stops countdown and returns to idle)
                 Button {
@@ -540,7 +540,7 @@ struct VoiceRecordingView: View {
                                 .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
                         )
                 }
-                .accessibilityLabel("Cancelar vista previa")
+                .accessibilityLabel(L10n.Accessibility.cancelPreview)
 
                 // Process now button (skips countdown)
                 Button {
@@ -577,7 +577,7 @@ struct VoiceRecordingView: View {
                                 .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
                         )
                 }
-                .accessibilityLabel("Cancelar procesamiento")
+                .accessibilityLabel(L10n.Accessibility.cancelProcessing)
             } else {
                 // Start recording button
                 Button {
@@ -599,7 +599,7 @@ struct VoiceRecordingView: View {
                         .clipShape(Circle())
                         .shadow(color: Color.hotPink.opacity(0.4), radius: 16, x: 0, y: 8)
                 }
-                .accessibilityLabel("Iniciar grabación")
+                .accessibilityLabel(L10n.Accessibility.startRecording)
             }
         }
         .padding(.bottom, DS.Spacing.xxl)

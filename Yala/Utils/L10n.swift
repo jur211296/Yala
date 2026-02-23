@@ -397,6 +397,26 @@ enum L10n {
         static var close: String { ls("action.close", comment: "") }
     }
 
+    // MARK: - Accessibility
+
+    enum Accessibility {
+        static var closeMenu: String { ls("accessibility.closeMenu", comment: "") }
+        static var newRecord: String { ls("accessibility.newRecord", comment: "") }
+        static var clearFilters: String { ls("accessibility.clearFilters", comment: "") }
+        static var cancelRecording: String { ls("accessibility.cancelRecording", comment: "") }
+        static var stopRecording: String { ls("accessibility.stopRecording", comment: "") }
+        static var startRecording: String { ls("accessibility.startRecording", comment: "") }
+        static var cancelPreview: String { ls("accessibility.cancelPreview", comment: "") }
+        static var cancelProcessing: String { ls("accessibility.cancelProcessing", comment: "") }
+        static var cashFlowChart: String { ls("accessibility.cashFlowChart", comment: "") }
+        static var categoryPieChart: String { ls("accessibility.categoryPieChart", comment: "") }
+        static var subcategoryPieChart: String { ls("accessibility.subcategoryPieChart", comment: "") }
+        static var tagPieChart: String { ls("accessibility.tagPieChart", comment: "") }
+        static var widgetFixed: String { ls("accessibility.widgetFixed", comment: "") }
+        static var favoriteTemplates: String { ls("accessibility.favoriteTemplates", comment: "") }
+        static var exceeded: String { ls("accessibility.exceeded", comment: "") }
+    }
+
     // MARK: - Search
 
     enum Search {
@@ -1330,6 +1350,21 @@ enum L10n {
             static var tomorrow: String { ls("scheduled.widget.tomorrow", comment: "") }
             static var inDays: String { ls("scheduled.widget.inDays", comment: "") }
         }
+
+        enum Editor {
+            static var recurrence: String { ls("scheduled.editor.recurrence", comment: "") }
+            static var dayOfMonth: String { ls("scheduled.editor.day.of.month", comment: "") }
+            static var isSubscription: String { ls("scheduled.is.subscription", comment: "") }
+            static var onetime: String { ls("scheduled.recurrence.onetime", comment: "") }
+            static var recurring: String { ls("scheduled.recurrence.recurring", comment: "") }
+            static var every: String { ls("scheduled.every", comment: "") }
+            static var whichDays: String { ls("scheduled.which.days", comment: "") }
+            static var paymentDate: String { ls("scheduled.payment.date", comment: "") }
+            static var startDate: String { ls("scheduled.start.date", comment: "") }
+            static var hasEndDate: String { ls("scheduled.has.end.date", comment: "") }
+            static var endDate: String { ls("scheduled.end.date", comment: "") }
+            static var yearlyDate: String { ls("scheduled.yearly.date", comment: "") }
+        }
     }
 
     // MARK: - Settings
@@ -1626,6 +1661,7 @@ enum L10n {
     // MARK: - Profile
 
     enum Profile {
+        static var defaultName: String { ls("profile.defaultName", comment: "") }
         static var title: String { ls("profile.title", comment: "") }
         static var edit: String { ls("profile.edit", comment: "") }
         static var importSuccess: String { ls("profile.importSuccess", comment: "") }
@@ -2312,6 +2348,9 @@ enum L10n {
         }
         static var errorArchivedAccount: String {
             ls("inbox.errorArchivedAccount", comment: "")
+        }
+        static var errorFutureDate: String {
+            ls("inbox.errorFutureDate", comment: "")
         }
         static var duplicateWarningTitle: String {
             ls("inbox.duplicateWarningTitle", comment: "")

@@ -821,12 +821,27 @@ struct OnboardingView: View {
         }
     }
 
+    private static let hintTimeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .none
+        f.timeStyle = .short
+        return f
+    }()
+
+    private func formattedTime(hour: Int, minute: Int) -> String {
+        var components = DateComponents()
+        components.hour = hour
+        components.minute = minute
+        guard let date = Calendar.current.date(from: components) else { return "" }
+        return Self.hintTimeFormatter.string(from: date)
+    }
+
     private func notificationHint(for type: NotificationType) -> String {
         switch type {
-        case .endOfDay: return "8:00 PM"
-        case .lunchTime: return "1:30 PM"
-        case .dailyReport: return "9:00 PM"
-        case .weeklyReport: return L10n.Notifications.dayMonday + " 9:00 AM"
+        case .endOfDay: return formattedTime(hour: 20, minute: 0)
+        case .lunchTime: return formattedTime(hour: 13, minute: 30)
+        case .dailyReport: return formattedTime(hour: 21, minute: 0)
+        case .weeklyReport: return L10n.Notifications.dayMonday + " " + formattedTime(hour: 9, minute: 0)
         case .monthlyReport: return L10n.Notifications.dayFirstOfMonth
         case .scheduledPayments: return L10n.Notifications.scheduledPaymentsHint
         case .announcements: return L10n.Notifications.announcementsHint
@@ -1137,7 +1152,7 @@ struct OnboardingView: View {
 
         // User name
         let finalName = userName.trimmingCharacters(in: .whitespacesAndNewlines)
-        sync.set(string: finalName.isEmpty ? "Usuario" : finalName, forKey: "userName")
+        sync.set(string: finalName.isEmpty ? L10n.Profile.defaultName : finalName, forKey: "userName")
 
         // Preferred currency
         sync.set(string: selectedCurrency.rawValue, forKey: "defaultCurrencyCode")

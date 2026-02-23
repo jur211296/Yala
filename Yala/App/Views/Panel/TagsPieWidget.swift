@@ -460,7 +460,7 @@ struct TagsPieWidget: View {
                 }
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Gráfica circular de gastos por etiqueta")
+            .accessibilityLabel(L10n.Accessibility.tagPieChart)
             .accessibilityValue(safeData.isEmpty ? "Sin datos" :
                 "\(safeData.count) etiquetas, total \(formattedCurrency(safeData.reduce(0) { $0 + $1.amount }))")
         }

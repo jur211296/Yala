@@ -141,7 +141,7 @@ struct SubcategoryDetailView: View {
             Button(L10n.Alert.discardChanges, role: .destructive) {
                 dismiss()
             }
-            Button("Cancelar", role: .cancel) {}
+            Button(L10n.Action.cancel, role: .cancel) {}
         } message: {
             Text(L10n.Alert.discardChanges)
         }

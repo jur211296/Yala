@@ -471,6 +471,7 @@
 // MARK: - Profile
 
 "profile.title" = "Perfil";
+"profile.defaultName" = "Usuário";
 "profile.personalDetails" = "Dados pessoais";
 "profile.dataManagement" = "Gestao de dados";
 "profile.appearance" = "Aparencia";
@@ -1262,6 +1263,23 @@
 "filters.clear" = "Limpar";
 "action.close" = "Fechar";
 
+// MARK: - Accessibility
+"accessibility.closeMenu" = "Fechar menu";
+"accessibility.newRecord" = "Novo registro";
+"accessibility.clearFilters" = "Limpar filtros";
+"accessibility.cancelRecording" = "Cancelar gravação";
+"accessibility.stopRecording" = "Parar gravação";
+"accessibility.startRecording" = "Iniciar gravação";
+"accessibility.cancelPreview" = "Cancelar pré-visualização";
+"accessibility.cancelProcessing" = "Cancelar processamento";
+"accessibility.cashFlowChart" = "Gráfico de fluxo de caixa";
+"accessibility.categoryPieChart" = "Gráfico circular de despesas por categoria";
+"accessibility.subcategoryPieChart" = "Gráfico circular de despesas por subcategoria";
+"accessibility.tagPieChart" = "Gráfico circular de despesas por etiqueta";
+"accessibility.widgetFixed" = "Widget fixo, sempre visível";
+"accessibility.favoriteTemplates" = "Modelos favoritos";
+"accessibility.exceeded" = "Excedido";
+
 // MARK: - Widget Hints
 
 "settings.widgetHints" = "Textos de ajuda";
@@ -1431,6 +1449,7 @@
 "inbox.errorNoAmount" = "Specify amount";
 "inbox.errorNoSubcategory" = "Select subcategory";
 "inbox.errorArchivedAccount" = "Esta conta está arquivada. Edite o rascunho e mude a conta para aprovar.";
+"inbox.errorFutureDate" = "Transações com data futura não podem ser aprovadas";
 "inbox.duplicateWarningTitle" = "Possible duplicate";
 "inbox.duplicateWarningMessage" = "Similar transaction exists. Create anyway?";
 "inbox.createAnyway" = "Create anyway";

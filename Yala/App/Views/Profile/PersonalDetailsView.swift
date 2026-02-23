@@ -303,7 +303,7 @@ struct PersonalDetailsView: View {
     private func saveAndDismiss() {
         // Save name (trim whitespace and ensure not empty)
         let trimmedName = editedName.trimmingCharacters(in: .whitespacesAndNewlines)
-        userName = trimmedName.isEmpty ? "Usuario" : trimmedName
+        userName = trimmedName.isEmpty ? L10n.Profile.defaultName : trimmedName
 
         // Save alias (only if valid or empty)
         if isAliasValid || editedAlias.isEmpty {

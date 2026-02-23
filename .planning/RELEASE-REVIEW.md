@@ -184,12 +184,12 @@
 - **Fix:** Migrar todos a `L10n.*`
 
 ### L10N-2: BudgetsWidget usa `NSLocalizedString()` en vez de `L10n.*`
-- [ ] **Archivo:** `App/Views/Panel/BudgetsWidget.swift:125, 130, 148, 153`
-- **Fix:** Migrar a pattern `L10n.*`
+- [x] **Archivo:** `App/Views/Panel/BudgetsWidget.swift:125, 130, 148, 153`
+- **Fix:** Migrado a `L10n.Budgets.*` (48baa83)
 
 ### L10N-3: ScheduledPaymentsWidget usa `NSLocalizedString()` en vez de `L10n.*`
-- [ ] **Archivo:** `App/Views/Panel/ScheduledPaymentsWidget.swift:264, 324, 329, 451-465`
-- **Fix:** Migrar a pattern `L10n.*`
+- [x] **Archivo:** `App/Views/Panel/ScheduledPaymentsWidget.swift:264, 324, 329, 451-465`
+- **Fix:** Migrado a `L10n.Scheduled.Widget.*` (48baa83)
 
 ### L10N-4: BalanceStatusIndicator strings hardcodeados
 - [ ] **Archivo:** `App/Views/Panel/BalanceStatusIndicator.swift:41-48`
@@ -442,11 +442,11 @@ Lo siguiente fue verificado y funciona correctamente:
 - **Detalle:** 13+ instancias de `NSLocalizedString(...)` inconsistentes con el resto del proyecto
 
 ### L10N-6: "Atras" hardcodeado en CurrencySelectorView
-- [ ] **Archivo:** `App/Views/Shared/CurrencySelectorView.swift:73`
-- **Fix:** Usar `L10n.Action.back`
+- [x] **Archivo:** `App/Views/Shared/CurrencySelectorView.swift:73`
+- **Fix:** `L10n.Action.back` (48baa83)
 
 ### L10N-7: "Cerrar" hardcodeado en 6 selectors
-- [ ] **Detalle:** Ya documentado en A11Y-11, incluido aquí por completitud
+- [x] **Detalle:** Migrado a `L10n.Action.close` en 34 archivos (48baa83)
 
 ### L10N-8: Categorías transfer buscan por nombre en español
 - [ ] **Detalle:** Ya documentado en BUG-11, incluido aquí por completitud
@@ -653,8 +653,8 @@ Lo que funciona correctamente:
 ## 3.5 L10N — Localización
 
 ### L10N-9: "Todas" hardcodeado en RecordsFiltersViewModel (8 instancias)
-- [ ] **Archivo:** `App/ViewModels/RecordsFiltersViewModel.swift:122, 125, 134, 139, 146, 158, 163, 166`
-- **Fix:** `L10n.Common.all`
+- [x] **Archivo:** `App/ViewModels/RecordsFiltersViewModel.swift:122, 125, 134, 139, 146, 158, 163, 166`
+- **Fix:** `L10n.Common.all` (48baa83)
 
 ### L10N-10: "Categoria"/"Categorias" fallback en FilterControlBar
 - [ ] **Archivo:** `App/Views/Filters/FilterControlBar.swift:156, 158`
@@ -806,7 +806,8 @@ Lo que funciona correctamente:
 ## 4.5 L10N
 
 ### L10N-14: Hardcoded Spanish en budget views
-- [ ] **Archivos:** BudgetsListView.swift:230 ("No hay presupuestos inactivos"), BudgetEditorView.swift:112 ("Cerrar"), PlanningView.swift:75 ("Plantillas favoritas")
+- [ ] **Archivos:** BudgetsListView.swift:230 ("No hay presupuestos inactivos"), PlanningView.swift:75 ("Plantillas favoritas")
+- [x] BudgetEditorView.swift:112 ("Cerrar") → `L10n.Action.close` (48baa83)
 
 ---
 
@@ -905,7 +906,8 @@ Lo que funciona correctamente:
 ## 5.4 A11Y
 
 ### A11Y-33: Hardcoded Spanish en toolbar buttons (8 instancias)
-- [ ] **Archivos:** ScheduledPaymentEditorView:129 ("Cerrar"), :136,354 ("Crea una cuenta primero"), ScheduledPaymentDetailView:107 ("Atrás"), :112 ("Editar"), ScheduledPaymentsSettingsView:47,52, TransactionAssociationSheet:38
+- [x] **Archivos:** ScheduledPaymentEditorView:129 ("Cerrar"→L10n), ScheduledPaymentDetailView:107 ("Atrás"→L10n), ScheduledPaymentsSettingsView:47,52 (→L10n), TransactionAssociationSheet:38 (→L10n) — 48baa83
+- [ ] **Pendiente:** :136,354 ("Crea una cuenta primero"), :112 ("Editar") — requieren keys nuevos
 
 ---
 
@@ -1250,8 +1252,8 @@ Lo que funciona correctamente:
 ## 9.5 L10N
 
 ### L10N-21: Hardcoded Spanish en ~46 toolbar a11y labels ("Cerrar", "Atrás", "Agregar")
-- [ ] **Archivos:** ~35+ archivos de settings
-- **Detalle:** Patrón sistémico `YalaToolbarButton(label: "Cerrar")` en toda la app
+- [x] **Archivos:** 66 archivos migrados a `L10n.Action.{close,back,add}`
+- **Fix:** 48baa83 — "Cerrar"(42), "Atrás"(26), "Agregar"(6) reemplazados
 
 ### L10N-22: Date format hardcodeado en español en CurrencySettingsView
 - [ ] **Archivo:** `App/Views/Settings/CurrencySettingsView.swift:344`
