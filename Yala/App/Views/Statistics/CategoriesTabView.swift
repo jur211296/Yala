@@ -1094,9 +1094,25 @@ struct CategoriesTabView: View {
             context: modelContext
         )
 
-        // Calculate tag spending (show ALL tags, dim applied in widget)
+        // Calculate tag spending — respects category/subcategory filters but shows ALL tags
+        let tagCriteria = FilterCriteria(
+            selectedAccounts: viewModel.selectedAccounts,
+            selectedCategories: viewModel.selectedCategories,
+            selectedSubcategories: viewModel.selectedSubcategories,
+            selectedTags: [],  // Don't filter by tag — show all with dim
+            selectedNatures: viewModel.selectedNatures,
+            selectedTransactionNatures: viewModel.selectedTransactionNatures,
+            selectedCurrencies: viewModel.selectedCurrencies,
+            transactionTypeFilter: .all,
+            amountCondition: viewModel.amountCondition,
+            searchText: viewModel.searchText,
+            dateInterval: interval
+        )
+        let tagFiltered = FilterService.filterForTrends(
+            transactions: allTransactions, accounts: accounts, criteria: tagCriteria
+        )
         tagSpending = TagSpendingCalculator.calculateTopSpending(
-            transactions: pieFiltered,
+            transactions: tagFiltered,
             interval: interval,
             currencyCode: defaultCurrencyCode,
             transactionNatures: naturesFilter
@@ -1222,9 +1238,25 @@ struct CategoriesTabView: View {
             }
         }
 
-        // Calculate previous period tag spending
+        // Calculate previous period tag spending — respects category/subcategory filters
+        let prevTagCriteria = FilterCriteria(
+            selectedAccounts: viewModel.selectedAccounts,
+            selectedCategories: viewModel.selectedCategories,
+            selectedSubcategories: viewModel.selectedSubcategories,
+            selectedTags: [],  // Don't filter by tag — show all
+            selectedNatures: viewModel.selectedNatures,
+            selectedTransactionNatures: viewModel.selectedTransactionNatures,
+            selectedCurrencies: viewModel.selectedCurrencies,
+            transactionTypeFilter: .all,
+            amountCondition: viewModel.amountCondition,
+            searchText: viewModel.searchText,
+            dateInterval: previousInterval
+        )
+        let prevTagFiltered = FilterService.filterForTrends(
+            transactions: allTransactions, accounts: accounts, criteria: prevTagCriteria
+        )
         let previousTagSpending = TagSpendingCalculator.calculateTopSpending(
-            transactions: previousFiltered,
+            transactions: prevTagFiltered,
             interval: previousInterval,
             currencyCode: defaultCurrencyCode,
             transactionNatures: naturesFilter

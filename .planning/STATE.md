@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-23] ed52513 fix: tags KPI respects category/subcategory filters in Statistics
 - [2026-02-22] 7ce5dd6 feat: add exclude mode for filters
 - [2026-02-20] cf3418d fix: add a11y labels to Panel buttons and localize Tips strings
 - [2026-02-20] 52b572e feat: add Siri & Shortcuts settings screen in Profile
@@ -431,7 +432,12 @@ Agregado `SortDescriptor(\.createdAt, order: .reverse)` como tiebreaker en 4 Fet
 
 ### Bugs Pre-Release Pendientes
 
-- ✅ **BUG-29: Selector de mes falta en Presupuestos** — Resuelto (71d6e92): periodNavigationHeader con chevrones idéntico a ScheduledPaymentsListView
+- ✅ **BUG-25: Banner de trial en Profile** — Resuelto (f66df45): eliminado TrialBanner + sheet + computed props (trial manejado por Apple)
+- ✅ **BUG-26: Campo alias visible en perfil** — Resuelto (f66df45): ocultado VStack alias en PersonalDetailsView
+- ✅ **BUG-27: "Fecha futura" al editar transacción de hoy** — Resuelto (f66df45): comparación Calendar.day granularity
+- ✅ **BUG-28: Botón "Editar" en success abre transacción vacía** — Resuelto (f66df45): flag isEditingFromSuccess evita reset
+- ✅ **BUG-29: Widget pagos planificados muestra pagados** — Resuelto (f66df45): filtro !isPaid && !isSkipped en getUpcomingPayments
+- ✅ **BUG-29 (prev): Selector de mes falta en Presupuestos** — Resuelto (71d6e92): periodNavigationHeader con chevrones idéntico a ScheduledPaymentsListView
 - ✅ **BUG-30: Notificación de resumen del día se envía duplicada** — Resuelto (71d6e92): isSendingReports guard en ReportNotificationService
 
 ### Fase 11: Sistema de Temas Independientes (V1.2) — ✅ COMPLETADA (2026-02-19)
@@ -530,13 +536,10 @@ Ver ROADMAP.md para detalles.
 
 ## Session Continuity
 
-Last session: 2026-02-22
-Stopped at: Exclude mode feature complete — data corrections for pie charts, categories, trends
-Next step: QA manual testing of exclude mode scenarios (verification checklist in plan)
+Last session: 2026-02-23
+Stopped at: Tags KPI fix cherry-picked from 1.0 to 1.1
+Next step: QA manual testing of exclude mode scenarios, then continue Phase 12
 Resume context:
-- Exclude mode: toggle in FilterControlBar switches include↔exclude across entire app (7ce5dd6)
-- PanelViewModel pieContextTransactions now excludes cat/subcat in exclude mode
-- CategoriesTabView: pieChartCriteria/criteria include cat/subcat in exclude; subcategoryTransactions uses pieFiltered directly; shouldLockToSubcategories=false in exclude
-- TrendsTabView: hasExpenseOnlyFilters returns false in exclude mode (allows metric switching)
-- Tags KPI fix reverted (will be done in 1.0 branch separately)
-- 37 files changed, build succeeded
+- Tags KPI fix (ed52513) cherry-picked: tag spending now respects category/subcategory filters
+- Exclude mode feature complete (7ce5dd6) — pending QA
+- Branch 1.1 — development branch
