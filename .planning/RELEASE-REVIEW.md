@@ -438,8 +438,8 @@ Lo siguiente fue verificado y funciona correctamente:
 ## 2.5 L10N — Localización
 
 ### L10N-5: SaveAsRecurringSheet usa `NSLocalizedString` en vez de `L10n.*`
-- [ ] **Archivo:** `App/Views/Transactions/SaveAsRecurringSheet.swift:467, 485, 488-489, 533, 550, 581, 596-602, 636, 655, 699, 718, 731`
-- **Detalle:** 13+ instancias de `NSLocalizedString(...)` inconsistentes con el resto del proyecto
+- [x] **Archivo:** `App/Views/Transactions/SaveAsRecurringSheet.swift:467, 485, 488-489, 533, 550, 581, 596-602, 636, 655, 699, 718, 731`
+- **Detalle:** 19 NSLocalizedString → L10n.Scheduled.Editor.* + L10n.Weekday.* (c6dca6f)
 
 ### L10N-6: "Atras" hardcodeado en CurrencySelectorView
 - [x] **Archivo:** `App/Views/Shared/CurrencySelectorView.swift:73`
@@ -663,11 +663,11 @@ Lo que funciona correctamente:
 - [ ] **Archivo:** `App/Views/Filters/FilterChipView.swift:45`
 
 ### L10N-12: Spanish hardcodeado en RecordsModels
-- [ ] **Archivo:** `App/Models/RecordsModels.swift:23-24, 49-53`
-- **Detalle:** "Ingresos", "Gastos", "Transferencias", "Todos" sin L10n
+- [x] **Archivo:** `App/Models/RecordsModels.swift:23-24, 49-53`
+- **Detalle:** → L10n.Transaction.TransactionType.* + L10n.Common.all (c6dca6f)
 
 ### L10N-13: "Cancelar" hardcodeado en SubcategoryDetailView
-- [ ] **Archivo:** `App/Views/Categories/SubcategoryDetailView.swift:144`
+- [x] **Archivo:** `App/Views/Categories/SubcategoryDetailView.swift:144` → L10n.Action.cancel (c6dca6f)
 
 ---
 
@@ -799,7 +799,8 @@ Lo que funciona correctamente:
 - **Detalle:** `Picker("", selection:)` → VoiceOver no anuncia nada
 
 ### A11Y-32: Hardcoded Spanish "Excedido", "Cerrar", "Plantillas favoritas"
-- [ ] **Archivos:** BudgetProgressBar.swift:33, BudgetEditorView.swift:112, PlanningView.swift:75
+- [x] **Archivos:** BudgetProgressBar.swift → L10n.Accessibility.exceeded, PlanningView.swift → L10n.Accessibility.favoriteTemplates (c6dca6f)
+- [x] BudgetEditorView.swift:112 ("Cerrar") → L10n.Action.close (48baa83)
 
 ---
 
@@ -1004,7 +1005,7 @@ Lo que funciona correctamente:
 - [ ] **Archivo:** InboxDraftEditSheet.swift:318 ("Cerrar"), :335 ("Eliminar"), :344 ("Rechazar"), :705 hint
 
 ### A11Y-36: Hardcoded Spanish a11y en VoiceRecordingView (6 instancias)
-- [ ] **Archivo:** App/Views/Voice/VoiceRecordingView.swift:504-602
+- [x] **Archivo:** App/Views/Voice/VoiceRecordingView.swift → L10n.Accessibility.* (5 labels) (c6dca6f)
 
 ### A11Y-37: InboxDraftRowView sin accessibility labels
 - [ ] **Archivo:** App/Views/Inbox/InboxDraftRowView.swift
@@ -1018,8 +1019,7 @@ Lo que funciona correctamente:
 ## 6.5 L10N
 
 ### L10N-16: DraftService error string hardcodeado en español
-- [ ] **Archivo:** `Services/DraftService.swift:420`
-- **Detalle:** "No se pueden aprobar transacciones con fecha futura"
+- [x] **Archivo:** `Services/DraftService.swift:420` → L10n.Inbox.errorFutureDate (c6dca6f)
 
 ### L10N-17: VoiceTranscriptionService defaults a Spanish para non-English
 - [ ] **Archivo:** `Services/VoiceTranscriptionService.swift:64-66`
@@ -1164,12 +1164,11 @@ Lo que funciona correctamente:
 - **Fix:** Usar `L10n.Category.*`
 
 ### L10N-19: "Usuario" hardcodeado como nombre default
-- [ ] **Archivos:** OnboardingView.swift:1140, ProfileView.swift:30, PersonalDetailsView.swift:18,304, PanelView.swift:75
-- **Fix:** `L10n.Onboarding.defaultName` o string vacío
+- [x] **Archivos:** OnboardingView.swift:1140, PersonalDetailsView.swift:306 → L10n.Profile.defaultName (c6dca6f)
+- **Nota:** @AppStorage defaults no pueden usar L10n (compile-time), solo runtime fallbacks corregidos
 
 ### L10N-20: Tiempo de notificación en formato 12h hardcodeado ("8:00 PM", "1:30 PM")
-- [ ] **Archivo:** `App/Views/Onboarding/OnboardingView.swift:826-828`
-- **Impacto:** Locales 24h (Alemania, Francia) ven formato anglosajón
+- [x] **Archivo:** `App/Views/Onboarding/OnboardingView.swift:826-828` → locale-aware DateFormatter (c6dca6f)
 
 ---
 
