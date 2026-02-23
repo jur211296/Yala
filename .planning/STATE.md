@@ -28,6 +28,8 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-23] 320f5dd fix: batch 5B — 7 medium fixes for N+1 queries, a11y, notifications, and profile storage
+- [2026-02-23] f9755d5 fix: batch 5A — 12 HIGH fixes for validation, performance, data integrity, and UX
 - [2026-02-23] 7d5f379 fix: period comparison chart respects currency, amount, and search filters
 - [2026-02-23] 872390a fix: batch 3 — 15 quick fixes for panel, validation, data integrity, and filters
 - [2026-02-23] 2eb7acc fix: transaction save reactivity, locale decimal parsing, and bulk edit data integrity
@@ -539,10 +541,11 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Batch 4 complete — 17 bugs fixed (BUG-5/7/8/11/13/17/18/22/23/31/32/34/35/36/38/39/40)
-Next step: Continue with remaining RELEASE-REVIEW items (HIGH, DS, A11Y, L10N, CODE categories)
+Stopped at: Batch 5B complete — 7 medium HIGH fixes (HIGH-1/21, HIGH-11, HIGH-18, HIGH-19, HIGH-25, HIGH-26/4)
+Next step: Mark deferred items [>] in RELEASE-REVIEW.md (HIGH-2/3/12/13/24), then continue with remaining RELEASE-REVIEW items
 Resume context:
-- Batch 4 complete: 17 bugs across 28 files, 276 insertions, 146 deletions
-- All 40 BUGs in RELEASE-REVIEW.md now resolved
-- Transfer pair system added (transferPairID on TransactionItem)
+- Batch 5A: 12 HIGHs (f9755d5), Batch 5B: 7 HIGHs (320f5dd)
+- New files: AmountInputHelper.swift, ProfileImageStorage.swift
+- HIGH-2/3/12/13 deferred post-release (performance/reactivity risk)
+- HIGH-24 deferred (a11y batch scope)
 - Branch 1.0 — release branch

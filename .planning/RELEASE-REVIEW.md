@@ -63,24 +63,24 @@
 ## 1.2 HIGH — Rendimiento/UX significativo
 
 ### HIGH-1: ScheduledPaymentsWidget ejecuta 2 queries SwiftData en computed property
-- [ ] **Archivo:** `App/Views/Panel/ScheduledPaymentsWidget.swift:96-152`
+- [x] **Archivo:** `App/Views/Panel/ScheduledPaymentsWidget.swift:96-152`
 - **Impacto:** 2 fetch queries en cada render de la vista
-- **Fix:** Mover a `onAppear`/`onChange` con `@State` caching
+- **Fix:** Mover a `onAppear`/`onChange` con `@State` caching (320f5dd)
 
 ### HIGH-2: `loadData()` carga TODAS las transacciones sin límite
-- [ ] **Archivo:** `App/ViewModels/PanelViewModel.swift:143-155`
+- [>] **Archivo:** `App/ViewModels/PanelViewModel.swift:143-155`
 - **Impacto:** Con miles de transacciones, cada recalculación es costosa
 - **Fix:** Filtrar por período + transacciones históricas solo para balance
 
 ### HIGH-3: Recalculaciones redundantes en cascada
-- [ ] **Archivos:** `App/Views/Panel/PanelView.swift` (PanelDataObservers + PanelSessionObservers)
+- [>] **Archivos:** `App/Views/Panel/PanelView.swift` (PanelDataObservers + PanelSessionObservers)
 - **Impacto:** `recalculateData()` se dispara 4-5 veces por acción que modifica múltiples filtros (ej: applyBudgetFilters)
 - **Fix:** Implementar debouncing con el `calculationTask` existente (actualmente dead code)
 
 ### HIGH-4: `calculateExchangeRateData` computa tasas para 48 monedas
-- [ ] **Archivo:** `App/ViewModels/PanelViewModel.swift:1456`
+- [x] **Archivo:** `App/ViewModels/PanelViewModel.swift:1456`
 - **Impacto:** Calcula chart points para 47 monedas cuando solo se muestran 2
-- **Fix:** Computar lazily al seleccionar moneda
+- **Fix:** Usa solo selectedComparisonCurrencies (2-3 max) (320f5dd)
 
 ---
 
@@ -336,27 +336,27 @@ Lo siguiente fue verificado y funciona correctamente:
 ## 2.2 HIGH — Rendimiento/UX significativo
 
 ### HIGH-5: Sin feedback de error cuando save falla
-- [ ] **Archivo:** `App/ViewModels/NewTransactionViewModel.swift:487-493`
+- [x] **Archivo:** `App/ViewModels/NewTransactionViewModel.swift:487-493` — Resuelto (f9755d5)
 - **Impacto:** Si `context.save()` falla (disco lleno, error SwiftData), usuario no ve ningún mensaje. Botón Save se re-habilita silenciosamente
 - **Fix:** Añadir `@Published var saveError: String?` y mostrar alert
 
 ### HIGH-6: Sin validación de monto máximo
-- [ ] **Archivo:** `App/ViewModels/NewTransactionViewModel.swift:234-236`
+- [x] **Archivo:** `App/ViewModels/NewTransactionViewModel.swift:234-236` — Resuelto (f9755d5)
 - **Impacto:** Un monto como `99999999999999.99` puede causar overflow en exchange rates y problemas de precisión Double
 - **Fix:** Limitar a un máximo razonable (ej: 999,999,999)
 
 ### HIGH-7: `loadData()` en ViewModel carga TODAS las transacciones para sugerencias
-- [ ] **Archivo:** `App/ViewModels/NewTransactionViewModel.swift:220-229`
+- [x] **Archivo:** `App/ViewModels/NewTransactionViewModel.swift:220-229` — Resuelto (f9755d5)
 - **Impacto:** Sin `fetchLimit`, carga historia completa en memoria solo para autocomplete
 - **Fix:** Añadir `fetchLimit = 100`
 
 ### HIGH-8: Transfer sin validación visible de cuentas iguales
-- [ ] **Archivo:** `App/ViewModels/NewTransactionViewModel.swift:245-251`
+- [x] **Archivo:** `App/ViewModels/NewTransactionViewModel.swift:245-251` — Resuelto (f9755d5)
 - **Impacto:** `isTransferAccountsValid` bloquea Save pero no hay mensaje explicando por qué. `accountValidation.errorMessage` existe pero nunca se muestra en UI
 - **Fix:** Mostrar error inline cuando source == destination
 
 ### HIGH-9: `filterAmountInput` duplicado en 2 archivos
-- [ ] **Archivos:** `NewTransactionView.swift:521-558` y `TransferAmountInputView.swift:214-249`
+- [x] **Archivos:** `NewTransactionView.swift:521-558` y `TransferAmountInputView.swift:214-249` — Resuelto (f9755d5)
 - **Impacto:** Misma función copiada — divergirán en futuras correcciones
 - **Fix:** Extraer a utility compartido
 
@@ -569,25 +569,25 @@ Lo que funciona correctamente:
 ## 3.2 HIGH
 
 ### HIGH-11: RecordRowView sin accessibility labels
-- [ ] **Archivo:** `App/Views/Records/Components/RecordRowView.swift`
+- [x] **Archivo:** `App/Views/Records/Components/RecordRowView.swift`
 - **Impacto:** VoiceOver no puede describir transacciones. Zero `.accessibilityLabel` en el row completo
-- **Fix:** Label combinado "Café, 15 soles, 12 diciembre, Alimentación"
+- **Fix:** accessibilityLabel + accessibilityAddTraits(.isSelected) (320f5dd)
 
 ### HIGH-12: Sin paginación en Records — todo cargado en memoria
-- [ ] **Archivo:** `App/ViewModels/RecordsViewModel.swift:188-227`
+- [>] **Archivo:** `App/ViewModels/RecordsViewModel.swift:188-227`
 - **Impacto:** Con miles de transacciones en un período, FilterService hace scan lineal de todas. LazyVStack ayuda en render pero no en datos
 - **Fix:** Agregar fetchLimit o paginación progresiva
 
 ### HIGH-13: Double observer firing — recálculo duplicado por cambio de filtro
-- [ ] **Archivo:** `App/Views/Records/RecordsStandaloneView.swift:520-705`
+- [>] **Archivo:** `App/Views/Records/RecordsStandaloneView.swift:520-705`
 - **Impacto:** RecordsViewModel properties son computed pass-throughs a SessionState. Los observers escuchan ambos, causando doble `refreshRecordsData()` por cada cambio
 
 ### HIGH-14: DateFormatter creado en cada render en CompactRecordRow
-- [ ] **Archivo:** `App/Views/Statistics/TrendsTabView.swift:1767-1772`
+- [x] **Archivo:** `App/Views/Statistics/TrendsTabView.swift:1767-1772` — Resuelto (f9755d5)
 - **Fix:** Usar static formatter o YalaFormatter
 
 ### HIGH-15: Bulk delete usa `groupedRecords` que puede estar stale
-- [ ] **Archivo:** `App/ViewModels/RecordsViewModel.swift:311-316`
+- [x] **Archivo:** `App/ViewModels/RecordsViewModel.swift:311-316` — Resuelto (f9755d5)
 - **Fix:** Usar `context.model(for: id)` como hace `getSelectedTransactions()`
 
 ---
@@ -767,11 +767,11 @@ Lo que funciona correctamente:
 ## 4.2 HIGH
 
 ### HIGH-16: BudgetsViewModel.loadData() carga TODAS las transacciones
-- [ ] **Archivo:** `App/ViewModels/BudgetsViewModel.swift:196-204`
+- [x] **Archivo:** `App/ViewModels/BudgetsViewModel.swift:196-204` — Resuelto (f9755d5)
 - **Impacto:** Sin predicate de fecha. Con miles de transacciones, cada carga es costosa
 
 ### HIGH-17: BudgetAlertService también carga todas las transacciones sin predicate
-- [ ] **Archivo:** `Services/BudgetAlertService.swift:58-59`
+- [x] **Archivo:** `Services/BudgetAlertService.swift:58-59` — Resuelto (f9755d5)
 - **Detalle:** `FetchDescriptor<TransactionItem>()` sin filtro
 
 ---
@@ -874,20 +874,23 @@ Lo que funciona correctamente:
 ## 5.2 HIGH
 
 ### HIGH-18: Deletion no cancela notificaciones pendientes ni limpia InboxDrafts
-- [ ] **Archivo:** `Services/EntityDeletionService.swift:129-131`
+- [x] **Archivo:** `Services/EntityDeletionService.swift:129-131`
 - **Impacto:** Al borrar scheduled payment: drafts con `sourceScheduledPaymentID` quedan huérfanos, notification requests no se cancelan, tracker entries no se limpian
+- **Fix:** Limpieza de tracker UserDefaults + orphan pending drafts (320f5dd)
 
 ### HIGH-19: Notificaciones solo verifican `nextDueDate`, no ocurrencias generadas
-- [ ] **Archivo:** `Services/ScheduledPaymentNotificationService.swift:33-68`
+- [x] **Archivo:** `Services/ScheduledPaymentNotificationService.swift:33-68`
 - **Impacto:** Pago semanal Mon/Wed/Fri con nextDueDate=Monday → notificaciones de Wed y Fri nunca se envían
+- **Fix:** Usa DateCalculator para todas las ocurrencias del mes con ventana 7 días (320f5dd)
 
 ### HIGH-20: Yearly payment on Feb 29 desaparece en años no bisiesto
-- [ ] **Archivo:** `App/ViewModels/ScheduledPaymentsViewModel.swift:733-749`
+- [x] **Archivo:** `Utils/ScheduledPaymentDateCalculator.swift:180-184` — Resuelto (f9755d5)
 - **Impacto:** `Calendar.date(from: DateComponents(year: 2027, month: 2, day: 29))` retorna nil → pago invisible ese año
 
 ### HIGH-21: `paidStatus` en Widget como computed var = N+1 query en cada render
-- [ ] **Archivo:** `App/Views/Panel/ScheduledPaymentsWidget.swift:95-97`
+- [x] **Archivo:** `App/Views/Panel/ScheduledPaymentsWidget.swift:95-97`
 - **Impacto:** 2 SwiftData queries en cada evaluación del body (ya documentado como HIGH-1)
+- **Fix:** Resuelto junto con HIGH-1 — @State + onAppear/onChange (320f5dd)
 
 ---
 
@@ -970,11 +973,11 @@ Lo que funciona correctamente:
 ## 6.2 HIGH
 
 ### HIGH-22: MerchantMemoryService.findMemory fetcha ALL records para fuzzy matching
-- [ ] **Archivo:** `App/Services/MerchantMemoryService.swift:151-177`
+- [x] **Archivo:** `App/Services/MerchantMemoryService.swift:151-177` — Resuelto (f9755d5)
 - **Impacto:** Con miles de merchants, scan lineal completo
 
 ### HIGH-23: Bulk approve no verifica cuentas archivadas
-- [ ] **Archivo:** `App/Views/Inbox/InboxBulkActionsSheet.swift:318-338`
+- [x] **Archivo:** `Services/DraftService.swift:241` — Resuelto (f9755d5)
 - **Impacto:** Puede crear transacciones contra cuentas archivadas (single approve SÍ verifica)
 
 ---
@@ -1131,7 +1134,7 @@ Lo que funciona correctamente:
 ## 8.2 HIGH
 
 ### HIGH-24: Zero accessibility labels en todo el onboarding
-- [ ] **Archivos:** OnboardingView.swift, LanguageSelectionView.swift, SplashScreenView.swift
+- [>] **Archivos:** OnboardingView.swift, LanguageSelectionView.swift, SplashScreenView.swift
 - **Impacto:** VoiceOver: progress dots sin descripción, radio buttons sin toggle semantics, currency rows sin contexto
 
 ---
@@ -1147,7 +1150,7 @@ Lo que funciona correctamente:
 ## 8.4 A11Y
 
 ### A11Y-41: Zero accessibility labels en onboarding completo
-- [ ] **Detalle:** Ya documentado en HIGH-24
+- [>] **Detalle:** Ya documentado en HIGH-24
 
 ---
 
@@ -1214,13 +1217,14 @@ Lo que funciona correctamente:
 ## 9.2 HIGH
 
 ### HIGH-25: Profile image almacenada en UserDefaults (@AppStorage)
-- [ ] **Archivo:** `App/Views/Profile/ProfileView.swift:32`
+- [x] **Archivo:** `App/Views/Profile/ProfileView.swift:32`
 - **Impacto:** Foto 2-5MB en UserDefaults puede causar slowdowns. Anti-pattern de Apple
-- **Fix:** Guardar en Documents directory, solo path en UserDefaults
+- **Fix:** ProfileImageStorage helper (Documents/profile.jpg), migración automática, DataWipeService cleanup (320f5dd)
 
 ### HIGH-26: Data wipe no advierte sobre eliminación de datos iCloud
-- [ ] **Archivo:** `App/Views/Settings/UserDataResetView.swift`
+- [x] **Archivo:** `App/Views/Settings/UserDataResetView.swift`
 - **Impacto:** Borrar local propaga a iCloud, afecta otros dispositivos sin aviso
+- **Fix:** L10n settings.wipeICloudWarning en 6 idiomas (320f5dd)
 
 ---
 
