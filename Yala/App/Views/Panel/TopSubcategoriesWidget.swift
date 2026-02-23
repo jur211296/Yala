@@ -29,6 +29,7 @@ struct TopSubcategoriesWidget: View {
 
     // Selected Subcategory IDs (for dimming others) - uses PersistentIdentifier for uniqueness
     var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
+    var isExcludeMode: Bool = false
 
     // Navigation Action
     var onShowMore: (() -> Void)? = nil
@@ -285,12 +286,24 @@ struct TopSubcategoriesWidget: View {
                 return subcategories
             }()
 
-            // Find max amount for bar scaling from filtered list
-            if let maxAmount = filteredSubcategories.first?.amount {
-                let displayed = Array(filteredSubcategories.prefix(limit))
+            // In exclude mode, hide excluded items entirely
+            let visibleSubcategories: [SubcategorySpendingSummary] = {
+                if isExcludeMode && !selectedSubcategoryIDs.isEmpty {
+                    return filteredSubcategories.filter {
+                        guard let id = $0.persistentID else { return true }
+                        return !selectedSubcategoryIDs.contains(id)
+                    }
+                }
+                return filteredSubcategories
+            }()
+
+            // Find max amount for bar scaling from visible list
+            if let maxAmount = visibleSubcategories.first?.amount {
+                let displayed = Array(visibleSubcategories.prefix(limit))
                 ForEach(displayed) { summary in
                     let isSelected = summary.persistentID.map { selectedSubcategoryIDs.contains($0) } ?? false
-                    let isDimmed = !selectedSubcategoryIDs.isEmpty && !isSelected
+                    // In exclude mode, excluded items are hidden — no dimming needed
+                    let isDimmed = !isExcludeMode && !selectedSubcategoryIDs.isEmpty && !isSelected
 
                     SubcategoryRow(
                         summary: summary,

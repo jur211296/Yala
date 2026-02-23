@@ -115,6 +115,9 @@
 "filters.type" = "Type";
 "filters.nature" = "Nature";
 "filters.currency" = "Devise";
+"filters.includeMode" = "Inclure";
+"filters.excludeMode" = "Exclure";
+"filters.nothingExcluded" = "Aucun";
 
 // MARK: - Actions
 

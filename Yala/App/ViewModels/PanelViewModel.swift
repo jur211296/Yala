@@ -246,6 +246,11 @@ final class PanelViewModel {
         set { SessionState.shared.selectedTransactionNatures = newValue }
     }
 
+    var isExcludeMode: Bool {
+        get { SessionState.shared.isExcludeMode }
+        set { SessionState.shared.isExcludeMode = newValue }
+    }
+
     // Nature Widget State
     var natureTrendPoints: [NatureTrendPoint] = []
     var previousNatureTotalAmount: Double? = nil
@@ -737,8 +742,13 @@ final class PanelViewModel {
 
         // Determine eligible accounts (archived accounts still count for calculations)
         let eligibleAccounts = accounts.filter { account in
-            !account.excludeFromStatistics
-                && (selectedAccountID == nil || account.persistentModelID == selectedAccountID)
+            guard !account.excludeFromStatistics else { return false }
+            guard let selectedID = selectedAccountID else { return true }
+            if isExcludeMode {
+                return account.persistentModelID != selectedID
+            } else {
+                return account.persistentModelID == selectedID
+            }
         }
         let eligibleAccountIDs = Set(eligibleAccounts.map { $0.persistentModelID })
 
@@ -755,47 +765,70 @@ final class PanelViewModel {
 
             // Category Filter
             if let catID = selectedCategoryID {
-                guard transaction.category?.persistentModelID == catID else { return false }
+                if isExcludeMode {
+                    if transaction.category?.persistentModelID == catID { return false }
+                } else {
+                    guard transaction.category?.persistentModelID == catID else { return false }
+                }
             }
 
             // Subcategory Filter
             if !selectedSubcategoryIDs.isEmpty {
-                guard let subID = transaction.subcategory?.persistentModelID,
-                    selectedSubcategoryIDs.contains(subID)
-                else { return false }
+                if isExcludeMode {
+                    if let subID = transaction.subcategory?.persistentModelID,
+                        selectedSubcategoryIDs.contains(subID)
+                    { return false }
+                } else {
+                    guard let subID = transaction.subcategory?.persistentModelID,
+                        selectedSubcategoryIDs.contains(subID)
+                    else { return false }
+                }
             }
 
             // Nature Filter
             if let nature = selectedNature {
-                if let sub = transaction.subcategory {
-                    if sub.nature != nature { return false }
+                if isExcludeMode {
+                    if let sub = transaction.subcategory, sub.nature == nature { return false }
                 } else {
-                    // No subcategory - only pass if looking for unclassified
-                    if nature != .unclassified { return false }
+                    if let sub = transaction.subcategory {
+                        if sub.nature != nature { return false }
+                    } else {
+                        if nature != .unclassified { return false }
+                    }
                 }
             }
 
             // Tag Filter
             if !selectedTags.isEmpty {
                 let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
-                if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
+                if isExcludeMode {
+                    if !transactionTagIDs.isDisjoint(with: selectedTags) { return false }
+                } else {
+                    if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
+                }
             }
 
             // Currency Filter
             if !selectedCurrencies.isEmpty {
-                guard let txCurrency = CurrencyCode(rawValue: transaction.currencyCode) else {
-                    return false
+                if isExcludeMode {
+                    if let txCurrency = CurrencyCode(rawValue: transaction.currencyCode),
+                        selectedCurrencies.contains(txCurrency)
+                    { return false }
+                } else {
+                    guard let txCurrency = CurrencyCode(rawValue: transaction.currencyCode) else {
+                        return false
+                    }
+                    if !selectedCurrencies.contains(txCurrency) { return false }
                 }
-                if !selectedCurrencies.contains(txCurrency) { return false }
             }
 
-            // Amount Filter
+            // Amount Filter (not affected by exclude mode)
             if amountCondition.isActive {
                 let amountDecimal = Decimal(transaction.amount)
                 if !amountCondition.matches(amountDecimal) { return false }
             }
 
-            // Search/Note Filter
+            // Search/Note Filter (not affected by exclude mode)
             if !searchText.isEmpty {
                 let noteMatches = transaction.note?.localizedCaseInsensitiveContains(searchText) ?? false
                 if !noteMatches { return false }
@@ -821,24 +854,34 @@ final class PanelViewModel {
             // Tag Filter
             if !selectedTags.isEmpty {
                 let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
-                if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
+                if isExcludeMode {
+                    if !transactionTagIDs.isDisjoint(with: selectedTags) { return false }
+                } else {
+                    if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
+                }
             }
 
             // Currency Filter
             if !selectedCurrencies.isEmpty {
-                guard let txCurrency = CurrencyCode(rawValue: transaction.currencyCode) else {
-                    return false
+                if isExcludeMode {
+                    if let txCurrency = CurrencyCode(rawValue: transaction.currencyCode),
+                        selectedCurrencies.contains(txCurrency)
+                    { return false }
+                } else {
+                    guard let txCurrency = CurrencyCode(rawValue: transaction.currencyCode) else {
+                        return false
+                    }
+                    if !selectedCurrencies.contains(txCurrency) { return false }
                 }
-                if !selectedCurrencies.contains(txCurrency) { return false }
             }
 
-            // Amount Filter
+            // Amount Filter (not affected by exclude mode)
             if amountCondition.isActive {
                 let amountDecimal = Decimal(transaction.amount)
                 if !amountCondition.matches(amountDecimal) { return false }
             }
 
-            // Search/Note Filter
+            // Search/Note Filter (not affected by exclude mode)
             if !searchText.isEmpty {
                 let noteMatches = transaction.note?.localizedCaseInsensitiveContains(searchText) ?? false
                 if !noteMatches { return false }
@@ -857,47 +900,70 @@ final class PanelViewModel {
             // Focused Date Filter - skip for balance (need all history)
             // Category Filter
             if let catID = selectedCategoryID {
-                guard transaction.category?.persistentModelID == catID else { return false }
+                if isExcludeMode {
+                    if transaction.category?.persistentModelID == catID { return false }
+                } else {
+                    guard transaction.category?.persistentModelID == catID else { return false }
+                }
             }
 
             // Subcategory Filter
             if !selectedSubcategoryIDs.isEmpty {
-                guard let subID = transaction.subcategory?.persistentModelID,
-                    selectedSubcategoryIDs.contains(subID)
-                else { return false }
+                if isExcludeMode {
+                    if let subID = transaction.subcategory?.persistentModelID,
+                        selectedSubcategoryIDs.contains(subID)
+                    { return false }
+                } else {
+                    guard let subID = transaction.subcategory?.persistentModelID,
+                        selectedSubcategoryIDs.contains(subID)
+                    else { return false }
+                }
             }
 
             // Nature Filter
             if let nature = selectedNature {
-                if let sub = transaction.subcategory {
-                    if sub.nature != nature { return false }
+                if isExcludeMode {
+                    if let sub = transaction.subcategory, sub.nature == nature { return false }
                 } else {
-                    // No subcategory - only pass if looking for unclassified
-                    if nature != .unclassified { return false }
+                    if let sub = transaction.subcategory {
+                        if sub.nature != nature { return false }
+                    } else {
+                        if nature != .unclassified { return false }
+                    }
                 }
             }
 
             // Tag Filter
             if !selectedTags.isEmpty {
                 let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
-                if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
+                if isExcludeMode {
+                    if !transactionTagIDs.isDisjoint(with: selectedTags) { return false }
+                } else {
+                    if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
+                }
             }
 
             // Currency Filter
             if !selectedCurrencies.isEmpty {
-                guard let txCurrency = CurrencyCode(rawValue: transaction.currencyCode) else {
-                    return false
+                if isExcludeMode {
+                    if let txCurrency = CurrencyCode(rawValue: transaction.currencyCode),
+                        selectedCurrencies.contains(txCurrency)
+                    { return false }
+                } else {
+                    guard let txCurrency = CurrencyCode(rawValue: transaction.currencyCode) else {
+                        return false
+                    }
+                    if !selectedCurrencies.contains(txCurrency) { return false }
                 }
-                if !selectedCurrencies.contains(txCurrency) { return false }
             }
 
-            // Amount Filter
+            // Amount Filter (not affected by exclude mode)
             if amountCondition.isActive {
                 let amountDecimal = Decimal(transaction.amount)
                 if !amountCondition.matches(amountDecimal) { return false }
             }
 
-            // Search/Note Filter
+            // Search/Note Filter (not affected by exclude mode)
             if !searchText.isEmpty {
                 let noteMatches = transaction.note?.localizedCaseInsensitiveContains(searchText) ?? false
                 if !noteMatches { return false }
@@ -956,10 +1022,23 @@ final class PanelViewModel {
 
             // Category/Subcategory filters excluded for pie dimming behavior,
             // EXCEPT when filtering comes from a budget selection (must show only budget categories)
+            // or when in exclude mode (must remove excluded items from pie data)
             if selectedBudgetID != nil && !selectedSubcategoryIDs.isEmpty {
                 guard let subID = transaction.subcategory?.persistentModelID,
                     selectedSubcategoryIDs.contains(subID)
                 else { return false }
+            } else if isExcludeMode {
+                // Exclude selected categories from pie data
+                if let selectedCatID = selectedCategoryID,
+                   transaction.category?.persistentModelID == selectedCatID {
+                    return false
+                }
+                // Exclude selected subcategories from pie data
+                if !selectedSubcategoryIDs.isEmpty,
+                   let subID = transaction.subcategory?.persistentModelID,
+                   selectedSubcategoryIDs.contains(subID) {
+                    return false
+                }
             }
 
             // Nature Filter (still applies to pie charts)

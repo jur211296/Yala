@@ -222,9 +222,27 @@ struct TrendsTabView: View {
 
     // MARK: - Control Bar
 
+    private var excludeModeBadge: some View {
+        HStack(spacing: DS.Spacing.xs) {
+            Image(systemName: "minus.circle.fill")
+                .font(DS.Typography.chipIconOnly)
+                .foregroundStyle(DS.Semantic.errorForeground)
+            Text(L10n.Filters.excludeMode)
+                .font(DS.Typography.caption)
+                .foregroundStyle(DS.Semantic.errorForeground)
+        }
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.vertical, DS.Spacing.xs)
+        .background(DS.Semantic.errorBackgroundSubtle, in: Capsule())
+    }
+
     private var controlBar: some View {
         HStack(spacing: DS.Spacing.md) {
             periodSelector
+
+            if trendsViewModel.isExcludeMode {
+                excludeModeBadge
+            }
 
             if trendsViewModel.hasActiveFilters {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -237,7 +255,7 @@ struct TrendsTabView: View {
                                 onClear: {
                                     trendsViewModel.selectedAccounts.removeAll()
                                 }
-                            )
+                            ).excludeMode(trendsViewModel.isExcludeMode)
                         }
 
                         // Category chip (aggregated - one chip max)
@@ -255,7 +273,7 @@ struct TrendsTabView: View {
                                     trendsViewModel.selectedCategories.removeAll()
                                     trendsViewModel.selectedSubcategories.removeAll()
                                 }
-                            )
+                            ).excludeMode(trendsViewModel.isExcludeMode)
                         } else if !trendsViewModel.selectedCategories.isEmpty {
                             // Direct category filter (not from subcategory)
                             let selectedCats = categories.filter { trendsViewModel.selectedCategories.contains($0.persistentModelID) }
@@ -268,7 +286,7 @@ struct TrendsTabView: View {
                                     onClear: {
                                         trendsViewModel.selectedCategories.removeAll()
                                     }
-                                )
+                                ).excludeMode(trendsViewModel.isExcludeMode)
                             }
                         }
 
@@ -285,7 +303,7 @@ struct TrendsTabView: View {
                                 onClear: {
                                     trendsViewModel.selectedSubcategories.removeAll()
                                 }
-                            )
+                            ).excludeMode(trendsViewModel.isExcludeMode)
                         }
 
                         // Tag chips (with icons and color)
@@ -297,7 +315,7 @@ struct TrendsTabView: View {
                                 onClear: {
                                     trendsViewModel.selectedTags.remove(chip.tagID)
                                 }
-                            )
+                            ).excludeMode(trendsViewModel.isExcludeMode)
                         }
 
                         // Nature chips (with color dots)
@@ -307,7 +325,7 @@ struct TrendsTabView: View {
                                 onClear: {
                                     trendsViewModel.selectedNatures.remove(chipData.nature)
                                 }
-                            )
+                            ).excludeMode(trendsViewModel.isExcludeMode)
                         }
 
                         // Transaction nature chip (income/expense with color dot)
@@ -333,7 +351,7 @@ struct TrendsTabView: View {
                                     // SSOT: trendsViewModel.selectedCurrencies writes to SessionState.shared
                                     trendsViewModel.selectedCurrencies.remove(currency)
                                 }
-                            )
+                            ).excludeMode(trendsViewModel.isExcludeMode)
                         }
 
                         // Amount chip
@@ -758,8 +776,11 @@ struct TrendsTabView: View {
     }
 
     /// Check if expense-only filters are active (category/subcategory/nature)
+    /// In exclude mode, these filters remove items rather than restricting to them,
+    /// so they don't imply expense-only context
     private var hasExpenseOnlyFilters: Bool {
-        !sessionState.selectedCategoryIDs.isEmpty
+        guard !sessionState.isExcludeMode else { return false }
+        return !sessionState.selectedCategoryIDs.isEmpty
             || !sessionState.selectedSubcategoryIDs.isEmpty
             || !sessionState.selectedNatures.isEmpty
     }
@@ -1365,6 +1386,7 @@ struct TrendsTabView: View {
             selectedTags: trendsViewModel.selectedTags,
             selectedNatures: trendsViewModel.selectedNatures,
             selectedCurrencies: trendsViewModel.selectedCurrencies,
+            isExcludeMode: trendsViewModel.isExcludeMode,
             transactionTypeFilter: .all,
             amountCondition: trendsViewModel.amountCondition,
             searchText: trendsViewModel.searchText,
@@ -1446,6 +1468,7 @@ struct TrendsTabView: View {
             selectedTags: trendsViewModel.selectedTags,
             selectedNatures: trendsViewModel.selectedNatures,
             selectedCurrencies: trendsViewModel.selectedCurrencies,
+            isExcludeMode: trendsViewModel.isExcludeMode,
             transactionTypeFilter: .all,
             amountCondition: trendsViewModel.amountCondition,
             searchText: trendsViewModel.searchText,
@@ -1539,6 +1562,7 @@ struct TrendsTabView: View {
             selectedTags: trendsViewModel.selectedTags,
             selectedNatures: trendsViewModel.selectedNatures,
             selectedCurrencies: [],
+            isExcludeMode: trendsViewModel.isExcludeMode,
             transactionTypeFilter: .all,
             amountCondition: .any,
             searchText: "",
@@ -1579,6 +1603,7 @@ struct TrendsTabView: View {
                 selectedTags: trendsViewModel.selectedTags,
                 selectedNatures: trendsViewModel.selectedNatures,
                 selectedCurrencies: [],
+                isExcludeMode: trendsViewModel.isExcludeMode,
                 transactionTypeFilter: .all,
                 amountCondition: .any,
                 searchText: "",

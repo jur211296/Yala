@@ -115,6 +115,9 @@
 "filters.type" = "Tipo";
 "filters.nature" = "Natureza";
 "filters.currency" = "Moeda";
+"filters.includeMode" = "Incluir";
+"filters.excludeMode" = "Excluir";
+"filters.nothingExcluded" = "Nenhum";
 
 // MARK: - Actions
 

@@ -117,6 +117,9 @@
 "filters.type" = "Type";
 "filters.nature" = "Nature";
 "filters.currency" = "Currency";
+"filters.includeMode" = "Include";
+"filters.excludeMode" = "Exclude";
+"filters.nothingExcluded" = "None";
 
 // MARK: - Actions
 

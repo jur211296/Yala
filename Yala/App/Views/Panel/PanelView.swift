@@ -526,6 +526,21 @@ struct PanelView: View {
                 if activeFilterCount > 0 {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: DS.Spacing.sm) {
+                            // Exclude mode badge
+                            if viewModel.isExcludeMode {
+                                HStack(spacing: DS.Spacing.xs) {
+                                    Image(systemName: "minus.circle.fill")
+                                        .font(DS.Typography.chipIconOnly)
+                                        .foregroundStyle(DS.Semantic.errorForeground)
+                                    Text(L10n.Filters.excludeMode)
+                                        .font(DS.Typography.caption)
+                                        .foregroundStyle(DS.Semantic.errorForeground)
+                                }
+                                .padding(.horizontal, DS.Spacing.sm)
+                                .padding(.vertical, DS.Spacing.xs)
+                                .background(DS.Semantic.errorBackgroundSubtle, in: Capsule())
+                            }
+
                             // Account Chip
                             if let selectedID = viewModel.selectedAccountID,
                                 let account = accounts.first(where: {
@@ -535,7 +550,7 @@ struct PanelView: View {
                                 FilterChipView(
                                     accountName: account.name,
                                     onClear: { viewModel.selectedAccountID = nil }
-                                )
+                                ).excludeMode(viewModel.isExcludeMode)
                             }
 
                             // Date Chip
@@ -575,7 +590,7 @@ struct PanelView: View {
                                         sessionState.selectedCategoryIDs.removeAll()
                                         sessionState.selectedSubcategoryIDs.removeAll()
                                     }
-                                )
+                                ).excludeMode(viewModel.isExcludeMode)
                             } else if !isAllSubsSelected && !selectedSubsByID.isEmpty {
                                 // Subcategory selection - show parent category
                                 let parentCategories = Set(
@@ -592,7 +607,7 @@ struct PanelView: View {
                                             sessionState.selectedCategoryIDs.removeAll()
                                             sessionState.selectedSubcategoryIDs.removeAll()
                                         }
-                                    )
+                                    ).excludeMode(viewModel.isExcludeMode)
                                 }
                             }
 
@@ -612,7 +627,7 @@ struct PanelView: View {
                                             viewModel.selectedSubcategoryIDs.removeAll()
                                             sessionState.selectedSubcategoryIDs.removeAll()
                                         }
-                                    )
+                                    ).excludeMode(viewModel.isExcludeMode)
                                 }
                             }
 
@@ -623,7 +638,7 @@ struct PanelView: View {
                                     onClear: {
                                         dsWithAnimation(reduceMotion) { viewModel.selectedNature = nil }
                                     }
-                                )
+                                ).excludeMode(viewModel.isExcludeMode)
                             }
 
                             // Transaction Nature Chip (Income/Expense)
@@ -652,7 +667,7 @@ struct PanelView: View {
                                                 viewModel.syncToSessionState(sessionState)
                                             }
                                         }
-                                    )
+                                    ).excludeMode(viewModel.isExcludeMode)
                                 }
                             }
 
@@ -666,7 +681,7 @@ struct PanelView: View {
                                             viewModel.syncToSessionState(sessionState)
                                         }
                                     }
-                                )
+                                ).excludeMode(viewModel.isExcludeMode)
                             }
 
                             // Amount Chip
@@ -869,6 +884,7 @@ struct PanelView: View {
                 categories: viewModel.topSpendingCategories,
                 currencyCode: preferredCurrency.rawValue,
                 selectedCategoryID: viewModel.selectedCategoryID,
+                isExcludeMode: viewModel.isExcludeMode,
                 onSelectCategory: { id in
                     dsWithAnimation(reduceMotion) {
                         viewModel.toggleCategoryFilter(id)
@@ -899,6 +915,7 @@ struct PanelView: View {
                     }
                 },
                 selectedSubcategoryIDs: viewModel.selectedSubcategoryIDs,
+                isExcludeMode: viewModel.isExcludeMode,
                 onShowMore: { navigateToStatistics(.categories) },
                 size: mapWidgetSize(config.size),
                 period: viewModel.selectedPeriod,
@@ -916,6 +933,7 @@ struct PanelView: View {
                     }
                 },
                 onShowDetail: { navigateToStatistics(.categories) },
+                isExcludeMode: viewModel.isExcludeMode,
                 size: config.size,
                 period: viewModel.selectedPeriod,
                 previousTotalAmount: viewModel.previousCategoriesTotalAmount,
@@ -940,6 +958,7 @@ struct PanelView: View {
                     }
                 },
                 onShowDetail: { navigateToStatistics(.categories) },
+                isExcludeMode: viewModel.isExcludeMode,
                 size: config.size,
                 period: viewModel.selectedPeriod,
                 previousTotalAmount: viewModel.previousSubcategoriesTotalAmount,
@@ -1006,6 +1025,7 @@ struct PanelView: View {
                 currencyCode: displayCurrency,
                 hasBudgetsButNoFavorites: viewModel.hasBudgetsButNoFavorites,
                 selectedBudgetID: sessionState.selectedBudgetID,
+                isExcludeMode: viewModel.isExcludeMode,
                 onSelectBudget: { budget in
                     sessionState.applyBudgetFilters(budget)
                 },
@@ -1359,7 +1379,8 @@ private struct PanelSessionObservers: ViewModifier {
             }
             .onChange(of: sessionState.selectedCategoryIDs) {
                 // Auto-create expense chip only if ALL selected categories are expense (not income)
-                if !sessionState.selectedCategoryIDs.isEmpty {
+                // Skip in exclude mode — selecting a category to exclude doesn't imply expense-only
+                if !sessionState.isExcludeMode && !sessionState.selectedCategoryIDs.isEmpty {
                     let selectedCats = categories.filter {
                         sessionState.selectedCategoryIDs.contains($0.persistentModelID)
                     }
@@ -1372,14 +1393,16 @@ private struct PanelSessionObservers: ViewModifier {
             }
             .onChange(of: sessionState.selectedNatures) {
                 // Auto-create expense chip when nature filter applied (natures are expense-only)
-                if !sessionState.selectedNatures.isEmpty {
+                // Skip in exclude mode
+                if !sessionState.isExcludeMode && !sessionState.selectedNatures.isEmpty {
                     sessionState.selectedTransactionNatures = [.expense]
                 }
                 recalculateData()
             }
             .onChange(of: sessionState.selectedSubcategoryIDs) {
                 // Auto-create expense chip only if ALL selected subcategories are from expense categories
-                if !sessionState.selectedSubcategoryIDs.isEmpty {
+                // Skip in exclude mode
+                if !sessionState.isExcludeMode && !sessionState.selectedSubcategoryIDs.isEmpty {
                     let selectedSubs = subcategories.filter {
                         sessionState.selectedSubcategoryIDs.contains($0.persistentModelID)
                     }
@@ -1403,6 +1426,9 @@ private struct PanelSessionObservers: ViewModifier {
                 recalculateData()
             }
             .onChange(of: sessionState.searchText) {
+                recalculateData()
+            }
+            .onChange(of: sessionState.isExcludeMode) {
                 recalculateData()
             }
             .onChange(of: sessionState.selectedTrendMetric) {

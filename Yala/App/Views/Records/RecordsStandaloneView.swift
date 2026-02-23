@@ -580,6 +580,7 @@ private struct RecordsSessionObservers2b: ViewModifier {
         content
             .onChange(of: sessionState.amountCondition) { _, _ in refreshRecordsData() }
             .onChange(of: sessionState.searchText) { _, _ in refreshRecordsData() }
+            .onChange(of: sessionState.isExcludeMode) { _, _ in refreshRecordsData() }
             .onChange(of: sessionState.customDateRange) { _, _ in refreshRecordsData() }
             .onChange(of: dataViewModel.allTransactions) { refreshRecordsData() }
     }

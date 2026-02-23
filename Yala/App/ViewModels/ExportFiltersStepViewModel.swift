@@ -142,7 +142,8 @@ final class ExportFiltersStepViewModel {
         amountCondition: AmountFilterCondition,
         selectedPeriod: DetailPeriod,
         customDateRange: DateInterval?,
-        noteContains: String
+        noteContains: String,
+        isExcludeMode: Bool = false
     ) -> ExportFilters {
         // Resolve subcategory objects from PersistentIdentifiers
         let selectedSubcategoryObjects = allSubcategories.filter {
@@ -178,6 +179,7 @@ final class ExportFiltersStepViewModel {
             amountCondition: amountCondition,
             dateFrom: dateInterval.start,
             dateTo: dateInterval.end,
+            isExcludeMode: isExcludeMode,
             noteContains: noteContains.isEmpty ? nil : noteContains
         )
     }

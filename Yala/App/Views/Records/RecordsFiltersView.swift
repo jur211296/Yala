@@ -61,11 +61,18 @@ struct RecordsFiltersView: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
+                        // Include/Exclude mode selector
+                        Picker("", selection: $recordsViewModel.isExcludeMode) {
+                            Text(L10n.Filters.includeMode).tag(false)
+                            Text(L10n.Filters.excludeMode).tag(true)
+                        }
+                        .pickerStyle(.segmented)
+
                         SectionBox(title: L10n.Filters.filterOptions) {
                             VStack(spacing: DS.Spacing.none) {
                                 accountsContent
-                                // Transaction natures (Income/Expense) - hidden in expenses-only mode
-                                if !sessionState.isExpensesOnlyMode {
+                                // Transaction natures (Income/Expense) - hidden in expenses-only mode and exclude mode
+                                if !sessionState.isExpensesOnlyMode && !recordsViewModel.isExcludeMode {
                                     Divider().padding(.leading, DS.Spacing.lg)
                                     transactionNaturesContent
                                 }
@@ -178,7 +185,7 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedAccountsText: String {
-        filtersViewModel.selectedAccountsText(selectedAccounts: recordsViewModel.selectedAccounts)
+        filtersViewModel.selectedAccountsText(selectedAccounts: recordsViewModel.selectedAccounts, isExcludeMode: recordsViewModel.isExcludeMode)
     }
 
     private var categoriesContent: some View {
@@ -243,7 +250,7 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedCategoriesText: String {
-        filtersViewModel.selectedCategoriesText(selectedSubcategories: recordsViewModel.selectedSubcategories)
+        filtersViewModel.selectedCategoriesText(selectedSubcategories: recordsViewModel.selectedSubcategories, isExcludeMode: recordsViewModel.isExcludeMode)
     }
 
     private var tagsContent: some View {
@@ -297,7 +304,7 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedTagsText: String {
-        filtersViewModel.selectedTagsText(selectedTags: recordsViewModel.selectedTags)
+        filtersViewModel.selectedTagsText(selectedTags: recordsViewModel.selectedTags, isExcludeMode: recordsViewModel.isExcludeMode)
     }
 
     // MARK: - Transaction Natures Content (Income/Expense)
@@ -350,7 +357,9 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedTransactionNaturesText: String {
-        if recordsViewModel.selectedTransactionNatures.isEmpty { return L10n.Filters.all }
+        if recordsViewModel.selectedTransactionNatures.isEmpty {
+            return L10n.Filters.all
+        }
         if recordsViewModel.selectedTransactionNatures.count == TransactionNature.allCases.count {
             return L10n.Filters.all
         }
@@ -409,7 +418,9 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedNaturesText: String {
-        if recordsViewModel.selectedNatures.isEmpty { return L10n.Filters.allNatures }
+        if recordsViewModel.selectedNatures.isEmpty {
+            return recordsViewModel.isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.allNatures
+        }
         return "\(recordsViewModel.selectedNatures.count)"
     }
 
@@ -476,7 +487,10 @@ struct RecordsFiltersView: View {
         // If no currencies with transactions, don't show anything
         guard !filtersViewModel.currenciesWithTransactions.isEmpty else { return "" }
 
-        if recordsViewModel.selectedCurrencies.isEmpty ||
+        if recordsViewModel.selectedCurrencies.isEmpty {
+            return recordsViewModel.isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.all
+        }
+        if !recordsViewModel.isExcludeMode &&
            recordsViewModel.selectedCurrencies.count == filtersViewModel.currenciesWithTransactions.count {
             return L10n.Filters.all
         }

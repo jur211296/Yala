@@ -149,35 +149,59 @@ class SessionState {
     // MARK: - Global Filter State (shared between Panel and Statistics)
 
     /// Selected account IDs (empty = all accounts)
-    var selectedAccountIDs: Set<PersistentIdentifier> = []
+    var selectedAccountIDs: Set<PersistentIdentifier> = [] { didSet { resetExcludeModeIfNeeded() } }
 
     /// Selected category IDs (empty = all categories)
-    var selectedCategoryIDs: Set<PersistentIdentifier> = []
+    var selectedCategoryIDs: Set<PersistentIdentifier> = [] { didSet { resetExcludeModeIfNeeded() } }
 
     /// Selected subcategory IDs (empty = all subcategories)
     /// Changed from names to IDs to handle duplicate subcategory names across categories
-    var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
+    var selectedSubcategoryIDs: Set<PersistentIdentifier> = [] { didSet { resetExcludeModeIfNeeded() } }
 
     /// Selected natures (empty = all natures)
-    var selectedNatures: Set<SubcategoryNature> = []
+    var selectedNatures: Set<SubcategoryNature> = [] { didSet { resetExcludeModeIfNeeded() } }
 
     /// Selected tags (empty = all tags)
-    var selectedTags: Set<PersistentIdentifier> = []
+    var selectedTags: Set<PersistentIdentifier> = [] { didSet { resetExcludeModeIfNeeded() } }
 
     /// Selected budget ID for widget highlighting (nil = none selected)
     var selectedBudgetID: PersistentIdentifier?
 
     /// Selected currencies (empty = all currencies)
-    var selectedCurrencies: Set<CurrencyCode> = []
+    var selectedCurrencies: Set<CurrencyCode> = [] { didSet { resetExcludeModeIfNeeded() } }
 
     /// Selected transaction natures for filtering income/expense (empty = all)
     var selectedTransactionNatures: Set<TransactionNature> = []
 
     /// Amount filter condition
-    var amountCondition: AmountFilterCondition = .any
+    var amountCondition: AmountFilterCondition = .any { didSet { resetExcludeModeIfNeeded() } }
 
     /// Search text for note filtering
-    var searchText: String = ""
+    var searchText: String = "" { didSet { resetExcludeModeIfNeeded() } }
+
+    /// Guard against re-entrant didSet calls during exclude mode transitions
+    private var isSwitchingExcludeMode = false
+
+    /// Exclude mode: when true, selected entity filters hide matching items instead of showing only them
+    var isExcludeMode: Bool = false {
+        didSet {
+            guard oldValue != isExcludeMode else { return }
+            // Clear entity selections when switching mode to avoid confusion
+            // Don't call clearFilters() — it resets isExcludeMode itself, causing a loop
+            isSwitchingExcludeMode = true
+            selectedAccountIDs.removeAll()
+            selectedCategoryIDs.removeAll()
+            selectedSubcategoryIDs.removeAll()
+            selectedNatures.removeAll()
+            selectedTags.removeAll()
+            selectedCurrencies.removeAll()
+            selectedTransactionNatures.removeAll()
+            amountCondition = .any
+            searchText = ""
+            globalFilters.clearAll()
+            isSwitchingExcludeMode = false
+        }
+    }
 
     // MARK: - Filter Criteria State
 
@@ -201,6 +225,22 @@ class SessionState {
             || amountCondition.isActive || !searchText.isEmpty
     }
 
+    /// Check if any exclude-eligible filter is active (transaction type is NOT excludable)
+    private var hasActiveExcludeFilters: Bool {
+        !selectedAccountIDs.isEmpty || !selectedCategoryIDs.isEmpty
+            || !selectedSubcategoryIDs.isEmpty || !selectedNatures.isEmpty
+            || !selectedTags.isEmpty || !selectedCurrencies.isEmpty
+            || amountCondition.isActive || !searchText.isEmpty
+    }
+
+    /// Auto-reset exclude mode when no exclude-eligible filters remain
+    func resetExcludeModeIfNeeded() {
+        guard !isSwitchingExcludeMode, isExcludeMode, !hasActiveExcludeFilters else { return }
+        isSwitchingExcludeMode = true
+        isExcludeMode = false
+        isSwitchingExcludeMode = false
+    }
+
     // MARK: - Actions
 
     /// Clear all global filters (except period)
@@ -213,6 +253,7 @@ class SessionState {
         selectedCurrencies.removeAll()
         selectedTransactionNatures.removeAll()
         selectedBudgetID = nil
+        isExcludeMode = false
         amountCondition = .any
         searchText = ""
         globalFilters.clearAll()

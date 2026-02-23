@@ -255,45 +255,64 @@ struct TransactionsExportService {
             filters.selectedTagNames.map { $0.lowercased() }
         )
 
+        let isExclude = filters.isExcludeMode
+
         return transactions.filter { transaction in
             // 1) Filtro por cuenta (si se seleccionaron cuentas).
             if !selectedAccountSet.isEmpty {
-                guard let account = transaction.account else { return false }
-                if !selectedAccountSet.contains(account.id) {
-                    return false
+                if isExclude {
+                    if let account = transaction.account, selectedAccountSet.contains(account.id) {
+                        return false
+                    }
+                } else {
+                    guard let account = transaction.account else { return false }
+                    if !selectedAccountSet.contains(account.id) {
+                        return false
+                    }
                 }
             }
 
             // 2) Filtro por categoría (si se seleccionaron).
             if !selectedCategorySet.isEmpty {
-                if let category = transaction.category {
-                    if !selectedCategorySet.contains(category.id) {
+                if isExclude {
+                    if let category = transaction.category, selectedCategorySet.contains(category.id) {
                         return false
                     }
                 } else {
-                    // Transacción sin categoría no pasa si se han seleccionado categorías.
-                    return false
+                    if let category = transaction.category {
+                        if !selectedCategorySet.contains(category.id) {
+                            return false
+                        }
+                    } else {
+                        return false
+                    }
                 }
             }
 
             // 3) Filtro por subcategoría (si se seleccionaron).
             if !selectedSubcategorySet.isEmpty {
-                if let subcategory = transaction.subcategory {
-                    if !selectedSubcategorySet.contains(subcategory.id) {
+                if isExclude {
+                    if let subcategory = transaction.subcategory, selectedSubcategorySet.contains(subcategory.id) {
                         return false
                     }
                 } else {
-                    // Transacción sin subcategoría no pasa si se han seleccionado subcategorías.
-                    return false
+                    if let subcategory = transaction.subcategory {
+                        if !selectedSubcategorySet.contains(subcategory.id) {
+                            return false
+                        }
+                    } else {
+                        return false
+                    }
                 }
             }
 
             // 4) Filtro por moneda (si se seleccionaron monedas).
             if !selectedCurrencySet.isEmpty {
-                // Usamos normalizeCurrencyCode para alinear con CurrencyUtils.
                 let normalized = normalizeCurrencyCode(transaction.currencyCode)
-                if !selectedCurrencySet.contains(normalized) {
-                    return false
+                if isExclude {
+                    if selectedCurrencySet.contains(normalized) { return false }
+                } else {
+                    if !selectedCurrencySet.contains(normalized) { return false }
                 }
             }
 
@@ -314,13 +333,15 @@ struct TransactionsExportService {
 
             // 7) Filtro por etiquetas (nombres).
             if !tagFilterSet.isEmpty {
-                // En tu modelo tags es [Tag]? opcional para CloudKit.
                 let transactionTagNames = (transaction.tags ?? []).map { $0.name.lowercased() }
                 let transactionTagSet = Set(transactionTagNames)
 
-                // Para que pase, la transacción debe contener al menos una de las etiquetas seleccionadas.
-                if transactionTagSet.isDisjoint(with: tagFilterSet) {
-                    return false
+                if isExclude {
+                    // Exclude: if transaction has ANY excluded tag → hide it
+                    if !transactionTagSet.isDisjoint(with: tagFilterSet) { return false }
+                } else {
+                    // Include: transaction must contain at least one selected tag
+                    if transactionTagSet.isDisjoint(with: tagFilterSet) { return false }
                 }
             }
 

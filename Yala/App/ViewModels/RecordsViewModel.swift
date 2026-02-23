@@ -96,6 +96,12 @@ final class RecordsViewModel: Filterable {
         set { SessionState.shared.searchText = newValue }
     }
 
+    /// Exclude mode for entity filters
+    var isExcludeMode: Bool {
+        get { SessionState.shared.isExcludeMode }
+        set { SessionState.shared.isExcludeMode = newValue }
+    }
+
     // MARK: - UI State
 
     /// Whether search bar is expanded
@@ -204,6 +210,7 @@ final class RecordsViewModel: Filterable {
             selectedNatures: selectedNatures,
             selectedTransactionNatures: effectiveTransactionNatures,
             selectedCurrencies: selectedCurrencies,
+            isExcludeMode: isExcludeMode,
             transactionTypeFilter: transactionTypeFilter,
             amountCondition: amountCondition,
             searchText: searchText,
@@ -345,6 +352,7 @@ final class RecordsViewModel: Filterable {
         }
         selectedTags.removeAll()
         transactionTypeFilter = .all
+        isExcludeMode = false
         amountCondition = .any
         // period = .thisMonth // Do not reset period
         customStartDate = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()

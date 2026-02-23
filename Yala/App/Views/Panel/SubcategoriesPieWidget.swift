@@ -21,6 +21,7 @@ struct SubcategoriesPieWidget: View {
     var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
     var onSelectSubcategory: ((PersistentIdentifier) -> Void)?
     var onShowDetail: (() -> Void)? = nil
+    var isExcludeMode: Bool = false
 
     var size: WidgetSize = .medium
 
@@ -44,8 +45,15 @@ struct SubcategoriesPieWidget: View {
     // Filtered total based on selected subcategories
     private var filteredTotalExpense: Double {
         guard !selectedSubcategoryIDs.isEmpty else { return totalExpense }
+        if isExcludeMode {
+            return subcategories
+                .filter { guard let id = $0.persistentID else { return true }
+                    return !selectedSubcategoryIDs.contains(id) }
+                .reduce(0) { $0 + $1.amount }
+        }
         return subcategories
-            .filter { guard let id = $0.persistentID else { return false }; return selectedSubcategoryIDs.contains(id) }
+            .filter { guard let id = $0.persistentID else { return false }
+                return selectedSubcategoryIDs.contains(id) }
             .reduce(0) { $0 + $1.amount }
     }
 
@@ -311,8 +319,12 @@ struct SubcategoriesPieWidget: View {
             .transition(.opacity.combined(with: .scale(scale: 0.9)))
     }
 
-    // Logic: If selection exists, ONLY show selected. Else, show all > threshold.
+    // In exclude mode, excluded items are removed — show labels normally by percentage.
+    // In include mode, show only selected items' labels.
     private func shouldShowLabel(for item: PieChartData) -> Bool {
+        if isExcludeMode {
+            return item.percentage > 4.0
+        }
         if !selectedSubcategoryIDs.isEmpty {
             guard let id = item.persistentID else { return false }
             return selectedSubcategoryIDs.contains(id)
@@ -605,14 +617,20 @@ struct SubcategoriesPieWidget: View {
     }
 
     private func isDimmed(_ item: PieChartData) -> Bool {
+        // In exclude mode, excluded items are already removed — no dimming needed
+        if isExcludeMode { return false }
         guard !selectedSubcategoryIDs.isEmpty else { return false }
         guard let itemPersistentID = item.persistentID else { return true }  // Dim "Restante" when something is selected
         return !selectedSubcategoryIDs.contains(itemPersistentID)
     }
 
     private func currentCenterItem() -> PieChartData? {
-        if let firstID = selectedSubcategoryIDs.first {
-            return chartData.first { $0.persistentID == firstID }
+        if isExcludeMode {
+            // Excluded items already removed; show first visible item
+            return chartData.first
+        }
+        if !selectedSubcategoryIDs.isEmpty {
+            return chartData.first { $0.persistentID == selectedSubcategoryIDs.first }
         }
         return chartData.first
     }
@@ -644,17 +662,30 @@ struct SubcategoriesPieWidget: View {
         let maxVisible = 9
 
         // Filter out items with non-finite or zero amounts
-        let validSubcategories = subcategories.filter { $0.amount.isFinite && $0.amount > 0 }
+        var validSubcategories = subcategories.filter { $0.amount.isFinite && $0.amount > 0 }
+
+        // In exclude mode, remove excluded items entirely
+        if isExcludeMode && !selectedSubcategoryIDs.isEmpty {
+            validSubcategories = validSubcategories.filter {
+                guard let id = $0.persistentID else { return true }
+                return !selectedSubcategoryIDs.contains(id)
+            }
+        }
+
+        // Recalculate total from visible items
+        let visibleTotal = validSubcategories.reduce(0) { $0 + $1.amount }
+
         var finalItems: [PieChartData] = []
 
         if validSubcategories.count <= maxVisible {
             finalItems = validSubcategories.map {
-                PieChartData(
+                let pct = visibleTotal > 0 ? ($0.amount / visibleTotal) * 100 : 0
+                return PieChartData(
                     id: $0.id,
                     name: $0.subcategoryName,
                     iconName: $0.subcategory?.iconName ?? $0.category?.iconName ?? "tag.fill",
                     amount: $0.amount,
-                    percentage: $0.percentageOfTotal.isFinite ? $0.percentageOfTotal : 0,
+                    percentage: pct,
                     colorHex: $0.colorHex ?? "#8E8E93",
                     persistentID: $0.persistentID
                 )
@@ -664,20 +695,20 @@ struct SubcategoriesPieWidget: View {
             let others = validSubcategories.dropFirst(maxVisible)
 
             finalItems = top.map {
-                PieChartData(
+                let pct = visibleTotal > 0 ? ($0.amount / visibleTotal) * 100 : 0
+                return PieChartData(
                     id: $0.id,
                     name: $0.subcategoryName,
                     iconName: $0.subcategory?.iconName ?? $0.category?.iconName ?? "tag.fill",
                     amount: $0.amount,
-                    percentage: $0.percentageOfTotal.isFinite ? $0.percentageOfTotal : 0,
+                    percentage: pct,
                     colorHex: $0.colorHex ?? "#8E8E93",
                     persistentID: $0.persistentID
                 )
             }
 
             let othersAmount = others.reduce(0) { $0 + $1.amount }
-            // Safe percentage calculation - guard against division by zero
-            let othersPercentage = totalExpense > 0 ? (othersAmount / totalExpense) * 100 : 0
+            let othersPercentage = visibleTotal > 0 ? (othersAmount / visibleTotal) * 100 : 0
 
             if othersAmount > 0 {
                 finalItems.append(

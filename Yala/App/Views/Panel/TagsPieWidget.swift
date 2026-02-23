@@ -20,6 +20,7 @@ struct TagsPieWidget: View {
     var selectedTagIDs: Set<PersistentIdentifier> = []
     var onSelectTag: ((PersistentIdentifier) -> Void)?
     var onShowDetail: (() -> Void)? = nil
+    var isExcludeMode: Bool = false
 
     var size: WidgetSize = .medium
 
@@ -42,6 +43,11 @@ struct TagsPieWidget: View {
 
     private var filteredTotalExpense: Double {
         guard !selectedTagIDs.isEmpty else { return totalExpense }
+        if isExcludeMode {
+            return tags
+                .filter { !selectedTagIDs.contains($0.tag.persistentModelID) }
+                .reduce(0) { $0 + $1.amount }
+        }
         return tags
             .filter { selectedTagIDs.contains($0.tag.persistentModelID) }
             .reduce(0) { $0 + $1.amount }
@@ -264,6 +270,10 @@ struct TagsPieWidget: View {
     }
 
     private func shouldShowLabel(for item: PieChartData) -> Bool {
+        if isExcludeMode {
+            // Excluded items already removed; show labels by percentage threshold
+            return item.percentage > 4.0
+        }
         if !selectedTagIDs.isEmpty {
             guard let id = item.id else { return false }
             return selectedTagIDs.contains(id)
@@ -498,6 +508,8 @@ struct TagsPieWidget: View {
     }
 
     private func isDimmed(_ item: PieChartData) -> Bool {
+        // In exclude mode, excluded items are already removed — no dimming needed
+        if isExcludeMode { return false }
         guard !selectedTagIDs.isEmpty else { return false }
         guard let id = item.id else { return true }
         return !selectedTagIDs.contains(id)
@@ -526,38 +538,50 @@ struct TagsPieWidget: View {
 
     private func processChartData() -> [PieChartData] {
         let threshold = size == .large ? 12 : 20
-        let validTags = tags
+
+        // In exclude mode, remove excluded items entirely
+        let visibleTags: [TagSpendingSummary]
+        if isExcludeMode && !selectedTagIDs.isEmpty {
+            visibleTags = tags.filter { !selectedTagIDs.contains($0.tag.persistentModelID) }
+        } else {
+            visibleTags = tags
+        }
+
+        // Recalculate total from visible items
+        let visibleTotal = visibleTags.reduce(0) { $0 + $1.amount }
 
         var finalItems: [PieChartData] = []
 
-        if validTags.count <= threshold {
-            finalItems = validTags.map {
-                PieChartData(
+        if visibleTags.count <= threshold {
+            finalItems = visibleTags.map {
+                let pct = visibleTotal > 0 ? ($0.amount / visibleTotal) * 100 : 0
+                return PieChartData(
                     id: $0.tag.persistentModelID,
                     name: $0.tag.name,
                     iconName: $0.tag.iconName,
                     amount: $0.amount,
-                    percentage: $0.percentage,
+                    percentage: pct,
                     colorHex: $0.tag.colorHex
                 )
             }
         } else {
-            let top = validTags.prefix(threshold)
-            let others = validTags.dropFirst(threshold)
+            let top = visibleTags.prefix(threshold)
+            let others = visibleTags.dropFirst(threshold)
 
             finalItems = top.map {
-                PieChartData(
+                let pct = visibleTotal > 0 ? ($0.amount / visibleTotal) * 100 : 0
+                return PieChartData(
                     id: $0.tag.persistentModelID,
                     name: $0.tag.name,
                     iconName: $0.tag.iconName,
                     amount: $0.amount,
-                    percentage: $0.percentage,
+                    percentage: pct,
                     colorHex: $0.tag.colorHex
                 )
             }
 
             let othersAmount = others.reduce(0) { $0 + $1.amount }
-            let othersPercentage = totalExpense > 0 ? (othersAmount / totalExpense) * 100 : 0
+            let othersPercentage = visibleTotal > 0 ? (othersAmount / visibleTotal) * 100 : 0
 
             if othersAmount > 0 {
                 finalItems.append(

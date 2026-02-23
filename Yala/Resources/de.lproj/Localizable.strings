@@ -115,6 +115,9 @@
 "filters.type" = "Typ";
 "filters.nature" = "Art";
 "filters.currency" = "Währung";
+"filters.includeMode" = "Einschließen";
+"filters.excludeMode" = "Ausschließen";
+"filters.nothingExcluded" = "Keine";
 
 // MARK: - Actions
 

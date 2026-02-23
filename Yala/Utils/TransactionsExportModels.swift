@@ -228,6 +228,11 @@ struct ExportFilters: Equatable {
     /// Fecha de fin del periodo de exportación.
     var dateTo: Date
 
+    // MARK: Modo
+
+    /// When true, selected entity filters act as exclusion (hide matching items)
+    var isExcludeMode: Bool = false
+
     // MARK: Nota
 
     /// Texto a buscar dentro de la nota de la transacción.

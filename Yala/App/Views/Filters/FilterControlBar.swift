@@ -50,6 +50,9 @@ struct FilterControlBar<PeriodView: View>: View {
     /// Transaction type filter (optional, only for Records)
     let transactionTypeFilter: TransactionTypeFilter?
 
+    /// Whether exclude mode is active (for chip visual)
+    var isExcludeMode: Bool = false
+
     // MARK: - Callbacks
 
     let onClearAccounts: () -> Void
@@ -67,28 +70,33 @@ struct FilterControlBar<PeriodView: View>: View {
             // Period dropdown on the left
             periodSelector
 
+            // Exclude mode badge
+            if isExcludeMode {
+                excludeModeBadge
+            }
+
             // Filter chips scrollable area
             if hasActiveFilters {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: DS.Spacing.sm) {
                         // Account chips - "First +x" format
                         if let chipText = accountsChipText {
-                            FilterChipView(text: chipText, onClear: onClearAccounts)
+                            FilterChipView(text: chipText, isExcludeMode: isExcludeMode, onClear: onClearAccounts)
                         }
 
                         // Category chips - "First +x" format
                         if let chipText = categoriesChipText {
-                            FilterChipView(text: chipText, onClear: onClearCategories)
+                            FilterChipView(text: chipText, isExcludeMode: isExcludeMode, onClear: onClearCategories)
                         }
 
                         // Tag chips - "First +x" format
                         if let chipText = tagsChipText {
-                            FilterChipView(text: chipText, onClear: onClearTags)
+                            FilterChipView(text: chipText, isExcludeMode: isExcludeMode, onClear: onClearTags)
                         }
 
                         // Nature chips - "First +x" format
                         if let chipText = naturesChipText {
-                            FilterChipView(text: chipText, onClear: onClearNatures)
+                            FilterChipView(text: chipText, isExcludeMode: isExcludeMode, onClear: onClearNatures)
                         }
 
                         // Transaction nature chip (income/expense with color dot)
@@ -97,7 +105,7 @@ struct FilterControlBar<PeriodView: View>: View {
                             let nature = selectedTransactionNatures.first,
                             let onClear = onClearTransactionNature
                         {
-                            FilterChipView(transactionNature: nature, onClear: onClear)
+                            FilterChipView(transactionNature: nature, isExcludeMode: false, onClear: onClear)
                         }
 
                         // Transaction type chip (only for Records)
@@ -125,6 +133,22 @@ struct FilterControlBar<PeriodView: View>: View {
 
             Spacer()
         }
+    }
+
+    // MARK: - Exclude Mode Badge
+
+    private var excludeModeBadge: some View {
+        HStack(spacing: DS.Spacing.xs) {
+            Image(systemName: "minus.circle.fill")
+                .font(DS.Typography.chipIconOnly)
+                .foregroundStyle(DS.Semantic.errorForeground)
+            Text(L10n.Filters.excludeMode)
+                .font(DS.Typography.caption)
+                .foregroundStyle(DS.Semantic.errorForeground)
+        }
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.vertical, DS.Spacing.xs)
+        .background(DS.Semantic.errorBackgroundSubtle, in: Capsule())
     }
 
     // MARK: - Chip Text Helpers
@@ -201,6 +225,7 @@ extension FilterControlBar {
         allTags: [Tag],
         selectedNatures: Set<SubcategoryNature>,
         selectedTransactionNatures: Set<TransactionNature> = [],
+        isExcludeMode: Bool = false,
         onClearAccounts: @escaping () -> Void,
         onClearCategories: @escaping () -> Void,
         onClearTags: @escaping () -> Void,
@@ -221,6 +246,7 @@ extension FilterControlBar {
         self.selectedNatures = selectedNatures
         self.selectedTransactionNatures = selectedTransactionNatures
         self.transactionTypeFilter = nil
+        self.isExcludeMode = isExcludeMode
         self.onClearAccounts = onClearAccounts
         self.onClearCategories = onClearCategories
         self.onClearTags = onClearTags

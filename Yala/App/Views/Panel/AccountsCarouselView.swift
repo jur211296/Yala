@@ -78,6 +78,7 @@ struct AccountsCarouselView: View {
                     ? viewModel.expenseForPeriod(for: account, allTransactions: transactions)
                     : currentBalance(for: account),
                 isSelected: isSelected,
+                isExcludeMode: viewModel.isExcludeMode,
                 onEditTapped: {
                     onEditAccount(account)
                 }

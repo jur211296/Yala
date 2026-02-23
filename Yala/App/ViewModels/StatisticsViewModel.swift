@@ -130,6 +130,11 @@ final class StatisticsViewModel: Filterable {
         set { SessionState.shared.searchText = newValue }
     }
 
+    var isExcludeMode: Bool {
+        get { SessionState.shared.isExcludeMode }
+        set { SessionState.shared.isExcludeMode = newValue }
+    }
+
     /// Selected period (using DetailPeriod for expanded options)
     var detailPeriod: DetailPeriod {
         get { SessionState.shared.selectedPeriod }
@@ -331,6 +336,7 @@ final class StatisticsViewModel: Filterable {
             selectedTags: selectedTags,
             selectedNatures: selectedNatures,
             selectedCurrencies: selectedCurrencies,
+            isExcludeMode: isExcludeMode,
             transactionTypeFilter: .all,  // TrendsView handles metric filtering separately
             amountCondition: amountCondition,
             searchText: searchText,

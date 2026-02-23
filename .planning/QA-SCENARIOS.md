@@ -4782,3 +4782,77 @@ Para cada tema verificar:
 ### 39.7 Localización de trial UI
 - [ ] Verificar strings de trial en los 6 idiomas (es, en, de, fr, it, pt)
 - [ ] Verificar que el formato "%@ días, luego %@" se muestra correctamente
+
+---
+
+## Sección 40: Filtros Avanzados — Modo Excluir/Incluir
+
+### 40.1 Segmented control en RecordsFiltersView
+- [ ] Abrir filtros de Records → segmented control visible con "Incluir" / "Excluir"
+- [ ] Por defecto seleccionado "Incluir"
+- [ ] Al cambiar a "Excluir", todas las selecciones de filtro se limpian
+- [ ] Al cambiar de vuelta a "Incluir", las selecciones se limpian de nuevo
+- [ ] El label de status cambia: vacío muestra "Nada" en modo excluir (vs "Todas" en incluir)
+
+### 40.2 Modo Excluir — Cuentas
+- [ ] Cambiar a "Excluir" → seleccionar 1 cuenta
+- [ ] En Records: transacciones de esa cuenta desaparecen
+- [ ] Transacciones de otras cuentas siguen visibles
+- [ ] Selección vacía en modo excluir = todo visible (sin efecto)
+
+### 40.3 Modo Excluir — Categorías/Subcategorías
+- [ ] Cambiar a "Excluir" → seleccionar 1 categoría
+- [ ] Transacciones de esa categoría se ocultan
+- [ ] Subcategorías de esa categoría también se ocultan
+
+### 40.4 Modo Excluir — Tags
+- [ ] Cambiar a "Excluir" → seleccionar 1 tag
+- [ ] Transacciones que tengan ese tag se ocultan
+- [ ] Si una transacción tiene CUALQUIER tag excluido → se excluye completa
+
+### 40.5 Modo Excluir — Monedas
+- [ ] Cambiar a "Excluir" → seleccionar moneda USD
+- [ ] Transacciones en USD desaparecen
+- [ ] Transacciones en otras monedas siguen visibles
+
+### 40.6 Modo Excluir — Nature y TransactionNature
+- [ ] Cambiar a "Excluir" → seleccionar nature "Necesidad"
+- [ ] Subcategorías de tipo necesidad se ocultan
+- [ ] Cambiar a "Excluir" → filtrar por income → solo expenses visibles
+
+### 40.7 Chips visuales en modo excluir
+- [ ] En modo excluir con filtros activos, chips muestran ícono minus.circle.fill rojo
+- [ ] En modo incluir, chips NO muestran ícono minus (comportamiento normal)
+- [ ] Chips en PanelView muestran ícono minus en modo excluir
+- [ ] Chips en TrendsTabView muestran ícono minus en modo excluir
+- [ ] Chips en CategoriesTabView muestran ícono minus en modo excluir
+- [ ] Chips en RecordsTabView muestran ícono minus en modo excluir
+
+### 40.8 Persistencia entre pestañas
+- [ ] Activar modo excluir + seleccionar filtros en Records
+- [ ] Ir a pestaña Trends → mismos filtros de exclusión aplicados
+- [ ] Ir a pestaña Categories → mismos filtros de exclusión aplicados
+- [ ] Ir a Panel → mismos filtros de exclusión aplicados
+- [ ] Modo excluir persiste en SessionState (SSOT)
+
+### 40.9 Limpiar filtros
+- [ ] Activar modo excluir con filtros → tap "Limpiar filtros"
+- [ ] Todos los filtros se limpian
+- [ ] Modo vuelve a "Incluir"
+- [ ] Botón "Clear all" (xmark.circle.fill) también resetea a incluir
+
+### 40.10 Exportación con modo excluir
+- [ ] Abrir wizard de exportación → segmented control "Incluir/Excluir" visible
+- [ ] Seleccionar "Excluir" + elegir cuenta → exportar CSV
+- [ ] CSV NO contiene transacciones de la cuenta excluida
+- [ ] CSV SÍ contiene transacciones de otras cuentas
+
+### 40.11 Filtros no-entidad no afectados por modo
+- [ ] En modo excluir, filtro de monto (>100) funciona igual que en incluir
+- [ ] En modo excluir, filtro de nota/búsqueda funciona igual que en incluir
+- [ ] En modo excluir, filtro de periodo funciona igual que en incluir
+- [ ] En modo excluir, filtro de tipo transacción funciona igual que en incluir
+
+### 40.12 Localización del modo excluir
+- [ ] Verificar "Incluir"/"Excluir"/"Nada" en los 6 idiomas (es, en, de, fr, it, pt)
+- [ ] Labels correctos en cada idioma al cambiar modo

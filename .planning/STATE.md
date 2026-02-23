@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-20] cf3418d fix: add a11y labels to Panel buttons and localize Tips strings
 - [2026-02-20] 52b572e feat: add Siri & Shortcuts settings screen in Profile
 - [2026-02-20] 7700b2d feat: add Siri natural language intent, .siri source type and tip card
 - [2026-02-20] 50bef88 feat: add Lock Screen widgets (4 accessory widgets)
@@ -529,11 +530,11 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Siri & Shortcuts — intent + settings screen completed
-Next step: Continue Phase 12 items
+Stopped at: Pre-launch fixes — a11y labels + Tips localization completed
+Next step: Continue Phase 12 items or next pre-launch fix
 Resume context:
-- SiriNaturalEntryIntent: LLM parsing (Pro) + AmountParser offline fallback → InboxDraft (7700b2d)
-- SiriShortcutsView: 3 sections (Siri card, 5 shortcuts with descriptions, FAQ) in Profile > Security (52b572e)
-- Siri tip card in PanelView (dismissable, @AppStorage showSiriTip)
-- .siri source type added to DraftSourceType, Inbox views updated
-- Localized in 6 languages (es, en, de, fr, it, pt)
+- 6 Panel chevron buttons now have accessibilityLabel (cf3418d)
+- Dead code headerSection removed from SubcategoriesPieWidget + CategoriesPieWidget
+- L10n.Tips enum added (23 accessors) — all tips keys connected to code
+- 20 tips keys added to es.lproj, 3 Siri keys added to all 6 languages
+- PanelView Siri tip card now uses L10n.Tips.Siri.* instead of hardcoded strings

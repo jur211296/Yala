@@ -795,15 +795,44 @@ private struct DetailContainerObservers: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            .modifier(SessionStateObservers(
+                sessionState: sessionState,
+                categories: categories,
+                subcategories: subcategories,
+                syncFromSessionState: syncFromSessionState,
+                handleSessionStateFilterChange: handleSessionStateFilterChange,
+                calculateTrendsData: calculateTrendsData,
+                refreshRecordsData: refreshRecordsData
+            ))
+            .modifier(ViewModelObservers(
+                trendsViewModel: trendsViewModel,
+                recordsViewModel: recordsViewModel,
+                syncToSessionState: syncToSessionState,
+                calculateTrendsData: calculateTrendsData,
+                refreshRecordsData: refreshRecordsData
+            ))
+    }
+}
+
+/// SessionState onChange observers — split to reduce type-checker complexity.
+private struct SessionStateObservers: ViewModifier {
+    let sessionState: SessionState
+    let categories: [Category]
+    let subcategories: [Subcategory]
+    let syncFromSessionState: () -> Void
+    let handleSessionStateFilterChange: () -> Void
+    let calculateTrendsData: () -> Void
+    let refreshRecordsData: () -> Void
+
+    func body(content: Content) -> some View {
+        content
             .onChange(of: sessionState.selectedPeriod) { syncFromSessionState() }
             .onChange(of: sessionState.selectedAccountIDs) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.selectedCategoryIDs) {
-                // Auto-select expense filter only if ALL selected categories are expense (not income)
-                if !sessionState.selectedCategoryIDs.isEmpty {
+                if !sessionState.isExcludeMode && !sessionState.selectedCategoryIDs.isEmpty {
                     let selectedCats = categories.filter {
                         sessionState.selectedCategoryIDs.contains($0.persistentModelID)
                     }
-                    // Only set expense if we found matching categories AND all are expense categories
                     if !selectedCats.isEmpty && selectedCats.allSatisfy({ !$0.isIncome }) {
                         sessionState.selectedTransactionNatures = [.expense]
                     }
@@ -811,19 +840,16 @@ private struct DetailContainerObservers: ViewModifier {
                 handleSessionStateFilterChange()
             }
             .onChange(of: sessionState.selectedNatures) {
-                // Natures (esencial, prioritaria, etc.) are only for expenses
-                if !sessionState.selectedNatures.isEmpty {
+                if !sessionState.isExcludeMode && !sessionState.selectedNatures.isEmpty {
                     sessionState.selectedTransactionNatures = [.expense]
                 }
                 handleSessionStateFilterChange()
             }
             .onChange(of: sessionState.selectedSubcategoryIDs) {
-                // Auto-select expense filter only if ALL selected subcategories belong to expense categories
-                if !sessionState.selectedSubcategoryIDs.isEmpty {
+                if !sessionState.isExcludeMode && !sessionState.selectedSubcategoryIDs.isEmpty {
                     let selectedSubs = subcategories.filter {
                         sessionState.selectedSubcategoryIDs.contains($0.persistentModelID)
                     }
-                    // Only set expense if we found matching subcategories AND all are from expense categories
                     if !selectedSubs.isEmpty && selectedSubs.allSatisfy({ !$0.safeCategory.isIncome }) {
                         sessionState.selectedTransactionNatures = [.expense]
                     }
@@ -835,6 +861,7 @@ private struct DetailContainerObservers: ViewModifier {
             .onChange(of: sessionState.selectedTransactionNatures) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.amountCondition) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.searchText) { handleSessionStateFilterChange() }
+            .onChange(of: sessionState.isExcludeMode) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.selectedTrendMetric) {
                 syncFromSessionState()
                 calculateTrendsData()
@@ -844,6 +871,19 @@ private struct DetailContainerObservers: ViewModifier {
                 calculateTrendsData()
                 refreshRecordsData()
             }
+    }
+}
+
+/// ViewModel onChange observers — split to reduce type-checker complexity.
+private struct ViewModelObservers: ViewModifier {
+    @Bindable var trendsViewModel: StatisticsViewModel
+    @Bindable var recordsViewModel: RecordsViewModel
+    let syncToSessionState: () -> Void
+    let calculateTrendsData: () -> Void
+    let refreshRecordsData: () -> Void
+
+    func body(content: Content) -> some View {
+        content
             .onChange(of: trendsViewModel.selectedMetric) { _, _ in
                 syncToSessionState()
                 calculateTrendsData()

@@ -205,9 +205,27 @@ struct CategoriesTabView: View {
 
     // MARK: - Control Bar
 
+    private var excludeModeBadge: some View {
+        HStack(spacing: DS.Spacing.xs) {
+            Image(systemName: "minus.circle.fill")
+                .font(DS.Typography.chipIconOnly)
+                .foregroundStyle(DS.Semantic.errorForeground)
+            Text(L10n.Filters.excludeMode)
+                .font(DS.Typography.caption)
+                .foregroundStyle(DS.Semantic.errorForeground)
+        }
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.vertical, DS.Spacing.xs)
+        .background(DS.Semantic.errorBackgroundSubtle, in: Capsule())
+    }
+
     private var controlBar: some View {
         HStack(spacing: DS.Spacing.md) {
             periodSelector
+
+            if viewModel.isExcludeMode {
+                excludeModeBadge
+            }
 
             if hasActiveFilters {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -220,7 +238,7 @@ struct CategoriesTabView: View {
                                 onClear: {
                                     viewModel.selectedAccounts.removeAll()
                                 }
-                            )
+                            ).excludeMode(viewModel.isExcludeMode)
                         }
 
                         // Category chip - show when category selected from pie or via filter
@@ -238,7 +256,7 @@ struct CategoriesTabView: View {
                                     viewModel.selectedCategories.removeAll()
                                     viewModel.selectedSubcategories.removeAll()
                                 }
-                            )
+                            ).excludeMode(viewModel.isExcludeMode)
                         } else if !viewModel.selectedCategories.isEmpty {
                             // Chip from category selection (pie chart or SessionState)
                             let selectedCats = categories.filter { viewModel.selectedCategories.contains($0.persistentModelID) }
@@ -251,7 +269,7 @@ struct CategoriesTabView: View {
                                     onClear: {
                                         viewModel.selectedCategories.removeAll()
                                     }
-                                )
+                                ).excludeMode(viewModel.isExcludeMode)
                             }
                         }
 
@@ -269,7 +287,7 @@ struct CategoriesTabView: View {
                                 onClear: {
                                     viewModel.selectedSubcategories.removeAll()
                                 }
-                            )
+                            ).excludeMode(viewModel.isExcludeMode)
                         }
 
                         // Tag chips (individual with color dots)
@@ -281,7 +299,7 @@ struct CategoriesTabView: View {
                                 onClear: {
                                     viewModel.selectedTags.remove(chip.tagID)
                                 }
-                            )
+                            ).excludeMode(viewModel.isExcludeMode)
                         }
 
                         // Nature chips (individual with color dots)
@@ -291,7 +309,7 @@ struct CategoriesTabView: View {
                                 onClear: {
                                     viewModel.selectedNatures.remove(nature)
                                 }
-                            )
+                            ).excludeMode(viewModel.isExcludeMode)
                         }
 
                         // Transaction nature chip (income/expense with color dot)
@@ -306,7 +324,7 @@ struct CategoriesTabView: View {
                                     viewModel.selectedTransactionNatures.removeAll()
                                     sessionState.selectedTransactionNatures.removeAll()
                                 }
-                            )
+                            ).excludeMode(viewModel.isExcludeMode)
                         }
 
                         // Currency chips
@@ -317,7 +335,7 @@ struct CategoriesTabView: View {
                                     viewModel.selectedCurrencies.remove(currency)
                                     sessionState.selectedCurrencies.remove(currency)
                                 }
-                            )
+                            ).excludeMode(viewModel.isExcludeMode)
                         }
 
                         // Amount chip
@@ -535,7 +553,9 @@ struct CategoriesTabView: View {
                 CategoriesPieWidget(
                     categories: categorySpending,
                     currencyCode: defaultCurrencyCode,
-                    selectedCategoryIDs: effectiveCategoryIDsForDim,
+                    selectedCategoryIDs: viewModel.isExcludeMode
+                        ? viewModel.selectedCategories  // Exclude: only directly excluded categories
+                        : effectiveCategoryIDsForDim,   // Include: dimming with derived parent
                     onSelectCategory: { categoryID in
                         if viewModel.selectedCategories.contains(categoryID) {
                             viewModel.selectedCategories.remove(categoryID)
@@ -544,6 +564,7 @@ struct CategoriesTabView: View {
                         }
                         viewModel.selectedSubcategories.removeAll()
                     },
+                    isExcludeMode: viewModel.isExcludeMode,
                     size: .large,
                     period: viewModel.detailPeriod,
                     customRange: sessionState.customDateRange,
@@ -588,6 +609,7 @@ struct CategoriesTabView: View {
                         // Clear category filter — subcategory selection is more specific
                         viewModel.selectedCategories.removeAll()
                     },
+                    isExcludeMode: viewModel.isExcludeMode,
                     size: .large,
                     period: viewModel.detailPeriod,
                     customRange: sessionState.customDateRange,
@@ -629,6 +651,7 @@ struct CategoriesTabView: View {
                             viewModel.selectedTags = [tagID]
                         }
                     },
+                    isExcludeMode: viewModel.isExcludeMode,
                     size: .large,
                     period: viewModel.detailPeriod,
                     customRange: sessionState.customDateRange,
@@ -834,6 +857,7 @@ struct CategoriesTabView: View {
                         categories: categorySpending,
                         currencyCode: defaultCurrencyCode,
                         selectedCategoryIDs: effectiveCategoryIDsForDim,
+                        isExcludeMode: viewModel.isExcludeMode,
                         isExpanded: isListExpanded,
                         showVariation: showVariations && viewModel.detailPeriod != .allTime,
                         onToggleExpanded: { isListExpanded.toggle() },
@@ -861,6 +885,7 @@ struct CategoriesTabView: View {
                         currencyCode: defaultCurrencyCode,
                         selectedCategoryIDs: effectiveCategoryIDsForDim,
                         selectedSubcategoryIDs: viewModel.selectedSubcategories,
+                        isExcludeMode: viewModel.isExcludeMode,
                         isExpanded: isListExpanded,
                         showVariation: showVariations && viewModel.detailPeriod != .allTime,
                         onToggleExpanded: { isListExpanded.toggle() },
@@ -932,7 +957,9 @@ struct CategoriesTabView: View {
     /// - When a category filter is applied (show only subcategories of that category)
     /// - When income mode is active (category breakdown not useful for income)
     private var shouldLockToSubcategories: Bool {
-        !viewModel.selectedCategories.isEmpty || !viewModel.selectedSubcategories.isEmpty || isIncomeMode
+        if isIncomeMode { return true }
+        if viewModel.isExcludeMode { return false }
+        return !viewModel.selectedCategories.isEmpty || !viewModel.selectedSubcategories.isEmpty
     }
 
     /// Enforce list view lock logic based on current category filter
@@ -984,15 +1011,18 @@ struct CategoriesTabView: View {
     private func calculateData() {
         let interval = viewModel.panelDateInterval
 
-        // Build filter criteria for pie charts (WITHOUT category/subcategory filter - show all with dim)
+        // Build filter criteria for pie charts
+        // Include mode: show all categories/subcategories with dim (no filter)
+        // Exclude mode: actually exclude selected categories/subcategories from data
         let pieChartCriteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
-            selectedCategories: [],  // Don't filter by category - show all in pie with dim
-            selectedSubcategories: [],  // Don't filter by subcategory - show all in pie with dim
+            selectedCategories: viewModel.isExcludeMode ? viewModel.selectedCategories : [],
+            selectedSubcategories: viewModel.isExcludeMode ? viewModel.selectedSubcategories : [],
             selectedTags: viewModel.selectedTags,
             selectedNatures: viewModel.selectedNatures,
             selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
+            isExcludeMode: viewModel.isExcludeMode,
             transactionTypeFilter: .all,
             amountCondition: viewModel.amountCondition,
             searchText: viewModel.searchText,
@@ -1015,6 +1045,7 @@ struct CategoriesTabView: View {
             selectedNatures: [],  // Don't filter by nature - show all with dim
             selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
+            isExcludeMode: viewModel.isExcludeMode,
             transactionTypeFilter: .all,
             amountCondition: viewModel.amountCondition,
             searchText: viewModel.searchText,
@@ -1044,7 +1075,10 @@ struct CategoriesTabView: View {
 
         // Calculate subcategory spending - filter by category if one is selected
         let subcategoryTransactions: [TransactionItem]
-        if let categoryID = effectiveCategoryID {
+        if viewModel.isExcludeMode {
+            // pieFiltered already excludes the right transactions via pieChartCriteria
+            subcategoryTransactions = pieFiltered
+        } else if let categoryID = effectiveCategoryID {
             // Filter to only show subcategories of selected category
             subcategoryTransactions = pieFiltered.filter { $0.category?.persistentModelID == categoryID }
         } else {
@@ -1106,15 +1140,18 @@ struct CategoriesTabView: View {
             customRange: sessionState.customDateRange
         )
 
-        // Build filter criteria for previous period (WITHOUT category filter - compare all)
+        // Build filter criteria for previous period
+        // Include mode: show all (no filter) for comparison
+        // Exclude mode: exclude selected categories/subcategories for consistent comparison
         let criteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
-            selectedCategories: [],  // Don't filter by category for comparison
-            selectedSubcategories: [],  // Don't filter by subcategory for comparison
+            selectedCategories: viewModel.isExcludeMode ? viewModel.selectedCategories : [],
+            selectedSubcategories: viewModel.isExcludeMode ? viewModel.selectedSubcategories : [],
             selectedTags: viewModel.selectedTags,
             selectedNatures: viewModel.selectedNatures,
             selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
+            isExcludeMode: viewModel.isExcludeMode,
             transactionTypeFilter: .all,
             amountCondition: viewModel.amountCondition,
             searchText: viewModel.searchText,
@@ -1153,7 +1190,10 @@ struct CategoriesTabView: View {
 
         // Calculate previous period subcategory spending (filter by category if selected)
         let prevSubcategoryTransactions: [TransactionItem]
-        if let categoryID = effectiveCategoryID {
+        if viewModel.isExcludeMode {
+            // previousFiltered already excludes the right transactions via criteria
+            prevSubcategoryTransactions = previousFiltered
+        } else if let categoryID = effectiveCategoryID {
             prevSubcategoryTransactions = previousFiltered.filter { $0.category?.persistentModelID == categoryID }
         } else {
             prevSubcategoryTransactions = previousFiltered
@@ -1209,6 +1249,7 @@ struct CategoriesTabView: View {
             selectedNatures: [],  // Don't filter by nature
             selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
+            isExcludeMode: viewModel.isExcludeMode,
             transactionTypeFilter: .all,
             amountCondition: viewModel.amountCondition,
             searchText: viewModel.searchText,
@@ -1458,27 +1499,37 @@ private struct AllCategoriesListContent: View {
     let categories: [CategorySpendingSummary]
     let currencyCode: String
     var selectedCategoryIDs: Set<PersistentIdentifier> = []
+    var isExcludeMode: Bool = false
     var isExpanded: Bool
     var showVariation: Bool = true
     var onToggleExpanded: (() -> Void)?
     var onSelectCategory: ((PersistentIdentifier) -> Void)?
     @Environment(\.yalaTheme) private var theme
 
+    /// Visible categories: in exclude mode, excluded items are hidden entirely
+    private var visibleCategories: [CategorySpendingSummary] {
+        if isExcludeMode && !selectedCategoryIDs.isEmpty {
+            return categories.filter { !selectedCategoryIDs.contains($0.category.persistentModelID) }
+        }
+        return categories
+    }
+
     private var displayedCategories: [CategorySpendingSummary] {
-        isExpanded ? categories : Array(categories.prefix(10))
+        isExpanded ? visibleCategories : Array(visibleCategories.prefix(10))
     }
 
     private var showExpandButton: Bool {
-        categories.count > 10
+        visibleCategories.count > 10
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            if let maxAmount = categories.first?.amount {
+            if let maxAmount = displayedCategories.first?.amount {
                 ForEach(displayedCategories) { summary in
                     let isSelected = selectedCategoryIDs.contains(summary.category.persistentModelID)
                     let isAnySelected = !selectedCategoryIDs.isEmpty
-                    let shouldDim = isAnySelected && !isSelected
+                    // In exclude mode, excluded items are already hidden — no dimming
+                    let shouldDim = !isExcludeMode && isAnySelected && !isSelected
 
                     CategoryRowView(
                         summary: summary,
@@ -1528,23 +1579,35 @@ private struct AllSubcategoriesListContent: View {
     let currencyCode: String
     var selectedCategoryIDs: Set<PersistentIdentifier> = []
     var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
+    var isExcludeMode: Bool = false
     var isExpanded: Bool
     var showVariation: Bool = true
     var onToggleExpanded: (() -> Void)?
     var onSelectSubcategory: ((PersistentIdentifier) -> Void)?
     @Environment(\.yalaTheme) private var theme
 
+    /// Visible subcategories: in exclude mode, excluded items are hidden entirely
+    private var visibleSubcategories: [SubcategorySpendingSummary] {
+        if isExcludeMode && !selectedSubcategoryIDs.isEmpty {
+            return subcategories.filter {
+                guard let id = $0.persistentID else { return true }
+                return !selectedSubcategoryIDs.contains(id)
+            }
+        }
+        return subcategories
+    }
+
     private var displayedSubcategories: [SubcategorySpendingSummary] {
-        isExpanded ? subcategories : Array(subcategories.prefix(10))
+        isExpanded ? visibleSubcategories : Array(visibleSubcategories.prefix(10))
     }
 
     private var showExpandButton: Bool {
-        subcategories.count > 10
+        visibleSubcategories.count > 10
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            if let maxAmount = subcategories.first?.amount {
+            if let maxAmount = displayedSubcategories.first?.amount {
                 ForEach(displayedSubcategories) { summary in
                     let isSelected = summary.persistentID.map { selectedSubcategoryIDs.contains($0) } ?? false
                     let isAnySelected = !selectedSubcategoryIDs.isEmpty
@@ -1554,10 +1617,8 @@ private struct AllSubcategoriesListContent: View {
                         selectedCategoryIDs.isEmpty
                         || (summary.category?.persistentModelID).map { selectedCategoryIDs.contains($0) } ?? false
 
-                    // Dim if:
-                    // 1. There's a subcategory selected and this isn't it, OR
-                    // 2. There's a category selected and this subcategory doesn't belong to it
-                    let shouldDim = (isAnySelected && !isSelected) || !belongsToSelectedCategory
+                    // In exclude mode, excluded items are already hidden — only dim for include mode or category mismatch
+                    let shouldDim = (!isExcludeMode && isAnySelected && !isSelected) || !belongsToSelectedCategory
 
                     SubcategoryRowView(
                         summary: summary,

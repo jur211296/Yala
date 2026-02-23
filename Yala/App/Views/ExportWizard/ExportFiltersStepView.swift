@@ -43,6 +43,9 @@ struct ExportFiltersStepView: View {
     // Nota
     @State private var noteContains: String = ""
 
+    // Modo incluir/excluir
+    @State private var isExcludeMode: Bool = false
+
     // MARK: - Sheet Presentation State
     @State private var showCategoriesSheet = false
     @State private var showPeriodPicker = false
@@ -75,7 +78,8 @@ struct ExportFiltersStepView: View {
             amountCondition: amountCondition,
             selectedPeriod: selectedPeriod,
             customDateRange: customDateRange,
-            noteContains: noteContains
+            noteContains: noteContains,
+            isExcludeMode: isExcludeMode
         )
     }
 
@@ -109,6 +113,12 @@ struct ExportFiltersStepView: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
+                        Picker("", selection: $isExcludeMode) {
+                            Text(L10n.Filters.includeMode).tag(false)
+                            Text(L10n.Filters.excludeMode).tag(true)
+                        }
+                        .pickerStyle(.segmented)
+
                         SectionBox(title: L10n.Filters.filterOptions) {
                             VStack(spacing: DS.Spacing.none) {
                                 periodRow

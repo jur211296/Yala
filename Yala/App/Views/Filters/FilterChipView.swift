@@ -20,10 +20,18 @@ enum FilterChipIndicator {
 struct FilterChipView: View {
     let text: String
     var indicator: FilterChipIndicator = .none
+    var isExcludeMode: Bool = false
     let onClear: () -> Void
 
     var body: some View {
         HStack(spacing: DS.Chip.spacing) {
+            // Exclude mode indicator
+            if isExcludeMode {
+                Image(systemName: "minus.circle.fill")
+                    .font(DS.Typography.chipIconOnly)
+                    .foregroundStyle(DS.Semantic.errorForeground)
+            }
+
             // Indicator (icon or color dot)
             indicatorView
 
@@ -47,6 +55,13 @@ struct FilterChipView: View {
         .padding(.horizontal, DS.Chip.paddingH)
         .padding(.vertical, DS.Chip.paddingV)
         .glassEffect(.regular.interactive(), in: .capsule)
+    }
+
+    /// Fluent API to set exclude mode on any chip
+    func excludeMode(_ isExclude: Bool) -> FilterChipView {
+        var copy = self
+        copy.isExcludeMode = isExclude
+        return copy
     }
 
     @ViewBuilder
@@ -231,6 +246,22 @@ extension FilterChipView {
     init(text: String, onClear: @escaping () -> Void) {
         self.text = text
         self.indicator = .none
+        self.onClear = onClear
+    }
+
+    /// Simple text chip with exclude mode support
+    init(text: String, isExcludeMode: Bool, onClear: @escaping () -> Void) {
+        self.text = text
+        self.indicator = .none
+        self.isExcludeMode = isExcludeMode
+        self.onClear = onClear
+    }
+
+    /// Transaction nature chip with exclude mode support
+    init(transactionNature: TransactionNature, isExcludeMode: Bool, onClear: @escaping () -> Void) {
+        self.text = transactionNature.displayName
+        self.indicator = .colorDot(transactionNature.color)
+        self.isExcludeMode = isExcludeMode
         self.onClear = onClear
     }
 }

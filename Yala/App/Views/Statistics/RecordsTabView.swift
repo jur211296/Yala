@@ -66,6 +66,11 @@ struct RecordsTabView: View {
         HStack(spacing: DS.Spacing.md) {
             periodSelector
 
+            // Exclude mode badge
+            if viewModel.isExcludeMode {
+                excludeModeBadge
+            }
+
             if viewModel.hasActiveFilters {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: DS.Spacing.sm) {
@@ -78,7 +83,7 @@ struct RecordsTabView: View {
                                     viewModel.selectedAccounts.removeAll()
                                     onFilterChange()
                                 }
-                            )
+                            ).excludeMode(viewModel.isExcludeMode)
                         }
 
                         // Category chip (aggregated - one chip max)
@@ -96,7 +101,7 @@ struct RecordsTabView: View {
                                     viewModel.selectedSubcategories.removeAll()
                                     onFilterChange()
                                 }
-                            )
+                            ).excludeMode(viewModel.isExcludeMode)
                         } else if !viewModel.selectedCategories.isEmpty {
                             // Direct category filter (not from subcategory)
                             let selectedCats = categories.filter { viewModel.selectedCategories.contains($0.persistentModelID) }
@@ -110,7 +115,7 @@ struct RecordsTabView: View {
                                         viewModel.selectedCategories.removeAll()
                                         onFilterChange()
                                     }
-                                )
+                                ).excludeMode(viewModel.isExcludeMode)
                             }
                         }
 
@@ -128,7 +133,7 @@ struct RecordsTabView: View {
                                     viewModel.selectedSubcategories.removeAll()
                                     onFilterChange()
                                 }
-                            )
+                            ).excludeMode(viewModel.isExcludeMode)
                         }
 
                         // Tag chips (individual with icon and color)
@@ -141,7 +146,7 @@ struct RecordsTabView: View {
                                     viewModel.selectedTags.remove(chip.tagID)
                                     onFilterChange()
                                 }
-                            )
+                            ).excludeMode(viewModel.isExcludeMode)
                         }
 
                         // Nature chips (with color dots)
@@ -152,7 +157,7 @@ struct RecordsTabView: View {
                                     viewModel.selectedNatures.remove(chipData.nature)
                                     onFilterChange()
                                 }
-                            )
+                            ).excludeMode(viewModel.isExcludeMode)
                         }
 
                         // Transaction nature chip (income/expense with color dot)
@@ -188,7 +193,7 @@ struct RecordsTabView: View {
                                     viewModel.selectedCurrencies.remove(currency)
                                     onFilterChange()
                                 }
-                            )
+                            ).excludeMode(viewModel.isExcludeMode)
                         }
 
                         // Amount chip
@@ -234,6 +239,22 @@ struct RecordsTabView: View {
             Spacer()
         }
         .animation(nil, value: viewModel.period)
+    }
+
+    // MARK: - Exclude Mode Badge
+
+    private var excludeModeBadge: some View {
+        HStack(spacing: DS.Spacing.xs) {
+            Image(systemName: "minus.circle.fill")
+                .font(DS.Typography.chipIconOnly)
+                .foregroundStyle(DS.Semantic.errorForeground)
+            Text(L10n.Filters.excludeMode)
+                .font(DS.Typography.caption)
+                .foregroundStyle(DS.Semantic.errorForeground)
+        }
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.vertical, DS.Spacing.xs)
+        .background(DS.Semantic.errorBackgroundSubtle, in: Capsule())
     }
 
     // MARK: - Period Selector

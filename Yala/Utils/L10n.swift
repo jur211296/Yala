@@ -366,6 +366,9 @@ enum L10n {
         static var type: String { ls("filters.type", comment: "") }
         static var nature: String { ls("filters.nature", comment: "") }
         static var currency: String { ls("filters.currency", comment: "") }
+        static var includeMode: String { ls("filters.includeMode", comment: "") }
+        static var excludeMode: String { ls("filters.excludeMode", comment: "") }
+        static var nothingExcluded: String { ls("filters.nothingExcluded", comment: "") }
     }
 
     // MARK: - Actions
