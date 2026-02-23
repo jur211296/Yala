@@ -125,7 +125,7 @@ struct CategoriesSettingsListView: View {
                                     .font(DS.Typography.title)
                                     .foregroundStyle(.red)
                             }
-                            .accessibilityLabel("Eliminar categoría")
+                            .accessibilityLabel(L10n.Accessibility.deleteCategory)
                             .padding(.leading, DS.Spacing.lg)
                             .padding(.trailing, DS.Spacing.sm)
                         }
@@ -185,7 +185,7 @@ struct CategoriesSettingsListView: View {
                                     .font(DS.Typography.title)
                                     .foregroundStyle(.red)
                             }
-                            .accessibilityLabel("Eliminar subcategoría")
+                            .accessibilityLabel(L10n.Accessibility.deleteSubcategory)
                             .padding(.leading, DS.Spacing.lg)
                             .padding(.trailing, DS.Spacing.sm)
                         }

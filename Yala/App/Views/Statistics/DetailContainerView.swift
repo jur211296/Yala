@@ -547,7 +547,7 @@ struct DetailContainerView: View {
                         .foregroundStyle(.red)
                         .frame(width: 44, height: 44)
                 }
-                .accessibilityLabel("Eliminar")
+                .accessibilityLabel(L10n.Action.delete)
                 .buttonStyle(.plain)
 
                 Spacer()

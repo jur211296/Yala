@@ -83,7 +83,7 @@ struct RecentRecordsWidget: View {
                         .padding(.leading, DS.Spacing.xs)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Ver todos los registros")
+                .accessibilityLabel(L10n.Accessibility.viewAllRecords)
             }
         }
     }

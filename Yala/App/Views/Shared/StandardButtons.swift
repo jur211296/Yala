@@ -50,7 +50,7 @@ struct YalaSaveButton: View {
         .buttonStyle(.borderedProminent)
 
         .buttonBorderShape(.circle)
-        .accessibilityLabel("Guardar")
+        .accessibilityLabel(L10n.Action.save)
     }
 }
 

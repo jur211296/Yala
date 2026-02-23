@@ -109,7 +109,7 @@ struct ScheduledPaymentDetailView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                YalaToolbarButton(systemName: "pencil", label: "Editar") {
+                YalaToolbarButton(systemName: "pencil", label: L10n.Action.edit) {
                     showEditor = true
                 }
             }

@@ -432,7 +432,7 @@ struct PanelView: View {
             .shadow(color: (isLocked ? DS.Semantic.disabledForeground : color).opacity(0.3), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
-        .phaseAnimator([false, true]) { content, phase in
+        .phaseAnimator(reduceMotion ? [false] : [false, true]) { content, phase in
             content
                 .scaleEffect(phase ? 1.03 : 1.0)
         } animation: { _ in

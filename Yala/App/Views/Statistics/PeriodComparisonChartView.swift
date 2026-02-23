@@ -234,7 +234,7 @@ struct PeriodComparisonChartView: View {
         }
         .chartXSelection(value: $draggingDate)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Gráfica de comparación entre periodos")
+        .accessibilityLabel(L10n.Accessibility.periodComparison)
         .accessibilityValue(currentPeriodPoints.isEmpty ? "Sin datos" :
             "Periodo actual vs anterior, \(currentPeriodPoints.count) puntos")
         .frame(height: 220)  // Match TrendChartView height

@@ -434,6 +434,16 @@ enum L10n {
         static var widgetPreferences: String { ls("accessibility.widgetPreferences", comment: "") }
         static var createAccountFirst: String { ls("accessibility.createAccountFirst", comment: "") }
         static var removeFilter: String { ls("accessibility.removeFilter", comment: "") }
+        static var viewDetails: String { ls("accessibility.viewDetails", comment: "") }
+        static var viewAllRecords: String { ls("accessibility.viewAllRecords", comment: "") }
+        static var viewAllCategories: String { ls("accessibility.viewAllCategories", comment: "") }
+        static var deleteSubcategory: String { ls("accessibility.deleteSubcategory", comment: "") }
+        static var deleteCategory: String { ls("accessibility.deleteCategory", comment: "") }
+        static var deleteTag: String { ls("accessibility.deleteTag", comment: "") }
+        static var processAudio: String { ls("accessibility.processAudio", comment: "") }
+        static var exchangeRateChart: String { ls("accessibility.exchangeRateChart", comment: "") }
+        static var periodComparison: String { ls("accessibility.periodComparison", comment: "") }
+        static var natureTrend: String { ls("accessibility.natureTrend", comment: "") }
     }
 
     // MARK: - Search
@@ -2397,6 +2407,9 @@ enum L10n {
         }
         static var reject: String {
             ls("inbox.reject", comment: "")
+        }
+        static var approveAll: String {
+            ls("inbox.approveAll", comment: "")
         }
         static var returnToPending: String {
             ls("inbox.returnToPending", comment: "")

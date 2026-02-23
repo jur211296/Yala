@@ -101,7 +101,7 @@ struct ExchangeRateWidget: View {
                         .foregroundStyle(.secondary)
                         .padding(.leading, DS.Spacing.sm)
                 }
-                .accessibilityLabel("Ver detalle")
+                .accessibilityLabel(L10n.Accessibility.viewDetails)
                 .buttonStyle(.plain)
             }
         }
@@ -122,7 +122,7 @@ struct ExchangeRateWidget: View {
             } else {
                 chartView(data: data)
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("Gráfica de tipo de cambio")
+                    .accessibilityLabel(L10n.Accessibility.exchangeRateChart)
                     .accessibilityValue(data.chartPoints.isEmpty ? "Sin datos" :
                         "\(data.currentRates.count) divisas")
             }

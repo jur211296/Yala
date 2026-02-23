@@ -46,6 +46,7 @@ struct TransactionTypeSelectorView: View {
                                 .fill(selectedType == type ? type.color : Color.clear)
                         )
                 }
+                .accessibilityAddTraits(selectedType == type ? .isSelected : [])
             }
         }
         .padding(DS.Spacing.xs)

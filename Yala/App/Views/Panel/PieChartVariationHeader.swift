@@ -112,7 +112,7 @@ struct PieChartVariationHeader: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Ver detalles")
+                .accessibilityLabel(L10n.Accessibility.viewDetails)
                 .padding(.leading, DS.Spacing.sm)
             }
         }

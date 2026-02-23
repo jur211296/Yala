@@ -324,7 +324,7 @@ struct CategoryDetailView: View {
                                                 .font(DS.Typography.title)
                                                 .foregroundStyle(.red)
                                         }
-                                        .accessibilityLabel("Eliminar subcategoría")
+                                        .accessibilityLabel(L10n.Accessibility.deleteSubcategory)
                                         .padding(.leading, DS.Spacing.lg)
                                         .padding(.trailing, DS.Spacing.sm)
                                     }
@@ -402,7 +402,7 @@ struct CategoryDetailView: View {
                                             .font(DS.Typography.title)
                                             .foregroundStyle(.red)
                                     }
-                                    .accessibilityLabel("Eliminar subcategoría")
+                                    .accessibilityLabel(L10n.Accessibility.deleteSubcategory)
                                     .padding(.leading, DS.Spacing.lg)
                                     .padding(.trailing, DS.Spacing.sm)
                                 }

@@ -1288,6 +1288,16 @@
 "balance.status.good" = "Good";
 "balance.status.critical" = "Critical";
 "balance.status.normal" = "Normal";
+"accessibility.viewDetails" = "View details";
+"accessibility.viewAllRecords" = "View all records";
+"accessibility.viewAllCategories" = "View all categories";
+"accessibility.deleteSubcategory" = "Delete subcategory";
+"accessibility.deleteCategory" = "Delete category";
+"accessibility.deleteTag" = "Delete tag";
+"accessibility.processAudio" = "Process audio";
+"accessibility.exchangeRateChart" = "Exchange rate chart";
+"accessibility.periodComparison" = "Period comparison chart";
+"accessibility.natureTrend" = "Spending by nature chart";
 
 // MARK: - Widget Hints
 
@@ -1470,6 +1480,7 @@
 "inbox.deleteTitle" = "Delete draft";
 "inbox.deleteMessage" = "This action cannot be undone.";
 "inbox.reject" = "Reject";
+"inbox.approveAll" = "Approve all";
 "inbox.returnToPending" = "Return to pending";
 "inbox.discardChangesTitle" = "Discard changes?";
 "inbox.discardChanges" = "Discard";

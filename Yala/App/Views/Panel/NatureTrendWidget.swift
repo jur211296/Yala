@@ -466,7 +466,7 @@ struct NatureTrendChartView: View {
             averageLineMarks
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Gráfica de gastos por naturaleza")
+        .accessibilityLabel(L10n.Accessibility.natureTrend)
         .accessibilityValue(points.isEmpty ? "Sin datos" :
             "\(points.count) periodos")
         .chartXScale(domain: dataXDomain)

@@ -1288,6 +1288,16 @@
 "balance.status.good" = "Bom";
 "balance.status.critical" = "Crítico";
 "balance.status.normal" = "Normal";
+"accessibility.viewDetails" = "Ver detalhes";
+"accessibility.viewAllRecords" = "Ver todos os registros";
+"accessibility.viewAllCategories" = "Ver todas as categorias";
+"accessibility.deleteSubcategory" = "Excluir subcategoria";
+"accessibility.deleteCategory" = "Excluir categoria";
+"accessibility.deleteTag" = "Excluir etiqueta";
+"accessibility.processAudio" = "Processar áudio";
+"accessibility.exchangeRateChart" = "Gráfico de taxa de câmbio";
+"accessibility.periodComparison" = "Gráfico de comparação entre períodos";
+"accessibility.natureTrend" = "Gráfico de gastos por natureza";
 
 // MARK: - Widget Hints
 
@@ -1468,6 +1478,7 @@
 "inbox.deleteTitle" = "Excluir rascunho";
 "inbox.deleteMessage" = "Esta ação não pode ser desfeita.";
 "inbox.reject" = "Rejeitar";
+"inbox.approveAll" = "Aprovar tudo";
 "inbox.returnToPending" = "Voltar para pendentes";
 "inbox.discardChangesTitle" = "Descartar alterações?";
 "inbox.discardChanges" = "Descartar";

@@ -332,7 +332,7 @@ struct InboxDraftEditSheet: View {
                     Image(systemName: "trash")
                         .foregroundStyle(DS.Semantic.errorForeground)
                 }
-                .accessibilityLabel("Eliminar")
+                .accessibilityLabel(L10n.Action.delete)
             } else {
                 // Pending drafts: reject button only
                 Button {
@@ -341,7 +341,7 @@ struct InboxDraftEditSheet: View {
                     Image(systemName: "xmark.circle")
                         .foregroundStyle(DS.Semantic.errorForeground)
                 }
-                .accessibilityLabel("Rechazar")
+                .accessibilityLabel(L10n.Inbox.reject)
             }
         }
     }

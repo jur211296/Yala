@@ -147,7 +147,7 @@ struct RecordsStandaloneView: View {
                         .font(DS.Typography.body.weight(.medium))
                         .foregroundStyle(.thToolbarIcon)
                 }
-                .accessibilityLabel("Seleccionar")
+                .accessibilityLabel(L10n.Action.select)
 
                 // Filters button
                 Button {
@@ -157,7 +157,7 @@ struct RecordsStandaloneView: View {
                         .font(DS.Typography.body.weight(.medium))
                         .foregroundStyle(.thToolbarIcon)
                 }
-                .accessibilityLabel("Filtros")
+                .accessibilityLabel(L10n.Filters.title)
                 .overlay(alignment: .topTrailing) {
                     if recordsViewModel.activeFilterCount > 0 {
                         Circle()
@@ -360,7 +360,7 @@ struct RecordsStandaloneView: View {
             .shadow(color: (isLocked ? Color.gray : color).opacity(0.3), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
-        .phaseAnimator([false, true]) { content, phase in
+        .phaseAnimator(reduceMotion ? [false] : [false, true]) { content, phase in
             content
                 .scaleEffect(phase ? 1.03 : 1.0)
         } animation: { _ in
@@ -385,7 +385,7 @@ struct RecordsStandaloneView: View {
                         .foregroundStyle(.red)
                         .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                 }
-                .accessibilityLabel("Eliminar")
+                .accessibilityLabel(L10n.Action.delete)
                 .buttonStyle(.plain)
 
                 Spacer()
@@ -407,7 +407,7 @@ struct RecordsStandaloneView: View {
                         .foregroundStyle(theme.accent)
                         .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                 }
-                .accessibilityLabel("Editar")
+                .accessibilityLabel(L10n.Action.edit)
                 .buttonStyle(.plain)
             }
             .padding(.vertical, DS.Spacing.sm)

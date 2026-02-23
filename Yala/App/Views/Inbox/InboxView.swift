@@ -120,7 +120,7 @@ struct InboxView: View {
                     }
                     if !filteredDrafts.isEmpty {
                         ToolbarItem(placement: .topBarTrailing) {
-                            YalaToolbarButton(systemName: "checkmark.circle", label: "Aprobar todo") {
+                            YalaToolbarButton(systemName: "checkmark.circle", label: L10n.Inbox.approveAll) {
                                 dsWithAnimation(reduceMotion) {
                                     isSelectionMode = true
                                 }
@@ -240,7 +240,7 @@ struct InboxView: View {
                     .foregroundStyle(theme.accent)
                     .frame(minWidth: 44, minHeight: 44)
             }
-            .accessibilityLabel(selectedDraftIDs.count == filteredDrafts.count ? "Deseleccionar todos" : "Seleccionar todos")
+            .accessibilityLabel(selectedDraftIDs.count == filteredDrafts.count ? L10n.Filters.deselectAll : L10n.Filters.selectAll)
 
             // Count
             Text(L10n.Inbox.selectedCount(selectedDraftIDs.count))

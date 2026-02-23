@@ -560,7 +560,7 @@ struct VoiceRecordingView: View {
                         .clipShape(Circle())
                         .shadow(color: Color.hotPink.opacity(0.4), radius: 12, x: 0, y: 6)
                 }
-                .accessibilityLabel("Procesar audio")
+                .accessibilityLabel(L10n.Accessibility.processAudio)
             } else if isProcessing {
                 // Cancel processing button
                 Button {
