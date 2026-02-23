@@ -106,7 +106,7 @@ struct ScheduledPaymentsView: View {
                     Image(systemName: "plus")
                         .font(DS.Typography.title)
                         .foregroundStyle(.white)
-                        .frame(width: 56, height: 56)
+                        .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                         .background(theme.accent)
                         .clipShape(Circle())
                 }

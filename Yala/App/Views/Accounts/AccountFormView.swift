@@ -376,7 +376,7 @@ struct AccountFormView: View {
                         Spacer()
                         Text(formatAdjustment(adjustment, currency: viewModel.selectedCurrency))
                             .font(DS.Typography.label)
-                            .foregroundStyle(adjustment >= 0 ? .green : .red)
+                            .foregroundStyle(adjustment >= 0 ? DS.Semantic.successForeground : DS.Semantic.errorForeground)
                     }
                     .padding()
                 }

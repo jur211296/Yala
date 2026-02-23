@@ -158,7 +158,7 @@ private struct WidgetRow: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .padding(.leading, 44)  // Indent to align with text
+                .padding(.leading, DS.Spacing.formIndent)  // Indent to align with text
             }
 
             // Size Controls (Only if visible, not locked, and has multiple sizes)
@@ -175,7 +175,7 @@ private struct WidgetRow: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .padding(.leading, 44)  // Indent to align with text
+                .padding(.leading, DS.Spacing.formIndent)  // Indent to align with text
             }
         }
         .padding(.vertical, DS.Spacing.xs)

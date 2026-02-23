@@ -47,9 +47,9 @@ enum InboxBulkOption: String, Identifiable {
         switch self {
         case .account: return .blue
         case .subcategory: return .purple
-        case .approve: return .green
-        case .reject: return .orange
-        case .delete: return .red
+        case .approve: return DS.Semantic.successForeground
+        case .reject: return DS.Semantic.warningForeground
+        case .delete: return DS.Semantic.errorForeground
         case .returnToPending: return .teal
         }
     }
@@ -238,7 +238,7 @@ struct InboxBulkActionsSheet: View {
                 if isApplied {
                     Image(systemName: "checkmark.circle.fill")
                         .font(DS.Typography.body)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(DS.Semantic.successForeground)
                 } else if !isDisabled {
                     Image(systemName: "chevron.right")
                         .font(DS.Typography.labelSmall.weight(.semibold))
@@ -258,7 +258,7 @@ struct InboxBulkActionsSheet: View {
     private var appliedChangesSummary: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(.green)
+                .foregroundStyle(DS.Semantic.successForeground)
 
             Text(L10n.BulkEdit.successMessage)
                 .font(DS.Typography.caption)

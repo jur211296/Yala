@@ -469,7 +469,7 @@ struct ImageSelectionView: View {
                 Image(systemName: "xmark")
                     .font(.title2.weight(.medium))
                     .foregroundStyle(.secondary)
-                    .frame(width: 56, height: 56)
+                    .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                     .background(.ultraThinMaterial)
                     .clipShape(Circle())
                     .overlay(

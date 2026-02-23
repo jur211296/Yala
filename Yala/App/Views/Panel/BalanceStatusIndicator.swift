@@ -49,19 +49,19 @@ struct BalanceStatusIndicator: View {
 
     private var foregroundColor: Color {
         switch status {
-        case .good: return .green
-        case .critical: return .red
-        case .normal: return .green  // Using green for normal as per reference image
-        case .unknown: return .secondary
+        case .good: return DS.Semantic.successForeground
+        case .critical: return DS.Semantic.errorForeground
+        case .normal: return DS.Semantic.successForeground
+        case .unknown: return DS.Semantic.disabledForeground
         }
     }
 
     private var backgroundColor: Color {
         switch status {
-        case .good: return .green
-        case .critical: return .red
-        case .normal: return .green
-        case .unknown: return .gray
+        case .good: return DS.Semantic.successForeground
+        case .critical: return DS.Semantic.errorForeground
+        case .normal: return DS.Semantic.successForeground
+        case .unknown: return DS.Semantic.disabledForeground
         }
     }
 }

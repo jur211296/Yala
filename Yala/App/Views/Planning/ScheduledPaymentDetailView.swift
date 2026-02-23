@@ -199,10 +199,10 @@ struct ScheduledPaymentDetailView: View {
             if !payment.isActive {
                 HStack {
                     Image(systemName: "pause.circle.fill")
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(DS.Semantic.warningForeground)
                     Text(NSLocalizedString("scheduled.status.inactive", comment: ""))
                         .font(DS.Typography.label)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(DS.Semantic.warningForeground)
                 }
                 .padding(.top, DS.Spacing.sm)
             }

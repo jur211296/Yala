@@ -72,23 +72,25 @@ struct AccountsCarouselView: View {
             let account = accounts[index]
             let isSelected = viewModel.selectedAccountID == account.persistentModelID
 
-            AccountCardView(
-                account: account,
-                currentBalance: isExpensesOnlyMode
-                    ? viewModel.expenseForPeriod(for: account, allTransactions: transactions)
-                    : currentBalance(for: account),
-                isSelected: isSelected,
-                onEditTapped: {
-                    onEditAccount(account)
-                }
-            )
-            .onTapGesture {
+            Button {
                 if viewModel.selectedAccountID == account.persistentModelID {
                     viewModel.selectedAccountID = nil
                 } else {
                     viewModel.selectedAccountID = account.persistentModelID
                 }
+            } label: {
+                AccountCardView(
+                    account: account,
+                    currentBalance: isExpensesOnlyMode
+                        ? viewModel.expenseForPeriod(for: account, allTransactions: transactions)
+                        : currentBalance(for: account),
+                    isSelected: isSelected,
+                    onEditTapped: {
+                        onEditAccount(account)
+                    }
+                )
             }
+            .buttonStyle(.plain)
         } else {
             AddAccountCardView {
                 onAddAccount()

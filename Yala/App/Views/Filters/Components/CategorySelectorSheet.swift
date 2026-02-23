@@ -118,57 +118,59 @@ struct CategorySelectorSheet: View {
     // MARK: - Category Row
 
     private func categoryRow(_ category: Category) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            Circle()
-                .fill(colorForHex(category.colorHex))
-                .frame(width: 36, height: 36)
-                .overlay(
-                    Image(systemName: category.iconName ?? "tag")
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.white)
-                )
-
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(category.name)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.primary)
-
-                Text(selectionSummary(for: category))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            // Toggle all subcategories
-            Button {
-                toggleCategory(category)
-            } label: {
-                Image(systemName: selectionIcon(for: category))
-                    .foregroundStyle(
-                        isNoneSelected(for: category)
-                            ? theme.secondaryText.opacity(0.4)
-                            : theme.accent
-                    )
-            }
-            .buttonStyle(.plain)
-
-            // Expand/collapse
-            Button {
-                toggleExpanded(category)
-            } label: {
-                Image(systemName: "chevron.down")
-                    .rotationEffect(.degrees(expandedCategories.contains(category) ? 0 : -90))
-                    .foregroundStyle(.tertiary)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.FormRow.paddingV)
-        .contentShape(Rectangle())
-        .onTapGesture {
+        Button {
             toggleExpanded(category)
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Circle()
+                    .fill(colorForHex(category.colorHex))
+                    .frame(width: 36, height: 36)
+                    .overlay(
+                        Image(systemName: category.iconName ?? "tag")
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.white)
+                    )
+
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(category.name)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.primary)
+
+                    Text(selectionSummary(for: category))
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                // Toggle all subcategories
+                Button {
+                    toggleCategory(category)
+                } label: {
+                    Image(systemName: selectionIcon(for: category))
+                        .foregroundStyle(
+                            isNoneSelected(for: category)
+                                ? theme.secondaryText.opacity(0.4)
+                                : theme.accent
+                        )
+                }
+                .buttonStyle(.plain)
+
+                // Expand/collapse
+                Button {
+                    toggleExpanded(category)
+                } label: {
+                    Image(systemName: "chevron.down")
+                        .rotationEffect(.degrees(expandedCategories.contains(category) ? 0 : -90))
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Subcategory Row

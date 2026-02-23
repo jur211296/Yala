@@ -132,7 +132,7 @@ struct KeypadButtonView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 56)
+            .frame(height: DS.Button.fabSize)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

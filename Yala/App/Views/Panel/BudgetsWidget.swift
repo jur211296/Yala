@@ -78,7 +78,7 @@ struct BudgetsWidget: View {
                 } label: {
                     Image(systemName: "chevron.right")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(Color.gray.opacity(0.7))
+                        .foregroundStyle(.secondary)
                         .padding(.leading, DS.Spacing.xs)
                 }
                 .buttonStyle(.plain)
@@ -97,17 +97,19 @@ struct BudgetsWidget: View {
                 let isAnySelected = selectedBudgetID != nil
                 let shouldDim = isAnySelected && !isSelected
 
-                BudgetWidgetRow(
-                    summary: summary,
-                    currencyCode: currencyCode
-                )
-                .contentShape(Rectangle())
-                .opacity(shouldDim ? 0.3 : 1.0)
-                .onTapGesture {
+                Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         onSelectBudget?(summary.budget)
                     }
+                } label: {
+                    BudgetWidgetRow(
+                        summary: summary,
+                        currencyCode: currencyCode
+                    )
+                    .contentShape(Rectangle())
+                    .opacity(shouldDim ? 0.3 : 1.0)
                 }
+                .buttonStyle(.plain)
             }
         }
     }

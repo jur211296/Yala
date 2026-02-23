@@ -199,7 +199,7 @@ struct BulkEditSheet: View {
     private var currencyWarning: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.orange)
+                .foregroundStyle(DS.Semantic.warningForeground)
 
             Text(L10n.BulkEdit.currencyWarning)
                 .font(DS.Typography.caption)
@@ -324,7 +324,7 @@ private struct BulkEditOptionRow: View {
                 if isApplied {
                     Image(systemName: "checkmark.circle.fill")
                         .font(DS.Typography.body)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(DS.Semantic.successForeground)
                 } else {
                     Image(systemName: "chevron.right")
                         .font(DS.Typography.labelSmall.weight(.semibold))
@@ -580,7 +580,7 @@ private struct BulkTagRow: View {
             // Mixed state - some have it, some don't
             Image(systemName: "minus.square.fill")
                 .font(DS.Typography.title)
-                .foregroundStyle(.orange)
+                .foregroundStyle(DS.Semantic.warningForeground)
         }
     }
 }

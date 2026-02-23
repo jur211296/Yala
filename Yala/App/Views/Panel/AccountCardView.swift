@@ -87,7 +87,7 @@ struct AccountCardView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.primary.opacity(0.06), lineWidth: 0.8)
+                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
             )
 
             if let onEditTapped {
@@ -157,7 +157,7 @@ struct AddAccountCardView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.primary.opacity(0.06), lineWidth: 0.8)
+                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
             )
         }
         .buttonStyle(.plain)

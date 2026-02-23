@@ -1506,17 +1506,19 @@ private struct AllCategoriesListContent: View {
                     let isAnySelected = !selectedCategoryIDs.isEmpty
                     let shouldDim = isAnySelected && !isSelected
 
-                    CategoryRowView(
-                        summary: summary,
-                        maxAmount: maxAmount,
-                        currencyCode: currencyCode,
-                        showVariation: showVariation
-                    )
-                    .opacity(shouldDim ? 0.3 : 1.0)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                    Button {
                         onSelectCategory?(summary.category.persistentModelID)
+                    } label: {
+                        CategoryRowView(
+                            summary: summary,
+                            maxAmount: maxAmount,
+                            currencyCode: currencyCode,
+                            showVariation: showVariation
+                        )
+                        .opacity(shouldDim ? 0.3 : 1.0)
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
 
                 if showExpandButton {
@@ -1585,19 +1587,21 @@ private struct AllSubcategoriesListContent: View {
                     // 2. There's a category selected and this subcategory doesn't belong to it
                     let shouldDim = (isAnySelected && !isSelected) || !belongsToSelectedCategory
 
-                    SubcategoryRowView(
-                        summary: summary,
-                        maxAmount: maxAmount,
-                        currencyCode: currencyCode,
-                        showVariation: showVariation
-                    )
-                    .opacity(shouldDim ? 0.3 : 1.0)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                    Button {
                         if let persistentID = summary.persistentID {
                             onSelectSubcategory?(persistentID)
                         }
+                    } label: {
+                        SubcategoryRowView(
+                            summary: summary,
+                            maxAmount: maxAmount,
+                            currencyCode: currencyCode,
+                            showVariation: showVariation
+                        )
+                        .opacity(shouldDim ? 0.3 : 1.0)
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
 
                 if showExpandButton {

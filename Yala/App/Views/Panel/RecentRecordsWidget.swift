@@ -79,7 +79,7 @@ struct RecentRecordsWidget: View {
                 } label: {
                     Image(systemName: "chevron.right")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(Color.gray.opacity(0.7))
+                        .foregroundStyle(.secondary)
                         .padding(.leading, DS.Spacing.xs)
                 }
                 .buttonStyle(.plain)

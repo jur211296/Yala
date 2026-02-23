@@ -392,14 +392,14 @@ struct InboxView: View {
                     } label: {
                         Label(L10n.Inbox.delete, systemImage: "trash")
                     }
-                    .tint(.red)
+                    .tint(DS.Semantic.errorForeground)
 
                     Button {
                         rejectDraft(draft)
                     } label: {
                         Label(L10n.Inbox.reject, systemImage: "xmark.circle")
                     }
-                    .tint(.orange)
+                    .tint(DS.Semantic.warningForeground)
                 } else if draft.status == .rejected {
                     // Archived (rejected only): Delete
                     Button {
@@ -407,7 +407,7 @@ struct InboxView: View {
                     } label: {
                         Label(L10n.Inbox.delete, systemImage: "trash")
                     }
-                    .tint(.red)
+                    .tint(DS.Semantic.errorForeground)
                 }
                 // Approved drafts in archived: no swipe actions
             }

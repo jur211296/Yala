@@ -368,7 +368,7 @@ struct ProfileView: View {
         SectionBox(title: L10n.Settings.organization) {
             VStack(spacing: DS.Spacing.none) {
                 profileRow(
-                    icon: "creditcard.fill", title: L10n.Settings.accounts, iconColor: .green,
+                    icon: "creditcard.fill", title: L10n.Settings.accounts, iconColor: DS.Semantic.successForeground,
                     destination: .accounts)
                 SubsectionDivider()
                 profileRow(
@@ -411,7 +411,7 @@ struct ProfileView: View {
                 SubsectionDivider()
                 profileRow(
                     icon: "dollarsign.circle.fill", title: L10n.Settings.currencyAndExchange,
-                    iconColor: .green, destination: .currency
+                    iconColor: DS.Semantic.successForeground, destination: .currency
                 )
                 SubsectionDivider()
                 profileRow(
@@ -662,7 +662,7 @@ struct ProfileView: View {
                 profileRow(
                     icon: BiometricAuthService.shared.biometricType.icon,
                     title: BiometricAuthService.shared.biometricType.displayName,
-                    iconColor: .green,
+                    iconColor: DS.Semantic.successForeground,
                     destination: .biometricSecurity)
                 SubsectionDivider()
                 profileRow(

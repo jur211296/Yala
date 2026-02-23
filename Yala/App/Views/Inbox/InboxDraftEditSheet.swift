@@ -330,7 +330,7 @@ struct InboxDraftEditSheet: View {
                     showDeleteConfirmation = true
                 } label: {
                     Image(systemName: "trash")
-                        .foregroundStyle(.red)
+                        .foregroundStyle(DS.Semantic.errorForeground)
                 }
                 .accessibilityLabel("Eliminar")
             } else {
@@ -339,7 +339,7 @@ struct InboxDraftEditSheet: View {
                     rejectDraft()
                 } label: {
                     Image(systemName: "xmark.circle")
-                        .foregroundStyle(.red)
+                        .foregroundStyle(DS.Semantic.errorForeground)
                 }
                 .accessibilityLabel("Rechazar")
             }
@@ -663,7 +663,7 @@ struct InboxDraftEditSheet: View {
             if let missingText = missingFieldsText {
                 Text(missingText)
                     .font(DS.Typography.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(DS.Semantic.errorForeground)
             }
 
             HStack(spacing: DS.Spacing.md) {

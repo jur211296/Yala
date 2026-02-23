@@ -382,7 +382,7 @@ struct PanelView: View {
                     Image(systemName: showFABMenu ? "xmark" : "plus")
                         .font(DS.Typography.title)
                         .foregroundStyle(.white)
-                        .frame(width: 56, height: 56)
+                        .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                         .background(showFABMenu ? DS.Semantic.disabledForeground : fabBackground)
                         .clipShape(Circle())
                         .rotationEffect(.degrees(showFABMenu ? 90 : 0))
@@ -404,7 +404,7 @@ struct PanelView: View {
                 Image(systemName: "plus")
                     .font(DS.Typography.title)
                     .foregroundStyle(.white)
-                    .frame(width: 56, height: 56)
+                    .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                     .background(fabBackground)
                     .clipShape(Circle())
             }
