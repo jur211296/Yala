@@ -499,9 +499,10 @@ struct NewTransactionView: View {
                     if !isFocused {
                         if viewModel.amountString.isEmpty {
                             viewModel.amountString = "0.00"
-                        } else if let amount = Double(viewModel.amountString) {
-                            // Helper to format consistent decimals
-                            viewModel.amountString = String(format: "%.2f", amount)
+                        } else {
+                            let sep = Locale.current.decimalSeparator ?? "."
+                            viewModel.amountString = String(format: "%.2f", viewModel.amount)
+                                .replacingOccurrences(of: ".", with: sep)
                         }
                     }
                 }
@@ -571,7 +572,7 @@ struct NewTransactionView: View {
     /// Format: "≈ S/ 38.99 (TC: 3.8900)" or "≈ PEN 38.99 (TC: 3.8900)" based on user preference
     private var exchangeRateChip: some View {
         let rate = viewModel.exchangeRate
-        let amount = Double(viewModel.amountString) ?? 0
+        let amount = viewModel.amount
         let convertedAmount = amount * rate
 
         // Get preferred currency display based on user setting

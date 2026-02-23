@@ -28,6 +28,8 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-23] fe3142c fix: extract ScheduledPaymentDateCalculator fixing 5 date generation bugs
+- [2026-02-23] ed52513 fix: tags KPI respects category/subcategory filters in Statistics
 - [2026-02-23] f66df45 fix: resolve 5 QA bugs before 1.0 release
 - [2026-02-20] 52b572e feat: add Siri & Shortcuts settings screen in Profile
 - [2026-02-20] 7700b2d feat: add Siri natural language intent, .siri source type and tip card
@@ -534,9 +536,10 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: 5 QA bugfixes pre-release V1.0 (f66df45)
-Next step: Pending BUG from BUGFIX-TAGS-KPI.md (tags KPI no respeta filtros), then continue Phase 12
+Stopped at: Scheduled payment date generation bugs fixed (fe3142c) — BUG-25 to BUG-29
+Next step: Continue with next batch of bugs or Phase 12 items
 Resume context:
-- 5 bugs fixed: trial banner removed, alias hidden, date comparison fixed, edit-from-success flag, paid payments filtered
-- BUGFIX-TAGS-KPI.md has detailed plan for tags KPI filter bug (CategoriesTabView)
+- ScheduledPaymentDateCalculator extracted as shared utility (BUG-25 endDate, BUG-26 weekly interval, BUG-27 monthly interval, BUG-28 daily safety, BUG-29 dedup)
+- 17 new tests in ScheduledPaymentDateCalculatorTests
+- Widget now includes createdAt filter (bonus fix)
 - Branch 1.0 — release branch

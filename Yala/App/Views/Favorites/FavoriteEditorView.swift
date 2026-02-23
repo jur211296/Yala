@@ -275,7 +275,7 @@ struct FavoriteEditorView: View {
                     if !isFocused {
                         if amountString.isEmpty {
                             amountString = ""
-                        } else if let amount = Double(amountString) {
+                        } else if let amount = Double(amountString.replacingOccurrences(of: ",", with: ".")) {
                             amountString = String(format: "%.2f", amount)
                         }
                     }

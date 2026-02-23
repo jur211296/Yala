@@ -111,7 +111,10 @@ final class NewTransactionViewModel {
 
     /// Monto como Double
     var amount: Double {
-        Double(amountString) ?? 0.0
+        let normalized = amountString.replacingOccurrences(
+            of: Locale.current.decimalSeparator ?? ".", with: "."
+        )
+        return Double(normalized) ?? 0.0
     }
 
     /// Monto formateado para display
@@ -482,6 +485,7 @@ final class NewTransactionViewModel {
             }
             try context.save()
             WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
             isSaving = false
             return result
         } catch {

@@ -394,14 +394,15 @@ final class RecordsViewModel: Filterable {
         let transactions = getSelectedTransactions(context: context)
         for transaction in transactions {
             transaction.account = account
-            // Update currency to match the new account
             transaction.currencyCode = account.currencyCode
+            transaction.recalculatePreferredCurrency(context: context)
         }
         do {
             try context.save()
+            SessionState.shared.incrementDataVersion()
         } catch {
             #if DEBUG
-            print("Error saving bulk account update: \(error)")
+            print("RecordsViewModel: Error saving bulk account update: \(error)")
             #endif
         }
     }
@@ -415,9 +416,10 @@ final class RecordsViewModel: Filterable {
         }
         do {
             try context.save()
+            SessionState.shared.incrementDataVersion()
         } catch {
             #if DEBUG
-            print("Error saving bulk subcategory update: \(error)")
+            print("RecordsViewModel: Error saving bulk subcategory update: \(error)")
             #endif
         }
     }
@@ -436,9 +438,10 @@ final class RecordsViewModel: Filterable {
         }
         do {
             try context.save()
+            SessionState.shared.incrementDataVersion()
         } catch {
             #if DEBUG
-            print("Error saving bulk tags update: \(error)")
+            print("RecordsViewModel: Error saving bulk tags update: \(error)")
             #endif
         }
     }
@@ -454,9 +457,10 @@ final class RecordsViewModel: Filterable {
         }
         do {
             try context.save()
+            SessionState.shared.incrementDataVersion()
         } catch {
             #if DEBUG
-            print("Error saving bulk tags removal: \(error)")
+            print("RecordsViewModel: Error saving bulk tags removal: \(error)")
             #endif
         }
     }
@@ -469,9 +473,10 @@ final class RecordsViewModel: Filterable {
         }
         do {
             try context.save()
+            SessionState.shared.incrementDataVersion()
         } catch {
             #if DEBUG
-            print("Error saving bulk note update: \(error)")
+            print("RecordsViewModel: Error saving bulk note update: \(error)")
             #endif
         }
     }
@@ -480,13 +485,16 @@ final class RecordsViewModel: Filterable {
     func bulkUpdateAmount(_ amount: Double, context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
         for transaction in transactions {
-            transaction.amount = amount
+            // Preserve sign: expenses are negative, income positive
+            transaction.amount = transaction.amount < 0 ? -abs(amount) : abs(amount)
+            transaction.recalculatePreferredCurrency(context: context)
         }
         do {
             try context.save()
+            SessionState.shared.incrementDataVersion()
         } catch {
             #if DEBUG
-            print("Error saving bulk amount update: \(error)")
+            print("RecordsViewModel: Error saving bulk amount update: \(error)")
             #endif
         }
     }

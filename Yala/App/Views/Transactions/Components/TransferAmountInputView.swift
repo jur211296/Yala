@@ -71,7 +71,7 @@ struct TransferAmountInputView: View {
                     if !isFocused {
                         if viewModel.amountString.isEmpty {
                             viewModel.amountString = "0.00"
-                        } else if let amount = Double(viewModel.amountString) {
+                        } else if let amount = Double(viewModel.amountString.replacingOccurrences(of: ",", with: ".")) {
                             viewModel.amountString = String(format: "%.2f", amount)
                         }
                     }

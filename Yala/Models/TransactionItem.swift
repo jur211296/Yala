@@ -69,6 +69,30 @@ final class TransactionItem {
         return subcategory?.nature ?? .unclassified
     }
 
+    // MARK: - Currency Recalculation
+
+    /// Recalculates exchangeRate, amountInPreferredCurrency, and preferredCurrencyCode
+    /// based on the transaction's current amount and currencyCode.
+    func recalculatePreferredCurrency(context: ModelContext) {
+        let preferredCode = CurrencyDefaults.currentPreferred
+        let amountInPreferred = CurrencyConverter.shared.convert(
+            Decimal(amount),
+            from: currencyCode,
+            to: preferredCode,
+            on: date,
+            context: context
+        )
+        let effectiveRate: Double
+        if abs(amount) > 0.0001 {
+            effectiveRate = (amountInPreferred as NSDecimalNumber).doubleValue / amount
+        } else {
+            effectiveRate = 1.0
+        }
+        exchangeRate = abs(effectiveRate)
+        amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
+        preferredCurrencyCode = preferredCode
+    }
+
     init(
         date: Date,
         amount: Double,
