@@ -203,6 +203,12 @@ struct ScheduledPaymentsWidget: View {
         return formatter
     }()
 
+    private static let shortDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d MMM"
+        return formatter
+    }()
+
     private var periodLabel: String {
         Self.monthYearFormatter.string(from: displayMonth).capitalized
     }
@@ -460,9 +466,7 @@ struct ScheduledPaymentsWidget: View {
         } else if days <= 7 {
             return String(format: L10n.Scheduled.Widget.inDays, days)
         } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "d MMM"
-            return formatter.string(from: date)
+            return Self.shortDateFormatter.string(from: date)
         }
     }
 

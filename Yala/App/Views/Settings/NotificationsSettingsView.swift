@@ -195,64 +195,6 @@ struct NotificationsSettingsView: View {
         )
     }
 
-    /// Legacy notifications list (kept for reference, not used)
-    private var notificationsList: some View {
-        VStack(spacing: DS.Spacing.md) {
-            ForEach(viewModel.notifications) { notification in
-                NotificationCard(
-                    notification: notification,
-                    onToggle: { isActive in
-                        notification.isActive = isActive
-                        viewModel.saveContext()
-                        Task {
-                            if isActive {
-                                // Check permission status
-                                let status = await NotificationService.shared.checkPermissionStatus()
-
-                                switch status {
-                                case .notDetermined:
-                                    // First time - request permission
-                                    let granted = await NotificationService.shared.requestPermission()
-                                    if granted {
-                                        await NotificationService.shared.scheduleNotification(for: notification)
-                                    } else {
-                                        await MainActor.run {
-                                            notification.isActive = false
-                                            viewModel.saveContext()
-                                        }
-                                    }
-
-                                case .denied:
-                                    // Previously denied - show settings alert
-                                    await MainActor.run {
-                                        notification.isActive = false
-                                        viewModel.saveContext()
-                                        viewModel.showPermissionAlert = true
-                                    }
-
-                                case .authorized, .provisional, .ephemeral:
-                                    // Already authorized - schedule
-                                    await NotificationService.shared.scheduleNotification(for: notification)
-
-                                @unknown default:
-                                    break
-                                }
-                            } else {
-                                await NotificationService.shared.cancelNotification(for: notification)
-                            }
-                        }
-                    },
-                    onTap: {
-                        viewModel.selectedNotification = notification
-                    },
-                    onDelete: notification.notificationType.isDeletable ? {
-                        deleteNotification(notification)
-                    } : nil
-                )
-            }
-        }
-    }
-
     // MARK: - Actions
 
     private func deleteNotification(_ notification: NotificationItem) {

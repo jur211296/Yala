@@ -235,10 +235,6 @@ struct ProfileView: View {
         }
     }
 
-    // Default Period Preference
-    @AppStorage("defaultPeriod") private var defaultPeriodRaw: String = DetailPeriod.allTime
-        .rawValue
-
     // MARK: - Header
 
     private var profileHeader: some View {

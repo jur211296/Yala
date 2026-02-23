@@ -8,6 +8,13 @@
 import SwiftData
 import SwiftUI
 
+private let sharedPercentFormatter: NumberFormatter = {
+    let formatter = NumberFormatter()
+    formatter.numberStyle = .percent
+    formatter.maximumFractionDigits = 1
+    return formatter
+}()
+
 struct TopSubcategoriesWidget: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
@@ -407,10 +414,7 @@ struct TopSubcategoriesWidget: View {
     }
 
     private func formattedPercentage(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        formatter.maximumFractionDigits = 1
-        return formatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
+        sharedPercentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
     }
 }
 
@@ -499,9 +503,6 @@ private struct SubcategoryRow: View {
     }
 
     private func formattedPercentage(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        formatter.maximumFractionDigits = 1
-        return formatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
+        sharedPercentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
     }
 }

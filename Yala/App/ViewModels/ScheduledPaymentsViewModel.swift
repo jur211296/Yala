@@ -13,6 +13,12 @@ import SwiftUI
 @Observable
 final class ScheduledPaymentsViewModel {
 
+    private static let monthYearFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMMM yyyy"
+        return f
+    }()
+
     // MARK: - Dependencies
 
     private var modelContext: ModelContext?
@@ -92,9 +98,7 @@ final class ScheduledPaymentsViewModel {
                   calendar.isDate(selectedMonth, equalTo: nextMonth, toGranularity: .month) {
             return L10n.Period.nextMonth
         } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MMMM yyyy"
-            return formatter.string(from: selectedMonth).capitalized
+            return Self.monthYearFormatter.string(from: selectedMonth).capitalized
         }
     }
 

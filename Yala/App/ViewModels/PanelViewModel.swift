@@ -439,7 +439,6 @@ final class PanelViewModel {
 
     /// Calculates the total balance in the default currency.
     /// Uses pre-calculated amountInPreferredCurrency for optimal performance.
-    /// Calculates the total balance in the default currency.
     func totalBalanceInDefaultCurrency(
         accounts: [Account],
         transactions: [TransactionItem],
@@ -456,7 +455,6 @@ final class PanelViewModel {
 
     /// Calculates the displayed balance (either total or selected account).
     /// Uses date-specific exchange rates for each transaction for accuracy.
-    /// Calculates the displayed balance (either total or selected account).
     func displayedBalanceInDefaultCurrency(
         accounts: [Account],
         transactions: [TransactionItem],

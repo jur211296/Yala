@@ -51,10 +51,7 @@ struct PanelView: View {
     /// Sheet presentation state for account form
     @State private var accountFormSheet: AccountFormSheet?
 
-    /// Trend Detail View State (To be removed/minimized as navigation is gone)
-    @State private var trendDetailType: TrendType = .balance
-
-    /// Widget Preferences Sheet
+/// Widget Preferences Sheet
     @State private var showWidgetPreferences = false
 
     /// New Transaction Sheet
@@ -66,10 +63,7 @@ struct PanelView: View {
     /// Inbox View Sheet
     @State private var showInbox = false
 
-    /// Task for debouncing data recalculations
-    @State private var calculationTask: Task<Void, Never>?
-
-    /// Custom period picker sheet
+/// Custom period picker sheet
     @State private var showCustomPeriodPicker = false
 
     @AppStorage("userName") private var userName: String = "Usuario"
@@ -306,11 +300,9 @@ struct PanelView: View {
     @ViewBuilder
     private var newRecordFAB: some View {
         let fabBackground = canUseVoiceInput ? theme.accent : Color.gray.opacity(0.5)
-        let hasMultipleInputs = (voiceInputEnabled && imageInputEnabled) ||
-                                (voiceInputEnabled && !imageInputEnabled) ||
-                                (!voiceInputEnabled && imageInputEnabled)
+        let hasAlternativeInputs = voiceInputEnabled || imageInputEnabled
 
-        if hasMultipleInputs && canUseVoiceInput {
+        if hasAlternativeInputs && canUseVoiceInput {
             // Custom FAB with popup menu above
             VStack(alignment: .trailing, spacing: DS.Spacing.md) {
                 // Menu options (shown when expanded)
@@ -773,15 +765,7 @@ struct PanelView: View {
 
     }
 
-    private func formattedAmount(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: value)) ?? "0.00"
-    }
-
-    private func formattedDate(_ date: Date) -> String {
+private func formattedDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = AppLocale.current
         formatter.dateFormat = "d MMM"

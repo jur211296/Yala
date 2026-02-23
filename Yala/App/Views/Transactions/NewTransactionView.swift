@@ -803,16 +803,20 @@ struct NewTransactionView: View {
         }
     }
 
+    private static let shortDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "d MMM"
+        f.locale = Locale.current
+        return f
+    }()
+
     private var dateChipText: String {
         if Calendar.current.isDateInToday(viewModel.transactionDate) {
             return L10n.Date.today
         } else if Calendar.current.isDateInYesterday(viewModel.transactionDate) {
             return L10n.Date.yesterday
         } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "d MMM"
-            formatter.locale = Locale.current
-            return formatter.string(from: viewModel.transactionDate)
+            return Self.shortDateFormatter.string(from: viewModel.transactionDate)
         }
     }
 
