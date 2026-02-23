@@ -959,7 +959,12 @@ struct PanelView: View {
                     isExpensesOnlyMode: sessionState.isExpensesOnlyMode
                 )
             } else {
-                EmptyView()
+                YalaEmptyState(
+                    icon: "chart.bar.fill",
+                    title: L10n.Empty.noData,
+                    message: L10n.Statistics.noRecordsDescription
+                )
+                .frame(height: 200)
             }
         } else if config.type == .latestRecords {
             RecentRecordsWidget(

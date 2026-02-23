@@ -20,7 +20,7 @@ struct CategoriesTabView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 48
+
 
     // MARK: - Settings
 
@@ -962,21 +962,11 @@ struct CategoriesTabView: View {
     // MARK: - Empty State
 
     private func emptyState(icon: String, title: String, subtitle: String) -> some View {
-        VStack(spacing: DS.Spacing.md) {
-            Image(systemName: icon)
-                .font(.system(size: scaledEmptyIconSize))
-                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                .foregroundStyle(.secondary)
-            Text(title)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.secondary)
-            Text(subtitle)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(DS.Card.padding)
+        YalaEmptyState(
+            icon: icon,
+            title: title,
+            message: subtitle
+        )
     }
 
     // MARK: - Data Calculation

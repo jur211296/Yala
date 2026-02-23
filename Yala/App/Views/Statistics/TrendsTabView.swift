@@ -21,7 +21,7 @@ struct TrendsTabView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
+
 
     // MARK: - Data (passed from parent)
 
@@ -582,34 +582,18 @@ struct TrendsTabView: View {
     }
 
     private var trendEmptyState: some View {
-        VStack(spacing: DS.Spacing.md) {
-            Spacer()
-            Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.system(size: scaledEmptyIconSize))
-                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                .foregroundStyle(.secondary)
-            Text(L10n.Empty.noData)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity)
+        YalaEmptyState(
+            icon: "chart.line.uptrend.xyaxis",
+            title: L10n.Empty.noData
+        )
         .frame(height: 220)
     }
 
     private var comparisonEmptyState: some View {
-        VStack(spacing: DS.Spacing.md) {
-            Spacer()
-            Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.system(size: scaledEmptyIconSize))
-                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                .foregroundStyle(.secondary)
-            Text(L10n.Empty.noData)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity)
+        YalaEmptyState(
+            icon: "chart.line.uptrend.xyaxis",
+            title: L10n.Empty.noData
+        )
         .frame(height: 220)
     }
 
@@ -872,20 +856,11 @@ struct TrendsTabView: View {
     }
 
     private var cashFlowEmptyState: some View {
-        VStack(spacing: DS.Spacing.md) {
-            Spacer()
-            Image(systemName: "chart.bar.fill")
-                .font(.system(size: scaledEmptyIconSize))
-                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                .foregroundStyle(.secondary)
-            Text(L10n.Empty.noData)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity)
+        YalaEmptyState(
+            icon: "chart.bar.fill",
+            title: L10n.Empty.noData
+        )
         .frame(height: 200)
-        .padding(DS.Card.padding)
         .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(

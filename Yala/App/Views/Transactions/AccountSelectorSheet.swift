@@ -32,22 +32,26 @@ struct AccountSelectorSheet: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
-                        SectionBox(title: "") {
-                            VStack(spacing: DS.Spacing.none) {
-                                ForEach(
-                                    Array(viewModel.activeAccounts.enumerated()),
-                                    id: \.element.persistentModelID
-                                ) { index, account in
-                                    if index > 0 {
-                                        SubsectionDivider()
-                                    }
+                        if viewModel.activeAccounts.isEmpty {
+                            YalaEmptyState.noAccounts()
+                        } else {
+                            SectionBox(title: "") {
+                                VStack(spacing: DS.Spacing.none) {
+                                    ForEach(
+                                        Array(viewModel.activeAccounts.enumerated()),
+                                        id: \.element.persistentModelID
+                                    ) { index, account in
+                                        if index > 0 {
+                                            SubsectionDivider()
+                                        }
 
-                                    AccountSelectorRow(
-                                        account: account,
-                                        isSelected: isSelected(account)
-                                    ) {
-                                        selectedAccount = account
-                                        dismiss()
+                                        AccountSelectorRow(
+                                            account: account,
+                                            isSelected: isSelected(account)
+                                        ) {
+                                            selectedAccount = account
+                                            dismiss()
+                                        }
                                     }
                                 }
                             }

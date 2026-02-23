@@ -979,21 +979,8 @@ struct SearchContentView: View {
 
                 // No results message
                 if filteredResults.isEmpty && !searchText.isEmpty {
-                    VStack(spacing: DS.Spacing.md) {
-                        Image(systemName: "magnifyingglass")
-                            .font(DS.Typography.amountLarge)
-                            .foregroundStyle(.tertiary)
-
-                        Text(L10n.Search.noResults)
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.primary)
-
-                        Text(L10n.Search.tryAnotherTerm)
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 60)
+                    YalaEmptyState.noResults()
+                        .padding(.top, DS.Spacing.xxxl)
                 }
             }
             .padding(.bottom, DS.Spacing.xl)
