@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-22] 7ce5dd6 feat: add exclude mode for filters
 - [2026-02-20] cf3418d fix: add a11y labels to Panel buttons and localize Tips strings
 - [2026-02-20] 52b572e feat: add Siri & Shortcuts settings screen in Profile
 - [2026-02-20] 7700b2d feat: add Siri natural language intent, .siri source type and tip card
@@ -37,7 +38,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-02-20] 4add74e feat: dev-only subscription reset on data wipe for testing
 - [2026-02-20] 4a57873 fix: improve ProTrialOfferSheet layout and show success view after purchase
 - [2026-02-20] 9860a60 feat: add free trial UI — paywall trial info, post-onboarding offer sheet, StoreKit config
-- [2026-02-20] 5c8eb76 fix: dark mode system theme, circular selectors, budget pie filter, support email context
 - [2026-02-19] 5cf0528 fix: localize notification names and texts dynamically
 - [2026-02-19] 44d3b89 feat: add average line to bar and trend charts with personalization picker
 - [2026-02-19] 71d6e92 fix: budget period chevron navigation + duplicate report notification guard
@@ -165,6 +165,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - **Fix Sincronización de Datos (10.5.N)** - Lista de registros ahora actualiza inmediatamente al eliminar transacción (refreshRecordsData llama loadData primero); Cash Flow ya no muestra empty state falso (onChange de allTransactions.count en TrendsTabView)
 - **Auditoría Pre-Launch (10.5.O)** - Auditoría completa de 10 categorías: PrivacyInfo.xcprivacy para App Store compliance; 143+ prints envueltos en #if DEBUG; 26 try? convertidos a do/catch con diagnóstico en 14 archivos; force unwraps protegidos con guard; 40 traducciones faltantes añadidas a de/fr/it/pt; 16 claves L10n para columnas de exportación; foregroundColor→foregroundStyle (3 archivos); cornerRadius→clipShape (6 archivos); 19 @available innecesarios eliminados (target iOS 26+); deinit en iCloudSyncService; 4 commits (dc12ae6, 9bc7bff, aba270f, bc5916f)
 - **Mejoras Onboarding (10.5.P)** - Botón "Activar todo" en notificaciones; LanguageManager + ls() helper para override de idioma in-app; selección de idioma como pantalla pre-onboarding (no dentro del flujo); eliminada vista "Sincronizando datos" de iCloud; MainTabView no se renderiza hasta completar onboarding; alert si datos iCloud llegan durante onboarding; welcome copy actualizado al brand voice en 6 idiomas; DE/FR corregido de formal a informal
+- **Exclude Mode para Filtros (Fase 12)** - Toggle include↔exclude en FilterControlBar; en exclude mode: transacciones de categorías/subcategorías/tags seleccionadas se eliminan de datos y charts (no solo dimming visual); PanelVM pieContextTransactions excluye cat/subcat; CategoriesTabView pieChartCriteria/criteria incluyen filtros en exclude, subcategoryTransactions sin filtrar por padre, shouldLockToSubcategories=false; TrendsTabView permite cambio de métrica; FilterService con isExcludeMode; FilterChipView con estilo exclude (rojo); exportación respeta exclude; 37 archivos, 6 idiomas, QA-SCENARIOS actualizados; commit 7ce5dd6
 - **Auditoría Documental y Web (10.5.R)** - Auditoría completa de toda la documentación del proyecto; 19 archivos obsoletos eliminados; rename Neto→Yala propagado a todos los docs activos (UI-PATTERNS, APPSTORE-CHECKLIST, QA-SCENARIOS, PROJECT, ROADMAP, AUDIT-REPORT); ROADMAP sincronizado con progreso real de fase 10.5; CLAUDE.md corregido (12 entidades SwiftData, tests actualizados, ref EXECUTION-RULES eliminada); PRIVACY-POLICY.md reescrita con datos reales (iCloud sync, OpenAI API, exchangerate.host, permisos); TERMS-CONDITIONS.md creado (suscripciones Free/Pro, servicios terceros, ley peruana); web actualizada: PrivacyPage y TermsPage reescritas en 6 idiomas (ES/EN/DE/FR/IT/PT), trust badges corregidos ("100% Local"→"Privacidad primero", "Sin servidores"→"Sin rastreo"); 3 commits (fc7a6ac, 1dc78a4, eb8f3f3)
 - **Fix Dark Mode Cards (10.5.Q)** - Migración de List→ScrollView+SectionBox en 4 vistas (AdjustmentModeSelectorView, AccountTypeSelectorView, RecordsFiltersView accounts/tags sheets, MultiSelectionList); DatePickers mantienen List con `.listRowBackground(Color.yalaCard)`; fix crash PeriodSelector (safe DatePicker ranges con min/max); 5 keys L10n nuevas (filters.categories/type/nature/currency, action.apply); magic numbers→DS tokens; 6 idiomas
 - **Bugs finales fase 10.5 (BUG-5/6/7)** - BUG-7: nextDueDate default mañana en SaveAsRecurringSheet y ScheduledPaymentEditorView, DatePickers restringidos a futuro; BUG-6: subcategorías filtradas por tipo en edición masiva, opción deshabilitada si selección mixta; BUG-5: conversión de divisas en resumen de pagos planificados (ViewModel y Widget) con CurrencyConverter; fixes de review: force unwrap eliminado en Widget calendar, @MainActor en RecordsViewModel, guard nil subcategory
@@ -529,12 +530,13 @@ Ver ROADMAP.md para detalles.
 
 ## Session Continuity
 
-Last session: 2026-02-20
-Stopped at: Pre-launch fixes — a11y labels + Tips localization completed
-Next step: Continue Phase 12 items or next pre-launch fix
+Last session: 2026-02-22
+Stopped at: Exclude mode feature complete — data corrections for pie charts, categories, trends
+Next step: QA manual testing of exclude mode scenarios (verification checklist in plan)
 Resume context:
-- 6 Panel chevron buttons now have accessibilityLabel (cf3418d)
-- Dead code headerSection removed from SubcategoriesPieWidget + CategoriesPieWidget
-- L10n.Tips enum added (23 accessors) — all tips keys connected to code
-- 20 tips keys added to es.lproj, 3 Siri keys added to all 6 languages
-- PanelView Siri tip card now uses L10n.Tips.Siri.* instead of hardcoded strings
+- Exclude mode: toggle in FilterControlBar switches include↔exclude across entire app (7ce5dd6)
+- PanelViewModel pieContextTransactions now excludes cat/subcat in exclude mode
+- CategoriesTabView: pieChartCriteria/criteria include cat/subcat in exclude; subcategoryTransactions uses pieFiltered directly; shouldLockToSubcategories=false in exclude
+- TrendsTabView: hasExpenseOnlyFilters returns false in exclude mode (allows metric switching)
+- Tags KPI fix reverted (will be done in 1.0 branch separately)
+- 37 files changed, build succeeded
