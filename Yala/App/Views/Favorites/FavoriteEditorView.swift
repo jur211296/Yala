@@ -214,7 +214,7 @@ struct FavoriteEditorView: View {
         .padding(DS.Spacing.xs)
         .background(
             Capsule()
-                .fill(Color(UIColor.label).opacity(0.08))
+                .fill(Color.primary.opacity(0.08))
         )
         .padding(.horizontal, DS.Spacing.xxxxl + DS.Spacing.md)
     }
@@ -230,7 +230,7 @@ struct FavoriteEditorView: View {
                 .multilineTextAlignment(.center)
                 .focused($isNameFieldFocused)
                 .padding(.horizontal, DS.Spacing.xxxxl)
-                .tint(Color(UIColor.label))
+                .tint(Color.primary)
 
             // Description field
             TextField(L10n.Favorites.descriptionPlaceholder, text: $note)
@@ -238,7 +238,7 @@ struct FavoriteEditorView: View {
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 280)
-                .tint(Color(UIColor.label))
+                .tint(Color.primary)
 
             // Amount display
             amountDisplay

@@ -400,7 +400,7 @@ struct InboxDraftEditSheet: View {
                 .padding(.vertical, DS.Spacing.md)
                 .background(
                     Capsule()
-                        .fill(Color(UIColor.label).opacity(0.08))
+                        .fill(Color.primary.opacity(0.08))
                 )
             }
             .buttonStyle(.plain)
@@ -414,7 +414,7 @@ struct InboxDraftEditSheet: View {
                 .autocorrectionDisabled(false)
                 .focused($isNoteFieldFocused)
                 .frame(maxWidth: 280)
-                .tint(Color(UIColor.label))
+                .tint(Color.primary)
 
             // Amount display
             amountDisplay
@@ -514,7 +514,7 @@ struct InboxDraftEditSheet: View {
                 .padding(.vertical, DS.Spacing.xs)
                 .background(
                     Capsule()
-                        .fill(Color(UIColor.label).opacity(0.05))
+                        .fill(Color.primary.opacity(0.05))
                 )
             }
             .buttonStyle(.plain)
@@ -530,7 +530,7 @@ struct InboxDraftEditSheet: View {
                     .frame(maxWidth: 280)
                     .background(
                         RoundedRectangle(cornerRadius: DS.Radius.sm)
-                            .fill(Color(UIColor.label).opacity(0.03))
+                            .fill(Color.primary.opacity(0.03))
                     )
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }

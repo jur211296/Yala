@@ -54,7 +54,7 @@ struct BudgetsFavoritesSettingsView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 if viewModel.hasFavorites {
-                    YalaToolbarButton(systemName: viewModel.isEditMode ? "checkmark" : "arrow.up.arrow.down", label: viewModel.isEditMode ? "Listo" : "Reordenar") {
+                    YalaToolbarButton(systemName: viewModel.isEditMode ? "checkmark" : "arrow.up.arrow.down", label: viewModel.isEditMode ? L10n.Action.done : L10n.Action.reorder) {
                         dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.8)) {
                             viewModel.isEditMode.toggle()
                         }

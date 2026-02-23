@@ -141,6 +141,7 @@
 "action.select" = "Selecionar";
 "action.retry" = "Tentar novamente";
 "action.later" = "Mais tarde";
+"action.reorder" = "Reordenar";
 
 // MARK: - Search
 
@@ -441,6 +442,7 @@
 "budgets.status.exceeded" = "Excedidos";
 "budgets.status.active" = "Ativos";
 "budgets.status.inactive" = "Inativos";
+"budget.noInactive" = "Nenhum orçamento inativo";
 
 // Budget Details
 "budgets.spent.percent" = "%@ gasto";
@@ -1279,6 +1281,13 @@
 "accessibility.widgetFixed" = "Widget fixo, sempre visível";
 "accessibility.favoriteTemplates" = "Modelos favoritos";
 "accessibility.exceeded" = "Excedido";
+"accessibility.inbox" = "Caixa de entrada";
+"accessibility.widgetPreferences" = "Preferências de widgets";
+"accessibility.createAccountFirst" = "Crie pelo menos uma conta e uma categoria";
+"accessibility.removeFilter" = "Remover filtro";
+"balance.status.good" = "Bom";
+"balance.status.critical" = "Crítico";
+"balance.status.normal" = "Normal";
 
 // MARK: - Widget Hints
 

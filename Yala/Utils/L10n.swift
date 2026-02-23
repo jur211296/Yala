@@ -89,6 +89,20 @@ enum L10n {
         }
     }
 
+    // MARK: - Balance Status
+
+    enum BalanceStatus {
+        static var good: String { ls("balance.status.good", comment: "") }
+        static var critical: String { ls("balance.status.critical", comment: "") }
+        static var normal: String { ls("balance.status.normal", comment: "") }
+    }
+
+    // MARK: - Budget
+
+    enum Budget {
+        static var noInactive: String { ls("budget.noInactive", comment: "") }
+    }
+
     // MARK: - Trend
 
     enum Trend {
@@ -395,6 +409,7 @@ enum L10n {
         static var retry: String { ls("action.retry", comment: "") }
         static var later: String { ls("action.later", comment: "") }
         static var close: String { ls("action.close", comment: "") }
+        static var reorder: String { ls("action.reorder", comment: "") }
     }
 
     // MARK: - Accessibility
@@ -415,6 +430,10 @@ enum L10n {
         static var widgetFixed: String { ls("accessibility.widgetFixed", comment: "") }
         static var favoriteTemplates: String { ls("accessibility.favoriteTemplates", comment: "") }
         static var exceeded: String { ls("accessibility.exceeded", comment: "") }
+        static var inbox: String { ls("accessibility.inbox", comment: "") }
+        static var widgetPreferences: String { ls("accessibility.widgetPreferences", comment: "") }
+        static var createAccountFirst: String { ls("accessibility.createAccountFirst", comment: "") }
+        static var removeFilter: String { ls("accessibility.removeFilter", comment: "") }
     }
 
     // MARK: - Search

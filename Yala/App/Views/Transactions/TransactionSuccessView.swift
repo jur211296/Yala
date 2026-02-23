@@ -527,7 +527,7 @@ struct TransactionSuccessView: View {
                     .padding(.vertical, DS.Spacing.xs)
                     .background(
                         Capsule()
-                            .fill(Color(UIColor.label).opacity(0.08))
+                            .fill(Color.primary.opacity(0.08))
                     )
                 }
             }

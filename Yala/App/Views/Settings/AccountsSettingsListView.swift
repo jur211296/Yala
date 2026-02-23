@@ -73,7 +73,7 @@ struct AccountsSettingsListView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: DS.Spacing.md) {
-                    YalaToolbarButton(systemName: viewModel.isEditMode ? "checkmark" : "arrow.up.arrow.down", label: viewModel.isEditMode ? "Listo" : "Reordenar")
+                    YalaToolbarButton(systemName: viewModel.isEditMode ? "checkmark" : "arrow.up.arrow.down", label: viewModel.isEditMode ? L10n.Action.done : L10n.Action.reorder)
                     {
                         dsWithAnimation(reduceMotion) {
                             viewModel.isEditMode.toggle()

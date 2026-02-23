@@ -42,7 +42,7 @@ struct FilterChipView: View {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Quitar filtro")
+            .accessibilityLabel(L10n.Accessibility.removeFilter)
         }
         .padding(.horizontal, DS.Chip.paddingH)
         .padding(.vertical, DS.Chip.paddingV)

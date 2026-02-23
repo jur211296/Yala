@@ -158,10 +158,10 @@ struct NewTransactionView: View {
                     } label: {
                         Image(systemName: "star.fill")
                             .font(DS.Typography.body)
-                            .foregroundStyle(Color(UIColor.label))
+                            .foregroundStyle(Color.primary)
                     }
                     .accessibilityLabel(L10n.Accessibility.favoriteTemplates)
-                    .tint(Color(UIColor.label))
+                    .tint(Color.primary)
                 }
             }
             .sheet(isPresented: $viewModel.showAccountSelector) {
@@ -313,7 +313,7 @@ struct NewTransactionView: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.vertical, DS.Spacing.sm)
-                        .background(Capsule().fill(Color(UIColor.darkGray)))
+                        .background(Capsule().fill(Color.secondary))
                         .padding(.bottom, DS.Spacing.xxxl)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
@@ -383,7 +383,7 @@ struct NewTransactionView: View {
                 .padding(.vertical, DS.Spacing.md)
                 .background(
                     Capsule()
-                        .fill(Color(UIColor.label).opacity(0.08))
+                        .fill(Color.primary.opacity(0.08))
                 )
             }
             .buttonStyle(.plain)
@@ -398,7 +398,7 @@ struct NewTransactionView: View {
                     .autocorrectionDisabled(false)
                     .focused($isNoteFieldFocused)
                     .frame(maxWidth: 280)
-                    .tint(Color(UIColor.label))
+                    .tint(Color.primary)
                     .onChange(of: viewModel.note) { _, newValue in
                         dsWithAnimation(reduceMotion) {
                             // Disable #!@ shortcuts for transfers

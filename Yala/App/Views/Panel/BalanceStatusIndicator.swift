@@ -40,9 +40,9 @@ struct BalanceStatusIndicator: View {
 
     private var statusText: String {
         switch status {
-        case .good: return "Bueno"
-        case .critical: return "Crítico"
-        case .normal: return "Normal"
+        case .good: return L10n.BalanceStatus.good
+        case .critical: return L10n.BalanceStatus.critical
+        case .normal: return L10n.BalanceStatus.normal
         case .unknown: return "--"
         }
     }

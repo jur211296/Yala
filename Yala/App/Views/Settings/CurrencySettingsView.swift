@@ -340,7 +340,8 @@ struct CurrencySettingsView: View {
     private func formatLastUpdated(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale.current
-        formatter.dateFormat = "d 'de' MMMM yyyy, HH:mm"
+        formatter.dateStyle = .long
+        formatter.timeStyle = .short
         return formatter.string(from: date)
     }
 

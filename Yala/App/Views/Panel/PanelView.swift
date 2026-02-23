@@ -142,7 +142,7 @@ struct PanelView: View {
                 }
             }
         }
-        .accessibilityLabel("Bandeja de entrada")
+        .accessibilityLabel(L10n.Accessibility.inbox)
     }
 
 
@@ -394,7 +394,7 @@ struct PanelView: View {
             .padding(.bottom, DS.Spacing.xxl)
             .disabled(!canUseVoiceInput)
             .accessibilityLabel(L10n.Accessibility.newRecord)
-            .accessibilityHint(!canUseVoiceInput ? "Crea al menos una cuenta y una categoría" : "")
+            .accessibilityHint(!canUseVoiceInput ? L10n.Accessibility.createAccountFirst : "")
         }
     }
 
@@ -708,7 +708,7 @@ struct PanelView: View {
                         .font(DS.Typography.body).fontWeight(.medium)
                         .foregroundStyle(Color.primary)
                 }
-                .accessibilityLabel("Preferencias de widgets")
+                .accessibilityLabel(L10n.Accessibility.widgetPreferences)
             }
             .padding(.trailing, DS.Spacing.xxs)
 
