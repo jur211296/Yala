@@ -59,7 +59,7 @@ final class BudgetAlertService {
         let earliestDate = budgets.compactMap { budget -> Date? in
             if let start = budget.startDate { return start }
             return Calendar.current.date(byAdding: .year, value: -1, to: Date())
-        }.min() ?? Calendar.current.date(byAdding: .year, value: -1, to: Date())!
+        }.min() ?? Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
         let capturedDate = earliestDate
         let txDescriptor = FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.date >= capturedDate }

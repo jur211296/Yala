@@ -1198,7 +1198,15 @@ struct OnboardingView: View {
     private func createDefaultAccount() {
         // Check if any accounts already exist (e.g. from iCloud sync)
         let descriptor = FetchDescriptor<Account>()
-        let existingCount = (try? modelContext.fetchCount(descriptor)) ?? 0
+        let existingCount: Int
+        do {
+            existingCount = try modelContext.fetchCount(descriptor)
+        } catch {
+            #if DEBUG
+            print("OnboardingView: Error fetching account count: \(error)")
+            #endif
+            existingCount = 0
+        }
         guard existingCount == 0 else { return }
 
         let account = Account(

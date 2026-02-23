@@ -375,7 +375,15 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     @MainActor
     func deduplicateNotifications(context: ModelContext) {
         let descriptor = FetchDescriptor<NotificationItem>()
-        guard let all = try? context.fetch(descriptor) else { return }
+        let all: [NotificationItem]
+        do {
+            all = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("NotificationService: Error fetching notifications: \(error)")
+            #endif
+            return
+        }
 
         let grouped = Dictionary(grouping: all) { $0.typeRaw }
         var removed = 0

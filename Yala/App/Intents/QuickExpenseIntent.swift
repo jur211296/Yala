@@ -726,7 +726,15 @@ struct ApplePayTransactionIntent: AppIntent {
         let context = container.mainContext
 
         // Guard: no accounts configured yet
-        let accountCount = (try? context.fetchCount(FetchDescriptor<Account>())) ?? 0
+        let accountCount: Int
+        do {
+            accountCount = try context.fetchCount(FetchDescriptor<Account>())
+        } catch {
+            #if DEBUG
+            print("QuickExpenseIntent: Error fetching account count: \(error)")
+            #endif
+            accountCount = 0
+        }
         guard accountCount > 0 else {
             return .result(dialog: "shortcut.error.noAccount")
         }
@@ -985,7 +993,15 @@ struct AutomationEntryIntent: AppIntent {
         let context = container.mainContext
 
         // Guard: no accounts configured yet
-        let accountCount = (try? context.fetchCount(FetchDescriptor<Account>())) ?? 0
+        let accountCount: Int
+        do {
+            accountCount = try context.fetchCount(FetchDescriptor<Account>())
+        } catch {
+            #if DEBUG
+            print("QuickExpenseIntent: Error fetching account count: \(error)")
+            #endif
+            accountCount = 0
+        }
         guard accountCount > 0 else {
             return .result(dialog: "shortcut.error.noAccount")
         }
@@ -1116,7 +1132,15 @@ struct SiriNaturalEntryIntent: AppIntent {
         let context = container.mainContext
 
         // Step 4: Guard — at least 1 account configured
-        let accountCount = (try? context.fetchCount(FetchDescriptor<Account>())) ?? 0
+        let accountCount: Int
+        do {
+            accountCount = try context.fetchCount(FetchDescriptor<Account>())
+        } catch {
+            #if DEBUG
+            print("SiriNaturalEntryIntent: Error fetching account count: \(error)")
+            #endif
+            accountCount = 0
+        }
         guard accountCount > 0 else {
             return .result(dialog: "shortcut.error.noAccount")
         }
@@ -1126,7 +1150,15 @@ struct SiriNaturalEntryIntent: AppIntent {
             predicate: #Predicate { $0.isVisible },
             sortBy: [SortDescriptor(\Subcategory.name)]
         )
-        let allSubcategories = (try? context.fetch(subcategoryDescriptor)) ?? []
+        let allSubcategories: [Subcategory]
+        do {
+            allSubcategories = try context.fetch(subcategoryDescriptor)
+        } catch {
+            #if DEBUG
+            print("SiriNaturalEntryIntent: Error fetching subcategories: \(error)")
+            #endif
+            allSubcategories = []
+        }
 
         let expenseSubcategories = allSubcategories
             .filter { !$0.safeCategory.isIncome }
@@ -1182,7 +1214,15 @@ struct SiriNaturalEntryIntent: AppIntent {
         let pendingDescriptor = FetchDescriptor<InboxDraft>(
             predicate: #Predicate { $0.statusRaw == "pending" }
         )
-        let existingDrafts = (try? context.fetch(pendingDescriptor)) ?? []
+        let existingDrafts: [InboxDraft]
+        do {
+            existingDrafts = try context.fetch(pendingDescriptor)
+        } catch {
+            #if DEBUG
+            print("SiriNaturalEntryIntent: Error fetching pending drafts: \(error)")
+            #endif
+            existingDrafts = []
+        }
 
         // Step 8: Create InboxDrafts from parsed transactions
         let merchantService = MerchantMemoryService(modelContext: context)

@@ -304,7 +304,15 @@ struct ContentView: View {
                 } catch {
                     break // Task cancelled
                 }
-                let txCount = (try? modelContext.fetchCount(FetchDescriptor<TransactionItem>())) ?? 0
+                let txCount: Int
+                do {
+                    txCount = try modelContext.fetchCount(FetchDescriptor<TransactionItem>())
+                } catch {
+                    #if DEBUG
+                    print("ContentView: Error fetching transaction count: \(error)")
+                    #endif
+                    txCount = 0
+                }
                 if hasExistingData || txCount > 0 {
                     hasCompletedOnboarding = true
                     isWaitingForSync = false

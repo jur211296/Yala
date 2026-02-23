@@ -28,16 +28,16 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-23] ec03800 a11y: batch 10B — localize accessibility labels, reduceMotion support, and selection traits
+- [2026-02-23] 4430d00 l10n+ds: batch 10A — localize remaining hardcoded strings and DS color cleanup
+- [2026-02-23] 61e0945 fix: batch 9B — service routing and behavior fixes
+- [2026-02-23] a1ccb18 refactor: batch 9A — dead code removal and static formatter extraction
+- [2026-02-23] 071bc4c refactor: batch 8 — migrate empty states to YalaEmptyState component
+- [2026-02-23] 4222f80 docs: update STATE.md with batch 7 progress
 - [2026-02-23] e106dbe refactor: batch 7 — DS semantic tokens, FAB size token, and onTapGesture→Button migration
 - [2026-02-23] c6dca6f l10n: batch 6B — a11y labels, SaveAsRecurring migration, and remaining L10N fixes
 - [2026-02-23] 48baa83 l10n: batch 6A — migrate hardcoded toolbar labels and model strings to L10n
 - [2026-02-23] 320f5dd fix: batch 5B — 7 medium fixes for N+1 queries, a11y, notifications, and profile storage
-- [2026-02-23] f9755d5 fix: batch 5A — 12 HIGH fixes for validation, performance, data integrity, and UX
-- [2026-02-23] 7d5f379 fix: period comparison chart respects currency, amount, and search filters
-- [2026-02-23] 872390a fix: batch 3 — 15 quick fixes for panel, validation, data integrity, and filters
-- [2026-02-23] 2eb7acc fix: transaction save reactivity, locale decimal parsing, and bulk edit data integrity
-- [2026-02-23] fe3142c fix: extract ScheduledPaymentDateCalculator fixing 5 date generation bugs
-- [2026-02-20] 50bef88 feat: add Lock Screen widgets (4 accessory widgets)
 - [2026-02-20] d534a4f feat: add VoiceOver accessibility labels to all charts
 - [2026-02-20] 54185b5 fix: resolve pre-launch warnings — legal link and force unwraps
 - [2026-02-20] 4add74e feat: dev-only subscription reset on data wipe for testing
@@ -540,10 +540,9 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Batch 7 complete — DS semantic tokens, FAB size, onTapGesture→Button (e106dbe)
-Next step: Batch 8 — Empty states
+Stopped at: RELEASE-REVIEW complete — all 10 batches done (ec03800)
+Next step: Final manual QA on simulator, then App Store submission
 Resume context:
-- Batch 7: 28 files — DS.Semantic colors, DS.Button.fabSize, chevron→.secondary, onTapGesture→Button
-- Deferred: #8E8E93 hex in pie chart data models (needs deeper refactor), Color(.tertiarySystemFill) (valid UIKit semantic)
-- Plan covers batches 6A→6B→7→8→9A→9B (polish items before V1.0)
+- Release Review: 10 batches (1→10B) across 2 sessions, ~67 items resolved
+- Remaining deferred: pie widget onTapGesture→Button (complex), dynamic a11y labels (needs format), some Spanish accessibilityValues in chart widgets
 - Branch 1.0 — release branch

@@ -141,10 +141,15 @@ final class EntityDeletionService {
         let draftDescriptor = FetchDescriptor<InboxDraft>(
             predicate: #Predicate<InboxDraft> { $0.sourceScheduledPaymentID == paymentID }
         )
-        if let orphanDrafts = try? context.fetch(draftDescriptor) {
+        do {
+            let orphanDrafts = try context.fetch(draftDescriptor)
             for draft in orphanDrafts where draft.statusRaw == "pending" {
                 context.delete(draft)
             }
+        } catch {
+            #if DEBUG
+            print("EntityDeletionService: Error fetching orphan drafts: \(error)")
+            #endif
         }
 
         // 3. Delete payment

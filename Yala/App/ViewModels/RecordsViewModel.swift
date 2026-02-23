@@ -326,10 +326,15 @@ final class RecordsViewModel: Filterable {
                 let descriptor = FetchDescriptor<TransactionItem>(
                     predicate: #Predicate { $0.transferPairID == fetchPairID }
                 )
-                if let pairs = try? context.fetch(descriptor) {
+                do {
+                    let pairs = try context.fetch(descriptor)
                     for pair in pairs where !selectedRecordIDs.contains(pair.persistentModelID) {
                         context.delete(pair)
                     }
+                } catch {
+                    #if DEBUG
+                    print("RecordsViewModel: Error fetching transfer pairs: \(error)")
+                    #endif
                 }
             }
         }

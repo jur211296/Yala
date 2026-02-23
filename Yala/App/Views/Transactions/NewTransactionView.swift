@@ -1123,7 +1123,8 @@ struct NewTransactionView: View {
                 let descriptor = FetchDescriptor<TransactionItem>(
                     predicate: #Predicate { $0.transferPairID == fetchPairID }
                 )
-                if let pairs = try? modelContext.fetch(descriptor) {
+                do {
+                    let pairs = try modelContext.fetch(descriptor)
                     let pair = pairs.first { $0.persistentModelID != tx.persistentModelID }
                     if let pair {
                         viewModel.transactionType = .transfer
@@ -1136,6 +1137,10 @@ struct NewTransactionView: View {
                         // Use absolute amount from the outflow side
                         viewModel.amountString = String(format: "%.2f", abs(outTx.amount))
                     }
+                } catch {
+                    #if DEBUG
+                    print("NewTransactionView: Error fetching transfer pairs: \(error)")
+                    #endif
                 }
             }
 
@@ -1222,10 +1227,15 @@ struct NewTransactionView: View {
                 let descriptor = FetchDescriptor<TransactionItem>(
                     predicate: #Predicate { $0.transferPairID == fetchPairID }
                 )
-                if let pairs = try? modelContext.fetch(descriptor) {
+                do {
+                    let pairs = try modelContext.fetch(descriptor)
                     for pair in pairs where pair.persistentModelID != transaction.persistentModelID {
                         modelContext.delete(pair)
                     }
+                } catch {
+                    #if DEBUG
+                    print("NewTransactionView: Error fetching transfer pairs for deletion: \(error)")
+                    #endif
                 }
             }
 
