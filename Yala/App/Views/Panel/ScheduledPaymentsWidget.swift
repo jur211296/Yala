@@ -438,15 +438,13 @@ struct ScheduledPaymentsWidget: View {
             }
         }
 
-        // Sort: unpaid first, then paid, then skipped; within each group by date
-        items.sort { a, b in
-            let orderA = a.isSkipped ? 2 : (a.isPaid ? 1 : 0)
-            let orderB = b.isSkipped ? 2 : (b.isPaid ? 1 : 0)
-            if orderA != orderB { return orderA < orderB }
-            return a.dueDate < b.dueDate
-        }
+        // Filter out paid and skipped items — widget only shows pending payments
+        let pending = items.filter { !$0.isPaid && !$0.isSkipped }
 
-        return Array(items.prefix(limit))
+        // Sort by date
+        let sorted = pending.sorted { $0.dueDate < $1.dueDate }
+
+        return Array(sorted.prefix(limit))
     }
 
     private func formatDueDate(days: Int, date: Date) -> String {

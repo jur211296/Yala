@@ -228,47 +228,6 @@ struct PersonalDetailsView: View {
                     }
                 }
 
-                SubsectionDivider()
-
-                // Alias row
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    HStack {
-                        Text(L10n.Common.alias)
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        TextField(L10n.Profile.aliasPlaceholder, text: $editedAlias)
-                            .multilineTextAlignment(.trailing)
-                            .foregroundStyle(.primary)
-                            .autocapitalization(.none)
-                            .autocorrectionDisabled()
-                    }
-                    .padding(DS.Spacing.lg)
-
-                    // Validation message
-                    if !editedAlias.isEmpty {
-                        HStack(spacing: DS.Spacing.xs) {
-                            Image(
-                                systemName: isAliasValid
-                                    ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
-                            )
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(isAliasValid ? .green : .orange)
-
-                            Text(aliasValidationMessage)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(isAliasValid ? .green : .orange)
-                        }
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.bottom, DS.Spacing.md)
-                    }
-
-                    // Alias info
-                    Text(L10n.Profile.aliasHelper)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.bottom, DS.Spacing.md)
-                }
             }
         }
     }

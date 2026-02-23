@@ -32,6 +32,7 @@ struct NewTransactionView: View {
     @State private var showSuccessScreen = false
     @State private var successData: TransactionSuccessData?
     @State private var isCreatingAnother = false
+    @State private var isEditingFromSuccess = false
     @State private var isDuplicating = false
 
     @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64
@@ -80,7 +81,8 @@ struct NewTransactionView: View {
                     }
                 },
                 onEdit: {
-                    // Go back to form with current data
+                    // Go back to form with current data (flag prevents prefillFromContext from resetting)
+                    isEditingFromSuccess = true
                     dsWithAnimation(reduceMotion) {
                         showSuccessScreen = false
                         successData = nil
@@ -1068,6 +1070,12 @@ struct NewTransactionView: View {
         // Skip prefill if user chose "Create another" - viewModel already reset
         if isCreatingAnother {
             isCreatingAnother = false
+            return
+        }
+
+        // Skip prefill if returning from success screen via "Edit" - viewModel already has saved data
+        if isEditingFromSuccess {
+            isEditingFromSuccess = false
             return
         }
 

@@ -48,7 +48,6 @@ struct ProfileView: View {
     @State private var permissionDeniedType: String = ""
 
     // Subscription state
-    @State private var showSubscriptionSheet = false
     @State private var showUpgradeForVoice = false
     @State private var showUpgradeForImage = false
 
@@ -62,14 +61,6 @@ struct ProfileView: View {
 
     private var isImageLocked: Bool {
         !FeatureGateService.shared.canAccess(.imageInput)
-    }
-
-    private var isInTrial: Bool {
-        StoreKitManager.shared.isInTrial
-    }
-
-    private var trialDaysRemaining: Int {
-        StoreKitManager.shared.trialDaysRemaining
     }
 
     enum ProfileSheet: Identifiable {
@@ -321,14 +312,6 @@ struct ProfileView: View {
             .font(DS.Typography.label)
             .foregroundStyle(.primary)
 
-            // Trial banner
-            if isInTrial {
-                TrialBanner(daysRemaining: trialDaysRemaining) {
-                    showSubscriptionSheet = true
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.top, DS.Spacing.sm)
-            }
         }
         .padding(.top, DS.Spacing.sm)
         .padding(.bottom, isProUser ? DS.Spacing.lg : 0)
@@ -343,11 +326,6 @@ struct ProfileView: View {
                 }
             }
         )
-        .sheet(isPresented: $showSubscriptionSheet) {
-            NavigationStack {
-                SubscriptionView()
-            }
-        }
         .sheet(isPresented: $showUpgradeForVoice) {
             UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
         }

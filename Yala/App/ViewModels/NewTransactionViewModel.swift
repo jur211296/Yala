@@ -457,8 +457,8 @@ final class NewTransactionViewModel {
     func save(context: ModelContext) -> [TransactionItem]? {
         showValidationErrors = true
 
-        // Validate: block future dates
-        if transactionDate > Date() {
+        // Validate: block future dates (compare at day granularity to avoid false positives from time-of-day)
+        if Calendar.current.compare(transactionDate, to: Date(), toGranularity: .day) == .orderedDescending {
             showFutureDateAlert = true
             return nil
         }
