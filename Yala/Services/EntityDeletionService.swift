@@ -124,9 +124,30 @@ final class EntityDeletionService {
 
     // MARK: - ScheduledPayment Deletion
 
-    /// Deletes a scheduled payment
+    /// Deletes a scheduled payment, cleaning up tracker entries and orphan drafts
     /// - Parameter payment: The scheduled payment to delete
     func deleteScheduledPayment(_ payment: ScheduledPayment) throws {
+        let context = try requireContext()
+        let paymentID = payment.id.uuidString
+
+        // 1. Clean tracker entries (UserDefaults keys: scheduledPaymentNotif_UUID_*)
+        let allKeys = UserDefaults.standard.dictionaryRepresentation().keys
+        let trackerKeys = allKeys.filter { $0.hasPrefix("scheduledPaymentNotif_\(paymentID)") }
+        for key in trackerKeys {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+
+        // 2. Clean orphan pending drafts linked to this payment
+        let draftDescriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate<InboxDraft> { $0.sourceScheduledPaymentID == paymentID }
+        )
+        if let orphanDrafts = try? context.fetch(draftDescriptor) {
+            for draft in orphanDrafts where draft.statusRaw == "pending" {
+                context.delete(draft)
+            }
+        }
+
+        // 3. Delete payment
         try delete(payment)
     }
 

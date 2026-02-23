@@ -29,7 +29,7 @@ final class ScheduledPaymentNotificationService {
 
     // MARK: - Public Methods
 
-    /// Check and notify payments that are due TODAY
+    /// Check and notify payments that are due TODAY (using DateCalculator for all occurrences)
     func checkAndNotifyDuePayments() async {
         guard let context = modelContext else { return }
         guard await NotificationService.shared.isAuthorized() else { return }
@@ -40,22 +40,26 @@ final class ScheduledPaymentNotificationService {
         for payment in payments {
             guard payment.notifyOnDueDate else { continue }
 
-            // Use Calendar to compare only day (not hour/minute/second)
-            guard Calendar.current.isDateInToday(payment.nextDueDate) else { continue }
+            // Use DateCalculator to get all occurrences this month (not just nextDueDate)
+            let dates = ScheduledPaymentDateCalculator.paymentDatesInMonth(
+                params: payment.dateCalculatorParams, month: today
+            )
 
-            // Skip if this date has been skipped by user
-            guard !payment.isDateSkipped(payment.nextDueDate) else { continue }
+            for date in dates {
+                guard Calendar.current.isDateInToday(date) else { continue }
+                guard !payment.isDateSkipped(date) else { continue }
 
-            // Avoid duplicate notification
-            guard !tracker.hasNotifiedForDate(
-                paymentID: payment.id,
-                date: today,
-                type: .dueDate
-            ) else { continue }
+                // Avoid duplicate notification
+                guard !tracker.hasNotifiedForDate(
+                    paymentID: payment.id,
+                    date: today,
+                    type: .dueDate
+                ) else { continue }
 
-            await sendPaymentNotification(payment: payment, type: .dueToday)
-            tracker.markNotified(paymentID: payment.id, date: today, type: .dueDate)
-            payment.lastNotifiedDate = today
+                await sendPaymentNotification(payment: payment, type: .dueToday)
+                tracker.markNotified(paymentID: payment.id, date: today, type: .dueDate)
+                payment.lastNotifiedDate = today
+            }
         }
 
         do {
@@ -68,6 +72,7 @@ final class ScheduledPaymentNotificationService {
     }
 
     /// Check and notify payments that are due in X days (based on notifyDaysBefore)
+    /// Uses DateCalculator for all occurrences within a 7-day window
     func checkAndNotifyUpcomingPayments() async {
         guard let context = modelContext else { return }
         guard await NotificationService.shared.isAuthorized() else { return }
@@ -79,22 +84,28 @@ final class ScheduledPaymentNotificationService {
         for payment in payments {
             guard payment.notifyDaysBefore > 0 else { continue }
 
-            let daysUntilDue = calendar.dateComponents([.day], from: today, to: payment.nextDueDate).day ?? 0
+            // Use DateCalculator for all occurrences this month
+            let dates = ScheduledPaymentDateCalculator.paymentDatesInMonth(
+                params: payment.dateCalculatorParams, month: today
+            )
 
-            guard daysUntilDue == payment.notifyDaysBefore else { continue }
+            // Only consider dates within 7-day window to avoid spam
+            let sevenDaysFromNow = calendar.date(byAdding: .day, value: 7, to: today) ?? today
+            for date in dates where date <= sevenDaysFromNow {
+                let daysUntilDue = calendar.dateComponents([.day], from: today, to: date).day ?? 0
+                guard daysUntilDue == payment.notifyDaysBefore else { continue }
+                guard !payment.isDateSkipped(date) else { continue }
 
-            // Skip if this date has been skipped by user
-            guard !payment.isDateSkipped(payment.nextDueDate) else { continue }
+                // Avoid duplicate notification
+                guard !tracker.hasNotifiedForDate(
+                    paymentID: payment.id,
+                    date: today,
+                    type: .daysBefore
+                ) else { continue }
 
-            // Avoid duplicate notification
-            guard !tracker.hasNotifiedForDate(
-                paymentID: payment.id,
-                date: today,
-                type: .daysBefore
-            ) else { continue }
-
-            await sendPaymentNotification(payment: payment, type: .dueSoon(days: daysUntilDue))
-            tracker.markNotified(paymentID: payment.id, date: today, type: .daysBefore)
+                await sendPaymentNotification(payment: payment, type: .dueSoon(days: daysUntilDue))
+                tracker.markNotified(paymentID: payment.id, date: today, type: .daysBefore)
+            }
         }
     }
 

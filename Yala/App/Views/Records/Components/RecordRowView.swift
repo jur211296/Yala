@@ -107,6 +107,18 @@ struct RecordRowView: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityDescription)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    // MARK: - Accessibility
+
+    private var accessibilityDescription: String {
+        let note = record.note ?? ""
+        let amount = YalaFormatter.currency(value: abs(record.amount), currencyCode: currencyCode)
+        let category = record.subcategory?.name ?? record.category?.name ?? ""
+        let account = record.account?.name ?? ""
+        return "\(note), \(amount), \(category), \(account)"
     }
 
     // MARK: - Card Background

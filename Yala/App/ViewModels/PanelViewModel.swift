@@ -1451,10 +1451,9 @@ final class PanelViewModel {
     ) {
         let preferredCurrency = CurrencyCode(rawValue: preferredCurrencyCode) ?? .pen
 
-        // Calculate rates for ALL possible comparison currencies (so selection changes are instant)
-        // Use all supported currencies so COP, BRL, MXN, GBP work correctly
-        let allCurrencies = CurrencyCode.allCases
-        let allComparisonCurrencies = allCurrencies.filter { $0 != preferredCurrency }
+        // Only calculate rates for user-selected secondary currencies (2-3 max)
+        // instead of all 47 currencies — huge performance win
+        let targetCurrencies = selectedComparisonCurrencies.filter { $0 != preferredCurrency }
 
         // Determine grouping based on period
         switch selectedPeriod {
@@ -1491,10 +1490,10 @@ final class PanelViewModel {
             return
         }
 
-        // Calculate current rates for ALL comparison currencies
+        // Calculate current rates for selected comparison currencies only
         let currentRates = ExchangeRateWidgetHelper.calculateRatesFromPreferred(
             preferredCurrency: preferredCurrencyCode,
-            targetCurrencies: allComparisonCurrencies.map { $0.rawValue },
+            targetCurrencies: targetCurrencies.map { $0.rawValue },
             exchangeRate: latestRate
         )
 
@@ -1508,12 +1507,12 @@ final class PanelViewModel {
                 return dateFormatter.date(from: latestRate.dateKey) ?? Date()
             }()
 
-        // Build chart points for ALL comparison currencies
+        // Build chart points for selected comparison currencies only
         let chartPoints = ExchangeRateWidgetHelper.buildChartPoints(
             interval: interval,
             grouping: exchangeRateGrouping,
             preferredCurrency: preferredCurrencyCode,
-            targetCurrencies: allComparisonCurrencies.map { $0.rawValue },
+            targetCurrencies: targetCurrencies.map { $0.rawValue },
             context: context
         )
 

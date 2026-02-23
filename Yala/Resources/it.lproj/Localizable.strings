@@ -823,6 +823,7 @@
 "settings.deleteAllData" = "Elimina tutti i tuoi dati";
 "settings.deleteDataConfirmation" = "Eliminare tutti i tuoi dati?";
 "settings.deleteDataWarning" = "Questa azione e irreversibile. Tutti i tuoi conti, transazioni, budget, tassi di cambio e categorie verranno eliminati. Dopo cio, Yala verra ripristinato a uno stato simile a quello iniziale e non potrai recuperare i tuoi dati.";
+"settings.wipeICloudWarning" = "Questo eliminerà anche i tuoi dati iCloud. Gli altri dispositivi sincronizzati perderanno questi dati.";
 "settings.delete" = "Elimina";
 "settings.cancel" = "Annulla";
 "settings.iconOriginal" = "Originale";

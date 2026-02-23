@@ -13,7 +13,7 @@ import UIKit
 struct ProfileToolbarButton: View {
     // MARK: - Data Access
 
-    @AppStorage("userProfileImageData") private var userProfileImageData: Data?
+    @State private var userProfileImageData: Data?
     @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
     @Environment(\.yalaTheme) private var theme
 
@@ -44,6 +44,10 @@ struct ProfileToolbarButton: View {
         }
         .buttonStyle(.plain)
         .glassEffect(.regular.interactive())
+        .onAppear {
+            ProfileImageStorage.migrateFromUserDefaultsIfNeeded()
+            userProfileImageData = ProfileImageStorage.load()
+        }
         .overlay(alignment: .bottomTrailing) {
             if isProUser {
                 sparkBadge

@@ -1530,6 +1530,9 @@ enum L10n {
         static var deleteDataWarning: String {
             ls("settings.deleteDataWarning", comment: "")
         }
+        static var wipeICloudWarning: String {
+            ls("settings.wipeICloudWarning", comment: "")
+        }
         static var delete: String { ls("settings.delete", comment: "") }
         static var cancel: String { ls("settings.cancel", comment: "") }
         static var iconOriginal: String { ls("settings.iconOriginal", comment: "") }

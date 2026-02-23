@@ -17,7 +17,7 @@ struct PersonalDetailsView: View {
 
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("userAlias") private var userAlias: String = ""
-    @AppStorage("userProfileImageData") private var userProfileImageData: Data?
+    @State private var userProfileImageData: Data?
     @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
 
     @State private var editedName: String = ""
@@ -255,10 +255,12 @@ struct PersonalDetailsView: View {
         editedAlias = userAlias
         selectedIcon = userProfileIcon
 
-        // Load profile image if exists
-        if let imageData = userProfileImageData,
+        // Migrate from UserDefaults if needed, then load from file
+        ProfileImageStorage.migrateFromUserDefaultsIfNeeded()
+        if let imageData = ProfileImageStorage.load(),
             let uiImage = UIImage(data: imageData)
         {
+            userProfileImageData = imageData
             profileUIImage = uiImage
             profileImage = Image(uiImage: uiImage)
         }
@@ -308,19 +310,19 @@ struct PersonalDetailsView: View {
             userAlias = editedAlias.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         }
 
-        // Save profile image or clear it if icon is selected
+        // Save profile image to file or clear it if icon is selected
         if let uiImage = profileUIImage {
             if let imageData = uiImage.jpegData(compressionQuality: 0.7) {
-                userProfileImageData = imageData
+                ProfileImageStorage.save(imageData)
                 userProfileIcon = "" // Clear icon when photo is set
             }
         } else if !selectedIcon.isEmpty {
-            // Icon selected, clear image data
-            userProfileImageData = nil
+            // Icon selected, clear image file
+            ProfileImageStorage.delete()
             userProfileIcon = selectedIcon
         } else if !hasCustomAvatar {
             // User removed avatar, clear both
-            userProfileImageData = nil
+            ProfileImageStorage.delete()
             userProfileIcon = ""
         }
 

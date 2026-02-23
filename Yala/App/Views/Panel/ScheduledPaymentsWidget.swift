@@ -26,6 +26,9 @@ struct ScheduledPaymentsWidget: View {
 
     @Namespace private var filterNamespace
 
+    /// Cached paid status to avoid N+1 SwiftData queries per render
+    @State private var paidStatus: [String: Int] = [:]
+
     /// Computed month based on period selection (intelligent mapping)
     private var displayMonth: Date {
         let calendar = Calendar.current
@@ -77,6 +80,9 @@ struct ScheduledPaymentsWidget: View {
                 .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+        .onAppear { paidStatus = loadPaidStatus(for: filteredPayments, month: displayMonth) }
+        .onChange(of: displayMonth) { paidStatus = loadPaidStatus(for: filteredPayments, month: displayMonth) }
+        .onChange(of: filter) { paidStatus = loadPaidStatus(for: filteredPayments, month: displayMonth) }
     }
 
     // MARK: - Filtered Payments
@@ -89,12 +95,6 @@ struct ScheduledPaymentsWidget: View {
     }
 
     // MARK: - Paid Status
-
-    /// Batch load paid count for filtered payments in the display month.
-    /// Checks InboxDraft (approved) and TransactionItem (linked).
-    private var paidStatus: [String: Int] {
-        loadPaidStatus(for: filteredPayments, month: displayMonth)
-    }
 
     private func loadPaidStatus(for payments: [ScheduledPayment], month: Date) -> [String: Int] {
         let calendar = Calendar.current
@@ -197,10 +197,14 @@ struct ScheduledPaymentsWidget: View {
     }
 
     /// Formatted period label for display
-    private var periodLabel: String {
+    private static let monthYearFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM yyyy"
-        return formatter.string(from: displayMonth).capitalized
+        return formatter
+    }()
+
+    private var periodLabel: String {
+        Self.monthYearFormatter.string(from: displayMonth).capitalized
     }
 
     private var filterSelector: some View {

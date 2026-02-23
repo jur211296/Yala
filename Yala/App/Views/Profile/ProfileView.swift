@@ -29,7 +29,7 @@ struct ProfileView: View {
 
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
-    @AppStorage("userProfileImageData") private var userProfileImageData: Data?
+    @State private var userProfileImageData: Data?
     @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
     @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
@@ -229,6 +229,8 @@ struct ProfileView: View {
             }
             .onAppear {
                 viewModel.setContext(modelContext)
+                ProfileImageStorage.migrateFromUserDefaultsIfNeeded()
+                userProfileImageData = ProfileImageStorage.load()
             }
         }
     }
