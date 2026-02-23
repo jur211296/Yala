@@ -28,6 +28,8 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-23] 872390a fix: batch 3 — 15 quick fixes for panel, validation, data integrity, and filters
+- [2026-02-23] 2eb7acc fix: transaction save reactivity, locale decimal parsing, and bulk edit data integrity
 - [2026-02-23] fe3142c fix: extract ScheduledPaymentDateCalculator fixing 5 date generation bugs
 - [2026-02-23] ed52513 fix: tags KPI respects category/subcategory filters in Statistics
 - [2026-02-23] f66df45 fix: resolve 5 QA bugs before 1.0 release
@@ -536,10 +538,13 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Scheduled payment date generation bugs fixed (fe3142c) — BUG-25 to BUG-29
-Next step: Continue with next batch of bugs or Phase 12 items
+Stopped at: Batch 3 — 15 quick fixes committed (872390a)
+Next step: Continue with batch 4+ bugs from RELEASE-REVIEW.md (BUG-5, BUG-35, BUG-40, BUG-7/8/13 transfers)
 Resume context:
-- ScheduledPaymentDateCalculator extracted as shared utility (BUG-25 endDate, BUG-26 weekly interval, BUG-27 monthly interval, BUG-28 daily safety, BUG-29 dedup)
-- 17 new tests in ScheduledPaymentDateCalculatorTests
-- Widget now includes createdAt filter (bonus fix)
+- Batch 3 fixed: BUG-1/2/3/4/10/12/16/19/20/21/24/30/33/37 + HIGH-10
+- Panel: normalizeCurrencyCode, TagsPie title, transfer colors, locale formatter
+- Validation: DatePicker max date, budget/scheduled payment amount > 0
+- Data integrity: Decimal precision, CurrencyDefaults in transfers, budget alert currency
+- Filters: activeFilterCount delegation, trends chart filters, widget refresh on save
+- Toggles: voice/image reset on permission denied
 - Branch 1.0 — release branch
