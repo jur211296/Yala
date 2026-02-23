@@ -239,6 +239,7 @@ final class DraftService: DraftServiceProtocol {
             guard draft.effectiveDate <= Date() else { continue }
 
             guard let account = draft.account,
+                  !account.isArchived,
                   let amount = draft.amount,
                   let subcategory = draft.subcategory else { continue }
 

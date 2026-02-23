@@ -311,14 +311,11 @@ final class RecordsViewModel: Filterable {
         var transferPairIDs: Set<String> = []
         var recordsToDelete: [TransactionItem] = []
 
-        for group in groupedRecords {
-            for record in group.records {
-                if selectedRecordIDs.contains(record.persistentModelID) {
-                    recordsToDelete.append(record)
-                    if record.balanceAdjustmentType == "transfer", let pairID = record.transferPairID {
-                        transferPairIDs.insert(pairID)
-                    }
-                }
+        for id in selectedRecordIDs {
+            guard let record = context.model(for: id) as? TransactionItem else { continue }
+            recordsToDelete.append(record)
+            if record.balanceAdjustmentType == "transfer", let pairID = record.transferPairID {
+                transferPairIDs.insert(pairID)
             }
         }
 

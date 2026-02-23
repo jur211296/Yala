@@ -55,8 +55,15 @@ final class BudgetAlertService {
 
         guard !budgets.isEmpty else { return }
 
-        // 2. Fetch all transactions
-        let txDescriptor = FetchDescriptor<TransactionItem>()
+        // 2. Fetch transactions within budget periods (not all history)
+        let earliestDate = budgets.compactMap { budget -> Date? in
+            if let start = budget.startDate { return start }
+            return Calendar.current.date(byAdding: .year, value: -1, to: Date())
+        }.min() ?? Calendar.current.date(byAdding: .year, value: -1, to: Date())!
+        let capturedDate = earliestDate
+        let txDescriptor = FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.date >= capturedDate }
+        )
         let transactions: [TransactionItem]
         do {
             transactions = try context.fetch(txDescriptor)

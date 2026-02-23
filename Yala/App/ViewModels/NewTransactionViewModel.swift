@@ -106,6 +106,7 @@ final class NewTransactionViewModel {
     var showValidationErrors: Bool = false
     var showFutureDateAlert: Bool = false
     var isSaving: Bool = false
+    var saveError: String?
 
     // MARK: - Computed Properties
 
@@ -220,9 +221,10 @@ final class NewTransactionViewModel {
         }
 
         // Load transactions (for recent suggestions)
-        let transactionsDescriptor = FetchDescriptor<TransactionItem>(
+        var transactionsDescriptor = FetchDescriptor<TransactionItem>(
             sortBy: [SortDescriptor(\.date, order: .reverse), SortDescriptor(\.createdAt, order: .reverse)]
         )
+        transactionsDescriptor.fetchLimit = 100
         do {
             transactions = try context.fetch(transactionsDescriptor)
         } catch {
@@ -235,7 +237,7 @@ final class NewTransactionViewModel {
     // MARK: - Validation
 
     var isAmountValid: Bool {
-        amount > 0
+        amount > 0 && amount <= 999_999_999
     }
 
     var isAccountValid: Bool {
@@ -492,6 +494,7 @@ final class NewTransactionViewModel {
             #if DEBUG
             print("Error saving transaction: \(error)")
             #endif
+            saveError = L10n.Common.saveError
             isSaving = false
             return nil
         }

@@ -278,6 +278,17 @@ struct NewTransactionView: View {
             } message: {
                 Text(L10n.Validation.futureDateMessage)
             }
+            .alert(
+                L10n.Common.error,
+                isPresented: Binding(
+                    get: { viewModel.saveError != nil },
+                    set: { if !$0 { viewModel.saveError = nil } }
+                )
+            ) {
+                Button(L10n.Common.understood, role: .cancel) {}
+            } message: {
+                Text(viewModel.saveError ?? "")
+            }
             .sheet(isPresented: $viewModel.showSaveAsFavoriteSheet) {
                 favoriteSheetContent
             }
@@ -518,44 +529,8 @@ struct NewTransactionView: View {
         .animation(.easeInOut(duration: DS.Animation.fast), value: viewModel.transactionType)
     }
 
-    /// Filters amount input to only allow numbers and one decimal with max 2 decimal places
     private func filterAmountInput(_ input: String) -> String {
-        let decimalSeparator = Locale.current.decimalSeparator ?? "."
-        var result = ""
-        var hasDecimal = false
-        var decimalCount = 0
-
-        for char in input {
-            if char.isNumber {
-                if hasDecimal {
-                    if decimalCount < 2 {
-                        result.append(char)
-                        decimalCount += 1
-                    }
-                } else {
-                    result.append(char)
-                }
-            } else if String(char) == decimalSeparator || char == "." || char == "," {
-                if !hasDecimal {
-                    result.append(decimalSeparator.first ?? ".")
-                    hasDecimal = true
-                }
-            }
-        }
-
-        // Remove ALL leading zeros except for "0.x" pattern
-        // First, strip all leading zeros
-        while result.hasPrefix("0") && result.count > 1 {
-            let secondChar = result[result.index(after: result.startIndex)]
-            // Keep if it's "0." pattern
-            if String(secondChar) == decimalSeparator {
-                break
-            }
-            result = String(result.dropFirst())
-        }
-
-        // Allow empty string (will be restored to "0" when field loses focus)
-        return result
+        AmountInputHelper.filterAmountInput(input)
     }
 
     /// Currency display for amount field - respects user preference (code vs symbol)
@@ -732,6 +707,13 @@ struct NewTransactionView: View {
                     ) {
                         dismissKeyboard()
                         viewModel.showDestinationAccountSelector = true
+                    }
+
+                    // Transfer accounts validation message
+                    if case .invalid(let message) = viewModel.accountValidation {
+                        Text(message)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(DS.Semantic.errorForeground)
                     }
                 } else {
                     SelectionChip(

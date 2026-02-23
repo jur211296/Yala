@@ -192,8 +192,16 @@ final class BudgetsViewModel {
             allBudgets = []
         }
 
-        // Load transactions
-        let transactionDescriptor = FetchDescriptor<TransactionItem>(sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse), SortDescriptor(\TransactionItem.createdAt, order: .reverse)])
+        // Load transactions (filtered by earliest budget date to avoid loading all history)
+        let earliestDate = allBudgets.compactMap { budget -> Date? in
+            if let start = budget.startDate { return start }
+            return Calendar.current.date(byAdding: .year, value: -1, to: Date())
+        }.min() ?? Calendar.current.date(byAdding: .year, value: -1, to: Date())!
+        let capturedDate = earliestDate
+        let transactionDescriptor = FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.date >= capturedDate },
+            sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse), SortDescriptor(\TransactionItem.createdAt, order: .reverse)]
+        )
         do {
             allTransactions = try context.fetch(transactionDescriptor)
         } catch {

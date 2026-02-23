@@ -177,11 +177,19 @@ enum ScheduledPaymentDateCalculator {
         let yearsBetween = year - anchorYear
         guard yearsBetween % interval == 0 else { return [] }
 
-        guard let paymentDate = calendar.date(from: DateComponents(
-            year: year,
-            month: targetMonth,
-            day: targetDay
-        )) else { return [] }
+        var components = DateComponents(year: year, month: targetMonth, day: targetDay)
+        let paymentDate: Date
+        if let direct = calendar.date(from: components) {
+            paymentDate = direct
+        } else {
+            // Fallback: last day of month (e.g., Feb 28 in non-leap year)
+            if let range = calendar.range(of: .day, in: .month,
+                for: calendar.date(from: DateComponents(year: year, month: targetMonth, day: 1)) ?? month) {
+                components.day = min(targetDay, range.count)
+            }
+            guard let fallback = calendar.date(from: components) else { return [] }
+            paymentDate = fallback
+        }
 
         let startOfPayment = calendar.startOfDay(for: paymentDate)
         guard monthInterval.contains(startOfPayment) else { return [] }

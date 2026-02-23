@@ -1764,11 +1764,15 @@ struct CompactRecordRow: View {
         return isIncome ? Color.electricIndigo : Color.hotPink
     }
 
-    private var shortDateFormat: String {
+    private static let shortDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale.current
         formatter.dateFormat = "d MMM"
-        return formatter.string(from: record.date).replacingOccurrences(of: ".", with: "")
+        return formatter
+    }()
+
+    private var shortDateFormat: String {
+        Self.shortDateFormatter.string(from: record.date).replacingOccurrences(of: ".", with: "")
     }
 
     private var formattedAmount: String {
