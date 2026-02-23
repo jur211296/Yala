@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-23] e106dbe refactor: batch 7 — DS semantic tokens, FAB size token, and onTapGesture→Button migration
 - [2026-02-23] c6dca6f l10n: batch 6B — a11y labels, SaveAsRecurring migration, and remaining L10N fixes
 - [2026-02-23] 48baa83 l10n: batch 6A — migrate hardcoded toolbar labels and model strings to L10n
 - [2026-02-23] 320f5dd fix: batch 5B — 7 medium fixes for N+1 queries, a11y, notifications, and profile storage
@@ -36,8 +37,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-02-23] 872390a fix: batch 3 — 15 quick fixes for panel, validation, data integrity, and filters
 - [2026-02-23] 2eb7acc fix: transaction save reactivity, locale decimal parsing, and bulk edit data integrity
 - [2026-02-23] fe3142c fix: extract ScheduledPaymentDateCalculator fixing 5 date generation bugs
-- [2026-02-23] ed52513 fix: tags KPI respects category/subcategory filters in Statistics
-- [2026-02-20] 52b572e feat: add Siri & Shortcuts settings screen in Profile
 - [2026-02-20] 50bef88 feat: add Lock Screen widgets (4 accessory widgets)
 - [2026-02-20] d534a4f feat: add VoiceOver accessibility labels to all charts
 - [2026-02-20] 54185b5 fix: resolve pre-launch warnings — legal link and force unwraps
@@ -541,12 +540,10 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Batch 6B complete — a11y labels, SaveAsRecurring migration, remaining L10N (c6dca6f)
-Next step: Batch 7 — DS tokens + onTapGesture→Button
+Stopped at: Batch 7 complete — DS semantic tokens, FAB size, onTapGesture→Button (e106dbe)
+Next step: Batch 8 — Empty states
 Resume context:
-- Batch 6B: 25 files — 15 a11y keys, 16 label replacements, SaveAsRecurring 19 NSLocalizedString→L10n
-- L10n.Accessibility (15 keys), L10n.Scheduled.Editor (12 keys), L10n.Profile.defaultName
-- "Usuario" runtime fallbacks → L10n, 12h time hints → locale-aware DateFormatter
-- Deferred: L10N-8 (transfer categories by name — risky), L10N-18 (seed preview names — cosmetic)
+- Batch 7: 28 files — DS.Semantic colors, DS.Button.fabSize, chevron→.secondary, onTapGesture→Button
+- Deferred: #8E8E93 hex in pie chart data models (needs deeper refactor), Color(.tertiarySystemFill) (valid UIKit semantic)
 - Plan covers batches 6A→6B→7→8→9A→9B (polish items before V1.0)
 - Branch 1.0 — release branch
