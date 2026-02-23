@@ -628,8 +628,7 @@ struct BulkNoteEditorSheet: View {
                         onSave()
                         dismiss()
                     }
-                    .disabled(note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    .accessibilityHint(note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Completa la selección requerida" : "")
+                    .accessibilityHint(L10n.Action.save)
                 }
             }
             .onAppear {

@@ -422,15 +422,13 @@ struct RecordsStandaloneView: View {
     // MARK: - Actions
 
     private func refreshRecordsData() {
-        DispatchQueue.main.async {
-            dataViewModel.loadData()
-            recordsViewModel.applyFilters(
-                transactions: dataViewModel.allTransactions,
-                accounts: dataViewModel.accounts,
-                categories: dataViewModel.categories,
-                tags: dataViewModel.tags
-            )
-        }
+        dataViewModel.loadData()
+        recordsViewModel.applyFilters(
+            transactions: dataViewModel.allTransactions,
+            accounts: dataViewModel.accounts,
+            categories: dataViewModel.categories,
+            tags: dataViewModel.tags
+        )
     }
 
     private func handleEditAction() {

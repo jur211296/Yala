@@ -548,13 +548,12 @@ struct InboxView: View {
             } else {
                 // No linked transaction (old draft or transaction was deleted)
                 // Allow re-approval by changing status to pending
-                draft.status = .pending
-                draft.updatedAt = Date()
+                draftService.setContext(modelContext)
                 do {
-                    try modelContext.save()
+                    try draftService.returnToPending(draft)
                 } catch {
                     #if DEBUG
-                    print("InboxView: Error saving draft status change: \(error)")
+                    print("InboxView: Error returning draft to pending: \(error)")
                     #endif
                 }
                 selectedDraft = draft

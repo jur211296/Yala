@@ -73,6 +73,17 @@ struct NewTransactionView: View {
                     // Reset form for new transaction
                     let newViewModel = NewTransactionViewModel()
                     newViewModel.setContext(modelContext)
+                    // Re-apply prefill account so "create another" keeps the same account context
+                    if let accountID = prefillAccountID {
+                        let allSubs = newViewModel.categories.flatMap { $0.subcategories ?? [] }
+                        newViewModel.prefill(
+                            accountID: accountID,
+                            categoryID: nil,
+                            subcategoryName: nil,
+                            accounts: newViewModel.accounts,
+                            subcategories: allSubs
+                        )
+                    }
                     viewModel = newViewModel
                     isCreatingAnother = true
                     dsWithAnimation(reduceMotion) {

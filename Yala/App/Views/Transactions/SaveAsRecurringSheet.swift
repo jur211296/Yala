@@ -792,6 +792,7 @@ struct SaveAsRecurringSheet: View {
         modelContext.insert(scheduled)
         do {
             try modelContext.save()
+            SessionState.shared.incrementDataVersion()
             onSaved(L10n.Action.savedAsRecurring)
             dismiss()
         } catch {

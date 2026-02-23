@@ -34,15 +34,15 @@ struct DowngradeResolutionSheet: View {
     }
 
     private var excessAccounts: Int {
-        max(0, activeAccounts.count - 2)  // Free limit is 2
+        max(0, activeAccounts.count - (ProFeature.accounts.freeLimit ?? Int.max))
     }
 
     private var excessBudgets: Int {
-        max(0, activeBudgets.count - 3)  // Free limit is 3
+        max(0, activeBudgets.count - (ProFeature.budgets.freeLimit ?? Int.max))
     }
 
-    private var accountsToKeep: Int { 2 }
-    private var budgetsToKeep: Int { 3 }
+    private var accountsToKeep: Int { ProFeature.accounts.freeLimit ?? Int.max }
+    private var budgetsToKeep: Int { ProFeature.budgets.freeLimit ?? Int.max }
 
     // MARK: - State
 

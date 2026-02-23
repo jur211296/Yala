@@ -13,19 +13,6 @@ import UIKit
 
 struct PanelView: View {
 
-    init() {
-        // Eliminamos el fondo gris por defecto del TabView en modo página
-        let pageViewBackground = UIView.appearance(
-            whenContainedInInstancesOf: [UIPageViewController.self]
-        )
-        pageViewBackground.backgroundColor = .clear
-
-        let scrollViewBackground = UIScrollView.appearance(
-            whenContainedInInstancesOf: [UIPageViewController.self]
-        )
-        scrollViewBackground.backgroundColor = .clear
-    }
-
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -1055,6 +1042,7 @@ private func formattedDate(_ date: Date) -> String {
         viewModel.focusedDate = nil
         viewModel.selectedCategoryID = nil
         viewModel.selectedSubcategoryIDs.removeAll()
+        viewModel.subcategoriesWidgetFilter = nil
         viewModel.selectedNature = nil
         viewModel.selectedTags.removeAll()
         viewModel.selectedCurrencies.removeAll()

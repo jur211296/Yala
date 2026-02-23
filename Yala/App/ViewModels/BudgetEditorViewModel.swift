@@ -209,6 +209,8 @@ final class BudgetEditorViewModel {
         service.setContext(context)
         do {
             try service.deleteBudget(budget)
+            WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
             return true
         } catch {
             #if DEBUG
