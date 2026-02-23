@@ -384,7 +384,7 @@ struct TagsPieWidget: View {
                     )
 
                     InfoHintButton(
-                        title: L10n.WidgetType.expensesByNature,
+                        title: L10n.WidgetType.expensesByTag,
                         message: L10n.Widget.Hint.tagsPie
                     )
                 }
@@ -406,7 +406,7 @@ struct TagsPieWidget: View {
                     }
 
                     InfoHintButton(
-                        title: L10n.WidgetType.expensesByNature,
+                        title: L10n.WidgetType.expensesByTag,
                         message: L10n.Widget.Hint.tagsPie
                     )
 

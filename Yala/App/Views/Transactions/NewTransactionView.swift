@@ -1043,7 +1043,7 @@ struct NewTransactionView: View {
                 accountName: account?.name ?? L10n.Transaction.account,
                 accountColorHex: account?.colorHex ?? "6366F1",
                 note: viewModel.note,
-                amount: Decimal(viewModel.amount),
+                amount: Decimal(string: viewModel.amountString.replacingOccurrences(of: Locale.current.decimalSeparator ?? ".", with: ".")) ?? 0,
                 currencyCode: viewModel.effectiveCurrencyCode,
                 subcategoryName: viewModel.selectedSubcategory?.name,
                 subcategoryColorHex: viewModel.selectedSubcategory?.colorHex,

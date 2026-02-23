@@ -573,6 +573,7 @@
 "widgetType.subcategoriesPie" = "Distribution des sous-categories";
 "widgetType.latestRecords" = "Derniers enregistrements";
 "widgetType.expensesByNature" = "Depenses par nature";
+"widgetType.expensesByTag" = "Depenses par etiquette";
 "widgetType.exchangeRate" = "Taux de change";
 "widgetType.budgets" = "Budgets";
 "widgetType.scheduledPayments" = "Paiements planifies";

@@ -570,7 +570,7 @@ final class NewTransactionViewModel {
 
         let outflowSubcategory = try ensureTransferCategory(context: context)
         let inflowSubcategory = try ensureIncomeTransferCategory(context: context)
-        let preferredCode = UserDefaults.standard.string(forKey: "defaultCurrencyCode") ?? "PEN"
+        let preferredCode = CurrencyDefaults.currentPreferred
 
         // --- OUTFLOW (Source) ---
         let outAmount = -amount

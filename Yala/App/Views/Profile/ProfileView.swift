@@ -479,6 +479,7 @@ struct ProfileView: View {
                                 if status == .undetermined {
                                     AVAudioApplication.requestRecordPermission { _ in }
                                 } else if status == .denied {
+                                    voiceInputEnabled = false
                                     permissionDeniedType = L10n.Settings.voiceInputEnabled
                                     showPermissionDeniedAlert = true
                                 }
@@ -583,6 +584,7 @@ struct ProfileView: View {
                             if status == .notDetermined {
                                 PHPhotoLibrary.requestAuthorization(for: .readWrite) { _ in }
                             } else if status == .denied || status == .restricted {
+                                imageInputEnabled = false
                                 permissionDeniedType = L10n.Settings.imageInputEnabled
                                 showPermissionDeniedAlert = true
                             }

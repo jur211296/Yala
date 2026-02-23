@@ -125,7 +125,7 @@ struct AccountCardView: View {
         case "PEN", "SOL", "SOLES", "S/", "S/.", "S/. ": return "PEN"
         case "USD", "US$", "US DOLLAR", "$", "$USD", "USD$": return "USD"
         case "EUR", "€", "EURO": return "EUR"
-        default: return "PEN"
+        default: return upper
         }
     }
 

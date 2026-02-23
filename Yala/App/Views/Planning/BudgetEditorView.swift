@@ -653,7 +653,7 @@ struct BudgetEditorView: View {
     }
 
     private func saveBudget() {
-        guard let amount = Double(limitAmount) else { return }
+        guard let amount = Double(limitAmount), amount > 0 else { return }
 
         let saved = viewModel.saveBudget(
             existing: budget,
@@ -673,6 +673,7 @@ struct BudgetEditorView: View {
         )
 
         if saved {
+            sessionState.needsBudgetsWidgetRefresh = true
             dismiss()
         }
     }

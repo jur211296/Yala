@@ -831,7 +831,7 @@ struct ScheduledPaymentEditorView: View {
     private var canSave: Bool {
         !name.isEmpty &&
         !amount.isEmpty &&
-        Double(amount) != nil &&
+        (Double(amount) ?? 0) > 0 &&
         selectedAccount != nil &&
         selectedSubcategory != nil
     }

@@ -23,7 +23,7 @@ struct RecentRecordsWidget: View {
 
     private static let shortDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.locale = Locale.current
+        formatter.locale = AppLocale.current
         formatter.dateFormat = "d MMM"
         return formatter
     }()
@@ -220,6 +220,7 @@ struct RecentRecordsWidget: View {
     }
 
     private func amountColor(for record: TransactionItem) -> Color {
+        if record.balanceAdjustmentType == "transfer" { return Color(.label) }
         let isIncome = record.category?.isIncome ?? (record.amount >= 0)
         return isIncome ? Color.electricIndigo : Color.hotPink
     }

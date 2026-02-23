@@ -23,6 +23,7 @@ struct DatePickerSheet: View {
                     DatePicker(
                         L10n.Common.date,
                         selection: $selectedDate,
+                        in: ...Date(),
                         displayedComponents: [.date]
                     )
                     .datePickerStyle(.graphical)

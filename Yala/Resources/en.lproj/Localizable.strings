@@ -575,6 +575,7 @@
 "widgetType.subcategoriesPie" = "Subcategory Distribution";
 "widgetType.latestRecords" = "Latest Records";
 "widgetType.expensesByNature" = "Expenses by Nature";
+"widgetType.expensesByTag" = "Expenses by Tag";
 "widgetType.exchangeRate" = "Exchange Rate";
 "widgetType.budgets" = "Budgets";
 "widgetType.scheduledPayments" = "Scheduled Payments";

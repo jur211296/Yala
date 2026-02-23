@@ -128,7 +128,7 @@ final class InboxViewModel {
         case .pending:
             return allDrafts.filter { $0.status == .pending }.count
         case .archived:
-            return allDrafts.filter { $0.status == .approved || $0.status == .rejected }.count
+            return allDrafts.filter { ($0.status == .approved || $0.status == .rejected) && $0.cachedAccountName != nil }.count
         }
     }
 

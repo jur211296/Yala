@@ -1538,10 +1538,10 @@ struct TrendsTabView: View {
             selectedSubcategories: trendsViewModel.selectedSubcategories,
             selectedTags: trendsViewModel.selectedTags,
             selectedNatures: trendsViewModel.selectedNatures,
-            selectedCurrencies: [],
+            selectedCurrencies: trendsViewModel.selectedCurrencies,
             transactionTypeFilter: .all,
-            amountCondition: .any,
-            searchText: "",
+            amountCondition: trendsViewModel.amountCondition,
+            searchText: trendsViewModel.searchText,
             dateInterval: isBalanceMetric ? nil : currentInterval
         )
 

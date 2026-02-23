@@ -573,6 +573,7 @@
 "widgetType.subcategoriesPie" = "Unterkategorienverteilung";
 "widgetType.latestRecords" = "Neueste Einträge";
 "widgetType.expensesByNature" = "Ausgaben nach Art";
+"widgetType.expensesByTag" = "Ausgaben nach Etikett";
 "widgetType.exchangeRate" = "Wechselkurs";
 "widgetType.budgets" = "Budgets";
 "widgetType.scheduledPayments" = "Geplante Zahlungen";

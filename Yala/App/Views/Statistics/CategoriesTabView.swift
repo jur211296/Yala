@@ -1436,13 +1436,7 @@ struct CategoriesTabView: View {
     }
 
     private var activeFilterCount: Int {
-        var count = 0
-        if !viewModel.selectedAccounts.isEmpty { count += 1 }
-        if !viewModel.selectedCategories.isEmpty { count += 1 }
-        if !viewModel.selectedSubcategories.isEmpty { count += 1 }
-        if !viewModel.selectedTags.isEmpty { count += 1 }
-        if !viewModel.selectedNatures.isEmpty { count += 1 }
-        return count
+        viewModel.activeFilterCount
     }
 
     // MARK: - Chip Helpers

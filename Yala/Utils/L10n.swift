@@ -1814,6 +1814,9 @@ enum L10n {
         static var expensesByNature: String {
             ls("widgetType.expensesByNature", comment: "")
         }
+        static var expensesByTag: String {
+            ls("widgetType.expensesByTag", comment: "")
+        }
         static var exchangeRate: String {
             ls("widgetType.exchangeRate", comment: "")
         }
