@@ -72,7 +72,7 @@ struct ImageSelectionView: View {
                 // Only show X in selection view (during countdown/processing, there's an X below)
                 if !isCountingDown && !isProcessing && !showingResult {
                     ToolbarItem(placement: .topBarTrailing) {
-                        YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                        YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                             dismiss()
                         }
                     }

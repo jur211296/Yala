@@ -112,7 +112,7 @@ struct RecordsFiltersView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }

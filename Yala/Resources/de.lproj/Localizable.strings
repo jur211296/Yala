@@ -991,6 +991,7 @@
 
 "common.seeAll" = "Alle anzeigen";
 "common.none" = "Keine";
+"common.ok" = "OK";
 
 "common.selectColor" = "Farbe auswählen";
 "common.useThisColor" = "Diese Farbe verwenden";

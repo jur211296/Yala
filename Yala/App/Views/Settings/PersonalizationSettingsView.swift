@@ -497,7 +497,7 @@ struct PersonalizationSettingsView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
+                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                     dismiss()
                 }
             }
@@ -643,7 +643,7 @@ private struct PeriodPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -716,7 +716,7 @@ private struct WeekdayPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -795,7 +795,7 @@ private struct DecimalsPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -879,7 +879,7 @@ private struct CurrencyFormatPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -1039,7 +1039,7 @@ private struct AverageLinePickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }

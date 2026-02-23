@@ -315,7 +315,7 @@ struct InboxDraftEditSheet: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+            YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                 if hasUnsavedChanges() {
                     showDiscardChangesAlert = true
                 } else {

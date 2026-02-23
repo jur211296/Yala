@@ -122,12 +122,12 @@ struct BudgetsWidget: View {
                 .padding(.bottom, DS.Spacing.xs)
 
             if hasBudgetsButNoFavorites {
-                Text(NSLocalizedString("budgets.widget.noFavorites.title", comment: ""))
+                Text(L10n.Budgets.Widget.noFavoritesTitle)
                     .font(DS.Typography.label)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.primary)
 
-                Text(NSLocalizedString("budgets.widget.noFavorites.message", comment: ""))
+                Text(L10n.Budgets.Widget.noFavoritesMessage)
                     .font(DS.Typography.caption)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
@@ -145,12 +145,12 @@ struct BudgetsWidget: View {
                     .padding(.top, DS.Spacing.sm)
                 }
             } else {
-                Text(NSLocalizedString("budgets.empty.title", comment: ""))
+                Text(L10n.Budgets.emptyTitle)
                     .font(DS.Typography.label)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.primary)
 
-                Text(NSLocalizedString("budgets.empty.message", comment: ""))
+                Text(L10n.Budgets.emptyMessage)
                     .font(DS.Typography.caption)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)

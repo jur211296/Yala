@@ -135,7 +135,7 @@ struct BulkEditSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         finishEditing()
                     }
                 }
@@ -428,7 +428,7 @@ struct BulkTagEditorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -618,7 +618,7 @@ struct BulkNoteEditorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -679,7 +679,7 @@ struct BulkAmountEditorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }

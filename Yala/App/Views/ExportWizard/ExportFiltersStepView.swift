@@ -137,7 +137,7 @@ struct ExportFiltersStepView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -561,7 +561,7 @@ private struct ExportPeriodPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -703,7 +703,7 @@ private struct ExportCustomPeriodPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
+                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                         dismiss()
                     }
                 }

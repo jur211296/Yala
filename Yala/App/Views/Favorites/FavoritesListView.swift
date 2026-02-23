@@ -63,7 +63,7 @@ struct FavoritesListView: View {
             // Leading button only for select mode (sheet)
             if mode == .select {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -92,7 +92,7 @@ struct FavoritesListView: View {
 
                     // Add button (hide in edit mode)
                     if !(editMode?.wrappedValue.isEditing == true) {
-                        YalaToolbarButton(systemName: "plus", label: "Agregar") {
+                        YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
                             viewModel.openEditor(for: nil)
                         }
                     }

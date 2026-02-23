@@ -67,7 +67,7 @@ struct AccountsSettingsListView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
+                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                     dismiss()
                 }
             }
@@ -80,7 +80,7 @@ struct AccountsSettingsListView: View {
                         }
                     }
 
-                    YalaToolbarButton(systemName: "plus", label: "Agregar") {
+                    YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
                         if FeatureGateService.shared.canCreate(.accounts, currentCount: activeAccountsCount) {
                             viewModel.isPresentingCreateAccount = true
                         } else {

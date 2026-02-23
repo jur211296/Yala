@@ -119,10 +119,10 @@ final class RecordsFiltersViewModel {
 
     func selectedAccountsText(selectedAccounts: Set<PersistentIdentifier>) -> String {
         if selectedAccounts.isEmpty {
-            return "Todas"
+            return L10n.Common.all
         }
         if selectedAccounts.count == activeAccounts.count {
-            return "Todas"
+            return L10n.Common.all
         }
         return "\(selectedAccounts.count)/\(activeAccounts.count)"
     }
@@ -131,19 +131,19 @@ final class RecordsFiltersViewModel {
         let subCount = selectedSubcategories.count
 
         if subCount == 0 {
-            return "Todas"
+            return L10n.Common.all
         }
 
         let allIDs = Set(allSubcategories.map { $0.persistentModelID })
         if selectedSubcategories == allIDs {
-            return "Todas"
+            return L10n.Common.all
         }
 
         let selectedSubs = allSubcategories.filter {
             selectedSubcategories.contains($0.persistentModelID)
         }
         if selectedSubs.isEmpty {
-            return "Todas"
+            return L10n.Common.all
         }
 
         if let firstSub = selectedSubs.first {
@@ -155,15 +155,15 @@ final class RecordsFiltersViewModel {
             }
         }
 
-        return "Todas"
+        return L10n.Common.all
     }
 
     func selectedTagsText(selectedTags: Set<PersistentIdentifier>) -> String {
         if selectedTags.isEmpty {
-            return "Todas"
+            return L10n.Common.all
         }
         if selectedTags.count == activeTags.count {
-            return "Todas"
+            return L10n.Common.all
         }
         return "\(selectedTags.count)/\(activeTags.count)"
     }

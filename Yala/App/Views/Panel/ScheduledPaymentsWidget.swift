@@ -265,8 +265,7 @@ struct ScheduledPaymentsWidget: View {
     }
 
     private func paymentCountLabel(_ count: Int) -> String {
-        let format = NSLocalizedString("scheduled.widget.count", comment: "")
-        return String(format: format, count)
+        return String(format: L10n.Scheduled.Widget.count, count)
     }
 
     private func calculateMonthlyTotal() -> Double {
@@ -325,12 +324,12 @@ struct ScheduledPaymentsWidget: View {
                 .foregroundStyle(.secondary.opacity(0.5))
                 .padding(.bottom, DS.Spacing.xs)
 
-            Text(NSLocalizedString("scheduled.widget.empty.title", comment: ""))
+            Text(L10n.Scheduled.Widget.emptyTitle)
                 .font(DS.Typography.label)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.primary)
 
-            Text(NSLocalizedString("scheduled.widget.empty.message", comment: ""))
+            Text(L10n.Scheduled.Widget.emptyMessage)
                 .font(DS.Typography.caption)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
@@ -453,15 +452,13 @@ struct ScheduledPaymentsWidget: View {
 
     private func formatDueDate(days: Int, date: Date) -> String {
         if days < 0 {
-            let format = NSLocalizedString("scheduled.widget.daysAgo", comment: "")
-            return String(format: format, abs(days))
+            return String(format: L10n.Scheduled.Widget.daysAgo, abs(days))
         } else if days == 0 {
-            return NSLocalizedString("date.today", comment: "")
+            return L10n.Date.today
         } else if days == 1 {
-            return NSLocalizedString("scheduled.widget.tomorrow", comment: "")
+            return L10n.Scheduled.Widget.tomorrow
         } else if days <= 7 {
-            let format = NSLocalizedString("scheduled.widget.inDays", comment: "")
-            return String(format: format, days)
+            return String(format: L10n.Scheduled.Widget.inDays, days)
         } else {
             let formatter = DateFormatter()
             formatter.dateFormat = "d MMM"

@@ -119,7 +119,7 @@ struct VoiceRecordingView: View {
                 // Only show X when idle (during recording/preview/processing, there's an X below)
                 if recorder.state == .idle && !isPreviewMode && !isProcessing {
                     ToolbarItem(placement: .topBarTrailing) {
-                        YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                        YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                             recorder.cancelRecording()
                             dismiss()
                         }

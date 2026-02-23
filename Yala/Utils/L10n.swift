@@ -394,6 +394,7 @@ enum L10n {
         static var select: String { ls("action.select", comment: "") }
         static var retry: String { ls("action.retry", comment: "") }
         static var later: String { ls("action.later", comment: "") }
+        static var close: String { ls("action.close", comment: "") }
     }
 
     // MARK: - Search
@@ -1282,6 +1283,53 @@ enum L10n {
         static var viewInbox: String {
             ls("scheduled.viewInbox", comment: "Button to view inbox")
         }
+
+        enum Recurrence {
+            static var daily: String { ls("scheduled.recurrence.daily", comment: "") }
+            static var weekly: String { ls("scheduled.recurrence.weekly", comment: "") }
+            static var monthly: String { ls("scheduled.recurrence.monthly", comment: "") }
+            static var yearly: String { ls("scheduled.recurrence.yearly", comment: "") }
+            static var day: String { ls("scheduled.recurrence.day", comment: "") }
+            static var week: String { ls("scheduled.recurrence.week", comment: "") }
+            static var month: String { ls("scheduled.recurrence.month", comment: "") }
+            static var year: String { ls("scheduled.recurrence.year", comment: "") }
+            static var days: String { ls("scheduled.recurrence.days", comment: "") }
+            static var weeks: String { ls("scheduled.recurrence.weeks", comment: "") }
+            static var months: String { ls("scheduled.recurrence.months", comment: "") }
+            static var years: String { ls("scheduled.recurrence.years", comment: "") }
+        }
+
+        enum Category {
+            static var recurring: String { ls("scheduled.category.recurring", comment: "") }
+            static var subscription: String { ls("scheduled.category.subscription", comment: "") }
+        }
+
+        enum Status {
+            static var past: String { ls("scheduled.status.past", comment: "") }
+            static var today: String { ls("scheduled.status.today", comment: "") }
+            static var upcoming: String { ls("scheduled.status.upcoming", comment: "") }
+        }
+
+        enum Filter {
+            static var all: String { ls("scheduled.filter.all", comment: "") }
+            static var paid: String { ls("scheduled.filter.paid", comment: "") }
+            static var pending: String { ls("scheduled.filter.pending", comment: "") }
+        }
+
+        enum Tab {
+            static var recurring: String { ls("scheduled.tab.recurring", comment: "") }
+            static var subscriptions: String { ls("scheduled.tab.subscriptions", comment: "") }
+            static var all: String { ls("scheduled.tab.all", comment: "") }
+        }
+
+        enum Widget {
+            static var count: String { ls("scheduled.widget.count", comment: "") }
+            static var emptyTitle: String { ls("scheduled.widget.empty.title", comment: "") }
+            static var emptyMessage: String { ls("scheduled.widget.empty.message", comment: "") }
+            static var daysAgo: String { ls("scheduled.widget.daysAgo", comment: "") }
+            static var tomorrow: String { ls("scheduled.widget.tomorrow", comment: "") }
+            static var inDays: String { ls("scheduled.widget.inDays", comment: "") }
+        }
     }
 
     // MARK: - Settings
@@ -1670,6 +1718,7 @@ enum L10n {
         static var select: String { ls("common.select", comment: "") }
         static var seeAll: String { ls("common.seeAll", comment: "") }
         static var none: String { ls("common.none", comment: "") }
+        static var ok: String { ls("common.ok", comment: "") }
     }
 
     // MARK: - Widgets
@@ -1841,7 +1890,16 @@ enum L10n {
             static var selectFavorites: String {
                 ls("budgets.widget.selectFavorites", comment: "")
             }
+            static var noFavoritesTitle: String {
+                ls("budgets.widget.noFavorites.title", comment: "")
+            }
+            static var noFavoritesMessage: String {
+                ls("budgets.widget.noFavorites.message", comment: "")
+            }
         }
+
+        static var emptyTitle: String { ls("budgets.empty.title", comment: "") }
+        static var emptyMessage: String { ls("budgets.empty.message", comment: "") }
 
         // Alert notifications
         static var alertsTitle: String {
