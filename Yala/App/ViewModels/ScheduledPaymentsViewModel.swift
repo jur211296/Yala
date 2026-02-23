@@ -664,100 +664,11 @@ final class ScheduledPaymentsViewModel {
         return total
     }
 
-    /// Get payment dates for a subscription in a given month
+    /// Get payment dates for a subscription in a given month (delegates to shared calculator)
     func getPaymentDatesInMonth(payment: ScheduledPayment, month: Date) -> [Date] {
-        let calendar = Calendar.current
-        guard let monthInterval = calendar.dateInterval(of: .month, for: month) else { return [] }
-
-        var dates: [Date] = []
-
-        // For one-time payments
-        if !payment.isRecurring {
-            let paymentDate = calendar.startOfDay(for: payment.nextDueDate)
-            if monthInterval.contains(paymentDate) {
-                dates.append(paymentDate)
-            }
-            return dates
-        }
-
-        // For recurring payments
-        guard let recurrenceType = RecurrenceType(rawValue: payment.recurrenceType) else { return [] }
-
-        switch recurrenceType {
-        case .daily:
-            // Daily: every interval days
-            var date = calendar.startOfDay(for: payment.nextDueDate)
-            // Go back to find the first occurrence in or before this month
-            while date > monthInterval.start {
-                date = calendar.date(byAdding: .day, value: -payment.recurrenceInterval, to: date) ?? date
-            }
-            // Now iterate forward
-            while date < monthInterval.end {
-                if date >= monthInterval.start {
-                    dates.append(date)
-                }
-                date = calendar.date(byAdding: .day, value: payment.recurrenceInterval, to: date) ?? monthInterval.end
-            }
-
-        case .weekly:
-            // Weekly: specific weekdays
-            let weekdays = parseWeekdays(payment.selectedWeekdays)
-            if weekdays.isEmpty { return dates }
-
-            // Iterate through each day of the month
-            var date = monthInterval.start
-            while date < monthInterval.end {
-                let weekday = calendar.component(.weekday, from: date)
-                if weekdays.contains(weekday) {
-                    dates.append(date)
-                }
-                date = calendar.date(byAdding: .day, value: 1, to: date) ?? monthInterval.end
-            }
-
-        case .monthly:
-            // Monthly: specific day of month
-            let dayOfMonth = payment.dayOfMonth ?? calendar.component(.day, from: payment.nextDueDate)
-            let monthComponents = calendar.dateComponents([.year, .month], from: month)
-            if var paymentDate = calendar.date(from: DateComponents(
-                year: monthComponents.year,
-                month: monthComponents.month,
-                day: min(dayOfMonth, calendar.range(of: .day, in: .month, for: month)?.count ?? 28)
-            )) {
-                paymentDate = calendar.startOfDay(for: paymentDate)
-                if monthInterval.contains(paymentDate) {
-                    dates.append(paymentDate)
-                }
-            }
-
-        case .yearly:
-            // Yearly: specific month and day
-            let targetMonth = payment.yearlyMonth ?? calendar.component(.month, from: payment.nextDueDate)
-            let targetDay = payment.yearlyDay ?? calendar.component(.day, from: payment.nextDueDate)
-            let monthComponents = calendar.dateComponents([.year, .month], from: month)
-
-            if monthComponents.month == targetMonth {
-                if let paymentDate = calendar.date(from: DateComponents(
-                    year: monthComponents.year,
-                    month: targetMonth,
-                    day: targetDay
-                )) {
-                    let startOfPayment = calendar.startOfDay(for: paymentDate)
-                    if monthInterval.contains(startOfPayment) {
-                        dates.append(startOfPayment)
-                    }
-                }
-            }
-        }
-
-        // Filter out dates before payment creation (M4: no backward propagation)
-        let createdDay = calendar.startOfDay(for: payment.createdAt)
-        return dates.filter { $0 >= createdDay }
-    }
-
-    /// Parse weekdays string "1,3,5" into set of weekday integers
-    private func parseWeekdays(_ weekdaysString: String?) -> Set<Int> {
-        guard let string = weekdaysString, !string.isEmpty else { return [] }
-        return Set(string.split(separator: ",").compactMap { Int($0) })
+        ScheduledPaymentDateCalculator.paymentDatesInMonth(
+            params: payment.dateCalculatorParams, month: month
+        )
     }
 
     /// Move calendar to previous month
