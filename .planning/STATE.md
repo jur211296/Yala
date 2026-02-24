@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-23] e39d8d4 fix: flow review G4+G5 — widget cache, safeCategory, deterministic IDs, static formatters, l10n accessibility
 - [2026-02-23] 8c59350 fix: flow review G3 — budget currency, task leaks, static formatters, l10n accessibility
 - [2026-02-23] 2a15388 fix: flow review G1 — onboarding scroll lock, language detection, trial error state
 - [2026-02-23] be3cb18 fix: eliminate force unwraps and silent try? for pre-launch stability
@@ -540,9 +541,10 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Flow review G1+G3 fixes committed (2a15388, 8c59350). Starting G4: Statistics review.
-Next step: Flow review G4 (Statistics) → G5 (Transaction CRUD) → remaining groups
+Stopped at: Flow review G4+G5 fixes committed (e39d8d4). G1-G5 complete.
+Next step: Flow review G6 (Inbox/Smart Recording) → remaining groups G7-G14
 Resume context:
+- Flow review: G1 ✅, G2 ✅ (clean), G3 ✅, G4 ✅, G5 ✅ (2 skipped: bulk dedup refactor, intermediate save)
 - Release Review: 10 batches (1→10B) across 2 sessions, ~67 items resolved
-- Remaining deferred: pie widget onTapGesture→Button (complex), dynamic a11y labels (needs format), some Spanish accessibilityValues in chart widgets
+- Remaining deferred: pie widget onTapGesture→Button (complex), dynamic a11y labels (needs format)
 - Branch 1.0 — release branch
