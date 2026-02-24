@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: None
 Plan: None
 Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-02-24 — A11Y-DT completado (Dynamic Type audit)
+Last activity: 2026-02-24 — Support form sheet con picker de tipo
 
 ### Branch Strategy
 - **1.0** = Release (V1.0 + V1.1 mergeada)
@@ -28,6 +28,9 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-24] a4b00da feat: support form sheet with type picker before sending email
+- [2026-02-24] 0962a43 fix: show initial balance mode when editing account without balance set
+- [2026-02-24] 8fbb672 fix: a11y labels on 6 icon-only buttons + A11Y-DM audit comments on hardcoded colors
 - [2026-02-24] Merge 1.0 into 1.1 — all release polish + a11y + DS improvements
 - [2026-02-23] ed52513 fix: tags KPI respects category/subcategory filters in Statistics
 - [2026-02-22] 7ce5dd6 feat: add exclude mode for filters
@@ -35,8 +38,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-02-20] 52b572e feat: add Siri & Shortcuts settings screen in Profile
 - [2026-02-20] 7700b2d feat: add Siri natural language intent, .siri source type and tip card
 - [2026-02-20] 50bef88 feat: add Lock Screen widgets (4 accessory widgets)
-- [2026-02-20] d534a4f feat: add VoiceOver accessibility labels to all charts
-- [2026-02-20] 54185b5 fix: resolve pre-launch warnings — legal link and force unwraps
 - [2026-02-20] 4add74e feat: dev-only subscription reset on data wipe for testing
 - [2026-02-20] 4a57873 fix: improve ProTrialOfferSheet layout and show success view after purchase
 - [2026-02-19] 44d3b89 feat: add average line to bar and trend charts with personalization picker
@@ -561,8 +562,8 @@ Ver ROADMAP.md para más detalles de Fase 12.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Merged 1.0 release polish into 1.1
-Next step: QA exclude mode + continue Phase 12 development
+Stopped at: Support form sheet con picker de tipo antes de enviar email
+Next step: Fase 12 — siguiente item pendiente
 Resume context:
 - Merged 1.0→1.1: all release polish, a11y, DS tokens, dead code cleanup
 - Exclude mode feature complete (7ce5dd6) — pending QA

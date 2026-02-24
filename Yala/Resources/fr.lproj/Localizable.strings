@@ -740,6 +740,16 @@
 "settings.privacy" = "Politique de confidentialite";
 "settings.terms" = "Conditions d'utilisation";
 
+// Support
+"support.title" = "Nous contacter";
+"support.type" = "Type de demande";
+"support.typeError" = "Erreur";
+"support.typeImprovement" = "Amélioration";
+"support.typeIdea" = "Idée";
+"support.message" = "Décrivez votre demande";
+"support.messagePlaceholder" = "Dites-nous en détail...";
+"support.send" = "Envoyer";
+
 // Biometric
 "biometric.title" = "Sécurité biométrique";
 "biometric.description" = "Protégez vos informations financières avec l'authentification biométrique ou le code de l'appareil.";
