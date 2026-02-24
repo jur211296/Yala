@@ -28,16 +28,16 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-24] afc1bc3 docs: Fase 11.5 polish — STATE, QA scenarios, CLAUDE.md test count
+- [2026-02-24] 596ca67 feat: credit card account type with payment reminder notification (POLISH-3)
+- [2026-02-24] c17ba2b feat: recurring badge in transaction edit mode (POLISH-2)
+- [2026-02-24] b74e8e4 fix: budget widget uses hotPink for exceeded budgets (POLISH-1)
 - [2026-02-24] 8c87eb7 refactor: empty states — YalaEmptyState.widget style, 0-accounts guide, autocomplete feedback (EMPTY-1, EMPTY-3, EMPTY-5)
 - [2026-02-24] da1fa54 fix: A11Y-DT — @ScaledMetric en 2 vistas hardcoded, audit comments en 49 archivos
 - [2026-02-24] ad1e1f8 fix: release review — asyncAfter→Task, DS hex tokens, code dedup, small fixes (11 items)
 - [2026-02-24] 2614785 fix: release review — DS tokens, dead code cleanup (DS-3, DS-10, DS-21, DS-28, CODE-24)
 - [2026-02-24] b5506a6 fix: release review — DS tokens, a11y labels, l10n migration, code quality (~60 items)
 - [2026-02-24] d5ba5be fix: flow review final pass — data version sync, l10n accessibility, static formatter
-- [2026-02-23] 1a65c0a fix: flow review G9+G10 — WidgetDataCache, static formatters, l10n accessibility
-- [2026-02-23] b1e724a fix: flow review G7+G8+G13+G14 — yearly IDs, WidgetDataCache, static formatters, l10n accessibility
-- [2026-02-23] 821a3ea fix: flow review G6 — bulk MerchantMemory, static formatters, l10n accessibility
-- [2026-02-23] e39d8d4 fix: flow review G4+G5 — widget cache, safeCategory, deterministic IDs, static formatters, l10n accessibility
 
 - [2026-02-20] 4add74e feat: dev-only subscription reset on data wipe for testing
 - [2026-02-20] 4a57873 fix: improve ProTrialOfferSheet layout and show success view after purchase
@@ -446,6 +446,12 @@ Agregado `SortDescriptor(\.createdAt, order: .reverse)` como tiebreaker en 4 Fet
 
 Refactorización completa del sistema de colores. 6 temas (3 free + 3 PRO). YalaTheme struct + ThemeColor ShapeStyle + @Observable ThemeManager. Cambio de tema sin reinicio (eliminado `.id(userThemeRaw)`). 0 usos de colores legacy. 12 escenarios QA (Sección 38).
 
+### Fase 11.5: Polish Pre-Fase 12 — ✅ COMPLETADA (2026-02-24)
+
+- [x] POLISH-1: Budget progress bar — hotPink en widget para excedido (consistencia con app)
+- [x] POLISH-2: Badge "Recurrente" en edición de transacción (chip pill en quickActionsBar)
+- [x] POLISH-3: Tipo cuenta tarjeta de crédito + notificación de pago (AccountType, form, reminder)
+
 ### Siguiente: Fase 12 — Plataforma Extendida (V1.2)
 
 **Prioridad: Tech Debt del Release Review (10 items)**
@@ -558,10 +564,10 @@ Ver ROADMAP.md para más detalles de Fase 12.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: EMPTY-1/3/5 completados — YalaEmptyState.widget style, 11 widgets migrados, 0-accounts guide, autocomplete feedback
+Stopped at: Fase 11.5 completada — 3 mejoras polish pre-Fase 12 (POLISH-1/2/3)
 Next step: Fase 12 — siguiente item tech debt (CODE-20/21/28/30/32/41/46 pendientes)
 Resume context:
-- FLOW-REVIEW.md y RELEASE-REVIEW.md archivados (cerrados)
-- 10 items pendientes migrados a STATE.md Fase 12 (EMPTY-1/3/5, CODE-20/21/28/30/32/41/46)
+- Fase 11.5 completada: budget widget hotPink, recurring badge, credit card account type
+- QA-SCENARIOS.md Sección 40 agregada para las 3 mejoras
 - Deferred post-release: HIGH-2/3/12/13 (pagination), HIGH-24/A11Y-41 (onboarding a11y)
 - Branch 1.0 — release branch
