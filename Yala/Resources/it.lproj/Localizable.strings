@@ -737,6 +737,16 @@
 "settings.privacy" = "Informativa sulla privacy";
 "settings.terms" = "Termini di utilizzo";
 
+// Support
+"support.title" = "Contattaci";
+"support.type" = "Tipo di richiesta";
+"support.typeError" = "Errore";
+"support.typeImprovement" = "Miglioramento";
+"support.typeIdea" = "Idea";
+"support.message" = "Descrivi la tua richiesta";
+"support.messagePlaceholder" = "Raccontaci nel dettaglio...";
+"support.send" = "Invia";
+
 // Biometric
 "biometric.title" = "Sicurezza biometrica";
 "biometric.description" = "Proteggi le tue informazioni finanziarie con l'autenticazione biometrica o il codice del dispositivo.";

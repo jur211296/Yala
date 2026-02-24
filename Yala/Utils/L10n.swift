@@ -1777,6 +1777,19 @@ enum L10n {
         static var categoryHidden: String { ls("settings.categoryHidden", comment: "") }
     }
 
+    // MARK: - Support
+
+    enum Support {
+        static var title: String { ls("support.title", comment: "") }
+        static var type: String { ls("support.type", comment: "") }
+        static var typeError: String { ls("support.typeError", comment: "") }
+        static var typeImprovement: String { ls("support.typeImprovement", comment: "") }
+        static var typeIdea: String { ls("support.typeIdea", comment: "") }
+        static var message: String { ls("support.message", comment: "") }
+        static var messagePlaceholder: String { ls("support.messagePlaceholder", comment: "") }
+        static var send: String { ls("support.send", comment: "") }
+    }
+
     // MARK: - Profile
 
     enum Profile {

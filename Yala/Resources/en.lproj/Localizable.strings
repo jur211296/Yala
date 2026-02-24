@@ -736,6 +736,16 @@
 "settings.privacy" = "Privacy Policy";
 "settings.terms" = "Terms of Use";
 
+// Support
+"support.title" = "Contact Us";
+"support.type" = "Type of inquiry";
+"support.typeError" = "Bug";
+"support.typeImprovement" = "Improvement";
+"support.typeIdea" = "Idea";
+"support.message" = "Describe your inquiry";
+"support.messagePlaceholder" = "Tell us in detail...";
+"support.send" = "Send";
+
 // Biometric
 "biometric.title" = "Biometric Security";
 "biometric.description" = "Protect your financial information with biometric authentication or device passcode.";

@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: None
 Plan: None
 Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-02-24 — A11Y-DT completado (Dynamic Type audit)
+Last activity: 2026-02-24 — Support form sheet con picker de tipo
 
 ### Branch Strategy
 - **1.0** = Release (V1.0 + V1.1 mergeada)
@@ -28,6 +28,8 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-24] dea0d82 feat: support form sheet with type picker before sending email
+- [2026-02-24] 0962a43 fix: show initial balance mode when editing account without balance set
 - [2026-02-24] 8fbb672 fix: a11y labels on 6 icon-only buttons + A11Y-DM audit comments on hardcoded colors
 - [2026-02-24] afc1bc3 docs: Fase 11.5 polish — STATE, QA scenarios, CLAUDE.md test count
 - [2026-02-24] 596ca67 feat: credit card account type with payment reminder notification (POLISH-3)
@@ -564,7 +566,7 @@ Ver ROADMAP.md para más detalles de Fase 12.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Pre-launch a11y audit fixes — 6 icon-only buttons labeled, 4 hardcoded colors documented
+Stopped at: UX fix — account form shows initial balance mode for accounts without balance set (onboarding default)
 Next step: Fase 12 — siguiente item tech debt (CODE-20/21/28/30/32/41/46 pendientes)
 Resume context:
 - A11y audit cerrado: accessibilityLabel en 6 botones, A11Y-DM comments en 4 colores

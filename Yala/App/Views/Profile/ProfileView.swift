@@ -50,6 +50,7 @@ struct ProfileView: View {
     // Subscription state
     @State private var showUpgradeForVoice = false
     @State private var showUpgradeForImage = false
+    @State private var showSupportSheet = false
 
     private var isProUser: Bool {
         FeatureGateService.shared.isProUser
@@ -706,15 +707,16 @@ struct ProfileView: View {
                     iconColor: .orange, destination: .faq)
                 SubsectionDivider()
                 Button {
-                    if let url = Self.supportMailURL {
-                        openURL(url)
-                    }
+                    showSupportSheet = true
                 } label: {
                     settingsRowContent(
                         icon: "envelope.fill", title: L10n.Settings.contact,
                         iconColor: .teal)
                 }
                 .buttonStyle(.plain)
+                .sheet(isPresented: $showSupportSheet) {
+                    SupportFormSheet()
+                }
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
@@ -802,37 +804,6 @@ struct ProfileView: View {
         .contentShape(Rectangle())
     }
 
-    // MARK: - Support Mail
-
-    private static var supportMailURL: URL? {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
-        let systemVersion = UIDevice.current.systemVersion
-        let modelName = UIDevice.current.model
-        let themeName = AppTheme(rawValue: UserDefaults.standard.integer(forKey: "userTheme"))?.label ?? "System"
-        let locale = Locale.preferredLanguages.first ?? "?"
-
-        let subject = "Yala - Soporte"
-        let body = """
-        [Describe tu consulta aquí]
-
-        ---
-        App: Yala v\(version) (\(build))
-        iOS: \(systemVersion)
-        Device: \(modelName)
-        Theme: \(themeName)
-        Locale: \(locale)
-        """
-
-        guard var components = URLComponents(string: "mailto:\(AppConstants.supportEmail)") else {
-            return nil
-        }
-        components.queryItems = [
-            URLQueryItem(name: "subject", value: subject),
-            URLQueryItem(name: "body", value: body),
-        ]
-        return components.url
-    }
 }
 
 #Preview {
