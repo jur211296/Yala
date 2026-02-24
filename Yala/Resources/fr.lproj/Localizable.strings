@@ -1314,6 +1314,10 @@
 "accessibility.selectAtLeastOneDraft" = "Sélectionne au moins un brouillon";
 "accessibility.approveCompleteHint" = "Pour approuver, complète le compte, le montant et la catégorie";
 "accessibility.updatingExchangeRates" = "Mise à jour des taux de change";
+"accessibility.authenticating" = "Authentification en cours";
+"accessibility.showMoreSubcategories" = "Voir plus de sous-catégories";
+"accessibility.subscriptionToggle" = "Marquer comme abonnement";
+"accessibility.skipSync" = "Ignorer l'attente et continuer la configuration";
 
 // MARK: - Widget Hints
 

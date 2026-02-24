@@ -70,7 +70,7 @@ struct ExchangeRateWidget: View {
                 Text(L10n.ExchangeRate.title)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
-                    .padding(.bottom, 2)
+                    .padding(.bottom, DS.Spacing.xxs)
 
                 // Subtitle: "Hoy, HH:mm" or "d MMM, HH:mm"
                 if let data = data, !data.hasError {
@@ -497,7 +497,7 @@ struct ExchangeRateWidget: View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "exclamationmark.triangle")
                 .font(DS.Typography.title)
-                .foregroundStyle(.orange)
+                .foregroundStyle(DS.Semantic.warningForeground)
             Text(message)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)

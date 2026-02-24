@@ -723,9 +723,7 @@ struct ProfileView: View {
         SectionBox(title: L10n.Settings.legal) {
             VStack(spacing: DS.Spacing.none) {
                 Button {
-                    if let url = URL(string: "https://yala-app.pe/privacy") {
-                        openURL(url)
-                    }
+                    openURL(AppConstants.privacyURL)
                 } label: {
                     settingsRowContent(
                         icon: "hand.raised.fill", title: L10n.Settings.privacy,
@@ -734,9 +732,7 @@ struct ProfileView: View {
                 .buttonStyle(.plain)
                 SubsectionDivider()
                 Button {
-                    if let url = URL(string: "https://yala-app.pe/terms") {
-                        openURL(url)
-                    }
+                    openURL(AppConstants.termsURL)
                 } label: {
                     settingsRowContent(
                         icon: "doc.text.fill", title: L10n.Settings.terms,
@@ -827,7 +823,7 @@ struct ProfileView: View {
         Locale: \(locale)
         """
 
-        guard var components = URLComponents(string: "mailto:admin@yala-app.pe") else {
+        guard var components = URLComponents(string: "mailto:\(AppConstants.supportEmail)") else {
             return nil
         }
         components.queryItems = [

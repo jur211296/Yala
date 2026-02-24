@@ -6,6 +6,20 @@ import SwiftUI
 @Observable
 final class PanelViewModel {
 
+    // MARK: - Constants
+
+    /// Default budget color when no category provides one (matches Color.electricIndigo)
+    private static let defaultBudgetColorHex = "#6366F1"
+
+    // MARK: - Static Formatters
+
+    private static let dateKeyFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = TimeZone(identifier: "UTC")
+        return f
+    }()
+
     // MARK: - Dependencies
 
     private var modelContext: ModelContext?
@@ -1499,10 +1513,7 @@ final class PanelViewModel {
         let currentRatesDate: Date =
             latestRate.timestamp
             ?? {
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd"
-                dateFormatter.timeZone = TimeZone(identifier: "UTC")
-                return dateFormatter.date(from: latestRate.dateKey) ?? Date()
+                Self.dateKeyFormatter.date(from: latestRate.dateKey) ?? Date()
             }()
 
         // Build chart points for selected comparison currencies only
@@ -1718,7 +1729,7 @@ final class PanelViewModel {
     private func getBudgetDisplayProperties(budget: Budget) -> (icon: String, color: String) {
         let subcategories = budget.subcategories ?? []
         guard !subcategories.isEmpty else {
-            return ("chart.pie.fill", "#6366F1")
+            return ("chart.pie.fill", Self.defaultBudgetColorHex)
         }
 
         if subcategories.count == 1, let subcategory = subcategories.first {
@@ -1735,7 +1746,7 @@ final class PanelViewModel {
             let color = category.colorHex
             return (icon, color)
         } else {
-            return ("chart.pie.fill", "#6366F1")
+            return ("chart.pie.fill", Self.defaultBudgetColorHex)
         }
     }
 }

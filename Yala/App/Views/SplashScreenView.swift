@@ -72,6 +72,7 @@ struct SplashScreenView: View {
                     .scaleEffect(logoScale)
                     .opacity(logoOpacity)
                     .scaleEffect(isPulsing ? 1.05 : 1.0)
+                    .accessibilityLabel("Yala")
             }
             .onAppear {
                 // Generate initial particles

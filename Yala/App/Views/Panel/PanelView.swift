@@ -133,12 +133,12 @@ struct PanelView: View {
                         .font(DS.Typography.captionSmall).fontWeight(.bold)
                         .foregroundStyle(.white)
                         .padding(.horizontal, DS.Spacing.xs)
-                        .padding(.vertical, 1)
+                        .padding(.vertical, DS.Spacing.xxs)
                         .background(
                             Capsule()
                                 .fill(Color.hotPink)
                         )
-                        .offset(x: 8, y: -6)
+                        .offset(x: DS.Spacing.sm, y: -(DS.Spacing.xs + 2))
                 }
             }
         }
@@ -368,7 +368,7 @@ struct PanelView: View {
                 }
                 .buttonStyle(.plain)
                 .glassEffect(.regular.interactive())
-                .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+                .dsFloatingShadow()
                 .accessibilityLabel(showFABMenu ? L10n.Accessibility.closeMenu : L10n.Accessibility.newRecord)
             }
             .padding(.trailing, DS.Spacing.xl)
@@ -389,7 +389,7 @@ struct PanelView: View {
             }
             .buttonStyle(.plain)
             .glassEffect(.regular.interactive())
-            .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+            .dsFloatingShadow()
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
             .disabled(!canUseVoiceInput)
@@ -412,7 +412,7 @@ struct PanelView: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: icon)
                     .font(DS.Typography.headline)
-                    .frame(width: 24)
+                    .frame(width: DS.Icon.badgeSmall)
 
                 Text(text)
                     .font(DS.Typography.headline)
@@ -429,7 +429,7 @@ struct PanelView: View {
             .padding(.vertical, DS.Spacing.md)
             .background(isLocked ? DS.Semantic.disabledForeground : color)
             .clipShape(Capsule())
-            .shadow(color: (isLocked ? DS.Semantic.disabledForeground : color).opacity(0.3), radius: 8, x: 0, y: 4)
+            .shadow(color: (isLocked ? DS.Semantic.disabledForeground : color).opacity(0.3), radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
         }
         .buttonStyle(.plain)
         .phaseAnimator(reduceMotion ? [false] : [false, true]) { content, phase in

@@ -142,13 +142,6 @@ final class StatisticsViewModel: Filterable {
         set { SessionState.shared.customDateRange = newValue }
     }
 
-    /// Custom date range start (for backward compat, deprecated)
-    var customStartDate: Date =
-        Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
-
-    /// Custom date range end (for backward compat, deprecated)
-    var customEndDate: Date = Date()
-
     // MARK: - Sheet State
 
     /// Whether to show the filters sheet

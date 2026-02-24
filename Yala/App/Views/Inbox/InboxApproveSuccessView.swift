@@ -247,7 +247,7 @@ struct InboxApproveSuccessView: View {
             Image(systemName: icon)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
-                .frame(width: 20)
+                .frame(width: DS.Icon.sizeLarge)
 
             Text(label)
                 .font(DS.Typography.subheadline)
@@ -269,7 +269,7 @@ struct InboxApproveSuccessView: View {
             Image(systemName: "creditcard")
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
-                .frame(width: 20)
+                .frame(width: DS.Icon.sizeLarge)
 
             Text(L10n.Transaction.account)
                 .font(DS.Typography.subheadline)
@@ -280,7 +280,7 @@ struct InboxApproveSuccessView: View {
             HStack(spacing: DS.Spacing.xs) {
                 Circle()
                     .fill(Color(hex: data.accountColorHex))
-                    .frame(width: 8, height: 8)
+                    .frame(width: DS.Chip.dotSize, height: DS.Chip.dotSize)
                 Text(data.accountName)
                     .font(DS.Typography.label)
                     .foregroundStyle(.primary)
@@ -295,7 +295,7 @@ struct InboxApproveSuccessView: View {
             Image(systemName: "tag")
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
-                .frame(width: 20)
+                .frame(width: DS.Icon.sizeLarge)
 
             Text(L10n.Transaction.category)
                 .font(DS.Typography.subheadline)
@@ -307,7 +307,7 @@ struct InboxApproveSuccessView: View {
                 HStack(spacing: DS.Spacing.xs) {
                     Circle()
                         .fill(Color(hex: data.categoryColorHex))
-                        .frame(width: 8, height: 8)
+                        .frame(width: DS.Chip.dotSize, height: DS.Chip.dotSize)
                     Text(data.subcategoryName)
                         .font(DS.Typography.label)
                         .foregroundStyle(.primary)

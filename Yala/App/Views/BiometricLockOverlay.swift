@@ -58,7 +58,7 @@ struct BiometricLockOverlay: View {
                     .clipShape(Capsule())
                 }
                 .disabled(isAuthenticating)
-                .accessibilityHint(isAuthenticating ? "Autenticando" : "")
+                .accessibilityHint(isAuthenticating ? L10n.Accessibility.authenticating : "")
                 .padding(.horizontal, DS.Spacing.xxxl)
                 .padding(.bottom, DS.Spacing.xxxl)
             }

@@ -77,13 +77,6 @@ final class RecordsViewModel: Filterable {
         set { SessionState.shared.customDateRange = newValue }
     }
 
-    /// Custom date range start (for backward compat, deprecated)
-    var customStartDate: Date =
-        Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
-
-    /// Custom date range end (for backward compat, deprecated)
-    var customEndDate: Date = Date()
-
     /// Selected currencies for filtering
     var selectedCurrencies: Set<CurrencyCode> {
         get { SessionState.shared.selectedCurrencies }
@@ -375,8 +368,6 @@ final class RecordsViewModel: Filterable {
         transactionTypeFilter = .all
         amountCondition = .any
         // period = .thisMonth // Do not reset period
-        customStartDate = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
-        customEndDate = Date()
         selectedCurrencies = []
         searchText = ""
     }

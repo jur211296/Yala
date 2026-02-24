@@ -87,7 +87,7 @@ struct AccountCardView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
+                    .stroke(DS.Colors.borderDark, lineWidth: 1)
             )
 
             if let onEditTapped {
@@ -113,20 +113,6 @@ struct AccountCardView: View {
     private func formattedAmount(_ value: Double) -> String {
         YalaFormatter.currency(
             value: value, currencyCode: normalizeCurrencyCode(account.currencyCode))
-    }
-
-    // Helpers locally defined to resolve scope issues
-    private func normalizeCurrencyCode(_ raw: String) -> String {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { return "PEN" }
-
-        let upper = trimmed.uppercased()
-        switch upper {
-        case "PEN", "SOL", "SOLES", "S/", "S/.", "S/. ": return "PEN"
-        case "USD", "US$", "US DOLLAR", "$", "$USD", "USD$": return "USD"
-        case "EUR", "€", "EURO": return "EUR"
-        default: return upper
-        }
     }
 
 }
@@ -157,7 +143,7 @@ struct AddAccountCardView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
+                    .stroke(DS.Colors.borderDark, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)

@@ -173,6 +173,7 @@ struct TopSubcategoriesWidget: View {
                             .padding(.leading, DS.Spacing.xs)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.Accessibility.showMoreSubcategories)
                 }
             }
 

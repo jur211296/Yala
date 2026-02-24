@@ -476,6 +476,10 @@ enum L10n {
         static var selectAtLeastOneDraft: String { ls("accessibility.selectAtLeastOneDraft", comment: "") }
         static var approveCompleteHint: String { ls("accessibility.approveCompleteHint", comment: "") }
         static var updatingExchangeRates: String { ls("accessibility.updatingExchangeRates", comment: "") }
+        static var authenticating: String { ls("accessibility.authenticating", comment: "") }
+        static var showMoreSubcategories: String { ls("accessibility.showMoreSubcategories", comment: "") }
+        static var subscriptionToggle: String { ls("accessibility.subscriptionToggle", comment: "") }
+        static var skipSync: String { ls("accessibility.skipSync", comment: "") }
     }
 
     // MARK: - Search

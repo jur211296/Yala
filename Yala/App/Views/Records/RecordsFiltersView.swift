@@ -274,7 +274,7 @@ struct RecordsFiltersView: View {
             HStack(spacing: DS.Spacing.sm) {
                 Circle()
                     .fill(isSelected ? Color.white : Color(hex: tag.colorHex))
-                    .frame(width: 8, height: 8)
+                    .frame(width: DS.Chip.dotSize, height: DS.Chip.dotSize)
 
                 Text(tag.name)
                     .font(DS.Typography.subheadline)

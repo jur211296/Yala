@@ -542,7 +542,7 @@ private struct BulkTagRow: View {
                 // Color circle with icon
                 Circle()
                     .fill(Color(hex: tag.colorHex))
-                    .frame(width: 28, height: 28)
+                    .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
                     .overlay(
                         Image(systemName: tag.iconName)
                             .font(DS.Typography.labelSmall.weight(.semibold))

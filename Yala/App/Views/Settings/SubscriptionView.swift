@@ -110,10 +110,8 @@ struct SubscriptionView: View {
                             .font(DS.Typography.caption)
                             .foregroundStyle(.tertiary)
                             .multilineTextAlignment(.center)
-                        if let url = URL(string: "https://yala-app.pe/terms") {
-                            Link(L10n.Subscription.termsLink, destination: url)
-                                .font(DS.Typography.caption)
-                        }
+                        Link(L10n.Subscription.termsLink, destination: AppConstants.termsURL)
+                            .font(DS.Typography.caption)
                     }
                     .padding(.horizontal, DS.Spacing.xl)
                     .padding(.bottom, DS.Spacing.xxl)

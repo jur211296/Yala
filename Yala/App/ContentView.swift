@@ -382,6 +382,7 @@ struct ContentView: View {
                         .font(DS.Typography.label)
                         .foregroundStyle(.secondary)
                 }
+                .accessibilityHint(L10n.Accessibility.skipSync)
                 .padding(.top, DS.Spacing.lg)
             }
             .padding(.horizontal, DS.Spacing.xxl)

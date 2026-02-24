@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: None
 Plan: None
 Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-02-23 — Flow review G7+G8+G11-G14 completado
+Last activity: 2026-02-23 — Flow review BAJA batch resuelto (~30 issues)
 
 ### Branch Strategy
 - **1.0** = Release (V1.0 + V1.1 mergeada)
@@ -28,6 +28,8 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-24] 047fb8d fix: flow review BAJA batch — DS tokens, l10n accessibility, dead code, AppConstants
+- [2026-02-23] 1a65c0a fix: flow review G9+G10 — WidgetDataCache, static formatters, l10n accessibility
 - [2026-02-23] b1e724a fix: flow review G7+G8+G13+G14 — yearly IDs, WidgetDataCache, static formatters, l10n accessibility
 - [2026-02-23] 821a3ea fix: flow review G6 — bulk MerchantMemory, static formatters, l10n accessibility
 - [2026-02-23] e39d8d4 fix: flow review G4+G5 — widget cache, safeCategory, deterministic IDs, static formatters, l10n accessibility
@@ -36,11 +38,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-02-23] be3cb18 fix: eliminate force unwraps and silent try? for pre-launch stability
 - [2026-02-23] ec03800 a11y: batch 10B — localize accessibility labels, reduceMotion support, and selection traits
 - [2026-02-23] 4430d00 l10n+ds: batch 10A — localize remaining hardcoded strings and DS color cleanup
-- [2026-02-23] 61e0945 fix: batch 9B — service routing and behavior fixes
-- [2026-02-23] a1ccb18 refactor: batch 9A — dead code removal and static formatter extraction
-- [2026-02-23] 071bc4c refactor: batch 8 — migrate empty states to YalaEmptyState component
-- [2026-02-23] e106dbe refactor: batch 7 — DS semantic tokens, FAB size token, and onTapGesture→Button migration
-- [2026-02-23] c6dca6f l10n: batch 6B — a11y labels, SaveAsRecurring migration, and remaining L10N fixes
 - [2026-02-20] d534a4f feat: add VoiceOver accessibility labels to all charts
 - [2026-02-20] 54185b5 fix: resolve pre-launch warnings — legal link and force unwraps
 - [2026-02-20] 4add74e feat: dev-only subscription reset on data wipe for testing
@@ -543,10 +540,11 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Flow review G7+G8+G11-G14 committed (b1e724a). G1-G8+G11-G14 complete.
-Next step: Flow review G9 (Profile & Settings) + G10 (Upgrade/Paywall) — last 2 groups
+Stopped at: Flow review BAJA batch completed. All 14 groups reviewed + BAJA polish applied.
+Next step: Fase 12 — Plataforma Extendida
 Resume context:
-- Flow review: G1 ✅, G2 ✅ (clean), G3 ✅, G4 ✅, G5 ✅, G6 ✅, G7 ✅, G8 ✅, G11 ✅ (clean), G12 ✅ (clean), G13 ✅, G14 ✅
-- G9 (Profile & Settings) is the largest group (~50 archivos) — pending
-- G10 (Upgrade/Paywall) — pending
+- Flow review: ALL 14 GROUPS ✅ (G1-G14 complete, G9+G10 done in prev session)
+- BAJA batch: ~30 issues resolved (L10n, dead code, DS tokens, shadows, constants)
+- ~15 items SKIP (refactors grandes, widget context, UX decisions)
+- AppConstants.swift created (termsURL, privacyURL, supportEmail)
 - Branch 1.0 — release branch

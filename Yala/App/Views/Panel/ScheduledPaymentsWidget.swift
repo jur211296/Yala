@@ -549,10 +549,10 @@ struct ScheduledPaymentsWidget: View {
         let isToday = isCurrentDay(day)
         let hasPayments = !entries.isEmpty
 
-        return VStack(alignment: .leading, spacing: 1) {
+        return VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
             // Day number
             Text("\(day)")
-                .font(.caption2.weight(isToday ? .bold : .medium))
+                .font(DS.Typography.captionSmall.weight(isToday ? .bold : .medium))
                 .foregroundStyle(isToday ? theme.accent : .secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -560,7 +560,7 @@ struct ScheduledPaymentsWidget: View {
             if hasPayments {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     ForEach(Array(entries.prefix(2).enumerated()), id: \.offset) { _, entry in
-                        HStack(spacing: 2) {
+                        HStack(spacing: DS.Spacing.xxs) {
                             if entry.isSkipped {
                                 Image(systemName: "arrow.uturn.forward")
                                     .font(.system(size: 6, weight: .bold))

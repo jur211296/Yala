@@ -467,7 +467,7 @@ struct SaveAsRecurringSheet: View {
                     Text(L10n.Scheduled.Editor.isSubscription)
                 }
             }
-
+            .accessibilityLabel(L10n.Accessibility.subscriptionToggle)
             .padding()
         }
     }

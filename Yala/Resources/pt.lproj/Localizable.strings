@@ -1314,6 +1314,10 @@
 "accessibility.selectAtLeastOneDraft" = "Selecione pelo menos um rascunho";
 "accessibility.approveCompleteHint" = "Para aprovar, preencha conta, valor e categoria";
 "accessibility.updatingExchangeRates" = "Atualizando taxas de câmbio";
+"accessibility.authenticating" = "Autenticando";
+"accessibility.showMoreSubcategories" = "Ver mais subcategorias";
+"accessibility.subscriptionToggle" = "Marcar como assinatura";
+"accessibility.skipSync" = "Pular espera e continuar configuração";
 
 // MARK: - Widget Hints
 

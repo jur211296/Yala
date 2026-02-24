@@ -410,7 +410,6 @@ final class NewTransactionViewModel {
         isExchangeRateManual = true
     }
 
-    /// Carga el tipo de cambio del servicio
     /// Carga el tipo de cambio del servicio (solo para transfers entre cuentas de diferente divisa)
     func loadExchangeRate(context: ModelContext) async {
         // Only load exchange rate for transfers between accounts with different currencies

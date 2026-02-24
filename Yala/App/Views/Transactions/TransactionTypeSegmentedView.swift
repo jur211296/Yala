@@ -55,10 +55,10 @@ struct TransactionTypeButton: View {
     var body: some View {
         Button(action: action) {
             Text(type.displayName)
-                .font(.subheadline.weight(isSelected ? .semibold : .medium))
+                .font(DS.Typography.label.weight(isSelected ? .semibold : .medium))
                 .foregroundStyle(isSelected ? .white : .primary)
                 .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Chip.paddingH)
+                .padding(.vertical, DS.Chip.paddingV)
                 .frame(maxWidth: .infinity)
                 .background {
                     if isSelected {

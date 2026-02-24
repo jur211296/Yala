@@ -1314,6 +1314,10 @@
 "accessibility.selectAtLeastOneDraft" = "Select at least one draft";
 "accessibility.approveCompleteHint" = "To approve, complete account, amount, and category";
 "accessibility.updatingExchangeRates" = "Updating exchange rates";
+"accessibility.authenticating" = "Authenticating";
+"accessibility.showMoreSubcategories" = "Show more subcategories";
+"accessibility.subscriptionToggle" = "Mark as subscription";
+"accessibility.skipSync" = "Skip waiting and continue setup";
 
 // MARK: - Widget Hints
 
