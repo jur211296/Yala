@@ -263,7 +263,7 @@ struct PaymentRowView: View {
         if payment.isOverdue {
             return WidgetColors.overdue
         }
-        return .primary
+        return WidgetColors.expense
     }
 
     private var formattedDate: String {
@@ -291,7 +291,7 @@ struct PaymentRowView: View {
         formatter.maximumFractionDigits = 2
 
         let formatted = formatter.string(from: NSNumber(value: payment.amount)) ?? "0.00"
-        let prefix = payment.isIncome ? "+" : ""
+        let prefix = payment.isIncome ? "+" : "-"
         let currency = displayFormat == "symbol"
             ? CurrencySymbols.symbol(for: payment.currencyCode)
             : payment.currencyCode
