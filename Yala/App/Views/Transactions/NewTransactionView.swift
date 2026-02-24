@@ -594,6 +594,18 @@ struct NewTransactionView: View {
 
     private var quickActionsBar: some View {
         HStack(spacing: DS.Spacing.xl) {
+            // Recurring badge (edit mode, linked to scheduled payment)
+            if transactionToEdit?.scheduledPaymentID != nil {
+                Label(L10n.Action.recurring, systemImage: "arrow.trianglehead.2.clockwise.rotate.90")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.purple)
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .padding(.vertical, DS.Spacing.xxs)
+                    .background(
+                        Capsule().fill(.purple.opacity(0.12))
+                    )
+            }
+
             // Duplicate (only in edit mode)
             if transactionToEdit != nil {
                 quickActionButton(
