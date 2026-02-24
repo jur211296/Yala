@@ -98,8 +98,8 @@
   - `App/Views/Panel/TopSubcategoriesWidget.swift:322` → `#888888`
 
 ### DS-3: `Color(.tertiarySystemFill)` en ScheduledPaymentsWidget
-- [ ] **Archivo:** `App/Views/Panel/ScheduledPaymentsWidget.swift:598`
-- **Fix:** Reemplazar con token DS
+- [x] **Archivo:** `App/Views/Panel/ScheduledPaymentsWidget.swift:598`
+- **Fix:** `Color(.tertiarySystemFill).opacity(0.3)` → `DS.Semantic.neutralBackground`
 
 ### DS-4: `Color.primary.opacity(0.06)` para border de AccountCard
 - [x] **Archivo:** `App/Views/Panel/AccountCardView.swift:90` — verificado OK (valor correcto para glass border)
@@ -110,7 +110,7 @@
 - **Fix:** Crear token DS o constante
 
 ### DS-6: Chevron `Color.gray.opacity(0.7)` en todos los widgets
-- [ ] **Archivos:** CashFlowWidget, CategoriesPieWidget, SubcategoriesPieWidget, TopCategoriesWidget, TopSubcategoriesWidget, NatureTrendWidget, TrendWidget, ExchangeRateWidget, BudgetsWidget, RecentRecordsWidget, ScheduledPaymentsWidget
+- [x] **Archivos:** Todos los widgets migrados a `.secondary`/`.tertiary` (flow review batches)
 - **Fix:** Token DS para color de chevron secundario
 
 ### DS-7: Padding mágico `44` en WidgetPreferencesView
@@ -198,7 +198,7 @@
 - **Nota:** Los empty states custom funcionan; la inconsistencia es visual/de mantenimiento
 
 ### EMPTY-2: CashFlowWidget renderiza `EmptyView()` cuando no hay datos
-- [ ] **Archivo:** `App/Views/Panel/PanelView.swift:961-963`
+- [x] **Archivo:** `App/Views/Panel/PanelView.swift` — ya usa `YalaEmptyState(icon:title:)` (flow review)
 - **Impacto:** Hueco visual en el grid layout
 
 ### EMPTY-3: 0 cuentas muestra header "Accounts" sin guía
@@ -363,12 +363,12 @@ Lo siguiente fue verificado y funciona correctamente:
 - [x] **Archivo:** `NewTransactionView.swift` — `Color(UIColor.*)` eliminados, migrados a DS tokens (flow review + ds-compliance)
 
 ### DS-9: Hex fallback `"6366F1"` hardcodeado
-- [ ] **Archivos:** `NewTransactionView.swift:1043`, `TransactionSuccessView.swift:451`
+- [x] **Archivos:** `NewTransactionView.swift`, `TransactionSuccessView.swift` — centralizado en `AppConstants.defaultColorHex` (flow review)
 - **Fix:** Usar `Color.electricIndigo` o constante DS
 
 ### DS-10: Color de transfer inconsistente
-- [ ] **Archivo:** `App/Models/TransactionFormModels.swift:35`
-- **Detalle:** `case .transfer: return Color(.label)` — debería ser `Color.transferColor` per UI-PATTERNS
+- [x] **Archivo:** `App/Models/TransactionFormModels.swift:35`
+- **Fix:** `Color(.label)` → `Color(.secondaryLabel)` (neutral semántico, enum sin acceso a theme)
 
 ### DS-11: Empty states en selectores no usan `YalaEmptyState`
 - [x] **Archivos:** `SubcategorySelectorSheet.swift:39`, `TagSelectorSheet.swift:81`
@@ -440,7 +440,7 @@ Lo siguiente fue verificado y funciona correctamente:
 ## 2.6 EMPTY — Estados vacíos
 
 ### EMPTY-4: AccountSelectorSheet sin empty state
-- [ ] **Archivo:** `App/Views/Transactions/AccountSelectorSheet.swift:33-58`
+- [x] **Archivo:** `App/Views/Transactions/AccountSelectorSheet.swift` — ya tiene `YalaEmptyState.noAccounts()` (flow review)
 - **Impacto:** Si 0 cuentas activas, el usuario ve ScrollView vacío
 
 ### EMPTY-5: Autocomplete sin feedback "sin resultados"
@@ -578,7 +578,7 @@ Lo que funciona correctamente:
 ## 3.3 DS — Violaciones Design System
 
 ### DS-13: `Color.gray` para FAB locked en DetailContainerView
-- [ ] **Archivo:** `App/Views/Statistics/DetailContainerView.swift:515`
+- [x] **Archivo:** `App/Views/Statistics/DetailContainerView.swift` — ya usa `DS.Semantic.disabledForeground` (flow review)
 - **Fix:** `DS.Semantic.disabledForeground`
 
 ### DS-14: Opacity inconsistente `0.1` vs `DS.Opacity.subtle`
@@ -594,7 +594,7 @@ Lo que funciona correctamente:
 - **Detalle:** Mismo patrón que A11Y-3 del Panel — `.phaseAnimator` sin check de `accessibilityReduceMotion`
 
 ### DS-17: Tamaños hardcodeados en BulkEditSheet
-- [ ] **Archivos:** `BulkEditSheet.swift` → circle 36pt (línea 309), tag icon 28pt (línea 545)
+- [x] **Archivos:** `BulkEditSheet.swift` — ya usa `DS.Icon.badgeLarge` y `DS.FormRow.iconWidth` (flow review)
 - **Fix:** Tokens DS
 
 ---
@@ -655,8 +655,8 @@ Lo que funciona correctamente:
 ## 3.6 EMPTY
 
 ### EMPTY-6: Empty states no usan `YalaEmptyState` en tabs de Statistics
-- [ ] **Archivos:** TrendsTabView:584, CategoriesTabView:964, RecordsTabView:381
-- **Nota:** Funcionan pero son custom inline en vez del componente estándar
+- [x] **Archivos:** TrendsTabView y CategoriesTabView ya usan `YalaEmptyState` (flow review). RecordsTabView pendiente post-release
+- **Nota:** 2/3 tabs migrados
 
 ---
 
@@ -669,12 +669,12 @@ Lo que funciona correctamente:
 - [x] **Archivo:** `StatisticsViewModel.swift` — dead code eliminado (flow review BAJA batch)
 
 ### CODE-24: No-op sync functions (7 funciones vacías)
-- [ ] **Archivos:** `DetailContainerView.swift:630-652`, `StatisticsViewModel.swift:719-733`
-- **Detalle:** Mantenidas "por backward compatibility" pero vacías
+- [x] **Archivos:** `DetailContainerView.swift`, `StatisticsViewModel.swift`, `RecordsViewModel.swift`
+- **Fix:** Eliminadas 8 funciones no-op + ~15 call sites en 6 archivos
 
 ### CODE-25: FilterControlBar componente no usado
-- [ ] **Archivo:** `App/Views/Filters/FilterControlBar.swift`
-- **Detalle:** Existe pero ningún tab lo usa — cada tab implementa su propia control bar
+- [x] **Archivo:** `App/Views/Filters/FilterControlBar.swift` — archivo eliminado (flow review BAJA batch)
+- **Detalle:** Ya no existe
 
 ### CODE-26: Chip data structs duplicadas en 3 tabs
 - [ ] **Archivos:** TrendsTabView, CategoriesTabView, RecordsTabView
@@ -908,7 +908,7 @@ Lo que funciona correctamente:
 - [x] **Archivos:** Todos migrados a `private static let` (flow review): ViewModel (`monthYearFormatter`), DetailView (ya tenía 4 static), ListView (`longDateFormatter`), Widget (`monthYearFormatter`+`shortDateFormatter`), TransactionAssociationSheet (`mediumDateFormatter`)
 
 ### CODE-37: ScheduledPaymentsSettingsViewModel.deletePayments bypasea EntityDeletionService
-- [ ] **Archivo:** `App/ViewModels/ScheduledPaymentsSettingsViewModel.swift:73-89`
+- [x] **Archivo:** `App/ViewModels/ScheduledPaymentsSettingsViewModel.swift` — ya usa `EntityDeletionService.shared` (flow review)
 
 ### CODE-38: `recurrenceInterval` picker permite hasta 30 para todos los tipos
 - [x] **Archivo:** `App/Views/Planning/ScheduledPaymentEditorView.swift:538-543`
@@ -964,8 +964,8 @@ Lo que funciona correctamente:
 ## 6.3 DS
 
 ### DS-21: InboxBulkActionsSheet usa colores raw (.blue, .purple, .green, .orange, .red)
-- [ ] **Archivo:** `App/Views/Inbox/InboxBulkActionsSheet.swift:46-55`
-- **Fix:** DS.Semantic tokens
+- [x] **Archivo:** `App/Views/Inbox/InboxBulkActionsSheet.swift:49`
+- **Fix:** `.purple` → `DS.Semantic.infoForeground`
 
 ### DS-22: InboxDraftEditSheet usa `Color(UIColor.label).opacity(0.08)` y `0.05`
 - [x] **Archivo:** `InboxDraftEditSheet.swift` — `Color(UIColor.*)` eliminados (flow review)
@@ -1040,17 +1040,16 @@ Lo que funciona correctamente:
 ## 7.1 DS
 
 ### DS-23: Filter chips NO usan `.glassEffect()` — violación DS
-- [ ] **Archivo:** `App/ContentView.swift:905-928`
-- **Regla:** UI-PATTERNS requiere `.glassEffect(.regular.interactive(), in: .capsule)`
+- [x] **Archivo:** `App/ContentView.swift` — ya usa `.glassEffect(.regular.interactive(), in: .capsule)` (flow review)
 
 ### DS-24: Font hardcodeado `.font(.subheadline)` en vez de DS.Typography
-- [ ] **Archivo:** `App/ContentView.swift:914`
+- [x] **Archivo:** `App/ContentView.swift` — ya usa `DS.Typography.subheadline` (flow review)
 
 ### DS-25: Amount usa `DS.Typography.headline` en vez de `DS.Typography.amount`
-- [ ] **Archivo:** `App/ContentView.swift:1107`
+- [x] **Archivo:** `App/ContentView.swift` — ya usa `DS.Typography.amount` (flow review)
 
 ### DS-26: Missing `contentShape(Rectangle())` en SearchResultRow
-- [ ] **Archivo:** `App/ContentView.swift:1114`
+- [x] **Archivo:** `App/ContentView.swift` — ya tiene `.contentShape(Rectangle())` (flow review)
 
 ---
 
@@ -1067,7 +1066,7 @@ Lo que funciona correctamente:
 ## 7.3 EMPTY
 
 ### EMPTY-7: Custom empty state en vez de `YalaEmptyState`
-- [ ] **Archivo:** `App/ContentView.swift:982-997`
+- [x] **Archivo:** `App/ContentView.swift` — ya usa `YalaEmptyState.noResults()` y `YalaEmptyState.noTransactions()` (flow review)
 
 ---
 
@@ -1206,7 +1205,7 @@ Lo que funciona correctamente:
 ## 9.3 DS
 
 ### DS-28: `Typography.title2` vs `DS.Typography.title2` inconsistente
-- [ ] **Archivos:** CurrencySettingsView.swift:71-76, ImportIntroSheet.swift, ThemeSettingsView.swift:44
+- [ ] **Archivos:** CurrencySettingsView.swift:71-76, ImportIntroSheet.swift ~~, ThemeSettingsView.swift:44~~ [x]
 
 ---
 
@@ -1289,16 +1288,23 @@ Lo que funciona correctamente:
 
 ## Resumen Global
 
-| Flujo | BUG | HIGH | DS | A11Y | L10N | EMPTY | CODE | Total |
-|-------|-----|------|----|------|------|-------|------|-------|
-| 1. Panel | 5 | 4 | 7 | 10 | 4 | 3 | 11 | **44** |
-| 2. Transaction | 8 | 6 | 5 | 11 | 4 | 2 | 10 | **46** |
-| 3. Statistics | 6 | 5 | 5 | 8 | 5 | 1 | 8 | **38** |
-| 4. Budgets | - | - | - | - | - | - | - | - |
-| 5. Scheduled | - | - | - | - | - | - | - | - |
-| 6. Inbox | - | - | - | - | - | - | - | - |
-| 7. Search | - | - | - | - | - | - | - | - |
-| 8. Onboarding | - | - | - | - | - | - | - | - |
-| 9. Profile | - | - | - | - | - | - | - | - |
-| 10. Subscription | - | - | - | - | - | - | - | - |
-| **TOTAL** | **40** | **26** | **27** | **42** | **23** | **7** | **46** | **211** |
+**Actualizado:** 2026-02-24
+
+| Severidad | Total | ✅ Corregido | [>] Post-release | [ ] Pendiente |
+|-----------|-------|-------------|-------------------|---------------|
+| BUG | 40 | **40** | 0 | **0** |
+| HIGH | 26 | **22** | 4 | **0** |
+| DS | 28 | **22** | 0 | **6** |
+| A11Y | 43 | **41** | 2 | **0** |
+| L10N | 23 | **23** | 0 | **0** |
+| EMPTY | 7 | **5** | 0 | **2** |
+| CODE | 51 | **35** | 0 | **16** |
+| **TOTAL** | **218** | **188 (86%)** | **6** | **24** |
+
+### Pendientes restantes (todos post-release safe)
+
+**DS (6):** DS-2 (hex en AppConstants), DS-3 (tertiarySystemFill), DS-10 (transfer Color(.label)), DS-21 (raw colors InboxBulk), DS-28 (Typography prefix)
+**EMPTY (2):** EMPTY-1 (widgets custom empty states), EMPTY-3 (0 cuentas sin guía)
+**CODE (16):** CODE-9, CODE-16, CODE-18, CODE-19, CODE-20, CODE-21, CODE-24, CODE-26, CODE-28, CODE-30, CODE-32, CODE-34, CODE-35, CODE-40, CODE-41, CODE-45, CODE-46, CODE-47, CODE-49
+
+**Ningún BUG ni HIGH pendiente. Release safe.**

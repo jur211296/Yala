@@ -145,8 +145,6 @@ struct TrendsTabView: View {
             .yalaSafeBottomPadding()
         }
         .onAppear {
-            // Sync metric from SessionState on appear
-            trendsViewModel.syncMetricFromSessionState(sessionState)
             calculateCashFlowData()
             calculatePeriodComparisonData()
         }
@@ -176,15 +174,6 @@ struct TrendsTabView: View {
         }
         .onChange(of: trendsViewModel.selectedMetric) {
             calculatePeriodComparisonData()
-            trendsViewModel.syncMetricToSessionState(sessionState)
-        }
-        .onChange(of: sessionState.selectedTrendMetric) {
-            // Sync metric from SessionState when it changes in other views
-            trendsViewModel.syncMetricFromSessionState(sessionState)
-        }
-        .onChange(of: sessionState.customDateRange) {
-            // Sync custom date range and recalculate
-            trendsViewModel.syncCustomRangeFromSessionState(sessionState)
         }
         .onChange(of: sessionState.comparisonMode) {
             // Recalculate when comparison mode changes (P-1 vs A-1)

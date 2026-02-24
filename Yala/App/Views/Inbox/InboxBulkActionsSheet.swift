@@ -46,7 +46,7 @@ enum InboxBulkOption: String, Identifiable {
     var iconColor: Color {
         switch self {
         case .account: return DS.Semantic.infoForeground
-        case .subcategory: return .purple
+        case .subcategory: return DS.Semantic.infoForeground
         case .approve: return DS.Semantic.successForeground
         case .reject: return DS.Semantic.warningForeground
         case .delete: return DS.Semantic.errorForeground

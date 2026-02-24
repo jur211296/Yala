@@ -170,8 +170,6 @@ struct CategoriesTabView: View {
             calculateData()
         }
         .onChange(of: sessionState.customDateRange) {
-            // Sync custom date range and recalculate
-            viewModel.syncCustomRangeFromSessionState(sessionState)
             calculateData()
         }
         .onChange(of: sessionState.comparisonMode) {

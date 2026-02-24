@@ -567,25 +567,6 @@ final class StatisticsViewModel: Filterable {
         )
     }
 
-    // MARK: - SessionState Synchronization (SSOT - Most sync is now via computed properties)
-
-    /// No-op: selectedMetric is now a computed property reading from SessionState.shared
-    /// Kept for backward compatibility with existing callers
-    func syncMetricFromSessionState(_ sessionState: SessionState) {
-        // No-op: selectedMetric and customDateRange are now SSOT computed properties
-    }
-
-    /// No-op: selectedMetric is now a computed property writing to SessionState.shared
-    /// Kept for backward compatibility with existing callers
-    func syncMetricToSessionState(_ sessionState: SessionState) {
-        // No-op: selectedMetric is now a SSOT computed property
-    }
-
-    /// No-op: customDateRange is now a computed property reading from SessionState.shared
-    /// Kept for backward compatibility with existing callers
-    func syncCustomRangeFromSessionState(_ sessionState: SessionState) {
-        // No-op: customDateRange is now a SSOT computed property
-    }
 }
 
 // MARK: - Account Trend Series

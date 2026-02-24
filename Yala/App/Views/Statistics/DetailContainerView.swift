@@ -126,23 +126,17 @@ struct DetailContainerView: View {
                     showUpgradeForImage: $showUpgradeForImage,
                     modelContext: modelContext,
                     refreshRecordsData: refreshRecordsData,
-                    syncFiltersToTrends: syncFiltersToTrends,
                     calculateTrendsData: calculateTrendsData
                 )
             )
             .onRecordsFilterChange(viewModel: recordsViewModel) {
                 refreshRecordsData()
-                syncFiltersToTrends()
-                syncToSessionState()
             }
             .onTrendsFilterChange(viewModel: trendsViewModel) {
                 calculateTrendsData()
-                syncFiltersToRecords()
-                syncToSessionState()
             }
             .onAppear {
                 dataViewModel.setContext(modelContext)
-                if !isFromSearch { syncFromSessionState() }
                 refreshRecordsData()
                 calculateTrendsData()
             }
@@ -153,7 +147,6 @@ struct DetailContainerView: View {
                 }
                 // Sync filters when navigating to Statistics tab (view may already be mounted)
                 if newTab == .statistics && !isFromSearch {
-                    syncFromSessionState()
                     calculateTrendsData()
                     refreshRecordsData()
                 }
@@ -174,9 +167,7 @@ struct DetailContainerView: View {
                     recordsViewModel: recordsViewModel,
                     categories: dataViewModel.categories,
                     subcategories: dataViewModel.allSubcategories,
-                    syncFromSessionState: syncFromSessionState,
                     handleSessionStateFilterChange: handleSessionStateFilterChange,
-                    syncToSessionState: syncToSessionState,
                     calculateTrendsData: calculateTrendsData,
                     refreshRecordsData: refreshRecordsData
                 ))
@@ -626,35 +617,8 @@ struct DetailContainerView: View {
         isSyncingState = true
         defer { isSyncingState = false }
 
-        syncFromSessionState()
         calculateTrendsData()
         refreshRecordsData()
-    }
-
-    // MARK: - Synchronization
-
-    private func syncFiltersToTrends() {
-        // SSOT Refactor: Both trendsViewModel and recordsViewModel have computed properties
-        // that read/write directly from SessionState.shared. They're always in sync.
-        // This function is kept as a no-op for backward compatibility.
-    }
-
-    private func syncFiltersToRecords() {
-        // SSOT Refactor: Both trendsViewModel and recordsViewModel have computed properties
-        // that read/write directly from SessionState.shared. They're always in sync.
-        // This function is kept as a no-op for backward compatibility.
-    }
-
-    private func syncFromSessionState() {
-        // SSOT Refactor: All viewModel filter properties are now computed properties
-        // that read/write directly from SessionState.shared. No sync needed.
-        // This function is kept as a no-op for backward compatibility with existing callers.
-    }
-
-    private func syncToSessionState() {
-        // SSOT Refactor: All viewModel filter properties are now computed properties
-        // that read/write directly from SessionState.shared. No sync needed.
-        // This function is kept as a no-op for backward compatibility with existing callers.
     }
 }
 
@@ -719,7 +683,6 @@ private struct DetailContainerSheets: ViewModifier {
     @Binding var showUpgradeForImage: Bool
     let modelContext: ModelContext
     let refreshRecordsData: () -> Void
-    let syncFiltersToTrends: () -> Void
     let calculateTrendsData: () -> Void
 
     func body(content: Content) -> some View {
@@ -756,7 +719,6 @@ private struct DetailContainerSheets: ViewModifier {
             .sheet(isPresented: $trendsViewModel.showFiltersSheet) {
                 RecordsFiltersView(recordsViewModel: recordsViewModel)
                     .onDisappear {
-                        syncFiltersToTrends()
                         calculateTrendsData()
                     }
             }
@@ -793,15 +755,13 @@ private struct DetailContainerObservers: ViewModifier {
     @Bindable var recordsViewModel: RecordsViewModel
     let categories: [Category]
     let subcategories: [Subcategory]
-    let syncFromSessionState: () -> Void
     let handleSessionStateFilterChange: () -> Void
-    let syncToSessionState: () -> Void
     let calculateTrendsData: () -> Void
     let refreshRecordsData: () -> Void
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: sessionState.selectedPeriod) { syncFromSessionState() }
+            .onChange(of: sessionState.selectedPeriod) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.selectedAccountIDs) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.selectedCategoryIDs) {
                 // Auto-select expense filter only if ALL selected categories are expense (not income)
@@ -842,16 +802,13 @@ private struct DetailContainerObservers: ViewModifier {
             .onChange(of: sessionState.amountCondition) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.searchText) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.selectedTrendMetric) {
-                syncFromSessionState()
                 calculateTrendsData()
             }
             .onChange(of: sessionState.customDateRange) {
-                syncFromSessionState()
                 calculateTrendsData()
                 refreshRecordsData()
             }
             .onChange(of: trendsViewModel.selectedMetric) { _, _ in
-                syncToSessionState()
                 calculateTrendsData()
             }
             .onChange(of: trendsViewModel.isAggregatedView) { _, _ in calculateTrendsData() }

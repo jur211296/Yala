@@ -41,7 +41,7 @@ struct ThemeSettingsView: View {
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Profile.appearance)
-                            .font(.title2.bold())
+                            .font(DS.Typography.title2.bold())
                             .foregroundStyle(.thPrimaryText)
 
                         Text(L10n.Settings.themeDescription)

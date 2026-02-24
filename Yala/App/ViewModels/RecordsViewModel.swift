@@ -253,14 +253,6 @@ final class RecordsViewModel: Filterable {
         return period.dateInterval(customRange: customDateRange)
     }
 
-    // MARK: - SessionState Synchronization (SSOT - Most sync is now via computed properties)
-
-    /// No-op: customDateRange and period are now SSOT computed properties
-    /// Kept for backward compatibility with existing callers
-    func syncCustomRangeFromSessionState(_ sessionState: SessionState) {
-        // No-op: customDateRange and period are now SSOT computed properties
-    }
-
     // MARK: - Selection Actions
 
     /// Toggle selection for a record

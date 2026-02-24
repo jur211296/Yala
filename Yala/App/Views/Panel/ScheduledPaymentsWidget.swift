@@ -604,7 +604,7 @@ struct ScheduledPaymentsWidget: View {
         } else if hasPayments {
             return DS.Semantic.neutralBackground
         } else {
-            return Color(.tertiarySystemFill).opacity(0.3)
+            return DS.Semantic.neutralBackground
         }
     }
 

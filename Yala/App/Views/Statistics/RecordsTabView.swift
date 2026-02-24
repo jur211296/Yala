@@ -53,8 +53,6 @@ struct RecordsTabView: View {
             )
         }
         .onChange(of: sessionState.customDateRange) {
-            // Sync custom date range and period, then recalculate
-            viewModel.syncCustomRangeFromSessionState(sessionState)
             onFilterChange()
         }
     }
