@@ -16,7 +16,7 @@ private let naturePercentFormatter: NumberFormatter = {
 }()
 
 struct NatureTrendWidget: View {
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32 // A11Y-DT: @ScaledMetric
 
     let trendPoints: [NatureTrendPoint]
     let selectedNature: SubcategoryNature?

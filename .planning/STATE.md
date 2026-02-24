@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: None
 Plan: None
 Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-02-24 — Flow review final pass (6 issues pendientes)
+Last activity: 2026-02-24 — A11Y-DT completado (Dynamic Type audit)
 
 ### Branch Strategy
 - **1.0** = Release (V1.0 + V1.1 mergeada)
@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-24] da1fa54 fix: A11Y-DT — @ScaledMetric en 2 vistas hardcoded, audit comments en 49 archivos
 - [2026-02-24] ad1e1f8 fix: release review — asyncAfter→Task, DS hex tokens, code dedup, small fixes (11 items)
 - [2026-02-24] 2614785 fix: release review — DS tokens, dead code cleanup (DS-3, DS-10, DS-21, DS-28, CODE-24)
 - [2026-02-24] b5506a6 fix: release review — DS tokens, a11y labels, l10n migration, code quality (~60 items)
@@ -38,6 +39,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-02-23] e39d8d4 fix: flow review G4+G5 — widget cache, safeCategory, deterministic IDs, static formatters, l10n accessibility
 - [2026-02-23] 8c59350 fix: flow review G3 — budget currency, task leaks, static formatters, l10n accessibility
 - [2026-02-23] 2a15388 fix: flow review G1 — onboarding scroll lock, language detection, trial error state
+
 - [2026-02-20] 4add74e feat: dev-only subscription reset on data wipe for testing
 - [2026-02-20] 4a57873 fix: improve ProTrialOfferSheet layout and show success view after purchase
 - [2026-02-20] 9860a60 feat: add free trial UI — paywall trial info, post-onboarding offer sheet, StoreKit config
@@ -454,6 +456,9 @@ Empty States:
 - [ ] EMPTY-3: 0 cuentas sin guía en Panel header
 - [ ] EMPTY-5: Autocomplete sin feedback "sin resultados"
 
+Accessibility:
+- [x] A11Y-DT: Migrar `.font(.system(size:))` a Dynamic Type — 2 fixes (@ScaledMetric + DT cap), 47 archivos auditados con comentarios A11Y-DT
+
 Code Quality:
 - [ ] CODE-20: Tags relationship sin `inverse` explícito (TransactionItem.swift)
 - [ ] CODE-21: Triple save en creación de transfer (NewTransactionViewModel)
@@ -554,8 +559,8 @@ Ver ROADMAP.md para más detalles de Fase 12.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: FLOW-REVIEW y RELEASE-REVIEW cerrados. 10 items tech debt movidos a Fase 12.
-Next step: Fase 12 — Plataforma Extendida (empezar por tech debt prioritario)
+Stopped at: A11Y-DT completado — 2 fixes @ScaledMetric + 49 archivos auditados con comentarios
+Next step: Fase 12 — siguiente item tech debt (ver lista en Fase 12 backlog)
 Resume context:
 - FLOW-REVIEW.md y RELEASE-REVIEW.md archivados (cerrados)
 - 10 items pendientes migrados a STATE.md Fase 12 (EMPTY-1/3/5, CODE-20/21/28/30/32/41/46)

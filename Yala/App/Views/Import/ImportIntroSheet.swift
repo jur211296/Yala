@@ -25,7 +25,7 @@ struct ImportResult: Identifiable {
 /// Overlay view for showing import results - displayed on top of content in ZStack
 /// This approach avoids the nested sheet presentation bug in SwiftUI
 struct ImportResultOverlay: View {
-    @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 80
+    @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 80 // A11Y-DT: @ScaledMetric
     @Environment(\.yalaTheme) private var theme
 
     let result: ImportResult

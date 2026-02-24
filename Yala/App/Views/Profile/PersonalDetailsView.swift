@@ -13,7 +13,7 @@ struct PersonalDetailsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
 
-    @ScaledMetric(relativeTo: .largeTitle) private var avatarSize: CGFloat = 44
+    @ScaledMetric(relativeTo: .largeTitle) private var avatarSize: CGFloat = 44 // A11Y-DT: @ScaledMetric
 
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("userAlias") private var userAlias: String = ""

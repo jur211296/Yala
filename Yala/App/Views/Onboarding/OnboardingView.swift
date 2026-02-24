@@ -16,7 +16,7 @@ struct OnboardingView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .largeTitle) private var completionIconSize: CGFloat = 56
     @ScaledMetric(relativeTo: .body) private var appIconSize: CGFloat = 120
     @ScaledMetric(relativeTo: .body) private var categoryIconSize: CGFloat = 40

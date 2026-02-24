@@ -211,7 +211,7 @@ struct BudgetRowView: View {
                                height: WDS.ListItem.iconSizeCompact)
 
                     Image(systemName: budget.iconName ?? "chart.pie.fill")
-                        .font(.system(size: WDS.Icon.sm))
+                        .font(.system(size: WDS.Icon.sm)) // A11Y-DT: widget fixed layout
                         .foregroundStyle(budgetColor)
                         .widgetAccentable()
                 }

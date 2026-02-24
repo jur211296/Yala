@@ -11,7 +11,7 @@ struct BudgetPeriodSelectorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledIconSize: CGFloat = 36
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledIconSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
     @Bindable var viewModel: BudgetsViewModel
     var transactions: [TransactionItem]
     var onPeriodChange: () -> Void

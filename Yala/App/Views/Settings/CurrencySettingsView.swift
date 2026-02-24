@@ -14,7 +14,7 @@ struct CurrencySettingsView: View {
     @Environment(CurrencyConverter.self) private var currencyConverter
     @Environment(ExchangeRateService.self) private var exchangeRateService
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
         .rawValue

@@ -61,7 +61,7 @@ enum AppIconOption: String, CaseIterable, Identifiable {
 struct AppIconSettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
     @State private var selectedIcon: AppIconOption = .original
     @State private var showingError = false

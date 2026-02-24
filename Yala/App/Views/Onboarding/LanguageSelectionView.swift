@@ -10,7 +10,7 @@ import SwiftUI
 
 struct LanguageSelectionView: View {
     @Environment(\.yalaTheme) private var theme
-    @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 56
+    @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 56 // A11Y-DT: @ScaledMetric
 
     @State private var selectedLanguage: String = LanguageManager.closestSupportedLanguage
     var onComplete: () -> Void

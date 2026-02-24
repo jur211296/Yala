@@ -44,7 +44,7 @@ struct InboxDraftEditSheet: View {
     @State private var showDatePicker = false
     @State private var showNatureSelector = false
 
-    @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64
+    @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
 
     // Focus state
     @FocusState private var isNoteFieldFocused: Bool

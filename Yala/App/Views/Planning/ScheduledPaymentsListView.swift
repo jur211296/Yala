@@ -11,7 +11,7 @@ import SwiftUI
 
 struct ScheduledPaymentsListView: View {
     @Environment(\.yalaTheme) private var theme
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 36
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
 
     @Bindable var viewModel: ScheduledPaymentsViewModel
     let payments: [ScheduledPayment]
@@ -390,7 +390,7 @@ struct ScheduledPaymentsListView: View {
                         }
                         if payments.count > 3 {
                             Text("+\(payments.count - 3)")
-                                .font(.system(size: 8, weight: .medium))
+                                .font(.system(size: 8, weight: .medium)) // A11Y-DT: fixed size — calendar micro-badge
                                 .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
                         }
                     }

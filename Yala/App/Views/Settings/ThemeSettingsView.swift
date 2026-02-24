@@ -19,7 +19,7 @@ struct ThemeSettingsView: View {
 
     @State private var showUpgradeSheet = false
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
     private let columns = [
         GridItem(.flexible(), spacing: DS.Spacing.lg),

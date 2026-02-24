@@ -66,7 +66,7 @@ struct QuickManualEntryWidgetView: View {
                     .frame(width: WDS.QuickEntry.circleSize, height: WDS.QuickEntry.circleSize)
 
                 Image(systemName: "plus.circle.fill")
-                    .font(.system(size: WDS.Icon.xl))
+                    .font(.system(size: WDS.Icon.xl)) // A11Y-DT: widget fixed layout
                     .foregroundStyle(WidgetColors.electricIndigo)
                     .widgetAccentable()
             }

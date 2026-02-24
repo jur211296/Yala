@@ -10,7 +10,7 @@ import SwiftUI
 // MARK: - Vista placeholder genérica para opciones futuras de Ajustes
 
 struct SettingsPlaceholderView: View {
-    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 44
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 44 // A11Y-DT: @ScaledMetric
 
     let title: String
     let message: String

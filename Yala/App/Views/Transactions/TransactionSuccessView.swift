@@ -43,7 +43,7 @@ struct TransactionSuccessView: View {
         return f
     }()
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 36
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
 
     let data: TransactionSuccessData
     let onAccept: () -> Void

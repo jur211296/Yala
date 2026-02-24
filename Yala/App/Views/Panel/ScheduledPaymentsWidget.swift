@@ -514,11 +514,11 @@ struct ScheduledPaymentsWidget: View {
                         HStack(spacing: DS.Spacing.xxs) {
                             if entry.isSkipped {
                                 Image(systemName: "arrow.uturn.forward")
-                                    .font(.system(size: 6, weight: .bold))
+                                    .font(.system(size: 6, weight: .bold)) // A11Y-DT: fixed size — calendar micro-badge
                                     .foregroundStyle(.secondary)
                             } else if entry.isPaid {
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 6, weight: .bold))
+                                    .font(.system(size: 6, weight: .bold)) // A11Y-DT: fixed size — calendar micro-badge
                                     .foregroundStyle(theme.accent)
                             }
                             Text(entry.payment.name)

@@ -35,7 +35,7 @@ struct NewTransactionView: View {
     @State private var isEditingFromSuccess = false
     @State private var isDuplicating = false
 
-    @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64
+    @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
 
     // Quick action states
     @State private var showSavedToast = false

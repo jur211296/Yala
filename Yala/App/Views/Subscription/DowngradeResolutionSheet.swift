@@ -15,7 +15,7 @@ struct DowngradeResolutionSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
     // MARK: - Properties
 

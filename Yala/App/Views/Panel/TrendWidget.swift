@@ -10,7 +10,7 @@ import SwiftData
 import SwiftUI
 
 struct TrendWidget: View {
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32 // A11Y-DT: @ScaledMetric
 
     @Bindable var viewModel: PanelViewModel
     @Bindable var sessionState: SessionState

@@ -49,6 +49,7 @@ struct FavoriteEditorView: View {
     @State private var showTagSelector = false
     @State private var showNatureSelector = false
 
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .largeTitle) private var heroAmountSize: CGFloat = 64
     @ScaledMetric(relativeTo: .title) private var currencySymbolSize: CGFloat = 28
 

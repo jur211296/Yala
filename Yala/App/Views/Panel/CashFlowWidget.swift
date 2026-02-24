@@ -11,7 +11,7 @@ import SwiftUI
 struct CashFlowWidget: View {
     @Environment(\.yalaTheme) private var theme
     @AppStorage("averageLineMode") private var averageLineMode: Int = 1
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32 // A11Y-DT: @ScaledMetric
 
     let summary: CashFlowSummary
     let size: WidgetSize

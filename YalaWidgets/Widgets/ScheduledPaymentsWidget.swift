@@ -210,7 +210,7 @@ struct PaymentRowView: View {
                            height: WDS.ListItem.iconSizeCompact)
 
                 Image(systemName: iconName)
-                    .font(.system(size: WDS.Icon.sm))
+                    .font(.system(size: WDS.Icon.sm)) // A11Y-DT: widget fixed layout
                     .foregroundStyle(payment.isOverdue ? WidgetColors.overdue : paymentColor)
                     .widgetAccentable()
             }

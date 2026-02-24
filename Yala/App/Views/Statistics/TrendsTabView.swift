@@ -1675,7 +1675,7 @@ struct CompactRecordRow: View {
                 .frame(width: iconSize, height: iconSize)
 
             Image(systemName: iconName)
-                .font(.system(size: iconSize * 0.4))
+                .font(.system(size: iconSize * 0.4)) // A11Y-DT: fixed size — icon from caller parameter
                 .foregroundStyle(.white)
         }
     }

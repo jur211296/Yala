@@ -107,7 +107,7 @@ struct KeypadButtonView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
-    @ScaledMetric(relativeTo: .title) private var digitSize: CGFloat = 28
+    @ScaledMetric(relativeTo: .title) private var digitSize: CGFloat = 28 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .title) private var deleteSize: CGFloat = 22
     @State private var isPressed = false
 

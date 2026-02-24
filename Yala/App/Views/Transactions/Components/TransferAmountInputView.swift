@@ -19,7 +19,7 @@ struct TransferAmountInputView: View {
     @State private var exchangeRateString: String = "1.0000"
     @State private var isRateInverted: Bool = false
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroAmountSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .largeTitle) private var heroAmountSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .title) private var currencyLabelSize: CGFloat = 20
 
     // Focus states

@@ -11,7 +11,7 @@ struct BiometricLockOverlay: View {
     @Environment(\.yalaTheme) private var theme
     private let authService = BiometricAuthService.shared
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 56
+    @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 56 // A11Y-DT: @ScaledMetric
 
     @State private var isAuthenticating = false
 
