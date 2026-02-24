@@ -169,8 +169,10 @@ struct ScheduledPaymentRowView: View {
 
 
     private var amountColor: Color {
-        // Only highlight past due payments in hotPink, everything else is neutral
-        summary.dueStatus == .past ? Color.hotPink : .primary
+        if summary.payment.transactionType == "income" {
+            return Color.priorityNature
+        }
+        return summary.dueStatus == .past ? Color.hotPink.opacity(0.8) : Color.hotPink
     }
 
     private var formattedAmount: String {

@@ -109,16 +109,37 @@ final class ScheduledPaymentsViewModel {
         groupedPayments.flatMap(\.payments)
     }
 
-    /// Monthly total of paid payments (excluding income and skipped)
-    var monthlyTotalPaid: Double {
-        allSummaries.filter { $0.isPaidForMonth && !$0.isSkippedForMonth && $0.payment.transactionType != "income" }
-            .reduce(0) { $0 + $1.payment.amount }
+    /// Monthly total of paid payments (excluding income and skipped), converted to preferred currency
+    func monthlyTotalPaid(preferredCurrencyCode: String) -> Double {
+        let summaries = allSummaries.filter { $0.isPaidForMonth && !$0.isSkippedForMonth && $0.payment.transactionType != "income" }
+        return convertedTotal(for: summaries, preferredCurrencyCode: preferredCurrencyCode)
     }
 
-    /// Monthly total of pending (unpaid, non-skipped) payments (excluding income)
-    var monthlyTotalPending: Double {
-        allSummaries.filter { !$0.isPaidForMonth && !$0.isSkippedForMonth && $0.payment.transactionType != "income" }
-            .reduce(0) { $0 + $1.payment.amount }
+    /// Monthly total of pending (unpaid, non-skipped) payments (excluding income), converted to preferred currency
+    func monthlyTotalPending(preferredCurrencyCode: String) -> Double {
+        let summaries = allSummaries.filter { !$0.isPaidForMonth && !$0.isSkippedForMonth && $0.payment.transactionType != "income" }
+        return convertedTotal(for: summaries, preferredCurrencyCode: preferredCurrencyCode)
+    }
+
+    private func convertedTotal(for summaries: [ScheduledPaymentSummary], preferredCurrencyCode: String) -> Double {
+        let converter = CurrencyConverter.shared
+        var total: Double = 0
+        for summary in summaries {
+            let amount = summary.payment.amount
+            if summary.payment.currencyCode != preferredCurrencyCode, amount > 0 {
+                let decimal = Decimal(amount)
+                let converted: Decimal
+                if let context = modelContext {
+                    converted = converter.convertWithLatestRate(decimal, from: summary.payment.currencyCode, to: preferredCurrencyCode, context: context)
+                } else {
+                    converted = converter.convertWithFallback(decimal, from: summary.payment.currencyCode, to: preferredCurrencyCode)
+                }
+                total += NSDecimalNumber(decimal: converted).doubleValue
+            } else {
+                total += amount
+            }
+        }
+        return total
     }
 
     /// Grouped payments filtered by paymentStatusFilter

@@ -313,9 +313,11 @@ struct ScheduledPaymentsWidget: View {
 
             // Amount + status badge
             HStack(spacing: DS.Spacing.xs) {
-                Text(YalaFormatter.currency(value: item.payment.amount, currencyCode: currencyCode, forceFullPrecision: true))
+                let isIncome = item.payment.transactionType == "income"
+                let prefix = isIncome ? "+" : "-"
+                Text(prefix + YalaFormatter.currency(value: item.payment.amount, currencyCode: item.payment.currencyCode, forceFullPrecision: true))
                     .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(isIncome ? Color.priorityNature : Color.hotPink)
                     .opacity(item.isPaid || item.isSkipped ? 0.6 : 1.0)
 
                 if item.isSkipped {
