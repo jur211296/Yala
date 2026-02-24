@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: None
 Plan: None
 Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-02-23 — Flow review G6 (Inbox) completado
+Last activity: 2026-02-23 — Flow review G7+G8+G11-G14 completado
 
 ### Branch Strategy
 - **1.0** = Release (V1.0 + V1.1 mergeada)
@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-23] b1e724a fix: flow review G7+G8+G13+G14 — yearly IDs, WidgetDataCache, static formatters, l10n accessibility
 - [2026-02-23] 821a3ea fix: flow review G6 — bulk MerchantMemory, static formatters, l10n accessibility
 - [2026-02-23] e39d8d4 fix: flow review G4+G5 — widget cache, safeCategory, deterministic IDs, static formatters, l10n accessibility
 - [2026-02-23] 8c59350 fix: flow review G3 — budget currency, task leaks, static formatters, l10n accessibility
@@ -542,10 +543,10 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Flow review G4+G5 fixes committed (e39d8d4). G1-G5 complete.
-Next step: Flow review G6 (Inbox/Smart Recording) → remaining groups G7-G14
+Stopped at: Flow review G7+G8+G11-G14 committed (b1e724a). G1-G8+G11-G14 complete.
+Next step: Flow review G9 (Profile & Settings) + G10 (Upgrade/Paywall) — last 2 groups
 Resume context:
-- Flow review: G1 ✅, G2 ✅ (clean), G3 ✅, G4 ✅, G5 ✅ (2 skipped: bulk dedup refactor, intermediate save)
-- Release Review: 10 batches (1→10B) across 2 sessions, ~67 items resolved
-- Remaining deferred: pie widget onTapGesture→Button (complex), dynamic a11y labels (needs format)
+- Flow review: G1 ✅, G2 ✅ (clean), G3 ✅, G4 ✅, G5 ✅, G6 ✅, G7 ✅, G8 ✅, G11 ✅ (clean), G12 ✅ (clean), G13 ✅, G14 ✅
+- G9 (Profile & Settings) is the largest group (~50 archivos) — pending
+- G10 (Upgrade/Paywall) — pending
 - Branch 1.0 — release branch
