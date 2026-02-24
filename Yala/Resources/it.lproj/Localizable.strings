@@ -1311,6 +1311,8 @@
 "accessibility.periodsCount %d" = "%d periodi";
 "accessibility.currenciesCount %d" = "%d valute";
 "accessibility.cashFlowSummary %@ %@" = "Entrate %@, Uscite %@";
+"accessibility.selectAtLeastOneDraft" = "Seleziona almeno una bozza";
+"accessibility.approveCompleteHint" = "Per approvare, completa conto, importo e categoria";
 
 // MARK: - Widget Hints
 

@@ -210,7 +210,7 @@ struct InboxDraftEditSheet: View {
                     }
                 }
                 .alert(L10n.Inbox.cannotApprove, isPresented: $showApproveError) {
-                    Button("OK", role: .cancel) {}
+                    Button(L10n.Common.ok, role: .cancel) {}
                 } message: {
                     Text(approveErrorMessage)
                 }
@@ -702,7 +702,7 @@ struct InboxDraftEditSheet: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!isReadyToApprove)
-                .accessibilityHint(!isReadyToApprove ? "Para aprobar, completa cuenta, monto y categoría" : "")
+                .accessibilityHint(!isReadyToApprove ? L10n.Accessibility.approveCompleteHint : "")
             }
         }
     }

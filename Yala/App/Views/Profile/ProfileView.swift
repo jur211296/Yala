@@ -160,7 +160,7 @@ struct ProfileView: View {
                 isPresented: $showImportResult,
                 presenting: importResult
             ) { _ in
-                Button("OK", role: .cancel) {}
+                Button(L10n.Common.ok, role: .cancel) {}
             } message: { result in
                 Text(result.message)
             }

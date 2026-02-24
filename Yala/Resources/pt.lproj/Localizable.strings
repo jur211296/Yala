@@ -1311,6 +1311,8 @@
 "accessibility.periodsCount %d" = "%d períodos";
 "accessibility.currenciesCount %d" = "%d moedas";
 "accessibility.cashFlowSummary %@ %@" = "Receitas %@, Despesas %@";
+"accessibility.selectAtLeastOneDraft" = "Selecione pelo menos um rascunho";
+"accessibility.approveCompleteHint" = "Para aprovar, preencha conta, valor e categoria";
 
 // MARK: - Widget Hints
 

@@ -138,7 +138,7 @@ struct ProTrialOfferSheet: View {
             }
         }
         .alert(L10n.Subscription.errorTitle, isPresented: $showError) {
-            Button("OK", role: .cancel) {}
+            Button(L10n.Common.ok, role: .cancel) {}
         } message: {
             Text(store.errorMessage ?? "")
         }

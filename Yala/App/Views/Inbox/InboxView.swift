@@ -203,7 +203,7 @@ struct InboxView: View {
                 }
             }
             .alert(L10n.Inbox.cannotApprove, isPresented: $showArchivedAccountAlert) {
-                Button("OK", role: .cancel) {}
+                Button(L10n.Common.ok, role: .cancel) {}
             } message: {
                 Text(L10n.Inbox.errorArchivedAccount)
             }
@@ -264,7 +264,7 @@ struct InboxView: View {
                     )
             }
             .disabled(selectedDraftIDs.isEmpty)
-            .accessibilityHint(selectedDraftIDs.isEmpty ? "Selecciona al menos un borrador" : "")
+            .accessibilityHint(selectedDraftIDs.isEmpty ? L10n.Accessibility.selectAtLeastOneDraft : "")
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
@@ -359,11 +359,15 @@ struct InboxView: View {
         .scrollContentBackground(.hidden)
     }
 
-    private func formattedDate(_ date: Date) -> String {
+    private static let sectionDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = AppLocale.current
         formatter.setLocalizedDateFormatFromTemplate("d MMMM")
-        return formatter.string(from: date)
+        return formatter
+    }()
+
+    private func formattedDate(_ date: Date) -> String {
+        Self.sectionDateFormatter.string(from: date)
     }
 
     private func draftRow(for draft: InboxDraft) -> some View {

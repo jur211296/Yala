@@ -141,7 +141,7 @@ struct BiometricSecurityView: View {
             authService.lockTimeout = newValue
         }
         .alert(L10n.Biometric.authFailed, isPresented: $showAuthError) {
-            Button("OK", role: .cancel) {}
+            Button(L10n.Common.ok, role: .cancel) {}
         } message: {
             Text(L10n.Biometric.authFailedMessage)
         }

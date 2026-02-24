@@ -1311,6 +1311,8 @@
 "accessibility.periodsCount %d" = "%d Zeiträume";
 "accessibility.currenciesCount %d" = "%d Währungen";
 "accessibility.cashFlowSummary %@ %@" = "Einnahmen %@, Ausgaben %@";
+"accessibility.selectAtLeastOneDraft" = "Wähle mindestens einen Entwurf aus";
+"accessibility.approveCompleteHint" = "Zum Genehmigen: Konto, Betrag und Kategorie ausfüllen";
 
 // MARK: - Widget Hints
 

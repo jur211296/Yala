@@ -473,6 +473,8 @@ enum L10n {
         static func periodsCount(_ count: Int) -> String { String(format: ls("accessibility.periodsCount %d", comment: ""), count) }
         static func currenciesCount(_ count: Int) -> String { String(format: ls("accessibility.currenciesCount %d", comment: ""), count) }
         static func cashFlowSummary(income: String, expense: String) -> String { String(format: ls("accessibility.cashFlowSummary %@ %@", comment: ""), income, expense) }
+        static var selectAtLeastOneDraft: String { ls("accessibility.selectAtLeastOneDraft", comment: "") }
+        static var approveCompleteHint: String { ls("accessibility.approveCompleteHint", comment: "") }
     }
 
     // MARK: - Search

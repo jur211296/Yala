@@ -286,6 +286,16 @@ final class DraftService: DraftServiceProtocol {
             // Update scheduled payment
             ScheduledPaymentDraftService.handleDraftApproved(draft: draft, context: context)
 
+            // Update merchant memory (learn from approved drafts)
+            if !draft.note.trimmingCharacters(in: .whitespaces).isEmpty {
+                let merchantService = MerchantMemoryService(modelContext: context)
+                merchantService.updateMemory(
+                    merchantRaw: draft.note,
+                    subcategory: subcategory,
+                    wasCorrection: false
+                )
+            }
+
             transactions.append(transaction)
         }
 

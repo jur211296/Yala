@@ -63,7 +63,7 @@ struct ExportSummaryStepView: View {
         .navigationTitle(L10n.Export.summaryAndExport)
         .navigationBarTitleDisplayMode(.inline)
         .alert(L10n.Export.exportError, isPresented: $showErrorAlert, presenting: exportError) { _ in
-            Button("OK", role: .cancel) {}
+            Button(L10n.Common.ok, role: .cancel) {}
         } message: { error in
             if let localizedError = error as? LocalizedError {
                 Text(localizedError.recoverySuggestion ?? localizedError.localizedDescription)

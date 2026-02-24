@@ -231,11 +231,15 @@ struct InboxApproveSuccessView: View {
         )
     }
 
-    private var formattedDate: String {
+    private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "d MMM yyyy"
         formatter.locale = AppLocale.current
-        return formatter.string(from: data.date)
+        return formatter
+    }()
+
+    private var formattedDate: String {
+        Self.dateFormatter.string(from: data.date)
     }
 
     private func detailRow(icon: String, label: String, value: String) -> some View {

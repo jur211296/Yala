@@ -15,7 +15,7 @@
 | 3 | Panel (Home) | Revisado + fixes | 4 → 0 | 10 → 2 | ~20 | 12 fixes |
 | 4 | Statistics + Records | Revisado + fixes | 0 | 14 → 0 | ~10 | 14 fixes |
 | 5 | Transaction CRUD | Revisado + fixes | 5 → 0 | 12 → 5 | ~8 | 5 fixes + 2 skip |
-| 6 | Inbox (Smart Recording) | Parcial (en G3) | — | — | — | — |
+| 6 | Inbox (Smart Recording) | Revisado + fixes | 1 → 0 | 6 → 0 | 0 | 8 fixes |
 | 7 | Planning | Pendiente | — | — | — | — |
 | 8 | Global Search | Pendiente | — | — | — | — |
 | 9 | Profile & Settings | Pendiente | — | — | — | — |
@@ -261,8 +261,8 @@
 | ID | Archivo:Línea | Descripción |
 |----|---------------|-------------|
 | G3-A11Y-01 | `TopSubcategoriesWidget.swift:166-176` | Header chevron sin `accessibilityLabel` (TopCategories sí lo tiene) |
-| G3-A11Y-02 | `InboxView.swift:267` | `accessibilityHint("Selecciona al menos un borrador")` en español sin L10n |
-| G3-A11Y-03 | `InboxDraftEditSheet.swift:705` | `accessibilityHint("Para aprobar, completa cuenta, monto y categoría")` en español sin L10n |
+| G3-A11Y-02 | `InboxView.swift:267` | `accessibilityHint` en español sin L10n — CORREGIDO en G6 |
+| G3-A11Y-03 | `InboxDraftEditSheet.swift:705` | `accessibilityHint` en español sin L10n — CORREGIDO en G6 |
 
 ##### Performance
 
@@ -679,31 +679,68 @@ Estos archivos fueron revisados y **no presentaron issues**:
 
 ---
 
-## Grupo 6: Inbox (Smart Recording) — PARCIALMENTE REVISADO EN G3
+## Grupo 6: Inbox (Smart Recording) — Revisado + fixes
 
-### Flujos a revisar (pendientes de profundizar)
+### Archivos revisados (deep-dive G6)
 
-| # | Flujo | Revisado en G3? |
-|---|-------|-----------------|
-| 6.1 | Inbox List | Sí (InboxView, InboxViewModel) |
-| 6.2 | Approve Draft (Swipe) | Sí (InboxApproveSuccessView) |
-| 6.3 | Edit Draft | Sí (InboxDraftEditSheet, InboxDraftEditViewModel) |
-| 6.4 | Bulk Actions | Sí (InboxBulkActionsSheet) |
-| 6.5 | Voice Recording | Sí (VoiceRecordingView) |
-| 6.6 | Image/Receipt Input | Sí (ImageSelectionView) |
+| Archivo | Propósito |
+|---------|-----------|
+| `Yala/Services/DraftService.swift` | Service layer — approve, bulkApprove, reject, delete |
+| `Yala/App/ViewModels/InboxViewModel.swift` | ViewModel inbox list |
+| `Yala/App/Views/Inbox/InboxView.swift` | Vista principal inbox |
+| `Yala/App/Views/Inbox/InboxDraftEditSheet.swift` | Edición de borrador |
+| `Yala/App/Views/Inbox/InboxApproveSuccessView.swift` | Vista éxito al aprobar |
 
-### Issues ya encontrados en G3
-- G3-FAB-01: `try?` en InboxApproveSuccessView
-- G3-FAB-02: `superview?.superview?` en InboxAlertModal
-- G3-FAB-04: Timer leak en VoiceRecordingView
-- G3-FAB-05: Task leak en VoiceRecordingView
-- G3-FAB-06: Task leak en ImageSelectionView
-- G3-FAB-07: `asyncAfter(0.3)` frágil en InboxView
+### Issues encontrados
 
-### Pendiente
-- Profundizar en lógica de DraftService y DraftDeduplicationService
-- Verificar flujo completo de approve → TransactionItem creation
-- Verificar que bulk approve maneja errores parciales
+#### ALTA (1) — CORREGIDO
+
+| ID | Archivo:Línea | Descripción | Estado |
+|----|---------------|-------------|--------|
+| G6-SV-01 | `DraftService.swift:289` | `bulkApprove` missing MerchantMemory update (single approve has it at line 203) | CORREGIDO — added MerchantMemoryService.updateMemory in bulk loop |
+
+#### MEDIA (6) — TODOS CORREGIDOS
+
+| ID | Archivo:Línea | Descripción | Estado |
+|----|---------------|-------------|--------|
+| G6-TV-01 | `InboxView.swift:267` | `accessibilityHint` hardcodeado en español | CORREGIDO → `L10n.Accessibility.selectAtLeastOneDraft` |
+| G6-TV-02 | `InboxDraftEditSheet.swift:705` | `accessibilityHint` hardcodeado en español | CORREGIDO → `L10n.Accessibility.approveCompleteHint` |
+| G6-TV-03 | `InboxView.swift:206` | `Button("OK")` hardcodeado | CORREGIDO → `L10n.Common.ok` |
+| G6-TV-04 | `InboxDraftEditSheet.swift:213` | `Button("OK")` hardcodeado | CORREGIDO → `L10n.Common.ok` |
+| G6-TV-05 | `InboxView.swift:362` | DateFormatter inline | CORREGIDO → `static let sectionDateFormatter` |
+| G6-TV-06 | `InboxApproveSuccessView.swift:234` | DateFormatter inline | CORREGIDO → `static let dateFormatter` |
+
+#### Batch fix: `Button("OK")` → `L10n.Common.ok` (5 archivos adicionales)
+
+| Archivo | Estado |
+|---------|--------|
+| `ProfileView.swift:163` | CORREGIDO |
+| `ProTrialOfferSheet.swift:141` | CORREGIDO |
+| `BiometricSecurityView.swift:144` | CORREGIDO |
+| `SubscriptionView.swift:48` | CORREGIDO |
+| `ExportSummaryStepView.swift:66` | CORREGIDO |
+
+### SKIPs (falsos positivos)
+
+- **SessionState/WidgetDataCache en reject/delete/returnToPending/saveDraft**: Estas operaciones solo modifican InboxDraft (no TransactionItem). Widgets no muestran counts de drafts. Inbox se refresca via `loadData()`. NO necesario.
+- **Error feedback para draft ops**: Actualmente `#if DEBUG print` only. Válido pero es enhancement, no bug — drafts son transitorios y el patrón es consistente con el resto del codebase.
+- **G6-SV-02 MARK comments**: Verificado — todos los `// MARK:` son correctos, fue artifact de lectura del agente.
+
+### Issues ya encontrados en G3 (previos)
+- G3-FAB-01: `try?` en InboxApproveSuccessView — CORREGIDO
+- G3-FAB-02: `superview?.superview?` en InboxAlertModal — CORREGIDO
+- G3-FAB-04: Timer leak en VoiceRecordingView — CORREGIDO
+- G3-FAB-05: Task leak en VoiceRecordingView — CORREGIDO
+- G3-FAB-06: Task leak en ImageSelectionView — CORREGIDO
+- G3-FAB-07: `asyncAfter(0.3)` frágil en InboxView — NO CAMBIAR (funcional, riesgo alto)
+
+### Hallazgos positivos
+- DraftService bien estructurado con `requireContext()` pattern
+- Error handling correcto con do/catch en todos los saves
+- Single approve tiene MerchantMemory integration (bug was only in bulk)
+- DraftDeduplicationService con 15 tests — buena cobertura
+- InboxViewModel con 10 tests
+- Scheduled payment draft association correcto en ambos paths
 
 ---
 

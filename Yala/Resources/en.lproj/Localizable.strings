@@ -1311,6 +1311,8 @@
 "accessibility.periodsCount %d" = "%d periods";
 "accessibility.currenciesCount %d" = "%d currencies";
 "accessibility.cashFlowSummary %@ %@" = "Income %@, Expenses %@";
+"accessibility.selectAtLeastOneDraft" = "Select at least one draft";
+"accessibility.approveCompleteHint" = "To approve, complete account, amount, and category";
 
 // MARK: - Widget Hints
 
