@@ -123,8 +123,8 @@ struct ExchangeRateWidget: View {
                 chartView(data: data)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(L10n.Accessibility.exchangeRateChart)
-                    .accessibilityValue(data.chartPoints.isEmpty ? "Sin datos" :
-                        "\(data.currentRates.count) divisas")
+                    .accessibilityValue(data.chartPoints.isEmpty ? L10n.Accessibility.noData :
+                        L10n.Accessibility.currenciesCount(data.currentRates.count))
             }
         } else {
             loadingView
@@ -133,19 +133,27 @@ struct ExchangeRateWidget: View {
 
     // MARK: - Date Formatting
 
-    /// Formats date for subtitle: "Hoy, 15:45" or "19 dic, 15:45"
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "HH:mm"
+        return f
+    }()
+
+    private static let dateDayTimeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "d MMM, HH:mm"
+        return f
+    }()
+
     /// Formats date for subtitle: "Hoy, 15:45" or "19 dic, 15:45"
     private func formatSubtitleDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
-
         if Calendar.current.isDateInToday(date) {
-            formatter.dateFormat = "HH:mm"
-            let timeStr = formatter.string(from: date)
+            let timeStr = Self.timeFormatter.string(from: date)
             return "\(L10n.Widget.today), \(timeStr)"
         } else {
-            formatter.dateFormat = "d MMM, HH:mm"
-            return formatter.string(from: date)
+            return Self.dateDayTimeFormatter.string(from: date)
         }
     }
 
@@ -507,19 +515,34 @@ struct ExchangeRateWidget: View {
         String(format: "%.4f", value)
     }
 
+    private static let tooltipDayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "EEE d MMM"
+        return f
+    }()
+
+    private static let tooltipWeekFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "d MMM yyyy"
+        return f
+    }()
+
+    private static let tooltipMonthFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "MMM yyyy"
+        return f
+    }()
+
     private func formatTooltipDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
-
+        let formatter: DateFormatter
         switch grouping {
-        case .day:
-            formatter.dateFormat = "EEE d MMM"
-        case .week:
-            formatter.dateFormat = "d MMM yyyy"
-        case .month:
-            formatter.dateFormat = "MMM yyyy"
+        case .day: formatter = Self.tooltipDayFormatter
+        case .week: formatter = Self.tooltipWeekFormatter
+        case .month: formatter = Self.tooltipMonthFormatter
         }
-
         return formatter.string(from: date)
     }
 

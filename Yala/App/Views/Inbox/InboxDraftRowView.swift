@@ -348,6 +348,14 @@ struct InboxDraftRowView: View {
 
     // MARK: - Helpers
 
+    private static let mediumDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .none
+        f.locale = AppLocale.current
+        return f
+    }()
+
     private var formattedDate: String {
         let date = draft.effectiveDate
         let calendar = Calendar.current
@@ -357,11 +365,7 @@ struct InboxDraftRowView: View {
         } else if calendar.isDateInYesterday(date) {
             return L10n.Date.yesterday
         } else {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            formatter.timeStyle = .none
-            formatter.locale = AppLocale.current
-            return formatter.string(from: date)
+            return Self.mediumDateFormatter.string(from: date)
         }
     }
 }

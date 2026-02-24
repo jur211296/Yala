@@ -145,6 +145,12 @@ struct VoiceRecordingView: View {
                     draftWasApproved = false
                 }
             }
+            .onDisappear {
+                countdownTimer?.invalidate()
+                countdownTimer = nil
+                processingTask?.cancel()
+                processingTask = nil
+            }
         }
     }
 

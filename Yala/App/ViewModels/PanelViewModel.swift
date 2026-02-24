@@ -1617,8 +1617,23 @@ final class PanelViewModel {
         // Sum amounts in budget's currency
         let spent = filtered.reduce(0.0) { sum, transaction in
             let amount: Double
-            if transaction.preferredCurrencyCode == budget.currencyCode {
+            if transaction.currencyCode == budget.currencyCode {
+                // Same currency as budget — use original amount
+                amount = transaction.amount
+            } else if transaction.preferredCurrencyCode == budget.currencyCode {
+                // Preferred currency matches budget — use pre-converted amount
                 amount = transaction.amountInPreferredCurrency
+            } else if let context = modelContext,
+                      let fromCode = CurrencyCode(rawValue: transaction.currencyCode),
+                      let toCode = CurrencyCode(rawValue: budget.currencyCode) {
+                // Different currency — convert using latest rates
+                let converted = convertToPreferredCurrency(
+                    amount: Decimal(transaction.amount),
+                    from: fromCode,
+                    to: toCode,
+                    context: context
+                )
+                amount = NSDecimalNumber(decimal: converted).doubleValue
             } else {
                 amount = transaction.amount
             }

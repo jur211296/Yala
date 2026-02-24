@@ -115,6 +115,7 @@
 "filters.type" = "Typ";
 "filters.nature" = "Art";
 "filters.currency" = "Währung";
+"filters.datePrefix %@" = "Datum: %@";
 
 // MARK: - Actions
 
@@ -1298,6 +1299,15 @@
 "accessibility.exchangeRateChart" = "Wechselkursdiagramm";
 "accessibility.periodComparison" = "Periodenvergleichsdiagramm";
 "accessibility.natureTrend" = "Ausgaben nach Art Diagramm";
+"accessibility.noData" = "Keine Daten";
+"accessibility.trendChart %@" = "Trenddiagramm für %@";
+"accessibility.dataPoints %d" = "%d Datenpunkte";
+"accessibility.categoriesCount %d %@" = "%d Kategorien, gesamt %@";
+"accessibility.subcategoriesCount %d %@" = "%d Unterkategorien, gesamt %@";
+"accessibility.tagsCount %d %@" = "%d Tags, gesamt %@";
+"accessibility.periodsCount %d" = "%d Zeiträume";
+"accessibility.currenciesCount %d" = "%d Währungen";
+"accessibility.cashFlowSummary %@ %@" = "Einnahmen %@, Ausgaben %@";
 
 // MARK: - Widget Hints
 

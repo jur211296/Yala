@@ -722,17 +722,21 @@ struct InboxDraftEditSheet: View {
         return baseAmountSize * ratio
     }
 
+    private static let mediumDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .none
+        f.locale = AppLocale.current
+        return f
+    }()
+
     private var dateChipText: String {
         if Calendar.current.isDateInToday(transactionDate) {
             return L10n.Date.today
         } else if Calendar.current.isDateInYesterday(transactionDate) {
             return L10n.Date.yesterday
         } else {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            formatter.timeStyle = .none
-            formatter.locale = AppLocale.current
-            return formatter.string(from: transactionDate)
+            return Self.mediumDateFormatter.string(from: transactionDate)
         }
     }
 

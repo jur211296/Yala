@@ -141,6 +141,10 @@ struct ImageSelectionView: View {
             .onAppear {
                 checkForSharedImage()
             }
+            .onDisappear {
+                countdownTask?.cancel()
+                countdownTask = nil
+            }
         }
     }
 

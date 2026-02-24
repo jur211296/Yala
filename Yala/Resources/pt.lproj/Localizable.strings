@@ -115,6 +115,7 @@
 "filters.type" = "Tipo";
 "filters.nature" = "Natureza";
 "filters.currency" = "Moeda";
+"filters.datePrefix %@" = "Data: %@";
 
 // MARK: - Actions
 
@@ -1298,6 +1299,15 @@
 "accessibility.exchangeRateChart" = "Gráfico de taxa de câmbio";
 "accessibility.periodComparison" = "Gráfico de comparação entre períodos";
 "accessibility.natureTrend" = "Gráfico de gastos por natureza";
+"accessibility.noData" = "Sem dados";
+"accessibility.trendChart %@" = "Gráfico de tendência de %@";
+"accessibility.dataPoints %d" = "%d pontos";
+"accessibility.categoriesCount %d %@" = "%d categorias, total %@";
+"accessibility.subcategoriesCount %d %@" = "%d subcategorias, total %@";
+"accessibility.tagsCount %d %@" = "%d etiquetas, total %@";
+"accessibility.periodsCount %d" = "%d períodos";
+"accessibility.currenciesCount %d" = "%d moedas";
+"accessibility.cashFlowSummary %@ %@" = "Receitas %@, Despesas %@";
 
 // MARK: - Widget Hints
 

@@ -24,6 +24,7 @@ struct ContentView: View {
     @State private var wipeGraceTask: Task<Void, Never>?
     @State private var showRemoteWipeAlert: Bool = false
     @State private var showProTrialOffer: Bool = false
+    @State private var isInitialCheckDone: Bool = false
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ThemeManager.self) private var themeManager
@@ -74,14 +75,17 @@ struct ContentView: View {
                 .padding(.top, DS.Spacing.xxl)
             }
 
-            // Splash screen overlay
+            // Splash screen overlay — waits for both minimum duration AND initial state check
             if showSplash {
                 SplashScreenView()
                     .opacity(splashOpacity)
                     .ignoresSafeArea()
                     .task {
-                        // Dismiss splash after minimum duration
                         try? await Task.sleep(for: .seconds(minimumSplashDuration))
+                        // Wait until initial check determines what to show (avoids blank flash)
+                        while !isInitialCheckDone {
+                            try? await Task.sleep(for: .milliseconds(50))
+                        }
                         dismissSplash()
                     }
             }
@@ -130,6 +134,9 @@ struct ContentView: View {
         }
         .alert(L10n.iCloud.remoteWipeTitle, isPresented: $showRemoteWipeAlert) {
             Button(L10n.iCloud.remoteWipeConfirm, role: .destructive) {
+                // Reset seed guards so onboarding can re-create data
+                UserDefaults.standard.removeObject(forKey: "seedCategoriesExecuted")
+                UserDefaults.standard.removeObject(forKey: "notificationsSeeded")
                 hasCompletedOnboarding = false
             }
             Button(L10n.iCloud.remoteWipeCancel, role: .cancel) {}
@@ -198,7 +205,7 @@ struct ContentView: View {
                     SessionState.shared.pendingInboxNotification = .init()
                 }
             )
-            .background(ClearBackgroundView())
+            .presentationBackground(.clear)
             .environment(SessionState.shared)
         }
         .onAppear {
@@ -291,6 +298,7 @@ struct ContentView: View {
             if needsLanguageSelection {
                 showLanguageSelection = true
             }
+            isInitialCheckDone = true
             return
         }
 
@@ -316,6 +324,7 @@ struct ContentView: View {
                 if hasExistingData || txCount > 0 {
                     hasCompletedOnboarding = true
                     isWaitingForSync = false
+                    isInitialCheckDone = true
                     scheduleDeduplication()
                     if !SessionState.shared.isWipingData {
                         withAnimation(.easeInOut) { showSyncBanner = true }
@@ -335,6 +344,7 @@ struct ContentView: View {
         } else {
             showOnboarding = true
         }
+        isInitialCheckDone = true
     }
 
     /// Inline view shown while waiting for iCloud sync on a new device

@@ -494,8 +494,8 @@ struct CashFlowWidget: View {
                 }  // Close Chart
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(L10n.Accessibility.cashFlowChart)
-                .accessibilityValue(activeChartData.isEmpty ? "Sin datos" :
-                    "Ingresos \(YalaFormatter.currency(value: summary.totalIncome, currencyCode: summary.currencyCode)), Gastos \(YalaFormatter.currency(value: summary.totalExpense, currencyCode: summary.currencyCode))")
+                .accessibilityValue(activeChartData.isEmpty ? L10n.Accessibility.noData :
+                    L10n.Accessibility.cashFlowSummary(income: YalaFormatter.currency(value: summary.totalIncome, currencyCode: summary.currencyCode), expense: YalaFormatter.currency(value: summary.totalExpense, currencyCode: summary.currencyCode)))
                 .chartXScale(domain: dataXDomain)
                 .chartYScale(domain: dataYDomain)
                 .chartXAxis {
@@ -854,13 +854,25 @@ struct CashFlowWidget: View {
         }
     }
 
+    private static let tooltipDayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "d MMM yy"
+        return f
+    }()
+
+    private static let tooltipMonthFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "MMM yy"
+        return f
+    }()
+
     private func formatTooltipDate(_ date: Date, grouping: TrendGrouping) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
+        let formatter: DateFormatter
         switch grouping {
-        case .day: formatter.dateFormat = "d MMM yy"  // 19 dic 25
-        case .week: formatter.dateFormat = "d MMM yy"  // 19 dic 25
-        case .month: formatter.dateFormat = "MMM yy"  // ene 25
+        case .day, .week: formatter = Self.tooltipDayFormatter
+        case .month: formatter = Self.tooltipMonthFormatter
         }
         return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
     }

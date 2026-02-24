@@ -117,6 +117,7 @@
 "filters.type" = "Type";
 "filters.nature" = "Nature";
 "filters.currency" = "Currency";
+"filters.datePrefix %@" = "Date: %@";
 
 // MARK: - Actions
 
@@ -1298,6 +1299,15 @@
 "accessibility.exchangeRateChart" = "Exchange rate chart";
 "accessibility.periodComparison" = "Period comparison chart";
 "accessibility.natureTrend" = "Spending by nature chart";
+"accessibility.noData" = "No data";
+"accessibility.trendChart %@" = "Trend chart for %@";
+"accessibility.dataPoints %d" = "%d data points";
+"accessibility.categoriesCount %d %@" = "%d categories, total %@";
+"accessibility.subcategoriesCount %d %@" = "%d subcategories, total %@";
+"accessibility.tagsCount %d %@" = "%d tags, total %@";
+"accessibility.periodsCount %d" = "%d periods";
+"accessibility.currenciesCount %d" = "%d currencies";
+"accessibility.cashFlowSummary %@ %@" = "Income %@, Expenses %@";
 
 // MARK: - Widget Hints
 

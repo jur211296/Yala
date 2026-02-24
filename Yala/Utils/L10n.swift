@@ -35,6 +35,22 @@ enum LanguageManager {
         set { UserDefaults.standard.set(newValue, forKey: overrideKey) }
     }
 
+    /// Best guess for pre-selecting a language when the device language is not supported.
+    /// Falls back to English if no match found.
+    static var closestSupportedLanguage: String {
+        let deviceLang = String(Locale.preferredLanguages.first?.prefix(2) ?? "en")
+        // Check if the device language base matches any supported language
+        if supportedLanguages.contains(where: { $0.code == deviceLang }) {
+            return deviceLang
+        }
+        // Check region-based hints (e.g. pt-BR user → Portuguese, Latin American → Spanish)
+        let region = Locale.current.region?.identifier ?? ""
+        let latinAmericanCountries = ["MX", "AR", "CO", "CL", "PE", "VE", "EC", "GT", "CU", "BO", "DO", "HN", "PY", "SV", "NI", "CR", "PA", "UY"]
+        if latinAmericanCountries.contains(region) { return "es" }
+        if region == "BR" { return "pt" }
+        return "en"
+    }
+
     /// Bundle for loading localized strings (override or main)
     static var bundle: Bundle {
         guard let override = overrideLanguage,
@@ -380,6 +396,7 @@ enum L10n {
         static var type: String { ls("filters.type", comment: "") }
         static var nature: String { ls("filters.nature", comment: "") }
         static var currency: String { ls("filters.currency", comment: "") }
+        static func datePrefix(_ date: String) -> String { String(format: ls("filters.datePrefix %@", comment: ""), date) }
     }
 
     // MARK: - Actions
@@ -444,6 +461,15 @@ enum L10n {
         static var exchangeRateChart: String { ls("accessibility.exchangeRateChart", comment: "") }
         static var periodComparison: String { ls("accessibility.periodComparison", comment: "") }
         static var natureTrend: String { ls("accessibility.natureTrend", comment: "") }
+        static var noData: String { ls("accessibility.noData", comment: "") }
+        static func trendChart(_ type: String) -> String { String(format: ls("accessibility.trendChart %@", comment: ""), type) }
+        static func dataPoints(_ count: Int) -> String { String(format: ls("accessibility.dataPoints %d", comment: ""), count) }
+        static func categoriesCount(_ count: Int, _ total: String) -> String { String(format: ls("accessibility.categoriesCount %d %@", comment: ""), count, total) }
+        static func subcategoriesCount(_ count: Int, _ total: String) -> String { String(format: ls("accessibility.subcategoriesCount %d %@", comment: ""), count, total) }
+        static func tagsCount(_ count: Int, _ total: String) -> String { String(format: ls("accessibility.tagsCount %d %@", comment: ""), count, total) }
+        static func periodsCount(_ count: Int) -> String { String(format: ls("accessibility.periodsCount %d", comment: ""), count) }
+        static func currenciesCount(_ count: Int) -> String { String(format: ls("accessibility.currenciesCount %d", comment: ""), count) }
+        static func cashFlowSummary(income: String, expense: String) -> String { String(format: ls("accessibility.cashFlowSummary %@ %@", comment: ""), income, expense) }
     }
 
     // MARK: - Search

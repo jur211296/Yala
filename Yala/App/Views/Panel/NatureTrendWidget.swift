@@ -8,6 +8,13 @@
 import Charts
 import SwiftUI
 
+private let naturePercentFormatter: NumberFormatter = {
+    let f = NumberFormatter()
+    f.numberStyle = .percent
+    f.maximumFractionDigits = 0
+    return f
+}()
+
 struct NatureTrendWidget: View {
     @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
 
@@ -325,7 +332,7 @@ struct NatureTrendChartView: View {
 
     // Flattened data struct for the chart
     struct ChartItem: Identifiable {
-        let id = UUID()
+        var id: String { "\(nature.rawValue)-\(Int(date.timeIntervalSince1970))" }
         let date: Date
         let nature: SubcategoryNature
         let amount: Double
@@ -467,8 +474,8 @@ struct NatureTrendChartView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.Accessibility.natureTrend)
-        .accessibilityValue(points.isEmpty ? "Sin datos" :
-            "\(points.count) periodos")
+        .accessibilityValue(points.isEmpty ? L10n.Accessibility.noData :
+            L10n.Accessibility.periodsCount(points.count))
         .chartXScale(domain: dataXDomain)
         .chartYScale(domain: yDomain)
         .chartForegroundStyleScale([
@@ -700,13 +707,25 @@ struct NatureTrendChartView: View {
         }
     }
 
+    private static let fullDayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "d MMM yy"
+        return f
+    }()
+
+    private static let fullMonthFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "MMM yy"
+        return f
+    }()
+
     private func formatDateFull(_ date: Date, grouping: TrendGrouping) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
+        let formatter: DateFormatter
         switch grouping {
-        case .day: formatter.dateFormat = "d MMM yy"  // 19 dic 25
-        case .week: formatter.dateFormat = "d MMM yy"  // 19 dic 25
-        case .month: formatter.dateFormat = "MMM yy"  // ene 25
+        case .day, .week: formatter = Self.fullDayFormatter
+        case .month: formatter = Self.fullMonthFormatter
         }
         return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
     }
@@ -737,17 +756,6 @@ struct NatureTrendChartView: View {
         case .week: return .weekOfYear
         case .month: return .month
         }
-    }
-
-    private func formatDate(_ date: Date, grouping: TrendGrouping) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
-        switch grouping {
-        case .day: formatter.dateFormat = "d"
-        case .week: formatter.dateFormat = "d MMM"
-        case .month: formatter.dateFormat = "MMM"
-        }
-        return formatter.string(from: date)
     }
 
     private func flattenData(_ points: [NatureTrendPoint]) -> [ChartItem] {
@@ -869,10 +877,7 @@ struct LegendItem: View {
     private func formattedPercent(_ value: Double, _ total: Double) -> String {
         guard total > 0 else { return "0%" }
         let pct = value / total
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: pct)) ?? "0%"
+        return naturePercentFormatter.string(from: NSNumber(value: pct)) ?? "0%"
     }
 }
 
@@ -917,10 +922,7 @@ struct CompactLegendChip: View {
     private func formattedPercent(_ value: Double, _ total: Double) -> String {
         guard total > 0 else { return "0%" }
         let pct = value / total
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: pct)) ?? "0%"
+        return naturePercentFormatter.string(from: NSNumber(value: pct)) ?? "0%"
     }
 }
 

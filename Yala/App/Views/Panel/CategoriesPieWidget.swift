@@ -64,6 +64,7 @@ struct CategoriesPieWidget: View {
     // We'll calculate exact pixels in GeometryReader
 
     var body: some View {
+        let chartData = processChartData()
         VStack(alignment: .leading, spacing: DS.Spacing.none) {
             // Guard against empty chartData (Charts framework crashes on empty array)
             if chartData.isEmpty {
@@ -568,8 +569,8 @@ struct CategoriesPieWidget: View {
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(L10n.Accessibility.categoryPieChart)
-            .accessibilityValue(safeData.isEmpty ? "Sin datos" :
-                "\(safeData.count) categorías, total \(formattedCurrency(safeData.reduce(0) { $0 + $1.amount }))")
+            .accessibilityValue(safeData.isEmpty ? L10n.Accessibility.noData :
+                L10n.Accessibility.categoriesCount(safeData.count, formattedCurrency(safeData.reduce(0) { $0 + $1.amount })))
         }
     }
 
@@ -579,11 +580,15 @@ struct CategoriesPieWidget: View {
         YalaFormatter.currency(value: value, currencyCode: currencyCode)
     }
 
+    private static let percentFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .percent
+        f.maximumFractionDigits = 0
+        return f
+    }()
+
     private func formattedPercentage(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
+        Self.percentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
     }
 
     private func selectCategory(at angle: Double) {

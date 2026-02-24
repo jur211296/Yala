@@ -57,6 +57,7 @@ struct TagsPieWidget: View {
     private let innerRadiusRatio: CGFloat = 0.50
 
     var body: some View {
+        let chartData = processChartData()
         VStack(alignment: .leading, spacing: DS.Spacing.none) {
             if chartData.isEmpty {
                 emptyState
@@ -461,8 +462,8 @@ struct TagsPieWidget: View {
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(L10n.Accessibility.tagPieChart)
-            .accessibilityValue(safeData.isEmpty ? "Sin datos" :
-                "\(safeData.count) etiquetas, total \(formattedCurrency(safeData.reduce(0) { $0 + $1.amount }))")
+            .accessibilityValue(safeData.isEmpty ? L10n.Accessibility.noData :
+                L10n.Accessibility.tagsCount(safeData.count, formattedCurrency(safeData.reduce(0) { $0 + $1.amount })))
         }
     }
 
@@ -472,11 +473,15 @@ struct TagsPieWidget: View {
         YalaFormatter.currency(value: value, currencyCode: currencyCode)
     }
 
+    private static let percentFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .percent
+        f.maximumFractionDigits = 0
+        return f
+    }()
+
     private func formattedPercentage(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
+        Self.percentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
     }
 
     private func selectTag(at angle: Double) {

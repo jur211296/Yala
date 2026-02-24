@@ -520,7 +520,7 @@ struct PanelView: View {
                             // Date Chip
                             if let focusedDate = viewModel.focusedDate {
                                 FilterChipView(
-                                    text: "Fecha: \(formattedDate(focusedDate))",
+                                    text: L10n.Filters.datePrefix(formattedDate(focusedDate)),
                                     onClear: {
                                         dsWithAnimation(reduceMotion) {
                                             viewModel.focusedDate = nil
@@ -752,11 +752,15 @@ struct PanelView: View {
 
     }
 
-private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
-        formatter.dateFormat = "d MMM"
-        return formatter.string(from: date)
+    private static let chipDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "d MMM"
+        return f
+    }()
+
+    private func formattedDate(_ date: Date) -> String {
+        Self.chipDateFormatter.string(from: date)
     }
 
     /// Recalculate trend data with smooth animation

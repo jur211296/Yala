@@ -160,33 +160,38 @@ struct InboxApproveSuccessView: View {
                 showActions = true
             } else {
                 Task {
-                    // 0ms — hero circle + glow
-                    withAnimation(.spring(response: 0.5, dampingFraction: DS.Animation.springBouncy)) {
-                        showHero = true
-                    }
+                    do {
+                        // 0ms — hero circle + glow
+                        withAnimation(.spring(response: 0.5, dampingFraction: DS.Animation.springBouncy)) {
+                            showHero = true
+                        }
 
-                    // 150ms — checkmark
-                    try? await Task.sleep(for: .milliseconds(150))
-                    withAnimation(.spring(response: 0.4, dampingFraction: DS.Animation.springBouncy)) {
-                        showCheckmark = true
-                    }
+                        // 150ms — checkmark
+                        try await Task.sleep(for: .milliseconds(150))
+                        withAnimation(.spring(response: 0.4, dampingFraction: DS.Animation.springBouncy)) {
+                            showCheckmark = true
+                        }
 
-                    // 300ms — amount
-                    try? await Task.sleep(for: .milliseconds(150))
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                        showAmount = true
-                    }
+                        // 300ms — amount
+                        try await Task.sleep(for: .milliseconds(150))
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            showAmount = true
+                        }
 
-                    // 500ms — details card
-                    try? await Task.sleep(for: .milliseconds(200))
-                    withAnimation(.easeOut(duration: 0.35)) {
-                        showDetails = true
-                    }
+                        // 500ms — details card
+                        try await Task.sleep(for: .milliseconds(200))
+                        withAnimation(.easeOut(duration: 0.35)) {
+                            showDetails = true
+                        }
 
-                    // 700ms — action buttons
-                    try? await Task.sleep(for: .milliseconds(200))
-                    withAnimation(.easeOut(duration: 0.3)) {
-                        showActions = true
+                        // 700ms — action buttons
+                        try await Task.sleep(for: .milliseconds(200))
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            showActions = true
+                        }
+                    } catch {
+                        // Task cancelled — stop animation sequence
+                        return
                     }
                 }
             }
