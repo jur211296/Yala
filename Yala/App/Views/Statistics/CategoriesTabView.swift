@@ -1361,18 +1361,7 @@ struct CategoriesTabView: View {
 
     // MARK: - Chip Data Structures
 
-    private struct CategoryChip: Identifiable {
-        var id: PersistentIdentifier { categoryID }
-        let categoryID: PersistentIdentifier
-    }
-
-    private struct SubcategoryChip: Identifiable {
-        let id: String
-        let name: String
-        let iconName: String?
-        let colorHex: String?
-        let subcategoryID: PersistentIdentifier?
-    }
+    // Chip models defined in FilterChipModels.swift
 
     private var selectedCategoryChips: [CategoryChip] {
         viewModel.selectedCategories.map { CategoryChip(categoryID: $0) }
@@ -1385,7 +1374,6 @@ struct CategoriesTabView: View {
             }) else { return nil }
             let categoryColor = subcategory.safeCategory.colorHex
             return SubcategoryChip(
-                id: subcategory.name,
                 name: subcategory.name,
                 iconName: subcategory.iconName,
                 colorHex: (subcategory.colorHex?.isEmpty == false
@@ -1396,14 +1384,6 @@ struct CategoriesTabView: View {
     }
 
     // MARK: - Tag Chip Data
-
-    private struct TagChip: Identifiable {
-        let id: PersistentIdentifier
-        let tagID: PersistentIdentifier
-        let name: String
-        let iconName: String
-        let colorHex: String?
-    }
 
     private var selectedTagChips: [TagChip] {
         tags.filter { viewModel.selectedTags.contains($0.persistentModelID) }
@@ -1429,12 +1409,6 @@ struct CategoriesTabView: View {
     }
 
     // MARK: - Chip Helpers
-
-    private struct AccountChip: Identifiable {
-        var id: String { name }
-        let name: String
-        let count: Int
-    }
 
     private var selectedAccountChips: [AccountChip] {
         guard !viewModel.selectedAccounts.isEmpty else { return [] }
@@ -1724,7 +1698,7 @@ private struct SubcategoryRowView: View {
             // Icon Circle
             ZStack {
                 Circle()
-                    .fill(Color(hex: summary.colorHex ?? "#6366F1"))
+                    .fill(Color(hex: summary.colorHex ?? AppConstants.defaultColorHex))
                     .frame(width: 40, height: 40)
 
                 if let subcategory = summary.subcategory {
@@ -1779,7 +1753,7 @@ private struct SubcategoryRowView: View {
                                 .frame(height: 6)
 
                             Capsule()
-                                .fill(Color(hex: summary.colorHex ?? "#6366F1"))
+                                .fill(Color(hex: summary.colorHex ?? AppConstants.defaultColorHex))
                                 .frame(width: width, height: 6)
                         }
                     }

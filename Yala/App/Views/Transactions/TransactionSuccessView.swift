@@ -145,16 +145,38 @@ struct TransactionSuccessView: View {
                     }
 
                     // Promoted amount
-                    Text(
-                        YalaFormatter.currency(
-                            value: Double(truncating: data.amount as NSDecimalNumber),
-                            currencyCode: data.currencyCode,
-                            forceFullPrecision: true)
-                    )
-                    .font(DS.Typography.largeTitle)
-                    .foregroundStyle(typeColor)
-                    .scaleEffect(showAmount ? 1.0 : 0.8)
-                    .opacity(showAmount ? 1.0 : 0.0)
+                    if data.isTransfer,
+                       let destAmount = data.destinationAmount,
+                       let destCurrency = data.destinationCurrencyCode,
+                       destCurrency != data.currencyCode
+                    {
+                        Text(
+                            YalaFormatter.currency(
+                                value: Double(truncating: data.amount as NSDecimalNumber),
+                                currencyCode: data.currencyCode,
+                                forceFullPrecision: true)
+                            + " → "
+                            + YalaFormatter.currency(
+                                value: Double(truncating: destAmount as NSDecimalNumber),
+                                currencyCode: destCurrency,
+                                forceFullPrecision: true)
+                        )
+                        .font(DS.Typography.title2)
+                        .foregroundStyle(typeColor)
+                        .scaleEffect(showAmount ? 1.0 : 0.8)
+                        .opacity(showAmount ? 1.0 : 0.0)
+                    } else {
+                        Text(
+                            YalaFormatter.currency(
+                                value: Double(truncating: data.amount as NSDecimalNumber),
+                                currencyCode: data.currencyCode,
+                                forceFullPrecision: true)
+                        )
+                        .font(DS.Typography.largeTitle)
+                        .foregroundStyle(typeColor)
+                        .scaleEffect(showAmount ? 1.0 : 0.8)
+                        .opacity(showAmount ? 1.0 : 0.0)
+                    }
                 }
                 .padding(.bottom, DS.Spacing.xxxl)
 

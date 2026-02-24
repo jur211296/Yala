@@ -14,6 +14,8 @@ enum AppConstants {
 
     /// Default fallback color hex for categories/budgets (Electric Indigo)
     static let defaultColorHex = "#6366F1"
+    /// Default subcategory fallback color hex (Neutral Gray)
+    static let defaultSubcategoryColorHex = "#9CA3AF"
     /// Default "Others/Remaining" color hex (System Gray)
     static let othersColorHex = "#8E8E93"
 }

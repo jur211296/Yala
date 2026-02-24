@@ -140,7 +140,8 @@ struct InboxView: View {
                     },
                     onEditTransaction: { transaction in
                         // Open transaction editor after sheet dismiss
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        Task {
+                            try? await Task.sleep(for: .milliseconds(300))
                             selectedTransaction = transaction
                         }
                     }
@@ -152,7 +153,8 @@ struct InboxView: View {
                     pendingNextDraftID = nil
                     // Find the draft by ID and open it
                     if let nextDraft = viewModel.findPendingDraft(by: nextID) {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        Task {
+                            try? await Task.sleep(for: .milliseconds(300))
                             selectedDraft = nextDraft
                         }
                     }
@@ -183,7 +185,8 @@ struct InboxView: View {
                         onEdit: {
                             showSwipeSuccessView = false
                             if let transaction = swipeApprovedTransaction {
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                Task {
+                                    try? await Task.sleep(for: .milliseconds(300))
                                     selectedTransaction = transaction
                                 }
                             }

@@ -240,7 +240,8 @@ struct ContentView: View {
         withAnimation(.easeOut(duration: 0.4)) {
             splashOpacity = 0
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        Task {
+            try? await Task.sleep(for: .milliseconds(400))
             showSplash = false
         }
     }
@@ -779,8 +780,32 @@ struct SearchContentView: View {
 
     // MARK: - Filtered Results
 
+    private func matchesSearch(_ transaction: TransactionItem, search: String, filter: SearchFilter) -> Bool {
+        let lowercasedSearch = search.lowercased()
+        switch filter {
+        case .all:
+            let noteMatch = transaction.note?.lowercased().contains(lowercasedSearch) ?? false
+            let categoryMatch = transaction.category?.name.lowercased().contains(lowercasedSearch) ?? false
+            let subcategoryMatch = transaction.subcategory?.name.lowercased().contains(lowercasedSearch) ?? false
+            let accountMatch = transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
+            let tagMatch = (transaction.tags ?? []).contains { $0.name.lowercased().contains(lowercasedSearch) }
+            return noteMatch || categoryMatch || subcategoryMatch || accountMatch || tagMatch
+        case .note:
+            return transaction.note?.lowercased().contains(lowercasedSearch) ?? false
+        case .category:
+            return transaction.category?.name.lowercased().contains(lowercasedSearch) ?? false
+        case .subcategory:
+            return transaction.subcategory?.name.lowercased().contains(lowercasedSearch) ?? false
+        case .account:
+            return transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
+        case .nature:
+            return transaction.subcategory?.nature.displayName.lowercased().contains(lowercasedSearch) ?? false
+        case .tag:
+            return (transaction.tags ?? []).contains { $0.name.lowercased().contains(lowercasedSearch) }
+        }
+    }
+
     private var filteredResults: [TransactionItem] {
-        // Pre-filter: exclude income transactions in expenses-only mode
         let baseTransactions: [TransactionItem]
         if sessionState.isExpensesOnlyMode {
             baseTransactions = transactions.filter { $0.category?.isIncome != true }
@@ -788,51 +813,15 @@ struct SearchContentView: View {
             baseTransactions = transactions
         }
 
-        // If no search text, show all (limited to 20)
         guard !searchText.isEmpty else {
             return Array(baseTransactions.prefix(20))
         }
 
-        let lowercasedSearch = searchText.lowercased()
-
-        return baseTransactions.filter { transaction in
-            switch selectedFilter {
-            case .all:
-                // Search in all fields
-                let noteMatch = transaction.note?.lowercased().contains(lowercasedSearch) ?? false
-                let categoryMatch =
-                    transaction.category?.name.lowercased().contains(lowercasedSearch) ?? false
-                let subcategoryMatch =
-                    transaction.subcategory?.name.lowercased().contains(lowercasedSearch) ?? false
-                let accountMatch =
-                    transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
-                let tagMatch = (transaction.tags ?? []).contains {
-                    $0.name.lowercased().contains(lowercasedSearch)
-                }
-                return noteMatch || categoryMatch || subcategoryMatch || accountMatch || tagMatch
-            case .note:
-                return transaction.note?.lowercased().contains(lowercasedSearch) ?? false
-            case .category:
-                return transaction.category?.name.lowercased().contains(lowercasedSearch) ?? false
-            case .subcategory:
-                return transaction.subcategory?.name.lowercased().contains(lowercasedSearch)
-                    ?? false
-            case .account:
-                return transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
-            case .nature:
-                return transaction.subcategory?.nature.displayName.lowercased()
-                    .contains(lowercasedSearch) ?? false
-            case .tag:
-                return (transaction.tags ?? []).contains { $0.name.lowercased().contains(lowercasedSearch) }
-            }
-        }
-        .prefix(20)
-        .map { $0 }
+        return Array(baseTransactions.filter { matchesSearch($0, search: searchText, filter: selectedFilter) }.prefix(20))
     }
 
     // Total count for "Ver todo" (without limit)
     private var totalMatchingCount: Int {
-        // Pre-filter: exclude income transactions in expenses-only mode
         let baseTransactions: [TransactionItem]
         if sessionState.isExpensesOnlyMode {
             baseTransactions = transactions.filter { $0.category?.isIncome != true }
@@ -842,38 +831,7 @@ struct SearchContentView: View {
 
         guard !searchText.isEmpty else { return baseTransactions.count }
 
-        let lowercasedSearch = searchText.lowercased()
-
-        return baseTransactions.filter { transaction in
-            switch selectedFilter {
-            case .all:
-                let noteMatch = transaction.note?.lowercased().contains(lowercasedSearch) ?? false
-                let categoryMatch =
-                    transaction.category?.name.lowercased().contains(lowercasedSearch) ?? false
-                let subcategoryMatch =
-                    transaction.subcategory?.name.lowercased().contains(lowercasedSearch) ?? false
-                let accountMatch =
-                    transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
-                let tagMatch = (transaction.tags ?? []).contains {
-                    $0.name.lowercased().contains(lowercasedSearch)
-                }
-                return noteMatch || categoryMatch || subcategoryMatch || accountMatch || tagMatch
-            case .note:
-                return transaction.note?.lowercased().contains(lowercasedSearch) ?? false
-            case .category:
-                return transaction.category?.name.lowercased().contains(lowercasedSearch) ?? false
-            case .subcategory:
-                return transaction.subcategory?.name.lowercased().contains(lowercasedSearch)
-                    ?? false
-            case .account:
-                return transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
-            case .nature:
-                return transaction.subcategory?.nature.displayName.lowercased().contains(
-                    lowercasedSearch) ?? false
-            case .tag:
-                return (transaction.tags ?? []).contains { $0.name.lowercased().contains(lowercasedSearch) }
-            }
-        }.count
+        return baseTransactions.filter { matchesSearch($0, search: searchText, filter: selectedFilter) }.count
     }
 
     // MARK: - Grouped Results by Date

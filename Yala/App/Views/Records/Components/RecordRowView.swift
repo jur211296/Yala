@@ -158,7 +158,7 @@ struct RecordRowView: View {
 
     private var subcategoryIcon: some View {
         // Use category color for the icon background
-        let colorHex = record.category?.colorHex ?? "#6366F1"
+        let colorHex = record.category?.colorHex ?? AppConstants.defaultColorHex
         // Use subcategory icon if available, fallback to category icon, then default tag
         let iconName =
             record.subcategory?.iconName

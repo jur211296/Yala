@@ -363,7 +363,8 @@ struct ImportIntroSheet: View {
                 count: 0
             )
             dismiss()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            Task {
+                try? await Task.sleep(for: .milliseconds(300))
                 self.onImportCompleted?(result)
             }
         } else {
@@ -461,7 +462,8 @@ struct ImportIntroSheet: View {
                 count: 0
             )
             dismiss()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            Task {
+                try? await Task.sleep(for: .milliseconds(300))
                 self.onImportCompleted?(errorResult)
             }
         case .success(let urls):
@@ -624,7 +626,8 @@ struct ImportIntroSheet: View {
                 dismiss()
 
                 // Notify parent with result after small delay for sheet to close
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(300))
                     self.onImportCompleted?(importResult)
                 }
 
@@ -728,7 +731,8 @@ struct ImportIntroSheet: View {
 
                 dismiss()
 
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(300))
                     self.onImportCompleted?(importResult)
                 }
 

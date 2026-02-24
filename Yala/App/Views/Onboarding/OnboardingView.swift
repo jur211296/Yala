@@ -1218,7 +1218,7 @@ struct OnboardingView: View {
         let account = Account(
             name: L10n.Onboarding.defaultAccountName,
             currencyCode: selectedCurrency.rawValue,
-            colorHex: "#6366F1",
+            colorHex: AppConstants.defaultColorHex,
             iconName: "creditcard",
             type: "checking"
         )
@@ -1346,7 +1346,7 @@ enum SeedCategoryPreview {
         CategoryInfo(name: L10n.Category.food, colorHex: "#22C55E", iconName: "cart.fill"),
         CategoryInfo(name: L10n.Category.shopping, colorHex: "#F59E0B", iconName: "bag.fill"),
         CategoryInfo(name: L10n.Category.transport, colorHex: "#0EA5E9", iconName: "car.fill"),
-        CategoryInfo(name: L10n.Category.finance, colorHex: "#6366F1", iconName: "banknote.fill"),
+        CategoryInfo(name: L10n.Category.finance, colorHex: AppConstants.defaultColorHex, iconName: "banknote.fill"),
         CategoryInfo(name: L10n.Category.housing, colorHex: "#475569", iconName: "house.fill"),
         CategoryInfo(name: L10n.Category.entertainment, colorHex: "#FF0080", iconName: "sparkles"),
         CategoryInfo(name: L10n.Category.personal, colorHex: "#A855F7", iconName: "person.fill"),

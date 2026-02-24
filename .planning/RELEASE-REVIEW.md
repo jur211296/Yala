@@ -90,7 +90,7 @@
 - [x] **Archivo:** `BalanceStatusIndicator.swift` — migrado a DS.Semantic tokens (ds-compliance batch)
 
 ### DS-2: Hexadecimales hardcodeados en múltiples archivos
-- [ ] **Archivos y valores:**
+- [x] **Archivos y valores:** — Migrado a `AppConstants.defaultColorHex` / `defaultSubcategoryColorHex` en ~20 archivos
   - `App/ViewModels/PanelViewModel.swift:1709, 1726` → `#6366F1` — [parcial] extraído a `defaultBudgetColorHex` constante (flow review)
   - `App/Views/Panel/RecentRecordsWidget.swift:182` → `#6366F1`
   - `App/Views/Panel/CategoriesPieWidget.swift:687` → `#8E8E93` ("Others")
@@ -242,7 +242,7 @@
 - **Fix:** Usar `static let` formatter
 
 ### CODE-9: Filtro duplicado 4 veces en `buildCalculationContext`
-- [ ] **Archivo:** `App/ViewModels/PanelViewModel.swift:746-1027`
+- [-] **Archivo:** `App/ViewModels/PanelViewModel.swift:746-1027` — Descartado: los 4 bloques tienen criterios DIFERENTES (date, category, adjustments). No es duplicación real.
 - **Impacto:** 4 bloques de filtrado casi idénticos — riesgo de mantenimiento
 - **Fix:** Extraer helper de filtrado común
 
@@ -469,7 +469,7 @@ Lo siguiente fue verificado y funciona correctamente:
 - **Impacto:** Al crear otro después de guardar, se pierde la cuenta por defecto del contexto original
 
 ### CODE-16: Success screen solo muestra monto origen en transfers
-- [ ] **Archivo:** `App/Views/Transactions/TransactionSuccessView.swift:141-150`
+- [x] **Archivo:** `App/Views/Transactions/TransactionSuccessView.swift:141-150` — Muestra formato `$100 USD → S/370 PEN` para transfers multi-moneda
 - **Impacto:** Para transfers multi-moneda, el monto destino solo aparece como texto pequeño
 
 ### CODE-17: No widget update después de guardar recurring
@@ -477,11 +477,11 @@ Lo siguiente fue verificado y funciona correctamente:
 - **Impacto:** Widgets de scheduled payments no reflejan el nuevo pago hasta próximo refresh cycle
 
 ### CODE-18: `isSaving` progress nunca se muestra visualmente
-- [ ] **Archivo:** `App/ViewModels/NewTransactionViewModel.swift:470`
+- [-] **Archivo:** `App/ViewModels/NewTransactionViewModel.swift:470` — Descartado: `isSaving` YA muestra ProgressView en botón save
 - **Detalle:** `context.save()` es sincrónico en @MainActor — el flag se setea y limpia antes de que UI pueda renderizar el indicador
 
 ### CODE-19: SaveAsRecurringSheet monto con ancho fijo 80pt
-- [ ] **Archivo:** `App/Views/Transactions/SaveAsRecurringSheet.swift:259`
+- [x] **Archivo:** `App/Views/Transactions/SaveAsRecurringSheet.swift:259` — `.frame(width: 80)` → `.fixedSize()`
 - **Impacto:** Se trunca con montos grandes o Dynamic Type
 
 ### CODE-20: Tags relationship sin `inverse` explícito
@@ -677,7 +677,7 @@ Lo que funciona correctamente:
 - **Detalle:** Ya no existe
 
 ### CODE-26: Chip data structs duplicadas en 3 tabs
-- [ ] **Archivos:** TrendsTabView, CategoriesTabView, RecordsTabView
+- [x] **Archivos:** TrendsTabView, CategoriesTabView, RecordsTabView — Extraídas a `FilterChipModels.swift`
 - **Detalle:** AccountChip, CategoryChip, TagChip, NatureChipData definidos independientemente con estructura idéntica
 
 ### CODE-27: Bulk note editor no permite limpiar notas
@@ -899,10 +899,10 @@ Lo que funciona correctamente:
 ## 5.6 CODE
 
 ### CODE-34: `loadPaidStatus` duplicado en Widget y ViewModel
-- [ ] **Archivos:** Widget:99-152 vs ViewModel:247-302
+- [x] **Archivos:** Widget:99-152 vs ViewModel:247-302 — Extraído a `ScheduledPaymentPaidStatusHelper`
 
 ### CODE-35: Filter logic triplicada en getSubscriptions/getRecurringPayments/calculatePaymentData
-- [ ] **Archivo:** `App/ViewModels/ScheduledPaymentsViewModel.swift:550-629, 307-367`
+- [x] **Archivo:** `App/ViewModels/ScheduledPaymentsViewModel.swift:550-629, 307-367` — Extraído a `applyPaymentFilters(_:)`
 
 ### CODE-36: DateFormatter creado en computed properties (5+ instancias)
 - [x] **Archivos:** Todos migrados a `private static let` (flow review): ViewModel (`monthYearFormatter`), DetailView (ya tenía 4 static), ListView (`longDateFormatter`), Widget (`monthYearFormatter`+`shortDateFormatter`), TransactionAssociationSheet (`mediumDateFormatter`)
@@ -1006,7 +1006,7 @@ Lo que funciona correctamente:
 ## 6.6 CODE
 
 ### CODE-40: DispatchQueue.main.asyncAfter(0.3) frágil en InboxView (3 instancias)
-- [ ] **Archivo:** `App/Views/Inbox/InboxView.swift:138, 150, 181`
+- [x] **Archivo:** `App/Views/Inbox/InboxView.swift:138, 150, 181` — Migrado a `Task { try? await Task.sleep(for:) }`
 
 ### CODE-41: Direct modelContext.save() bypasea DraftService
 - [ ] **Archivo:** `App/Views/Inbox/InboxView.swift:544-555`
@@ -1073,7 +1073,7 @@ Lo que funciona correctamente:
 ## 7.4 CODE
 
 ### CODE-45: Lógica de filtrado duplicada (~50 líneas) entre `filteredResults` y `totalMatchingCount`
-- [ ] **Archivo:** `App/ContentView.swift:763-812` y `815-858`
+- [x] **Archivo:** `App/ContentView.swift:763-812` y `815-858` — Extraído a `matchesSearch(_:search:filter:)`
 - **Impacto:** Filtro ejecutado 2x en cada keystroke
 
 ### CODE-46: 470 líneas de search embebidas en ContentView.swift
@@ -1148,7 +1148,7 @@ Lo que funciona correctamente:
 ## 8.6 CODE
 
 ### CODE-47: DispatchQueue.main.asyncAfter para splash dismiss (inconsistente con structured concurrency)
-- [ ] **Archivo:** `App/ContentView.swift:236`
+- [x] **Archivo:** `App/ContentView.swift:236` — Migrado a `Task { try? await Task.sleep(for:) }`
 
 ---
 
@@ -1204,8 +1204,8 @@ Lo que funciona correctamente:
 
 ## 9.3 DS
 
-### DS-28: `Typography.title2` vs `DS.Typography.title2` inconsistente
-- [ ] **Archivos:** CurrencySettingsView.swift:71-76, ImportIntroSheet.swift ~~, ThemeSettingsView.swift:44~~ [x]
+### DS-28: `Typography.title2` vs `DS.Typography.title2` inconsistente — YA usan DS.Typography
+- [x] **Archivos:** CurrencySettingsView.swift:71-76, ImportIntroSheet.swift, ThemeSettingsView.swift — YA usan `DS.Typography.title2`
 
 ---
 
@@ -1241,7 +1241,7 @@ Lo que funciona correctamente:
 - [x] **Archivo:** `NotificationsSettingsView.swift` — legacy code eliminado, refactorizado a `notificationsListWithBudgetAlerts` (flow review BAJA batch)
 
 ### CODE-49: DispatchQueue.main.asyncAfter en ~10 locations de Profile/Import
-- [ ] **Archivos:** ProfileView:148, ImportIntroSheet:366,464,499,522,627,731, ThemeSettingsView:94
+- [x] **Archivos:** ProfileView:148, ImportIntroSheet:366,464,499,522,627,731, ThemeSettingsView:94 — Migrados a `Task { try? await Task.sleep(for:) }`
 
 ### CODE-50: Unused @AppStorage("defaultPeriod") en ProfileView
 - [x] **Archivo:** `ProfileView.swift` — dead code eliminado (flow review BAJA batch)

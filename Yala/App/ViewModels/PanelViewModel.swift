@@ -8,9 +8,6 @@ final class PanelViewModel {
 
     // MARK: - Constants
 
-    /// Default budget color when no category provides one (matches Color.electricIndigo)
-    private static let defaultBudgetColorHex = "#6366F1"
-
     // MARK: - Static Formatters
 
     private static let dateKeyFormatter: DateFormatter = {
@@ -1729,7 +1726,7 @@ final class PanelViewModel {
     private func getBudgetDisplayProperties(budget: Budget) -> (icon: String, color: String) {
         let subcategories = budget.subcategories ?? []
         guard !subcategories.isEmpty else {
-            return ("chart.pie.fill", Self.defaultBudgetColorHex)
+            return ("chart.pie.fill", AppConstants.defaultColorHex)
         }
 
         if subcategories.count == 1, let subcategory = subcategories.first {
@@ -1746,7 +1743,7 @@ final class PanelViewModel {
             let color = category.colorHex
             return (icon, color)
         } else {
-            return ("chart.pie.fill", Self.defaultBudgetColorHex)
+            return ("chart.pie.fill", AppConstants.defaultColorHex)
         }
     }
 }

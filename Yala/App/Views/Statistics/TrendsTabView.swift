@@ -1200,29 +1200,7 @@ struct TrendsTabView: View {
 
     // MARK: - Chip Data Structures
 
-    private struct AccountChip: Identifiable {
-        var id: String { name }
-        let name: String
-        let count: Int
-    }
-
-    private struct CategoryChip: Identifiable {
-        var id: PersistentIdentifier { categoryID }
-        let categoryID: PersistentIdentifier
-    }
-
-    private struct SubcategoryChip: Identifiable {
-        var id: String { subcategoryID?.hashValue.description ?? name }
-        let name: String
-        let iconName: String?
-        let colorHex: String?
-        let subcategoryID: PersistentIdentifier?
-    }
-
-    private struct NatureChipData: Identifiable {
-        var id: String { nature.rawValue }
-        let nature: SubcategoryNature
-    }
+    // Chip models defined in FilterChipModels.swift
 
     private var selectedAccountChips: [AccountChip] {
         guard !trendsViewModel.selectedAccounts.isEmpty else { return [] }
@@ -1266,14 +1244,6 @@ struct TrendsTabView: View {
 
     private var selectedNatureChips: [NatureChipData] {
         trendsViewModel.selectedNatures.map { NatureChipData(nature: $0) }
-    }
-
-    private struct TagChip: Identifiable {
-        let id: PersistentIdentifier
-        let tagID: PersistentIdentifier
-        let name: String
-        let iconName: String
-        let colorHex: String?
     }
 
     private var selectedTagChips: [TagChip] {
@@ -1692,7 +1662,7 @@ struct CompactRecordRow: View {
         let colorHex =
             record.subcategory?.colorHex
             ?? record.category?.colorHex
-            ?? "#6366F1"
+            ?? AppConstants.defaultColorHex
 
         let iconName =
             record.subcategory?.iconName

@@ -87,7 +87,7 @@ struct TransactionAssociationSheet: View {
 
     private var paymentInfoHeader: some View {
         HStack(spacing: DS.Spacing.md) {
-            let color = payment.subcategory?.colorHex ?? payment.subcategory?.category?.colorHex ?? "#6366F1"
+            let color = payment.subcategory?.colorHex ?? payment.subcategory?.category?.colorHex ?? AppConstants.defaultColorHex
             let icon = payment.subcategory?.iconName ?? payment.subcategory?.category?.iconName ?? "calendar.badge.clock"
 
             ZStack {

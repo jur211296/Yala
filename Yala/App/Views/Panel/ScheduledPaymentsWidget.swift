@@ -97,58 +97,7 @@ struct ScheduledPaymentsWidget: View {
     // MARK: - Paid Status
 
     private func loadPaidStatus(for payments: [ScheduledPayment], month: Date) -> [String: Int] {
-        let calendar = Calendar.current
-        guard let monthInterval = calendar.dateInterval(of: .month, for: month) else { return [:] }
-
-        var result: [String: Int] = [:]
-        let paymentIDs = Set(payments.map { $0.id.uuidString })
-
-        // Query 1: InboxDrafts approved with sourceScheduledPaymentID
-        do {
-            var draftDescriptor = FetchDescriptor<InboxDraft>(
-                predicate: #Predicate<InboxDraft> { draft in
-                    draft.statusRaw == "approved" && draft.sourceScheduledPaymentID != nil
-                }
-            )
-            draftDescriptor.propertiesToFetch = [\.sourceScheduledPaymentID, \.date]
-            let approvedDrafts = try modelContext.fetch(draftDescriptor)
-
-            for draft in approvedDrafts {
-                guard let spID = draft.sourceScheduledPaymentID, paymentIDs.contains(spID) else { continue }
-                let draftDate = draft.approvedTransaction?.date ?? draft.date ?? draft.createdAt
-                if draftDate >= monthInterval.start && draftDate < monthInterval.end {
-                    result[spID, default: 0] += 1
-                }
-            }
-        } catch {
-            #if DEBUG
-            print("ScheduledPaymentsWidget: Error loading draft paid status: \(error)")
-            #endif
-        }
-
-        // Query 2: TransactionItems with scheduledPaymentID
-        do {
-            var txDescriptor = FetchDescriptor<TransactionItem>(
-                predicate: #Predicate<TransactionItem> { tx in
-                    tx.scheduledPaymentID != nil
-                }
-            )
-            txDescriptor.propertiesToFetch = [\.scheduledPaymentID, \.date]
-            let linkedTransactions = try modelContext.fetch(txDescriptor)
-
-            for tx in linkedTransactions {
-                guard let spID = tx.scheduledPaymentID, paymentIDs.contains(spID) else { continue }
-                if tx.date >= monthInterval.start && tx.date < monthInterval.end {
-                    result[spID, default: 0] += 1
-                }
-            }
-        } catch {
-            #if DEBUG
-            print("ScheduledPaymentsWidget: Error loading tx paid status: \(error)")
-            #endif
-        }
-
-        return result
+        ScheduledPaymentPaidStatusHelper.loadPaidStatus(for: payments, month: month, context: modelContext)
     }
 
     // MARK: - Header
@@ -426,7 +375,7 @@ struct ScheduledPaymentsWidget: View {
                 ?? "creditcard.fill"
             let color = payment.subcategory?.colorHex
                 ?? payment.subcategory?.category?.colorHex
-                ?? "#6366F1"
+                ?? AppConstants.defaultColorHex
 
             for date in dates.sorted() {
                 let dueDate = calendar.startOfDay(for: date)

@@ -126,7 +126,7 @@ extension FilterChipView {
         self.text = count > 1 ? "\(subcategoryName) +\(count - 1)" : subcategoryName
         self.indicator = .iconWithColor(
             iconName: iconName ?? "list.bullet.indent",
-            color: Color(hex: colorHex ?? "#6366F1")
+            color: Color(hex: colorHex ?? AppConstants.defaultColorHex)
         )
         self.onClear = onClear
     }
@@ -257,7 +257,7 @@ extension FilterChipView {
         FilterChipView(
             subcategoryName: "Uber",
             iconName: "app.fill",
-            colorHex: "#6366F1",
+            colorHex: AppConstants.defaultColorHex,
             onClear: {}
         )
         FilterChipView(

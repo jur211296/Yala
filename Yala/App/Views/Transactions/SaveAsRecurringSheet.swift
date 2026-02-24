@@ -256,7 +256,7 @@ struct SaveAsRecurringSheet: View {
                 TextField("0.00", text: $amountString)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
-                    .frame(width: 80)
+                    .fixedSize()
                     .focused($isAmountFocused)
             }
         }

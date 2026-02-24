@@ -42,7 +42,7 @@ final class AccountFormViewModel {
     var selectedAdjustmentMode: AdjustmentMode = .changeInitialBalance
 
     // Color
-    var selectedColorHex: String = "#6366F1"
+    var selectedColorHex: String = AppConstants.defaultColorHex
     var customColor: Color = Color(hex: "6366F1")
     var isPresentingColorPicker: Bool = false
 
@@ -148,7 +148,7 @@ final class AccountFormViewModel {
         } else {
             // Creation mode - default to "Cambiar saldo inicial"
             self.selectedAdjustmentMode = .changeInitialBalance
-            self.selectedColorHex = "#6366F1"
+            self.selectedColorHex = AppConstants.defaultColorHex
             self.customColor = Color(hex: "6366F1")
             self.isPositive = true
             self.balanceText = ""

@@ -327,7 +327,7 @@ struct TopSubcategoriesWidget: View {
                     // Icon
                     ZStack {
                         Circle()
-                            .fill(Color(hex: top.colorHex ?? "9CA3AF"))
+                            .fill(Color(hex: top.colorHex ?? AppConstants.defaultSubcategoryColorHex))
                             .frame(width: 48, height: 48)
 
                         Image(
@@ -356,11 +356,11 @@ struct TopSubcategoriesWidget: View {
                                 "\(formattedPercentage(top.percentageOfCategory)) \(String(format: L10n.Widget.of, top.category?.name ?? L10n.Widget.categoryAbbr))"
                             )
                             .font(DS.Typography.labelTiny)
-                            .foregroundStyle(Color(hex: top.colorHex ?? "9CA3AF"))
+                            .foregroundStyle(Color(hex: top.colorHex ?? AppConstants.defaultSubcategoryColorHex))
                         }
                         .padding(.horizontal, DS.Chip.paddingV)
                         .padding(.vertical, DS.Spacing.xxs)
-                        .background(Color(hex: top.colorHex ?? "9CA3AF").opacity(0.1))
+                        .background(Color(hex: top.colorHex ?? AppConstants.defaultSubcategoryColorHex).opacity(0.1))
                         .clipShape(Capsule())
                     }
                 }
@@ -435,7 +435,7 @@ private struct SubcategoryRow: View {
                     // Icon (Default placeholder as requested)
                     ZStack {
                         Circle()
-                            .fill(Color(hex: summary.colorHex ?? "9CA3AF"))
+                            .fill(Color(hex: summary.colorHex ?? AppConstants.defaultSubcategoryColorHex))
                             .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
 
                         Image(
@@ -491,7 +491,7 @@ private struct SubcategoryRow: View {
                                 maxAmount > 0 ? (summary.amount / maxAmount) * geo.size.width : 0
                             ZStack(alignment: .leading) {
                                 Capsule().fill(DS.Semantic.neutralBackground).frame(height: 6)
-                                Capsule().fill(Color(hex: summary.colorHex ?? "9CA3AF")).frame(
+                                Capsule().fill(Color(hex: summary.colorHex ?? AppConstants.defaultSubcategoryColorHex)).frame(
                                     width: width, height: 6)
                             }
                         }

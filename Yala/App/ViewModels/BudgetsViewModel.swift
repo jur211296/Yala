@@ -497,13 +497,13 @@ final class BudgetsViewModel {
     ) -> (icon: String, color: String) {
         // No subcategories: use neutral app icon/color
         guard subcategoryCount > 0 else {
-            return ("chart.pie.fill", "#6366F1") // Electric indigo
+            return ("chart.pie.fill", AppConstants.defaultColorHex) // Electric indigo
         }
 
         // Single subcategory: use subcategory icon/color
         if subcategoryCount == 1 {
             let icon = firstSubcategoryIcon ?? "tag.fill"
-            let color = firstCategoryColor ?? "#6366F1"
+            let color = firstCategoryColor ?? AppConstants.defaultColorHex
             return (icon, color)
         }
 
@@ -511,11 +511,11 @@ final class BudgetsViewModel {
         if uniqueCategoryCount == 1 {
             // All from same category: use category icon/color
             let icon = firstCategoryIcon ?? "tag.fill"
-            let color = firstCategoryColor ?? "#6366F1"
+            let color = firstCategoryColor ?? AppConstants.defaultColorHex
             return (icon, color)
         } else {
             // Multiple categories: use app icon + electric indigo
-            return ("chart.pie.fill", "#6366F1")
+            return ("chart.pie.fill", AppConstants.defaultColorHex)
         }
     }
 }

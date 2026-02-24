@@ -248,65 +248,44 @@ final class ScheduledPaymentsViewModel {
 
     // MARK: - Paid Status
 
-    /// Batch load paid count for a set of payments in a given month.
-    /// Checks both InboxDraft (approved with sourceScheduledPaymentID) and
-    /// TransactionItem (with scheduledPaymentID).
-    /// Returns dictionary [paymentIDString: paidCount]
+    /// Apply shared filters (active, accounts, subcategories, categories, tags, natures) to a payment list.
+    private func applyPaymentFilters(_ payments: [ScheduledPayment]) -> [ScheduledPayment] {
+        var filtered = payments
+
+        if hideInactive {
+            filtered = filtered.filter { $0.isActive }
+        }
+        if !selectedAccounts.isEmpty {
+            filtered = filtered.filter { payment in
+                guard let accountID = payment.account?.persistentModelID else { return false }
+                return selectedAccounts.contains(accountID)
+            }
+        }
+        if !selectedSubcategories.isEmpty {
+            filtered = filtered.filter { payment in
+                guard let subID = payment.subcategory?.persistentModelID else { return false }
+                return selectedSubcategories.contains(subID)
+            }
+        }
+        if !selectedCategories.isEmpty && selectedSubcategories.isEmpty {
+            filtered = filtered.filter { payment in
+                guard let catID = payment.subcategory?.safeCategory.persistentModelID else { return false }
+                return selectedCategories.contains(catID)
+            }
+        }
+        if !selectedTags.isEmpty {
+            filtered = filtered.filter { payment in
+                let paymentTagIDs = Set((payment.tags ?? []).map { $0.persistentModelID })
+                return !paymentTagIDs.isDisjoint(with: selectedTags)
+            }
+        }
+
+        return filtered
+    }
+
     private func loadPaidStatus(for payments: [ScheduledPayment], month: Date) -> [String: Int] {
         guard let context = modelContext else { return [:] }
-        let calendar = Calendar.current
-        guard let monthInterval = calendar.dateInterval(of: .month, for: month) else { return [:] }
-
-        var result: [String: Int] = [:]
-        let paymentIDs = Set(payments.map { $0.id.uuidString })
-
-        // Query 1: InboxDrafts approved with sourceScheduledPaymentID
-        do {
-            var draftDescriptor = FetchDescriptor<InboxDraft>(
-                predicate: #Predicate<InboxDraft> { draft in
-                    draft.statusRaw == "approved" && draft.sourceScheduledPaymentID != nil
-                }
-            )
-            draftDescriptor.propertiesToFetch = [\.sourceScheduledPaymentID, \.date]
-            let approvedDrafts = try context.fetch(draftDescriptor)
-
-            for draft in approvedDrafts {
-                guard let spID = draft.sourceScheduledPaymentID, paymentIDs.contains(spID) else { continue }
-                // Check if the approved transaction date is within the month
-                let draftDate = draft.approvedTransaction?.date ?? draft.date ?? draft.createdAt
-                if draftDate >= monthInterval.start && draftDate < monthInterval.end {
-                    result[spID, default: 0] += 1
-                }
-            }
-        } catch {
-            #if DEBUG
-            print("ScheduledPaymentsViewModel: Error loading draft paid status: \(error)")
-            #endif
-        }
-
-        // Query 2: TransactionItems with scheduledPaymentID
-        do {
-            var txDescriptor = FetchDescriptor<TransactionItem>(
-                predicate: #Predicate<TransactionItem> { tx in
-                    tx.scheduledPaymentID != nil
-                }
-            )
-            txDescriptor.propertiesToFetch = [\.scheduledPaymentID, \.date]
-            let linkedTransactions = try context.fetch(txDescriptor)
-
-            for tx in linkedTransactions {
-                guard let spID = tx.scheduledPaymentID, paymentIDs.contains(spID) else { continue }
-                if tx.date >= monthInterval.start && tx.date < monthInterval.end {
-                    result[spID, default: 0] += 1
-                }
-            }
-        } catch {
-            #if DEBUG
-            print("ScheduledPaymentsViewModel: Error loading tx paid status: \(error)")
-            #endif
-        }
-
-        return result
+        return ScheduledPaymentPaidStatusHelper.loadPaidStatus(for: payments, month: month, context: context)
     }
 
     // MARK: - Data Calculation
@@ -329,42 +308,8 @@ final class ScheduledPaymentsViewModel {
             filtered = filtered.filter { $0.transactionType != "income" }
         }
 
-        // Filter by active status
-        if hideInactive {
-            filtered = filtered.filter { $0.isActive }
-        }
-
-        // Apply account filter
-        if !selectedAccounts.isEmpty {
-            filtered = filtered.filter { payment in
-                guard let accountID = payment.account?.persistentModelID else { return false }
-                return selectedAccounts.contains(accountID)
-            }
-        }
-
-        // Apply subcategory filter
-        if !selectedSubcategories.isEmpty {
-            filtered = filtered.filter { payment in
-                guard let subID = payment.subcategory?.persistentModelID else { return false }
-                return selectedSubcategories.contains(subID)
-            }
-        }
-
-        // Apply category filter (if subcategory not set, check category)
-        if !selectedCategories.isEmpty && selectedSubcategories.isEmpty {
-            filtered = filtered.filter { payment in
-                guard let catID = payment.subcategory?.safeCategory.persistentModelID else { return false }
-                return selectedCategories.contains(catID)
-            }
-        }
-
-        // Apply tag filter
-        if !selectedTags.isEmpty {
-            filtered = filtered.filter { payment in
-                let paymentTagIDs = Set((payment.tags ?? []).map { $0.persistentModelID })
-                return !paymentTagIDs.isDisjoint(with: selectedTags)
-            }
-        }
+        // Apply shared filters
+        filtered = applyPaymentFilters(filtered)
 
         // Apply transaction nature filter (income/expense)
         if !selectedTransactionNatures.isEmpty {
@@ -449,9 +394,9 @@ final class ScheduledPaymentsViewModel {
 
         // Default based on payment category
         if payment.paymentCategory == PaymentCategory.subscription.rawValue {
-            return ("creditcard.and.123", "#6366F1") // Electric indigo
+            return ("creditcard.and.123", AppConstants.defaultColorHex) // Electric indigo
         } else {
-            return ("arrow.trianglehead.2.clockwise.rotate.90", "#6366F1")
+            return ("arrow.trianglehead.2.clockwise.rotate.90", AppConstants.defaultColorHex)
         }
     }
 
@@ -557,83 +502,19 @@ final class ScheduledPaymentsViewModel {
     /// Get all subscriptions (filtered)
     func getSubscriptions(from payments: [ScheduledPayment]) -> [ScheduledPayment] {
         var filtered = payments.filter { $0.paymentCategory == PaymentCategory.subscription.rawValue }
-
-        // Filter income payments in expenses-only mode
         if SessionState.shared.isExpensesOnlyMode {
             filtered = filtered.filter { $0.transactionType != "income" }
         }
-
-        // Apply filters
-        if hideInactive {
-            filtered = filtered.filter { $0.isActive }
-        }
-        if !selectedAccounts.isEmpty {
-            filtered = filtered.filter { payment in
-                guard let accountID = payment.account?.persistentModelID else { return false }
-                return selectedAccounts.contains(accountID)
-            }
-        }
-        if !selectedSubcategories.isEmpty {
-            filtered = filtered.filter { payment in
-                guard let subID = payment.subcategory?.persistentModelID else { return false }
-                return selectedSubcategories.contains(subID)
-            }
-        }
-        if !selectedCategories.isEmpty && selectedSubcategories.isEmpty {
-            filtered = filtered.filter { payment in
-                guard let catID = payment.subcategory?.safeCategory.persistentModelID else { return false }
-                return selectedCategories.contains(catID)
-            }
-        }
-        if !selectedTags.isEmpty {
-            filtered = filtered.filter { payment in
-                let paymentTagIDs = Set((payment.tags ?? []).map { $0.persistentModelID })
-                return !paymentTagIDs.isDisjoint(with: selectedTags)
-            }
-        }
-
-        return filtered
+        return applyPaymentFilters(filtered)
     }
 
     /// Get all recurring payments (non-subscription, filtered)
     func getRecurringPayments(from payments: [ScheduledPayment]) -> [ScheduledPayment] {
         var filtered = payments.filter { $0.paymentCategory == PaymentCategory.recurring.rawValue }
-
-        // Filter income payments in expenses-only mode
         if SessionState.shared.isExpensesOnlyMode {
             filtered = filtered.filter { $0.transactionType != "income" }
         }
-
-        // Apply same filters as subscriptions
-        if hideInactive {
-            filtered = filtered.filter { $0.isActive }
-        }
-        if !selectedAccounts.isEmpty {
-            filtered = filtered.filter { payment in
-                guard let accountID = payment.account?.persistentModelID else { return false }
-                return selectedAccounts.contains(accountID)
-            }
-        }
-        if !selectedSubcategories.isEmpty {
-            filtered = filtered.filter { payment in
-                guard let subID = payment.subcategory?.persistentModelID else { return false }
-                return selectedSubcategories.contains(subID)
-            }
-        }
-        if !selectedCategories.isEmpty && selectedSubcategories.isEmpty {
-            filtered = filtered.filter { payment in
-                guard let catID = payment.subcategory?.safeCategory.persistentModelID else { return false }
-                return selectedCategories.contains(catID)
-            }
-        }
-        if !selectedTags.isEmpty {
-            filtered = filtered.filter { payment in
-                let paymentTagIDs = Set((payment.tags ?? []).map { $0.persistentModelID })
-                return !paymentTagIDs.isDisjoint(with: selectedTags)
-            }
-        }
-
-        return filtered
+        return applyPaymentFilters(filtered)
     }
 
     /// Calculate total monthly subscription spending for a given month, converting all amounts to preferredCurrencyCode

@@ -91,7 +91,8 @@ struct ThemeSettingsView: View {
             } else {
                 themeManager.userChoice = appTheme
                 // Dismiss theme view + parent profile sheet
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(300))
                     dismiss()
                     onThemeChanged?()
                 }

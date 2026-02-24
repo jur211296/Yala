@@ -424,7 +424,7 @@ struct ScheduledPaymentsListView: View {
             let todayDay = calendar.component(.day, from: today)
             if day < todayDay { return Color.hotPink }
         }
-        let color = payment.subcategory?.colorHex ?? payment.subcategory?.category?.colorHex ?? "#6366F1"
+        let color = payment.subcategory?.colorHex ?? payment.subcategory?.category?.colorHex ?? AppConstants.defaultColorHex
         return Color(hex: color)
     }
 

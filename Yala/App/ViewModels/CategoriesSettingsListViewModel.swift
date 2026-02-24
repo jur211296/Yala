@@ -80,7 +80,7 @@ final class CategoriesSettingsListViewModel {
 
         let category = Category(
             name: "",
-            colorHex: "#6366F1",
+            colorHex: AppConstants.defaultColorHex,
             isIncome: false,
             isDefaultSeed: false,
             isVisible: true,

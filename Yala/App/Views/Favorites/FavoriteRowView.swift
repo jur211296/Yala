@@ -82,7 +82,7 @@ struct FavoriteRowView: View {
         let colorHex =
             favorite.subcategory?.category?.colorHex
             ?? favorite.subcategory?.colorHex
-            ?? "#6366F1"
+            ?? AppConstants.defaultColorHex
         let iconName =
             favorite.subcategory?.iconName
             ?? favorite.subcategory?.category?.iconName
