@@ -435,6 +435,7 @@ enum L10n {
     enum Accessibility {
         static var closeMenu: String { ls("accessibility.closeMenu", comment: "") }
         static var newRecord: String { ls("accessibility.newRecord", comment: "") }
+        static var filters: String { ls("accessibility.filters", comment: "") }
         static var clearFilters: String { ls("accessibility.clearFilters", comment: "") }
         static var cancelRecording: String { ls("accessibility.cancelRecording", comment: "") }
         static var stopRecording: String { ls("accessibility.stopRecording", comment: "") }

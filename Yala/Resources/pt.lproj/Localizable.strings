@@ -1274,6 +1274,7 @@
 // MARK: - Accessibility
 "accessibility.closeMenu" = "Fechar menu";
 "accessibility.newRecord" = "Novo registro";
+"accessibility.filters" = "Filtros";
 "accessibility.clearFilters" = "Limpar filtros";
 "accessibility.cancelRecording" = "Cancelar gravação";
 "accessibility.stopRecording" = "Parar gravação";

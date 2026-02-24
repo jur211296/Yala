@@ -176,7 +176,7 @@ struct AppIconSettingsView: View {
                     } else {
                         // Fallback if image not found
                         RoundedRectangle(cornerRadius: 18)
-                            .fill(Color.gray.opacity(0.3))
+                            .fill(Color.gray.opacity(0.3)) // A11Y-DM: placeholder fallback for missing icon
                             .frame(width: 80, height: 80)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 18)
@@ -190,7 +190,7 @@ struct AppIconSettingsView: View {
                             .font(DS.Typography.labelSmall)
                             .foregroundStyle(.white)
                             .padding(DS.Chip.paddingV)
-                            .background(Circle().fill(Color.gray))
+                            .background(Circle().fill(Color.gray)) // A11Y-DM: lock badge on app icon — white icon on gray
                             .offset(x: 4, y: -4)
                     }
                 }

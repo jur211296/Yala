@@ -148,6 +148,10 @@ Después de crear o modificar modelos, servicios o ViewModels:
 ### API Keys
 - NUNCA hardcodear — usar `Secrets.xcconfig` + `Info.plist` via `Bundle.main.object(forInfoDictionaryKey:)`
 
+### Audit Markers
+- `// A11Y-DT:` — Dynamic Type: justifica font size hardcodeado (e.g., @ScaledMetric, widget fixed layout)
+- `// A11Y-DM:` — Dark Mode: justifica color hardcodeado (e.g., brand bg, decorative animation)
+
 ### Logs
 - SIEMPRE dentro de `#if DEBUG` — nunca datos sensibles en producción
 

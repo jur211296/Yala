@@ -119,7 +119,7 @@ struct ThemeSettingsView: View {
                             .font(DS.Typography.labelSmall)
                             .foregroundStyle(.white)
                             .padding(DS.Chip.paddingV)
-                            .background(Circle().fill(Color.gray))
+                            .background(Circle().fill(Color.gray)) // A11Y-DM: lock badge on theme preview — white icon on gray
                             .offset(x: 4, y: -4)
                     }
                 }

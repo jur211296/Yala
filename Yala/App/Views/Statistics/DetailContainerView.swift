@@ -292,6 +292,7 @@ struct DetailContainerView: View {
                             .font(DS.Typography.body).fontWeight(.medium)
                             .foregroundStyle(.thToolbarIcon)
                     }
+                    .accessibilityLabel(L10n.Action.select)
                 }
 
                 // Filters button
@@ -306,6 +307,7 @@ struct DetailContainerView: View {
                         .font(DS.Typography.body).fontWeight(.medium)
                         .foregroundStyle(.thToolbarIcon)
                 }
+                .accessibilityLabel(L10n.Accessibility.filters)
                 .overlay(alignment: .topTrailing) {
                     let showIndicator = (selectedTab == .records && recordsViewModel.activeFilterCount > 0) ||
                                        (selectedTab == .trends && trendsViewModel.activeFilterCount > 0) ||
@@ -443,6 +445,7 @@ struct DetailContainerView: View {
                         .rotationEffect(.degrees(showFABMenu ? 90 : 0))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(showFABMenu ? L10n.Accessibility.closeMenu : L10n.Accessibility.newRecord)
                 .glassEffect(.regular.interactive())
                 .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
             }
@@ -469,6 +472,7 @@ struct DetailContainerView: View {
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Accessibility.newRecord)
             .glassEffect(.regular.interactive())
             .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
             .padding(.trailing, DS.Spacing.xl)
@@ -559,6 +563,7 @@ struct DetailContainerView: View {
                         .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(L10n.Action.edit)
             }
             .padding(.vertical, DS.Spacing.sm)
             .padding(.horizontal, DS.Spacing.lg)
