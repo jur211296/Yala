@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: None
 Plan: None
 Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-02-24 — Support form sheet con picker de tipo
+Last activity: 2026-02-24 — Scheduled payments visual consistency fix
 
 ### Branch Strategy
 - **1.0** = Release (V1.0 + V1.1 mergeada)
@@ -28,18 +28,23 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
-- [2026-02-24] a4b00da feat: support form sheet with type picker before sending email
+- [2026-02-24] 328ba03 fix: scheduled payments visual consistency — hot pink expenses, sign prefix, currency conversion
+- [2026-02-24] dea0d82 feat: support form sheet with type picker before sending email
 - [2026-02-24] 0962a43 fix: show initial balance mode when editing account without balance set
 - [2026-02-24] 8fbb672 fix: a11y labels on 6 icon-only buttons + A11Y-DM audit comments on hardcoded colors
-- [2026-02-24] Merge 1.0 into 1.1 — all release polish + a11y + DS improvements
-- [2026-02-23] ed52513 fix: tags KPI respects category/subcategory filters in Statistics
-- [2026-02-22] 7ce5dd6 feat: add exclude mode for filters
-- [2026-02-20] cf3418d fix: add a11y labels to Panel buttons and localize Tips strings
-- [2026-02-20] 52b572e feat: add Siri & Shortcuts settings screen in Profile
-- [2026-02-20] 7700b2d feat: add Siri natural language intent, .siri source type and tip card
-- [2026-02-20] 50bef88 feat: add Lock Screen widgets (4 accessory widgets)
+- [2026-02-24] afc1bc3 docs: Fase 11.5 polish — STATE, QA scenarios, CLAUDE.md test count
+- [2026-02-24] 596ca67 feat: credit card account type with payment reminder notification (POLISH-3)
+- [2026-02-24] c17ba2b feat: recurring badge in transaction edit mode (POLISH-2)
+- [2026-02-24] b74e8e4 fix: budget widget uses hotPink for exceeded budgets (POLISH-1)
+- [2026-02-24] 8c87eb7 refactor: empty states — YalaEmptyState.widget style, 0-accounts guide, autocomplete feedback (EMPTY-1, EMPTY-3, EMPTY-5)
+- [2026-02-24] da1fa54 fix: A11Y-DT — @ScaledMetric en 2 vistas hardcoded, audit comments en 49 archivos
+- [2026-02-24] 2614785 fix: release review — DS tokens, dead code cleanup (DS-3, DS-10, DS-21, DS-28, CODE-24)
+- [2026-02-24] b5506a6 fix: release review — DS tokens, a11y labels, l10n migration, code quality (~60 items)
+
 - [2026-02-20] 4add74e feat: dev-only subscription reset on data wipe for testing
 - [2026-02-20] 4a57873 fix: improve ProTrialOfferSheet layout and show success view after purchase
+- [2026-02-20] 9860a60 feat: add free trial UI — paywall trial info, post-onboarding offer sheet, StoreKit config
+- [2026-02-20] 5c8eb76 fix: dark mode system theme, circular selectors, budget pie filter, support email context
 - [2026-02-19] 44d3b89 feat: add average line to bar and trend charts with personalization picker
 - [2026-02-19] 71d6e92 fix: budget period chevron navigation + duplicate report notification guard
 - [2026-02-19] cbe7678 feat: add theme system with accent color propagation across all views
@@ -166,7 +171,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - **Fix Sincronización de Datos (10.5.N)** - Lista de registros ahora actualiza inmediatamente al eliminar transacción (refreshRecordsData llama loadData primero); Cash Flow ya no muestra empty state falso (onChange de allTransactions.count en TrendsTabView)
 - **Auditoría Pre-Launch (10.5.O)** - Auditoría completa de 10 categorías: PrivacyInfo.xcprivacy para App Store compliance; 143+ prints envueltos en #if DEBUG; 26 try? convertidos a do/catch con diagnóstico en 14 archivos; force unwraps protegidos con guard; 40 traducciones faltantes añadidas a de/fr/it/pt; 16 claves L10n para columnas de exportación; foregroundColor→foregroundStyle (3 archivos); cornerRadius→clipShape (6 archivos); 19 @available innecesarios eliminados (target iOS 26+); deinit en iCloudSyncService; 4 commits (dc12ae6, 9bc7bff, aba270f, bc5916f)
 - **Mejoras Onboarding (10.5.P)** - Botón "Activar todo" en notificaciones; LanguageManager + ls() helper para override de idioma in-app; selección de idioma como pantalla pre-onboarding (no dentro del flujo); eliminada vista "Sincronizando datos" de iCloud; MainTabView no se renderiza hasta completar onboarding; alert si datos iCloud llegan durante onboarding; welcome copy actualizado al brand voice en 6 idiomas; DE/FR corregido de formal a informal
-- **Exclude Mode para Filtros (Fase 12)** - Toggle include↔exclude en FilterControlBar; en exclude mode: transacciones de categorías/subcategorías/tags seleccionadas se eliminan de datos y charts (no solo dimming visual); PanelVM pieContextTransactions excluye cat/subcat; CategoriesTabView pieChartCriteria/criteria incluyen filtros en exclude, subcategoryTransactions sin filtrar por padre, shouldLockToSubcategories=false; TrendsTabView permite cambio de métrica; FilterService con isExcludeMode; FilterChipView con estilo exclude (rojo); exportación respeta exclude; 37 archivos, 6 idiomas, QA-SCENARIOS actualizados; commit 7ce5dd6
 - **Auditoría Documental y Web (10.5.R)** - Auditoría completa de toda la documentación del proyecto; 19 archivos obsoletos eliminados; rename Neto→Yala propagado a todos los docs activos (UI-PATTERNS, APPSTORE-CHECKLIST, QA-SCENARIOS, PROJECT, ROADMAP, AUDIT-REPORT); ROADMAP sincronizado con progreso real de fase 10.5; CLAUDE.md corregido (12 entidades SwiftData, tests actualizados, ref EXECUTION-RULES eliminada); PRIVACY-POLICY.md reescrita con datos reales (iCloud sync, OpenAI API, exchangerate.host, permisos); TERMS-CONDITIONS.md creado (suscripciones Free/Pro, servicios terceros, ley peruana); web actualizada: PrivacyPage y TermsPage reescritas en 6 idiomas (ES/EN/DE/FR/IT/PT), trust badges corregidos ("100% Local"→"Privacidad primero", "Sin servidores"→"Sin rastreo"); 3 commits (fc7a6ac, 1dc78a4, eb8f3f3)
 - **Fix Dark Mode Cards (10.5.Q)** - Migración de List→ScrollView+SectionBox en 4 vistas (AdjustmentModeSelectorView, AccountTypeSelectorView, RecordsFiltersView accounts/tags sheets, MultiSelectionList); DatePickers mantienen List con `.listRowBackground(Color.yalaCard)`; fix crash PeriodSelector (safe DatePicker ranges con min/max); 5 keys L10n nuevas (filters.categories/type/nature/currency, action.apply); magic numbers→DS tokens; 6 idiomas
 - **Bugs finales fase 10.5 (BUG-5/6/7)** - BUG-7: nextDueDate default mañana en SaveAsRecurringSheet y ScheduledPaymentEditorView, DatePickers restringidos a futuro; BUG-6: subcategorías filtradas por tipo en edición masiva, opción deshabilitada si selección mixta; BUG-5: conversión de divisas en resumen de pagos planificados (ViewModel y Widget) con CurrencyConverter; fixes de review: force unwrap eliminado en Widget calendar, @MainActor en RecordsViewModel, guard nil subcategory
@@ -562,9 +566,10 @@ Ver ROADMAP.md para más detalles de Fase 12.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Support form sheet con picker de tipo antes de enviar email
-Next step: Fase 12 — siguiente item pendiente
+Stopped at: Scheduled payments visual consistency — color, sign, currency conversion across 6 files
+Next step: Fase 12 — siguiente item tech debt o polish pendiente
 Resume context:
-- Merged 1.0→1.1: all release polish, a11y, DS tokens, dead code cleanup
-- Exclude mode feature complete (7ce5dd6) — pending QA
-- Branch 1.1 — development branch
+- Pagos planificados: gastos hot pink con signo -, ingresos teal con +, conversión divisas en totales
+- Badge recurrente movido a icono-only junto a NatureChip en edición de transacción
+- Deferred post-release: HIGH-2/3/12/13 (pagination), HIGH-24/A11Y-41 (onboarding a11y)
+- Branch 1.0 — release branch
