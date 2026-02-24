@@ -72,6 +72,7 @@ struct OnboardingView: View {
                 privacyStep.tag(7)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .scrollDisabled(true)
             .dsAnimation(.easeInOut(duration: 0.3), value: currentStep, reduceMotion: reduceMotion)
 
             Spacer()
@@ -1168,9 +1169,6 @@ struct OnboardingView: View {
         sync.set(bool: expensesOnlyMode, forKey: "expensesOnlyMode")
         sessionState.isExpensesOnlyMode = expensesOnlyMode
 
-        // Mark onboarding as complete (NOT synced — per-device)
-        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
-
         // Budget alerts preference
         sync.set(bool: budgetAlertsEnabled, forKey: "budgetAlertsEnabled")
 
@@ -1187,6 +1185,9 @@ struct OnboardingView: View {
 
         // Create notifications based on user selection
         createSelectedNotifications()
+
+        // Mark onboarding as complete AFTER data creation (prevents inconsistent state on crash)
+        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
 
         // Load historical exchange rates for secondary currencies (in background)
         loadHistoricalRatesForSecondaryCurrencies()
@@ -1337,17 +1338,17 @@ enum SeedCategoryPreview {
     }
 
     static let categories: [CategoryInfo] = [
-        CategoryInfo(name: "Alimentación", colorHex: "#22C55E", iconName: "cart.fill"),
-        CategoryInfo(name: "Compras", colorHex: "#F59E0B", iconName: "bag.fill"),
-        CategoryInfo(name: "Transporte", colorHex: "#0EA5E9", iconName: "car.fill"),
-        CategoryInfo(name: "Finanzas", colorHex: "#6366F1", iconName: "banknote.fill"),
-        CategoryInfo(name: "Hogar", colorHex: "#475569", iconName: "house.fill"),
-        CategoryInfo(name: "Entretenimiento", colorHex: "#FF0080", iconName: "sparkles"),
-        CategoryInfo(name: "Personal", colorHex: "#A855F7", iconName: "person.fill"),
-        CategoryInfo(name: "Mascotas", colorHex: "#84CC16", iconName: "pawprint.fill"),
-        CategoryInfo(name: "Vehículo", colorHex: "#64748B", iconName: "car.side.fill"),
-        CategoryInfo(name: "Ingresos", colorHex: "#14B8A6", iconName: "arrow.down.circle.fill"),
-        CategoryInfo(name: "Otros", colorHex: "#64748B", iconName: "ellipsis.circle.fill"),
+        CategoryInfo(name: L10n.Category.food, colorHex: "#22C55E", iconName: "cart.fill"),
+        CategoryInfo(name: L10n.Category.shopping, colorHex: "#F59E0B", iconName: "bag.fill"),
+        CategoryInfo(name: L10n.Category.transport, colorHex: "#0EA5E9", iconName: "car.fill"),
+        CategoryInfo(name: L10n.Category.finance, colorHex: "#6366F1", iconName: "banknote.fill"),
+        CategoryInfo(name: L10n.Category.housing, colorHex: "#475569", iconName: "house.fill"),
+        CategoryInfo(name: L10n.Category.entertainment, colorHex: "#FF0080", iconName: "sparkles"),
+        CategoryInfo(name: L10n.Category.personal, colorHex: "#A855F7", iconName: "person.fill"),
+        CategoryInfo(name: L10n.Category.pets, colorHex: "#84CC16", iconName: "pawprint.fill"),
+        CategoryInfo(name: L10n.Category.vehicle, colorHex: "#64748B", iconName: "car.side.fill"),
+        CategoryInfo(name: L10n.Category.incomeCategory, colorHex: "#14B8A6", iconName: "arrow.down.circle.fill"),
+        CategoryInfo(name: L10n.Category.other, colorHex: "#64748B", iconName: "ellipsis.circle.fill"),
     ]
 }
 

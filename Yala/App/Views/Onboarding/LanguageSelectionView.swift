@@ -12,7 +12,7 @@ struct LanguageSelectionView: View {
     @Environment(\.yalaTheme) private var theme
     @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 56
 
-    @State private var selectedLanguage: String = "en"
+    @State private var selectedLanguage: String = LanguageManager.closestSupportedLanguage
     var onComplete: () -> Void
 
     var body: some View {
