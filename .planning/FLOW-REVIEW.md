@@ -18,8 +18,8 @@
 | 6 | Inbox (Smart Recording) | Revisado + fixes | 1 → 0 | 6 → 0 | 0 | 8 fixes |
 | 7 | Planning | Revisado + fixes | 6 → 0 | 8 → 0 | 2 → 0 | 22 fixes |
 | 8 | Global Search | Revisado + fixes | 0 | 1 → 0 | 0 | 1 fix |
-| 9 | Profile & Settings | Pendiente | — | — | — | — |
-| 10 | Upgrade/Paywall | Pendiente | — | — | — | — |
+| 9 | Profile & Settings | Revisado + fixes | 2 → 0 | 16 → 0 | 0 | 18 fixes |
+| 10 | Upgrade/Paywall | Revisado + fixes | 0 | 1 → 0 | 0 | 1 fix |
 | 11 | More Tab | Revisado (limpio) | 0 | 0 | 0 | — |
 | 12 | Widget Deep Links | Revisado (limpio) | 0 | 0 | 0 | — |
 | 13 | Share Extension | Revisado + fixes | 0 | 1 → 0 | 0 | 1 fix |
@@ -877,9 +877,52 @@ Estos archivos fueron revisados y **no presentaron issues**:
 
 ---
 
-## Grupo 9: Profile & Settings — PENDIENTE
+## Grupo 9: Profile & Settings — Revisado + fixes
 
-### Flujos a revisar
+### Issues encontrados
+
+#### ALTA (2) — Data integrity — CORREGIDOS
+
+| ID | Archivo | Descripción | Estado |
+|----|---------|-------------|--------|
+| G9-SV-01 | `SubcategoryTransferViewModel.swift:129,148` | Missing `WidgetDataCache.updateCache` + `SessionState.incrementDataVersion` after saves that move/delete transactions | CORREGIDO |
+| G9-SV-02 | `CategoriesSettingsListViewModel.swift:116` | Missing `WidgetDataCache.updateCache` + `SessionState.incrementDataVersion` after category delete | CORREGIDO |
+
+#### MEDIA — SessionState.incrementDataVersion missing (3) — CORREGIDOS
+
+| ID | Archivo | Descripción | Estado |
+|----|---------|-------------|--------|
+| G9-SV-03 | `CategoryDetailViewModel.swift:157,184` | Missing incrementDataVersion after category save/delete | CORREGIDO |
+| G9-SV-04 | `TagFormViewModel.swift:128` | Missing incrementDataVersion after tag save | CORREGIDO |
+| G9-SV-05 | `FavoriteEditorViewModel.swift:92` | Missing incrementDataVersion after favorite save | CORREGIDO |
+
+#### MEDIA — Static formatters (12 instancias en 9 archivos) — CORREGIDOS
+
+| ID | Archivo:Línea | Tipo | Estado |
+|----|---------------|------|--------|
+| G9-FMT-01 | `ExchangeRatesSheet.swift:54,130` | 2× DateFormatter → `static let dateKeyFormatter`, `lastUpdatedFormatter` | CORREGIDO |
+| G9-FMT-02 | `CurrencySettingsView.swift:286,341` | 2× DateFormatter → `static let dateKeyFormatter`, `lastUpdatedFormatter` | CORREGIDO |
+| G9-FMT-03 | `NotificationEditorSheet.swift:237` | 1× DateFormatter → `static let timeFormatter` | CORREGIDO |
+| G9-FMT-04 | `AccountFormView.swift:470,479` | 2× NumberFormatter → `static let currencyFormatter` (shared) | CORREGIDO |
+| G9-FMT-05 | `ExportSummaryStepView.swift:224` | 1× DateFormatter → `static let periodFormatter` | CORREGIDO |
+| G9-FMT-06 | `ExportFiltersStepView.swift:455,466,644` | 3× DateFormatter → `static let periodLongFormatter`, `periodShortFormatter` | CORREGIDO |
+| G9-FMT-07 | `AccountsSettingsListViewModel.swift:144` | 1× NumberFormatter → `static let balanceFormatter` | CORREGIDO |
+
+#### MEDIA — L10n accessibility (1) — CORREGIDO
+
+| ID | Archivo:Línea | Descripción | Estado |
+|----|---------------|-------------|--------|
+| G9-L10N-01 | `CurrencySettingsView.swift:92` | `"Actualizando tipos de cambio"` hardcoded → `L10n.Accessibility.updatingExchangeRates` + 6 `.strings` | CORREGIDO |
+
+### Hallazgos positivos
+- ~50 archivos revisados, la gran mayoría limpios
+- Import/Export wizard bien estructurado con error handling correcto
+- Notification scheduling/cancellation robusto con 7 tipos
+- iCloud sync settings con estado informativo claro
+- Data wipe con doble confirmación
+- All ViewModels follow `setContext` + `loadData` pattern consistently
+
+### Flujos revisados
 
 | # | Flujo | Descripción |
 |---|-------|-------------|
@@ -1045,9 +1088,25 @@ Estos archivos fueron revisados y **no presentaron issues**:
 
 ---
 
-## Grupo 10: Upgrade / Paywall — PENDIENTE
+## Grupo 10: Upgrade / Paywall — Revisado + fixes
 
-### Flujos a revisar
+### Issues encontrados
+
+#### MEDIA (1) — CORREGIDO
+
+| ID | Archivo:Línea | Descripción | Estado |
+|----|---------------|-------------|--------|
+| G10-FMT-01 | `DowngradeResolutionSheet.swift:339` | NumberFormatter inline → `static let currencyFormatter` | CORREGIDO |
+
+### Clean (6 archivos)
+- `UpgradePromptSheet.swift` — L10n correcto, feature gates OK
+- `TrialBanner.swift` — L10n correcto, trial detection OK
+- `LimitReachedBanner.swift` — L10n correcto, limit display OK
+- `SubscriptionSuccessView.swift` — L10n correcto
+- `FeatureGateService.swift` — límites correctos (2 cuentas free, 3 budgets free)
+- `StoreKitManager.swift` — restore purchases OK, trial detection OK, do/catch correcto
+
+### Flujos revisados
 
 | # | Flujo | Descripción |
 |---|-------|-------------|

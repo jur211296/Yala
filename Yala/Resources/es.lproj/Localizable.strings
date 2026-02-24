@@ -1313,6 +1313,7 @@
 "accessibility.cashFlowSummary %@ %@" = "Ingresos %@, Gastos %@";
 "accessibility.selectAtLeastOneDraft" = "Selecciona al menos un borrador";
 "accessibility.approveCompleteHint" = "Para aprobar, completa cuenta, monto y categoría";
+"accessibility.updatingExchangeRates" = "Actualizando tipos de cambio";
 
 // MARK: - Widget Hints
 

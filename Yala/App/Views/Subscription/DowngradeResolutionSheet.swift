@@ -333,13 +333,19 @@ struct DowngradeResolutionSheet: View {
         StoreKitManager.shared.wasProUser = false
     }
 
+    // MARK: - Static Formatters
+
+    private static let currencyFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        return f
+    }()
+
     // MARK: - Helpers
 
     private func formatCurrency(_ amount: Double, code: String) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = code
-        return formatter.string(from: NSNumber(value: amount)) ?? "\(amount)"
+        Self.currencyFormatter.currencyCode = code
+        return Self.currencyFormatter.string(from: NSNumber(value: amount)) ?? "\(amount)"
     }
 }
 

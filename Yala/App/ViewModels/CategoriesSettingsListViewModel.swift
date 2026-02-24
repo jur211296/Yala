@@ -115,6 +115,8 @@ final class CategoriesSettingsListViewModel {
         do {
             try context.save()
             context.processPendingChanges()
+            WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
             loadCategories()
         } catch {
             #if DEBUG

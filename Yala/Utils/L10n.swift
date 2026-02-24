@@ -475,6 +475,7 @@ enum L10n {
         static func cashFlowSummary(income: String, expense: String) -> String { String(format: ls("accessibility.cashFlowSummary %@ %@", comment: ""), income, expense) }
         static var selectAtLeastOneDraft: String { ls("accessibility.selectAtLeastOneDraft", comment: "") }
         static var approveCompleteHint: String { ls("accessibility.approveCompleteHint", comment: "") }
+        static var updatingExchangeRates: String { ls("accessibility.updatingExchangeRates", comment: "") }
     }
 
     // MARK: - Search

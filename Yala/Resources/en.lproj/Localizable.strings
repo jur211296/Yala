@@ -1313,6 +1313,7 @@
 "accessibility.cashFlowSummary %@ %@" = "Income %@, Expenses %@";
 "accessibility.selectAtLeastOneDraft" = "Select at least one draft";
 "accessibility.approveCompleteHint" = "To approve, complete account, amount, and category";
+"accessibility.updatingExchangeRates" = "Updating exchange rates";
 
 // MARK: - Widget Hints
 

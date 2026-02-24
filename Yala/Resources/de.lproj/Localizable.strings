@@ -1313,6 +1313,7 @@
 "accessibility.cashFlowSummary %@ %@" = "Einnahmen %@, Ausgaben %@";
 "accessibility.selectAtLeastOneDraft" = "Wähle mindestens einen Entwurf aus";
 "accessibility.approveCompleteHint" = "Zum Genehmigen: Konto, Betrag und Kategorie ausfüllen";
+"accessibility.updatingExchangeRates" = "Wechselkurse werden aktualisiert";
 
 // MARK: - Widget Hints
 

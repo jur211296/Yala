@@ -155,6 +155,7 @@ final class CategoryDetailViewModel {
 
         do {
             try context.save()
+            SessionState.shared.incrementDataVersion()
             return true
         } catch {
             #if DEBUG
@@ -168,6 +169,7 @@ final class CategoryDetailViewModel {
         guard let service = deletionService else { return false }
         do {
             try service.deleteCategory(category, withSubcategories: subcategories)
+            SessionState.shared.incrementDataVersion()
             return true
         } catch {
             #if DEBUG

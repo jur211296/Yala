@@ -464,23 +464,26 @@ struct AccountFormView: View {
         }
     }
 
+    // MARK: - Static Formatters
+
+    private static let currencyFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        f.maximumFractionDigits = 2
+        return f
+    }()
+
     // MARK: Helpers
 
     private func formatAmount(_ amount: Double, currency: CurrencyCode) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = currency.rawValue
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: amount)) ?? "0.00"
+        Self.currencyFormatter.currencyCode = currency.rawValue
+        return Self.currencyFormatter.string(from: NSNumber(value: amount)) ?? "0.00"
     }
 
     private func formatAdjustment(_ amount: Double, currency: CurrencyCode) -> String {
         let sign = amount >= 0 ? "+" : ""
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = currency.rawValue
-        formatter.maximumFractionDigits = 2
-        let formatted = formatter.string(from: NSNumber(value: amount)) ?? "0.00"
+        Self.currencyFormatter.currencyCode = currency.rawValue
+        let formatted = Self.currencyFormatter.string(from: NSNumber(value: amount)) ?? "0.00"
         return sign + formatted
     }
 

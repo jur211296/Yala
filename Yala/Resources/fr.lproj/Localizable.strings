@@ -1313,6 +1313,7 @@
 "accessibility.cashFlowSummary %@ %@" = "Revenus %@, Dépenses %@";
 "accessibility.selectAtLeastOneDraft" = "Sélectionne au moins un brouillon";
 "accessibility.approveCompleteHint" = "Pour approuver, complète le compte, le montant et la catégorie";
+"accessibility.updatingExchangeRates" = "Mise à jour des taux de change";
 
 // MARK: - Widget Hints
 
