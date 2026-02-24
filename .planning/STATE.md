@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: None
 Plan: None
 Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-02-23 — Flow review BAJA batch resuelto (~30 issues)
+Last activity: 2026-02-24 — Flow review final pass (6 issues pendientes)
 
 ### Branch Strategy
 - **1.0** = Release (V1.0 + V1.1 mergeada)
@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-24] d5ba5be fix: flow review final pass — data version sync, l10n accessibility, static formatter
 - [2026-02-24] 047fb8d fix: flow review BAJA batch — DS tokens, l10n accessibility, dead code, AppConstants
 - [2026-02-23] 1a65c0a fix: flow review G9+G10 — WidgetDataCache, static formatters, l10n accessibility
 - [2026-02-23] b1e724a fix: flow review G7+G8+G13+G14 — yearly IDs, WidgetDataCache, static formatters, l10n accessibility
@@ -539,12 +540,11 @@ Ver ROADMAP.md para detalles.
 
 ## Session Continuity
 
-Last session: 2026-02-23
-Stopped at: Flow review BAJA batch completed. All 14 groups reviewed + BAJA polish applied.
+Last session: 2026-02-24
+Stopped at: Flow review final pass completed (6 issues: 2 data integrity, 3 L10n, 1 perf)
 Next step: Fase 12 — Plataforma Extendida
 Resume context:
-- Flow review: ALL 14 GROUPS ✅ (G1-G14 complete, G9+G10 done in prev session)
-- BAJA batch: ~30 issues resolved (L10n, dead code, DS tokens, shadows, constants)
+- Flow review: ALL COMPLETE ✅ (14 groups + BAJA batch + final pass)
+- Final pass fixes: incrementDataVersion in InboxDraftEditSheet + QuickExpenseIntent, 3 L10n hardcoded→keys, deleteSubcategory→deleteCategory fix, static DateFormatter
 - ~15 items SKIP (refactors grandes, widget context, UX decisions)
-- AppConstants.swift created (termsURL, privacyURL, supportEmail)
 - Branch 1.0 — release branch

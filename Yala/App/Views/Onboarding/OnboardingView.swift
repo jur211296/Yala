@@ -18,6 +18,11 @@ struct OnboardingView: View {
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
     @ScaledMetric(relativeTo: .largeTitle) private var completionIconSize: CGFloat = 56
+    @ScaledMetric(relativeTo: .body) private var appIconSize: CGFloat = 120
+    @ScaledMetric(relativeTo: .body) private var categoryIconSize: CGFloat = 40
+    @ScaledMetric(relativeTo: .body) private var badgeSize: CGFloat = 36
+    @ScaledMetric(relativeTo: .body) private var notifIconSize: CGFloat = 52
+    @ScaledMetric(relativeTo: .largeTitle) private var privacyIconSize: CGFloat = 100
 
     // User preferences (will be saved on completion)
     @State private var userName: String = ""
@@ -108,7 +113,7 @@ struct OnboardingView: View {
             Image(uiImage: UIImage(named: "IconOriginal@3x") ?? UIImage())
                 .resizable()
                 .scaledToFit()
-                .frame(width: 120, height: 120)
+                .frame(width: appIconSize, height: appIconSize)
                 .clipShape(RoundedRectangle(cornerRadius: 26))
 
             VStack(spacing: DS.Spacing.md) {
@@ -668,7 +673,7 @@ struct OnboardingView: View {
                 ZStack {
                     Circle()
                         .fill(Color(hex: type.defaultColor).opacity(0.2))
-                        .frame(width: 40, height: 40)
+                        .frame(width: categoryIconSize, height: categoryIconSize)
 
                     Image(systemName: type.defaultIcon)
                         .font(DS.Typography.body)
@@ -771,7 +776,7 @@ struct OnboardingView: View {
                 ZStack {
                     Circle()
                         .fill(Color.hotPink.opacity(0.2))
-                        .frame(width: 40, height: 40)
+                        .frame(width: categoryIconSize, height: categoryIconSize)
 
                     Image(systemName: "chart.bar.fill")
                         .font(DS.Typography.body)
@@ -860,7 +865,7 @@ struct OnboardingView: View {
             ZStack {
                 Circle()
                     .fill(Color.electricIndigo.opacity(0.12))
-                    .frame(width: 100, height: 100)
+                    .frame(width: privacyIconSize, height: privacyIconSize)
 
                 Image(systemName: "checkmark.seal.fill")
                     .font(.system(size: completionIconSize))
@@ -898,7 +903,7 @@ struct OnboardingView: View {
                     ZStack {
                         Circle()
                             .fill(Color.electricIndigo.opacity(0.15))
-                            .frame(width: 36, height: 36)
+                            .frame(width: badgeSize, height: badgeSize)
 
                         Image(systemName: "lightbulb.fill")
                             .font(DS.Typography.subheadline)
@@ -942,7 +947,7 @@ struct OnboardingView: View {
             ZStack {
                 Circle()
                     .fill(color.opacity(0.15))
-                    .frame(width: 36, height: 36)
+                    .frame(width: badgeSize, height: badgeSize)
 
                 Image(systemName: icon)
                     .font(DS.Typography.subheadline)
@@ -978,7 +983,7 @@ struct OnboardingView: View {
                     ZStack {
                         Circle()
                             .fill(Color(hex: category.colorHex).opacity(0.2))
-                            .frame(width: 52, height: 52)
+                            .frame(width: notifIconSize, height: notifIconSize)
 
                         Image(systemName: category.iconName)
                             .font(DS.Typography.title)

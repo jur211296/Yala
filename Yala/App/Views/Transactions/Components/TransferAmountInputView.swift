@@ -55,6 +55,7 @@ struct TransferAmountInputView: View {
                 .foregroundStyle(Color.hotPink.opacity(0.7))
 
             TextField("0.00", text: $viewModel.amountString)
+                .accessibilityLabel(L10n.Accessibility.sourceAmount)
                 .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.hotPink)
                 .multilineTextAlignment(.center)
@@ -94,6 +95,7 @@ struct TransferAmountInputView: View {
                 .foregroundStyle(Color.electricIndigo.opacity(0.7))
 
             TextField("0.00", text: $destinationAmountString)
+                .accessibilityLabel(L10n.Accessibility.destinationAmount)
                 .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.electricIndigo)
                 .multilineTextAlignment(.center)
@@ -166,6 +168,7 @@ struct TransferAmountInputView: View {
                     .foregroundStyle(.secondary)
 
                 TextField("Rate", text: $exchangeRateString)
+                    .accessibilityLabel(L10n.Accessibility.exchangeRate)
                     .font(DS.Typography.label)
                     .foregroundStyle(.primary)
                     .keyboardType(.decimalPad)

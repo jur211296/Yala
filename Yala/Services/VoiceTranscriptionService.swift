@@ -59,10 +59,13 @@ enum VoiceLanguage: String, CaseIterable, Identifiable {
     var isoCode: String? {
         switch self {
         case .system:
-            // Get system language, default to Spanish
+            // Map system language to closest Whisper-supported language
             let preferred = Locale.preferredLanguages.first ?? "es"
-            if preferred.hasPrefix("en") { return "en" }
-            return "es"  // Default to Spanish for other languages
+            let langPrefix = String(preferred.prefix(2))
+            // Whisper supports: en, es, fr, de, it, pt, and many more
+            let whisperSupported = ["en", "es", "fr", "de", "it", "pt", "ja", "zh", "ko", "nl", "pl", "ru", "tr", "ar", "hi", "sv", "da", "no", "fi", "el", "he", "th", "uk", "cs", "ro", "hu", "vi", "id", "ms", "ca", "hr", "sk", "bg", "sr", "sl", "lt", "lv", "et", "ta", "te", "mr", "ur", "bn", "gu", "kn", "ml"]
+            if whisperSupported.contains(langPrefix) { return langPrefix }
+            return "en"  // Default to English for unsupported languages
         case .spanish:
             return "es"
         case .english:

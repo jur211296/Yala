@@ -246,6 +246,8 @@ struct ScheduledPaymentsWidget: View {
                 }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(filterOption == .all ? L10n.Accessibility.filterScheduledAll : filterOption == .recurring ? L10n.Accessibility.filterScheduledRecurring : L10n.Accessibility.filterScheduledSubscriptions)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     // MARK: - Summary Content
@@ -600,7 +602,7 @@ struct ScheduledPaymentsWidget: View {
         if isToday {
             return theme.accent.opacity(0.12)
         } else if hasPayments {
-            return Color(.tertiarySystemFill).opacity(0.7)
+            return DS.Semantic.neutralBackground
         } else {
             return Color(.tertiarySystemFill).opacity(0.3)
         }

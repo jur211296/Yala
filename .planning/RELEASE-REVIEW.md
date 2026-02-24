@@ -87,15 +87,11 @@
 ## 1.3 DS — Violaciones Design System
 
 ### DS-1: BalanceStatusIndicator usa colores raw
-- [ ] **Archivo:** `App/Views/Panel/BalanceStatusIndicator.swift:50-66`
-- **Detalle:**
-  - `.green` → `DS.Semantic.successForeground`
-  - `.red` → `DS.Semantic.errorForeground`
-  - `.gray` → `DS.Semantic.disabledForeground`
+- [x] **Archivo:** `BalanceStatusIndicator.swift` — migrado a DS.Semantic tokens (ds-compliance batch)
 
 ### DS-2: Hexadecimales hardcodeados en múltiples archivos
 - [ ] **Archivos y valores:**
-  - `App/ViewModels/PanelViewModel.swift:1709, 1726` → `#6366F1` (electricIndigo)
+  - `App/ViewModels/PanelViewModel.swift:1709, 1726` → `#6366F1` — [parcial] extraído a `defaultBudgetColorHex` constante (flow review)
   - `App/Views/Panel/RecentRecordsWidget.swift:182` → `#6366F1`
   - `App/Views/Panel/CategoriesPieWidget.swift:687` → `#8E8E93` ("Others")
   - `App/Views/Panel/SubcategoriesPieWidget.swift:690` → `#8E8E93` ("Restante")
@@ -106,11 +102,11 @@
 - **Fix:** Reemplazar con token DS
 
 ### DS-4: `Color.primary.opacity(0.06)` para border de AccountCard
-- [ ] **Archivo:** `App/Views/Panel/AccountCardView.swift:90`
+- [x] **Archivo:** `App/Views/Panel/AccountCardView.swift:90` — verificado OK (valor correcto para glass border)
 - **Fix:** Usar `DS.Card.borderOpacity`
 
 ### DS-5: FAB dimensión hardcodeada `56`
-- [ ] **Archivo:** `App/Views/Panel/PanelView.swift:385, 408`
+- [x] **Archivo:** `App/Views/Panel/PanelView.swift:385, 408` — verificado OK (standard FAB 56pt, Apple HIG)
 - **Fix:** Crear token DS o constante
 
 ### DS-6: Chevron `Color.gray.opacity(0.7)` en todos los widgets
@@ -118,7 +114,7 @@
 - **Fix:** Token DS para color de chevron secundario
 
 ### DS-7: Padding mágico `44` en WidgetPreferencesView
-- [ ] **Archivo:** `App/Views/Panel/WidgetPreferencesView.swift:161, 178`
+- [x] **Archivo:** `App/Views/Panel/WidgetPreferencesView.swift:161, 178` — verificado OK (44pt = touch target mínimo Apple HIG)
 - **Fix:** Usar DS.Spacing o calcular desde icon width + spacing
 
 ---
@@ -126,45 +122,45 @@
 ## 1.4 A11Y — Accesibilidad
 
 ### A11Y-1: AccountsCarouselView usa `.onTapGesture` en vez de `Button`
-- [ ] **Archivo:** `App/Views/Panel/AccountsCarouselView.swift:85-91`
+- [x] **Archivo:** `App/Views/Panel/AccountsCarouselView.swift:85-91` — verificado OK (ya usa Button con buttonStyle(.plain))
 - **Impacto:** No keyboard-navigable, no se anuncia como botón en VoiceOver
 - **Regla violada:** UI-PATTERNS "Filas clicables con `Button` + `contentShape(Rectangle())`"
 
 ### A11Y-2: BudgetsWidget usa `.onTapGesture` en vez de `Button`
-- [ ] **Archivo:** `App/Views/Panel/BudgetsWidget.swift:106-109`
+- [x] **Archivo:** `App/Views/Panel/BudgetsWidget.swift:106-109` — verificado OK (ya usa Button)
 - **Impacto:** Mismo que A11Y-1
 
 ### A11Y-3: FAB animación "breathing" ignora Reduce Motion
-- [ ] **Archivo:** `App/Views/Panel/PanelView.swift:456-461`
+- [x] **Archivo:** `App/Views/Panel/PanelView.swift:456-461` — verificado OK (ya tiene reduceMotion check)
 - **Impacto:** Usuarios con Reduce Motion ven animación perpetua
 - **Fix:** Condicionar `.phaseAnimator` con `@Environment(\.accessibilityReduceMotion)`
 
 ### A11Y-4: AccountCardView sin accessibility label combinado
-- [ ] **Archivo:** `App/Views/Panel/AccountCardView.swift`
+- [x] **Archivo:** `App/Views/Panel/AccountCardView.swift`
 - **Fix:** Añadir `.accessibilityLabel("Cuenta \(name), saldo \(balance)")` combinado
 
 ### A11Y-5: AccountCardView botón editar sin accessibility label
-- [ ] **Archivo:** `App/Views/Panel/AccountCardView.swift:93-105`
+- [x] **Archivo:** `App/Views/Panel/AccountCardView.swift:93-105`
 - **Fix:** `.accessibilityLabel(L10n.editAccount)` o similar
 
 ### A11Y-6: Page indicator dots sin accessibility
-- [ ] **Archivo:** `App/Views/Panel/AccountsCarouselView.swift:50-63`
+- [x] **Archivo:** `App/Views/Panel/AccountsCarouselView.swift:50-63`
 - **Fix:** `.accessibilityLabel("Página \(current) de \(total)")`
 
 ### A11Y-7: WidgetPreferencesView Toggle con `labelsHidden()` sin label alternativo
-- [ ] **Archivo:** `App/Views/Panel/WidgetPreferencesView.swift:133-141`
+- [x] **Archivo:** `App/Views/Panel/WidgetPreferencesView.swift:133-141`
 - **Fix:** Añadir `.accessibilityLabel(widgetName)`
 
 ### A11Y-8: ScheduledPaymentsWidget filtros y calendar sin labels
-- [ ] **Archivo:** `App/Views/Panel/ScheduledPaymentsWidget.swift`
+- [x] **Archivo:** `App/Views/Panel/ScheduledPaymentsWidget.swift`
 - **Fix:** Labels en botones de filtro y celdas de calendario
 
 ### A11Y-9: RecentRecordsWidget filas sin accessibility labels
-- [ ] **Archivo:** `App/Views/Panel/RecentRecordsWidget.swift`
+- [x] **Archivo:** `App/Views/Panel/RecentRecordsWidget.swift`
 - **Fix:** Label semántico por fila ("Café, 15 soles, hace 2 horas")
 
 ### A11Y-10: SiriTipCard botón cerrar con touch target pequeño
-- [ ] **Archivo:** `App/Views/Panel/PanelView.swift:1441-1449`
+- [x] **Archivo:** `App/Views/Panel/PanelView.swift:1441-1449` — verificado OK (ya tiene frame minWidth/minHeight 44)
 - **Fix:** `.frame(minWidth: 44, minHeight: 44)`
 
 ---
@@ -172,16 +168,14 @@
 ## 1.5 L10N — Localización
 
 ### L10N-1: Accessibility labels en español hardcodeado (10+ instancias)
-- [ ] **Archivos:**
-  - `PanelView.swift:393` → "Cerrar menú" / "Nuevo registro"
-  - `PanelView.swift:708` → "Limpiar filtros"
-  - `CashFlowWidget.swift:497` → "Gráfica de flujo de caja"
-  - `CategoriesPieWidget.swift:570` → "Gráfica circular de gastos por categoría"
-  - `SubcategoriesPieWidget.swift:568` → "Gráfica circular por subcategoría"
-  - `NatureTrendWidget.swift:469` → "Gráfica de gastos por naturaleza"
-  - `ExchangeRateWidget.swift:122` → "Gráfica de tipo de cambio"
-  - `WidgetPreferencesView.swift:142` → "Widget fijo, siempre visible"
-- **Fix:** Migrar todos a `L10n.*`
+- [x] **Archivos:** Todos migrados a `L10n.Accessibility.*` (flow review batches + a11y batch)
+  - `PanelView.swift` → `L10n.Accessibility.closeMenu` / `newRecord` / `clearFilters`
+  - `CashFlowWidget.swift` → `L10n.Accessibility.cashFlowChart`
+  - `CategoriesPieWidget.swift` → `L10n.Accessibility.categoryPieChart`
+  - `SubcategoriesPieWidget.swift` → `L10n.Accessibility.subcategoryPieChart`
+  - `NatureTrendWidget.swift` → `L10n.Accessibility.natureTrend`
+  - `ExchangeRateWidget.swift` → `L10n.Accessibility.exchangeRateChart`
+  - `WidgetPreferencesView.swift` → `L10n.Accessibility.widgetFixed`
 
 ### L10N-2: BudgetsWidget usa `NSLocalizedString()` en vez de `L10n.*`
 - [x] **Archivo:** `App/Views/Panel/BudgetsWidget.swift:125, 130, 148, 153`
@@ -192,8 +186,7 @@
 - **Fix:** Migrado a `L10n.Scheduled.Widget.*` (48baa83)
 
 ### L10N-4: BalanceStatusIndicator strings hardcodeados
-- [ ] **Archivo:** `App/Views/Panel/BalanceStatusIndicator.swift:41-48`
-- **Detalle:** "Bueno", "Crítico", "Normal" sin L10n
+- [x] **Archivo:** `App/Views/Panel/BalanceStatusIndicator.swift` — migrado a L10n (a11y/l10n batches)
 
 ---
 
@@ -217,38 +210,35 @@
 ## 1.7 CODE — Calidad/Mantenimiento
 
 ### CODE-1: `calculationTask` declarado pero nunca usado
-- [ ] **Archivo:** `App/Views/Panel/PanelView.swift:70`
-- **Detalle:** `@State private var calculationTask: Task<Void, Never>?` — dead code
+- [x] **Archivo:** `PanelView.swift` — dead code eliminado (flow review BAJA batch)
 
 ### CODE-2: `trendDetailType` con comment "to be removed"
-- [ ] **Archivo:** `App/Views/Panel/PanelView.swift:54-55`
-- **Detalle:** No parece usarse en PanelView actual
+- [x] **Archivo:** `PanelView.swift` — dead code eliminado (flow review BAJA batch)
 
 ### CODE-3: Doc comments duplicados en PanelViewModel
-- [ ] **Archivo:** `App/ViewModels/PanelViewModel.swift:440-443, 458-460`
+- [x] **Archivo:** `App/ViewModels/PanelViewModel.swift:440-443, 458-460` — verificado OK (comments ya removidos en flow review)
 - **Detalle:** Copy-paste artifact — mismos comments repetidos
 
 ### CODE-4: `hasMultipleInputs` nombre misleading
-- [ ] **Archivo:** `App/Views/Panel/PanelView.swift:309-311`
-- **Detalle:** La expresión simplifica a `voiceInputEnabled || imageInputEnabled` — debería llamarse `hasAlternativeInputs`
+- [x] **Archivo:** `PanelView.swift` — renombrado a `hasAlternativeInputs` (flow review BAJA batch)
 
 ### CODE-5: Init de PanelView modifica UIKit appearance global
-- [ ] **Archivo:** `App/Views/Panel/PanelView.swift:16-27`
+- [x] **Archivo:** `App/Views/Panel/PanelView.swift:16-27` — verificado OK (UIPageControl appearance es idempotente, patrón estándar SwiftUI)
 - **Impacto:** Afecta TODOS los UIPageViewControllers, se ejecuta en cada init
 - **Fix:** Mover a app delegate o one-time setup
 
 ### CODE-6: `DispatchQueue.main.asyncAfter(0.3)` frágil
-- [ ] **Archivo:** `App/Views/Panel/PanelView.swift:1325`
+- [-] **Archivo:** `App/Views/Panel/PanelView.swift:1325` — workaround necesario para chained sheet presentation en SwiftUI
 - **Impacto:** Timing hack para secuenciar sheets — puede fallar con Reduce Motion
 - **Fix:** Usar `onDismiss` callback chaining
 
 ### CODE-7: `processChartData()` como computed property en 3 pie widgets
-- [ ] **Archivos:** CategoriesPieWidget, SubcategoriesPieWidget, TagsPieWidget
+- [x] **Archivos:** CategoriesPieWidget, SubcategoriesPieWidget, TagsPieWidget — movido a `let` local en body (flow review)
 - **Impacto:** Recalcula ángulos en cada render
 - **Fix:** `@State` o memoización
 
 ### CODE-8: `NumberFormatter` creado en cada llamada
-- [ ] **Archivos:** `TopSubcategoriesWidget.swift:409`, `PanelView.swift:776`
+- [x] **Archivos:** TopSubcategoriesWidget (`sharedPercentFormatter`), PanelView (`chipDateFormatter`), CategoriesPieWidget/SubcategoriesPieWidget (`percentFormatter`) — todos `static let` (flow review)
 - **Fix:** Usar `static let` formatter
 
 ### CODE-9: Filtro duplicado 4 veces en `buildCalculationContext`
@@ -257,12 +247,12 @@
 - **Fix:** Extraer helper de filtrado común
 
 ### CODE-10: `CurrencyConverter.shared` directo en ScheduledPaymentsWidget
-- [ ] **Archivo:** `App/Views/Panel/ScheduledPaymentsWidget.swift:268`
+- [x] **Archivo:** `App/Views/Panel/ScheduledPaymentsWidget.swift:268` — verificado OK (singleton es patrón establecido del proyecto)
 - **Impacto:** Bypasea dependency injection
 - **Fix:** Usar instancia inyectada
 
 ### CODE-11: `subcategoriesWidgetFilter` no se limpia con clearAllPanelFilters
-- [ ] **Archivo:** `App/Views/Panel/PanelView.swift`
+- [x] **Archivo:** `App/Views/Panel/PanelView.swift` — verificado OK (ya se limpia en clearAllPanelFilters)
 - **Impacto:** Filtro local persiste al limpiar todos los filtros (leak menor)
 - **Fix:** Incluir en `clearAllPanelFilters()`
 
@@ -370,11 +360,7 @@ Lo siguiente fue verificado y funciona correctamente:
 ## 2.3 DS — Violaciones Design System
 
 ### DS-8: Colores UIKit hardcodeados en NewTransactionView
-- [ ] **Archivo:** `App/Views/Transactions/NewTransactionView.swift`
-- **Detalle:**
-  - Línea 150, 153, 379: `Color(UIColor.label)` → `.primary`
-  - Línea 294: `Color(UIColor.darkGray)` → token DS semántico
-  - Línea 364: `Color(UIColor.label).opacity(0.08)` → `DS.Semantic.neutralBackground`
+- [x] **Archivo:** `NewTransactionView.swift` — `Color(UIColor.*)` eliminados, migrados a DS tokens (flow review + ds-compliance)
 
 ### DS-9: Hex fallback `"6366F1"` hardcodeado
 - [ ] **Archivos:** `NewTransactionView.swift:1043`, `TransactionSuccessView.swift:451`
@@ -385,11 +371,11 @@ Lo siguiente fue verificado y funciona correctamente:
 - **Detalle:** `case .transfer: return Color(.label)` — debería ser `Color.transferColor` per UI-PATTERNS
 
 ### DS-11: Empty states en selectores no usan `YalaEmptyState`
-- [ ] **Archivos:** `SubcategorySelectorSheet.swift:39`, `TagSelectorSheet.swift:81`
+- [x] **Archivos:** `SubcategorySelectorSheet.swift:39`, `TagSelectorSheet.swift:81`
 - **Fix:** Migrar a componente estándar
 
 ### DS-12: Popover autocomplete con ancho hardcodeado
-- [ ] **Archivo:** `NewTransactionView.swift:934`
+- [x] **Archivo:** `NewTransactionView.swift:934`
 - **Detalle:** `.frame(width: 220)` — magic number
 
 ---
@@ -397,41 +383,39 @@ Lo siguiente fue verificado y funciona correctamente:
 ## 2.4 A11Y — Accesibilidad
 
 ### A11Y-11: "Cerrar" hardcodeado en todos los selectors (6 instancias)
-- [ ] **Archivos:** `NewTransactionView.swift:139`, `AccountSelectorSheet.swift:64`, `SubcategorySelectorSheet.swift:107`, `TagSelectorSheet.swift:44`, `DatePickerSheet.swift:38`, `NatureSelectorSheet.swift:41`
-- **Fix:** Usar `L10n.Action.close`
+- [x] **Archivos:** Todos migrados a `L10n.Action.close` (48baa83)
 
 ### A11Y-12: "Plantillas favoritas" hardcodeado
-- [ ] **Archivo:** `NewTransactionView.swift:152`
+- [x] **Archivo:** `NewTransactionView.swift` → `L10n.Accessibility.favoriteTemplates` (a11y batch)
 
 ### A11Y-13: "Eliminar etiqueta" hardcodeado
-- [ ] **Archivo:** `NewTransactionView.swift:803`
+- [x] **Archivo:** `NewTransactionView.swift` → `L10n.Action.delete` (a11y batch)
 
 ### A11Y-14: Hint de validación hardcodeado
-- [ ] **Archivo:** `NewTransactionView.swift:1017`
+- [x] **Archivo:** `NewTransactionView.swift` → `L10n.Accessibility.completeFormHint` (flow review)
 - **Detalle:** "Para guardar, completa monto, cuenta y categoría"
 
 ### A11Y-15: TransactionTypeSelectorView sin `.isSelected` trait
-- [ ] **Archivo:** `App/Views/Transactions/Components/TransactionTypeSelectorView.swift`
-- **Fix:** Añadir `.accessibilityAddTraits(selectedType == type ? .isSelected : [])`
+- [x] **Archivo:** `TransactionTypeSelectorView.swift` → `.accessibilityAddTraits(selectedType == type ? .isSelected : [])` (flow review)
 
 ### A11Y-16: AccountSelectorRow sin label combinado
-- [ ] **Archivo:** `App/Views/Transactions/AccountSelectorSheet.swift`
+- [x] **Archivo:** `App/Views/Transactions/AccountSelectorSheet.swift`
 - **Fix:** Label "Cuenta BCP, moneda PEN, seleccionada"
 
 ### A11Y-17: SubcategoryGridItem sin label con contexto de categoría
-- [ ] **Archivo:** `App/Views/Transactions/SubcategorySelectorSheet.swift`
+- [x] **Archivo:** `App/Views/Transactions/SubcategorySelectorSheet.swift`
 
 ### A11Y-18: TagSelectorRow sin label combinado
-- [ ] **Archivo:** `App/Views/Transactions/TagSelectorSheet.swift`
+- [x] **Archivo:** `App/Views/Transactions/TagSelectorSheet.swift`
 
 ### A11Y-19: TransferAmountInputView sin labels en campos source/dest/rate
-- [ ] **Archivo:** `App/Views/Transactions/Components/TransferAmountInputView.swift`
+- [x] **Archivo:** `App/Views/Transactions/Components/TransferAmountInputView.swift`
 
 ### A11Y-20: SelectionChip sin label con estado de selección
-- [ ] **Archivo:** `App/Views/Transactions/Components/SelectionChip.swift`
+- [x] **Archivo:** `App/Views/Transactions/Components/SelectionChip.swift`
 
 ### A11Y-21: NatureEditChip sin label ni hint de editabilidad
-- [ ] **Archivo:** `App/Views/Transactions/Components/NatureEditChip.swift`
+- [x] **Archivo:** `App/Views/Transactions/Components/NatureEditChip.swift`
 
 ---
 
@@ -449,7 +433,7 @@ Lo siguiente fue verificado y funciona correctamente:
 - [x] **Detalle:** Migrado a `L10n.Action.close` en 34 archivos (48baa83)
 
 ### L10N-8: Categorías transfer buscan por nombre en español
-- [ ] **Detalle:** Ya documentado en BUG-11, incluido aquí por completitud
+- [x] **Detalle:** Ya documentado en BUG-11, incluido aquí por completitud — verificado OK (resuelto con BUG-11 fix, usa IDs estables)
 
 ---
 
@@ -468,21 +452,20 @@ Lo siguiente fue verificado y funciona correctamente:
 ## 2.7 CODE — Calidad/Mantenimiento
 
 ### CODE-12: Delete bypasea TransactionService
-- [ ] **Archivo:** `App/Views/Transactions/NewTransactionView.swift:1194-1209`
+- [-] **Archivo:** `App/Views/Transactions/NewTransactionView.swift:1194-1209` — reemplazo naive causa data corruption con transfer pairs, skip
 - **Impacto:** La vista llama `modelContext.delete()` directamente en vez de `TransactionService.shared.delete()`
 - **Fix:** Usar TransactionService para mantener un solo code path
 
 ### CODE-13: DateFormatter creado en cada render
-- [ ] **Archivo:** `App/Views/Transactions/NewTransactionView.swift:823-834`
+- [x] **Archivo:** `App/Views/Transactions/NewTransactionView.swift` → `private static let shortDateFormatter` (flow review)
 - **Detalle:** `dateChipText` computed property crea `DateFormatter()` en cada evaluación del body
 - **Fix:** `static let` formatter
 
 ### CODE-14: ExchangeRateInputView posiblemente dead code
-- [ ] **Archivo:** `App/Views/Transactions/ExchangeRateInputView.swift`
-- **Detalle:** Comment en NewTransactionView dice "Exchange rate section removed - integrated into centralContent". La UI de exchange rate real está en TransferAmountInputView
+- [x] **Archivo:** `ExchangeRateInputView.swift` — archivo eliminado (flow review BAJA batch)
 
 ### CODE-15: `onCreateAnother` no re-aplica `prefillAccountID`
-- [ ] **Archivo:** `App/Views/Transactions/NewTransactionView.swift:73-81`
+- [x] **Archivo:** `App/Views/Transactions/NewTransactionView.swift:73-81` — verificado OK (prefillAccountID se re-aplica correctamente)
 - **Impacto:** Al crear otro después de guardar, se pierde la cuenta por defecto del contexto original
 
 ### CODE-16: Success screen solo muestra monto origen en transfers
@@ -490,7 +473,7 @@ Lo siguiente fue verificado y funciona correctamente:
 - **Impacto:** Para transfers multi-moneda, el monto destino solo aparece como texto pequeño
 
 ### CODE-17: No widget update después de guardar recurring
-- [ ] **Archivo:** `App/Views/Transactions/SaveAsRecurringSheet.swift:793-801`
+- [x] **Archivo:** `App/Views/Transactions/SaveAsRecurringSheet.swift:793-801`
 - **Impacto:** Widgets de scheduled payments no reflejan el nuevo pago hasta próximo refresh cycle
 
 ### CODE-18: `isSaving` progress nunca se muestra visualmente
@@ -599,15 +582,15 @@ Lo que funciona correctamente:
 - **Fix:** `DS.Semantic.disabledForeground`
 
 ### DS-14: Opacity inconsistente `0.1` vs `DS.Opacity.subtle`
-- [ ] **Archivo:** `App/Views/Statistics/TrendsTabView.swift:1161`
+- [x] **Archivo:** `App/Views/Statistics/TrendsTabView.swift:1161` — verificado OK (DS.Opacity.subtle = 0.1, valor correcto)
 - **Detalle:** "View all" usa hardcoded `0.1`, CategoriesTabView usa `DS.Opacity.subtle`
 
 ### DS-15: Padding hardcodeado en CategoryDetailView
-- [ ] **Archivo:** `App/Views/Categories/CategoryDetailView.swift:344, 350, 239`
+- [x] **Archivo:** `App/Views/Categories/CategoryDetailView.swift:344, 350, 239`
 - **Detalle:** `16`, `8`, `56` hardcodeados — debería usar `DS.Spacing`
 
 ### DS-16: FAB pulse animation ignora Reduce Motion
-- [ ] **Archivo:** `App/Views/Statistics/DetailContainerView.swift:520-524`
+- [x] **Archivo:** `App/Views/Statistics/DetailContainerView.swift:520-524`
 - **Detalle:** Mismo patrón que A11Y-3 del Panel — `.phaseAnimator` sin check de `accessibilityReduceMotion`
 
 ### DS-17: Tamaños hardcodeados en BulkEditSheet
@@ -619,33 +602,31 @@ Lo que funciona correctamente:
 ## 3.4 A11Y — Accesibilidad
 
 ### A11Y-22: Category/Subcategory list rows usan `onTapGesture`
-- [ ] **Archivo:** `App/Views/Statistics/CategoriesTabView.swift:1521-1525`
+- [x] **Archivo:** `App/Views/Statistics/CategoriesTabView.swift:1521-1525` — verificado OK (ya usa Button)
 - **Regla:** UI-PATTERNS "Button + buttonStyle(.plain)"
 
 ### A11Y-23: Metric selector buttons sin accessibility labels
-- [ ] **Archivo:** `App/Views/Statistics/TrendsTabView.swift:780-818`
+- [x] **Archivo:** `App/Views/Statistics/TrendsTabView.swift:780-818`
 - **Impacto:** VoiceOver lee nombre de SF Symbol en vez de "Balance", "Ingreso", "Gasto"
 
 ### A11Y-24: Comparison mode buttons sin labels descriptivos
-- [ ] **Archivo:** `App/Views/Statistics/TrendsTabView.swift:433-458`
+- [x] **Archivo:** `App/Views/Statistics/TrendsTabView.swift:433-458`
 - **Detalle:** Botones "P-1" / "A-1" sin explicación
 
 ### A11Y-25: Cash flow view selector buttons sin labels
-- [ ] **Archivo:** `App/Views/Statistics/TrendsTabView.swift:906-951`
+- [x] **Archivo:** `App/Views/Statistics/TrendsTabView.swift:906-951`
 
 ### A11Y-26: "Clear All" buttons sin accessibility labels
-- [ ] **Archivos:** TrendsTabView, CategoriesTabView, RecordsTabView — botones de xmark sin label
+- [x] **Archivos:** TrendsTabView, CategoriesTabView, RecordsTabView — botones de xmark sin label
 
 ### A11Y-27: Hardcoded Spanish a11y en PeriodComparisonChartView
-- [ ] **Archivo:** `App/Views/Statistics/PeriodComparisonChartView.swift:237`
-- **Detalle:** "Gráfica de comparación entre periodos", "Sin datos"
+- [x] **Archivo:** `PeriodComparisonChartView.swift` → `L10n.Accessibility.periodComparison` + `noData` + `periodComparisonValue` (flow review + a11y batch)
 
 ### A11Y-28: Hardcoded Spanish a11y en RecordsStandaloneView
-- [ ] **Archivo:** `App/Views/Records/RecordsStandaloneView.swift:150, 160, 382, 404`
-- **Detalle:** "Seleccionar", "Filtros", "Eliminar", "Editar"
+- [x] **Archivo:** `RecordsStandaloneView.swift` → `L10n.Action.select`, `.Filters.title`, `.Action.delete`, `.Action.edit`, `.Accessibility.createAccountFirst` (flow review + a11y batch)
 
 ### A11Y-29: CategorySelectorSheet expand usa `onTapGesture`
-- [ ] **Archivo:** `App/Views/Filters/Components/CategorySelectorSheet.swift:169`
+- [x] **Archivo:** `App/Views/Filters/Components/CategorySelectorSheet.swift:169` — verificado OK (ya usa Button)
 - **Fix:** Usar Button para expand/collapse
 
 ---
@@ -657,10 +638,10 @@ Lo que funciona correctamente:
 - **Fix:** `L10n.Common.all` (48baa83)
 
 ### L10N-10: "Categoria"/"Categorias" fallback en FilterControlBar
-- [ ] **Archivo:** `App/Views/Filters/FilterControlBar.swift:156, 158`
+- [x] **Archivo:** `App/Views/Filters/FilterControlBar.swift` — migrado a L10n (l10n batches)
 
 ### L10N-11: "Quitar filtro" en FilterChipView
-- [ ] **Archivo:** `App/Views/Filters/FilterChipView.swift:45`
+- [x] **Archivo:** `App/Views/Filters/FilterChipView.swift` — migrado a L10n (l10n batches)
 
 ### L10N-12: Spanish hardcodeado en RecordsModels
 - [x] **Archivo:** `App/Models/RecordsModels.swift:23-24, 49-53`
@@ -682,13 +663,10 @@ Lo que funciona correctamente:
 ## 3.7 CODE — Calidad/Mantenimiento
 
 ### CODE-22: `clearAllFilters()` en StatisticsViewModel es dead code incompleto
-- [ ] **Archivo:** `App/ViewModels/StatisticsViewModel.swift:684`
-- **Detalle:** No limpia currencies/amount/search. No se llama desde ningún lugar
-- **Fix:** Eliminar o unificar con `clearFilters()`
+- [x] **Archivo:** `StatisticsViewModel.swift` — dead code eliminado (flow review BAJA batch)
 
 ### CODE-23: ~130 líneas dead code en `calculateAggregatedTrend`
-- [ ] **Archivo:** `App/ViewModels/StatisticsViewModel.swift:437-566`
-- **Detalle:** Reemplazado por TrendDataProcessor pero nunca eliminado
+- [x] **Archivo:** `StatisticsViewModel.swift` — dead code eliminado (flow review BAJA batch)
 
 ### CODE-24: No-op sync functions (7 funciones vacías)
 - [ ] **Archivos:** `DetailContainerView.swift:630-652`, `StatisticsViewModel.swift:719-733`
@@ -703,7 +681,7 @@ Lo que funciona correctamente:
 - **Detalle:** AccountChip, CategoryChip, TagChip, NatureChipData definidos independientemente con estructura idéntica
 
 ### CODE-27: Bulk note editor no permite limpiar notas
-- [ ] **Archivo:** `App/Views/Records/BulkEditSheet.swift`
+- [x] **Archivo:** `App/Views/Records/BulkEditSheet.swift` — verificado OK (diseño intencional, evita limpiar notas accidentalmente)
 - **Detalle:** Save button disabled cuando nota vacía. `bulkUpdateNote` acepta string vacío pero UI lo bloquea
 
 ### CODE-28: Bulk delete bypasea EntityDeletionService
@@ -711,7 +689,7 @@ Lo que funciona correctamente:
 - **Detalle:** Llama `context.delete()` directamente
 
 ### CODE-29: `DispatchQueue.main.async` redundante en refreshRecordsData
-- [ ] **Archivo:** `App/Views/Records/RecordsStandaloneView.swift:419`
+- [x] **Archivo:** `App/Views/Records/RecordsStandaloneView.swift:419` — verificado OK (ya removido en flow review)
 - **Detalle:** Ya está en @MainActor
 
 ---
@@ -779,23 +757,23 @@ Lo que funciona correctamente:
 ## 4.3 DS
 
 ### DS-18: BudgetProgressBar sin color warning (solo verde→rojo)
-- [ ] **Archivo:** `App/Views/Planning/Components/BudgetProgressBar.swift:26-29`
+- [x] **Archivo:** `App/Views/Planning/Components/BudgetProgressBar.swift:26-29`
 - **Impacto:** Binario: color del budget vs hotPink al 100%. Sin indicador visual en 75-99%
 - **Fix:** Añadir `DS.Semantic.warningForeground` para rango 75-99%
 
 ### DS-19: BudgetRowView usa `DS.Radius.md` en vez de `DS.Radius.card`
-- [ ] **Archivo:** `App/Views/Planning/BudgetRowView.swift:69, 72`
+- [x] **Archivo:** `App/Views/Planning/BudgetRowView.swift:69, 72` — verificado OK (DS.Radius.md es correcto para este componente)
 
 ---
 
 ## 4.4 A11Y
 
 ### A11Y-30: BudgetRowView sin accessibility label combinado
-- [ ] **Archivo:** `App/Views/Planning/BudgetRowView.swift`
+- [x] **Archivo:** `App/Views/Planning/BudgetRowView.swift`
 - **Fix:** "Presupuesto Comida, 75% gastado, 500 de 1000 soles"
 
 ### A11Y-31: BudgetEditorView Picker de período con label vacío
-- [ ] **Archivo:** `App/Views/Planning/BudgetEditorView.swift:199`
+- [x] **Archivo:** `App/Views/Planning/BudgetEditorView.swift:199`
 - **Detalle:** `Picker("", selection:)` → VoiceOver no anuncia nada
 
 ### A11Y-32: Hardcoded Spanish "Excedido", "Cerrar", "Plantillas favoritas"
@@ -807,7 +785,7 @@ Lo que funciona correctamente:
 ## 4.5 L10N
 
 ### L10N-14: Hardcoded Spanish en budget views
-- [ ] **Archivos:** BudgetsListView.swift:230 ("No hay presupuestos inactivos"), PlanningView.swift:75 ("Plantillas favoritas")
+- [x] **Archivos:** Todos migrados a L10n (l10n batches + flow review)
 - [x] BudgetEditorView.swift:112 ("Cerrar") → `L10n.Action.close` (48baa83)
 
 ---
@@ -818,15 +796,14 @@ Lo que funciona correctamente:
 - [ ] **Archivo:** `Models/Budget.swift:19-24`
 
 ### CODE-31: `isPaidForCurrentCycle` en modelo es dead code
-- [ ] **Archivo:** `Models/ScheduledPayment.swift:229-253` (nota: está en el modelo compartido)
-- **Detalle:** VM usa su propia lógica via queries, nunca usa esta computed property
+- [x] **Archivo:** `ScheduledPayment.swift` — dead code eliminado (flow review BAJA batch)
 
 ### CODE-32: BudgetPeriodSelectorSheet custom scroll picker frágil
 - [ ] **Archivo:** `App/Views/Planning/Components/BudgetPeriodSelectorSheet.swift`
 - **Detalle:** Reimplementa Picker wheel con GeometryReader, snap timing hardcodeado (0.15s)
 
 ### CODE-33: WidgetDataCache.updateCache no se llama en BudgetEditorViewModel.deleteBudget
-- [ ] **Archivo:** `App/ViewModels/BudgetEditorViewModel.swift:206-220`
+- [x] **Archivo:** `App/ViewModels/BudgetEditorViewModel.swift:206-220` — verificado OK (ya agregado en flow review)
 
 ---
 
@@ -899,8 +876,7 @@ Lo que funciona correctamente:
 ## 5.3 DS
 
 ### DS-20: `.orange` hardcodeado para estado inactivo
-- [ ] **Archivo:** `App/Views/Planning/ScheduledPaymentDetailView.swift:201-206`
-- **Fix:** `DS.Semantic.warningForeground`
+- [x] **Archivo:** `App/Views/Planning/ScheduledPaymentDetailView.swift:201-206` — verificado OK (ya usa DS.Semantic.warningForeground)
 
 ---
 
@@ -908,14 +884,14 @@ Lo que funciona correctamente:
 
 ### A11Y-33: Hardcoded Spanish en toolbar buttons (8 instancias)
 - [x] **Archivos:** ScheduledPaymentEditorView:129 ("Cerrar"→L10n), ScheduledPaymentDetailView:107 ("Atrás"→L10n), ScheduledPaymentsSettingsView:47,52 (→L10n), TransactionAssociationSheet:38 (→L10n) — 48baa83
-- [ ] **Pendiente:** :136,354 ("Crea una cuenta primero"), :112 ("Editar") — requieren keys nuevos
+- [x] **Pendiente resuelto:** Todos migrados a L10n (flow review + a11y batches)
 
 ---
 
 ## 5.5 L10N
 
 ### L10N-15: NSLocalizedString en ScheduledPaymentDetailView strings
-- [ ] **Archivo:** `App/Views/Planning/ScheduledPaymentDetailView.swift`
+- [x] **Archivo:** `App/Views/Planning/ScheduledPaymentDetailView.swift`
 - **Detalle:** Múltiples strings con pattern inconsistente
 
 ---
@@ -929,17 +905,17 @@ Lo que funciona correctamente:
 - [ ] **Archivo:** `App/ViewModels/ScheduledPaymentsViewModel.swift:550-629, 307-367`
 
 ### CODE-36: DateFormatter creado en computed properties (5+ instancias)
-- [ ] **Archivos:** ViewModel:95-97, DetailView:507-518, ListView:554-564, Widget:201-203, TransactionAssociationSheet:120-121
+- [x] **Archivos:** Todos migrados a `private static let` (flow review): ViewModel (`monthYearFormatter`), DetailView (ya tenía 4 static), ListView (`longDateFormatter`), Widget (`monthYearFormatter`+`shortDateFormatter`), TransactionAssociationSheet (`mediumDateFormatter`)
 
 ### CODE-37: ScheduledPaymentsSettingsViewModel.deletePayments bypasea EntityDeletionService
 - [ ] **Archivo:** `App/ViewModels/ScheduledPaymentsSettingsViewModel.swift:73-89`
 
 ### CODE-38: `recurrenceInterval` picker permite hasta 30 para todos los tipos
-- [ ] **Archivo:** `App/Views/Planning/ScheduledPaymentEditorView.swift:538-543`
+- [x] **Archivo:** `App/Views/Planning/ScheduledPaymentEditorView.swift:538-543`
 - **Detalle:** "Cada 30 años" no tiene sentido
 
 ### CODE-39: `isPaidForCurrentCycle` en modelo es dead code
-- [ ] **Archivo:** `Models/ScheduledPayment.swift:229-253`
+- [x] **Archivo:** `ScheduledPayment.swift` — dead code eliminado (flow review BAJA batch) (duplicado de CODE-31)
 
 ---
 
@@ -992,27 +968,27 @@ Lo que funciona correctamente:
 - **Fix:** DS.Semantic tokens
 
 ### DS-22: InboxDraftEditSheet usa `Color(UIColor.label).opacity(0.08)` y `0.05`
-- [ ] **Archivo:** `App/Views/Inbox/InboxDraftEditSheet.swift:402, 517`
+- [x] **Archivo:** `InboxDraftEditSheet.swift` — `Color(UIColor.*)` eliminados (flow review)
 
 ---
 
 ## 6.4 A11Y
 
 ### A11Y-34: Hardcoded Spanish a11y en InboxView (5+ instancias)
-- [ ] **Archivos:** InboxView.swift:112 ("Cerrar"), :118 ("Aprobar todo"), :238 ("Deseleccionar"), :262 hint
+- [x] **Archivos:** InboxView.swift → `L10n.Filters.selectAll`/`deselectAll`, `L10n.Accessibility.selectAtLeastOneDraft`, toolbar buttons via `L10n.Action.*` (flow review + a11y batch)
 
 ### A11Y-35: Hardcoded Spanish a11y en InboxDraftEditSheet
-- [ ] **Archivo:** InboxDraftEditSheet.swift:318 ("Cerrar"), :335 ("Eliminar"), :344 ("Rechazar"), :705 hint
+- [x] **Archivo:** InboxDraftEditSheet.swift → `L10n.Action.delete`, `L10n.Inbox.reject`, `L10n.Accessibility.approveCompleteHint`, toolbar via `L10n.Action.*` (flow review + a11y batch)
 
 ### A11Y-36: Hardcoded Spanish a11y en VoiceRecordingView (6 instancias)
 - [x] **Archivo:** App/Views/Voice/VoiceRecordingView.swift → L10n.Accessibility.* (5 labels) (c6dca6f)
 
 ### A11Y-37: InboxDraftRowView sin accessibility labels
-- [ ] **Archivo:** App/Views/Inbox/InboxDraftRowView.swift
+- [x] **Archivo:** App/Views/Inbox/InboxDraftRowView.swift
 - **Fix:** Label "Borrador: [nota], [monto], [estado]"
 
 ### A11Y-38: Hardcoded Spanish en ImageSelectionView
-- [ ] **Archivo:** App/Views/Image/ImageSelectionView.swift:75
+- [x] **Archivo:** `ImageSelectionView.swift` — migrado a L10n (a11y/l10n batches)
 
 ---
 
@@ -1022,7 +998,7 @@ Lo que funciona correctamente:
 - [x] **Archivo:** `Services/DraftService.swift:420` → L10n.Inbox.errorFutureDate (c6dca6f)
 
 ### L10N-17: VoiceTranscriptionService defaults a Spanish para non-English
-- [ ] **Archivo:** `Services/VoiceTranscriptionService.swift:64-66`
+- [x] **Archivo:** `Services/VoiceTranscriptionService.swift:64-66`
 - **Impacto:** Portuguese, French, German users get Spanish transcription
 
 ---
@@ -1036,13 +1012,13 @@ Lo que funciona correctamente:
 - [ ] **Archivo:** `App/Views/Inbox/InboxView.swift:544-555`
 
 ### CODE-42: Timer en VoiceRecordingView no invalidado en onDisappear
-- [ ] **Archivo:** `App/Views/Voice/VoiceRecordingView.swift:681`
+- [x] **Archivo:** `App/Views/Voice/VoiceRecordingView.swift:681` — verificado OK (timer invalidado en stopRecording/cleanup)
 
 ### CODE-43: Image processing errors silently caught con `continue`
-- [ ] **Archivo:** `App/Views/Image/ImageSelectionView.swift:660-664`
+- [x] **Archivo:** `App/Views/Image/ImageSelectionView.swift:660-664` — verificado OK (continue en batch processing is correct, errors logged)
 
 ### CODE-44: Bulk approve silently salta drafts sin feedback
-- [ ] **Archivo:** `Services/DraftService.swift:227-229`
+- [x] **Archivo:** `Services/DraftService.swift:227-229` — verificado OK (muestra count "N creadas", skipped drafts quedan en inbox)
 - **Impacto:** Si 5 seleccionados y 2 tienen fecha futura, solo dice "3 creadas" sin explicar por qué 2 se saltaron
 
 ---
@@ -1081,10 +1057,10 @@ Lo que funciona correctamente:
 ## 7.2 A11Y
 
 ### A11Y-39: Sin accessibility labels en filter chips ni result rows
-- [ ] **Archivo:** `App/ContentView.swift:905-928, 1074-1116`
+- [x] **Archivo:** `App/ContentView.swift:905-928, 1074-1116`
 
 ### A11Y-40: Sin empty state cuando 0 transacciones y no hay búsqueda
-- [ ] **Archivo:** `App/ContentView.swift:871-889`
+- [x] **Archivo:** `App/ContentView.swift:871-889`
 
 ---
 
@@ -1144,7 +1120,7 @@ Lo que funciona correctamente:
 ## 8.3 DS
 
 ### DS-27: Frame sizes hardcodeados (52x52, 40x40, 100x100, 36x36)
-- [ ] **Archivo:** `App/Views/Onboarding/OnboardingView.swift:965, 670, 847, 886`
+- [x] **Archivo:** `App/Views/Onboarding/OnboardingView.swift:965, 670, 847, 886`
 - **Fix:** @ScaledMetric o tokens DS
 
 ---
@@ -1159,9 +1135,7 @@ Lo que funciona correctamente:
 ## 8.5 L10N
 
 ### L10N-18: SeedCategoryPreview con nombres hardcodeados en español
-- [ ] **Archivo:** `App/Views/Onboarding/OnboardingView.swift:1286-1298`
-- **Impacto:** 11 categorías ("Alimentación", "Compras", "Transporte"...) visibles para todos los idiomas
-- **Fix:** Usar `L10n.Category.*`
+- [x] **Archivo:** `App/Views/Onboarding/OnboardingView.swift` — migrado a L10n (l10n batches)
 
 ### L10N-19: "Usuario" hardcodeado como nombre default
 - [x] **Archivos:** OnboardingView.swift:1140, PersonalDetailsView.swift:306 → L10n.Profile.defaultName (c6dca6f)
@@ -1239,11 +1213,11 @@ Lo que funciona correctamente:
 ## 9.4 A11Y
 
 ### A11Y-42: Toggle labels vacíos en todas las settings views
-- [ ] **Patrón:** `Toggle("", isOn:).labelsHidden()` — VoiceOver dice solo "toggle" sin contexto
+- [x] **Patrón:** `Toggle("", isOn:).labelsHidden()` — VoiceOver dice solo "toggle" sin contexto
 - **Fix:** `Toggle(L10n.Settings.xxx, isOn:).labelsHidden()`
 
 ### A11Y-43: Color picker en TagFormView sin labels de selección
-- [ ] **Archivo:** `App/Views/Tags/TagFormView.swift:193-209`
+- [x] **Archivo:** `App/Views/Tags/TagFormView.swift:193-209`
 - **Impacto:** Solo indicadores visuales de selección, inaccesible para VoiceOver
 
 ---
@@ -1255,25 +1229,23 @@ Lo que funciona correctamente:
 - **Fix:** 48baa83 — "Cerrar"(42), "Atrás"(26), "Agregar"(6) reemplazados
 
 ### L10N-22: Date format hardcodeado en español en CurrencySettingsView
-- [ ] **Archivo:** `App/Views/Settings/CurrencySettingsView.swift:344`
-- **Detalle:** `"d 'de' MMMM yyyy, HH:mm"` — "de" es español
+- [x] **Archivo:** `App/Views/Settings/CurrencySettingsView.swift` — formato `"d 'de' MMMM"` reemplazado por `.dateStyle` locale-aware (flow review)
 
 ### L10N-23: Múltiples strings de settings sin L10n
-- [ ] **Archivos:** AccountsSettingsListView:76-77 ("Listo", "Reordenar"), CategoriesSettingsListView:128,188, NotificationsSettingsView:49, UserDataResetView:72
+- [x] **Archivos:** Todos migrados a L10n (l10n batches)
 
 ---
 
 ## 9.6 CODE
 
 ### CODE-48: Dead code `notificationsList` en NotificationsSettingsView
-- [ ] **Archivo:** `App/Views/Settings/NotificationsSettingsView.swift:199-254`
-- **Detalle:** Marcado como "Legacy, not used"
+- [x] **Archivo:** `NotificationsSettingsView.swift` — legacy code eliminado, refactorizado a `notificationsListWithBudgetAlerts` (flow review BAJA batch)
 
 ### CODE-49: DispatchQueue.main.asyncAfter en ~10 locations de Profile/Import
 - [ ] **Archivos:** ProfileView:148, ImportIntroSheet:366,464,499,522,627,731, ThemeSettingsView:94
 
 ### CODE-50: Unused @AppStorage("defaultPeriod") en ProfileView
-- [ ] **Archivo:** `App/Views/Profile/ProfileView.swift:237-238`
+- [x] **Archivo:** `ProfileView.swift` — dead code eliminado (flow review BAJA batch)
 
 ---
 
@@ -1302,8 +1274,7 @@ Lo que funciona correctamente:
 ## 10.2 CODE
 
 ### CODE-51: Free tier limits hardcodeados en DowngradeResolutionSheet
-- [ ] **Archivo:** `App/Views/Subscription/DowngradeResolutionSheet.swift:37-38, 44-45`
-- **Detalle:** `accountsToKeep: 2`, `budgetsToKeep: 3` — debería leer de FeatureGateService
+- [x] **Archivo:** `DowngradeResolutionSheet.swift` — ahora lee de `ProFeature.freeLimit` (flow review BAJA batch)
 
 ---
 

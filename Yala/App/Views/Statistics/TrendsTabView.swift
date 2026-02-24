@@ -365,6 +365,7 @@ struct TrendsTabView: View {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(.secondary)
                             }
+                            .accessibilityLabel(L10n.Action.clearAll)
                         }
                     }
                 }
@@ -455,6 +456,8 @@ struct TrendsTabView: View {
                 }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(mode.displayName)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     // MARK: - Trend Charts Carousel
@@ -799,6 +802,8 @@ struct TrendsTabView: View {
                 }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(metric == .balance ? L10n.Accessibility.metricBalance : metric == .income ? L10n.Accessibility.metricIncome : L10n.Accessibility.metricExpense)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     // MARK: - Cash Flow Widget
@@ -923,6 +928,8 @@ struct TrendsTabView: View {
                 }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(viewType.title)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     @ViewBuilder

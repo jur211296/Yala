@@ -929,7 +929,7 @@ struct NewTransactionView: View {
             }
         }
         .padding(.vertical, DS.Spacing.sm)
-        .frame(width: 220)
+        .frame(minWidth: 200, idealWidth: 240)
         .background(.thCard)
     }
 
@@ -1038,7 +1038,7 @@ struct NewTransactionView: View {
                 transactionType: viewModel.transactionType,
                 date: viewModel.transactionDate,
                 accountName: account?.name ?? L10n.Transaction.account,
-                accountColorHex: account?.colorHex ?? "6366F1",
+                accountColorHex: account?.colorHex ?? AppConstants.defaultColorHex,
                 note: viewModel.note,
                 amount: Decimal(string: viewModel.amountString.replacingOccurrences(of: Locale.current.decimalSeparator ?? ".", with: ".")) ?? 0,
                 currencyCode: viewModel.effectiveCurrencyCode,

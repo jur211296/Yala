@@ -688,7 +688,7 @@ struct CategoriesPieWidget: View {
                         iconName: "ellipsis.circle.fill",
                         amount: othersAmount,
                         percentage: othersPercentage,
-                        colorHex: "#8E8E93"
+                        colorHex: AppConstants.othersColorHex
                     ))
             }
         }

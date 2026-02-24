@@ -468,7 +468,7 @@ struct ProfileView: View {
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                     } else {
-                        Toggle("", isOn: $voiceInputEnabled)
+                        Toggle(L10n.Settings.voiceInputEnabled, isOn: $voiceInputEnabled)
                             .labelsHidden()
 
                             .onChange(of: voiceInputEnabled) { _, isEnabled in
@@ -581,7 +581,7 @@ struct ProfileView: View {
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 } else {
-                    Toggle("", isOn: $imageInputEnabled)
+                    Toggle(L10n.Settings.imageInputEnabled, isOn: $imageInputEnabled)
                         .labelsHidden()
 
                         .onChange(of: imageInputEnabled) { _, isEnabled in

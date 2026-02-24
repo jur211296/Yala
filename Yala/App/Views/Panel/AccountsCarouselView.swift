@@ -60,6 +60,7 @@ struct AccountsCarouselView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
+                .accessibilityLabel(L10n.Accessibility.pageIndicator(currentPage + 1, pageCount))
             }
         }
     }

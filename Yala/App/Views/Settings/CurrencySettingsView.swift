@@ -68,7 +68,7 @@ struct CurrencySettingsView: View {
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Settings.currencyAndExchange)
-                            .font(Typography.title2)
+                            .font(DS.Typography.title2)
                             .foregroundStyle(.thPrimaryText)
 
                         Text(L10n.Settings.currencyDescription)

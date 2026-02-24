@@ -452,7 +452,7 @@ struct TransactionSuccessView: View {
                             .fill(
                                 Color(
                                     hex: data.subcategoryColorHex ?? data.categoryColorHex
-                                        ?? "6366F1")
+                                        ?? AppConstants.defaultColorHex)
                             )
                             .frame(width: 8, height: 8)
                         Text(subcatName)

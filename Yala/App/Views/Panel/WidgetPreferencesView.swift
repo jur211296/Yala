@@ -131,7 +131,7 @@ private struct WidgetRow: View {
 
                 // Toggle (Disabled if locked)
                 Toggle(
-                    "",
+                    config.type.displayName,
                     isOn: Binding(
                         get: { config.isVisible },
                         set: { _ in onToggle() }

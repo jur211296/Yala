@@ -103,7 +103,7 @@ struct PersonalizationSettingsView: View {
 
                                 Spacer()
 
-                                Toggle("", isOn: Binding(
+                                Toggle(L10n.Settings.expensesOnlyMode, isOn: Binding(
                                     get: { sessionState.isExpensesOnlyMode },
                                     set: { _ in showingExpensesOnlyConfirmation = true }
                                 ))
@@ -211,7 +211,7 @@ struct PersonalizationSettingsView: View {
 
                                 Spacer()
 
-                                Toggle("", isOn: $colorfulIcons)
+                                Toggle(L10n.Settings.colorfulIcons, isOn: $colorfulIcons)
                                     .labelsHidden()
 
                             }
@@ -323,7 +323,7 @@ struct PersonalizationSettingsView: View {
 
                                 Spacer()
 
-                                Toggle("", isOn: $showWidgetHints)
+                                Toggle(L10n.Settings.widgetHints, isOn: $showWidgetHints)
                                     .labelsHidden()
 
                             }
@@ -351,7 +351,7 @@ struct PersonalizationSettingsView: View {
 
                                 Spacer()
 
-                                Toggle("", isOn: $showVariations)
+                                Toggle(L10n.Settings.showVariations, isOn: $showVariations)
                                     .labelsHidden()
 
                             }

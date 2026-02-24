@@ -125,6 +125,8 @@ struct AccountSelectorRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(L10n.Accessibility.accountRow(account.name, account.currencyCode))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 

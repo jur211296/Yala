@@ -143,6 +143,7 @@
 "action.retry" = "Tentar novamente";
 "action.later" = "Mais tarde";
 "action.reorder" = "Reordenar";
+"action.clearAll" = "Limpar filtros";
 
 // MARK: - Search
 
@@ -1320,6 +1321,25 @@
 "accessibility.skipSync" = "Pular espera e continuar configuração";
 "accessibility.tabLimitReached" = "Limite de abas atingido";
 "accessibility.noTransactionsToExport" = "Nenhuma transação para exportar";
+"accessibility.accountCard %@ %@" = "Conta %@, saldo %@";
+"accessibility.editAccount" = "Editar conta";
+"accessibility.pageIndicator %d %d" = "Página %1$d de %2$d";
+"accessibility.accountRow %@ %@" = "Conta %@, moeda %@";
+"accessibility.budgetRow %@ %d %@ %@" = "Orçamento %@, %d por cento gasto, %@ de %@";
+"accessibility.searchResultRow %@ %@ %@" = "%@, %@, %@";
+"accessibility.filterScheduledAll" = "Todos os pagamentos";
+"accessibility.filterScheduledRecurring" = "Filtro: recorrentes";
+"accessibility.filterScheduledSubscriptions" = "Filtro: assinaturas";
+"accessibility.calendarDay %d" = "Dia %d";
+"accessibility.recentRecord %@ %@ %@" = "%@, %@, %@";
+"accessibility.sourceAmount" = "Valor de origem";
+"accessibility.destinationAmount" = "Valor de destino";
+"accessibility.exchangeRate" = "Taxa de câmbio";
+"accessibility.draftRow %@ %@ %@" = "Rascunho: %@, %@, %@";
+"accessibility.metricBalance" = "Saldo";
+"accessibility.metricIncome" = "Receita";
+"accessibility.metricExpense" = "Despesa";
+"accessibility.colorOption %@" = "Cor %@";
 
 // MARK: - Widget Hints
 

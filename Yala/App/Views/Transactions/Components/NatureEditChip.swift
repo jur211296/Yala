@@ -34,5 +34,6 @@ struct NatureEditChip: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(nature.displayName)
     }
 }

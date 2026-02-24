@@ -518,12 +518,12 @@ struct DetailContainerView: View {
             .frame(width: DS.Button.fabMenuWidth)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)
-            .background(isLocked ? Color.gray : color)
+            .background(isLocked ? DS.Semantic.disabledForeground : color)
             .clipShape(Capsule())
-            .shadow(color: (isLocked ? Color.gray : color).opacity(0.3), radius: 8, x: 0, y: 4)
+            .shadow(color: (isLocked ? DS.Semantic.disabledForeground : color).opacity(0.3), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
-        .phaseAnimator([false, true]) { content, phase in
+        .phaseAnimator(reduceMotion ? [false] : [false, true]) { content, phase in
             content
                 .scaleEffect(phase ? 1.03 : 1.0)
         } animation: { _ in

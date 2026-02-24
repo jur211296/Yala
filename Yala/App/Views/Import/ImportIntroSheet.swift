@@ -49,7 +49,7 @@ struct ImportResultOverlay: View {
 
                 // Title
                 Text(result.isSuccess ? L10n.Import.completed : L10n.Import.importError)
-                    .font(Typography.title2)
+                    .font(DS.Typography.title2)
                     .foregroundStyle(.thPrimaryText)
 
                 // Message
@@ -267,7 +267,7 @@ struct ImportIntroSheet: View {
                 .padding(.bottom, DS.Spacing.sm)
 
             Text(L10n.Import.title)
-                .font(Typography.title2)
+                .font(DS.Typography.title2)
                 .foregroundStyle(.thPrimaryText)
 
             Text(L10n.Import.introDescription)
@@ -332,7 +332,7 @@ struct ImportIntroSheet: View {
 
                 Spacer()
 
-                Toggle("", isOn: $allowCreatingNewCategories)
+                Toggle(L10n.Import.createCategories, isOn: $allowCreatingNewCategories)
                     .labelsHidden()
 
             }

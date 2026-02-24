@@ -196,7 +196,7 @@ struct BudgetEditorView: View {
 
     private var periodSection: some View {
         SectionBox(title: NSLocalizedString("budgets.editor.period.type", comment: "")) {
-            Picker("", selection: $selectedPeriodType) {
+            Picker(NSLocalizedString("budgets.editor.period.type", comment: ""), selection: $selectedPeriodType) {
                 Text(NSLocalizedString("budgets.period.weekly", comment: "")).tag(BudgetPeriodType.weekly)
                 Text(NSLocalizedString("budgets.period.monthly", comment: "")).tag(BudgetPeriodType.monthly)
                 Text(NSLocalizedString("budgets.period.yearly", comment: "")).tag(BudgetPeriodType.yearly)

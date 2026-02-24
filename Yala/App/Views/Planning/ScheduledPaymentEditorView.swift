@@ -441,6 +441,15 @@ struct ScheduledPaymentEditorView: View {
         return "\(selectedTags.count)"
     }
 
+    private var maxInterval: Int {
+        switch recurrenceType {
+        case .daily: return 30
+        case .weekly: return 12
+        case .monthly: return 12
+        case .yearly: return 5
+        }
+    }
+
     // MARK: - Recurrence Section
 
     private var recurrenceSection: some View {
@@ -536,12 +545,18 @@ struct ScheduledPaymentEditorView: View {
             Spacer()
 
             Picker("", selection: $recurrenceInterval) {
-                ForEach(1...30, id: \.self) { num in
+                ForEach(1...maxInterval, id: \.self) { num in
                     Text("\(num)").tag(num)
                 }
             }
             .pickerStyle(.menu)
             .frame(width: 60)
+            .onChange(of: recurrenceType) {
+                // Clamp interval when switching to a type with lower max
+                if recurrenceInterval > maxInterval {
+                    recurrenceInterval = maxInterval
+                }
+            }
 
             Picker("", selection: $recurrenceType) {
                 ForEach(RecurrenceType.allCases) { type in

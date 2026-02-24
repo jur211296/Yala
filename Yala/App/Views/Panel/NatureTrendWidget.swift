@@ -175,7 +175,7 @@ struct NatureTrendWidget: View {
                     } label: {
                         Image(systemName: "chevron.right")
                             .font(DS.Typography.headline)
-                            .foregroundStyle(Color.secondary.opacity(0.7))
+                            .foregroundStyle(.tertiary)
                     }
                     .padding(.top, DS.Spacing.xs)
                 }
@@ -482,7 +482,7 @@ struct NatureTrendChartView: View {
             L10n.Nature.essential: Color.essentialNature,
             L10n.Nature.priority: Color.priorityNatureNew,
             L10n.Nature.optional: Color.optionalNature,
-            L10n.Nature.unclassified: Color.gray,
+            L10n.Nature.unclassified: DS.Semantic.disabledForeground,
         ])
         .chartLegend(.hidden)
         // X-Axis: Smart dynamic labels matching TrendChartView

@@ -305,7 +305,7 @@ struct SaveAsFavoriteSheet: View {
                 }
                 .buttonStyle(.plain)
             } else {
-                Toggle("", isOn: $includeAmount)
+                Toggle(L10n.Transaction.amount, isOn: $includeAmount)
                     .labelsHidden()
 
             }

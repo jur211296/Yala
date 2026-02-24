@@ -51,7 +51,7 @@ struct BiometricSecurityView: View {
 
                             Spacer()
 
-                            Toggle("", isOn: $isEnabled)
+                            Toggle(L10n.Biometric.enableLock, isOn: $isEnabled)
                                 .labelsHidden()
 
                         }

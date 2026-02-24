@@ -152,28 +152,28 @@ struct ScheduledPaymentDetailView: View {
             VStack(spacing: DS.Spacing.md) {
                 detailRow(
                     icon: "repeat",
-                    label: NSLocalizedString("scheduled.detail.frequency", comment: ""),
+                    label: L10n.Scheduled.Detail.frequency,
                     value: frequencyDescription
                 )
 
                 if payment.isRecurring {
                     detailRow(
                         icon: "calendar",
-                        label: NSLocalizedString("scheduled.detail.next.date", comment: ""),
+                        label: L10n.Scheduled.Detail.nextDate,
                         value: formatDate(payment.nextDueDate)
                     )
 
                     if let endDate = payment.endDate {
                         detailRow(
                             icon: "calendar.badge.minus",
-                            label: NSLocalizedString("scheduled.detail.end.date", comment: ""),
+                            label: L10n.Scheduled.Detail.endDate,
                             value: formatDate(endDate)
                         )
                     }
                 } else {
                     detailRow(
                         icon: "calendar",
-                        label: NSLocalizedString("scheduled.payment.date", comment: ""),
+                        label: L10n.Scheduled.Editor.paymentDate,
                         value: formatDate(payment.nextDueDate)
                     )
                 }
@@ -181,7 +181,7 @@ struct ScheduledPaymentDetailView: View {
                 if let account = payment.account {
                     detailRow(
                         icon: "creditcard",
-                        label: NSLocalizedString("scheduled.editor.account", comment: ""),
+                        label: L10n.Scheduled.Editor.account,
                         value: account.name
                     )
                 }
@@ -189,7 +189,7 @@ struct ScheduledPaymentDetailView: View {
                 if let subcategory = payment.subcategory {
                     detailRow(
                         icon: "tag",
-                        label: NSLocalizedString("scheduled.editor.subcategory", comment: ""),
+                        label: L10n.Scheduled.Editor.subcategory,
                         value: subcategory.name
                     )
                 }
@@ -200,7 +200,7 @@ struct ScheduledPaymentDetailView: View {
                 HStack {
                     Image(systemName: "pause.circle.fill")
                         .foregroundStyle(DS.Semantic.warningForeground)
-                    Text(NSLocalizedString("scheduled.status.inactive", comment: ""))
+                    Text(L10n.Scheduled.Detail.statusInactive)
                         .font(DS.Typography.label)
                         .foregroundStyle(DS.Semantic.warningForeground)
                 }
@@ -244,7 +244,7 @@ struct ScheduledPaymentDetailView: View {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "arrow.forward.circle.fill")
                     .foregroundStyle(.thAccent)
-                Text(NSLocalizedString("scheduled.detail.upcoming", comment: ""))
+                Text(L10n.Scheduled.Detail.upcoming)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
             }
@@ -277,7 +277,7 @@ struct ScheduledPaymentDetailView: View {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "clock.arrow.circlepath")
                     .foregroundStyle(.secondary)
-                Text(NSLocalizedString("scheduled.detail.history", comment: ""))
+                Text(L10n.Scheduled.Detail.history)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
             }
@@ -347,7 +347,7 @@ struct ScheduledPaymentDetailView: View {
                         HStack(spacing: DS.Spacing.xxs) {
                             Image(systemName: "arrow.uturn.forward.circle")
                                 .font(DS.Typography.captionSmall)
-                            Text(NSLocalizedString("scheduled.status.skipped", comment: ""))
+                            Text(L10n.Scheduled.Detail.statusSkipped)
                                 .font(DS.Typography.captionSmall)
                         }
                         .foregroundStyle(.secondary)
@@ -355,7 +355,7 @@ struct ScheduledPaymentDetailView: View {
                         HStack(spacing: DS.Spacing.xxs) {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(DS.Typography.captionSmall)
-                            Text(NSLocalizedString("scheduled.status.paid", comment: ""))
+                            Text(L10n.Scheduled.Detail.statusPaid)
                                 .font(DS.Typography.captionSmall)
                         }
                         .foregroundStyle(theme.accent)
@@ -363,7 +363,7 @@ struct ScheduledPaymentDetailView: View {
                         HStack(spacing: DS.Spacing.xxs) {
                             Image(systemName: "exclamationmark.circle")
                                 .font(DS.Typography.captionSmall)
-                            Text(NSLocalizedString("scheduled.status.overdue", comment: ""))
+                            Text(L10n.Scheduled.Detail.statusOverdue)
                                 .font(DS.Typography.captionSmall)
                         }
                         .foregroundStyle(Color.hotPink)
@@ -401,11 +401,11 @@ struct ScheduledPaymentDetailView: View {
             titleVisibility: .visible
         ) {
             if isSkipped {
-                Button(NSLocalizedString("scheduled.skip.undo", comment: "")) {
+                Button(L10n.Scheduled.Detail.skipUndo) {
                     viewModel.unskipOccurrence(payment: payment, date: date)
                 }
             } else {
-                Button(NSLocalizedString("scheduled.skip", comment: ""), role: .destructive) {
+                Button(L10n.Scheduled.Detail.skip, role: .destructive) {
                     viewModel.skipOccurrence(payment: payment, date: date)
                 }
             }
@@ -432,7 +432,7 @@ struct ScheduledPaymentDetailView: View {
                 .font(DS.Typography.body)
                 .foregroundStyle(.thAccent)
 
-            Text(NSLocalizedString("scheduled.detail.info.note", comment: ""))
+            Text(L10n.Scheduled.Detail.infoNote)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
@@ -463,7 +463,7 @@ struct ScheduledPaymentDetailView: View {
                     .font(DS.Typography.body)
                     .foregroundStyle(.thAccent)
 
-                Text(NSLocalizedString("scheduled.associate.title", comment: ""))
+                Text(L10n.Scheduled.Detail.associateTitle)
                     .font(DS.Typography.label)
                     .foregroundStyle(.thAccent)
 
@@ -487,7 +487,7 @@ struct ScheduledPaymentDetailView: View {
 
     private var frequencyDescription: String {
         if !payment.isRecurring {
-            return NSLocalizedString("scheduled.recurrence.onetime", comment: "")
+            return L10n.Scheduled.Editor.onetime
         }
 
         let type = RecurrenceType(rawValue: payment.recurrenceType) ?? .monthly
@@ -496,7 +496,7 @@ struct ScheduledPaymentDetailView: View {
         if interval == 1 {
             return type.localizedName
         } else {
-            return "\(NSLocalizedString("scheduled.every", comment: "")) \(interval) \(type.localizedNamePlural)"
+            return "\(L10n.Scheduled.Editor.every) \(interval) \(type.localizedNamePlural)"
         }
     }
 
@@ -547,9 +547,9 @@ struct ScheduledPaymentDetailView: View {
 
     private func ordinalText(_ n: Int) -> String {
         switch n {
-        case 1: return NSLocalizedString("scheduled.next.first", comment: "")
-        case 2: return NSLocalizedString("scheduled.next.second", comment: "")
-        case 3: return NSLocalizedString("scheduled.next.third", comment: "")
+        case 1: return L10n.Scheduled.Detail.nextFirst
+        case 2: return L10n.Scheduled.Detail.nextSecond
+        case 3: return L10n.Scheduled.Detail.nextThird
         default: return ""
         }
     }

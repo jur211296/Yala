@@ -306,7 +306,7 @@ private struct BulkEditOptionRow: View {
                 // Icon
                 Circle()
                     .fill(option.iconColor.opacity(0.15))
-                    .frame(width: 36, height: 36)
+                    .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
                     .overlay(
                         Image(systemName: option.icon)
                             .font(DS.Typography.body).fontWeight(.medium)

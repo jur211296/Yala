@@ -234,7 +234,7 @@ struct NotificationsSettingsView: View {
             Spacer()
 
             // Toggle
-            Toggle("", isOn: $budgetAlertsEnabled)
+            Toggle(L10n.Notifications.budgetAlertsTitle, isOn: $budgetAlertsEnabled)
                 .labelsHidden()
 
         }
@@ -308,7 +308,7 @@ struct NotificationCard: View {
                 }
 
                 // Toggle (stops propagation)
-                Toggle("", isOn: $isActive)
+                Toggle(notification.localizedName, isOn: $isActive)
                     .labelsHidden()
 
                     .onChange(of: isActive) { _, newValue in

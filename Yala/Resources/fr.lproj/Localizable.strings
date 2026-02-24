@@ -143,6 +143,7 @@
 "action.retry" = "Réessayer";
 "action.later" = "Plus tard";
 "action.reorder" = "Réorganiser";
+"action.clearAll" = "Effacer les filtres";
 
 // MARK: - Search
 
@@ -1320,6 +1321,25 @@
 "accessibility.skipSync" = "Ignorer l'attente et continuer la configuration";
 "accessibility.tabLimitReached" = "Limite d'onglets atteinte";
 "accessibility.noTransactionsToExport" = "Aucune transaction à exporter";
+"accessibility.accountCard %@ %@" = "Compte %@, solde %@";
+"accessibility.editAccount" = "Modifier le compte";
+"accessibility.pageIndicator %d %d" = "Page %1$d sur %2$d";
+"accessibility.accountRow %@ %@" = "Compte %@, devise %@";
+"accessibility.budgetRow %@ %d %@ %@" = "Budget %@, %d pour cent dépensé, %@ sur %@";
+"accessibility.searchResultRow %@ %@ %@" = "%@, %@, %@";
+"accessibility.filterScheduledAll" = "Tous les paiements";
+"accessibility.filterScheduledRecurring" = "Filtre : récurrents";
+"accessibility.filterScheduledSubscriptions" = "Filtre : abonnements";
+"accessibility.calendarDay %d" = "Jour %d";
+"accessibility.recentRecord %@ %@ %@" = "%@, %@, %@";
+"accessibility.sourceAmount" = "Montant source";
+"accessibility.destinationAmount" = "Montant destination";
+"accessibility.exchangeRate" = "Taux de change";
+"accessibility.draftRow %@ %@ %@" = "Brouillon : %@, %@, %@";
+"accessibility.metricBalance" = "Solde";
+"accessibility.metricIncome" = "Revenu";
+"accessibility.metricExpense" = "Dépense";
+"accessibility.colorOption %@" = "Couleur %@";
 
 // MARK: - Widget Hints
 

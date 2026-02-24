@@ -46,6 +46,7 @@ struct SelectionChip: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(text)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

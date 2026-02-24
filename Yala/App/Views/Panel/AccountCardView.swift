@@ -101,9 +101,12 @@ struct AccountCardView: View {
                         .background(.ultraThinMaterial, in: Circle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(L10n.Accessibility.editAccount)
                 .padding(DS.Spacing.sm)
             }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(L10n.Accessibility.accountCard(account.name, formattedAmount(currentBalance)))
     }
 
     private var iconForAccount: String {

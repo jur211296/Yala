@@ -930,20 +930,23 @@ struct SearchContentView: View {
             }
         } label: {
             Text(filter.displayName)
-                .font(.subheadline.weight(isSelected ? .semibold : .regular))
+                .font(DS.Typography.subheadline.weight(isSelected ? .semibold : .regular))
                 .foregroundStyle(isSelected ? .white : .primary)
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.sm)
                 .background(
-                    Capsule()
-                        .fill(isSelected ? theme.accent : Color.clear)
-                )
-                .overlay(
-                    Capsule()
-                        .stroke(Color.secondary.opacity(0.3), lineWidth: isSelected ? 0 : 1)
+                    Group {
+                        if isSelected {
+                            Capsule().fill(theme.accent)
+                        } else {
+                            Capsule().fill(.clear).glassEffect(.regular.interactive(), in: .capsule)
+                        }
+                    }
                 )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(filter.displayName)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     // MARK: - Search Results
@@ -999,6 +1002,9 @@ struct SearchContentView: View {
                 // No results message
                 if filteredResults.isEmpty && !searchText.isEmpty {
                     YalaEmptyState.noResults()
+                        .padding(.top, DS.Spacing.xxxl)
+                } else if filteredResults.isEmpty && searchText.isEmpty {
+                    YalaEmptyState.noTransactions()
                         .padding(.top, DS.Spacing.xxxl)
                 }
             }
@@ -1113,11 +1119,12 @@ struct SearchResultRow: View {
 
                 // Amount
                 Text(formattedAmount)
-                    .font(DS.Typography.headline)
+                    .font(DS.Typography.amount)
                     .foregroundStyle(amountColor)
             }
             .padding(.vertical, DS.Spacing.md)
             .padding(.horizontal, DS.Spacing.md)
+            .contentShape(Rectangle())
             .background(cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
         }
@@ -1125,7 +1132,7 @@ struct SearchResultRow: View {
     }
 
     private var subcategoryIcon: some View {
-        let colorHex = record.category?.colorHex ?? "#6366F1"
+        let colorHex = record.category?.colorHex ?? AppConstants.defaultColorHex
         let iconName = record.subcategory?.iconName ?? record.category?.iconName ?? "tag.fill"
 
         return ZStack {

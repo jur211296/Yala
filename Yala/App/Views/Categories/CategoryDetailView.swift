@@ -341,13 +341,13 @@ struct CategoryDetailView: View {
                                         }
                                     }
                                     .buttonStyle(.plain)
-                                    .padding(.horizontal, isEditingSubcategories && !subcategory.isSystemSubcategory ? 8 : 16)
+                                    .padding(.horizontal, isEditingSubcategories && !subcategory.isSystemSubcategory ? DS.Spacing.sm : DS.Spacing.lg)
                                     .padding(.vertical, DS.Spacing.sm)
                                 }
 
                                 if index < visibles.count - 1 {
                                     Divider()
-                                        .padding(.leading, isEditingSubcategories && !subcategory.isSystemSubcategory ? 56 : 16)
+                                        .padding(.leading, isEditingSubcategories && !subcategory.isSystemSubcategory ? DS.Spacing.xxxxl + DS.Spacing.sm : DS.Spacing.lg)
                                 }
                             }
                         }
@@ -419,13 +419,13 @@ struct CategoryDetailView: View {
                                     }
                                 }
                                 .buttonStyle(.plain)
-                                .padding(.horizontal, isEditingSubcategories && !subcategory.isSystemSubcategory ? 8 : 16)
+                                .padding(.horizontal, isEditingSubcategories && !subcategory.isSystemSubcategory ? DS.Spacing.sm : DS.Spacing.lg)
                                 .padding(.vertical, DS.Spacing.sm)
                             }
 
                             if index < ocultas.count - 1 {
                                 Divider()
-                                    .padding(.leading, isEditingSubcategories && !subcategory.isSystemSubcategory ? 56 : 16)
+                                    .padding(.leading, isEditingSubcategories && !subcategory.isSystemSubcategory ? DS.Spacing.xxxxl + DS.Spacing.sm : DS.Spacing.lg)
                             }
                         }
                     }

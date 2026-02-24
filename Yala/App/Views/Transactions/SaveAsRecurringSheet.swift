@@ -794,6 +794,7 @@ struct SaveAsRecurringSheet: View {
         do {
             try modelContext.save()
             SessionState.shared.incrementDataVersion()
+            WidgetDataCache.updateCache(context: modelContext)
             onSaved(L10n.Action.savedAsRecurring)
             dismiss()
         } catch {

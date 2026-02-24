@@ -143,6 +143,7 @@
 "action.retry" = "Erneut versuchen";
 "action.later" = "Später";
 "action.reorder" = "Neu ordnen";
+"action.clearAll" = "Filter löschen";
 
 // MARK: - Search
 
@@ -1320,6 +1321,25 @@
 "accessibility.skipSync" = "Warten überspringen und Einrichtung fortsetzen";
 "accessibility.tabLimitReached" = "Tab-Limit erreicht";
 "accessibility.noTransactionsToExport" = "Keine Transaktionen zum Exportieren";
+"accessibility.accountCard %@ %@" = "Konto %@, Saldo %@";
+"accessibility.editAccount" = "Konto bearbeiten";
+"accessibility.pageIndicator %d %d" = "Seite %1$d von %2$d";
+"accessibility.accountRow %@ %@" = "Konto %@, Währung %@";
+"accessibility.budgetRow %@ %d %@ %@" = "Budget %@, %d Prozent ausgegeben, %@ von %@";
+"accessibility.searchResultRow %@ %@ %@" = "%@, %@, %@";
+"accessibility.filterScheduledAll" = "Alle Zahlungen";
+"accessibility.filterScheduledRecurring" = "Filter: Wiederkehrend";
+"accessibility.filterScheduledSubscriptions" = "Filter: Abonnements";
+"accessibility.calendarDay %d" = "Tag %d";
+"accessibility.recentRecord %@ %@ %@" = "%@, %@, %@";
+"accessibility.sourceAmount" = "Quellbetrag";
+"accessibility.destinationAmount" = "Zielbetrag";
+"accessibility.exchangeRate" = "Wechselkurs";
+"accessibility.draftRow %@ %@ %@" = "Entwurf: %@, %@, %@";
+"accessibility.metricBalance" = "Saldo";
+"accessibility.metricIncome" = "Einnahmen";
+"accessibility.metricExpense" = "Ausgaben";
+"accessibility.colorOption %@" = "Farbe %@";
 
 // MARK: - Widget Hints
 

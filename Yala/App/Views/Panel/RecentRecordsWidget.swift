@@ -179,7 +179,7 @@ struct RecentRecordsWidget: View {
         let colorHex =
             record.subcategory?.colorHex
             ?? record.category?.colorHex
-            ?? "#6366F1"
+            ?? AppConstants.defaultColorHex
 
         // Use subcategory icon if available, fallback to category icon, then default tag
         let iconName =

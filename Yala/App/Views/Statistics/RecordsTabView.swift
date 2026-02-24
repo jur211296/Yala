@@ -226,6 +226,7 @@ struct RecordsTabView: View {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(.secondary)
                             }
+                            .accessibilityLabel(L10n.Action.clearAll)
                         }
                     }
                 }

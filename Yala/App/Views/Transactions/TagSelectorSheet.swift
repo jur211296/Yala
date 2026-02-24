@@ -79,20 +79,11 @@ struct TagSelectorSheet: View {
 
     private var emptyState: some View {
         VStack(spacing: DS.Spacing.lg) {
-            VStack(spacing: DS.Spacing.md) {
-                Image(systemName: "tag.slash")
-                    .font(DS.Typography.amountLarge)
-                    .foregroundStyle(.secondary)
-
-                Text(L10n.Empty.noTags)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.secondary)
-
-                Text(L10n.Tag.createFirstDescription)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.tertiary)
-                    .multilineTextAlignment(.center)
-            }
+            YalaEmptyState(
+                icon: "tag.slash",
+                title: L10n.Empty.noTags,
+                message: L10n.Tag.createFirstDescription
+            )
             .frame(maxWidth: .infinity)
             .padding(.vertical, DS.Spacing.xxxxl)
 
@@ -194,6 +185,8 @@ struct TagSelectorRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(tag.name)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
