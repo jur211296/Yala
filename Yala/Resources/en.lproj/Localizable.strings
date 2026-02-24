@@ -1709,6 +1709,7 @@
 "shortcut.automation.error.noAmount" = "An amount greater than zero is required.";
 "shortcut.automation.error.noCurrency" = "A currency is required (e.g., USD, PEN, EUR).";
 "shortcut.automation.success %@ %@" = "Draft created: %@ at %@. Check your inbox to review.";
+"shortcut.automation.defaultNote" = "Automation";
 
 // MARK: - Siri Natural Language Entry
 "shortcut.siriNatural.title" = "Siri Entry";

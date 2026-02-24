@@ -1012,18 +1012,21 @@ struct SearchContentView: View {
 struct SearchDateSectionHeader: View {
     let date: Date
 
-    private var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
+    private static let sectionDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "d MMM yyyy"
+        return f
+    }()
 
+    private var formattedDate: String {
         let calendar = Calendar.current
         if calendar.isDateInToday(date) {
             return L10n.Date.today
         } else if calendar.isDateInYesterday(date) {
             return L10n.Date.yesterday
         } else {
-            formatter.dateFormat = "d MMM yyyy"
-            return formatter.string(from: date).replacingOccurrences(of: ".", with: "")
+            return Self.sectionDateFormatter.string(from: date).replacingOccurrences(of: ".", with: "")
         }
     }
 

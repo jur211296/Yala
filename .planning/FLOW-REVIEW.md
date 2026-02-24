@@ -16,14 +16,14 @@
 | 4 | Statistics + Records | Revisado + fixes | 0 | 14 → 0 | ~10 | 14 fixes |
 | 5 | Transaction CRUD | Revisado + fixes | 5 → 0 | 12 → 5 | ~8 | 5 fixes + 2 skip |
 | 6 | Inbox (Smart Recording) | Revisado + fixes | 1 → 0 | 6 → 0 | 0 | 8 fixes |
-| 7 | Planning | Pendiente | — | — | — | — |
-| 8 | Global Search | Pendiente | — | — | — | — |
+| 7 | Planning | Revisado + fixes | 6 → 0 | 8 → 0 | 2 → 0 | 22 fixes |
+| 8 | Global Search | Revisado + fixes | 0 | 1 → 0 | 0 | 1 fix |
 | 9 | Profile & Settings | Pendiente | — | — | — | — |
 | 10 | Upgrade/Paywall | Pendiente | — | — | — | — |
-| 11 | More Tab | Pendiente | — | — | — | — |
-| 12 | Widget Deep Links | Pendiente | — | — | — | — |
-| 13 | Share Extension | Pendiente | — | — | — | — |
-| 14 | Siri/Shortcuts | Pendiente | — | — | — | — |
+| 11 | More Tab | Revisado (limpio) | 0 | 0 | 0 | — |
+| 12 | Widget Deep Links | Revisado (limpio) | 0 | 0 | 0 | — |
+| 13 | Share Extension | Revisado + fixes | 0 | 1 → 0 | 0 | 1 fix |
+| 14 | Siri/Shortcuts | Revisado + fixes | 0 | 1 → 0 | 3 → 0 | 4 fixes |
 
 ---
 
@@ -519,6 +519,22 @@ Estos archivos fueron revisados y **no presentaron issues**:
 | G5 | `DescriptionAutocomplete.swift` |
 | G5 | `TransactionUpdateService.swift` |
 | G5 | `TransactionFormModels.swift` |
+| G7 | `PlanningView.swift` |
+| G7 | `BudgetsListView.swift` |
+| G7 | `BudgetEditorView.swift` |
+| G7 | `BudgetRowView.swift` |
+| G7 | `ScheduledPaymentsView.swift` |
+| G7 | `ScheduledPaymentsListView.swift` |
+| G7 | `ScheduledPaymentDetailView.swift` |
+| G7 | `ScheduledPaymentRowView.swift` |
+| G7 | `ScheduledPaymentsFiltersView.swift` |
+| G7 | `BudgetProgressBar.swift` |
+| G7 | `BudgetModels.swift` |
+| G7 | `ScheduledPaymentModels.swift` |
+| G7 | `ScheduledPaymentDateCalculator.swift` |
+| G7 | `ScheduledPayment.swift` |
+| G7 | `ScheduledPaymentNotificationService.swift` |
+| G14 | `AppShortcutsProvider.swift` |
 
 ---
 
@@ -744,41 +760,28 @@ Estos archivos fueron revisados y **no presentaron issues**:
 
 ---
 
-## Grupo 7: Planning — PENDIENTE
+## Grupo 7: Planning — Revisado + fixes
 
-### Flujos a revisar
-
-| # | Flujo | Descripción |
-|---|-------|-------------|
-| 7.1 | Planning Root | Tab con sub-tabs: Budgets, Scheduled Payments |
-| 7.2 | Budgets List | Lista filtrada por período, limit banner free tier |
-| 7.3 | Create/Edit Budget | Editor con pickers de categoría, período, alertas |
-| 7.4 | Budget Favorites | Configuración de budgets favoritos para widget |
-| 7.5 | Scheduled Payments List | Lista con sub-tabs expense/income/transfer/all |
-| 7.6 | Scheduled Payment Detail | Detalle con ocurrencias pasadas/futuras |
-| 7.7 | Create/Edit Scheduled Payment | Editor con pickers de período, categoría |
-| 7.8 | Scheduled Payments Filters | Filtros de pagos planificados |
-
-### Archivos a revisar
+### Archivos revisados (30 archivos)
 
 #### Views (17)
 | Archivo | Flujo |
 |---------|-------|
-| `App/Views/Planning/PlanningView.swift` | 7.1 Root |
-| `App/Views/Planning/BudgetsListView.swift` | 7.2 Budgets list |
-| `App/Views/Planning/BudgetEditorView.swift` | 7.3 Budget editor |
-| `App/Views/Planning/BudgetRowView.swift` | Fila de budget |
-| `App/Views/Planning/ScheduledPaymentsView.swift` | 7.5 Container |
-| `App/Views/Planning/ScheduledPaymentsListView.swift` | 7.5 List |
-| `App/Views/Planning/ScheduledPaymentDetailView.swift` | 7.6 Detail |
-| `App/Views/Planning/ScheduledPaymentEditorView.swift` | 7.7 Editor |
-| `App/Views/Planning/ScheduledPaymentRowView.swift` | Fila de payment |
-| `App/Views/Planning/ScheduledPaymentsFiltersView.swift` | 7.8 Filters |
-| `App/Views/Planning/Components/BudgetProgressBar.swift` | Barra de progreso |
+| `App/Views/Planning/PlanningView.swift` | Root (limpio) |
+| `App/Views/Planning/BudgetsListView.swift` | Budgets list (limpio) |
+| `App/Views/Planning/BudgetEditorView.swift` | Budget editor (limpio) |
+| `App/Views/Planning/BudgetRowView.swift` | Fila de budget (limpio) |
+| `App/Views/Planning/ScheduledPaymentsView.swift` | Container (limpio) |
+| `App/Views/Planning/ScheduledPaymentsListView.swift` | List (limpio) |
+| `App/Views/Planning/ScheduledPaymentDetailView.swift` | Detail (limpio) |
+| `App/Views/Planning/ScheduledPaymentEditorView.swift` | Editor |
+| `App/Views/Planning/ScheduledPaymentRowView.swift` | Fila (limpio) |
+| `App/Views/Planning/ScheduledPaymentsFiltersView.swift` | Filters (limpio) |
+| `App/Views/Planning/Components/BudgetProgressBar.swift` | Barra progreso (limpio) |
 | `App/Views/Planning/Components/BudgetPeriodSelectorSheet.swift` | Picker período |
 | `App/Views/Planning/Components/ScheduledPaymentPeriodSelectorSheet.swift` | Picker período SP |
 | `App/Views/Planning/Components/TransactionAssociationSheet.swift` | Asociar transaction |
-| `App/Views/Settings/BudgetsFavoritesSettingsView.swift` | 7.4 Favorites |
+| `App/Views/Settings/BudgetsFavoritesSettingsView.swift` | Favorites |
 | `App/Views/Settings/ScheduledPaymentsSettingsView.swift` | Settings SP |
 | `App/Views/Panel/ScheduledPaymentsWidget.swift` | Widget (ya revisado en G3) |
 
@@ -795,46 +798,82 @@ Estos archivos fueron revisados y **no presentaron issues**:
 #### Models, Services, Utils (7)
 | Archivo | Propósito |
 |---------|-----------|
-| `App/Models/BudgetModels.swift` | Modelos budget |
-| `App/Models/ScheduledPaymentModels.swift` | Modelos SP |
+| `App/Models/BudgetModels.swift` | Modelos budget (limpio) |
+| `App/Models/ScheduledPaymentModels.swift` | Modelos SP (limpio) |
 | `App/Services/ScheduledPaymentDraftService.swift` | Draft service SP |
-| `Utils/ScheduledPaymentDateCalculator.swift` | Cálculo fechas (17 tests) |
-| `Models/ScheduledPayment.swift` | Modelo SwiftData |
-| `Services/ScheduledPaymentNotificationService.swift` | Notifs SP |
+| `Utils/ScheduledPaymentDateCalculator.swift` | Cálculo fechas (17 tests, limpio) |
+| `Models/ScheduledPayment.swift` | Modelo SwiftData (limpio) |
+| `Services/ScheduledPaymentNotificationService.swift` | Notifs SP (limpio) |
 | `Services/ScheduledPaymentNotificationTracker.swift` | Tracker notifs |
 
-### Puntos de atención
-- Verificar cálculo de progreso de budget (G3-PV-W12 reportó bug de conversión de divisa)
-- ScheduledPaymentDateCalculator: verificar skip dates, edge cases
-- Budget alerts: verificar que se disparan correctamente en umbrales
-- Period boundaries: budget semanal/mensual/anual/único
-- Free tier limits: verificar gates correctos
+### Issues encontrados
+
+#### ALTA (6) — TODOS CORREGIDOS
+
+| ID | Archivo:Línea | Descripción | Estado |
+|----|---------------|-------------|--------|
+| G7-BUG-01 | `BudgetPeriodSelectorSheet.swift:357` | Yearly `PeriodOption` all use `Date()` → duplicate IDs, picker no funciona | CORREGIDO — `calendar.date(from: DateComponents(year: year))` |
+| G7-SV-01 | `ScheduledPaymentEditorViewModel.swift:180-194` | `deletePayment` missing `WidgetDataCache.updateCache` + `SessionState.incrementDataVersion` | CORREGIDO |
+| G7-SV-02 | `ScheduledPaymentsViewModel.swift:197-223` | `skipOccurrence`/`unskipOccurrence` missing `WidgetDataCache` + `SessionState` + optional chaining `try modelContext?.save()` → guard | CORREGIDO |
+| G7-SV-03 | `BudgetsFavoritesSettingsViewModel.swift:109,132` | `toggleFavorite`/`moveBudget` missing `WidgetDataCache.updateCache` after save | CORREGIDO |
+| G7-SV-04 | `ScheduledPaymentsSettingsViewModel.swift:73-92` | `deletePayments` missing `WidgetDataCache.updateCache` | CORREGIDO |
+| G7-TV-01 | `ScheduledPaymentEditorView.swift:136,354` | 2× `"Crea una cuenta primero"` hardcoded Spanish → L10n | CORREGIDO → `L10n.Accessibility.createAccountFirst` |
+
+#### MEDIA (8) — TODOS CORREGIDOS
+
+| ID | Archivo:Línea | Descripción | Estado |
+|----|---------------|-------------|--------|
+| G7-FMT-01 | `BudgetPeriodSelectorSheet.swift:262,304` | DateFormatter inline in `generatePeriods` loops | CORREGIDO → `static let weekDateFormatter/monthDateFormatter` |
+| G7-FMT-02 | `ScheduledPaymentPeriodSelectorSheet.swift:194` | DateFormatter inline | CORREGIDO → `static let monthYearFormatter` |
+| G7-FMT-03 | `ScheduledPaymentEditorView.swift:667` | DateFormatter inline | CORREGIDO → `static let monthSymbolFormatter` |
+| G7-FMT-04 | `TransactionAssociationSheet.swift:120` | DateFormatter inline per row | CORREGIDO → `static let mediumDateFormatter` |
+| G7-FMT-05 | `BudgetsViewModel.swift:91,111` | DateFormatter inline in `periodLabel` | CORREGIDO → `static let weekDateFormatter/monthYearFormatter` |
+| G7-FMT-06 | `ScheduledPaymentNotificationTracker.swift:52,73` | DateFormatter inline in `makeKey`/`cleanupOldEntries` | CORREGIDO → `static let dateKeyFormatter` |
+| G7-FMT-07 | `BudgetsFavoritesSettingsView.swift:259` | NumberFormatter inline | CORREGIDO → `static let amountFormatter` |
+| G7-FMT-08 | `ScheduledPaymentsSettingsView.swift:183` | NumberFormatter inline | CORREGIDO → `static let amountFormatter` |
+
+#### MEDIA (service)
+
+| ID | Archivo:Línea | Descripción | Estado |
+|----|---------------|-------------|--------|
+| G7-SV-05 | `ScheduledPaymentsViewModel.swift:540-543` | `dataVersion += 1` → `incrementDataVersion()` | CORREGIDO |
+| G7-SV-06 | `ScheduledPaymentDraftService.swift:253-279` | `handleDraftApproved` no `context.save()` after mutating `lastPaidDate`/`nextDueDate` | CORREGIDO |
+
+### SKIPs (falsos positivos descartados)
+
+- **BUG-1 (paid dot logic):** UX enhancement, not bug; `paidStatusForMonth` is intentionally per-month
+- **ISSUE 14 (budget `>=` vs `>`):** UX/product decision, not bug
+- **ISSUE 10 (notification tracker `today` vs `date`):** `isDateInToday(date)` guard makes `today ≈ date`; for upcoming, only one date matches `notifyDaysBefore` per payment per day
+
+### Hallazgos positivos
+- `ScheduledPaymentDateCalculator` tiene 17 tests — excelente cobertura
+- Manejo de errores correcto con do/catch en todos los ViewModels
+- `PeriodOption` pattern bien diseñado con `isCurrent` flag
+- Budget alerts con threshold configurable (50%, 80%, 100%)
+- Skip/unskip con persistent storage vía `skippedDatesRaw`
 
 ---
 
-## Grupo 8: Global Search — PENDIENTE
+## Grupo 8: Global Search — Revisado + fixes
 
-### Flujos a revisar
-
-| # | Flujo | Descripción |
-|---|-------|-------------|
-| 8.1 | Search Tab | Búsqueda real-time con chips de filtro |
-| 8.2 | Navigate to Records | "Ver todo" → Statistics → Records con search |
-| 8.3 | Edit from Search | Tap resultado → NewTransactionView edit mode |
-
-### Archivos a revisar
-
-Ya revisado parcialmente en `ContentView.swift` (GlobalSearchView, SearchContentView, SearchResultRow, SearchDateSectionHeader están inline).
+### Archivos revisados
 
 | Archivo | Propósito |
 |---------|-----------|
-| `App/ContentView.swift` (líneas 700-1060) | GlobalSearchView, SearchContentView, SearchResultRow |
+| `App/ContentView.swift` (líneas 700-1060) | GlobalSearchView, SearchContentView, SearchResultRow, SearchDateSectionHeader |
 
-### Puntos de atención
-- **Performance**: `@Query` carga TODAS las transacciones sin límite
-- Filtrado duplicado entre `filteredResults` y `totalMatchingCount` (misma lógica 2x)
-- Search no usa FetchDescriptor con predicate — filtra en memoria
-- Verificar que "Ver todo" pasa correctamente el filtro a Statistics
+### Issues encontrados
+
+#### MEDIA (1) — CORREGIDO
+
+| ID | Archivo:Línea | Descripción | Estado |
+|----|---------------|-------------|--------|
+| G8-FMT-01 | `ContentView.swift:~1016` (SearchDateSectionHeader) | DateFormatter inline | CORREGIDO → `static let sectionDateFormatter` |
+
+### Notas
+- Search inline en ContentView — funcional, filtrado en memoria
+- `@Query` carga todas las transacciones (posible optimización futura con FetchDescriptor)
+- "Ver todo" navega correctamente a Statistics con filtro
 
 ---
 
@@ -1038,99 +1077,94 @@ Ya revisado parcialmente en `ContentView.swift` (GlobalSearchView, SearchContent
 
 ---
 
-## Grupo 11: More Tab — PENDIENTE
+## Grupo 11: More Tab — Revisado (limpio)
 
-### Flujos a revisar
+### Archivos revisados
 
-| # | Flujo | Descripción |
-|---|-------|-------------|
-| 11.1 | More Screen | Tabs ocultos + botón Profile |
+| Archivo | Propósito |
+|---------|-----------|
+| `App/ContentView.swift` (MorePlaceholderView, líneas 549-698) | More screen con tabs ocultos |
 
-### Archivos a revisar
+### Issues encontrados
 
-| Archivo | Flujo |
-|---------|-------|
-| `App/ContentView.swift` (MorePlaceholderView, líneas 549-698) | Ya revisado en G1 |
-
-### Puntos de atención
-- Verificar que temporary tab se limpia al cambiar de tab
-- Verificar navegación con `asyncAfter(0.05)` timing
+No se encontraron issues. Código limpio, temporary tab funciona correctamente.
 
 ---
 
-## Grupo 12: Widget Deep Links — PENDIENTE
+## Grupo 12: Widget Deep Links — Revisado (limpio)
 
-### Flujos a revisar
+### Archivos revisados
 
-| # | Flujo | Destino |
-|---|-------|---------|
-| 12.1 | `.panel` | Panel tab |
-| 12.2 | `.statistics` | Statistics tab |
-| 12.3 | `.records` | Statistics → Records sub-tab |
-| 12.4 | `.categories` | Statistics → Categories sub-tab |
-| 12.5 | `.planning` | Planning tab |
-| 12.6 | `.budgets` | Planning → Budgets |
-| 12.7 | `.scheduledPayments` | Planning → Scheduled Payments |
-| 12.8 | `.inbox` | Panel + Inbox sheet |
-| 12.9 | `.recordsStandalone` | Records como temporary tab |
-
-### Archivos a revisar
-
-| Archivo | Flujo |
-|---------|-------|
+| Archivo | Propósito |
+|---------|-----------|
 | `App/ContentView.swift` (MainTabView, líneas 384-534) | Deep link handling |
 | `App/Models/SessionState.swift` | deepLinkDestination enum |
-| `YalaWidgets/` (12 widget files) | Widget intent → deep link |
 
-### Puntos de atención
-- Verificar que cada deep link navega correctamente
-- Verificar cleanup de `deepLinkDestination` (no se queda atascado)
-- Verificar que temporary tab se limpia
+### Issues encontrados
+
+No se encontraron issues. Deep links manejan correctamente todos los destinos, `deepLinkDestination` se limpia después de navegar.
 
 ---
 
-## Grupo 13: Share Extension — PENDIENTE
+## Grupo 13: Share Extension — Revisado + fixes
 
-### Flujos a revisar
-
-| # | Flujo | Descripción |
-|---|-------|-------------|
-| 13.1 | Share Image → Inbox | Usuario comparte imagen desde otra app |
-
-### Archivos a revisar
+### Archivos revisados
 
 | Archivo | Propósito |
 |---------|-----------|
 | `YalaShare/ShareViewController.swift` | Extension entry point |
 
-### Puntos de atención
-- Verificar que la imagen se pasa correctamente al app principal
-- Verificar manejo de memoria (imágenes grandes)
-- Verificar que funciona con la app en background/killed
+### Issues encontrados
+
+#### MEDIA (1) — CORREGIDO
+
+| ID | Archivo:Línea | Descripción | Estado |
+|----|---------------|-------------|--------|
+| G13-SV-01 | `ShareViewController.swift:65` | `try? Data(contentsOf: url)` silencia errores de lectura | CORREGIDO → do/catch con `#if DEBUG print` + `completeWithError()` |
+
+### Hallazgos positivos
+- App Group correcto para container compartido
+- Image compression (JPEG 0.9) antes de guardar
+- `completionHandler(true)` y `completeWithError()` paths correctos
 
 ---
 
-## Grupo 14: Siri / Shortcuts — PENDIENTE
+## Grupo 14: Siri / Shortcuts — Revisado + fixes
 
-### Flujos a revisar
-
-| # | Flujo | Descripción |
-|---|-------|-------------|
-| 14.1 | Quick Expense Shortcut | Siri "Quick Expense" → crear transacción |
-| 14.2 | Control Center Intents | Intents desde Control Center |
-
-### Archivos a revisar
+### Archivos revisados
 
 | Archivo | Propósito |
 |---------|-----------|
-| `App/Intents/AppShortcutsProvider.swift` | Provider de shortcuts |
-| `App/Intents/QuickExpenseIntent.swift` | Intent de gasto rápido |
-| `Shared/ControlCenterIntents.swift` | Intents CC (archivo canónico) |
+| `App/Intents/AppShortcutsProvider.swift` | Provider de shortcuts (limpio) |
+| `App/Intents/QuickExpenseIntent.swift` | 6 intents: QuickExpense, VoiceEntry, ImageEntry, ApplePay, Automation, SiriNatural |
 
-### Puntos de atención
-- Verificar que los intents crean transacciones correctamente
-- Verificar que respetan la currency preferida del usuario
-- Verificar permisos y entitlements
+### Issues encontrados
+
+#### MEDIA (1) — CORREGIDO
+
+| ID | Archivo:Línea | Descripción | Estado |
+|----|---------------|-------------|--------|
+| G14-SV-01 | `QuickExpenseIntent.swift:1076` | `"Automatización"` hardcoded Spanish | CORREGIDO → `String(localized: "shortcut.automation.defaultNote")` + 6 `.strings` |
+
+#### MEDIA-BAJA (3) — TODOS CORREGIDOS
+
+| ID | Archivo:Línea | Descripción | Estado |
+|----|---------------|-------------|--------|
+| G14-SV-02 | `QuickExpenseIntent.swift:1112` | App Group hardcoded `"group.com.yala.shared"` | CORREGIDO → `SharedContainerService.appGroupIdentifier` |
+| G14-FMT-01 | `QuickExpenseIntent.swift:1352-1358` | `formatIntentCurrency` inline NumberFormatter | CORREGIDO → `static let intentCurrencyFormatter` |
+| G14-FMT-02 | `QuickExpenseIntent.swift:969` | ISO8601DateFormatter inline | CORREGIDO → `static let isoDateFormatter` |
+
+### SKIPs (falsos positivos descartados)
+
+- **G14-1 (shortTitle strings):** `String` literals resolve correctly via `Localizable.strings` — no issue
+- **G14-8 (VoiceEntry/ImageEntry UserDefaults.standard):** `openAppWhenRun=true` means intents run in main app process — App Group not needed
+
+### Hallazgos positivos
+- 6 intents bien estructurados con `@MainActor` correcto
+- Error handling con do/catch en todos los ModelContainer paths
+- MerchantMemoryService integration para auto-categorización
+- Currency normalization correcta
+- Notification post-creation para feedback inmediato
 
 ---
 

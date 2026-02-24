@@ -1707,6 +1707,7 @@
 "shortcut.automation.error.noCurrency" = "Uma moeda é necessária (ex: USD, PEN, EUR).";
 "shortcut.automation.error.noJSON" = "Os dados JSON da transação são necessários.";
 "shortcut.automation.success %@ %@" = "Rascunho criado: %@ em %@. Verifique sua caixa de entrada.";
+"shortcut.automation.defaultNote" = "Automação";
 
 // MARK: - Siri Natural Language Entry
 "shortcut.siriNatural.title" = "Registro com Siri";

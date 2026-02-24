@@ -133,7 +133,7 @@ struct ScheduledPaymentEditorView: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaSaveButton(action: savePayment, isDisabled: !canSave)
-                        .accessibilityHint(!canSave ? "Crea una cuenta primero" : "")
+                        .accessibilityHint(!canSave ? L10n.Accessibility.createAccountFirst : "")
                 }
             }
             .sheet(isPresented: $showCategoriesSheet) {
@@ -351,7 +351,7 @@ struct ScheduledPaymentEditorView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityHint(viewModel.activeAccounts.isEmpty ? "Crea una cuenta primero" : "")
+        .accessibilityHint(viewModel.activeAccounts.isEmpty ? L10n.Accessibility.createAccountFirst : "")
         .disabled(viewModel.activeAccounts.isEmpty)
     }
 
@@ -663,10 +663,14 @@ struct ScheduledPaymentEditorView: View {
         .padding()
     }
 
+    private static let monthSymbolFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale.current
+        return f
+    }()
+
     private func monthName(_ month: Int) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale.current
-        return formatter.monthSymbols[month - 1]
+        return Self.monthSymbolFormatter.monthSymbols[month - 1]
     }
 
     private func daysInMonth(_ month: Int) -> Int {

@@ -1709,6 +1709,7 @@
 "shortcut.automation.error.noCurrency" = "È richiesta una valuta (es: USD, PEN, EUR).";
 "shortcut.automation.error.noJSON" = "Sono richiesti i dati JSON della transazione.";
 "shortcut.automation.success %@ %@" = "Bozza creata: %@ a %@. Controlla la tua posta in arrivo.";
+"shortcut.automation.defaultNote" = "Automazione";
 
 // MARK: - Siri Natural Language Entry
 "shortcut.siriNatural.title" = "Voce con Siri";

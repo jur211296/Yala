@@ -1892,6 +1892,7 @@
 "shortcut.automation.error.noAmount" = "Se requiere un monto mayor a cero.";
 "shortcut.automation.error.noCurrency" = "Se requiere una divisa (ej: USD, PEN, EUR).";
 "shortcut.automation.success %@ %@" = "Borrador creado: %@ en %@. Revísalo en tu bandeja de entrada.";
+"shortcut.automation.defaultNote" = "Automatización";
 
 // MARK: - Siri Natural Language Entry
 "shortcut.siriNatural.title" = "Registro con Siri";

@@ -81,6 +81,7 @@ final class ScheduledPaymentsSettingsViewModel {
                 let payment = filteredPayments[index]
                 try service.deleteScheduledPayment(payment)
             }
+            WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
             loadPayments()
         } catch {

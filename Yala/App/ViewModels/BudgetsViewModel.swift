@@ -14,6 +14,20 @@ import SwiftUI
 @Observable
 final class BudgetsViewModel {
 
+    // MARK: - Static Formatters
+
+    private static let weekDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "d MMM"
+        return f
+    }()
+
+    private static let monthYearFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMMM yyyy"
+        return f
+    }()
+
     // MARK: - Dependencies
 
     private var modelContext: ModelContext?
@@ -88,11 +102,9 @@ final class BudgetsViewModel {
                       calendar.isDate(selectedWeek, equalTo: nextWeek, toGranularity: .weekOfYear) {
                 return L10n.Period.nextWeek
             } else {
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "d MMM"
-                let start = dateFormatter.string(from: selectedWeek)
+                let start = Self.weekDateFormatter.string(from: selectedWeek)
                 let end = calendar.date(byAdding: .day, value: 6, to: selectedWeek) ?? selectedWeek
-                let endString = dateFormatter.string(from: end)
+                let endString = Self.weekDateFormatter.string(from: end)
                 return "\(start) - \(endString)"
             }
 
@@ -108,9 +120,7 @@ final class BudgetsViewModel {
                       calendar.isDate(selectedMonth, equalTo: nextMonth, toGranularity: .month) {
                 return L10n.Period.nextMonth
             } else {
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "MMMM yyyy"
-                return dateFormatter.string(from: selectedMonth).capitalized
+                return Self.monthYearFormatter.string(from: selectedMonth).capitalized
             }
 
         case .yearly:

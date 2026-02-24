@@ -195,10 +195,13 @@ final class ScheduledPaymentsViewModel {
     // MARK: - Skip/Unskip
 
     func skipOccurrence(payment: ScheduledPayment, date: Date) {
+        guard let context = modelContext else { return }
         payment.skipDate(date)
         rejectPendingDraft(for: payment)
         do {
-            try modelContext?.save()
+            try context.save()
+            WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
         } catch {
             #if DEBUG
             print("ScheduledPaymentsViewModel: Error saving skip: \(error)")
@@ -208,12 +211,13 @@ final class ScheduledPaymentsViewModel {
     }
 
     func unskipOccurrence(payment: ScheduledPayment, date: Date) {
+        guard let context = modelContext else { return }
         payment.unskipDate(date)
-        if let context = modelContext {
-            ScheduledPaymentDraftService.recreateDraftIfNeeded(for: payment, date: date, context: context)
-        }
+        ScheduledPaymentDraftService.recreateDraftIfNeeded(for: payment, date: date, context: context)
         do {
-            try modelContext?.save()
+            try context.save()
+            WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
         } catch {
             #if DEBUG
             print("ScheduledPaymentsViewModel: Error saving unskip: \(error)")
@@ -539,8 +543,8 @@ final class ScheduledPaymentsViewModel {
         guard let context = modelContext else { return }
         do {
             try context.save()
-            // Refresh paid status
-            SessionState.shared.dataVersion += 1
+            WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
         } catch {
             #if DEBUG
             print("ScheduledPaymentsViewModel: Error associating transaction: \(error)")

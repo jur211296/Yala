@@ -255,12 +255,16 @@ struct BudgetsFavoritesSettingsView: View {
 
     // MARK: - Helpers
 
+    private static let amountFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        f.maximumFractionDigits = 0
+        return f
+    }()
+
     private func formatAmount(_ amount: Double, currency: String) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = currency
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: amount)) ?? "\(currency) \(Int(amount))"
+        Self.amountFormatter.currencyCode = currency
+        return Self.amountFormatter.string(from: NSNumber(value: amount)) ?? "\(currency) \(Int(amount))"
     }
 }
 

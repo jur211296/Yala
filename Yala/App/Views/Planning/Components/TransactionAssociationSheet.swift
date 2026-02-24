@@ -116,11 +116,14 @@ struct TransactionAssociationSheet: View {
         .padding(.bottom, DS.Spacing.sm)
     }
 
-    private func candidateRow(_ transaction: TransactionItem) -> some View {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateStyle = .medium
-        dateFormatter.timeStyle = .none
+    private static let mediumDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .none
+        return f
+    }()
 
+    private func candidateRow(_ transaction: TransactionItem) -> some View {
         return Button {
             selectedTransaction = transaction
             showConfirmation = true
@@ -150,13 +153,13 @@ struct TransactionAssociationSheet: View {
                 }
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(transaction.note ?? dateFormatter.string(from: transaction.date))
+                    Text(transaction.note ?? Self.mediumDateFormatter.string(from: transaction.date))
                         .font(DS.Typography.label)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
                     HStack(spacing: DS.Spacing.xs) {
-                        Text(dateFormatter.string(from: transaction.date))
+                        Text(Self.mediumDateFormatter.string(from: transaction.date))
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
 
