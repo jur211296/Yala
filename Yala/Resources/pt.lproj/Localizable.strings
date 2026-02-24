@@ -1112,6 +1112,10 @@
 "account.adjustByEntryDesc" = "Escreva o saldo correto e criaremos um registro de correcao. Use isso se voce esqueceu de registrar algumas despesas.";
 "account.changeInitialBalanceName" = "Alterar saldo inicial";
 "account.changeInitialBalanceDesc" = "Escreva o saldo correto e alteraremos o saldo inicial da sua conta. Use isso se voce nao registrou durante muito tempo.";
+"account.creditCard.sectionTitle" = "Cartao de credito";
+"account.creditCard.paymentReminder" = "Avisar na data de pagamento";
+"account.creditCard.paymentDay" = "Dia de pagamento";
+"account.creditCard.paymentNotification" = "Lembre-se de pagar seu cartao %@ hoje";
 "category.others" = "Outros";
 "subcategory.balanceAdjustment" = "Ajustes de saldo";
 

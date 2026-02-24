@@ -180,6 +180,52 @@ final class ScheduledPaymentNotificationService {
         )
     }
 
+    // MARK: - Credit Card Payment Notifications
+
+    /// Check accounts with credit card payment reminders and notify if today is payment day
+    func checkAndNotifyCreditCardPayments() async {
+        guard let context = modelContext else { return }
+        guard await NotificationService.shared.isAuthorized() else { return }
+
+        let accounts = fetchCreditCardAccounts(context: context)
+        let today = Date()
+        let dayOfMonth = Calendar.current.component(.day, from: today)
+
+        for account in accounts {
+            guard account.creditCardPaymentDay == dayOfMonth else { continue }
+
+            let trackerKey = "creditCardNotif_\(account.name)_\(ScheduledPaymentNotificationTracker.dateKeyString(from: today))"
+            guard !UserDefaults.standard.bool(forKey: trackerKey) else { continue }
+
+            let message = L10n.Account.CreditCard.paymentNotification(account.name)
+            await NotificationService.shared.sendNotification(
+                title: account.name,
+                body: message,
+                deepLink: "accounts"
+            )
+
+            UserDefaults.standard.set(true, forKey: trackerKey)
+        }
+    }
+
+    private func fetchCreditCardAccounts(context: ModelContext) -> [Account] {
+        let creditCardType = AccountType.creditCard.rawValue
+        let descriptor = FetchDescriptor<Account>(
+            predicate: #Predicate {
+                $0.type == creditCardType && $0.creditCardPaymentReminder == true
+            }
+        )
+
+        do {
+            return try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentNotificationService: Error fetching credit card accounts: \(error)")
+            #endif
+            return []
+        }
+    }
+
     private func fetchActivePayments(context: ModelContext) -> [ScheduledPayment] {
         let descriptor = FetchDescriptor<ScheduledPayment>(
             predicate: #Predicate { $0.isActive }

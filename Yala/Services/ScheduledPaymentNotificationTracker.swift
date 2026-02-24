@@ -23,6 +23,11 @@ final class ScheduledPaymentNotificationTracker {
 
     private init() {}
 
+    /// Public accessor for date key formatting (used by credit card notifications)
+    static func dateKeyString(from date: Date) -> String {
+        dateKeyFormatter.string(from: date)
+    }
+
     // MARK: - Notification Types
 
     enum NotificationType: String {

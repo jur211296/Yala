@@ -867,6 +867,16 @@ enum L10n {
             ls("account.changeInitialBalanceDesc", comment: "")
         }
 
+        // MARK: - Credit Card
+        enum CreditCard {
+            static var sectionTitle: String { ls("account.creditCard.sectionTitle", comment: "") }
+            static var paymentReminder: String { ls("account.creditCard.paymentReminder", comment: "") }
+            static var paymentDay: String { ls("account.creditCard.paymentDay", comment: "") }
+            static func paymentNotification(_ accountName: String) -> String {
+                String(format: ls("account.creditCard.paymentNotification", comment: ""), accountName)
+            }
+        }
+
     }
 
     // MARK: - Category

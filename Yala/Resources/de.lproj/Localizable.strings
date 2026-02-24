@@ -1112,6 +1112,10 @@
 "account.adjustByEntryDesc" = "Gib den korrekten Saldo ein und wir erstellen einen Korrektureintrag. Verwende dies, wenn du vergessen hast, einige Ausgaben zu erfassen.";
 "account.changeInitialBalanceName" = "Anfangssaldo ändern";
 "account.changeInitialBalanceDesc" = "Gib den korrekten Saldo ein und wir ändern den Anfangssaldo deines Kontos. Verwende dies, wenn du längere Zeit keine Einträge gemacht hast.";
+"account.creditCard.sectionTitle" = "Kreditkarte";
+"account.creditCard.paymentReminder" = "Am Zahlungstag erinnern";
+"account.creditCard.paymentDay" = "Zahlungstag";
+"account.creditCard.paymentNotification" = "Denke daran, heute deine Kreditkarte %@ zu bezahlen";
 "category.others" = "Sonstige";
 "subcategory.balanceAdjustment" = "Saldoanpassungen";
 

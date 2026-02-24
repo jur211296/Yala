@@ -1112,6 +1112,10 @@
 "account.adjustByEntryDesc" = "Enter the correct balance and we'll create a correction entry. Use this if you forgot to record some expenses.";
 "account.changeInitialBalanceName" = "Change initial balance";
 "account.changeInitialBalanceDesc" = "Enter the correct balance and we'll change the initial balance in your account. Use this if you haven't recorded in a long time.";
+"account.creditCard.sectionTitle" = "Credit card";
+"account.creditCard.paymentReminder" = "Remind on payment date";
+"account.creditCard.paymentDay" = "Payment day";
+"account.creditCard.paymentNotification" = "Remember to pay your credit card %@ today";
 "category.others" = "Others";
 "subcategory.balanceAdjustment" = "Balance adjustments";
 

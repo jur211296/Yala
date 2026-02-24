@@ -50,6 +50,10 @@ final class AccountFormViewModel {
     var excludeFromStatistics: Bool = false
     var isArchived: Bool = false
 
+    // Credit card
+    var creditCardPaymentReminder: Bool = false
+    var creditCardPaymentDay: Int = 1
+
     // MARK: - UI State
     var isShowingDeleteError: Bool = false
     var deleteErrorMessage: String = ""
@@ -140,6 +144,8 @@ final class AccountFormViewModel {
 
             self.excludeFromStatistics = account.excludeFromStatistics
             self.isArchived = account.isArchived
+            self.creditCardPaymentReminder = account.creditCardPaymentReminder
+            self.creditCardPaymentDay = account.creditCardPaymentDay
 
             // Don't pre-fill balance here - will be done in initializeBalanceIfNeeded()
             // after transactions are loaded
@@ -277,6 +283,8 @@ final class AccountFormViewModel {
             account.adjustmentMode = selectedAdjustmentMode.rawValue
             account.excludeFromStatistics = excludeFromStatistics
             account.isArchived = isArchived
+            account.creditCardPaymentReminder = selectedType == .creditCard ? creditCardPaymentReminder : false
+            account.creditCardPaymentDay = selectedType == .creditCard ? creditCardPaymentDay : 1
 
             // Handle balance adjustment if specified
             if let balanceValue = parsedBalanceAmount, needsAdjustment, let sub = subcategory {
@@ -314,6 +322,10 @@ final class AccountFormViewModel {
                 excludeFromStatistics: excludeFromStatistics,
                 isArchived: isArchived
             )
+            if selectedType == .creditCard {
+                newAccount.creditCardPaymentReminder = creditCardPaymentReminder
+                newAccount.creditCardPaymentDay = creditCardPaymentDay
+            }
             context.insert(newAccount)
 
             // Create initial balance transaction if amount specified

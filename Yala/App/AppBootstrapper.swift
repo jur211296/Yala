@@ -463,6 +463,9 @@ final class AppBootstrapper {
         await ScheduledPaymentNotificationService.shared.checkAndNotifyDuePayments()
         await ScheduledPaymentNotificationService.shared.checkAndNotifyUpcomingPayments()
 
+        // Check credit card payment reminders
+        await ScheduledPaymentNotificationService.shared.checkAndNotifyCreditCardPayments()
+
         // Cleanup old tracker entries
         ScheduledPaymentNotificationTracker.shared.cleanupOldEntries()
 

@@ -1112,6 +1112,10 @@
 "account.adjustByEntryDesc" = "Entrez le solde correct et nous creons une ecriture de correction. Utilisez ceci si vous avez oublie d'enregistrer certaines depenses.";
 "account.changeInitialBalanceName" = "Modifier le solde initial";
 "account.changeInitialBalanceDesc" = "Entrez le solde correct et nous modifierons le solde initial de votre compte. Utilisez ceci si vous n'avez pas enregistre pendant longtemps.";
+"account.creditCard.sectionTitle" = "Carte de credit";
+"account.creditCard.paymentReminder" = "Rappeler a la date de paiement";
+"account.creditCard.paymentDay" = "Jour de paiement";
+"account.creditCard.paymentNotification" = "N'oubliez pas de payer votre carte %@ aujourd'hui";
 "category.others" = "Autres";
 "subcategory.balanceAdjustment" = "Ajustements de solde";
 

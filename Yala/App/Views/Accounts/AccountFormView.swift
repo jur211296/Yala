@@ -44,6 +44,9 @@ struct AccountFormView: View {
                     VStack(spacing: DS.Spacing.xxl) {
                         generalSection
                         currencySection
+                        if viewModel.selectedType == .creditCard {
+                            creditCardSection
+                        }
                         if viewModel.isEditing {
                             adjustmentSection
                         }
@@ -457,6 +460,34 @@ struct AccountFormView: View {
                             Text(L10n.Account.delete)
                             Spacer()
                         }
+                    }
+                    .padding()
+                }
+            }
+        }
+    }
+
+    private var creditCardSection: some View {
+        SectionBox(title: L10n.Account.CreditCard.sectionTitle) {
+            VStack(spacing: DS.Spacing.none) {
+                Toggle(isOn: $viewModel.creditCardPaymentReminder) {
+                    Text(L10n.Account.CreditCard.paymentReminder)
+                }
+                .padding()
+
+                if viewModel.creditCardPaymentReminder {
+                    SubsectionDivider()
+
+                    HStack {
+                        Text(L10n.Account.CreditCard.paymentDay)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Picker(L10n.Account.CreditCard.paymentDay, selection: $viewModel.creditCardPaymentDay) {
+                            ForEach(1...28, id: \.self) { day in
+                                Text("\(day)").tag(day)
+                            }
+                        }
+                        .pickerStyle(.menu)
                     }
                     .padding()
                 }
