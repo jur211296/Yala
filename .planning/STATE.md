@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: None
 Plan: None
 Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-02-24 — Support form sheet con picker de tipo
+Last activity: 2026-02-24 — Scheduled payments visual consistency fix
 
 ### Branch Strategy
 - **1.0** = Release (V1.0 + V1.1 mergeada)
@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-24] 328ba03 fix: scheduled payments visual consistency — hot pink expenses, sign prefix, currency conversion
 - [2026-02-24] dea0d82 feat: support form sheet with type picker before sending email
 - [2026-02-24] 0962a43 fix: show initial balance mode when editing account without balance set
 - [2026-02-24] 8fbb672 fix: a11y labels on 6 icon-only buttons + A11Y-DM audit comments on hardcoded colors
@@ -37,7 +38,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-02-24] b74e8e4 fix: budget widget uses hotPink for exceeded budgets (POLISH-1)
 - [2026-02-24] 8c87eb7 refactor: empty states — YalaEmptyState.widget style, 0-accounts guide, autocomplete feedback (EMPTY-1, EMPTY-3, EMPTY-5)
 - [2026-02-24] da1fa54 fix: A11Y-DT — @ScaledMetric en 2 vistas hardcoded, audit comments en 49 archivos
-- [2026-02-24] ad1e1f8 fix: release review — asyncAfter→Task, DS hex tokens, code dedup, small fixes (11 items)
 - [2026-02-24] 2614785 fix: release review — DS tokens, dead code cleanup (DS-3, DS-10, DS-21, DS-28, CODE-24)
 - [2026-02-24] b5506a6 fix: release review — DS tokens, a11y labels, l10n migration, code quality (~60 items)
 
@@ -566,10 +566,10 @@ Ver ROADMAP.md para más detalles de Fase 12.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: UX fix — account form shows initial balance mode for accounts without balance set (onboarding default)
-Next step: Fase 12 — siguiente item tech debt (CODE-20/21/28/30/32/41/46 pendientes)
+Stopped at: Scheduled payments visual consistency — color, sign, currency conversion across 6 files
+Next step: Fase 12 — siguiente item tech debt o polish pendiente
 Resume context:
-- A11y audit cerrado: accessibilityLabel en 6 botones, A11Y-DM comments en 4 colores
-- CLAUDE.md actualizado con patrón Audit Markers (A11Y-DT / A11Y-DM)
+- Pagos planificados: gastos hot pink con signo -, ingresos teal con +, conversión divisas en totales
+- Badge recurrente movido a icono-only junto a NatureChip en edición de transacción
 - Deferred post-release: HIGH-2/3/12/13 (pagination), HIGH-24/A11Y-41 (onboarding a11y)
 - Branch 1.0 — release branch
