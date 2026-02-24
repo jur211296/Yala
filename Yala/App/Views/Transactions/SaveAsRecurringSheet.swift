@@ -677,9 +677,10 @@ struct SaveAsRecurringSheet: View {
     }
 
     private func monthName(_ month: Int) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale.current
-        return formatter.monthSymbols[month - 1]
+        guard month >= 1, month <= 12 else { return "" }
+        var calendar = Calendar.current
+        calendar.locale = AppLocale.current
+        return calendar.monthSymbols[month - 1]
     }
 
     private func daysInMonth(_ month: Int) -> Int {

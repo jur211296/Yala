@@ -1300,6 +1300,9 @@
 "accessibility.periodComparison" = "Period comparison chart";
 "accessibility.natureTrend" = "Spending by nature chart";
 "accessibility.noData" = "No data";
+"accessibility.completeFormHint" = "To save, complete amount, account, and category";
+"accessibility.completeSelectionHint" = "Complete the required selection";
+"accessibility.periodComparisonValue %d" = "Current vs previous period, %d data points";
 "accessibility.trendChart %@" = "Trend chart for %@";
 "accessibility.dataPoints %d" = "%d data points";
 "accessibility.categoriesCount %d %@" = "%d categories, total %@";

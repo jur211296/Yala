@@ -1363,7 +1363,7 @@ struct CategoriesTabView: View {
     // MARK: - Chip Data Structures
 
     private struct CategoryChip: Identifiable {
-        let id = UUID()
+        var id: PersistentIdentifier { categoryID }
         let categoryID: PersistentIdentifier
     }
 
@@ -1432,7 +1432,7 @@ struct CategoriesTabView: View {
     // MARK: - Chip Helpers
 
     private struct AccountChip: Identifiable {
-        let id = UUID()
+        var id: String { name }
         let name: String
         let count: Int
     }
@@ -1624,6 +1624,13 @@ private struct AllSubcategoriesListContent: View {
 // MARK: - Category Row Component
 
 private struct CategoryRowView: View {
+    private static let percentFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .percent
+        f.maximumFractionDigits = 1
+        return f
+    }()
+
     let summary: CategorySpendingSummary
     let maxAmount: Double
     let currencyCode: String
@@ -1694,16 +1701,20 @@ private struct CategoryRowView: View {
     }
 
     private func formattedPercentage(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        formatter.maximumFractionDigits = 1
-        return formatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
+        Self.percentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
     }
 }
 
 // MARK: - Subcategory Row Component
 
 private struct SubcategoryRowView: View {
+    private static let percentFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .percent
+        f.maximumFractionDigits = 1
+        return f
+    }()
+
     let summary: SubcategorySpendingSummary
     let maxAmount: Double
     let currencyCode: String
@@ -1780,9 +1791,6 @@ private struct SubcategoryRowView: View {
     }
 
     private func formattedPercentage(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        formatter.maximumFractionDigits = 1
-        return formatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
+        Self.percentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
     }
 }

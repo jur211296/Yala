@@ -13,8 +13,8 @@
 | 1 | Launch & First-Run | Revisado + fixes | 3 → 0 | 8 → 2 | 7 | 7 fixes |
 | 2 | Autenticación | Revisado (limpio) | 0 | 0 | 1 | — |
 | 3 | Panel (Home) | Revisado + fixes | 4 → 0 | 10 → 2 | ~20 | 12 fixes |
-| 4 | Statistics | Pendiente | — | — | — | — |
-| 5 | Transaction CRUD | Pendiente | — | — | — | — |
+| 4 | Statistics + Records | Revisado + fixes | 0 | 14 → 0 | ~10 | 14 fixes |
+| 5 | Transaction CRUD | Revisado + fixes | 5 → 0 | 12 → 5 | ~8 | 5 fixes + 2 skip |
 | 6 | Inbox (Smart Recording) | Parcial (en G3) | — | — | — | — |
 | 7 | Planning | Pendiente | — | — | — | — |
 | 8 | Global Search | Pendiente | — | — | — | — |
@@ -295,6 +295,202 @@
 
 ---
 
+## Grupo 4: Statistics + Records
+
+### Archivos revisados
+
+#### Statistics Views (6 archivos)
+
+| Archivo | Flujo |
+|---------|-------|
+| `Yala/App/Views/Statistics/StatisticsView.swift` | Vista wrapper (limpio) |
+| `Yala/App/Views/Statistics/RecordsTabView.swift` | Tab de registros |
+| `Yala/App/Views/Statistics/TrendsTabView.swift` | Tab de tendencias |
+| `Yala/App/Views/Statistics/CategoriesTabView.swift` | Tab de categorías |
+| `Yala/App/Views/Statistics/DetailContainerView.swift` | Container con FAB y tabs |
+| `Yala/App/Views/Statistics/PeriodComparisonChartView.swift` | Chart comparación periodos |
+
+#### Records Views (5 archivos)
+
+| Archivo | Flujo |
+|---------|-------|
+| `Yala/App/Views/Records/Components/RecordDateSectionView.swift` | Header de sección fecha |
+| `Yala/App/Views/Records/Components/RecordRowView.swift` | Fila de registro |
+| `Yala/App/Views/Records/RecordsFiltersView.swift` | Filtros de registros |
+| `Yala/App/Views/Records/BulkEditSheet.swift` | Edición masiva |
+| `Yala/App/Views/Records/RecordsStandaloneView.swift` | Vista standalone registros |
+
+#### ViewModels (3 archivos)
+
+| Archivo | Propósito |
+|---------|-----------|
+| `Yala/App/ViewModels/StatisticsViewModel.swift` | ViewModel Statistics |
+| `Yala/App/ViewModels/RecordsViewModel.swift` | ViewModel Records |
+| `Yala/App/ViewModels/RecordsFiltersViewModel.swift` | ViewModel filtros |
+
+### Issues encontrados
+
+#### ALTA (0)
+
+No se encontraron issues de severidad alta.
+
+#### MEDIA (14)
+
+| ID | Archivo:Línea | Descripción |
+|----|---------------|-------------|
+| G4-RT-01 | `RecordsTabView.swift:420` | `AccountChip` usa `let id = UUID()` — ID no determinista |
+| G4-RT-02 | `RecordsTabView.swift:426` | `CategoryChip` usa `let id = UUID()` — idem |
+| G4-RT-03 | `RecordsTabView.swift:431` | `SubcategoryChip` usa `let id = UUID()` — idem |
+| G4-RT-04 | `RecordsTabView.swift:446` | `NatureChipData` usa `let id = UUID()` — idem |
+| G4-TT-01 | `TrendsTabView.swift:1208,1214,1218,1226` | 4 chip structs con `let id = UUID()` — mismos que RecordsTabView |
+| G4-CT-01 | `CategoriesTabView.swift:1365,1434` | `CategoryChip` y `AccountChip` con `let id = UUID()` |
+| G4-CT-05 | `CategoriesTabView.swift:1696` | `NumberFormatter` inline en `formattedPercentage()` |
+| G4-CT-06 | `CategoriesTabView.swift:1782` | `NumberFormatter` inline en `SubcategoryRowView.formattedPercentage()` |
+| G4-PC-01 | `PeriodComparisonChartView.swift:459` | `DateFormatter` inline en `periodLabel()` |
+| G4-PC-02 | `PeriodComparisonChartView.swift:238-239` | Accessibility values hardcodeados: `"Sin datos"`, `"Periodo actual vs anterior"` |
+| G4-DC-01 | `DetailContainerView.swift:486` | `accessibilityHint("Crea al menos una cuenta y una categoría")` sin L10n |
+| G4-RV-01 | `RecordDateSectionView.swift:30` | `DateFormatter` inline |
+| G4-RV-04 | `RecordsFiltersView.swift:558,641,661` | `"Atrás"` hardcodeado ×3 — L10n.Action.back existe |
+| G4-RV-10 | `RecordsStandaloneView.swift:323` | `accessibilityHint` hardcodeado en español sin L10n |
+
+#### BAJA (~10)
+
+##### UUID no determinista (patrón repetido)
+
+> Los ~12 chip structs con `UUID()` son el mismo patrón. Un fix futuro: extraer un struct genérico `FilterChipModel<ID>` reutilizable.
+
+##### DS Compliance
+
+| ID | Archivo:Línea | Descripción |
+|----|---------------|-------------|
+| G4-RV-05 | `RecordsFiltersView.swift:277,610` | `.frame(width: 8/10)` color dots hardcodeados |
+| G4-RV-07 | `BulkEditSheet.swift:309` | `.frame(width: 36, height: 36)` icon size |
+| G4-RV-08 | `BulkEditSheet.swift:545` | `.frame(width: 28, height: 28)` tag icon |
+
+##### Accesibilidad
+
+| ID | Archivo:Línea | Descripción |
+|----|---------------|-------------|
+| G4-RV-06 | `BulkEditSheet.swift:444,695` | `"Completa la selección requerida"` sin L10n |
+
+##### Mantenibilidad
+
+| ID | Archivo:Línea | Descripción |
+|----|---------------|-------------|
+| G4-VM-04 | `StatisticsViewModel.swift:472-484` | Filtrado duplicado: `allAccountTxns` idéntico a `accountTransactions` |
+| G4-VM-05 | `StatisticsViewModel.swift:354-393` | Income/expense calculado dos veces (local + TrendDataProcessor) |
+| G4-VM-06 | `RecordsViewModel.swift:420-527` | 6 métodos bulk con patrón repetido → candidato a helper |
+| G4-VM-11 | `StatisticsViewModel.swift:145` | Propiedades deprecated `customStartDate`/`customEndDate` sin uso |
+| G4-VM-12 | `RecordsViewModel.swift:81` | Idem propiedades deprecated |
+
+### Fixes aplicados (2026-02-23)
+
+Todos los 14 MEDIA resueltos:
+- G4-RT-01/02/03/04: UUID → ID determinista en RecordsTabView chip structs
+- G4-TT-01/02/03/04: UUID → ID determinista en TrendsTabView chip structs
+- G4-CT-01: UUID → ID determinista en CategoriesTabView chip structs
+- G4-CT-05/06: NumberFormatter inline → `static let percentFormatter`
+- G4-PC-01: DateFormatter inline → `static let periodDayFormatter/periodMonthFormatter`
+- G4-PC-02: Accessibility values → `L10n.Accessibility.noData` + `periodComparisonValue`
+- G4-DC-01: Hint → `L10n.Accessibility.createAccountFirst`
+- G4-RV-01: DateFormatter inline → `static let sectionDateFormatter`
+- G4-RV-04: `"Atrás"` ×3 → `L10n.Action.back`
+- G4-RV-10: Hint → `L10n.Accessibility.createAccountFirst`
+- G4-RV-06: `"Completa la selección requerida"` → `L10n.Accessibility.completeSelectionHint`
+
+### Hallazgos positivos
+
+- `StatisticsView.swift` limpio — buen wrapper delegando a `DetailContainerView`
+- `RecordRowView.swift` bien estructurado con DS tokens
+- Manejo de errores correcto en todos los ViewModels (do/catch con #if DEBUG)
+- Bulk edit con `TransactionService.shared.notifyWidgets()` correcto
+- `RecordsFiltersViewModel` con tests existentes (3 tests)
+- Period comparison con `PreviousPeriodHelper` reutilizado
+- FAB en DetailContainerView reutiliza misma lógica que PanelView
+
+---
+
+## Grupo 5: Transaction CRUD
+
+### Archivos revisados (27 archivos)
+
+| Categoría | Archivos |
+|-----------|----------|
+| Views principales | `NewTransactionView.swift`, `TransactionSuccessView.swift` |
+| Componentes form | `TransactionAmountInputView`, `TransferAmountInputView`, `TransactionTypeSelectorView`, `NatureSelectorSheet`, `NatureEditChip`, `DatePickerSheet`, `SelectionChip`, `NumericKeypadView`, `TransactionFormRow`, `TransactionTypeSegmentedView` |
+| Sheets selector | `AccountSelectorSheet`, `SubcategorySelectorSheet`, `TagSelectorSheet`, `SaveAsFavoriteSheet`, `SaveAsRecurringSheet`, `DescriptionAutocomplete` |
+| ViewModels | `NewTransactionViewModel` (35 tests), `AccountSelectorViewModel`, `SubcategorySelectorViewModel`, `TagSelectorViewModel` |
+| Services | `TransactionService`, `TransactionUpdateService` |
+| Models | `TransactionFormModels` |
+
+### Issues encontrados
+
+#### ALTA (5)
+
+| ID | Archivo:Línea | Descripción |
+|----|---------------|-------------|
+| G5-SV-01 | `TransactionService.swift:180` | `bulkAddTags` no llama `WidgetDataCache.updateCache` — widgets quedan desactualizados |
+| G5-SV-02 | `TransactionService.swift:195` | `bulkRemoveTags` idem — falta cache invalidation |
+| G5-SV-03 | `NewTransactionViewModel.swift:649,665` | Transfer creation usa `.category` pero edit usa `.safeCategory` — inconsistencia, posible category nil |
+| G5-TV-02 | `NewTransactionView.swift:1015` | `accessibilityHint("Para guardar, completa monto...")` hardcodeado en español |
+| G5-TV-03 | `NumericKeypadView.swift:97` | `"Borrar"` hardcodeado en `accessibilityText` |
+
+#### MEDIA (12)
+
+| ID | Archivo:Línea | Descripción |
+|----|---------------|-------------|
+| G5-TV-05 | `TransactionFormRow.swift:247` | DateFormatter inline en `formattedDate` |
+| G5-TV-06 | `TransactionSuccessView.swift:308` | DateFormatter inline en `formattedDate` |
+| G5-TC-01 | `SaveAsRecurringSheet.swift:680` | DateFormatter inline en `monthName()` + `Locale.current` en vez de `AppLocale.current` |
+| G5-TC-04 | `SaveAsRecurringSheet.swift:682` | `monthSymbols[month - 1]` sin bounds check — crash si month fuera de 1-12 |
+| G5-SV-05 | TransactionService + RecordsViewModel | 6 métodos bulk duplicados entre ambos archivos — SSOT no definida |
+| G5-SV-06 | `NewTransactionViewModel.swift:750,823` | `context.save()` intermedio en `ensureTransferCategory` falla silenciosamente |
+| G5-DC-01 | `DetailContainerView.swift:486` | `accessibilityHint` hardcodeado español (repetido de G4) |
+| G5-PC-02 | `PeriodComparisonChartView.swift:238` | `"Sin datos"`, `"Periodo actual vs anterior"` sin L10n |
+| G5-RV-04 | `RecordsFiltersView.swift:558,641,661` | `"Atrás"` hardcodeado ×3 — `L10n.Action.back` existe |
+| G5-RV-10 | `RecordsStandaloneView.swift:323` | `accessibilityHint` hardcodeado español |
+| G5-RV-06 | `BulkEditSheet.swift:444,695` | `"Completa la selección requerida"` sin L10n |
+| G5-RV-01 | `RecordDateSectionView.swift:30` | DateFormatter inline |
+
+#### BAJA (~8)
+
+| ID | Archivo:Línea | Descripción |
+|----|---------------|-------------|
+| G5-TC-07 | `TransactionTypeSelectorView.swift:43` | `DS.Chip.paddingH` usado para vertical padding |
+| G5-TC-08 | `SaveAsRecurringSheet.swift:308` | Toggle sin accessibilityLabel |
+| G5-TV-14 | `TransactionTypeSegmentedView.swift:58` | Font sin DS.Typography |
+| G5-SV-08 | `NewTransactionViewModel.swift:413` | Comentario duplicado |
+| G5-RV-05 | `RecordsFiltersView.swift:277,610` | Circle sizes hardcodeados |
+| G5-RV-07 | `BulkEditSheet.swift:309` | Icon frame 36×36 sin DS token |
+
+### Fixes aplicados (2026-02-23)
+
+5 ALTA + 7 MEDIA resueltos:
+- G5-SV-01/02: `WidgetDataCache.updateCache` en `bulkAddTags`/`bulkRemoveTags`
+- G5-SV-03: `.category` → `.safeCategory` en transfer creation
+- G5-TV-02: Hint → `L10n.Accessibility.completeFormHint`
+- G5-TV-03: `"Borrar"` → `L10n.Action.delete`
+- G5-TV-05: DateFormatter inline → `static let dateFormatter` (DateFormRow)
+- G5-TV-06: DateFormatter inline → `static let dateFormatter` (TransactionSuccessView)
+- G5-TC-01/04: `monthName()` → Calendar.monthSymbols + guard + AppLocale
+- G5-DC-01, G5-PC-02, G5-RV-04, G5-RV-10, G5-RV-06, G5-RV-01: (resueltos en G4 fixes arriba)
+
+**SKIP (refactor futuro):**
+- G5-SV-05: Bulk methods duplicados TransactionService vs RecordsViewModel — requiere consolidar 6 métodos
+- G5-SV-06: Intermediate save en `ensureTransferCategory` — funciona correctamente, optimización no bug
+
+### Hallazgos positivos
+
+- `NewTransactionViewModel` tiene 35 tests — excelente cobertura
+- Error handling correcto con do/catch en todos los saves
+- `requireContext()` pattern en TransactionService
+- L10n extensivo en >95% de strings visibles
+- Transfer pair management con `transferPairID` bidireccional
+- `MerchantMemoryService` integrado para auto-categorización
+- Validación de campos antes de save (`canSave` computed property)
+
+---
+
 ## Archivos limpios (sin issues)
 
 Estos archivos fueron revisados y **no presentaron issues**:
@@ -309,6 +505,20 @@ Estos archivos fueron revisados y **no presentaron issues**:
 | G3 | `BalanceStatusIndicator.swift` |
 | G3 | `PieChartVariationHeader.swift` |
 | G3 | `NatureCompactLegendItem.swift` |
+| G4 | `StatisticsView.swift` |
+| G4 | `RecordRowView.swift` |
+| G5 | `AccountSelectorSheet.swift` |
+| G5 | `SubcategorySelectorSheet.swift` |
+| G5 | `TagSelectorSheet.swift` |
+| G5 | `SaveAsFavoriteSheet.swift` |
+| G5 | `TransactionAmountInputView.swift` |
+| G5 | `TransferAmountInputView.swift` |
+| G5 | `NatureSelectorSheet.swift` |
+| G5 | `NatureEditChip.swift` |
+| G5 | `DatePickerSheet.swift` |
+| G5 | `DescriptionAutocomplete.swift` |
+| G5 | `TransactionUpdateService.swift` |
+| G5 | `TransactionFormModels.swift` |
 
 ---
 

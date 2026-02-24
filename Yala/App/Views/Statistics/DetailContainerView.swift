@@ -483,7 +483,7 @@ struct DetailContainerView: View {
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
             .disabled(!canUseVoiceInput)
-            .accessibilityHint(!canUseVoiceInput ? "Crea al menos una cuenta y una categoría" : "")
+            .accessibilityHint(!canUseVoiceInput ? L10n.Accessibility.createAccountFirst : "")
                 }
             }
         }

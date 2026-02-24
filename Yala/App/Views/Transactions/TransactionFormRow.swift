@@ -207,6 +207,13 @@ struct NatureChip: View {
 
 /// Fila para selección de fecha
 struct DateFormRow: View {
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "d MMM yyyy"
+        return f
+    }()
+
     @Binding var date: Date
     let action: () -> Void
 
@@ -244,10 +251,7 @@ struct DateFormRow: View {
         if Calendar.current.isDateInToday(date) {
             return L10n.Date.today
         }
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
-        formatter.dateFormat = "d MMM yyyy"
-        return formatter.string(from: date)
+        return Self.dateFormatter.string(from: date)
     }
 }
 

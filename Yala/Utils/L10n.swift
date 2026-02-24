@@ -462,6 +462,9 @@ enum L10n {
         static var periodComparison: String { ls("accessibility.periodComparison", comment: "") }
         static var natureTrend: String { ls("accessibility.natureTrend", comment: "") }
         static var noData: String { ls("accessibility.noData", comment: "") }
+        static var completeFormHint: String { ls("accessibility.completeFormHint", comment: "") }
+        static var completeSelectionHint: String { ls("accessibility.completeSelectionHint", comment: "") }
+        static func periodComparisonValue(_ count: Int) -> String { String(format: ls("accessibility.periodComparisonValue %d", comment: ""), count) }
         static func trendChart(_ type: String) -> String { String(format: ls("accessibility.trendChart %@", comment: ""), type) }
         static func dataPoints(_ count: Int) -> String { String(format: ls("accessibility.dataPoints %d", comment: ""), count) }
         static func categoriesCount(_ count: Int, _ total: String) -> String { String(format: ls("accessibility.categoriesCount %d %@", comment: ""), count, total) }

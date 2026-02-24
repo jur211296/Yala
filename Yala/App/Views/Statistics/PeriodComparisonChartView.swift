@@ -235,8 +235,8 @@ struct PeriodComparisonChartView: View {
         .chartXSelection(value: $draggingDate)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.Accessibility.periodComparison)
-        .accessibilityValue(currentPeriodPoints.isEmpty ? "Sin datos" :
-            "Periodo actual vs anterior, \(currentPeriodPoints.count) puntos")
+        .accessibilityValue(currentPeriodPoints.isEmpty ? L10n.Accessibility.noData :
+            L10n.Accessibility.periodComparisonValue(currentPeriodPoints.count))
         .frame(height: 220)  // Match TrendChartView height
         .chartLegend(position: .top, alignment: .leading) {
             HStack(spacing: DS.Spacing.lg) {
@@ -454,14 +454,26 @@ struct PeriodComparisonChartView: View {
         }
     }
 
+    private static let periodDayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "d MMM yy"
+        return f
+    }()
+
+    private static let periodMonthFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "MMM yy"
+        return f
+    }()
+
     /// Format period label for tooltip
     private func periodLabel(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
+        let formatter: DateFormatter
         switch grouping {
-        case .day: formatter.dateFormat = "d MMM yy"  // 19 dic 25
-        case .week: formatter.dateFormat = "d MMM yy"  // 19 dic 25
-        case .month: formatter.dateFormat = "MMM yy"  // ene 25
+        case .day, .week: formatter = Self.periodDayFormatter
+        case .month: formatter = Self.periodMonthFormatter
         }
         return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
     }

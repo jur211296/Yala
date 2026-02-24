@@ -36,6 +36,13 @@ struct TransactionSuccessData {
 // MARK: - Transaction Success View
 
 struct TransactionSuccessView: View {
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "d MMM yyyy"
+        f.locale = AppLocale.current
+        return f
+    }()
+
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 36
 
     let data: TransactionSuccessData
@@ -305,10 +312,7 @@ struct TransactionSuccessView: View {
     }
 
     private var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "d MMM yyyy"
-        formatter.locale = AppLocale.current
-        return formatter.string(from: data.date)
+        Self.dateFormatter.string(from: data.date)
     }
 
     private func detailRow(icon: String, label: String, value: String) -> some View {

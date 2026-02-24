@@ -94,7 +94,7 @@ enum KeypadButton: Identifiable {
         switch self {
         case .digit(let value): return value
         case .decimal: return Locale.current.decimalSeparator ?? "."
-        case .delete: return "Borrar"
+        case .delete: return L10n.Action.delete
         }
     }
 }

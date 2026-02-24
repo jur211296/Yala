@@ -1300,6 +1300,9 @@
 "accessibility.periodComparison" = "Grafico di confronto tra periodi";
 "accessibility.natureTrend" = "Grafico delle spese per natura";
 "accessibility.noData" = "Nessun dato";
+"accessibility.completeFormHint" = "Per salvare, completa importo, conto e categoria";
+"accessibility.completeSelectionHint" = "Completa la selezione richiesta";
+"accessibility.periodComparisonValue %d" = "Periodo attuale vs precedente, %d punti";
 "accessibility.trendChart %@" = "Grafico delle tendenze di %@";
 "accessibility.dataPoints %d" = "%d punti";
 "accessibility.categoriesCount %d %@" = "%d categorie, totale %@";

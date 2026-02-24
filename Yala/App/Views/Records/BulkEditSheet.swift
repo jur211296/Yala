@@ -441,7 +441,7 @@ struct BulkTagEditorSheet: View {
                         dismiss()
                     }
                     .disabled(tagsToAdd.isEmpty && tagsToRemove.isEmpty)
-                    .accessibilityHint(tagsToAdd.isEmpty && tagsToRemove.isEmpty ? "Completa la selección requerida" : "")
+                    .accessibilityHint(tagsToAdd.isEmpty && tagsToRemove.isEmpty ? L10n.Accessibility.completeSelectionHint : "")
                 }
             }
         }
@@ -692,7 +692,7 @@ struct BulkAmountEditorSheet: View {
                         dismiss()
                     }
                     .disabled(amountText.isEmpty)
-                    .accessibilityHint(amountText.isEmpty ? "Completa la selección requerida" : "")
+                    .accessibilityHint(amountText.isEmpty ? L10n.Accessibility.completeSelectionHint : "")
                 }
             }
             .onAppear {

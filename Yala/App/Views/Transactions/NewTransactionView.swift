@@ -1012,7 +1012,7 @@ struct NewTransactionView: View {
         .tint(viewModel.canSave ? theme.accent : DS.Semantic.disabledForeground.opacity(0.4))
         .controlSize(.large)
         .disabled(!viewModel.canSave || viewModel.isSaving)
-        .accessibilityHint(!viewModel.canSave ? "Para guardar, completa monto, cuenta y categoría" : "")
+        .accessibilityHint(!viewModel.canSave ? L10n.Accessibility.completeFormHint : "")
         .dsAnimation(.easeInOut(duration: 0.2), value: viewModel.canSave, reduceMotion: reduceMotion)
     }
 

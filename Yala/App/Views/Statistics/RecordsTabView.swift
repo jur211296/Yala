@@ -417,18 +417,18 @@ struct RecordsTabView: View {
     // MARK: - Chip Data Structures
 
     private struct AccountChip: Identifiable {
-        let id = UUID()
+        var id: String { name }
         let name: String
         let count: Int
     }
 
     private struct CategoryChip: Identifiable {
-        let id = UUID()
+        var id: PersistentIdentifier { categoryID }
         let categoryID: PersistentIdentifier
     }
 
     private struct SubcategoryChip: Identifiable {
-        let id = UUID()
+        var id: String { subcategoryID?.hashValue.description ?? name }
         let name: String
         let iconName: String?
         let colorHex: String?
@@ -444,7 +444,7 @@ struct RecordsTabView: View {
     }
 
     private struct NatureChipData: Identifiable {
-        let id = UUID()
+        var id: String { nature.rawValue }
         let nature: SubcategoryNature
     }
 

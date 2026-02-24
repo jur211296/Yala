@@ -1300,6 +1300,9 @@
 "accessibility.periodComparison" = "Periodenvergleichsdiagramm";
 "accessibility.natureTrend" = "Ausgaben nach Art Diagramm";
 "accessibility.noData" = "Keine Daten";
+"accessibility.completeFormHint" = "Zum Speichern Betrag, Konto und Kategorie ausfüllen";
+"accessibility.completeSelectionHint" = "Erforderliche Auswahl vervollständigen";
+"accessibility.periodComparisonValue %d" = "Aktueller vs. vorheriger Zeitraum, %d Datenpunkte";
 "accessibility.trendChart %@" = "Trenddiagramm für %@";
 "accessibility.dataPoints %d" = "%d Datenpunkte";
 "accessibility.categoriesCount %d %@" = "%d Kategorien, gesamt %@";
