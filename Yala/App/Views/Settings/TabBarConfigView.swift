@@ -237,7 +237,7 @@ struct TabBarConfigView: View {
             }
             .buttonStyle(.plain)
             .disabled(!canActivate)
-            .accessibilityHint(!canActivate ? "Límite de pestañas alcanzado" : "")
+            .accessibilityHint(!canActivate ? L10n.Accessibility.tabLimitReached : "")
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)

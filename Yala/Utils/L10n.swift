@@ -480,6 +480,8 @@ enum L10n {
         static var showMoreSubcategories: String { ls("accessibility.showMoreSubcategories", comment: "") }
         static var subscriptionToggle: String { ls("accessibility.subscriptionToggle", comment: "") }
         static var skipSync: String { ls("accessibility.skipSync", comment: "") }
+        static var tabLimitReached: String { ls("accessibility.tabLimitReached", comment: "") }
+        static var noTransactionsToExport: String { ls("accessibility.noTransactionsToExport", comment: "") }
     }
 
     // MARK: - Search

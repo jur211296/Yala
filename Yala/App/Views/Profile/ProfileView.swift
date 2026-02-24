@@ -636,7 +636,7 @@ struct ProfileView: View {
                     )
                     .opacity(!viewModel.hasTransactions ? 0.5 : 1.0)
                 }
-                .accessibilityHint(!viewModel.hasTransactions ? "No hay transacciones para exportar" : "")
+                .accessibilityHint(!viewModel.hasTransactions ? L10n.Accessibility.noTransactionsToExport : "")
                 .disabled(!viewModel.hasTransactions)
                 .buttonStyle(.plain)
 

@@ -185,7 +185,7 @@ struct CategoriesSettingsListView: View {
                                     .font(DS.Typography.title)
                                     .foregroundStyle(.red)
                             }
-                            .accessibilityLabel(L10n.Accessibility.deleteSubcategory)
+                            .accessibilityLabel(L10n.Accessibility.deleteCategory)
                             .padding(.leading, DS.Spacing.lg)
                             .padding(.trailing, DS.Spacing.sm)
                         }

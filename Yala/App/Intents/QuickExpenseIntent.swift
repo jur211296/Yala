@@ -196,6 +196,8 @@ struct QuickExpenseIntent: AppIntent {
 
         do {
             try context.save()
+            WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
         } catch {
             return .result(dialog: "shortcut.error.save")
         }

@@ -550,16 +550,20 @@ struct ScheduledPaymentsListView: View {
         .padding(.top, DS.Spacing.md)
     }
 
+    private static let longDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        formatter.timeStyle = .none
+        return formatter
+    }()
+
     private func selectedDayLabel(day: Int) -> String {
         let calendar = Calendar.current
         let month = viewModel.selectedMonth
         let components = calendar.dateComponents([.year, .month], from: month)
 
         if let date = calendar.date(from: DateComponents(year: components.year, month: components.month, day: day)) {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .long
-            formatter.timeStyle = .none
-            return formatter.string(from: date)
+            return Self.longDateFormatter.string(from: date)
         }
         return "\(day)"
     }

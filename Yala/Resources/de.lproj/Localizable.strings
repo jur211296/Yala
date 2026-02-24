@@ -1318,6 +1318,8 @@
 "accessibility.showMoreSubcategories" = "Mehr Unterkategorien anzeigen";
 "accessibility.subscriptionToggle" = "Als Abonnement markieren";
 "accessibility.skipSync" = "Warten überspringen und Einrichtung fortsetzen";
+"accessibility.tabLimitReached" = "Tab-Limit erreicht";
+"accessibility.noTransactionsToExport" = "Keine Transaktionen zum Exportieren";
 
 // MARK: - Widget Hints
 
