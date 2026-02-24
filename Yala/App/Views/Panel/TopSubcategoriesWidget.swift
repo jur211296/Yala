@@ -378,34 +378,16 @@ struct TopSubcategoriesWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            if size == .small {
-                Image(systemName: "list.bullet.indent")
-                    .font(DS.Typography.largeTitle)
-                    .foregroundStyle(.secondary.opacity(0.5))
-                Text(L10n.Empty.noExpenses)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                Image(systemName: "list.bullet.indent")
-                    .font(DS.Typography.largeTitle)
-                    .foregroundStyle(.secondary.opacity(0.5))
-                    .padding(.bottom, DS.Spacing.xs)
-
-                Text(L10n.Widget.noExpensesPeriod)
-                    .font(DS.Typography.label)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.primary)
-
-                Text(L10n.Widget.noExpensesDescriptionSubcategories)
-                    .font(DS.Typography.caption)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
-            }
+        if size == .small {
+            YalaEmptyState(icon: "list.bullet.indent", title: L10n.Empty.noExpenses, style: .widget)
+        } else {
+            YalaEmptyState(
+                icon: "list.bullet.indent",
+                title: L10n.Widget.noExpensesPeriod,
+                message: L10n.Widget.noExpensesDescriptionSubcategories,
+                style: .widget
+            )
         }
-        .frame(maxWidth: .infinity)
-        .frame(minHeight: size == .small ? 120 : 180)
-        .padding(.vertical, size == .small ? DS.Spacing.md : DS.Spacing.xxl)
     }
 
     // MARK: - Formatters

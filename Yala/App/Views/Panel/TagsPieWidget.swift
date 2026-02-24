@@ -11,8 +11,6 @@ import SwiftUI
 
 struct TagsPieWidget: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32 // A11Y-DT: @ScaledMetric
-
     let tags: [TagSpendingSummary]
     let currencyCode: String
 
@@ -80,16 +78,7 @@ struct TagsPieWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.md) {
-            Image(systemName: "tag.fill")
-                .font(.system(size: scaledEmptyIconSize))
-                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                .foregroundStyle(.secondary)
-            Text(L10n.Empty.noData)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        YalaEmptyState(icon: "tag.fill", title: L10n.Empty.noData, style: .widget)
     }
 
     // MARK: - Content Switcher

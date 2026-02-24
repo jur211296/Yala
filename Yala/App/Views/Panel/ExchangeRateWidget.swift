@@ -460,18 +460,8 @@ struct ExchangeRateWidget: View {
     }
 
     private var emptyChartView: some View {
-        VStack {
-            Image(systemName: "chart.line.downtrend.xyaxis")
-                .font(DS.Typography.title)
-                .foregroundStyle(.secondary)
-            Text(L10n.Widget.noDataForPeriod)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(height: 120)
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.bottom, DS.Spacing.lg)
+        YalaEmptyState(icon: "chart.line.downtrend.xyaxis", title: L10n.Widget.noDataForPeriod, style: .widget)
+            .frame(height: 120)
     }
 
     private var noSecondaryCurrenciesView: some View {

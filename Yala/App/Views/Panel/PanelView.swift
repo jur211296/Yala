@@ -445,25 +445,35 @@ struct PanelView: View {
             Text(L10n.Panel.accounts)
                 .font(DS.Typography.title)
 
-            AccountsCarouselView(
-                viewModel: viewModel,
-                orderedAccounts: viewModel.orderedActiveAccounts(
-                    from: accounts,
-                    sortOrderNames: accountsSortOrderNamesRaw.split(separator: "|").map(String.init)
-                ),
-                transactions: transactions,
-                isExpensesOnlyMode: sessionState.isExpensesOnlyMode,
-                onAddAccount: {
+            if accounts.isEmpty {
+                YalaEmptyState.noAccounts {
                     if isAccountsLimitReached {
                         showUpgradeForAccounts = true
                     } else {
                         accountFormSheet = AccountFormSheet(account: nil)
                     }
-                },
-                onEditAccount: { account in
-                    accountFormSheet = AccountFormSheet(account: account)
                 }
-            )
+            } else {
+                AccountsCarouselView(
+                    viewModel: viewModel,
+                    orderedAccounts: viewModel.orderedActiveAccounts(
+                        from: accounts,
+                        sortOrderNames: accountsSortOrderNamesRaw.split(separator: "|").map(String.init)
+                    ),
+                    transactions: transactions,
+                    isExpensesOnlyMode: sessionState.isExpensesOnlyMode,
+                    onAddAccount: {
+                        if isAccountsLimitReached {
+                            showUpgradeForAccounts = true
+                        } else {
+                            accountFormSheet = AccountFormSheet(account: nil)
+                        }
+                    },
+                    onEditAccount: { account in
+                        accountFormSheet = AccountFormSheet(account: account)
+                    }
+                )
+            }
         }
     }
 

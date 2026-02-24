@@ -16,8 +16,6 @@ private let naturePercentFormatter: NumberFormatter = {
 }()
 
 struct NatureTrendWidget: View {
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32 // A11Y-DT: @ScaledMetric
-
     let trendPoints: [NatureTrendPoint]
     let selectedNature: SubcategoryNature?
     let currencyCode: String
@@ -198,18 +196,7 @@ struct NatureTrendWidget: View {
                 .frame(maxWidth: .infinity)
                 Spacer()
             } else if trendPoints.isEmpty {
-                Spacer()
-                VStack(spacing: DS.Spacing.md) {
-                    Image(systemName: "chart.bar.fill")
-                        .font(.system(size: scaledEmptyIconSize))
-                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                        .foregroundStyle(.secondary)
-                    Text(L10n.Empty.noExpenses)
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-                Spacer()
+                YalaEmptyState(icon: "chart.bar.fill", title: L10n.Empty.noExpenses, style: .widget)
             } else {
                 chartView
             }

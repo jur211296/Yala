@@ -5,30 +5,35 @@ import SwiftUI
 struct YalaEmptyState: View {
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
+    enum Style { case standard, widget }
+
     let icon: String
     let title: String
     let message: String?
     let actionTitle: String?
     let action: (() -> Void)?
+    let style: Style
 
     init(
         icon: String,
         title: String,
         message: String? = nil,
         actionTitle: String? = nil,
-        action: (() -> Void)? = nil
+        action: (() -> Void)? = nil,
+        style: Style = .standard
     ) {
         self.icon = icon
         self.title = title
         self.message = message
         self.actionTitle = actionTitle
         self.action = action
+        self.style = style
     }
 
     var body: some View {
-        VStack(spacing: DS.Spacing.lg) {
+        VStack(spacing: style == .widget ? DS.Spacing.md : DS.Spacing.lg) {
             Image(systemName: icon)
-                .font(.system(size: heroIconSize, weight: .light))
+                .font(style == .widget ? DS.Typography.title : .system(size: heroIconSize, weight: .light))
                 .foregroundStyle(Color.secondary.opacity(0.6))
                 .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .accessibilityHidden(true)
@@ -55,8 +60,8 @@ struct YalaEmptyState: View {
                 .padding(.top, DS.Spacing.sm)
             }
         }
-        .padding(DS.Spacing.xxxl)
-        .frame(maxWidth: .infinity)
+        .padding(style == .widget ? DS.Spacing.lg : DS.Spacing.xxxl)
+        .frame(maxWidth: .infinity, maxHeight: style == .widget ? .infinity : nil)
     }
 }
 
@@ -158,6 +163,10 @@ extension YalaEmptyState {
             YalaEmptyState.noResults()
             Divider()
             YalaEmptyState.noTags { }
+            Divider()
+            YalaEmptyState(icon: "tag.fill", title: L10n.Empty.noData, style: .widget)
+                .frame(height: 200)
+                .background(.thCard)
         }
     }
     .background(.thBackground)

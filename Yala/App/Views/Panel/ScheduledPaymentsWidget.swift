@@ -275,24 +275,12 @@ struct ScheduledPaymentsWidget: View {
     }
 
     private var emptyListState: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "calendar.badge.clock")
-                .font(DS.Typography.largeTitle)
-                .foregroundStyle(.secondary.opacity(0.5))
-                .padding(.bottom, DS.Spacing.xs)
-
-            Text(L10n.Scheduled.Widget.emptyTitle)
-                .font(DS.Typography.label)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.primary)
-
-            Text(L10n.Scheduled.Widget.emptyMessage)
-                .font(DS.Typography.caption)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.vertical, DS.Spacing.xl)
+        YalaEmptyState(
+            icon: "calendar.badge.clock",
+            title: L10n.Scheduled.Widget.emptyTitle,
+            message: L10n.Scheduled.Widget.emptyMessage,
+            style: .widget
+        )
     }
 
     private func paymentRow(_ item: UpcomingPaymentItem) -> some View {

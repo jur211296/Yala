@@ -11,8 +11,6 @@ import SwiftUI
 
 struct CategoriesPieWidget: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32 // A11Y-DT: @ScaledMetric
-
     let categories: [CategorySpendingSummary]
     let currencyCode: String
 
@@ -107,18 +105,7 @@ struct CategoriesPieWidget: View {
             .padding(.top, DS.Spacing.lg)
 
             // Empty content
-            VStack(spacing: DS.Spacing.md) {
-                Spacer()
-                Image(systemName: "folder.fill")
-                    .font(.system(size: scaledEmptyIconSize))
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                    .foregroundStyle(.secondary)
-                Text(L10n.Empty.noExpenses)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            YalaEmptyState(icon: "folder.fill", title: L10n.Empty.noExpenses, style: .widget)
         }
     }
 

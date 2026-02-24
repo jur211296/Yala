@@ -11,8 +11,6 @@ import SwiftUI
 struct CashFlowWidget: View {
     @Environment(\.yalaTheme) private var theme
     @AppStorage("averageLineMode") private var averageLineMode: Int = 1
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32 // A11Y-DT: @ScaledMetric
-
     let summary: CashFlowSummary
     let size: WidgetSize
     let period: String
@@ -816,20 +814,7 @@ struct CashFlowWidget: View {
 
     // Empty state view
     private var emptyStateView: some View {
-        VStack(spacing: DS.Spacing.md) {
-            Spacer()
-            Image(systemName: "chart.bar.xaxis")
-                .font(.system(size: scaledEmptyIconSize))
-                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                .foregroundStyle(.secondary)
-            Text(L10n.Empty.noData)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.bottom, DS.Spacing.xl)
+        YalaEmptyState(icon: "chart.bar.xaxis", title: L10n.Empty.noData, style: .widget)
     }
 
     // Helpers

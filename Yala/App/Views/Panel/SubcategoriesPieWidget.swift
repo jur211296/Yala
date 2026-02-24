@@ -11,8 +11,6 @@ import SwiftUI
 
 struct SubcategoriesPieWidget: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32 // A11Y-DT: @ScaledMetric
-
     let subcategories: [SubcategorySpendingSummary]
     let currencyCode: String
 
@@ -106,18 +104,7 @@ struct SubcategoriesPieWidget: View {
             .padding(.top, DS.Spacing.lg)
 
             // Empty content
-            VStack(spacing: DS.Spacing.md) {
-                Spacer()
-                Image(systemName: "list.bullet.indent")
-                    .font(.system(size: scaledEmptyIconSize))
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                    .foregroundStyle(.secondary)
-                Text(L10n.Empty.noExpenses)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            YalaEmptyState(icon: "list.bullet.indent", title: L10n.Empty.noExpenses, style: .widget)
         }
     }
 

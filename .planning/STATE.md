@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-24] 8c87eb7 refactor: empty states — YalaEmptyState.widget style, 0-accounts guide, autocomplete feedback (EMPTY-1, EMPTY-3, EMPTY-5)
 - [2026-02-24] da1fa54 fix: A11Y-DT — @ScaledMetric en 2 vistas hardcoded, audit comments en 49 archivos
 - [2026-02-24] ad1e1f8 fix: release review — asyncAfter→Task, DS hex tokens, code dedup, small fixes (11 items)
 - [2026-02-24] 2614785 fix: release review — DS tokens, dead code cleanup (DS-3, DS-10, DS-21, DS-28, CODE-24)
@@ -37,8 +38,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-02-23] b1e724a fix: flow review G7+G8+G13+G14 — yearly IDs, WidgetDataCache, static formatters, l10n accessibility
 - [2026-02-23] 821a3ea fix: flow review G6 — bulk MerchantMemory, static formatters, l10n accessibility
 - [2026-02-23] e39d8d4 fix: flow review G4+G5 — widget cache, safeCategory, deterministic IDs, static formatters, l10n accessibility
-- [2026-02-23] 8c59350 fix: flow review G3 — budget currency, task leaks, static formatters, l10n accessibility
-- [2026-02-23] 2a15388 fix: flow review G1 — onboarding scroll lock, language detection, trial error state
 
 - [2026-02-20] 4add74e feat: dev-only subscription reset on data wipe for testing
 - [2026-02-20] 4a57873 fix: improve ProTrialOfferSheet layout and show success view after purchase
@@ -452,9 +451,9 @@ Refactorización completa del sistema de colores. 6 temas (3 free + 3 PRO). Yala
 **Prioridad: Tech Debt del Release Review (10 items)**
 
 Empty States:
-- [ ] EMPTY-1: Widgets no usan `YalaEmptyState` (11 widgets)
-- [ ] EMPTY-3: 0 cuentas sin guía en Panel header
-- [ ] EMPTY-5: Autocomplete sin feedback "sin resultados"
+- [x] EMPTY-1: Widgets migrados a `YalaEmptyState` con `Style.widget` (11 widgets, ~200 LOC eliminados)
+- [x] EMPTY-3: Empty state `YalaEmptyState.noAccounts` en Panel cuando 0 cuentas
+- [x] EMPTY-5: Autocomplete muestra "Sin resultados" cuando mención activa sin matches
 
 Accessibility:
 - [x] A11Y-DT: Migrar `.font(.system(size:))` a Dynamic Type — 2 fixes (@ScaledMetric + DT cap), 47 archivos auditados con comentarios A11Y-DT
@@ -559,8 +558,8 @@ Ver ROADMAP.md para más detalles de Fase 12.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: A11Y-DT completado — 2 fixes @ScaledMetric + 49 archivos auditados con comentarios
-Next step: Fase 12 — siguiente item tech debt (ver lista en Fase 12 backlog)
+Stopped at: EMPTY-1/3/5 completados — YalaEmptyState.widget style, 11 widgets migrados, 0-accounts guide, autocomplete feedback
+Next step: Fase 12 — siguiente item tech debt (CODE-20/21/28/30/32/41/46 pendientes)
 Resume context:
 - FLOW-REVIEW.md y RELEASE-REVIEW.md archivados (cerrados)
 - 10 items pendientes migrados a STATE.md Fase 12 (EMPTY-1/3/5, CODE-20/21/28/30/32/41/46)

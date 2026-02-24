@@ -117,48 +117,22 @@ struct BudgetsWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            Image(systemName: hasBudgetsButNoFavorites ? "star" : "chart.pie.fill")
-                .font(DS.Typography.largeTitle)
-                .foregroundStyle(.secondary.opacity(0.5))
-                .padding(.bottom, DS.Spacing.xs)
-
-            if hasBudgetsButNoFavorites {
-                Text(L10n.Budgets.Widget.noFavoritesTitle)
-                    .font(DS.Typography.label)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.primary)
-
-                Text(L10n.Budgets.Widget.noFavoritesMessage)
-                    .font(DS.Typography.caption)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
-
-                // Quick action to edit favorites
-                if onEditFavorites != nil {
-                    Button {
-                        onEditFavorites?()
-                    } label: {
-                        Text(L10n.Budgets.Widget.selectFavorites)
-                            .font(DS.Typography.label)
-                            .foregroundStyle(.primary)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.top, DS.Spacing.sm)
-                }
-            } else {
-                Text(L10n.Budgets.emptyTitle)
-                    .font(DS.Typography.label)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.primary)
-
-                Text(L10n.Budgets.emptyMessage)
-                    .font(DS.Typography.caption)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
-            }
+        if hasBudgetsButNoFavorites {
+            YalaEmptyState(
+                icon: "star",
+                title: L10n.Budgets.Widget.noFavoritesTitle,
+                message: L10n.Budgets.Widget.noFavoritesMessage,
+                actionTitle: onEditFavorites != nil ? L10n.Budgets.Widget.selectFavorites : nil,
+                action: onEditFavorites,
+                style: .widget
+            )
+        } else {
+            YalaEmptyState(
+                icon: "chart.pie.fill",
+                title: L10n.Budgets.emptyTitle,
+                message: L10n.Budgets.emptyMessage,
+                style: .widget
+            )
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.vertical, DS.Spacing.xxl)
     }
 }

@@ -898,7 +898,7 @@ struct NewTransactionView: View {
     /// Binding to control popover visibility
     private var showAutocompletePopover: Binding<Bool> {
         Binding(
-            get: { !autocompleteSuggestions.isEmpty },
+            get: { currentMentionState != nil },
             set: { if !$0 { currentMentionState = nil } }
         )
     }
@@ -906,26 +906,34 @@ struct NewTransactionView: View {
     /// Content for the autocomplete popover - clean list style (max 5 items)
     private var autocompletePopoverContent: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            ForEach(Array(autocompleteSuggestions.prefix(5))) { suggestion in
-                Button {
-                    handleAutocompleteSuggestion(suggestion)
-                } label: {
-                    HStack(spacing: DS.Spacing.sm) {
-                        Circle()
-                            .fill(Color(hex: suggestion.colorHex))
-                            .frame(width: 10, height: 10)
-
-                        Text(suggestion.name)
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.primary)
-
-                        Spacer()
-                    }
+            if autocompleteSuggestions.isEmpty {
+                Text(L10n.Search.noResults)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.sm)
-                    .contentShape(Rectangle())
+            } else {
+                ForEach(Array(autocompleteSuggestions.prefix(5))) { suggestion in
+                    Button {
+                        handleAutocompleteSuggestion(suggestion)
+                    } label: {
+                        HStack(spacing: DS.Spacing.sm) {
+                            Circle()
+                                .fill(Color(hex: suggestion.colorHex))
+                                .frame(width: 10, height: 10)
+
+                            Text(suggestion.name)
+                                .font(DS.Typography.subheadline)
+                                .foregroundStyle(.primary)
+
+                            Spacer()
+                        }
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
         .padding(.vertical, DS.Spacing.sm)

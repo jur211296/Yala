@@ -236,23 +236,11 @@ struct RecentRecordsWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "list.bullet.rectangle")
-                .font(DS.Typography.largeTitle)
-                .foregroundStyle(.secondary.opacity(0.5))
-                .padding(.bottom, DS.Spacing.xs)
-
-            Text(L10n.Widget.noRecordsForFilters)
-                .font(DS.Typography.label)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.primary)
-
-            Text(L10n.Widget.recordsWillAppear)
-                .font(DS.Typography.caption)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.vertical, DS.Spacing.xxl)
+        YalaEmptyState(
+            icon: "list.bullet.rectangle",
+            title: L10n.Widget.noRecordsForFilters,
+            message: L10n.Widget.recordsWillAppear,
+            style: .widget
+        )
     }
 }
