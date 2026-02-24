@@ -184,7 +184,19 @@ final class AccountFormViewModel {
 
     /// Call this after transactions are loaded to pre-fill the initial balance
     func initializeBalanceIfNeeded() {
-        guard isEditing, !hasInitializedBalance, !allTransactions.isEmpty else { return }
+        guard isEditing, !hasInitializedBalance else { return }
+
+        // If the account has no initial balance transaction, show "Saldo inicial" mode
+        // instead of "Ajustar por registro" — e.g., default account from onboarding
+        let hasInitialBalanceTx = allTransactions.contains {
+            $0.account?.persistentModelID == accountToEdit?.persistentModelID
+                && $0.balanceAdjustmentType == InitialBalanceService.typeInitialBalance
+        }
+        if !hasInitialBalanceTx {
+            selectedAdjustmentMode = .changeInitialBalance
+        }
+
+        guard !allTransactions.isEmpty else { return }
 
         if selectedAdjustmentMode == .changeInitialBalance {
             let existingInitial = existingInitialBalance
@@ -251,6 +263,15 @@ final class AccountFormViewModel {
 
     var isEditing: Bool {
         accountToEdit != nil
+    }
+
+    /// Whether to show the adjustment mode selector (only when account already has an initial balance)
+    var showAdjustmentMode: Bool {
+        guard isEditing else { return false }
+        return allTransactions.contains {
+            $0.account?.persistentModelID == accountToEdit?.persistentModelID
+                && $0.balanceAdjustmentType == InitialBalanceService.typeInitialBalance
+        }
     }
 
     var colorOptions: [String] {

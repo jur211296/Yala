@@ -47,7 +47,7 @@ struct AccountFormView: View {
                         if viewModel.selectedType == .creditCard {
                             creditCardSection
                         }
-                        if viewModel.isEditing {
+                        if viewModel.showAdjustmentMode {
                             adjustmentSection
                         }
                         balanceSection
