@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-23] 821a3ea fix: flow review G6 — bulk MerchantMemory, static formatters, l10n accessibility
 - [2026-02-23] e39d8d4 fix: flow review G4+G5 — widget cache, safeCategory, deterministic IDs, static formatters, l10n accessibility
 - [2026-02-23] 8c59350 fix: flow review G3 — budget currency, task leaks, static formatters, l10n accessibility
 - [2026-02-23] 2a15388 fix: flow review G1 — onboarding scroll lock, language detection, trial error state
