@@ -28,6 +28,8 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-24] ad1e1f8 fix: release review — asyncAfter→Task, DS hex tokens, code dedup, small fixes (11 items)
+- [2026-02-24] 2614785 fix: release review — DS tokens, dead code cleanup (DS-3, DS-10, DS-21, DS-28, CODE-24)
 - [2026-02-24] b5506a6 fix: release review — DS tokens, a11y labels, l10n migration, code quality (~60 items)
 - [2026-02-24] d5ba5be fix: flow review final pass — data version sync, l10n accessibility, static formatter
 - [2026-02-23] 1a65c0a fix: flow review G9+G10 — WidgetDataCache, static formatters, l10n accessibility
@@ -36,11 +38,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-02-23] e39d8d4 fix: flow review G4+G5 — widget cache, safeCategory, deterministic IDs, static formatters, l10n accessibility
 - [2026-02-23] 8c59350 fix: flow review G3 — budget currency, task leaks, static formatters, l10n accessibility
 - [2026-02-23] 2a15388 fix: flow review G1 — onboarding scroll lock, language detection, trial error state
-- [2026-02-23] be3cb18 fix: eliminate force unwraps and silent try? for pre-launch stability
-- [2026-02-23] ec03800 a11y: batch 10B — localize accessibility labels, reduceMotion support, and selection traits
-- [2026-02-23] 4430d00 l10n+ds: batch 10A — localize remaining hardcoded strings and DS color cleanup
-- [2026-02-20] d534a4f feat: add VoiceOver accessibility labels to all charts
-- [2026-02-20] 54185b5 fix: resolve pre-launch warnings — legal link and force unwraps
 - [2026-02-20] 4add74e feat: dev-only subscription reset on data wipe for testing
 - [2026-02-20] 4a57873 fix: improve ProTrialOfferSheet layout and show success view after purchase
 - [2026-02-20] 9860a60 feat: add free trial UI — paywall trial info, post-onboarding offer sheet, StoreKit config
@@ -450,7 +447,23 @@ Refactorización completa del sistema de colores. 6 temas (3 free + 3 PRO). Yala
 
 ### Siguiente: Fase 12 — Plataforma Extendida (V1.2)
 
-Ver ROADMAP.md para detalles.
+**Prioridad: Tech Debt del Release Review (10 items)**
+
+Empty States:
+- [ ] EMPTY-1: Widgets no usan `YalaEmptyState` (11 widgets)
+- [ ] EMPTY-3: 0 cuentas sin guía en Panel header
+- [ ] EMPTY-5: Autocomplete sin feedback "sin resultados"
+
+Code Quality:
+- [ ] CODE-20: Tags relationship sin `inverse` explícito (TransactionItem.swift)
+- [ ] CODE-21: Triple save en creación de transfer (NewTransactionViewModel)
+- [ ] CODE-28: Bulk delete bypasea EntityDeletionService (RecordsViewModel)
+- [ ] CODE-30: Legacy fields `month/year/category` en Budget model (dead code)
+- [ ] CODE-32: BudgetPeriodSelectorSheet scroll picker frágil
+- [ ] CODE-41: Direct modelContext.save() bypasea DraftService (InboxView)
+- [ ] CODE-46: 470 líneas de search embebidas en ContentView (extraer)
+
+Ver ROADMAP.md para más detalles de Fase 12.
 
 ### Fase 7: Beta Preparation (V1.0 Release) ✅ COMPLETADA
 
@@ -541,10 +554,10 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: RELEASE-REVIEW ~60 non-high-risk items completed (b5506a6)
-Next step: Fase 12 — Plataforma Extendida
+Stopped at: FLOW-REVIEW y RELEASE-REVIEW cerrados. 10 items tech debt movidos a Fase 12.
+Next step: Fase 12 — Plataforma Extendida (empezar por tech debt prioritario)
 Resume context:
-- RELEASE-REVIEW: ~60 items fixed across 7 batches (DS tokens, a11y, l10n, code quality)
-- Excluded: CODE-9 (filter refactor), CODE-20 (tags @Relationship), CODE-30 (budget legacy fields), CODE-18 (isSaving used by UI)
+- FLOW-REVIEW.md y RELEASE-REVIEW.md archivados (cerrados)
+- 10 items pendientes migrados a STATE.md Fase 12 (EMPTY-1/3/5, CODE-20/21/28/30/32/41/46)
 - Deferred post-release: HIGH-2/3/12/13 (pagination), HIGH-24/A11Y-41 (onboarding a11y)
 - Branch 1.0 — release branch
