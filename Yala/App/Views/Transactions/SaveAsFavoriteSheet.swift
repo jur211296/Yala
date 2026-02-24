@@ -113,7 +113,7 @@ struct SaveAsFavoriteSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -305,7 +305,7 @@ struct SaveAsFavoriteSheet: View {
                 }
                 .buttonStyle(.plain)
             } else {
-                Toggle("", isOn: $includeAmount)
+                Toggle(L10n.Transaction.amount, isOn: $includeAmount)
                     .labelsHidden()
 
             }
@@ -408,7 +408,7 @@ struct SaveAsFavoriteSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         showTagSelector = false
                     }
                 }

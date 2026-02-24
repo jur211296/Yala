@@ -32,7 +32,7 @@ enum TransactionType: String, CaseIterable, Identifiable {
         switch self {
         case .expense: return .hotPink
         case .income: return .electricIndigo
-        case .transfer: return Color(.label)
+        case .transfer: return Color(.secondaryLabel)
         }
     }
 

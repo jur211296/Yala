@@ -28,6 +28,7 @@ struct ProTrialOfferSheet: View {
     @State private var contentOpacity: Double = 0
     @State private var showError = false
     @State private var showSuccess = false
+    @State private var productLoadFailed = false
 
     // MARK: - Body
 
@@ -71,6 +72,18 @@ struct ProTrialOfferSheet: View {
                 if !store.products.isEmpty {
                     planSelector
                         .opacity(contentOpacity)
+                } else if productLoadFailed {
+                    VStack(spacing: DS.Spacing.sm) {
+                        Text(L10n.Subscription.errorTitle)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                        Button(L10n.Action.retry) {
+                            productLoadFailed = false
+                            Task { await loadProductsWithTimeout() }
+                        }
+                        .font(DS.Typography.label)
+                    }
+                    .padding(.vertical, DS.Spacing.lg)
                 } else {
                     ProgressView()
                         .padding(.vertical, DS.Spacing.lg)
@@ -100,10 +113,8 @@ struct ProTrialOfferSheet: View {
                             .font(DS.Typography.caption)
                             .foregroundStyle(.tertiary)
                             .multilineTextAlignment(.center)
-                        if let url = URL(string: "https://yala-app.pe/terms") {
-                            Link(L10n.Subscription.termsLink, destination: url)
-                                .font(DS.Typography.caption)
-                        }
+                        Link(L10n.Subscription.termsLink, destination: AppConstants.termsURL)
+                            .font(DS.Typography.caption)
                     }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
@@ -114,7 +125,7 @@ struct ProTrialOfferSheet: View {
         .scrollBounceBehavior(.basedOnSize)
         .background(theme.background.ignoresSafeArea())
         .task {
-            await store.loadProducts()
+            await loadProductsWithTimeout()
         }
         .onAppear {
             dsWithAnimation(reduceMotion) {
@@ -125,7 +136,7 @@ struct ProTrialOfferSheet: View {
             }
         }
         .alert(L10n.Subscription.errorTitle, isPresented: $showError) {
-            Button("OK", role: .cancel) {}
+            Button(L10n.Common.ok, role: .cancel) {}
         } message: {
             Text(store.errorMessage ?? "")
         }
@@ -336,6 +347,14 @@ struct ProTrialOfferSheet: View {
             "\(days)",
             product.displayPrice + " " + planPeriodLabel(for: product)
         )
+    }
+
+    private func loadProductsWithTimeout() async {
+        await store.loadProducts()
+        // If products are still empty after loading, mark as failed
+        if store.products.isEmpty {
+            productLoadFailed = true
+        }
     }
 
     private func purchaseSelected() async {

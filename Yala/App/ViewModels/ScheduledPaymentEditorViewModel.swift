@@ -183,6 +183,8 @@ final class ScheduledPaymentEditorViewModel {
         service.setContext(context)
         do {
             try service.deleteScheduledPayment(payment)
+            WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
             return true
         } catch {
             #if DEBUG

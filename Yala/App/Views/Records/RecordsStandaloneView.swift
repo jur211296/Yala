@@ -147,7 +147,7 @@ struct RecordsStandaloneView: View {
                         .font(DS.Typography.body.weight(.medium))
                         .foregroundStyle(.thToolbarIcon)
                 }
-                .accessibilityLabel("Seleccionar")
+                .accessibilityLabel(L10n.Action.select)
 
                 // Filters button
                 Button {
@@ -157,7 +157,7 @@ struct RecordsStandaloneView: View {
                         .font(DS.Typography.body.weight(.medium))
                         .foregroundStyle(.thToolbarIcon)
                 }
-                .accessibilityLabel("Filtros")
+                .accessibilityLabel(L10n.Filters.title)
                 .overlay(alignment: .topTrailing) {
                     if recordsViewModel.activeFilterCount > 0 {
                         Circle()
@@ -188,8 +188,14 @@ struct RecordsStandaloneView: View {
         }
 
         ToolbarItem(placement: .topBarTrailing) {
-            Button(L10n.Export.selectAll) {
-                recordsViewModel.selectAll()
+            let allSelected = recordsViewModel.selectedRecordIDs.count ==
+                recordsViewModel.groupedRecords.flatMap(\.records).count
+            Button(allSelected ? L10n.Export.deselectAll : L10n.Export.selectAll) {
+                if allSelected {
+                    recordsViewModel.deselectAll()
+                } else {
+                    recordsViewModel.selectAll()
+                }
             }
         }
     }
@@ -314,7 +320,7 @@ struct RecordsStandaloneView: View {
                     .padding(.trailing, DS.Spacing.xl)
                     .padding(.bottom, DS.Spacing.xxl)
                     .disabled(!canUseVoiceInput)
-                    .accessibilityHint(!canUseVoiceInput ? "Crea al menos una cuenta y una categoría" : "")
+                    .accessibilityHint(!canUseVoiceInput ? L10n.Accessibility.createAccountFirst : "")
                 }
             }
         }
@@ -354,7 +360,7 @@ struct RecordsStandaloneView: View {
             .shadow(color: (isLocked ? Color.gray : color).opacity(0.3), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
-        .phaseAnimator([false, true]) { content, phase in
+        .phaseAnimator(reduceMotion ? [false] : [false, true]) { content, phase in
             content
                 .scaleEffect(phase ? 1.03 : 1.0)
         } animation: { _ in
@@ -379,7 +385,7 @@ struct RecordsStandaloneView: View {
                         .foregroundStyle(.red)
                         .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                 }
-                .accessibilityLabel("Eliminar")
+                .accessibilityLabel(L10n.Action.delete)
                 .buttonStyle(.plain)
 
                 Spacer()
@@ -401,7 +407,7 @@ struct RecordsStandaloneView: View {
                         .foregroundStyle(theme.accent)
                         .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                 }
-                .accessibilityLabel("Editar")
+                .accessibilityLabel(L10n.Action.edit)
                 .buttonStyle(.plain)
             }
             .padding(.vertical, DS.Spacing.sm)
@@ -416,15 +422,13 @@ struct RecordsStandaloneView: View {
     // MARK: - Actions
 
     private func refreshRecordsData() {
-        DispatchQueue.main.async {
-            dataViewModel.loadData()
-            recordsViewModel.applyFilters(
-                transactions: dataViewModel.allTransactions,
-                accounts: dataViewModel.accounts,
-                categories: dataViewModel.categories,
-                tags: dataViewModel.tags
-            )
-        }
+        dataViewModel.loadData()
+        recordsViewModel.applyFilters(
+            transactions: dataViewModel.allTransactions,
+            accounts: dataViewModel.accounts,
+            categories: dataViewModel.categories,
+            tags: dataViewModel.tags
+        )
     }
 
     private func handleEditAction() {

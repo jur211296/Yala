@@ -61,7 +61,7 @@ enum AppIconOption: String, CaseIterable, Identifiable {
 struct AppIconSettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
     @State private var selectedIcon: AppIconOption = .original
     @State private var showingError = false
@@ -120,7 +120,7 @@ struct AppIconSettingsView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
+                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                     dismiss()
                 }
             }
@@ -176,7 +176,7 @@ struct AppIconSettingsView: View {
                     } else {
                         // Fallback if image not found
                         RoundedRectangle(cornerRadius: 18)
-                            .fill(Color.gray.opacity(0.3))
+                            .fill(Color.gray.opacity(0.3)) // A11Y-DM: placeholder fallback for missing icon
                             .frame(width: 80, height: 80)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 18)
@@ -190,7 +190,7 @@ struct AppIconSettingsView: View {
                             .font(DS.Typography.labelSmall)
                             .foregroundStyle(.white)
                             .padding(DS.Chip.paddingV)
-                            .background(Circle().fill(Color.gray))
+                            .background(Circle().fill(Color.gray)) // A11Y-DM: lock badge on app icon — white icon on gray
                             .offset(x: 4, y: -4)
                     }
                 }

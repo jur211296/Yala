@@ -42,13 +42,17 @@ final class AccountFormViewModel {
     var selectedAdjustmentMode: AdjustmentMode = .changeInitialBalance
 
     // Color
-    var selectedColorHex: String = "#6366F1"
+    var selectedColorHex: String = AppConstants.defaultColorHex
     var customColor: Color = Color(hex: "6366F1")
     var isPresentingColorPicker: Bool = false
 
     // Actions
     var excludeFromStatistics: Bool = false
     var isArchived: Bool = false
+
+    // Credit card
+    var creditCardPaymentReminder: Bool = false
+    var creditCardPaymentDay: Int = 1
 
     // MARK: - UI State
     var isShowingDeleteError: Bool = false
@@ -140,6 +144,8 @@ final class AccountFormViewModel {
 
             self.excludeFromStatistics = account.excludeFromStatistics
             self.isArchived = account.isArchived
+            self.creditCardPaymentReminder = account.creditCardPaymentReminder
+            self.creditCardPaymentDay = account.creditCardPaymentDay
 
             // Don't pre-fill balance here - will be done in initializeBalanceIfNeeded()
             // after transactions are loaded
@@ -148,7 +154,7 @@ final class AccountFormViewModel {
         } else {
             // Creation mode - default to "Cambiar saldo inicial"
             self.selectedAdjustmentMode = .changeInitialBalance
-            self.selectedColorHex = "#6366F1"
+            self.selectedColorHex = AppConstants.defaultColorHex
             self.customColor = Color(hex: "6366F1")
             self.isPositive = true
             self.balanceText = ""
@@ -277,6 +283,8 @@ final class AccountFormViewModel {
             account.adjustmentMode = selectedAdjustmentMode.rawValue
             account.excludeFromStatistics = excludeFromStatistics
             account.isArchived = isArchived
+            account.creditCardPaymentReminder = selectedType == .creditCard ? creditCardPaymentReminder : false
+            account.creditCardPaymentDay = selectedType == .creditCard ? creditCardPaymentDay : 1
 
             // Handle balance adjustment if specified
             if let balanceValue = parsedBalanceAmount, needsAdjustment, let sub = subcategory {
@@ -314,6 +322,10 @@ final class AccountFormViewModel {
                 excludeFromStatistics: excludeFromStatistics,
                 isArchived: isArchived
             )
+            if selectedType == .creditCard {
+                newAccount.creditCardPaymentReminder = creditCardPaymentReminder
+                newAccount.creditCardPaymentDay = creditCardPaymentDay
+            }
             context.insert(newAccount)
 
             // Create initial balance transaction if amount specified

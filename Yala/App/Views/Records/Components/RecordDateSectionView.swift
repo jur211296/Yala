@@ -11,6 +11,13 @@ import SwiftUI
 
 /// Header view for date grouping in Records list
 struct RecordDateSectionView: View {
+    private static let sectionDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.setLocalizedDateFormatFromTemplate("d MMMM")
+        return f
+    }()
+
     let date: Date
 
     var body: some View {
@@ -27,10 +34,7 @@ struct RecordDateSectionView: View {
 
     /// Format: "12 December" or "12 de diciembre" depending on locale
     private var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
-        formatter.setLocalizedDateFormatFromTemplate("d MMMM")
-        return formatter.string(from: date)
+        Self.sectionDateFormatter.string(from: date)
     }
 }
 

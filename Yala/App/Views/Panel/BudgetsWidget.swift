@@ -79,7 +79,7 @@ struct BudgetsWidget: View {
                 } label: {
                     Image(systemName: "chevron.right")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(Color.gray.opacity(0.7))
+                        .foregroundStyle(.secondary)
                         .padding(.leading, DS.Spacing.xs)
                 }
                 .buttonStyle(.plain)
@@ -98,17 +98,19 @@ struct BudgetsWidget: View {
                 let isAnySelected = selectedBudgetID != nil
                 let shouldDim = isAnySelected && (isExcludeMode ? isSelected : !isSelected)
 
-                BudgetWidgetRow(
-                    summary: summary,
-                    currencyCode: currencyCode
-                )
-                .contentShape(Rectangle())
-                .opacity(shouldDim ? 0.3 : 1.0)
-                .onTapGesture {
+                Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         onSelectBudget?(summary.budget)
                     }
+                } label: {
+                    BudgetWidgetRow(
+                        summary: summary,
+                        currencyCode: currencyCode
+                    )
+                    .contentShape(Rectangle())
+                    .opacity(shouldDim ? 0.3 : 1.0)
                 }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -116,48 +118,22 @@ struct BudgetsWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            Image(systemName: hasBudgetsButNoFavorites ? "star" : "chart.pie.fill")
-                .font(DS.Typography.largeTitle)
-                .foregroundStyle(.secondary.opacity(0.5))
-                .padding(.bottom, DS.Spacing.xs)
-
-            if hasBudgetsButNoFavorites {
-                Text(NSLocalizedString("budgets.widget.noFavorites.title", comment: ""))
-                    .font(DS.Typography.label)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.primary)
-
-                Text(NSLocalizedString("budgets.widget.noFavorites.message", comment: ""))
-                    .font(DS.Typography.caption)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
-
-                // Quick action to edit favorites
-                if onEditFavorites != nil {
-                    Button {
-                        onEditFavorites?()
-                    } label: {
-                        Text(L10n.Budgets.Widget.selectFavorites)
-                            .font(DS.Typography.label)
-                            .foregroundStyle(.primary)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.top, DS.Spacing.sm)
-                }
-            } else {
-                Text(NSLocalizedString("budgets.empty.title", comment: ""))
-                    .font(DS.Typography.label)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.primary)
-
-                Text(NSLocalizedString("budgets.empty.message", comment: ""))
-                    .font(DS.Typography.caption)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
-            }
+        if hasBudgetsButNoFavorites {
+            YalaEmptyState(
+                icon: "star",
+                title: L10n.Budgets.Widget.noFavoritesTitle,
+                message: L10n.Budgets.Widget.noFavoritesMessage,
+                actionTitle: onEditFavorites != nil ? L10n.Budgets.Widget.selectFavorites : nil,
+                action: onEditFavorites,
+                style: .widget
+            )
+        } else {
+            YalaEmptyState(
+                icon: "chart.pie.fill",
+                title: L10n.Budgets.emptyTitle,
+                message: L10n.Budgets.emptyMessage,
+                style: .widget
+            )
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.vertical, DS.Spacing.xxl)
     }
 }

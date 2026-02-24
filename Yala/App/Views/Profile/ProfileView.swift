@@ -23,13 +23,13 @@ struct ProfileView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.yalaTheme) private var theme
 
-    @ScaledMetric(relativeTo: .largeTitle) private var avatarIconSize: CGFloat = 40
+    @ScaledMetric(relativeTo: .largeTitle) private var avatarIconSize: CGFloat = 40 // A11Y-DT: @ScaledMetric
 
     @State private var viewModel = ProfileViewModel()
 
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
-    @AppStorage("userProfileImageData") private var userProfileImageData: Data?
+    @State private var userProfileImageData: Data?
     @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
     @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
@@ -48,7 +48,6 @@ struct ProfileView: View {
     @State private var permissionDeniedType: String = ""
 
     // Subscription state
-    @State private var showSubscriptionSheet = false
     @State private var showUpgradeForVoice = false
     @State private var showUpgradeForImage = false
 
@@ -62,14 +61,6 @@ struct ProfileView: View {
 
     private var isImageLocked: Bool {
         !FeatureGateService.shared.canAccess(.imageInput)
-    }
-
-    private var isInTrial: Bool {
-        StoreKitManager.shared.isInTrial
-    }
-
-    private var trialDaysRemaining: Int {
-        StoreKitManager.shared.trialDaysRemaining
     }
 
     enum ProfileSheet: Identifiable {
@@ -136,7 +127,7 @@ struct ProfileView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -154,7 +145,8 @@ struct ProfileView: View {
                             activeSheet = nil
                             importResult = result
                             // Small delay to ensure sheet is fully dismissed
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            Task {
+                                try? await Task.sleep(for: .milliseconds(200))
                                 showImportResult = true
                             }
                         }
@@ -169,7 +161,7 @@ struct ProfileView: View {
                 isPresented: $showImportResult,
                 presenting: importResult
             ) { _ in
-                Button("OK", role: .cancel) {}
+                Button(L10n.Common.ok, role: .cancel) {}
             } message: { result in
                 Text(result.message)
             }
@@ -238,13 +230,11 @@ struct ProfileView: View {
             }
             .onAppear {
                 viewModel.setContext(modelContext)
+                ProfileImageStorage.migrateFromUserDefaultsIfNeeded()
+                userProfileImageData = ProfileImageStorage.load()
             }
         }
     }
-
-    // Default Period Preference
-    @AppStorage("defaultPeriod") private var defaultPeriodRaw: String = DetailPeriod.allTime
-        .rawValue
 
     // MARK: - Header
 
@@ -321,14 +311,6 @@ struct ProfileView: View {
             .font(DS.Typography.label)
             .foregroundStyle(.primary)
 
-            // Trial banner
-            if isInTrial {
-                TrialBanner(daysRemaining: trialDaysRemaining) {
-                    showSubscriptionSheet = true
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.top, DS.Spacing.sm)
-            }
         }
         .padding(.top, DS.Spacing.sm)
         .padding(.bottom, isProUser ? DS.Spacing.lg : 0)
@@ -343,11 +325,6 @@ struct ProfileView: View {
                 }
             }
         )
-        .sheet(isPresented: $showSubscriptionSheet) {
-            NavigationStack {
-                SubscriptionView()
-            }
-        }
         .sheet(isPresented: $showUpgradeForVoice) {
             UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
         }
@@ -388,7 +365,7 @@ struct ProfileView: View {
         SectionBox(title: L10n.Settings.organization) {
             VStack(spacing: DS.Spacing.none) {
                 profileRow(
-                    icon: "creditcard.fill", title: L10n.Settings.accounts, iconColor: .green,
+                    icon: "creditcard.fill", title: L10n.Settings.accounts, iconColor: DS.Semantic.successForeground,
                     destination: .accounts)
                 SubsectionDivider()
                 profileRow(
@@ -431,7 +408,7 @@ struct ProfileView: View {
                 SubsectionDivider()
                 profileRow(
                     icon: "dollarsign.circle.fill", title: L10n.Settings.currencyAndExchange,
-                    iconColor: .green, destination: .currency
+                    iconColor: DS.Semantic.successForeground, destination: .currency
                 )
                 SubsectionDivider()
                 profileRow(
@@ -492,15 +469,24 @@ struct ProfileView: View {
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                     } else {
-                        Toggle("", isOn: $voiceInputEnabled)
+                        Toggle(L10n.Settings.voiceInputEnabled, isOn: $voiceInputEnabled)
                             .labelsHidden()
 
                             .onChange(of: voiceInputEnabled) { _, isEnabled in
                                 guard isEnabled else { return }
                                 let status = AVAudioApplication.shared.recordPermission
                                 if status == .undetermined {
-                                    AVAudioApplication.requestRecordPermission { _ in }
+                                    AVAudioApplication.requestRecordPermission { granted in
+                                        DispatchQueue.main.async {
+                                            if !granted {
+                                                voiceInputEnabled = false
+                                                permissionDeniedType = L10n.Settings.voiceInputEnabled
+                                                showPermissionDeniedAlert = true
+                                            }
+                                        }
+                                    }
                                 } else if status == .denied {
+                                    voiceInputEnabled = false
                                     permissionDeniedType = L10n.Settings.voiceInputEnabled
                                     showPermissionDeniedAlert = true
                                 }
@@ -596,7 +582,7 @@ struct ProfileView: View {
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 } else {
-                    Toggle("", isOn: $imageInputEnabled)
+                    Toggle(L10n.Settings.imageInputEnabled, isOn: $imageInputEnabled)
                         .labelsHidden()
 
                         .onChange(of: imageInputEnabled) { _, isEnabled in
@@ -605,6 +591,7 @@ struct ProfileView: View {
                             if status == .notDetermined {
                                 PHPhotoLibrary.requestAuthorization(for: .readWrite) { _ in }
                             } else if status == .denied || status == .restricted {
+                                imageInputEnabled = false
                                 permissionDeniedType = L10n.Settings.imageInputEnabled
                                 showPermissionDeniedAlert = true
                             }
@@ -650,7 +637,7 @@ struct ProfileView: View {
                     )
                     .opacity(!viewModel.hasTransactions ? 0.5 : 1.0)
                 }
-                .accessibilityHint(!viewModel.hasTransactions ? "No hay transacciones para exportar" : "")
+                .accessibilityHint(!viewModel.hasTransactions ? L10n.Accessibility.noTransactionsToExport : "")
                 .disabled(!viewModel.hasTransactions)
                 .buttonStyle(.plain)
 
@@ -672,7 +659,7 @@ struct ProfileView: View {
                 profileRow(
                     icon: BiometricAuthService.shared.biometricType.icon,
                     title: BiometricAuthService.shared.biometricType.displayName,
-                    iconColor: .green,
+                    iconColor: DS.Semantic.successForeground,
                     destination: .biometricSecurity)
                 SubsectionDivider()
                 profileRow(
@@ -737,9 +724,7 @@ struct ProfileView: View {
         SectionBox(title: L10n.Settings.legal) {
             VStack(spacing: DS.Spacing.none) {
                 Button {
-                    if let url = URL(string: "https://yala-app.pe/privacy") {
-                        openURL(url)
-                    }
+                    openURL(AppConstants.privacyURL)
                 } label: {
                     settingsRowContent(
                         icon: "hand.raised.fill", title: L10n.Settings.privacy,
@@ -748,9 +733,7 @@ struct ProfileView: View {
                 .buttonStyle(.plain)
                 SubsectionDivider()
                 Button {
-                    if let url = URL(string: "https://yala-app.pe/terms") {
-                        openURL(url)
-                    }
+                    openURL(AppConstants.termsURL)
                 } label: {
                     settingsRowContent(
                         icon: "doc.text.fill", title: L10n.Settings.terms,
@@ -841,7 +824,7 @@ struct ProfileView: View {
         Locale: \(locale)
         """
 
-        guard var components = URLComponents(string: "mailto:admin@yala-app.pe") else {
+        guard var components = URLComponents(string: "mailto:\(AppConstants.supportEmail)") else {
             return nil
         }
         components.queryItems = [

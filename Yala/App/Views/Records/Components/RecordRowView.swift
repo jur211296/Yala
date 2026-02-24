@@ -107,6 +107,18 @@ struct RecordRowView: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityDescription)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    // MARK: - Accessibility
+
+    private var accessibilityDescription: String {
+        let note = record.note ?? ""
+        let amount = YalaFormatter.currency(value: abs(record.amount), currencyCode: currencyCode)
+        let category = record.subcategory?.name ?? record.category?.name ?? ""
+        let account = record.account?.name ?? ""
+        return "\(note), \(amount), \(category), \(account)"
     }
 
     // MARK: - Card Background
@@ -146,7 +158,7 @@ struct RecordRowView: View {
 
     private var subcategoryIcon: some View {
         // Use category color for the icon background
-        let colorHex = record.category?.colorHex ?? "#6366F1"
+        let colorHex = record.category?.colorHex ?? AppConstants.defaultColorHex
         // Use subcategory icon if available, fallback to category icon, then default tag
         let iconName =
             record.subcategory?.iconName

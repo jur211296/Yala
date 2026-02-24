@@ -12,7 +12,7 @@ struct PersonalizationSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(SessionState.self) private var sessionState
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
     @AppStorage("defaultPeriod") private var defaultPeriodRaw: String = DetailPeriod.allTime
         .rawValue
@@ -103,7 +103,7 @@ struct PersonalizationSettingsView: View {
 
                                 Spacer()
 
-                                Toggle("", isOn: Binding(
+                                Toggle(L10n.Settings.expensesOnlyMode, isOn: Binding(
                                     get: { sessionState.isExpensesOnlyMode },
                                     set: { _ in showingExpensesOnlyConfirmation = true }
                                 ))
@@ -211,7 +211,7 @@ struct PersonalizationSettingsView: View {
 
                                 Spacer()
 
-                                Toggle("", isOn: $colorfulIcons)
+                                Toggle(L10n.Settings.colorfulIcons, isOn: $colorfulIcons)
                                     .labelsHidden()
 
                             }
@@ -323,7 +323,7 @@ struct PersonalizationSettingsView: View {
 
                                 Spacer()
 
-                                Toggle("", isOn: $showWidgetHints)
+                                Toggle(L10n.Settings.widgetHints, isOn: $showWidgetHints)
                                     .labelsHidden()
 
                             }
@@ -351,7 +351,7 @@ struct PersonalizationSettingsView: View {
 
                                 Spacer()
 
-                                Toggle("", isOn: $showVariations)
+                                Toggle(L10n.Settings.showVariations, isOn: $showVariations)
                                     .labelsHidden()
 
                             }
@@ -497,7 +497,7 @@ struct PersonalizationSettingsView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
+                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                     dismiss()
                 }
             }
@@ -643,7 +643,7 @@ private struct PeriodPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -716,7 +716,7 @@ private struct WeekdayPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -795,7 +795,7 @@ private struct DecimalsPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -879,7 +879,7 @@ private struct CurrencyFormatPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -1039,7 +1039,7 @@ private struct AverageLinePickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }

@@ -35,17 +35,12 @@ struct SubcategorySelectorSheet: View {
                 ScrollView {
                     VStack(spacing: DS.Spacing.xl) {
                         if viewModel.isEmpty {
-                            // Empty state
-                            VStack(spacing: DS.Spacing.lg) {
-                                Image(systemName: "tag.slash")
-                                    .font(DS.Typography.amountLarge)
-                                    .foregroundStyle(.secondary)
-                                Text(L10n.Empty.noSubcategories)
-                                    .font(DS.Typography.headline)
-                                    .foregroundStyle(.secondary)
-                            }
+                            YalaEmptyState(
+                                icon: "tag.slash",
+                                title: L10n.Empty.noSubcategories
+                            )
                             .frame(maxWidth: .infinity)
-                            .padding(.top, 60)
+                            .padding(.top, DS.Spacing.xxxl)
                         } else {
                             // Recientes section (if any)
                             if !viewModel.recentSubcategories.isEmpty {
@@ -104,7 +99,7 @@ struct SubcategorySelectorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -201,6 +196,8 @@ struct SubcategoryGridItem: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(subcategory.name)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var effectiveColor: String {

@@ -119,7 +119,7 @@ struct NotificationEditorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -232,11 +232,17 @@ struct NotificationEditorSheet: View {
         }
     }
 
+    // MARK: - Static Formatters
+
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.timeStyle = .short
+        return f
+    }()
+
     /// Formatted time string for preview
     private var formattedScheduledTime: String {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: scheduledTime)
+        Self.timeFormatter.string(from: scheduledTime)
     }
 
     // MARK: - Time Section

@@ -25,6 +25,7 @@ enum AccountType: String, CaseIterable, Identifiable {
     case cash = "Efectivo"
     case checking = "Cuenta corriente"
     case savings = "Cuenta de ahorros"
+    case creditCard = "Tarjeta de crédito"
 
     var id: String { rawValue }
 
@@ -34,6 +35,7 @@ enum AccountType: String, CaseIterable, Identifiable {
         case .cash: return L10n.Account.AccountType.cash
         case .checking: return L10n.Account.AccountType.current
         case .savings: return L10n.Account.AccountType.savings
+        case .creditCard: return L10n.Account.AccountType.creditCard
         }
     }
 }
@@ -140,6 +142,7 @@ func iconName(for accountType: AccountType) -> String {
     case .cash: return "banknote.fill"
     case .checking: return "building.columns.fill"
     case .savings: return "banknote"
+    case .creditCard: return "creditcard.fill"
     }
 }
 

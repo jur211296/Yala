@@ -119,7 +119,7 @@ struct RecordsFiltersView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -281,7 +281,7 @@ struct RecordsFiltersView: View {
             HStack(spacing: DS.Spacing.sm) {
                 Circle()
                     .fill(isSelected ? Color.white : Color(hex: tag.colorHex))
-                    .frame(width: 8, height: 8)
+                    .frame(width: DS.Chip.dotSize, height: DS.Chip.dotSize)
 
                 Text(tag.name)
                     .font(DS.Typography.subheadline)
@@ -569,7 +569,7 @@ struct RecordsFiltersView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "chevron.left", label: "Atr\u{00e1}s") {
+                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                         showAccountsSheet = false
                     }
                 }
@@ -652,7 +652,7 @@ struct RecordsFiltersView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "chevron.left", label: "Atr\u{00e1}s") {
+                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                         showTagsSheet = false
                     }
                 }
@@ -672,7 +672,7 @@ struct RecordsFiltersView: View {
             )
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "chevron.left", label: "Atr\u{00e1}s") {
+                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                         showCurrencySheet = false
                     }
                 }

@@ -245,9 +245,9 @@ struct TrendChartView: View {
         }
         .chartXSelection(value: $draggingDate)  // Native iOS 17+ selection - works with scroll
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Gráfica de tendencia de \(trendType.displayName)")
-        .accessibilityValue(trendPoints.isEmpty ? "Sin datos" :
-            "\(trendPoints.count) puntos")
+        .accessibilityLabel(L10n.Accessibility.trendChart(trendType.displayName))
+        .accessibilityValue(trendPoints.isEmpty ? L10n.Accessibility.noData :
+            L10n.Accessibility.dataPoints(trendPoints.count))
         .frame(height: chartHeight)
     }
 
@@ -364,20 +364,36 @@ struct TrendChartView: View {
         }
     }
 
+    private static let dayNumberFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "d"
+        return f
+    }()
+
+    private static let periodDayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "d MMM yy"
+        return f
+    }()
+
+    private static let periodMonthFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "MMM yy"
+        return f
+    }()
+
     /// Format day as number only (1, 2, 3, etc.)
     private func formatDayNumber(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "d"
-        return formatter.string(from: date)
+        Self.dayNumberFormatter.string(from: date)
     }
 
     private func periodLabel(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
+        let formatter: DateFormatter
         switch grouping {
-        case .day: formatter.dateFormat = "d MMM yy"  // 19 dic 25
-        case .week: formatter.dateFormat = "d MMM yy"  // 19 dic 25
-        case .month: formatter.dateFormat = "MMM yy"  // ene 25
+        case .day, .week: formatter = Self.periodDayFormatter
+        case .month: formatter = Self.periodMonthFormatter
         }
         return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
     }

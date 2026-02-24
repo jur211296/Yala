@@ -227,7 +227,7 @@ struct BudgetsListView: View {
         }
         .buttonStyle(.plain)
         .opacity(hasInactiveBudgets ? 1 : 0)
-        .accessibilityHint(!hasInactiveBudgets ? "No hay presupuestos inactivos" : "")
+        .accessibilityHint(!hasInactiveBudgets ? L10n.Budget.noInactive : "")
         .disabled(!hasInactiveBudgets)
     }
 
@@ -292,7 +292,7 @@ struct BudgetsListView: View {
                     Image(systemName: "plus")
                         .font(DS.Typography.title)
                         .foregroundStyle(.white)
-                        .frame(width: 56, height: 56)
+                        .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                         .background(theme.accent)
                         .clipShape(Circle())
                 }

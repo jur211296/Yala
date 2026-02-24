@@ -25,7 +25,7 @@ struct ImportResult: Identifiable {
 /// Overlay view for showing import results - displayed on top of content in ZStack
 /// This approach avoids the nested sheet presentation bug in SwiftUI
 struct ImportResultOverlay: View {
-    @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 80
+    @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 80 // A11Y-DT: @ScaledMetric
     @Environment(\.yalaTheme) private var theme
 
     let result: ImportResult
@@ -49,7 +49,7 @@ struct ImportResultOverlay: View {
 
                 // Title
                 Text(result.isSuccess ? L10n.Import.completed : L10n.Import.importError)
-                    .font(Typography.title2)
+                    .font(DS.Typography.title2)
                     .foregroundStyle(.thPrimaryText)
 
                 // Message
@@ -197,7 +197,7 @@ struct ImportIntroSheet: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -267,7 +267,7 @@ struct ImportIntroSheet: View {
                 .padding(.bottom, DS.Spacing.sm)
 
             Text(L10n.Import.title)
-                .font(Typography.title2)
+                .font(DS.Typography.title2)
                 .foregroundStyle(.thPrimaryText)
 
             Text(L10n.Import.introDescription)
@@ -332,7 +332,7 @@ struct ImportIntroSheet: View {
 
                 Spacer()
 
-                Toggle("", isOn: $allowCreatingNewCategories)
+                Toggle(L10n.Import.createCategories, isOn: $allowCreatingNewCategories)
                     .labelsHidden()
 
             }
@@ -363,7 +363,8 @@ struct ImportIntroSheet: View {
                 count: 0
             )
             dismiss()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            Task {
+                try? await Task.sleep(for: .milliseconds(300))
                 self.onImportCompleted?(result)
             }
         } else {
@@ -461,7 +462,8 @@ struct ImportIntroSheet: View {
                 count: 0
             )
             dismiss()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            Task {
+                try? await Task.sleep(for: .milliseconds(300))
                 self.onImportCompleted?(errorResult)
             }
         case .success(let urls):
@@ -613,7 +615,7 @@ struct ImportIntroSheet: View {
                 // Create result and dismiss (keep button in "Importando" state until sheet closes)
                 let importResult = ImportResult(
                     isSuccess: true,
-                    message: "\(createdCount) registros importados correctamente.",
+                    message: L10n.Import.recordsImported(createdCount),
                     count: createdCount
                 )
                 #if DEBUG
@@ -624,7 +626,8 @@ struct ImportIntroSheet: View {
                 dismiss()
 
                 // Notify parent with result after small delay for sheet to close
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(300))
                     self.onImportCompleted?(importResult)
                 }
 
@@ -728,7 +731,8 @@ struct ImportIntroSheet: View {
 
                 dismiss()
 
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(300))
                     self.onImportCompleted?(importResult)
                 }
 

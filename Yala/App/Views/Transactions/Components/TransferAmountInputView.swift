@@ -19,7 +19,7 @@ struct TransferAmountInputView: View {
     @State private var exchangeRateString: String = "1.0000"
     @State private var isRateInverted: Bool = false
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroAmountSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .largeTitle) private var heroAmountSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .title) private var currencyLabelSize: CGFloat = 20
 
     // Focus states
@@ -55,6 +55,7 @@ struct TransferAmountInputView: View {
                 .foregroundStyle(Color.hotPink.opacity(0.7))
 
             TextField("0.00", text: $viewModel.amountString)
+                .accessibilityLabel(L10n.Accessibility.sourceAmount)
                 .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.hotPink)
                 .multilineTextAlignment(.center)
@@ -71,7 +72,7 @@ struct TransferAmountInputView: View {
                     if !isFocused {
                         if viewModel.amountString.isEmpty {
                             viewModel.amountString = "0.00"
-                        } else if let amount = Double(viewModel.amountString) {
+                        } else if let amount = Double(viewModel.amountString.replacingOccurrences(of: ",", with: ".")) {
                             viewModel.amountString = String(format: "%.2f", amount)
                         }
                     }
@@ -94,6 +95,7 @@ struct TransferAmountInputView: View {
                 .foregroundStyle(Color.electricIndigo.opacity(0.7))
 
             TextField("0.00", text: $destinationAmountString)
+                .accessibilityLabel(L10n.Accessibility.destinationAmount)
                 .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.electricIndigo)
                 .multilineTextAlignment(.center)
@@ -166,6 +168,7 @@ struct TransferAmountInputView: View {
                     .foregroundStyle(.secondary)
 
                 TextField("Rate", text: $exchangeRateString)
+                    .accessibilityLabel(L10n.Accessibility.exchangeRate)
                     .font(DS.Typography.label)
                     .foregroundStyle(.primary)
                     .keyboardType(.decimalPad)
@@ -210,41 +213,7 @@ struct TransferAmountInputView: View {
 
     // MARK: - Helper Methods
 
-    /// Filters amount input to only allow numbers and one decimal with max 2 decimal places
     private func filterAmountInput(_ input: String) -> String {
-        let decimalSeparator = Locale.current.decimalSeparator ?? "."
-        var result = ""
-        var hasDecimal = false
-        var decimalCount = 0
-
-        for char in input {
-            if char.isNumber {
-                if hasDecimal {
-                    if decimalCount < 2 {
-                        result.append(char)
-                        decimalCount += 1
-                    }
-                } else {
-                    result.append(char)
-                }
-            } else if String(char) == decimalSeparator || char == "." || char == "," {
-                if !hasDecimal {
-                    result.append(decimalSeparator.first ?? ".")
-                    hasDecimal = true
-                }
-            }
-        }
-
-        // Remove ALL leading zeros except for "0.x" pattern
-        while result.hasPrefix("0") && result.count > 1 {
-            let secondChar = result[result.index(after: result.startIndex)]
-            // Keep if it's "0." pattern
-            if String(secondChar) == decimalSeparator {
-                break
-            }
-            result = String(result.dropFirst())
-        }
-
-        return result
+        AmountInputHelper.filterAmountInput(input)
     }
 }

@@ -43,8 +43,8 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 | SubcategorySelectorViewModel, TagSelectorViewModel | — |
 | + 18 ViewModels más en App/ViewModels/ | — |
 
-### Test Suites (28 suites, 260 tests)
-FilterServiceTests (10), CalculatorTests (3), TagTests (10), TrendProcessingTests (5), TrendGroupingTests (13), CurrencyCodeTests (4), CurrencyDefaultsTests (3), NewTransactionViewModelTests (35), BudgetsViewModelTests (11), InboxViewModelTests (10), MerchantCanonicalizerTests (12), AmountParserTests (15), DateParserTests (10), MoneyParsingTests (10), PreviousPeriodHelperTests (24), DateContextProviderTests (5), DraftDeduplicationServiceTests (15), AccountFormViewModelTests (20), TagFormViewModelTests (8), CategoryDetailViewModelTests (9), BudgetEditorViewModelTests (1), ViewModelFilterTests (6), CurrencyConverterTests (8), AccountBalanceCalculatorTests (6), FeatureGateTests (6), ExchangeRateWidgetHelperTests (4), RecordsFiltersViewModelTests (3), YalaTests (1)
+### Test Suites (29 suites, 279 tests)
+FilterServiceTests (10), CalculatorTests (3), TagTests (10), TrendProcessingTests (5), TrendGroupingTests (13), CurrencyCodeTests (4), CurrencyDefaultsTests (3), NewTransactionViewModelTests (35), BudgetsViewModelTests (11), InboxViewModelTests (10), MerchantCanonicalizerTests (12), AmountParserTests (15), DateParserTests (10), MoneyParsingTests (10), PreviousPeriodHelperTests (24), DateContextProviderTests (5), DraftDeduplicationServiceTests (15), AccountFormViewModelTests (22), TagFormViewModelTests (8), CategoryDetailViewModelTests (9), BudgetEditorViewModelTests (1), ViewModelFilterTests (6), CurrencyConverterTests (8), AccountBalanceCalculatorTests (6), FeatureGateTests (6), ExchangeRateWidgetHelperTests (4), RecordsFiltersViewModelTests (3), ScheduledPaymentDateCalculatorTests (17), YalaTests (1)
 
 ## Product & Stack
 Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, presupuestos y reportes con claridad.
@@ -147,6 +147,10 @@ Después de crear o modificar modelos, servicios o ViewModels:
 
 ### API Keys
 - NUNCA hardcodear — usar `Secrets.xcconfig` + `Info.plist` via `Bundle.main.object(forInfoDictionaryKey:)`
+
+### Audit Markers
+- `// A11Y-DT:` — Dynamic Type: justifica font size hardcodeado (e.g., @ScaledMetric, widget fixed layout)
+- `// A11Y-DM:` — Dark Mode: justifica color hardcodeado (e.g., brand bg, decorative animation)
 
 ### Logs
 - SIEMPRE dentro de `#if DEBUG` — nunca datos sensibles en producción

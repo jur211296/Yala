@@ -20,42 +20,30 @@ enum RecurrenceType: String, CaseIterable, Identifiable {
 
     var localizedName: String {
         switch self {
-        case .daily:
-            return NSLocalizedString("scheduled.recurrence.daily", comment: "Daily recurrence")
-        case .weekly:
-            return NSLocalizedString("scheduled.recurrence.weekly", comment: "Weekly recurrence")
-        case .monthly:
-            return NSLocalizedString("scheduled.recurrence.monthly", comment: "Monthly recurrence")
-        case .yearly:
-            return NSLocalizedString("scheduled.recurrence.yearly", comment: "Yearly recurrence")
+        case .daily: return L10n.Scheduled.Recurrence.daily
+        case .weekly: return L10n.Scheduled.Recurrence.weekly
+        case .monthly: return L10n.Scheduled.Recurrence.monthly
+        case .yearly: return L10n.Scheduled.Recurrence.yearly
         }
     }
 
     /// Singular form for "every 1 day/week/month/year"
     var localizedNameSingular: String {
         switch self {
-        case .daily:
-            return NSLocalizedString("scheduled.recurrence.day", comment: "Day")
-        case .weekly:
-            return NSLocalizedString("scheduled.recurrence.week", comment: "Week")
-        case .monthly:
-            return NSLocalizedString("scheduled.recurrence.month", comment: "Month")
-        case .yearly:
-            return NSLocalizedString("scheduled.recurrence.year", comment: "Year")
+        case .daily: return L10n.Scheduled.Recurrence.day
+        case .weekly: return L10n.Scheduled.Recurrence.week
+        case .monthly: return L10n.Scheduled.Recurrence.month
+        case .yearly: return L10n.Scheduled.Recurrence.year
         }
     }
 
     /// Plural form for "every X days/weeks/months/years"
     var localizedNamePlural: String {
         switch self {
-        case .daily:
-            return NSLocalizedString("scheduled.recurrence.days", comment: "Days")
-        case .weekly:
-            return NSLocalizedString("scheduled.recurrence.weeks", comment: "Weeks")
-        case .monthly:
-            return NSLocalizedString("scheduled.recurrence.months", comment: "Months")
-        case .yearly:
-            return NSLocalizedString("scheduled.recurrence.years", comment: "Years")
+        case .daily: return L10n.Scheduled.Recurrence.days
+        case .weekly: return L10n.Scheduled.Recurrence.weeks
+        case .monthly: return L10n.Scheduled.Recurrence.months
+        case .yearly: return L10n.Scheduled.Recurrence.years
         }
     }
 }
@@ -70,10 +58,8 @@ enum PaymentCategory: String, CaseIterable, Identifiable {
 
     var localizedName: String {
         switch self {
-        case .recurring:
-            return NSLocalizedString("scheduled.category.recurring", comment: "Recurring payments")
-        case .subscription:
-            return NSLocalizedString("scheduled.category.subscription", comment: "Subscriptions")
+        case .recurring: return L10n.Scheduled.Category.recurring
+        case .subscription: return L10n.Scheduled.Category.subscription
         }
     }
 
@@ -98,12 +84,9 @@ enum DueStatus: String, CaseIterable, Identifiable {
 
     var localizedName: String {
         switch self {
-        case .past:
-            return NSLocalizedString("scheduled.status.past", comment: "Past due payments")
-        case .today:
-            return NSLocalizedString("scheduled.status.today", comment: "Due today")
-        case .upcoming:
-            return NSLocalizedString("scheduled.status.upcoming", comment: "Upcoming payments")
+        case .past: return L10n.Scheduled.Status.past
+        case .today: return L10n.Scheduled.Status.today
+        case .upcoming: return L10n.Scheduled.Status.upcoming
         }
     }
 
@@ -146,12 +129,9 @@ enum PaymentStatusFilter: String, CaseIterable, Identifiable {
 
     var localizedName: String {
         switch self {
-        case .all:
-            return NSLocalizedString("scheduled.filter.all", comment: "")
-        case .paid:
-            return NSLocalizedString("scheduled.filter.paid", comment: "")
-        case .pending:
-            return NSLocalizedString("scheduled.filter.pending", comment: "")
+        case .all: return L10n.Scheduled.Filter.all
+        case .paid: return L10n.Scheduled.Filter.paid
+        case .pending: return L10n.Scheduled.Filter.pending
         }
     }
 }
@@ -167,12 +147,9 @@ enum ScheduledPaymentsTab: Int, CaseIterable, Identifiable {
 
     var localizedName: String {
         switch self {
-        case .recurring:
-            return NSLocalizedString("scheduled.tab.recurring", comment: "Recurring payments tab")
-        case .subscriptions:
-            return NSLocalizedString("scheduled.tab.subscriptions", comment: "Subscriptions tab")
-        case .all:
-            return NSLocalizedString("scheduled.tab.all", comment: "All payments tab")
+        case .recurring: return L10n.Scheduled.Tab.recurring
+        case .subscriptions: return L10n.Scheduled.Tab.subscriptions
+        case .all: return L10n.Scheduled.Tab.all
         }
     }
 

@@ -127,6 +127,16 @@ final class AccountsSettingsListViewModel {
         }
     }
 
+    // MARK: - Static Formatters
+
+    private static let balanceFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.minimumFractionDigits = 2
+        f.maximumFractionDigits = 2
+        return f
+    }()
+
     // MARK: - Balance Calculation
 
     func formattedBalance(for account: Account) -> String {
@@ -141,11 +151,7 @@ final class AccountsSettingsListViewModel {
         let nsNumber = currentDecimal as NSDecimalNumber
         let amountDouble = nsNumber.doubleValue
 
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-        let formattedAmount = formatter.string(from: NSNumber(value: amountDouble)) ?? "0.00"
+        let formattedAmount = Self.balanceFormatter.string(from: NSNumber(value: amountDouble)) ?? "0.00"
         return "\(info.code) \(formattedAmount)"
     }
 

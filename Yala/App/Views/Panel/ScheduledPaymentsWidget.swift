@@ -26,6 +26,9 @@ struct ScheduledPaymentsWidget: View {
 
     @Namespace private var filterNamespace
 
+    /// Cached paid status to avoid N+1 SwiftData queries per render
+    @State private var paidStatus: [String: Int] = [:]
+
     /// Computed month based on period selection (intelligent mapping)
     private var displayMonth: Date {
         let calendar = Calendar.current
@@ -77,6 +80,9 @@ struct ScheduledPaymentsWidget: View {
                 .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+        .onAppear { paidStatus = loadPaidStatus(for: filteredPayments, month: displayMonth) }
+        .onChange(of: displayMonth) { paidStatus = loadPaidStatus(for: filteredPayments, month: displayMonth) }
+        .onChange(of: filter) { paidStatus = loadPaidStatus(for: filteredPayments, month: displayMonth) }
     }
 
     // MARK: - Filtered Payments
@@ -90,65 +96,8 @@ struct ScheduledPaymentsWidget: View {
 
     // MARK: - Paid Status
 
-    /// Batch load paid count for filtered payments in the display month.
-    /// Checks InboxDraft (approved) and TransactionItem (linked).
-    private var paidStatus: [String: Int] {
-        loadPaidStatus(for: filteredPayments, month: displayMonth)
-    }
-
     private func loadPaidStatus(for payments: [ScheduledPayment], month: Date) -> [String: Int] {
-        let calendar = Calendar.current
-        guard let monthInterval = calendar.dateInterval(of: .month, for: month) else { return [:] }
-
-        var result: [String: Int] = [:]
-        let paymentIDs = Set(payments.map { $0.id.uuidString })
-
-        // Query 1: InboxDrafts approved with sourceScheduledPaymentID
-        do {
-            var draftDescriptor = FetchDescriptor<InboxDraft>(
-                predicate: #Predicate<InboxDraft> { draft in
-                    draft.statusRaw == "approved" && draft.sourceScheduledPaymentID != nil
-                }
-            )
-            draftDescriptor.propertiesToFetch = [\.sourceScheduledPaymentID, \.date]
-            let approvedDrafts = try modelContext.fetch(draftDescriptor)
-
-            for draft in approvedDrafts {
-                guard let spID = draft.sourceScheduledPaymentID, paymentIDs.contains(spID) else { continue }
-                let draftDate = draft.approvedTransaction?.date ?? draft.date ?? draft.createdAt
-                if draftDate >= monthInterval.start && draftDate < monthInterval.end {
-                    result[spID, default: 0] += 1
-                }
-            }
-        } catch {
-            #if DEBUG
-            print("ScheduledPaymentsWidget: Error loading draft paid status: \(error)")
-            #endif
-        }
-
-        // Query 2: TransactionItems with scheduledPaymentID
-        do {
-            var txDescriptor = FetchDescriptor<TransactionItem>(
-                predicate: #Predicate<TransactionItem> { tx in
-                    tx.scheduledPaymentID != nil
-                }
-            )
-            txDescriptor.propertiesToFetch = [\.scheduledPaymentID, \.date]
-            let linkedTransactions = try modelContext.fetch(txDescriptor)
-
-            for tx in linkedTransactions {
-                guard let spID = tx.scheduledPaymentID, paymentIDs.contains(spID) else { continue }
-                if tx.date >= monthInterval.start && tx.date < monthInterval.end {
-                    result[spID, default: 0] += 1
-                }
-            }
-        } catch {
-            #if DEBUG
-            print("ScheduledPaymentsWidget: Error loading tx paid status: \(error)")
-            #endif
-        }
-
-        return result
+        ScheduledPaymentPaidStatusHelper.loadPaidStatus(for: payments, month: month, context: modelContext)
     }
 
     // MARK: - Header
@@ -187,7 +136,7 @@ struct ScheduledPaymentsWidget: View {
                     } label: {
                         Image(systemName: "chevron.right")
                             .font(DS.Typography.headline)
-                            .foregroundStyle(Color.gray.opacity(0.7))
+                            .foregroundStyle(.secondary)
                             .padding(.leading, DS.Spacing.xs)
                     }
                     .buttonStyle(.plain)
@@ -197,10 +146,20 @@ struct ScheduledPaymentsWidget: View {
     }
 
     /// Formatted period label for display
-    private var periodLabel: String {
+    private static let monthYearFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM yyyy"
-        return formatter.string(from: displayMonth).capitalized
+        return formatter
+    }()
+
+    private static let shortDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d MMM"
+        return formatter
+    }()
+
+    private var periodLabel: String {
+        Self.monthYearFormatter.string(from: displayMonth).capitalized
     }
 
     private var filterSelector: some View {
@@ -236,6 +195,8 @@ struct ScheduledPaymentsWidget: View {
                 }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(filterOption == .all ? L10n.Accessibility.filterScheduledAll : filterOption == .recurring ? L10n.Accessibility.filterScheduledRecurring : L10n.Accessibility.filterScheduledSubscriptions)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     // MARK: - Summary Content
@@ -261,8 +222,7 @@ struct ScheduledPaymentsWidget: View {
     }
 
     private func paymentCountLabel(_ count: Int) -> String {
-        let format = NSLocalizedString("scheduled.widget.count", comment: "")
-        return String(format: format, count)
+        return String(format: L10n.Scheduled.Widget.count, count)
     }
 
     private func calculateMonthlyTotal() -> Double {
@@ -315,24 +275,12 @@ struct ScheduledPaymentsWidget: View {
     }
 
     private var emptyListState: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "calendar.badge.clock")
-                .font(DS.Typography.largeTitle)
-                .foregroundStyle(.secondary.opacity(0.5))
-                .padding(.bottom, DS.Spacing.xs)
-
-            Text(NSLocalizedString("scheduled.widget.empty.title", comment: ""))
-                .font(DS.Typography.label)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.primary)
-
-            Text(NSLocalizedString("scheduled.widget.empty.message", comment: ""))
-                .font(DS.Typography.caption)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.vertical, DS.Spacing.xl)
+        YalaEmptyState(
+            icon: "calendar.badge.clock",
+            title: L10n.Scheduled.Widget.emptyTitle,
+            message: L10n.Scheduled.Widget.emptyMessage,
+            style: .widget
+        )
     }
 
     private func paymentRow(_ item: UpcomingPaymentItem) -> some View {
@@ -415,7 +363,7 @@ struct ScheduledPaymentsWidget: View {
                 ?? "creditcard.fill"
             let color = payment.subcategory?.colorHex
                 ?? payment.subcategory?.category?.colorHex
-                ?? "#6366F1"
+                ?? AppConstants.defaultColorHex
 
             for date in dates.sorted() {
                 let dueDate = calendar.startOfDay(for: date)
@@ -438,32 +386,26 @@ struct ScheduledPaymentsWidget: View {
             }
         }
 
-        // Sort: unpaid first, then paid, then skipped; within each group by date
-        items.sort { a, b in
-            let orderA = a.isSkipped ? 2 : (a.isPaid ? 1 : 0)
-            let orderB = b.isSkipped ? 2 : (b.isPaid ? 1 : 0)
-            if orderA != orderB { return orderA < orderB }
-            return a.dueDate < b.dueDate
-        }
+        // Filter out paid and skipped items — widget only shows pending payments
+        let pending = items.filter { !$0.isPaid && !$0.isSkipped }
 
-        return Array(items.prefix(limit))
+        // Sort by date
+        let sorted = pending.sorted { $0.dueDate < $1.dueDate }
+
+        return Array(sorted.prefix(limit))
     }
 
     private func formatDueDate(days: Int, date: Date) -> String {
         if days < 0 {
-            let format = NSLocalizedString("scheduled.widget.daysAgo", comment: "")
-            return String(format: format, abs(days))
+            return String(format: L10n.Scheduled.Widget.daysAgo, abs(days))
         } else if days == 0 {
-            return NSLocalizedString("date.today", comment: "")
+            return L10n.Date.today
         } else if days == 1 {
-            return NSLocalizedString("scheduled.widget.tomorrow", comment: "")
+            return L10n.Scheduled.Widget.tomorrow
         } else if days <= 7 {
-            let format = NSLocalizedString("scheduled.widget.inDays", comment: "")
-            return String(format: format, days)
+            return String(format: L10n.Scheduled.Widget.inDays, days)
         } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "d MMM"
-            return formatter.string(from: date)
+            return Self.shortDateFormatter.string(from: date)
         }
     }
 
@@ -546,10 +488,10 @@ struct ScheduledPaymentsWidget: View {
         let isToday = isCurrentDay(day)
         let hasPayments = !entries.isEmpty
 
-        return VStack(alignment: .leading, spacing: 1) {
+        return VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
             // Day number
             Text("\(day)")
-                .font(.caption2.weight(isToday ? .bold : .medium))
+                .font(DS.Typography.captionSmall.weight(isToday ? .bold : .medium))
                 .foregroundStyle(isToday ? theme.accent : .secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -557,14 +499,14 @@ struct ScheduledPaymentsWidget: View {
             if hasPayments {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     ForEach(Array(entries.prefix(2).enumerated()), id: \.offset) { _, entry in
-                        HStack(spacing: 2) {
+                        HStack(spacing: DS.Spacing.xxs) {
                             if entry.isSkipped {
                                 Image(systemName: "arrow.uturn.forward")
-                                    .font(.system(size: 6, weight: .bold))
+                                    .font(.system(size: 6, weight: .bold)) // A11Y-DT: fixed size — calendar micro-badge
                                     .foregroundStyle(.secondary)
                             } else if entry.isPaid {
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 6, weight: .bold))
+                                    .font(.system(size: 6, weight: .bold)) // A11Y-DT: fixed size — calendar micro-badge
                                     .foregroundStyle(theme.accent)
                             }
                             Text(entry.payment.name)
@@ -597,9 +539,9 @@ struct ScheduledPaymentsWidget: View {
         if isToday {
             return theme.accent.opacity(0.12)
         } else if hasPayments {
-            return Color(.tertiarySystemFill).opacity(0.7)
+            return DS.Semantic.neutralBackground
         } else {
-            return Color(.tertiarySystemFill).opacity(0.3)
+            return DS.Semantic.neutralBackground
         }
     }
 
@@ -615,87 +557,8 @@ struct ScheduledPaymentsWidget: View {
     // MARK: - Payment Date Calculation
 
     private func getPaymentDatesInMonth(payment: ScheduledPayment, month: Date) -> [Date] {
-        let calendar = Calendar.current
-        guard let monthInterval = calendar.dateInterval(of: .month, for: month) else { return [] }
-
-        var dates: [Date] = []
-
-        // For one-time payments
-        if !payment.isRecurring {
-            let paymentDate = calendar.startOfDay(for: payment.nextDueDate)
-            if monthInterval.contains(paymentDate) {
-                dates.append(paymentDate)
-            }
-            return dates
-        }
-
-        // For recurring payments
-        guard let recurrenceType = RecurrenceType(rawValue: payment.recurrenceType) else { return [] }
-
-        switch recurrenceType {
-        case .daily:
-            var date = calendar.startOfDay(for: payment.nextDueDate)
-            while date > monthInterval.start {
-                date = calendar.date(byAdding: .day, value: -payment.recurrenceInterval, to: date) ?? date
-            }
-            while date < monthInterval.end {
-                if date >= monthInterval.start {
-                    dates.append(date)
-                }
-                date = calendar.date(byAdding: .day, value: payment.recurrenceInterval, to: date) ?? monthInterval.end
-            }
-
-        case .weekly:
-            let weekdays = parseWeekdays(payment.selectedWeekdays)
-            if weekdays.isEmpty { return dates }
-
-            var date = monthInterval.start
-            while date < monthInterval.end {
-                let weekday = calendar.component(.weekday, from: date)
-                if weekdays.contains(weekday) {
-                    dates.append(date)
-                }
-                date = calendar.date(byAdding: .day, value: 1, to: date) ?? monthInterval.end
-            }
-
-        case .monthly:
-            let dayOfMonth = payment.dayOfMonth ?? calendar.component(.day, from: payment.nextDueDate)
-            let monthComponents = calendar.dateComponents([.year, .month], from: month)
-            if var paymentDate = calendar.date(from: DateComponents(
-                year: monthComponents.year,
-                month: monthComponents.month,
-                day: min(dayOfMonth, calendar.range(of: .day, in: .month, for: month)?.count ?? 28)
-            )) {
-                paymentDate = calendar.startOfDay(for: paymentDate)
-                if monthInterval.contains(paymentDate) {
-                    dates.append(paymentDate)
-                }
-            }
-
-        case .yearly:
-            let targetMonth = payment.yearlyMonth ?? calendar.component(.month, from: payment.nextDueDate)
-            let targetDay = payment.yearlyDay ?? calendar.component(.day, from: payment.nextDueDate)
-            let monthComponents = calendar.dateComponents([.year, .month], from: month)
-
-            if monthComponents.month == targetMonth {
-                if let paymentDate = calendar.date(from: DateComponents(
-                    year: monthComponents.year,
-                    month: targetMonth,
-                    day: targetDay
-                )) {
-                    let startOfPayment = calendar.startOfDay(for: paymentDate)
-                    if monthInterval.contains(startOfPayment) {
-                        dates.append(startOfPayment)
-                    }
-                }
-            }
-        }
-
-        return dates
-    }
-
-    private func parseWeekdays(_ weekdaysString: String?) -> Set<Int> {
-        guard let string = weekdaysString, !string.isEmpty else { return [] }
-        return Set(string.split(separator: ",").compactMap { Int($0) })
+        ScheduledPaymentDateCalculator.paymentDatesInMonth(
+            params: payment.dateCalculatorParams, month: month
+        )
     }
 }

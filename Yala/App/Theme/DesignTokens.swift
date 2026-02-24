@@ -201,6 +201,8 @@ enum DS {
         static let errorForeground = Color.red
         static let favoriteIcon = Color.yellow
         static let disabledForeground = Color.gray
+        static let infoForeground = Color.blue
+        static let undoForeground = Color.teal
     }
 
     // MARK: - Shadow

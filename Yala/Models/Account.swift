@@ -24,6 +24,10 @@ final class Account {
     var excludeFromStatistics: Bool = false
     var isArchived: Bool = false
 
+    // Credit card specific
+    var creditCardPaymentReminder: Bool = false
+    var creditCardPaymentDay: Int = 1
+
     /// Relación inversa con budgets (muchos-a-muchos) - CloudKit: must be optional
     @Relationship(deleteRule: .nullify)
     var budgets: [Budget]?

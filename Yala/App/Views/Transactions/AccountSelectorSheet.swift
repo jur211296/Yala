@@ -32,22 +32,26 @@ struct AccountSelectorSheet: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
-                        SectionBox(title: "") {
-                            VStack(spacing: DS.Spacing.none) {
-                                ForEach(
-                                    Array(viewModel.activeAccounts.enumerated()),
-                                    id: \.element.persistentModelID
-                                ) { index, account in
-                                    if index > 0 {
-                                        SubsectionDivider()
-                                    }
+                        if viewModel.activeAccounts.isEmpty {
+                            YalaEmptyState.noAccounts()
+                        } else {
+                            SectionBox(title: "") {
+                                VStack(spacing: DS.Spacing.none) {
+                                    ForEach(
+                                        Array(viewModel.activeAccounts.enumerated()),
+                                        id: \.element.persistentModelID
+                                    ) { index, account in
+                                        if index > 0 {
+                                            SubsectionDivider()
+                                        }
 
-                                    AccountSelectorRow(
-                                        account: account,
-                                        isSelected: isSelected(account)
-                                    ) {
-                                        selectedAccount = account
-                                        dismiss()
+                                        AccountSelectorRow(
+                                            account: account,
+                                            isSelected: isSelected(account)
+                                        ) {
+                                            selectedAccount = account
+                                            dismiss()
+                                        }
                                     }
                                 }
                             }
@@ -61,7 +65,7 @@ struct AccountSelectorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -121,6 +125,8 @@ struct AccountSelectorRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(L10n.Accessibility.accountRow(account.name, account.currencyCode))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 

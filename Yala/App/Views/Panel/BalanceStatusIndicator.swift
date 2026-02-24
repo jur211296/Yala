@@ -40,28 +40,28 @@ struct BalanceStatusIndicator: View {
 
     private var statusText: String {
         switch status {
-        case .good: return "Bueno"
-        case .critical: return "Crítico"
-        case .normal: return "Normal"
+        case .good: return L10n.BalanceStatus.good
+        case .critical: return L10n.BalanceStatus.critical
+        case .normal: return L10n.BalanceStatus.normal
         case .unknown: return "--"
         }
     }
 
     private var foregroundColor: Color {
         switch status {
-        case .good: return .green
-        case .critical: return .red
-        case .normal: return .green  // Using green for normal as per reference image
-        case .unknown: return .secondary
+        case .good: return DS.Semantic.successForeground
+        case .critical: return DS.Semantic.errorForeground
+        case .normal: return DS.Semantic.successForeground
+        case .unknown: return DS.Semantic.disabledForeground
         }
     }
 
     private var backgroundColor: Color {
         switch status {
-        case .good: return .green
-        case .critical: return .red
-        case .normal: return .green
-        case .unknown: return .gray
+        case .good: return DS.Semantic.successForeground
+        case .critical: return DS.Semantic.errorForeground
+        case .normal: return DS.Semantic.successForeground
+        case .unknown: return DS.Semantic.disabledForeground
         }
     }
 }

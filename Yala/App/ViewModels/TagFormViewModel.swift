@@ -126,6 +126,7 @@ final class TagFormViewModel {
 
         do {
             try context.save()
+            SessionState.shared.incrementDataVersion()
             return true
         } catch {
             #if DEBUG

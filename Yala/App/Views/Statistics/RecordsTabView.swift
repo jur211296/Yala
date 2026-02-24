@@ -53,8 +53,6 @@ struct RecordsTabView: View {
             )
         }
         .onChange(of: sessionState.customDateRange) {
-            // Sync custom date range and period, then recalculate
-            viewModel.syncCustomRangeFromSessionState(sessionState)
             onFilterChange()
         }
     }
@@ -231,6 +229,7 @@ struct RecordsTabView: View {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(.secondary)
                             }
+                            .accessibilityLabel(L10n.Action.clearAll)
                         }
                     }
                 }
@@ -437,37 +436,7 @@ struct RecordsTabView: View {
 
     // MARK: - Chip Data Structures
 
-    private struct AccountChip: Identifiable {
-        let id = UUID()
-        let name: String
-        let count: Int
-    }
-
-    private struct CategoryChip: Identifiable {
-        let id = UUID()
-        let categoryID: PersistentIdentifier
-    }
-
-    private struct SubcategoryChip: Identifiable {
-        let id = UUID()
-        let name: String
-        let iconName: String?
-        let colorHex: String?
-        let subcategoryID: PersistentIdentifier?
-    }
-
-    private struct TagChip: Identifiable {
-        let id: PersistentIdentifier
-        let tagID: PersistentIdentifier
-        let name: String
-        let iconName: String
-        let colorHex: String?
-    }
-
-    private struct NatureChipData: Identifiable {
-        let id = UUID()
-        let nature: SubcategoryNature
-    }
+    // Chip models defined in FilterChipModels.swift
 
     // MARK: - Chip Computation
 

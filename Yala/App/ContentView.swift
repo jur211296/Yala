@@ -24,6 +24,7 @@ struct ContentView: View {
     @State private var wipeGraceTask: Task<Void, Never>?
     @State private var showRemoteWipeAlert: Bool = false
     @State private var showProTrialOffer: Bool = false
+    @State private var isInitialCheckDone: Bool = false
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ThemeManager.self) private var themeManager
@@ -74,14 +75,17 @@ struct ContentView: View {
                 .padding(.top, DS.Spacing.xxl)
             }
 
-            // Splash screen overlay
+            // Splash screen overlay — waits for both minimum duration AND initial state check
             if showSplash {
                 SplashScreenView()
                     .opacity(splashOpacity)
                     .ignoresSafeArea()
                     .task {
-                        // Dismiss splash after minimum duration
                         try? await Task.sleep(for: .seconds(minimumSplashDuration))
+                        // Wait until initial check determines what to show (avoids blank flash)
+                        while !isInitialCheckDone {
+                            try? await Task.sleep(for: .milliseconds(50))
+                        }
                         dismissSplash()
                     }
             }
@@ -130,6 +134,9 @@ struct ContentView: View {
         }
         .alert(L10n.iCloud.remoteWipeTitle, isPresented: $showRemoteWipeAlert) {
             Button(L10n.iCloud.remoteWipeConfirm, role: .destructive) {
+                // Reset seed guards so onboarding can re-create data
+                UserDefaults.standard.removeObject(forKey: "seedCategoriesExecuted")
+                UserDefaults.standard.removeObject(forKey: "notificationsSeeded")
                 hasCompletedOnboarding = false
             }
             Button(L10n.iCloud.remoteWipeCancel, role: .cancel) {}
@@ -198,7 +205,7 @@ struct ContentView: View {
                     SessionState.shared.pendingInboxNotification = .init()
                 }
             )
-            .background(ClearBackgroundView())
+            .presentationBackground(.clear)
             .environment(SessionState.shared)
         }
         .onAppear {
@@ -233,7 +240,8 @@ struct ContentView: View {
         withAnimation(.easeOut(duration: 0.4)) {
             splashOpacity = 0
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        Task {
+            try? await Task.sleep(for: .milliseconds(400))
             showSplash = false
         }
     }
@@ -291,6 +299,7 @@ struct ContentView: View {
             if needsLanguageSelection {
                 showLanguageSelection = true
             }
+            isInitialCheckDone = true
             return
         }
 
@@ -304,10 +313,19 @@ struct ContentView: View {
                 } catch {
                     break // Task cancelled
                 }
-                let txCount = (try? modelContext.fetchCount(FetchDescriptor<TransactionItem>())) ?? 0
+                let txCount: Int
+                do {
+                    txCount = try modelContext.fetchCount(FetchDescriptor<TransactionItem>())
+                } catch {
+                    #if DEBUG
+                    print("ContentView: Error fetching transaction count: \(error)")
+                    #endif
+                    txCount = 0
+                }
                 if hasExistingData || txCount > 0 {
                     hasCompletedOnboarding = true
                     isWaitingForSync = false
+                    isInitialCheckDone = true
                     scheduleDeduplication()
                     if !SessionState.shared.isWipingData {
                         withAnimation(.easeInOut) { showSyncBanner = true }
@@ -327,6 +345,7 @@ struct ContentView: View {
         } else {
             showOnboarding = true
         }
+        isInitialCheckDone = true
     }
 
     /// Inline view shown while waiting for iCloud sync on a new device
@@ -364,6 +383,7 @@ struct ContentView: View {
                         .font(DS.Typography.label)
                         .foregroundStyle(.secondary)
                 }
+                .accessibilityHint(L10n.Accessibility.skipSync)
                 .padding(.top, DS.Spacing.lg)
             }
             .padding(.horizontal, DS.Spacing.xxl)
@@ -657,7 +677,7 @@ struct MorePlaceholderView: View {
                         .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
                         .background(
                             RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.gray)
+                                .fill(Color.gray) // A11Y-DM: gray badge on brand accent bg — visible both modes
                         )
 
                     Text(L10n.Profile.title)
@@ -760,8 +780,32 @@ struct SearchContentView: View {
 
     // MARK: - Filtered Results
 
+    private func matchesSearch(_ transaction: TransactionItem, search: String, filter: SearchFilter) -> Bool {
+        let lowercasedSearch = search.lowercased()
+        switch filter {
+        case .all:
+            let noteMatch = transaction.note?.lowercased().contains(lowercasedSearch) ?? false
+            let categoryMatch = transaction.category?.name.lowercased().contains(lowercasedSearch) ?? false
+            let subcategoryMatch = transaction.subcategory?.name.lowercased().contains(lowercasedSearch) ?? false
+            let accountMatch = transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
+            let tagMatch = (transaction.tags ?? []).contains { $0.name.lowercased().contains(lowercasedSearch) }
+            return noteMatch || categoryMatch || subcategoryMatch || accountMatch || tagMatch
+        case .note:
+            return transaction.note?.lowercased().contains(lowercasedSearch) ?? false
+        case .category:
+            return transaction.category?.name.lowercased().contains(lowercasedSearch) ?? false
+        case .subcategory:
+            return transaction.subcategory?.name.lowercased().contains(lowercasedSearch) ?? false
+        case .account:
+            return transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
+        case .nature:
+            return transaction.subcategory?.nature.displayName.lowercased().contains(lowercasedSearch) ?? false
+        case .tag:
+            return (transaction.tags ?? []).contains { $0.name.lowercased().contains(lowercasedSearch) }
+        }
+    }
+
     private var filteredResults: [TransactionItem] {
-        // Pre-filter: exclude income transactions in expenses-only mode
         let baseTransactions: [TransactionItem]
         if sessionState.isExpensesOnlyMode {
             baseTransactions = transactions.filter { $0.category?.isIncome != true }
@@ -769,51 +813,15 @@ struct SearchContentView: View {
             baseTransactions = transactions
         }
 
-        // If no search text, show all (limited to 20)
         guard !searchText.isEmpty else {
             return Array(baseTransactions.prefix(20))
         }
 
-        let lowercasedSearch = searchText.lowercased()
-
-        return baseTransactions.filter { transaction in
-            switch selectedFilter {
-            case .all:
-                // Search in all fields
-                let noteMatch = transaction.note?.lowercased().contains(lowercasedSearch) ?? false
-                let categoryMatch =
-                    transaction.category?.name.lowercased().contains(lowercasedSearch) ?? false
-                let subcategoryMatch =
-                    transaction.subcategory?.name.lowercased().contains(lowercasedSearch) ?? false
-                let accountMatch =
-                    transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
-                let tagMatch = (transaction.tags ?? []).contains {
-                    $0.name.lowercased().contains(lowercasedSearch)
-                }
-                return noteMatch || categoryMatch || subcategoryMatch || accountMatch || tagMatch
-            case .note:
-                return transaction.note?.lowercased().contains(lowercasedSearch) ?? false
-            case .category:
-                return transaction.category?.name.lowercased().contains(lowercasedSearch) ?? false
-            case .subcategory:
-                return transaction.subcategory?.name.lowercased().contains(lowercasedSearch)
-                    ?? false
-            case .account:
-                return transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
-            case .nature:
-                return transaction.subcategory?.nature.displayName.lowercased()
-                    .contains(lowercasedSearch) ?? false
-            case .tag:
-                return (transaction.tags ?? []).contains { $0.name.lowercased().contains(lowercasedSearch) }
-            }
-        }
-        .prefix(20)
-        .map { $0 }
+        return Array(baseTransactions.filter { matchesSearch($0, search: searchText, filter: selectedFilter) }.prefix(20))
     }
 
     // Total count for "Ver todo" (without limit)
     private var totalMatchingCount: Int {
-        // Pre-filter: exclude income transactions in expenses-only mode
         let baseTransactions: [TransactionItem]
         if sessionState.isExpensesOnlyMode {
             baseTransactions = transactions.filter { $0.category?.isIncome != true }
@@ -823,38 +831,7 @@ struct SearchContentView: View {
 
         guard !searchText.isEmpty else { return baseTransactions.count }
 
-        let lowercasedSearch = searchText.lowercased()
-
-        return baseTransactions.filter { transaction in
-            switch selectedFilter {
-            case .all:
-                let noteMatch = transaction.note?.lowercased().contains(lowercasedSearch) ?? false
-                let categoryMatch =
-                    transaction.category?.name.lowercased().contains(lowercasedSearch) ?? false
-                let subcategoryMatch =
-                    transaction.subcategory?.name.lowercased().contains(lowercasedSearch) ?? false
-                let accountMatch =
-                    transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
-                let tagMatch = (transaction.tags ?? []).contains {
-                    $0.name.lowercased().contains(lowercasedSearch)
-                }
-                return noteMatch || categoryMatch || subcategoryMatch || accountMatch || tagMatch
-            case .note:
-                return transaction.note?.lowercased().contains(lowercasedSearch) ?? false
-            case .category:
-                return transaction.category?.name.lowercased().contains(lowercasedSearch) ?? false
-            case .subcategory:
-                return transaction.subcategory?.name.lowercased().contains(lowercasedSearch)
-                    ?? false
-            case .account:
-                return transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
-            case .nature:
-                return transaction.subcategory?.nature.displayName.lowercased().contains(
-                    lowercasedSearch) ?? false
-            case .tag:
-                return (transaction.tags ?? []).contains { $0.name.lowercased().contains(lowercasedSearch) }
-            }
-        }.count
+        return baseTransactions.filter { matchesSearch($0, search: searchText, filter: selectedFilter) }.count
     }
 
     // MARK: - Grouped Results by Date
@@ -911,20 +888,23 @@ struct SearchContentView: View {
             }
         } label: {
             Text(filter.displayName)
-                .font(.subheadline.weight(isSelected ? .semibold : .regular))
+                .font(DS.Typography.subheadline.weight(isSelected ? .semibold : .regular))
                 .foregroundStyle(isSelected ? .white : .primary)
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.sm)
                 .background(
-                    Capsule()
-                        .fill(isSelected ? theme.accent : Color.clear)
-                )
-                .overlay(
-                    Capsule()
-                        .stroke(Color.secondary.opacity(0.3), lineWidth: isSelected ? 0 : 1)
+                    Group {
+                        if isSelected {
+                            Capsule().fill(theme.accent)
+                        } else {
+                            Capsule().fill(.clear).glassEffect(.regular.interactive(), in: .capsule)
+                        }
+                    }
                 )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(filter.displayName)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     // MARK: - Search Results
@@ -979,21 +959,11 @@ struct SearchContentView: View {
 
                 // No results message
                 if filteredResults.isEmpty && !searchText.isEmpty {
-                    VStack(spacing: DS.Spacing.md) {
-                        Image(systemName: "magnifyingglass")
-                            .font(DS.Typography.amountLarge)
-                            .foregroundStyle(.tertiary)
-
-                        Text(L10n.Search.noResults)
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.primary)
-
-                        Text(L10n.Search.tryAnotherTerm)
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 60)
+                    YalaEmptyState.noResults()
+                        .padding(.top, DS.Spacing.xxxl)
+                } else if filteredResults.isEmpty && searchText.isEmpty {
+                    YalaEmptyState.noTransactions()
+                        .padding(.top, DS.Spacing.xxxl)
                 }
             }
             .padding(.bottom, DS.Spacing.xl)
@@ -1007,18 +977,21 @@ struct SearchContentView: View {
 struct SearchDateSectionHeader: View {
     let date: Date
 
-    private var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
+    private static let sectionDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "d MMM yyyy"
+        return f
+    }()
 
+    private var formattedDate: String {
         let calendar = Calendar.current
         if calendar.isDateInToday(date) {
             return L10n.Date.today
         } else if calendar.isDateInYesterday(date) {
             return L10n.Date.yesterday
         } else {
-            formatter.dateFormat = "d MMM yyyy"
-            return formatter.string(from: date).replacingOccurrences(of: ".", with: "")
+            return Self.sectionDateFormatter.string(from: date).replacingOccurrences(of: ".", with: "")
         }
     }
 
@@ -1104,11 +1077,12 @@ struct SearchResultRow: View {
 
                 // Amount
                 Text(formattedAmount)
-                    .font(DS.Typography.headline)
+                    .font(DS.Typography.amount)
                     .foregroundStyle(amountColor)
             }
             .padding(.vertical, DS.Spacing.md)
             .padding(.horizontal, DS.Spacing.md)
+            .contentShape(Rectangle())
             .background(cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
         }
@@ -1116,7 +1090,7 @@ struct SearchResultRow: View {
     }
 
     private var subcategoryIcon: some View {
-        let colorHex = record.category?.colorHex ?? "#6366F1"
+        let colorHex = record.category?.colorHex ?? AppConstants.defaultColorHex
         let iconName = record.subcategory?.iconName ?? record.category?.iconName ?? "tag.fill"
 
         return ZStack {

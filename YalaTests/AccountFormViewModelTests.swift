@@ -169,6 +169,24 @@ struct AccountFormViewModelTests {
         #expect(vm.needsAdjustment == true)
     }
 
+    // MARK: - Credit Card Fields
+
+    @MainActor @Test func creditCard_defaultValues() {
+        let vm = AccountFormViewModel(accountToEdit: nil, existingNames: [])
+        #expect(vm.creditCardPaymentReminder == false)
+        #expect(vm.creditCardPaymentDay == 1)
+    }
+
+    @MainActor @Test func creditCard_loadsFromAccount() {
+        let account = Account(name: "Visa", currencyCode: "USD", colorHex: "#FF0080", iconName: "creditcard.fill", type: "Tarjeta de crédito")
+        account.creditCardPaymentReminder = true
+        account.creditCardPaymentDay = 15
+        let vm = AccountFormViewModel(accountToEdit: account, existingNames: [])
+        #expect(vm.creditCardPaymentReminder == true)
+        #expect(vm.creditCardPaymentDay == 15)
+        #expect(vm.selectedType == .creditCard)
+    }
+
     // Cambio de modo: byEntry → changeInitialBalance pre-llena, changeInitialBalance → byEntry limpia
     @MainActor @Test func adjustmentModeChanged_switchModes_correctState() {
         let account = Account(name: "Test", currencyCode: "PEN", colorHex: "#6366F1", iconName: "creditcard.fill", type: "bank")

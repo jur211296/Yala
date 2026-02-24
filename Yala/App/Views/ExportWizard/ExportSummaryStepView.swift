@@ -63,7 +63,7 @@ struct ExportSummaryStepView: View {
         .navigationTitle(L10n.Export.summaryAndExport)
         .navigationBarTitleDisplayMode(.inline)
         .alert(L10n.Export.exportError, isPresented: $showErrorAlert, presenting: exportError) { _ in
-            Button("OK", role: .cancel) {}
+            Button(L10n.Common.ok, role: .cancel) {}
         } message: { error in
             if let localizedError = error as? LocalizedError {
                 Text(localizedError.recoverySuggestion ?? localizedError.localizedDescription)
@@ -220,14 +220,19 @@ struct ExportSummaryStepView: View {
         return L10n.Export.accountsSelected(exportFilters.selectedAccounts.count)
     }
 
-    private var periodSummaryText: String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale.current
-        formatter.dateStyle = .medium
+    // MARK: - Static Formatters
 
+    private static let periodFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale.current
+        f.dateStyle = .medium
+        return f
+    }()
+
+    private var periodSummaryText: String {
         let from = exportFilters.dateFrom
         let to = exportFilters.dateTo
-        return "\(formatter.string(from: from)) - \(formatter.string(from: to))"
+        return "\(Self.periodFormatter.string(from: from)) - \(Self.periodFormatter.string(from: to))"
     }
 
     private var categoriesSummaryText: String {

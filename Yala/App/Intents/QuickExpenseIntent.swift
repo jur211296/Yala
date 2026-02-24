@@ -196,6 +196,8 @@ struct QuickExpenseIntent: AppIntent {
 
         do {
             try context.save()
+            WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
         } catch {
             return .result(dialog: "shortcut.error.save")
         }
@@ -726,7 +728,15 @@ struct ApplePayTransactionIntent: AppIntent {
         let context = container.mainContext
 
         // Guard: no accounts configured yet
-        let accountCount = (try? context.fetchCount(FetchDescriptor<Account>())) ?? 0
+        let accountCount: Int
+        do {
+            accountCount = try context.fetchCount(FetchDescriptor<Account>())
+        } catch {
+            #if DEBUG
+            print("QuickExpenseIntent: Error fetching account count: \(error)")
+            #endif
+            accountCount = 0
+        }
         guard accountCount > 0 else {
             return .result(dialog: "shortcut.error.noAccount")
         }
@@ -882,6 +892,12 @@ private struct AutomationTransactionData: Codable {
 
 struct AutomationEntryIntent: AppIntent {
 
+    private static let isoDateFormatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withFullDate]
+        return f
+    }()
+
     static var title: LocalizedStringResource = "shortcut.automation.title"
     static var description = IntentDescription("shortcut.automation.description")
 
@@ -958,9 +974,7 @@ struct AutomationEntryIntent: AppIntent {
         // Parse date if provided (ISO format: YYYY-MM-DD)
         var effectiveDate = Date()
         if let dateString = transaction.date, !dateString.isEmpty {
-            let formatter = ISO8601DateFormatter()
-            formatter.formatOptions = [.withFullDate]
-            if let parsed = formatter.date(from: dateString) {
+            if let parsed = Self.isoDateFormatter.date(from: dateString) {
                 effectiveDate = parsed
             }
         }
@@ -985,7 +999,15 @@ struct AutomationEntryIntent: AppIntent {
         let context = container.mainContext
 
         // Guard: no accounts configured yet
-        let accountCount = (try? context.fetchCount(FetchDescriptor<Account>())) ?? 0
+        let accountCount: Int
+        do {
+            accountCount = try context.fetchCount(FetchDescriptor<Account>())
+        } catch {
+            #if DEBUG
+            print("QuickExpenseIntent: Error fetching account count: \(error)")
+            #endif
+            accountCount = 0
+        }
         guard accountCount > 0 else {
             return .result(dialog: "shortcut.error.noAccount")
         }
@@ -1057,7 +1079,7 @@ struct AutomationEntryIntent: AppIntent {
 
         // Format success message
         let formattedAmount = formatIntentCurrency(amount: transaction.amount, currencyCode: normalizedCurrency)
-        let noteDisplay = finalNote.isEmpty ? "Automatización" : finalNote
+        let noteDisplay = finalNote.isEmpty ? String(localized: "shortcut.automation.defaultNote") : finalNote
         return .result(dialog: "shortcut.automation.success \(formattedAmount) \(noteDisplay)")
     }
 
@@ -1093,7 +1115,7 @@ struct SiriNaturalEntryIntent: AppIntent {
         }
 
         // Step 2: Pro gate — LLM parsing requires Pro subscription
-        let isProUser = UserDefaults(suiteName: "group.com.yala.shared")?.bool(forKey: "isProUser") ?? false
+        let isProUser = UserDefaults(suiteName: SharedContainerService.appGroupIdentifier)?.bool(forKey: "isProUser") ?? false
 
         guard isProUser else {
             return .result(dialog: "shortcut.siriNatural.error.proRequired")
@@ -1116,7 +1138,15 @@ struct SiriNaturalEntryIntent: AppIntent {
         let context = container.mainContext
 
         // Step 4: Guard — at least 1 account configured
-        let accountCount = (try? context.fetchCount(FetchDescriptor<Account>())) ?? 0
+        let accountCount: Int
+        do {
+            accountCount = try context.fetchCount(FetchDescriptor<Account>())
+        } catch {
+            #if DEBUG
+            print("SiriNaturalEntryIntent: Error fetching account count: \(error)")
+            #endif
+            accountCount = 0
+        }
         guard accountCount > 0 else {
             return .result(dialog: "shortcut.error.noAccount")
         }
@@ -1126,7 +1156,15 @@ struct SiriNaturalEntryIntent: AppIntent {
             predicate: #Predicate { $0.isVisible },
             sortBy: [SortDescriptor(\Subcategory.name)]
         )
-        let allSubcategories = (try? context.fetch(subcategoryDescriptor)) ?? []
+        let allSubcategories: [Subcategory]
+        do {
+            allSubcategories = try context.fetch(subcategoryDescriptor)
+        } catch {
+            #if DEBUG
+            print("SiriNaturalEntryIntent: Error fetching subcategories: \(error)")
+            #endif
+            allSubcategories = []
+        }
 
         let expenseSubcategories = allSubcategories
             .filter { !$0.safeCategory.isIncome }
@@ -1182,7 +1220,15 @@ struct SiriNaturalEntryIntent: AppIntent {
         let pendingDescriptor = FetchDescriptor<InboxDraft>(
             predicate: #Predicate { $0.statusRaw == "pending" }
         )
-        let existingDrafts = (try? context.fetch(pendingDescriptor)) ?? []
+        let existingDrafts: [InboxDraft]
+        do {
+            existingDrafts = try context.fetch(pendingDescriptor)
+        } catch {
+            #if DEBUG
+            print("SiriNaturalEntryIntent: Error fetching pending drafts: \(error)")
+            #endif
+            existingDrafts = []
+        }
 
         // Step 8: Create InboxDrafts from parsed transactions
         let merchantService = MerchantMemoryService(modelContext: context)
@@ -1309,12 +1355,16 @@ struct SiriNaturalEntryIntent: AppIntent {
 
 // MARK: - Shared Intent Helpers
 
+private let intentCurrencyFormatter: NumberFormatter = {
+    let f = NumberFormatter()
+    f.numberStyle = .currency
+    f.maximumFractionDigits = 2
+    return f
+}()
+
 private func formatIntentCurrency(amount: Double, currencyCode: String) -> String {
-    let formatter = NumberFormatter()
-    formatter.numberStyle = .currency
-    formatter.currencyCode = currencyCode
-    formatter.maximumFractionDigits = 2
-    return formatter.string(from: NSNumber(value: amount)) ?? "\(currencyCode) \(amount)"
+    intentCurrencyFormatter.currencyCode = currencyCode
+    return intentCurrencyFormatter.string(from: NSNumber(value: amount)) ?? "\(currencyCode) \(amount)"
 }
 
 @MainActor

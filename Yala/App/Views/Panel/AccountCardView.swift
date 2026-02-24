@@ -95,7 +95,7 @@ struct AccountCardView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.primary.opacity(0.06), lineWidth: 0.8)
+                    .stroke(DS.Colors.borderDark, lineWidth: 1)
             )
 
             if let onEditTapped {
@@ -109,6 +109,7 @@ struct AccountCardView: View {
                         .background(.ultraThinMaterial, in: Circle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(L10n.Accessibility.editAccount)
                 .padding(DS.Spacing.sm)
             }
 
@@ -121,6 +122,8 @@ struct AccountCardView: View {
             }
         }
         .opacity(isExcluded ? 0.5 : 1.0)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(L10n.Accessibility.accountCard(account.name, formattedAmount(currentBalance)))
     }
 
     private var iconForAccount: String {
@@ -130,20 +133,6 @@ struct AccountCardView: View {
     private func formattedAmount(_ value: Double) -> String {
         YalaFormatter.currency(
             value: value, currencyCode: normalizeCurrencyCode(account.currencyCode))
-    }
-
-    // Helpers locally defined to resolve scope issues
-    private func normalizeCurrencyCode(_ raw: String) -> String {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { return "PEN" }
-
-        let upper = trimmed.uppercased()
-        switch upper {
-        case "PEN", "SOL", "SOLES", "S/", "S/.", "S/. ": return "PEN"
-        case "USD", "US$", "US DOLLAR", "$", "$USD", "USD$": return "USD"
-        case "EUR", "€", "EURO": return "EUR"
-        default: return "PEN"
-        }
     }
 
 }
@@ -174,7 +163,7 @@ struct AddAccountCardView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.primary.opacity(0.06), lineWidth: 0.8)
+                    .stroke(DS.Colors.borderDark, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)

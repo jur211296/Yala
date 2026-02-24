@@ -118,6 +118,7 @@
 "filters.includeMode" = "Includere";
 "filters.excludeMode" = "Escludere";
 "filters.nothingExcluded" = "Nessuno";
+"filters.datePrefix %@" = "Data: %@";
 
 // MARK: - Actions
 
@@ -144,6 +145,8 @@
 "action.select" = "Seleziona";
 "action.retry" = "Riprova";
 "action.later" = "Più tardi";
+"action.reorder" = "Riordinare";
+"action.clearAll" = "Cancella filtri";
 
 // MARK: - Search
 
@@ -272,6 +275,7 @@
 "import.assignAccountPerCurrency" = "Assegna un conto per ogni valuta trovata nel file.";
 "import.selectAccountForCurrency" = "Seleziona conto";
 "import.currenciesDetected" = "%d valute rilevate";
+"import.recordsImported" = "%d record importati con successo.";
 "import.recordsImportedMultiCurrency" = "%d record importati in %d valute.";
 "import.noAccountsForCurrency" = "Nessun conto in %@. Crea prima un conto in questa valuta.";
 "import.noCurrenciesDetected" = "Nessuna valuta valida rilevata nel file.";
@@ -443,6 +447,7 @@
 "budgets.status.exceeded" = "Superati";
 "budgets.status.active" = "Attivi";
 "budgets.status.inactive" = "Inattivi";
+"budget.noInactive" = "Nessun budget inattivo";
 
 // Budget Details
 "budgets.spent.percent" = "%@ speso";
@@ -473,6 +478,7 @@
 // MARK: - Profile
 
 "profile.title" = "Profilo";
+"profile.defaultName" = "Utente";
 "profile.personalDetails" = "Dati personali";
 "profile.dataManagement" = "Gestione dati";
 "profile.appearance" = "Aspetto";
@@ -576,6 +582,7 @@
 "widgetType.subcategoriesPie" = "Distribuzione sottocategorie";
 "widgetType.latestRecords" = "Ultime registrazioni";
 "widgetType.expensesByNature" = "Spese per natura";
+"widgetType.expensesByTag" = "Spese per etichetta";
 "widgetType.exchangeRate" = "Tasso di cambio";
 "widgetType.budgets" = "Budget";
 "widgetType.scheduledPayments" = "Pagamenti pianificati";
@@ -824,6 +831,7 @@
 "settings.deleteAllData" = "Elimina tutti i tuoi dati";
 "settings.deleteDataConfirmation" = "Eliminare tutti i tuoi dati?";
 "settings.deleteDataWarning" = "Questa azione e irreversibile. Tutti i tuoi conti, transazioni, budget, tassi di cambio e categorie verranno eliminati. Dopo cio, Yala verra ripristinato a uno stato simile a quello iniziale e non potrai recuperare i tuoi dati.";
+"settings.wipeICloudWarning" = "Questo eliminerà anche i tuoi dati iCloud. Gli altri dispositivi sincronizzati perderanno questi dati.";
 "settings.delete" = "Elimina";
 "settings.cancel" = "Annulla";
 "settings.iconOriginal" = "Originale";
@@ -991,6 +999,7 @@
 
 "common.seeAll" = "Vedi tutto";
 "common.none" = "Nessuno";
+"common.ok" = "OK";
 
 "common.selectColor" = "Seleziona un colore";
 "common.useThisColor" = "Usa questo colore";
@@ -1106,6 +1115,10 @@
 "account.adjustByEntryDesc" = "Inserisci il saldo corretto e creeremo una registrazione di correzione. Usalo se hai dimenticato di registrare alcune spese.";
 "account.changeInitialBalanceName" = "Modifica saldo iniziale";
 "account.changeInitialBalanceDesc" = "Inserisci il saldo corretto e modificheremo il saldo iniziale del tuo conto. Usalo se non hai registrato per molto tempo.";
+"account.creditCard.sectionTitle" = "Carta di credito";
+"account.creditCard.paymentReminder" = "Avvisa alla data di pagamento";
+"account.creditCard.paymentDay" = "Giorno di pagamento";
+"account.creditCard.paymentNotification" = "Ricorda di pagare la tua carta %@ oggi";
 "category.others" = "Altri";
 "subcategory.balanceAdjustment" = "Rettifiche del saldo";
 
@@ -1261,6 +1274,81 @@
 "filters.clear" = "Cancella";
 "action.close" = "Chiudi";
 
+// MARK: - Accessibility
+"accessibility.closeMenu" = "Chiudi menu";
+"accessibility.newRecord" = "Nuovo registro";
+"accessibility.filters" = "Filtri";
+"accessibility.clearFilters" = "Cancella filtri";
+"accessibility.cancelRecording" = "Annulla registrazione";
+"accessibility.stopRecording" = "Interrompi registrazione";
+"accessibility.startRecording" = "Avvia registrazione";
+"accessibility.cancelPreview" = "Annulla anteprima";
+"accessibility.cancelProcessing" = "Annulla elaborazione";
+"accessibility.cashFlowChart" = "Grafico del flusso di cassa";
+"accessibility.categoryPieChart" = "Grafico a torta delle spese per categoria";
+"accessibility.subcategoryPieChart" = "Grafico a torta delle spese per sottocategoria";
+"accessibility.tagPieChart" = "Grafico a torta delle spese per etichetta";
+"accessibility.widgetFixed" = "Widget fisso, sempre visibile";
+"accessibility.favoriteTemplates" = "Modelli preferiti";
+"accessibility.exceeded" = "Superato";
+"accessibility.inbox" = "Posta in arrivo";
+"accessibility.widgetPreferences" = "Preferenze widget";
+"accessibility.createAccountFirst" = "Crea almeno un conto e una categoria";
+"accessibility.removeFilter" = "Rimuovi filtro";
+"balance.status.good" = "Buono";
+"balance.status.critical" = "Critico";
+"balance.status.normal" = "Normale";
+"accessibility.viewDetails" = "Vedi dettagli";
+"accessibility.viewAllRecords" = "Vedi tutti i registri";
+"accessibility.viewAllCategories" = "Vedi tutte le categorie";
+"accessibility.deleteSubcategory" = "Elimina sottocategoria";
+"accessibility.deleteCategory" = "Elimina categoria";
+"accessibility.deleteTag" = "Elimina etichetta";
+"accessibility.processAudio" = "Elabora audio";
+"accessibility.exchangeRateChart" = "Grafico del tasso di cambio";
+"accessibility.periodComparison" = "Grafico di confronto tra periodi";
+"accessibility.natureTrend" = "Grafico delle spese per natura";
+"accessibility.noData" = "Nessun dato";
+"accessibility.completeFormHint" = "Per salvare, completa importo, conto e categoria";
+"accessibility.completeSelectionHint" = "Completa la selezione richiesta";
+"accessibility.periodComparisonValue %d" = "Periodo attuale vs precedente, %d punti";
+"accessibility.trendChart %@" = "Grafico delle tendenze di %@";
+"accessibility.dataPoints %d" = "%d punti";
+"accessibility.categoriesCount %d %@" = "%d categorie, totale %@";
+"accessibility.subcategoriesCount %d %@" = "%d sottocategorie, totale %@";
+"accessibility.tagsCount %d %@" = "%d etichette, totale %@";
+"accessibility.periodsCount %d" = "%d periodi";
+"accessibility.currenciesCount %d" = "%d valute";
+"accessibility.cashFlowSummary %@ %@" = "Entrate %@, Uscite %@";
+"accessibility.selectAtLeastOneDraft" = "Seleziona almeno una bozza";
+"accessibility.approveCompleteHint" = "Per approvare, completa conto, importo e categoria";
+"accessibility.updatingExchangeRates" = "Aggiornamento dei tassi di cambio";
+"accessibility.authenticating" = "Autenticazione in corso";
+"accessibility.showMoreSubcategories" = "Mostra più sottocategorie";
+"accessibility.subscriptionToggle" = "Segna come abbonamento";
+"accessibility.skipSync" = "Salta l'attesa e continua la configurazione";
+"accessibility.tabLimitReached" = "Limite di schede raggiunto";
+"accessibility.noTransactionsToExport" = "Nessuna transazione da esportare";
+"accessibility.accountCard %@ %@" = "Conto %@, saldo %@";
+"accessibility.editAccount" = "Modifica conto";
+"accessibility.pageIndicator %d %d" = "Pagina %1$d di %2$d";
+"accessibility.accountRow %@ %@" = "Conto %@, valuta %@";
+"accessibility.budgetRow %@ %d %@ %@" = "Budget %@, %d percento speso, %@ di %@";
+"accessibility.searchResultRow %@ %@ %@" = "%@, %@, %@";
+"accessibility.filterScheduledAll" = "Tutti i pagamenti";
+"accessibility.filterScheduledRecurring" = "Filtro: ricorrenti";
+"accessibility.filterScheduledSubscriptions" = "Filtro: abbonamenti";
+"accessibility.calendarDay %d" = "Giorno %d";
+"accessibility.recentRecord %@ %@ %@" = "%@, %@, %@";
+"accessibility.sourceAmount" = "Importo di origine";
+"accessibility.destinationAmount" = "Importo di destinazione";
+"accessibility.exchangeRate" = "Tasso di cambio";
+"accessibility.draftRow %@ %@ %@" = "Bozza: %@, %@, %@";
+"accessibility.metricBalance" = "Saldo";
+"accessibility.metricIncome" = "Entrate";
+"accessibility.metricExpense" = "Spese";
+"accessibility.colorOption %@" = "Colore %@";
+
 // MARK: - Widget Hints
 
 "settings.widgetHints" = "Testi di aiuto";
@@ -1327,6 +1415,7 @@
 "onboarding.periodTitle" = "Periodo predefinito";
 "onboarding.periodSubtitle" = "Quale intervallo di tempo preferisci vedere all'apertura dell'app?";
 "onboarding.finish" = "Inizia";
+"onboarding.defaultAccountName" = "Il mio conto";
 "onboarding.categoriesTitle" = "Categorie per iniziare";
 "onboarding.categoriesSubtitle" = "Abbiamo preparato categorie comuni per aiutarti a organizzare le tue spese fin dal primo giorno.";
 "onboarding.categoriesYes" = "Inizia con queste categorie";
@@ -1431,6 +1520,7 @@
 "inbox.errorNoAmount" = "Specify amount";
 "inbox.errorNoSubcategory" = "Select subcategory";
 "inbox.errorArchivedAccount" = "Questo conto è archiviato. Modifica la bozza e cambia il conto per approvare.";
+"inbox.errorFutureDate" = "Le transazioni con data futura non possono essere approvate";
 "inbox.duplicateWarningTitle" = "Possible duplicate";
 "inbox.duplicateWarningMessage" = "Similar transaction exists. Create anyway?";
 "inbox.createAnyway" = "Create anyway";
@@ -1440,6 +1530,7 @@
 "inbox.deleteTitle" = "Elimina bozza";
 "inbox.deleteMessage" = "Questa azione non può essere annullata.";
 "inbox.reject" = "Rifiuta";
+"inbox.approveAll" = "Approva tutto";
 "inbox.returnToPending" = "Torna a in sospeso";
 "inbox.discardChangesTitle" = "Annullare le modifiche?";
 "inbox.discardChanges" = "Annulla";
@@ -1653,6 +1744,7 @@
 "shortcut.automation.error.noCurrency" = "È richiesta una valuta (es: USD, PEN, EUR).";
 "shortcut.automation.error.noJSON" = "Sono richiesti i dati JSON della transazione.";
 "shortcut.automation.success %@ %@" = "Bozza creata: %@ a %@. Controlla la tua posta in arrivo.";
+"shortcut.automation.defaultNote" = "Automazione";
 
 // MARK: - Siri Natural Language Entry
 "shortcut.siriNatural.title" = "Voce con Siri";

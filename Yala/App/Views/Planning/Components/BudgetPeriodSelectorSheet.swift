@@ -11,7 +11,7 @@ struct BudgetPeriodSelectorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledIconSize: CGFloat = 36
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledIconSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
     @Bindable var viewModel: BudgetsViewModel
     var transactions: [TransactionItem]
     var onPeriodChange: () -> Void
@@ -238,6 +238,18 @@ struct BudgetPeriodSelectorSheet: View {
 
     // MARK: - Period Generation
 
+    private static let weekDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "d MMM"
+        return f
+    }()
+
+    private static let monthDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMMM yyyy"
+        return f
+    }()
+
     private func generatePeriods() {
         let calendar = Calendar.current
         var generatedPeriods: [PeriodOption] = []
@@ -258,10 +270,8 @@ struct BudgetPeriodSelectorSheet: View {
             while weekDate <= endWeek {
                 let weekEnd = calendar.date(byAdding: .day, value: 6, to: weekDate) ?? weekDate
 
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "d MMM"
-                let startStr = dateFormatter.string(from: weekDate)
-                let endStr = dateFormatter.string(from: weekEnd)
+                let startStr = Self.weekDateFormatter.string(from: weekDate)
+                let endStr = Self.weekDateFormatter.string(from: weekEnd)
 
                 let isCurrent = calendar.isDate(weekDate, equalTo: viewModel.selectedWeek, toGranularity: .weekOfYear) &&
                                 calendar.isDate(weekDate, equalTo: viewModel.selectedWeek, toGranularity: .year)
@@ -300,9 +310,7 @@ struct BudgetPeriodSelectorSheet: View {
 
             var monthDate = startMonth
             while monthDate <= endMonth {
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "MMMM yyyy"
-                let monthStr = dateFormatter.string(from: monthDate)
+                let monthStr = Self.monthDateFormatter.string(from: monthDate)
 
                 let isCurrent = calendar.isDate(monthDate, equalTo: viewModel.selectedMonth, toGranularity: .month)
 
@@ -354,7 +362,7 @@ struct BudgetPeriodSelectorSheet: View {
                 }
 
                 generatedPeriods.append(PeriodOption(
-                    date: Date(),  // Placeholder, we use year directly
+                    date: calendar.date(from: DateComponents(year: year)) ?? Date(),
                     title: "\(year)",
                     subtitle: specialText,
                     isCurrent: isCurrent

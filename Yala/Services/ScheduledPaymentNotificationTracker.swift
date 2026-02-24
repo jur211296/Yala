@@ -15,7 +15,18 @@ final class ScheduledPaymentNotificationTracker {
     private let defaults = UserDefaults.standard
     private let keyPrefix = "scheduledPaymentNotif_"
 
+    private static let dateKeyFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyyMMdd"
+        return f
+    }()
+
     private init() {}
+
+    /// Public accessor for date key formatting (used by credit card notifications)
+    static func dateKeyString(from date: Date) -> String {
+        dateKeyFormatter.string(from: date)
+    }
 
     // MARK: - Notification Types
 
@@ -49,9 +60,6 @@ final class ScheduledPaymentNotificationTracker {
         let calendar = Calendar.current
         let cutoffDate = calendar.date(byAdding: .day, value: -30, to: Date()) ?? Date()
 
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyyMMdd"
-
         for key in trackerKeys {
             // Key format: scheduledPaymentNotif_UUID_YYYYMMDD_type
             let components = key.split(separator: "_")
@@ -59,7 +67,7 @@ final class ScheduledPaymentNotificationTracker {
 
             // Date is the third component (index 2, after prefix split)
             let dateString = String(components[2])
-            guard let keyDate = dateFormatter.date(from: dateString) else { continue }
+            guard let keyDate = Self.dateKeyFormatter.date(from: dateString) else { continue }
 
             if keyDate < cutoffDate {
                 defaults.removeObject(forKey: key)
@@ -70,9 +78,7 @@ final class ScheduledPaymentNotificationTracker {
     // MARK: - Private
 
     private func makeKey(paymentID: UUID, date: Date, type: NotificationType) -> String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyyMMdd"
-        let dateStr = dateFormatter.string(from: date)
+        let dateStr = Self.dateKeyFormatter.string(from: date)
         return "\(keyPrefix)\(paymentID.uuidString)_\(dateStr)_\(type.rawValue)"
     }
 }

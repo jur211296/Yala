@@ -41,12 +41,12 @@ struct NotificationsSettingsView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
+                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                     dismiss()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                YalaToolbarButton(systemName: "plus", label: "Agregar") {
+                YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
                     viewModel.isCreatingNew = true
                 }
             }
@@ -195,64 +195,6 @@ struct NotificationsSettingsView: View {
         )
     }
 
-    /// Legacy notifications list (kept for reference, not used)
-    private var notificationsList: some View {
-        VStack(spacing: DS.Spacing.md) {
-            ForEach(viewModel.notifications) { notification in
-                NotificationCard(
-                    notification: notification,
-                    onToggle: { isActive in
-                        notification.isActive = isActive
-                        viewModel.saveContext()
-                        Task {
-                            if isActive {
-                                // Check permission status
-                                let status = await NotificationService.shared.checkPermissionStatus()
-
-                                switch status {
-                                case .notDetermined:
-                                    // First time - request permission
-                                    let granted = await NotificationService.shared.requestPermission()
-                                    if granted {
-                                        await NotificationService.shared.scheduleNotification(for: notification)
-                                    } else {
-                                        await MainActor.run {
-                                            notification.isActive = false
-                                            viewModel.saveContext()
-                                        }
-                                    }
-
-                                case .denied:
-                                    // Previously denied - show settings alert
-                                    await MainActor.run {
-                                        notification.isActive = false
-                                        viewModel.saveContext()
-                                        viewModel.showPermissionAlert = true
-                                    }
-
-                                case .authorized, .provisional, .ephemeral:
-                                    // Already authorized - schedule
-                                    await NotificationService.shared.scheduleNotification(for: notification)
-
-                                @unknown default:
-                                    break
-                                }
-                            } else {
-                                await NotificationService.shared.cancelNotification(for: notification)
-                            }
-                        }
-                    },
-                    onTap: {
-                        viewModel.selectedNotification = notification
-                    },
-                    onDelete: notification.notificationType.isDeletable ? {
-                        deleteNotification(notification)
-                    } : nil
-                )
-            }
-        }
-    }
-
     // MARK: - Actions
 
     private func deleteNotification(_ notification: NotificationItem) {
@@ -292,7 +234,7 @@ struct NotificationsSettingsView: View {
             Spacer()
 
             // Toggle
-            Toggle("", isOn: $budgetAlertsEnabled)
+            Toggle(L10n.Notifications.budgetAlertsTitle, isOn: $budgetAlertsEnabled)
                 .labelsHidden()
 
         }
@@ -366,12 +308,24 @@ struct NotificationCard: View {
                 }
 
                 // Toggle (stops propagation)
-                Toggle("", isOn: $isActive)
+                Toggle(notification.localizedName, isOn: $isActive)
                     .labelsHidden()
 
                     .onChange(of: isActive) { _, newValue in
                         onToggle(newValue)
                     }
+
+                // Delete button (only for deletable notifications)
+                if let onDelete = onDelete {
+                    Button(role: .destructive) {
+                        onDelete()
+                    } label: {
+                        Image(systemName: "trash")
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.red.opacity(0.7))
+                    }
+                    .buttonStyle(.plain)
+                }
             }
             .padding(DS.Spacing.lg)
             .background(.thCard)
@@ -384,15 +338,6 @@ struct NotificationCard: View {
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
-        .swipeActions(edge: .trailing) {
-            if let onDelete = onDelete {
-                Button(role: .destructive) {
-                    onDelete()
-                } label: {
-                    Label(L10n.Notifications.delete, systemImage: "trash")
-                }
-            }
-        }
         .onChange(of: notification.isActive) { _, newValue in
             isActive = newValue
         }

@@ -167,11 +167,11 @@ struct TopCategoriesWidget: View {
                 } label: {
                     Image(systemName: "chevron.right")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(Color.gray.opacity(0.7))
+                        .foregroundStyle(.secondary)
                         .padding(.leading, DS.Spacing.xs)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Ver todas las categorías")
+                .accessibilityLabel(L10n.Accessibility.viewAllCategories)
             }
         }
     }
@@ -276,35 +276,16 @@ struct TopCategoriesWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            if size == .small {
-                Spacer()  // Push down
-                Image(systemName: "folder.fill")
-                    .font(DS.Typography.largeTitle)
-                    .foregroundStyle(.secondary.opacity(0.5))
-                Text(L10n.Empty.noExpenses)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()  // Push up
-            } else {
-                Image(systemName: "folder.fill")
-                    .font(DS.Typography.largeTitle)
-                    .foregroundStyle(.secondary.opacity(0.5))
-                    .padding(.bottom, DS.Spacing.xs)
-
-                Text(L10n.Widget.noExpensesPeriod)
-                    .font(DS.Typography.label)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.primary)
-
-                Text(L10n.Widget.noExpensesDescriptionCategories)
-                    .font(DS.Typography.caption)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
-            }
+        if size == .small {
+            YalaEmptyState(icon: "folder.fill", title: L10n.Empty.noExpenses, style: .widget)
+        } else {
+            YalaEmptyState(
+                icon: "folder.fill",
+                title: L10n.Widget.noExpensesPeriod,
+                message: L10n.Widget.noExpensesDescriptionCategories,
+                style: .widget
+            )
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)  // Fill available space
-        .padding(.vertical, size == .small ? 0 : DS.Spacing.xxl)
     }
 
     // Helpers (moved inside View to be accessible)

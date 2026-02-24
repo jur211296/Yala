@@ -108,6 +108,7 @@ final class BudgetsFavoritesSettingsViewModel {
 
         do {
             try context.save()
+            WidgetDataCache.updateCache(context: context)
             loadBudgets()
         } catch {
             #if DEBUG
@@ -131,6 +132,7 @@ final class BudgetsFavoritesSettingsViewModel {
 
         do {
             try context.save()
+            WidgetDataCache.updateCache(context: context)
             loadBudgets()
         } catch {
             #if DEBUG

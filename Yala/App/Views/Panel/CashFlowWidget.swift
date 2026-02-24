@@ -11,8 +11,6 @@ import SwiftUI
 struct CashFlowWidget: View {
     @Environment(\.yalaTheme) private var theme
     @AppStorage("averageLineMode") private var averageLineMode: Int = 1
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
-
     let summary: CashFlowSummary
     let size: WidgetSize
     let period: String
@@ -381,10 +379,10 @@ struct CashFlowWidget: View {
                     Button(action: { onShowDetail?() }) {
                         Image(systemName: "chevron.right")
                             .font(DS.Typography.headline)
-                            .foregroundStyle(Color.gray.opacity(0.7))
+                            .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Ver detalles")
+                    .accessibilityLabel(L10n.Accessibility.viewDetails)
                 }
             }
             .padding([.horizontal, .top], DS.Spacing.lg)
@@ -493,9 +491,9 @@ struct CashFlowWidget: View {
                     averageLineMarks
                 }  // Close Chart
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Gráfica de flujo de caja")
-                .accessibilityValue(activeChartData.isEmpty ? "Sin datos" :
-                    "Ingresos \(YalaFormatter.currency(value: summary.totalIncome, currencyCode: summary.currencyCode)), Gastos \(YalaFormatter.currency(value: summary.totalExpense, currencyCode: summary.currencyCode))")
+                .accessibilityLabel(L10n.Accessibility.cashFlowChart)
+                .accessibilityValue(activeChartData.isEmpty ? L10n.Accessibility.noData :
+                    L10n.Accessibility.cashFlowSummary(income: YalaFormatter.currency(value: summary.totalIncome, currencyCode: summary.currencyCode), expense: YalaFormatter.currency(value: summary.totalExpense, currencyCode: summary.currencyCode)))
                 .chartXScale(domain: dataXDomain)
                 .chartYScale(domain: dataYDomain)
                 .chartXAxis {
@@ -816,20 +814,7 @@ struct CashFlowWidget: View {
 
     // Empty state view
     private var emptyStateView: some View {
-        VStack(spacing: DS.Spacing.md) {
-            Spacer()
-            Image(systemName: "chart.bar.xaxis")
-                .font(.system(size: scaledEmptyIconSize))
-                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                .foregroundStyle(.secondary)
-            Text(L10n.Empty.noData)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.bottom, DS.Spacing.xl)
+        YalaEmptyState(icon: "chart.bar.xaxis", title: L10n.Empty.noData, style: .widget)
     }
 
     // Helpers
@@ -854,13 +839,25 @@ struct CashFlowWidget: View {
         }
     }
 
+    private static let tooltipDayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "d MMM yy"
+        return f
+    }()
+
+    private static let tooltipMonthFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "MMM yy"
+        return f
+    }()
+
     private func formatTooltipDate(_ date: Date, grouping: TrendGrouping) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
+        let formatter: DateFormatter
         switch grouping {
-        case .day: formatter.dateFormat = "d MMM yy"  // 19 dic 25
-        case .week: formatter.dateFormat = "d MMM yy"  // 19 dic 25
-        case .month: formatter.dateFormat = "MMM yy"  // ene 25
+        case .day, .week: formatter = Self.tooltipDayFormatter
+        case .month: formatter = Self.tooltipMonthFormatter
         }
         return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
     }

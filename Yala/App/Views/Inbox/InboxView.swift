@@ -100,22 +100,27 @@ struct InboxView: View {
                         }
                     }
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button(L10n.Export.selectAll) {
+                        let allSelected = selectedDraftIDs.count == filteredDrafts.count
+                        Button(allSelected ? L10n.Export.deselectAll : L10n.Export.selectAll) {
                             dsWithAnimation(reduceMotion) {
-                                selectedDraftIDs = Set(filteredDrafts.map { $0.persistentModelID })
+                                if allSelected {
+                                    selectedDraftIDs.removeAll()
+                                } else {
+                                    selectedDraftIDs = Set(filteredDrafts.map { $0.persistentModelID })
+                                }
                             }
                         }
                     }
                 } else {
                     // Normal mode: X left, selection icon right
                     ToolbarItem(placement: .topBarLeading) {
-                        YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                        YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                             dismiss()
                         }
                     }
                     if !filteredDrafts.isEmpty {
                         ToolbarItem(placement: .topBarTrailing) {
-                            YalaToolbarButton(systemName: "checkmark.circle", label: "Aprobar todo") {
+                            YalaToolbarButton(systemName: "checkmark.circle", label: L10n.Inbox.approveAll) {
                                 dsWithAnimation(reduceMotion) {
                                     isSelectionMode = true
                                 }
@@ -135,7 +140,8 @@ struct InboxView: View {
                     },
                     onEditTransaction: { transaction in
                         // Open transaction editor after sheet dismiss
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        Task {
+                            try? await Task.sleep(for: .milliseconds(300))
                             selectedTransaction = transaction
                         }
                     }
@@ -147,7 +153,8 @@ struct InboxView: View {
                     pendingNextDraftID = nil
                     // Find the draft by ID and open it
                     if let nextDraft = viewModel.findPendingDraft(by: nextID) {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        Task {
+                            try? await Task.sleep(for: .milliseconds(300))
                             selectedDraft = nextDraft
                         }
                     }
@@ -178,7 +185,8 @@ struct InboxView: View {
                         onEdit: {
                             showSwipeSuccessView = false
                             if let transaction = swipeApprovedTransaction {
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                Task {
+                                    try? await Task.sleep(for: .milliseconds(300))
                                     selectedTransaction = transaction
                                 }
                             }
@@ -198,7 +206,7 @@ struct InboxView: View {
                 }
             }
             .alert(L10n.Inbox.cannotApprove, isPresented: $showArchivedAccountAlert) {
-                Button("OK", role: .cancel) {}
+                Button(L10n.Common.ok, role: .cancel) {}
             } message: {
                 Text(L10n.Inbox.errorArchivedAccount)
             }
@@ -235,7 +243,7 @@ struct InboxView: View {
                     .foregroundStyle(theme.accent)
                     .frame(minWidth: 44, minHeight: 44)
             }
-            .accessibilityLabel(selectedDraftIDs.count == filteredDrafts.count ? "Deseleccionar todos" : "Seleccionar todos")
+            .accessibilityLabel(selectedDraftIDs.count == filteredDrafts.count ? L10n.Filters.deselectAll : L10n.Filters.selectAll)
 
             // Count
             Text(L10n.Inbox.selectedCount(selectedDraftIDs.count))
@@ -259,7 +267,7 @@ struct InboxView: View {
                     )
             }
             .disabled(selectedDraftIDs.isEmpty)
-            .accessibilityHint(selectedDraftIDs.isEmpty ? "Selecciona al menos un borrador" : "")
+            .accessibilityHint(selectedDraftIDs.isEmpty ? L10n.Accessibility.selectAtLeastOneDraft : "")
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
@@ -354,11 +362,15 @@ struct InboxView: View {
         .scrollContentBackground(.hidden)
     }
 
-    private func formattedDate(_ date: Date) -> String {
+    private static let sectionDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = AppLocale.current
         formatter.setLocalizedDateFormatFromTemplate("d MMMM")
-        return formatter.string(from: date)
+        return formatter
+    }()
+
+    private func formattedDate(_ date: Date) -> String {
+        Self.sectionDateFormatter.string(from: date)
     }
 
     private func draftRow(for draft: InboxDraft) -> some View {
@@ -387,14 +399,14 @@ struct InboxView: View {
                     } label: {
                         Label(L10n.Inbox.delete, systemImage: "trash")
                     }
-                    .tint(.red)
+                    .tint(DS.Semantic.errorForeground)
 
                     Button {
                         rejectDraft(draft)
                     } label: {
                         Label(L10n.Inbox.reject, systemImage: "xmark.circle")
                     }
-                    .tint(.orange)
+                    .tint(DS.Semantic.warningForeground)
                 } else if draft.status == .rejected {
                     // Archived (rejected only): Delete
                     Button {
@@ -402,7 +414,7 @@ struct InboxView: View {
                     } label: {
                         Label(L10n.Inbox.delete, systemImage: "trash")
                     }
-                    .tint(.red)
+                    .tint(DS.Semantic.errorForeground)
                 }
                 // Approved drafts in archived: no swipe actions
             }
@@ -543,13 +555,12 @@ struct InboxView: View {
             } else {
                 // No linked transaction (old draft or transaction was deleted)
                 // Allow re-approval by changing status to pending
-                draft.status = .pending
-                draft.updatedAt = Date()
+                draftService.setContext(modelContext)
                 do {
-                    try modelContext.save()
+                    try draftService.returnToPending(draft)
                 } catch {
                     #if DEBUG
-                    print("InboxView: Error saving draft status change: \(error)")
+                    print("InboxView: Error returning draft to pending: \(error)")
                     #endif
                 }
                 selectedDraft = draft

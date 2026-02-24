@@ -20,7 +20,7 @@ struct CategoriesTabView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 48
+
 
     // MARK: - Settings
 
@@ -170,8 +170,6 @@ struct CategoriesTabView: View {
             calculateData()
         }
         .onChange(of: sessionState.customDateRange) {
-            // Sync custom date range and recalculate
-            viewModel.syncCustomRangeFromSessionState(sessionState)
             calculateData()
         }
         .onChange(of: sessionState.comparisonMode) {
@@ -370,6 +368,7 @@ struct CategoriesTabView: View {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(.secondary)
                             }
+                            .accessibilityLabel(L10n.Action.clearAll)
                         }
                     }
                 }
@@ -947,6 +946,8 @@ struct CategoriesTabView: View {
                 }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(viewType.title)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .opacity((isLocked && viewType == .categories) ? 0.4 : 1.0)
         .disabled(isLocked && viewType == .categories)
     }
@@ -989,21 +990,11 @@ struct CategoriesTabView: View {
     // MARK: - Empty State
 
     private func emptyState(icon: String, title: String, subtitle: String) -> some View {
-        VStack(spacing: DS.Spacing.md) {
-            Image(systemName: icon)
-                .font(.system(size: scaledEmptyIconSize))
-                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                .foregroundStyle(.secondary)
-            Text(title)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.secondary)
-            Text(subtitle)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(DS.Card.padding)
+        YalaEmptyState(
+            icon: icon,
+            title: title,
+            message: subtitle
+        )
     }
 
     // MARK: - Data Calculation
@@ -1413,18 +1404,7 @@ struct CategoriesTabView: View {
 
     // MARK: - Chip Data Structures
 
-    private struct CategoryChip: Identifiable {
-        let id = UUID()
-        let categoryID: PersistentIdentifier
-    }
-
-    private struct SubcategoryChip: Identifiable {
-        let id: String
-        let name: String
-        let iconName: String?
-        let colorHex: String?
-        let subcategoryID: PersistentIdentifier?
-    }
+    // Chip models defined in FilterChipModels.swift
 
     private var selectedCategoryChips: [CategoryChip] {
         viewModel.selectedCategories.map { CategoryChip(categoryID: $0) }
@@ -1437,7 +1417,6 @@ struct CategoriesTabView: View {
             }) else { return nil }
             let categoryColor = subcategory.safeCategory.colorHex
             return SubcategoryChip(
-                id: subcategory.name,
                 name: subcategory.name,
                 iconName: subcategory.iconName,
                 colorHex: (subcategory.colorHex?.isEmpty == false
@@ -1448,14 +1427,6 @@ struct CategoriesTabView: View {
     }
 
     // MARK: - Tag Chip Data
-
-    private struct TagChip: Identifiable {
-        let id: PersistentIdentifier
-        let tagID: PersistentIdentifier
-        let name: String
-        let iconName: String
-        let colorHex: String?
-    }
 
     private var selectedTagChips: [TagChip] {
         tags.filter { viewModel.selectedTags.contains($0.persistentModelID) }
@@ -1477,22 +1448,10 @@ struct CategoriesTabView: View {
     }
 
     private var activeFilterCount: Int {
-        var count = 0
-        if !viewModel.selectedAccounts.isEmpty { count += 1 }
-        if !viewModel.selectedCategories.isEmpty { count += 1 }
-        if !viewModel.selectedSubcategories.isEmpty { count += 1 }
-        if !viewModel.selectedTags.isEmpty { count += 1 }
-        if !viewModel.selectedNatures.isEmpty { count += 1 }
-        return count
+        viewModel.activeFilterCount
     }
 
     // MARK: - Chip Helpers
-
-    private struct AccountChip: Identifiable {
-        let id = UUID()
-        let name: String
-        let count: Int
-    }
 
     private var selectedAccountChips: [AccountChip] {
         guard !viewModel.selectedAccounts.isEmpty else { return [] }
@@ -1563,17 +1522,19 @@ private struct AllCategoriesListContent: View {
                     // In exclude mode, excluded items are already hidden — no dimming
                     let shouldDim = !isExcludeMode && isAnySelected && !isSelected
 
-                    CategoryRowView(
-                        summary: summary,
-                        maxAmount: maxAmount,
-                        currencyCode: currencyCode,
-                        showVariation: showVariation
-                    )
-                    .opacity(shouldDim ? 0.3 : 1.0)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                    Button {
                         onSelectCategory?(summary.category.persistentModelID)
+                    } label: {
+                        CategoryRowView(
+                            summary: summary,
+                            maxAmount: maxAmount,
+                            currencyCode: currencyCode,
+                            showVariation: showVariation
+                        )
+                        .opacity(shouldDim ? 0.3 : 1.0)
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
 
                 if showExpandButton {
@@ -1652,19 +1613,21 @@ private struct AllSubcategoriesListContent: View {
                     // In exclude mode, excluded items are already hidden — only dim for include mode or category mismatch
                     let shouldDim = (!isExcludeMode && isAnySelected && !isSelected) || !belongsToSelectedCategory
 
-                    SubcategoryRowView(
-                        summary: summary,
-                        maxAmount: maxAmount,
-                        currencyCode: currencyCode,
-                        showVariation: showVariation
-                    )
-                    .opacity(shouldDim ? 0.3 : 1.0)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                    Button {
                         if let persistentID = summary.persistentID {
                             onSelectSubcategory?(persistentID)
                         }
+                    } label: {
+                        SubcategoryRowView(
+                            summary: summary,
+                            maxAmount: maxAmount,
+                            currencyCode: currencyCode,
+                            showVariation: showVariation
+                        )
+                        .opacity(shouldDim ? 0.3 : 1.0)
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
 
                 if showExpandButton {
@@ -1697,6 +1660,13 @@ private struct AllSubcategoriesListContent: View {
 // MARK: - Category Row Component
 
 private struct CategoryRowView: View {
+    private static let percentFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .percent
+        f.maximumFractionDigits = 1
+        return f
+    }()
+
     let summary: CategorySpendingSummary
     let maxAmount: Double
     let currencyCode: String
@@ -1767,16 +1737,20 @@ private struct CategoryRowView: View {
     }
 
     private func formattedPercentage(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        formatter.maximumFractionDigits = 1
-        return formatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
+        Self.percentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
     }
 }
 
 // MARK: - Subcategory Row Component
 
 private struct SubcategoryRowView: View {
+    private static let percentFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .percent
+        f.maximumFractionDigits = 1
+        return f
+    }()
+
     let summary: SubcategorySpendingSummary
     let maxAmount: Double
     let currencyCode: String
@@ -1787,7 +1761,7 @@ private struct SubcategoryRowView: View {
             // Icon Circle
             ZStack {
                 Circle()
-                    .fill(Color(hex: summary.colorHex ?? "#6366F1"))
+                    .fill(Color(hex: summary.colorHex ?? AppConstants.defaultColorHex))
                     .frame(width: 40, height: 40)
 
                 if let subcategory = summary.subcategory {
@@ -1842,7 +1816,7 @@ private struct SubcategoryRowView: View {
                                 .frame(height: 6)
 
                             Capsule()
-                                .fill(Color(hex: summary.colorHex ?? "#6366F1"))
+                                .fill(Color(hex: summary.colorHex ?? AppConstants.defaultColorHex))
                                 .frame(width: width, height: 6)
                         }
                     }
@@ -1853,9 +1827,6 @@ private struct SubcategoryRowView: View {
     }
 
     private func formattedPercentage(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        formatter.maximumFractionDigits = 1
-        return formatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
+        Self.percentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
     }
 }

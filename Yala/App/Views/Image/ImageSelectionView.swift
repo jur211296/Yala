@@ -72,7 +72,7 @@ struct ImageSelectionView: View {
                 // Only show X in selection view (during countdown/processing, there's an X below)
                 if !isCountingDown && !isProcessing && !showingResult {
                     ToolbarItem(placement: .topBarTrailing) {
-                        YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                        YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                             dismiss()
                         }
                     }
@@ -140,6 +140,10 @@ struct ImageSelectionView: View {
             }
             .onAppear {
                 checkForSharedImage()
+            }
+            .onDisappear {
+                countdownTask?.cancel()
+                countdownTask = nil
             }
         }
     }
@@ -469,7 +473,7 @@ struct ImageSelectionView: View {
                 Image(systemName: "xmark")
                     .font(.title2.weight(.medium))
                     .foregroundStyle(.secondary)
-                    .frame(width: 56, height: 56)
+                    .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                     .background(.ultraThinMaterial)
                     .clipShape(Circle())
                     .overlay(

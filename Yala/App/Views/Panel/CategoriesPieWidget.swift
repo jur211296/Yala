@@ -11,8 +11,6 @@ import SwiftUI
 
 struct CategoriesPieWidget: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
-
     let categories: [CategorySpendingSummary]
     let currencyCode: String
 
@@ -71,6 +69,7 @@ struct CategoriesPieWidget: View {
     // We'll calculate exact pixels in GeometryReader
 
     var body: some View {
+        let chartData = processChartData()
         VStack(alignment: .leading, spacing: DS.Spacing.none) {
             // Guard against empty chartData (Charts framework crashes on empty array)
             if chartData.isEmpty {
@@ -113,18 +112,7 @@ struct CategoriesPieWidget: View {
             .padding(.top, DS.Spacing.lg)
 
             // Empty content
-            VStack(spacing: DS.Spacing.md) {
-                Spacer()
-                Image(systemName: "folder.fill")
-                    .font(.system(size: scaledEmptyIconSize))
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                    .foregroundStyle(.secondary)
-                Text(L10n.Empty.noExpenses)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            YalaEmptyState(icon: "folder.fill", title: L10n.Empty.noExpenses, style: .widget)
         }
     }
 
@@ -490,7 +478,7 @@ struct CategoriesPieWidget: View {
                                 .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel("Ver detalles")
+                        .accessibilityLabel(L10n.Accessibility.viewDetails)
                     }
                 }
             }
@@ -579,9 +567,9 @@ struct CategoriesPieWidget: View {
                 }
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Gráfica circular de gastos por categoría")
-            .accessibilityValue(safeData.isEmpty ? "Sin datos" :
-                "\(safeData.count) categorías, total \(formattedCurrency(safeData.reduce(0) { $0 + $1.amount }))")
+            .accessibilityLabel(L10n.Accessibility.categoryPieChart)
+            .accessibilityValue(safeData.isEmpty ? L10n.Accessibility.noData :
+                L10n.Accessibility.categoriesCount(safeData.count, formattedCurrency(safeData.reduce(0) { $0 + $1.amount })))
         }
     }
 
@@ -591,11 +579,15 @@ struct CategoriesPieWidget: View {
         YalaFormatter.currency(value: value, currencyCode: currencyCode)
     }
 
+    private static let percentFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .percent
+        f.maximumFractionDigits = 0
+        return f
+    }()
+
     private func formattedPercentage(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
+        Self.percentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
     }
 
     private func selectCategory(at angle: Double) {
@@ -713,7 +705,7 @@ struct CategoriesPieWidget: View {
                         iconName: "ellipsis.circle.fill",
                         amount: othersAmount,
                         percentage: othersPercentage,
-                        colorHex: "#8E8E93"
+                        colorHex: AppConstants.othersColorHex
                     ))
             }
         }

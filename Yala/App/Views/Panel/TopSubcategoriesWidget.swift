@@ -8,6 +8,13 @@
 import SwiftData
 import SwiftUI
 
+private let sharedPercentFormatter: NumberFormatter = {
+    let formatter = NumberFormatter()
+    formatter.numberStyle = .percent
+    formatter.maximumFractionDigits = 1
+    return formatter
+}()
+
 struct TopSubcategoriesWidget: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
@@ -163,10 +170,11 @@ struct TopSubcategoriesWidget: View {
                     } label: {
                         Image(systemName: "chevron.right")
                             .font(DS.Typography.headline)
-                            .foregroundStyle(Color.gray.opacity(0.7))
+                            .foregroundStyle(.secondary)
                             .padding(.leading, DS.Spacing.xs)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.Accessibility.showMoreSubcategories)
                 }
             }
 
@@ -332,7 +340,7 @@ struct TopSubcategoriesWidget: View {
                     // Icon
                     ZStack {
                         Circle()
-                            .fill(Color(hex: top.colorHex ?? "#888888"))
+                            .fill(Color(hex: top.colorHex ?? AppConstants.defaultSubcategoryColorHex))
                             .frame(width: 48, height: 48)
 
                         Image(
@@ -361,11 +369,11 @@ struct TopSubcategoriesWidget: View {
                                 "\(formattedPercentage(top.percentageOfCategory)) \(String(format: L10n.Widget.of, top.category?.name ?? L10n.Widget.categoryAbbr))"
                             )
                             .font(DS.Typography.labelTiny)
-                            .foregroundStyle(Color(hex: top.colorHex ?? "#888888"))
+                            .foregroundStyle(Color(hex: top.colorHex ?? AppConstants.defaultSubcategoryColorHex))
                         }
                         .padding(.horizontal, DS.Chip.paddingV)
                         .padding(.vertical, DS.Spacing.xxs)
-                        .background(Color(hex: top.colorHex ?? "#888888").opacity(0.1))
+                        .background(Color(hex: top.colorHex ?? AppConstants.defaultSubcategoryColorHex).opacity(0.1))
                         .clipShape(Capsule())
                     }
                 }
@@ -383,34 +391,16 @@ struct TopSubcategoriesWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            if size == .small {
-                Image(systemName: "list.bullet.indent")
-                    .font(DS.Typography.largeTitle)
-                    .foregroundStyle(.secondary.opacity(0.5))
-                Text(L10n.Empty.noExpenses)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                Image(systemName: "list.bullet.indent")
-                    .font(DS.Typography.largeTitle)
-                    .foregroundStyle(.secondary.opacity(0.5))
-                    .padding(.bottom, DS.Spacing.xs)
-
-                Text(L10n.Widget.noExpensesPeriod)
-                    .font(DS.Typography.label)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.primary)
-
-                Text(L10n.Widget.noExpensesDescriptionSubcategories)
-                    .font(DS.Typography.caption)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
-            }
+        if size == .small {
+            YalaEmptyState(icon: "list.bullet.indent", title: L10n.Empty.noExpenses, style: .widget)
+        } else {
+            YalaEmptyState(
+                icon: "list.bullet.indent",
+                title: L10n.Widget.noExpensesPeriod,
+                message: L10n.Widget.noExpensesDescriptionSubcategories,
+                style: .widget
+            )
         }
-        .frame(maxWidth: .infinity)
-        .frame(minHeight: size == .small ? 120 : 180)
-        .padding(.vertical, size == .small ? DS.Spacing.md : DS.Spacing.xxl)
     }
 
     // MARK: - Formatters
@@ -420,10 +410,7 @@ struct TopSubcategoriesWidget: View {
     }
 
     private func formattedPercentage(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        formatter.maximumFractionDigits = 1
-        return formatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
+        sharedPercentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
     }
 }
 
@@ -443,7 +430,7 @@ private struct SubcategoryRow: View {
                     // Icon (Default placeholder as requested)
                     ZStack {
                         Circle()
-                            .fill(Color(hex: summary.colorHex ?? "#888888"))
+                            .fill(Color(hex: summary.colorHex ?? AppConstants.defaultSubcategoryColorHex))
                             .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
 
                         Image(
@@ -499,7 +486,7 @@ private struct SubcategoryRow: View {
                                 maxAmount > 0 ? (summary.amount / maxAmount) * geo.size.width : 0
                             ZStack(alignment: .leading) {
                                 Capsule().fill(DS.Semantic.neutralBackground).frame(height: 6)
-                                Capsule().fill(Color(hex: summary.colorHex ?? "#888888")).frame(
+                                Capsule().fill(Color(hex: summary.colorHex ?? AppConstants.defaultSubcategoryColorHex)).frame(
                                     width: width, height: 6)
                             }
                         }
@@ -512,9 +499,6 @@ private struct SubcategoryRow: View {
     }
 
     private func formattedPercentage(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        formatter.maximumFractionDigits = 1
-        return formatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
+        sharedPercentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
     }
 }

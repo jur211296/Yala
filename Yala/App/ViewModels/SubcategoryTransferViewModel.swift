@@ -128,6 +128,8 @@ final class SubcategoryTransferViewModel {
 
         try context.save()
         context.processPendingChanges()
+        WidgetDataCache.updateCache(context: context)
+        SessionState.shared.incrementDataVersion()
     }
 
     /// Deletes all transactions associated with the subcategory
@@ -147,6 +149,8 @@ final class SubcategoryTransferViewModel {
 
         try context.save()
         context.processPendingChanges()
+        WidgetDataCache.updateCache(context: context)
+        SessionState.shared.incrementDataVersion()
     }
 
     /// Gets or creates the "Unassigned" subcategory in the "Others" category

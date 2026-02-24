@@ -94,7 +94,7 @@ enum KeypadButton: Identifiable {
         switch self {
         case .digit(let value): return value
         case .decimal: return Locale.current.decimalSeparator ?? "."
-        case .delete: return "Borrar"
+        case .delete: return L10n.Action.delete
         }
     }
 }
@@ -107,7 +107,7 @@ struct KeypadButtonView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
-    @ScaledMetric(relativeTo: .title) private var digitSize: CGFloat = 28
+    @ScaledMetric(relativeTo: .title) private var digitSize: CGFloat = 28 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .title) private var deleteSize: CGFloat = 22
     @State private var isPressed = false
 
@@ -132,7 +132,7 @@ struct KeypadButtonView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 56)
+            .frame(height: DS.Button.fabSize)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

@@ -51,7 +51,7 @@ struct BiometricSecurityView: View {
 
                             Spacer()
 
-                            Toggle("", isOn: $isEnabled)
+                            Toggle(L10n.Biometric.enableLock, isOn: $isEnabled)
                                 .labelsHidden()
 
                         }
@@ -108,7 +108,7 @@ struct BiometricSecurityView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
+                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                     dismiss()
                 }
             }
@@ -141,7 +141,7 @@ struct BiometricSecurityView: View {
             authService.lockTimeout = newValue
         }
         .alert(L10n.Biometric.authFailed, isPresented: $showAuthError) {
-            Button("OK", role: .cancel) {}
+            Button(L10n.Common.ok, role: .cancel) {}
         } message: {
             Text(L10n.Biometric.authFailedMessage)
         }

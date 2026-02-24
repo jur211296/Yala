@@ -21,7 +21,7 @@ struct TrendsTabView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
+
 
     // MARK: - Data (passed from parent)
 
@@ -145,8 +145,6 @@ struct TrendsTabView: View {
             .yalaSafeBottomPadding()
         }
         .onAppear {
-            // Sync metric from SessionState on appear
-            trendsViewModel.syncMetricFromSessionState(sessionState)
             calculateCashFlowData()
             calculatePeriodComparisonData()
         }
@@ -176,15 +174,6 @@ struct TrendsTabView: View {
         }
         .onChange(of: trendsViewModel.selectedMetric) {
             calculatePeriodComparisonData()
-            trendsViewModel.syncMetricToSessionState(sessionState)
-        }
-        .onChange(of: sessionState.selectedTrendMetric) {
-            // Sync metric from SessionState when it changes in other views
-            trendsViewModel.syncMetricFromSessionState(sessionState)
-        }
-        .onChange(of: sessionState.customDateRange) {
-            // Sync custom date range and recalculate
-            trendsViewModel.syncCustomRangeFromSessionState(sessionState)
         }
         .onChange(of: sessionState.comparisonMode) {
             // Recalculate when comparison mode changes (P-1 vs A-1)
@@ -383,6 +372,7 @@ struct TrendsTabView: View {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(.secondary)
                             }
+                            .accessibilityLabel(L10n.Action.clearAll)
                         }
                     }
                 }
@@ -473,6 +463,8 @@ struct TrendsTabView: View {
                 }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(mode.displayName)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     // MARK: - Trend Charts Carousel
@@ -600,34 +592,18 @@ struct TrendsTabView: View {
     }
 
     private var trendEmptyState: some View {
-        VStack(spacing: DS.Spacing.md) {
-            Spacer()
-            Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.system(size: scaledEmptyIconSize))
-                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                .foregroundStyle(.secondary)
-            Text(L10n.Empty.noData)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity)
+        YalaEmptyState(
+            icon: "chart.line.uptrend.xyaxis",
+            title: L10n.Empty.noData
+        )
         .frame(height: 220)
     }
 
     private var comparisonEmptyState: some View {
-        VStack(spacing: DS.Spacing.md) {
-            Spacer()
-            Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.system(size: scaledEmptyIconSize))
-                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                .foregroundStyle(.secondary)
-            Text(L10n.Empty.noData)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity)
+        YalaEmptyState(
+            icon: "chart.line.uptrend.xyaxis",
+            title: L10n.Empty.noData
+        )
         .frame(height: 220)
     }
 
@@ -836,6 +812,8 @@ struct TrendsTabView: View {
                 }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(metric == .balance ? L10n.Accessibility.metricBalance : metric == .income ? L10n.Accessibility.metricIncome : L10n.Accessibility.metricExpense)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     // MARK: - Cash Flow Widget
@@ -893,20 +871,11 @@ struct TrendsTabView: View {
     }
 
     private var cashFlowEmptyState: some View {
-        VStack(spacing: DS.Spacing.md) {
-            Spacer()
-            Image(systemName: "chart.bar.fill")
-                .font(.system(size: scaledEmptyIconSize))
-                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                .foregroundStyle(.secondary)
-            Text(L10n.Empty.noData)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity)
+        YalaEmptyState(
+            icon: "chart.bar.fill",
+            title: L10n.Empty.noData
+        )
         .frame(height: 200)
-        .padding(DS.Card.padding)
         .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .overlay(
@@ -969,6 +938,8 @@ struct TrendsTabView: View {
                 }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(viewType.title)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     @ViewBuilder
@@ -1250,29 +1221,7 @@ struct TrendsTabView: View {
 
     // MARK: - Chip Data Structures
 
-    private struct AccountChip: Identifiable {
-        let id = UUID()
-        let name: String
-        let count: Int
-    }
-
-    private struct CategoryChip: Identifiable {
-        let id = UUID()
-        let categoryID: PersistentIdentifier
-    }
-
-    private struct SubcategoryChip: Identifiable {
-        let id = UUID()
-        let name: String
-        let iconName: String?
-        let colorHex: String?
-        let subcategoryID: PersistentIdentifier?
-    }
-
-    private struct NatureChipData: Identifiable {
-        let id = UUID()
-        let nature: SubcategoryNature
-    }
+    // Chip models defined in FilterChipModels.swift
 
     private var selectedAccountChips: [AccountChip] {
         guard !trendsViewModel.selectedAccounts.isEmpty else { return [] }
@@ -1316,14 +1265,6 @@ struct TrendsTabView: View {
 
     private var selectedNatureChips: [NatureChipData] {
         trendsViewModel.selectedNatures.map { NatureChipData(nature: $0) }
-    }
-
-    private struct TagChip: Identifiable {
-        let id: PersistentIdentifier
-        let tagID: PersistentIdentifier
-        let name: String
-        let iconName: String
-        let colorHex: String?
     }
 
     private var selectedTagChips: [TagChip] {
@@ -1561,11 +1502,11 @@ struct TrendsTabView: View {
             selectedSubcategories: trendsViewModel.selectedSubcategories,
             selectedTags: trendsViewModel.selectedTags,
             selectedNatures: trendsViewModel.selectedNatures,
-            selectedCurrencies: [],
+            selectedCurrencies: trendsViewModel.selectedCurrencies,
             isExcludeMode: trendsViewModel.isExcludeMode,
             transactionTypeFilter: .all,
-            amountCondition: .any,
-            searchText: "",
+            amountCondition: trendsViewModel.amountCondition,
+            searchText: trendsViewModel.searchText,
             dateInterval: isBalanceMetric ? nil : currentInterval
         )
 
@@ -1602,11 +1543,11 @@ struct TrendsTabView: View {
                 selectedSubcategories: trendsViewModel.selectedSubcategories,
                 selectedTags: trendsViewModel.selectedTags,
                 selectedNatures: trendsViewModel.selectedNatures,
-                selectedCurrencies: [],
+                selectedCurrencies: trendsViewModel.selectedCurrencies,
                 isExcludeMode: trendsViewModel.isExcludeMode,
                 transactionTypeFilter: .all,
-                amountCondition: .any,
-                searchText: "",
+                amountCondition: trendsViewModel.amountCondition,
+                searchText: trendsViewModel.searchText,
                 dateInterval: previousInterval
             )
             previousFiltered = FilterService.filterForTrends(
@@ -1746,7 +1687,7 @@ struct CompactRecordRow: View {
         let colorHex =
             record.subcategory?.colorHex
             ?? record.category?.colorHex
-            ?? "#6366F1"
+            ?? AppConstants.defaultColorHex
 
         let iconName =
             record.subcategory?.iconName
@@ -1759,7 +1700,7 @@ struct CompactRecordRow: View {
                 .frame(width: iconSize, height: iconSize)
 
             Image(systemName: iconName)
-                .font(.system(size: iconSize * 0.4))
+                .font(.system(size: iconSize * 0.4)) // A11Y-DT: fixed size — icon from caller parameter
                 .foregroundStyle(.white)
         }
     }
@@ -1789,11 +1730,15 @@ struct CompactRecordRow: View {
         return isIncome ? Color.electricIndigo : Color.hotPink
     }
 
-    private var shortDateFormat: String {
+    private static let shortDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale.current
         formatter.dateFormat = "d MMM"
-        return formatter.string(from: record.date).replacingOccurrences(of: ".", with: "")
+        return formatter
+    }()
+
+    private var shortDateFormat: String {
+        Self.shortDateFormatter.string(from: record.date).replacingOccurrences(of: ".", with: "")
     }
 
     private var formattedAmount: String {

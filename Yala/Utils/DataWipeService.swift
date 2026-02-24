@@ -168,6 +168,11 @@ final class DataWipeService {
         context.processPendingChanges()
 
         // ============================================================
+        // PASO 1.11: Limpiar archivo de imagen de perfil
+        // ============================================================
+        ProfileImageStorage.delete()
+
+        // ============================================================
         // PASO 2: Resetear todas las preferencias de usuario (UserDefaults)
         // ============================================================
         resetAllUserPreferences()

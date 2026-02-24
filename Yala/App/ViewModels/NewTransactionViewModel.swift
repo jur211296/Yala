@@ -106,12 +106,16 @@ final class NewTransactionViewModel {
     var showValidationErrors: Bool = false
     var showFutureDateAlert: Bool = false
     var isSaving: Bool = false
+    var saveError: String?
 
     // MARK: - Computed Properties
 
     /// Monto como Double
     var amount: Double {
-        Double(amountString) ?? 0.0
+        let normalized = amountString.replacingOccurrences(
+            of: Locale.current.decimalSeparator ?? ".", with: "."
+        )
+        return Double(normalized) ?? 0.0
     }
 
     /// Monto formateado para display
@@ -217,9 +221,10 @@ final class NewTransactionViewModel {
         }
 
         // Load transactions (for recent suggestions)
-        let transactionsDescriptor = FetchDescriptor<TransactionItem>(
+        var transactionsDescriptor = FetchDescriptor<TransactionItem>(
             sortBy: [SortDescriptor(\.date, order: .reverse), SortDescriptor(\.createdAt, order: .reverse)]
         )
+        transactionsDescriptor.fetchLimit = 100
         do {
             transactions = try context.fetch(transactionsDescriptor)
         } catch {
@@ -232,7 +237,7 @@ final class NewTransactionViewModel {
     // MARK: - Validation
 
     var isAmountValid: Bool {
-        amount > 0
+        amount > 0 && amount <= 999_999_999
     }
 
     var isAccountValid: Bool {
@@ -405,7 +410,6 @@ final class NewTransactionViewModel {
         isExchangeRateManual = true
     }
 
-    /// Carga el tipo de cambio del servicio
     /// Carga el tipo de cambio del servicio (solo para transfers entre cuentas de diferente divisa)
     func loadExchangeRate(context: ModelContext) async {
         // Only load exchange rate for transfers between accounts with different currencies
@@ -457,8 +461,8 @@ final class NewTransactionViewModel {
     func save(context: ModelContext) -> [TransactionItem]? {
         showValidationErrors = true
 
-        // Validate: block future dates
-        if transactionDate > Date() {
+        // Validate: block future dates (compare at day granularity to avoid false positives from time-of-day)
+        if Calendar.current.compare(transactionDate, to: Date(), toGranularity: .day) == .orderedDescending {
             showFutureDateAlert = true
             return nil
         }
@@ -482,12 +486,14 @@ final class NewTransactionViewModel {
             }
             try context.save()
             WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
             isSaving = false
             return result
         } catch {
             #if DEBUG
             print("Error saving transaction: \(error)")
             #endif
+            saveError = L10n.Common.saveError
             isSaving = false
             return nil
         }
@@ -566,7 +572,7 @@ final class NewTransactionViewModel {
 
         let outflowSubcategory = try ensureTransferCategory(context: context)
         let inflowSubcategory = try ensureIncomeTransferCategory(context: context)
-        let preferredCode = UserDefaults.standard.string(forKey: "defaultCurrencyCode") ?? "PEN"
+        let preferredCode = CurrencyDefaults.currentPreferred
 
         // --- OUTFLOW (Source) ---
         let outAmount = -amount
@@ -639,7 +645,7 @@ final class NewTransactionViewModel {
                 amount: outAmount,
                 currencyCode: source.currencyCode,
                 note: note.isEmpty ? L10n.Transfer.transferTo(dest.name) : note,
-                category: outflowSubcategory.category,
+                category: outflowSubcategory.safeCategory,
                 subcategory: outflowSubcategory,
                 account: source,
                 tags: selectedTags,
@@ -655,7 +661,7 @@ final class NewTransactionViewModel {
                 amount: inAmount,
                 currencyCode: dest.currencyCode,
                 note: note.isEmpty ? L10n.Transfer.transferFrom(source.name) : note,
-                category: inflowSubcategory.category,
+                category: inflowSubcategory.safeCategory,
                 subcategory: inflowSubcategory,
                 account: dest,
                 tags: selectedTags,
@@ -669,17 +675,21 @@ final class NewTransactionViewModel {
             context.insert(inTransaction)
         }
 
+        // Link both sides with a shared transfer pair ID
+        let pairID = UUID().uuidString
+        outTransaction.transferPairID = pairID
+        inTransaction.transferPairID = pairID
+
         return (outTransaction, inTransaction)
     }
 
     private func ensureTransferCategory(context: ModelContext) throws -> Subcategory {
-        // Use "Otros" category (from seed) with localized subcategory name
-        let parentCategoryName = "Otros"
+        // Use first expense category with localized subcategory name
         let subcategoryName = L10n.Transfer.categoryName
 
-        // Check if subcategory exists within "Otros"
+        // Check if transfer subcategory already exists in any expense category
         let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == subcategoryName && $0.category?.name == parentCategoryName }
+            predicate: #Predicate { $0.name == subcategoryName && $0.category?.isIncome == false }
         )
 
         let fetchedSubcategories: [Subcategory]
@@ -687,7 +697,7 @@ final class NewTransactionViewModel {
             fetchedSubcategories = try context.fetch(descriptor)
         } catch {
             #if DEBUG
-            print("[NewTransactionViewModel] Error fetching transfer subcategory in Otros: \(error)")
+            print("[NewTransactionViewModel] Error fetching transfer subcategory: \(error)")
             #endif
             fetchedSubcategories = []
         }
@@ -695,28 +705,29 @@ final class NewTransactionViewModel {
             return existing
         }
 
-        // Check if "Otros" category exists (should always exist from seed)
+        // Find first expense category
         let catDescriptor = FetchDescriptor<Category>(
-            predicate: #Predicate { $0.name == parentCategoryName }
+            predicate: #Predicate { $0.isIncome == false },
+            sortBy: [SortDescriptor(\.sortOrder)]
         )
 
-        let fetchedOtrosCategories: [Category]
+        let fetchedExpenseCategories: [Category]
         do {
-            fetchedOtrosCategories = try context.fetch(catDescriptor)
+            fetchedExpenseCategories = try context.fetch(catDescriptor)
         } catch {
             #if DEBUG
-            print("[NewTransactionViewModel] Error fetching Otros category: \(error)")
+            print("[NewTransactionViewModel] Error fetching expense categories: \(error)")
             #endif
-            fetchedOtrosCategories = []
+            fetchedExpenseCategories = []
         }
 
         let category: Category
-        if let existingCat = fetchedOtrosCategories.first {
+        if let existingCat = fetchedExpenseCategories.first {
             category = existingCat
         } else {
-            // Fallback: create "Otros" if somehow missing
+            // Fallback: create expense category if somehow missing
             category = Category(
-                name: parentCategoryName,
+                name: "Otros",
                 colorHex: "#64748B",
                 isIncome: false
             )
@@ -746,14 +757,13 @@ final class NewTransactionViewModel {
         return subcategory
     }
 
-    /// Ensures the "Ingresos/Transferencia entre cuentas" subcategory exists for incoming transfers
+    /// Ensures the income transfer subcategory exists for incoming transfers
     private func ensureIncomeTransferCategory(context: ModelContext) throws -> Subcategory {
-        let parentCategoryName = "Ingresos"
         let subcategoryName = L10n.Transfer.categoryName
 
-        // Check if subcategory exists within "Ingresos"
+        // Check if transfer subcategory already exists in any income category
         let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == subcategoryName && $0.category?.name == parentCategoryName }
+            predicate: #Predicate { $0.name == subcategoryName && $0.category?.isIncome == true }
         )
 
         let fetchedIncomeSubcategories: [Subcategory]
@@ -761,7 +771,7 @@ final class NewTransactionViewModel {
             fetchedIncomeSubcategories = try context.fetch(descriptor)
         } catch {
             #if DEBUG
-            print("[NewTransactionViewModel] Error fetching transfer subcategory in Ingresos: \(error)")
+            print("[NewTransactionViewModel] Error fetching income transfer subcategory: \(error)")
             #endif
             fetchedIncomeSubcategories = []
         }
@@ -769,28 +779,29 @@ final class NewTransactionViewModel {
             return existing
         }
 
-        // Check if "Ingresos" category exists (should always exist from seed)
+        // Find first income category
         let catDescriptor = FetchDescriptor<Category>(
-            predicate: #Predicate { $0.name == parentCategoryName }
+            predicate: #Predicate { $0.isIncome == true },
+            sortBy: [SortDescriptor(\.sortOrder)]
         )
 
-        let fetchedIngresosCategories: [Category]
+        let fetchedIncomeCategories: [Category]
         do {
-            fetchedIngresosCategories = try context.fetch(catDescriptor)
+            fetchedIncomeCategories = try context.fetch(catDescriptor)
         } catch {
             #if DEBUG
-            print("[NewTransactionViewModel] Error fetching Ingresos category: \(error)")
+            print("[NewTransactionViewModel] Error fetching income categories: \(error)")
             #endif
-            fetchedIngresosCategories = []
+            fetchedIncomeCategories = []
         }
 
         let category: Category
-        if let existingCat = fetchedIngresosCategories.first {
+        if let existingCat = fetchedIncomeCategories.first {
             category = existingCat
         } else {
-            // Fallback: create "Ingresos" if somehow missing
+            // Fallback: create income category if somehow missing
             category = Category(
-                name: parentCategoryName,
+                name: "Ingresos",
                 colorHex: "#14B8A6",
                 isIncome: true
             )

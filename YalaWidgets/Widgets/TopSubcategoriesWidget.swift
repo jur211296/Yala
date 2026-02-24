@@ -166,7 +166,7 @@ struct SubcategoryRow: View {
                                height: WDS.ListItem.iconSizeCompact)
 
                     Image(systemName: subcategory.iconName ?? "tag.fill")
-                        .font(.system(size: WDS.Icon.sm))
+                        .font(.system(size: WDS.Icon.sm)) // A11Y-DT: widget fixed layout
                         .foregroundStyle(subcategoryColor)
                         .widgetAccentable()
                 }

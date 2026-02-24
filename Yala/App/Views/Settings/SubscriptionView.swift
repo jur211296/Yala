@@ -13,7 +13,7 @@ struct SubscriptionView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
 
-    private var store = StoreKitManager.shared
+    @State private var store = StoreKitManager.shared
 
     @State private var selectedPlan: String = StoreKitManager.proYearlyID
     @State private var showManageSubscription = false
@@ -35,7 +35,7 @@ struct SubscriptionView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
+                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                     dismiss()
                 }
             }
@@ -45,7 +45,7 @@ struct SubscriptionView: View {
             await store.updateSubscriptionStatus()
         }
         .alert(L10n.Subscription.errorTitle, isPresented: $showError) {
-            Button("OK", role: .cancel) {}
+            Button(L10n.Common.ok, role: .cancel) {}
         } message: {
             Text(store.errorMessage ?? "")
         }
@@ -110,10 +110,8 @@ struct SubscriptionView: View {
                             .font(DS.Typography.caption)
                             .foregroundStyle(.tertiary)
                             .multilineTextAlignment(.center)
-                        if let url = URL(string: "https://yala-app.pe/terms") {
-                            Link(L10n.Subscription.termsLink, destination: url)
-                                .font(DS.Typography.caption)
-                        }
+                        Link(L10n.Subscription.termsLink, destination: AppConstants.termsURL)
+                            .font(DS.Typography.caption)
                     }
                     .padding(.horizontal, DS.Spacing.xl)
                     .padding(.bottom, DS.Spacing.xxl)

@@ -148,7 +148,7 @@ struct YalaIconBadgeModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .font(.system(size: iconSize, weight: .medium))
+            .font(.system(size: iconSize, weight: .medium)) // A11Y-DT: DS tokens
             .foregroundStyle(foregroundColor)
             .frame(width: size, height: size)
             .background(backgroundColor)

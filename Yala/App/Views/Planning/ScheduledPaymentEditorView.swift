@@ -12,7 +12,7 @@ struct ScheduledPaymentEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 28
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 28 // A11Y-DT: @ScaledMetric
     @Environment(EntityDeletionService.self) private var deletionService
     @Environment(SessionState.self) private var sessionState
 
@@ -126,14 +126,14 @@ struct ScheduledPaymentEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaSaveButton(action: savePayment, isDisabled: !canSave)
-                        .accessibilityHint(!canSave ? "Crea una cuenta primero" : "")
+                        .accessibilityHint(!canSave ? L10n.Accessibility.createAccountFirst : "")
                 }
             }
             .sheet(isPresented: $showCategoriesSheet) {
@@ -351,7 +351,7 @@ struct ScheduledPaymentEditorView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityHint(viewModel.activeAccounts.isEmpty ? "Crea una cuenta primero" : "")
+        .accessibilityHint(viewModel.activeAccounts.isEmpty ? L10n.Accessibility.createAccountFirst : "")
         .disabled(viewModel.activeAccounts.isEmpty)
     }
 
@@ -439,6 +439,15 @@ struct ScheduledPaymentEditorView: View {
             return NSLocalizedString("filters.none", comment: "")
         }
         return "\(selectedTags.count)"
+    }
+
+    private var maxInterval: Int {
+        switch recurrenceType {
+        case .daily: return 30
+        case .weekly: return 12
+        case .monthly: return 12
+        case .yearly: return 5
+        }
     }
 
     // MARK: - Recurrence Section
@@ -536,12 +545,18 @@ struct ScheduledPaymentEditorView: View {
             Spacer()
 
             Picker("", selection: $recurrenceInterval) {
-                ForEach(1...30, id: \.self) { num in
+                ForEach(1...maxInterval, id: \.self) { num in
                     Text("\(num)").tag(num)
                 }
             }
             .pickerStyle(.menu)
             .frame(width: 60)
+            .onChange(of: recurrenceType) {
+                // Clamp interval when switching to a type with lower max
+                if recurrenceInterval > maxInterval {
+                    recurrenceInterval = maxInterval
+                }
+            }
 
             Picker("", selection: $recurrenceType) {
                 ForEach(RecurrenceType.allCases) { type in
@@ -663,10 +678,14 @@ struct ScheduledPaymentEditorView: View {
         .padding()
     }
 
+    private static let monthSymbolFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale.current
+        return f
+    }()
+
     private func monthName(_ month: Int) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale.current
-        return formatter.monthSymbols[month - 1]
+        return Self.monthSymbolFormatter.monthSymbols[month - 1]
     }
 
     private func daysInMonth(_ month: Int) -> Int {
@@ -831,7 +850,7 @@ struct ScheduledPaymentEditorView: View {
     private var canSave: Bool {
         !name.isEmpty &&
         !amount.isEmpty &&
-        Double(amount) != nil &&
+        (Double(amount) ?? 0) > 0 &&
         selectedAccount != nil &&
         selectedSubcategory != nil
     }

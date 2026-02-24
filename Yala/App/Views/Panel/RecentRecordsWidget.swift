@@ -23,7 +23,7 @@ struct RecentRecordsWidget: View {
 
     private static let shortDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.locale = Locale.current
+        formatter.locale = AppLocale.current
         formatter.dateFormat = "d MMM"
         return formatter
     }()
@@ -79,11 +79,11 @@ struct RecentRecordsWidget: View {
                 } label: {
                     Image(systemName: "chevron.right")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(Color.gray.opacity(0.7))
+                        .foregroundStyle(.secondary)
                         .padding(.leading, DS.Spacing.xs)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Ver todos los registros")
+                .accessibilityLabel(L10n.Accessibility.viewAllRecords)
             }
         }
     }
@@ -179,7 +179,7 @@ struct RecentRecordsWidget: View {
         let colorHex =
             record.subcategory?.colorHex
             ?? record.category?.colorHex
-            ?? "#6366F1"
+            ?? AppConstants.defaultColorHex
 
         // Use subcategory icon if available, fallback to category icon, then default tag
         let iconName =
@@ -193,7 +193,7 @@ struct RecentRecordsWidget: View {
                 .frame(width: iconSize, height: iconSize)
 
             Image(systemName: iconName)
-                .font(.system(size: iconSize * 0.4))
+                .font(.system(size: iconSize * 0.4)) // A11Y-DT: fixed size — icon from caller parameter
                 .foregroundStyle(.white)
         }
     }
@@ -220,6 +220,7 @@ struct RecentRecordsWidget: View {
     }
 
     private func amountColor(for record: TransactionItem) -> Color {
+        if record.balanceAdjustmentType == "transfer" { return Color(.label) }
         let isIncome = record.category?.isIncome ?? (record.amount >= 0)
         return isIncome ? Color.electricIndigo : Color.hotPink
     }
@@ -235,23 +236,11 @@ struct RecentRecordsWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "list.bullet.rectangle")
-                .font(DS.Typography.largeTitle)
-                .foregroundStyle(.secondary.opacity(0.5))
-                .padding(.bottom, DS.Spacing.xs)
-
-            Text(L10n.Widget.noRecordsForFilters)
-                .font(DS.Typography.label)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.primary)
-
-            Text(L10n.Widget.recordsWillAppear)
-                .font(DS.Typography.caption)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.vertical, DS.Spacing.xxl)
+        YalaEmptyState(
+            icon: "list.bullet.rectangle",
+            title: L10n.Widget.noRecordsForFilters,
+            message: L10n.Widget.recordsWillAppear,
+            style: .widget
+        )
     }
 }

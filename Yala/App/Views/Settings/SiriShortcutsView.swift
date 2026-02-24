@@ -10,6 +10,7 @@ import SwiftUI
 struct SiriShortcutsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .largeTitle) private var siriIconSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
     @State private var expandedFAQ: SiriShortcutsFAQ?
 
     private var isProUser: Bool {
@@ -53,12 +54,13 @@ struct SiriShortcutsView: View {
                 .padding(.bottom, DS.Spacing.safeBottom)
             }
         }
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .navigationTitle(String(localized: "siriShortcuts.title"))
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
+                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                     dismiss()
                 }
             }
@@ -84,7 +86,7 @@ struct SiriShortcutsView: View {
                 // Main phrase
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "mic.circle.fill")
-                        .font(.system(size: 36))
+                        .font(.system(size: siriIconSize))
                         .foregroundStyle(.blue)
 
                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {

@@ -44,12 +44,12 @@ struct CategoriesSettingsListView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
+                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                     dismiss()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                YalaToolbarButton(systemName: "plus", label: "Agregar") {
+                YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
                     viewModel.createAndOpenNewCategory()
                 }
             }
@@ -125,7 +125,7 @@ struct CategoriesSettingsListView: View {
                                     .font(DS.Typography.title)
                                     .foregroundStyle(.red)
                             }
-                            .accessibilityLabel("Eliminar categoría")
+                            .accessibilityLabel(L10n.Accessibility.deleteCategory)
                             .padding(.leading, DS.Spacing.lg)
                             .padding(.trailing, DS.Spacing.sm)
                         }
@@ -185,7 +185,7 @@ struct CategoriesSettingsListView: View {
                                     .font(DS.Typography.title)
                                     .foregroundStyle(.red)
                             }
-                            .accessibilityLabel("Eliminar subcategoría")
+                            .accessibilityLabel(L10n.Accessibility.deleteCategory)
                             .padding(.leading, DS.Spacing.lg)
                             .padding(.trailing, DS.Spacing.sm)
                         }

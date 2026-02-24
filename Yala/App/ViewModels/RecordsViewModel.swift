@@ -77,13 +77,6 @@ final class RecordsViewModel: Filterable {
         set { SessionState.shared.customDateRange = newValue }
     }
 
-    /// Custom date range start (for backward compat, deprecated)
-    var customStartDate: Date =
-        Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
-
-    /// Custom date range end (for backward compat, deprecated)
-    var customEndDate: Date = Date()
-
     /// Selected currencies for filtering
     var selectedCurrencies: Set<CurrencyCode> {
         get { SessionState.shared.selectedCurrencies }
@@ -267,14 +260,6 @@ final class RecordsViewModel: Filterable {
         return period.dateInterval(customRange: customDateRange)
     }
 
-    // MARK: - SessionState Synchronization (SSOT - Most sync is now via computed properties)
-
-    /// No-op: customDateRange and period are now SSOT computed properties
-    /// Kept for backward compatibility with existing callers
-    func syncCustomRangeFromSessionState(_ sessionState: SessionState) {
-        // No-op: customDateRange and period are now SSOT computed properties
-    }
-
     // MARK: - Selection Actions
 
     /// Toggle selection for a record
@@ -312,15 +297,43 @@ final class RecordsViewModel: Filterable {
         selectedRecordIDs.removeAll()
     }
 
-    /// Delete selected records
+    /// Delete selected records (including transfer pairs)
     func deleteSelected(context: ModelContext) {
-        // Fetch all transactions matching selected IDs
-        for group in groupedRecords {
-            for record in group.records {
-                if selectedRecordIDs.contains(record.persistentModelID) {
-                    context.delete(record)
+        // Collect transfer pair IDs from selected records
+        var transferPairIDs: Set<String> = []
+        var recordsToDelete: [TransactionItem] = []
+
+        for id in selectedRecordIDs {
+            guard let record = context.model(for: id) as? TransactionItem else { continue }
+            recordsToDelete.append(record)
+            if record.balanceAdjustmentType == "transfer", let pairID = record.transferPairID {
+                transferPairIDs.insert(pairID)
+            }
+        }
+
+        // Delete transfer pairs that weren't already selected
+        if !transferPairIDs.isEmpty {
+            for pairID in transferPairIDs {
+                let fetchPairID = pairID
+                let descriptor = FetchDescriptor<TransactionItem>(
+                    predicate: #Predicate { $0.transferPairID == fetchPairID }
+                )
+                do {
+                    let pairs = try context.fetch(descriptor)
+                    for pair in pairs where !selectedRecordIDs.contains(pair.persistentModelID) {
+                        context.delete(pair)
+                    }
+                } catch {
+                    #if DEBUG
+                    print("RecordsViewModel: Error fetching transfer pairs: \(error)")
+                    #endif
                 }
             }
+        }
+
+        // Delete selected records
+        for record in recordsToDelete {
+            context.delete(record)
         }
 
         do {
@@ -355,8 +368,6 @@ final class RecordsViewModel: Filterable {
         isExcludeMode = false
         amountCondition = .any
         // period = .thisMonth // Do not reset period
-        customStartDate = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
-        customEndDate = Date()
         selectedCurrencies = []
         searchText = ""
     }
@@ -402,14 +413,15 @@ final class RecordsViewModel: Filterable {
         let transactions = getSelectedTransactions(context: context)
         for transaction in transactions {
             transaction.account = account
-            // Update currency to match the new account
             transaction.currencyCode = account.currencyCode
+            transaction.recalculatePreferredCurrency(context: context)
         }
         do {
             try context.save()
+            SessionState.shared.incrementDataVersion()
         } catch {
             #if DEBUG
-            print("Error saving bulk account update: \(error)")
+            print("RecordsViewModel: Error saving bulk account update: \(error)")
             #endif
         }
     }
@@ -423,9 +435,10 @@ final class RecordsViewModel: Filterable {
         }
         do {
             try context.save()
+            SessionState.shared.incrementDataVersion()
         } catch {
             #if DEBUG
-            print("Error saving bulk subcategory update: \(error)")
+            print("RecordsViewModel: Error saving bulk subcategory update: \(error)")
             #endif
         }
     }
@@ -444,9 +457,10 @@ final class RecordsViewModel: Filterable {
         }
         do {
             try context.save()
+            SessionState.shared.incrementDataVersion()
         } catch {
             #if DEBUG
-            print("Error saving bulk tags update: \(error)")
+            print("RecordsViewModel: Error saving bulk tags update: \(error)")
             #endif
         }
     }
@@ -462,9 +476,10 @@ final class RecordsViewModel: Filterable {
         }
         do {
             try context.save()
+            SessionState.shared.incrementDataVersion()
         } catch {
             #if DEBUG
-            print("Error saving bulk tags removal: \(error)")
+            print("RecordsViewModel: Error saving bulk tags removal: \(error)")
             #endif
         }
     }
@@ -477,9 +492,10 @@ final class RecordsViewModel: Filterable {
         }
         do {
             try context.save()
+            SessionState.shared.incrementDataVersion()
         } catch {
             #if DEBUG
-            print("Error saving bulk note update: \(error)")
+            print("RecordsViewModel: Error saving bulk note update: \(error)")
             #endif
         }
     }
@@ -488,13 +504,16 @@ final class RecordsViewModel: Filterable {
     func bulkUpdateAmount(_ amount: Double, context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
         for transaction in transactions {
-            transaction.amount = amount
+            // Preserve sign: expenses are negative, income positive
+            transaction.amount = transaction.amount < 0 ? -abs(amount) : abs(amount)
+            transaction.recalculatePreferredCurrency(context: context)
         }
         do {
             try context.save()
+            SessionState.shared.incrementDataVersion()
         } catch {
             #if DEBUG
-            print("Error saving bulk amount update: \(error)")
+            print("RecordsViewModel: Error saving bulk amount update: \(error)")
             #endif
         }
     }

@@ -25,11 +25,11 @@ struct BudgetProgressBar: View {
 
                 // Foreground capsule (progress)
                 Capsule()
-                    .fill(isExceeded ? Color.hotPink : Color(hex: color))
+                    .fill(isExceeded ? Color.hotPink : percentage >= 75 ? DS.Semantic.warningForeground : Color(hex: color))
                     .frame(width: max(0, width), height: 6)
             }
         }
         .frame(height: 6)
-        .accessibilityValue(isExceeded ? "Excedido" : "\(Int(percentage))%")
+        .accessibilityValue(isExceeded ? L10n.Accessibility.exceeded : "\(Int(percentage))%")
     }
 }

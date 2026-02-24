@@ -11,7 +11,7 @@ import SwiftUI
 
 struct ScheduledPaymentsListView: View {
     @Environment(\.yalaTheme) private var theme
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 36
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
 
     @Bindable var viewModel: ScheduledPaymentsViewModel
     let payments: [ScheduledPayment]
@@ -390,7 +390,7 @@ struct ScheduledPaymentsListView: View {
                         }
                         if payments.count > 3 {
                             Text("+\(payments.count - 3)")
-                                .font(.system(size: 8, weight: .medium))
+                                .font(.system(size: 8, weight: .medium)) // A11Y-DT: fixed size — calendar micro-badge
                                 .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
                         }
                     }
@@ -424,7 +424,7 @@ struct ScheduledPaymentsListView: View {
             let todayDay = calendar.component(.day, from: today)
             if day < todayDay { return Color.hotPink }
         }
-        let color = payment.subcategory?.colorHex ?? payment.subcategory?.category?.colorHex ?? "#6366F1"
+        let color = payment.subcategory?.colorHex ?? payment.subcategory?.category?.colorHex ?? AppConstants.defaultColorHex
         return Color(hex: color)
     }
 
@@ -550,16 +550,20 @@ struct ScheduledPaymentsListView: View {
         .padding(.top, DS.Spacing.md)
     }
 
+    private static let longDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        formatter.timeStyle = .none
+        return formatter
+    }()
+
     private func selectedDayLabel(day: Int) -> String {
         let calendar = Calendar.current
         let month = viewModel.selectedMonth
         let components = calendar.dateComponents([.year, .month], from: month)
 
         if let date = calendar.date(from: DateComponents(year: components.year, month: components.month, day: day)) {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .long
-            formatter.timeStyle = .none
-            return formatter.string(from: date)
+            return Self.longDateFormatter.string(from: date)
         }
         return "\(day)"
     }

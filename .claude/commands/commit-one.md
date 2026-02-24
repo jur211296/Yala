@@ -74,20 +74,26 @@ PASOS OBLIGATORIOS (usando outputs ya guardados):
    - Determinar si es un tema único atómico
    - Si son múltiples temas, alertar y pedir división
 
-5. PROPUESTA DE COMMIT:
+5. SWIFT AUDIT AUTOMÁTICO (antes de commitear):
+   - Ejecutar /swift-audit sobre los archivos modificados (de $GIT_DIFF_NAMES)
+   - Si hay issues CRÍTICOS: mostrarlos y BLOQUEAR el commit hasta que se resuelvan
+   - Si hay warnings menores: mostrarlos como nota informativa, no bloquean
+   - Si está LIMPIO: continuar al paso 6
+
+6. PROPUESTA DE COMMIT:
    - Determinar prefijo correcto: feat:, fix:, refactor:, chore:, docs:
    - Proponer mensaje descriptivo
    - ❌ NUNCA incluir línea "Co-Authored-By: Claude..." en el mensaje
    - Listar archivos específicos para `git add`
    - Preguntar: "¿Procedo con este commit?"
 
-6. EJECUCIÓN (solo si usuario confirma):
+7. EJECUCIÓN (solo si usuario confirma):
 ```bash
    git add [archivos específicos]
    git commit -m "[prefijo]: [mensaje]"
 ```
 
-7. POST-COMMIT: ACTUALIZACIÓN DE DOCUMENTACIÓN
+8. POST-COMMIT: ACTUALIZACIÓN DE DOCUMENTACIÓN
 
    PRINCIPIO: Todo trabajo debe dejar rastro para futuras sesiones.
 

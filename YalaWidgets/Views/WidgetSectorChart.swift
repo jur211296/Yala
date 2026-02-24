@@ -164,7 +164,7 @@ struct WidgetSectorChart: View {
                     .frame(width: iconSize, height: iconSize)
 
                 Image(systemName: iconName)
-                    .font(.system(size: fontSize, weight: .bold))
+                    .font(.system(size: fontSize, weight: .bold)) // A11Y-DT: widget fixed layout
                     .foregroundStyle(.white)
 
                 // Percentage label (only for segments > 10%)

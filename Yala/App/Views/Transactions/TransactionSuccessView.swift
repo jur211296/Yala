@@ -36,7 +36,14 @@ struct TransactionSuccessData {
 // MARK: - Transaction Success View
 
 struct TransactionSuccessView: View {
-    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 36
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "d MMM yyyy"
+        f.locale = AppLocale.current
+        return f
+    }()
+
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
 
     let data: TransactionSuccessData
     let onAccept: () -> Void
@@ -138,16 +145,38 @@ struct TransactionSuccessView: View {
                     }
 
                     // Promoted amount
-                    Text(
-                        YalaFormatter.currency(
-                            value: Double(truncating: data.amount as NSDecimalNumber),
-                            currencyCode: data.currencyCode,
-                            forceFullPrecision: true)
-                    )
-                    .font(DS.Typography.largeTitle)
-                    .foregroundStyle(typeColor)
-                    .scaleEffect(showAmount ? 1.0 : 0.8)
-                    .opacity(showAmount ? 1.0 : 0.0)
+                    if data.isTransfer,
+                       let destAmount = data.destinationAmount,
+                       let destCurrency = data.destinationCurrencyCode,
+                       destCurrency != data.currencyCode
+                    {
+                        Text(
+                            YalaFormatter.currency(
+                                value: Double(truncating: data.amount as NSDecimalNumber),
+                                currencyCode: data.currencyCode,
+                                forceFullPrecision: true)
+                            + " → "
+                            + YalaFormatter.currency(
+                                value: Double(truncating: destAmount as NSDecimalNumber),
+                                currencyCode: destCurrency,
+                                forceFullPrecision: true)
+                        )
+                        .font(DS.Typography.title2)
+                        .foregroundStyle(typeColor)
+                        .scaleEffect(showAmount ? 1.0 : 0.8)
+                        .opacity(showAmount ? 1.0 : 0.0)
+                    } else {
+                        Text(
+                            YalaFormatter.currency(
+                                value: Double(truncating: data.amount as NSDecimalNumber),
+                                currencyCode: data.currencyCode,
+                                forceFullPrecision: true)
+                        )
+                        .font(DS.Typography.largeTitle)
+                        .foregroundStyle(typeColor)
+                        .scaleEffect(showAmount ? 1.0 : 0.8)
+                        .opacity(showAmount ? 1.0 : 0.0)
+                    }
                 }
                 .padding(.bottom, DS.Spacing.xxxl)
 
@@ -305,10 +334,7 @@ struct TransactionSuccessView: View {
     }
 
     private var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "d MMM yyyy"
-        formatter.locale = AppLocale.current
-        return formatter.string(from: data.date)
+        Self.dateFormatter.string(from: data.date)
     }
 
     private func detailRow(icon: String, label: String, value: String) -> some View {
@@ -448,7 +474,7 @@ struct TransactionSuccessView: View {
                             .fill(
                                 Color(
                                     hex: data.subcategoryColorHex ?? data.categoryColorHex
-                                        ?? "6366F1")
+                                        ?? AppConstants.defaultColorHex)
                             )
                             .frame(width: 8, height: 8)
                         Text(subcatName)
@@ -527,7 +553,7 @@ struct TransactionSuccessView: View {
                     .padding(.vertical, DS.Spacing.xs)
                     .background(
                         Capsule()
-                            .fill(Color(UIColor.label).opacity(0.08))
+                            .fill(Color.primary.opacity(0.08))
                     )
                 }
             }

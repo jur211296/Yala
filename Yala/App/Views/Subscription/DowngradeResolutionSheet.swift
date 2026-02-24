@@ -15,7 +15,7 @@ struct DowngradeResolutionSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
     // MARK: - Properties
 
@@ -34,15 +34,15 @@ struct DowngradeResolutionSheet: View {
     }
 
     private var excessAccounts: Int {
-        max(0, activeAccounts.count - 2)  // Free limit is 2
+        max(0, activeAccounts.count - (ProFeature.accounts.freeLimit ?? Int.max))
     }
 
     private var excessBudgets: Int {
-        max(0, activeBudgets.count - 3)  // Free limit is 3
+        max(0, activeBudgets.count - (ProFeature.budgets.freeLimit ?? Int.max))
     }
 
-    private var accountsToKeep: Int { 2 }
-    private var budgetsToKeep: Int { 3 }
+    private var accountsToKeep: Int { ProFeature.accounts.freeLimit ?? Int.max }
+    private var budgetsToKeep: Int { ProFeature.budgets.freeLimit ?? Int.max }
 
     // MARK: - State
 
@@ -333,13 +333,19 @@ struct DowngradeResolutionSheet: View {
         StoreKitManager.shared.wasProUser = false
     }
 
+    // MARK: - Static Formatters
+
+    private static let currencyFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        return f
+    }()
+
     // MARK: - Helpers
 
     private func formatCurrency(_ amount: Double, code: String) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = code
-        return formatter.string(from: NSNumber(value: amount)) ?? "\(amount)"
+        Self.currencyFormatter.currencyCode = code
+        return Self.currencyFormatter.string(from: NSNumber(value: amount)) ?? "\(amount)"
     }
 }
 

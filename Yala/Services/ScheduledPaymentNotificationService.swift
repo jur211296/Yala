@@ -29,7 +29,7 @@ final class ScheduledPaymentNotificationService {
 
     // MARK: - Public Methods
 
-    /// Check and notify payments that are due TODAY
+    /// Check and notify payments that are due TODAY (using DateCalculator for all occurrences)
     func checkAndNotifyDuePayments() async {
         guard let context = modelContext else { return }
         guard await NotificationService.shared.isAuthorized() else { return }
@@ -40,22 +40,26 @@ final class ScheduledPaymentNotificationService {
         for payment in payments {
             guard payment.notifyOnDueDate else { continue }
 
-            // Use Calendar to compare only day (not hour/minute/second)
-            guard Calendar.current.isDateInToday(payment.nextDueDate) else { continue }
+            // Use DateCalculator to get all occurrences this month (not just nextDueDate)
+            let dates = ScheduledPaymentDateCalculator.paymentDatesInMonth(
+                params: payment.dateCalculatorParams, month: today
+            )
 
-            // Skip if this date has been skipped by user
-            guard !payment.isDateSkipped(payment.nextDueDate) else { continue }
+            for date in dates {
+                guard Calendar.current.isDateInToday(date) else { continue }
+                guard !payment.isDateSkipped(date) else { continue }
 
-            // Avoid duplicate notification
-            guard !tracker.hasNotifiedForDate(
-                paymentID: payment.id,
-                date: today,
-                type: .dueDate
-            ) else { continue }
+                // Avoid duplicate notification
+                guard !tracker.hasNotifiedForDate(
+                    paymentID: payment.id,
+                    date: today,
+                    type: .dueDate
+                ) else { continue }
 
-            await sendPaymentNotification(payment: payment, type: .dueToday)
-            tracker.markNotified(paymentID: payment.id, date: today, type: .dueDate)
-            payment.lastNotifiedDate = today
+                await sendPaymentNotification(payment: payment, type: .dueToday)
+                tracker.markNotified(paymentID: payment.id, date: today, type: .dueDate)
+                payment.lastNotifiedDate = today
+            }
         }
 
         do {
@@ -68,6 +72,7 @@ final class ScheduledPaymentNotificationService {
     }
 
     /// Check and notify payments that are due in X days (based on notifyDaysBefore)
+    /// Uses DateCalculator for all occurrences within a 7-day window
     func checkAndNotifyUpcomingPayments() async {
         guard let context = modelContext else { return }
         guard await NotificationService.shared.isAuthorized() else { return }
@@ -79,22 +84,28 @@ final class ScheduledPaymentNotificationService {
         for payment in payments {
             guard payment.notifyDaysBefore > 0 else { continue }
 
-            let daysUntilDue = calendar.dateComponents([.day], from: today, to: payment.nextDueDate).day ?? 0
+            // Use DateCalculator for all occurrences this month
+            let dates = ScheduledPaymentDateCalculator.paymentDatesInMonth(
+                params: payment.dateCalculatorParams, month: today
+            )
 
-            guard daysUntilDue == payment.notifyDaysBefore else { continue }
+            // Only consider dates within 7-day window to avoid spam
+            let sevenDaysFromNow = calendar.date(byAdding: .day, value: 7, to: today) ?? today
+            for date in dates where date <= sevenDaysFromNow {
+                let daysUntilDue = calendar.dateComponents([.day], from: today, to: date).day ?? 0
+                guard daysUntilDue == payment.notifyDaysBefore else { continue }
+                guard !payment.isDateSkipped(date) else { continue }
 
-            // Skip if this date has been skipped by user
-            guard !payment.isDateSkipped(payment.nextDueDate) else { continue }
+                // Avoid duplicate notification
+                guard !tracker.hasNotifiedForDate(
+                    paymentID: payment.id,
+                    date: today,
+                    type: .daysBefore
+                ) else { continue }
 
-            // Avoid duplicate notification
-            guard !tracker.hasNotifiedForDate(
-                paymentID: payment.id,
-                date: today,
-                type: .daysBefore
-            ) else { continue }
-
-            await sendPaymentNotification(payment: payment, type: .dueSoon(days: daysUntilDue))
-            tracker.markNotified(paymentID: payment.id, date: today, type: .daysBefore)
+                await sendPaymentNotification(payment: payment, type: .dueSoon(days: daysUntilDue))
+                tracker.markNotified(paymentID: payment.id, date: today, type: .daysBefore)
+            }
         }
     }
 
@@ -167,6 +178,52 @@ final class ScheduledPaymentNotificationService {
             body: message,
             deepLink: "scheduledPayments"
         )
+    }
+
+    // MARK: - Credit Card Payment Notifications
+
+    /// Check accounts with credit card payment reminders and notify if today is payment day
+    func checkAndNotifyCreditCardPayments() async {
+        guard let context = modelContext else { return }
+        guard await NotificationService.shared.isAuthorized() else { return }
+
+        let accounts = fetchCreditCardAccounts(context: context)
+        let today = Date()
+        let dayOfMonth = Calendar.current.component(.day, from: today)
+
+        for account in accounts {
+            guard account.creditCardPaymentDay == dayOfMonth else { continue }
+
+            let trackerKey = "creditCardNotif_\(account.name)_\(ScheduledPaymentNotificationTracker.dateKeyString(from: today))"
+            guard !UserDefaults.standard.bool(forKey: trackerKey) else { continue }
+
+            let message = L10n.Account.CreditCard.paymentNotification(account.name)
+            await NotificationService.shared.sendNotification(
+                title: account.name,
+                body: message,
+                deepLink: "accounts"
+            )
+
+            UserDefaults.standard.set(true, forKey: trackerKey)
+        }
+    }
+
+    private func fetchCreditCardAccounts(context: ModelContext) -> [Account] {
+        let creditCardType = AccountType.creditCard.rawValue
+        let descriptor = FetchDescriptor<Account>(
+            predicate: #Predicate {
+                $0.type == creditCardType && $0.creditCardPaymentReminder == true
+            }
+        )
+
+        do {
+            return try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentNotificationService: Error fetching credit card accounts: \(error)")
+            #endif
+            return []
+        }
     }
 
     private func fetchActivePayments(context: ModelContext) -> [ScheduledPayment] {

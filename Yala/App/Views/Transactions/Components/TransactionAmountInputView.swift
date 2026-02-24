@@ -15,7 +15,7 @@ struct TransactionAmountInputView: View {
     let currencyCode: String
     let onCurrencyTap: () -> Void
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroAmountSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .largeTitle) private var heroAmountSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
     @FocusState private var isAmountFocused: Bool
 
     var body: some View {

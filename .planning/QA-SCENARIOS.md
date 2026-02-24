@@ -4856,3 +4856,39 @@ Para cada tema verificar:
 ### 40.12 Localización del modo excluir
 - [ ] Verificar "Incluir"/"Excluir"/"Nada" en los 6 idiomas (es, en, de, fr, it, pt)
 - [ ] Labels correctos en cada idioma al cambiar modo
+
+---
+
+## Sección 41: Polish Pre-Fase 12 (Fase 11.5)
+
+### 41.1 Budget Progress Bar — colores por contexto
+- [ ] Crear presupuesto con 1 categoría, gastar <75% → barra muestra color de la categoría
+- [ ] Crear presupuesto con múltiples categorías, gastar <75% → barra muestra color indigo
+- [ ] Gastar 75-99% en cualquier presupuesto → barra muestra color warning (ámbar)
+- [ ] Exceder 100% → barra muestra color hotPink (app)
+- [ ] Verificar widget de presupuesto: excedido muestra hotPink (no rojo)
+- [ ] Verificar widget de presupuesto: ≥75% muestra warning (ámbar)
+
+### 41.2 Badge "Recurrente" en edición de transacción
+- [ ] Crear un pago planificado, ejecutarlo para crear transacción
+- [ ] Editar esa transacción → chip "Recurrente" con icono visible en barra de acciones
+- [ ] Chip es púrpura con fondo translúcido
+- [ ] Crear transacción nueva (sin pago planificado) → chip NO aparece
+- [ ] Duplicar transacción recurrente → chip NO aparece en la duplicada (es nueva)
+
+### 41.3 Tipo de cuenta: Tarjeta de crédito
+- [ ] Crear nueva cuenta → tipo "Tarjeta de crédito" disponible en selector
+- [ ] Seleccionar tipo → icono es `creditcard.fill` (distinto del `creditcard` outline de General)
+- [ ] Al seleccionar tipo tarjeta de crédito → sección "Tarjeta de crédito" aparece en formulario
+- [ ] Toggle "Avisar en fecha de pago" → desactivado por defecto
+- [ ] Activar toggle → picker de día de pago (1-28) aparece
+- [ ] Seleccionar día 15, guardar cuenta, reabrir → valores persisten
+- [ ] Cambiar tipo a otro (ej. General) → sección tarjeta de crédito desaparece
+- [ ] Editar cuenta existente tipo tarjeta de crédito → campos se cargan correctamente
+
+### 41.4 Notificación de pago de tarjeta de crédito
+- [ ] Crear cuenta tarjeta de crédito con reminder activado, día = hoy
+- [ ] Cerrar y reabrir app → recibir notificación "Recuerda que hoy toca pagar tu tarjeta {nombre}"
+- [ ] Cerrar y reabrir app de nuevo → NO recibir notificación duplicada
+- [ ] Crear cuenta tarjeta de crédito con reminder activado, día ≠ hoy → sin notificación
+- [ ] Desactivar reminder → sin notificación aunque sea el día correcto

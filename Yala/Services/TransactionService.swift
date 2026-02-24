@@ -178,6 +178,7 @@ final class TransactionService {
         }
         try context.save()
         SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
     }
 
     /// Removes tags from multiple transactions
@@ -194,6 +195,7 @@ final class TransactionService {
         }
         try context.save()
         SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
     }
 
     /// Updates note for multiple transactions

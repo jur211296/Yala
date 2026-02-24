@@ -169,7 +169,7 @@ struct CustomPeriodPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
+                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                         dismiss()
                     }
                 }

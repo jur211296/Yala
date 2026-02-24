@@ -13,11 +13,11 @@ struct PersonalDetailsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
 
-    @ScaledMetric(relativeTo: .largeTitle) private var avatarSize: CGFloat = 44
+    @ScaledMetric(relativeTo: .largeTitle) private var avatarSize: CGFloat = 44 // A11Y-DT: @ScaledMetric
 
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("userAlias") private var userAlias: String = ""
-    @AppStorage("userProfileImageData") private var userProfileImageData: Data?
+    @State private var userProfileImageData: Data?
     @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
 
     @State private var editedName: String = ""
@@ -69,7 +69,7 @@ struct PersonalDetailsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
+                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                         saveAndDismiss()
                     }
                 }
@@ -228,47 +228,6 @@ struct PersonalDetailsView: View {
                     }
                 }
 
-                SubsectionDivider()
-
-                // Alias row
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    HStack {
-                        Text(L10n.Common.alias)
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        TextField(L10n.Profile.aliasPlaceholder, text: $editedAlias)
-                            .multilineTextAlignment(.trailing)
-                            .foregroundStyle(.primary)
-                            .autocapitalization(.none)
-                            .autocorrectionDisabled()
-                    }
-                    .padding(DS.Spacing.lg)
-
-                    // Validation message
-                    if !editedAlias.isEmpty {
-                        HStack(spacing: DS.Spacing.xs) {
-                            Image(
-                                systemName: isAliasValid
-                                    ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
-                            )
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(isAliasValid ? .green : .orange)
-
-                            Text(aliasValidationMessage)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(isAliasValid ? .green : .orange)
-                        }
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.bottom, DS.Spacing.md)
-                    }
-
-                    // Alias info
-                    Text(L10n.Profile.aliasHelper)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.bottom, DS.Spacing.md)
-                }
             }
         }
     }
@@ -296,10 +255,12 @@ struct PersonalDetailsView: View {
         editedAlias = userAlias
         selectedIcon = userProfileIcon
 
-        // Load profile image if exists
-        if let imageData = userProfileImageData,
+        // Migrate from UserDefaults if needed, then load from file
+        ProfileImageStorage.migrateFromUserDefaultsIfNeeded()
+        if let imageData = ProfileImageStorage.load(),
             let uiImage = UIImage(data: imageData)
         {
+            userProfileImageData = imageData
             profileUIImage = uiImage
             profileImage = Image(uiImage: uiImage)
         }
@@ -342,26 +303,26 @@ struct PersonalDetailsView: View {
     private func saveAndDismiss() {
         // Save name (trim whitespace and ensure not empty)
         let trimmedName = editedName.trimmingCharacters(in: .whitespacesAndNewlines)
-        userName = trimmedName.isEmpty ? "Usuario" : trimmedName
+        userName = trimmedName.isEmpty ? L10n.Profile.defaultName : trimmedName
 
         // Save alias (only if valid or empty)
         if isAliasValid || editedAlias.isEmpty {
             userAlias = editedAlias.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         }
 
-        // Save profile image or clear it if icon is selected
+        // Save profile image to file or clear it if icon is selected
         if let uiImage = profileUIImage {
             if let imageData = uiImage.jpegData(compressionQuality: 0.7) {
-                userProfileImageData = imageData
+                ProfileImageStorage.save(imageData)
                 userProfileIcon = "" // Clear icon when photo is set
             }
         } else if !selectedIcon.isEmpty {
-            // Icon selected, clear image data
-            userProfileImageData = nil
+            // Icon selected, clear image file
+            ProfileImageStorage.delete()
             userProfileIcon = selectedIcon
         } else if !hasCustomAvatar {
             // User removed avatar, clear both
-            userProfileImageData = nil
+            ProfileImageStorage.delete()
             userProfileIcon = ""
         }
 

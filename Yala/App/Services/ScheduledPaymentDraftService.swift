@@ -276,5 +276,13 @@ struct ScheduledPaymentDraftService {
 
         // Advance to next due date
         advanceToNextDueDate(payment: payment)
+
+        do {
+            try context.save()
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error saving after draft approved: \(error)")
+            #endif
+        }
     }
 }

@@ -80,7 +80,7 @@ final class CategoriesSettingsListViewModel {
 
         let category = Category(
             name: "",
-            colorHex: "#6366F1",
+            colorHex: AppConstants.defaultColorHex,
             isIncome: false,
             isDefaultSeed: false,
             isVisible: true,
@@ -115,6 +115,8 @@ final class CategoriesSettingsListViewModel {
         do {
             try context.save()
             context.processPendingChanges()
+            WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
             loadCategories()
         } catch {
             #if DEBUG

@@ -48,13 +48,13 @@ struct BudgetsFavoritesSettingsView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
+                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                     dismiss()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 if viewModel.hasFavorites {
-                    YalaToolbarButton(systemName: viewModel.isEditMode ? "checkmark" : "arrow.up.arrow.down", label: viewModel.isEditMode ? "Listo" : "Reordenar") {
+                    YalaToolbarButton(systemName: viewModel.isEditMode ? "checkmark" : "arrow.up.arrow.down", label: viewModel.isEditMode ? L10n.Action.done : L10n.Action.reorder) {
                         dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.8)) {
                             viewModel.isEditMode.toggle()
                         }
@@ -255,12 +255,16 @@ struct BudgetsFavoritesSettingsView: View {
 
     // MARK: - Helpers
 
+    private static let amountFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        f.maximumFractionDigits = 0
+        return f
+    }()
+
     private func formatAmount(_ amount: Double, currency: String) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = currency
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: amount)) ?? "\(currency) \(Int(amount))"
+        Self.amountFormatter.currencyCode = currency
+        return Self.amountFormatter.string(from: NSNumber(value: amount)) ?? "\(currency) \(Int(amount))"
     }
 }
 

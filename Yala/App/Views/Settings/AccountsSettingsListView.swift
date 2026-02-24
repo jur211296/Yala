@@ -67,20 +67,20 @@ struct AccountsSettingsListView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
+                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                     dismiss()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: DS.Spacing.md) {
-                    YalaToolbarButton(systemName: viewModel.isEditMode ? "checkmark" : "arrow.up.arrow.down", label: viewModel.isEditMode ? "Listo" : "Reordenar")
+                    YalaToolbarButton(systemName: viewModel.isEditMode ? "checkmark" : "arrow.up.arrow.down", label: viewModel.isEditMode ? L10n.Action.done : L10n.Action.reorder)
                     {
                         dsWithAnimation(reduceMotion) {
                             viewModel.isEditMode.toggle()
                         }
                     }
 
-                    YalaToolbarButton(systemName: "plus", label: "Agregar") {
+                    YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
                         if FeatureGateService.shared.canCreate(.accounts, currentCount: activeAccountsCount) {
                             viewModel.isPresentingCreateAccount = true
                         } else {

@@ -19,7 +19,7 @@ struct ThemeSettingsView: View {
 
     @State private var showUpgradeSheet = false
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
     private let columns = [
         GridItem(.flexible(), spacing: DS.Spacing.lg),
@@ -41,7 +41,7 @@ struct ThemeSettingsView: View {
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Profile.appearance)
-                            .font(.title2.bold())
+                            .font(DS.Typography.title2.bold())
                             .foregroundStyle(.thPrimaryText)
 
                         Text(L10n.Settings.themeDescription)
@@ -68,7 +68,7 @@ struct ThemeSettingsView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
+                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                     dismiss()
                 }
             }
@@ -91,7 +91,8 @@ struct ThemeSettingsView: View {
             } else {
                 themeManager.userChoice = appTheme
                 // Dismiss theme view + parent profile sheet
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(300))
                     dismiss()
                     onThemeChanged?()
                 }
@@ -118,7 +119,7 @@ struct ThemeSettingsView: View {
                             .font(DS.Typography.labelSmall)
                             .foregroundStyle(.white)
                             .padding(DS.Chip.paddingV)
-                            .background(Circle().fill(Color.gray))
+                            .background(Circle().fill(Color.gray)) // A11Y-DM: lock badge on theme preview — white icon on gray
                             .offset(x: 4, y: -4)
                     }
                 }

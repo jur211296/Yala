@@ -45,12 +45,12 @@ enum InboxBulkOption: String, Identifiable {
 
     var iconColor: Color {
         switch self {
-        case .account: return .blue
-        case .subcategory: return .purple
-        case .approve: return .green
-        case .reject: return .orange
-        case .delete: return .red
-        case .returnToPending: return .teal
+        case .account: return DS.Semantic.infoForeground
+        case .subcategory: return DS.Semantic.infoForeground
+        case .approve: return DS.Semantic.successForeground
+        case .reject: return DS.Semantic.warningForeground
+        case .delete: return DS.Semantic.errorForeground
+        case .returnToPending: return DS.Semantic.undoForeground
         }
     }
 }
@@ -152,7 +152,7 @@ struct InboxBulkActionsSheet: View {
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
-                            YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                            YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                                 finishEditing()
                             }
                         }
@@ -179,7 +179,7 @@ struct InboxBulkActionsSheet: View {
             .sheet(isPresented: $showSubcategorySelector) {
                 SubcategorySelectorSheet(
                     selectedSubcategory: $selectedSubcategory,
-                    transactionType: .expense
+                    transactionType: selectedDrafts.allSatisfy({ ($0.amount ?? 0) > 0 }) ? .income : .expense
                 )
                 .onDisappear {
                     if let subcategory = selectedSubcategory {
@@ -238,7 +238,7 @@ struct InboxBulkActionsSheet: View {
                 if isApplied {
                     Image(systemName: "checkmark.circle.fill")
                         .font(DS.Typography.body)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(DS.Semantic.successForeground)
                 } else if !isDisabled {
                     Image(systemName: "chevron.right")
                         .font(DS.Typography.labelSmall.weight(.semibold))
@@ -258,7 +258,7 @@ struct InboxBulkActionsSheet: View {
     private var appliedChangesSummary: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(.green)
+                .foregroundStyle(DS.Semantic.successForeground)
 
             Text(L10n.BulkEdit.successMessage)
                 .font(DS.Typography.caption)

@@ -10,8 +10,6 @@ import SwiftData
 import SwiftUI
 
 struct TrendWidget: View {
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
-
     @Bindable var viewModel: PanelViewModel
     @Bindable var sessionState: SessionState
     var currencyCode: String
@@ -102,19 +100,8 @@ struct TrendWidget: View {
     }
 
     private var emptyStateView: some View {
-        VStack(spacing: DS.Spacing.md) {
-            Spacer()
-            Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.system(size: scaledEmptyIconSize))
-                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                .foregroundStyle(.secondary)
-            Text(L10n.Empty.noData)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 160)
+        YalaEmptyState(icon: "chart.line.uptrend.xyaxis", title: L10n.Empty.noData, style: .widget)
+            .frame(height: 160)
     }
 
     private var metricSelector: some View {

@@ -14,6 +14,20 @@ import SwiftUI
 @Observable
 final class BudgetsViewModel {
 
+    // MARK: - Static Formatters
+
+    private static let weekDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "d MMM"
+        return f
+    }()
+
+    private static let monthYearFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMMM yyyy"
+        return f
+    }()
+
     // MARK: - Dependencies
 
     private var modelContext: ModelContext?
@@ -88,11 +102,9 @@ final class BudgetsViewModel {
                       calendar.isDate(selectedWeek, equalTo: nextWeek, toGranularity: .weekOfYear) {
                 return L10n.Period.nextWeek
             } else {
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "d MMM"
-                let start = dateFormatter.string(from: selectedWeek)
+                let start = Self.weekDateFormatter.string(from: selectedWeek)
                 let end = calendar.date(byAdding: .day, value: 6, to: selectedWeek) ?? selectedWeek
-                let endString = dateFormatter.string(from: end)
+                let endString = Self.weekDateFormatter.string(from: end)
                 return "\(start) - \(endString)"
             }
 
@@ -108,9 +120,7 @@ final class BudgetsViewModel {
                       calendar.isDate(selectedMonth, equalTo: nextMonth, toGranularity: .month) {
                 return L10n.Period.nextMonth
             } else {
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "MMMM yyyy"
-                return dateFormatter.string(from: selectedMonth).capitalized
+                return Self.monthYearFormatter.string(from: selectedMonth).capitalized
             }
 
         case .yearly:
@@ -192,8 +202,16 @@ final class BudgetsViewModel {
             allBudgets = []
         }
 
-        // Load transactions
-        let transactionDescriptor = FetchDescriptor<TransactionItem>(sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse), SortDescriptor(\TransactionItem.createdAt, order: .reverse)])
+        // Load transactions (filtered by earliest budget date to avoid loading all history)
+        let earliestDate = allBudgets.compactMap { budget -> Date? in
+            if let start = budget.startDate { return start }
+            return Calendar.current.date(byAdding: .year, value: -1, to: Date())
+        }.min() ?? Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
+        let capturedDate = earliestDate
+        let transactionDescriptor = FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.date >= capturedDate },
+            sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse), SortDescriptor(\TransactionItem.createdAt, order: .reverse)]
+        )
         do {
             allTransactions = try context.fetch(transactionDescriptor)
         } catch {
@@ -300,44 +318,40 @@ final class BudgetsViewModel {
         transactions: [TransactionItem],
         defaultCurrencyCode: String
     ) -> Double {
-        // Get budget period date interval
         let interval = getBudgetDateInterval(budget: budget)
+        return Self.calculateSpending(budget: budget, transactions: transactions, interval: interval)
+    }
 
-        // Filter transactions by date
-        var filtered = transactions.filter { transaction in
-            interval.contains(transaction.date)
-        }
-
-        // Apply budget filters
+    /// Shared spending calculation used by both BudgetsViewModel and BudgetAlertService.
+    /// Filters transactions by budget criteria and sums expense amounts.
+    static func calculateSpending(
+        budget: Budget,
+        transactions: [TransactionItem],
+        interval: DateInterval
+    ) -> Double {
+        var filtered = transactions.filter { interval.contains($0.date) }
 
         // Account filter
         if let accounts = budget.accounts, !accounts.isEmpty {
             let accountIDs = Set(accounts.map { $0.persistentModelID })
-            filtered = filtered.filter { transaction in
-                if let accountID = transaction.account?.persistentModelID {
-                    return accountIDs.contains(accountID)
-                }
-                return false
+            filtered = filtered.filter { tx in
+                tx.account.map { accountIDs.contains($0.persistentModelID) } ?? false
             }
         }
 
         // Subcategory filter
         if let subcategories = budget.subcategories, !subcategories.isEmpty {
             let subIDs = Set(subcategories.map { $0.persistentModelID })
-            filtered = filtered.filter { transaction in
-                if let subID = transaction.subcategory?.persistentModelID {
-                    return subIDs.contains(subID)
-                }
-                return false
+            filtered = filtered.filter { tx in
+                tx.subcategory.map { subIDs.contains($0.persistentModelID) } ?? false
             }
         }
 
         // Tag filter
         if let budgetTags = budget.tags, !budgetTags.isEmpty {
             let tagIDs = Set(budgetTags.map { $0.persistentModelID })
-            filtered = filtered.filter { transaction in
-                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
-                return !transactionTagIDs.isDisjoint(with: tagIDs)
+            filtered = filtered.filter { tx in
+                !Set((tx.tags ?? []).map { $0.persistentModelID }).isDisjoint(with: tagIDs)
             }
         }
 
@@ -345,28 +359,21 @@ final class BudgetsViewModel {
         if let naturesString = budget.natures, !naturesString.isEmpty {
             let natures = naturesString.split(separator: ",")
                 .compactMap { SubcategoryNature(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
-
-            filtered = filtered.filter { transaction in
-                natures.contains(transaction.effectiveNature)
-            }
+            filtered = filtered.filter { natures.contains($0.effectiveNature) }
         }
 
         // Only count expenses (not income)
-        filtered = filtered.filter { transaction in
-            transaction.category?.isIncome == false
-        }
+        filtered = filtered.filter { $0.category?.isIncome == false }
 
         // Sum amounts based on budget account configuration:
         // - If exactly 1 account: use transaction.amount (same currency as budget)
         // - If 0 or multiple accounts: use amountInPreferredCurrency (normalized)
         let useBudgetCurrency = (budget.accounts?.count ?? 0) == 1
 
-        let total = filtered.reduce(0.0) { sum, transaction in
-            let amount = useBudgetCurrency ? transaction.amount : transaction.amountInPreferredCurrency
+        return filtered.reduce(0.0) { sum, tx in
+            let amount = useBudgetCurrency ? tx.amount : tx.amountInPreferredCurrency
             return sum + abs(amount)
         }
-
-        return total
     }
 
     // MARK: - Budget Status Determination
@@ -490,13 +497,13 @@ final class BudgetsViewModel {
     ) -> (icon: String, color: String) {
         // No subcategories: use neutral app icon/color
         guard subcategoryCount > 0 else {
-            return ("chart.pie.fill", "#6366F1") // Electric indigo
+            return ("chart.pie.fill", AppConstants.defaultColorHex) // Electric indigo
         }
 
         // Single subcategory: use subcategory icon/color
         if subcategoryCount == 1 {
             let icon = firstSubcategoryIcon ?? "tag.fill"
-            let color = firstCategoryColor ?? "#6366F1"
+            let color = firstCategoryColor ?? AppConstants.defaultColorHex
             return (icon, color)
         }
 
@@ -504,11 +511,11 @@ final class BudgetsViewModel {
         if uniqueCategoryCount == 1 {
             // All from same category: use category icon/color
             let icon = firstCategoryIcon ?? "tag.fill"
-            let color = firstCategoryColor ?? "#6366F1"
+            let color = firstCategoryColor ?? AppConstants.defaultColorHex
             return (icon, color)
         } else {
             // Multiple categories: use app icon + electric indigo
-            return ("chart.pie.fill", "#6366F1")
+            return ("chart.pie.fill", AppConstants.defaultColorHex)
         }
     }
 }

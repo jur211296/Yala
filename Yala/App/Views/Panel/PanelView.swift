@@ -13,19 +13,6 @@ import UIKit
 
 struct PanelView: View {
 
-    init() {
-        // Eliminamos el fondo gris por defecto del TabView en modo página
-        let pageViewBackground = UIView.appearance(
-            whenContainedInInstancesOf: [UIPageViewController.self]
-        )
-        pageViewBackground.backgroundColor = .clear
-
-        let scrollViewBackground = UIScrollView.appearance(
-            whenContainedInInstancesOf: [UIPageViewController.self]
-        )
-        scrollViewBackground.backgroundColor = .clear
-    }
-
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -51,10 +38,7 @@ struct PanelView: View {
     /// Sheet presentation state for account form
     @State private var accountFormSheet: AccountFormSheet?
 
-    /// Trend Detail View State (To be removed/minimized as navigation is gone)
-    @State private var trendDetailType: TrendType = .balance
-
-    /// Widget Preferences Sheet
+/// Widget Preferences Sheet
     @State private var showWidgetPreferences = false
 
     /// New Transaction Sheet
@@ -66,10 +50,7 @@ struct PanelView: View {
     /// Inbox View Sheet
     @State private var showInbox = false
 
-    /// Task for debouncing data recalculations
-    @State private var calculationTask: Task<Void, Never>?
-
-    /// Custom period picker sheet
+/// Custom period picker sheet
     @State private var showCustomPeriodPicker = false
 
     @AppStorage("userName") private var userName: String = "Usuario"
@@ -152,16 +133,16 @@ struct PanelView: View {
                         .font(DS.Typography.captionSmall).fontWeight(.bold)
                         .foregroundStyle(.white)
                         .padding(.horizontal, DS.Spacing.xs)
-                        .padding(.vertical, 1)
+                        .padding(.vertical, DS.Spacing.xxs)
                         .background(
                             Capsule()
                                 .fill(Color.hotPink)
                         )
-                        .offset(x: 8, y: -6)
+                        .offset(x: DS.Spacing.sm, y: -(DS.Spacing.xs + 2))
                 }
             }
         }
-        .accessibilityLabel("Bandeja de entrada")
+        .accessibilityLabel(L10n.Accessibility.inbox)
     }
 
 
@@ -306,11 +287,9 @@ struct PanelView: View {
     @ViewBuilder
     private var newRecordFAB: some View {
         let fabBackground = canUseVoiceInput ? theme.accent : Color.gray.opacity(0.5)
-        let hasMultipleInputs = (voiceInputEnabled && imageInputEnabled) ||
-                                (voiceInputEnabled && !imageInputEnabled) ||
-                                (!voiceInputEnabled && imageInputEnabled)
+        let hasAlternativeInputs = voiceInputEnabled || imageInputEnabled
 
-        if hasMultipleInputs && canUseVoiceInput {
+        if hasAlternativeInputs && canUseVoiceInput {
             // Custom FAB with popup menu above
             VStack(alignment: .trailing, spacing: DS.Spacing.md) {
                 // Menu options (shown when expanded)
@@ -382,15 +361,15 @@ struct PanelView: View {
                     Image(systemName: showFABMenu ? "xmark" : "plus")
                         .font(DS.Typography.title)
                         .foregroundStyle(.white)
-                        .frame(width: 56, height: 56)
+                        .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                         .background(showFABMenu ? DS.Semantic.disabledForeground : fabBackground)
                         .clipShape(Circle())
                         .rotationEffect(.degrees(showFABMenu ? 90 : 0))
                 }
                 .buttonStyle(.plain)
                 .glassEffect(.regular.interactive())
-                .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
-                .accessibilityLabel(showFABMenu ? "Cerrar menú" : "Nuevo registro")
+                .dsFloatingShadow()
+                .accessibilityLabel(showFABMenu ? L10n.Accessibility.closeMenu : L10n.Accessibility.newRecord)
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
@@ -404,18 +383,18 @@ struct PanelView: View {
                 Image(systemName: "plus")
                     .font(DS.Typography.title)
                     .foregroundStyle(.white)
-                    .frame(width: 56, height: 56)
+                    .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                     .background(fabBackground)
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
             .glassEffect(.regular.interactive())
-            .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+            .dsFloatingShadow()
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
             .disabled(!canUseVoiceInput)
-            .accessibilityLabel("Nuevo registro")
-            .accessibilityHint(!canUseVoiceInput ? "Crea al menos una cuenta y una categoría" : "")
+            .accessibilityLabel(L10n.Accessibility.newRecord)
+            .accessibilityHint(!canUseVoiceInput ? L10n.Accessibility.createAccountFirst : "")
         }
     }
 
@@ -433,7 +412,7 @@ struct PanelView: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: icon)
                     .font(DS.Typography.headline)
-                    .frame(width: 24)
+                    .frame(width: DS.Icon.badgeSmall)
 
                 Text(text)
                     .font(DS.Typography.headline)
@@ -450,10 +429,10 @@ struct PanelView: View {
             .padding(.vertical, DS.Spacing.md)
             .background(isLocked ? DS.Semantic.disabledForeground : color)
             .clipShape(Capsule())
-            .shadow(color: (isLocked ? DS.Semantic.disabledForeground : color).opacity(0.3), radius: 8, x: 0, y: 4)
+            .shadow(color: (isLocked ? DS.Semantic.disabledForeground : color).opacity(0.3), radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
         }
         .buttonStyle(.plain)
-        .phaseAnimator([false, true]) { content, phase in
+        .phaseAnimator(reduceMotion ? [false] : [false, true]) { content, phase in
             content
                 .scaleEffect(phase ? 1.03 : 1.0)
         } animation: { _ in
@@ -466,25 +445,35 @@ struct PanelView: View {
             Text(L10n.Panel.accounts)
                 .font(DS.Typography.title)
 
-            AccountsCarouselView(
-                viewModel: viewModel,
-                orderedAccounts: viewModel.orderedActiveAccounts(
-                    from: accounts,
-                    sortOrderNames: accountsSortOrderNamesRaw.split(separator: "|").map(String.init)
-                ),
-                transactions: transactions,
-                isExpensesOnlyMode: sessionState.isExpensesOnlyMode,
-                onAddAccount: {
+            if accounts.isEmpty {
+                YalaEmptyState.noAccounts {
                     if isAccountsLimitReached {
                         showUpgradeForAccounts = true
                     } else {
                         accountFormSheet = AccountFormSheet(account: nil)
                     }
-                },
-                onEditAccount: { account in
-                    accountFormSheet = AccountFormSheet(account: account)
                 }
-            )
+            } else {
+                AccountsCarouselView(
+                    viewModel: viewModel,
+                    orderedAccounts: viewModel.orderedActiveAccounts(
+                        from: accounts,
+                        sortOrderNames: accountsSortOrderNamesRaw.split(separator: "|").map(String.init)
+                    ),
+                    transactions: transactions,
+                    isExpensesOnlyMode: sessionState.isExpensesOnlyMode,
+                    onAddAccount: {
+                        if isAccountsLimitReached {
+                            showUpgradeForAccounts = true
+                        } else {
+                            accountFormSheet = AccountFormSheet(account: nil)
+                        }
+                    },
+                    onEditAccount: { account in
+                        accountFormSheet = AccountFormSheet(account: account)
+                    }
+                )
+            }
         }
     }
 
@@ -556,7 +545,7 @@ struct PanelView: View {
                             // Date Chip
                             if let focusedDate = viewModel.focusedDate {
                                 FilterChipView(
-                                    text: "Fecha: \(formattedDate(focusedDate))",
+                                    text: L10n.Filters.datePrefix(formattedDate(focusedDate)),
                                     onClear: {
                                         dsWithAnimation(reduceMotion) {
                                             viewModel.focusedDate = nil
@@ -720,7 +709,7 @@ struct PanelView: View {
                                     Image(systemName: "xmark.circle.fill")
                                         .foregroundStyle(.secondary)
                                 }
-                                .accessibilityLabel("Limpiar filtros")
+                                .accessibilityLabel(L10n.Accessibility.clearFilters)
                                 .buttonStyle(.plain)
                             }
                         }
@@ -744,7 +733,7 @@ struct PanelView: View {
                         .font(DS.Typography.body).fontWeight(.medium)
                         .foregroundStyle(Color.primary)
                 }
-                .accessibilityLabel("Preferencias de widgets")
+                .accessibilityLabel(L10n.Accessibility.widgetPreferences)
             }
             .padding(.trailing, DS.Spacing.xxs)
 
@@ -788,19 +777,15 @@ struct PanelView: View {
 
     }
 
-    private func formattedAmount(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: value)) ?? "0.00"
-    }
+    private static let chipDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "d MMM"
+        return f
+    }()
 
     private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
-        formatter.dateFormat = "d MMM"
-        return formatter.string(from: date)
+        Self.chipDateFormatter.string(from: date)
     }
 
     /// Recalculate trend data with smooth animation
@@ -978,7 +963,12 @@ struct PanelView: View {
                     isExpensesOnlyMode: sessionState.isExpensesOnlyMode
                 )
             } else {
-                EmptyView()
+                YalaEmptyState(
+                    icon: "chart.bar.fill",
+                    title: L10n.Empty.noData,
+                    message: L10n.Statistics.noRecordsDescription
+                )
+                .frame(height: 200)
             }
         } else if config.type == .latestRecords {
             RecentRecordsWidget(
@@ -1086,6 +1076,7 @@ struct PanelView: View {
         viewModel.focusedDate = nil
         viewModel.selectedCategoryID = nil
         viewModel.selectedSubcategoryIDs.removeAll()
+        viewModel.subcategoriesWidgetFilter = nil
         viewModel.selectedNature = nil
         viewModel.selectedTags.removeAll()
         viewModel.selectedCurrencies.removeAll()

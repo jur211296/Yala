@@ -12,7 +12,7 @@ struct TutorialCompletionView: View {
     let onDismiss: () -> Void
     let onNextTutorial: ((Tutorial) -> Void)?
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 36
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var showHero = false

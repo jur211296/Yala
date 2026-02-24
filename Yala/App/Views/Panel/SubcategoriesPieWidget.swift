@@ -11,8 +11,6 @@ import SwiftUI
 
 struct SubcategoriesPieWidget: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
-
     let subcategories: [SubcategorySpendingSummary]
     let currencyCode: String
 
@@ -71,6 +69,7 @@ struct SubcategoriesPieWidget: View {
     private let innerRadiusRatio: CGFloat = 0.50
 
     var body: some View {
+        let chartData = processChartData()
         VStack(alignment: .leading, spacing: DS.Spacing.none) {
             // Guard against empty chartData (Charts framework crashes on empty array)
             if chartData.isEmpty {
@@ -113,18 +112,7 @@ struct SubcategoriesPieWidget: View {
             .padding(.top, DS.Spacing.lg)
 
             // Empty content
-            VStack(spacing: DS.Spacing.md) {
-                Spacer()
-                Image(systemName: "list.bullet.indent")
-                    .font(.system(size: scaledEmptyIconSize))
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                    .foregroundStyle(.secondary)
-                Text(L10n.Empty.noExpenses)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            YalaEmptyState(icon: "list.bullet.indent", title: L10n.Empty.noExpenses, style: .widget)
         }
     }
 
@@ -487,7 +475,7 @@ struct SubcategoriesPieWidget: View {
                                 .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel("Ver detalles")
+                        .accessibilityLabel(L10n.Accessibility.viewDetails)
                     }
                 }
             }
@@ -577,9 +565,9 @@ struct SubcategoriesPieWidget: View {
                 }
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Gráfica circular de gastos por subcategoría")
-            .accessibilityValue(safeData.isEmpty ? "Sin datos" :
-                "\(safeData.count) subcategorías, total \(formattedCurrency(safeData.reduce(0) { $0 + $1.amount }))")
+            .accessibilityLabel(L10n.Accessibility.subcategoryPieChart)
+            .accessibilityValue(safeData.isEmpty ? L10n.Accessibility.noData :
+                L10n.Accessibility.subcategoriesCount(safeData.count, formattedCurrency(safeData.reduce(0) { $0 + $1.amount })))
         }
     }
 
@@ -589,11 +577,15 @@ struct SubcategoriesPieWidget: View {
         YalaFormatter.currency(value: value, currencyCode: currencyCode)
     }
 
+    private static let percentFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .percent
+        f.maximumFractionDigits = 0
+        return f
+    }()
+
     private func formattedPercentage(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
+        Self.percentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
     }
 
     private func selectSubcategory(at angle: Double) {
@@ -718,7 +710,7 @@ struct SubcategoriesPieWidget: View {
                         iconName: "ellipsis.circle.fill",
                         amount: othersAmount,
                         percentage: othersPercentage,
-                        colorHex: "#8E8E93",
+                        colorHex: AppConstants.othersColorHex,
                         persistentID: nil  // "Restante" has no specific subcategory
                     ))
             }

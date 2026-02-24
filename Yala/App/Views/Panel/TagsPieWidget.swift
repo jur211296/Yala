@@ -11,8 +11,6 @@ import SwiftUI
 
 struct TagsPieWidget: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledEmptyIconSize: CGFloat = 32
-
     let tags: [TagSpendingSummary]
     let currencyCode: String
 
@@ -63,6 +61,7 @@ struct TagsPieWidget: View {
     private let innerRadiusRatio: CGFloat = 0.50
 
     var body: some View {
+        let chartData = processChartData()
         VStack(alignment: .leading, spacing: DS.Spacing.none) {
             if chartData.isEmpty {
                 emptyState
@@ -85,16 +84,7 @@ struct TagsPieWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.md) {
-            Image(systemName: "tag.fill")
-                .font(.system(size: scaledEmptyIconSize))
-                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                .foregroundStyle(.secondary)
-            Text(L10n.Empty.noData)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        YalaEmptyState(icon: "tag.fill", title: L10n.Empty.noData, style: .widget)
     }
 
     // MARK: - Content Switcher
@@ -394,7 +384,7 @@ struct TagsPieWidget: View {
                     )
 
                     InfoHintButton(
-                        title: L10n.WidgetType.expensesByNature,
+                        title: L10n.WidgetType.expensesByTag,
                         message: L10n.Widget.Hint.tagsPie
                     )
                 }
@@ -416,7 +406,7 @@ struct TagsPieWidget: View {
                     }
 
                     InfoHintButton(
-                        title: L10n.WidgetType.expensesByNature,
+                        title: L10n.WidgetType.expensesByTag,
                         message: L10n.Widget.Hint.tagsPie
                     )
 
@@ -430,7 +420,7 @@ struct TagsPieWidget: View {
                                 .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel("Ver detalles")
+                        .accessibilityLabel(L10n.Accessibility.viewDetails)
                     }
                 }
             }
@@ -470,9 +460,9 @@ struct TagsPieWidget: View {
                 }
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Gráfica circular de gastos por etiqueta")
-            .accessibilityValue(safeData.isEmpty ? "Sin datos" :
-                "\(safeData.count) etiquetas, total \(formattedCurrency(safeData.reduce(0) { $0 + $1.amount }))")
+            .accessibilityLabel(L10n.Accessibility.tagPieChart)
+            .accessibilityValue(safeData.isEmpty ? L10n.Accessibility.noData :
+                L10n.Accessibility.tagsCount(safeData.count, formattedCurrency(safeData.reduce(0) { $0 + $1.amount })))
         }
     }
 
@@ -482,11 +472,15 @@ struct TagsPieWidget: View {
         YalaFormatter.currency(value: value, currencyCode: currencyCode)
     }
 
+    private static let percentFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .percent
+        f.maximumFractionDigits = 0
+        return f
+    }()
+
     private func formattedPercentage(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .percent
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
+        Self.percentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
     }
 
     private func selectTag(at angle: Double) {

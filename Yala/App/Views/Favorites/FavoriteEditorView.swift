@@ -49,6 +49,7 @@ struct FavoriteEditorView: View {
     @State private var showTagSelector = false
     @State private var showNatureSelector = false
 
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .largeTitle) private var heroAmountSize: CGFloat = 64
     @ScaledMetric(relativeTo: .title) private var currencySymbolSize: CGFloat = 28
 
@@ -87,7 +88,7 @@ struct FavoriteEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -214,7 +215,7 @@ struct FavoriteEditorView: View {
         .padding(DS.Spacing.xs)
         .background(
             Capsule()
-                .fill(Color(UIColor.label).opacity(0.08))
+                .fill(Color.primary.opacity(0.08))
         )
         .padding(.horizontal, DS.Spacing.xxxxl + DS.Spacing.md)
     }
@@ -230,7 +231,7 @@ struct FavoriteEditorView: View {
                 .multilineTextAlignment(.center)
                 .focused($isNameFieldFocused)
                 .padding(.horizontal, DS.Spacing.xxxxl)
-                .tint(Color(UIColor.label))
+                .tint(Color.primary)
 
             // Description field
             TextField(L10n.Favorites.descriptionPlaceholder, text: $note)
@@ -238,7 +239,7 @@ struct FavoriteEditorView: View {
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 280)
-                .tint(Color(UIColor.label))
+                .tint(Color.primary)
 
             // Amount display
             amountDisplay
@@ -275,7 +276,7 @@ struct FavoriteEditorView: View {
                     if !isFocused {
                         if amountString.isEmpty {
                             amountString = ""
-                        } else if let amount = Double(amountString) {
+                        } else if let amount = Double(amountString.replacingOccurrences(of: ",", with: ".")) {
                             amountString = String(format: "%.2f", amount)
                         }
                     }

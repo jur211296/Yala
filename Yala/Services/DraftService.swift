@@ -199,6 +199,16 @@ final class DraftService: DraftServiceProtocol {
         draft.approvedTransaction = transaction
         draft.updatedAt = Date()
 
+        // Update merchant memory (learn from approved drafts)
+        if !draft.note.trimmingCharacters(in: .whitespaces).isEmpty {
+            let merchantService = MerchantMemoryService(modelContext: context)
+            merchantService.updateMemory(
+                merchantRaw: draft.note,
+                subcategory: subcategory,
+                wasCorrection: false
+            )
+        }
+
         // Update scheduled payment if this draft came from one
         ScheduledPaymentDraftService.handleDraftApproved(draft: draft, context: context)
 
@@ -229,6 +239,7 @@ final class DraftService: DraftServiceProtocol {
             guard draft.effectiveDate <= Date() else { continue }
 
             guard let account = draft.account,
+                  !account.isArchived,
                   let amount = draft.amount,
                   let subcategory = draft.subcategory else { continue }
 
@@ -274,6 +285,16 @@ final class DraftService: DraftServiceProtocol {
 
             // Update scheduled payment
             ScheduledPaymentDraftService.handleDraftApproved(draft: draft, context: context)
+
+            // Update merchant memory (learn from approved drafts)
+            if !draft.note.trimmingCharacters(in: .whitespaces).isEmpty {
+                let merchantService = MerchantMemoryService(modelContext: context)
+                merchantService.updateMemory(
+                    merchantRaw: draft.note,
+                    subcategory: subcategory,
+                    wasCorrection: false
+                )
+            }
 
             transactions.append(transaction)
         }
@@ -417,7 +438,7 @@ enum DraftServiceError: LocalizedError {
         case .missingSubcategory:
             return L10n.Inbox.errorNoSubcategory
         case .futureDateNotAllowed:
-            return "No se pueden aprobar transacciones con fecha futura"
+            return L10n.Inbox.errorFutureDate
         case .saveFailed(let error):
             return "DraftService: Save failed - \(error.localizedDescription)"
         }

@@ -10,7 +10,7 @@ import SwiftUI
 
 struct InboxBulkApproveSuccessView: View {
     @Environment(\.yalaTheme) private var theme
-    @ScaledMetric(relativeTo: .largeTitle) private var checkmarkSize: CGFloat = 40
+    @ScaledMetric(relativeTo: .largeTitle) private var checkmarkSize: CGFloat = 40 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .largeTitle) private var countSize: CGFloat = 48
 
     let approvedCount: Int

@@ -126,23 +126,17 @@ struct DetailContainerView: View {
                     showUpgradeForImage: $showUpgradeForImage,
                     modelContext: modelContext,
                     refreshRecordsData: refreshRecordsData,
-                    syncFiltersToTrends: syncFiltersToTrends,
                     calculateTrendsData: calculateTrendsData
                 )
             )
             .onRecordsFilterChange(viewModel: recordsViewModel) {
                 refreshRecordsData()
-                syncFiltersToTrends()
-                syncToSessionState()
             }
             .onTrendsFilterChange(viewModel: trendsViewModel) {
                 calculateTrendsData()
-                syncFiltersToRecords()
-                syncToSessionState()
             }
             .onAppear {
                 dataViewModel.setContext(modelContext)
-                if !isFromSearch { syncFromSessionState() }
                 refreshRecordsData()
                 calculateTrendsData()
             }
@@ -153,7 +147,6 @@ struct DetailContainerView: View {
                 }
                 // Sync filters when navigating to Statistics tab (view may already be mounted)
                 if newTab == .statistics && !isFromSearch {
-                    syncFromSessionState()
                     calculateTrendsData()
                     refreshRecordsData()
                 }
@@ -174,9 +167,7 @@ struct DetailContainerView: View {
                     recordsViewModel: recordsViewModel,
                     categories: dataViewModel.categories,
                     subcategories: dataViewModel.allSubcategories,
-                    syncFromSessionState: syncFromSessionState,
                     handleSessionStateFilterChange: handleSessionStateFilterChange,
-                    syncToSessionState: syncToSessionState,
                     calculateTrendsData: calculateTrendsData,
                     refreshRecordsData: refreshRecordsData
                 ))
@@ -301,6 +292,7 @@ struct DetailContainerView: View {
                             .font(DS.Typography.body).fontWeight(.medium)
                             .foregroundStyle(.thToolbarIcon)
                     }
+                    .accessibilityLabel(L10n.Action.select)
                 }
 
                 // Filters button
@@ -315,6 +307,7 @@ struct DetailContainerView: View {
                         .font(DS.Typography.body).fontWeight(.medium)
                         .foregroundStyle(.thToolbarIcon)
                 }
+                .accessibilityLabel(L10n.Accessibility.filters)
                 .overlay(alignment: .topTrailing) {
                     let showIndicator = (selectedTab == .records && recordsViewModel.activeFilterCount > 0) ||
                                        (selectedTab == .trends && trendsViewModel.activeFilterCount > 0) ||
@@ -349,8 +342,14 @@ struct DetailContainerView: View {
         }
 
         ToolbarItem(placement: .topBarTrailing) {
-            Button(L10n.Export.selectAll) {
-                recordsViewModel.selectAll()
+            let allSelected = recordsViewModel.selectedRecordIDs.count ==
+                recordsViewModel.groupedRecords.flatMap(\.records).count
+            Button(allSelected ? L10n.Export.deselectAll : L10n.Export.selectAll) {
+                if allSelected {
+                    recordsViewModel.deselectAll()
+                } else {
+                    recordsViewModel.selectAll()
+                }
             }
         }
     }
@@ -440,12 +439,13 @@ struct DetailContainerView: View {
                     Image(systemName: showFABMenu ? "xmark" : "plus")
                         .font(DS.Typography.title)
                         .foregroundStyle(.white)
-                        .frame(width: 56, height: 56)
+                        .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                         .background(showFABMenu ? DS.Semantic.disabledForeground : fabBackground)
                         .clipShape(Circle())
                         .rotationEffect(.degrees(showFABMenu ? 90 : 0))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(showFABMenu ? L10n.Accessibility.closeMenu : L10n.Accessibility.newRecord)
                 .glassEffect(.regular.interactive())
                 .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
             }
@@ -467,17 +467,18 @@ struct DetailContainerView: View {
                 Image(systemName: "plus")
                     .font(DS.Typography.title)
                     .foregroundStyle(.white)
-                    .frame(width: 56, height: 56)
+                    .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                     .background(fabBackground)
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Accessibility.newRecord)
             .glassEffect(.regular.interactive())
             .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
             .disabled(!canUseVoiceInput)
-            .accessibilityHint(!canUseVoiceInput ? "Crea al menos una cuenta y una categoría" : "")
+            .accessibilityHint(!canUseVoiceInput ? L10n.Accessibility.createAccountFirst : "")
                 }
             }
         }
@@ -512,12 +513,12 @@ struct DetailContainerView: View {
             .frame(width: DS.Button.fabMenuWidth)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)
-            .background(isLocked ? Color.gray : color)
+            .background(isLocked ? DS.Semantic.disabledForeground : color)
             .clipShape(Capsule())
-            .shadow(color: (isLocked ? Color.gray : color).opacity(0.3), radius: 8, x: 0, y: 4)
+            .shadow(color: (isLocked ? DS.Semantic.disabledForeground : color).opacity(0.3), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
-        .phaseAnimator([false, true]) { content, phase in
+        .phaseAnimator(reduceMotion ? [false] : [false, true]) { content, phase in
             content
                 .scaleEffect(phase ? 1.03 : 1.0)
         } animation: { _ in
@@ -541,7 +542,7 @@ struct DetailContainerView: View {
                         .foregroundStyle(.red)
                         .frame(width: 44, height: 44)
                 }
-                .accessibilityLabel("Eliminar")
+                .accessibilityLabel(L10n.Action.delete)
                 .buttonStyle(.plain)
 
                 Spacer()
@@ -562,6 +563,7 @@ struct DetailContainerView: View {
                         .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(L10n.Action.edit)
             }
             .padding(.vertical, DS.Spacing.sm)
             .padding(.horizontal, DS.Spacing.lg)
@@ -620,35 +622,8 @@ struct DetailContainerView: View {
         isSyncingState = true
         defer { isSyncingState = false }
 
-        syncFromSessionState()
         calculateTrendsData()
         refreshRecordsData()
-    }
-
-    // MARK: - Synchronization
-
-    private func syncFiltersToTrends() {
-        // SSOT Refactor: Both trendsViewModel and recordsViewModel have computed properties
-        // that read/write directly from SessionState.shared. They're always in sync.
-        // This function is kept as a no-op for backward compatibility.
-    }
-
-    private func syncFiltersToRecords() {
-        // SSOT Refactor: Both trendsViewModel and recordsViewModel have computed properties
-        // that read/write directly from SessionState.shared. They're always in sync.
-        // This function is kept as a no-op for backward compatibility.
-    }
-
-    private func syncFromSessionState() {
-        // SSOT Refactor: All viewModel filter properties are now computed properties
-        // that read/write directly from SessionState.shared. No sync needed.
-        // This function is kept as a no-op for backward compatibility with existing callers.
-    }
-
-    private func syncToSessionState() {
-        // SSOT Refactor: All viewModel filter properties are now computed properties
-        // that read/write directly from SessionState.shared. No sync needed.
-        // This function is kept as a no-op for backward compatibility with existing callers.
     }
 }
 
@@ -713,7 +688,6 @@ private struct DetailContainerSheets: ViewModifier {
     @Binding var showUpgradeForImage: Bool
     let modelContext: ModelContext
     let refreshRecordsData: () -> Void
-    let syncFiltersToTrends: () -> Void
     let calculateTrendsData: () -> Void
 
     func body(content: Content) -> some View {
@@ -750,7 +724,6 @@ private struct DetailContainerSheets: ViewModifier {
             .sheet(isPresented: $trendsViewModel.showFiltersSheet) {
                 RecordsFiltersView(recordsViewModel: recordsViewModel)
                     .onDisappear {
-                        syncFiltersToTrends()
                         calculateTrendsData()
                     }
             }
@@ -787,9 +760,7 @@ private struct DetailContainerObservers: ViewModifier {
     @Bindable var recordsViewModel: RecordsViewModel
     let categories: [Category]
     let subcategories: [Subcategory]
-    let syncFromSessionState: () -> Void
     let handleSessionStateFilterChange: () -> Void
-    let syncToSessionState: () -> Void
     let calculateTrendsData: () -> Void
     let refreshRecordsData: () -> Void
 
@@ -799,7 +770,6 @@ private struct DetailContainerObservers: ViewModifier {
                 sessionState: sessionState,
                 categories: categories,
                 subcategories: subcategories,
-                syncFromSessionState: syncFromSessionState,
                 handleSessionStateFilterChange: handleSessionStateFilterChange,
                 calculateTrendsData: calculateTrendsData,
                 refreshRecordsData: refreshRecordsData
@@ -807,7 +777,6 @@ private struct DetailContainerObservers: ViewModifier {
             .modifier(ViewModelObservers(
                 trendsViewModel: trendsViewModel,
                 recordsViewModel: recordsViewModel,
-                syncToSessionState: syncToSessionState,
                 calculateTrendsData: calculateTrendsData,
                 refreshRecordsData: refreshRecordsData
             ))
@@ -819,14 +788,13 @@ private struct SessionStateObservers: ViewModifier {
     let sessionState: SessionState
     let categories: [Category]
     let subcategories: [Subcategory]
-    let syncFromSessionState: () -> Void
     let handleSessionStateFilterChange: () -> Void
     let calculateTrendsData: () -> Void
     let refreshRecordsData: () -> Void
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: sessionState.selectedPeriod) { syncFromSessionState() }
+            .onChange(of: sessionState.selectedPeriod) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.selectedAccountIDs) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.selectedCategoryIDs) {
                 if !sessionState.isExcludeMode && !sessionState.selectedCategoryIDs.isEmpty {
@@ -863,11 +831,9 @@ private struct SessionStateObservers: ViewModifier {
             .onChange(of: sessionState.searchText) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.isExcludeMode) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.selectedTrendMetric) {
-                syncFromSessionState()
                 calculateTrendsData()
             }
             .onChange(of: sessionState.customDateRange) {
-                syncFromSessionState()
                 calculateTrendsData()
                 refreshRecordsData()
             }
@@ -878,14 +844,12 @@ private struct SessionStateObservers: ViewModifier {
 private struct ViewModelObservers: ViewModifier {
     @Bindable var trendsViewModel: StatisticsViewModel
     @Bindable var recordsViewModel: RecordsViewModel
-    let syncToSessionState: () -> Void
     let calculateTrendsData: () -> Void
     let refreshRecordsData: () -> Void
 
     func body(content: Content) -> some View {
         content
             .onChange(of: trendsViewModel.selectedMetric) { _, _ in
-                syncToSessionState()
                 calculateTrendsData()
             }
             .onChange(of: trendsViewModel.isAggregatedView) { _, _ in calculateTrendsData() }

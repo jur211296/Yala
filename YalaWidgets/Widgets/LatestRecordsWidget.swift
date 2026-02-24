@@ -175,7 +175,7 @@ struct TransactionRowView: View {
                            height: WDS.ListItem.iconSizeCompact)
 
                 Image(systemName: transaction.categoryIcon ?? "questionmark")
-                    .font(.system(size: WDS.Icon.sm))
+                    .font(.system(size: WDS.Icon.sm)) // A11Y-DT: widget fixed layout
                     .foregroundStyle(categoryColor)
                     .widgetAccentable()
             }

@@ -50,12 +50,7 @@ struct ExchangeRatesSheet: View {
                         if let latestRate = exchangeRateService.getLatestRate(context: modelContext) {
                             let rateDate: Date? =
                                 latestRate.timestamp
-                                ?? {
-                                    let dateFormatter = DateFormatter()
-                                    dateFormatter.dateFormat = "yyyy-MM-dd"
-                                    dateFormatter.timeZone = TimeZone(identifier: "UTC")
-                                    return dateFormatter.date(from: latestRate.dateKey)
-                                }()
+                                ?? Self.dateKeyFormatter.date(from: latestRate.dateKey)
 
                             if let date = rateDate {
                                 Text("\(L10n.Common.lastUpdate) \(formatLastUpdated(date))")
@@ -74,7 +69,7 @@ struct ExchangeRatesSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -120,6 +115,23 @@ struct ExchangeRatesSheet: View {
         .contentShape(Rectangle())
     }
 
+    // MARK: - Static Formatters
+
+    private static let dateKeyFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = TimeZone(identifier: "UTC")
+        return f
+    }()
+
+    private static let lastUpdatedFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale.current
+        f.dateStyle = .long
+        f.timeStyle = .short
+        return f
+    }()
+
     // MARK: - Helpers
 
     private func getDisplayRate(from: CurrencyCode, to: CurrencyCode) -> Double? {
@@ -127,10 +139,7 @@ struct ExchangeRatesSheet: View {
     }
 
     private func formatLastUpdated(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale.current
-        formatter.dateFormat = "d 'de' MMMM yyyy, HH:mm"
-        return formatter.string(from: date)
+        Self.lastUpdatedFormatter.string(from: date)
     }
 }
 

@@ -14,6 +14,8 @@ struct TutorialDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
+    @ScaledMetric(relativeTo: .largeTitle) private var introIconSize: CGFloat = 60 // A11Y-DT: @ScaledMetric
+    @ScaledMetric(relativeTo: .largeTitle) private var placeholderIconSize: CGFloat = 40 // A11Y-DT: @ScaledMetric
     @State private var currentPage = 0
 
     private var steps: [TutorialStep] { tutorial.steps }
@@ -64,12 +66,13 @@ struct TutorialDetailView: View {
                 }
             }
         }
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .navigationTitle(tutorial.title)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
+                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                     dismiss()
                 }
             }
@@ -104,7 +107,7 @@ struct TutorialDetailView: View {
 
             // Large icon
             Image(systemName: tutorial.icon)
-                .font(.system(size: 60))
+                .font(.system(size: introIconSize))
                 .foregroundStyle(tutorial.color)
                 .padding(DS.Spacing.xl)
                 .background(
@@ -184,7 +187,7 @@ struct TutorialDetailView: View {
                 .overlay(
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: tutorial.icon)
-                            .font(.system(size: 40))
+                            .font(.system(size: placeholderIconSize))
                             .foregroundStyle(tutorial.color.opacity(0.4))
                         Text(tutorial.title)
                             .font(DS.Typography.subheadline)

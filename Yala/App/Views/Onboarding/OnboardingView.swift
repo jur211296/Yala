@@ -16,8 +16,13 @@ struct OnboardingView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .largeTitle) private var completionIconSize: CGFloat = 56
+    @ScaledMetric(relativeTo: .body) private var appIconSize: CGFloat = 120
+    @ScaledMetric(relativeTo: .body) private var categoryIconSize: CGFloat = 40
+    @ScaledMetric(relativeTo: .body) private var badgeSize: CGFloat = 36
+    @ScaledMetric(relativeTo: .body) private var notifIconSize: CGFloat = 52
+    @ScaledMetric(relativeTo: .largeTitle) private var privacyIconSize: CGFloat = 100
 
     // User preferences (will be saved on completion)
     @State private var userName: String = ""
@@ -72,6 +77,7 @@ struct OnboardingView: View {
                 privacyStep.tag(7)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .scrollDisabled(true)
             .dsAnimation(.easeInOut(duration: 0.3), value: currentStep, reduceMotion: reduceMotion)
 
             Spacer()
@@ -107,7 +113,7 @@ struct OnboardingView: View {
             Image(uiImage: UIImage(named: "IconOriginal@3x") ?? UIImage())
                 .resizable()
                 .scaledToFit()
-                .frame(width: 120, height: 120)
+                .frame(width: appIconSize, height: appIconSize)
                 .clipShape(RoundedRectangle(cornerRadius: 26))
 
             VStack(spacing: DS.Spacing.md) {
@@ -667,7 +673,7 @@ struct OnboardingView: View {
                 ZStack {
                     Circle()
                         .fill(Color(hex: type.defaultColor).opacity(0.2))
-                        .frame(width: 40, height: 40)
+                        .frame(width: categoryIconSize, height: categoryIconSize)
 
                     Image(systemName: type.defaultIcon)
                         .font(DS.Typography.body)
@@ -770,7 +776,7 @@ struct OnboardingView: View {
                 ZStack {
                     Circle()
                         .fill(Color.hotPink.opacity(0.2))
-                        .frame(width: 40, height: 40)
+                        .frame(width: categoryIconSize, height: categoryIconSize)
 
                     Image(systemName: "chart.bar.fill")
                         .font(DS.Typography.body)
@@ -821,12 +827,27 @@ struct OnboardingView: View {
         }
     }
 
+    private static let hintTimeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .none
+        f.timeStyle = .short
+        return f
+    }()
+
+    private func formattedTime(hour: Int, minute: Int) -> String {
+        var components = DateComponents()
+        components.hour = hour
+        components.minute = minute
+        guard let date = Calendar.current.date(from: components) else { return "" }
+        return Self.hintTimeFormatter.string(from: date)
+    }
+
     private func notificationHint(for type: NotificationType) -> String {
         switch type {
-        case .endOfDay: return "8:00 PM"
-        case .lunchTime: return "1:30 PM"
-        case .dailyReport: return "9:00 PM"
-        case .weeklyReport: return L10n.Notifications.dayMonday + " 9:00 AM"
+        case .endOfDay: return formattedTime(hour: 20, minute: 0)
+        case .lunchTime: return formattedTime(hour: 13, minute: 30)
+        case .dailyReport: return formattedTime(hour: 21, minute: 0)
+        case .weeklyReport: return L10n.Notifications.dayMonday + " " + formattedTime(hour: 9, minute: 0)
         case .monthlyReport: return L10n.Notifications.dayFirstOfMonth
         case .scheduledPayments: return L10n.Notifications.scheduledPaymentsHint
         case .announcements: return L10n.Notifications.announcementsHint
@@ -844,7 +865,7 @@ struct OnboardingView: View {
             ZStack {
                 Circle()
                     .fill(Color.electricIndigo.opacity(0.12))
-                    .frame(width: 100, height: 100)
+                    .frame(width: privacyIconSize, height: privacyIconSize)
 
                 Image(systemName: "checkmark.seal.fill")
                     .font(.system(size: completionIconSize))
@@ -882,7 +903,7 @@ struct OnboardingView: View {
                     ZStack {
                         Circle()
                             .fill(Color.electricIndigo.opacity(0.15))
-                            .frame(width: 36, height: 36)
+                            .frame(width: badgeSize, height: badgeSize)
 
                         Image(systemName: "lightbulb.fill")
                             .font(DS.Typography.subheadline)
@@ -926,7 +947,7 @@ struct OnboardingView: View {
             ZStack {
                 Circle()
                     .fill(color.opacity(0.15))
-                    .frame(width: 36, height: 36)
+                    .frame(width: badgeSize, height: badgeSize)
 
                 Image(systemName: icon)
                     .font(DS.Typography.subheadline)
@@ -962,7 +983,7 @@ struct OnboardingView: View {
                     ZStack {
                         Circle()
                             .fill(Color(hex: category.colorHex).opacity(0.2))
-                            .frame(width: 52, height: 52)
+                            .frame(width: notifIconSize, height: notifIconSize)
 
                         Image(systemName: category.iconName)
                             .font(DS.Typography.title)
@@ -1137,7 +1158,7 @@ struct OnboardingView: View {
 
         // User name
         let finalName = userName.trimmingCharacters(in: .whitespacesAndNewlines)
-        sync.set(string: finalName.isEmpty ? "Usuario" : finalName, forKey: "userName")
+        sync.set(string: finalName.isEmpty ? L10n.Profile.defaultName : finalName, forKey: "userName")
 
         // Preferred currency
         sync.set(string: selectedCurrency.rawValue, forKey: "defaultCurrencyCode")
@@ -1153,14 +1174,14 @@ struct OnboardingView: View {
         sync.set(bool: expensesOnlyMode, forKey: "expensesOnlyMode")
         sessionState.isExpensesOnlyMode = expensesOnlyMode
 
-        // Mark onboarding as complete (NOT synced — per-device)
-        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
-
         // Budget alerts preference
         sync.set(bool: budgetAlertsEnabled, forKey: "budgetAlertsEnabled")
 
         // Apply period to SessionState immediately (since it was created before onboarding)
         sessionState.selectedPeriod = selectedPeriod
+
+        // Create default account
+        createDefaultAccount()
 
         // Seed categories if user chose to
         if loadSeedCategories {
@@ -1170,11 +1191,49 @@ struct OnboardingView: View {
         // Create notifications based on user selection
         createSelectedNotifications()
 
+        // Mark onboarding as complete AFTER data creation (prevents inconsistent state on crash)
+        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+
         // Load historical exchange rates for secondary currencies (in background)
         loadHistoricalRatesForSecondaryCurrencies()
 
         // Notify completion
         onComplete()
+    }
+
+    private func createDefaultAccount() {
+        // Check if any accounts already exist (e.g. from iCloud sync)
+        let descriptor = FetchDescriptor<Account>()
+        let existingCount: Int
+        do {
+            existingCount = try modelContext.fetchCount(descriptor)
+        } catch {
+            #if DEBUG
+            print("OnboardingView: Error fetching account count: \(error)")
+            #endif
+            existingCount = 0
+        }
+        guard existingCount == 0 else { return }
+
+        let account = Account(
+            name: L10n.Onboarding.defaultAccountName,
+            currencyCode: selectedCurrency.rawValue,
+            colorHex: AppConstants.defaultColorHex,
+            iconName: "creditcard",
+            type: "checking"
+        )
+        modelContext.insert(account)
+
+        do {
+            try modelContext.save()
+            #if DEBUG
+            print("OnboardingView: Created default account '\(account.name)' (\(account.currencyCode))")
+            #endif
+        } catch {
+            #if DEBUG
+            print("OnboardingView: Error creating default account: \(error)")
+            #endif
+        }
     }
 
     private func loadHistoricalRatesForSecondaryCurrencies() {
@@ -1284,17 +1343,17 @@ enum SeedCategoryPreview {
     }
 
     static let categories: [CategoryInfo] = [
-        CategoryInfo(name: "Alimentación", colorHex: "#22C55E", iconName: "cart.fill"),
-        CategoryInfo(name: "Compras", colorHex: "#F59E0B", iconName: "bag.fill"),
-        CategoryInfo(name: "Transporte", colorHex: "#0EA5E9", iconName: "car.fill"),
-        CategoryInfo(name: "Finanzas", colorHex: "#6366F1", iconName: "banknote.fill"),
-        CategoryInfo(name: "Hogar", colorHex: "#475569", iconName: "house.fill"),
-        CategoryInfo(name: "Entretenimiento", colorHex: "#FF0080", iconName: "sparkles"),
-        CategoryInfo(name: "Personal", colorHex: "#A855F7", iconName: "person.fill"),
-        CategoryInfo(name: "Mascotas", colorHex: "#84CC16", iconName: "pawprint.fill"),
-        CategoryInfo(name: "Vehículo", colorHex: "#64748B", iconName: "car.side.fill"),
-        CategoryInfo(name: "Ingresos", colorHex: "#14B8A6", iconName: "arrow.down.circle.fill"),
-        CategoryInfo(name: "Otros", colorHex: "#64748B", iconName: "ellipsis.circle.fill"),
+        CategoryInfo(name: L10n.Category.food, colorHex: "#22C55E", iconName: "cart.fill"),
+        CategoryInfo(name: L10n.Category.shopping, colorHex: "#F59E0B", iconName: "bag.fill"),
+        CategoryInfo(name: L10n.Category.transport, colorHex: "#0EA5E9", iconName: "car.fill"),
+        CategoryInfo(name: L10n.Category.finance, colorHex: AppConstants.defaultColorHex, iconName: "banknote.fill"),
+        CategoryInfo(name: L10n.Category.housing, colorHex: "#475569", iconName: "house.fill"),
+        CategoryInfo(name: L10n.Category.entertainment, colorHex: "#FF0080", iconName: "sparkles"),
+        CategoryInfo(name: L10n.Category.personal, colorHex: "#A855F7", iconName: "person.fill"),
+        CategoryInfo(name: L10n.Category.pets, colorHex: "#84CC16", iconName: "pawprint.fill"),
+        CategoryInfo(name: L10n.Category.vehicle, colorHex: "#64748B", iconName: "car.side.fill"),
+        CategoryInfo(name: L10n.Category.incomeCategory, colorHex: "#14B8A6", iconName: "arrow.down.circle.fill"),
+        CategoryInfo(name: L10n.Category.other, colorHex: "#64748B", iconName: "ellipsis.circle.fill"),
     ]
 }
 

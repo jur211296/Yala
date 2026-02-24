@@ -66,8 +66,7 @@ enum CategoryImportHelper {
         }
 
         // Si no existe, creamos una nueva categoría.
-        // Color por defecto: Electric Indigo (#6366F1)
-        let defaultColorHex = "#6366F1"
+        let defaultColorHex = AppConstants.defaultColorHex
 
         // sortOrder se coloca al final según el máximo actual.
         let allCategoriesDescriptor = FetchDescriptor<Category>()

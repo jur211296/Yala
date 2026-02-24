@@ -35,6 +35,22 @@ enum LanguageManager {
         set { UserDefaults.standard.set(newValue, forKey: overrideKey) }
     }
 
+    /// Best guess for pre-selecting a language when the device language is not supported.
+    /// Falls back to English if no match found.
+    static var closestSupportedLanguage: String {
+        let deviceLang = String(Locale.preferredLanguages.first?.prefix(2) ?? "en")
+        // Check if the device language base matches any supported language
+        if supportedLanguages.contains(where: { $0.code == deviceLang }) {
+            return deviceLang
+        }
+        // Check region-based hints (e.g. pt-BR user → Portuguese, Latin American → Spanish)
+        let region = Locale.current.region?.identifier ?? ""
+        let latinAmericanCountries = ["MX", "AR", "CO", "CL", "PE", "VE", "EC", "GT", "CU", "BO", "DO", "HN", "PY", "SV", "NI", "CR", "PA", "UY"]
+        if latinAmericanCountries.contains(region) { return "es" }
+        if region == "BR" { return "pt" }
+        return "en"
+    }
+
     /// Bundle for loading localized strings (override or main)
     static var bundle: Bundle {
         guard let override = overrideLanguage,
@@ -87,6 +103,20 @@ enum L10n {
         static var spent: String {
             ls("panel.spent", comment: "Spent label for expenses-only mode account cards")
         }
+    }
+
+    // MARK: - Balance Status
+
+    enum BalanceStatus {
+        static var good: String { ls("balance.status.good", comment: "") }
+        static var critical: String { ls("balance.status.critical", comment: "") }
+        static var normal: String { ls("balance.status.normal", comment: "") }
+    }
+
+    // MARK: - Budget
+
+    enum Budget {
+        static var noInactive: String { ls("budget.noInactive", comment: "") }
     }
 
     // MARK: - Trend
@@ -369,6 +399,7 @@ enum L10n {
         static var includeMode: String { ls("filters.includeMode", comment: "") }
         static var excludeMode: String { ls("filters.excludeMode", comment: "") }
         static var nothingExcluded: String { ls("filters.nothingExcluded", comment: "") }
+        static func datePrefix(_ date: String) -> String { String(format: ls("filters.datePrefix %@", comment: ""), date) }
     }
 
     // MARK: - Actions
@@ -397,6 +428,84 @@ enum L10n {
         static var select: String { ls("action.select", comment: "") }
         static var retry: String { ls("action.retry", comment: "") }
         static var later: String { ls("action.later", comment: "") }
+        static var close: String { ls("action.close", comment: "") }
+        static var reorder: String { ls("action.reorder", comment: "") }
+        static var clearAll: String { ls("action.clearAll", comment: "") }
+    }
+
+    // MARK: - Accessibility
+
+    enum Accessibility {
+        static var closeMenu: String { ls("accessibility.closeMenu", comment: "") }
+        static var newRecord: String { ls("accessibility.newRecord", comment: "") }
+        static var filters: String { ls("accessibility.filters", comment: "") }
+        static var clearFilters: String { ls("accessibility.clearFilters", comment: "") }
+        static var cancelRecording: String { ls("accessibility.cancelRecording", comment: "") }
+        static var stopRecording: String { ls("accessibility.stopRecording", comment: "") }
+        static var startRecording: String { ls("accessibility.startRecording", comment: "") }
+        static var cancelPreview: String { ls("accessibility.cancelPreview", comment: "") }
+        static var cancelProcessing: String { ls("accessibility.cancelProcessing", comment: "") }
+        static var cashFlowChart: String { ls("accessibility.cashFlowChart", comment: "") }
+        static var categoryPieChart: String { ls("accessibility.categoryPieChart", comment: "") }
+        static var subcategoryPieChart: String { ls("accessibility.subcategoryPieChart", comment: "") }
+        static var tagPieChart: String { ls("accessibility.tagPieChart", comment: "") }
+        static var widgetFixed: String { ls("accessibility.widgetFixed", comment: "") }
+        static var favoriteTemplates: String { ls("accessibility.favoriteTemplates", comment: "") }
+        static var exceeded: String { ls("accessibility.exceeded", comment: "") }
+        static var inbox: String { ls("accessibility.inbox", comment: "") }
+        static var widgetPreferences: String { ls("accessibility.widgetPreferences", comment: "") }
+        static var createAccountFirst: String { ls("accessibility.createAccountFirst", comment: "") }
+        static var removeFilter: String { ls("accessibility.removeFilter", comment: "") }
+        static var viewDetails: String { ls("accessibility.viewDetails", comment: "") }
+        static var viewAllRecords: String { ls("accessibility.viewAllRecords", comment: "") }
+        static var viewAllCategories: String { ls("accessibility.viewAllCategories", comment: "") }
+        static var deleteSubcategory: String { ls("accessibility.deleteSubcategory", comment: "") }
+        static var deleteCategory: String { ls("accessibility.deleteCategory", comment: "") }
+        static var deleteTag: String { ls("accessibility.deleteTag", comment: "") }
+        static var processAudio: String { ls("accessibility.processAudio", comment: "") }
+        static var exchangeRateChart: String { ls("accessibility.exchangeRateChart", comment: "") }
+        static var periodComparison: String { ls("accessibility.periodComparison", comment: "") }
+        static var natureTrend: String { ls("accessibility.natureTrend", comment: "") }
+        static var noData: String { ls("accessibility.noData", comment: "") }
+        static var completeFormHint: String { ls("accessibility.completeFormHint", comment: "") }
+        static var completeSelectionHint: String { ls("accessibility.completeSelectionHint", comment: "") }
+        static func periodComparisonValue(_ count: Int) -> String { String(format: ls("accessibility.periodComparisonValue %d", comment: ""), count) }
+        static func trendChart(_ type: String) -> String { String(format: ls("accessibility.trendChart %@", comment: ""), type) }
+        static func dataPoints(_ count: Int) -> String { String(format: ls("accessibility.dataPoints %d", comment: ""), count) }
+        static func categoriesCount(_ count: Int, _ total: String) -> String { String(format: ls("accessibility.categoriesCount %d %@", comment: ""), count, total) }
+        static func subcategoriesCount(_ count: Int, _ total: String) -> String { String(format: ls("accessibility.subcategoriesCount %d %@", comment: ""), count, total) }
+        static func tagsCount(_ count: Int, _ total: String) -> String { String(format: ls("accessibility.tagsCount %d %@", comment: ""), count, total) }
+        static func periodsCount(_ count: Int) -> String { String(format: ls("accessibility.periodsCount %d", comment: ""), count) }
+        static func currenciesCount(_ count: Int) -> String { String(format: ls("accessibility.currenciesCount %d", comment: ""), count) }
+        static func cashFlowSummary(income: String, expense: String) -> String { String(format: ls("accessibility.cashFlowSummary %@ %@", comment: ""), income, expense) }
+        static var selectAtLeastOneDraft: String { ls("accessibility.selectAtLeastOneDraft", comment: "") }
+        static var approveCompleteHint: String { ls("accessibility.approveCompleteHint", comment: "") }
+        static var updatingExchangeRates: String { ls("accessibility.updatingExchangeRates", comment: "") }
+        static var authenticating: String { ls("accessibility.authenticating", comment: "") }
+        static var showMoreSubcategories: String { ls("accessibility.showMoreSubcategories", comment: "") }
+        static var subscriptionToggle: String { ls("accessibility.subscriptionToggle", comment: "") }
+        static var skipSync: String { ls("accessibility.skipSync", comment: "") }
+        static var tabLimitReached: String { ls("accessibility.tabLimitReached", comment: "") }
+        static var noTransactionsToExport: String { ls("accessibility.noTransactionsToExport", comment: "") }
+        static func accountCard(_ name: String, _ balance: String) -> String { String(format: ls("accessibility.accountCard %@ %@", comment: ""), name, balance) }
+        static var editAccount: String { ls("accessibility.editAccount", comment: "") }
+        static func pageIndicator(_ current: Int, _ total: Int) -> String { String(format: ls("accessibility.pageIndicator %d %d", comment: ""), current, total) }
+        static func accountRow(_ name: String, _ currency: String) -> String { String(format: ls("accessibility.accountRow %@ %@", comment: ""), name, currency) }
+        static func budgetRow(_ name: String, _ percent: Int, _ spent: String, _ limit: String) -> String { String(format: ls("accessibility.budgetRow %@ %d %@ %@", comment: ""), name, percent, spent, limit) }
+        static func searchResultRow(_ note: String, _ amount: String, _ category: String) -> String { String(format: ls("accessibility.searchResultRow %@ %@ %@", comment: ""), note, amount, category) }
+        static var filterScheduledAll: String { ls("accessibility.filterScheduledAll", comment: "") }
+        static var filterScheduledRecurring: String { ls("accessibility.filterScheduledRecurring", comment: "") }
+        static var filterScheduledSubscriptions: String { ls("accessibility.filterScheduledSubscriptions", comment: "") }
+        static func calendarDay(_ day: Int) -> String { String(format: ls("accessibility.calendarDay %d", comment: ""), day) }
+        static func recentRecord(_ note: String, _ amount: String, _ time: String) -> String { String(format: ls("accessibility.recentRecord %@ %@ %@", comment: ""), note, amount, time) }
+        static var sourceAmount: String { ls("accessibility.sourceAmount", comment: "") }
+        static var destinationAmount: String { ls("accessibility.destinationAmount", comment: "") }
+        static var exchangeRate: String { ls("accessibility.exchangeRate", comment: "") }
+        static func draftRow(_ note: String, _ amount: String, _ status: String) -> String { String(format: ls("accessibility.draftRow %@ %@ %@", comment: ""), note, amount, status) }
+        static var metricBalance: String { ls("accessibility.metricBalance", comment: "") }
+        static var metricIncome: String { ls("accessibility.metricIncome", comment: "") }
+        static var metricExpense: String { ls("accessibility.metricExpense", comment: "") }
+        static func colorOption(_ name: String) -> String { String(format: ls("accessibility.colorOption %@", comment: ""), name) }
     }
 
     // MARK: - Search
@@ -762,6 +871,16 @@ enum L10n {
             ls("account.changeInitialBalanceDesc", comment: "")
         }
 
+        // MARK: - Credit Card
+        enum CreditCard {
+            static var sectionTitle: String { ls("account.creditCard.sectionTitle", comment: "") }
+            static var paymentReminder: String { ls("account.creditCard.paymentReminder", comment: "") }
+            static var paymentDay: String { ls("account.creditCard.paymentDay", comment: "") }
+            static func paymentNotification(_ accountName: String) -> String {
+                String(format: ls("account.creditCard.paymentNotification", comment: ""), accountName)
+            }
+        }
+
     }
 
     // MARK: - Category
@@ -1094,6 +1213,9 @@ enum L10n {
         static func currenciesDetected(_ count: Int) -> String {
             String(format: ls("import.currenciesDetected", comment: ""), count)
         }
+        static func recordsImported(_ count: Int) -> String {
+            String(format: ls("import.recordsImported", comment: ""), count)
+        }
         static func recordsImportedMultiCurrency(_ count: Int, _ currencies: Int) -> String {
             String(format: ls("import.recordsImportedMultiCurrency", comment: ""), count, currencies)
         }
@@ -1281,6 +1403,89 @@ enum L10n {
 
         static var viewInbox: String {
             ls("scheduled.viewInbox", comment: "Button to view inbox")
+        }
+
+        enum Recurrence {
+            static var daily: String { ls("scheduled.recurrence.daily", comment: "") }
+            static var weekly: String { ls("scheduled.recurrence.weekly", comment: "") }
+            static var monthly: String { ls("scheduled.recurrence.monthly", comment: "") }
+            static var yearly: String { ls("scheduled.recurrence.yearly", comment: "") }
+            static var day: String { ls("scheduled.recurrence.day", comment: "") }
+            static var week: String { ls("scheduled.recurrence.week", comment: "") }
+            static var month: String { ls("scheduled.recurrence.month", comment: "") }
+            static var year: String { ls("scheduled.recurrence.year", comment: "") }
+            static var days: String { ls("scheduled.recurrence.days", comment: "") }
+            static var weeks: String { ls("scheduled.recurrence.weeks", comment: "") }
+            static var months: String { ls("scheduled.recurrence.months", comment: "") }
+            static var years: String { ls("scheduled.recurrence.years", comment: "") }
+        }
+
+        enum Category {
+            static var recurring: String { ls("scheduled.category.recurring", comment: "") }
+            static var subscription: String { ls("scheduled.category.subscription", comment: "") }
+        }
+
+        enum Status {
+            static var past: String { ls("scheduled.status.past", comment: "") }
+            static var today: String { ls("scheduled.status.today", comment: "") }
+            static var upcoming: String { ls("scheduled.status.upcoming", comment: "") }
+        }
+
+        enum Filter {
+            static var all: String { ls("scheduled.filter.all", comment: "") }
+            static var paid: String { ls("scheduled.filter.paid", comment: "") }
+            static var pending: String { ls("scheduled.filter.pending", comment: "") }
+        }
+
+        enum Tab {
+            static var recurring: String { ls("scheduled.tab.recurring", comment: "") }
+            static var subscriptions: String { ls("scheduled.tab.subscriptions", comment: "") }
+            static var all: String { ls("scheduled.tab.all", comment: "") }
+        }
+
+        enum Widget {
+            static var count: String { ls("scheduled.widget.count", comment: "") }
+            static var emptyTitle: String { ls("scheduled.widget.empty.title", comment: "") }
+            static var emptyMessage: String { ls("scheduled.widget.empty.message", comment: "") }
+            static var daysAgo: String { ls("scheduled.widget.daysAgo", comment: "") }
+            static var tomorrow: String { ls("scheduled.widget.tomorrow", comment: "") }
+            static var inDays: String { ls("scheduled.widget.inDays", comment: "") }
+        }
+
+        enum Editor {
+            static var recurrence: String { ls("scheduled.editor.recurrence", comment: "") }
+            static var dayOfMonth: String { ls("scheduled.editor.day.of.month", comment: "") }
+            static var isSubscription: String { ls("scheduled.is.subscription", comment: "") }
+            static var onetime: String { ls("scheduled.recurrence.onetime", comment: "") }
+            static var recurring: String { ls("scheduled.recurrence.recurring", comment: "") }
+            static var every: String { ls("scheduled.every", comment: "") }
+            static var whichDays: String { ls("scheduled.which.days", comment: "") }
+            static var paymentDate: String { ls("scheduled.payment.date", comment: "") }
+            static var startDate: String { ls("scheduled.start.date", comment: "") }
+            static var hasEndDate: String { ls("scheduled.has.end.date", comment: "") }
+            static var endDate: String { ls("scheduled.end.date", comment: "") }
+            static var yearlyDate: String { ls("scheduled.yearly.date", comment: "") }
+            static var account: String { ls("scheduled.editor.account", comment: "") }
+            static var subcategory: String { ls("scheduled.editor.subcategory", comment: "") }
+        }
+
+        enum Detail {
+            static var frequency: String { ls("scheduled.detail.frequency", comment: "") }
+            static var nextDate: String { ls("scheduled.detail.next.date", comment: "") }
+            static var endDate: String { ls("scheduled.detail.end.date", comment: "") }
+            static var upcoming: String { ls("scheduled.detail.upcoming", comment: "") }
+            static var history: String { ls("scheduled.detail.history", comment: "") }
+            static var infoNote: String { ls("scheduled.detail.info.note", comment: "") }
+            static var statusInactive: String { ls("scheduled.status.inactive", comment: "") }
+            static var statusSkipped: String { ls("scheduled.status.skipped", comment: "") }
+            static var statusPaid: String { ls("scheduled.status.paid", comment: "") }
+            static var statusOverdue: String { ls("scheduled.status.overdue", comment: "") }
+            static var skip: String { ls("scheduled.skip", comment: "") }
+            static var skipUndo: String { ls("scheduled.skip.undo", comment: "") }
+            static var nextFirst: String { ls("scheduled.next.first", comment: "") }
+            static var nextSecond: String { ls("scheduled.next.second", comment: "") }
+            static var nextThird: String { ls("scheduled.next.third", comment: "") }
+            static var associateTitle: String { ls("scheduled.associate.title", comment: "") }
         }
     }
 
@@ -1530,6 +1735,9 @@ enum L10n {
         static var deleteDataWarning: String {
             ls("settings.deleteDataWarning", comment: "")
         }
+        static var wipeICloudWarning: String {
+            ls("settings.wipeICloudWarning", comment: "")
+        }
         static var delete: String { ls("settings.delete", comment: "") }
         static var cancel: String { ls("settings.cancel", comment: "") }
         static var iconOriginal: String { ls("settings.iconOriginal", comment: "") }
@@ -1575,6 +1783,7 @@ enum L10n {
     // MARK: - Profile
 
     enum Profile {
+        static var defaultName: String { ls("profile.defaultName", comment: "") }
         static var title: String { ls("profile.title", comment: "") }
         static var edit: String { ls("profile.edit", comment: "") }
         static var importSuccess: String { ls("profile.importSuccess", comment: "") }
@@ -1667,6 +1876,7 @@ enum L10n {
         static var select: String { ls("common.select", comment: "") }
         static var seeAll: String { ls("common.seeAll", comment: "") }
         static var none: String { ls("common.none", comment: "") }
+        static var ok: String { ls("common.ok", comment: "") }
     }
 
     // MARK: - Widgets
@@ -1817,6 +2027,9 @@ enum L10n {
         static var expensesByNature: String {
             ls("widgetType.expensesByNature", comment: "")
         }
+        static var expensesByTag: String {
+            ls("widgetType.expensesByTag", comment: "")
+        }
         static var exchangeRate: String {
             ls("widgetType.exchangeRate", comment: "")
         }
@@ -1835,7 +2048,16 @@ enum L10n {
             static var selectFavorites: String {
                 ls("budgets.widget.selectFavorites", comment: "")
             }
+            static var noFavoritesTitle: String {
+                ls("budgets.widget.noFavorites.title", comment: "")
+            }
+            static var noFavoritesMessage: String {
+                ls("budgets.widget.noFavorites.message", comment: "")
+            }
         }
+
+        static var emptyTitle: String { ls("budgets.empty.title", comment: "") }
+        static var emptyMessage: String { ls("budgets.empty.message", comment: "") }
 
         // Alert notifications
         static var alertsTitle: String {
@@ -2043,6 +2265,9 @@ enum L10n {
         static var finish: String {
             ls("onboarding.finish", comment: "")
         }
+        static var defaultAccountName: String {
+            ls("onboarding.defaultAccountName", comment: "")
+        }
         static var categoriesTitle: String {
             ls("onboarding.categoriesTitle", comment: "")
         }
@@ -2246,6 +2471,9 @@ enum L10n {
         static var errorArchivedAccount: String {
             ls("inbox.errorArchivedAccount", comment: "")
         }
+        static var errorFutureDate: String {
+            ls("inbox.errorFutureDate", comment: "")
+        }
         static var duplicateWarningTitle: String {
             ls("inbox.duplicateWarningTitle", comment: "")
         }
@@ -2272,6 +2500,9 @@ enum L10n {
         }
         static var reject: String {
             ls("inbox.reject", comment: "")
+        }
+        static var approveAll: String {
+            ls("inbox.approveAll", comment: "")
         }
         static var returnToPending: String {
             ls("inbox.returnToPending", comment: "")

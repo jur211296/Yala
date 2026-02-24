@@ -148,8 +148,9 @@ final class MerchantMemoryService {
             return exact
         }
 
-        // 2. Fuzzy match: buscar todas las memorias y comparar similaridad
-        let allDescriptor = FetchDescriptor<MerchantMemory>()
+        // 2. Fuzzy match: buscar memorias y comparar similaridad
+        var allDescriptor = FetchDescriptor<MerchantMemory>()
+        allDescriptor.fetchLimit = 500
         let allMemories: [MerchantMemory]
         do {
             allMemories = try modelContext.fetch(allDescriptor)

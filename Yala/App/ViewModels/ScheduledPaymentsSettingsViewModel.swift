@@ -73,13 +73,16 @@ final class ScheduledPaymentsSettingsViewModel {
     func deletePayments(at offsets: IndexSet) {
         guard let context = modelContext else { return }
 
-        for index in offsets {
-            let payment = filteredPayments[index]
-            context.delete(payment)
-        }
+        let service = EntityDeletionService.shared
+        service.setContext(context)
 
         do {
-            try context.save()
+            for index in offsets {
+                let payment = filteredPayments[index]
+                try service.deleteScheduledPayment(payment)
+            }
+            WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
             loadPayments()
         } catch {
             #if DEBUG

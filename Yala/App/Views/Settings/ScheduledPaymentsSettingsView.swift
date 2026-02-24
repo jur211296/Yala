@@ -44,12 +44,12 @@ struct ScheduledPaymentsSettingsView: View {
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
+                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                     dismiss()
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                YalaToolbarButton(systemName: "plus", label: "Agregar") {
+                YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
                     viewModel.openEditor(for: nil)
                 }
             }
@@ -104,7 +104,7 @@ struct ScheduledPaymentsSettingsView: View {
     private func paymentRow(_ payment: ScheduledPayment) -> some View {
         // Get icon and color from subcategory
         let iconName = payment.subcategory?.iconName ?? payment.subcategory?.category?.iconName ?? "creditcard.fill"
-        let colorHex = payment.subcategory?.colorHex ?? payment.subcategory?.category?.colorHex ?? "#6366F1"
+        let colorHex = payment.subcategory?.colorHex ?? payment.subcategory?.category?.colorHex ?? AppConstants.defaultColorHex
 
         return Button {
             viewModel.openEditor(for: payment)
@@ -179,12 +179,16 @@ struct ScheduledPaymentsSettingsView: View {
 
     // MARK: - Helpers
 
+    private static let amountFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        f.maximumFractionDigits = 2
+        return f
+    }()
+
     private func formatAmount(_ amount: Double, currency: String) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = currency
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: amount)) ?? "\(currency) \(amount)"
+        Self.amountFormatter.currencyCode = currency
+        return Self.amountFormatter.string(from: NSNumber(value: amount)) ?? "\(currency) \(amount)"
     }
 
     private func recurrenceDescription(_ payment: ScheduledPayment) -> String {

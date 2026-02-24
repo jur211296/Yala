@@ -60,6 +60,7 @@ struct AccountsCarouselView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
+                .accessibilityLabel(L10n.Accessibility.pageIndicator(currentPage + 1, pageCount))
             }
         }
     }
@@ -72,24 +73,26 @@ struct AccountsCarouselView: View {
             let account = accounts[index]
             let isSelected = viewModel.selectedAccountID == account.persistentModelID
 
-            AccountCardView(
-                account: account,
-                currentBalance: isExpensesOnlyMode
-                    ? viewModel.expenseForPeriod(for: account, allTransactions: transactions)
-                    : currentBalance(for: account),
-                isSelected: isSelected,
-                isExcludeMode: viewModel.isExcludeMode,
-                onEditTapped: {
-                    onEditAccount(account)
-                }
-            )
-            .onTapGesture {
+            Button {
                 if viewModel.selectedAccountID == account.persistentModelID {
                     viewModel.selectedAccountID = nil
                 } else {
                     viewModel.selectedAccountID = account.persistentModelID
                 }
+            } label: {
+                AccountCardView(
+                    account: account,
+                    currentBalance: isExpensesOnlyMode
+                        ? viewModel.expenseForPeriod(for: account, allTransactions: transactions)
+                        : currentBalance(for: account),
+                    isSelected: isSelected,
+                    isExcludeMode: viewModel.isExcludeMode,
+                    onEditTapped: {
+                        onEditAccount(account)
+                    }
+                )
             }
+            .buttonStyle(.plain)
         } else {
             AddAccountCardView {
                 onAddAccount()

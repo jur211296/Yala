@@ -21,8 +21,8 @@ enum TransactionNature: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .income: return "Ingresos"
-        case .expense: return "Gastos"
+        case .income: return L10n.Transaction.TransactionType.income
+        case .expense: return L10n.Transaction.TransactionType.expense
         }
     }
 
@@ -45,13 +45,12 @@ enum TransactionTypeFilter: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// Display name in Spanish
     var displayName: String {
         switch self {
-        case .all: return "Todos"
-        case .income: return "Ingresos"
-        case .expense: return "Gastos"
-        case .transfer: return "Transferencias"
+        case .all: return L10n.Common.all
+        case .income: return L10n.Transaction.TransactionType.income
+        case .expense: return L10n.Transaction.TransactionType.expense
+        case .transfer: return L10n.Transaction.TransactionType.transfer
         }
     }
 

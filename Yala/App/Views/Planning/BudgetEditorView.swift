@@ -12,7 +12,7 @@ struct BudgetEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 28
+    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 28 // A11Y-DT: @ScaledMetric
     @Environment(SessionState.self) private var sessionState
     @Environment(EntityDeletionService.self) private var deletionService
 
@@ -109,7 +109,7 @@ struct BudgetEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -196,7 +196,7 @@ struct BudgetEditorView: View {
 
     private var periodSection: some View {
         SectionBox(title: NSLocalizedString("budgets.editor.period.type", comment: "")) {
-            Picker("", selection: $selectedPeriodType) {
+            Picker(NSLocalizedString("budgets.editor.period.type", comment: ""), selection: $selectedPeriodType) {
                 Text(NSLocalizedString("budgets.period.weekly", comment: "")).tag(BudgetPeriodType.weekly)
                 Text(NSLocalizedString("budgets.period.monthly", comment: "")).tag(BudgetPeriodType.monthly)
                 Text(NSLocalizedString("budgets.period.yearly", comment: "")).tag(BudgetPeriodType.yearly)
@@ -653,7 +653,7 @@ struct BudgetEditorView: View {
     }
 
     private func saveBudget() {
-        guard let amount = Double(limitAmount) else { return }
+        guard let amount = Double(limitAmount), amount > 0 else { return }
 
         let saved = viewModel.saveBudget(
             existing: budget,
@@ -673,6 +673,7 @@ struct BudgetEditorView: View {
         )
 
         if saved {
+            sessionState.needsBudgetsWidgetRefresh = true
             dismiss()
         }
     }

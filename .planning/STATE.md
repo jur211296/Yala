@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: None
 Plan: None
 Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-02-19 — Fase 11 cerrada, verificación visual OK
+Last activity: 2026-02-24 — A11Y-DT completado (Dynamic Type audit)
 
 ### Branch Strategy
 - **1.0** = Release (V1.0 + V1.1 mergeada)
@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-24] Merge 1.0 into 1.1 — all release polish + a11y + DS improvements
 - [2026-02-23] ed52513 fix: tags KPI respects category/subcategory filters in Statistics
 - [2026-02-22] 7ce5dd6 feat: add exclude mode for filters
 - [2026-02-20] cf3418d fix: add a11y labels to Panel buttons and localize Tips strings
@@ -38,8 +39,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-02-20] 54185b5 fix: resolve pre-launch warnings — legal link and force unwraps
 - [2026-02-20] 4add74e feat: dev-only subscription reset on data wipe for testing
 - [2026-02-20] 4a57873 fix: improve ProTrialOfferSheet layout and show success view after purchase
-- [2026-02-20] 9860a60 feat: add free trial UI — paywall trial info, post-onboarding offer sheet, StoreKit config
-- [2026-02-19] 5cf0528 fix: localize notification names and texts dynamically
 - [2026-02-19] 44d3b89 feat: add average line to bar and trend charts with personalization picker
 - [2026-02-19] 71d6e92 fix: budget period chevron navigation + duplicate report notification guard
 - [2026-02-19] cbe7678 feat: add theme system with accent color propagation across all views
@@ -444,9 +443,34 @@ Agregado `SortDescriptor(\.createdAt, order: .reverse)` como tiebreaker en 4 Fet
 
 Refactorización completa del sistema de colores. 6 temas (3 free + 3 PRO). YalaTheme struct + ThemeColor ShapeStyle + @Observable ThemeManager. Cambio de tema sin reinicio (eliminado `.id(userThemeRaw)`). 0 usos de colores legacy. 12 escenarios QA (Sección 38).
 
+### Fase 11.5: Polish Pre-Fase 12 — ✅ COMPLETADA (2026-02-24)
+
+- [x] POLISH-1: Budget progress bar — hotPink en widget para excedido (consistencia con app)
+- [x] POLISH-2: Badge "Recurrente" en edición de transacción (chip pill en quickActionsBar)
+- [x] POLISH-3: Tipo cuenta tarjeta de crédito + notificación de pago (AccountType, form, reminder)
+
 ### Siguiente: Fase 12 — Plataforma Extendida (V1.2)
 
-Ver ROADMAP.md para detalles.
+**Prioridad: Tech Debt del Release Review (10 items)**
+
+Empty States:
+- [x] EMPTY-1: Widgets migrados a `YalaEmptyState` con `Style.widget` (11 widgets, ~200 LOC eliminados)
+- [x] EMPTY-3: Empty state `YalaEmptyState.noAccounts` en Panel cuando 0 cuentas
+- [x] EMPTY-5: Autocomplete muestra "Sin resultados" cuando mención activa sin matches
+
+Accessibility:
+- [x] A11Y-DT: Migrar `.font(.system(size:))` a Dynamic Type — 2 fixes (@ScaledMetric + DT cap), 47 archivos auditados con comentarios A11Y-DT
+
+Code Quality:
+- [ ] CODE-20: Tags relationship sin `inverse` explícito (TransactionItem.swift)
+- [ ] CODE-21: Triple save en creación de transfer (NewTransactionViewModel)
+- [ ] CODE-28: Bulk delete bypasea EntityDeletionService (RecordsViewModel)
+- [ ] CODE-30: Legacy fields `month/year/category` en Budget model (dead code)
+- [ ] CODE-32: BudgetPeriodSelectorSheet scroll picker frágil
+- [ ] CODE-41: Direct modelContext.save() bypasea DraftService (InboxView)
+- [ ] CODE-46: 470 líneas de search embebidas en ContentView (extraer)
+
+Ver ROADMAP.md para más detalles de Fase 12.
 
 ### Fase 7: Beta Preparation (V1.0 Release) ✅ COMPLETADA
 
@@ -536,10 +560,10 @@ Ver ROADMAP.md para detalles.
 
 ## Session Continuity
 
-Last session: 2026-02-23
-Stopped at: Tags KPI fix cherry-picked from 1.0 to 1.1
-Next step: QA manual testing of exclude mode scenarios, then continue Phase 12
+Last session: 2026-02-24
+Stopped at: Merged 1.0 release polish into 1.1
+Next step: QA exclude mode + continue Phase 12 development
 Resume context:
-- Tags KPI fix (ed52513) cherry-picked: tag spending now respects category/subcategory filters
+- Merged 1.0→1.1: all release polish, a11y, DS tokens, dead code cleanup
 - Exclude mode feature complete (7ce5dd6) — pending QA
 - Branch 1.1 — development branch

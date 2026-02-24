@@ -8,11 +8,18 @@
 import StoreKit
 import SwiftData
 import SwiftUI
+import UIKit
 
 @main
 struct YalaApp: App {
 
     @Environment(\.scenePhase) private var scenePhase
+
+    init() {
+        // Clear default gray background for paged TabView
+        UIView.appearance(whenContainedInInstancesOf: [UIPageViewController.self]).backgroundColor = .clear
+        UIScrollView.appearance(whenContainedInInstancesOf: [UIPageViewController.self]).backgroundColor = .clear
+    }
 
     /// ModelContainer compartido para toda la app.
     var sharedModelContainer: ModelContainer = {

@@ -147,7 +147,7 @@ struct ExportFiltersStepView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -456,27 +456,36 @@ struct ExportFiltersStepView: View {
         )
     }
 
+    // MARK: - Static Formatters
+
+    private static let periodLongFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale.current
+        f.dateFormat = "d MMM yyyy"
+        return f
+    }()
+
+    private static let periodShortFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "d MMM yy"
+        f.locale = AppLocale.current
+        return f
+    }()
+
     private var periodSubtitle: String {
         let interval = selectedPeriod.dateInterval()
 
         let calendar = Calendar.current
         let displayEnd = calendar.date(byAdding: .day, value: -1, to: interval.end) ?? interval.end
 
-        let formatter = DateFormatter()
-        formatter.locale = Locale.current
-        formatter.dateFormat = "d MMM yyyy"
-
-        return "\(formatter.string(from: interval.start)) - \(formatter.string(from: displayEnd))"
+        return "\(Self.periodLongFormatter.string(from: interval.start)) - \(Self.periodLongFormatter.string(from: displayEnd))"
     }
 
     // MARK: - Period Row (inside SectionBox)
 
     private var periodDisplayText: String {
         if selectedPeriod == .custom, let range = customDateRange {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "d MMM yy"
-            formatter.locale = AppLocale.current
-            return "\(formatter.string(from: range.start)) - \(formatter.string(from: range.end))"
+            return "\(Self.periodShortFormatter.string(from: range.start)) - \(Self.periodShortFormatter.string(from: range.end))"
         }
         return selectedPeriod.displayName
     }
@@ -571,7 +580,7 @@ private struct ExportPeriodPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -650,11 +659,15 @@ private struct ExportPeriodPickerSheet: View {
         .buttonStyle(.plain)
     }
 
+    private static let periodShortFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "d MMM yy"
+        f.locale = AppLocale.current
+        return f
+    }()
+
     private func formattedRange(_ range: DateInterval) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "d MMM yy"
-        formatter.locale = AppLocale.current
-        return "\(formatter.string(from: range.start)) - \(formatter.string(from: range.end))"
+        "\(Self.periodShortFormatter.string(from: range.start)) - \(Self.periodShortFormatter.string(from: range.end))"
     }
 }
 
@@ -713,7 +726,7 @@ private struct ExportCustomPeriodPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    YalaToolbarButton(systemName: "chevron.left", label: "Atrás") {
+                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
                         dismiss()
                     }
                 }

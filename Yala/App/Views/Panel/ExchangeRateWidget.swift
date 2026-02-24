@@ -35,9 +35,12 @@ struct ExchangeRateWidget: View {
     @State private var selectedDate: Date?
     @State private var filteredCurrency: CurrencyCode?
 
-    // Colors for currency lines
-    private var currencyAColor: Color { theme.accent }
-    private let currencyBColor = Color.hotPink
+    // Colors for currency lines (indexed by position)
+    private static let currencyColors: [Color] = [.electricIndigo, .hotPink, .teal, .orange]
+
+    private func colorForIndex(_ index: Int) -> Color {
+        Self.currencyColors[index % Self.currencyColors.count]
+    }
 
     var body: some View {
         VStack(spacing: DS.Spacing.none) {
@@ -67,7 +70,7 @@ struct ExchangeRateWidget: View {
                 Text(L10n.ExchangeRate.title)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
-                    .padding(.bottom, 2)
+                    .padding(.bottom, DS.Spacing.xxs)
 
                 // Subtitle: "Hoy, HH:mm" or "d MMM, HH:mm"
                 if let data = data, !data.hasError {
@@ -95,10 +98,10 @@ struct ExchangeRateWidget: View {
                 } label: {
                     Image(systemName: "chevron.right")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(Color.gray.opacity(0.7))
+                        .foregroundStyle(.secondary)
                         .padding(.leading, DS.Spacing.sm)
                 }
-                .accessibilityLabel("Ver detalle")
+                .accessibilityLabel(L10n.Accessibility.viewDetails)
                 .buttonStyle(.plain)
             }
         }
@@ -119,9 +122,9 @@ struct ExchangeRateWidget: View {
             } else {
                 chartView(data: data)
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("Gráfica de tipo de cambio")
-                    .accessibilityValue(data.chartPoints.isEmpty ? "Sin datos" :
-                        "\(data.currentRates.count) divisas")
+                    .accessibilityLabel(L10n.Accessibility.exchangeRateChart)
+                    .accessibilityValue(data.chartPoints.isEmpty ? L10n.Accessibility.noData :
+                        L10n.Accessibility.currenciesCount(data.currentRates.count))
             }
         } else {
             loadingView
@@ -130,19 +133,27 @@ struct ExchangeRateWidget: View {
 
     // MARK: - Date Formatting
 
-    /// Formats date for subtitle: "Hoy, 15:45" or "19 dic, 15:45"
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "HH:mm"
+        return f
+    }()
+
+    private static let dateDayTimeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "d MMM, HH:mm"
+        return f
+    }()
+
     /// Formats date for subtitle: "Hoy, 15:45" or "19 dic, 15:45"
     private func formatSubtitleDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
-
         if Calendar.current.isDateInToday(date) {
-            formatter.dateFormat = "HH:mm"
-            let timeStr = formatter.string(from: date)
+            let timeStr = Self.timeFormatter.string(from: date)
             return "\(L10n.Widget.today), \(timeStr)"
         } else {
-            formatter.dateFormat = "d MMM, HH:mm"
-            return formatter.string(from: date)
+            return Self.dateDayTimeFormatter.string(from: date)
         }
     }
 
@@ -170,12 +181,13 @@ struct ExchangeRateWidget: View {
                         // Get original index for consistent colors
                         let originalIndex = activeCurrencies.firstIndex(of: currency) ?? index
                         if let rate = point.rate(for: currency.rawValue) {
+                            let lineColor = colorForIndex(originalIndex)
                             LineMark(
                                 x: .value("Date", point.date),
                                 y: .value("Rate", rate),
                                 series: .value("Currency", currency.rawValue)
                             )
-                            .foregroundStyle(originalIndex == 0 ? currencyAColor : currencyBColor)
+                            .foregroundStyle(lineColor)
                             .lineStyle(StrokeStyle(lineWidth: 2))
                             .interpolationMethod(.monotone)
 
@@ -183,14 +195,14 @@ struct ExchangeRateWidget: View {
                                 x: .value("Date", point.date),
                                 y: .value("Rate", rate)
                             )
-                            .foregroundStyle(originalIndex == 0 ? currencyAColor : currencyBColor)
+                            .foregroundStyle(lineColor)
                             .symbolSize(20)
-                            .annotation(position: originalIndex == 0 ? .top : .bottom, spacing: DS.Spacing.xxs) {
+                            .annotation(position: originalIndex % 2 == 0 ? .top : .bottom, spacing: DS.Spacing.xxs) {
                                 // Only show labels on first, last, and middle points to avoid clutter
                                 if shouldShowLabel(for: point, in: data.chartPoints) {
                                     Text(formatRateCompact(rate))
                                         .font(DS.Typography.captionSmall).fontWeight(.medium)
-                                        .foregroundStyle(originalIndex == 0 ? currencyAColor : currencyBColor)
+                                        .foregroundStyle(lineColor)
                                 }
                             }
                         }
@@ -297,7 +309,7 @@ struct ExchangeRateWidget: View {
             HStack(spacing: DS.Spacing.sm) {
                 ForEach(Array(activeCurrencies.enumerated()), id: \.element.rawValue) { index, currency in
                     if let rate = data.currentRates[currency.rawValue] {
-                        let color = index == 0 ? currencyAColor : currencyBColor
+                        let color = colorForIndex(index)
                         let isSelected = filteredCurrency == nil || filteredCurrency == currency
 
                         Button {
@@ -407,15 +419,16 @@ struct ExchangeRateWidget: View {
                     // Use original index from allActiveCurrencies for consistent colors
                     let originalIndex = allActiveCurrencies.firstIndex(of: currency) ?? 0
                     if let rate = point.rate(for: currency.rawValue) {
+                        let tooltipColor = colorForIndex(originalIndex)
                         HStack(spacing: DS.Spacing.xs) {
                             Circle()
-                                .fill(originalIndex == 0 ? currencyAColor : currencyBColor)
+                                .fill(tooltipColor)
                                 .frame(width: 5, height: 5)
                             Text(
                                 "1 \(currency.rawValue) = \(formatRate(rate)) \(preferredCurrency)"
                             )
                             .font(DS.Typography.labelTiny)
-                            .foregroundStyle(originalIndex == 0 ? currencyAColor : currencyBColor)
+                            .foregroundStyle(tooltipColor)
                         }
                     }
                 }
@@ -447,18 +460,8 @@ struct ExchangeRateWidget: View {
     }
 
     private var emptyChartView: some View {
-        VStack {
-            Image(systemName: "chart.line.downtrend.xyaxis")
-                .font(DS.Typography.title)
-                .foregroundStyle(.secondary)
-            Text(L10n.Widget.noDataForPeriod)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(height: 120)
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.bottom, DS.Spacing.lg)
+        YalaEmptyState(icon: "chart.line.downtrend.xyaxis", title: L10n.Widget.noDataForPeriod, style: .widget)
+            .frame(height: 120)
     }
 
     private var noSecondaryCurrenciesView: some View {
@@ -484,7 +487,7 @@ struct ExchangeRateWidget: View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "exclamationmark.triangle")
                 .font(DS.Typography.title)
-                .foregroundStyle(.orange)
+                .foregroundStyle(DS.Semantic.warningForeground)
             Text(message)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
@@ -502,19 +505,34 @@ struct ExchangeRateWidget: View {
         String(format: "%.4f", value)
     }
 
+    private static let tooltipDayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "EEE d MMM"
+        return f
+    }()
+
+    private static let tooltipWeekFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "d MMM yyyy"
+        return f
+    }()
+
+    private static let tooltipMonthFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "MMM yyyy"
+        return f
+    }()
+
     private func formatTooltipDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
-
+        let formatter: DateFormatter
         switch grouping {
-        case .day:
-            formatter.dateFormat = "EEE d MMM"
-        case .week:
-            formatter.dateFormat = "d MMM yyyy"
-        case .month:
-            formatter.dateFormat = "MMM yyyy"
+        case .day: formatter = Self.tooltipDayFormatter
+        case .week: formatter = Self.tooltipWeekFormatter
+        case .month: formatter = Self.tooltipMonthFormatter
         }
-
         return formatter.string(from: date)
     }
 

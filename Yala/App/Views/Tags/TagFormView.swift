@@ -66,7 +66,7 @@ struct TagFormView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -204,6 +204,8 @@ struct TagFormView: View {
                                 .shadow(
                                     radius: viewModel.selectedColorHex.uppercased() == hex.uppercased() ? 4 : 0
                                 )
+                                .accessibilityLabel(L10n.Accessibility.colorOption(hex))
+                                .accessibilityAddTraits(viewModel.selectedColorHex.uppercased() == hex.uppercased() ? .isSelected : [])
                                 .onTapGesture {
                                     viewModel.selectedColorHex = hex
                                 }

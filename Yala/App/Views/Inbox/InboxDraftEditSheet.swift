@@ -44,7 +44,7 @@ struct InboxDraftEditSheet: View {
     @State private var showDatePicker = false
     @State private var showNatureSelector = false
 
-    @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64
+    @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
 
     // Focus state
     @FocusState private var isNoteFieldFocused: Bool
@@ -210,7 +210,7 @@ struct InboxDraftEditSheet: View {
                     }
                 }
                 .alert(L10n.Inbox.cannotApprove, isPresented: $showApproveError) {
-                    Button("OK", role: .cancel) {}
+                    Button(L10n.Common.ok, role: .cancel) {}
                 } message: {
                     Text(approveErrorMessage)
                 }
@@ -315,7 +315,7 @@ struct InboxDraftEditSheet: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+            YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                 if hasUnsavedChanges() {
                     showDiscardChangesAlert = true
                 } else {
@@ -330,18 +330,18 @@ struct InboxDraftEditSheet: View {
                     showDeleteConfirmation = true
                 } label: {
                     Image(systemName: "trash")
-                        .foregroundStyle(.red)
+                        .foregroundStyle(DS.Semantic.errorForeground)
                 }
-                .accessibilityLabel("Eliminar")
+                .accessibilityLabel(L10n.Action.delete)
             } else {
                 // Pending drafts: reject button only
                 Button {
                     rejectDraft()
                 } label: {
                     Image(systemName: "xmark.circle")
-                        .foregroundStyle(.red)
+                        .foregroundStyle(DS.Semantic.errorForeground)
                 }
-                .accessibilityLabel("Rechazar")
+                .accessibilityLabel(L10n.Inbox.reject)
             }
         }
     }
@@ -400,7 +400,7 @@ struct InboxDraftEditSheet: View {
                 .padding(.vertical, DS.Spacing.md)
                 .background(
                     Capsule()
-                        .fill(Color(UIColor.label).opacity(0.08))
+                        .fill(Color.primary.opacity(0.08))
                 )
             }
             .buttonStyle(.plain)
@@ -414,7 +414,7 @@ struct InboxDraftEditSheet: View {
                 .autocorrectionDisabled(false)
                 .focused($isNoteFieldFocused)
                 .frame(maxWidth: 280)
-                .tint(Color(UIColor.label))
+                .tint(Color.primary)
 
             // Amount display
             amountDisplay
@@ -514,7 +514,7 @@ struct InboxDraftEditSheet: View {
                 .padding(.vertical, DS.Spacing.xs)
                 .background(
                     Capsule()
-                        .fill(Color(UIColor.label).opacity(0.05))
+                        .fill(Color.primary.opacity(0.05))
                 )
             }
             .buttonStyle(.plain)
@@ -530,7 +530,7 @@ struct InboxDraftEditSheet: View {
                     .frame(maxWidth: 280)
                     .background(
                         RoundedRectangle(cornerRadius: DS.Radius.sm)
-                            .fill(Color(UIColor.label).opacity(0.03))
+                            .fill(Color.primary.opacity(0.03))
                     )
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }
@@ -663,7 +663,7 @@ struct InboxDraftEditSheet: View {
             if let missingText = missingFieldsText {
                 Text(missingText)
                     .font(DS.Typography.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(DS.Semantic.errorForeground)
             }
 
             HStack(spacing: DS.Spacing.md) {
@@ -702,7 +702,7 @@ struct InboxDraftEditSheet: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!isReadyToApprove)
-                .accessibilityHint(!isReadyToApprove ? "Para aprobar, completa cuenta, monto y categoría" : "")
+                .accessibilityHint(!isReadyToApprove ? L10n.Accessibility.approveCompleteHint : "")
             }
         }
     }
@@ -722,17 +722,21 @@ struct InboxDraftEditSheet: View {
         return baseAmountSize * ratio
     }
 
+    private static let mediumDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .none
+        f.locale = AppLocale.current
+        return f
+    }()
+
     private var dateChipText: String {
         if Calendar.current.isDateInToday(transactionDate) {
             return L10n.Date.today
         } else if Calendar.current.isDateInYesterday(transactionDate) {
             return L10n.Date.yesterday
         } else {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            formatter.timeStyle = .none
-            formatter.locale = AppLocale.current
-            return formatter.string(from: transactionDate)
+            return Self.mediumDateFormatter.string(from: transactionDate)
         }
     }
 
@@ -977,6 +981,7 @@ struct InboxDraftEditSheet: View {
         do {
             try modelContext.save()
             WidgetDataCache.updateCache(context: modelContext)
+            SessionState.shared.incrementDataVersion()
 
             // Prepare success view data
             approvedTransaction = transaction

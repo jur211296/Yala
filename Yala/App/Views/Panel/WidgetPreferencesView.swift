@@ -131,7 +131,7 @@ private struct WidgetRow: View {
 
                 // Toggle (Disabled if locked)
                 Toggle(
-                    "",
+                    config.type.displayName,
                     isOn: Binding(
                         get: { config.isVisible },
                         set: { _ in onToggle() }
@@ -139,7 +139,7 @@ private struct WidgetRow: View {
                 )
                 .labelsHidden()
                 .disabled(config.isLocked)
-                .accessibilityHint(config.isLocked ? "Widget fijo, siempre visible" : "")
+                .accessibilityHint(config.isLocked ? L10n.Accessibility.widgetFixed : "")
                 .opacity(config.isLocked ? 0.6 : 1.0)
 
             }
@@ -158,7 +158,7 @@ private struct WidgetRow: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .padding(.leading, 44)  // Indent to align with text
+                .padding(.leading, DS.Spacing.formIndent)  // Indent to align with text
             }
 
             // Size Controls (Only if visible, not locked, and has multiple sizes)
@@ -175,7 +175,7 @@ private struct WidgetRow: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .padding(.leading, 44)  // Indent to align with text
+                .padding(.leading, DS.Spacing.formIndent)  // Indent to align with text
             }
         }
         .padding(.vertical, DS.Spacing.xs)

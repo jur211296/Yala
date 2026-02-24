@@ -44,6 +44,9 @@ struct AccountFormView: View {
                     VStack(spacing: DS.Spacing.xxl) {
                         generalSection
                         currencySection
+                        if viewModel.selectedType == .creditCard {
+                            creditCardSection
+                        }
                         if viewModel.isEditing {
                             adjustmentSection
                         }
@@ -59,7 +62,7 @@ struct AccountFormView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -376,7 +379,7 @@ struct AccountFormView: View {
                         Spacer()
                         Text(formatAdjustment(adjustment, currency: viewModel.selectedCurrency))
                             .font(DS.Typography.label)
-                            .foregroundStyle(adjustment >= 0 ? .green : .red)
+                            .foregroundStyle(adjustment >= 0 ? DS.Semantic.successForeground : DS.Semantic.errorForeground)
                     }
                     .padding()
                 }
@@ -464,23 +467,54 @@ struct AccountFormView: View {
         }
     }
 
+    private var creditCardSection: some View {
+        SectionBox(title: L10n.Account.CreditCard.sectionTitle) {
+            VStack(spacing: DS.Spacing.none) {
+                Toggle(isOn: $viewModel.creditCardPaymentReminder) {
+                    Text(L10n.Account.CreditCard.paymentReminder)
+                }
+                .padding()
+
+                if viewModel.creditCardPaymentReminder {
+                    SubsectionDivider()
+
+                    HStack {
+                        Text(L10n.Account.CreditCard.paymentDay)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Picker(L10n.Account.CreditCard.paymentDay, selection: $viewModel.creditCardPaymentDay) {
+                            ForEach(1...28, id: \.self) { day in
+                                Text("\(day)").tag(day)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
+                    .padding()
+                }
+            }
+        }
+    }
+
+    // MARK: - Static Formatters
+
+    private static let currencyFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        f.maximumFractionDigits = 2
+        return f
+    }()
+
     // MARK: Helpers
 
     private func formatAmount(_ amount: Double, currency: CurrencyCode) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = currency.rawValue
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: amount)) ?? "0.00"
+        Self.currencyFormatter.currencyCode = currency.rawValue
+        return Self.currencyFormatter.string(from: NSNumber(value: amount)) ?? "0.00"
     }
 
     private func formatAdjustment(_ amount: Double, currency: CurrencyCode) -> String {
         let sign = amount >= 0 ? "+" : ""
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = currency.rawValue
-        formatter.maximumFractionDigits = 2
-        let formatted = formatter.string(from: NSNumber(value: amount)) ?? "0.00"
+        Self.currencyFormatter.currencyCode = currency.rawValue
+        let formatted = Self.currencyFormatter.string(from: NSNumber(value: amount)) ?? "0.00"
         return sign + formatted
     }
 

@@ -62,7 +62,15 @@ class ShareViewController: UIViewController {
                 var imageData: Data?
 
                 if let url = item as? URL {
-                    imageData = try? Data(contentsOf: url)
+                    do {
+                        imageData = try Data(contentsOf: url)
+                    } catch {
+                        #if DEBUG
+                        print("ShareViewController: Error reading image data: \(error)")
+                        #endif
+                        self.completeWithError()
+                        return
+                    }
                 } else if let image = item as? UIImage {
                     imageData = image.jpegData(compressionQuality: 0.9)
                 } else if let data = item as? Data {

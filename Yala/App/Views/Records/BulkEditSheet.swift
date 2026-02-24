@@ -135,7 +135,7 @@ struct BulkEditSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         finishEditing()
                     }
                 }
@@ -199,7 +199,7 @@ struct BulkEditSheet: View {
     private var currencyWarning: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.orange)
+                .foregroundStyle(DS.Semantic.warningForeground)
 
             Text(L10n.BulkEdit.currencyWarning)
                 .font(DS.Typography.caption)
@@ -306,7 +306,7 @@ private struct BulkEditOptionRow: View {
                 // Icon
                 Circle()
                     .fill(option.iconColor.opacity(0.15))
-                    .frame(width: 36, height: 36)
+                    .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
                     .overlay(
                         Image(systemName: option.icon)
                             .font(DS.Typography.body).fontWeight(.medium)
@@ -324,7 +324,7 @@ private struct BulkEditOptionRow: View {
                 if isApplied {
                     Image(systemName: "checkmark.circle.fill")
                         .font(DS.Typography.body)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(DS.Semantic.successForeground)
                 } else {
                     Image(systemName: "chevron.right")
                         .font(DS.Typography.labelSmall.weight(.semibold))
@@ -428,7 +428,7 @@ struct BulkTagEditorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -441,7 +441,7 @@ struct BulkTagEditorSheet: View {
                         dismiss()
                     }
                     .disabled(tagsToAdd.isEmpty && tagsToRemove.isEmpty)
-                    .accessibilityHint(tagsToAdd.isEmpty && tagsToRemove.isEmpty ? "Completa la selección requerida" : "")
+                    .accessibilityHint(tagsToAdd.isEmpty && tagsToRemove.isEmpty ? L10n.Accessibility.completeSelectionHint : "")
                 }
             }
         }
@@ -542,7 +542,7 @@ private struct BulkTagRow: View {
                 // Color circle with icon
                 Circle()
                     .fill(Color(hex: tag.colorHex))
-                    .frame(width: 28, height: 28)
+                    .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
                     .overlay(
                         Image(systemName: tag.iconName)
                             .font(DS.Typography.labelSmall.weight(.semibold))
@@ -580,7 +580,7 @@ private struct BulkTagRow: View {
             // Mixed state - some have it, some don't
             Image(systemName: "minus.square.fill")
                 .font(DS.Typography.title)
-                .foregroundStyle(.orange)
+                .foregroundStyle(DS.Semantic.warningForeground)
         }
     }
 }
@@ -618,7 +618,7 @@ struct BulkNoteEditorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -628,8 +628,7 @@ struct BulkNoteEditorSheet: View {
                         onSave()
                         dismiss()
                     }
-                    .disabled(note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    .accessibilityHint(note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Completa la selección requerida" : "")
+                    .accessibilityHint(L10n.Action.save)
                 }
             }
             .onAppear {
@@ -679,7 +678,7 @@ struct BulkAmountEditorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: "Cerrar") {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
@@ -693,7 +692,7 @@ struct BulkAmountEditorSheet: View {
                         dismiss()
                     }
                     .disabled(amountText.isEmpty)
-                    .accessibilityHint(amountText.isEmpty ? "Completa la selección requerida" : "")
+                    .accessibilityHint(amountText.isEmpty ? L10n.Accessibility.completeSelectionHint : "")
                 }
             }
             .onAppear {
