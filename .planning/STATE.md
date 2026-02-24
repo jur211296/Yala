@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-24] 8fbb672 fix: a11y labels on 6 icon-only buttons + A11Y-DM audit comments on hardcoded colors
 - [2026-02-24] afc1bc3 docs: Fase 11.5 polish — STATE, QA scenarios, CLAUDE.md test count
 - [2026-02-24] 596ca67 feat: credit card account type with payment reminder notification (POLISH-3)
 - [2026-02-24] c17ba2b feat: recurring badge in transaction edit mode (POLISH-2)
@@ -37,7 +38,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-02-24] ad1e1f8 fix: release review — asyncAfter→Task, DS hex tokens, code dedup, small fixes (11 items)
 - [2026-02-24] 2614785 fix: release review — DS tokens, dead code cleanup (DS-3, DS-10, DS-21, DS-28, CODE-24)
 - [2026-02-24] b5506a6 fix: release review — DS tokens, a11y labels, l10n migration, code quality (~60 items)
-- [2026-02-24] d5ba5be fix: flow review final pass — data version sync, l10n accessibility, static formatter
 
 - [2026-02-20] 4add74e feat: dev-only subscription reset on data wipe for testing
 - [2026-02-20] 4a57873 fix: improve ProTrialOfferSheet layout and show success view after purchase
@@ -564,10 +564,10 @@ Ver ROADMAP.md para más detalles de Fase 12.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Fase 11.5 completada — 3 mejoras polish pre-Fase 12 (POLISH-1/2/3)
+Stopped at: Pre-launch a11y audit fixes — 6 icon-only buttons labeled, 4 hardcoded colors documented
 Next step: Fase 12 — siguiente item tech debt (CODE-20/21/28/30/32/41/46 pendientes)
 Resume context:
-- Fase 11.5 completada: budget widget hotPink, recurring badge, credit card account type
-- QA-SCENARIOS.md Sección 40 agregada para las 3 mejoras
+- A11y audit cerrado: accessibilityLabel en 6 botones, A11Y-DM comments en 4 colores
+- CLAUDE.md actualizado con patrón Audit Markers (A11Y-DT / A11Y-DM)
 - Deferred post-release: HIGH-2/3/12/13 (pagination), HIGH-24/A11Y-41 (onboarding a11y)
 - Branch 1.0 — release branch
