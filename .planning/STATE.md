@@ -28,16 +28,16 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-23] 8c59350 fix: flow review G3 — budget currency, task leaks, static formatters, l10n accessibility
+- [2026-02-23] 2a15388 fix: flow review G1 — onboarding scroll lock, language detection, trial error state
 - [2026-02-23] be3cb18 fix: eliminate force unwraps and silent try? for pre-launch stability
 - [2026-02-23] ec03800 a11y: batch 10B — localize accessibility labels, reduceMotion support, and selection traits
 - [2026-02-23] 4430d00 l10n+ds: batch 10A — localize remaining hardcoded strings and DS color cleanup
 - [2026-02-23] 61e0945 fix: batch 9B — service routing and behavior fixes
 - [2026-02-23] a1ccb18 refactor: batch 9A — dead code removal and static formatter extraction
 - [2026-02-23] 071bc4c refactor: batch 8 — migrate empty states to YalaEmptyState component
-- [2026-02-23] 4222f80 docs: update STATE.md with batch 7 progress
 - [2026-02-23] e106dbe refactor: batch 7 — DS semantic tokens, FAB size token, and onTapGesture→Button migration
 - [2026-02-23] c6dca6f l10n: batch 6B — a11y labels, SaveAsRecurring migration, and remaining L10N fixes
-- [2026-02-23] 48baa83 l10n: batch 6A — migrate hardcoded toolbar labels and model strings to L10n
 - [2026-02-20] d534a4f feat: add VoiceOver accessibility labels to all charts
 - [2026-02-20] 54185b5 fix: resolve pre-launch warnings — legal link and force unwraps
 - [2026-02-20] 4add74e feat: dev-only subscription reset on data wipe for testing
@@ -540,8 +540,8 @@ Ver ROADMAP.md para detalles.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Pre-launch fixes — force unwraps + try? silenciados eliminados (be3cb18)
-Next step: Final manual QA on simulator, then App Store submission
+Stopped at: Flow review G1+G3 fixes committed (2a15388, 8c59350). Starting G4: Statistics review.
+Next step: Flow review G4 (Statistics) → G5 (Transaction CRUD) → remaining groups
 Resume context:
 - Release Review: 10 batches (1→10B) across 2 sessions, ~67 items resolved
 - Remaining deferred: pie widget onTapGesture→Button (complex), dynamic a11y labels (needs format), some Spanish accessibilityValues in chart widgets
