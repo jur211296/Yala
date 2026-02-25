@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-25] 8d2ba84 docs: add Groups (expense splitting) design document
 - [2026-02-24] 328ba03 fix: scheduled payments visual consistency — hot pink expenses, sign prefix, currency conversion
 - [2026-02-24] dea0d82 feat: support form sheet with type picker before sending email
 - [2026-02-24] 0962a43 fix: show initial balance mode when editing account without balance set
@@ -37,7 +38,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-02-24] c17ba2b feat: recurring badge in transaction edit mode (POLISH-2)
 - [2026-02-24] b74e8e4 fix: budget widget uses hotPink for exceeded budgets (POLISH-1)
 - [2026-02-24] 8c87eb7 refactor: empty states — YalaEmptyState.widget style, 0-accounts guide, autocomplete feedback (EMPTY-1, EMPTY-3, EMPTY-5)
-- [2026-02-24] da1fa54 fix: A11Y-DT — @ScaledMetric en 2 vistas hardcoded, audit comments en 49 archivos
 - [2026-02-24] 2614785 fix: release review — DS tokens, dead code cleanup (DS-3, DS-10, DS-21, DS-28, CODE-24)
 - [2026-02-24] b5506a6 fix: release review — DS tokens, a11y labels, l10n migration, code quality (~60 items)
 
@@ -565,11 +565,12 @@ Ver ROADMAP.md para más detalles de Fase 12.
 
 ## Session Continuity
 
-Last session: 2026-02-24
-Stopped at: Scheduled payments visual consistency — color, sign, currency conversion across 6 files
-Next step: Fase 12 — siguiente item tech debt o polish pendiente
+Last session: 2026-02-25
+Stopped at: Investigación y diseño completo de funcionalidad Grupos (expense splitting)
+Next step: Fase 12 — siguiente item tech debt o polish pendiente (Grupos es futuro)
 Resume context:
-- Pagos planificados: gastos hot pink con signo -, ingresos teal con +, conversión divisas en totales
-- Badge recurrente movido a icono-only junto a NatureChip en edición de transacción
+- Documento de diseño completo en .planning/GROUPS-DESIGN.md
+- Arquitectura: CloudKit CKShare + CKSyncEngine x2 + encryptedValues, solo enlace para invitar
+- 7 fases de implementación definidas (A-G), funcionalidad futura
 - Deferred post-release: HIGH-2/3/12/13 (pagination), HIGH-24/A11Y-41 (onboarding a11y)
 - Branch 1.0 — release branch
