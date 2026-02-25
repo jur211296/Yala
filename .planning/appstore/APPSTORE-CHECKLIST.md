@@ -36,11 +36,11 @@ Este documento guía la preparación de assets y metadata para publicar Yala en 
 
 ### Checklist Screenshots
 
-- [ ] Crear datos de demo atractivos (balances realistas, variedad de categorías)
-- [ ] Capturar en modo claro (principal)
-- [ ] Capturar en modo oscuro (opcional, como screenshots adicionales)
-- [ ] Verificar que no haya datos personales visibles
-- [ ] Exportar en PNG sin compresión
+- [x] Crear datos de demo atractivos (balances realistas, variedad de categorías) ✅
+- [x] Capturar en modo claro (principal) ✅
+- [x] Capturar en modo oscuro (opcional, como screenshots adicionales) ✅
+- [x] Verificar que no haya datos personales visibles ✅
+- [x] Exportar en PNG sin compresión ✅
 
 ### Cómo Capturar (Xcode)
 
@@ -362,36 +362,36 @@ Yala é 100% offline e seus dados ficam no seu dispositivo.
 ### Contenido Mínimo
 
 La política debe cubrir:
-- [ ] Qué datos recopila la app (ninguno - todo local)
-- [ ] Cómo se almacenan los datos (en dispositivo)
-- [ ] Si se comparten datos con terceros (no)
-- [ ] Derechos del usuario sobre sus datos
-- [ ] Contacto para preguntas de privacidad
+- [x] Qué datos recopila la app (ninguno - todo local) ✅
+- [x] Cómo se almacenan los datos (en dispositivo) ✅
+- [x] Si se comparten datos con terceros (no) ✅
+- [x] Derechos del usuario sobre sus datos ✅
+- [x] Contacto para preguntas de privacidad ✅
 
 ---
 
 ## 6. Checklist Final
 
 ### Assets
-- [ ] Screenshots 6.7" en 6 idiomas (mínimo 3 por idioma)
-- [ ] App Icon 1024x1024 (ya existe en Assets.xcassets)
+- [x] Screenshots 6.7" en 6 idiomas (mínimo 3 por idioma) ✅
+- [x] App Icon 1024x1024 (ya existe en Assets.xcassets) ✅
 
 ### Metadata
-- [ ] App Name verificado en todos los idiomas
-- [ ] Subtitle en 6 idiomas
-- [ ] Keywords optimizados por idioma (100 chars max)
-- [ ] Descripción completa en 6 idiomas
-- [ ] Promotional Text en 6 idiomas
+- [x] App Name verificado en todos los idiomas ✅
+- [x] Subtitle en 6 idiomas ✅
+- [x] Keywords optimizados por idioma (100 chars max) ✅
+- [x] Descripción completa en 6 idiomas ✅
+- [x] Promotional Text en 6 idiomas ✅
 
 ### Legal
-- [ ] Privacy Policy URL activa y accesible
-- [ ] Support URL (puede ser email o página)
+- [x] Privacy Policy URL activa y accesible ✅
+- [x] Support URL (puede ser email o página) ✅
 
 ### App Store Connect
-- [ ] Cuenta de desarrollador activa ($99/año)
-- [ ] App creada en App Store Connect
-- [ ] Build subido desde Xcode
-- [ ] TestFlight configurado para beta
+- [x] Cuenta de desarrollador activa ($99/año) ✅
+- [x] App creada en App Store Connect ✅
+- [x] Build subido desde Xcode ✅
+- [x] TestFlight configurado para beta ✅
 
 ---
 
@@ -409,8 +409,8 @@ La política debe cubrir:
 | Descripción completa IT | Completado |
 | Descripción completa PT | Completado |
 | Privacy Policy | Completado (ver PRIVACY-POLICY.md) |
-| Screenshots | Pendiente (manual) |
+| Screenshots | Completado ✅ |
 
 ---
 
-*Última actualización: 2026-01-20*
+*Última actualización: 2026-02-25 — V1.0 enviada a App Store Review*

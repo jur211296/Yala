@@ -516,9 +516,9 @@ Incluye:
 - [ ] Integrar Smart Insights a lo largo de la app (contextuales)
 - [ ] Vista de reporte financiero (exportable PDF/Excel)
 - [ ] Filtros avanzados: excluir/incluir en DetailContainerView
-- [ ] Línea promedio en gráficas de barras verticales (CashFlow ingreso/gasto, Naturaleza)
-- [ ] Integración Siri para registro rápido de gastos
-- [ ] Widgets para Lock Screen (WidgetFamily.accessory)
+- [x] Línea promedio en gráficas de barras verticales (CashFlow ingreso/gasto, Naturaleza) ✅
+- [x] Integración Siri para registro rápido de gastos ✅
+- [x] Widgets para Lock Screen (WidgetFamily.accessory) ✅
 - [ ] Vista de análisis de presupuesto (detalle, tendencias, proyección)
 - [ ] Split de transacciones (dividir en múltiples partes/personas)
 - [ ] Predicción de saldo en gráfica de tendencias
