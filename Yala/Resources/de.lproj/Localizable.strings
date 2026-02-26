@@ -1609,6 +1609,8 @@
 "subscription.feature.export" = "Export als Excel und CSV";
 "subscription.legalFooter" = "Die Zahlung wird über dein Apple-Konto abgerechnet. Das Abo verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ende des aktuellen Zeitraums gekündigt wird.";
 "subscription.termsLink" = "Nutzungsbedingungen und Datenschutzrichtlinie";
+"subscription.termsOfUseLink" = "Nutzungsbedingungen";
+"subscription.privacyPolicyLink" = "Datenschutzrichtlinie";
 "subscription.errorTitle" = "Kauffehler";
 "subscription.activeTitle" = "Du bist Yala Pro";
 "subscription.activeSubtitle" = "Du hast Zugang zu allen Premium-Funktionen";

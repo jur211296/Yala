@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: None
 Plan: None
 Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-02-24 — Scheduled payments visual consistency fix
+Last activity: 2026-02-26 — Apple 3.1.2 rejection fix (separate Terms/Privacy links)
 
 ### Branch Strategy
 - **1.0** = Release (V1.0 + V1.1 mergeada)
@@ -28,6 +28,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-02-26] 9cc6831 fix: separate Terms/Privacy links and localize legal URLs — Apple 3.1.2 rejection
 - [2026-02-25] 8d2ba84 docs: add Groups (expense splitting) design document
 - [2026-02-24] 328ba03 fix: scheduled payments visual consistency — hot pink expenses, sign prefix, currency conversion
 - [2026-02-24] dea0d82 feat: support form sheet with type picker before sending email

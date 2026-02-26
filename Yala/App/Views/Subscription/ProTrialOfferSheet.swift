@@ -113,8 +113,12 @@ struct ProTrialOfferSheet: View {
                             .font(DS.Typography.caption)
                             .foregroundStyle(.tertiary)
                             .multilineTextAlignment(.center)
-                        Link(L10n.Subscription.termsLink, destination: AppConstants.termsURL)
-                            .font(DS.Typography.caption)
+                        HStack(spacing: DS.Spacing.xs) {
+                            Link(L10n.Subscription.termsOfUseLink, destination: AppConstants.termsURL)
+                            Text("·").foregroundStyle(.tertiary)
+                            Link(L10n.Subscription.privacyPolicyLink, destination: AppConstants.privacyURL)
+                        }
+                        .font(DS.Typography.caption)
                     }
                 }
                 .padding(.horizontal, DS.Spacing.lg)

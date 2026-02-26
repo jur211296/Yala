@@ -1609,6 +1609,8 @@
 "subscription.feature.export" = "Exportación en Excel y CSV";
 "subscription.legalFooter" = "El pago se carga a tu cuenta de Apple. La suscripción se renueva automáticamente a menos que la canceles al menos 24 horas antes del final del periodo actual.";
 "subscription.termsLink" = "Términos de uso y Política de privacidad";
+"subscription.termsOfUseLink" = "Términos de uso";
+"subscription.privacyPolicyLink" = "Política de privacidad";
 "subscription.errorTitle" = "Error de compra";
 "subscription.activeTitle" = "Eres Yala Pro";
 "subscription.activeSubtitle" = "Tienes acceso a todas las funciones premium";
