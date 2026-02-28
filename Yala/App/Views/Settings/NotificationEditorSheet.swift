@@ -225,8 +225,6 @@ struct NotificationEditorSheet: View {
             return L10n.Notifications.monthlyReportHint(selectedDataType.displayName, day)
         case .scheduledPayments:
             return L10n.Notifications.scheduledPaymentsHint
-        case .announcements:
-            return L10n.Notifications.announcementsHint
         default:
             return notification?.displayText ?? ""
         }
@@ -563,8 +561,6 @@ struct NotificationEditorSheet: View {
             return L10n.Notifications.testScheduledPayment
         case .endOfDay, .lunchTime, .custom:
             return text.isEmpty ? L10n.Notifications.endOfDayText : text
-        case .announcements:
-            return L10n.Notifications.announcementsHint
         }
     }
 

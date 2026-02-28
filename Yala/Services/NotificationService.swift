@@ -316,10 +316,6 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             }
             return UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
 
-        case .announcements:
-            // One-time notification (will be rescheduled when there's an announcement)
-            return UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
-
         default:
             // Daily at specified time (endOfDay, lunchTime, dailyReport, scheduledPayments, custom)
             return UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
@@ -342,6 +338,12 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             print("NotificationService: Error checking existing notifications: \(error)")
             #endif
             return
+        }
+
+        // Clean up legacy announcements notifications
+        let legacyAnnouncements = existing.filter { $0.typeRaw == "announcements" }
+        for item in legacyAnnouncements {
+            context.delete(item)
         }
 
         // Build set of existing types
