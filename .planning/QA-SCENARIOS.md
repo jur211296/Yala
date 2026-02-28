@@ -4892,3 +4892,34 @@ Para cada tema verificar:
 - [ ] Cerrar y reabrir app de nuevo → NO recibir notificación duplicada
 - [ ] Crear cuenta tarjeta de crédito con reminder activado, día ≠ hoy → sin notificación
 - [ ] Desactivar reminder → sin notificación aunque sea el día correcto
+
+---
+
+## 41. AI Data Consent (Apple 5.1.1/5.1.2)
+
+### 41.1 Consent alert — primera activación
+- [ ] Toggle voz OFF → activar → alert "Uso de inteligencia artificial" aparece
+- [ ] Alert muestra: datos enviados (audio, imagen, texto), OpenAI por nombre, qué NO se envía
+- [ ] Tocar "Cancelar" → toggle vuelve a OFF, consent no guardado
+- [ ] Tocar "Política de privacidad" → abre Safari, toggle queda OFF
+- [ ] Tocar "Aceptar y activar" → consent guardado, toggle ON, permiso mic del OS aparece
+- [ ] Toggle imagen OFF → activar → alert aparece (si consent no dado aún)
+- [ ] Aceptar desde imagen → toggle imagen ON, permiso fotos del OS aparece
+
+### 41.2 Consent persistente
+- [ ] Aceptar consent en voz → activar imagen → NO aparece alert, va directo a permiso fotos
+- [ ] Aceptar consent en imagen → activar voz → NO aparece alert, va directo a permiso mic
+- [ ] Cerrar app → reabrir → activar toggle → NO aparece alert (consent persiste)
+
+### 41.3 Hint inline
+- [ ] Voz o imagen activada → texto "Tus grabaciones e imágenes se procesan con OpenAI..." visible bajo los toggles
+- [ ] Ambos toggles desactivados → hint NO visible
+
+### 41.4 Wipe de datos
+- [ ] Wipear datos desde Perfil → desactivar voz/imagen → activar de nuevo → alert de consent reaparece
+
+### 41.5 Privacy policy web
+- [ ] Abrir privacy policy en Safari → sección 4 menciona "OpenAI" por nombre
+- [ ] Sección 4 detalla: audio, imágenes, texto transcrito, categorías
+- [ ] Sección 4 aclara qué NO se envía: montos, historial, info personal
+- [ ] Verificar en los 6 idiomas (es, en, de, fr, it, pt)

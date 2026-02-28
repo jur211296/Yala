@@ -2320,3 +2320,10 @@
 "siriShortcuts.faq.inboxA" = "Les enregistrements créés par Siri arrivent dans ta boîte de réception comme brouillons à vérifier.";
 "siriShortcuts.faq.offlineQ" = "Ça fonctionne hors ligne ?";
 "siriShortcuts.faq.offlineA" = "Oui, les raccourcis fonctionnent en mode basique sans connexion internet.";
+
+// MARK: - AI Consent
+"aiConsent.title" = "Traitement des données par IA";
+"aiConsent.message" = "Les fonctions vocales et image utilisent OpenAI pour traiter tes données :\n\n• Voix : ton enregistrement audio\n• Images : la photo que tu sélectionnes\n• Texte : la transcription et les noms de tes catégories\n\nAucun montant, historique de transactions ou information personnelle n'est envoyé. OpenAI n'utilise pas ces données pour l'entraînement.";
+"aiConsent.accept" = "Accepter et activer";
+"aiConsent.privacyPolicy" = "Politique de confidentialité";
+"aiConsent.inlineHint" = "Tes enregistrements et images sont traités avec OpenAI. Ils ne sont pas stockés de manière permanente.";

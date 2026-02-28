@@ -2319,3 +2319,10 @@
 "siriShortcuts.faq.inboxA" = "Os registos criados pelo Siri chegam à tua caixa de entrada como rascunhos para revisão.";
 "siriShortcuts.faq.offlineQ" = "Funciona sem internet?";
 "siriShortcuts.faq.offlineA" = "Sim, os atalhos funcionam em modo básico sem ligação à internet.";
+
+// MARK: - AI Consent
+"aiConsent.title" = "Processamento de dados com IA";
+"aiConsent.message" = "As funções de voz e imagem usam OpenAI para processar os teus dados:\n\n• Voz: a tua gravação de áudio\n• Imagens: a foto que selecionas\n• Texto: a transcrição e os nomes das tuas categorias\n\nNão são enviados valores, histórico de transações nem informações pessoais. A OpenAI não usa estes dados para treino.";
+"aiConsent.accept" = "Aceitar e ativar";
+"aiConsent.privacyPolicy" = "Política de privacidade";
+"aiConsent.inlineHint" = "As tuas gravações e imagens são processadas com OpenAI. Não são armazenadas permanentemente.";
