@@ -34,6 +34,9 @@ struct ProfileView: View {
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
     @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
+    @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
+    @State private var showAIConsentAlert: Bool = false
+    @State private var pendingConsentForVoice: Bool = true
 
     // Navigation & Sheets
     @State private var navigationPath = NavigationPath()
@@ -182,6 +185,22 @@ struct ProfileView: View {
                 } else {
                     Text(L10n.Image.errorPhotoPermission)
                 }
+            }
+            .alert(L10n.AIConsent.title, isPresented: $showAIConsentAlert) {
+                Button(L10n.AIConsent.accept) {
+                    aiDataConsentAccepted = true
+                    if pendingConsentForVoice {
+                        voiceInputEnabled = true
+                    } else {
+                        imageInputEnabled = true
+                    }
+                }
+                Button(L10n.AIConsent.privacyPolicy) {
+                    openURL(AppConstants.privacyURL)
+                }
+                Button(L10n.Action.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.AIConsent.message)
             }
             .navigationDestination(for: ProfileDestination.self) { destination in
                 switch destination {
@@ -423,6 +442,14 @@ struct ProfileView: View {
                 voiceInputRow
                 SubsectionDivider()
                 imageInputRow
+
+                if voiceInputEnabled || imageInputEnabled {
+                    Text(L10n.AIConsent.inlineHint)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.vertical, DS.Spacing.sm)
+                }
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
@@ -475,6 +502,12 @@ struct ProfileView: View {
 
                             .onChange(of: voiceInputEnabled) { _, isEnabled in
                                 guard isEnabled else { return }
+                                if !aiDataConsentAccepted {
+                                    voiceInputEnabled = false
+                                    pendingConsentForVoice = true
+                                    showAIConsentAlert = true
+                                    return
+                                }
                                 let status = AVAudioApplication.shared.recordPermission
                                 if status == .undetermined {
                                     AVAudioApplication.requestRecordPermission { granted in
@@ -588,6 +621,12 @@ struct ProfileView: View {
 
                         .onChange(of: imageInputEnabled) { _, isEnabled in
                             guard isEnabled else { return }
+                            if !aiDataConsentAccepted {
+                                imageInputEnabled = false
+                                pendingConsentForVoice = false
+                                showAIConsentAlert = true
+                                return
+                            }
                             let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
                             if status == .notDetermined {
                                 PHPhotoLibrary.requestAuthorization(for: .readWrite) { _ in }

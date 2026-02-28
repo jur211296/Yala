@@ -430,6 +430,16 @@ enum L10n {
         static var clearAll: String { ls("action.clearAll", comment: "") }
     }
 
+    // MARK: - AI Consent
+
+    enum AIConsent {
+        static var title: String { ls("aiConsent.title", comment: "") }
+        static var message: String { ls("aiConsent.message", comment: "") }
+        static var accept: String { ls("aiConsent.accept", comment: "") }
+        static var privacyPolicy: String { ls("aiConsent.privacyPolicy", comment: "") }
+        static var inlineHint: String { ls("aiConsent.inlineHint", comment: "") }
+    }
+
     // MARK: - Accessibility
 
     enum Accessibility {
