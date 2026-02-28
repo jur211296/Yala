@@ -95,7 +95,6 @@ struct ProfileView: View {
         case subscription
         case tips
         case faq
-        case placeholder(String)
         case iCloudSync
         case siriShortcuts
     }
@@ -228,8 +227,6 @@ struct ProfileView: View {
                     TutorialsListView()
                 case .faq:
                     FAQView()
-                case .placeholder(let title):
-                    SettingsPlaceholderView(title: title)
                 case .notifications:
                     NotificationsSettingsView()
                 case .favorites:

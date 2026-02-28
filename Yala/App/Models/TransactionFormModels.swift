@@ -55,33 +55,6 @@ enum TransactionType: String, CaseIterable, Identifiable {
     }
 }
 
-// MARK: - Capture Mode
-
-/// Modo de captura para el registro (Manual activo, resto próximamente)
-enum CaptureMode: String, CaseIterable, Identifiable {
-    case manual = "Manual"
-    case screenshot = "Screenshot"
-    case smartAudio = "Smart Audio"
-    case receipt = "Recibo"
-
-    var id: String { rawValue }
-
-    /// Indica si el modo está disponible (solo Manual por ahora)
-    var isAvailable: Bool {
-        self == .manual
-    }
-
-    /// Ícono SF Symbol del modo
-    var iconName: String {
-        switch self {
-        case .manual: return "pencil.line"
-        case .screenshot: return "camera.viewfinder"
-        case .smartAudio: return "waveform"
-        case .receipt: return "doc.text.viewfinder"
-        }
-    }
-}
-
 // MARK: - Form Field Validation
 
 /// Estado de validación de un campo del formulario
