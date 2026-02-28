@@ -1445,10 +1445,10 @@
 "onboarding.expensesOnlyOptionExpenses" = "I only want to track expenses";
 "onboarding.privacyTitle" = "All Set";
 "onboarding.privacySubtitle" = "You're ready to start using Yala";
-"onboarding.privacyLocal" = "Your data stays on your device";
+"onboarding.privacyLocal" = "Your financial data stays on your device";
 "onboarding.privacyNoTracking" = "No tracking or ads";
 "onboarding.privacyIcloud" = "Only you have access to your data";
-"onboarding.privacyNoSharing" = "We never share your information";
+"onboarding.privacyNoSharing" = "AI features don't share or store sensitive data";
 "onboarding.privacyTutorialsHint" = "Discover Yala's tutorials and tips";
 
 // MARK: - Bulk Edit
@@ -1842,8 +1842,6 @@
 // System notifications
 "notifications.scheduledPayments.name" = "Scheduled payments";
 "notifications.scheduledPayments.hint" = "We'll let you know when you have upcoming payments";
-"notifications.announcements.name" = "Yala news";
-"notifications.announcements.hint" = "We'll share improvements and new features ✨";
 
 // Empty state
 "notifications.empty.title" = "No notifications";
@@ -2304,7 +2302,7 @@
 
 // MARK: - AI Consent
 "aiConsent.title" = "AI Data Processing";
-"aiConsent.message" = "Voice and image features use OpenAI to process your data:\n\n• Voice: your audio recording\n• Images: the photo you select\n• Text: the transcription and your category names\n\nNo amounts, transaction history, or personal info is sent. OpenAI does not use this data for training.";
+"aiConsent.message" = "Voice and image features use OpenAI to process your data:\n\n• Voice: your audio recording\n• Images: the photo you select\n• Text: the transcription and your subcategory names\n\nNo amounts, transaction history, or personal info is sent. OpenAI does not use this data for training.";
 "aiConsent.accept" = "Accept and Enable";
 "aiConsent.privacyPolicy" = "Privacy Policy";
 "aiConsent.inlineHint" = "Your recordings and images are processed with OpenAI. They are not stored permanently.";

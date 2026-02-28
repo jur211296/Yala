@@ -1445,10 +1445,10 @@
 "onboarding.expensesOnlyOptionExpenses" = "Je veux uniquement enregistrer les dépenses";
 "onboarding.privacyTitle" = "Tout est prêt";
 "onboarding.privacySubtitle" = "Tu peux commencer à utiliser Yala";
-"onboarding.privacyLocal" = "Tes données restent sur ton appareil";
+"onboarding.privacyLocal" = "Tes données financières restent sur ton appareil";
 "onboarding.privacyNoTracking" = "Ni suivi, ni publicité";
 "onboarding.privacyIcloud" = "Toi seul as accès à tes données";
-"onboarding.privacyNoSharing" = "Nous ne partageons pas tes données";
+"onboarding.privacyNoSharing" = "Les fonctions IA ne partagent ni ne stockent de données sensibles";
 "onboarding.privacyTutorialsHint" = "Découvre les tutoriels et conseils de Yala";
 
 // MARK: - Bulk Edit
@@ -1825,8 +1825,6 @@
 "notifications.weeklyReport.text" = "Voici ton bilan de la semaine 📊";
 "notifications.scheduledPayments.name" = "Paiements planifiés";
 "notifications.scheduledPayments.text" = "Tu as des paiements à venir";
-"notifications.announcements.name" = "Nouveautés Yala";
-"notifications.announcements.text" = "Découvre les dernières fonctionnalités";
 
 // Empty state
 "notifications.empty.title" = "Aucune notification";
@@ -1861,7 +1859,6 @@
 
 // System
 "notifications.scheduledPayments.hint" = "On t'informe quand tu as des paiements à venir";
-"notifications.announcements.hint" = "On te partage les nouveautés et améliorations ✨";
 
 // Section headers
 "notifications.section.reminders" = "Rappels";
@@ -2320,7 +2317,7 @@
 
 // MARK: - AI Consent
 "aiConsent.title" = "Traitement des données par IA";
-"aiConsent.message" = "Les fonctions vocales et image utilisent OpenAI pour traiter tes données :\n\n• Voix : ton enregistrement audio\n• Images : la photo que tu sélectionnes\n• Texte : la transcription et les noms de tes catégories\n\nAucun montant, historique de transactions ou information personnelle n'est envoyé. OpenAI n'utilise pas ces données pour l'entraînement.";
+"aiConsent.message" = "Les fonctions vocales et image utilisent OpenAI pour traiter tes données :\n\n• Voix : ton enregistrement audio\n• Images : la photo que tu sélectionnes\n• Texte : la transcription et les noms de tes sous-catégories\n\nAucun montant, historique de transactions ou information personnelle n'est envoyé. OpenAI n'utilise pas ces données pour l'entraînement.";
 "aiConsent.accept" = "Accepter et activer";
 "aiConsent.privacyPolicy" = "Politique de confidentialité";
 "aiConsent.inlineHint" = "Tes enregistrements et images sont traités avec OpenAI. Ils ne sont pas stockés de manière permanente.";
