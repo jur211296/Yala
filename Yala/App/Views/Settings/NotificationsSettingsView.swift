@@ -121,28 +121,14 @@ struct NotificationsSettingsView: View {
 
     // MARK: - Notifications List
 
-    /// Notifications list with budgetAlertsSection inserted before announcements
+    /// Notifications list with budgetAlertsSection at the end
     private var notificationsListWithBudgetAlerts: some View {
-        let notificationsExceptAnnouncements = viewModel.notifications.filter {
-            $0.notificationType != .announcements
-        }
-        let announcementsNotification = viewModel.notifications.first {
-            $0.notificationType == .announcements
-        }
-
-        return VStack(spacing: DS.Spacing.md) {
-            // All notifications except announcements
-            ForEach(notificationsExceptAnnouncements) { notification in
+        VStack(spacing: DS.Spacing.md) {
+            ForEach(viewModel.notifications) { notification in
                 notificationCard(for: notification)
             }
 
-            // Budget alerts (between regular notifications and announcements)
             budgetAlertsSection
-
-            // Announcements at the end
-            if let announcement = announcementsNotification {
-                notificationCard(for: announcement)
-            }
         }
     }
 

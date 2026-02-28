@@ -22,9 +22,9 @@
 	<key>EXCHANGE_RATE_API_KEY</key>
 	<string>$(EXCHANGE_RATE_API_KEY)</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Yala uses the microphone to record voice input for creating transactions. Your audio is processed to extract expense details.</string>
+	<string>Yala uses the microphone to record voice input for creating transactions. Your audio is sent to OpenAI for transcription.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Yala uses your photos to extract transaction details from screenshots and receipts.</string>
+	<string>Yala uses your photos to extract transaction details from screenshots and receipts. Selected images are sent to OpenAI for processing.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Yala uses Face ID to protect your financial information.</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>

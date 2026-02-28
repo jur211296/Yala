@@ -34,9 +34,6 @@ final class NewTransactionViewModel {
     /// Tipo de transacción seleccionado
     var transactionType: TransactionType = .expense
 
-    /// Modo de captura (solo Manual disponible por ahora)
-    var captureMode: CaptureMode = .manual
-
     /// Monto como string para el teclado numérico
     var amountString: String = "0.00" {
         didSet {

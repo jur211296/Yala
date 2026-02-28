@@ -1446,10 +1446,10 @@
 "onboarding.expensesOnlyOptionExpenses" = "Solo quiero registrar gastos";
 "onboarding.privacyTitle" = "Todo listo";
 "onboarding.privacySubtitle" = "Ya puedes empezar a usar Yala";
-"onboarding.privacyLocal" = "Tus datos se guardan en tu dispositivo";
+"onboarding.privacyLocal" = "Tus datos financieros se guardan en tu dispositivo";
 "onboarding.privacyNoTracking" = "Sin rastreo ni anuncios";
 "onboarding.privacyIcloud" = "Solo tú tienes acceso a tus datos";
-"onboarding.privacyNoSharing" = "No compartimos tu información";
+"onboarding.privacyNoSharing" = "Las funciones de IA no comparten ni almacenan datos sensibles";
 "onboarding.privacyTutorialsHint" = "Descubre los tutoriales y consejos de Yala";
 
 // MARK: - Bulk Edit
@@ -2028,8 +2028,6 @@
 // System notifications
 "notifications.scheduledPayments.name" = "Pagos planificados";
 "notifications.scheduledPayments.hint" = "Te avisaremos cuando tengas pagos próximos";
-"notifications.announcements.name" = "Novedades de Yala";
-"notifications.announcements.hint" = "Te contaremos las mejoras y novedades ✨";
 
 // Empty state
 "notifications.empty.title" = "Sin notificaciones";
@@ -2304,7 +2302,7 @@
 
 // MARK: - AI Consent
 "aiConsent.title" = "Uso de inteligencia artificial";
-"aiConsent.message" = "Las funciones de voz e imagen usan OpenAI para procesar tus datos:\n\n• Voz: tu grabación de audio\n• Imágenes: la foto que seleccionas\n• Texto: la transcripción y nombres de tus categorías\n\nNo se envían montos, historial de gastos ni información personal. OpenAI no usa estos datos para entrenar sus modelos.";
+"aiConsent.message" = "Las funciones de voz e imagen usan OpenAI para procesar tus datos:\n\n• Voz: tu grabación de audio\n• Imágenes: la foto que seleccionas\n• Texto: la transcripción y nombres de tus subcategorías\n\nNo se envían montos, historial de gastos ni información personal. OpenAI no usa estos datos para entrenar sus modelos.";
 "aiConsent.accept" = "Aceptar y activar";
 "aiConsent.privacyPolicy" = "Política de privacidad";
 "aiConsent.inlineHint" = "Tus grabaciones e imágenes se procesan con OpenAI. No se almacenan permanentemente.";

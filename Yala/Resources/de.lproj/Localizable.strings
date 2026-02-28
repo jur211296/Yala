@@ -1446,10 +1446,10 @@
 "onboarding.expensesOnlyOptionExpenses" = "Ich möchte nur Ausgaben erfassen";
 "onboarding.privacyTitle" = "Alles bereit";
 "onboarding.privacySubtitle" = "Du kannst jetzt Yala nutzen";
-"onboarding.privacyLocal" = "Deine Daten bleiben auf deinem Gerät";
+"onboarding.privacyLocal" = "Deine Finanzdaten bleiben auf deinem Gerät";
 "onboarding.privacyNoTracking" = "Kein Tracking, keine Werbung";
 "onboarding.privacyIcloud" = "Nur du hast Zugriff auf deine Daten";
-"onboarding.privacyNoSharing" = "Wir teilen deine Daten nicht";
+"onboarding.privacyNoSharing" = "KI-Funktionen teilen oder speichern keine sensiblen Daten";
 "onboarding.privacyTutorialsHint" = "Entdecke die Tutorials und Tipps von Yala";
 
 // MARK: - Bulk Edit
@@ -1826,8 +1826,6 @@
 "notifications.weeklyReport.text" = "Dein Wochenrückblick 📊";
 "notifications.scheduledPayments.name" = "Geplante Zahlungen";
 "notifications.scheduledPayments.text" = "Du hast anstehende Zahlungen";
-"notifications.announcements.name" = "Yala Neuigkeiten";
-"notifications.announcements.text" = "Entdecke die neuesten Funktionen";
 
 // Empty state
 "notifications.empty.title" = "Keine Benachrichtigungen";
@@ -1862,7 +1860,6 @@
 
 // System
 "notifications.scheduledPayments.hint" = "Wir informieren dich über anstehende Zahlungen";
-"notifications.announcements.hint" = "Wir teilen Verbesserungen und neue Funktionen ✨";
 
 // Section headers
 "notifications.section.reminders" = "Erinnerungen";
@@ -2322,7 +2319,7 @@
 
 // MARK: - AI Consent
 "aiConsent.title" = "KI-Datenverarbeitung";
-"aiConsent.message" = "Sprach- und Bildfunktionen nutzen OpenAI zur Verarbeitung deiner Daten:\n\n• Sprache: deine Audioaufnahme\n• Bilder: das ausgewählte Foto\n• Text: die Transkription und deine Kategorienamen\n\nEs werden keine Beträge, Transaktionsverläufe oder persönliche Daten gesendet. OpenAI verwendet diese Daten nicht zum Training.";
+"aiConsent.message" = "Sprach- und Bildfunktionen nutzen OpenAI zur Verarbeitung deiner Daten:\n\n• Sprache: deine Audioaufnahme\n• Bilder: das ausgewählte Foto\n• Text: die Transkription und deine Unterkategorienamen\n\nEs werden keine Beträge, Transaktionsverläufe oder persönliche Daten gesendet. OpenAI verwendet diese Daten nicht zum Training.";
 "aiConsent.accept" = "Akzeptieren und aktivieren";
 "aiConsent.privacyPolicy" = "Datenschutzrichtlinie";
 "aiConsent.inlineHint" = "Deine Aufnahmen und Bilder werden mit OpenAI verarbeitet. Sie werden nicht dauerhaft gespeichert.";

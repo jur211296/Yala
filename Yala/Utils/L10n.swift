@@ -3162,8 +3162,7 @@ enum L10n {
         // System notifications
         static var scheduledPaymentsName: String { ls("notifications.scheduledPayments.name", comment: "") }
         static var scheduledPaymentsHint: String { ls("notifications.scheduledPayments.hint", comment: "") }
-        static var announcementsName: String { ls("notifications.announcements.name", comment: "") }
-        static var announcementsHint: String { ls("notifications.announcements.hint", comment: "") }
+
 
         // Empty state
         static var emptyTitle: String { ls("notifications.empty.title", comment: "") }

@@ -18,7 +18,6 @@ enum NotificationType: String, Codable, CaseIterable, Sendable {
     case weeklyReport = "weeklyReport"
     case monthlyReport = "monthlyReport"
     case scheduledPayments = "scheduledPayments"
-    case announcements = "announcements"
     case custom = "custom"
 
     var defaultIcon: String {
@@ -29,7 +28,6 @@ enum NotificationType: String, Codable, CaseIterable, Sendable {
         case .weeklyReport: return "calendar.badge.clock"
         case .monthlyReport: return "calendar"
         case .scheduledPayments: return "creditcard.fill"
-        case .announcements: return "sparkles"
         case .custom: return "bell.fill"
         }
     }
@@ -42,7 +40,6 @@ enum NotificationType: String, Codable, CaseIterable, Sendable {
         case .weeklyReport: return "#32ADE6"  // Teal
         case .monthlyReport: return "#0A84FF" // Blue
         case .scheduledPayments: return "#FF375F" // Pink
-        case .announcements: return "#BF5AF2" // Magenta
         case .custom: return "#64D2FF"        // Cyan
         }
     }
@@ -56,7 +53,6 @@ enum NotificationType: String, Codable, CaseIterable, Sendable {
         case .weeklyReport: return (9, 0)     // 9:00 AM
         case .monthlyReport: return (9, 0)    // 9:00 AM
         case .scheduledPayments: return (9, 0) // 9:00 AM
-        case .announcements: return (10, 0)   // 10:00 AM
         case .custom: return (12, 0)          // 12:00 PM
         }
     }
@@ -66,7 +62,7 @@ enum NotificationType: String, Codable, CaseIterable, Sendable {
         switch self {
         case .endOfDay, .lunchTime, .custom:
             return true
-        case .dailyReport, .weeklyReport, .monthlyReport, .scheduledPayments, .announcements:
+        case .dailyReport, .weeklyReport, .monthlyReport, .scheduledPayments:
             return false
         }
     }
@@ -118,7 +114,7 @@ enum NotificationType: String, Codable, CaseIterable, Sendable {
     var requiresDynamicContent: Bool {
         switch self {
         case .dailyReport, .weeklyReport, .monthlyReport,
-             .scheduledPayments, .announcements:
+             .scheduledPayments:
             return true
         default:
             return false
@@ -438,15 +434,6 @@ final class NotificationItem {
                 isActive: false,
                 sortOrder: 5
             ),
-            NotificationItem(
-                name: L10n.Notifications.announcementsName,
-                text: "", // Controlled by us
-                hour: NotificationType.announcements.defaultTime.hour,
-                minute: NotificationType.announcements.defaultTime.minute,
-                type: .announcements,
-                isActive: false,
-                sortOrder: 6
-            ),
         ]
     }
 }
@@ -470,7 +457,6 @@ extension NotificationItem {
         case .weeklyReport: return L10n.Notifications.weeklyReportName
         case .monthlyReport: return L10n.Notifications.monthlyReportName
         case .scheduledPayments: return L10n.Notifications.scheduledPaymentsName
-        case .announcements: return L10n.Notifications.announcementsName
         case .custom: return name
         }
     }
@@ -522,8 +508,6 @@ extension NotificationItem {
             return L10n.Notifications.monthlyReportHint(reportConfig.dataType.displayName, day)
         case .scheduledPayments:
             return L10n.Notifications.scheduledPaymentsHint
-        case .announcements:
-            return L10n.Notifications.announcementsHint
         default:
             return localizedText
         }

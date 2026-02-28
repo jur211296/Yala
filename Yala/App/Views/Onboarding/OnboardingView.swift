@@ -640,7 +640,6 @@ struct OnboardingView: View {
                     notificationGroupHeader(L10n.Notifications.sectionSystem)
                     notificationToggleRow(.scheduledPayments)
                     budgetAlertsToggleRow
-                    notificationToggleRow(.announcements)
                 }
                 .padding(.horizontal, DS.Spacing.xl)
             }
@@ -714,7 +713,7 @@ struct OnboardingView: View {
     private var allNotificationsSelected: Bool {
         let allTypes: Set<NotificationType> = [
             .endOfDay, .lunchTime, .dailyReport, .weeklyReport,
-            .monthlyReport, .scheduledPayments, .announcements
+            .monthlyReport, .scheduledPayments
         ]
         return selectedNotifications == allTypes && budgetAlertsEnabled
     }
@@ -731,7 +730,7 @@ struct OnboardingView: View {
             }
             selectedNotifications = [
                 .endOfDay, .lunchTime, .dailyReport, .weeklyReport,
-                .monthlyReport, .scheduledPayments, .announcements
+                .monthlyReport, .scheduledPayments
             ]
             budgetAlertsEnabled = true
         }
@@ -822,7 +821,6 @@ struct OnboardingView: View {
         case .weeklyReport: return L10n.Notifications.weeklyReportName
         case .monthlyReport: return L10n.Notifications.monthlyReportName
         case .scheduledPayments: return L10n.Notifications.scheduledPaymentsName
-        case .announcements: return L10n.Notifications.announcementsName
         case .custom: return ""
         }
     }
@@ -850,7 +848,6 @@ struct OnboardingView: View {
         case .weeklyReport: return L10n.Notifications.dayMonday + " " + formattedTime(hour: 9, minute: 0)
         case .monthlyReport: return L10n.Notifications.dayFirstOfMonth
         case .scheduledPayments: return L10n.Notifications.scheduledPaymentsHint
-        case .announcements: return L10n.Notifications.announcementsHint
         case .custom: return ""
         }
     }
