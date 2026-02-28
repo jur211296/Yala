@@ -9,11 +9,19 @@ import Foundation
 
 enum AppConstants {
     static var termsURL: URL {
-        URL(string: "https://yala-app.pe/\(localePath)terms")!
+        guard let url = URL(string: "https://yala-app.pe/\(localePath)terms") else {
+            assertionFailure("Invalid terms URL")
+            return URL(string: "https://yala-app.pe/terms")!
+        }
+        return url
     }
 
     static var privacyURL: URL {
-        URL(string: "https://yala-app.pe/\(localePath)privacy")!
+        guard let url = URL(string: "https://yala-app.pe/\(localePath)privacy") else {
+            assertionFailure("Invalid privacy URL")
+            return URL(string: "https://yala-app.pe/privacy")!
+        }
+        return url
     }
 
     /// Returns locale prefix for web URLs (empty for es, "en/" for English, etc.)
