@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: None
 Plan: None
 Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-03-04 — iCloud preference sync expansion + pull-to-refresh
+Last activity: 2026-03-04 — Cross-device wipe coordination via iCloud KV
 
 ### Apple Review History (V1.0)
 
@@ -42,6 +42,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-04] 33db4f8 feat: cross-device wipe coordination via iCloud KV signaling
 - [2026-03-04] 85b2920 feat: auto-refresh UI on CloudKit remote changes
 - [2026-03-04] 845e402 feat: sync 8 additional preferences via iCloud KV + pull-to-refresh
 - [2026-02-27] a459aa3 fix: remove announcements notification type (no server infrastructure)
@@ -183,6 +184,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - **Localización de Widgets (i18n)** - 13 widgets localizados con ~65 claves en es/en; AppIntents (title, description, @Parameter), WidgetPeriodOption enum, textos UI (headers, empty states, labels), Control Widgets iOS 18+; archivos eliminados (templates no usados)
 - **Soporte Modo Teñido iOS 18 (widgetAccentable)** - `.widgetAccentable()` agregado a 12 archivos de widgets para soporte de tinted mode; KPIs, progress bars, charts, iconos y montos se tiñen con el color de acento del usuario; pie charts excluidos (mantienen colores para diferenciación visual)
 - **Notificaciones Personalizadas (10.5.H)** - ScheduledPaymentNotificationService para pagos vencidos/hoy/próximos con nombre y monto ("Hoy vence: Netflix por $29.90"); BudgetAlertService mejorado con montos gastado/límite ("Presupuesto Comida al 50% — $500 de $1,000 gastados"); ReportNotificationService con datos reales calculados (balance, gastos, ingresos, top categoría); verificación de permisos y reprogramación automática al volver a la app o reinstalar; CurrencyUtils.symbol(for:) helper; localizaciones 6 idiomas
+- **Cross-device wipe coordination (hotfix/1.0.1)** - Señalización via iCloud KV timestamps para que otros dispositivos detecten wipe en segundos (vs minutos de CloudKit). 3 escenarios: wipe remoto→onboarding, wipe+onboarding completo→sync banner, mid-onboarding exit si otro device termina primero. WipeKey enum para type-safety. broadcastSignal param en DataWipeService para evitar loops. Protección contra auto-reacción via lastKnownWipeTimestamp local.
 - **iCloud Sync Always-On (10.5.G.1 mejora)** - Sync simplificado a always-on (sin toggle opt-in); Settings solo muestra estado (sin restart); detección de datos iCloud al instalar para saltar onboarding; pantalla "Sincronizando..." mientras espera datos (5s timeout); localizaciones completas en 6 idiomas para todas las claves iCloud
 - **Personalización de Widgets iOS (10.5.G.4)** - Tema (Yala/iOS) para 10 widgets de datos; modo de selección (Automático/Personalizado) para BudgetsWidget y ScheduledPaymentsWidget; AppEntity + EntityQuery para Budget y ScheduledPayment; ParameterSummary condicional para mostrar selector solo en modo custom; localizaciones es/en (tema, selección, entidades)
 - **Fix etiquetas duplicadas en gráficos de barras** - Nueva función `calculateSmartAxisDates(forDataDates:grouping:)` en SmartAxisHelper que usa fechas reales de datos en vez de interpolación lineal para agrupación mes/semana; previene etiquetas duplicadas como "ene", "ene", "feb" cuando hay pocos datos; actualizado en CashFlowWidget, NatureTrendWidget (app y widget)
