@@ -1101,7 +1101,7 @@ struct OnboardingView: View {
             if currentStep > 0 {
                 Button {
                     navigatingForward = false
-                    withAnimation(.easeInOut(duration: 0.3)) {
+                    dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
                         currentStep -= 1
                     }
                 } label: {
@@ -1122,7 +1122,7 @@ struct OnboardingView: View {
 
                 if currentStep < totalSteps - 1 {
                     navigatingForward = true
-                    withAnimation(.easeInOut(duration: 0.3)) {
+                    dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
                         currentStep += 1
                     }
                     // Trigger category icons animation when entering categories step
