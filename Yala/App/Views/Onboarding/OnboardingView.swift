@@ -56,7 +56,7 @@ struct OnboardingView: View {
         .thisYear, .lastYear, .allTime
     ]
 
-    private let totalSteps = 8
+    private let totalSteps = 9
 
     var body: some View {
         VStack(spacing: DS.Spacing.none) {
@@ -76,7 +76,8 @@ struct OnboardingView: View {
                 case 4: expensesOnlyStep
                 case 5: categoriesStep
                 case 6: notificationsStep
-                case 7: privacyStep
+                case 7: tutorialsStep
+                case 8: privacyStep
                 default: EmptyView()
                 }
             }
@@ -906,90 +907,165 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 8: Privacy & Finish
+    // MARK: - Step 8: Tutorials
 
-    private var privacyStep: some View {
-        VStack(spacing: DS.Spacing.xl) {
-            Spacer()
-
-            // Checkmark icon with gradient circle background
-            ZStack {
-                Circle()
-                    .fill(Color.electricIndigo.opacity(0.12))
-                    .frame(width: privacyIconSize, height: privacyIconSize)
-
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: completionIconSize))
+    private var tutorialsStep: some View {
+        VStack(spacing: DS.Spacing.lg) {
+            // Fixed header (same pattern as notifications step)
+            VStack(spacing: DS.Spacing.md) {
+                Image(systemName: "lightbulb.fill")
+                    .font(.system(size: heroIconSize))
                     .foregroundStyle(Color.electricIndigo)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-            }
 
-            VStack(spacing: DS.Spacing.md) {
-                Text(L10n.Onboarding.privacyTitle)
-                    .font(DS.Typography.largeTitle)
+                Text(L10n.Onboarding.tutorialsTitle)
+                    .font(DS.Typography.title)
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
 
-                Text(L10n.Onboarding.privacySubtitle)
-                    .font(DS.Typography.body)
+                Text(L10n.Onboarding.tutorialsSubtitle)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, DS.Spacing.xl)
             }
+            .padding(.top, DS.Spacing.md)
 
-            // Privacy points with colored icon circles
-            VStack(spacing: DS.Spacing.sm) {
-                privacyPoint(icon: "iphone", color: .electricIndigo, text: L10n.Onboarding.privacyLocal)
-                privacyPoint(icon: "eye.slash.fill", color: .hotPink, text: L10n.Onboarding.privacyNoTracking)
-                privacyPoint(icon: "person.badge.key.fill", color: .electricIndigo, text: L10n.Onboarding.privacyIcloud)
-                privacyPoint(icon: "lock.shield.fill", color: .hotPink, text: L10n.Onboarding.privacyNoSharing)
-            }
-            .padding(.horizontal, DS.Spacing.xl)
+            // Scrollable tutorial categories in cards
+            ScrollView {
+                VStack(spacing: DS.Spacing.lg) {
+                    ForEach(TutorialCategory.allCases) { category in
+                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                            Text(category.title)
+                                .font(DS.Typography.labelSmall)
+                                .foregroundStyle(.secondary)
+                                .textCase(.uppercase)
+                                .padding(.leading, DS.Spacing.xs)
 
-            // Tutorials card button
-            Button {
-                showTutorialsSheet = true
-            } label: {
-                HStack(spacing: DS.Spacing.md) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.electricIndigo.opacity(0.15))
-                            .frame(width: badgeSize, height: badgeSize)
+                            // Card with tutorial rows
+                            VStack(spacing: DS.Spacing.none) {
+                                ForEach(Array(category.tutorials.enumerated()), id: \.element.id) { index, tutorial in
+                                    HStack(spacing: DS.Spacing.md) {
+                                        ZStack {
+                                            Circle()
+                                                .fill(tutorial.color.opacity(0.15))
+                                                .frame(width: badgeSize, height: badgeSize)
 
-                        Image(systemName: "lightbulb.fill")
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(Color.electricIndigo)
+                                            Image(systemName: tutorial.icon)
+                                                .font(DS.Typography.caption)
+                                                .foregroundStyle(tutorial.color)
+                                        }
+
+                                        Text(tutorial.title)
+                                            .font(DS.Typography.body)
+                                            .foregroundStyle(.primary)
+
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal, DS.Spacing.md)
+                                    .padding(.vertical, DS.Spacing.sm)
+
+                                    if index < category.tutorials.count - 1 {
+                                        Divider()
+                                            .padding(.leading, DS.Spacing.md + badgeSize + DS.Spacing.md)
+                                    }
+                                }
+                            }
+                            .background(.thCard)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DS.Radius.md)
+                                    .stroke(DS.Colors.borderSubtle, lineWidth: 1)
+                            )
+                        }
                     }
-
-                    Text(L10n.Onboarding.privacyTutorialsHint)
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(Color.electricIndigo)
-                        .multilineTextAlignment(.leading)
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(Color.electricIndigo.opacity(0.6))
                 }
-                .padding(DS.Spacing.md)
-                .background(Color.electricIndigo.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                .overlay(
-                    RoundedRectangle(cornerRadius: DS.Radius.md)
-                        .stroke(Color.electricIndigo.opacity(0.15), lineWidth: 1)
-                )
+                .padding(.horizontal, DS.Spacing.xl)
             }
-            .buttonStyle(.plain)
-            .padding(.horizontal, DS.Spacing.xl)
 
-            Spacer()
-            Spacer()
+            // Fixed footer: CTA + hint (always visible above nav buttons)
+            VStack(spacing: DS.Spacing.sm) {
+                Button {
+                    showTutorialsSheet = true
+                } label: {
+                    HStack(spacing: DS.Spacing.sm) {
+                        Text(L10n.Onboarding.tutorialsExplore)
+                            .font(DS.Typography.headline)
+                            .foregroundStyle(Color.electricIndigo)
+
+                        Image(systemName: "chevron.right")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(Color.electricIndigo.opacity(0.6))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, DS.Spacing.md)
+                    .background(Color.electricIndigo.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DS.Radius.md)
+                            .stroke(Color.electricIndigo.opacity(0.15), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Text(L10n.Onboarding.tutorialsSettingsHint)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, DS.Spacing.xl)
         }
         .sheet(isPresented: $showTutorialsSheet) {
             NavigationStack {
                 TutorialsListView()
             }
+        }
+    }
+
+    // MARK: - Step 9: Privacy & Finish
+
+    private var privacyStep: some View {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: DS.Spacing.xl) {
+                    // Checkmark icon with gradient circle background
+                    ZStack {
+                        Circle()
+                            .fill(Color.electricIndigo.opacity(0.12))
+                            .frame(width: privacyIconSize, height: privacyIconSize)
+
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: completionIconSize))
+                            .foregroundStyle(Color.electricIndigo)
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                    }
+
+                    VStack(spacing: DS.Spacing.md) {
+                        Text(L10n.Onboarding.privacyTitle)
+                            .font(DS.Typography.largeTitle)
+                            .foregroundStyle(.primary)
+                            .multilineTextAlignment(.center)
+
+                        Text(L10n.Onboarding.privacySubtitle)
+                            .font(DS.Typography.body)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, DS.Spacing.xl)
+                    }
+
+                    // Privacy points with colored icon circles
+                    VStack(spacing: DS.Spacing.sm) {
+                        privacyPoint(icon: "iphone", color: .electricIndigo, text: L10n.Onboarding.privacyLocal)
+                        privacyPoint(icon: "eye.slash.fill", color: .hotPink, text: L10n.Onboarding.privacyNoTracking)
+                        privacyPoint(icon: "person.badge.key.fill", color: .electricIndigo, text: L10n.Onboarding.privacyIcloud)
+                        privacyPoint(icon: "lock.shield.fill", color: .hotPink, text: L10n.Onboarding.privacyNoSharing)
+                    }
+                    .padding(.horizontal, DS.Spacing.xl)
+                }
+                .padding(.vertical, DS.Spacing.xl)
+                .frame(minHeight: geometry.size.height)
+            }
+            .scrollBounceBehavior(.basedOnSize)
         }
     }
 

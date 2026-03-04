@@ -2353,6 +2353,10 @@ enum L10n {
         static var privacyIcloud: String { ls("onboarding.privacyIcloud", comment: "") }
         static var privacyNoSharing: String { ls("onboarding.privacyNoSharing", comment: "") }
         static var privacyTutorialsHint: String { ls("onboarding.privacyTutorialsHint", comment: "") }
+        static var tutorialsTitle: String { ls("onboarding.tutorialsTitle", comment: "") }
+        static var tutorialsSubtitle: String { ls("onboarding.tutorialsSubtitle", comment: "") }
+        static var tutorialsExplore: String { ls("onboarding.tutorialsExplore", comment: "") }
+        static var tutorialsSettingsHint: String { ls("onboarding.tutorialsSettingsHint", comment: "") }
     }
 
     // MARK: - Bulk Edit

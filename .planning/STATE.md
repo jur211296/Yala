@@ -42,6 +42,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-04] f262162 fix: remove default account creation after onboarding
 - [2026-03-04] 33db4f8 feat: cross-device wipe coordination via iCloud KV signaling
 - [2026-03-04] 85b2920 feat: auto-refresh UI on CloudKit remote changes
 - [2026-03-04] 845e402 feat: sync 8 additional preferences via iCloud KV + pull-to-refresh
@@ -591,8 +592,8 @@ Ver ROADMAP.md para más detalles de Fase 12.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Auto-refresh UI on CloudKit remote changes via NSPersistentStoreRemoteChange observer
-Next step: Testing manual multi-dispositivo de sync completo (preferencias + datos + auto-refresh)
+Stopped at: Hotfix 1.0.1 — removed default account creation after onboarding
+Next step: Continue hotfix/1.0.1 bug fixes
 Resume context:
 - Branch hotfix/1.0.1 — CloudKit sync multi-dispositivo funcional
 - AppBootstrapper observa NSPersistentStoreRemoteChange con debounce 1s → incrementDataVersion()

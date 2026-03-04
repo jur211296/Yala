@@ -1451,6 +1451,10 @@
 "onboarding.privacyIcloud" = "Only you have access to your data";
 "onboarding.privacyNoSharing" = "AI features don't share or store sensitive data";
 "onboarding.privacyTutorialsHint" = "Discover Yala's tutorials and tips";
+"onboarding.tutorialsTitle" = "Learn to use Yala";
+"onboarding.tutorialsSubtitle" = "Short guides to get the most out of your finances";
+"onboarding.tutorialsExplore" = "Explore tutorials";
+"onboarding.tutorialsSettingsHint" = "You can always find these in Settings";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Changing the account will update the currency of selected transactions.";
