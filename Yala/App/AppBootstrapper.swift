@@ -6,6 +6,7 @@
 //  Resuelve ARCH-005: Inicialización dispersa en YalaApp.
 //
 
+import CoreData
 import SwiftData
 import SwiftUI
 import UserNotifications
@@ -36,6 +37,7 @@ final class AppBootstrapper {
 
     private(set) var isInitialized = false
     var deferredInboxNotification: PendingInboxNotification?
+    private var lastRemoteChangeDate = Date.distantPast
 
     // MARK: - Initialization
 
@@ -105,7 +107,33 @@ final class AppBootstrapper {
         // 12. Check if any report notifications should be sent now (app launch case)
         await ReportNotificationService.shared.sendDueReports(context: context)
 
+        // 13. Observe CloudKit remote changes to auto-refresh UI
+        observeRemoteStoreChanges()
+
         isInitialized = true
+    }
+
+    // MARK: - Remote Change Observation
+
+    private func observeRemoteStoreChanges() {
+        NotificationCenter.default.addObserver(
+            forName: .NSPersistentStoreRemoteChange,
+            object: nil,
+            queue: .main
+        ) { _ in
+            Task { @MainActor in
+                let bootstrapper = AppBootstrapper.shared
+                // Debounce: CloudKit puede disparar múltiples notificaciones en ráfaga
+                let now = Date()
+                guard now.timeIntervalSince(bootstrapper.lastRemoteChangeDate) > 1.0 else { return }
+                bootstrapper.lastRemoteChangeDate = now
+                bootstrapper.sessionState.incrementDataVersion()
+
+                #if DEBUG
+                print("AppBootstrapper: Remote CloudKit change detected — refreshing UI")
+                #endif
+            }
+        }
     }
 
     // MARK: - Scene Phase Handlers

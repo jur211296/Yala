@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: None
 Plan: None
 Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-02-27 — 8 preventive Apple Review compliance fixes
+Last activity: 2026-03-04 — iCloud preference sync expansion + pull-to-refresh
 
 ### Apple Review History (V1.0)
 
@@ -42,6 +42,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-04] 845e402 feat: sync 8 additional preferences via iCloud KV + pull-to-refresh
 - [2026-02-27] a459aa3 fix: remove announcements notification type (no server infrastructure)
 - [2026-02-27] 930e725 fix: guard force unwraps in AppConstants URL construction
 - [2026-02-27] 16d38b3 chore: remove SettingsPlaceholderView and CaptureMode dead code
@@ -586,12 +587,12 @@ Ver ROADMAP.md para más detalles de Fase 12.
 
 ## Session Continuity
 
-Last session: 2026-02-25
-Stopped at: Investigación y diseño completo de funcionalidad Grupos (expense splitting)
-Next step: Fase 12 — siguiente item tech debt o polish pendiente (Grupos es futuro)
+Last session: 2026-03-04
+Stopped at: iCloud preference sync — 8 nuevas keys + pull-to-refresh + onboarding pre-fill
+Next step: Testing manual multi-dispositivo de sync + posibles fixes adicionales de hotfix/1.0.1
 Resume context:
-- Documento de diseño completo en .planning/GROUPS-DESIGN.md
-- Arquitectura: CloudKit CKShare + CKSyncEngine x2 + encryptedValues, solo enlace para invitar
-- 7 fases de implementación definidas (A-G), funcionalidad futura
-- Deferred post-release: HIGH-2/3/12/13 (pagination), HIGH-24/A11Y-41 (onboarding a11y)
-- Branch 1.0 — release branch
+- Branch hotfix/1.0.1 — CloudKit schema desplegado a producción pendiente
+- 8 nuevas preferencias sincronizadas: userProfileIcon, colorfulIcons, firstWeekday, decimalPlaces, currencyDisplayFormat, showVariations, averageLineMode, voiceLanguage
+- Pull-to-refresh en PanelView con bootstrap + recalculate + haptic
+- Onboarding pre-llena datos del dispositivo anterior via .task
+- NO sincronizado: foto de perfil (requiere CloudKit Assets), voiceInputEnabled/imageInputEnabled (per-device permissions)
