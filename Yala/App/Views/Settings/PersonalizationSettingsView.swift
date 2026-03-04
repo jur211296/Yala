@@ -213,6 +213,9 @@ struct PersonalizationSettingsView: View {
 
                                 Toggle(L10n.Settings.colorfulIcons, isOn: $colorfulIcons)
                                     .labelsHidden()
+                                    .onChange(of: colorfulIcons) { _, newValue in
+                                        PreferenceSyncService.shared.set(bool: newValue, forKey: "colorfulIcons")
+                                    }
 
                             }
                             .padding(.horizontal, DS.FormRow.paddingH)
@@ -353,6 +356,9 @@ struct PersonalizationSettingsView: View {
 
                                 Toggle(L10n.Settings.showVariations, isOn: $showVariations)
                                     .labelsHidden()
+                                    .onChange(of: showVariations) { _, newValue in
+                                        PreferenceSyncService.shared.set(bool: newValue, forKey: "showVariations")
+                                    }
 
                             }
                             .padding(.horizontal, DS.FormRow.paddingH)
@@ -521,6 +527,7 @@ struct PersonalizationSettingsView: View {
                 selectedWeekday: selectedWeekday,
                 onSelect: { weekday in
                     firstWeekdayRaw = weekday.rawValue
+                    PreferenceSyncService.shared.set(int: weekday.rawValue, forKey: "firstWeekday")
                     // Force recalculation of dateInterval with new firstWeekday
                     let currentPeriod = sessionState.selectedPeriod
                     sessionState.selectedPeriod = currentPeriod
@@ -541,6 +548,7 @@ struct PersonalizationSettingsView: View {
                 selectedDecimals: decimalPlaces,
                 onSelect: { decimals in
                     decimalPlaces = decimals
+                    PreferenceSyncService.shared.set(int: decimals, forKey: "decimalPlaces")
                     // Trigger UI refresh for all views showing formatted amounts
                     sessionState.formattingVersion += 1
                     showingDecimalsPicker = false
@@ -553,6 +561,7 @@ struct PersonalizationSettingsView: View {
                 selectedFormat: currencyDisplayFormat,
                 onSelect: { format in
                     currencyDisplayFormat = format
+                    PreferenceSyncService.shared.set(string: format, forKey: "currencyDisplayFormat")
                     // Trigger UI refresh for all views showing formatted amounts
                     sessionState.formattingVersion += 1
                     showingCurrencyFormatPicker = false
@@ -565,6 +574,7 @@ struct PersonalizationSettingsView: View {
                 selectedMode: averageLineMode,
                 onSelect: { mode in
                     averageLineMode = mode
+                    PreferenceSyncService.shared.set(int: mode, forKey: "averageLineMode")
                     showingAverageLinePicker = false
                 }
             )

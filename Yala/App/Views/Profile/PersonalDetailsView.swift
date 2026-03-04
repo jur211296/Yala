@@ -302,6 +302,7 @@ struct PersonalDetailsView: View {
         // Save name (trim whitespace and ensure not empty)
         let trimmedName = editedName.trimmingCharacters(in: .whitespacesAndNewlines)
         userName = trimmedName.isEmpty ? L10n.Profile.defaultName : trimmedName
+        PreferenceSyncService.shared.set(string: userName, forKey: "userName")
 
         // Save alias (only if valid or empty)
         if isAliasValid || editedAlias.isEmpty {
@@ -313,15 +314,18 @@ struct PersonalDetailsView: View {
             if let imageData = uiImage.jpegData(compressionQuality: 0.7) {
                 ProfileImageStorage.shared.save(imageData)
                 userProfileIcon = "" // Clear icon when photo is set
+                PreferenceSyncService.shared.set(string: "", forKey: "userProfileIcon")
             }
         } else if !selectedIcon.isEmpty {
             // Icon selected, clear image file
             ProfileImageStorage.shared.delete()
             userProfileIcon = selectedIcon
+            PreferenceSyncService.shared.set(string: selectedIcon, forKey: "userProfileIcon")
         } else if !hasCustomAvatar {
             // User removed avatar, clear both
             ProfileImageStorage.shared.delete()
             userProfileIcon = ""
+            PreferenceSyncService.shared.set(string: "", forKey: "userProfileIcon")
         }
 
         // Dismiss the sheet

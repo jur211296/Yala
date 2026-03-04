@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import WidgetKit
 
 @MainActor
 final class PreferenceSyncService {
@@ -25,10 +26,19 @@ final class PreferenceSyncService {
         case secondaryCurrencies
         case budgetAlertsEnabled
         case expensesOnlyMode
+        case userProfileIcon
+        case colorfulIcons
+        case firstWeekday
+        case decimalPlaces
+        case currencyDisplayFormat
+        case showVariations
+        case averageLineMode
+        case voiceLanguage
     }
 
     private let iKV = NSUbiquitousKeyValueStore.default
     private let local = UserDefaults.standard
+    private var isObserverRegistered = false
 
     private init() {}
 
@@ -36,10 +46,13 @@ final class PreferenceSyncService {
 
     /// Call early in app launch (before services read preferences).
     /// Pulls remote values into UserDefaults and starts observing changes.
+    /// Safe to call multiple times (e.g. pull-to-refresh) — observer registered only once.
     func bootstrap() {
         iKV.synchronize()
         applyRemoteValues()
 
+        guard !isObserverRegistered else { return }
+        isObserverRegistered = true
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(iCloudDidChange(_:)),
@@ -57,6 +70,12 @@ final class PreferenceSyncService {
     }
 
     func set(bool value: Bool, forKey key: String) {
+        local.set(value, forKey: key)
+        iKV.set(value, forKey: key)
+        iKV.synchronize()
+    }
+
+    func set(int value: Int, forKey key: String) {
         local.set(value, forKey: key)
         iKV.set(value, forKey: key)
         iKV.synchronize()
@@ -85,19 +104,35 @@ final class PreferenceSyncService {
 
     /// Merges iKV values into UserDefaults and pushes to SessionState.
     private func applyRemoteValues() {
+        var formattingChanged = false
+        var weekdayChanged = false
+
         for key in SyncKey.allCases {
             let k = key.rawValue
 
             switch key {
-            case .defaultCurrencyCode, .userName, .defaultPeriod, .secondaryCurrencies:
+            case .defaultCurrencyCode, .userName, .defaultPeriod, .secondaryCurrencies,
+                 .userProfileIcon, .currencyDisplayFormat, .voiceLanguage:
                 if let remote = iKV.string(forKey: k), !remote.isEmpty {
-                    local.set(remote, forKey: k)
+                    if local.string(forKey: k) != remote {
+                        local.set(remote, forKey: k)
+                        if key == .currencyDisplayFormat { formattingChanged = true }
+                    }
                 }
 
-            case .budgetAlertsEnabled, .expensesOnlyMode:
-                // iKV returns 0 for unset bools — only overwrite if the key actually exists
+            case .budgetAlertsEnabled, .expensesOnlyMode, .colorfulIcons, .showVariations:
                 if iKV.object(forKey: k) != nil {
                     local.set(iKV.bool(forKey: k), forKey: k)
+                }
+
+            case .firstWeekday, .decimalPlaces, .averageLineMode:
+                if iKV.object(forKey: k) != nil {
+                    let remote = Int(iKV.longLong(forKey: k))
+                    if local.integer(forKey: k) != remote {
+                        local.set(remote, forKey: k)
+                        if key == .decimalPlaces { formattingChanged = true }
+                        if key == .firstWeekday { weekdayChanged = true }
+                    }
                 }
             }
         }
@@ -110,6 +145,19 @@ final class PreferenceSyncService {
 
         // expensesOnlyMode didSet propagates to app group + WidgetCenter
         SessionState.shared.isExpensesOnlyMode = local.bool(forKey: SyncKey.expensesOnlyMode.rawValue)
+
+        // Trigger UI refresh when formatting preferences change remotely
+        if formattingChanged {
+            SessionState.shared.formattingVersion += 1
+        }
+
+        // Sync firstWeekday to App Group for widgets
+        if weekdayChanged {
+            if let defaults = UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) {
+                defaults.set(local.integer(forKey: SyncKey.firstWeekday.rawValue), forKey: "firstWeekday")
+            }
+            WidgetCenter.shared.reloadAllTimelines()
+        }
     }
 
     // MARK: - External Change Observer

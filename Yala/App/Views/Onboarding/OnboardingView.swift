@@ -93,6 +93,24 @@ struct OnboardingView: View {
                 .padding(.bottom, DS.Spacing.xxxl)
         }
         .background(.thBackground)
+        .task {
+            // Pre-fill from synced preferences (populated by PreferenceSyncService.bootstrap())
+            let defaults = UserDefaults.standard
+            if let name = defaults.string(forKey: "userName"), !name.isEmpty, name != "Usuario" {
+                userName = name
+            }
+            if let raw = defaults.string(forKey: "defaultCurrencyCode"),
+               let currency = CurrencyCode(rawValue: raw) {
+                selectedCurrency = currency
+            }
+            if let raw = defaults.string(forKey: "defaultPeriod"),
+               let period = DetailPeriod(rawValue: raw) {
+                selectedPeriod = period
+            }
+            if defaults.object(forKey: "expensesOnlyMode") != nil {
+                expensesOnlyMode = defaults.bool(forKey: "expensesOnlyMode")
+            }
+        }
     }
 
     // MARK: - Progress Indicator

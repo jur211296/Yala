@@ -546,6 +546,7 @@ struct ProfileView: View {
                         ForEach(VoiceLanguage.allCases) { language in
                             Button {
                                 voiceLanguageRaw = language.rawValue
+                                PreferenceSyncService.shared.set(string: language.rawValue, forKey: "voiceLanguage")
                             } label: {
                                 HStack {
                                     Text(language.displayName)
