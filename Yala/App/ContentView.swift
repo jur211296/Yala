@@ -166,7 +166,12 @@ struct ContentView: View {
             // Show trial offer after onboarding completes (only for eligible non-Pro users)
             if hasCompletedOnboarding && !FeatureGateService.shared.isProUser {
                 Task {
-                    let eligible = await StoreKitManager.shared.isEligibleForIntroOffer()
+                    var eligible = false
+                    for _ in 0..<3 {
+                        eligible = await StoreKitManager.shared.isEligibleForIntroOffer()
+                        if eligible || !StoreKitManager.shared.products.isEmpty { break }
+                        try? await Task.sleep(for: .seconds(1))
+                    }
                     if eligible {
                         showProTrialOffer = true
                     }
@@ -174,6 +179,7 @@ struct ContentView: View {
             }
         }) {
             OnboardingView {
+                hasCompletedOnboarding = true
                 showOnboarding = false
             }
             .environment(SessionState.shared)
@@ -307,7 +313,7 @@ struct ContentView: View {
         if SwiftDataConfiguration.isICloudAvailable() {
             isWaitingForSync = true
 
-            for _ in 0..<15 { // 15 × 2s = 30s max (CloudKit cold sync can take 30-60s)
+            for _ in 0..<4 { // 4 × 2s = 8s max (was 15 × 2s = 30s; late data handled by dedup + onChange)
                 do {
                     try await Task.sleep(for: .seconds(2))
                 } catch {
