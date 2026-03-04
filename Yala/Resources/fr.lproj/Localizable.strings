@@ -752,7 +752,7 @@
 "biometric.description" = "Protégez vos informations financières avec l'authentification biométrique ou le code de l'appareil.";
 "biometric.enableLock" = "Activer le verrouillage";
 "biometric.lockAfter" = "Verrouiller après";
-"biometric.timeout.immediate" = "Immédiatement";
+"biometric.timeout.immediate" = "10 secondes";
 "biometric.timeout.oneMinute" = "1 minute";
 "biometric.timeout.fiveMinutes" = "5 minutes";
 "biometric.timeout.fifteenMinutes" = "15 minutes";

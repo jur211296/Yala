@@ -751,7 +751,7 @@
 "biometric.description" = "Protect your financial information with biometric authentication or device passcode.";
 "biometric.enableLock" = "Enable lock";
 "biometric.lockAfter" = "Lock after";
-"biometric.timeout.immediate" = "Immediately";
+"biometric.timeout.immediate" = "10 seconds";
 "biometric.timeout.oneMinute" = "1 minute";
 "biometric.timeout.fiveMinutes" = "5 minutes";
 "biometric.timeout.fifteenMinutes" = "15 minutes";

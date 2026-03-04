@@ -752,7 +752,7 @@
 "biometric.description" = "Proteja suas informações financeiras com autenticação biométrica ou senha do dispositivo.";
 "biometric.enableLock" = "Ativar bloqueio";
 "biometric.lockAfter" = "Bloquear após";
-"biometric.timeout.immediate" = "Imediatamente";
+"biometric.timeout.immediate" = "10 segundos";
 "biometric.timeout.oneMinute" = "1 minuto";
 "biometric.timeout.fiveMinutes" = "5 minutos";
 "biometric.timeout.fifteenMinutes" = "15 minutos";

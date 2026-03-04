@@ -752,7 +752,7 @@
 "biometric.description" = "Schützen Sie Ihre Finanzdaten mit biometrischer Authentifizierung oder dem Gerätecode.";
 "biometric.enableLock" = "Sperre aktivieren";
 "biometric.lockAfter" = "Sperren nach";
-"biometric.timeout.immediate" = "Sofort";
+"biometric.timeout.immediate" = "10 Sekunden";
 "biometric.timeout.oneMinute" = "1 Minute";
 "biometric.timeout.fiveMinutes" = "5 Minuten";
 "biometric.timeout.fifteenMinutes" = "15 Minuten";
