@@ -1422,7 +1422,6 @@
 "onboarding.periodTitle" = "Default period";
 "onboarding.periodSubtitle" = "What time range do you prefer to see when opening the app?";
 "onboarding.finish" = "Let's Go";
-"onboarding.defaultAccountName" = "My account";
 "onboarding.categoriesTitle" = "Categories to start";
 "onboarding.categoriesSubtitle" = "We've prepared common categories to help you organize your expenses from day one.";
 "onboarding.categoriesYes" = "Start with these categories";

@@ -2285,9 +2285,6 @@ enum L10n {
         static var finish: String {
             ls("onboarding.finish", comment: "")
         }
-        static var defaultAccountName: String {
-            ls("onboarding.defaultAccountName", comment: "")
-        }
         static var categoriesTitle: String {
             ls("onboarding.categoriesTitle", comment: "")
         }
