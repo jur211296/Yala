@@ -14,14 +14,14 @@ Phase: 12 — Plataforma Extendida
 Spec: None
 Plan: None
 Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-02-27 — Apple 5.1.1(i)/5.1.2(i) rejection fix (AI data consent)
+Last activity: 2026-02-27 — 8 preventive Apple Review compliance fixes
 
 ### Apple Review History (V1.0)
 
 | # | Fecha | Guideline | Problema | Solución | Estado |
 |---|-------|-----------|----------|----------|--------|
 | 1 | 2026-02-26 | 3.1.2 | Links de Terms/Privacy no separados ni localizados | Separar links y localizar URLs legales | ✅ Resuelto (9cc6831) |
-| 2 | 2026-02-27 | 5.1.1(i) + 5.1.2(i) | App comparte datos con OpenAI (voz/imagen) sin revelar qué datos, identificar a OpenAI, ni obtener permiso explícito | Consent alert in-app al activar funciones AI + actualizar privacy policy web para nombrar OpenAI y detallar datos | Pendiente |
+| 2 | 2026-02-27 | 5.1.1(i) + 5.1.2(i) | App comparte datos con OpenAI (voz/imagen) sin revelar qué datos, identificar a OpenAI, ni obtener permiso explícito | Consent alert in-app al activar funciones AI + actualizar privacy policy web para nombrar OpenAI y detallar datos | ✅ Resuelto (44efe2f + 8 fixes preventivos) |
 
 **Detalle rechazo #2:**
 - **Datos enviados a OpenAI:** Audio (Whisper), imágenes JPEG (GPT-4o Vision), texto transcrito + nombres de categorías (GPT-4o Mini)
@@ -42,7 +42,12 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
-- [2026-02-27] fix: AI data consent for OpenAI features — Apple 5.1.1(i)/5.1.2(i) rejection
+- [2026-02-27] a459aa3 fix: remove announcements notification type (no server infrastructure)
+- [2026-02-27] 930e725 fix: guard force unwraps in AppConstants URL construction
+- [2026-02-27] 16d38b3 chore: remove SettingsPlaceholderView and CaptureMode dead code
+- [2026-02-27] a792f17 fix: declare OpenAI data usage in Privacy Manifest and Info.plist
+- [2026-02-27] b8b575d fix: precise privacy claims and consent text in all localizations
+- [2026-02-27] 44efe2f fix: AI data consent for OpenAI features — Apple 5.1.1(i)/5.1.2(i) rejection
 - [2026-02-26] 9cc6831 fix: separate Terms/Privacy links and localize legal URLs — Apple 3.1.2 rejection
 - [2026-02-25] 8d2ba84 docs: add Groups (expense splitting) design document
 - [2026-02-24] 328ba03 fix: scheduled payments visual consistency — hot pink expenses, sign prefix, currency conversion

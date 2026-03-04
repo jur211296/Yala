@@ -1439,10 +1439,12 @@
 "onboarding.languageSubtitle" = "We noticed your language isn't supported yet. Don't worry, pick one of these options!";
 
 // Expenses Only Mode - Onboarding
-"onboarding.expensesOnlyTitle" = "What do you want to track?";
-"onboarding.expensesOnlySubtitle" = "You can change this anytime in Settings.";
-"onboarding.expensesOnlyOptionAll" = "I want to track everything";
-"onboarding.expensesOnlyOptionExpenses" = "I only want to track expenses";
+"onboarding.expensesOnlyTitle" = "How do you want to use Yala?";
+"onboarding.expensesOnlySubtitle" = "Choose how you want to organize your money. You can change this later in Settings.";
+"onboarding.expensesOnlyOptionAll" = "Full control";
+"onboarding.expensesOnlyOptionExpenses" = "Expenses only";
+"onboarding.expensesOnlyDescAll" = "Expenses, income, transfers and account balances";
+"onboarding.expensesOnlyDescExpenses" = "Track only what you spend, no complications";
 "onboarding.privacyTitle" = "All Set";
 "onboarding.privacySubtitle" = "You're ready to start using Yala";
 "onboarding.privacyLocal" = "Your financial data stays on your device";

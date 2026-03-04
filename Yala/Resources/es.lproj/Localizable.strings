@@ -1437,10 +1437,12 @@
 "onboarding.languageTitle" = "Elige tu idioma";
 "onboarding.languageSubtitle" = "Hemos detectado que tu idioma no está soportado aún. No te preocupes, elige entre estas opciones.";
 // Expenses Only Mode - Onboarding
-"onboarding.expensesOnlyTitle" = "¿Qué quieres registrar?";
-"onboarding.expensesOnlySubtitle" = "Puedes cambiar esto cuando quieras en Ajustes.";
-"onboarding.expensesOnlyOptionAll" = "Quiero registrar todo";
-"onboarding.expensesOnlyOptionExpenses" = "Solo quiero registrar gastos";
+"onboarding.expensesOnlyTitle" = "¿Cómo quieres usar Yala?";
+"onboarding.expensesOnlySubtitle" = "Elige cómo quieres organizar tu dinero. Puedes cambiar esto después en Ajustes.";
+"onboarding.expensesOnlyOptionAll" = "Control total";
+"onboarding.expensesOnlyOptionExpenses" = "Solo gastos";
+"onboarding.expensesOnlyDescAll" = "Gastos, ingresos, transferencias y saldos de tus cuentas";
+"onboarding.expensesOnlyDescExpenses" = "Registra solo lo que gastas, sin complicaciones";
 "onboarding.privacyTitle" = "Todo listo";
 "onboarding.privacySubtitle" = "Ya puedes empezar a usar Yala";
 "onboarding.privacyLocal" = "Tus datos financieros se guardan en tu dispositivo";

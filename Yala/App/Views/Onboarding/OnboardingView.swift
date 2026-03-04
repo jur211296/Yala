@@ -399,7 +399,7 @@ struct OnboardingView: View {
     private var expensesOnlyStep: some View {
         VStack(spacing: DS.Spacing.xl) {
             VStack(spacing: DS.Spacing.md) {
-                Image(systemName: "arrow.down.circle.fill")
+                Image(systemName: "gearshape.fill")
                     .font(.system(size: heroIconSize))
                     .foregroundStyle(Color.electricIndigo)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
@@ -422,22 +422,40 @@ struct OnboardingView: View {
                 Button {
                     expensesOnlyMode = false
                 } label: {
-                    HStack {
-                        Image(systemName: expensesOnlyMode ? "circle" : "checkmark.circle.fill")
-                            .font(DS.Typography.title)
-                            .foregroundStyle(expensesOnlyMode ? .secondary : Color.electricIndigo)
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                        HStack {
+                            Image(systemName: expensesOnlyMode ? "circle" : "checkmark.circle.fill")
+                                .font(DS.Typography.title)
+                                .foregroundStyle(expensesOnlyMode ? .secondary : Color.electricIndigo)
 
-                        Text(L10n.Onboarding.expensesOnlyOptionAll)
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.primary)
+                            Text(L10n.Onboarding.expensesOnlyOptionAll)
+                                .font(DS.Typography.body)
+                                .foregroundStyle(.primary)
 
-                        Spacer()
+                            Spacer()
 
-                        if !expensesOnlyMode {
-                            Text(L10n.Onboarding.categoriesRecommended)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(Color.electricIndigo)
+                            if !expensesOnlyMode {
+                                Text(L10n.Onboarding.categoriesRecommended)
+                                    .font(DS.Typography.caption)
+                                    .foregroundStyle(Color.electricIndigo)
+                            }
                         }
+
+                        Text(L10n.Onboarding.expensesOnlyDescAll)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.leading, DS.Spacing.xl + DS.Spacing.xs)
+
+                        HStack(spacing: DS.Spacing.sm) {
+                            Image(systemName: "arrow.down.circle.fill")
+                            Image(systemName: "arrow.up.circle.fill")
+                            Image(systemName: "arrow.left.arrow.right.circle.fill")
+                            Image(systemName: "building.columns.fill")
+                        }
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                        .padding(.leading, DS.Spacing.xl + DS.Spacing.xs)
                     }
                     .padding(DS.Spacing.md)
                     .background(!expensesOnlyMode ? Color.electricIndigo.opacity(0.1) : theme.card)
@@ -453,16 +471,29 @@ struct OnboardingView: View {
                 Button {
                     expensesOnlyMode = true
                 } label: {
-                    HStack {
-                        Image(systemName: expensesOnlyMode ? "checkmark.circle.fill" : "circle")
-                            .font(DS.Typography.title)
-                            .foregroundStyle(expensesOnlyMode ? Color.electricIndigo : .secondary)
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                        HStack {
+                            Image(systemName: expensesOnlyMode ? "checkmark.circle.fill" : "circle")
+                                .font(DS.Typography.title)
+                                .foregroundStyle(expensesOnlyMode ? Color.electricIndigo : .secondary)
 
-                        Text(L10n.Onboarding.expensesOnlyOptionExpenses)
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.primary)
+                            Text(L10n.Onboarding.expensesOnlyOptionExpenses)
+                                .font(DS.Typography.body)
+                                .foregroundStyle(.primary)
 
-                        Spacer()
+                            Spacer()
+                        }
+
+                        Text(L10n.Onboarding.expensesOnlyDescExpenses)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.leading, DS.Spacing.xl + DS.Spacing.xs)
+
+                        Image(systemName: "arrow.down.circle.fill")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                            .padding(.leading, DS.Spacing.xl + DS.Spacing.xs)
                     }
                     .padding(DS.Spacing.md)
                     .background(expensesOnlyMode ? Color.electricIndigo.opacity(0.1) : theme.card)

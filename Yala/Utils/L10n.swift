@@ -2343,6 +2343,12 @@ enum L10n {
         static var expensesOnlyOptionExpenses: String {
             ls("onboarding.expensesOnlyOptionExpenses", comment: "")
         }
+        static var expensesOnlyDescAll: String {
+            ls("onboarding.expensesOnlyDescAll", comment: "")
+        }
+        static var expensesOnlyDescExpenses: String {
+            ls("onboarding.expensesOnlyDescExpenses", comment: "")
+        }
         static var privacyTitle: String { ls("onboarding.privacyTitle", comment: "") }
         static var privacySubtitle: String { ls("onboarding.privacySubtitle", comment: "") }
         static var privacyLocal: String { ls("onboarding.privacyLocal", comment: "") }
