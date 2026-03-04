@@ -42,6 +42,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-04] 85b2920 feat: auto-refresh UI on CloudKit remote changes
 - [2026-03-04] 845e402 feat: sync 8 additional preferences via iCloud KV + pull-to-refresh
 - [2026-02-27] a459aa3 fix: remove announcements notification type (no server infrastructure)
 - [2026-02-27] 930e725 fix: guard force unwraps in AppConstants URL construction
@@ -588,11 +589,10 @@ Ver ROADMAP.md para más detalles de Fase 12.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: iCloud preference sync — 8 nuevas keys + pull-to-refresh + onboarding pre-fill
-Next step: Testing manual multi-dispositivo de sync + posibles fixes adicionales de hotfix/1.0.1
+Stopped at: Auto-refresh UI on CloudKit remote changes via NSPersistentStoreRemoteChange observer
+Next step: Testing manual multi-dispositivo de sync completo (preferencias + datos + auto-refresh)
 Resume context:
-- Branch hotfix/1.0.1 — CloudKit schema desplegado a producción pendiente
-- 8 nuevas preferencias sincronizadas: userProfileIcon, colorfulIcons, firstWeekday, decimalPlaces, currencyDisplayFormat, showVariations, averageLineMode, voiceLanguage
-- Pull-to-refresh en PanelView con bootstrap + recalculate + haptic
-- Onboarding pre-llena datos del dispositivo anterior via .task
-- NO sincronizado: foto de perfil (requiere CloudKit Assets), voiceInputEnabled/imageInputEnabled (per-device permissions)
+- Branch hotfix/1.0.1 — CloudKit sync multi-dispositivo funcional
+- AppBootstrapper observa NSPersistentStoreRemoteChange con debounce 1s → incrementDataVersion()
+- 6 vistas ya reaccionan: PanelView, DetailContainerView, ScheduledPaymentsView, BudgetsListView, RecordsStandaloneView, InboxView
+- Pendiente: testing manual en 2 dispositivos para verificar auto-refresh sin cambiar de pestaña

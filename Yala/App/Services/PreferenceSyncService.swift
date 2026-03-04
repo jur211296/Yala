@@ -9,6 +9,18 @@
 import Foundation
 import WidgetKit
 
+// MARK: - Cross-Device Wipe Notifications
+
+extension Notification.Name {
+    /// Fired when a remote device initiated a data wipe.
+    /// `userInfo["onboardingAlreadyDone"]` (Bool) indicates whether another device already completed onboarding.
+    static let remoteWipeDetected = Notification.Name("remoteWipeDetected")
+
+    /// Fired when a remote device completed onboarding after a wipe.
+    /// Used to pull a device out of mid-onboarding and show a sync banner instead.
+    static let remoteOnboardingCompleted = Notification.Name("remoteOnboardingCompleted")
+}
+
 @MainActor
 final class PreferenceSyncService {
 
@@ -36,6 +48,17 @@ final class PreferenceSyncService {
         case voiceLanguage
     }
 
+    /// Keys for cross-device wipe coordination (iKV = remote, local = UserDefaults)
+    private enum WipeKey {
+        static let remoteWipe = "lastWipeTimestamp"           // iKV
+        static let remoteOnboarding = "lastOnboardingTimestamp" // iKV
+        static let localWipe = "lastKnownWipeTimestamp"       // UserDefaults
+        static let localOnboarding = "lastKnownOnboardingTimestamp" // UserDefaults
+    }
+
+    /// Key for notification userInfo
+    static let onboardingAlreadyDoneKey = "onboardingAlreadyDone"
+
     private let iKV = NSUbiquitousKeyValueStore.default
     private let local = UserDefaults.standard
     private var isObserverRegistered = false
@@ -50,6 +73,9 @@ final class PreferenceSyncService {
     func bootstrap() {
         iKV.synchronize()
         applyRemoteValues()
+
+        // Offline catch-up: process any wipe/onboarding signals that arrived while app was closed
+        checkForRemoteWipeSignal()
 
         guard !isObserverRegistered else { return }
         isObserverRegistered = true
@@ -160,11 +186,88 @@ final class PreferenceSyncService {
         }
     }
 
+    // MARK: - Cross-Device Wipe Signaling
+
+    /// Called by DataWipeService BEFORE deleting data — signals other devices that a wipe occurred.
+    func signalWipeInitiated() {
+        let timestamp = Date().timeIntervalSince1970
+        iKV.set(timestamp, forKey: WipeKey.remoteWipe)
+        iKV.synchronize()
+
+        // Save locally so THIS device doesn't react to its own signal
+        local.set(timestamp, forKey: WipeKey.localWipe)
+
+        #if DEBUG
+        print("PreferenceSyncService: Signaled wipe initiated (timestamp=\(timestamp))")
+        #endif
+    }
+
+    /// Called after onboarding completes — signals other devices that onboarding is done.
+    func signalOnboardingCompleted() {
+        let timestamp = Date().timeIntervalSince1970
+        iKV.set(timestamp, forKey: WipeKey.remoteOnboarding)
+        iKV.synchronize()
+
+        // Save locally to avoid redundant processing
+        local.set(timestamp, forKey: WipeKey.localOnboarding)
+
+        #if DEBUG
+        print("PreferenceSyncService: Signaled onboarding completed (timestamp=\(timestamp))")
+        #endif
+    }
+
+    /// Checks for remote wipe/onboarding signals and posts notifications.
+    /// Called from iCloudDidChange and bootstrap (offline catch-up).
+    private func checkForRemoteWipeSignal() {
+        let remoteWipe = iKV.double(forKey: WipeKey.remoteWipe)
+        let localWipe = local.double(forKey: WipeKey.localWipe)
+        let remoteOnboarding = iKV.double(forKey: WipeKey.remoteOnboarding)
+        let localOnboarding = local.double(forKey: WipeKey.localOnboarding)
+
+        // Caso A: Nueva señal de wipe (remoteWipe > localWipe)
+        if remoteWipe > 0 && remoteWipe > localWipe {
+            // Mark as processed so we don't react again
+            local.set(remoteWipe, forKey: WipeKey.localWipe)
+
+            let onboardingAlreadyDone = remoteOnboarding > remoteWipe
+
+            #if DEBUG
+            print("PreferenceSyncService: Remote wipe detected (onboardingAlreadyDone=\(onboardingAlreadyDone))")
+            #endif
+
+            NotificationCenter.default.post(
+                name: .remoteWipeDetected,
+                object: nil,
+                userInfo: [Self.onboardingAlreadyDoneKey: onboardingAlreadyDone]
+            )
+            return
+        }
+
+        // Caso B: Wipe ya procesado, pero onboarding remoto nuevo
+        // (another device completed onboarding after a wipe we already processed)
+        if remoteWipe > 0 && remoteWipe == localWipe
+            && remoteOnboarding > remoteWipe
+            && remoteOnboarding > localOnboarding {
+
+            local.set(remoteOnboarding, forKey: WipeKey.localOnboarding)
+
+            #if DEBUG
+            print("PreferenceSyncService: Remote onboarding completed after wipe")
+            #endif
+
+            NotificationCenter.default.post(
+                name: .remoteOnboardingCompleted,
+                object: nil
+            )
+        }
+    }
+
     // MARK: - External Change Observer
 
     @objc private func iCloudDidChange(_ notification: Notification) {
         Task { @MainActor in
             self.applyRemoteValues()
+            self.checkForRemoteWipeSignal()
 
             #if DEBUG
             print("PreferenceSyncService: Applied remote iKV changes")

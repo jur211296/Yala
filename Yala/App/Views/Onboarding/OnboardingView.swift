@@ -1247,6 +1247,9 @@ struct OnboardingView: View {
         // Mark onboarding as complete AFTER data creation (prevents inconsistent state on crash)
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
 
+        // Signal other devices that onboarding is done (cross-device wipe coordination)
+        PreferenceSyncService.shared.signalOnboardingCompleted()
+
         // Load historical exchange rates for secondary currencies (in background)
         loadHistoricalRatesForSecondaryCurrencies()
 

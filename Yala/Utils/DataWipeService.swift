@@ -23,8 +23,16 @@ final class DataWipeService {
     // Note: reseedInitialData defaults to false - the UI should ask the user
     static func wipeAllUserData(
         in context: ModelContext,
-        reseedInitialData: Bool = false
+        reseedInitialData: Bool = false,
+        broadcastSignal: Bool = true
     ) throws {
+        // ============================================================
+        // PASO 0: Señalizar wipe a otros dispositivos via iCloud KV
+        // ============================================================
+        if broadcastSignal {
+            PreferenceSyncService.shared.signalWipeInitiated()
+        }
+
         // ============================================================
         // PASO 1: Borrar todos los datos de SwiftData
         // ============================================================
@@ -237,6 +245,10 @@ final class DataWipeService {
         // --- Onboarding ---
         defaults.removeObject(forKey: "hasCompletedOnboarding") // Default: false (triggers onboarding)
         defaults.removeObject(forKey: "secondaryCurrencies")    // Default: "" (no secondary currencies)
+
+        // --- Cross-device wipe coordination ---
+        // DO NOT clear lastKnownWipeTimestamp — it protects against reacting to our own wipe signal
+        defaults.removeObject(forKey: "lastKnownOnboardingTimestamp")  // Allow re-processing remote onboarding
 
         // --- Seed guards ---
         defaults.removeObject(forKey: "seedCategoriesExecuted") // Allow re-seed after wipe
