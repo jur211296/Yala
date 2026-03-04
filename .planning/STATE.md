@@ -42,6 +42,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-04] b1fad3c feat: configurable auto-focus field in Personalization settings
 - [2026-03-04] a830609 fix: Face ID grace period + stuck unlock screen
 - [2026-03-04] 8b2a954 fix: add tutorials onboarding step + wrap privacy screen in ScrollView
 - [2026-03-04] f262162 fix: remove default account creation after onboarding
@@ -594,8 +595,8 @@ Ver ROADMAP.md para más detalles de Fase 12.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Hotfix 1.0.1 — Face ID grace period + stuck unlock screen fix
-Next step: Continue hotfix/1.0.1 bug fixes or merge to 1.0
+Stopped at: Hotfix 1.0.1 — auto-focus field preference in Personalization
+Next step: Continue hotfix/1.0.1 fixes or merge to 1.0
 Resume context:
 - Branch hotfix/1.0.1 — biometric lock now has 10s grace period (was 0s/immediately)
 - BiometricLockOverlay delays auto-auth 0.5s to avoid fullScreenCover race condition
