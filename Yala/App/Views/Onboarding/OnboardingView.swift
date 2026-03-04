@@ -33,6 +33,7 @@ struct OnboardingView: View {
 
     // Current step in the onboarding flow
     @State private var currentStep: Int = 0
+    @State private var navigatingForward: Bool = true
 
     // Animation state for category grid
     @State private var showCategoryIcons: Bool = false
@@ -66,19 +67,23 @@ struct OnboardingView: View {
                 .opacity(currentStep < totalSteps - 1 ? 1 : 0)
 
             // Content based on current step
-            TabView(selection: $currentStep) {
-                welcomeStep.tag(0)
-                currencyStep.tag(1)
-                secondaryCurrenciesStep.tag(2)
-                periodStep.tag(3)
-                expensesOnlyStep.tag(4)
-                categoriesStep.tag(5)
-                notificationsStep.tag(6)
-                privacyStep.tag(7)
+            Group {
+                switch currentStep {
+                case 0: welcomeStep
+                case 1: currencyStep
+                case 2: secondaryCurrenciesStep
+                case 3: periodStep
+                case 4: expensesOnlyStep
+                case 5: categoriesStep
+                case 6: notificationsStep
+                case 7: privacyStep
+                default: EmptyView()
+                }
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .scrollDisabled(true)
-            .dsAnimation(.easeInOut(duration: 0.3), value: currentStep, reduceMotion: reduceMotion)
+            .transition(.asymmetric(
+                insertion: .move(edge: navigatingForward ? .trailing : .leading),
+                removal: .move(edge: navigatingForward ? .leading : .trailing)
+            ))
 
             Spacer()
 
@@ -1095,7 +1100,8 @@ struct OnboardingView: View {
             // Back button (hidden on first step)
             if currentStep > 0 {
                 Button {
-                    dsWithAnimation(reduceMotion) {
+                    navigatingForward = false
+                    withAnimation(.easeInOut(duration: 0.3)) {
                         currentStep -= 1
                     }
                 } label: {
@@ -1115,7 +1121,8 @@ struct OnboardingView: View {
                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
                 if currentStep < totalSteps - 1 {
-                    dsWithAnimation(reduceMotion) {
+                    navigatingForward = true
+                    withAnimation(.easeInOut(duration: 0.3)) {
                         currentStep += 1
                     }
                     // Trigger category icons animation when entering categories step
