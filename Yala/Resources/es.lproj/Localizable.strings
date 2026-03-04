@@ -1379,6 +1379,11 @@
 "settings.currencyFormatDescription" = "Elige si mostrar el código de moneda (PEN) o el símbolo (S/).";
 "settings.currencyCode" = "Código (PEN, USD)";
 "settings.currencySymbol" = "Símbolo (S/, $)";
+"settings.autoFocusField" = "Campo con enfoque automático";
+"settings.autoFocusFieldDescription" = "Al crear un nuevo registro manual, el teclado se abrirá automáticamente en el campo seleccionado.";
+"settings.autoFocusAmount" = "Monto";
+"settings.autoFocusNote" = "Descripción";
+"settings.autoFocusNone" = "Ninguno";
 // Expenses Only Mode
 "settings.sectionUsageMode" = "Modo de uso";
 "settings.expensesOnlyMode" = "Solo gastos";

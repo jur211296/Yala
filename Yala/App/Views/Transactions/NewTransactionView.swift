@@ -20,6 +20,7 @@ struct NewTransactionView: View {
 
     @AppStorage("defaultCurrencyCode") private var preferredCurrencyCode: String = CurrencyCode.pen.rawValue
     @AppStorage("currencyDisplayFormat") private var currencyDisplayFormat: String = "code"
+    @AppStorage("autoFocusField") private var autoFocusField: String = "none"
 
     @State private var viewModel = NewTransactionViewModel()
     @FocusState private var isNoteFieldFocused: Bool
@@ -327,10 +328,14 @@ struct NewTransactionView: View {
             if sessionState.isExpensesOnlyMode {
                 viewModel.transactionType = .expense
             }
-            // Auto-focus amount field only for new transactions (not editing)
-            if transactionToEdit == nil {
+            // Auto-focus field based on user preference (only for new transactions)
+            if transactionToEdit == nil && autoFocusField != "none" {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    isAmountFieldFocused = true
+                    if autoFocusField == "amount" {
+                        isAmountFieldFocused = true
+                    } else {
+                        isNoteFieldFocused = true
+                    }
                 }
             }
         }

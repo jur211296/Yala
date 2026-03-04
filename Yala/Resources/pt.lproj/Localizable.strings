@@ -1379,6 +1379,11 @@
 "settings.currencyFormatDescription" = "Escolha se mostra o código da moeda (BRL) ou o símbolo (R$).";
 "settings.currencyCode" = "Código (PEN, USD)";
 "settings.currencySymbol" = "Símbolo (S/, $)";
+"settings.autoFocusField" = "Campo com foco automático";
+"settings.autoFocusFieldDescription" = "Ao criar um novo registro manual, o teclado abrirá automaticamente no campo selecionado.";
+"settings.autoFocusAmount" = "Valor";
+"settings.autoFocusNote" = "Descrição";
+"settings.autoFocusNone" = "Nenhum";
 // Expenses Only Mode
 "settings.sectionUsageMode" = "Modo de uso";
 "settings.expensesOnlyMode" = "Apenas despesas";

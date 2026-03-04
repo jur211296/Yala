@@ -1731,6 +1731,21 @@ enum L10n {
         static var currencySymbol: String {
             ls("settings.currencySymbol", comment: "")
         }
+        static var autoFocusField: String {
+            ls("settings.autoFocusField", comment: "")
+        }
+        static var autoFocusFieldDescription: String {
+            ls("settings.autoFocusFieldDescription", comment: "")
+        }
+        static var autoFocusAmount: String {
+            ls("settings.autoFocusAmount", comment: "")
+        }
+        static var autoFocusNote: String {
+            ls("settings.autoFocusNote", comment: "")
+        }
+        static var autoFocusNone: String {
+            ls("settings.autoFocusNone", comment: "")
+        }
         // resetData removed (duplicate)
         static var resetDataDescription: String {
             ls("settings.resetDataDescription", comment: "")

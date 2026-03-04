@@ -1379,6 +1379,11 @@
 "settings.currencyFormatDescription" = "Wählen Sie, ob der Währungscode (EUR) oder das Symbol (€) angezeigt wird.";
 "settings.currencyCode" = "Code (PEN, USD)";
 "settings.currencySymbol" = "Symbol (S/, $)";
+"settings.autoFocusField" = "Automatischer Feldfokus";
+"settings.autoFocusFieldDescription" = "Beim Erstellen eines neuen manuellen Eintrags wird die Tastatur automatisch im ausgewählten Feld geöffnet.";
+"settings.autoFocusAmount" = "Betrag";
+"settings.autoFocusNote" = "Beschreibung";
+"settings.autoFocusNone" = "Keines";
 // Expenses Only Mode
 "settings.sectionUsageMode" = "Nutzungsmodus";
 "settings.expensesOnlyMode" = "Nur Ausgaben";

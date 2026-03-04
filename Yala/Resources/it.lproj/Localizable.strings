@@ -1379,6 +1379,11 @@
 "settings.currencyFormatDescription" = "Scegli se mostrare il codice valuta (EUR) o il simbolo (€).";
 "settings.currencyCode" = "Codice (PEN, USD)";
 "settings.currencySymbol" = "Simbolo (S/, $)";
+"settings.autoFocusField" = "Campo con focus automatico";
+"settings.autoFocusFieldDescription" = "Quando crei un nuovo registro manuale, la tastiera si aprirà automaticamente sul campo selezionato.";
+"settings.autoFocusAmount" = "Importo";
+"settings.autoFocusNote" = "Descrizione";
+"settings.autoFocusNone" = "Nessuno";
 
 // Expenses Only Mode
 "settings.sectionUsageMode" = "Modalità di utilizzo";

@@ -1379,6 +1379,11 @@
 "settings.currencyFormatDescription" = "Choose whether to show the currency code (USD) or symbol ($).";
 "settings.currencyCode" = "Code (PEN, USD)";
 "settings.currencySymbol" = "Symbol (S/, $)";
+"settings.autoFocusField" = "Auto-focus field";
+"settings.autoFocusFieldDescription" = "When creating a new manual record, the keyboard will automatically open on the selected field.";
+"settings.autoFocusAmount" = "Amount";
+"settings.autoFocusNote" = "Description";
+"settings.autoFocusNone" = "None";
 
 // Expenses Only Mode
 "settings.sectionUsageMode" = "Usage mode";

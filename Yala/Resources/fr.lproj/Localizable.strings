@@ -1379,6 +1379,11 @@
 "settings.currencyFormatDescription" = "Choisissez d'afficher le code de devise (EUR) ou le symbole (€).";
 "settings.currencyCode" = "Code (PEN, USD)";
 "settings.currencySymbol" = "Symbole (S/, $)";
+"settings.autoFocusField" = "Champ avec focus automatique";
+"settings.autoFocusFieldDescription" = "Lors de la création d'un nouveau enregistrement manuel, le clavier s'ouvrira automatiquement sur le champ sélectionné.";
+"settings.autoFocusAmount" = "Montant";
+"settings.autoFocusNote" = "Description";
+"settings.autoFocusNone" = "Aucun";
 
 // Expenses Only Mode
 "settings.sectionUsageMode" = "Mode d'utilisation";

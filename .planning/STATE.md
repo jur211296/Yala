@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: None
 Plan: None
 Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-03-04 — Cross-device wipe coordination via iCloud KV
+Last activity: 2026-03-04 — Face ID grace period + stuck unlock screen fix
 
 ### Apple Review History (V1.0)
 
@@ -42,6 +42,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-04] a830609 fix: Face ID grace period + stuck unlock screen
 - [2026-03-04] 8b2a954 fix: add tutorials onboarding step + wrap privacy screen in ScrollView
 - [2026-03-04] f262162 fix: remove default account creation after onboarding
 - [2026-03-04] 33db4f8 feat: cross-device wipe coordination via iCloud KV signaling
@@ -593,10 +594,10 @@ Ver ROADMAP.md para más detalles de Fase 12.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Hotfix 1.0.1 — tutorials onboarding step + privacy scroll fix
-Next step: Continue hotfix/1.0.1 bug fixes
+Stopped at: Hotfix 1.0.1 — Face ID grace period + stuck unlock screen fix
+Next step: Continue hotfix/1.0.1 bug fixes or merge to 1.0
 Resume context:
-- Branch hotfix/1.0.1 — CloudKit sync multi-dispositivo funcional
-- AppBootstrapper observa NSPersistentStoreRemoteChange con debounce 1s → incrementDataVersion()
-- 6 vistas ya reaccionan: PanelView, DetailContainerView, ScheduledPaymentsView, BudgetsListView, RecordsStandaloneView, InboxView
-- Pendiente: testing manual en 2 dispositivos para verificar auto-refresh sin cambiar de pestaña
+- Branch hotfix/1.0.1 — biometric lock now has 10s grace period (was 0s/immediately)
+- BiometricLockOverlay delays auto-auth 0.5s to avoid fullScreenCover race condition
+- BiometricAuthService is now @MainActor, isAuthenticating resets on foreground
+- Existing users with rawValue 0 in Keychain auto-migrate to tenSeconds via fallback
