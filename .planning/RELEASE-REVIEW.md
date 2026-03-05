@@ -195,7 +195,7 @@
 ## 1.6 EMPTY — Estados vacíos
 
 ### EMPTY-1: Ningún widget usa `YalaEmptyState`
-- [ ] **Archivos:** Todos los 11 widgets
+- [x] **Archivos:** Todos los 11 widgets
 - **Regla violada:** UI-PATTERNS "SIEMPRE usar YalaEmptyState para estados vacíos"
 - **Nota:** Los empty states custom funcionan; la inconsistencia es visual/de mantenimiento
 
@@ -1306,7 +1306,7 @@ Lo que funciona correctamente:
 ### Pendientes restantes (todos post-release safe)
 
 **DS (0):** todos resueltos
-**EMPTY (1):** EMPTY-1 (widgets custom empty states), ~~EMPTY-3~~, ~~EMPTY-5~~
-**CODE (11):** CODE-9, CODE-16, CODE-18, CODE-19, CODE-24, CODE-26, CODE-34, CODE-35, CODE-40, CODE-45, CODE-46
+**EMPTY (0):** todos resueltos
+**CODE (0):** todos resueltos o descartados (CODE-9 [-], CODE-18 [-], resto [x])
 
 **Ningún BUG ni HIGH pendiente. Release safe.**
