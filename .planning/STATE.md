@@ -42,6 +42,8 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-05] 3ac701b fix: add header to TagsPieWidget empty state for consistency with sibling pie widgets
+- [2026-03-05] f6ce90a fix: replace hardcoded #8E8E93 with AppConstants.othersColorHex
 - [2026-03-05] 40391ba refactor: extract search views from ContentView to dedicated file
 - [2026-03-05] 552c664 fix: remove dead Budget fields, modernize picker timing, improve tag empty state
 - [2026-03-05] 8665498 fix: remove redundant saves in transfers and improve bulk delete consistency
@@ -51,11 +53,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-04] b1fad3c feat: configurable auto-focus field in Personalization settings
 - [2026-03-04] a830609 fix: Face ID grace period + stuck unlock screen
 - [2026-03-04] 8b2a954 fix: add tutorials onboarding step + wrap privacy screen in ScrollView
-- [2026-03-04] f262162 fix: remove default account creation after onboarding
-- [2026-03-04] 33db4f8 feat: cross-device wipe coordination via iCloud KV signaling
-- [2026-03-04] 85b2920 feat: auto-refresh UI on CloudKit remote changes
-- [2026-03-04] 845e402 feat: sync 8 additional preferences via iCloud KV + pull-to-refresh
-- [2026-02-27] a459aa3 fix: remove announcements notification type (no server infrastructure)
 - [2026-02-27] 930e725 fix: guard force unwraps in AppConstants URL construction
 - [2026-02-27] 16d38b3 chore: remove SettingsPlaceholderView and CaptureMode dead code
 - [2026-02-27] a792f17 fix: declare OpenAI data usage in Privacy Manifest and Info.plist
@@ -601,10 +598,9 @@ Ver ROADMAP.md para más detalles de Fase 12.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Hotfix 1.0.2 — CODE-46 search extraction complete. All code quality items resolved.
-Next step: Merge hotfix/1.0.2 to 1.0 — all CODE items in RELEASE-REVIEW resolved
+Stopped at: Hotfix 1.0.2 — EMPTY-1 resolved (TagsPieWidget empty state header)
+Next step: Merge hotfix/1.0.2 to 1.0 — all RELEASE-REVIEW items resolved (EMPTY 0 remaining)
 Resume context:
-- Branch hotfix/1.0.2 with 5 commits: transfer fixes, code quality batch, search extraction
-- All code quality items resolved: CODE-20, CODE-21, CODE-28, CODE-30, CODE-32, CODE-41, CODE-46
-- CODE-46: Extracted 5 search types from ContentView (1212→796 LOC) + deduplicated filtering logic
-- Ready for merge — no pending CODE/BUG/HIGH items
+- Branch hotfix/1.0.2 with 7 commits: transfer fixes, code quality batch, search extraction, DS-2 cleanup, EMPTY-1 fix
+- All items fully resolved: DS(0), EMPTY(0), CODE(0), BUG(0), HIGH(0)
+- Ready for merge — no pending items
