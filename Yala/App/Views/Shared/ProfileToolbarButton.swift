@@ -13,9 +13,10 @@ import UIKit
 struct ProfileToolbarButton: View {
     // MARK: - Data Access
 
-    @State private var userProfileImageData: Data?
     @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
     @Environment(\.yalaTheme) private var theme
+
+    private var profileStorage: ProfileImageStorage { .shared }
 
     private var isProUser: Bool {
         FeatureGateService.shared.isProUser
@@ -44,10 +45,6 @@ struct ProfileToolbarButton: View {
         }
         .buttonStyle(.plain)
         .glassEffect(.regular.interactive())
-        .onAppear {
-            ProfileImageStorage.migrateFromUserDefaultsIfNeeded()
-            userProfileImageData = ProfileImageStorage.load()
-        }
         .overlay(alignment: .bottomTrailing) {
             if isProUser {
                 sparkBadge
@@ -60,7 +57,7 @@ struct ProfileToolbarButton: View {
 
     private var avatar: some View {
         Group {
-            if let imageData = userProfileImageData,
+            if let imageData = profileStorage.imageData,
                let uiImage = UIImage(data: imageData) {
                 // User photo
                 Image(uiImage: uiImage)

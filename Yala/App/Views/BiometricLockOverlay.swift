@@ -14,6 +14,7 @@ struct BiometricLockOverlay: View {
     @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 56 // A11Y-DT: @ScaledMetric
 
     @State private var isAuthenticating = false
+    @State private var autoAuthTask: Task<Void, Never>?
 
     var body: some View {
         ZStack {
@@ -64,8 +65,18 @@ struct BiometricLockOverlay: View {
             }
         }
         .onAppear {
-            // Auto-trigger authentication on appear
-            performAuth()
+            // Delay auto-auth to let fullScreenCover finish presenting
+            autoAuthTask = Task {
+                do {
+                    try await Task.sleep(for: .seconds(0.5))
+                    performAuth()
+                } catch {
+                    // Task cancelled — view disappeared before delay finished
+                }
+            }
+        }
+        .onDisappear {
+            autoAuthTask?.cancel()
         }
     }
 

@@ -7,6 +7,19 @@
 //
 
 import Foundation
+import WidgetKit
+
+// MARK: - Cross-Device Wipe Notifications
+
+extension Notification.Name {
+    /// Fired when a remote device initiated a data wipe.
+    /// `userInfo["onboardingAlreadyDone"]` (Bool) indicates whether another device already completed onboarding.
+    static let remoteWipeDetected = Notification.Name("remoteWipeDetected")
+
+    /// Fired when a remote device completed onboarding after a wipe.
+    /// Used to pull a device out of mid-onboarding and show a sync banner instead.
+    static let remoteOnboardingCompleted = Notification.Name("remoteOnboardingCompleted")
+}
 
 @MainActor
 final class PreferenceSyncService {
@@ -25,10 +38,32 @@ final class PreferenceSyncService {
         case secondaryCurrencies
         case budgetAlertsEnabled
         case expensesOnlyMode
+        case userProfileIcon
+        case colorfulIcons
+        case firstWeekday
+        case decimalPlaces
+        case currencyDisplayFormat
+        case showVariations
+        case averageLineMode
+        case voiceLanguage
+        case autoFocusField
+        case accountsSortOrderNames
     }
+
+    /// Keys for cross-device wipe coordination (iKV = remote, local = UserDefaults)
+    private enum WipeKey {
+        static let remoteWipe = "lastWipeTimestamp"           // iKV
+        static let remoteOnboarding = "lastOnboardingTimestamp" // iKV
+        static let localWipe = "lastKnownWipeTimestamp"       // UserDefaults
+        static let localOnboarding = "lastKnownOnboardingTimestamp" // UserDefaults
+    }
+
+    /// Key for notification userInfo
+    static let onboardingAlreadyDoneKey = "onboardingAlreadyDone"
 
     private let iKV = NSUbiquitousKeyValueStore.default
     private let local = UserDefaults.standard
+    private var isObserverRegistered = false
 
     private init() {}
 
@@ -36,10 +71,16 @@ final class PreferenceSyncService {
 
     /// Call early in app launch (before services read preferences).
     /// Pulls remote values into UserDefaults and starts observing changes.
+    /// Safe to call multiple times (e.g. pull-to-refresh) — observer registered only once.
     func bootstrap() {
         iKV.synchronize()
         applyRemoteValues()
 
+        // Offline catch-up: process any wipe/onboarding signals that arrived while app was closed
+        checkForRemoteWipeSignal()
+
+        guard !isObserverRegistered else { return }
+        isObserverRegistered = true
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(iCloudDidChange(_:)),
@@ -57,6 +98,12 @@ final class PreferenceSyncService {
     }
 
     func set(bool value: Bool, forKey key: String) {
+        local.set(value, forKey: key)
+        iKV.set(value, forKey: key)
+        iKV.synchronize()
+    }
+
+    func set(int value: Int, forKey key: String) {
         local.set(value, forKey: key)
         iKV.set(value, forKey: key)
         iKV.synchronize()
@@ -85,19 +132,36 @@ final class PreferenceSyncService {
 
     /// Merges iKV values into UserDefaults and pushes to SessionState.
     private func applyRemoteValues() {
+        var formattingChanged = false
+        var weekdayChanged = false
+
         for key in SyncKey.allCases {
             let k = key.rawValue
 
             switch key {
-            case .defaultCurrencyCode, .userName, .defaultPeriod, .secondaryCurrencies:
+            case .defaultCurrencyCode, .userName, .defaultPeriod, .secondaryCurrencies,
+                 .userProfileIcon, .currencyDisplayFormat, .voiceLanguage, .autoFocusField,
+                 .accountsSortOrderNames:
                 if let remote = iKV.string(forKey: k), !remote.isEmpty {
-                    local.set(remote, forKey: k)
+                    if local.string(forKey: k) != remote {
+                        local.set(remote, forKey: k)
+                        if key == .currencyDisplayFormat { formattingChanged = true }
+                    }
                 }
 
-            case .budgetAlertsEnabled, .expensesOnlyMode:
-                // iKV returns 0 for unset bools — only overwrite if the key actually exists
+            case .budgetAlertsEnabled, .expensesOnlyMode, .colorfulIcons, .showVariations:
                 if iKV.object(forKey: k) != nil {
                     local.set(iKV.bool(forKey: k), forKey: k)
+                }
+
+            case .firstWeekday, .decimalPlaces, .averageLineMode:
+                if iKV.object(forKey: k) != nil {
+                    let remote = Int(iKV.longLong(forKey: k))
+                    if local.integer(forKey: k) != remote {
+                        local.set(remote, forKey: k)
+                        if key == .decimalPlaces { formattingChanged = true }
+                        if key == .firstWeekday { weekdayChanged = true }
+                    }
                 }
             }
         }
@@ -110,6 +174,95 @@ final class PreferenceSyncService {
 
         // expensesOnlyMode didSet propagates to app group + WidgetCenter
         SessionState.shared.isExpensesOnlyMode = local.bool(forKey: SyncKey.expensesOnlyMode.rawValue)
+
+        // Trigger UI refresh when formatting preferences change remotely
+        if formattingChanged {
+            SessionState.shared.formattingVersion += 1
+        }
+
+        // Sync firstWeekday to App Group for widgets
+        if weekdayChanged {
+            if let defaults = UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) {
+                defaults.set(local.integer(forKey: SyncKey.firstWeekday.rawValue), forKey: "firstWeekday")
+            }
+            WidgetCenter.shared.reloadAllTimelines()
+        }
+    }
+
+    // MARK: - Cross-Device Wipe Signaling
+
+    /// Called by DataWipeService BEFORE deleting data — signals other devices that a wipe occurred.
+    func signalWipeInitiated() {
+        let timestamp = Date().timeIntervalSince1970
+        iKV.set(timestamp, forKey: WipeKey.remoteWipe)
+        iKV.synchronize()
+
+        // Save locally so THIS device doesn't react to its own signal
+        local.set(timestamp, forKey: WipeKey.localWipe)
+
+        #if DEBUG
+        print("PreferenceSyncService: Signaled wipe initiated (timestamp=\(timestamp))")
+        #endif
+    }
+
+    /// Called after onboarding completes — signals other devices that onboarding is done.
+    func signalOnboardingCompleted() {
+        let timestamp = Date().timeIntervalSince1970
+        iKV.set(timestamp, forKey: WipeKey.remoteOnboarding)
+        iKV.synchronize()
+
+        // Save locally to avoid redundant processing
+        local.set(timestamp, forKey: WipeKey.localOnboarding)
+
+        #if DEBUG
+        print("PreferenceSyncService: Signaled onboarding completed (timestamp=\(timestamp))")
+        #endif
+    }
+
+    /// Checks for remote wipe/onboarding signals and posts notifications.
+    /// Called from iCloudDidChange and bootstrap (offline catch-up).
+    private func checkForRemoteWipeSignal() {
+        let remoteWipe = iKV.double(forKey: WipeKey.remoteWipe)
+        let localWipe = local.double(forKey: WipeKey.localWipe)
+        let remoteOnboarding = iKV.double(forKey: WipeKey.remoteOnboarding)
+        let localOnboarding = local.double(forKey: WipeKey.localOnboarding)
+
+        // Caso A: Nueva señal de wipe (remoteWipe > localWipe)
+        if remoteWipe > 0 && remoteWipe > localWipe {
+            // Mark as processed so we don't react again
+            local.set(remoteWipe, forKey: WipeKey.localWipe)
+
+            let onboardingAlreadyDone = remoteOnboarding > remoteWipe
+
+            #if DEBUG
+            print("PreferenceSyncService: Remote wipe detected (onboardingAlreadyDone=\(onboardingAlreadyDone))")
+            #endif
+
+            NotificationCenter.default.post(
+                name: .remoteWipeDetected,
+                object: nil,
+                userInfo: [Self.onboardingAlreadyDoneKey: onboardingAlreadyDone]
+            )
+            return
+        }
+
+        // Caso B: Wipe ya procesado, pero onboarding remoto nuevo
+        // (another device completed onboarding after a wipe we already processed)
+        if remoteWipe > 0 && remoteWipe == localWipe
+            && remoteOnboarding > remoteWipe
+            && remoteOnboarding > localOnboarding {
+
+            local.set(remoteOnboarding, forKey: WipeKey.localOnboarding)
+
+            #if DEBUG
+            print("PreferenceSyncService: Remote onboarding completed after wipe")
+            #endif
+
+            NotificationCenter.default.post(
+                name: .remoteOnboardingCompleted,
+                object: nil
+            )
+        }
     }
 
     // MARK: - External Change Observer
@@ -117,6 +270,7 @@ final class PreferenceSyncService {
     @objc private func iCloudDidChange(_ notification: Notification) {
         Task { @MainActor in
             self.applyRemoteValues()
+            self.checkForRemoteWipeSignal()
 
             #if DEBUG
             print("PreferenceSyncService: Applied remote iKV changes")

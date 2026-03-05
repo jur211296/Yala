@@ -663,7 +663,9 @@ struct ImageSelectionView: View {
                 let drafts = try await processSingleImage(uiImage)
                 allDrafts.append(contentsOf: drafts)
             } catch {
-                // Continue processing other images even if one fails
+                #if DEBUG
+                print("ImageSelectionView: Error processing image \(index + 1): \(error)")
+                #endif
             }
         }
 
@@ -682,22 +684,25 @@ struct ImageSelectionView: View {
             existingDrafts: existingDrafts
         )
 
-        // If all are duplicates, navigate to what already exists
-        let draftsToUse = uniqueDrafts.isEmpty ? allDrafts : uniqueDrafts
+        // If all are duplicates, navigate to existing drafts instead of re-inserting
+        if uniqueDrafts.isEmpty {
+            draftsCreated = 0
+            await handleNavigation(drafts: allDrafts)
+            return
+        }
 
-        // Insert only unique drafts (no-op if SwiftData already auto-inserted)
-        for draft in draftsToUse {
+        for draft in uniqueDrafts {
             modelContext.insert(draft)
         }
 
-        draftsCreated = draftsToUse.count
+        draftsCreated = uniqueDrafts.count
         do {
             try modelContext.save()
         } catch {
             handleError(L10n.Image.errorSaveFailed, type: .generic)
             return
         }
-        await handleNavigation(drafts: draftsToUse)
+        await handleNavigation(drafts: uniqueDrafts)
     }
 
     /// Process a single image and return drafts

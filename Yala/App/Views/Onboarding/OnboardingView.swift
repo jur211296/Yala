@@ -33,6 +33,7 @@ struct OnboardingView: View {
 
     // Current step in the onboarding flow
     @State private var currentStep: Int = 0
+    @State private var navigatingForward: Bool = true
 
     // Animation state for category grid
     @State private var showCategoryIcons: Bool = false
@@ -55,7 +56,7 @@ struct OnboardingView: View {
         .thisYear, .lastYear, .allTime
     ]
 
-    private let totalSteps = 8
+    private let totalSteps = 9
 
     var body: some View {
         VStack(spacing: DS.Spacing.none) {
@@ -66,19 +67,24 @@ struct OnboardingView: View {
                 .opacity(currentStep < totalSteps - 1 ? 1 : 0)
 
             // Content based on current step
-            TabView(selection: $currentStep) {
-                welcomeStep.tag(0)
-                currencyStep.tag(1)
-                secondaryCurrenciesStep.tag(2)
-                periodStep.tag(3)
-                expensesOnlyStep.tag(4)
-                categoriesStep.tag(5)
-                notificationsStep.tag(6)
-                privacyStep.tag(7)
+            Group {
+                switch currentStep {
+                case 0: welcomeStep
+                case 1: currencyStep
+                case 2: secondaryCurrenciesStep
+                case 3: periodStep
+                case 4: expensesOnlyStep
+                case 5: categoriesStep
+                case 6: notificationsStep
+                case 7: tutorialsStep
+                case 8: privacyStep
+                default: EmptyView()
+                }
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .scrollDisabled(true)
-            .dsAnimation(.easeInOut(duration: 0.3), value: currentStep, reduceMotion: reduceMotion)
+            .transition(.asymmetric(
+                insertion: .move(edge: navigatingForward ? .trailing : .leading),
+                removal: .move(edge: navigatingForward ? .leading : .trailing)
+            ))
 
             Spacer()
 
@@ -88,6 +94,24 @@ struct OnboardingView: View {
                 .padding(.bottom, DS.Spacing.xxxl)
         }
         .background(.thBackground)
+        .task {
+            // Pre-fill from synced preferences (populated by PreferenceSyncService.bootstrap())
+            let defaults = UserDefaults.standard
+            if let name = defaults.string(forKey: "userName"), !name.isEmpty, name != "Usuario" {
+                userName = name
+            }
+            if let raw = defaults.string(forKey: "defaultCurrencyCode"),
+               let currency = CurrencyCode(rawValue: raw) {
+                selectedCurrency = currency
+            }
+            if let raw = defaults.string(forKey: "defaultPeriod"),
+               let period = DetailPeriod(rawValue: raw) {
+                selectedPeriod = period
+            }
+            if defaults.object(forKey: "expensesOnlyMode") != nil {
+                expensesOnlyMode = defaults.bool(forKey: "expensesOnlyMode")
+            }
+        }
     }
 
     // MARK: - Progress Indicator
@@ -394,7 +418,7 @@ struct OnboardingView: View {
     private var expensesOnlyStep: some View {
         VStack(spacing: DS.Spacing.xl) {
             VStack(spacing: DS.Spacing.md) {
-                Image(systemName: "arrow.down.circle.fill")
+                Image(systemName: "gearshape.fill")
                     .font(.system(size: heroIconSize))
                     .foregroundStyle(Color.electricIndigo)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
@@ -417,22 +441,40 @@ struct OnboardingView: View {
                 Button {
                     expensesOnlyMode = false
                 } label: {
-                    HStack {
-                        Image(systemName: expensesOnlyMode ? "circle" : "checkmark.circle.fill")
-                            .font(DS.Typography.title)
-                            .foregroundStyle(expensesOnlyMode ? .secondary : Color.electricIndigo)
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                        HStack {
+                            Image(systemName: expensesOnlyMode ? "circle" : "checkmark.circle.fill")
+                                .font(DS.Typography.title)
+                                .foregroundStyle(expensesOnlyMode ? .secondary : Color.electricIndigo)
 
-                        Text(L10n.Onboarding.expensesOnlyOptionAll)
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.primary)
+                            Text(L10n.Onboarding.expensesOnlyOptionAll)
+                                .font(DS.Typography.body)
+                                .foregroundStyle(.primary)
 
-                        Spacer()
+                            Spacer()
 
-                        if !expensesOnlyMode {
-                            Text(L10n.Onboarding.categoriesRecommended)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(Color.electricIndigo)
+                            if !expensesOnlyMode {
+                                Text(L10n.Onboarding.categoriesRecommended)
+                                    .font(DS.Typography.caption)
+                                    .foregroundStyle(Color.electricIndigo)
+                            }
                         }
+
+                        Text(L10n.Onboarding.expensesOnlyDescAll)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.leading, DS.Spacing.xl + DS.Spacing.xs)
+
+                        HStack(spacing: DS.Spacing.sm) {
+                            Image(systemName: "arrow.down.circle.fill")
+                            Image(systemName: "arrow.up.circle.fill")
+                            Image(systemName: "arrow.left.arrow.right.circle.fill")
+                            Image(systemName: "building.columns.fill")
+                        }
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                        .padding(.leading, DS.Spacing.xl + DS.Spacing.xs)
                     }
                     .padding(DS.Spacing.md)
                     .background(!expensesOnlyMode ? Color.electricIndigo.opacity(0.1) : theme.card)
@@ -448,16 +490,29 @@ struct OnboardingView: View {
                 Button {
                     expensesOnlyMode = true
                 } label: {
-                    HStack {
-                        Image(systemName: expensesOnlyMode ? "checkmark.circle.fill" : "circle")
-                            .font(DS.Typography.title)
-                            .foregroundStyle(expensesOnlyMode ? Color.electricIndigo : .secondary)
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                        HStack {
+                            Image(systemName: expensesOnlyMode ? "checkmark.circle.fill" : "circle")
+                                .font(DS.Typography.title)
+                                .foregroundStyle(expensesOnlyMode ? Color.electricIndigo : .secondary)
 
-                        Text(L10n.Onboarding.expensesOnlyOptionExpenses)
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.primary)
+                            Text(L10n.Onboarding.expensesOnlyOptionExpenses)
+                                .font(DS.Typography.body)
+                                .foregroundStyle(.primary)
 
-                        Spacer()
+                            Spacer()
+                        }
+
+                        Text(L10n.Onboarding.expensesOnlyDescExpenses)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.leading, DS.Spacing.xl + DS.Spacing.xs)
+
+                        Image(systemName: "arrow.down.circle.fill")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                            .padding(.leading, DS.Spacing.xl + DS.Spacing.xs)
                     }
                     .padding(DS.Spacing.md)
                     .background(expensesOnlyMode ? Color.electricIndigo.opacity(0.1) : theme.card)
@@ -852,90 +907,165 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 8: Privacy & Finish
+    // MARK: - Step 8: Tutorials
 
-    private var privacyStep: some View {
-        VStack(spacing: DS.Spacing.xl) {
-            Spacer()
-
-            // Checkmark icon with gradient circle background
-            ZStack {
-                Circle()
-                    .fill(Color.electricIndigo.opacity(0.12))
-                    .frame(width: privacyIconSize, height: privacyIconSize)
-
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: completionIconSize))
+    private var tutorialsStep: some View {
+        VStack(spacing: DS.Spacing.lg) {
+            // Fixed header (same pattern as notifications step)
+            VStack(spacing: DS.Spacing.md) {
+                Image(systemName: "lightbulb.fill")
+                    .font(.system(size: heroIconSize))
                     .foregroundStyle(Color.electricIndigo)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-            }
 
-            VStack(spacing: DS.Spacing.md) {
-                Text(L10n.Onboarding.privacyTitle)
-                    .font(DS.Typography.largeTitle)
+                Text(L10n.Onboarding.tutorialsTitle)
+                    .font(DS.Typography.title)
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
 
-                Text(L10n.Onboarding.privacySubtitle)
-                    .font(DS.Typography.body)
+                Text(L10n.Onboarding.tutorialsSubtitle)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, DS.Spacing.xl)
             }
+            .padding(.top, DS.Spacing.md)
 
-            // Privacy points with colored icon circles
-            VStack(spacing: DS.Spacing.sm) {
-                privacyPoint(icon: "iphone", color: .electricIndigo, text: L10n.Onboarding.privacyLocal)
-                privacyPoint(icon: "eye.slash.fill", color: .hotPink, text: L10n.Onboarding.privacyNoTracking)
-                privacyPoint(icon: "person.badge.key.fill", color: .electricIndigo, text: L10n.Onboarding.privacyIcloud)
-                privacyPoint(icon: "lock.shield.fill", color: .hotPink, text: L10n.Onboarding.privacyNoSharing)
-            }
-            .padding(.horizontal, DS.Spacing.xl)
+            // Scrollable tutorial categories in cards
+            ScrollView {
+                VStack(spacing: DS.Spacing.lg) {
+                    ForEach(TutorialCategory.allCases) { category in
+                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                            Text(category.title)
+                                .font(DS.Typography.labelSmall)
+                                .foregroundStyle(.secondary)
+                                .textCase(.uppercase)
+                                .padding(.leading, DS.Spacing.xs)
 
-            // Tutorials card button
-            Button {
-                showTutorialsSheet = true
-            } label: {
-                HStack(spacing: DS.Spacing.md) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.electricIndigo.opacity(0.15))
-                            .frame(width: badgeSize, height: badgeSize)
+                            // Card with tutorial rows
+                            VStack(spacing: DS.Spacing.none) {
+                                ForEach(Array(category.tutorials.enumerated()), id: \.element.id) { index, tutorial in
+                                    HStack(spacing: DS.Spacing.md) {
+                                        ZStack {
+                                            Circle()
+                                                .fill(tutorial.color.opacity(0.15))
+                                                .frame(width: badgeSize, height: badgeSize)
 
-                        Image(systemName: "lightbulb.fill")
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(Color.electricIndigo)
+                                            Image(systemName: tutorial.icon)
+                                                .font(DS.Typography.caption)
+                                                .foregroundStyle(tutorial.color)
+                                        }
+
+                                        Text(tutorial.title)
+                                            .font(DS.Typography.body)
+                                            .foregroundStyle(.primary)
+
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal, DS.Spacing.md)
+                                    .padding(.vertical, DS.Spacing.sm)
+
+                                    if index < category.tutorials.count - 1 {
+                                        Divider()
+                                            .padding(.leading, DS.Spacing.md + badgeSize + DS.Spacing.md)
+                                    }
+                                }
+                            }
+                            .background(.thCard)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DS.Radius.md)
+                                    .stroke(DS.Colors.borderSubtle, lineWidth: 1)
+                            )
+                        }
                     }
-
-                    Text(L10n.Onboarding.privacyTutorialsHint)
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(Color.electricIndigo)
-                        .multilineTextAlignment(.leading)
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(Color.electricIndigo.opacity(0.6))
                 }
-                .padding(DS.Spacing.md)
-                .background(Color.electricIndigo.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                .overlay(
-                    RoundedRectangle(cornerRadius: DS.Radius.md)
-                        .stroke(Color.electricIndigo.opacity(0.15), lineWidth: 1)
-                )
+                .padding(.horizontal, DS.Spacing.xl)
             }
-            .buttonStyle(.plain)
-            .padding(.horizontal, DS.Spacing.xl)
 
-            Spacer()
-            Spacer()
+            // Fixed footer: CTA + hint (always visible above nav buttons)
+            VStack(spacing: DS.Spacing.sm) {
+                Button {
+                    showTutorialsSheet = true
+                } label: {
+                    HStack(spacing: DS.Spacing.sm) {
+                        Text(L10n.Onboarding.tutorialsExplore)
+                            .font(DS.Typography.headline)
+                            .foregroundStyle(Color.electricIndigo)
+
+                        Image(systemName: "chevron.right")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(Color.electricIndigo.opacity(0.6))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, DS.Spacing.md)
+                    .background(Color.electricIndigo.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DS.Radius.md)
+                            .stroke(Color.electricIndigo.opacity(0.15), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Text(L10n.Onboarding.tutorialsSettingsHint)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, DS.Spacing.xl)
         }
         .sheet(isPresented: $showTutorialsSheet) {
             NavigationStack {
                 TutorialsListView()
             }
+        }
+    }
+
+    // MARK: - Step 9: Privacy & Finish
+
+    private var privacyStep: some View {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: DS.Spacing.xl) {
+                    // Checkmark icon with gradient circle background
+                    ZStack {
+                        Circle()
+                            .fill(Color.electricIndigo.opacity(0.12))
+                            .frame(width: privacyIconSize, height: privacyIconSize)
+
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: completionIconSize))
+                            .foregroundStyle(Color.electricIndigo)
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                    }
+
+                    VStack(spacing: DS.Spacing.md) {
+                        Text(L10n.Onboarding.privacyTitle)
+                            .font(DS.Typography.largeTitle)
+                            .foregroundStyle(.primary)
+                            .multilineTextAlignment(.center)
+
+                        Text(L10n.Onboarding.privacySubtitle)
+                            .font(DS.Typography.body)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, DS.Spacing.xl)
+                    }
+
+                    // Privacy points with colored icon circles
+                    VStack(spacing: DS.Spacing.sm) {
+                        privacyPoint(icon: "iphone", color: .electricIndigo, text: L10n.Onboarding.privacyLocal)
+                        privacyPoint(icon: "eye.slash.fill", color: .hotPink, text: L10n.Onboarding.privacyNoTracking)
+                        privacyPoint(icon: "person.badge.key.fill", color: .electricIndigo, text: L10n.Onboarding.privacyIcloud)
+                        privacyPoint(icon: "lock.shield.fill", color: .hotPink, text: L10n.Onboarding.privacyNoSharing)
+                    }
+                    .padding(.horizontal, DS.Spacing.xl)
+                }
+                .padding(.vertical, DS.Spacing.xl)
+                .frame(minHeight: geometry.size.height)
+            }
+            .scrollBounceBehavior(.basedOnSize)
         }
     }
 
@@ -1095,7 +1225,8 @@ struct OnboardingView: View {
             // Back button (hidden on first step)
             if currentStep > 0 {
                 Button {
-                    dsWithAnimation(reduceMotion) {
+                    navigatingForward = false
+                    dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
                         currentStep -= 1
                     }
                 } label: {
@@ -1115,7 +1246,8 @@ struct OnboardingView: View {
                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
                 if currentStep < totalSteps - 1 {
-                    dsWithAnimation(reduceMotion) {
+                    navigatingForward = true
+                    dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
                         currentStep += 1
                     }
                     // Trigger category icons animation when entering categories step
@@ -1177,9 +1309,6 @@ struct OnboardingView: View {
         // Apply period to SessionState immediately (since it was created before onboarding)
         sessionState.selectedPeriod = selectedPeriod
 
-        // Create default account
-        createDefaultAccount()
-
         // Seed categories if user chose to
         if loadSeedCategories {
             seedCategoriesIfNeeded(in: modelContext)
@@ -1191,46 +1320,14 @@ struct OnboardingView: View {
         // Mark onboarding as complete AFTER data creation (prevents inconsistent state on crash)
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
 
+        // Signal other devices that onboarding is done (cross-device wipe coordination)
+        PreferenceSyncService.shared.signalOnboardingCompleted()
+
         // Load historical exchange rates for secondary currencies (in background)
         loadHistoricalRatesForSecondaryCurrencies()
 
         // Notify completion
         onComplete()
-    }
-
-    private func createDefaultAccount() {
-        // Check if any accounts already exist (e.g. from iCloud sync)
-        let descriptor = FetchDescriptor<Account>()
-        let existingCount: Int
-        do {
-            existingCount = try modelContext.fetchCount(descriptor)
-        } catch {
-            #if DEBUG
-            print("OnboardingView: Error fetching account count: \(error)")
-            #endif
-            existingCount = 0
-        }
-        guard existingCount == 0 else { return }
-
-        let account = Account(
-            name: L10n.Onboarding.defaultAccountName,
-            currencyCode: selectedCurrency.rawValue,
-            colorHex: AppConstants.defaultColorHex,
-            iconName: "creditcard",
-            type: "checking"
-        )
-        modelContext.insert(account)
-
-        do {
-            try modelContext.save()
-            #if DEBUG
-            print("OnboardingView: Created default account '\(account.name)' (\(account.currencyCode))")
-            #endif
-        } catch {
-            #if DEBUG
-            print("OnboardingView: Error creating default account: \(error)")
-            #endif
-        }
     }
 
     private func loadHistoricalRatesForSecondaryCurrencies() {

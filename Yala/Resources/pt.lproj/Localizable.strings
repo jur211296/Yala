@@ -752,7 +752,7 @@
 "biometric.description" = "Proteja suas informações financeiras com autenticação biométrica ou senha do dispositivo.";
 "biometric.enableLock" = "Ativar bloqueio";
 "biometric.lockAfter" = "Bloquear após";
-"biometric.timeout.immediate" = "Imediatamente";
+"biometric.timeout.immediate" = "10 segundos";
 "biometric.timeout.oneMinute" = "1 minuto";
 "biometric.timeout.fiveMinutes" = "5 minutos";
 "biometric.timeout.fifteenMinutes" = "15 minutos";
@@ -1379,6 +1379,11 @@
 "settings.currencyFormatDescription" = "Escolha se mostra o código da moeda (BRL) ou o símbolo (R$).";
 "settings.currencyCode" = "Código (PEN, USD)";
 "settings.currencySymbol" = "Símbolo (S/, $)";
+"settings.autoFocusField" = "Campo com foco automático";
+"settings.autoFocusFieldDescription" = "Ao criar um novo registro manual, o teclado abrirá automaticamente no campo selecionado.";
+"settings.autoFocusAmount" = "Valor";
+"settings.autoFocusNote" = "Descrição";
+"settings.autoFocusNone" = "Nenhum";
 // Expenses Only Mode
 "settings.sectionUsageMode" = "Modo de uso";
 "settings.expensesOnlyMode" = "Apenas despesas";
@@ -1421,7 +1426,6 @@
 "onboarding.periodTitle" = "Período padrão";
 "onboarding.periodSubtitle" = "Qual intervalo de tempo você prefere ver ao abrir o aplicativo?";
 "onboarding.finish" = "Começar";
-"onboarding.defaultAccountName" = "Minha conta";
 "onboarding.categoriesTitle" = "Categorias para começar";
 "onboarding.categoriesSubtitle" = "Preparamos categorias comuns para ajudar a organizar suas despesas desde o primeiro dia.";
 "onboarding.categoriesYes" = "Começar com estas categorias";
@@ -1437,10 +1441,12 @@
 "onboarding.languageTitle" = "Escolha seu idioma";
 "onboarding.languageSubtitle" = "Detectamos que seu idioma ainda não é suportado. Não se preocupe, escolha entre estas opções!";
 // Expenses Only Mode - Onboarding
-"onboarding.expensesOnlyTitle" = "O que você quer registrar?";
-"onboarding.expensesOnlySubtitle" = "Você pode mudar isso a qualquer momento em Configurações.";
-"onboarding.expensesOnlyOptionAll" = "Quero registrar tudo";
-"onboarding.expensesOnlyOptionExpenses" = "Quero registrar apenas despesas";
+"onboarding.expensesOnlyTitle" = "Como você quer usar o Yala?";
+"onboarding.expensesOnlySubtitle" = "Escolha como organizar seu dinheiro. Você pode mudar isso depois em Configurações.";
+"onboarding.expensesOnlyOptionAll" = "Controle total";
+"onboarding.expensesOnlyOptionExpenses" = "Apenas despesas";
+"onboarding.expensesOnlyDescAll" = "Despesas, receitas, transferências e saldos das suas contas";
+"onboarding.expensesOnlyDescExpenses" = "Registre apenas o que você gasta, sem complicações";
 "onboarding.privacyTitle" = "Tudo pronto";
 "onboarding.privacySubtitle" = "Já podes começar a usar o Yala";
 "onboarding.privacyLocal" = "Os teus dados financeiros ficam no teu dispositivo";

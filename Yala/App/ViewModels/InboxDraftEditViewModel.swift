@@ -49,7 +49,7 @@ final class InboxDraftEditViewModel {
 
     /// Next pending draft excluding the given one
     func nextPendingDraft(excluding draft: InboxDraft) -> InboxDraft? {
-        pendingDrafts.first { $0.persistentModelID != draft.persistentModelID }
+        pendingDrafts.last(where: { $0.persistentModelID != draft.persistentModelID })
     }
 
     /// Check if there are more pending drafts after the given one

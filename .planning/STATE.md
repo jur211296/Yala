@@ -14,14 +14,14 @@ Phase: 12 — Plataforma Extendida
 Spec: None
 Plan: None
 Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-02-27 — Apple 5.1.1(i)/5.1.2(i) rejection fix (AI data consent)
+Last activity: 2026-03-04 — Inbox hotfix: swipe crash, image duplicates, approve-next direction
 
 ### Apple Review History (V1.0)
 
 | # | Fecha | Guideline | Problema | Solución | Estado |
 |---|-------|-----------|----------|----------|--------|
 | 1 | 2026-02-26 | 3.1.2 | Links de Terms/Privacy no separados ni localizados | Separar links y localizar URLs legales | ✅ Resuelto (9cc6831) |
-| 2 | 2026-02-27 | 5.1.1(i) + 5.1.2(i) | App comparte datos con OpenAI (voz/imagen) sin revelar qué datos, identificar a OpenAI, ni obtener permiso explícito | Consent alert in-app al activar funciones AI + actualizar privacy policy web para nombrar OpenAI y detallar datos | Pendiente |
+| 2 | 2026-02-27 | 5.1.1(i) + 5.1.2(i) | App comparte datos con OpenAI (voz/imagen) sin revelar qué datos, identificar a OpenAI, ni obtener permiso explícito | Consent alert in-app al activar funciones AI + actualizar privacy policy web para nombrar OpenAI y detallar datos | ✅ Resuelto (44efe2f + 8 fixes preventivos) |
 
 **Detalle rechazo #2:**
 - **Datos enviados a OpenAI:** Audio (Whisper), imágenes JPEG (GPT-4o Vision), texto transcrito + nombres de categorías (GPT-4o Mini)
@@ -42,7 +42,21 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
-- [2026-02-27] fix: AI data consent for OpenAI features — Apple 5.1.1(i)/5.1.2(i) rejection
+- [2026-03-04] b18626b fix: inbox swipe crash, image duplicates, and approve-next direction
+- [2026-03-04] 3298f58 fix: sync account sort order across devices via iCloud KV
+- [2026-03-04] b1fad3c feat: configurable auto-focus field in Personalization settings
+- [2026-03-04] a830609 fix: Face ID grace period + stuck unlock screen
+- [2026-03-04] 8b2a954 fix: add tutorials onboarding step + wrap privacy screen in ScrollView
+- [2026-03-04] f262162 fix: remove default account creation after onboarding
+- [2026-03-04] 33db4f8 feat: cross-device wipe coordination via iCloud KV signaling
+- [2026-03-04] 85b2920 feat: auto-refresh UI on CloudKit remote changes
+- [2026-03-04] 845e402 feat: sync 8 additional preferences via iCloud KV + pull-to-refresh
+- [2026-02-27] a459aa3 fix: remove announcements notification type (no server infrastructure)
+- [2026-02-27] 930e725 fix: guard force unwraps in AppConstants URL construction
+- [2026-02-27] 16d38b3 chore: remove SettingsPlaceholderView and CaptureMode dead code
+- [2026-02-27] a792f17 fix: declare OpenAI data usage in Privacy Manifest and Info.plist
+- [2026-02-27] b8b575d fix: precise privacy claims and consent text in all localizations
+- [2026-02-27] 44efe2f fix: AI data consent for OpenAI features — Apple 5.1.1(i)/5.1.2(i) rejection
 - [2026-02-26] 9cc6831 fix: separate Terms/Privacy links and localize legal URLs — Apple 3.1.2 rejection
 - [2026-02-25] 8d2ba84 docs: add Groups (expense splitting) design document
 - [2026-02-24] 328ba03 fix: scheduled payments visual consistency — hot pink expenses, sign prefix, currency conversion
@@ -176,6 +190,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - **Localización de Widgets (i18n)** - 13 widgets localizados con ~65 claves en es/en; AppIntents (title, description, @Parameter), WidgetPeriodOption enum, textos UI (headers, empty states, labels), Control Widgets iOS 18+; archivos eliminados (templates no usados)
 - **Soporte Modo Teñido iOS 18 (widgetAccentable)** - `.widgetAccentable()` agregado a 12 archivos de widgets para soporte de tinted mode; KPIs, progress bars, charts, iconos y montos se tiñen con el color de acento del usuario; pie charts excluidos (mantienen colores para diferenciación visual)
 - **Notificaciones Personalizadas (10.5.H)** - ScheduledPaymentNotificationService para pagos vencidos/hoy/próximos con nombre y monto ("Hoy vence: Netflix por $29.90"); BudgetAlertService mejorado con montos gastado/límite ("Presupuesto Comida al 50% — $500 de $1,000 gastados"); ReportNotificationService con datos reales calculados (balance, gastos, ingresos, top categoría); verificación de permisos y reprogramación automática al volver a la app o reinstalar; CurrencyUtils.symbol(for:) helper; localizaciones 6 idiomas
+- **Cross-device wipe coordination (hotfix/1.0.1)** - Señalización via iCloud KV timestamps para que otros dispositivos detecten wipe en segundos (vs minutos de CloudKit). 3 escenarios: wipe remoto→onboarding, wipe+onboarding completo→sync banner, mid-onboarding exit si otro device termina primero. WipeKey enum para type-safety. broadcastSignal param en DataWipeService para evitar loops. Protección contra auto-reacción via lastKnownWipeTimestamp local.
 - **iCloud Sync Always-On (10.5.G.1 mejora)** - Sync simplificado a always-on (sin toggle opt-in); Settings solo muestra estado (sin restart); detección de datos iCloud al instalar para saltar onboarding; pantalla "Sincronizando..." mientras espera datos (5s timeout); localizaciones completas en 6 idiomas para todas las claves iCloud
 - **Personalización de Widgets iOS (10.5.G.4)** - Tema (Yala/iOS) para 10 widgets de datos; modo de selección (Automático/Personalizado) para BudgetsWidget y ScheduledPaymentsWidget; AppEntity + EntityQuery para Budget y ScheduledPayment; ParameterSummary condicional para mostrar selector solo en modo custom; localizaciones es/en (tema, selección, entidades)
 - **Fix etiquetas duplicadas en gráficos de barras** - Nueva función `calculateSmartAxisDates(forDataDates:grouping:)` en SmartAxisHelper que usa fechas reales de datos en vez de interpolación lineal para agrupación mes/semana; previene etiquetas duplicadas como "ene", "ene", "feb" cuando hay pocos datos; actualizado en CashFlowWidget, NatureTrendWidget (app y widget)
@@ -581,12 +596,11 @@ Ver ROADMAP.md para más detalles de Fase 12.
 
 ## Session Continuity
 
-Last session: 2026-02-25
-Stopped at: Investigación y diseño completo de funcionalidad Grupos (expense splitting)
-Next step: Fase 12 — siguiente item tech debt o polish pendiente (Grupos es futuro)
+Last session: 2026-03-04
+Stopped at: Hotfix 1.0.1 — inbox 3 bugs fixed (swipe crash, image duplicates, approve-next)
+Next step: Merge hotfix/1.0.1 to 1.0 or continue with remaining hotfix items
 Resume context:
-- Documento de diseño completo en .planning/GROUPS-DESIGN.md
-- Arquitectura: CloudKit CKShare + CKSyncEngine x2 + encryptedValues, solo enlace para invitar
-- 7 fases de implementación definidas (A-G), funcionalidad futura
-- Deferred post-release: HIGH-2/3/12/13 (pagination), HIGH-24/A11Y-41 (onboarding a11y)
-- Branch 1.0 — release branch
+- Branch hotfix/1.0.1 pushed to origin with all inbox fixes
+- Swipe-delete/reject: separated UI animation from SwiftData persistence
+- Image dedup: no longer re-inserts all drafts when uniqueDrafts is empty
+- Approve-next: navigates to oldest pending draft (.last) instead of newest (.first)

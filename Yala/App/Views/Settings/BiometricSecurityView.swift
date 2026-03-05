@@ -14,7 +14,7 @@ struct BiometricSecurityView: View {
     private let authService = BiometricAuthService.shared
 
     @State private var isEnabled: Bool = false
-    @State private var selectedTimeout: LockTimeout = .immediately
+    @State private var selectedTimeout: LockTimeout = .tenSeconds
     @State private var showAuthError: Bool = false
     @State private var isProcessingToggle: Bool = false
 
@@ -100,7 +100,7 @@ struct BiometricSecurityView: View {
 
                     Spacer()
                 }
-                .padding()
+                .padding(DS.Spacing.lg)
             }
         }
         .navigationTitle(L10n.Biometric.title)

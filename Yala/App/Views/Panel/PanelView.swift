@@ -270,6 +270,9 @@ struct PanelView: View {
                 // Force complete re-render when formatting settings change
                 .id(sessionState.formattingVersion)
             }
+            .refreshable {
+                await refreshData()
+            }
 
             // Botón flotante de nuevo registro
             VStack {
@@ -771,6 +774,14 @@ struct PanelView: View {
 
     private func formattedDate(_ date: Date) -> String {
         Self.chipDateFormatter.string(from: date)
+    }
+
+    /// Pull-to-refresh: sync preferences + reload data
+    private func refreshData() async {
+        PreferenceSyncService.shared.bootstrap()
+        recalculateData()
+        try? await Task.sleep(for: .milliseconds(300))
+        DS.Haptic.light()
     }
 
     /// Recalculate trend data with smooth animation
