@@ -90,6 +90,51 @@ Cada decisión sigue esta estructura:
 
 ---
 
+### [2026-03-05] Filtros Excluir: Income/Expense siempre usa semántica de inclusión
+
+**Contexto:** Al implementar modo excluir en filtros, se evaluó si el chip Income/Expense debería soportar exclusión.
+
+**Decisión:** Income/Expense (TransactionNature) siempre usa semántica de inclusión. La sección se oculta en modo excluir.
+
+**Razones:**
+- Excluir "Income" equivale a incluir "Expense" — no añade capacidad nueva
+- UI más simple al no mostrar una opción que no aporta valor en modo excluir
+- Evita confusión semántica ("excluir ingresos" vs "mostrar solo gastos")
+
+**Estado:** Activa
+
+---
+
+### [2026-03-05] Filtros Excluir: Amount y Search siempre usan semántica de inclusión
+
+**Contexto:** Se evaluó si los filtros de monto y búsqueda de texto deberían invertirse en modo excluir.
+
+**Decisión:** Solo filtros basados en `Set<PersistentIdentifier>` y `Set<CurrencyCode>`/`Set<SubcategoryNature>` soportan exclusión. Amount y Search mantienen semántica de inclusión siempre.
+
+**Razones:**
+- Invertir "monto > 100" a "excluir monto > 100" es confuso y poco intuitivo
+- Invertir búsqueda de texto ("excluir notas que contengan X") tiene uso marginal
+- Consistencia: los filtros de valor/texto funcionan igual independientemente del modo
+
+**Estado:** Activa
+
+---
+
+### [2026-03-05] Filtros Excluir: Limpiar selecciones al cambiar modo
+
+**Contexto:** Al cambiar entre incluir↔excluir, se evaluó si preservar o limpiar las selecciones activas.
+
+**Decisión:** Limpiar todas las selecciones de filtros de entidad al cambiar de modo.
+
+**Razones:**
+- Preservar selecciones invierte la intención (lo que antes incluías ahora lo excluyes)
+- Limpiar es más seguro y predecible — el usuario siempre parte de estado conocido
+- Evita resultados inesperados donde el usuario no entiende por qué ve ciertos datos
+
+**Estado:** Activa
+
+---
+
 ## Decisiones Superadas
 
 [Decisiones que ya no aplican pero queremos preservar el razonamiento histórico]

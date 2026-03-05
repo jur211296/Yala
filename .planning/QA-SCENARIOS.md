@@ -4816,9 +4816,9 @@ Para cada tema verificar:
 - [ ] Transacciones en otras monedas siguen visibles
 
 ### 40.6 Modo Excluir — Nature y TransactionNature
-- [ ] Cambiar a "Excluir" → seleccionar nature "Necesidad"
-- [ ] Subcategorías de tipo necesidad se ocultan
-- [ ] Cambiar a "Excluir" → filtrar por income → solo expenses visibles
+- [ ] Cambiar a "Excluir" → seleccionar nature "Necesidad" → subcategorías de tipo necesidad se ocultan
+- [ ] En modo excluir, sección Income/Expense NO aparece (oculta por diseño)
+- [ ] El filtro transactionNature solo funciona en modo incluir
 
 ### 40.7 Chips visuales en modo excluir
 - [ ] En modo excluir con filtros activos, chips muestran ícono minus.circle.fill rojo
@@ -4856,6 +4856,16 @@ Para cada tema verificar:
 ### 40.12 Localización del modo excluir
 - [ ] Verificar "Incluir"/"Excluir"/"Nada" en los 6 idiomas (es, en, de, fr, it, pt)
 - [ ] Labels correctos en cada idioma al cambiar modo
+
+### 40.13 Auto-reset del modo excluir
+- [ ] Activar modo excluir → seleccionar 1 cuenta → deseleccionar esa cuenta
+- [ ] Modo auto-resetea a "Incluir" (resetExcludeModeIfNeeded)
+- [ ] Segmented control refleja el cambio automático
+
+### 40.14 Combinación de filtros en modo excluir
+- [ ] Excluir cuenta A + categoría B → tx que cumple CUALQUIERA de las dos condiciones se oculta
+- [ ] Excluir tag X + moneda USD → ambas condiciones se aplican independientemente
+- [ ] Excluir cuenta A + monto >100 → solo tx de cuenta A se excluyen; el filtro monto es inclusivo normal
 
 ---
 
