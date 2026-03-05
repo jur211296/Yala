@@ -1734,6 +1734,21 @@ enum L10n {
         static var currencySymbol: String {
             ls("settings.currencySymbol", comment: "")
         }
+        static var autoFocusField: String {
+            ls("settings.autoFocusField", comment: "")
+        }
+        static var autoFocusFieldDescription: String {
+            ls("settings.autoFocusFieldDescription", comment: "")
+        }
+        static var autoFocusAmount: String {
+            ls("settings.autoFocusAmount", comment: "")
+        }
+        static var autoFocusNote: String {
+            ls("settings.autoFocusNote", comment: "")
+        }
+        static var autoFocusNone: String {
+            ls("settings.autoFocusNone", comment: "")
+        }
         // resetData removed (duplicate)
         static var resetDataDescription: String {
             ls("settings.resetDataDescription", comment: "")
@@ -2288,9 +2303,6 @@ enum L10n {
         static var finish: String {
             ls("onboarding.finish", comment: "")
         }
-        static var defaultAccountName: String {
-            ls("onboarding.defaultAccountName", comment: "")
-        }
         static var categoriesTitle: String {
             ls("onboarding.categoriesTitle", comment: "")
         }
@@ -2346,6 +2358,12 @@ enum L10n {
         static var expensesOnlyOptionExpenses: String {
             ls("onboarding.expensesOnlyOptionExpenses", comment: "")
         }
+        static var expensesOnlyDescAll: String {
+            ls("onboarding.expensesOnlyDescAll", comment: "")
+        }
+        static var expensesOnlyDescExpenses: String {
+            ls("onboarding.expensesOnlyDescExpenses", comment: "")
+        }
         static var privacyTitle: String { ls("onboarding.privacyTitle", comment: "") }
         static var privacySubtitle: String { ls("onboarding.privacySubtitle", comment: "") }
         static var privacyLocal: String { ls("onboarding.privacyLocal", comment: "") }
@@ -2353,6 +2371,10 @@ enum L10n {
         static var privacyIcloud: String { ls("onboarding.privacyIcloud", comment: "") }
         static var privacyNoSharing: String { ls("onboarding.privacyNoSharing", comment: "") }
         static var privacyTutorialsHint: String { ls("onboarding.privacyTutorialsHint", comment: "") }
+        static var tutorialsTitle: String { ls("onboarding.tutorialsTitle", comment: "") }
+        static var tutorialsSubtitle: String { ls("onboarding.tutorialsSubtitle", comment: "") }
+        static var tutorialsExplore: String { ls("onboarding.tutorialsExplore", comment: "") }
+        static var tutorialsSettingsHint: String { ls("onboarding.tutorialsSettingsHint", comment: "") }
     }
 
     // MARK: - Bulk Edit

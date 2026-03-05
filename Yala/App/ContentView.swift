@@ -22,6 +22,7 @@ struct ContentView: View {
     @State private var syncDismissTask: Task<Void, Never>?
     @State private var deduplicationTask: Task<Void, Never>?
     @State private var wipeGraceTask: Task<Void, Never>?
+    @State private var remoteWipeTask: Task<Void, Never>?
     @State private var showRemoteWipeAlert: Bool = false
     @State private var showProTrialOffer: Bool = false
     @State private var isInitialCheckDone: Bool = false
@@ -166,7 +167,12 @@ struct ContentView: View {
             // Show trial offer after onboarding completes (only for eligible non-Pro users)
             if hasCompletedOnboarding && !FeatureGateService.shared.isProUser {
                 Task {
-                    let eligible = await StoreKitManager.shared.isEligibleForIntroOffer()
+                    var eligible = false
+                    for _ in 0..<3 {
+                        eligible = await StoreKitManager.shared.isEligibleForIntroOffer()
+                        if eligible || !StoreKitManager.shared.products.isEmpty { break }
+                        try? await Task.sleep(for: .seconds(1))
+                    }
                     if eligible {
                         showProTrialOffer = true
                     }
@@ -174,6 +180,7 @@ struct ContentView: View {
             }
         }) {
             OnboardingView {
+                hasCompletedOnboarding = true
                 showOnboarding = false
             }
             .environment(SessionState.shared)
@@ -234,6 +241,13 @@ struct ContentView: View {
                 }
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .remoteWipeDetected)) { notification in
+            let onboardingAlreadyDone = notification.userInfo?[PreferenceSyncService.onboardingAlreadyDoneKey] as? Bool ?? false
+            handleRemoteWipeSignal(onboardingAlreadyDone: onboardingAlreadyDone)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .remoteOnboardingCompleted)) { _ in
+            handleRemoteOnboardingCompleted()
+        }
     }
 
     private func dismissSplash() {
@@ -268,6 +282,64 @@ struct ContentView: View {
                 withAnimation(.easeInOut) { showSyncBanner = false }
             } catch {
                 // Task cancelled — a new change arrived, dismiss rescheduled
+            }
+        }
+    }
+
+    // MARK: - Cross-Device Wipe Handling
+
+    private func handleRemoteWipeSignal(onboardingAlreadyDone: Bool) {
+        // Don't react to our own wipe
+        guard !SessionState.shared.isWipingData else { return }
+
+        // Cancel the hasExistingData-based wipe grace to avoid double-alert
+        wipeGraceTask?.cancel()
+        wipeGraceTask = nil
+        showRemoteWipeAlert = false
+
+        performLocalWipeForRemoteSync(skipOnboarding: onboardingAlreadyDone)
+    }
+
+    private func handleRemoteOnboardingCompleted() {
+        // Only act if this device is mid-onboarding — otherwise ignore
+        guard showOnboarding else { return }
+        hasCompletedOnboarding = true
+        showOnboarding = false
+        withAnimation(.easeInOut) { showSyncBanner = true }
+        scheduleSyncBannerDismiss()
+    }
+
+    private func performLocalWipeForRemoteSync(skipOnboarding: Bool) {
+        remoteWipeTask?.cancel()
+        remoteWipeTask = Task {
+            let sessionState = SessionState.shared
+            sessionState.isWipingData = true
+
+            // Wait for MainTabView to dismount (prevents @Query crash)
+            try? await Task.sleep(for: .milliseconds(500))
+
+            do {
+                try DataWipeService.wipeAllUserData(
+                    in: modelContext,
+                    broadcastSignal: false  // Reactive wipe — don't re-signal
+                )
+            } catch {
+                #if DEBUG
+                print("ContentView: Remote wipe failed: \(error)")
+                #endif
+            }
+
+            // Let SwiftData settle
+            try? await Task.sleep(for: .milliseconds(200))
+
+            sessionState.isWipingData = false
+
+            if skipOnboarding {
+                hasCompletedOnboarding = true
+                withAnimation(.easeInOut) { showSyncBanner = true }
+                scheduleSyncBannerDismiss()
+            } else {
+                hasCompletedOnboarding = false  // onChange triggers onboarding
             }
         }
     }
@@ -307,7 +379,7 @@ struct ContentView: View {
         if SwiftDataConfiguration.isICloudAvailable() {
             isWaitingForSync = true
 
-            for _ in 0..<15 { // 15 × 2s = 30s max (CloudKit cold sync can take 30-60s)
+            for _ in 0..<4 { // 4 × 2s = 8s max (was 15 × 2s = 30s; late data handled by dedup + onChange)
                 do {
                     try await Task.sleep(for: .seconds(2))
                 } catch {

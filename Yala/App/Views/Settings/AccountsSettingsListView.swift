@@ -271,6 +271,7 @@ struct AccountsSettingsListView: View {
     private func moveAccountList(from source: IndexSet, to destination: Int) {
         let newRaw = viewModel.moveAccount(from: source, to: destination)
         accountsSortOrderNamesRaw = newRaw
+        PreferenceSyncService.shared.set(string: newRaw, forKey: "accountsSortOrderNames")
     }
 
     // MARK: - Presentación de filas

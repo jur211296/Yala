@@ -17,7 +17,6 @@ struct PersonalDetailsView: View {
 
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("userAlias") private var userAlias: String = ""
-    @State private var userProfileImageData: Data?
     @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
 
     @State private var editedName: String = ""
@@ -256,11 +255,10 @@ struct PersonalDetailsView: View {
         selectedIcon = userProfileIcon
 
         // Migrate from UserDefaults if needed, then load from file
-        ProfileImageStorage.migrateFromUserDefaultsIfNeeded()
-        if let imageData = ProfileImageStorage.load(),
+        ProfileImageStorage.shared.migrateFromUserDefaultsIfNeeded()
+        if let imageData = ProfileImageStorage.shared.imageData,
             let uiImage = UIImage(data: imageData)
         {
-            userProfileImageData = imageData
             profileUIImage = uiImage
             profileImage = Image(uiImage: uiImage)
         }
@@ -304,6 +302,7 @@ struct PersonalDetailsView: View {
         // Save name (trim whitespace and ensure not empty)
         let trimmedName = editedName.trimmingCharacters(in: .whitespacesAndNewlines)
         userName = trimmedName.isEmpty ? L10n.Profile.defaultName : trimmedName
+        PreferenceSyncService.shared.set(string: userName, forKey: "userName")
 
         // Save alias (only if valid or empty)
         if isAliasValid || editedAlias.isEmpty {
@@ -313,17 +312,20 @@ struct PersonalDetailsView: View {
         // Save profile image to file or clear it if icon is selected
         if let uiImage = profileUIImage {
             if let imageData = uiImage.jpegData(compressionQuality: 0.7) {
-                ProfileImageStorage.save(imageData)
+                ProfileImageStorage.shared.save(imageData)
                 userProfileIcon = "" // Clear icon when photo is set
+                PreferenceSyncService.shared.set(string: "", forKey: "userProfileIcon")
             }
         } else if !selectedIcon.isEmpty {
             // Icon selected, clear image file
-            ProfileImageStorage.delete()
+            ProfileImageStorage.shared.delete()
             userProfileIcon = selectedIcon
+            PreferenceSyncService.shared.set(string: selectedIcon, forKey: "userProfileIcon")
         } else if !hasCustomAvatar {
             // User removed avatar, clear both
-            ProfileImageStorage.delete()
+            ProfileImageStorage.shared.delete()
             userProfileIcon = ""
+            PreferenceSyncService.shared.set(string: "", forKey: "userProfileIcon")
         }
 
         // Dismiss the sheet

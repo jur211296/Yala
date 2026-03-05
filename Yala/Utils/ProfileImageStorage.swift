@@ -3,39 +3,66 @@
 //  Yala
 //
 //  Stores profile image in Documents directory instead of UserDefaults.
+//  Observable singleton so all views react to changes immediately.
 //
 
 import Foundation
 
-enum ProfileImageStorage {
-    private static let fileName = "profile.jpg"
+@MainActor @Observable
+final class ProfileImageStorage {
+    static let shared = ProfileImageStorage()
 
-    private static var fileURL: URL? {
+    private(set) var imageData: Data?
+
+    private let fileName = "profile.jpg"
+
+    private var fileURL: URL? {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
             .first?
             .appendingPathComponent(fileName)
     }
 
-    /// Save image data to Documents/profile.jpg
-    static func save(_ data: Data) {
-        guard let url = fileURL else { return }
-        try? data.write(to: url)
+    private init() {
+        // Load on init
+        if let url = fileURL {
+            do {
+                imageData = try Data(contentsOf: url)
+            } catch {
+                #if DEBUG
+                print("ProfileImageStorage: Error loading: \(error)")
+                #endif
+            }
+        }
     }
 
-    /// Load image data from Documents/profile.jpg
-    static func load() -> Data? {
-        guard let url = fileURL else { return nil }
-        return try? Data(contentsOf: url)
+    /// Save image data to Documents/profile.jpg
+    func save(_ data: Data) {
+        guard let url = fileURL else { return }
+        do {
+            try data.write(to: url)
+        } catch {
+            #if DEBUG
+            print("ProfileImageStorage: Error saving: \(error)")
+            #endif
+        }
+        imageData = data
     }
 
     /// Delete the profile image file
-    static func delete() {
+    func delete() {
         guard let url = fileURL else { return }
-        try? FileManager.default.removeItem(at: url)
+        do {
+            try FileManager.default.removeItem(at: url)
+        } catch {
+            #if DEBUG
+            print("ProfileImageStorage: Error deleting: \(error)")
+            #endif
+        }
+        imageData = nil
     }
 
     /// Migrate from UserDefaults to file if needed (one-time)
-    static func migrateFromUserDefaultsIfNeeded() {
+    func migrateFromUserDefaultsIfNeeded() {
         let defaults = UserDefaults.standard
         let key = "userProfileImageData"
         guard let data = defaults.data(forKey: key) else { return }

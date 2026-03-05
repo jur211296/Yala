@@ -754,7 +754,7 @@
 "biometric.description" = "Protect your financial information with biometric authentication or device passcode.";
 "biometric.enableLock" = "Enable lock";
 "biometric.lockAfter" = "Lock after";
-"biometric.timeout.immediate" = "Immediately";
+"biometric.timeout.immediate" = "10 seconds";
 "biometric.timeout.oneMinute" = "1 minute";
 "biometric.timeout.fiveMinutes" = "5 minutes";
 "biometric.timeout.fifteenMinutes" = "15 minutes";
@@ -1382,6 +1382,11 @@
 "settings.currencyFormatDescription" = "Choose whether to show the currency code (USD) or symbol ($).";
 "settings.currencyCode" = "Code (PEN, USD)";
 "settings.currencySymbol" = "Symbol (S/, $)";
+"settings.autoFocusField" = "Auto-focus field";
+"settings.autoFocusFieldDescription" = "When creating a new manual record, the keyboard will automatically open on the selected field.";
+"settings.autoFocusAmount" = "Amount";
+"settings.autoFocusNote" = "Description";
+"settings.autoFocusNone" = "None";
 
 // Expenses Only Mode
 "settings.sectionUsageMode" = "Usage mode";
@@ -1425,7 +1430,6 @@
 "onboarding.periodTitle" = "Default period";
 "onboarding.periodSubtitle" = "What time range do you prefer to see when opening the app?";
 "onboarding.finish" = "Let's Go";
-"onboarding.defaultAccountName" = "My account";
 "onboarding.categoriesTitle" = "Categories to start";
 "onboarding.categoriesSubtitle" = "We've prepared common categories to help you organize your expenses from day one.";
 "onboarding.categoriesYes" = "Start with these categories";
@@ -1442,10 +1446,12 @@
 "onboarding.languageSubtitle" = "We noticed your language isn't supported yet. Don't worry, pick one of these options!";
 
 // Expenses Only Mode - Onboarding
-"onboarding.expensesOnlyTitle" = "What do you want to track?";
-"onboarding.expensesOnlySubtitle" = "You can change this anytime in Settings.";
-"onboarding.expensesOnlyOptionAll" = "I want to track everything";
-"onboarding.expensesOnlyOptionExpenses" = "I only want to track expenses";
+"onboarding.expensesOnlyTitle" = "How do you want to use Yala?";
+"onboarding.expensesOnlySubtitle" = "Choose how you want to organize your money. You can change this later in Settings.";
+"onboarding.expensesOnlyOptionAll" = "Full control";
+"onboarding.expensesOnlyOptionExpenses" = "Expenses only";
+"onboarding.expensesOnlyDescAll" = "Expenses, income, transfers and account balances";
+"onboarding.expensesOnlyDescExpenses" = "Track only what you spend, no complications";
 "onboarding.privacyTitle" = "All Set";
 "onboarding.privacySubtitle" = "You're ready to start using Yala";
 "onboarding.privacyLocal" = "Your financial data stays on your device";
@@ -1453,6 +1459,10 @@
 "onboarding.privacyIcloud" = "Only you have access to your data";
 "onboarding.privacyNoSharing" = "AI features don't share or store sensitive data";
 "onboarding.privacyTutorialsHint" = "Discover Yala's tutorials and tips";
+"onboarding.tutorialsTitle" = "Learn to use Yala";
+"onboarding.tutorialsSubtitle" = "Short guides to get the most out of your finances";
+"onboarding.tutorialsExplore" = "Explore tutorials";
+"onboarding.tutorialsSettingsHint" = "You can always find these in Settings";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Changing the account will update the currency of selected transactions.";

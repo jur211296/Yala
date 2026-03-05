@@ -464,35 +464,42 @@ struct InboxView: View {
     // MARK: - Actions
 
     private func rejectDraft(_ draft: InboxDraft) {
-        // Haptic feedback
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
 
+        // 1. Animate removal from UI first
         dsWithAnimation(reduceMotion) {
-            draftService.setContext(modelContext)
-            do {
-                try draftService.rejectDraft(draft)
-            } catch {
-                #if DEBUG
-                print("InboxView: Error rejecting draft: \(error)")
-                #endif
-            }
+            viewModel.removeDraft(draft)
+        }
+
+        // 2. Persist rejection outside animation
+        draftService.setContext(modelContext)
+        do {
+            try draftService.rejectDraft(draft)
+        } catch {
+            #if DEBUG
+            print("InboxView: Error rejecting draft: \(error)")
+            #endif
+            viewModel.loadData()
         }
     }
 
     private func deleteDraftPermanently(_ draft: InboxDraft) {
-        // Haptic feedback for destructive action
         UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
 
+        // 1. Animate removal from UI first
         dsWithAnimation(reduceMotion) {
-            draftService.setContext(modelContext)
-            do {
-                try draftService.deleteDraft(draft)
-                viewModel.loadData()
-            } catch {
-                #if DEBUG
-                print("InboxView: Error deleting draft: \(error)")
-                #endif
-            }
+            viewModel.removeDraft(draft)
+        }
+
+        // 2. Persist deletion outside animation
+        draftService.setContext(modelContext)
+        do {
+            try draftService.deleteDraft(draft)
+        } catch {
+            #if DEBUG
+            print("InboxView: Error deleting draft: \(error)")
+            #endif
+            viewModel.loadData()
         }
     }
 

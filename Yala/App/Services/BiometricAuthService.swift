@@ -10,7 +10,7 @@ import SwiftUI
 
 /// Lock timeout options for biometric authentication
 enum LockTimeout: Int, CaseIterable, Identifiable {
-    case immediately = 0
+    case tenSeconds = 10
     case oneMinute = 60
     case fiveMinutes = 300
     case fifteenMinutes = 900
@@ -19,7 +19,7 @@ enum LockTimeout: Int, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .immediately:
+        case .tenSeconds:
             return L10n.Biometric.timeoutImmediate
         case .oneMinute:
             return L10n.Biometric.timeoutOneMinute
@@ -55,7 +55,7 @@ enum BiometricType {
 }
 
 /// Service for biometric authentication using LocalAuthentication framework
-@Observable
+@MainActor @Observable
 final class BiometricAuthService {
     static let shared = BiometricAuthService()
 
@@ -105,7 +105,7 @@ final class BiometricAuthService {
     var lockTimeout: LockTimeout {
         get {
             let raw = KeychainService.getInt(forKey: timeoutKey)
-            return LockTimeout(rawValue: raw) ?? .immediately
+            return LockTimeout(rawValue: raw) ?? .tenSeconds
         }
         set { KeychainService.setInt(newValue.rawValue, forKey: timeoutKey) }
     }
@@ -123,10 +123,11 @@ final class BiometricAuthService {
     func appDidEnterForeground() {
         guard isEnabled, didEnterBackground else { return }
         didEnterBackground = false
+        isAuthenticating = false
 
         if let timestamp = backgroundTimestamp {
             let elapsed = Date().timeIntervalSince(timestamp)
-            if lockTimeout == .immediately || elapsed >= Double(lockTimeout.rawValue) {
+            if elapsed >= Double(lockTimeout.rawValue) {
                 isLocked = true
             }
         }
@@ -139,7 +140,6 @@ final class BiometricAuthService {
     }
 
     /// Authenticate the user. Uses deviceOwnerAuthentication (biometric + passcode fallback).
-    @MainActor
     func authenticate() async -> Bool {
         guard !isAuthenticating else { return false }
         isAuthenticating = true
@@ -160,13 +160,15 @@ final class BiometricAuthService {
             isAuthenticating = false
             return success
         } catch {
+            #if DEBUG
+            print("[BiometricAuthService] Auth error: \(error)")
+            #endif
             isAuthenticating = false
             return false
         }
     }
 
     /// Authenticate once to verify before enabling biometric lock
-    @MainActor
     func authenticateToEnable() async -> Bool {
         let context = LAContext()
         context.localizedCancelTitle = L10n.Common.cancel
@@ -179,6 +181,9 @@ final class BiometricAuthService {
                 localizedReason: reason
             )
         } catch {
+            #if DEBUG
+            print("[BiometricAuthService] Enable auth error: \(error)")
+            #endif
             return false
         }
     }

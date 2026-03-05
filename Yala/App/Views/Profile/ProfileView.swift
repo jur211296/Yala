@@ -29,7 +29,7 @@ struct ProfileView: View {
 
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
-    @State private var userProfileImageData: Data?
+    private var profileStorage: ProfileImageStorage { .shared }
     @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
     @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
@@ -247,8 +247,7 @@ struct ProfileView: View {
             }
             .onAppear {
                 viewModel.setContext(modelContext)
-                ProfileImageStorage.migrateFromUserDefaultsIfNeeded()
-                userProfileImageData = ProfileImageStorage.load()
+                profileStorage.migrateFromUserDefaultsIfNeeded()
             }
         }
     }
@@ -276,7 +275,7 @@ struct ProfileView: View {
                         )
                         .frame(width: 100, height: 100)
 
-                    if let imageData = userProfileImageData,
+                    if let imageData = profileStorage.imageData,
                         let uiImage = UIImage(data: imageData)
                     {
                         // User photo
@@ -547,6 +546,7 @@ struct ProfileView: View {
                         ForEach(VoiceLanguage.allCases) { language in
                             Button {
                                 voiceLanguageRaw = language.rawValue
+                                PreferenceSyncService.shared.set(string: language.rawValue, forKey: "voiceLanguage")
                             } label: {
                                 HStack {
                                     Text(language.displayName)

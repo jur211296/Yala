@@ -23,8 +23,10 @@ struct PersonalizationSettingsView: View {
     @AppStorage("averageLineMode") private var averageLineMode: Int = 1
     @AppStorage("decimalPlaces") private var decimalPlaces: Int = 0
     @AppStorage("currencyDisplayFormat") private var currencyDisplayFormat: String = "code"  // "code" or "symbol"
+    @AppStorage("autoFocusField") private var autoFocusField: String = "none"
 
     @State private var showingPeriodPicker = false
+    @State private var showingAutoFocusPicker = false
     @State private var showingDecimalsPicker = false
     @State private var showingCurrencyFormatPicker = false
     @State private var showingTabBarConfig = false
@@ -59,6 +61,14 @@ struct PersonalizationSettingsView: View {
 
     private var currencyFormatDisplayName: String {
         currencyDisplayFormat == "symbol" ? L10n.Settings.currencySymbol : L10n.Settings.currencyCode
+    }
+
+    private var autoFocusDisplayName: String {
+        switch autoFocusField {
+        case "amount": return L10n.Settings.autoFocusAmount
+        case "description": return L10n.Settings.autoFocusNote
+        default: return L10n.Settings.autoFocusNone
+        }
     }
 
     private var currentLanguageDisplayName: String {
@@ -213,6 +223,9 @@ struct PersonalizationSettingsView: View {
 
                                 Toggle(L10n.Settings.colorfulIcons, isOn: $colorfulIcons)
                                     .labelsHidden()
+                                    .onChange(of: colorfulIcons) { _, newValue in
+                                        PreferenceSyncService.shared.set(bool: newValue, forKey: "colorfulIcons")
+                                    }
 
                             }
                             .padding(.horizontal, DS.FormRow.paddingH)
@@ -353,6 +366,9 @@ struct PersonalizationSettingsView: View {
 
                                 Toggle(L10n.Settings.showVariations, isOn: $showVariations)
                                     .labelsHidden()
+                                    .onChange(of: showVariations) { _, newValue in
+                                        PreferenceSyncService.shared.set(bool: newValue, forKey: "showVariations")
+                                    }
 
                             }
                             .padding(.horizontal, DS.FormRow.paddingH)
@@ -485,6 +501,43 @@ struct PersonalizationSettingsView: View {
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, DS.Spacing.xxs)
                         }
+
+                        // Auto-Focus Field
+                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                            Button {
+                                showingAutoFocusPicker = true
+                            } label: {
+                                HStack {
+                                    Text(L10n.Settings.autoFocusField)
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.thPrimaryText)
+
+                                    Spacer()
+
+                                    Text(autoFocusDisplayName)
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.secondary)
+
+                                    Image(systemName: "chevron.right")
+                                        .font(DS.Typography.labelSmall.weight(.medium))
+                                        .foregroundStyle(.tertiary)
+                                }
+                                .padding(.horizontal, DS.FormRow.paddingH)
+                                .padding(.vertical, DS.FormRow.paddingV)
+                                .background(.thCard)
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                                )
+                            }
+                            .buttonStyle(.plain)
+
+                            Text(L10n.Settings.autoFocusFieldDescription)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, DS.Spacing.xxs)
+                        }
                     }
 
                     Spacer()
@@ -521,6 +574,7 @@ struct PersonalizationSettingsView: View {
                 selectedWeekday: selectedWeekday,
                 onSelect: { weekday in
                     firstWeekdayRaw = weekday.rawValue
+                    PreferenceSyncService.shared.set(int: weekday.rawValue, forKey: "firstWeekday")
                     // Force recalculation of dateInterval with new firstWeekday
                     let currentPeriod = sessionState.selectedPeriod
                     sessionState.selectedPeriod = currentPeriod
@@ -541,6 +595,7 @@ struct PersonalizationSettingsView: View {
                 selectedDecimals: decimalPlaces,
                 onSelect: { decimals in
                     decimalPlaces = decimals
+                    PreferenceSyncService.shared.set(int: decimals, forKey: "decimalPlaces")
                     // Trigger UI refresh for all views showing formatted amounts
                     sessionState.formattingVersion += 1
                     showingDecimalsPicker = false
@@ -553,6 +608,7 @@ struct PersonalizationSettingsView: View {
                 selectedFormat: currencyDisplayFormat,
                 onSelect: { format in
                     currencyDisplayFormat = format
+                    PreferenceSyncService.shared.set(string: format, forKey: "currencyDisplayFormat")
                     // Trigger UI refresh for all views showing formatted amounts
                     sessionState.formattingVersion += 1
                     showingCurrencyFormatPicker = false
@@ -560,11 +616,23 @@ struct PersonalizationSettingsView: View {
             )
             .presentationDetents([.height(280)])
         }
+        .sheet(isPresented: $showingAutoFocusPicker) {
+            AutoFocusPickerSheet(
+                selectedField: autoFocusField,
+                onSelect: { field in
+                    autoFocusField = field
+                    PreferenceSyncService.shared.set(string: field, forKey: "autoFocusField")
+                    showingAutoFocusPicker = false
+                }
+            )
+            .presentationDetents([.height(320)])
+        }
         .sheet(isPresented: $showingAverageLinePicker) {
             AverageLinePickerSheet(
                 selectedMode: averageLineMode,
                 onSelect: { mode in
                     averageLineMode = mode
+                    PreferenceSyncService.shared.set(int: mode, forKey: "averageLineMode")
                     showingAverageLinePicker = false
                 }
             )
@@ -1080,6 +1148,85 @@ private struct AverageLinePickerSheet: View {
         .buttonStyle(.plain)
 
         if option.value != 2 {
+            Divider()
+                .padding(.leading, DS.Spacing.lg)
+        }
+    }
+}
+
+// MARK: - Auto-Focus Picker Sheet
+
+private struct AutoFocusPickerSheet: View {
+    let selectedField: String
+    let onSelect: (String) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    private let options: [(value: String, label: String)] = [
+        ("none", L10n.Settings.autoFocusNone),
+        ("amount", L10n.Settings.autoFocusAmount),
+        ("description", L10n.Settings.autoFocusNote),
+    ]
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                PanelBackgroundView()
+
+                ScrollView {
+                    VStack(spacing: DS.Spacing.none) {
+                        ForEach(options, id: \.value) { option in
+                            autoFocusRow(for: option)
+                        }
+                    }
+                    .background(.thCard)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DS.Radius.lg)
+                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                    )
+                    .padding(DS.Spacing.lg)
+                }
+            }
+            .navigationTitle(L10n.Settings.autoFocusField)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func autoFocusRow(for option: (value: String, label: String)) -> some View {
+        let isSelected = selectedField == option.value
+
+        Button {
+            onSelect(option.value)
+        } label: {
+            HStack {
+                Text(option.label)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.thPrimaryText)
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(.thAccent)
+                        .font(DS.Typography.headline)
+                }
+            }
+            .padding(.horizontal, DS.FormRow.paddingH)
+            .padding(.vertical, DS.FormRow.paddingV)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+
+        if option.value != "description" {
             Divider()
                 .padding(.leading, DS.Spacing.lg)
         }
