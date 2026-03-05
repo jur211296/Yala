@@ -138,8 +138,14 @@ final class InboxViewModel {
         pendingDrafts.first { $0.persistentModelID == id }
     }
 
+    /// Returns the oldest pending draft (last in array, sorted newest-first)
     func firstPendingDraft() -> InboxDraft? {
-        pendingDrafts.first
+        pendingDrafts.last
+    }
+
+    func removeDraft(_ draft: InboxDraft) {
+        allDrafts.removeAll { $0.persistentModelID == draft.persistentModelID }
+        pendingDrafts.removeAll { $0.persistentModelID == draft.persistentModelID }
     }
 
     var hasPendingDrafts: Bool {
