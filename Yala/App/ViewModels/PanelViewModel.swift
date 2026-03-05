@@ -723,6 +723,31 @@ final class PanelViewModel {
         }
     }
 
+    // MARK: - Filter Criteria Builder
+
+    /// Builds FilterCriteria from SessionState for use with FilterService.
+    /// Accounts NOT included — pre-filtered by eligibleAccountIDs (handles excludeFromStatistics).
+    private func buildFilterCriteria(
+        dateInterval: DateInterval? = nil,
+        includeCategories: Bool = true
+    ) -> FilterCriteria {
+        var criteria = FilterCriteria()
+        criteria.selectedTags = selectedTags
+        criteria.selectedCurrencies = selectedCurrencies
+        criteria.isExcludeMode = isExcludeMode
+        criteria.amountCondition = amountCondition
+        criteria.searchText = searchText
+        criteria.dateInterval = dateInterval
+
+        if includeCategories {
+            criteria.selectedCategories = SessionState.shared.selectedCategoryIDs
+            criteria.selectedSubcategories = selectedSubcategoryIDs
+            criteria.selectedNatures = SessionState.shared.selectedNatures
+        }
+
+        return criteria
+    }
+
     // MARK: - Calculation Context Builder
 
     /// Builds the shared context for all widget calculations
@@ -762,223 +787,36 @@ final class PanelViewModel {
         let eligibleAccountIDs = Set(eligibleAccounts.map { $0.persistentModelID })
 
         // Filter transactions by account + date + global filters
+        let fullCriteria = buildFilterCriteria(dateInterval: panelDateInterval)
         let filtered = transactions.filter { transaction in
             guard let account = transaction.account else { return false }
             if !eligibleAccountIDs.contains(account.persistentModelID) { return false }
-            if !panelDateInterval.contains(transaction.date) { return false }
 
-            // Focused Date Filter
+            // Focused Date Filter (PanelVM-specific: chart scrubbing)
             if let focus = focusedDate {
                 if !calendar.isDate(transaction.date, inSameDayAs: focus) { return false }
             }
 
-            // Category Filter
-            if let catID = selectedCategoryID {
-                if isExcludeMode {
-                    if transaction.category?.persistentModelID == catID { return false }
-                } else {
-                    guard transaction.category?.persistentModelID == catID else { return false }
-                }
-            }
-
-            // Subcategory Filter
-            if !selectedSubcategoryIDs.isEmpty {
-                if isExcludeMode {
-                    if let subID = transaction.subcategory?.persistentModelID,
-                        selectedSubcategoryIDs.contains(subID)
-                    { return false }
-                } else {
-                    guard let subID = transaction.subcategory?.persistentModelID,
-                        selectedSubcategoryIDs.contains(subID)
-                    else { return false }
-                }
-            }
-
-            // Nature Filter
-            if let nature = selectedNature {
-                if isExcludeMode {
-                    if let sub = transaction.subcategory, sub.nature == nature { return false }
-                } else {
-                    if let sub = transaction.subcategory {
-                        if sub.nature != nature { return false }
-                    } else {
-                        if nature != .unclassified { return false }
-                    }
-                }
-            }
-
-            // Tag Filter
-            if !selectedTags.isEmpty {
-                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
-                if isExcludeMode {
-                    if !transactionTagIDs.isDisjoint(with: selectedTags) { return false }
-                } else {
-                    if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
-                }
-            }
-
-            // Currency Filter
-            if !selectedCurrencies.isEmpty {
-                if isExcludeMode {
-                    if let txCurrency = CurrencyCode(rawValue: transaction.currencyCode),
-                        selectedCurrencies.contains(txCurrency)
-                    { return false }
-                } else {
-                    guard let txCurrency = CurrencyCode(rawValue: transaction.currencyCode) else {
-                        return false
-                    }
-                    if !selectedCurrencies.contains(txCurrency) { return false }
-                }
-            }
-
-            // Amount Filter (not affected by exclude mode)
-            if amountCondition.isActive {
-                let amountDecimal = Decimal(transaction.amount)
-                if !amountCondition.matches(amountDecimal) { return false }
-            }
-
-            // Search/Note Filter (not affected by exclude mode)
-            if !searchText.isEmpty {
-                let noteMatches = transaction.note?.localizedCaseInsensitiveContains(searchText) ?? false
-                if !noteMatches { return false }
-            }
-
-            return true
+            return FilterService.matchesCriteria(transaction, criteria: fullCriteria)
         }
 
-        // Transactions filtered by all criteria EXCEPT date (for previous period comparison)
+        // Transactions filtered by all criteria EXCEPT date and categories (for previous period comparison)
         // Excludes adjustments like expenseFiltered does
+        let comparisonCriteria = buildFilterCriteria(includeCategories: false)
         let transactionsWithoutDateFilter = transactions.filter { transaction in
-            // Exclude adjustments
             guard transaction.balanceAdjustmentType == nil else { return false }
-
             guard let account = transaction.account else { return false }
             if !eligibleAccountIDs.contains(account.persistentModelID) { return false }
-            // NO DATE FILTER HERE - that's the point
-
-            // Category Filter - NO category filter for comparison (compare all categories)
-            // Subcategory Filter - NO subcategory filter for comparison (compare all)
-            // Nature Filter - NO nature filter for comparison (compare all)
-
-            // Tag Filter
-            if !selectedTags.isEmpty {
-                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
-                if isExcludeMode {
-                    if !transactionTagIDs.isDisjoint(with: selectedTags) { return false }
-                } else {
-                    if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
-                }
-            }
-
-            // Currency Filter
-            if !selectedCurrencies.isEmpty {
-                if isExcludeMode {
-                    if let txCurrency = CurrencyCode(rawValue: transaction.currencyCode),
-                        selectedCurrencies.contains(txCurrency)
-                    { return false }
-                } else {
-                    guard let txCurrency = CurrencyCode(rawValue: transaction.currencyCode) else {
-                        return false
-                    }
-                    if !selectedCurrencies.contains(txCurrency) { return false }
-                }
-            }
-
-            // Amount Filter (not affected by exclude mode)
-            if amountCondition.isActive {
-                let amountDecimal = Decimal(transaction.amount)
-                if !amountCondition.matches(amountDecimal) { return false }
-            }
-
-            // Search/Note Filter (not affected by exclude mode)
-            if !searchText.isEmpty {
-                let noteMatches = transaction.note?.localizedCaseInsensitiveContains(searchText) ?? false
-                if !noteMatches { return false }
-            }
-
-            return true
+            return FilterService.matchesCriteria(transaction, criteria: comparisonCriteria)
         }
 
         // Balance transactions: same filters as filtered BUT without date filter
         // INCLUDES adjustments (needed for running balance calculation)
+        let balanceCriteria = buildFilterCriteria()  // dateInterval = nil → no date filter
         let balanceTransactions = transactions.filter { transaction in
             guard let account = transaction.account else { return false }
             if !eligibleAccountIDs.contains(account.persistentModelID) { return false }
-            // NO DATE FILTER - balance needs all historical transactions
-
-            // Focused Date Filter - skip for balance (need all history)
-            // Category Filter
-            if let catID = selectedCategoryID {
-                if isExcludeMode {
-                    if transaction.category?.persistentModelID == catID { return false }
-                } else {
-                    guard transaction.category?.persistentModelID == catID else { return false }
-                }
-            }
-
-            // Subcategory Filter
-            if !selectedSubcategoryIDs.isEmpty {
-                if isExcludeMode {
-                    if let subID = transaction.subcategory?.persistentModelID,
-                        selectedSubcategoryIDs.contains(subID)
-                    { return false }
-                } else {
-                    guard let subID = transaction.subcategory?.persistentModelID,
-                        selectedSubcategoryIDs.contains(subID)
-                    else { return false }
-                }
-            }
-
-            // Nature Filter
-            if let nature = selectedNature {
-                if isExcludeMode {
-                    if let sub = transaction.subcategory, sub.nature == nature { return false }
-                } else {
-                    if let sub = transaction.subcategory {
-                        if sub.nature != nature { return false }
-                    } else {
-                        if nature != .unclassified { return false }
-                    }
-                }
-            }
-
-            // Tag Filter
-            if !selectedTags.isEmpty {
-                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
-                if isExcludeMode {
-                    if !transactionTagIDs.isDisjoint(with: selectedTags) { return false }
-                } else {
-                    if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
-                }
-            }
-
-            // Currency Filter
-            if !selectedCurrencies.isEmpty {
-                if isExcludeMode {
-                    if let txCurrency = CurrencyCode(rawValue: transaction.currencyCode),
-                        selectedCurrencies.contains(txCurrency)
-                    { return false }
-                } else {
-                    guard let txCurrency = CurrencyCode(rawValue: transaction.currencyCode) else {
-                        return false
-                    }
-                    if !selectedCurrencies.contains(txCurrency) { return false }
-                }
-            }
-
-            // Amount Filter (not affected by exclude mode)
-            if amountCondition.isActive {
-                let amountDecimal = Decimal(transaction.amount)
-                if !amountCondition.matches(amountDecimal) { return false }
-            }
-
-            // Search/Note Filter (not affected by exclude mode)
-            if !searchText.isEmpty {
-                let noteMatches = transaction.note?.localizedCaseInsensitiveContains(searchText) ?? false
-                if !noteMatches { return false }
-            }
-
-            return true
+            return FilterService.matchesCriteria(transaction, criteria: balanceCriteria)
         }
 
         // Expense-filtered transactions (excludes adjustments and initial balances)

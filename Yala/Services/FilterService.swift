@@ -216,7 +216,8 @@ struct FilterService {
         if !matchesEntityFilter(transaction.account?.persistentModelID, selected: criteria.selectedAccounts, isExclude: isExclude) { return false }
         if !matchesEntityFilter(transaction.category?.persistentModelID, selected: criteria.selectedCategories, isExclude: isExclude) { return false }
         if !matchesEntityFilter(transaction.subcategory?.persistentModelID, selected: criteria.selectedSubcategories, isExclude: isExclude) { return false }
-        if !matchesEntityFilter(transaction.subcategory?.nature, selected: criteria.selectedNatures, isExclude: isExclude) { return false }
+        // Transactions without subcategory are treated as .unclassified (consistent with PanelVM behavior)
+        if !matchesEntityFilter(transaction.subcategory?.nature ?? .unclassified, selected: criteria.selectedNatures, isExclude: isExclude) { return false }
 
         // Tags filter (ANY match semantics)
         if !criteria.selectedTags.isEmpty {
@@ -260,17 +261,9 @@ struct FilterService {
         // Currency filter
         if !matchesEntityFilter(CurrencyCode(rawValue: transaction.currencyCode), selected: criteria.selectedCurrencies, isExclude: isExclude) { return false }
 
-        // Search text filter (searches in note, category, subcategory, account, tags)
+        // Search text filter (note only — GlobalSearchView handles broad multi-field search)
         if !criteria.searchText.isEmpty {
-            let search = criteria.searchText.lowercased()
-            let noteMatch = (transaction.note ?? "").lowercased().contains(search)
-            let categoryMatch = (transaction.category?.name ?? "").lowercased().contains(search)
-            let subcategoryMatch = (transaction.subcategory?.name ?? "").lowercased().contains(
-                search)
-            let accountMatch = (transaction.account?.name ?? "").lowercased().contains(search)
-            let tagMatch = (transaction.tags ?? []).contains { $0.name.lowercased().contains(search) }
-
-            guard noteMatch || categoryMatch || subcategoryMatch || accountMatch || tagMatch else {
+            guard (transaction.note ?? "").localizedCaseInsensitiveContains(criteria.searchText) else {
                 return false
             }
         }
