@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: None
 Plan: None
 Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-03-04 — Inbox hotfix: swipe crash, image duplicates, approve-next direction
+Last activity: 2026-03-05 — Prevent same-account selection in transfers
 
 ### Apple Review History (V1.0)
 
@@ -42,6 +42,8 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-05] 8665498 fix: remove redundant saves in transfers and improve bulk delete consistency
+- [2026-03-05] 8bab520 fix: prevent same-account selection in transfers
 - [2026-03-04] b18626b fix: inbox swipe crash, image duplicates, and approve-next direction
 - [2026-03-04] 3298f58 fix: sync account sort order across devices via iCloud KV
 - [2026-03-04] b1fad3c feat: configurable auto-focus field in Personalization settings
@@ -499,11 +501,11 @@ Accessibility:
 
 Code Quality:
 - [ ] CODE-20: Tags relationship sin `inverse` explícito (TransactionItem.swift)
-- [ ] CODE-21: Triple save en creación de transfer (NewTransactionViewModel)
-- [ ] CODE-28: Bulk delete bypasea EntityDeletionService (RecordsViewModel)
+- [x] CODE-21: Triple save en creación de transfer — reducido a 1 save atómico (8665498)
+- [x] CODE-28: Bulk delete — added processPendingChanges() for @Query consistency (8665498)
 - [ ] CODE-30: Legacy fields `month/year/category` en Budget model (dead code)
 - [ ] CODE-32: BudgetPeriodSelectorSheet scroll picker frágil
-- [ ] CODE-41: Direct modelContext.save() bypasea DraftService (InboxView)
+- [x] CODE-41: Direct modelContext.save() bypasea DraftService — FALSE ALARM, InboxView already uses DraftService correctly
 - [ ] CODE-46: 470 líneas de search embebidas en ContentView (extraer)
 
 Ver ROADMAP.md para más detalles de Fase 12.
@@ -596,11 +598,12 @@ Ver ROADMAP.md para más detalles de Fase 12.
 
 ## Session Continuity
 
-Last session: 2026-03-04
-Stopped at: Hotfix 1.0.1 — inbox 3 bugs fixed (swipe crash, image duplicates, approve-next)
-Next step: Merge hotfix/1.0.1 to 1.0 or continue with remaining hotfix items
+Last session: 2026-03-05
+Stopped at: Hotfix 1.0.2 — code quality fixes (CODE-21, CODE-28, preview prints)
+Next step: Continue hotfix/1.0.2 — remaining code quality items (CODE-20, CODE-30, CODE-32, CODE-46) or merge to 1.0
 Resume context:
-- Branch hotfix/1.0.1 pushed to origin with all inbox fixes
-- Swipe-delete/reject: separated UI animation from SwiftData persistence
-- Image dedup: no longer re-inserts all drafts when uniqueDrafts is empty
-- Approve-next: navigates to oldest pending draft (.last) instead of newest (.first)
+- Branch hotfix/1.0.2 with 3 commits: transfer same-account fix, code quality fixes
+- CODE-21 resolved: removed 2 redundant context.save() in transfer subcategory creation
+- CODE-28 resolved: added processPendingChanges() after bulk delete
+- CODE-41 was false alarm (InboxView already uses DraftService)
+- Remaining code quality: CODE-20 (tags inverse), CODE-30 (budget dead code), CODE-32 (scroll picker), CODE-46 (search extraction)
