@@ -203,26 +203,12 @@ struct CategoriesTabView: View {
 
     // MARK: - Control Bar
 
-    private var excludeModeBadge: some View {
-        HStack(spacing: DS.Spacing.xs) {
-            Image(systemName: "minus.circle.fill")
-                .font(DS.Typography.chipIconOnly)
-                .foregroundStyle(DS.Semantic.errorForeground)
-            Text(L10n.Filters.excludeMode)
-                .font(DS.Typography.caption)
-                .foregroundStyle(DS.Semantic.errorForeground)
-        }
-        .padding(.horizontal, DS.Spacing.sm)
-        .padding(.vertical, DS.Spacing.xs)
-        .background(DS.Semantic.errorBackgroundSubtle, in: Capsule())
-    }
-
     private var controlBar: some View {
         HStack(spacing: DS.Spacing.md) {
             periodSelector
 
             if viewModel.isExcludeMode {
-                excludeModeBadge
+                ExcludeModeBadge()
             }
 
             if hasActiveFilters {

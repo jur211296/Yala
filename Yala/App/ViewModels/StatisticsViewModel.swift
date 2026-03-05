@@ -287,6 +287,7 @@ final class StatisticsViewModel: Filterable {
         selectedCurrencies.removeAll()
         searchText = ""
         amountCondition = .any
+        isExcludeMode = false
     }
 
     // MARK: - Period Interval
@@ -345,9 +346,13 @@ final class StatisticsViewModel: Filterable {
 
         // Get eligible accounts for trend calculations (archived accounts still count)
         let eligibleAccounts = accounts.filter { account in
-            !account.excludeFromStatistics
-                && (selectedAccounts.isEmpty
-                    || selectedAccounts.contains(account.persistentModelID))
+            guard !account.excludeFromStatistics else { return false }
+            if selectedAccounts.isEmpty { return true }
+            if isExcludeMode {
+                return !selectedAccounts.contains(account.persistentModelID)
+            } else {
+                return selectedAccounts.contains(account.persistentModelID)
+            }
         }
 
         // Calculate total income and expense from filtered transactions

@@ -66,7 +66,7 @@ struct RecordsTabView: View {
 
             // Exclude mode badge
             if viewModel.isExcludeMode {
-                excludeModeBadge
+                ExcludeModeBadge()
             }
 
             if viewModel.hasActiveFilters {
@@ -238,22 +238,6 @@ struct RecordsTabView: View {
             Spacer()
         }
         .animation(nil, value: viewModel.period)
-    }
-
-    // MARK: - Exclude Mode Badge
-
-    private var excludeModeBadge: some View {
-        HStack(spacing: DS.Spacing.xs) {
-            Image(systemName: "minus.circle.fill")
-                .font(DS.Typography.chipIconOnly)
-                .foregroundStyle(DS.Semantic.errorForeground)
-            Text(L10n.Filters.excludeMode)
-                .font(DS.Typography.caption)
-                .foregroundStyle(DS.Semantic.errorForeground)
-        }
-        .padding(.horizontal, DS.Spacing.sm)
-        .padding(.vertical, DS.Spacing.xs)
-        .background(DS.Semantic.errorBackgroundSubtle, in: Capsule())
     }
 
     // MARK: - Period Selector

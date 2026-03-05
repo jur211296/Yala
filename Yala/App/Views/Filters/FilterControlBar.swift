@@ -72,7 +72,7 @@ struct FilterControlBar<PeriodView: View>: View {
 
             // Exclude mode badge
             if isExcludeMode {
-                excludeModeBadge
+                ExcludeModeBadge()
             }
 
             // Filter chips scrollable area
@@ -135,22 +135,6 @@ struct FilterControlBar<PeriodView: View>: View {
         }
     }
 
-    // MARK: - Exclude Mode Badge
-
-    private var excludeModeBadge: some View {
-        HStack(spacing: DS.Spacing.xs) {
-            Image(systemName: "minus.circle.fill")
-                .font(DS.Typography.chipIconOnly)
-                .foregroundStyle(DS.Semantic.errorForeground)
-            Text(L10n.Filters.excludeMode)
-                .font(DS.Typography.caption)
-                .foregroundStyle(DS.Semantic.errorForeground)
-        }
-        .padding(.horizontal, DS.Spacing.sm)
-        .padding(.vertical, DS.Spacing.xs)
-        .background(DS.Semantic.errorBackgroundSubtle, in: Capsule())
-    }
-
     // MARK: - Chip Text Helpers
 
     /// Returns chip text for accounts in "First +x" format
@@ -177,9 +161,9 @@ struct FilterControlBar<PeriodView: View>: View {
 
         let totalCount = selectedCategories.count + selectedSubcategories.count
         if totalCount == 1 {
-            return names.first ?? "Categoría"
+            return names.first ?? L10n.Transaction.category
         }
-        return "\(names.first ?? "Categorías") +\(totalCount - 1)"
+        return "\(names.first ?? L10n.Filters.selectCategories) +\(totalCount - 1)"
     }
 
     /// Returns chip text for tags in "First +x" format

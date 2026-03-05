@@ -43,6 +43,8 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-05] 0fbe1f2 refactor/fix: simplify exclude mode — extract shared badge, helper method, and fix bugs
+- [2026-03-05] b769e4b test/docs: add exclude mode tests, QA scenarios, and design decisions
 - [2026-03-05] 34f51b6 fix: use L10n.Filters.all instead of hardcoded Spanish string in tests
 - [2026-03-05] cc2f4a5 Merge hotfix/1.0.2 into 1.1
 - [2026-03-05] 2700d6d Merge hotfix/1.0.1 into 1.1
@@ -51,11 +53,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-05] 40391ba refactor: extract search views from ContentView to dedicated file
 - [2026-03-05] 552c664 fix: remove dead Budget fields, modernize picker timing, improve tag empty state
 - [2026-03-05] 8665498 fix: remove redundant saves in transfers and improve bulk delete consistency
-- [2026-03-05] 8bab520 fix: prevent same-account selection in transfers
-- [2026-03-04] b18626b fix: inbox swipe crash, image duplicates, and approve-next direction
-- [2026-03-04] 3298f58 fix: sync account sort order across devices via iCloud KV
-- [2026-03-04] b1fad3c feat: configurable auto-focus field in Personalization settings
-- [2026-03-04] a830609 fix: Face ID grace period + stuck unlock screen
 - [2026-03-04] 8b2a954 fix: add tutorials onboarding step + wrap privacy screen in ScrollView
 - [2026-02-27] 930e725 fix: guard force unwraps in AppConstants URL construction
 - [2026-02-27] 16d38b3 chore: remove SettingsPlaceholderView and CaptureMode dead code
@@ -513,6 +510,28 @@ Code Quality:
 
 Ver ROADMAP.md para más detalles de Fase 12.
 
+### Refactors Pendientes: Filtros Excluir/Incluir (identificados 2026-03-05)
+
+Descubiertos durante simplify + audit de la feature de filtros excluir/incluir. No bloquean funcionalidad pero acumulan deuda técnica.
+
+**RF-1: PanelViewModel — 3 copias inline de FilterService (~200 LOC)**
+`PanelViewModel.buildCalculationContext` (líneas 765-982) implementa su propia lógica de filtrado con exclude mode 3 veces (`filtered`, `transactionsWithoutDateFilter`, `balanceTransactions`) en lugar de delegar a `FilterService.matchesCriteria()` como ya hacen RecordsViewModel y StatisticsViewModel. Cada pase repite if/else de exclude para 6 tipos de entidad. Además, `pieWidgetContext` (líneas 1021-1089) es otra implementación inline.
+- **Riesgo:** Agregar nuevo tipo de filtro requiere actualizarlo en FilterService Y en PanelViewModel (4 veces).
+- **Solución propuesta:** Construir `FilterCriteria` y llamar `FilterService.filter()`. Para variantes (sin fecha, balance), usar criterias modificados o añadir flags opcionales a `FilterCriteria`.
+- **Esfuerzo:** Medio — requiere entender las 3 variantes y mapearlas correctamente.
+
+**RF-2: hasActiveFilters / activeFilterCount duplicados en 4 lugares**
+Definidos independientemente en `FilterCriteria`, `SessionState`, `RecordsViewModel`, y `StatisticsViewModel`. Cada uno chequea un set ligeramente distinto de campos (ej: RecordsVM incluye `transactionTypeFilter`, StatisticsVM no). Relacionado: el protocolo `Filterable` no incluye `isExcludeMode`, así que `clearFiltersDefault()` no lo resetea.
+- **Riesgo:** Agregar filtro nuevo requiere actualizar 4 computed properties que ya están fuera de sync.
+- **Solución propuesta:** Los ViewModels deberían delegar a `FilterCriteria.hasActiveFilters` / `FilterCriteria.activeFilterCount` después de construir su criteria. Añadir `isExcludeMode` al protocolo `Filterable`.
+- **Esfuerzo:** Bajo-Medio.
+
+**RF-3: processChartData() llamado 5+ veces por render en pie widgets**
+En `CategoriesPieWidget`, `SubcategoriesPieWidget` y `TagsPieWidget`, `chartData` es computed property que re-ejecuta `processChartData()` en cada acceso. Como `body` y sus subvistas (`chartView`, `connectorLines`, `bubblesLayer`, `simpleLegendList`) lo leen por separado, el cálculo corre ~5 veces por render.
+- **Riesgo:** Performance — O(5*K) por widget por render, donde K = número de categorías/tags.
+- **Solución propuesta:** Cachear resultado en una variable `let` al inicio de `body`, o convertir `chartData` a stored property actualizada en `onChange`.
+- **Esfuerzo:** Bajo.
+
 ### Fase 7: Beta Preparation (V1.0 Release) ✅ COMPLETADA
 
 **Subfase 7.1: Code Quality & Cleanup** ✅
@@ -602,11 +621,13 @@ Ver ROADMAP.md para más detalles de Fase 12.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Apple approved 1.0.1 — tagged, merged to 1.0, all hotfixes integrated into 1.1, branches cleaned
-Next step: Continue Fase 12 development on 1.1
+Stopped at: Exclude mode tests + simplify + bugfixes completados (b769e4b + 0fbe1f2)
+Next step: Continue Fase 12 — considerar RF-1 (PanelViewModel usa FilterService) o siguiente feature
 Resume context:
-- V1.0.1 approved by Apple, tagged and merged to 1.0
-- hotfix/1.0.1 + hotfix/1.0.2 merged into 1.1, branches deleted (local + remote)
-- 1.0 → 1.1 reconciliation merge done, histories synchronized
-- 279 tests passing on 1.1 (fixed RecordsFiltersViewModelTests locale hardcoding)
-- All pushed to origin: 1.0, 1.1, tag 1.0.1
+- 15 tests nuevos para exclude mode (FilterServiceTests 22, RecordsFiltersViewModelTests 6, total 294)
+- 3 bugs corregidos: StatisticsVM clearFilters, StatisticsVM account eligibility, FilterControlBar l10n
+- ExcludeModeBadge extraído como vista compartida (eliminado de 4 archivos)
+- matchesEntityFilter helper extraído en FilterService (elimina 5 bloques duplicados)
+- 3 decisiones de diseño documentadas en DECISIONS.md
+- QA scenarios 40.6 corregido, 40.13-40.14 añadidos
+- 3 refactors pendientes documentados en STATE.md (RF-1, RF-2, RF-3)

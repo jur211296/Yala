@@ -212,67 +212,20 @@ struct FilterService {
 
         let isExclude = criteria.isExcludeMode
 
-        // Account filter
-        if !criteria.selectedAccounts.isEmpty {
-            if isExclude {
-                if let accountID = transaction.account?.persistentModelID,
-                    criteria.selectedAccounts.contains(accountID)
-                { return false }
-            } else {
-                guard let accountID = transaction.account?.persistentModelID,
-                    criteria.selectedAccounts.contains(accountID)
-                else { return false }
-            }
-        }
+        // Entity filters (account, category, subcategory, nature, currency)
+        if !matchesEntityFilter(transaction.account?.persistentModelID, selected: criteria.selectedAccounts, isExclude: isExclude) { return false }
+        if !matchesEntityFilter(transaction.category?.persistentModelID, selected: criteria.selectedCategories, isExclude: isExclude) { return false }
+        if !matchesEntityFilter(transaction.subcategory?.persistentModelID, selected: criteria.selectedSubcategories, isExclude: isExclude) { return false }
+        if !matchesEntityFilter(transaction.subcategory?.nature, selected: criteria.selectedNatures, isExclude: isExclude) { return false }
 
-        // Category filter
-        if !criteria.selectedCategories.isEmpty {
-            if isExclude {
-                if let categoryID = transaction.category?.persistentModelID,
-                    criteria.selectedCategories.contains(categoryID)
-                { return false }
-            } else {
-                guard let categoryID = transaction.category?.persistentModelID,
-                    criteria.selectedCategories.contains(categoryID)
-                else { return false }
-            }
-        }
-
-        // Subcategory filter
-        if !criteria.selectedSubcategories.isEmpty {
-            if isExclude {
-                if let subcategoryID = transaction.subcategory?.persistentModelID,
-                    criteria.selectedSubcategories.contains(subcategoryID)
-                { return false }
-            } else {
-                guard let subcategoryID = transaction.subcategory?.persistentModelID,
-                    criteria.selectedSubcategories.contains(subcategoryID)
-                else { return false }
-            }
-        }
-
-        // Nature filter
-        if !criteria.selectedNatures.isEmpty {
-            if isExclude {
-                if let subcategory = transaction.subcategory,
-                    criteria.selectedNatures.contains(subcategory.nature)
-                { return false }
-            } else {
-                guard let subcategory = transaction.subcategory,
-                    criteria.selectedNatures.contains(subcategory.nature)
-                else { return false }
-            }
-        }
-
-        // Tags filter
+        // Tags filter (ANY match semantics)
         if !criteria.selectedTags.isEmpty {
             let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
+            let hasOverlap = !transactionTagIDs.isDisjoint(with: criteria.selectedTags)
             if isExclude {
-                // Exclude: if transaction has ANY excluded tag → hide it
-                if !transactionTagIDs.isDisjoint(with: criteria.selectedTags) { return false }
+                if hasOverlap { return false }
             } else {
-                // Include: match if ANY selected tag is present
-                guard !transactionTagIDs.isDisjoint(with: criteria.selectedTags) else { return false }
+                guard hasOverlap else { return false }
             }
         }
 
@@ -305,17 +258,7 @@ struct FilterService {
         guard criteria.amountCondition.matches(abs(amount)) else { return false }
 
         // Currency filter
-        if !criteria.selectedCurrencies.isEmpty {
-            if isExclude {
-                if let currencyCode = CurrencyCode(rawValue: transaction.currencyCode),
-                    criteria.selectedCurrencies.contains(currencyCode)
-                { return false }
-            } else {
-                guard let currencyCode = CurrencyCode(rawValue: transaction.currencyCode),
-                    criteria.selectedCurrencies.contains(currencyCode)
-                else { return false }
-            }
-        }
+        if !matchesEntityFilter(CurrencyCode(rawValue: transaction.currencyCode), selected: criteria.selectedCurrencies, isExclude: isExclude) { return false }
 
         // Search text filter (searches in note, category, subcategory, account, tags)
         if !criteria.searchText.isEmpty {
@@ -336,6 +279,23 @@ struct FilterService {
     }
 
     // MARK: - Filter for Trends (Accounts Pre-filtering)
+
+    // MARK: - Entity Filter Helper
+
+    /// Checks if a transaction value matches an entity filter set, respecting exclude mode.
+    /// Returns true if the transaction should be included, false if it should be filtered out.
+    private static func matchesEntityFilter<T: Hashable>(
+        _ value: T?, selected: Set<T>, isExclude: Bool
+    ) -> Bool {
+        guard !selected.isEmpty else { return true }
+        if isExclude {
+            if let value, selected.contains(value) { return false }
+            return true
+        } else {
+            guard let value, selected.contains(value) else { return false }
+            return true
+        }
+    }
 
     /// Filters transactions for trend calculations, considering account eligibility.
     ///
