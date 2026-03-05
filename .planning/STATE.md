@@ -42,6 +42,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-05] 40391ba refactor: extract search views from ContentView to dedicated file
 - [2026-03-05] 552c664 fix: remove dead Budget fields, modernize picker timing, improve tag empty state
 - [2026-03-05] 8665498 fix: remove redundant saves in transfers and improve bulk delete consistency
 - [2026-03-05] 8bab520 fix: prevent same-account selection in transfers
@@ -507,7 +508,7 @@ Code Quality:
 - [x] CODE-30: Removed dead `month`/`year` from Budget model (552c664). `category`/`currencyCode`/`limitAmount` kept — still used.
 - [x] CODE-32: Migrated 3 DispatchQueue.main.asyncAfter → Task.sleep in BudgetPeriodSelectorSheet (552c664)
 - [x] CODE-41: Direct modelContext.save() bypasea DraftService — FALSE ALARM, InboxView already uses DraftService correctly
-- [ ] CODE-46: 470 líneas de search embebidas en ContentView (extraer)
+- [x] CODE-46: Search views extracted to App/Views/Search/GlobalSearchView.swift (40391ba). ContentView 1212→796 LOC.
 
 Ver ROADMAP.md para más detalles de Fase 12.
 
@@ -600,12 +601,10 @@ Ver ROADMAP.md para más detalles de Fase 12.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Hotfix 1.0.2 — resolved CODE-20, CODE-30, CODE-32, EMPTY-5 (tag icon)
-Next step: CODE-46 (search extraction from ContentView) or merge hotfix/1.0.2 to 1.0
+Stopped at: Hotfix 1.0.2 — CODE-46 search extraction complete. All code quality items resolved.
+Next step: Merge hotfix/1.0.2 to 1.0 — all CODE items in RELEASE-REVIEW resolved
 Resume context:
-- Branch hotfix/1.0.2 with 4 commits: transfer same-account, redundant saves, bulk delete, code quality batch
-- CODE-20: Already resolved — Tag.swift declares inverse (SwiftData only needs one side, adding both causes circular reference)
-- CODE-30: Removed dead month/year from Budget. category/currencyCode/limitAmount kept (still used)
-- CODE-32: Migrated DispatchQueue → Task.sleep (3 instances)
-- EMPTY-5: Added tag icon to autocomplete empty state (was previously resolved with Text, now enhanced with Label+icon)
-- Remaining code quality: CODE-46 (470 LOC search in ContentView)
+- Branch hotfix/1.0.2 with 5 commits: transfer fixes, code quality batch, search extraction
+- All code quality items resolved: CODE-20, CODE-21, CODE-28, CODE-30, CODE-32, CODE-41, CODE-46
+- CODE-46: Extracted 5 search types from ContentView (1212→796 LOC) + deduplicated filtering logic
+- Ready for merge — no pending CODE/BUG/HIGH items
