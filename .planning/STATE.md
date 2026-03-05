@@ -42,6 +42,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-05] 552c664 fix: remove dead Budget fields, modernize picker timing, improve tag empty state
 - [2026-03-05] 8665498 fix: remove redundant saves in transfers and improve bulk delete consistency
 - [2026-03-05] 8bab520 fix: prevent same-account selection in transfers
 - [2026-03-04] b18626b fix: inbox swipe crash, image duplicates, and approve-next direction
@@ -500,11 +501,11 @@ Accessibility:
 - [x] A11Y-DT: Migrar `.font(.system(size:))` a Dynamic Type — 2 fixes (@ScaledMetric + DT cap), 47 archivos auditados con comentarios A11Y-DT
 
 Code Quality:
-- [ ] CODE-20: Tags relationship sin `inverse` explícito (TransactionItem.swift)
+- [x] CODE-20: Tags relationship — already resolved, Tag.swift declares inverse:\TransactionItem.tags (SwiftData only needs one side)
 - [x] CODE-21: Triple save en creación de transfer — reducido a 1 save atómico (8665498)
 - [x] CODE-28: Bulk delete — added processPendingChanges() for @Query consistency (8665498)
-- [ ] CODE-30: Legacy fields `month/year/category` en Budget model (dead code)
-- [ ] CODE-32: BudgetPeriodSelectorSheet scroll picker frágil
+- [x] CODE-30: Removed dead `month`/`year` from Budget model (552c664). `category`/`currencyCode`/`limitAmount` kept — still used.
+- [x] CODE-32: Migrated 3 DispatchQueue.main.asyncAfter → Task.sleep in BudgetPeriodSelectorSheet (552c664)
 - [x] CODE-41: Direct modelContext.save() bypasea DraftService — FALSE ALARM, InboxView already uses DraftService correctly
 - [ ] CODE-46: 470 líneas de search embebidas en ContentView (extraer)
 
@@ -599,11 +600,12 @@ Ver ROADMAP.md para más detalles de Fase 12.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Hotfix 1.0.2 — code quality fixes (CODE-21, CODE-28, preview prints)
-Next step: Continue hotfix/1.0.2 — remaining code quality items (CODE-20, CODE-30, CODE-32, CODE-46) or merge to 1.0
+Stopped at: Hotfix 1.0.2 — resolved CODE-20, CODE-30, CODE-32, EMPTY-5 (tag icon)
+Next step: CODE-46 (search extraction from ContentView) or merge hotfix/1.0.2 to 1.0
 Resume context:
-- Branch hotfix/1.0.2 with 3 commits: transfer same-account fix, code quality fixes
-- CODE-21 resolved: removed 2 redundant context.save() in transfer subcategory creation
-- CODE-28 resolved: added processPendingChanges() after bulk delete
-- CODE-41 was false alarm (InboxView already uses DraftService)
-- Remaining code quality: CODE-20 (tags inverse), CODE-30 (budget dead code), CODE-32 (scroll picker), CODE-46 (search extraction)
+- Branch hotfix/1.0.2 with 4 commits: transfer same-account, redundant saves, bulk delete, code quality batch
+- CODE-20: Already resolved — Tag.swift declares inverse (SwiftData only needs one side, adding both causes circular reference)
+- CODE-30: Removed dead month/year from Budget. category/currencyCode/limitAmount kept (still used)
+- CODE-32: Migrated DispatchQueue → Task.sleep (3 instances)
+- EMPTY-5: Added tag icon to autocomplete empty state (was previously resolved with Text, now enhanced with Label+icon)
+- Remaining code quality: CODE-46 (470 LOC search in ContentView)

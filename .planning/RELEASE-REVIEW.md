@@ -446,7 +446,7 @@ Lo siguiente fue verificado y funciona correctamente:
 - **Impacto:** Si 0 cuentas activas, el usuario ve ScrollView vacío
 
 ### EMPTY-5: Autocomplete sin feedback "sin resultados"
-- [ ] **Archivo:** `App/Views/Transactions/NewTransactionView.swift:900-906`
+- [x] **Archivo:** `App/Views/Transactions/NewTransactionView.swift:900-906` — Enhanced with Label+tag icon (552c664)
 - **Impacto:** Al escribir `#` sin tags que coincidan, el popover simplemente desaparece sin explicación
 
 ---
@@ -487,7 +487,7 @@ Lo siguiente fue verificado y funciona correctamente:
 - **Impacto:** Se trunca con montos grandes o Dynamic Type
 
 ### CODE-20: Tags relationship sin `inverse` explícito
-- [ ] **Archivo:** `Models/TransactionItem.swift:32`
+- [x] **Archivo:** `Models/TransactionItem.swift:32` — Already resolved: Tag.swift:23 declares `inverse: \TransactionItem.tags`. SwiftData only needs one side; adding both causes circular reference error.
 - **Detalle:** `@Relationship(deleteRule: .nullify) var tags: [Tag]?` — sin `inverse:` declarado
 - **Regla:** CLAUDE.md dice "SIEMPRE `@Relationship(inverse:)` en relaciones bidireccionales"
 
@@ -795,13 +795,13 @@ Lo que funciona correctamente:
 ## 4.6 CODE
 
 ### CODE-30: Legacy fields `month`, `year`, `category` en Budget model nunca usados
-- [ ] **Archivo:** `Models/Budget.swift:19-24`
+- [x] **Archivo:** `Models/Budget.swift:19-24` — Removed month/year (552c664). category kept (used in CategoryDeduplicationService), currencyCode/limitAmount kept (CloudKit compat).
 
 ### CODE-31: `isPaidForCurrentCycle` en modelo es dead code
 - [x] **Archivo:** `ScheduledPayment.swift` — dead code eliminado (flow review BAJA batch)
 
 ### CODE-32: BudgetPeriodSelectorSheet custom scroll picker frágil
-- [ ] **Archivo:** `App/Views/Planning/Components/BudgetPeriodSelectorSheet.swift`
+- [x] **Archivo:** `App/Views/Planning/Components/BudgetPeriodSelectorSheet.swift` — Migrated 3 DispatchQueue.main.asyncAfter → Task.sleep (552c664)
 - **Detalle:** Reimplementa Picker wheel con GeometryReader, snap timing hardcodeado (0.15s)
 
 ### CODE-33: WidgetDataCache.updateCache no se llama en BudgetEditorViewModel.deleteBudget
@@ -1079,8 +1079,8 @@ Lo que funciona correctamente:
 - **Impacto:** Filtro ejecutado 2x en cada keystroke
 
 ### CODE-46: 470 líneas de search embebidas en ContentView.swift
-- [ ] **Archivo:** `App/ContentView.swift:692-1152`
-- **Fix:** Extraer a archivos separados con SearchViewModel
+- [x] **Archivo:** `App/ContentView.swift` → Extraído a `App/Views/Search/GlobalSearchView.swift`
+- **Fix:** 5 structs/enums de búsqueda movidos a archivo dedicado (ContentView: 1212→796 LOC)
 
 ---
 
@@ -1306,7 +1306,7 @@ Lo que funciona correctamente:
 ### Pendientes restantes (todos post-release safe)
 
 **DS (6):** DS-2 (hex en AppConstants), DS-3 (tertiarySystemFill), DS-10 (transfer Color(.label)), DS-21 (raw colors InboxBulk), DS-28 (Typography prefix)
-**EMPTY (2):** EMPTY-1 (widgets custom empty states), EMPTY-3 (0 cuentas sin guía)
-**CODE (16):** CODE-9, CODE-16, CODE-18, CODE-19, CODE-20, CODE-21, CODE-24, CODE-26, CODE-28, CODE-30, CODE-32, CODE-34, CODE-35, CODE-40, CODE-41, CODE-45, CODE-46, CODE-47, CODE-49
+**EMPTY (1):** EMPTY-1 (widgets custom empty states), ~~EMPTY-3~~, ~~EMPTY-5~~
+**CODE (11):** CODE-9, CODE-16, CODE-18, CODE-19, CODE-24, CODE-26, CODE-34, CODE-35, CODE-40, CODE-45, CODE-46
 
 **Ningún BUG ni HIGH pendiente. Release safe.**
