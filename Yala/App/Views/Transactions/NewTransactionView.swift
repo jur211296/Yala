@@ -179,13 +179,15 @@ struct NewTransactionView: View {
             .sheet(isPresented: $viewModel.showSourceAccountSelector) {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.sourceAccount,
-                    title: L10n.Transaction.sourceAccount
+                    title: L10n.Transaction.sourceAccount,
+                    excludeAccount: viewModel.destinationAccount
                 )
             }
             .sheet(isPresented: $viewModel.showDestinationAccountSelector) {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.destinationAccount,
-                    title: L10n.Transaction.destinationAccount
+                    title: L10n.Transaction.destinationAccount,
+                    excludeAccount: viewModel.sourceAccount
                 )
             }
             .sheet(isPresented: $viewModel.showSubcategorySelector) {
@@ -922,7 +924,7 @@ struct NewTransactionView: View {
     private var autocompletePopoverContent: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             if autocompleteSuggestions.isEmpty {
-                Text(L10n.Search.noResults)
+                Label(L10n.Search.noResults, systemImage: "tag")
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, DS.Spacing.lg)

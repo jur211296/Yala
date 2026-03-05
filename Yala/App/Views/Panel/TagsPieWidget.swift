@@ -84,7 +84,25 @@ struct TagsPieWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        YalaEmptyState(icon: "tag.fill", title: L10n.Empty.noData, style: .widget)
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
+            HStack {
+                Text(L10n.Widget.distributionByTag)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                InfoHintButton(
+                    title: L10n.WidgetType.expensesByTag,
+                    message: L10n.Widget.Hint.tagsPie
+                )
+
+                Spacer()
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.lg)
+
+            YalaEmptyState(icon: "tag.fill", title: L10n.Empty.noData, style: .widget)
+        }
     }
 
     // MARK: - Content Switcher
@@ -585,7 +603,7 @@ struct TagsPieWidget: View {
                         iconName: "ellipsis.circle.fill",
                         amount: othersAmount,
                         percentage: othersPercentage,
-                        colorHex: "#8E8E93"
+                        colorHex: AppConstants.othersColorHex
                     ))
             }
         }

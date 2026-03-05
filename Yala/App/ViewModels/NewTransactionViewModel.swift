@@ -296,19 +296,21 @@ final class NewTransactionViewModel {
     }
 
     var accountValidation: FieldValidationState {
-        if !showValidationErrors { return .empty }
         if isTransfer {
+            // Same-account error shows immediately (no showValidationErrors gate)
+            if sourceAccount != nil, destinationAccount != nil, !isTransferAccountsValid {
+                return .invalid(message: L10n.Validation.accountsMustBeDifferent)
+            }
+            if !showValidationErrors { return .empty }
             if sourceAccount == nil {
                 return .invalid(message: L10n.Validation.selectSourceAccount)
             }
             if destinationAccount == nil {
                 return .invalid(message: L10n.Validation.selectDestinationAccount)
             }
-            if !isTransferAccountsValid {
-                return .invalid(message: L10n.Validation.accountsMustBeDifferent)
-            }
             return .valid
         }
+        if !showValidationErrors { return .empty }
         return selectedAccount != nil ? .valid : .invalid(message: L10n.Validation.selectAccount)
     }
 
@@ -741,16 +743,6 @@ final class NewTransactionViewModel {
         )
         context.insert(subcategory)
 
-        // Save to ensure ID stability if needed immediately
-        do {
-            try context.save()
-        } catch {
-            // Non-critical: SwiftData will auto-save later
-            #if DEBUG
-            print("[NewTransactionViewModel] Warning: Could not save subcategory immediately: \(error)")
-            #endif
-        }
-
         return subcategory
     }
 
@@ -814,14 +806,6 @@ final class NewTransactionViewModel {
             category: category
         )
         context.insert(subcategory)
-
-        do {
-            try context.save()
-        } catch {
-            #if DEBUG
-            print("[NewTransactionViewModel] Warning: Could not save income transfer subcategory: \(error)")
-            #endif
-        }
 
         return subcategory
     }

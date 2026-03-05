@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: None
 Plan: None
 Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-03-04 — Inbox hotfix: swipe crash, image duplicates, approve-next direction
+Last activity: 2026-03-05 — Prevent same-account selection in transfers
 
 ### Apple Review History (V1.0)
 
@@ -42,16 +42,17 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-05] 3ac701b fix: add header to TagsPieWidget empty state for consistency with sibling pie widgets
+- [2026-03-05] f6ce90a fix: replace hardcoded #8E8E93 with AppConstants.othersColorHex
+- [2026-03-05] 40391ba refactor: extract search views from ContentView to dedicated file
+- [2026-03-05] 552c664 fix: remove dead Budget fields, modernize picker timing, improve tag empty state
+- [2026-03-05] 8665498 fix: remove redundant saves in transfers and improve bulk delete consistency
+- [2026-03-05] 8bab520 fix: prevent same-account selection in transfers
 - [2026-03-04] b18626b fix: inbox swipe crash, image duplicates, and approve-next direction
 - [2026-03-04] 3298f58 fix: sync account sort order across devices via iCloud KV
 - [2026-03-04] b1fad3c feat: configurable auto-focus field in Personalization settings
 - [2026-03-04] a830609 fix: Face ID grace period + stuck unlock screen
 - [2026-03-04] 8b2a954 fix: add tutorials onboarding step + wrap privacy screen in ScrollView
-- [2026-03-04] f262162 fix: remove default account creation after onboarding
-- [2026-03-04] 33db4f8 feat: cross-device wipe coordination via iCloud KV signaling
-- [2026-03-04] 85b2920 feat: auto-refresh UI on CloudKit remote changes
-- [2026-03-04] 845e402 feat: sync 8 additional preferences via iCloud KV + pull-to-refresh
-- [2026-02-27] a459aa3 fix: remove announcements notification type (no server infrastructure)
 - [2026-02-27] 930e725 fix: guard force unwraps in AppConstants URL construction
 - [2026-02-27] 16d38b3 chore: remove SettingsPlaceholderView and CaptureMode dead code
 - [2026-02-27] a792f17 fix: declare OpenAI data usage in Privacy Manifest and Info.plist
@@ -498,13 +499,13 @@ Accessibility:
 - [x] A11Y-DT: Migrar `.font(.system(size:))` a Dynamic Type — 2 fixes (@ScaledMetric + DT cap), 47 archivos auditados con comentarios A11Y-DT
 
 Code Quality:
-- [ ] CODE-20: Tags relationship sin `inverse` explícito (TransactionItem.swift)
-- [ ] CODE-21: Triple save en creación de transfer (NewTransactionViewModel)
-- [ ] CODE-28: Bulk delete bypasea EntityDeletionService (RecordsViewModel)
-- [ ] CODE-30: Legacy fields `month/year/category` en Budget model (dead code)
-- [ ] CODE-32: BudgetPeriodSelectorSheet scroll picker frágil
-- [ ] CODE-41: Direct modelContext.save() bypasea DraftService (InboxView)
-- [ ] CODE-46: 470 líneas de search embebidas en ContentView (extraer)
+- [x] CODE-20: Tags relationship — already resolved, Tag.swift declares inverse:\TransactionItem.tags (SwiftData only needs one side)
+- [x] CODE-21: Triple save en creación de transfer — reducido a 1 save atómico (8665498)
+- [x] CODE-28: Bulk delete — added processPendingChanges() for @Query consistency (8665498)
+- [x] CODE-30: Removed dead `month`/`year` from Budget model (552c664). `category`/`currencyCode`/`limitAmount` kept — still used.
+- [x] CODE-32: Migrated 3 DispatchQueue.main.asyncAfter → Task.sleep in BudgetPeriodSelectorSheet (552c664)
+- [x] CODE-41: Direct modelContext.save() bypasea DraftService — FALSE ALARM, InboxView already uses DraftService correctly
+- [x] CODE-46: Search views extracted to App/Views/Search/GlobalSearchView.swift (40391ba). ContentView 1212→796 LOC.
 
 Ver ROADMAP.md para más detalles de Fase 12.
 
@@ -596,11 +597,10 @@ Ver ROADMAP.md para más detalles de Fase 12.
 
 ## Session Continuity
 
-Last session: 2026-03-04
-Stopped at: Hotfix 1.0.1 — inbox 3 bugs fixed (swipe crash, image duplicates, approve-next)
-Next step: Merge hotfix/1.0.1 to 1.0 or continue with remaining hotfix items
+Last session: 2026-03-05
+Stopped at: Hotfix 1.0.2 — EMPTY-1 resolved (TagsPieWidget empty state header)
+Next step: Merge hotfix/1.0.2 to 1.0 — all RELEASE-REVIEW items resolved (EMPTY 0 remaining)
 Resume context:
-- Branch hotfix/1.0.1 pushed to origin with all inbox fixes
-- Swipe-delete/reject: separated UI animation from SwiftData persistence
-- Image dedup: no longer re-inserts all drafts when uniqueDrafts is empty
-- Approve-next: navigates to oldest pending draft (.last) instead of newest (.first)
+- Branch hotfix/1.0.2 with 7 commits: transfer fixes, code quality batch, search extraction, DS-2 cleanup, EMPTY-1 fix
+- All items fully resolved: DS(0), EMPTY(0), CODE(0), BUG(0), HIGH(0)
+- Ready for merge — no pending items

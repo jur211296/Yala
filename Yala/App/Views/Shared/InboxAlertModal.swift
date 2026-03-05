@@ -156,8 +156,8 @@ struct InboxAlertModal: View {
 
         InboxAlertModal(
             notification: PendingInboxNotification(scheduledPayments: 2, subscriptions: 0, automations: 0),
-            onViewInbox: { print("View inbox") },
-            onDismiss: { print("Dismiss") }
+            onViewInbox: {},
+            onDismiss: {}
         )
     }
 }
