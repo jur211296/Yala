@@ -43,6 +43,8 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-05] fe9eebd fix/refactor: unify hasActiveFilters and activeFilterCount via FilterCriteria delegation
+- [2026-03-05] 932dd00 refactor: thread chartData parameter through pie widgets to avoid redundant processChartData calls
 - [2026-03-05] eab0c8d refactor/fix: replace PanelViewModel inline filtering with FilterService + fix nature nil and search scope
 - [2026-03-05] 0fbe1f2 refactor/fix: simplify exclude mode — extract shared badge, helper method, and fix bugs
 - [2026-03-05] b769e4b test/docs: add exclude mode tests, QA scenarios, and design decisions
@@ -51,8 +53,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-05] 2700d6d Merge hotfix/1.0.1 into 1.1
 - [2026-03-05] 3ac701b fix: add header to TagsPieWidget empty state for consistency with sibling pie widgets
 - [2026-03-05] f6ce90a fix: replace hardcoded #8E8E93 with AppConstants.othersColorHex
-- [2026-03-05] 40391ba refactor: extract search views from ContentView to dedicated file
-- [2026-03-05] 552c664 fix: remove dead Budget fields, modernize picker timing, improve tag empty state
 - [2026-02-27] 930e725 fix: guard force unwraps in AppConstants URL construction
 - [2026-02-27] 16d38b3 chore: remove SettingsPlaceholderView and CaptureMode dead code
 - [2026-02-27] a792f17 fix: declare OpenAI data usage in Privacy Manifest and Info.plist
@@ -518,17 +518,11 @@ Descubiertos durante simplify + audit de la feature de filtros excluir/incluir. 
 - **Solución propuesta:** Construir `FilterCriteria` y llamar `FilterService.filter()`. Para variantes (sin fecha, balance), usar criterias modificados o añadir flags opcionales a `FilterCriteria`.
 - **Esfuerzo:** Medio — requiere entender las 3 variantes y mapearlas correctamente.
 
-**RF-2: hasActiveFilters / activeFilterCount duplicados en 4 lugares**
-Definidos independientemente en `FilterCriteria`, `SessionState`, `RecordsViewModel`, y `StatisticsViewModel`. Cada uno chequea un set ligeramente distinto de campos (ej: RecordsVM incluye `transactionTypeFilter`, StatisticsVM no). Relacionado: el protocolo `Filterable` no incluye `isExcludeMode`, así que `clearFiltersDefault()` no lo resetea.
-- **Riesgo:** Agregar filtro nuevo requiere actualizar 4 computed properties que ya están fuera de sync.
-- **Solución propuesta:** Los ViewModels deberían delegar a `FilterCriteria.hasActiveFilters` / `FilterCriteria.activeFilterCount` después de construir su criteria. Añadir `isExcludeMode` al protocolo `Filterable`.
-- **Esfuerzo:** Bajo-Medio.
+**RF-2: hasActiveFilters / activeFilterCount duplicados en 4 lugares** ✅ Completado (fe9eebd)
+Fix: searchText faltaba en `FilterCriteria.activeFilterCount`. RecordsVM y StatisticsVM delegan a `FilterCriteria` via `Filterable.filterCriteria`. Protocolo extendido con `activeFilterCount`, `isExcludeMode`, `selectedTransactionNatures`.
 
-**RF-3: processChartData() llamado 5+ veces por render en pie widgets**
-En `CategoriesPieWidget`, `SubcategoriesPieWidget` y `TagsPieWidget`, `chartData` es computed property que re-ejecuta `processChartData()` en cada acceso. Como `body` y sus subvistas (`chartView`, `connectorLines`, `bubblesLayer`, `simpleLegendList`) lo leen por separado, el cálculo corre ~5 veces por render.
-- **Riesgo:** Performance — O(5*K) por widget por render, donde K = número de categorías/tags.
-- **Solución propuesta:** Cachear resultado en una variable `let` al inicio de `body`, o convertir `chartData` a stored property actualizada en `onChange`.
-- **Esfuerzo:** Bajo.
+**RF-3: processChartData() llamado 5+ veces por render en pie widgets** ✅ Completado (932dd00)
+Computed `chartData` eliminado de 3 widgets. `body` computa una vez via `let`, threading por parámetro a todas las funciones hijas.
 
 ### Fase 7: Beta Preparation (V1.0 Release) ✅ COMPLETADA
 
@@ -619,11 +613,10 @@ En `CategoriesPieWidget`, `SubcategoriesPieWidget` y `TagsPieWidget`, `chartData
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: RF-1 completado — PanelViewModel usa FilterService (eab0c8d)
-Next step: Continue Fase 12 — considerar RF-2/RF-3 o siguiente feature
+Stopped at: RF-2 + RF-3 completados — filter unification + pie widget perf (fe9eebd + 932dd00)
+Next step: Continue Fase 12 — siguiente feature o deuda técnica
 Resume context:
-- RF-1 completado: 3 pases inline → FilterService.matchesCriteria() (~170 LOC eliminadas)
-- Fix: nature nil → .unclassified en FilterService (transacciones sin subcategoría ahora filtran correctamente)
-- Fix: FilterService search narrowed to note-only (consistente con UI label "Nota", GlobalSearchView maneja búsqueda amplia)
+- RF-1/RF-2/RF-3 todos completados — deuda técnica de filtros eliminada
+- Filterable protocol ahora incluye activeFilterCount, isExcludeMode, selectedTransactionNatures
+- Pie widgets: processChartData() se ejecuta 1 vez por render (antes 5+)
 - pieWidgetContext inline aún pendiente (evaluar en RF futuro)
-- 2 refactors pendientes: RF-2, RF-3
