@@ -127,14 +127,15 @@ final class RecordsViewModel: Filterable {
 
     // MARK: - Computed Properties
 
-    /// Whether any filter is active (for UI indicator)
-    var hasActiveFilters: Bool {
-        !selectedAccounts.isEmpty || !selectedCategories.isEmpty || !selectedSubcategories.isEmpty
-            || !selectedNatures.isEmpty || !selectedTags.isEmpty || transactionTypeFilter != .all
-            || amountCondition.isActive
-            || !selectedCurrencies.isEmpty || !searchText.isEmpty
-            || hasTransactionNatureFilter
+    /// Build FilterCriteria including transactionTypeFilter (Records-specific, not in Filterable)
+    private var currentCriteria: FilterCriteria {
+        var c = filterCriteria
+        c.transactionTypeFilter = transactionTypeFilter
+        return c
     }
+
+    /// Whether any filter is active (for UI indicator)
+    var hasActiveFilters: Bool { currentCriteria.hasActiveFilters }
 
     /// Whether transaction nature filter shows a chip (exactly 1 selected)
     var hasTransactionNatureFilter: Bool {
@@ -142,19 +143,7 @@ final class RecordsViewModel: Filterable {
     }
 
     /// Number of active filter types (for badge)
-    var activeFilterCount: Int {
-        var count = 0
-        if !selectedAccounts.isEmpty { count += 1 }
-        if !selectedCategories.isEmpty || !selectedSubcategories.isEmpty { count += 1 }
-        if !selectedNatures.isEmpty { count += 1 }
-        if !selectedTags.isEmpty { count += 1 }
-        if transactionTypeFilter != .all { count += 1 }
-        if amountCondition.isActive { count += 1 }
-        // Exclude period from filters count as it's a primary control
-        if !selectedCurrencies.isEmpty { count += 1 }
-        if hasTransactionNatureFilter { count += 1 }
-        return count
-    }
+    var activeFilterCount: Int { currentCriteria.activeFilterCount }
 
     // MARK: - Initialization
 

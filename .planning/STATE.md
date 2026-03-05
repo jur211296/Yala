@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-05] eab0c8d refactor/fix: replace PanelViewModel inline filtering with FilterService + fix nature nil and search scope
 - [2026-03-05] 0fbe1f2 refactor/fix: simplify exclude mode — extract shared badge, helper method, and fix bugs
 - [2026-03-05] b769e4b test/docs: add exclude mode tests, QA scenarios, and design decisions
 - [2026-03-05] 34f51b6 fix: use L10n.Filters.all instead of hardcoded Spanish string in tests
@@ -52,8 +53,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-05] f6ce90a fix: replace hardcoded #8E8E93 with AppConstants.othersColorHex
 - [2026-03-05] 40391ba refactor: extract search views from ContentView to dedicated file
 - [2026-03-05] 552c664 fix: remove dead Budget fields, modernize picker timing, improve tag empty state
-- [2026-03-05] 8665498 fix: remove redundant saves in transfers and improve bulk delete consistency
-- [2026-03-04] 8b2a954 fix: add tutorials onboarding step + wrap privacy screen in ScrollView
 - [2026-02-27] 930e725 fix: guard force unwraps in AppConstants URL construction
 - [2026-02-27] 16d38b3 chore: remove SettingsPlaceholderView and CaptureMode dead code
 - [2026-02-27] a792f17 fix: declare OpenAI data usage in Privacy Manifest and Info.plist
@@ -514,9 +513,8 @@ Ver ROADMAP.md para más detalles de Fase 12.
 
 Descubiertos durante simplify + audit de la feature de filtros excluir/incluir. No bloquean funcionalidad pero acumulan deuda técnica.
 
-**RF-1: PanelViewModel — 3 copias inline de FilterService (~200 LOC)**
-`PanelViewModel.buildCalculationContext` (líneas 765-982) implementa su propia lógica de filtrado con exclude mode 3 veces (`filtered`, `transactionsWithoutDateFilter`, `balanceTransactions`) en lugar de delegar a `FilterService.matchesCriteria()` como ya hacen RecordsViewModel y StatisticsViewModel. Cada pase repite if/else de exclude para 6 tipos de entidad. Además, `pieWidgetContext` (líneas 1021-1089) es otra implementación inline.
-- **Riesgo:** Agregar nuevo tipo de filtro requiere actualizarlo en FilterService Y en PanelViewModel (4 veces).
+**RF-1: PanelViewModel — 3 copias inline de FilterService (~200 LOC)** ✅ Completado (eab0c8d)
+3 pases de filtrado reemplazados por `buildFilterCriteria()` + `FilterService.matchesCriteria()`. También: fix nature nil → `.unclassified`, search narrowed to note-only. `pieWidgetContext` (líneas 1021-1089) sigue inline — evaluar en RF futuro.
 - **Solución propuesta:** Construir `FilterCriteria` y llamar `FilterService.filter()`. Para variantes (sin fecha, balance), usar criterias modificados o añadir flags opcionales a `FilterCriteria`.
 - **Esfuerzo:** Medio — requiere entender las 3 variantes y mapearlas correctamente.
 
@@ -621,13 +619,11 @@ En `CategoriesPieWidget`, `SubcategoriesPieWidget` y `TagsPieWidget`, `chartData
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Exclude mode tests + simplify + bugfixes completados (b769e4b + 0fbe1f2)
-Next step: Continue Fase 12 — considerar RF-1 (PanelViewModel usa FilterService) o siguiente feature
+Stopped at: RF-1 completado — PanelViewModel usa FilterService (eab0c8d)
+Next step: Continue Fase 12 — considerar RF-2/RF-3 o siguiente feature
 Resume context:
-- 15 tests nuevos para exclude mode (FilterServiceTests 22, RecordsFiltersViewModelTests 6, total 294)
-- 3 bugs corregidos: StatisticsVM clearFilters, StatisticsVM account eligibility, FilterControlBar l10n
-- ExcludeModeBadge extraído como vista compartida (eliminado de 4 archivos)
-- matchesEntityFilter helper extraído en FilterService (elimina 5 bloques duplicados)
-- 3 decisiones de diseño documentadas en DECISIONS.md
-- QA scenarios 40.6 corregido, 40.13-40.14 añadidos
-- 3 refactors pendientes documentados en STATE.md (RF-1, RF-2, RF-3)
+- RF-1 completado: 3 pases inline → FilterService.matchesCriteria() (~170 LOC eliminadas)
+- Fix: nature nil → .unclassified en FilterService (transacciones sin subcategoría ahora filtran correctamente)
+- Fix: FilterService search narrowed to note-only (consistente con UI label "Nota", GlobalSearchView maneja búsqueda amplia)
+- pieWidgetContext inline aún pendiente (evaluar en RF futuro)
+- 2 refactors pendientes: RF-2, RF-3

@@ -244,37 +244,16 @@ final class StatisticsViewModel: Filterable {
 
     // MARK: - Computed Properties
 
-    /// Whether any filters are active
-    var hasActiveFilters: Bool {
-        !selectedAccounts.isEmpty
-            || !selectedCategories.isEmpty
-            || !selectedSubcategories.isEmpty
-            || !selectedTags.isEmpty
-            || !selectedNatures.isEmpty
-            || !selectedCurrencies.isEmpty
-            || !searchText.isEmpty
-            || amountCondition.isActive
-            || hasTransactionNatureFilter
-    }
+    /// Whether any filters are active (delegates to Filterable.filterCriteria)
+    var hasActiveFilters: Bool { filterCriteria.hasActiveFilters }
 
     /// Whether transaction nature filter shows a chip (exactly 1 selected)
     var hasTransactionNatureFilter: Bool {
         selectedTransactionNatures.count == 1
     }
 
-    /// Number of active filter types
-    var activeFilterCount: Int {
-        var count = 0
-        if !selectedAccounts.isEmpty { count += 1 }
-        if !selectedCategories.isEmpty || !selectedSubcategories.isEmpty { count += 1 }
-        if !selectedNatures.isEmpty { count += 1 }
-        if !selectedTags.isEmpty { count += 1 }
-        if !selectedCurrencies.isEmpty { count += 1 }
-        if !searchText.isEmpty { count += 1 }
-        if amountCondition.isActive { count += 1 }
-        if hasTransactionNatureFilter { count += 1 }
-        return count
-    }
+    /// Number of active filter types (delegates to Filterable.filterCriteria)
+    var activeFilterCount: Int { filterCriteria.activeFilterCount }
 
     /// Clear all active filters
     func clearFilters() {

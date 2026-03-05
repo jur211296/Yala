@@ -43,6 +43,15 @@ protocol Filterable: AnyObject {
     /// Whether any filter is active
     var hasActiveFilters: Bool { get }
 
+    /// Number of active filter types (for badge)
+    var activeFilterCount: Int { get }
+
+    /// Exclude mode for entity filters
+    var isExcludeMode: Bool { get set }
+
+    /// Selected transaction natures (income/expense chips)
+    var selectedTransactionNatures: Set<TransactionNature> { get set }
+
     // MARK: - Actions
 
     /// Clear all filters
@@ -53,11 +62,30 @@ protocol Filterable: AnyObject {
 
 extension Filterable {
 
+    /// Build FilterCriteria from current Filterable state
+    var filterCriteria: FilterCriteria {
+        var c = FilterCriteria()
+        c.selectedAccounts = selectedAccounts
+        c.selectedCategories = selectedCategories
+        c.selectedSubcategories = selectedSubcategories
+        c.selectedTags = selectedTags
+        c.selectedNatures = selectedNatures
+        c.selectedTransactionNatures = selectedTransactionNatures
+        c.selectedCurrencies = selectedCurrencies
+        c.isExcludeMode = isExcludeMode
+        c.amountCondition = amountCondition
+        c.searchText = searchText
+        return c
+    }
+
     /// Default implementation for hasActiveFilters
     var hasActiveFiltersDefault: Bool {
-        !selectedAccounts.isEmpty || !selectedCategories.isEmpty || !selectedSubcategories.isEmpty
-            || !selectedNatures.isEmpty || !selectedTags.isEmpty || !selectedCurrencies.isEmpty
-            || amountCondition.isActive || !searchText.isEmpty
+        filterCriteria.hasActiveFilters
+    }
+
+    /// Default implementation for activeFilterCount
+    var activeFilterCountDefault: Int {
+        filterCriteria.activeFilterCount
     }
 
     /// Default implementation for clearFilters
@@ -66,9 +94,11 @@ extension Filterable {
         selectedCategories.removeAll()
         selectedSubcategories.removeAll()
         selectedNatures.removeAll()
+        selectedTransactionNatures.removeAll()
         selectedTags.removeAll()
         selectedCurrencies.removeAll()
         amountCondition = .any
         searchText = ""
+        isExcludeMode = false
     }
 }

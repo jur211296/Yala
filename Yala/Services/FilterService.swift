@@ -93,6 +93,7 @@ struct FilterCriteria: Equatable {
         if amountCondition.isActive { count += 1 }
         if !selectedCurrencies.isEmpty { count += 1 }
         if hasTransactionNatureFilter { count += 1 }
+        if !searchText.isEmpty { count += 1 }
         return count
     }
 
