@@ -42,6 +42,9 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-05] 34f51b6 fix: use L10n.Filters.all instead of hardcoded Spanish string in tests
+- [2026-03-05] cc2f4a5 Merge hotfix/1.0.2 into 1.1
+- [2026-03-05] 2700d6d Merge hotfix/1.0.1 into 1.1
 - [2026-03-05] 3ac701b fix: add header to TagsPieWidget empty state for consistency with sibling pie widgets
 - [2026-03-05] f6ce90a fix: replace hardcoded #8E8E93 with AppConstants.othersColorHex
 - [2026-03-05] 40391ba refactor: extract search views from ContentView to dedicated file
@@ -598,9 +601,10 @@ Ver ROADMAP.md para más detalles de Fase 12.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Hotfix 1.0.2 — EMPTY-1 resolved (TagsPieWidget empty state header)
-Next step: Merge hotfix/1.0.2 to 1.0 — all RELEASE-REVIEW items resolved (EMPTY 0 remaining)
+Stopped at: Merged hotfix/1.0.1 + hotfix/1.0.2 → 1.1, fixed test locale issue
+Next step: Continue Fase 12 development on 1.1
 Resume context:
-- Branch hotfix/1.0.2 with 7 commits: transfer fixes, code quality batch, search extraction, DS-2 cleanup, EMPTY-1 fix
-- All items fully resolved: DS(0), EMPTY(0), CODE(0), BUG(0), HIGH(0)
-- Ready for merge — no pending items
+- hotfix/1.0.1 and hotfix/1.0.2 merged into 1.1 (all conflicts resolved)
+- 279 tests passing on 1.1 (fixed RecordsFiltersViewModelTests locale hardcoding)
+- hotfix/1.0.1 pending Apple approval — do NOT merge to 1.0 until approved
+- Branch 1.1 now has all hotfix work integrated
