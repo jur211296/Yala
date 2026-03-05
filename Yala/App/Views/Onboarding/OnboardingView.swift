@@ -1452,7 +1452,5 @@ enum SeedCategoryPreview {
 }
 
 #Preview {
-    OnboardingView {
-        print("Onboarding completed!")
-    }
+    OnboardingView {}
 }

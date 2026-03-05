@@ -380,7 +380,5 @@ extension L10n.Subscription {
     DowngradeResolutionSheet(
         accounts: [],
         budgets: []
-    ) {
-        print("Complete")
-    }
+    ) {}
 }

@@ -69,16 +69,12 @@ struct LimitReachedBanner: View {
         LimitReachedBanner(
             feature: .accounts,
             currentCount: 2
-        ) {
-            print("Upgrade tapped")
-        }
+        ) {}
 
         LimitReachedBanner(
             feature: .budgets,
             currentCount: 3
-        ) {
-            print("Upgrade tapped")
-        }
+        ) {}
     }
     .padding()
 }

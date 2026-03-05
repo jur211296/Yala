@@ -331,6 +331,7 @@ final class RecordsViewModel: Filterable {
 
         do {
             try context.save()
+            context.processPendingChanges()
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
         } catch {

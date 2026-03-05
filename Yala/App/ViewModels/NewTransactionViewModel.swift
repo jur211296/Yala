@@ -743,16 +743,6 @@ final class NewTransactionViewModel {
         )
         context.insert(subcategory)
 
-        // Save to ensure ID stability if needed immediately
-        do {
-            try context.save()
-        } catch {
-            // Non-critical: SwiftData will auto-save later
-            #if DEBUG
-            print("[NewTransactionViewModel] Warning: Could not save subcategory immediately: \(error)")
-            #endif
-        }
-
         return subcategory
     }
 
@@ -816,14 +806,6 @@ final class NewTransactionViewModel {
             category: category
         )
         context.insert(subcategory)
-
-        do {
-            try context.save()
-        } catch {
-            #if DEBUG
-            print("[NewTransactionViewModel] Warning: Could not save income transfer subcategory: \(error)")
-            #endif
-        }
 
         return subcategory
     }
