@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: None
 Plan: None
 Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-03-04 — Face ID grace period + stuck unlock screen fix
+Last activity: 2026-03-04 — Inbox hotfix: swipe crash, image duplicates, approve-next direction
 
 ### Apple Review History (V1.0)
 
@@ -42,6 +42,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-04] b18626b fix: inbox swipe crash, image duplicates, and approve-next direction
 - [2026-03-04] 3298f58 fix: sync account sort order across devices via iCloud KV
 - [2026-03-04] b1fad3c feat: configurable auto-focus field in Personalization settings
 - [2026-03-04] a830609 fix: Face ID grace period + stuck unlock screen
@@ -596,10 +597,10 @@ Ver ROADMAP.md para más detalles de Fase 12.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Hotfix 1.0.1 — sync account sort order via iCloud KV
-Next step: Continue hotfix/1.0.1 fixes or merge to 1.0
+Stopped at: Hotfix 1.0.1 — inbox 3 bugs fixed (swipe crash, image duplicates, approve-next)
+Next step: Merge hotfix/1.0.1 to 1.0 or continue with remaining hotfix items
 Resume context:
-- Branch hotfix/1.0.1 — biometric lock now has 10s grace period (was 0s/immediately)
-- BiometricLockOverlay delays auto-auth 0.5s to avoid fullScreenCover race condition
-- BiometricAuthService is now @MainActor, isAuthenticating resets on foreground
-- Existing users with rawValue 0 in Keychain auto-migrate to tenSeconds via fallback
+- Branch hotfix/1.0.1 pushed to origin with all inbox fixes
+- Swipe-delete/reject: separated UI animation from SwiftData persistence
+- Image dedup: no longer re-inserts all drafts when uniqueDrafts is empty
+- Approve-next: navigates to oldest pending draft (.last) instead of newest (.first)
