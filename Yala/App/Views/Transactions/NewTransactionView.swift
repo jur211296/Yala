@@ -179,13 +179,15 @@ struct NewTransactionView: View {
             .sheet(isPresented: $viewModel.showSourceAccountSelector) {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.sourceAccount,
-                    title: L10n.Transaction.sourceAccount
+                    title: L10n.Transaction.sourceAccount,
+                    excludeAccount: viewModel.destinationAccount
                 )
             }
             .sheet(isPresented: $viewModel.showDestinationAccountSelector) {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.destinationAccount,
-                    title: L10n.Transaction.destinationAccount
+                    title: L10n.Transaction.destinationAccount,
+                    excludeAccount: viewModel.sourceAccount
                 )
             }
             .sheet(isPresented: $viewModel.showSubcategorySelector) {

@@ -296,19 +296,21 @@ final class NewTransactionViewModel {
     }
 
     var accountValidation: FieldValidationState {
-        if !showValidationErrors { return .empty }
         if isTransfer {
+            // Same-account error shows immediately (no showValidationErrors gate)
+            if sourceAccount != nil, destinationAccount != nil, !isTransferAccountsValid {
+                return .invalid(message: L10n.Validation.accountsMustBeDifferent)
+            }
+            if !showValidationErrors { return .empty }
             if sourceAccount == nil {
                 return .invalid(message: L10n.Validation.selectSourceAccount)
             }
             if destinationAccount == nil {
                 return .invalid(message: L10n.Validation.selectDestinationAccount)
             }
-            if !isTransferAccountsValid {
-                return .invalid(message: L10n.Validation.accountsMustBeDifferent)
-            }
             return .valid
         }
+        if !showValidationErrors { return .empty }
         return selectedAccount != nil ? .valid : .invalid(message: L10n.Validation.selectAccount)
     }
 
