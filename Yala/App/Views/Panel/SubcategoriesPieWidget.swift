@@ -647,7 +647,7 @@ struct SubcategoriesPieWidget: View {
                     iconName: $0.subcategory?.iconName ?? $0.category?.iconName ?? "tag.fill",
                     amount: $0.amount,
                     percentage: $0.percentageOfTotal.isFinite ? $0.percentageOfTotal : 0,
-                    colorHex: $0.colorHex ?? "#8E8E93",
+                    colorHex: $0.colorHex ?? AppConstants.othersColorHex,
                     persistentID: $0.persistentID
                 )
             }
@@ -662,7 +662,7 @@ struct SubcategoriesPieWidget: View {
                     iconName: $0.subcategory?.iconName ?? $0.category?.iconName ?? "tag.fill",
                     amount: $0.amount,
                     percentage: $0.percentageOfTotal.isFinite ? $0.percentageOfTotal : 0,
-                    colorHex: $0.colorHex ?? "#8E8E93",
+                    colorHex: $0.colorHex ?? AppConstants.othersColorHex,
                     persistentID: $0.persistentID
                 )
             }

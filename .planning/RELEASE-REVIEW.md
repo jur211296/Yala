@@ -1305,7 +1305,7 @@ Lo que funciona correctamente:
 
 ### Pendientes restantes (todos post-release safe)
 
-**DS (6):** DS-2 (hex en AppConstants), DS-3 (tertiarySystemFill), DS-10 (transfer Color(.label)), DS-21 (raw colors InboxBulk), DS-28 (Typography prefix)
+**DS (0):** todos resueltos
 **EMPTY (1):** EMPTY-1 (widgets custom empty states), ~~EMPTY-3~~, ~~EMPTY-5~~
 **CODE (11):** CODE-9, CODE-16, CODE-18, CODE-19, CODE-24, CODE-26, CODE-34, CODE-35, CODE-40, CODE-45, CODE-46
 
