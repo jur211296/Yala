@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: None
 Plan: None
 Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-03-05 — Prevent same-account selection in transfers
+Last activity: 2026-03-05 — Apple approved 1.0.1, merged hotfixes, cleaned up branches
 
 ### Apple Review History (V1.0)
 
@@ -22,6 +22,7 @@ Last activity: 2026-03-05 — Prevent same-account selection in transfers
 |---|-------|-----------|----------|----------|--------|
 | 1 | 2026-02-26 | 3.1.2 | Links de Terms/Privacy no separados ni localizados | Separar links y localizar URLs legales | ✅ Resuelto (9cc6831) |
 | 2 | 2026-02-27 | 5.1.1(i) + 5.1.2(i) | App comparte datos con OpenAI (voz/imagen) sin revelar qué datos, identificar a OpenAI, ni obtener permiso explícito | Consent alert in-app al activar funciones AI + actualizar privacy policy web para nombrar OpenAI y detallar datos | ✅ Resuelto (44efe2f + 8 fixes preventivos) |
+| 3 | 2026-03-05 | — | V1.0.1 aprobada | Tag 1.0.1, merged to 1.0, hotfix branches deleted | ✅ Aprobada |
 
 **Detalle rechazo #2:**
 - **Datos enviados a OpenAI:** Audio (Whisper), imágenes JPEG (GPT-4o Vision), texto transcrito + nombres de categorías (GPT-4o Mini)
@@ -31,8 +32,8 @@ Last activity: 2026-03-05 — Prevent same-account selection in transfers
 - **Privacy policy (Web):** Solo decía "servicio externo de IA" — no nombraba a OpenAI ni detallaba datos
 
 ### Branch Strategy
-- **1.0** = Release (V1.0 + V1.1 mergeada)
-- **1.1** = Desarrollo activo (V1.2: Fase 11+)
+- **1.0** = Release (V1.0.1 — Apple approved 2026-03-05, tag `1.0.1`)
+- **1.1** = Desarrollo activo (V1.2: Fase 12, includes all hotfix work)
 
 Progress: V1.0 ████████████████ 100% ✅
 Progress: V1.1 ████████████████ 100% ✅ (Cerrada 2026-02-13)
@@ -601,10 +602,11 @@ Ver ROADMAP.md para más detalles de Fase 12.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Merged hotfix/1.0.1 + hotfix/1.0.2 → 1.1, fixed test locale issue
+Stopped at: Apple approved 1.0.1 — tagged, merged to 1.0, all hotfixes integrated into 1.1, branches cleaned
 Next step: Continue Fase 12 development on 1.1
 Resume context:
-- hotfix/1.0.1 and hotfix/1.0.2 merged into 1.1 (all conflicts resolved)
+- V1.0.1 approved by Apple, tagged and merged to 1.0
+- hotfix/1.0.1 + hotfix/1.0.2 merged into 1.1, branches deleted (local + remote)
+- 1.0 → 1.1 reconciliation merge done, histories synchronized
 - 279 tests passing on 1.1 (fixed RecordsFiltersViewModelTests locale hardcoding)
-- hotfix/1.0.1 pending Apple approval — do NOT merge to 1.0 until approved
-- Branch 1.1 now has all hotfix work integrated
+- All pushed to origin: 1.0, 1.1, tag 1.0.1
