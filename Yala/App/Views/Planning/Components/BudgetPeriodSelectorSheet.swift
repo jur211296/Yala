@@ -73,7 +73,8 @@ struct BudgetPeriodSelectorSheet: View {
                                             selectedIndex = index
                                             proxy.scrollTo(period.id, anchor: .center)
                                         }
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                        Task {
+                                            try? await Task.sleep(for: .milliseconds(500))
                                             isScrolling = false
                                         }
                                     } label: {
@@ -97,7 +98,8 @@ struct BudgetPeriodSelectorSheet: View {
                                         lastScrollTime = Date()
 
                                         // Schedule snap check
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                                        Task {
+                                            try? await Task.sleep(for: .milliseconds(150))
                                             checkAndSnap(proxy: proxy)
                                         }
                                     }
@@ -116,7 +118,8 @@ struct BudgetPeriodSelectorSheet: View {
                         // Scroll to currently selected period when periods are loaded
                         if !periods.isEmpty, let currentIndex = periods.firstIndex(where: { $0.isCurrent }) {
                             selectedIndex = currentIndex
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            Task {
+                                try? await Task.sleep(for: .milliseconds(200))
                                 proxy.scrollTo(periods[currentIndex].id, anchor: .center)
                             }
                         }

@@ -16,8 +16,6 @@ final class Budget {
     var id: UUID = UUID()
 
     // Legacy properties (kept for backwards compatibility) - CloudKit: defaults required
-    var month: Int = 0
-    var year: Int = 0
     var currencyCode: String = "USD"
     var limitAmount: Double = 0
     @Relationship(deleteRule: .nullify, inverse: \Category.budgets)
@@ -51,8 +49,6 @@ final class Budget {
 
     init(
         id: UUID = UUID(),
-        month: Int = 0,
-        year: Int = 0,
         currencyCode: String,
         limitAmount: Double,
         category: Category? = nil,
@@ -73,8 +69,6 @@ final class Budget {
         alertThresholds: String? = nil
     ) {
         self.id = id
-        self.month = month
-        self.year = year
         self.currencyCode = currencyCode
         self.limitAmount = limitAmount
         self.category = category

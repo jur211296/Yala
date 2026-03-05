@@ -924,7 +924,7 @@ struct NewTransactionView: View {
     private var autocompletePopoverContent: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             if autocompleteSuggestions.isEmpty {
-                Text(L10n.Search.noResults)
+                Label(L10n.Search.noResults, systemImage: "tag")
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, DS.Spacing.lg)
