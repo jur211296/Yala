@@ -51,10 +51,6 @@ struct TagsPieWidget: View {
             .reduce(0) { $0 + $1.amount }
     }
 
-    private var chartData: [PieChartData] {
-        processChartData()
-    }
-
     @State private var selectedAngle: Double?
     @State private var hoveredItem: PieChartData?
 
@@ -66,7 +62,7 @@ struct TagsPieWidget: View {
             if chartData.isEmpty {
                 emptyState
             } else {
-                contentForSize
+                contentForSize(chartData)
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.bottom, DS.Spacing.xxl)
             }
@@ -108,18 +104,18 @@ struct TagsPieWidget: View {
     // MARK: - Content Switcher
 
     @ViewBuilder
-    private var contentForSize: some View {
+    private func contentForSize(_ chartData: [PieChartData]) -> some View {
         switch size {
         case .medium:
-            mediumLayout
+            mediumLayout(chartData)
         case .large:
-            largeLayout
+            largeLayout(chartData)
         }
     }
 
     // MARK: - Layouts
 
-    private var largeLayout: some View {
+    private func largeLayout(_ chartData: [PieChartData]) -> some View {
         VStack(spacing: DS.Spacing.sm) {
             headerView
 
@@ -133,13 +129,13 @@ struct TagsPieWidget: View {
                     let chartRadius = radius * 0.65
 
                     ZStack {
-                        connectorLines(center: center, chartRadius: chartRadius)
+                        connectorLines(chartData, center: center, chartRadius: chartRadius)
 
-                        chartView(innerRadiusRatio: innerRadiusRatio)
+                        chartView(chartData, innerRadiusRatio: innerRadiusRatio)
                             .frame(width: chartRadius * 2, height: chartRadius * 2)
                             .position(center)
 
-                        bubblesLayer(center: center, chartRadius: chartRadius)
+                        bubblesLayer(chartData, center: center, chartRadius: chartRadius)
 
                         if let hovered = hoveredItem {
                             hoverTooltip(for: hovered)
@@ -149,14 +145,14 @@ struct TagsPieWidget: View {
                 }
                 .frame(maxWidth: .infinity)
 
-                simpleLegendList
+                simpleLegendList(chartData)
                     .frame(width: 140)
             }
         }
         .padding(.top, DS.Spacing.lg)
     }
 
-    private var simpleLegendList: some View {
+    private func simpleLegendList(_ chartData: [PieChartData]) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             ForEach(chartData) { item in
                 simpleLegendRow(for: item)
@@ -193,7 +189,7 @@ struct TagsPieWidget: View {
 
     // MARK: - Connector Lines
 
-    private func connectorLines(center: CGPoint, chartRadius: CGFloat) -> some View {
+    private func connectorLines(_ chartData: [PieChartData], center: CGPoint, chartRadius: CGFloat) -> some View {
         Path { path in
             for item in chartData {
                 if shouldShowLabel(for: item) {
@@ -215,7 +211,7 @@ struct TagsPieWidget: View {
 
     // MARK: - Bubbles Layer
 
-    private func bubblesLayer(center: CGPoint, chartRadius: CGFloat) -> some View {
+    private func bubblesLayer(_ chartData: [PieChartData], center: CGPoint, chartRadius: CGFloat) -> some View {
         ZStack {
             ForEach(Array(chartData.enumerated()), id: \.element.identity) { _, item in
                 bubbleView(for: item, center: center, chartRadius: chartRadius)
@@ -292,7 +288,7 @@ struct TagsPieWidget: View {
 
     // MARK: - Medium Layout
 
-    private var mediumLayout: some View {
+    private func mediumLayout(_ chartData: [PieChartData]) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             headerView
 
@@ -448,7 +444,7 @@ struct TagsPieWidget: View {
     // MARK: - Chart View
 
     @ViewBuilder
-    private func chartView(innerRadiusRatio: CGFloat) -> some View {
+    private func chartView(_ chartData: [PieChartData], innerRadiusRatio: CGFloat) -> some View {
         let safeData = chartData.filter { $0.amount.isFinite && $0.amount > 0 }
         let totalAmount = safeData.reduce(0) { $0 + $1.amount }
 
@@ -473,7 +469,7 @@ struct TagsPieWidget: View {
             .animation(nil, value: dataHash)
             .onChange(of: selectedAngle) {
                 if let angle = selectedAngle {
-                    selectTag(at: angle)
+                    selectTag(in: chartData, at: angle)
                     selectedAngle = nil
                 }
             }
@@ -501,7 +497,7 @@ struct TagsPieWidget: View {
         Self.percentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
     }
 
-    private func selectTag(at angle: Double) {
+    private func selectTag(in chartData: [PieChartData], at angle: Double) {
         var currentSum: Double = 0
         for item in chartData {
             let nextSum = currentSum + item.amount
