@@ -718,6 +718,44 @@
 "statistics.spendingAnalysis" = "Spending Analysis";
 "statistics.incomeAnalysis" = "Income Analysis";
 
+// MARK: - Insights
+"insights.title" = "Insights";
+"insights.records" = "Records";
+"insights.inThisPeriod" = "in this period";
+"insights.dailyAverage" = "Daily average";
+"insights.topCategory" = "Top category";
+"insights.topSubcategory" = "Top subcategory";
+"insights.highestExpense" = "Highest expense";
+"insights.busiestDay" = "Busiest day";
+"insights.subscriptions" = "Subscriptions";
+"insights.streak" = "Streak";
+"insights.streakDays" = "%d days recording expenses";
+"insights.quickStats" = "Quick Stats";
+"insights.comparison" = "Period Comparison";
+"insights.weekdaySpending" = "Spending by Day";
+"insights.natureDistribution" = "By Nature";
+"insights.commitments" = "Commitments";
+"insights.pendingPayments" = "Pending payments";
+"insights.activeSubscriptions" = "Active subscriptions";
+"insights.budgetsAtRisk" = "Budgets at risk";
+"insights.yearOverYear" = "Year over year";
+"insights.yearComparison" = "Last year: %@. This year: %@.";
+"insights.intelligentInsights" = "Insights";
+"insights.funFact" = "Fun fact";
+"insights.firstTimeTitle" = "Your smart summary";
+"insights.firstTimeBody" = "Here you'll see a smart summary of your finances. Customize sections in Profile > Personalization.";
+"insights.emptyTitle" = "No data yet";
+"insights.emptyBody" = "Record expenses to see your insights";
+"insights.fewTransactions" = "Record more to unlock all insights";
+"insights.monthly" = "monthly";
+"insights.ofTotal" = "of total";
+"insights.analyzingData" = "Analyzing your data...";
+"insights.activateAITitle" = "Activate AI Insights";
+"insights.activateAIBody" = "As a Pro user, you can get more personalized analysis of your finances.";
+"insights.activate" = "Activate";
+"insights.notInterested" = "Not interested";
+"insights.offlineCached" = "Offline. Showing last analysis.";
+"insights.offlineNoCache" = "Offline. Personalized insights will be available when connected.";
 
 "settings.organization" = "Organization";
 "settings.preferences" = "Preferences";
@@ -1937,6 +1975,7 @@
 "featureGate.imageInput" = "Image input";
 "featureGate.premiumIcons" = "Premium icons";
 "featureGate.proThemes" = "Pro Themes";
+"featureGate.smartInsightsAI" = "Smart Insights AI";
 
 // Titles
 "featureGate.limitReachedTitle" = "Limit reached";
@@ -2319,3 +2358,20 @@
 "aiConsent.accept" = "Accept and Enable";
 "aiConsent.privacyPolicy" = "Privacy Policy";
 "aiConsent.inlineHint" = "Your recordings and images are processed with OpenAI. They are not stored permanently.";
+
+// MARK: - Insights Settings
+"insights.aiSectionTitle" = "Artificial Intelligence";
+"insights.aiToggle" = "Enable AI insights";
+"insights.aiCaption" = "AI analyzes your aggregated data to generate personalized insights. No individual transactions are sent.";
+"insights.metricsSection" = "Metrics";
+"insights.chartsSection" = "Charts";
+"insights.analysisSection" = "Analysis";
+"insights.restoreDefaults" = "Restore defaults";
+
+// MARK: - Insights Rule-Based Templates
+"insights.ruleTopCategory" = "%@ accounts for %d%% of your spending this period.";
+"insights.ruleExpenseUp" = "Your spending went up %@ compared to the previous period.";
+"insights.ruleExpenseDown" = "Nice pace: your spending dropped %@ compared to the previous period.";
+"insights.ruleBudgetRisk" = "%@ is at %d%% of its limit.";
+"insights.ruleStreak" = "You've been tracking expenses for %d days. Great habit!";
+"insights.ruleOptionalHigh" = "Optional spending accounts for %d%% of your total.";

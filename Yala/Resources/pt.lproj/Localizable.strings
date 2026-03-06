@@ -715,6 +715,46 @@
 "statistics.ofExpense" = "da despesa";
 "statistics.spendingAnalysis" = "Análise de gastos";
 "statistics.incomeAnalysis" = "Análise de receitas";
+
+// MARK: - Insights
+"insights.title" = "Insights";
+"insights.records" = "Registros";
+"insights.inThisPeriod" = "neste período";
+"insights.dailyAverage" = "Média diária";
+"insights.topCategory" = "Categoria principal";
+"insights.topSubcategory" = "Subcategoria principal";
+"insights.highestExpense" = "Maior despesa";
+"insights.busiestDay" = "Dia de mais gastos";
+"insights.subscriptions" = "Assinaturas";
+"insights.streak" = "Sequência";
+"insights.streakDays" = "%d dias registrando despesas";
+"insights.quickStats" = "Resumo rápido";
+"insights.comparison" = "Comparação";
+"insights.weekdaySpending" = "Gastos por dia";
+"insights.natureDistribution" = "Por natureza";
+"insights.commitments" = "Compromissos";
+"insights.pendingPayments" = "Pagamentos pendentes";
+"insights.activeSubscriptions" = "Assinaturas ativas";
+"insights.budgetsAtRisk" = "Orçamentos em risco";
+"insights.yearOverYear" = "Comparação anual";
+"insights.yearComparison" = "Ano passado: %@. Este ano: %@.";
+"insights.intelligentInsights" = "Insights";
+"insights.funFact" = "Curiosidade";
+"insights.firstTimeTitle" = "Seu resumo inteligente";
+"insights.firstTimeBody" = "Aqui você verá um resumo inteligente das suas finanças. Personalize as seções em Perfil > Personalização.";
+"insights.emptyTitle" = "Sem dados ainda";
+"insights.emptyBody" = "Registre despesas para ver seus insights";
+"insights.fewTransactions" = "Registre mais para desbloquear todos os insights";
+"insights.monthly" = "mensal";
+"insights.ofTotal" = "do total";
+"insights.analyzingData" = "Analisando seus dados...";
+"insights.activateAITitle" = "Ativar insights com IA";
+"insights.activateAIBody" = "Como usuário Pro, você pode ter análises mais personalizadas das suas finanças.";
+"insights.activate" = "Ativar";
+"insights.notInterested" = "Não me interessa";
+"insights.offlineCached" = "Sem conexão. Mostrando última análise.";
+"insights.offlineNoCache" = "Sem conexão. Insights personalizados estarão disponíveis ao conectar.";
+
 "trend.filterBlockedMessage" = "Remova primeiro os filtros de categoria ou natureza";
 "trend.filterBlockedTitle" = "Opção não disponível";
 "nature.incomeNotApplicable" = "A classificação por natureza aplica-se apenas a despesas";
@@ -1947,6 +1987,7 @@
 "featureGate.imageInput" = "Entrada por imagem";
 "featureGate.premiumIcons" = "Ícones premium";
 "featureGate.proThemes" = "Temas Pro";
+"featureGate.smartInsightsAI" = "Insights inteligentes com IA";
 
 // Titles
 "featureGate.limitReachedTitle" = "Limite atingido";
@@ -2329,3 +2370,20 @@
 "aiConsent.accept" = "Aceitar e ativar";
 "aiConsent.privacyPolicy" = "Política de privacidade";
 "aiConsent.inlineHint" = "As tuas gravações e imagens são processadas com OpenAI. Não são armazenadas permanentemente.";
+
+// MARK: - Insights Settings
+"insights.aiSectionTitle" = "Inteligência Artificial";
+"insights.aiToggle" = "Ativar insights com IA";
+"insights.aiCaption" = "A IA analisa seus dados agregados para gerar insights personalizados. Nenhuma transação individual é enviada.";
+"insights.metricsSection" = "Métricas";
+"insights.chartsSection" = "Gráficos";
+"insights.analysisSection" = "Análise";
+"insights.restoreDefaults" = "Restaurar valores padrão";
+
+// MARK: - Insights Rule-Based Templates
+"insights.ruleTopCategory" = "%@ representa %d%% dos seus gastos neste período.";
+"insights.ruleExpenseUp" = "Seus gastos subiram %@ em relação ao período anterior.";
+"insights.ruleExpenseDown" = "Bom ritmo: seus gastos caíram %@ em relação ao período anterior.";
+"insights.ruleBudgetRisk" = "%@ está em %d%% do seu limite.";
+"insights.ruleStreak" = "Você registra gastos há %d dias. Ótimo hábito!";
+"insights.ruleOptionalHigh" = "Gastos opcionais representam %d%% do seu total.";

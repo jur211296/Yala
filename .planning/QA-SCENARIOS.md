@@ -4933,3 +4933,115 @@ Para cada tema verificar:
 - [ ] Sección 4 detalla: audio, imágenes, texto transcrito, categorías
 - [ ] Sección 4 aclara qué NO se envía: montos, historial, info personal
 - [ ] Verificar en los 6 idiomas (es, en, de, fr, it, pt)
+
+---
+
+## Sección 42: Filtros Deferred — Apply/Discard (Fase 12)
+
+### 42.1 Aplicar filtros
+- [ ] Abrir filtros, seleccionar 2 cuentas y 1 tag, tap "Aplicar" → filtros activos en Records
+- [ ] Abrir filtros desde Trends tab, seleccionar categoría, tap "Aplicar" → filtros activos
+
+### 42.2 Descartar filtros (X)
+- [ ] Abrir filtros, seleccionar varios, tap "X" → verificar que NO se aplicaron
+- [ ] Abrir filtros con filtros ya activos, no tocar nada, tap "X" → filtros pre-existentes intactos
+
+### 42.3 Limpiar filtros
+- [ ] Abrir filtros, seleccionar varios, tap "Limpiar filtros", tap "Aplicar" → todo limpio
+- [ ] Abrir filtros, seleccionar varios, tap "Limpiar filtros", tap "X" → filtros previos intactos (clear no se commiteó)
+
+### 42.4 Toggle exclude mode
+- [ ] Abrir filtros, seleccionar cuentas, toggle exclude ON → selecciones locales se limpian
+- [ ] Toggle exclude OFF → selecciones locales se limpian de nuevo
+- [ ] En modo solo gastos: toggle exclude ON → transactionNatures mantiene [.expense]
+
+### 42.5 Navegación desde Panel
+- [ ] Tap en categoría de pie chart → abrir filtros → subcategorías expandidas correctamente
+- [ ] En ese estado, tap "X" → filtro de categoría original no afectado
+
+### 42.6 Exclude mode sin entities
+- [ ] Abrir filtros, activar exclude mode sin seleccionar nada, tap "Aplicar" → exclude mode se auto-desactiva (comportamiento existente preservado)
+
+---
+
+## Sección 43: Smart Insights
+
+### 43.1 Tab y navegación
+- [ ] Insights aparece como primer tab en Statistics (antes de Tendencias)
+- [ ] Tap en Insights tab muestra contenido correcto
+- [ ] Cambiar periodo/filtros actualiza datos de Insights
+
+### 43.2 Period Summary (siempre visible)
+- [ ] 4 cards: gasto total, ingreso total, balance, cantidad de registros
+- [ ] VariationChip muestra variación vs periodo anterior (si showVariations ON)
+- [ ] Valores coinciden con datos reales del periodo
+
+### 43.3 Quick Stats Grid
+- [ ] Grid 2 columnas con: promedio diario, categoría top, subcategoría top, mayor gasto, día más activo, suscripciones
+- [ ] Celdas se adaptan al contenido disponible (no muestra celdas vacías)
+- [ ] Sección colapsable con chevron animado
+
+### 43.4 Compromisos
+- [ ] Pagos pendientes: muestra cantidad y monto
+- [ ] Suscripciones activas: muestra cantidad y monto mensual
+- [ ] Presupuestos en riesgo (>75%): muestra BudgetProgressBar
+- [ ] Sección no aparece si no hay datos de compromisos
+- [ ] Sección colapsable
+
+### 43.5 Streak Badge
+- [ ] Aparece solo si streak > 3 días
+- [ ] Muestra icono de llama y texto con días
+
+### 43.6 Gráfico de gasto por día de semana
+- [ ] 7 barras (Lun-Dom) con el máximo resaltado en color accent
+- [ ] Eje Y con formato de moneda compacto
+- [ ] Sección colapsable
+- [ ] No aparece si no hay datos de gasto
+
+### 43.7 Distribución por naturaleza
+- [ ] Barra horizontal apilada (esencial=teal, prioridad=naranja, opcional=púrpura)
+- [ ] Leyenda con porcentajes
+- [ ] Sección colapsable
+- [ ] No aparece si total es 0
+
+### 43.8 Comparación año a año
+- [ ] Aparece solo si hay datos del mismo mes del año anterior
+- [ ] Muestra montos anterior vs actual con VariationChip
+
+### 43.9 Insights textuales (rule-based)
+- [ ] Hero insight: primera regla más relevante (top categoría dominante, tendencia de gasto, etc.)
+- [ ] 3-4 InsightCards con icono, texto y color según sentimiento
+- [ ] Sección colapsable
+
+### 43.10 Edge cases
+- [ ] 0 transacciones → YalaEmptyState con sparkles
+- [ ] <5 transacciones → muestra KPIs, oculta gráficos y textos, muestra hint
+- [ ] Sin periodo anterior → variaciones muestran "---"
+
+### 43.11 First-time tip
+- [ ] Aparece en primera visita (hasSeenInsightsIntro = false)
+- [ ] Botón X lo descarta permanentemente
+- [ ] No reaparece tras cerrar
+
+### 43.12 Pro + AI Insights
+- [ ] Free: ve insights rule-based + fun fact bloqueado con lock + ProBadge
+- [ ] Pro sin AI consent: ve banner de activación AI
+- [ ] Pro con AI consent: genera insights AI (hero + cards + fun fact)
+- [ ] Tap "Activar" en banner → acepta consent, carga AI insights
+- [ ] Tap "No me interesa" → descarta banner permanentemente
+- [ ] Offline con cache: muestra cache + banner "datos en caché"
+- [ ] Offline sin cache: muestra fallback rule-based + banner "sin conexión"
+- [ ] Loading: shimmer con sparkles pulse
+
+### 43.13 Settings (Smart Insights)
+- [ ] Accesible desde Personalización → Smart Insights
+- [ ] AI toggle: Pro → funcional, Free → lock + ProBadge → upgrade sheet
+- [ ] Toggles de secciones: Quick Stats, Pagos pendientes, Suscripciones, Presupuestos, Comparación, Día de semana, Naturaleza, Insights inteligentes
+- [ ] Toggle OFF oculta sección correspondiente en InsightsTabView
+- [ ] "Restaurar valores por defecto" → todos ON
+- [ ] Cambios persisten entre sesiones (@AppStorage)
+
+### 43.14 Locked fun fact (Free)
+- [ ] Tap en fun fact bloqueado → abre UpgradePromptSheet
+- [ ] Texto redactado con placeholder
+- [ ] Lock icon + ProBadge visibles

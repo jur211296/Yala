@@ -11,10 +11,10 @@ See: .planning/PROJECT.md (updated 2026-01-15)
 
 Version: 1.2 (en desarrollo)
 Phase: 12 — Plataforma Extendida
-Spec: None
-Plan: None
-Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-03-05 — Apple approved 1.0.1, merged hotfixes, cleaned up branches
+Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
+Plan: Refactor filtros deferred -> Smart Insights tab
+Status: **Fase 12 en progreso** — Smart Insights implementado (7 incrementos), pendiente commit
+Last activity: 2026-03-06 — Smart Insights tab completo (Increments 1-7)
 
 ### Apple Review History (V1.0)
 
@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-06] 81559d6 refactor: defer RecordsFiltersView filters — Apply commits, X discards
 - [2026-03-05] fe9eebd fix/refactor: unify hasActiveFilters and activeFilterCount via FilterCriteria delegation
 - [2026-03-05] 932dd00 refactor: thread chartData parameter through pie widgets to avoid redundant processChartData calls
 - [2026-03-05] eab0c8d refactor/fix: replace PanelViewModel inline filtering with FilterService + fix nature nil and search scope
@@ -507,6 +508,17 @@ Code Quality:
 - [x] CODE-41: Direct modelContext.save() bypasea DraftService — FALSE ALARM, InboxView already uses DraftService correctly
 - [x] CODE-46: Search views extracted to App/Views/Search/GlobalSearchView.swift (40391ba). ContentView 1212→796 LOC.
 
+Fase 12 completados:
+- [x] iPad/Mac layouts adaptados ✅ (e2a69fd)
+- [x] Línea promedio en gráficas de barras ✅ (44d3b89)
+- [x] Siri registro rápido ✅
+- [x] Lock Screen widgets ✅
+- [x] Filtros avanzados: excluir/incluir en DetailContainerView ✅ (1716c2d..fe9eebd)
+
+Fase 12 siguiente (en orden):
+- [x] **Refactor filtros deferred** — RecordsFiltersView usa estado local, "Aplicar" escribe a SessionState, "X" descarta. Prerequisito para Smart Insights. (81559d6)
+- [ ] **Smart Insights** — Nueva tab en Statistics con KPIs, gráficas, textos inteligentes (Free: rule-based, Pro: LLM). Plan completo en `.planning/SMART-INSIGHTS-DESIGN.md`
+
 Ver ROADMAP.md para más detalles de Fase 12.
 
 ### Refactors Pendientes: Filtros Excluir/Incluir (identificados 2026-03-05)
@@ -612,11 +624,15 @@ Computed `chartData` eliminado de 3 widgets. `body` computa una vez via `let`, t
 
 ## Session Continuity
 
-Last session: 2026-03-05
-Stopped at: RF-2 + RF-3 completados — filter unification + pie widget perf (fe9eebd + 932dd00)
-Next step: Continue Fase 12 — siguiente feature o deuda técnica
+Last session: 2026-03-06
+Stopped at: Refactor filtros deferred completado (81559d6) — RecordsFiltersView con snapshot/commit pattern
+Next step: Smart Insights tab — nueva tab en Statistics con KPIs y textos inteligentes (ver SMART-INSIGHTS-DESIGN.md)
 Resume context:
-- RF-1/RF-2/RF-3 todos completados — deuda técnica de filtros eliminada
+- Design doc completo en `.planning/SMART-INSIGHTS-DESIGN.md`
+- Decisión: refactorizar filtros a deferred antes de Smart Insights
+- RecordsFiltersView muta SessionState directo (bug: "X" y "Aplicar" hacen lo mismo)
+- Solución: estado local en sheet, "Aplicar" escribe, "X" descarta
+- RF-1/RF-2/RF-3 completados previamente (deuda técnica filtros)
 - Filterable protocol ahora incluye activeFilterCount, isExcludeMode, selectedTransactionNatures
 - Pie widgets: processChartData() se ejecuta 1 vez por render (antes 5+)
 - pieWidgetContext inline aún pendiente (evaluar en RF futuro)

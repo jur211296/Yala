@@ -242,6 +242,7 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
 
 /// Navigation tabs for detail views
 enum DetailViewTab: String, CaseIterable, Identifiable {
+    case insights = "Insights"
     case trends = "Tendencias"
     case categories = "Categorías"
     case records = "Registros"
@@ -250,6 +251,7 @@ enum DetailViewTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
+        case .insights: return L10n.Insights.title
         case .trends: return L10n.Statistics.trends
         case .categories: return L10n.Statistics.categories
         case .records: return L10n.Statistics.records
@@ -258,6 +260,7 @@ enum DetailViewTab: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
+        case .insights: return "sparkles"
         case .trends: return "chart.line.uptrend.xyaxis"
         case .categories: return "chart.pie"
         case .records: return "list.bullet.rectangle"

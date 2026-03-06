@@ -24,6 +24,8 @@ final class DetailContainerViewModel {
     private(set) var categories: [Category] = []
     private(set) var allSubcategories: [Subcategory] = []
     private(set) var tags: [Tag] = []
+    private(set) var budgets: [Budget] = []
+    private(set) var scheduledPayments: [ScheduledPayment] = []
 
     // MARK: - Setup
 
@@ -95,6 +97,30 @@ final class DetailContainerViewModel {
         } catch {
             #if DEBUG
             print("DetailContainerViewModel: Error loading tags: \(error)")
+            #endif
+        }
+
+        // Load budgets (for Insights commitments section)
+        let budgetsDescriptor = FetchDescriptor<Budget>(
+            sortBy: [SortDescriptor(\.name)]
+        )
+        do {
+            budgets = try context.fetch(budgetsDescriptor)
+        } catch {
+            #if DEBUG
+            print("DetailContainerViewModel: Error loading budgets: \(error)")
+            #endif
+        }
+
+        // Load scheduled payments (for Insights commitments section)
+        let paymentsDescriptor = FetchDescriptor<ScheduledPayment>(
+            sortBy: [SortDescriptor(\.nextDueDate)]
+        )
+        do {
+            scheduledPayments = try context.fetch(paymentsDescriptor)
+        } catch {
+            #if DEBUG
+            print("DetailContainerViewModel: Error loading scheduled payments: \(error)")
             #endif
         }
     }

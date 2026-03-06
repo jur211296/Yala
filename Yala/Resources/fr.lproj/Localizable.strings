@@ -715,6 +715,46 @@
 "statistics.ofExpense" = "de la depense";
 "statistics.spendingAnalysis" = "Analyse des dépenses";
 "statistics.incomeAnalysis" = "Analyse des revenus";
+
+// MARK: - Insights
+"insights.title" = "Insights";
+"insights.records" = "Enregistrements";
+"insights.inThisPeriod" = "dans cette période";
+"insights.dailyAverage" = "Moyenne quotidienne";
+"insights.topCategory" = "Catégorie principale";
+"insights.topSubcategory" = "Sous-catégorie principale";
+"insights.highestExpense" = "Plus grosse dépense";
+"insights.busiestDay" = "Jour le plus dépensier";
+"insights.subscriptions" = "Abonnements";
+"insights.streak" = "Série";
+"insights.streakDays" = "%d jours d'enregistrement";
+"insights.quickStats" = "Aperçu rapide";
+"insights.comparison" = "Comparaison";
+"insights.weekdaySpending" = "Dépenses par jour";
+"insights.natureDistribution" = "Par nature";
+"insights.commitments" = "Engagements";
+"insights.pendingPayments" = "Paiements en attente";
+"insights.activeSubscriptions" = "Abonnements actifs";
+"insights.budgetsAtRisk" = "Budgets à risque";
+"insights.yearOverYear" = "Comparaison annuelle";
+"insights.yearComparison" = "L'an dernier : %@. Cette année : %@.";
+"insights.intelligentInsights" = "Insights";
+"insights.funFact" = "Le saviez-vous ?";
+"insights.firstTimeTitle" = "Votre résumé intelligent";
+"insights.firstTimeBody" = "Ici vous verrez un résumé intelligent de vos finances. Personnalisez les sections dans Profil > Personnalisation.";
+"insights.emptyTitle" = "Pas encore de données";
+"insights.emptyBody" = "Enregistrez des dépenses pour voir vos insights";
+"insights.fewTransactions" = "Enregistrez plus pour débloquer tous les insights";
+"insights.monthly" = "mensuel";
+"insights.ofTotal" = "du total";
+"insights.analyzingData" = "Analyse de vos données...";
+"insights.activateAITitle" = "Activer les insights IA";
+"insights.activateAIBody" = "En tant qu'utilisateur Pro, vous pouvez obtenir des analyses plus personnalisées.";
+"insights.activate" = "Activer";
+"insights.notInterested" = "Pas intéressé";
+"insights.offlineCached" = "Hors ligne. Dernière analyse affichée.";
+"insights.offlineNoCache" = "Hors ligne. Les insights personnalisés seront disponibles en ligne.";
+
 "trend.filterBlockedMessage" = "Supprimez d'abord les filtres de catégorie ou de nature";
 "trend.filterBlockedTitle" = "Option non disponible";
 "nature.incomeNotApplicable" = "La classification par nature ne s'applique qu'aux dépenses";
@@ -1949,6 +1989,7 @@
 "featureGate.imageInput" = "Saisie par image";
 "featureGate.premiumIcons" = "Icônes premium";
 "featureGate.proThemes" = "Thèmes Pro";
+"featureGate.smartInsightsAI" = "Insights intelligents avec IA";
 
 // Titles
 "featureGate.limitReachedTitle" = "Limite atteinte";
@@ -2330,3 +2371,20 @@
 "aiConsent.accept" = "Accepter et activer";
 "aiConsent.privacyPolicy" = "Politique de confidentialité";
 "aiConsent.inlineHint" = "Tes enregistrements et images sont traités avec OpenAI. Ils ne sont pas stockés de manière permanente.";
+
+// MARK: - Insights Settings
+"insights.aiSectionTitle" = "Intelligence Artificielle";
+"insights.aiToggle" = "Activer les insights IA";
+"insights.aiCaption" = "L'IA analyse vos données agrégées pour générer des insights personnalisés. Aucune transaction individuelle n'est envoyée.";
+"insights.metricsSection" = "Métriques";
+"insights.chartsSection" = "Graphiques";
+"insights.analysisSection" = "Analyse";
+"insights.restoreDefaults" = "Restaurer les valeurs par défaut";
+
+// MARK: - Insights Rule-Based Templates
+"insights.ruleTopCategory" = "%@ représente %d%% de tes dépenses cette période.";
+"insights.ruleExpenseUp" = "Tes dépenses ont augmenté de %@ par rapport à la période précédente.";
+"insights.ruleExpenseDown" = "Bon rythme : tes dépenses ont baissé de %@ par rapport à la période précédente.";
+"insights.ruleBudgetRisk" = "%@ est à %d%% de sa limite.";
+"insights.ruleStreak" = "Tu enregistres tes dépenses depuis %d jours. Belle habitude !";
+"insights.ruleOptionalHigh" = "Les dépenses optionnelles représentent %d%% de ton total.";

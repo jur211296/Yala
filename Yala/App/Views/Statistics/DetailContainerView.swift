@@ -25,6 +25,7 @@ struct DetailContainerView: View {
     @State private var dataViewModel = DetailContainerViewModel()
     @State private var recordsViewModel: RecordsViewModel
     @State private var trendsViewModel: StatisticsViewModel
+    @State private var insightsViewModel = InsightsViewModel()
 
     // MARK: - Navigation State
 
@@ -139,6 +140,10 @@ struct DetailContainerView: View {
                 dataViewModel.setContext(modelContext)
                 refreshRecordsData()
                 calculateTrendsData()
+                calculateInsightsData()
+            }
+            .onChange(of: selectedTab) { _, _ in
+                calculateInsightsData()
             }
             .onChange(of: sessionState.selectedMainTab) { _, newTab in
                 // Close FAB menu when navigating away from Statistics
@@ -149,16 +154,19 @@ struct DetailContainerView: View {
                 if newTab == .statistics && !isFromSearch {
                     calculateTrendsData()
                     refreshRecordsData()
+                    calculateInsightsData()
                 }
             }
             .onChange(of: dataViewModel.allTransactions) {
                 // Recalculate when transactions change (e.g., initial balance modified)
                 calculateTrendsData()
                 refreshRecordsData()
+                if selectedTab == .insights { calculateInsightsData() }
             }
             .onChange(of: sessionState.dataVersion) { _, _ in
                 refreshRecordsData()
                 calculateTrendsData()
+                if selectedTab == .insights { calculateInsightsData() }
             }
             .modifier(
                 DetailContainerObservers(
@@ -198,6 +206,18 @@ struct DetailContainerView: View {
     @ViewBuilder
     private var tabContent: some View {
         switch selectedTab {
+        case .insights:
+            InsightsTabView(
+                accounts: dataViewModel.accounts,
+                categories: dataViewModel.categories,
+                allSubcategories: dataViewModel.allSubcategories,
+                tags: dataViewModel.tags,
+                allTransactions: dataViewModel.allTransactions,
+                budgets: dataViewModel.budgets,
+                scheduledPayments: dataViewModel.scheduledPayments,
+                defaultCurrencyCode: defaultCurrencyCode,
+                viewModel: insightsViewModel
+            )
         case .trends:
             TrendsTabView(
                 accounts: dataViewModel.accounts,
@@ -311,7 +331,8 @@ struct DetailContainerView: View {
                 .overlay(alignment: .topTrailing) {
                     let showIndicator = (selectedTab == .records && recordsViewModel.activeFilterCount > 0) ||
                                        (selectedTab == .trends && trendsViewModel.activeFilterCount > 0) ||
-                                       (selectedTab == .categories && trendsViewModel.activeFilterCount > 0)
+                                       (selectedTab == .categories && trendsViewModel.activeFilterCount > 0) ||
+                                       (selectedTab == .insights && trendsViewModel.activeFilterCount > 0)
 
                     if showIndicator {
                         Circle()
@@ -600,6 +621,24 @@ struct DetailContainerView: View {
         }
     }
 
+    private func calculateInsightsData() {
+        guard selectedTab == .insights else { return }
+        DispatchQueue.main.async {
+            insightsViewModel.calculateInsightsData(
+                transactions: dataViewModel.allTransactions,
+                accounts: dataViewModel.accounts,
+                categories: dataViewModel.categories,
+                budgets: dataViewModel.budgets,
+                scheduledPayments: dataViewModel.scheduledPayments,
+                period: sessionState.selectedPeriod,
+                criteria: trendsViewModel.filterCriteria,
+                currencyCode: defaultCurrencyCode,
+                customRange: sessionState.customDateRange,
+                context: modelContext
+            )
+        }
+    }
+
     private func handleEditAction() {
         let flatTransactions = recordsViewModel.groupedRecords.flatMap { $0.records }
         let action = recordsViewModel.editSelectedRecords(transactions: flatTransactions)
@@ -624,6 +663,7 @@ struct DetailContainerView: View {
 
         calculateTrendsData()
         refreshRecordsData()
+        calculateInsightsData()
     }
 }
 

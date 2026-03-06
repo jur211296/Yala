@@ -506,19 +506,22 @@ DoD:
 ### Fase 12: Plataforma Extendida (V1.2 - App Store)
 **Goal**: Watch, iPad/Mac, Smart Insights y reportes
 **Depends on**: Fase 11
-**Research**: Likely (WatchKit, iPadOS/macOS adaptations, ML/heurísticas)
-**Plans**: TBD
+**Research**: Done (Smart Insights), Likely (WatchKit)
+**Plans**: `.planning/SMART-INSIGHTS-DESIGN.md`
+
+**Siguiente (en orden):**
+- [ ] Refactor filtros deferred — RecordsFiltersView estado local, "Aplicar" confirma, "X" descarta
+- [ ] Vista de Smart Insights — Tab en Statistics: KPIs, gráficas, textos (Free: rule-based, Pro: LLM)
+- [ ] Integrar Smart Insights a lo largo de la app (contextuales)
 
 Incluye:
 - [ ] Integración con Apple Watch (registro rápido, balance, widgets)
 - [x] Refinamiento versión iPad/Mac (layouts adaptados, sidebar) ✅
-- [ ] Vista de Smart Insights (patrones de gasto, alertas inteligentes)
-- [ ] Integrar Smart Insights a lo largo de la app (contextuales)
-- [ ] Vista de reporte financiero (exportable PDF/Excel)
-- [ ] Filtros avanzados: excluir/incluir en DetailContainerView
+- [x] Filtros avanzados: excluir/incluir en DetailContainerView ✅
 - [x] Línea promedio en gráficas de barras verticales (CashFlow ingreso/gasto, Naturaleza) ✅
 - [x] Integración Siri para registro rápido de gastos ✅
 - [x] Widgets para Lock Screen (WidgetFamily.accessory) ✅
+- [ ] Vista de reporte financiero (exportable PDF/Excel)
 - [ ] Vista de análisis de presupuesto (detalle, tendencias, proyección)
 - [ ] Split de transacciones (dividir en múltiples partes/personas)
 - [ ] Predicción de saldo en gráfica de tendencias

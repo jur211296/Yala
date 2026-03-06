@@ -226,6 +226,77 @@ enum L10n {
         }
     }
 
+    // MARK: - Insights
+    enum Insights {
+        static var title: String { ls("insights.title", comment: "") }
+        static var records: String { ls("insights.records", comment: "") }
+        static var inThisPeriod: String { ls("insights.inThisPeriod", comment: "") }
+        static var dailyAverage: String { ls("insights.dailyAverage", comment: "") }
+        static var topCategory: String { ls("insights.topCategory", comment: "") }
+        static var topSubcategory: String { ls("insights.topSubcategory", comment: "") }
+        static var highestExpense: String { ls("insights.highestExpense", comment: "") }
+        static var busiestDay: String { ls("insights.busiestDay", comment: "") }
+        static var subscriptions: String { ls("insights.subscriptions", comment: "") }
+        static var streak: String { ls("insights.streak", comment: "") }
+        static func streakDays(_ count: Int) -> String {
+            String(format: ls("insights.streakDays", comment: ""), count)
+        }
+        static var quickStats: String { ls("insights.quickStats", comment: "") }
+        static var comparison: String { ls("insights.comparison", comment: "") }
+        static var weekdaySpending: String { ls("insights.weekdaySpending", comment: "") }
+        static var natureDistribution: String { ls("insights.natureDistribution", comment: "") }
+        static var commitments: String { ls("insights.commitments", comment: "") }
+        static var pendingPayments: String { ls("insights.pendingPayments", comment: "") }
+        static var activeSubscriptions: String { ls("insights.activeSubscriptions", comment: "") }
+        static var budgetsAtRisk: String { ls("insights.budgetsAtRisk", comment: "") }
+        static var yearOverYear: String { ls("insights.yearOverYear", comment: "") }
+        static func yearComparison(previous: String, current: String) -> String {
+            String(format: ls("insights.yearComparison", comment: ""), previous, current)
+        }
+        static var intelligentInsights: String { ls("insights.intelligentInsights", comment: "") }
+        static var funFact: String { ls("insights.funFact", comment: "") }
+        static var firstTimeTitle: String { ls("insights.firstTimeTitle", comment: "") }
+        static var firstTimeBody: String { ls("insights.firstTimeBody", comment: "") }
+        static var emptyTitle: String { ls("insights.emptyTitle", comment: "") }
+        static var emptyBody: String { ls("insights.emptyBody", comment: "") }
+        static var fewTransactions: String { ls("insights.fewTransactions", comment: "") }
+        static var monthly: String { ls("insights.monthly", comment: "") }
+        static var ofTotal: String { ls("insights.ofTotal", comment: "") }
+        static var analyzingData: String { ls("insights.analyzingData", comment: "") }
+        static var activateAITitle: String { ls("insights.activateAITitle", comment: "") }
+        static var activateAIBody: String { ls("insights.activateAIBody", comment: "") }
+        static var activate: String { ls("insights.activate", comment: "") }
+        static var notInterested: String { ls("insights.notInterested", comment: "") }
+        static var offlineCached: String { ls("insights.offlineCached", comment: "") }
+        static var offlineNoCache: String { ls("insights.offlineNoCache", comment: "") }
+        static var aiSectionTitle: String { ls("insights.aiSectionTitle", comment: "") }
+        static var aiToggle: String { ls("insights.aiToggle", comment: "") }
+        static var aiCaption: String { ls("insights.aiCaption", comment: "") }
+        static var metricsSection: String { ls("insights.metricsSection", comment: "") }
+        static var chartsSection: String { ls("insights.chartsSection", comment: "") }
+        static var analysisSection: String { ls("insights.analysisSection", comment: "") }
+        static var restoreDefaults: String { ls("insights.restoreDefaults", comment: "") }
+        // Rule-based insight templates
+        static func ruleTopCategory(_ name: String, _ pct: Int) -> String {
+            String(format: ls("insights.ruleTopCategory", comment: ""), name, pct)
+        }
+        static func ruleExpenseUp(_ formatted: String) -> String {
+            String(format: ls("insights.ruleExpenseUp", comment: ""), formatted)
+        }
+        static func ruleExpenseDown(_ formatted: String) -> String {
+            String(format: ls("insights.ruleExpenseDown", comment: ""), formatted)
+        }
+        static func ruleBudgetRisk(_ name: String, _ pct: Int) -> String {
+            String(format: ls("insights.ruleBudgetRisk", comment: ""), name, pct)
+        }
+        static func ruleStreak(_ days: Int) -> String {
+            String(format: ls("insights.ruleStreak", comment: ""), days)
+        }
+        static func ruleOptionalHigh(_ pct: Int) -> String {
+            String(format: ls("insights.ruleOptionalHigh", comment: ""), pct)
+        }
+    }
+
     // MARK: - Statistics
     enum Statistics {
         static var title: String { ls("statistics.title", comment: "") }

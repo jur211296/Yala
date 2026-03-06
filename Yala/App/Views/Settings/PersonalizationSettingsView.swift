@@ -34,6 +34,7 @@ struct PersonalizationSettingsView: View {
     @State private var showingWeekdayPicker = false
     @State private var showingLanguagePicker = false
     @State private var showingExpensesOnlyConfirmation = false
+    @State private var showingSmartInsightsSettings = false
 
     private var selectedPeriod: DetailPeriod {
         DetailPeriod(rawValue: defaultPeriodRaw) ?? .thisMonth
@@ -424,6 +425,42 @@ struct PersonalizationSettingsView: View {
                         }
                     }
 
+                    // MARK: - Smart Insights Section
+                    VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                        YalaSectionHeader(L10n.Insights.title)
+
+                        Button {
+                            showingSmartInsightsSettings = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "sparkles")
+                                    .font(DS.Typography.body)
+                                    .foregroundStyle(.thAccent)
+                                    .frame(width: 28)
+
+                                Text(L10n.Insights.title)
+                                    .font(DS.Typography.body)
+                                    .foregroundStyle(.thPrimaryText)
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(DS.Typography.labelSmall.weight(.medium))
+                                    .foregroundStyle(.tertiary)
+                            }
+                            .padding(.horizontal, DS.FormRow.paddingH)
+                            .padding(.vertical, DS.FormRow.paddingV)
+                            .background(.thCard)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                            )
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+
                     // MARK: - Formato Section
                     VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                         YalaSectionHeader(L10n.Settings.sectionFormat)
@@ -647,6 +684,9 @@ struct PersonalizationSettingsView: View {
                 }
             )
             .presentationDetents([.medium])
+        }
+        .sheet(isPresented: $showingSmartInsightsSettings) {
+            SmartInsightsSettingsView()
         }
         .confirmationDialog(
             sessionState.isExpensesOnlyMode

@@ -24,8 +24,15 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 | iCloudSyncService | Services/iCloudSyncService.swift | Monitor estado sync iCloud |
 | PreferenceSyncService | App/Services/PreferenceSyncService.swift | Sync preferencias via iCloud KV |
 | CategoryDeduplicationService | App/Services/CategoryDeduplicationService.swift | Merge categorías duplicadas post-sync |
+| InsightsLLMService | Services/InsightsLLMService.swift | AI insights via GPT-4o Mini |
 
-### Key ViewModels (34)
+### Key Calculators
+| Calculator | Path | Purpose |
+|------------|------|---------|
+| InsightsCalculator | App/Logic/Calculators/InsightsCalculator.swift | KPIs, stats, rule-based insights |
+| WeekdaySpendingCalculator | App/Logic/Calculators/WeekdaySpendingCalculator.swift | Gasto por día de semana |
+
+### Key ViewModels (35)
 | ViewModel | Tests |
 |-----------|-------|
 | NewTransactionViewModel | 35 |
@@ -41,6 +48,7 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 | TagFormViewModel | 8 |
 | AccountSelectorViewModel | — |
 | SubcategorySelectorViewModel, TagSelectorViewModel | — |
+| InsightsViewModel | — |
 | + 18 ViewModels más en App/ViewModels/ | — |
 
 ### Test Suites (29 suites, 294 tests)
