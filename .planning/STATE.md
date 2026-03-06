@@ -13,8 +13,8 @@ Version: 1.2 (en desarrollo)
 Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
-Status: **Fase 12 en progreso** — Smart Insights implementado (7 incrementos), pendiente commit
-Last activity: 2026-03-06 — Smart Insights tab completo (Increments 1-7)
+Status: **Fase 12 en progreso** — Smart Insights funcionalidad completa, pendiente refinamiento UI
+Last activity: 2026-03-06 — Smart Insights tab committed (3439fe3), UI polish pendiente
 
 ### Apple Review History (V1.0)
 
@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-06] 3439fe3 feat: add Smart Insights tab with rule-based insights, AI integration, and settings
 - [2026-03-06] 81559d6 refactor: defer RecordsFiltersView filters — Apply commits, X discards
 - [2026-03-05] fe9eebd fix/refactor: unify hasActiveFilters and activeFilterCount via FilterCriteria delegation
 - [2026-03-05] 932dd00 refactor: thread chartData parameter through pie widgets to avoid redundant processChartData calls
@@ -52,15 +53,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-05] 34f51b6 fix: use L10n.Filters.all instead of hardcoded Spanish string in tests
 - [2026-03-05] cc2f4a5 Merge hotfix/1.0.2 into 1.1
 - [2026-03-05] 2700d6d Merge hotfix/1.0.1 into 1.1
-- [2026-03-05] 3ac701b fix: add header to TagsPieWidget empty state for consistency with sibling pie widgets
-- [2026-03-05] f6ce90a fix: replace hardcoded #8E8E93 with AppConstants.othersColorHex
-- [2026-02-27] 930e725 fix: guard force unwraps in AppConstants URL construction
-- [2026-02-27] 16d38b3 chore: remove SettingsPlaceholderView and CaptureMode dead code
-- [2026-02-27] a792f17 fix: declare OpenAI data usage in Privacy Manifest and Info.plist
-- [2026-02-27] b8b575d fix: precise privacy claims and consent text in all localizations
-- [2026-02-27] 44efe2f fix: AI data consent for OpenAI features — Apple 5.1.1(i)/5.1.2(i) rejection
-- [2026-02-26] 9cc6831 fix: separate Terms/Privacy links and localize legal URLs — Apple 3.1.2 rejection
-- [2026-02-25] 8d2ba84 docs: add Groups (expense splitting) design document
 - [2026-02-24] 328ba03 fix: scheduled payments visual consistency — hot pink expenses, sign prefix, currency conversion
 - [2026-02-24] dea0d82 feat: support form sheet with type picker before sending email
 - [2026-02-24] 0962a43 fix: show initial balance mode when editing account without balance set
@@ -625,14 +617,11 @@ Computed `chartData` eliminado de 3 widgets. `body` computa una vez via `let`, t
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Refactor filtros deferred completado (81559d6) — RecordsFiltersView con snapshot/commit pattern
-Next step: Smart Insights tab — nueva tab en Statistics con KPIs y textos inteligentes (ver SMART-INSIGHTS-DESIGN.md)
+Stopped at: Smart Insights feature complete (3439fe3) — funcionalidad OK, UI necesita refinamiento
+Next step: Refinamiento UI de Smart Insights — mejorar diseño visual de la tab
 Resume context:
-- Design doc completo en `.planning/SMART-INSIGHTS-DESIGN.md`
-- Decisión: refactorizar filtros a deferred antes de Smart Insights
-- RecordsFiltersView muta SessionState directo (bug: "X" y "Aplicar" hacen lo mismo)
-- Solución: estado local en sheet, "Aplicar" escribe, "X" descarta
-- RF-1/RF-2/RF-3 completados previamente (deuda técnica filtros)
-- Filterable protocol ahora incluye activeFilterCount, isExcludeMode, selectedTransactionNatures
-- Pie widgets: processChartData() se ejecuta 1 vez por render (antes 5+)
-- pieWidgetContext inline aún pendiente (evaluar en RF futuro)
+- Feature completa: 11 secciones, rule-based insights, AI integration, settings
+- Build pasa, audit limpio, QA scenarios documentados
+- UI actual es funcional pero necesita polish visual
+- generateAIInsights() definido pero no wired al UI (pendiente integración)
+- Archivos clave: InsightsTabView.swift, InsightsCalculator.swift, InsightsViewModel.swift
