@@ -433,7 +433,7 @@ class SessionState {
     var temporaryTab: ConfigurableTab?
 
     /// Currently selected detail tab within Statistics (Trends, Categories, Records)
-    var selectedDetailTab: DetailViewTab = .trends
+    var selectedDetailTab: DetailViewTab = .insights
 
     /// Currently selected tab within Planning (Budgets, Scheduled Payments)
     var selectedPlanningTab: PlanningTab = .budgets

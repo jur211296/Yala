@@ -74,7 +74,7 @@ struct DetailContainerView: View {
 
     // MARK: - Initialization
 
-    init(context: RecordsFilterContext = .empty, initialTab: DetailViewTab = .records) {
+    init(context: RecordsFilterContext = .empty, initialTab: DetailViewTab = .insights) {
         self.isFromSearch = context.isFromSearch
         var cleanContext = context
         // Only reset period and filters when NOT coming from search
@@ -216,7 +216,8 @@ struct DetailContainerView: View {
                 budgets: dataViewModel.budgets,
                 scheduledPayments: dataViewModel.scheduledPayments,
                 defaultCurrencyCode: defaultCurrencyCode,
-                viewModel: insightsViewModel
+                viewModel: insightsViewModel,
+                trendsViewModel: trendsViewModel
             )
         case .trends:
             TrendsTabView(

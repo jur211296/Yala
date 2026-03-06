@@ -34,6 +34,6 @@ struct InsightCard: View {
             Spacer(minLength: 0)
         }
         .padding(DS.Spacing.lg)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .yalaCard(padding: 0, radius: DS.Radius.lg, shadow: false)
     }
 }

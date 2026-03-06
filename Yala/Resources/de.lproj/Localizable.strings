@@ -717,7 +717,7 @@
 "statistics.incomeAnalysis" = "Einnahmenanalyse";
 
 // MARK: - Insights
-"insights.title" = "Insights";
+"insights.title" = "Überblick";
 "insights.records" = "Einträge";
 "insights.inThisPeriod" = "in diesem Zeitraum";
 "insights.dailyAverage" = "Tagesdurchschnitt";

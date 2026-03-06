@@ -719,7 +719,7 @@
 "statistics.incomeAnalysis" = "Income Analysis";
 
 // MARK: - Insights
-"insights.title" = "Insights";
+"insights.title" = "Overview";
 "insights.records" = "Records";
 "insights.inThisPeriod" = "in this period";
 "insights.dailyAverage" = "Daily average";

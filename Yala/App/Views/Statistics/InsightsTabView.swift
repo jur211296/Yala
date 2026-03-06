@@ -15,6 +15,7 @@ struct InsightsTabView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - Data (passed from parent)
 
@@ -30,6 +31,7 @@ struct InsightsTabView: View {
     // MARK: - ViewModel
 
     @Bindable var viewModel: InsightsViewModel
+    @Bindable var trendsViewModel: StatisticsViewModel
 
     // MARK: - Settings
 
@@ -61,6 +63,7 @@ struct InsightsTabView: View {
     // MARK: - Pro State
 
     @State private var showUpgradeSheet = false
+    @State private var showCustomPeriodPicker = false
 
     private var isProUser: Bool {
         FeatureGateService.shared.canAccess(.smartInsightsAI)
@@ -69,7 +72,7 @@ struct InsightsTabView: View {
     // MARK: - Body
 
     var body: some View {
-        ScrollView {
+        ScrollView(.vertical, showsIndicators: false) {
             if let data = viewModel.insightData {
                 if data.periodSummary.transactionCount == 0 {
                     // Edge case: 0 transactions
@@ -80,9 +83,17 @@ struct InsightsTabView: View {
                     )
                     .padding(.top, DS.Spacing.xxxxl)
                 } else {
-                    LazyVStack(spacing: DS.Spacing.xxl) {
+                    LazyVStack(spacing: DS.Spacing.xl) {
+                        // Control bar (period selector + filter chips)
+                        controlBar
+
                         // Section 1: Period Summary (always visible)
                         periodSummarySection(data.periodSummary)
+
+                        // First-time tip (shown at top for new users)
+                        if !hasSeenInsightsIntro {
+                            firstTimeTip
+                        }
 
                         // Pro AI consent banner
                         if isProUser && !aiDataConsentAccepted && !dismissedAIInsightsBanner {
@@ -165,21 +176,222 @@ struct InsightsTabView: View {
                                 .frame(maxWidth: .infinity, alignment: .center)
                                 .padding(.vertical, DS.Spacing.lg)
                         }
-
-                        // Section 11: First-time tip
-                        if !hasSeenInsightsIntro {
-                            firstTimeTip
-                        }
                     }
                     .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.xxl)
+                    .padding(.top, DS.Spacing.sm)
+                    .yalaSafeBottomPadding()
                 }
             } else {
                 ProgressView()
                     .frame(maxWidth: .infinity, minHeight: 200)
             }
         }
-        .yalaSafeBottomPadding()
+        .sheet(isPresented: $showCustomPeriodPicker) {
+            CustomPeriodPickerSheet(
+                minDate: transactionDateRange.start,
+                maxDate: transactionDateRange.end,
+                currentRange: sessionState.customDateRange
+            )
+        }
+    }
+
+    // MARK: - Control Bar
+
+    private var controlBar: some View {
+        HStack(spacing: DS.Spacing.md) {
+            TrendsPeriodMenu(
+                selectedPeriod: trendsViewModel.detailPeriod,
+                customDateRange: sessionState.customDateRange,
+                onSelect: { period in
+                    sessionState.selectedPeriod = period
+                },
+                onCustomTapped: {
+                    showCustomPeriodPicker = true
+                }
+            )
+            .equatable()
+
+            if trendsViewModel.isExcludeMode {
+                ExcludeModeBadge()
+            }
+
+            if trendsViewModel.hasActiveFilters {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: DS.Spacing.sm) {
+                        // Account chips
+                        ForEach(selectedAccountChips, id: \.id) { chip in
+                            FilterChipView(
+                                accountName: chip.name,
+                                count: chip.count,
+                                onClear: {
+                                    trendsViewModel.selectedAccounts.removeAll()
+                                }
+                            ).excludeMode(trendsViewModel.isExcludeMode)
+                        }
+
+                        // Category chip (aggregated)
+                        if let catChip = aggregatedCategoryChip(
+                            selectedSubcategories: trendsViewModel.selectedSubcategories,
+                            allSubcategories: allSubcategories
+                        ) {
+                            FilterChipView(
+                                categoryName: catChip.name,
+                                iconName: catChip.iconName,
+                                colorHex: catChip.colorHex,
+                                count: catChip.count,
+                                onClear: {
+                                    trendsViewModel.selectedCategories.removeAll()
+                                    trendsViewModel.selectedSubcategories.removeAll()
+                                }
+                            ).excludeMode(trendsViewModel.isExcludeMode)
+                        } else if !trendsViewModel.selectedCategories.isEmpty {
+                            let selectedCats = categories.filter { trendsViewModel.selectedCategories.contains($0.persistentModelID) }
+                            if let firstCat = selectedCats.first {
+                                FilterChipView(
+                                    categoryName: firstCat.name,
+                                    iconName: firstCat.iconName,
+                                    colorHex: firstCat.colorHex,
+                                    count: selectedCats.count,
+                                    onClear: {
+                                        trendsViewModel.selectedCategories.removeAll()
+                                    }
+                                ).excludeMode(trendsViewModel.isExcludeMode)
+                            }
+                        }
+
+                        // Subcategory chip (aggregated)
+                        if let subChip = aggregatedSubcategoryChip(
+                            selectedSubcategories: trendsViewModel.selectedSubcategories,
+                            allSubcategories: allSubcategories
+                        ) {
+                            FilterChipView(
+                                subcategoryName: subChip.name,
+                                iconName: subChip.iconName,
+                                colorHex: subChip.colorHex,
+                                count: subChip.count,
+                                onClear: {
+                                    trendsViewModel.selectedSubcategories.removeAll()
+                                }
+                            ).excludeMode(trendsViewModel.isExcludeMode)
+                        }
+
+                        // Tag chips
+                        ForEach(selectedTagChips, id: \.id) { chip in
+                            FilterChipView(
+                                tagName: chip.name,
+                                iconName: chip.iconName,
+                                colorHex: chip.colorHex,
+                                onClear: {
+                                    trendsViewModel.selectedTags.remove(chip.tagID)
+                                }
+                            ).excludeMode(trendsViewModel.isExcludeMode)
+                        }
+
+                        // Nature chips
+                        ForEach(selectedNatureChips, id: \.nature.rawValue) { chipData in
+                            FilterChipView(
+                                nature: chipData.nature,
+                                onClear: {
+                                    trendsViewModel.selectedNatures.remove(chipData.nature)
+                                }
+                            ).excludeMode(trendsViewModel.isExcludeMode)
+                        }
+
+                        // Transaction nature chip
+                        if !sessionState.isExpensesOnlyMode,
+                            trendsViewModel.selectedTransactionNatures.count == 1,
+                            let nature = trendsViewModel.selectedTransactionNatures.first
+                        {
+                            FilterChipView(
+                                transactionNature: nature,
+                                onClear: {
+                                    trendsViewModel.selectedTransactionNatures.removeAll()
+                                }
+                            )
+                        }
+
+                        // Currency chips
+                        ForEach(Array(trendsViewModel.selectedCurrencies), id: \.self) { currency in
+                            FilterChipView(
+                                currencyCode: currency.rawValue,
+                                onClear: {
+                                    trendsViewModel.selectedCurrencies.remove(currency)
+                                }
+                            ).excludeMode(trendsViewModel.isExcludeMode)
+                        }
+
+                        // Amount chip
+                        if trendsViewModel.amountCondition.isActive {
+                            FilterChipView(
+                                amountText: trendsViewModel.amountCondition.displayText,
+                                onClear: {
+                                    trendsViewModel.amountCondition = .any
+                                }
+                            )
+                        }
+
+                        // Search/Note chip
+                        if !trendsViewModel.searchText.isEmpty {
+                            FilterChipView(
+                                noteText: trendsViewModel.searchText,
+                                onClear: {
+                                    trendsViewModel.searchText = ""
+                                }
+                            )
+                        }
+
+                        if trendsViewModel.activeFilterCount > 1 {
+                            Button {
+                                dsWithAnimation(reduceMotion) { trendsViewModel.clearFilters() }
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .accessibilityLabel(L10n.Action.clearAll)
+                        }
+                    }
+                }
+            }
+
+            Spacer()
+        }
+        .animation(nil, value: trendsViewModel.detailPeriod)
+    }
+
+    // MARK: - Chip Helpers
+
+    private var selectedAccountChips: [AccountChip] {
+        guard !trendsViewModel.selectedAccounts.isEmpty else { return [] }
+        let selectedAccountsList = accounts.filter { trendsViewModel.selectedAccounts.contains($0.persistentModelID) }
+        guard !selectedAccountsList.isEmpty else { return [] }
+        if let firstName = selectedAccountsList.first?.name {
+            return [AccountChip(name: firstName, count: selectedAccountsList.count)]
+        }
+        return []
+    }
+
+    private var selectedNatureChips: [NatureChipData] {
+        trendsViewModel.selectedNatures.map { NatureChipData(nature: $0) }
+    }
+
+    private var selectedTagChips: [TagChip] {
+        tags.filter { trendsViewModel.selectedTags.contains($0.persistentModelID) }
+            .map {
+                TagChip(
+                    id: $0.persistentModelID,
+                    tagID: $0.persistentModelID,
+                    name: $0.name,
+                    iconName: $0.iconName,
+                    colorHex: $0.colorHex
+                )
+            }
+    }
+
+    private var transactionDateRange: (start: Date, end: Date) {
+        let sortedDates = allTransactions.map(\.date).sorted()
+        let start = sortedDates.first ?? Date()
+        let end = sortedDates.last ?? Date()
+        return (start, end)
     }
 
     // MARK: - Section 1: Period Summary
@@ -246,7 +458,7 @@ struct InsightsTabView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Spacing.lg)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .yalaCard(padding: 0, shadow: false)
     }
 
     private func countCard(count: Int) -> some View {
@@ -266,7 +478,7 @@ struct InsightsTabView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Spacing.lg)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .yalaCard(padding: 0, shadow: false)
     }
 
     // MARK: - Section 3: Quick Stats Grid
@@ -287,14 +499,14 @@ struct InsightsTabView: View {
 
                 LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
                     QuickStatCell(
-                        icon: "chart.bar",
+                        icon: "chart.bar.fill",
                         label: L10n.Insights.dailyAverage,
                         value: YalaFormatter.currency(value: stats.dailyAverage, currencyCode: defaultCurrencyCode)
                     )
 
                     if let top = stats.topCategory {
                         QuickStatCell(
-                            icon: "folder",
+                            icon: "folder.fill",
                             label: L10n.Insights.topCategory,
                             value: top.category.name,
                             secondary: "\(YalaFormatter.currency(value: top.amount, currencyCode: defaultCurrencyCode)) · \(Int(top.percentage))%"
@@ -303,7 +515,7 @@ struct InsightsTabView: View {
 
                     if let topSub = stats.topSubcategory {
                         QuickStatCell(
-                            icon: "tag",
+                            icon: "tag.fill",
                             label: L10n.Insights.topSubcategory,
                             value: topSub.subcategoryName,
                             secondary: YalaFormatter.currency(value: topSub.amount, currencyCode: defaultCurrencyCode)
@@ -312,7 +524,7 @@ struct InsightsTabView: View {
 
                     if let highest = stats.highestExpense {
                         QuickStatCell(
-                            icon: "arrow.up.circle",
+                            icon: "arrow.up.circle.fill",
                             label: L10n.Insights.highestExpense,
                             value: YalaFormatter.currency(value: highest.amount, currencyCode: defaultCurrencyCode),
                             secondary: highest.note
@@ -321,7 +533,7 @@ struct InsightsTabView: View {
 
                     if let busiest = stats.busiestDay {
                         QuickStatCell(
-                            icon: "calendar",
+                            icon: "calendar.circle.fill",
                             label: L10n.Insights.busiestDay,
                             value: busiest.date.formatted(.dateTime.month(.abbreviated).day()),
                             secondary: YalaFormatter.currency(value: busiest.amount, currencyCode: defaultCurrencyCode)
@@ -330,7 +542,7 @@ struct InsightsTabView: View {
 
                     if stats.subscriptionsTotal > 0 {
                         QuickStatCell(
-                            icon: "repeat",
+                            icon: "repeat.circle.fill",
                             label: L10n.Insights.subscriptions,
                             value: YalaFormatter.currency(value: stats.subscriptionsTotal, currencyCode: defaultCurrencyCode),
                             secondary: L10n.Insights.monthly
@@ -358,7 +570,7 @@ struct InsightsTabView: View {
             Spacer()
         }
         .padding(DS.Spacing.lg)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .yalaCard(padding: 0, shadow: false)
     }
 
     // MARK: - Section 4: Commitments
@@ -425,7 +637,7 @@ struct InsightsTabView: View {
                                 .frame(height: 6)
                             }
                             .padding(DS.Spacing.md)
-                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+                            .yalaCard(padding: 0, radius: DS.Radius.md, shadow: false)
                         }
                     }
                 }
@@ -457,7 +669,7 @@ struct InsightsTabView: View {
                 .foregroundStyle(.primary)
         }
         .padding(DS.Spacing.md)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+        .yalaCard(padding: 0, radius: DS.Radius.md, shadow: false)
     }
 
     // MARK: - Section 9: Year-over-Year
@@ -489,7 +701,7 @@ struct InsightsTabView: View {
             }
         }
         .padding(DS.Spacing.lg)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .yalaCard(padding: 0, shadow: false)
     }
 
     // MARK: - Section 7: Weekday Spending Chart
@@ -586,7 +798,7 @@ struct InsightsTabView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(DS.Spacing.lg)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .yalaCard(padding: 0, shadow: false)
     }
 
     // MARK: - Locked Fun Fact
@@ -614,7 +826,7 @@ struct InsightsTabView: View {
                 ProBadge(size: .small)
             }
             .padding(DS.Spacing.lg)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+            .yalaCard(padding: 0, shadow: false)
             .opacity(0.7)
         }
         .buttonStyle(.plain)
@@ -661,10 +873,11 @@ struct InsightsTabView: View {
             }
         }
         .padding(DS.Spacing.lg)
-        .background(DS.Semantic.infoBackground, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .background(DS.Semantic.infoBackground, in: RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .overlay(RoundedRectangle(cornerRadius: DS.Radius.xl).stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1))
     }
 
-    // MARK: - Section 11: First-Time Tip
+    // MARK: - First-Time Tip
 
     private var firstTimeTip: some View {
         HStack(spacing: DS.Spacing.md) {
@@ -694,7 +907,8 @@ struct InsightsTabView: View {
             .buttonStyle(.plain)
         }
         .padding(DS.Spacing.lg)
-        .background(DS.Semantic.infoBackground, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .background(DS.Semantic.infoBackground, in: RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .overlay(RoundedRectangle(cornerRadius: DS.Radius.xl).stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1))
     }
 
     // MARK: - Collapsible Header

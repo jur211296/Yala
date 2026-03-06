@@ -32,7 +32,7 @@ struct WeekdayBarChart: View {
                 x: .value("Day", item.shortName),
                 y: .value("Amount", item.total)
             )
-            .foregroundStyle(item.weekday == maxWeekday ? theme.accent : theme.accent.opacity(0.3))
+            .foregroundStyle(item.weekday == maxWeekday ? Color.expenseGraph.gradient : Color.expenseGraph.opacity(0.3).gradient)
             .cornerRadius(DS.Radius.xs)
         }
         .chartYAxis {

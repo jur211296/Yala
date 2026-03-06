@@ -42,6 +42,6 @@ struct QuickStatCell: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Spacing.md)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+        .yalaCard(padding: 0, radius: DS.Radius.md, shadow: false)
     }
 }

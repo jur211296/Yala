@@ -19,17 +19,17 @@ struct NatureBar: View {
                 HStack(spacing: 2) {
                     if distribution.essentialPercent > 0 {
                         RoundedRectangle(cornerRadius: DS.Radius.xs)
-                            .fill(Color.teal)
+                            .fill(Color.essentialNature)
                             .frame(width: geo.size.width * distribution.essentialPercent / 100)
                     }
                     if distribution.priorityPercent > 0 {
                         RoundedRectangle(cornerRadius: DS.Radius.xs)
-                            .fill(Color.orange)
+                            .fill(Color.priorityNatureNew)
                             .frame(width: geo.size.width * distribution.priorityPercent / 100)
                     }
                     if distribution.optionalPercent > 0 {
                         RoundedRectangle(cornerRadius: DS.Radius.xs)
-                            .fill(Color.purple)
+                            .fill(Color.optionalNature)
                             .frame(width: geo.size.width * distribution.optionalPercent / 100)
                     }
                 }
@@ -39,9 +39,9 @@ struct NatureBar: View {
 
             // Legend
             HStack(spacing: DS.Spacing.lg) {
-                legendItem(color: .teal, label: L10n.Nature.essential, percent: distribution.essentialPercent)
-                legendItem(color: .orange, label: L10n.Nature.priority, percent: distribution.priorityPercent)
-                legendItem(color: .purple, label: L10n.Nature.optional, percent: distribution.optionalPercent)
+                legendItem(color: .essentialNature, label: L10n.Nature.essential, percent: distribution.essentialPercent)
+                legendItem(color: .priorityNatureNew, label: L10n.Nature.priority, percent: distribution.priorityPercent)
+                legendItem(color: .optionalNature, label: L10n.Nature.optional, percent: distribution.optionalPercent)
             }
         }
     }

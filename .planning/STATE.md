@@ -528,6 +528,20 @@ Fix: searchText faltaba en `FilterCriteria.activeFilterCount`. RecordsVM y Stati
 **RF-3: processChartData() llamado 5+ veces por render en pie widgets** ✅ Completado (932dd00)
 Computed `chartData` eliminado de 3 widgets. `body` computa una vez via `let`, threading por parámetro a todas las funciones hijas.
 
+### Refactors Pendientes: Statistics Control Bar (identificados 2026-03-06)
+
+Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funcionalidad.
+
+**RF-4: controlBar duplicado en 3 tabs (~160 LOC × 3)**
+`TrendsTabView`, `CategoriesTabView`, e `InsightsTabView` tienen implementaciones casi idénticas del `controlBar` (TrendsPeriodMenu + ExcludeModeBadge + ScrollView de FilterChipViews + clear all). Cualquier cambio en lógica de chips requiere actualizar 3 archivos.
+- **Solución propuesta:** Extraer `StatisticsControlBar` como View compartido que reciba `trendsViewModel`, `sessionState`, y callbacks.
+- **Esfuerzo:** Medio — el layout es idéntico, solo varía el binding de `showCustomPeriodPicker`.
+
+**RF-5: Chip helpers duplicados en 3 tabs**
+`selectedAccountChips`, `selectedNatureChips`, `selectedTagChips` son computed properties idénticas en TrendsTabView, CategoriesTabView e InsightsTabView. `aggregatedCategoryChip`/`aggregatedSubcategoryChip` ya están extraídas en `FilterChipHelper.swift`.
+- **Solución propuesta:** Mover los 3 helpers restantes a `FilterChipHelper.swift` como funciones libres (reciben `accounts`/`tags` + `trendsViewModel`).
+- **Esfuerzo:** Bajo — copy directo, luego eliminar de los 3 tabs.
+
 ### Fase 7: Beta Preparation (V1.0 Release) ✅ COMPLETADA
 
 **Subfase 7.1: Code Quality & Cleanup** ✅
