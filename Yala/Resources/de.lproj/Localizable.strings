@@ -747,9 +747,9 @@
 "insights.perDay" = "pro Tag";
 "insights.ofTotal" = "vom Gesamt";
 "insights.analyzingData" = "Deine Daten werden analysiert...";
-"insights.activateAITitle" = "KI-Insights aktivieren";
-"insights.activateAIBody" = "Erhalte personalisierte Analysen deiner Finanzen mithilfe künstlicher Intelligenz.";
-"insights.activateAIDisclaimer" = "Es werden nur zusammengefasste Daten gesendet (Summen, Prozentsätze, Trends). Deine einzelnen Ausgaben und persönlichen Daten werden nie geteilt.";
+"insights.activateAITitle" = "Smarten Überblick aktivieren";
+"insights.activateAIBody" = "Erhalte personalisierte Analysen deiner Finanzen mit OpenAI.";
+"insights.activateAIDisclaimer" = "Nur zusammengefasste Daten werden an OpenAI gesendet (Summen, Prozentsätze, Trends). Deine einzelnen Ausgaben und persönlichen Daten werden nie geteilt.";
 "insights.activate" = "Aktivieren";
 "insights.notInterested" = "Kein Interesse";
 "insights.offlineCached" = "Offline. Letzte Analyse wird angezeigt.";
@@ -2366,15 +2366,15 @@
 
 // MARK: - AI Consent
 "aiConsent.title" = "KI-Datenverarbeitung";
-"aiConsent.message" = "Einige Funktionen nutzen optional künstliche Intelligenz:\n\n• Sprache: deine Audioaufnahme wird transkribiert\n• Bilder: das Foto wird analysiert, um Daten zu extrahieren\n• Insights: nur Summen, Prozentsätze und Trends werden gesendet\n\nDeine einzelnen Ausgaben, Transaktionsverläufe und persönlichen Daten werden nie geteilt. Die Daten werden nicht zum Training von KI-Modellen verwendet.";
+"aiConsent.message" = "Einige Funktionen nutzen optional OpenAI, um deine Daten zu verarbeiten:\n\n• Sprache: deine Audioaufnahme wird transkribiert\n• Bilder: das Foto wird analysiert, um Daten zu extrahieren\n• Überblick: nur Summen, Prozentsätze und Trends werden gesendet\n\nDeine einzelnen Ausgaben, Transaktionsverläufe und persönlichen Daten werden nie geteilt. OpenAI verwendet diese Daten nicht zum Training.";
 "aiConsent.accept" = "Akzeptieren und aktivieren";
 "aiConsent.privacyPolicy" = "Datenschutzrichtlinie";
 "aiConsent.inlineHint" = "Deine Aufnahmen und Bilder werden mit OpenAI verarbeitet. Sie werden nicht dauerhaft gespeichert.";
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Künstliche Intelligenz";
-"insights.aiToggle" = "KI-Insights aktivieren";
-"insights.aiCaption" = "KI analysiert deine aggregierten Daten, um personalisierte Insights zu erstellen. Es werden keine einzelnen Transaktionen gesendet.";
+"insights.aiToggle" = "Smarten Überblick aktivieren";
+"insights.aiCaption" = "OpenAI analysiert deine aggregierten Daten, um personalisierte Analysen zu erstellen. Es werden keine einzelnen Transaktionen gesendet.";
 "insights.metricsSection" = "Metriken";
 "insights.chartsSection" = "Diagramme";
 "insights.analysisSection" = "Analyse";

@@ -749,9 +749,9 @@
 "insights.perDay" = "per day";
 "insights.ofTotal" = "of total";
 "insights.analyzingData" = "Analyzing your data...";
-"insights.activateAITitle" = "Activate AI Insights";
-"insights.activateAIBody" = "Get personalized analysis of your finances using artificial intelligence.";
-"insights.activateAIDisclaimer" = "Only summarized data is sent (totals, percentages, trends). Your individual transactions and personal data are never shared.";
+"insights.activateAITitle" = "Activate Smart Overview";
+"insights.activateAIBody" = "Get personalized analysis of your finances powered by OpenAI.";
+"insights.activateAIDisclaimer" = "Only summarized data is sent to OpenAI (totals, percentages, trends). Your individual transactions and personal data are never shared.";
 "insights.activate" = "Activate";
 "insights.notInterested" = "Not interested";
 "insights.offlineCached" = "Offline. Showing last analysis.";
@@ -2354,15 +2354,15 @@
 
 // MARK: - AI Consent
 "aiConsent.title" = "AI Data Processing";
-"aiConsent.message" = "Some features use artificial intelligence optionally:\n\n• Voice: your audio recording is transcribed\n• Images: the photo is analyzed to extract data\n• Insights: only totals, percentages, and trends are sent\n\nYour individual transactions, transaction history, and personal information are never shared. Data is not used to train AI models.";
+"aiConsent.message" = "Some features optionally use OpenAI to process your data:\n\n• Voice: your audio recording is transcribed\n• Images: the photo is analyzed to extract data\n• Overview: only totals, percentages, and trends are sent\n\nYour individual transactions, transaction history, and personal information are never shared. OpenAI does not use this data for training.";
 "aiConsent.accept" = "Accept and Enable";
 "aiConsent.privacyPolicy" = "Privacy Policy";
 "aiConsent.inlineHint" = "Your recordings and images are processed with OpenAI. They are not stored permanently.";
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Artificial Intelligence";
-"insights.aiToggle" = "Enable AI insights";
-"insights.aiCaption" = "AI analyzes your aggregated data to generate personalized insights. No individual transactions are sent.";
+"insights.aiToggle" = "Enable smart overview";
+"insights.aiCaption" = "OpenAI analyzes your aggregated data to generate personalized analysis. No individual transactions are sent.";
 "insights.metricsSection" = "Metrics";
 "insights.chartsSection" = "Charts";
 "insights.analysisSection" = "Analysis";

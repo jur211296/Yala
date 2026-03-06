@@ -749,9 +749,9 @@
 "insights.perDay" = "por día";
 "insights.ofTotal" = "del total";
 "insights.analyzingData" = "Analizando tus datos...";
-"insights.activateAITitle" = "Activa los insights con IA";
-"insights.activateAIBody" = "Obtén análisis personalizados de tus finanzas usando inteligencia artificial.";
-"insights.activateAIDisclaimer" = "Solo se envían datos resumidos (totales, porcentajes, tendencias). Nunca se comparten tus gastos individuales ni datos personales.";
+"insights.activateAITitle" = "Activa el resumen inteligente";
+"insights.activateAIBody" = "Obtén análisis personalizados de tus finanzas con OpenAI.";
+"insights.activateAIDisclaimer" = "Solo se envían datos resumidos a OpenAI (totales, porcentajes, tendencias). Nunca se comparten tus gastos individuales ni datos personales.";
 "insights.activate" = "Activar";
 "insights.notInterested" = "No me interesa";
 "insights.offlineCached" = "Sin conexion. Mostrando ultimo analisis.";
@@ -2351,15 +2351,15 @@
 
 // MARK: - AI Consent
 "aiConsent.title" = "Uso de inteligencia artificial";
-"aiConsent.message" = "Algunas funciones usan inteligencia artificial de forma opcional:\n\n• Voz: tu grabación de audio se transcribe\n• Imágenes: la foto se analiza para extraer datos\n• Insights: se envían solo totales, porcentajes y tendencias\n\nNunca se comparten tus gastos individuales, historial de transacciones ni información personal. Los datos no se usan para entrenar modelos de IA.";
+"aiConsent.message" = "Algunas funciones usan OpenAI de forma opcional para procesar tus datos:\n\n• Voz: tu grabación de audio se transcribe\n• Imágenes: la foto se analiza para extraer datos\n• Resumen: se envían solo totales, porcentajes y tendencias\n\nNunca se comparten tus gastos individuales, historial de transacciones ni información personal. OpenAI no usa estos datos para entrenar sus modelos.";
 "aiConsent.accept" = "Aceptar y activar";
 "aiConsent.privacyPolicy" = "Política de privacidad";
 "aiConsent.inlineHint" = "Tus grabaciones e imágenes se procesan con OpenAI. No se almacenan permanentemente.";
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Inteligencia Artificial";
-"insights.aiToggle" = "Activar insights con IA";
-"insights.aiCaption" = "La IA analiza tus datos agregados para generar insights personalizados. No se envían transacciones individuales.";
+"insights.aiToggle" = "Activar resumen inteligente";
+"insights.aiCaption" = "OpenAI analiza tus datos agregados para generar análisis personalizados. No se envían transacciones individuales.";
 "insights.metricsSection" = "Métricas";
 "insights.chartsSection" = "Gráficos";
 "insights.analysisSection" = "Análisis";

@@ -747,9 +747,9 @@
 "insights.perDay" = "por dia";
 "insights.ofTotal" = "do total";
 "insights.analyzingData" = "Analisando seus dados...";
-"insights.activateAITitle" = "Ativar insights com IA";
-"insights.activateAIBody" = "Obtenha análises personalizadas das suas finanças usando inteligência artificial.";
-"insights.activateAIDisclaimer" = "Apenas dados resumidos são enviados (totais, percentuais, tendências). Suas transações individuais e dados pessoais nunca são compartilhados.";
+"insights.activateAITitle" = "Ativar resumo inteligente";
+"insights.activateAIBody" = "Obtenha análises personalizadas das suas finanças com OpenAI.";
+"insights.activateAIDisclaimer" = "Apenas dados resumidos são enviados à OpenAI (totais, percentuais, tendências). As tuas despesas individuais e dados pessoais nunca são compartilhados.";
 "insights.activate" = "Ativar";
 "insights.notInterested" = "Não me interessa";
 "insights.offlineCached" = "Sem conexão. Mostrando última análise.";
@@ -2366,15 +2366,15 @@
 
 // MARK: - AI Consent
 "aiConsent.title" = "Processamento de dados com IA";
-"aiConsent.message" = "Algumas funções usam inteligência artificial de forma opcional:\n\n• Voz: sua gravação de áudio é transcrita\n• Imagens: a foto é analisada para extrair dados\n• Insights: apenas totais, percentuais e tendências são enviados\n\nSuas despesas individuais, histórico de transações e informações pessoais nunca são compartilhados. Os dados não são usados para treinar modelos de IA.";
+"aiConsent.message" = "Algumas funções usam OpenAI de forma opcional para processar os teus dados:\n\n• Voz: a tua gravação de áudio é transcrita\n• Imagens: a foto é analisada para extrair dados\n• Resumo: apenas totais, percentuais e tendências são enviados\n\nAs tuas despesas individuais, histórico de transações e informações pessoais nunca são compartilhados. A OpenAI não usa estes dados para treinar os seus modelos.";
 "aiConsent.accept" = "Aceitar e ativar";
 "aiConsent.privacyPolicy" = "Política de privacidade";
 "aiConsent.inlineHint" = "As tuas gravações e imagens são processadas com OpenAI. Não são armazenadas permanentemente.";
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Inteligência Artificial";
-"insights.aiToggle" = "Ativar insights com IA";
-"insights.aiCaption" = "A IA analisa seus dados agregados para gerar insights personalizados. Nenhuma transação individual é enviada.";
+"insights.aiToggle" = "Ativar resumo inteligente";
+"insights.aiCaption" = "A OpenAI analisa seus dados agregados para gerar análises personalizadas. Nenhuma transação individual é enviada.";
 "insights.metricsSection" = "Métricas";
 "insights.chartsSection" = "Gráficos";
 "insights.analysisSection" = "Análise";
