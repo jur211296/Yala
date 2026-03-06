@@ -15,7 +15,7 @@ struct WeekdayBarChart: View {
     @Environment(\.yalaTheme) private var theme
 
     private var maxWeekday: Int? {
-        data.max(by: { $0.total < $1.total })?.weekday
+        data.max(by: { $0.average < $1.average })?.weekday
     }
 
     /// Reorder weekdays to start from Monday (weekday 2)
@@ -30,10 +30,17 @@ struct WeekdayBarChart: View {
         Chart(orderedData) { item in
             BarMark(
                 x: .value("Day", item.shortName),
-                y: .value("Amount", item.total)
+                y: .value("Amount", item.average)
             )
             .foregroundStyle(item.weekday == maxWeekday ? Color.expenseGraph.gradient : Color.expenseGraph.opacity(0.3).gradient)
             .cornerRadius(DS.Radius.xs)
+            .annotation(position: .top, spacing: 2) {
+                if item.average > 0 {
+                    Text(YalaFormatter.compactCurrency(value: item.average))
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
         .chartYAxis {
             AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
@@ -54,6 +61,6 @@ struct WeekdayBarChart: View {
                     .font(DS.Typography.captionSmall)
             }
         }
-        .frame(height: 180)
+        .frame(height: 200)
     }
 }

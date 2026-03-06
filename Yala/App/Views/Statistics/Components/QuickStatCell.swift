@@ -35,7 +35,7 @@ struct QuickStatCell: View {
 
             Text(secondary ?? " ")
                 .font(DS.Typography.captionSmall)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.secondary)
                 .opacity(secondary != nil ? 1 : 0)
                 .lineLimit(1)
         }

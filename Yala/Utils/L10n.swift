@@ -235,15 +235,17 @@ enum L10n {
         static var topCategory: String { ls("insights.topCategory", comment: "") }
         static var topSubcategory: String { ls("insights.topSubcategory", comment: "") }
         static var highestExpense: String { ls("insights.highestExpense", comment: "") }
-        static var busiestDay: String { ls("insights.busiestDay", comment: "") }
+        static var highestAvgWeekday: String { ls("insights.highestAvgWeekday", comment: "") }
         static var subscriptions: String { ls("insights.subscriptions", comment: "") }
         static var streak: String { ls("insights.streak", comment: "") }
+        static var days: String { ls("insights.days", comment: "") }
+        static var streakCaption: String { ls("insights.streakCaption", comment: "") }
         static func streakDays(_ count: Int) -> String {
             String(format: ls("insights.streakDays", comment: ""), count)
         }
         static var quickStats: String { ls("insights.quickStats", comment: "") }
         static var comparison: String { ls("insights.comparison", comment: "") }
-        static var weekdaySpending: String { ls("insights.weekdaySpending", comment: "") }
+        static var weekdayAverage: String { ls("insights.weekdayAverage", comment: "") }
         static var natureDistribution: String { ls("insights.natureDistribution", comment: "") }
         static var commitments: String { ls("insights.commitments", comment: "") }
         static var pendingPayments: String { ls("insights.pendingPayments", comment: "") }
@@ -261,6 +263,7 @@ enum L10n {
         static var emptyBody: String { ls("insights.emptyBody", comment: "") }
         static var fewTransactions: String { ls("insights.fewTransactions", comment: "") }
         static var monthly: String { ls("insights.monthly", comment: "") }
+        static var perDay: String { ls("insights.perDay", comment: "") }
         static var ofTotal: String { ls("insights.ofTotal", comment: "") }
         static var analyzingData: String { ls("insights.analyzingData", comment: "") }
         static var activateAITitle: String { ls("insights.activateAITitle", comment: "") }

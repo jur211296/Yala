@@ -30,6 +30,11 @@ struct PeriodSummary {
     let transactionCount: Int
     let expenseVariation: Double?
     let incomeVariation: Double?
+    let balanceVariation: Double?
+    let dailyAverageCount: Double
+    let dailyAverageExpense: Double
+    let dailyAverageVariation: Double?
+    let previousPeriodLabel: String
 }
 
 struct QuickStats {
@@ -37,7 +42,7 @@ struct QuickStats {
     let topCategory: CategorySpendingSummary?
     let topSubcategory: SubcategorySpendingSummary?
     let highestExpense: HighestExpenseInfo?
-    let busiestDay: BusiestDayInfo?
+    let highestAvgWeekday: HighestAvgWeekdayInfo?
     let subscriptionsTotal: Double
 }
 
@@ -46,9 +51,9 @@ struct HighestExpenseInfo {
     let note: String
 }
 
-struct BusiestDayInfo {
-    let date: Date
-    let amount: Double
+struct HighestAvgWeekdayInfo {
+    let weekdayName: String
+    let average: Double
 }
 
 struct Commitments {
@@ -126,6 +131,7 @@ struct InsightsCalculator {
         criteria: FilterCriteria,
         currencyCode: String,
         customRange: DateInterval?,
+        comparisonMode: ComparisonMode = .month,
         context: ModelContext
     ) -> InsightData {
         // Filter transactions using FilterService
@@ -141,7 +147,7 @@ struct InsightsCalculator {
         let periodTxns = filtered.filter { interval.contains($0.date) }
 
         // Previous period for variations
-        let prevInterval = PreviousPeriodHelper.previousInterval(for: period, mode: .month, customRange: customRange)
+        let prevInterval = PreviousPeriodHelper.previousInterval(for: period, mode: comparisonMode, customRange: customRange)
         let prevTxns = filtered.filter { prevInterval.contains($0.date) }
 
         // Period Summary
@@ -168,6 +174,30 @@ struct InsightsCalculator {
             currentAmount: cashFlow.totalIncome,
             previousAmount: prevCashFlow.totalIncome
         )
+        let balanceVariation = PreviousPeriodHelper.calculateVariation(
+            currentAmount: cashFlow.netFlow,
+            previousAmount: prevCashFlow.netFlow
+        )
+
+        let calendar = Calendar.current
+        let daysInPeriod = max(1, calendar.dateComponents([.day], from: interval.start, to: interval.end).day ?? 1)
+        let dailyAverageCount = Double(periodTxns.count) / Double(daysInPeriod)
+        let dailyAverageExpense = cashFlow.totalExpense / Double(daysInPeriod)
+
+        // Previous daily average for variation
+        let prevDaysInPeriod = max(1, calendar.dateComponents([.day], from: prevInterval.start, to: prevInterval.end).day ?? 1)
+        let prevDailyAvg = prevCashFlow.totalExpense / Double(prevDaysInPeriod)
+        let dailyAverageVariation = PreviousPeriodHelper.calculateVariation(
+            currentAmount: dailyAverageExpense,
+            previousAmount: prevDailyAvg
+        )
+
+        // Label for previous period (e.g. "vs Feb 25")
+        let previousPeriodLabel = PreviousPeriodHelper.formatComparisonText(
+            previousInterval: prevInterval,
+            period: period,
+            mode: comparisonMode
+        )
 
         let periodSummary = PeriodSummary(
             totalExpense: cashFlow.totalExpense,
@@ -175,8 +205,28 @@ struct InsightsCalculator {
             netBalance: cashFlow.netFlow,
             transactionCount: periodTxns.count,
             expenseVariation: expenseVariation,
-            incomeVariation: incomeVariation
+            incomeVariation: incomeVariation,
+            balanceVariation: balanceVariation,
+            dailyAverageCount: dailyAverageCount,
+            dailyAverageExpense: dailyAverageExpense,
+            dailyAverageVariation: dailyAverageVariation,
+            previousPeriodLabel: previousPeriodLabel
         )
+
+        // Weekday Spending (computed before Quick Stats for highestAvgWeekday)
+        let weekdaySpending = WeekdaySpendingCalculator.calculate(
+            transactions: periodTxns,
+            currencyCode: currencyCode,
+            context: context
+        )
+
+        // Highest average weekday
+        let highestAvgWeekday: HighestAvgWeekdayInfo? = {
+            guard let best = weekdaySpending.max(by: { $0.average < $1.average }), best.average > 0 else { return nil }
+            let symbols = Calendar.current.weekdaySymbols
+            guard best.weekday >= 1, best.weekday <= 7 else { return nil }
+            return HighestAvgWeekdayInfo(weekdayName: symbols[best.weekday - 1], average: best.average)
+        }()
 
         // Quick Stats
         let topCategories = TopSpendingCategoriesCalculator.calculateTopSpending(
@@ -192,19 +242,15 @@ struct InsightsCalculator {
             context: context
         )
 
-        let daysInPeriod = max(1, Calendar.current.dateComponents([.day], from: interval.start, to: interval.end).day ?? 1)
-        let dailyAvg = cashFlow.totalExpense / Double(daysInPeriod)
-
         let highestExpense = findHighestExpense(periodTxns, currencyCode: currencyCode, context: context)
-        let busiestDay = findBusiestDay(periodTxns, currencyCode: currencyCode, context: context)
         let subscriptionsTotal = calculateSubscriptionsTotal(scheduledPayments, currencyCode: currencyCode, context: context)
 
         let quickStats = QuickStats(
-            dailyAverage: dailyAvg,
+            dailyAverage: dailyAverageExpense,
             topCategory: topCategories.first,
             topSubcategory: topSubcategories.first,
             highestExpense: highestExpense,
-            busiestDay: busiestDay,
+            highestAvgWeekday: highestAvgWeekday,
             subscriptionsTotal: subscriptionsTotal
         )
 
@@ -214,13 +260,6 @@ struct InsightsCalculator {
             scheduledPayments: scheduledPayments,
             periodTxns: periodTxns,
             interval: interval,
-            currencyCode: currencyCode,
-            context: context
-        )
-
-        // Weekday Spending
-        let weekdaySpending = WeekdaySpendingCalculator.calculate(
-            transactions: periodTxns,
             currencyCode: currencyCode,
             context: context
         )
@@ -329,27 +368,6 @@ struct InsightsCalculator {
 
         guard let h = highest else { return nil }
         return HighestExpenseInfo(amount: h.amount, note: h.note)
-    }
-
-    private static func findBusiestDay(
-        _ transactions: [TransactionItem],
-        currencyCode: String,
-        context: ModelContext
-    ) -> BusiestDayInfo? {
-        let calendar = Calendar.current
-        var dayTotals: [Date: Double] = [:]
-
-        for tx in transactions {
-            guard let category = tx.category, !category.isIncome else { continue }
-            guard tx.balanceAdjustmentType == nil else { continue }
-
-            let dayKey = calendar.startOfDay(for: tx.date)
-            let amount = txAmount(tx, currencyCode: currencyCode, context: context)
-            dayTotals[dayKey, default: 0] += amount
-        }
-
-        guard let busiest = dayTotals.max(by: { $0.value < $1.value }) else { return nil }
-        return BusiestDayInfo(date: busiest.key, amount: busiest.value)
     }
 
     private static func calculateSubscriptionsTotal(

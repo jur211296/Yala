@@ -15,6 +15,8 @@ struct WeekdaySpending: Identifiable {
 
     var id: Int { weekday }
 
+    var average: Double { count > 0 ? total / Double(count) : 0 }
+
     /// Localized short weekday name (Mon, Tue, etc.)
     var shortName: String {
         let symbols = Calendar.current.shortWeekdaySymbols

@@ -724,13 +724,15 @@
 "insights.topCategory" = "Top-Kategorie";
 "insights.topSubcategory" = "Top-Unterkategorie";
 "insights.highestExpense" = "Höchste Ausgabe";
-"insights.busiestDay" = "Ausgabenstärkster Tag";
+"insights.highestAvgWeekday" = "Ausgabenstärkster Tag";
 "insights.subscriptions" = "Abonnements";
 "insights.streak" = "Serie";
+"insights.days" = "Tage";
+"insights.streakCaption" = "Ausgaben erfasst";
 "insights.streakDays" = "%d Tage Ausgaben erfasst";
 "insights.quickStats" = "Schnellübersicht";
 "insights.comparison" = "Periodenvergleich";
-"insights.weekdaySpending" = "Ausgaben nach Wochentag";
+"insights.weekdayAverage" = "Durchschnittliche Ausgaben pro Tag";
 "insights.natureDistribution" = "Nach Art";
 "insights.commitments" = "Verpflichtungen";
 "insights.pendingPayments" = "Ausstehende Zahlungen";
@@ -738,7 +740,7 @@
 "insights.budgetsAtRisk" = "Budgets in Gefahr";
 "insights.yearOverYear" = "Jahresvergleich";
 "insights.yearComparison" = "Letztes Jahr: %@. Dieses Jahr: %@.";
-"insights.intelligentInsights" = "Insights";
+"insights.intelligentInsights" = "Beobachtungen";
 "insights.funFact" = "Wusstest du?";
 "insights.firstTimeTitle" = "Deine smarte Zusammenfassung";
 "insights.firstTimeBody" = "Hier siehst du eine smarte Zusammenfassung deiner Finanzen. Passe die Abschnitte unter Profil > Personalisierung an.";
@@ -746,6 +748,7 @@
 "insights.emptyBody" = "Erfasse Ausgaben, um Insights zu sehen";
 "insights.fewTransactions" = "Erfasse mehr, um alle Insights freizuschalten";
 "insights.monthly" = "monatlich";
+"insights.perDay" = "pro Tag";
 "insights.ofTotal" = "vom Gesamt";
 "insights.analyzingData" = "Deine Daten werden analysiert...";
 "insights.activateAITitle" = "KI-Insights aktivieren";

@@ -47,7 +47,6 @@ struct InsightsTabView: View {
     @AppStorage("insightsShowPendingPayments") private var showPendingPayments = true
     @AppStorage("insightsShowSubscriptions") private var showSubscriptions = true
     @AppStorage("insightsShowBudgetsAtRisk") private var showBudgetsAtRisk = true
-    @AppStorage("insightsShowComparison") private var showComparison = true
     @AppStorage("insightsShowWeekday") private var showWeekday = true
     @AppStorage("insightsShowNature") private var showNature = true
     @AppStorage("insightsShowTexts") private var showTexts = true
@@ -109,7 +108,7 @@ struct InsightsTabView: View {
 
                         // Section 3: Quick Stats Grid
                         if showQuickStats {
-                            quickStatsSection(data.quickStats)
+                            quickStatsSection(data.quickStats, summary: data.periodSummary, streak: data.streak)
                         }
 
                         // Section 4: Commitments
@@ -117,26 +116,16 @@ struct InsightsTabView: View {
                             commitmentsSection(data.commitments)
                         }
 
-                        // Section 5: Streak Badge
-                        if data.streak > 3 {
-                            streakBadge(days: data.streak)
-                        }
-
                         // Charts and texts only if >= 5 transactions
                         if data.periodSummary.transactionCount >= 5 {
                             // Section 7: Weekday Spending Chart
-                            if showWeekday, data.weekdaySpending.contains(where: { $0.total > 0 }) {
+                            if showWeekday, data.weekdaySpending.contains(where: { $0.average > 0 }) {
                                 weekdayChartSection(data.weekdaySpending)
                             }
 
                             // Section 8: Nature Distribution
                             if showNature, data.natureDistribution.total > 0 {
                                 natureSection(data.natureDistribution)
-                            }
-
-                            // Section 9: Year-over-Year
-                            if let yoy = data.yearOverYear {
-                                yearOverYearSection(yoy)
                             }
 
                             // Section 10: Text Insights
@@ -190,7 +179,8 @@ struct InsightsTabView: View {
     // MARK: - Control Bar
 
     private var controlBar: some View {
-        HStack(spacing: DS.Spacing.md) {
+        VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+            HStack(spacing: DS.Spacing.md) {
             TrendsPeriodMenu(
                 selectedPeriod: trendsViewModel.detailPeriod,
                 customDateRange: sessionState.customDateRange,
@@ -346,8 +336,19 @@ struct InsightsTabView: View {
             }
 
             Spacer()
+
+            if showVariations && PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod) {
+                ComparisonModeSelector()
+            }
         }
         .animation(nil, value: trendsViewModel.detailPeriod)
+
+            if showVariations, let data = viewModel.insightData {
+                Text(data.periodSummary.previousPeriodLabel)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.tertiary)
+            }
+        }
     }
 
     // MARK: - Chip Helpers
@@ -412,10 +413,10 @@ struct InsightsTabView: View {
                 metricCard(
                     title: L10n.TrendType.balance,
                     value: summary.netBalance,
-                    variation: nil,
+                    variation: summary.balanceVariation,
                     isExpenseContext: false
                 )
-                countCard(count: summary.transactionCount)
+                countCard(count: summary.transactionCount, dailyAverage: summary.dailyAverageCount)
             }
         }
     }
@@ -453,7 +454,7 @@ struct InsightsTabView: View {
         .yalaCard(padding: 0, shadow: false)
     }
 
-    private func countCard(count: Int) -> some View {
+    private func countCard(count: Int, dailyAverage: Double = 0) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             Text(L10n.Insights.records)
                 .font(DS.Typography.caption)
@@ -464,9 +465,9 @@ struct InsightsTabView: View {
                 .fontWeight(.semibold)
                 .foregroundStyle(.primary)
 
-            Text(L10n.Insights.inThisPeriod)
+            Text("~\(String(format: "%.1f", dailyAverage)) \(L10n.Insights.perDay)")
                 .font(DS.Typography.captionSmall)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(DS.Spacing.lg)
@@ -476,7 +477,7 @@ struct InsightsTabView: View {
     // MARK: - Section 3: Quick Stats Grid
 
     @ViewBuilder
-    private func quickStatsSection(_ stats: QuickStats) -> some View {
+    private func quickStatsSection(_ stats: QuickStats, summary: PeriodSummary, streak: Int) -> some View {
         VStack(spacing: DS.Spacing.sm) {
             YalaSectionHeader(L10n.Insights.quickStats)
 
@@ -486,11 +487,7 @@ struct InsightsTabView: View {
             ]
 
             LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
-                QuickStatCell(
-                    icon: "chart.bar.fill",
-                    label: L10n.Insights.dailyAverage,
-                    value: YalaFormatter.currency(value: stats.dailyAverage, currencyCode: defaultCurrencyCode)
-                )
+                dailyAverageCell(stats: stats, summary: summary)
 
                 if let top = stats.topCategory {
                     QuickStatCell(
@@ -519,12 +516,12 @@ struct InsightsTabView: View {
                     )
                 }
 
-                if let busiest = stats.busiestDay {
+                if let bestDay = stats.highestAvgWeekday {
                     QuickStatCell(
                         icon: "calendar.circle.fill",
-                        label: L10n.Insights.busiestDay,
-                        value: busiest.date.formatted(.dateTime.month(.abbreviated).day()),
-                        secondary: YalaFormatter.currency(value: busiest.amount, currencyCode: defaultCurrencyCode)
+                        label: L10n.Insights.highestAvgWeekday,
+                        value: bestDay.weekdayName.capitalized,
+                        secondary: YalaFormatter.currency(value: bestDay.average, currencyCode: defaultCurrencyCode)
                     )
                 }
 
@@ -536,27 +533,49 @@ struct InsightsTabView: View {
                         secondary: L10n.Insights.monthly
                     )
                 }
+
+                if streak > 3 {
+                    QuickStatCell(
+                        icon: "flame.fill",
+                        label: L10n.Insights.streak,
+                        value: "\(streak) \(L10n.Insights.days)",
+                        secondary: L10n.Insights.streakCaption
+                    )
+                }
             }
         }
     }
 
-    // MARK: - Section 5: Streak Badge
+    // MARK: - Daily Average Cell
 
-    @ViewBuilder
-    private func streakBadge(days: Int) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: "flame.fill")
+    private func dailyAverageCell(stats: QuickStats, summary: PeriodSummary) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: "chart.bar.fill")
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(theme.accent)
+
+                Text(L10n.Insights.dailyAverage)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+            }
+
+            Text(YalaFormatter.currency(value: stats.dailyAverage, currencyCode: defaultCurrencyCode))
                 .font(DS.Typography.headline)
-                .foregroundStyle(.orange)
-
-            Text(L10n.Insights.streakDays(days))
-                .font(DS.Typography.subheadline)
                 .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
 
-            Spacer()
+            VariationChip(
+                variation: showVariations ? summary.dailyAverageVariation : nil,
+                size: .small,
+                isExpenseContext: true
+            )
+            .opacity(showVariations ? 1 : 0)
         }
-        .padding(DS.Spacing.lg)
-        .yalaCard(padding: 0, shadow: false)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Spacing.md)
+        .yalaCard(padding: 0, radius: DS.Radius.md, shadow: false)
     }
 
     // MARK: - Section 4: Commitments
@@ -652,44 +671,12 @@ struct InsightsTabView: View {
         .yalaCard(padding: 0, radius: DS.Radius.md, shadow: false)
     }
 
-    // MARK: - Section 9: Year-over-Year
-
-    @ViewBuilder
-    private func yearOverYearSection(_ yoy: YearComparison) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: "calendar.badge.clock")
-                .font(DS.Typography.body)
-                .foregroundStyle(theme.accent)
-
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(L10n.Insights.yearOverYear)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-
-                Text(L10n.Insights.yearComparison(
-                    previous: YalaFormatter.currency(value: yoy.previousYearAmount, currencyCode: defaultCurrencyCode),
-                    current: YalaFormatter.currency(value: yoy.currentAmount, currencyCode: defaultCurrencyCode)
-                ))
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.primary)
-            }
-
-            Spacer()
-
-            if let variation = yoy.variation {
-                VariationChip(variation: variation, size: .small, isExpenseContext: true)
-            }
-        }
-        .padding(DS.Spacing.lg)
-        .yalaCard(padding: 0, shadow: false)
-    }
-
     // MARK: - Section 7: Weekday Spending Chart
 
     @ViewBuilder
     private func weekdayChartSection(_ data: [WeekdaySpending]) -> some View {
         VStack(spacing: DS.Spacing.sm) {
-            YalaSectionHeader(L10n.Insights.weekdaySpending)
+            YalaSectionHeader(L10n.Insights.weekdayAverage)
 
             WeekdayBarChart(data: data, currencyCode: defaultCurrencyCode)
                 .yalaCard(padding: DS.Spacing.lg, shadow: false)

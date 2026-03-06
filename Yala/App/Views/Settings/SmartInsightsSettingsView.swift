@@ -22,7 +22,6 @@ struct SmartInsightsSettingsView: View {
     @AppStorage("insightsShowPendingPayments") private var showPendingPayments = true
     @AppStorage("insightsShowSubscriptions") private var showSubscriptions = true
     @AppStorage("insightsShowBudgetsAtRisk") private var showBudgetsAtRisk = true
-    @AppStorage("insightsShowComparison") private var showComparison = true
     @AppStorage("insightsShowWeekday") private var showWeekday = true
     @AppStorage("insightsShowNature") private var showNature = true
     @AppStorage("insightsShowTexts") private var showTexts = true
@@ -98,9 +97,7 @@ struct SmartInsightsSettingsView: View {
                         // Charts Section
                         SectionBox(title: L10n.Insights.chartsSection) {
                             VStack(spacing: DS.Spacing.none) {
-                                settingsToggle(L10n.Insights.comparison, isOn: $showComparison)
-                                SubsectionDivider()
-                                settingsToggle(L10n.Insights.weekdaySpending, isOn: $showWeekday)
+                                settingsToggle(L10n.Insights.weekdayAverage, isOn: $showWeekday)
                             }
                         }
 
@@ -163,7 +160,6 @@ struct SmartInsightsSettingsView: View {
         showPendingPayments = true
         showSubscriptions = true
         showBudgetsAtRisk = true
-        showComparison = true
         showWeekday = true
         showNature = true
         showTexts = true

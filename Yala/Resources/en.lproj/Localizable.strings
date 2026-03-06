@@ -726,13 +726,15 @@
 "insights.topCategory" = "Top category";
 "insights.topSubcategory" = "Top subcategory";
 "insights.highestExpense" = "Highest expense";
-"insights.busiestDay" = "Busiest day";
+"insights.highestAvgWeekday" = "Highest spending day";
 "insights.subscriptions" = "Subscriptions";
 "insights.streak" = "Streak";
+"insights.days" = "days";
+"insights.streakCaption" = "tracking expenses";
 "insights.streakDays" = "%d days recording expenses";
 "insights.quickStats" = "Quick Stats";
 "insights.comparison" = "Period Comparison";
-"insights.weekdaySpending" = "Spending by Day";
+"insights.weekdayAverage" = "Average spending by day";
 "insights.natureDistribution" = "By Nature";
 "insights.commitments" = "Commitments";
 "insights.pendingPayments" = "Pending payments";
@@ -740,7 +742,7 @@
 "insights.budgetsAtRisk" = "Budgets at risk";
 "insights.yearOverYear" = "Year over year";
 "insights.yearComparison" = "Last year: %@. This year: %@.";
-"insights.intelligentInsights" = "Insights";
+"insights.intelligentInsights" = "Observations";
 "insights.funFact" = "Fun fact";
 "insights.firstTimeTitle" = "Your smart summary";
 "insights.firstTimeBody" = "Here you'll see a smart summary of your finances. Customize sections in Profile > Personalization.";
@@ -748,6 +750,7 @@
 "insights.emptyBody" = "Record expenses to see your insights";
 "insights.fewTransactions" = "Record more to unlock all insights";
 "insights.monthly" = "monthly";
+"insights.perDay" = "per day";
 "insights.ofTotal" = "of total";
 "insights.analyzingData" = "Analyzing your data...";
 "insights.activateAITitle" = "Activate AI Insights";

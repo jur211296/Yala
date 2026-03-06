@@ -168,6 +168,9 @@ struct DetailContainerView: View {
                 calculateTrendsData()
                 if selectedTab == .insights { calculateInsightsData() }
             }
+            .onChange(of: sessionState.comparisonMode) {
+                if selectedTab == .insights { calculateInsightsData() }
+            }
             .modifier(
                 DetailContainerObservers(
                     sessionState: sessionState,
@@ -635,6 +638,7 @@ struct DetailContainerView: View {
                 criteria: trendsViewModel.filterCriteria,
                 currencyCode: defaultCurrencyCode,
                 customRange: sessionState.customDateRange,
+                comparisonMode: sessionState.comparisonMode,
                 context: modelContext
             )
         }
