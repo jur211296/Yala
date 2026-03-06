@@ -13,8 +13,8 @@ Version: 1.2 (en desarrollo)
 Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
-Status: **Fase 12 en progreso** — Smart Insights funcionalidad completa, pendiente refinamiento UI
-Last activity: 2026-03-06 — Smart Insights tab committed (3439fe3), UI polish pendiente
+Status: **Fase 12 en progreso** — Smart Insights UI refinement completo
+Last activity: 2026-03-06 — Smart Insights UI refined (daa9b03)
 
 ### Apple Review History (V1.0)
 
@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-06] daa9b03 feat: refine Smart Insights UI — rename, card styles, colors, period selector, filter chips
 - [2026-03-06] 3439fe3 feat: add Smart Insights tab with rule-based insights, AI integration, and settings
 - [2026-03-06] 81559d6 refactor: defer RecordsFiltersView filters — Apply commits, X discards
 - [2026-03-05] fe9eebd fix/refactor: unify hasActiveFilters and activeFilterCount via FilterCriteria delegation
@@ -509,7 +510,7 @@ Fase 12 completados:
 
 Fase 12 siguiente (en orden):
 - [x] **Refactor filtros deferred** — RecordsFiltersView usa estado local, "Aplicar" escribe a SessionState, "X" descarta. Prerequisito para Smart Insights. (81559d6)
-- [ ] **Smart Insights** — Nueva tab en Statistics con KPIs, gráficas, textos inteligentes (Free: rule-based, Pro: LLM). Plan completo en `.planning/SMART-INSIGHTS-DESIGN.md`
+- [x] **Smart Insights** — Nueva tab en Statistics con KPIs, gráficas, textos inteligentes (Free: rule-based, Pro: LLM). Funcionalidad (3439fe3) + UI refinement (daa9b03)
 
 Ver ROADMAP.md para más detalles de Fase 12.
 
@@ -631,11 +632,10 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Smart Insights feature complete (3439fe3) — funcionalidad OK, UI necesita refinamiento
-Next step: Refinamiento UI de Smart Insights — mejorar diseño visual de la tab
+Stopped at: Smart Insights UI refinement completo (daa9b03) — 10 fixes aplicados
+Next step: Verificar visualmente en simulador, luego continuar con siguiente item de Fase 12
 Resume context:
-- Feature completa: 11 secciones, rule-based insights, AI integration, settings
-- Build pasa, audit limpio, QA scenarios documentados
-- UI actual es funcional pero necesita polish visual
-- generateAIInsights() definido pero no wired al UI (pendiente integración)
-- Archivos clave: InsightsTabView.swift, InsightsCalculator.swift, InsightsViewModel.swift
+- Smart Insights: funcionalidad (3439fe3) + UI refinement (daa9b03) completos
+- 10 fixes: rename, default tab, card styles, fill icons, chart colors, nature colors, padding, tip position, period selector, filter chips
+- Tech debt documentado: RF-4 (controlBar duplicado 3 tabs) y RF-5 (chip helpers duplicados)
+- Build pasa, audit limpio, 27/28 tests OK (1 pre-existing failure unrelated)
