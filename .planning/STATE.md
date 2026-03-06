@@ -13,8 +13,8 @@ Version: 1.2 (en desarrollo)
 Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
-Status: **Fase 12 en progreso** — Apple compliance: restore OpenAI identification
-Last activity: 2026-03-06 — Restore OpenAI identification + Insights in privacy policy (fe175d8)
+Status: **Fase 12 en progreso** — Refactor FilterControlBar compartido
+Last activity: 2026-03-06 — Extract shared FilterControlBar, eliminate ~790 duplicate lines (7f01298)
 
 ### Apple Review History (V1.0)
 
@@ -43,6 +43,9 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-06] 7f01298 refactor: extract shared FilterControlBar — eliminate ~790 duplicate lines
+- [2026-03-06] f1ea108 fix: restore exclude mode filters — batch commit + AI filter context + Insights layout
+- [2026-03-06] 38c2f0d docs: update STATE.md with OpenAI compliance fix
 - [2026-03-06] fe175d8 fix: restore OpenAI identification in consent strings + add Insights to privacy policy
 - [2026-03-06] 6936e33 chore: migrate LLM services from GPT-4o Mini to GPT-4.1 Nano
 - [2026-03-06] 4851b92 feat: improve Smart Insights AI — enable generation, locale-aware prompt, privacy consent
@@ -51,11 +54,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-06] c280fcb feat: polish Smart Insights UI — remove collapsible headers, card wraps, equal heights
 - [2026-03-06] daa9b03 feat: refine Smart Insights UI — rename, card styles, colors, period selector, filter chips
 - [2026-03-06] 3439fe3 feat: add Smart Insights tab with rule-based insights, AI integration, and settings
-- [2026-03-06] 81559d6 refactor: defer RecordsFiltersView filters — Apply commits, X discards
-- [2026-03-05] fe9eebd fix/refactor: unify hasActiveFilters and activeFilterCount via FilterCriteria delegation
-- [2026-03-05] eab0c8d refactor/fix: replace PanelViewModel inline filtering with FilterService + fix nature nil and search scope
-- [2026-03-05] 0fbe1f2 refactor/fix: simplify exclude mode — extract shared badge, helper method, and fix bugs
-- [2026-03-05] b769e4b test/docs: add exclude mode tests, QA scenarios, and design decisions
 - [2026-03-05] 34f51b6 fix: use L10n.Filters.all instead of hardcoded Spanish string in tests
 - [2026-03-05] cc2f4a5 Merge hotfix/1.0.2 into 1.1
 - [2026-03-05] 2700d6d Merge hotfix/1.0.1 into 1.1
@@ -538,15 +536,13 @@ Computed `chartData` eliminado de 3 widgets. `body` computa una vez via `let`, t
 
 Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funcionalidad.
 
-**RF-4: controlBar duplicado en 3 tabs (~160 LOC × 3)**
-`TrendsTabView`, `CategoriesTabView`, e `InsightsTabView` tienen implementaciones casi idénticas del `controlBar` (TrendsPeriodMenu + ExcludeModeBadge + ScrollView de FilterChipViews + clear all). Cualquier cambio en lógica de chips requiere actualizar 3 archivos.
-- **Solución propuesta:** Extraer `StatisticsControlBar` como View compartido que reciba `trendsViewModel`, `sessionState`, y callbacks.
-- **Esfuerzo:** Medio — el layout es idéntico, solo varía el binding de `showCustomPeriodPicker`.
+**RF-4: controlBar duplicado en 4 tabs (~160 LOC × 4)** ✅ Completado (7f01298)
+- Extraído `FilterControlBar<VM: Filterable & Observable, PeriodView, TrailingContent>` compartido
+- 4 tabs migrados: Trends, Categories, Insights, Records (~790 líneas eliminadas)
 
-**RF-5: Chip helpers duplicados en 3 tabs**
-`selectedAccountChips`, `selectedNatureChips`, `selectedTagChips` son computed properties idénticas en TrendsTabView, CategoriesTabView e InsightsTabView. `aggregatedCategoryChip`/`aggregatedSubcategoryChip` ya están extraídas en `FilterChipHelper.swift`.
-- **Solución propuesta:** Mover los 3 helpers restantes a `FilterChipHelper.swift` como funciones libres (reciben `accounts`/`tags` + `trendsViewModel`).
-- **Esfuerzo:** Bajo — copy directo, luego eliminar de los 3 tabs.
+**RF-5: Chip helpers duplicados en 4 tabs** ✅ Completado (7f01298)
+- `buildAccountChips`, `buildTagChips`, `buildNatureChips` movidos a `FilterChipHelper.swift`
+- Eliminados computed properties duplicados de los 4 tabs
 
 ### Fase 7: Beta Preparation (V1.0 Release) ✅ COMPLETADA
 
@@ -637,15 +633,13 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Smart Insights AI improvements + GPT-4.1 Nano migration (6936e33)
+Stopped at: RF-4 completado — FilterControlBar compartido extraído (7f01298)
 Next step: Siguiente item de Fase 12 (ver ROADMAP.md)
 Resume context:
-- AI insights now generate correctly (was never called from view — fixed in DetailContainerView)
-- Prompt is locale-aware (device language), comparison-mode-aware (P-1/A-1), bold formatting, no questions
-- Privacy consent banner includes disclaimer about summarized data
-- Streaks/rachas removed entirely (calculator, VM, views, L10n, 6 locales)
-- FilterCriteria now Hashable for proper cache key generation (was using count → collisions)
-- All 3 LLM services migrated: InsightsLLMService, TranscriptionParserService, ImageVisionService → GPT-4.1 Nano
-- Privacy texts updated: profile.privacyDesc + aiConsent.message reflect optional AI + summarized data
-- RF-4/RF-5 pendientes: controlBar y chip helpers duplicados en 3 tabs
-- Build pasa, audit limpio
+- FilterControlBar<VM: Filterable & Observable, PeriodView, TrailingContent> reemplaza ~170 líneas duplicadas en cada tab
+- buildAccountChips/buildTagChips/buildNatureChips en FilterChipHelper.swift
+- InsightsTabView: controlBar visible incluso con 0 transacciones filtradas
+- Set iteration estabilizada con sorted() para currencies y natures
+- CategoriesTabView: selectedNature reset via .onChange(of: hasActiveFilters) en lugar de clearAllFilters()
+- Pre-existing test failure: criteriaActiveFilterCountIsCorrect (searchText counted vs test expects not)
+- Build pasa, audit limpio, tests relevantes pasan
