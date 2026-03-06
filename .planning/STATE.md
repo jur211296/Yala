@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-06] 2f3a042 feat: add "Simular Pro" dev toggle for testing PRO features
 - [2026-03-06] d00b62f feat: polish Smart Insights UI round 3 — comparison selector, weekday averages, KPI enrichment
 - [2026-03-06] c280fcb feat: polish Smart Insights UI — remove collapsible headers, card wraps, equal heights
 - [2026-03-06] daa9b03 feat: refine Smart Insights UI — rename, card styles, colors, period selector, filter chips
@@ -634,14 +635,13 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Smart Insights UI polish round 3 completo (d00b62f) — P-1/A-1 comparison selector, weekday averages, KPI enrichment, daily average with variation, streak in grid, "vs feb 25" label, removed YoY section, renamed to "Observaciones"
+Stopped at: "Simular Pro" dev toggle (2f3a042) — devForceProTier en StoreKitManager + toggle en ProfileView
 Next step: Siguiente item de Fase 12 (ver ROADMAP.md)
 Resume context:
-- ComparisonModeSelector extracted as shared component (used by TrendsTabView + InsightsTabView)
-- InsightsCalculator now accepts comparisonMode parameter
-- PeriodSummary enriched with balanceVariation, dailyAverageExpense, dailyAverageVariation, previousPeriodLabel
-- WeekdayBarChart shows averages (not totals) with data labels
-- RF-4/RF-5 identified: controlBar and chip helpers duplicated across 3 tabs
+- devForceProTier persiste en UserDefaults, mutual exclusion con devForceFreeTier
+- Toggle-OFF re-evalúa entitlements reales de StoreKit
+- Toggle visible solo en DEBUG + bundle .dev (Perfil > Seguridad)
+- RF-4/RF-5 pendientes: controlBar y chip helpers duplicados en 3 tabs
 - Smart Insights: funcionalidad (3439fe3) + UI refinement (daa9b03) + UI polish round 2 (c280fcb)
 - Round 2 fixes: removed collapsible headers (→YalaSectionHeader), card-wrapped charts, Y-axis trailing, equal-height cards
 - Tech debt documentado: RF-4 (controlBar duplicado 3 tabs) y RF-5 (chip helpers duplicados)
