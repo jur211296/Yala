@@ -717,6 +717,12 @@ struct ProfileView: View {
                 profileRow(
                     icon: "creditcard.fill", title: L10n.Settings.subscriptions,
                     iconColor: .purple, destination: .subscription)
+                #if DEBUG
+                if Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true {
+                    SubsectionDivider()
+                    devProToggleRow
+                }
+                #endif
                 SubsectionDivider()
                 Button {
                     requestReview()
@@ -730,6 +736,35 @@ struct ProfileView: View {
         }
         .padding(.horizontal, DS.Spacing.lg)
     }
+
+    #if DEBUG
+    private var devProToggleRow: some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "sparkles")
+                .font(DS.Typography.subheadline).fontWeight(.medium)
+                .foregroundStyle(.white)
+                .frame(width: 28, height: 28)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.orange)
+                )
+
+            Text("Simular Pro")
+                .font(DS.Typography.body)
+                .foregroundStyle(.primary)
+
+            Spacer()
+
+            Toggle("", isOn: Binding(
+                get: { StoreKitManager.shared.devForceProTier },
+                set: { _ in StoreKitManager.shared.toggleDevProTier() }
+            ))
+            .labelsHidden()
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
+    }
+    #endif
 
     private var ayudaSection: some View {
         SectionBox(title: L10n.Settings.help) {
