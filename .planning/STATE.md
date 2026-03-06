@@ -13,8 +13,8 @@ Version: 1.2 (en desarrollo)
 Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
-Status: **Fase 12 en progreso** — Smart Insights UI polish round 3 completo
-Last activity: 2026-03-06 — Smart Insights UI polish round 3 (d00b62f)
+Status: **Fase 12 en progreso** — Apple compliance: restore OpenAI identification
+Last activity: 2026-03-06 — Restore OpenAI identification + Insights in privacy policy (fe175d8)
 
 ### Apple Review History (V1.0)
 
@@ -25,7 +25,7 @@ Last activity: 2026-03-06 — Smart Insights UI polish round 3 (d00b62f)
 | 3 | 2026-03-05 | — | V1.0.1 aprobada | Tag 1.0.1, merged to 1.0, hotfix branches deleted | ✅ Aprobada |
 
 **Detalle rechazo #2:**
-- **Datos enviados a OpenAI:** Audio (Whisper), imágenes JPEG (GPT-4o Vision), texto transcrito + nombres de categorías (GPT-4o Mini)
+- **Datos enviados a OpenAI:** Audio (Whisper), imágenes JPEG (GPT-4.1 Nano), texto transcrito + nombres de categorías (GPT-4.1 Nano)
 - **Datos NO enviados:** Montos, historial de transacciones, información personal, EXIF/metadata
 - **Lo que faltaba:** (1) Disclosure in-app de datos compartidos, (2) Identificación de OpenAI como tercero, (3) Consentimiento explícito antes de enviar datos
 - **Privacy policy (.planning/appstore/):** Ya documentaba OpenAI correctamente
@@ -43,6 +43,9 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-06] fe175d8 fix: restore OpenAI identification in consent strings + add Insights to privacy policy
+- [2026-03-06] 6936e33 chore: migrate LLM services from GPT-4o Mini to GPT-4.1 Nano
+- [2026-03-06] 4851b92 feat: improve Smart Insights AI — enable generation, locale-aware prompt, privacy consent
 - [2026-03-06] 2f3a042 feat: add "Simular Pro" dev toggle for testing PRO features
 - [2026-03-06] d00b62f feat: polish Smart Insights UI round 3 — comparison selector, weekday averages, KPI enrichment
 - [2026-03-06] c280fcb feat: polish Smart Insights UI — remove collapsible headers, card wraps, equal heights
@@ -50,7 +53,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-06] 3439fe3 feat: add Smart Insights tab with rule-based insights, AI integration, and settings
 - [2026-03-06] 81559d6 refactor: defer RecordsFiltersView filters — Apply commits, X discards
 - [2026-03-05] fe9eebd fix/refactor: unify hasActiveFilters and activeFilterCount via FilterCriteria delegation
-- [2026-03-05] 932dd00 refactor: thread chartData parameter through pie widgets to avoid redundant processChartData calls
 - [2026-03-05] eab0c8d refactor/fix: replace PanelViewModel inline filtering with FilterService + fix nature nil and search scope
 - [2026-03-05] 0fbe1f2 refactor/fix: simplify exclude mode — extract shared badge, helper method, and fix bugs
 - [2026-03-05] b769e4b test/docs: add exclude mode tests, QA scenarios, and design decisions
@@ -635,14 +637,15 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: "Simular Pro" dev toggle (2f3a042) — devForceProTier en StoreKitManager + toggle en ProfileView
+Stopped at: Smart Insights AI improvements + GPT-4.1 Nano migration (6936e33)
 Next step: Siguiente item de Fase 12 (ver ROADMAP.md)
 Resume context:
-- devForceProTier persiste en UserDefaults, mutual exclusion con devForceFreeTier
-- Toggle-OFF re-evalúa entitlements reales de StoreKit
-- Toggle visible solo en DEBUG + bundle .dev (Perfil > Seguridad)
+- AI insights now generate correctly (was never called from view — fixed in DetailContainerView)
+- Prompt is locale-aware (device language), comparison-mode-aware (P-1/A-1), bold formatting, no questions
+- Privacy consent banner includes disclaimer about summarized data
+- Streaks/rachas removed entirely (calculator, VM, views, L10n, 6 locales)
+- FilterCriteria now Hashable for proper cache key generation (was using count → collisions)
+- All 3 LLM services migrated: InsightsLLMService, TranscriptionParserService, ImageVisionService → GPT-4.1 Nano
+- Privacy texts updated: profile.privacyDesc + aiConsent.message reflect optional AI + summarized data
 - RF-4/RF-5 pendientes: controlBar y chip helpers duplicados en 3 tabs
-- Smart Insights: funcionalidad (3439fe3) + UI refinement (daa9b03) + UI polish round 2 (c280fcb)
-- Round 2 fixes: removed collapsible headers (→YalaSectionHeader), card-wrapped charts, Y-axis trailing, equal-height cards
-- Tech debt documentado: RF-4 (controlBar duplicado 3 tabs) y RF-5 (chip helpers duplicados)
 - Build pasa, audit limpio
