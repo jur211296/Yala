@@ -100,7 +100,7 @@ struct FilterCriteria: Hashable {
     // MARK: - Factory
 
     /// Empty filter criteria (no filters applied)
-    static let empty = FilterCriteria()
+    nonisolated(unsafe) static let empty = FilterCriteria()
 
     // MARK: - Mutation
 

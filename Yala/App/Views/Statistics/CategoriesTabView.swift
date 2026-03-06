@@ -204,165 +204,20 @@ struct CategoriesTabView: View {
     // MARK: - Control Bar
 
     private var controlBar: some View {
-        HStack(spacing: DS.Spacing.md) {
-            periodSelector
-
-            if viewModel.isExcludeMode {
-                ExcludeModeBadge()
+        FilterControlBar(
+            periodSelector: periodSelector,
+            viewModel: viewModel,
+            accounts: accounts,
+            categories: categories,
+            allSubcategories: allSubcategories,
+            tags: tags,
+            animationValue: viewModel.detailPeriod
+        )
+        .onChange(of: viewModel.hasActiveFilters) {
+            if !viewModel.hasActiveFilters {
+                selectedNature = nil
             }
-
-            if hasActiveFilters {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: DS.Spacing.sm) {
-                        // Account chips (with icon)
-                        ForEach(selectedAccountChips, id: \.id) { chip in
-                            FilterChipView(
-                                accountName: chip.name,
-                                count: chip.count,
-                                onClear: {
-                                    viewModel.selectedAccounts.removeAll()
-                                }
-                            ).excludeMode(viewModel.isExcludeMode)
-                        }
-
-                        // Category chip - show when category selected from pie or via filter
-                        if let catChip = aggregatedCategoryChip(
-                            selectedSubcategories: viewModel.selectedSubcategories,
-                            allSubcategories: allSubcategories
-                        ) {
-                            // Chip from subcategory filter (shows parent category)
-                            FilterChipView(
-                                categoryName: catChip.name,
-                                iconName: catChip.iconName,
-                                colorHex: catChip.colorHex,
-                                count: catChip.count,
-                                onClear: {
-                                    viewModel.selectedCategories.removeAll()
-                                    viewModel.selectedSubcategories.removeAll()
-                                }
-                            ).excludeMode(viewModel.isExcludeMode)
-                        } else if !viewModel.selectedCategories.isEmpty {
-                            // Chip from category selection (pie chart or SessionState)
-                            let selectedCats = categories.filter { viewModel.selectedCategories.contains($0.persistentModelID) }
-                            if let firstCat = selectedCats.first {
-                                FilterChipView(
-                                    categoryName: firstCat.name,
-                                    iconName: firstCat.iconName,
-                                    colorHex: firstCat.colorHex,
-                                    count: selectedCats.count,
-                                    onClear: {
-                                        viewModel.selectedCategories.removeAll()
-                                    }
-                                ).excludeMode(viewModel.isExcludeMode)
-                            }
-                        }
-
-                        // Subcategory chip - show when subcategory selected from pie or via filter
-                        if let subChip = aggregatedSubcategoryChip(
-                            selectedSubcategories: viewModel.selectedSubcategories,
-                            allSubcategories: allSubcategories
-                        ) {
-                            // Chip from subcategory filter
-                            FilterChipView(
-                                subcategoryName: subChip.name,
-                                iconName: subChip.iconName,
-                                colorHex: subChip.colorHex,
-                                count: subChip.count,
-                                onClear: {
-                                    viewModel.selectedSubcategories.removeAll()
-                                }
-                            ).excludeMode(viewModel.isExcludeMode)
-                        }
-
-                        // Tag chips (individual with color dots)
-                        ForEach(selectedTagChips, id: \.id) { chip in
-                            FilterChipView(
-                                tagName: chip.name,
-                                iconName: chip.iconName,
-                                colorHex: chip.colorHex,
-                                onClear: {
-                                    viewModel.selectedTags.remove(chip.tagID)
-                                }
-                            ).excludeMode(viewModel.isExcludeMode)
-                        }
-
-                        // Nature chips (individual with color dots)
-                        ForEach(Array(viewModel.selectedNatures), id: \.rawValue) { nature in
-                            FilterChipView(
-                                nature: nature,
-                                onClear: {
-                                    viewModel.selectedNatures.remove(nature)
-                                }
-                            ).excludeMode(viewModel.isExcludeMode)
-                        }
-
-                        // Transaction nature chip (income/expense with color dot)
-                        // Only show when exactly 1 selected (hidden in expenses-only mode - always expense, non-clearable)
-                        if !sessionState.isExpensesOnlyMode,
-                            viewModel.selectedTransactionNatures.count == 1,
-                            let nature = viewModel.selectedTransactionNatures.first
-                        {
-                            FilterChipView(
-                                transactionNature: nature,
-                                onClear: {
-                                    viewModel.selectedTransactionNatures.removeAll()
-                                    sessionState.selectedTransactionNatures.removeAll()
-                                }
-                            ).excludeMode(viewModel.isExcludeMode)
-                        }
-
-                        // Currency chips
-                        ForEach(Array(viewModel.selectedCurrencies), id: \.self) { currency in
-                            FilterChipView(
-                                currencyCode: currency.rawValue,
-                                onClear: {
-                                    viewModel.selectedCurrencies.remove(currency)
-                                    sessionState.selectedCurrencies.remove(currency)
-                                }
-                            ).excludeMode(viewModel.isExcludeMode)
-                        }
-
-                        // Amount chip
-                        if viewModel.amountCondition.isActive {
-                            FilterChipView(
-                                amountText: viewModel.amountCondition.displayText,
-                                onClear: {
-                                    viewModel.amountCondition = .any
-                                    sessionState.amountCondition = .any
-                                }
-                            )
-                        }
-
-                        // Search/Note chip
-                        if !viewModel.searchText.isEmpty {
-                            FilterChipView(
-                                noteText: viewModel.searchText,
-                                onClear: {
-                                    viewModel.searchText = ""
-                                    sessionState.searchText = ""
-                                }
-                            )
-                        }
-
-                        // Clear all button
-                        if activeFilterCount > 1 {
-                            Button {
-                                dsWithAnimation(reduceMotion) {
-                                    clearAllFilters()
-                                }
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundStyle(.secondary)
-                            }
-                            .accessibilityLabel(L10n.Action.clearAll)
-                        }
-                    }
-                }
-            }
-
-            Spacer()
         }
-        .animation(nil, value: viewModel.detailPeriod)
     }
 
     private var periodSelector: some View {
@@ -1383,90 +1238,6 @@ struct CategoriesTabView: View {
         .padding(.vertical, DS.Spacing.xl)
     }
 
-    private func clearAllFilters() {
-        viewModel.clearFilters()
-        selectedNature = nil
-    }
-
-    // MARK: - Chip Data Structures
-
-    // Chip models defined in FilterChipModels.swift
-
-    private var selectedCategoryChips: [CategoryChip] {
-        viewModel.selectedCategories.map { CategoryChip(categoryID: $0) }
-    }
-
-    private var selectedSubcategoryChips: [SubcategoryChip] {
-        viewModel.selectedSubcategories.compactMap { subcategoryID in
-            guard let subcategory = allSubcategories.first(where: {
-                $0.persistentModelID == subcategoryID
-            }) else { return nil }
-            let categoryColor = subcategory.safeCategory.colorHex
-            return SubcategoryChip(
-                name: subcategory.name,
-                iconName: subcategory.iconName,
-                colorHex: (subcategory.colorHex?.isEmpty == false
-                    ? subcategory.colorHex : nil) ?? categoryColor,
-                subcategoryID: subcategoryID
-            )
-        }
-    }
-
-    // MARK: - Tag Chip Data
-
-    private var selectedTagChips: [TagChip] {
-        tags.filter { viewModel.selectedTags.contains($0.persistentModelID) }
-            .map {
-                TagChip(
-                    id: $0.persistentModelID,
-                    tagID: $0.persistentModelID,
-                    name: $0.name,
-                    iconName: $0.iconName,
-                    colorHex: $0.colorHex
-                )
-            }
-    }
-
-    // MARK: - Filter Helpers
-
-    private var hasActiveFilters: Bool {
-        viewModel.hasActiveFilters
-    }
-
-    private var activeFilterCount: Int {
-        viewModel.activeFilterCount
-    }
-
-    // MARK: - Chip Helpers
-
-    private var selectedAccountChips: [AccountChip] {
-        guard !viewModel.selectedAccounts.isEmpty else { return [] }
-        let selectedAccountsList =
-            accounts
-            .filter { viewModel.selectedAccounts.contains($0.persistentModelID) }
-        guard !selectedAccountsList.isEmpty else { return [] }
-
-        // Return a single chip with the first account name and total count
-        if let firstName = selectedAccountsList.first?.name {
-            return [AccountChip(name: firstName, count: selectedAccountsList.count)]
-        }
-        return []
-    }
-
-    private var tagsChipText: String? {
-        guard !viewModel.selectedTags.isEmpty else { return nil }
-        let names = tags.filter { viewModel.selectedTags.contains($0.persistentModelID) }.map {
-            $0.name
-        }
-        guard !names.isEmpty else { return nil }
-        return names.count == 1 ? names.first : "\(names.first ?? "") +\(names.count - 1)"
-    }
-
-    private var naturesChipText: String? {
-        guard !viewModel.selectedNatures.isEmpty else { return nil }
-        let names = viewModel.selectedNatures.map { $0.displayName }
-        return names.count == 1 ? names.first : "\(names.first ?? "") +\(names.count - 1)"
-    }
 }
 
 // MARK: - All Categories List Content

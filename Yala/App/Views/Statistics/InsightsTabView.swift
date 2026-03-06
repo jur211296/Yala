@@ -65,6 +65,11 @@ struct InsightsTabView: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             if let data = viewModel.insightData {
+                // Control bar always visible (period selector + filter chips)
+                controlBar
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.sm)
+
                 if data.periodSummary.transactionCount == 0 {
                     // Edge case: 0 transactions
                     YalaEmptyState(
@@ -75,8 +80,6 @@ struct InsightsTabView: View {
                     .padding(.top, DS.Spacing.xxxxl)
                 } else {
                     LazyVStack(spacing: DS.Spacing.xl) {
-                        // Control bar (period selector + filter chips)
-                        controlBar
 
                         // Section 1: Period Summary (always visible)
                         periodSummarySection(data.periodSummary)
@@ -159,7 +162,6 @@ struct InsightsTabView: View {
                         }
                     }
                     .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.top, DS.Spacing.sm)
                     .yalaSafeBottomPadding()
                 }
             } else {
@@ -179,8 +181,8 @@ struct InsightsTabView: View {
     // MARK: - Control Bar
 
     private var controlBar: some View {
-        HStack(spacing: DS.Spacing.md) {
-            TrendsPeriodMenu(
+        FilterControlBar(
+            periodSelector: TrendsPeriodMenu(
                 selectedPeriod: trendsViewModel.detailPeriod,
                 customDateRange: sessionState.customDateRange,
                 onSelect: { period in
@@ -190,152 +192,14 @@ struct InsightsTabView: View {
                     showCustomPeriodPicker = true
                 }
             )
-            .equatable()
-
-            if trendsViewModel.isExcludeMode {
-                ExcludeModeBadge()
-            }
-
-                if trendsViewModel.hasActiveFilters {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: DS.Spacing.sm) {
-                            // Account chips
-                            ForEach(selectedAccountChips, id: \.id) { chip in
-                                FilterChipView(
-                                    accountName: chip.name,
-                                    count: chip.count,
-                                    onClear: {
-                                        trendsViewModel.selectedAccounts.removeAll()
-                                    }
-                                ).excludeMode(trendsViewModel.isExcludeMode)
-                            }
-
-                            // Category chip (aggregated)
-                            if let catChip = aggregatedCategoryChip(
-                                selectedSubcategories: trendsViewModel.selectedSubcategories,
-                                allSubcategories: allSubcategories
-                            ) {
-                                FilterChipView(
-                                    categoryName: catChip.name,
-                                    iconName: catChip.iconName,
-                                    colorHex: catChip.colorHex,
-                                    count: catChip.count,
-                                    onClear: {
-                                        trendsViewModel.selectedCategories.removeAll()
-                                        trendsViewModel.selectedSubcategories.removeAll()
-                                    }
-                                ).excludeMode(trendsViewModel.isExcludeMode)
-                            } else if !trendsViewModel.selectedCategories.isEmpty {
-                                let selectedCats = categories.filter { trendsViewModel.selectedCategories.contains($0.persistentModelID) }
-                                if let firstCat = selectedCats.first {
-                                    FilterChipView(
-                                        categoryName: firstCat.name,
-                                        iconName: firstCat.iconName,
-                                        colorHex: firstCat.colorHex,
-                                        count: selectedCats.count,
-                                        onClear: {
-                                            trendsViewModel.selectedCategories.removeAll()
-                                        }
-                                    ).excludeMode(trendsViewModel.isExcludeMode)
-                                }
-                            }
-
-                            // Subcategory chip (aggregated)
-                            if let subChip = aggregatedSubcategoryChip(
-                                selectedSubcategories: trendsViewModel.selectedSubcategories,
-                                allSubcategories: allSubcategories
-                            ) {
-                                FilterChipView(
-                                    subcategoryName: subChip.name,
-                                    iconName: subChip.iconName,
-                                    colorHex: subChip.colorHex,
-                                    count: subChip.count,
-                                    onClear: {
-                                        trendsViewModel.selectedSubcategories.removeAll()
-                                    }
-                                ).excludeMode(trendsViewModel.isExcludeMode)
-                            }
-
-                            // Tag chips
-                            ForEach(selectedTagChips, id: \.id) { chip in
-                                FilterChipView(
-                                    tagName: chip.name,
-                                    iconName: chip.iconName,
-                                    colorHex: chip.colorHex,
-                                    onClear: {
-                                        trendsViewModel.selectedTags.remove(chip.tagID)
-                                    }
-                                ).excludeMode(trendsViewModel.isExcludeMode)
-                            }
-
-                            // Nature chips
-                            ForEach(selectedNatureChips, id: \.nature.rawValue) { chipData in
-                                FilterChipView(
-                                    nature: chipData.nature,
-                                    onClear: {
-                                        trendsViewModel.selectedNatures.remove(chipData.nature)
-                                    }
-                                ).excludeMode(trendsViewModel.isExcludeMode)
-                            }
-
-                            // Transaction nature chip
-                            if !sessionState.isExpensesOnlyMode,
-                                trendsViewModel.selectedTransactionNatures.count == 1,
-                                let nature = trendsViewModel.selectedTransactionNatures.first
-                            {
-                                FilterChipView(
-                                    transactionNature: nature,
-                                    onClear: {
-                                        trendsViewModel.selectedTransactionNatures.removeAll()
-                                    }
-                                )
-                            }
-
-                            // Currency chips
-                            ForEach(Array(trendsViewModel.selectedCurrencies), id: \.self) { currency in
-                                FilterChipView(
-                                    currencyCode: currency.rawValue,
-                                    onClear: {
-                                        trendsViewModel.selectedCurrencies.remove(currency)
-                                    }
-                                ).excludeMode(trendsViewModel.isExcludeMode)
-                            }
-
-                            // Amount chip
-                            if trendsViewModel.amountCondition.isActive {
-                                FilterChipView(
-                                    amountText: trendsViewModel.amountCondition.displayText,
-                                    onClear: {
-                                        trendsViewModel.amountCondition = .any
-                                    }
-                                )
-                            }
-
-                            // Search/Note chip
-                            if !trendsViewModel.searchText.isEmpty {
-                                FilterChipView(
-                                    noteText: trendsViewModel.searchText,
-                                    onClear: {
-                                        trendsViewModel.searchText = ""
-                                    }
-                                )
-                            }
-
-                            if trendsViewModel.activeFilterCount > 1 {
-                                Button {
-                                    dsWithAnimation(reduceMotion) { trendsViewModel.clearFilters() }
-                                } label: {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .foregroundStyle(.secondary)
-                                }
-                                .accessibilityLabel(L10n.Action.clearAll)
-                            }
-                        }
-                    }
-                }
-
-            Spacer()
-
+            .equatable(),
+            viewModel: trendsViewModel,
+            accounts: accounts,
+            categories: categories,
+            allSubcategories: allSubcategories,
+            tags: tags,
+            animationValue: trendsViewModel.detailPeriod
+        ) {
             if showVariations && PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod) {
                 VStack(spacing: DS.Spacing.xxs) {
                     ComparisonModeSelector()
@@ -348,36 +212,6 @@ struct InsightsTabView: View {
                 }
             }
         }
-        .animation(nil, value: trendsViewModel.detailPeriod)
-    }
-
-    // MARK: - Chip Helpers
-
-    private var selectedAccountChips: [AccountChip] {
-        guard !trendsViewModel.selectedAccounts.isEmpty else { return [] }
-        let selectedAccountsList = accounts.filter { trendsViewModel.selectedAccounts.contains($0.persistentModelID) }
-        guard !selectedAccountsList.isEmpty else { return [] }
-        if let firstName = selectedAccountsList.first?.name {
-            return [AccountChip(name: firstName, count: selectedAccountsList.count)]
-        }
-        return []
-    }
-
-    private var selectedNatureChips: [NatureChipData] {
-        trendsViewModel.selectedNatures.map { NatureChipData(nature: $0) }
-    }
-
-    private var selectedTagChips: [TagChip] {
-        tags.filter { trendsViewModel.selectedTags.contains($0.persistentModelID) }
-            .map {
-                TagChip(
-                    id: $0.persistentModelID,
-                    tagID: $0.persistentModelID,
-                    name: $0.name,
-                    iconName: $0.iconName,
-                    colorHex: $0.colorHex
-                )
-            }
     }
 
     private var transactionDateRange: (start: Date, end: Date) {
