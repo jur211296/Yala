@@ -178,7 +178,7 @@ final class ImageVisionService {
                 .system(.init(content: .textContent(systemPrompt))),
                 .user(.init(content: .contentParts([.text(textPart), .image(imagePart)])))
             ],
-            model: .gpt4_o_mini,
+            model: .gpt4_1_nano,
             responseFormat: .jsonObject
         )
 

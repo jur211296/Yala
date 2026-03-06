@@ -183,7 +183,7 @@ final class InsightsLLMService {
                 .init(role: .system, content: systemPrompt)!,
                 .init(role: .user, content: userMessage)!
             ],
-            model: .gpt4_o_mini,
+            model: .gpt4_1_nano,
             responseFormat: .jsonObject
         )
 

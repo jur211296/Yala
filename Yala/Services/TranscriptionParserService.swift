@@ -262,7 +262,7 @@ final class TranscriptionParserService {
                 .system(.init(content: .textContent(prompt))),
                 .user(.init(content: .string(trimmedText)))
             ],
-            model: .gpt4_o_mini,
+            model: .gpt4_1_nano,
             temperature: 0.1  // Low temperature for consistent parsing
         )
 
