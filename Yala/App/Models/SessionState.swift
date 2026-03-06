@@ -235,10 +235,21 @@ class SessionState {
 
     /// Auto-reset exclude mode when no exclude-eligible filters remain
     func resetExcludeModeIfNeeded() {
-        guard !isSwitchingExcludeMode, isExcludeMode, !hasActiveExcludeFilters else { return }
+        guard !isSwitchingExcludeMode, !isBatchingFilterUpdate, isExcludeMode, !hasActiveExcludeFilters else { return }
         isSwitchingExcludeMode = true
         isExcludeMode = false
         isSwitchingExcludeMode = false
+    }
+
+    /// Guard against resetExcludeModeIfNeeded during batch filter commits
+    private var isBatchingFilterUpdate = false
+
+    /// Batch-set multiple filter properties without triggering intermediate resetExcludeModeIfNeeded calls.
+    /// Use when committing filter values from a sheet where isExcludeMode was already set.
+    func performBatchFilterUpdate(_ block: () -> Void) {
+        isBatchingFilterUpdate = true
+        block()
+        isBatchingFilterUpdate = false
     }
 
     // MARK: - Actions

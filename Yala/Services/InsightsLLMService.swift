@@ -145,13 +145,36 @@ final class InsightsLLMService {
         let comparisonRef = aggregatedData["comparison_ref"] as? String ?? "periodo anterior"
         let comparisonLabel = aggregatedData["comparison_label"] as? String ?? ""
 
+        // Build filter context for prompt if active
+        let filterContext: String
+        if let filters = aggregatedData["active_filters"] as? [String: Any],
+           let summary = filters["summary"] as? String,
+           !summary.isEmpty {
+            let mode = filters["mode"] as? String ?? "include"
+            if mode == "exclude" {
+                filterContext = """
+
+                FILTROS ACTIVOS (EXCLUSIÓN): \(summary)
+                IMPORTANTE: Los datos que recibes EXCLUYEN los elementos mencionados. Todos los porcentajes, promedios y distribuciones son relativos al subconjunto visible, NO al total general. Por ejemplo, si se excluyen gastos esenciales, un 80% de "opcional" significa 80% dentro de los gastos no-esenciales, no del total. Menciona esta perspectiva filtrada en tus insights cuando sea relevante para evitar confusión.
+                """
+            } else {
+                filterContext = """
+
+                FILTROS ACTIVOS (INCLUSIÓN): \(summary)
+                IMPORTANTE: Los datos que recibes solo incluyen los elementos mencionados. Los porcentajes y promedios son relativos a este subconjunto filtrado, no al total de todas las finanzas. Menciona esta perspectiva filtrada en tus insights cuando sea relevante.
+                """
+            }
+        } else {
+            filterContext = ""
+        }
+
         let systemPrompt = """
         Eres un asistente financiero personal amigable. Analiza los datos agregados del usuario y genera insights.
 
         IDIOMA: Responde SIEMPRE en el idioma indicado por "locale" en los datos (\(locale)). Nunca mezcles idiomas.
 
         COMPARACIONES: Las variaciones en los datos se comparan contra "\(comparisonRef)" (\(comparisonLabel)). Usa esa referencia al mencionar cambios o tendencias.
-
+        \(filterContext)
         REGLAS DE VOZ:
         - Tutea al usuario
         - Lidera con el dato, opinion despues

@@ -63,7 +63,11 @@ final class InsightsViewModel {
         filterHash: Int,
         txnCount: Int,
         currencyCode: String,
-        comparisonMode: ComparisonMode = .month
+        comparisonMode: ComparisonMode = .month,
+        criteria: FilterCriteria = .empty,
+        accounts: [Account] = [],
+        categories: [Category] = [],
+        tags: [Tag] = []
     ) async {
         guard let data = insightData else { return }
 
@@ -94,7 +98,15 @@ final class InsightsViewModel {
         aiError = nil
 
         // Build aggregated data (never individual transactions)
-        let aggregated = buildAggregatedData(data, currencyCode: currencyCode, comparisonMode: comparisonMode)
+        let aggregated = buildAggregatedData(
+            data,
+            currencyCode: currencyCode,
+            comparisonMode: comparisonMode,
+            criteria: criteria,
+            accounts: accounts,
+            categories: categories,
+            tags: tags
+        )
 
         do {
             let response = try await InsightsLLMService.shared.generateInsights(
@@ -114,7 +126,15 @@ final class InsightsViewModel {
 
     // MARK: - Helpers
 
-    private func buildAggregatedData(_ data: InsightData, currencyCode: String, comparisonMode: ComparisonMode) -> [String: Any] {
+    private func buildAggregatedData(
+        _ data: InsightData,
+        currencyCode: String,
+        comparisonMode: ComparisonMode,
+        criteria: FilterCriteria = .empty,
+        accounts: [Account] = [],
+        categories: [Category] = [],
+        tags: [Tag] = []
+    ) -> [String: Any] {
         let comparisonLabel = comparisonMode == .year ? "año anterior" : "periodo anterior"
         var result: [String: Any] = [
             "currency": currencyCode,
@@ -154,6 +174,110 @@ final class InsightsViewModel {
             result["year_ago_variation"] = "\(Int(variation))%"
         }
 
+        // Active filters context — tells the AI what subset of data it's seeing
+        if criteria.hasActiveFilters {
+            result["active_filters"] = buildFilterContext(
+                criteria: criteria,
+                accounts: accounts,
+                categories: categories,
+                tags: tags
+            )
+        }
+
         return result
+    }
+
+    /// Builds a human-readable description of active filters for the AI prompt.
+    private func buildFilterContext(
+        criteria: FilterCriteria,
+        accounts: [Account],
+        categories: [Category],
+        tags: [Tag]
+    ) -> [String: Any] {
+        let mode = criteria.isExcludeMode ? "exclude" : "include"
+        var filters: [String: Any] = ["mode": mode]
+        var descriptions: [String] = []
+
+        // Accounts
+        if !criteria.selectedAccounts.isEmpty {
+            let names = accounts
+                .filter { criteria.selectedAccounts.contains($0.persistentModelID) }
+                .map { $0.name }
+            if !names.isEmpty {
+                filters["accounts"] = names
+                let verb = criteria.isExcludeMode ? "Excluyendo" : "Solo"
+                descriptions.append("\(verb) cuentas: \(names.joined(separator: ", "))")
+            }
+        }
+
+        // Categories
+        if !criteria.selectedCategories.isEmpty {
+            let names = categories
+                .filter { criteria.selectedCategories.contains($0.persistentModelID) }
+                .map { $0.name }
+            if !names.isEmpty {
+                filters["categories"] = names
+                let verb = criteria.isExcludeMode ? "Excluyendo" : "Solo"
+                descriptions.append("\(verb) categorías: \(names.joined(separator: ", "))")
+            }
+        }
+
+        // Subcategories
+        if !criteria.selectedSubcategories.isEmpty {
+            let names = categories
+                .flatMap { $0.subcategories ?? [] }
+                .filter { criteria.selectedSubcategories.contains($0.persistentModelID) }
+                .map { $0.name }
+            if !names.isEmpty {
+                filters["subcategories"] = names
+                let verb = criteria.isExcludeMode ? "Excluyendo" : "Solo"
+                descriptions.append("\(verb) subcategorías: \(names.joined(separator: ", "))")
+            }
+        }
+
+        // Tags
+        if !criteria.selectedTags.isEmpty {
+            let names = tags
+                .filter { criteria.selectedTags.contains($0.persistentModelID) }
+                .map { $0.name }
+            if !names.isEmpty {
+                filters["tags"] = names
+                let verb = criteria.isExcludeMode ? "Excluyendo" : "Solo"
+                descriptions.append("\(verb) etiquetas: \(names.joined(separator: ", "))")
+            }
+        }
+
+        // Natures
+        if !criteria.selectedNatures.isEmpty {
+            let names = criteria.selectedNatures.map { $0.displayName }
+            filters["natures"] = names
+            let verb = criteria.isExcludeMode ? "Excluyendo" : "Solo"
+            descriptions.append("\(verb) naturalezas: \(names.joined(separator: ", "))")
+        }
+
+        // Currencies
+        if !criteria.selectedCurrencies.isEmpty {
+            let codes = criteria.selectedCurrencies.map { $0.rawValue }
+            filters["currencies"] = codes
+            let verb = criteria.isExcludeMode ? "Excluyendo" : "Solo"
+            descriptions.append("\(verb) monedas: \(codes.joined(separator: ", "))")
+        }
+
+        // Transaction nature (income/expense) — always include semantics
+        if criteria.selectedTransactionNatures.count == 1,
+           let nature = criteria.selectedTransactionNatures.first {
+            filters["transaction_type"] = nature == .income ? "income" : "expense"
+            descriptions.append("Solo \(nature.displayName.lowercased())")
+        }
+
+        // Search text
+        if !criteria.searchText.isEmpty {
+            filters["search"] = criteria.searchText
+            descriptions.append("Buscando: \"\(criteria.searchText)\"")
+        }
+
+        filters["summary"] = descriptions.joined(separator: ". ")
+
+        return filters
     }
 }

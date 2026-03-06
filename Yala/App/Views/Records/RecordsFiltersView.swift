@@ -668,17 +668,20 @@ struct RecordsFiltersView: View {
 
     private func commitToViewModel() {
         // Set isExcludeMode FIRST — its didSet in SessionState clears selections,
-        // then the subsequent assignments overwrite with the correct local values
+        // then set filter values inside a batch to prevent resetExcludeModeIfNeeded
+        // from resetting exclude mode during intermediate empty states.
         recordsViewModel.isExcludeMode = localIsExcludeMode
-        recordsViewModel.selectedAccounts = localSelectedAccounts
-        recordsViewModel.selectedCategories = localSelectedCategories
-        recordsViewModel.selectedSubcategories = localSelectedSubcategories
-        recordsViewModel.selectedTags = localSelectedTags
-        recordsViewModel.selectedNatures = localSelectedNatures
-        recordsViewModel.selectedTransactionNatures = localSelectedTransactionNatures
-        recordsViewModel.selectedCurrencies = localSelectedCurrencies
-        recordsViewModel.amountCondition = localAmountCondition
-        recordsViewModel.searchText = localSearchText
+        SessionState.shared.performBatchFilterUpdate {
+            recordsViewModel.selectedAccounts = localSelectedAccounts
+            recordsViewModel.selectedCategories = localSelectedCategories
+            recordsViewModel.selectedSubcategories = localSelectedSubcategories
+            recordsViewModel.selectedTags = localSelectedTags
+            recordsViewModel.selectedNatures = localSelectedNatures
+            recordsViewModel.selectedTransactionNatures = localSelectedTransactionNatures
+            recordsViewModel.selectedCurrencies = localSelectedCurrencies
+            recordsViewModel.amountCondition = localAmountCondition
+            recordsViewModel.searchText = localSearchText
+        }
     }
 
     private func clearLocalFilters() {

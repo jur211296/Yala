@@ -127,7 +127,8 @@ struct DetailContainerView: View {
                     showUpgradeForImage: $showUpgradeForImage,
                     modelContext: modelContext,
                     refreshRecordsData: refreshRecordsData,
-                    calculateTrendsData: calculateTrendsData
+                    calculateTrendsData: calculateTrendsData,
+                    calculateInsightsData: calculateInsightsData
                 )
             )
             .onRecordsFilterChange(viewModel: recordsViewModel) {
@@ -135,6 +136,7 @@ struct DetailContainerView: View {
             }
             .onTrendsFilterChange(viewModel: trendsViewModel) {
                 calculateTrendsData()
+                calculateInsightsData()
             }
             .onAppear {
                 dataViewModel.setContext(modelContext)
@@ -643,17 +645,25 @@ struct DetailContainerView: View {
 
         // Generate AI insights if Pro + consent + online
         let period = sessionState.selectedPeriod
-        let filterHash = trendsViewModel.filterCriteria.hashValue
+        let criteria = trendsViewModel.filterCriteria
+        let filterHash = criteria.hashValue
         let txnCount = dataViewModel.allTransactions.count
         let currency = defaultCurrencyCode
         let comparison = sessionState.comparisonMode
+        let accounts = dataViewModel.accounts
+        let categories = dataViewModel.categories
+        let tags = dataViewModel.tags
         Task {
             await insightsViewModel.generateAIInsights(
                 period: period,
                 filterHash: filterHash,
                 txnCount: txnCount,
                 currencyCode: currency,
-                comparisonMode: comparison
+                comparisonMode: comparison,
+                criteria: criteria,
+                accounts: accounts,
+                categories: categories,
+                tags: tags
             )
         }
     }
@@ -748,6 +758,7 @@ private struct DetailContainerSheets: ViewModifier {
     let modelContext: ModelContext
     let refreshRecordsData: () -> Void
     let calculateTrendsData: () -> Void
+    let calculateInsightsData: () -> Void
 
     func body(content: Content) -> some View {
         content
@@ -784,6 +795,7 @@ private struct DetailContainerSheets: ViewModifier {
                 RecordsFiltersView(recordsViewModel: recordsViewModel)
                     .onDisappear {
                         calculateTrendsData()
+                        calculateInsightsData()
                     }
             }
             .confirmationDialog(
