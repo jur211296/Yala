@@ -37,14 +37,6 @@ struct InsightsTabView: View {
 
     @AppStorage("showVariations") private var showVariations: Bool = true
 
-    // MARK: - Collapse State
-
-    @AppStorage("insightsQuickStatsExpanded") private var quickStatsExpanded = true
-    @AppStorage("insightsComparisonExpanded") private var comparisonExpanded = true
-    @AppStorage("insightsWeekdayExpanded") private var weekdayExpanded = true
-    @AppStorage("insightsNatureExpanded") private var natureExpanded = true
-    @AppStorage("insightsCommitmentsExpanded") private var commitmentsExpanded = true
-    @AppStorage("insightsTextsExpanded") private var textsExpanded = true
     @AppStorage("hasSeenInsightsIntro") private var hasSeenInsightsIntro = false
     @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted = false
     @AppStorage("dismissedAIInsightsBanner") private var dismissedAIInsightsBanner = false
@@ -456,7 +448,7 @@ struct InsightsTabView: View {
                 )
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(DS.Spacing.lg)
         .yalaCard(padding: 0, shadow: false)
     }
@@ -476,7 +468,7 @@ struct InsightsTabView: View {
                 .font(DS.Typography.captionSmall)
                 .foregroundStyle(.tertiary)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(DS.Spacing.lg)
         .yalaCard(padding: 0, shadow: false)
     }
@@ -486,70 +478,64 @@ struct InsightsTabView: View {
     @ViewBuilder
     private func quickStatsSection(_ stats: QuickStats) -> some View {
         VStack(spacing: DS.Spacing.sm) {
-            collapsibleHeader(
-                title: L10n.Insights.quickStats,
-                isExpanded: $quickStatsExpanded
-            )
+            YalaSectionHeader(L10n.Insights.quickStats)
 
-            if quickStatsExpanded {
-                let columns = [
-                    GridItem(.flexible(), spacing: DS.Spacing.md),
-                    GridItem(.flexible(), spacing: DS.Spacing.md)
-                ]
+            let columns = [
+                GridItem(.flexible(), spacing: DS.Spacing.md),
+                GridItem(.flexible(), spacing: DS.Spacing.md)
+            ]
 
-                LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
+            LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
+                QuickStatCell(
+                    icon: "chart.bar.fill",
+                    label: L10n.Insights.dailyAverage,
+                    value: YalaFormatter.currency(value: stats.dailyAverage, currencyCode: defaultCurrencyCode)
+                )
+
+                if let top = stats.topCategory {
                     QuickStatCell(
-                        icon: "chart.bar.fill",
-                        label: L10n.Insights.dailyAverage,
-                        value: YalaFormatter.currency(value: stats.dailyAverage, currencyCode: defaultCurrencyCode)
+                        icon: "folder.fill",
+                        label: L10n.Insights.topCategory,
+                        value: top.category.name,
+                        secondary: "\(YalaFormatter.currency(value: top.amount, currencyCode: defaultCurrencyCode)) · \(Int(top.percentage))%"
                     )
-
-                    if let top = stats.topCategory {
-                        QuickStatCell(
-                            icon: "folder.fill",
-                            label: L10n.Insights.topCategory,
-                            value: top.category.name,
-                            secondary: "\(YalaFormatter.currency(value: top.amount, currencyCode: defaultCurrencyCode)) · \(Int(top.percentage))%"
-                        )
-                    }
-
-                    if let topSub = stats.topSubcategory {
-                        QuickStatCell(
-                            icon: "tag.fill",
-                            label: L10n.Insights.topSubcategory,
-                            value: topSub.subcategoryName,
-                            secondary: YalaFormatter.currency(value: topSub.amount, currencyCode: defaultCurrencyCode)
-                        )
-                    }
-
-                    if let highest = stats.highestExpense {
-                        QuickStatCell(
-                            icon: "arrow.up.circle.fill",
-                            label: L10n.Insights.highestExpense,
-                            value: YalaFormatter.currency(value: highest.amount, currencyCode: defaultCurrencyCode),
-                            secondary: highest.note
-                        )
-                    }
-
-                    if let busiest = stats.busiestDay {
-                        QuickStatCell(
-                            icon: "calendar.circle.fill",
-                            label: L10n.Insights.busiestDay,
-                            value: busiest.date.formatted(.dateTime.month(.abbreviated).day()),
-                            secondary: YalaFormatter.currency(value: busiest.amount, currencyCode: defaultCurrencyCode)
-                        )
-                    }
-
-                    if stats.subscriptionsTotal > 0 {
-                        QuickStatCell(
-                            icon: "repeat.circle.fill",
-                            label: L10n.Insights.subscriptions,
-                            value: YalaFormatter.currency(value: stats.subscriptionsTotal, currencyCode: defaultCurrencyCode),
-                            secondary: L10n.Insights.monthly
-                        )
-                    }
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
+
+                if let topSub = stats.topSubcategory {
+                    QuickStatCell(
+                        icon: "tag.fill",
+                        label: L10n.Insights.topSubcategory,
+                        value: topSub.subcategoryName,
+                        secondary: YalaFormatter.currency(value: topSub.amount, currencyCode: defaultCurrencyCode)
+                    )
+                }
+
+                if let highest = stats.highestExpense {
+                    QuickStatCell(
+                        icon: "arrow.up.circle.fill",
+                        label: L10n.Insights.highestExpense,
+                        value: YalaFormatter.currency(value: highest.amount, currencyCode: defaultCurrencyCode),
+                        secondary: highest.note
+                    )
+                }
+
+                if let busiest = stats.busiestDay {
+                    QuickStatCell(
+                        icon: "calendar.circle.fill",
+                        label: L10n.Insights.busiestDay,
+                        value: busiest.date.formatted(.dateTime.month(.abbreviated).day()),
+                        secondary: YalaFormatter.currency(value: busiest.amount, currencyCode: defaultCurrencyCode)
+                    )
+                }
+
+                if stats.subscriptionsTotal > 0 {
+                    QuickStatCell(
+                        icon: "repeat.circle.fill",
+                        label: L10n.Insights.subscriptions,
+                        value: YalaFormatter.currency(value: stats.subscriptionsTotal, currencyCode: defaultCurrencyCode),
+                        secondary: L10n.Insights.monthly
+                    )
+                }
             }
         }
     }
@@ -584,64 +570,58 @@ struct InsightsTabView: View {
     @ViewBuilder
     private func commitmentsSection(_ c: Commitments) -> some View {
         VStack(spacing: DS.Spacing.sm) {
-            collapsibleHeader(
-                title: L10n.Insights.commitments,
-                isExpanded: $commitmentsExpanded
-            )
+            YalaSectionHeader(L10n.Insights.commitments)
 
-            if commitmentsExpanded {
-                VStack(spacing: DS.Spacing.md) {
-                    if showPendingPayments, c.pendingPaymentsCount > 0 {
-                        commitmentRow(
-                            icon: "clock",
-                            label: L10n.Insights.pendingPayments,
-                            value: "\(c.pendingPaymentsCount)",
-                            secondary: YalaFormatter.currency(value: c.pendingPaymentsAmount, currencyCode: defaultCurrencyCode)
-                        )
-                    }
+            VStack(spacing: DS.Spacing.md) {
+                if showPendingPayments, c.pendingPaymentsCount > 0 {
+                    commitmentRow(
+                        icon: "clock",
+                        label: L10n.Insights.pendingPayments,
+                        value: "\(c.pendingPaymentsCount)",
+                        secondary: YalaFormatter.currency(value: c.pendingPaymentsAmount, currencyCode: defaultCurrencyCode)
+                    )
+                }
 
-                    if showSubscriptions, c.activeSubscriptionsCount > 0 {
-                        commitmentRow(
-                            icon: "repeat",
-                            label: L10n.Insights.activeSubscriptions,
-                            value: "\(c.activeSubscriptionsCount)",
-                            secondary: "\(YalaFormatter.currency(value: c.activeSubscriptionsMonthly, currencyCode: defaultCurrencyCode)) \(L10n.Insights.monthly)"
-                        )
-                    }
+                if showSubscriptions, c.activeSubscriptionsCount > 0 {
+                    commitmentRow(
+                        icon: "repeat",
+                        label: L10n.Insights.activeSubscriptions,
+                        value: "\(c.activeSubscriptionsCount)",
+                        secondary: "\(YalaFormatter.currency(value: c.activeSubscriptionsMonthly, currencyCode: defaultCurrencyCode)) \(L10n.Insights.monthly)"
+                    )
+                }
 
-                    if showBudgetsAtRisk {
-                        ForEach(c.budgetsAtRisk) { budget in
-                            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                                HStack {
-                                    Image(systemName: "exclamationmark.triangle")
-                                        .font(DS.Typography.captionSmall)
-                                        .foregroundStyle(DS.Semantic.warningForeground)
+                if showBudgetsAtRisk {
+                    ForEach(c.budgetsAtRisk) { budget in
+                        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle")
+                                    .font(DS.Typography.captionSmall)
+                                    .foregroundStyle(DS.Semantic.warningForeground)
 
-                                    Text(budget.name)
-                                        .font(DS.Typography.subheadline)
-                                        .foregroundStyle(.primary)
+                                Text(budget.name)
+                                    .font(DS.Typography.subheadline)
+                                    .foregroundStyle(.primary)
 
-                                    Spacer()
+                                Spacer()
 
-                                    Text("\(Int(budget.usagePercent))%")
-                                        .font(DS.Typography.caption)
-                                        .fontWeight(.medium)
-                                        .foregroundStyle(budget.usagePercent >= 100 ? DS.Semantic.errorForeground : DS.Semantic.warningForeground)
-                                }
-
-                                BudgetProgressBar(
-                                    percentage: budget.usagePercent,
-                                    color: budget.colorHex ?? "FF6B6B",
-                                    isExceeded: budget.usagePercent >= 100
-                                )
-                                .frame(height: 6)
+                                Text("\(Int(budget.usagePercent))%")
+                                    .font(DS.Typography.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(budget.usagePercent >= 100 ? DS.Semantic.errorForeground : DS.Semantic.warningForeground)
                             }
-                            .padding(DS.Spacing.md)
-                            .yalaCard(padding: 0, radius: DS.Radius.md, shadow: false)
+
+                            BudgetProgressBar(
+                                percentage: budget.usagePercent,
+                                color: budget.colorHex ?? "FF6B6B",
+                                isExceeded: budget.usagePercent >= 100
+                            )
+                            .frame(height: 6)
                         }
+                        .padding(DS.Spacing.md)
+                        .yalaCard(padding: 0, radius: DS.Radius.md, shadow: false)
                     }
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
     }
@@ -709,15 +689,10 @@ struct InsightsTabView: View {
     @ViewBuilder
     private func weekdayChartSection(_ data: [WeekdaySpending]) -> some View {
         VStack(spacing: DS.Spacing.sm) {
-            collapsibleHeader(
-                title: L10n.Insights.weekdaySpending,
-                isExpanded: $weekdayExpanded
-            )
+            YalaSectionHeader(L10n.Insights.weekdaySpending)
 
-            if weekdayExpanded {
-                WeekdayBarChart(data: data, currencyCode: defaultCurrencyCode)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
+            WeekdayBarChart(data: data, currencyCode: defaultCurrencyCode)
+                .yalaCard(padding: DS.Spacing.lg, shadow: false)
         }
     }
 
@@ -726,15 +701,10 @@ struct InsightsTabView: View {
     @ViewBuilder
     private func natureSection(_ distribution: NatureDistribution) -> some View {
         VStack(spacing: DS.Spacing.sm) {
-            collapsibleHeader(
-                title: L10n.Insights.natureDistribution,
-                isExpanded: $natureExpanded
-            )
+            YalaSectionHeader(L10n.Insights.natureDistribution)
 
-            if natureExpanded {
-                NatureBar(distribution: distribution)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
+            NatureBar(distribution: distribution)
+                .yalaCard(padding: DS.Spacing.lg, shadow: false)
         }
     }
 
@@ -743,16 +713,10 @@ struct InsightsTabView: View {
     @ViewBuilder
     private func textInsightsSection(_ insights: [InsightResult]) -> some View {
         VStack(spacing: DS.Spacing.sm) {
-            collapsibleHeader(
-                title: L10n.Insights.intelligentInsights,
-                isExpanded: $textsExpanded
-            )
+            YalaSectionHeader(L10n.Insights.intelligentInsights)
 
-            if textsExpanded {
-                ForEach(insights) { insight in
-                    InsightCard(insight: insight)
-                }
-                .transition(.opacity.combined(with: .move(edge: .top)))
+            ForEach(insights) { insight in
+                InsightCard(insight: insight)
             }
         }
     }
@@ -760,27 +724,21 @@ struct InsightsTabView: View {
     @ViewBuilder
     private func aiTextInsightsSection(_ cards: [LLMInsightCard]) -> some View {
         VStack(spacing: DS.Spacing.sm) {
-            collapsibleHeader(
-                title: L10n.Insights.intelligentInsights,
-                isExpanded: $textsExpanded
-            )
+            YalaSectionHeader(L10n.Insights.intelligentInsights)
 
-            if textsExpanded {
-                ForEach(Array(cards.enumerated()), id: \.offset) { _, card in
-                    let sentiment: Sentiment = switch card.sentiment {
-                    case "positive": .positive
-                    case "attention": .attention
-                    default: .neutral
-                    }
-                    InsightCard(insight: InsightResult(
-                        id: "ai_\(card.text.prefix(20))",
-                        icon: card.icon,
-                        text: AttributedString(card.text),
-                        sentiment: sentiment,
-                        isProOnly: true
-                    ))
+            ForEach(Array(cards.enumerated()), id: \.offset) { _, card in
+                let sentiment: Sentiment = switch card.sentiment {
+                case "positive": .positive
+                case "attention": .attention
+                default: .neutral
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                InsightCard(insight: InsightResult(
+                    id: "ai_\(card.text.prefix(20))",
+                    icon: card.icon,
+                    text: AttributedString(card.text),
+                    sentiment: sentiment,
+                    isProOnly: true
+                ))
             }
         }
     }
@@ -911,27 +869,4 @@ struct InsightsTabView: View {
         .overlay(RoundedRectangle(cornerRadius: DS.Radius.xl).stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1))
     }
 
-    // MARK: - Collapsible Header
-
-    private func collapsibleHeader(title: String, isExpanded: Binding<Bool>) -> some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.25)) {
-                isExpanded.wrappedValue.toggle()
-            }
-        } label: {
-            HStack {
-                Text(title)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
-
-                Spacer()
-
-                Image(systemName: "chevron.down")
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.tertiary)
-                    .rotationEffect(.degrees(isExpanded.wrappedValue ? 0 : -90))
-            }
-        }
-        .buttonStyle(.plain)
-    }
 }

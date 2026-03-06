@@ -33,12 +33,11 @@ struct QuickStatCell: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
 
-            if let secondary {
-                Text(secondary)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.tertiary)
-                    .lineLimit(1)
-            }
+            Text(secondary ?? " ")
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.tertiary)
+                .opacity(secondary != nil ? 1 : 0)
+                .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Spacing.md)

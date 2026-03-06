@@ -36,11 +36,14 @@ struct WeekdayBarChart: View {
             .cornerRadius(DS.Radius.xs)
         }
         .chartYAxis {
-            AxisMarks(position: .leading) { value in
+            AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                    .foregroundStyle(.thSecondaryText.opacity(0.1))
                 AxisValueLabel {
                     if let doubleVal = value.as(Double.self) {
                         Text(YalaFormatter.compactCurrency(value: doubleVal))
                             .font(DS.Typography.captionSmall)
+                            .foregroundStyle(.thSecondaryText)
                     }
                 }
             }
