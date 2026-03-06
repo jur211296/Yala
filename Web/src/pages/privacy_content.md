@@ -16,11 +16,12 @@ Toda tu información se guarda en tu dispositivo y, si tienes iCloud activo, se 
 Si tienes iCloud activo, tus datos se sincronizan automáticamente entre tus dispositivos Apple usando la base de datos privada de Apple. Solo tú puedes acceder a ellos — nosotros no tenemos acceso. Si no tienes iCloud, todo se queda en tu dispositivo.
 
 ## 4. Funciones inteligentes
-Cuando usas entrada por voz o escaneo de imágenes (funciones Pro), tus datos se procesan con **OpenAI**:
+Cuando usas entrada por voz, escaneo de imágenes o el resumen inteligente (funciones Pro), tus datos se procesan con **OpenAI**:
 
 - **Voz:** tu grabación de audio y el texto transcrito
 - **Imágenes:** la foto que seleccionas (comprimida, sin metadatos)
 - **Contexto:** los nombres de tus categorías para clasificar mejor
+- **Resumen:** totales, porcentajes y tendencias de tus gastos (datos agregados, nunca transacciones individuales)
 
 No se envían montos, historial de gastos ni información personal. OpenAI **no usa datos enviados por API para entrenar sus modelos**. El procesamiento es puntual y no se almacena permanentemente. Estas funciones son opcionales y solo se activan cuando tú las inicias.
 
