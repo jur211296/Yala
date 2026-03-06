@@ -14,7 +14,7 @@ import SwiftUI
 
 /// Unified filter criteria used across all views that filter transactions.
 /// This eliminates the need for each ViewModel to define its own filter state separately.
-struct FilterCriteria: Equatable {
+struct FilterCriteria: Hashable {
 
     // MARK: - Entity Filters
 

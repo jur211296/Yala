@@ -62,7 +62,8 @@ final class InsightsViewModel {
         period: DetailPeriod,
         filterHash: Int,
         txnCount: Int,
-        currencyCode: String
+        currencyCode: String,
+        comparisonMode: ComparisonMode = .month
     ) async {
         guard let data = insightData else { return }
 
@@ -79,7 +80,8 @@ final class InsightsViewModel {
         let key = InsightsLLMService.shared.cacheKey(
             period: period.rawValue,
             filterHash: filterHash,
-            txnCount: txnCount
+            txnCount: txnCount,
+            comparisonMode: comparisonMode.rawValue
         )
 
         // Check cache first
@@ -92,7 +94,7 @@ final class InsightsViewModel {
         aiError = nil
 
         // Build aggregated data (never individual transactions)
-        let aggregated = buildAggregatedData(data, currencyCode: currencyCode)
+        let aggregated = buildAggregatedData(data, currencyCode: currencyCode, comparisonMode: comparisonMode)
 
         do {
             let response = try await InsightsLLMService.shared.generateInsights(
@@ -112,14 +114,17 @@ final class InsightsViewModel {
 
     // MARK: - Helpers
 
-    private func buildAggregatedData(_ data: InsightData, currencyCode: String) -> [String: Any] {
+    private func buildAggregatedData(_ data: InsightData, currencyCode: String, comparisonMode: ComparisonMode) -> [String: Any] {
+        let comparisonLabel = comparisonMode == .year ? "año anterior" : "periodo anterior"
         var result: [String: Any] = [
             "currency": currencyCode,
+            "locale": Locale.current.language.languageCode?.identifier ?? "es",
+            "comparison_ref": comparisonLabel,
+            "comparison_label": data.periodSummary.previousPeriodLabel,
             "spending_total_variation": data.periodSummary.expenseVariation.map { "\(Int($0))%" } ?? "N/A",
             "income_variation": data.periodSummary.incomeVariation.map { "\(Int($0))%" } ?? "N/A",
             "count": data.periodSummary.transactionCount,
-            "daily_avg": Int(data.quickStats.dailyAverage),
-            "streak": data.streak
+            "daily_avg": Int(data.quickStats.dailyAverage)
         ]
 
         // Top categories (name + percentage only, never amounts)

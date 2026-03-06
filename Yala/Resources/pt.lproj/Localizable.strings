@@ -726,10 +726,6 @@
 "insights.highestExpense" = "Maior despesa";
 "insights.highestAvgWeekday" = "Dia de mais gastos";
 "insights.subscriptions" = "Assinaturas";
-"insights.streak" = "Sequência";
-"insights.days" = "dias";
-"insights.streakCaption" = "registrando despesas";
-"insights.streakDays" = "%d dias registrando despesas";
 "insights.quickStats" = "Resumo rápido";
 "insights.comparison" = "Comparação";
 "insights.weekdayAverage" = "Gasto médio por dia";
@@ -752,7 +748,8 @@
 "insights.ofTotal" = "do total";
 "insights.analyzingData" = "Analisando seus dados...";
 "insights.activateAITitle" = "Ativar insights com IA";
-"insights.activateAIBody" = "Como usuário Pro, você pode ter análises mais personalizadas das suas finanças.";
+"insights.activateAIBody" = "Obtenha análises personalizadas das suas finanças usando inteligência artificial.";
+"insights.activateAIDisclaimer" = "Apenas dados resumidos são enviados (totais, percentuais, tendências). Suas transações individuais e dados pessoais nunca são compartilhados.";
 "insights.activate" = "Ativar";
 "insights.notInterested" = "Não me interessa";
 "insights.offlineCached" = "Sem conexão. Mostrando última análise.";
@@ -831,7 +828,7 @@
 "profile.aliasAvailable" = "Alias disponivel";
 "profile.aliasHelper" = "3-20 caracteres. Somente letras, numeros e underscores.";
 "profile.privacyTitle" = "Seus dados nunca saem do seu dispositivo";
-"profile.privacyDesc" = "Yala armazena seus dados pessoais apenas no seu dispositivo. Nao temos acesso a eles nem os compartilhamos com terceiros. Se voce excluir o app, todos os seus dados serao apagados.";
+"profile.privacyDesc" = "Yala armazena seus dados pessoais apenas no seu dispositivo. As funções de IA (voz, imagem e insights) são opcionais e processam apenas dados resumidos — nunca suas despesas individuais ou informações pessoais.";
 "profile.aliasFutureNote" = "Nota: A validacao de unicidade do alias estara disponivel quando a funcionalidade de despesas compartilhadas for implementada.";
 "profile.proMember" = "Membro PRO";
 "profile.choosePhoto" = "Escolher foto";
@@ -2369,7 +2366,7 @@
 
 // MARK: - AI Consent
 "aiConsent.title" = "Processamento de dados com IA";
-"aiConsent.message" = "As funções de voz e imagem usam OpenAI para processar os teus dados:\n\n• Voz: a tua gravação de áudio\n• Imagens: a foto que selecionas\n• Texto: a transcrição e os nomes das tuas subcategorias\n\nNão são enviados valores, histórico de transações nem informações pessoais. A OpenAI não usa estes dados para treino.";
+"aiConsent.message" = "Algumas funções usam inteligência artificial de forma opcional:\n\n• Voz: sua gravação de áudio é transcrita\n• Imagens: a foto é analisada para extrair dados\n• Insights: apenas totais, percentuais e tendências são enviados\n\nSuas despesas individuais, histórico de transações e informações pessoais nunca são compartilhados. Os dados não são usados para treinar modelos de IA.";
 "aiConsent.accept" = "Aceitar e ativar";
 "aiConsent.privacyPolicy" = "Política de privacidade";
 "aiConsent.inlineHint" = "As tuas gravações e imagens são processadas com OpenAI. Não são armazenadas permanentemente.";
@@ -2388,5 +2385,4 @@
 "insights.ruleExpenseUp" = "Seus gastos subiram %@ em relação ao período anterior.";
 "insights.ruleExpenseDown" = "Bom ritmo: seus gastos caíram %@ em relação ao período anterior.";
 "insights.ruleBudgetRisk" = "%@ está em %d%% do seu limite.";
-"insights.ruleStreak" = "Você registra gastos há %d dias. Ótimo hábito!";
 "insights.ruleOptionalHigh" = "Gastos opcionais representam %d%% do seu total.";

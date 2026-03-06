@@ -728,10 +728,6 @@
 "insights.highestExpense" = "Highest expense";
 "insights.highestAvgWeekday" = "Highest spending day";
 "insights.subscriptions" = "Subscriptions";
-"insights.streak" = "Streak";
-"insights.days" = "days";
-"insights.streakCaption" = "tracking expenses";
-"insights.streakDays" = "%d days recording expenses";
 "insights.quickStats" = "Quick Stats";
 "insights.comparison" = "Period Comparison";
 "insights.weekdayAverage" = "Average spending by day";
@@ -754,7 +750,8 @@
 "insights.ofTotal" = "of total";
 "insights.analyzingData" = "Analyzing your data...";
 "insights.activateAITitle" = "Activate AI Insights";
-"insights.activateAIBody" = "As a Pro user, you can get more personalized analysis of your finances.";
+"insights.activateAIBody" = "Get personalized analysis of your finances using artificial intelligence.";
+"insights.activateAIDisclaimer" = "Only summarized data is sent (totals, percentages, trends). Your individual transactions and personal data are never shared.";
 "insights.activate" = "Activate";
 "insights.notInterested" = "Not interested";
 "insights.offlineCached" = "Offline. Showing last analysis.";
@@ -828,7 +825,7 @@
 "profile.aliasAvailable" = "Alias available";
 "profile.aliasHelper" = "3-20 characters. Only letters, numbers, and underscores.";
 "profile.privacyTitle" = "Your data never leaves your device";
-"profile.privacyDesc" = "Yala stores your personal data solely on your device. We do not have access to it nor do we share it with third parties. If you delete the app, all your data will be erased.";
+"profile.privacyDesc" = "Yala stores your personal data solely on your device. AI features (voice, image, and insights) are optional and only process summarized data — never your individual transactions or personal information.";
 "profile.aliasFutureNote" = "Note: Alias uniqueness validation will be available when shared expenses functionality is implemented.";
 "profile.proMember" = "PRO Member";
 "profile.choosePhoto" = "Choose photo";
@@ -2357,7 +2354,7 @@
 
 // MARK: - AI Consent
 "aiConsent.title" = "AI Data Processing";
-"aiConsent.message" = "Voice and image features use OpenAI to process your data:\n\n• Voice: your audio recording\n• Images: the photo you select\n• Text: the transcription and your subcategory names\n\nNo amounts, transaction history, or personal info is sent. OpenAI does not use this data for training.";
+"aiConsent.message" = "Some features use artificial intelligence optionally:\n\n• Voice: your audio recording is transcribed\n• Images: the photo is analyzed to extract data\n• Insights: only totals, percentages, and trends are sent\n\nYour individual transactions, transaction history, and personal information are never shared. Data is not used to train AI models.";
 "aiConsent.accept" = "Accept and Enable";
 "aiConsent.privacyPolicy" = "Privacy Policy";
 "aiConsent.inlineHint" = "Your recordings and images are processed with OpenAI. They are not stored permanently.";
@@ -2376,5 +2373,4 @@
 "insights.ruleExpenseUp" = "Your spending went up %@ compared to the previous period.";
 "insights.ruleExpenseDown" = "Nice pace: your spending dropped %@ compared to the previous period.";
 "insights.ruleBudgetRisk" = "%@ is at %d%% of its limit.";
-"insights.ruleStreak" = "You've been tracking expenses for %d days. Great habit!";
 "insights.ruleOptionalHigh" = "Optional spending accounts for %d%% of your total.";

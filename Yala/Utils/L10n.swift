@@ -237,12 +237,6 @@ enum L10n {
         static var highestExpense: String { ls("insights.highestExpense", comment: "") }
         static var highestAvgWeekday: String { ls("insights.highestAvgWeekday", comment: "") }
         static var subscriptions: String { ls("insights.subscriptions", comment: "") }
-        static var streak: String { ls("insights.streak", comment: "") }
-        static var days: String { ls("insights.days", comment: "") }
-        static var streakCaption: String { ls("insights.streakCaption", comment: "") }
-        static func streakDays(_ count: Int) -> String {
-            String(format: ls("insights.streakDays", comment: ""), count)
-        }
         static var quickStats: String { ls("insights.quickStats", comment: "") }
         static var comparison: String { ls("insights.comparison", comment: "") }
         static var weekdayAverage: String { ls("insights.weekdayAverage", comment: "") }
@@ -268,6 +262,7 @@ enum L10n {
         static var analyzingData: String { ls("insights.analyzingData", comment: "") }
         static var activateAITitle: String { ls("insights.activateAITitle", comment: "") }
         static var activateAIBody: String { ls("insights.activateAIBody", comment: "") }
+        static var activateAIDisclaimer: String { ls("insights.activateAIDisclaimer", comment: "") }
         static var activate: String { ls("insights.activate", comment: "") }
         static var notInterested: String { ls("insights.notInterested", comment: "") }
         static var offlineCached: String { ls("insights.offlineCached", comment: "") }
@@ -291,9 +286,6 @@ enum L10n {
         }
         static func ruleBudgetRisk(_ name: String, _ pct: Int) -> String {
             String(format: ls("insights.ruleBudgetRisk", comment: ""), name, pct)
-        }
-        static func ruleStreak(_ days: Int) -> String {
-            String(format: ls("insights.ruleStreak", comment: ""), days)
         }
         static func ruleOptionalHigh(_ pct: Int) -> String {
             String(format: ls("insights.ruleOptionalHigh", comment: ""), pct)

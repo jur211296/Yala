@@ -4,7 +4,7 @@
 //
 //  Calculator for Smart Insights data. Accepts ModelContext for currency conversion.
 //  Computes: period summary, quick stats, nature distribution, weekday spending,
-//  streak, year-over-year, budgets at risk.
+//  year-over-year, budgets at risk.
 //
 
 import Foundation
@@ -18,7 +18,6 @@ struct InsightData {
     let commitments: Commitments
     let weekdaySpending: [WeekdaySpending]
     let natureDistribution: NatureDistribution
-    let streak: Int
     let yearOverYear: YearComparison?
     let ruleBasedInsights: [InsightResult]
 }
@@ -267,9 +266,6 @@ struct InsightsCalculator {
         // Nature Distribution
         let natureDistribution = calculateNatureDistribution(periodTxns, currencyCode: currencyCode, context: context)
 
-        // Streak
-        let streak = calculateStreak(transactions: transactions)
-
         // Year-over-Year
         let yearOverYear = calculateYearOverYear(
             filtered: filtered,
@@ -286,7 +282,6 @@ struct InsightsCalculator {
             quickStats: quickStats,
             commitments: commitments,
             natureDistribution: natureDistribution,
-            streak: streak,
             yearOverYear: yearOverYear,
             topCategories: topCategories,
             prevCashFlow: prevCashFlow,
@@ -299,7 +294,6 @@ struct InsightsCalculator {
             commitments: commitments,
             weekdaySpending: weekdaySpending,
             natureDistribution: natureDistribution,
-            streak: streak,
             yearOverYear: yearOverYear,
             ruleBasedInsights: ruleBasedInsights
         )
@@ -505,36 +499,6 @@ struct InsightsCalculator {
         )
     }
 
-    private static func calculateStreak(transactions: [TransactionItem]) -> Int {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-
-        // Get unique days with transactions, sorted descending
-        let days = Set(transactions.map { calendar.startOfDay(for: $0.date) })
-            .sorted(by: >)
-
-        guard let latestDay = days.first else { return 0 }
-
-        // Streak must include today or yesterday
-        let dayDiff = calendar.dateComponents([.day], from: latestDay, to: today).day ?? 0
-        guard dayDiff <= 1 else { return 0 }
-
-        var streak = 1
-        var previousDay = latestDay
-
-        for day in days.dropFirst() {
-            let diff = calendar.dateComponents([.day], from: day, to: previousDay).day ?? 0
-            if diff == 1 {
-                streak += 1
-                previousDay = day
-            } else {
-                break
-            }
-        }
-
-        return streak
-    }
-
     private static func calculateYearOverYear(
         filtered: [TransactionItem],
         currentExpense: Double,
@@ -575,7 +539,6 @@ struct InsightsCalculator {
         quickStats: QuickStats,
         commitments: Commitments,
         natureDistribution: NatureDistribution,
-        streak: Int,
         yearOverYear: YearComparison?,
         topCategories: [CategorySpendingSummary],
         prevCashFlow: CashFlowSummary,
@@ -632,19 +595,7 @@ struct InsightsCalculator {
             ))
         }
 
-        // Rule 4: Streak milestone
-        if streak >= 7 {
-            let text = AttributedString(L10n.Insights.ruleStreak(streak))
-            insights.append(InsightResult(
-                id: "streak_milestone",
-                icon: "flame.fill",
-                text: text,
-                sentiment: .positive,
-                isProOnly: false
-            ))
-        }
-
-        // Rule 5: Nature distribution shift
+        // Rule 4: Nature distribution shift
         if natureDistribution.optionalPercent > 40 {
             let text = AttributedString(L10n.Insights.ruleOptionalHigh(Int(natureDistribution.optionalPercent)))
             insights.append(InsightResult(

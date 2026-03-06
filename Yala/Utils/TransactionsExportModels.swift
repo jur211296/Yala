@@ -22,7 +22,7 @@ import SwiftData
 /// - greater: solo montos estrictamente mayores al valor indicado.
 /// - less:    solo montos estrictamente menores al valor indicado.
 /// - between: solo montos dentro del rango [min, max] (inclusive).
-enum AmountFilterCondition: Equatable {
+enum AmountFilterCondition: Hashable {
     case any
     case greaterThan(Decimal)
     case lessThan(Decimal)

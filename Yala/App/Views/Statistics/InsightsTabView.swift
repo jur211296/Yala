@@ -98,7 +98,7 @@ struct InsightsTabView: View {
                             InsightCard(insight: InsightResult(
                                 id: "ai_hero",
                                 icon: "sparkles",
-                                text: AttributedString(aiHero),
+                                text: markdownAttributed(aiHero),
                                 sentiment: .neutral,
                                 isProOnly: true
                             ))
@@ -108,7 +108,7 @@ struct InsightsTabView: View {
 
                         // Section 3: Quick Stats Grid
                         if showQuickStats {
-                            quickStatsSection(data.quickStats, summary: data.periodSummary, streak: data.streak)
+                            quickStatsSection(data.quickStats, summary: data.periodSummary)
                         }
 
                         // Section 4: Commitments
@@ -144,7 +144,7 @@ struct InsightsTabView: View {
                                 InsightCard(insight: InsightResult(
                                     id: "ai_fun_fact",
                                     icon: "lightbulb",
-                                    text: AttributedString(funFact),
+                                    text: markdownAttributed(funFact),
                                     sentiment: .positive,
                                     isProOnly: true
                                 ))
@@ -477,7 +477,7 @@ struct InsightsTabView: View {
     // MARK: - Section 3: Quick Stats Grid
 
     @ViewBuilder
-    private func quickStatsSection(_ stats: QuickStats, summary: PeriodSummary, streak: Int) -> some View {
+    private func quickStatsSection(_ stats: QuickStats, summary: PeriodSummary) -> some View {
         VStack(spacing: DS.Spacing.sm) {
             YalaSectionHeader(L10n.Insights.quickStats)
 
@@ -531,15 +531,6 @@ struct InsightsTabView: View {
                         label: L10n.Insights.subscriptions,
                         value: YalaFormatter.currency(value: stats.subscriptionsTotal, currencyCode: defaultCurrencyCode),
                         secondary: L10n.Insights.monthly
-                    )
-                }
-
-                if streak > 3 {
-                    QuickStatCell(
-                        icon: "flame.fill",
-                        label: L10n.Insights.streak,
-                        value: "\(streak) \(L10n.Insights.days)",
-                        secondary: L10n.Insights.streakCaption
                     )
                 }
             }
@@ -722,7 +713,7 @@ struct InsightsTabView: View {
                 InsightCard(insight: InsightResult(
                     id: "ai_\(card.text.prefix(20))",
                     icon: card.icon,
-                    text: AttributedString(card.text),
+                    text: markdownAttributed(card.text),
                     sentiment: sentiment,
                     isProOnly: true
                 ))
@@ -800,6 +791,15 @@ struct InsightsTabView: View {
                 Spacer()
             }
 
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: "lock.shield")
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.tertiary)
+                Text(L10n.Insights.activateAIDisclaimer)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.tertiary)
+            }
+
             HStack(spacing: DS.Spacing.md) {
                 Button(L10n.Insights.activate) {
                     aiDataConsentAccepted = true
@@ -854,6 +854,12 @@ struct InsightsTabView: View {
         .padding(DS.Spacing.lg)
         .background(DS.Semantic.infoBackground, in: RoundedRectangle(cornerRadius: DS.Radius.xl))
         .overlay(RoundedRectangle(cornerRadius: DS.Radius.xl).stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1))
+    }
+
+    // MARK: - Helpers
+
+    private func markdownAttributed(_ text: String) -> AttributedString {
+        (try? AttributedString(markdown: text)) ?? AttributedString(text)
     }
 
 }

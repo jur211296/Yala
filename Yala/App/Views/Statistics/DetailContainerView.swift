@@ -627,19 +627,33 @@ struct DetailContainerView: View {
 
     private func calculateInsightsData() {
         guard selectedTab == .insights else { return }
-        DispatchQueue.main.async {
-            insightsViewModel.calculateInsightsData(
-                transactions: dataViewModel.allTransactions,
-                accounts: dataViewModel.accounts,
-                categories: dataViewModel.categories,
-                budgets: dataViewModel.budgets,
-                scheduledPayments: dataViewModel.scheduledPayments,
-                period: sessionState.selectedPeriod,
-                criteria: trendsViewModel.filterCriteria,
-                currencyCode: defaultCurrencyCode,
-                customRange: sessionState.customDateRange,
-                comparisonMode: sessionState.comparisonMode,
-                context: modelContext
+        insightsViewModel.calculateInsightsData(
+            transactions: dataViewModel.allTransactions,
+            accounts: dataViewModel.accounts,
+            categories: dataViewModel.categories,
+            budgets: dataViewModel.budgets,
+            scheduledPayments: dataViewModel.scheduledPayments,
+            period: sessionState.selectedPeriod,
+            criteria: trendsViewModel.filterCriteria,
+            currencyCode: defaultCurrencyCode,
+            customRange: sessionState.customDateRange,
+            comparisonMode: sessionState.comparisonMode,
+            context: modelContext
+        )
+
+        // Generate AI insights if Pro + consent + online
+        let period = sessionState.selectedPeriod
+        let filterHash = trendsViewModel.filterCriteria.hashValue
+        let txnCount = dataViewModel.allTransactions.count
+        let currency = defaultCurrencyCode
+        let comparison = sessionState.comparisonMode
+        Task {
+            await insightsViewModel.generateAIInsights(
+                period: period,
+                filterHash: filterHash,
+                txnCount: txnCount,
+                currencyCode: currency,
+                comparisonMode: comparison
             )
         }
     }

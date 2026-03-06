@@ -2,7 +2,7 @@
 //  InsightsLLMService.swift
 //  Yala
 //
-//  Service for generating AI-powered insights via OpenAI GPT-4o Mini.
+//  Service for generating AI-powered insights via OpenAI GPT-4.1 Nano.
 //  Follows VoiceTranscriptionService pattern: singleton, lazy OpenAI init, async/throws.
 //
 
@@ -90,9 +90,9 @@ final class InsightsLLMService {
 
     // MARK: - Cache
 
-    /// Build a cache key from period + filter hash + transaction count
-    func cacheKey(period: String, filterHash: Int, txnCount: Int) -> String {
-        "\(period)_\(filterHash)_\(txnCount)"
+    /// Build a cache key from period + filter hash + transaction count + comparison mode
+    func cacheKey(period: String, filterHash: Int, txnCount: Int, comparisonMode: String = "month") -> String {
+        "\(period)_\(filterHash)_\(txnCount)_\(comparisonMode)"
     }
 
     /// Get cached response if valid (< 5 minutes old)
@@ -140,16 +140,28 @@ final class InsightsLLMService {
         let jsonData = try JSONSerialization.data(withJSONObject: aggregatedData)
         let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
 
+        // Extract locale and comparison context from aggregated data
+        let locale = aggregatedData["locale"] as? String ?? "es"
+        let comparisonRef = aggregatedData["comparison_ref"] as? String ?? "periodo anterior"
+        let comparisonLabel = aggregatedData["comparison_label"] as? String ?? ""
+
         let systemPrompt = """
         Eres un asistente financiero personal amigable. Analiza los datos agregados del usuario y genera insights.
+
+        IDIOMA: Responde SIEMPRE en el idioma indicado por "locale" en los datos (\(locale)). Nunca mezcles idiomas.
+
+        COMPARACIONES: Las variaciones en los datos se comparan contra "\(comparisonRef)" (\(comparisonLabel)). Usa esa referencia al mencionar cambios o tendencias.
 
         REGLAS DE VOZ:
         - Tutea al usuario
         - Lidera con el dato, opinion despues
         - Nunca culpar ni juzgar
-        - Proponer, no imponer ("que tal si...?")
         - Celebrar con mesura
-        - Ofrecer accion ("revisamos?", "ajustamos?")
+        - Solo afirmaciones, datos, observaciones y guias. NUNCA preguntas al usuario.
+        - No menciones rachas ni streaks.
+
+        FORMATO:
+        - Usa **negritas** (doble asterisco markdown) para resaltar cifras, porcentajes y datos clave en cada texto.
 
         FORMATO DE RESPUESTA (JSON estricto):
         {
