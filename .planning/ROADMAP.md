@@ -510,8 +510,8 @@ DoD:
 **Plans**: `.planning/SMART-INSIGHTS-DESIGN.md`
 
 **Siguiente (en orden):**
-- [ ] Refactor filtros deferred — RecordsFiltersView estado local, "Aplicar" confirma, "X" descarta
-- [ ] Vista de Smart Insights — Tab en Statistics: KPIs, gráficas, textos (Free: rule-based, Pro: LLM)
+- [x] Refactor filtros deferred — RecordsFiltersView estado local, "Aplicar" confirma, "X" descarta ✅ (81559d6)
+- [x] Vista de Smart Insights — Tab en Statistics: KPIs, gráficas, textos (Free: rule-based, Pro: LLM) ✅
 - [ ] Integrar Smart Insights a lo largo de la app (contextuales)
 
 Incluye:

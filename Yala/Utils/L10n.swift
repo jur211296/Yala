@@ -103,6 +103,18 @@ enum L10n {
         static var spent: String {
             ls("panel.spent", comment: "Spent label for expenses-only mode account cards")
         }
+        static var aiInsightsTitle: String {
+            ls("panel.aiInsightsTitle", comment: "AI insights toggle title")
+        }
+        static var aiInsightsDescription: String {
+            ls("panel.aiInsightsDescription", comment: "AI insights toggle description")
+        }
+        static var dismissInsight: String {
+            ls("panel.dismissInsight", comment: "Dismiss contextual insight accessibility label")
+        }
+        static var aiConsentRequired: String {
+            ls("panel.aiConsentRequired", comment: "Hint when AI consent not accepted")
+        }
     }
 
     // MARK: - Balance Status

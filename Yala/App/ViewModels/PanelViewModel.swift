@@ -727,7 +727,7 @@ final class PanelViewModel {
 
     /// Builds FilterCriteria from SessionState for use with FilterService.
     /// Accounts NOT included — pre-filtered by eligibleAccountIDs (handles excludeFromStatistics).
-    private func buildFilterCriteria(
+    func buildFilterCriteria(
         dateInterval: DateInterval? = nil,
         includeCategories: Bool = true
     ) -> FilterCriteria {

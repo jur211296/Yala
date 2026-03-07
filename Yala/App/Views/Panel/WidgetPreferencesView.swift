@@ -11,6 +11,15 @@ struct WidgetPreferencesView: View {
     @Bindable var viewModel: PanelViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
+    @AppStorage("panelShowAIInsight") private var showAIInsight: Bool = true
+
+    private var isProUser: Bool {
+        FeatureGateService.shared.canAccess(.smartInsightsAI)
+    }
+
+    private var hasAIConsent: Bool {
+        UserDefaults.standard.bool(forKey: "aiDataConsentAccepted")
+    }
 
     var body: some View {
         NavigationStack {
@@ -21,6 +30,43 @@ struct WidgetPreferencesView: View {
                         .foregroundStyle(.secondary)
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 8, trailing: 0))
+                }
+
+                // AI Observations toggle
+                Section {
+                    HStack(spacing: DS.Spacing.md) {
+                        Image(systemName: "sparkles")
+                            .font(DS.Typography.title)
+                            .foregroundStyle(.thAccent)
+                            .frame(width: 32, height: 32)
+                            .background(Circle().fill(theme.accent.opacity(0.1)))
+
+                        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                            Text(L10n.Panel.aiInsightsTitle)
+                                .font(DS.Typography.bodyBold)
+                            if isProUser && !hasAIConsent {
+                                Text(L10n.Panel.aiConsentRequired)
+                                    .font(DS.Typography.captionSmall)
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                Text(L10n.Panel.aiInsightsDescription)
+                                    .font(DS.Typography.captionSmall)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        Spacer()
+
+                        if isProUser {
+                            Toggle(L10n.Panel.aiInsightsTitle, isOn: $showAIInsight)
+                                .labelsHidden()
+                                .disabled(!hasAIConsent)
+                        } else {
+                            ProBadge(size: .small)
+                        }
+                    }
+                    .padding(.vertical, DS.Spacing.xs)
+                    .listRowBackground(theme.card)
                 }
 
                 Section {

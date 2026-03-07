@@ -61,6 +61,12 @@ struct PanelView: View {
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
     @AppStorage("showSiriTip") private var showSiriTip: Bool = true
+    @AppStorage("panelShowAIInsight") private var showAIInsight: Bool = true
+
+    /// Contextual AI insight state
+    @State private var contextualInsight: String?
+    @State private var isLoadingInsight = false
+    @State private var contextualInsightDismissed = false
 
     /// Voice recording sheet
     @State private var showVoiceRecording = false
@@ -262,6 +268,7 @@ struct PanelView: View {
                     }
 
                     accountsSection
+                    contextualInsightSection
                     totalBalanceSection
                 }
                 .padding(.horizontal, DS.Adaptive.horizontalPadding(sizeClass))
@@ -269,6 +276,9 @@ struct PanelView: View {
                 .padding(.bottom, DS.Spacing.xxxl)
                 // Force complete re-render when formatting settings change
                 .id(sessionState.formattingVersion)
+                .task(id: insightTaskKey) {
+                    await loadContextualInsight()
+                }
             }
             .refreshable {
                 await refreshData()
@@ -477,6 +487,133 @@ struct PanelView: View {
                     }
                 )
             }
+        }
+    }
+
+    // MARK: - Contextual AI Insight
+
+    /// Stable task key that triggers re-computation when period or filters change.
+    /// Must be deterministic (no Hasher — its seed changes per launch).
+    private var insightTaskKey: String {
+        let account = viewModel.selectedAccountID.map { "\($0)" } ?? "all"
+        let cats = SessionState.shared.selectedCategoryIDs.map { "\($0)" }.sorted().joined(separator: ",")
+        let subs = viewModel.selectedSubcategoryIDs.map { "\($0)" }.sorted().joined(separator: ",")
+        return "\(viewModel.selectedPeriod.rawValue)_\(account)_\(cats)_\(subs)"
+    }
+
+    @ViewBuilder
+    private var contextualInsightSection: some View {
+        let isPro = FeatureGateService.shared.canAccess(.smartInsightsAI)
+        let hasConsent = UserDefaults.standard.bool(forKey: "aiDataConsentAccepted")
+        let shouldShow = isPro && hasConsent && showAIInsight && !contextualInsightDismissed && transactions.count >= 5
+
+        if shouldShow && isLoadingInsight {
+            HStack(spacing: DS.Spacing.md) {
+                ProgressView()
+                Text("...")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(DS.Spacing.lg)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+            .transition(.asymmetric(
+                insertion: .scale(scale: 0.95).combined(with: .opacity),
+                removal: .scale(scale: 0.95).combined(with: .opacity)
+            ))
+        } else if shouldShow, let insight = contextualInsight {
+            ContextualInsightCard(
+                text: insight,
+                onDismiss: {
+                    dsWithAnimation(reduceMotion) {
+                        contextualInsightDismissed = true
+                    }
+                }
+            )
+            .transition(.asymmetric(
+                insertion: .scale(scale: 0.95).combined(with: .opacity),
+                removal: .scale(scale: 0.95).combined(with: .opacity)
+            ))
+        }
+    }
+
+    private func loadContextualInsight() async {
+        // Reset dismiss state when task key changes (period/filter change)
+        contextualInsightDismissed = false
+        contextualInsight = nil
+
+        let isPro = FeatureGateService.shared.canAccess(.smartInsightsAI)
+        let hasConsent = UserDefaults.standard.bool(forKey: "aiDataConsentAccepted")
+        let isOnline = NetworkMonitor.shared.isConnected
+
+        guard isPro, hasConsent, isOnline, transactions.count >= 5 else {
+            return
+        }
+
+        let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCodeRaw) ?? .pen
+        let txnCount = transactions.count
+        let cacheKey = "panel_\(insightTaskKey)_\(txnCount)"
+
+        // Calculate InsightData
+        let criteria = viewModel.buildFilterCriteria(dateInterval: viewModel.panelDateInterval)
+        let data = InsightsCalculator.calculate(
+            transactions: transactions,
+            accounts: accounts,
+            categories: categories,
+            budgets: budgets,
+            scheduledPayments: scheduledPayments,
+            period: viewModel.selectedPeriod,
+            criteria: criteria,
+            currencyCode: preferredCurrency.rawValue,
+            customRange: viewModel.customDateRange,
+            context: modelContext
+        )
+
+        // Build lightweight aggregated dict (subset — no filter context, no year-over-year)
+        var aggregated: [String: Any] = [
+            "currency": preferredCurrency.rawValue,
+            "locale": Locale.current.language.languageCode?.identifier ?? "es",
+            "spending_total_variation": data.periodSummary.expenseVariation.map { "\(Int($0))%" } ?? "N/A",
+            "income_variation": data.periodSummary.incomeVariation.map { "\(Int($0))%" } ?? "N/A",
+            "count": data.periodSummary.transactionCount,
+            "daily_avg": Int(data.quickStats.dailyAverage)
+        ]
+
+        if let top = data.quickStats.topCategory {
+            aggregated["top_category"] = ["name": top.category.name, "pct": Int(top.percentage)]
+        }
+
+        let nature = data.natureDistribution
+        if nature.total > 0 {
+            aggregated["nature_split"] = [
+                "essential": Int(nature.essentialPercent),
+                "priority": Int(nature.priorityPercent),
+                "optional": Int(nature.optionalPercent)
+            ]
+        }
+
+        if !data.commitments.budgetsAtRisk.isEmpty {
+            aggregated["budgets_at_risk"] = data.commitments.budgetsAtRisk.map {
+                ["name": $0.name, "usage_pct": Int($0.usagePercent)]
+            }
+        }
+
+        // Loading state only covers the async LLM call
+        isLoadingInsight = true
+        defer { isLoadingInsight = false }
+
+        do {
+            let result = try await InsightsLLMService.shared.generateContextualInsight(
+                aggregatedData: aggregated,
+                cacheKey: cacheKey
+            )
+
+            guard !Task.isCancelled else { return }
+            contextualInsight = result
+        } catch {
+            #if DEBUG
+            print("PanelView: Contextual insight error: \(error)")
+            #endif
         }
     }
 
@@ -1439,6 +1576,45 @@ private struct PanelSessionObservers: ViewModifier {
             .onChange(of: sessionState.customDateRange) {
                 recalculateData()
             }
+    }
+}
+
+// MARK: - Contextual Insight Card
+
+private struct ContextualInsightCard: View {
+    let text: String
+    let onDismiss: () -> Void
+
+    var body: some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "sparkles")
+                .font(.title2)
+                .foregroundStyle(.tint)
+                .frame(width: 36, height: 36)
+
+            Text(markdownAttributed(text))
+                .font(DS.Typography.caption)
+                .foregroundStyle(.primary)
+                .lineLimit(3)
+
+            Spacer(minLength: 0)
+
+            Button {
+                onDismiss()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Panel.dismissInsight)
+        }
+        .padding(DS.Spacing.lg)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+    }
+
+    private func markdownAttributed(_ text: String) -> AttributedString {
+        (try? AttributedString(markdown: text)) ?? AttributedString(text)
     }
 }
 

@@ -554,6 +554,10 @@
 "panel.fabImage" = "Immagine";
 "panel.fabManual" = "Manuale";
 "panel.spent" = "Speso";
+"panel.aiInsightsTitle" = "Osservazioni IA";
+"panel.aiInsightsDescription" = "Commenti intelligenti sulle tue finanze";
+"panel.dismissInsight" = "Chiudi osservazione";
+"panel.aiConsentRequired" = "Attiva l'IA in Impostazioni → Osservazioni IA";
 
 "widget.today" = "Oggi";
 

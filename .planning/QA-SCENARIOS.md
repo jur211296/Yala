@@ -5045,3 +5045,42 @@ Para cada tema verificar:
 - [ ] Tap en fun fact bloqueado → abre UpgradePromptSheet
 - [ ] Texto redactado con placeholder
 - [ ] Lock icon + ProBadge visibles
+
+## Sección 44: Contextual AI Insight en PanelView
+
+### 44.1 Visibilidad — Pro + Consent + ≥5 txns
+- [ ] Pro + consent aceptado + ≥5 transacciones en periodo → card aparece entre cuentas y balance
+- [ ] Card muestra icono sparkles + texto (1 oración con **negritas**) + ProBadge + botón X
+- [ ] Free user → no se muestra nada (zero overhead)
+- [ ] Pro sin consent → no se muestra nada
+- [ ] < 5 transacciones en periodo → no se muestra nada
+- [ ] Sin conexión → no se muestra nada
+
+### 44.2 Dismiss y reset
+- [ ] Tap X → card desaparece con animación scale+opacity
+- [ ] Cambiar periodo → card reaparece (dismiss se resetea)
+- [ ] Cambiar filtros (cuenta, categoría) → card reaparece con nuevo insight
+
+### 44.3 Loading state
+- [ ] Primera carga muestra shimmer/spinner breve
+- [ ] Cache warm (< 30 min) → aparece instantáneo sin spinner
+
+### 44.4 Cache contextual (30 min TTL)
+- [ ] Mismo periodo + filtros + txnCount → usa cache (no llama API)
+- [ ] Cache expira después de 30 min → nueva llamada API
+- [ ] Cache separado del cache de 5 min de InsightsTabView
+
+### 44.5 Edge cases
+- [ ] LLM responde {"comment": null} → no se muestra card
+- [ ] Rate limited → no se muestra card (sin error visible)
+- [ ] Error de red → no se muestra card (sin error visible)
+- [ ] Agregar transacciones hasta ≥5 → card aparece al volver al panel
+
+### 44.6 Widget Preferences — Toggle "Observaciones con IA"
+- [ ] Toggle visible en WidgetPreferencesView antes de la sección de widgets
+- [ ] Pro + consent → toggle funcional, ON por defecto
+- [ ] Pro sin consent → toggle deshabilitado + hint "Activa IA en Ajustes"
+- [ ] Free → ProBadge en lugar de toggle (incentivo upgrade)
+- [ ] Toggle OFF → card no aparece en PanelView
+- [ ] Toggle ON → card aparece si se cumplen demás condiciones
+- [ ] Cambio persiste entre sesiones (@AppStorage "panelShowAIInsight")

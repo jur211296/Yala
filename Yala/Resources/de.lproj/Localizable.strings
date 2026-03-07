@@ -554,6 +554,10 @@
 "panel.fabImage" = "Bild";
 "panel.fabManual" = "Manuell";
 "panel.spent" = "Ausgegeben";
+"panel.aiInsightsTitle" = "KI-Beobachtungen";
+"panel.aiInsightsDescription" = "Intelligente Kommentare zu deinen Finanzen";
+"panel.dismissInsight" = "Beobachtung schließen";
+"panel.aiConsentRequired" = "Aktiviere KI in Einstellungen → KI-Beobachtungen";
 
 "widget.today" = "Heute";
 

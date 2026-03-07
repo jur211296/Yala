@@ -257,5 +257,109 @@ final class InsightsLLMService {
     /// Invalidate all cached responses
     func invalidateCache() {
         cache.removeAll()
+        contextualCache.removeAll()
+    }
+
+    // MARK: - Contextual Insight (PanelView)
+
+    private static let contextualFocusAngles = [
+        "variación de gasto vs periodo anterior",
+        "categoría o subcategoría con mayor cambio",
+        "distribución entre esencial/prioritario/opcional",
+        "presupuestos en riesgo o bien encaminados",
+        "ingreso vs gasto del periodo",
+        "promedio diario comparado con lo habitual",
+        "dato sorprendente o inusual en los datos"
+    ]
+
+    @ObservationIgnored
+    private var lastContextualCallTime: Date?
+
+    @ObservationIgnored
+    private var contextualCache: [String: ContextualCacheEntry] = [:]
+
+    private struct ContextualCacheEntry {
+        let text: String
+        let timestamp: Date
+    }
+
+    /// Generate a single-sentence contextual insight for PanelView.
+    /// Internal 30-min TTL cache — caller only provides cacheKey.
+    func generateContextualInsight(
+        aggregatedData: [String: Any],
+        cacheKey key: String
+    ) async throws -> String? {
+        guard let client = openAI else {
+            throw InsightsLLMError.noAPIKey
+        }
+
+        // Rate limit: 5s between contextual calls (independent from main insights)
+        if let lastCall = lastContextualCallTime,
+           Date().timeIntervalSince(lastCall) < 5 {
+            throw InsightsLLMError.rateLimited
+        }
+
+        // Evict expired contextual entries (30 min TTL)
+        let now = Date()
+        contextualCache = contextualCache.filter { now.timeIntervalSince($0.value.timestamp) < 1800 }
+
+        // Check cache (eviction above guarantees all entries are < 30 min)
+        if let entry = contextualCache[key] {
+            return entry.text
+        }
+
+        lastContextualCallTime = Date()
+
+        // Build JSON payload
+        let jsonData = try JSONSerialization.data(withJSONObject: aggregatedData)
+        let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
+
+        let locale = aggregatedData["locale"] as? String ?? "es"
+
+        // Rotate focus angle daily so insights don't repeat the same pattern
+        let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 1
+        let focusHint = Self.contextualFocusAngles[dayOfYear % Self.contextualFocusAngles.count]
+
+        let systemPrompt = """
+        Eres un asistente financiero personal. Genera UNA SOLA oración corta sobre las finanzas del usuario.
+        IDIOMA: Responde SIEMPRE en el idioma indicado por locale (\(locale)). Tutea, lidera con el dato, nunca juzgar, nunca preguntas.
+        ENFOQUE HOY: prioriza observaciones sobre "\(focusHint)". Si no hay dato relevante para ese enfoque, elige otro.
+        JSON estricto: {"comment": "una oración"} o {"comment": null} si no hay nada interesante.
+        Usa **negritas** (doble asterisco markdown) para cifras clave.
+        """
+
+        let userMessage = "Datos financieros del periodo:\n\(jsonString)"
+
+        let query = ChatQuery(
+            messages: [
+                .init(role: .system, content: systemPrompt)!,
+                .init(role: .user, content: userMessage)!
+            ],
+            model: .gpt4_1_nano,
+            responseFormat: .jsonObject
+        )
+
+        do {
+            let result = try await client.chats(query: query)
+
+            guard let content = result.choices.first?.message.content,
+                  let data = content.data(using: .utf8),
+                  let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                throw InsightsLLMError.parseFailed
+            }
+
+            // comment can be null → no insight
+            let comment = dict["comment"] as? String
+
+            if let comment {
+                contextualCache[key] = ContextualCacheEntry(text: comment, timestamp: Date())
+            }
+
+            return comment
+        } catch let error as InsightsLLMError {
+            throw error
+        } catch {
+            throw InsightsLLMError.networkError(error)
+        }
     }
 }
