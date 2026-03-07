@@ -13,8 +13,8 @@ Version: 1.2 (en desarrollo)
 Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
-Status: **Fase 12 en progreso** — Refactor FilterControlBar compartido
-Last activity: 2026-03-06 — Extract shared FilterControlBar, eliminate ~790 duplicate lines (7f01298)
+Status: **Fase 12 en progreso** — Smart Insights contextuales en PanelView
+Last activity: 2026-03-07 — Contextual AI insight card in PanelView (7fcdc22)
 
 ### Apple Review History (V1.0)
 
@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-07] 7fcdc22 feat: add contextual AI insight card to PanelView
 - [2026-03-06] 7f01298 refactor: extract shared FilterControlBar — eliminate ~790 duplicate lines
 - [2026-03-06] f1ea108 fix: restore exclude mode filters — batch commit + AI filter context + Insights layout
 - [2026-03-06] 38c2f0d docs: update STATE.md with OpenAI compliance fix
@@ -632,14 +633,14 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 
 ## Session Continuity
 
-Last session: 2026-03-06
-Stopped at: RF-4 completado — FilterControlBar compartido extraído (7f01298)
-Next step: Siguiente item de Fase 12 (ver ROADMAP.md)
+Last session: 2026-03-07
+Stopped at: Contextual AI insight card en PanelView (7fcdc22)
+Next step: Siguiente item de Fase 12 — más integración contextual de Smart Insights (ver ROADMAP.md)
 Resume context:
-- FilterControlBar<VM: Filterable & Observable, PeriodView, TrailingContent> reemplaza ~170 líneas duplicadas en cada tab
-- buildAccountChips/buildTagChips/buildNatureChips en FilterChipHelper.swift
-- InsightsTabView: controlBar visible incluso con 0 transacciones filtradas
-- Set iteration estabilizada con sorted() para currencies y natures
-- CategoriesTabView: selectedNature reset via .onChange(of: hasActiveFilters) en lugar de clearAllFilters()
-- Pre-existing test failure: criteriaActiveFilterCountIsCorrect (searchText counted vs test expects not)
+- ContextualInsightCard entre accountsSection y totalBalanceSection en PanelView
+- InsightsLLMService.generateContextualInsight() con cache 30 min, rate limiter independiente
+- Daily focus rotation (7 ángulos) para evitar insights repetitivos
+- Toggle en WidgetPreferencesView: Pro+consent→funcional, Pro sin consent→disabled+hint, Free→ProBadge
+- .task(id:) en VStack principal (no en conditional view — SwiftUI no monta .task en Groups vacíos)
+- Pre-existing test failure: criteriaActiveFilterCountIsCorrect
 - Build pasa, audit limpio, tests relevantes pasan
