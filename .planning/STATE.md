@@ -13,8 +13,8 @@ Version: 1.2 (en desarrollo)
 Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
-Status: **Fase 12 en progreso** — Smart Insights personalización (tono + enfoque + tips)
-Last activity: 2026-03-07 — Personalización Smart Insights: tone/focus/tips
+Status: **Fase 12 en progreso** — Smart Insights personalización completada
+Last activity: 2026-03-07 — Smart Insights personalization: tone/focus/tips (275392d)
 
 ### Apple Review History (V1.0)
 
@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-07] 275392d feat: add Smart Insights personalization — tone, focus, and actionable tips
 - [2026-03-07] 7fcdc22 feat: add contextual AI insight card to PanelView
 - [2026-03-06] 7f01298 refactor: extract shared FilterControlBar — eliminate ~790 duplicate lines
 - [2026-03-06] f1ea108 fix: restore exclude mode filters — batch commit + AI filter context + Insights layout
