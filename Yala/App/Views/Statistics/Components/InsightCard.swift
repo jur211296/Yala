@@ -27,9 +27,23 @@ struct InsightCard: View {
                 .foregroundStyle(accentColor)
                 .frame(width: 28)
 
-            Text(insight.text)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.primary)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(insight.text)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.primary)
+
+                if let tip = insight.tip {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "lightbulb")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                        Text(tip)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.top, DS.Spacing.xs)
+                }
+            }
 
             Spacer(minLength: 0)
         }

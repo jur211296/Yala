@@ -2385,8 +2385,39 @@
 "insights.restoreDefaults" = "Standardwerte wiederherstellen";
 
 // MARK: - Insights Rule-Based Templates
-"insights.ruleTopCategory" = "%@ macht %d%% deiner Ausgaben in diesem Zeitraum aus.";
-"insights.ruleExpenseUp" = "Deine Ausgaben sind um %@ gegenüber dem Vorzeitraum gestiegen.";
-"insights.ruleExpenseDown" = "Gutes Tempo: Deine Ausgaben sind um %@ gegenüber dem Vorzeitraum gesunken.";
-"insights.ruleBudgetRisk" = "%@ ist bei %d%% seines Limits.";
-"insights.ruleOptionalHigh" = "Optionale Ausgaben machen %d%% deiner Gesamtausgaben aus.";
+// Rule-based insights — tone variants
+"insights.ruleTopCategory.normal" = "%@ macht %d%% deiner Ausgaben in diesem Zeitraum aus.";
+"insights.ruleTopCategory.considerate" = "%@ macht %d%% deiner Ausgaben aus — das ist völlig okay, wenn es dir wichtig ist.";
+"insights.ruleTopCategory.sarcastic" = "%@ scheint dein Liebling zu sein: %d%% deiner Ausgaben.";
+"insights.ruleExpenseUp.normal" = "Deine Ausgaben sind um %@ gegenüber dem Vorzeitraum gestiegen.";
+"insights.ruleExpenseUp.considerate" = "Deine Ausgaben sind um %@ gestiegen — manche Monate sind eben so.";
+"insights.ruleExpenseUp.sarcastic" = "Dein Geldbeutel hatte ein Workout: Ausgaben um %@ rauf.";
+"insights.ruleExpenseDown.normal" = "Gutes Tempo: Deine Ausgaben sind um %@ gegenüber dem Vorzeitraum gesunken.";
+"insights.ruleExpenseDown.considerate" = "Gut gemacht: Du hast deine Ausgaben um %@ gesenkt — die Mühe zeigt sich.";
+"insights.ruleExpenseDown.sarcastic" = "Dein Konto atmet auf: Ausgaben um %@ runter.";
+"insights.ruleBudgetRisk.normal" = "%@ ist bei %d%% seines Limits.";
+"insights.ruleBudgetRisk.considerate" = "%@ ist bei %d%% seines Limits — es ist noch Spielraum da.";
+"insights.ruleBudgetRisk.sarcastic" = "%@ bei %d%% des Limits — heiß unterwegs, aber noch nicht geplatzt.";
+"insights.ruleOptionalHigh.normal" = "Optionale Ausgaben machen %d%% deiner Gesamtausgaben aus.";
+"insights.ruleOptionalHigh.considerate" = "Optionale Ausgaben liegen bei %d%% — lohnt sich, in Ruhe reinzuschauen.";
+"insights.ruleOptionalHigh.sarcastic" = "Die kleinen Freuden machen %d%% aus. Kein Urteil, nur gesagt.";
+// Tips
+"insights.tipTopCategory" = "Prüfe, ob Ausgaben in %@ einmalig waren oder ein Muster bilden";
+"insights.tipExpenseUp" = "Vergleiche mit deinem sparsamsten Monat, um Unterschiede zu sehen";
+"insights.tipBudgetRisk" = "Es sind noch Tage übrig — versuche bei %@ den Rest zu bremsen";
+"insights.tipOptionalHigh" = "Schau dir deine optionalen Ausgaben an und überlege, was verschiebbar ist";
+// Tone & Focus settings
+"insights.tone.normal" = "Normal";
+"insights.tone.considerate" = "Rücksichtsvoll";
+"insights.tone.sarcastic" = "Sarkastisch";
+"insights.tone.normal.preview" = "Restaurants stiegen um 32% vs. letzten Monat";
+"insights.tone.considerate.preview" = "Manchmal muss man auswärts essen — Restaurants stiegen um 32%";
+"insights.tone.sarcastic.preview" = "Die Küche scheint Urlaub zu haben — Restaurants +32%";
+"insights.focus.balanced" = "Ausgewogen";
+"insights.focus.saver" = "Sparsam";
+"insights.focus.cautious" = "Vorsichtig";
+"insights.focus.balanced.desc" = "Gesamtüberblick deiner Finanzen";
+"insights.focus.saver.desc" = "Sparmöglichkeiten priorisieren";
+"insights.focus.cautious.desc" = "Frühwarnungen und gefährdete Budgets";
+"insights.toneLabel" = "Ton";
+"insights.focusLabel" = "Fokus";

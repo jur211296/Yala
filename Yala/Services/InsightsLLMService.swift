@@ -21,6 +21,7 @@ struct LLMInsightCard {
     let icon: String
     let text: String
     let sentiment: String  // "positive", "neutral", "attention"
+    let tip: String?
 }
 
 // MARK: - LLM Error
@@ -91,8 +92,8 @@ final class InsightsLLMService {
     // MARK: - Cache
 
     /// Build a cache key from period + filter hash + transaction count + comparison mode
-    func cacheKey(period: String, filterHash: Int, txnCount: Int, comparisonMode: String = "month") -> String {
-        "\(period)_\(filterHash)_\(txnCount)_\(comparisonMode)"
+    func cacheKey(period: String, filterHash: Int, txnCount: Int, comparisonMode: String = "month", tone: InsightTone = .normal, focus: InsightFocus = .balanced) -> String {
+        "\(period)_\(filterHash)_\(txnCount)_\(comparisonMode)_\(tone.rawValue)_\(focus.rawValue)"
     }
 
     /// Get cached response if valid (< 5 minutes old)
@@ -113,7 +114,9 @@ final class InsightsLLMService {
     /// - Returns: LLMInsightResponse with hero text, cards, and optional fun fact
     func generateInsights(
         aggregatedData: [String: Any],
-        cacheKey key: String
+        cacheKey key: String,
+        tone: InsightTone = .normal,
+        focus: InsightFocus = .balanced
     ) async throws -> LLMInsightResponse {
         guard let client = openAI else {
             throw InsightsLLMError.noAPIKey
@@ -168,6 +171,9 @@ final class InsightsLLMService {
             filterContext = ""
         }
 
+        let toneInstruction = Self.toneInstruction(for: tone)
+        let focusInstruction = Self.focusInstruction(for: focus)
+
         let systemPrompt = """
         Eres un asistente financiero personal amigable. Analiza los datos agregados del usuario y genera insights.
 
@@ -182,7 +188,7 @@ final class InsightsLLMService {
         - Celebrar con mesura
         - Solo afirmaciones, datos, observaciones y guias. NUNCA preguntas al usuario.
         - No menciones rachas ni streaks.
-
+        \(toneInstruction)\(focusInstruction)
         FORMATO:
         - Usa **negritas** (doble asterisco markdown) para resaltar cifras, porcentajes y datos clave en cada texto.
 
@@ -190,11 +196,12 @@ final class InsightsLLMService {
         {
           "hero": "Texto principal del insight mas relevante (1-2 oraciones)",
           "cards": [
-            {"icon": "SF Symbol name", "text": "Texto del insight", "sentiment": "positive|neutral|attention"}
+            {"icon": "SF Symbol name", "text": "Texto del insight", "sentiment": "positive|neutral|attention", "tip": "optional actionable tip"}
           ],
           "funFact": "Dato curioso opcional combinando datos de formas inesperadas"
         }
 
+        Para cada card, si hay un tip practico y concreto, incluyelo en "tip". Solo tips utiles y especificos, nunca obvios. Si no hay tip relevante, omite el campo.
         Genera entre 3 y 6 cards. El hero debe ser el insight mas impactante.
         Usa iconos SF Symbols validos: chart.line.uptrend.xyaxis, arrow.down.right, flame.fill, cart, fork.knife, etc.
         """
@@ -245,7 +252,8 @@ final class InsightsLLMService {
                 guard let text = cardDict["text"] as? String else { continue }
                 let icon = cardDict["icon"] as? String ?? "sparkles"
                 let sentiment = cardDict["sentiment"] as? String ?? "neutral"
-                cards.append(LLMInsightCard(icon: icon, text: text, sentiment: sentiment))
+                let tip = cardDict["tip"] as? String
+                cards.append(LLMInsightCard(icon: icon, text: text, sentiment: sentiment, tip: tip))
             }
         }
 
@@ -258,6 +266,30 @@ final class InsightsLLMService {
     func invalidateCache() {
         cache.removeAll()
         contextualCache.removeAll()
+    }
+
+    // MARK: - Tone & Focus Instructions
+
+    private static func toneInstruction(for tone: InsightTone) -> String {
+        switch tone {
+        case .normal:
+            return ""
+        case .considerate:
+            return "\nESTILO: Empatico y comprensivo. Reconoce esfuerzos. Suaviza datos negativos con contexto ('entiendo que...', 'es normal que...'). Siempre con respeto y sin juzgar.\n"
+        case .sarcastic:
+            return "\nESTILO: Humor carinoso y ligero. Ironia amable, NUNCA cruel ni hiriente. Metaforas cotidianas divertidas. Datos precisos aunque el tono sea jugueton. Siempre con carino.\n"
+        }
+    }
+
+    private static func focusInstruction(for focus: InsightFocus) -> String {
+        switch focus {
+        case .balanced:
+            return ""
+        case .saver:
+            return "\nENFOQUE: Prioriza oportunidades de ahorro. Compara con periodos de menor gasto. Celebra reducciones. Sugiere areas donde optimizar.\n"
+        case .cautious:
+            return "\nENFOQUE: Alertas tempranas. Prioriza presupuestos en riesgo y proyecciones de sobregasto. Destaca tendencias preocupantes antes de que se consoliden.\n"
+        }
     }
 
     // MARK: - Contextual Insight (PanelView)
@@ -287,7 +319,9 @@ final class InsightsLLMService {
     /// Internal 30-min TTL cache — caller only provides cacheKey.
     func generateContextualInsight(
         aggregatedData: [String: Any],
-        cacheKey key: String
+        cacheKey key: String,
+        tone: InsightTone = .normal,
+        focus: InsightFocus = .balanced
     ) async throws -> String? {
         guard let client = openAI else {
             throw InsightsLLMError.noAPIKey
@@ -320,11 +354,14 @@ final class InsightsLLMService {
         let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 1
         let focusHint = Self.contextualFocusAngles[dayOfYear % Self.contextualFocusAngles.count]
 
+        let toneInstruction = Self.toneInstruction(for: tone)
+        let focusInstruction = Self.focusInstruction(for: focus)
+
         let systemPrompt = """
         Eres un asistente financiero personal. Genera UNA SOLA oración corta sobre las finanzas del usuario.
         IDIOMA: Responde SIEMPRE en el idioma indicado por locale (\(locale)). Tutea, lidera con el dato, nunca juzgar, nunca preguntas.
         ENFOQUE HOY: prioriza observaciones sobre "\(focusHint)". Si no hay dato relevante para ese enfoque, elige otro.
-        JSON estricto: {"comment": "una oración"} o {"comment": null} si no hay nada interesante.
+        \(toneInstruction)\(focusInstruction)JSON estricto: {"comment": "una oración"} o {"comment": null} si no hay nada interesante.
         Usa **negritas** (doble asterisco markdown) para cifras clave.
         """
 

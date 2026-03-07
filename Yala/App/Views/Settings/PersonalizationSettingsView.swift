@@ -24,8 +24,12 @@ struct PersonalizationSettingsView: View {
     @AppStorage("decimalPlaces") private var decimalPlaces: Int = 0
     @AppStorage("currencyDisplayFormat") private var currencyDisplayFormat: String = "code"  // "code" or "symbol"
     @AppStorage("autoFocusField") private var autoFocusField: String = "none"
+    @AppStorage(InsightTone.storageKey) private var insightsToneRaw: String = InsightTone.normal.rawValue
+    @AppStorage(InsightFocus.storageKey) private var insightsFocusRaw: String = InsightFocus.balanced.rawValue
 
     @State private var showingPeriodPicker = false
+    @State private var showingTonePicker = false
+    @State private var showingFocusPicker = false
     @State private var showingAutoFocusPicker = false
     @State private var showingDecimalsPicker = false
     @State private var showingCurrencyFormatPicker = false
@@ -75,6 +79,14 @@ struct PersonalizationSettingsView: View {
     private var currentLanguageDisplayName: String {
         guard let code = LanguageManager.overrideLanguage else { return "" }
         return LanguageManager.supportedLanguages.first { $0.code == code }?.nativeName ?? code
+    }
+
+    private var selectedTone: InsightTone {
+        InsightTone(rawValue: insightsToneRaw) ?? .normal
+    }
+
+    private var selectedFocus: InsightFocus {
+        InsightFocus(rawValue: insightsFocusRaw) ?? .balanced
     }
 
     var body: some View {
@@ -429,36 +441,99 @@ struct PersonalizationSettingsView: View {
                     VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                         YalaSectionHeader(L10n.Insights.title)
 
-                        Button {
-                            showingSmartInsightsSettings = true
-                        } label: {
-                            HStack {
-                                Image(systemName: "sparkles")
-                                    .font(DS.Typography.body)
-                                    .foregroundStyle(.thAccent)
-                                    .frame(width: 28)
+                        VStack(spacing: 0) {
+                            // Tone selector
+                            Button {
+                                showingTonePicker = true
+                            } label: {
+                                HStack {
+                                    Text(L10n.Insights.toneLabel)
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.thPrimaryText)
 
-                                Text(L10n.Insights.title)
-                                    .font(DS.Typography.body)
-                                    .foregroundStyle(.thPrimaryText)
+                                    Spacer()
 
-                                Spacer()
+                                    Text(selectedTone.displayName)
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.secondary)
 
-                                Image(systemName: "chevron.right")
-                                    .font(DS.Typography.labelSmall.weight(.medium))
-                                    .foregroundStyle(.tertiary)
+                                    Image(systemName: "chevron.right")
+                                        .font(DS.Typography.labelSmall.weight(.medium))
+                                        .foregroundStyle(.tertiary)
+                                }
+                                .padding(.horizontal, DS.FormRow.paddingH)
+                                .padding(.vertical, DS.FormRow.paddingV)
+                                .contentShape(Rectangle())
                             }
-                            .padding(.horizontal, DS.FormRow.paddingH)
-                            .padding(.vertical, DS.FormRow.paddingV)
-                            .background(.thCard)
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                            )
-                            .contentShape(Rectangle())
+                            .buttonStyle(.plain)
+
+                            Divider().padding(.leading, DS.FormRow.paddingH)
+
+                            // Focus selector
+                            Button {
+                                showingFocusPicker = true
+                            } label: {
+                                HStack {
+                                    Text(L10n.Insights.focusLabel)
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.thPrimaryText)
+
+                                    Spacer()
+
+                                    Text(selectedFocus.displayName)
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.secondary)
+
+                                    Image(systemName: "chevron.right")
+                                        .font(DS.Typography.labelSmall.weight(.medium))
+                                        .foregroundStyle(.tertiary)
+                                }
+                                .padding(.horizontal, DS.FormRow.paddingH)
+                                .padding(.vertical, DS.FormRow.paddingV)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+
+                            Divider().padding(.leading, DS.FormRow.paddingH)
+
+                            // Smart Insights settings
+                            Button {
+                                showingSmartInsightsSettings = true
+                            } label: {
+                                HStack {
+                                    Image(systemName: "sparkles")
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.thAccent)
+                                        .frame(width: 28)
+
+                                    Text(L10n.Insights.title)
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.thPrimaryText)
+
+                                    Spacer()
+
+                                    Image(systemName: "chevron.right")
+                                        .font(DS.Typography.labelSmall.weight(.medium))
+                                        .foregroundStyle(.tertiary)
+                                }
+                                .padding(.horizontal, DS.FormRow.paddingH)
+                                .padding(.vertical, DS.FormRow.paddingV)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
+                        .background(.thCard)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                        )
+                    }
+                    .sheet(isPresented: $showingTonePicker) {
+                        insightsToneSheet
+                    }
+                    .sheet(isPresented: $showingFocusPicker) {
+                        insightsFocusSheet
                     }
 
                     // MARK: - Formato Section
@@ -711,6 +786,88 @@ struct PersonalizationSettingsView: View {
                     : L10n.Settings.expensesOnlyActivateMessage
             )
         }
+    }
+
+    // MARK: - Insight Preference Picker Sheets
+
+    private var insightsToneSheet: some View {
+        insightPickerSheet(
+            title: L10n.Insights.toneLabel,
+            items: InsightTone.allCases,
+            selected: selectedTone,
+            label: \.displayName,
+            detail: \.previewText,
+            onSelect: { tone in
+                insightsToneRaw = tone.rawValue
+                PreferenceSyncService.shared.set(string: tone.rawValue, forKey: InsightTone.storageKey)
+            },
+            onDismiss: { showingTonePicker = false }
+        )
+    }
+
+    private var insightsFocusSheet: some View {
+        insightPickerSheet(
+            title: L10n.Insights.focusLabel,
+            items: InsightFocus.allCases,
+            selected: selectedFocus,
+            label: \.displayName,
+            detail: \.descriptionText,
+            onSelect: { focus in
+                insightsFocusRaw = focus.rawValue
+                PreferenceSyncService.shared.set(string: focus.rawValue, forKey: InsightFocus.storageKey)
+            },
+            onDismiss: { showingFocusPicker = false }
+        )
+    }
+
+    private func insightPickerSheet<T: CaseIterable & Identifiable & Equatable>(
+        title: String,
+        items: [T],
+        selected: T,
+        label: KeyPath<T, String>,
+        detail: KeyPath<T, String>,
+        onSelect: @escaping (T) -> Void,
+        onDismiss: @escaping () -> Void
+    ) -> some View {
+        NavigationStack {
+            List {
+                ForEach(items) { item in
+                    Button {
+                        onSelect(item)
+                        InsightsLLMService.shared.invalidateCache()
+                        onDismiss()
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                                Text(item[keyPath: label])
+                                    .font(DS.Typography.body)
+                                    .foregroundStyle(.primary)
+                                Text(item[keyPath: detail])
+                                    .font(DS.Typography.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            if item == selected {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(.thAccent)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(L10n.Settings.cancel) { onDismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 }
 

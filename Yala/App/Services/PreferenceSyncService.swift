@@ -48,6 +48,8 @@ final class PreferenceSyncService {
         case voiceLanguage
         case autoFocusField
         case accountsSortOrderNames
+        case insightsTone
+        case insightsFocus
     }
 
     /// Keys for cross-device wipe coordination (iKV = remote, local = UserDefaults)
@@ -141,7 +143,7 @@ final class PreferenceSyncService {
             switch key {
             case .defaultCurrencyCode, .userName, .defaultPeriod, .secondaryCurrencies,
                  .userProfileIcon, .currencyDisplayFormat, .voiceLanguage, .autoFocusField,
-                 .accountsSortOrderNames:
+                 .accountsSortOrderNames, .insightsTone, .insightsFocus:
                 if let remote = iKV.string(forKey: k), !remote.isEmpty {
                     if local.string(forKey: k) != remote {
                         local.set(remote, forKey: k)

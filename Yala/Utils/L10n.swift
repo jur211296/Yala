@@ -286,22 +286,55 @@ enum L10n {
         static var chartsSection: String { ls("insights.chartsSection", comment: "") }
         static var analysisSection: String { ls("insights.analysisSection", comment: "") }
         static var restoreDefaults: String { ls("insights.restoreDefaults", comment: "") }
-        // Rule-based insight templates
-        static func ruleTopCategory(_ name: String, _ pct: Int) -> String {
-            String(format: ls("insights.ruleTopCategory", comment: ""), name, pct)
+        // Rule-based insight templates (with tone variants)
+        static func ruleTopCategory(_ name: String, _ pct: Int, tone: InsightTone = .normal) -> String {
+            let key = "insights.ruleTopCategory.\(tone.rawValue)"
+            return String(format: ls(key, comment: ""), name, pct)
         }
-        static func ruleExpenseUp(_ formatted: String) -> String {
-            String(format: ls("insights.ruleExpenseUp", comment: ""), formatted)
+        static func ruleExpenseUp(_ formatted: String, tone: InsightTone = .normal) -> String {
+            let key = "insights.ruleExpenseUp.\(tone.rawValue)"
+            return String(format: ls(key, comment: ""), formatted)
         }
-        static func ruleExpenseDown(_ formatted: String) -> String {
-            String(format: ls("insights.ruleExpenseDown", comment: ""), formatted)
+        static func ruleExpenseDown(_ formatted: String, tone: InsightTone = .normal) -> String {
+            let key = "insights.ruleExpenseDown.\(tone.rawValue)"
+            return String(format: ls(key, comment: ""), formatted)
         }
-        static func ruleBudgetRisk(_ name: String, _ pct: Int) -> String {
-            String(format: ls("insights.ruleBudgetRisk", comment: ""), name, pct)
+        static func ruleBudgetRisk(_ name: String, _ pct: Int, tone: InsightTone = .normal) -> String {
+            let key = "insights.ruleBudgetRisk.\(tone.rawValue)"
+            return String(format: ls(key, comment: ""), name, pct)
         }
-        static func ruleOptionalHigh(_ pct: Int) -> String {
-            String(format: ls("insights.ruleOptionalHigh", comment: ""), pct)
+        static func ruleOptionalHigh(_ pct: Int, tone: InsightTone = .normal) -> String {
+            let key = "insights.ruleOptionalHigh.\(tone.rawValue)"
+            return String(format: ls(key, comment: ""), pct)
         }
+
+        // Tips (no tone variant)
+        static func tipTopCategory(_ name: String) -> String {
+            String(format: ls("insights.tipTopCategory", comment: ""), name)
+        }
+        static var tipExpenseUp: String { ls("insights.tipExpenseUp", comment: "") }
+        static func tipBudgetRisk(_ name: String) -> String {
+            String(format: ls("insights.tipBudgetRisk", comment: ""), name)
+        }
+        static var tipOptionalHigh: String { ls("insights.tipOptionalHigh", comment: "") }
+
+        // Tone/Focus display names
+        static func toneName(_ tone: InsightTone) -> String {
+            ls("insights.tone.\(tone.rawValue)", comment: "")
+        }
+        static func tonePreview(_ tone: InsightTone) -> String {
+            ls("insights.tone.\(tone.rawValue).preview", comment: "")
+        }
+        static func focusName(_ focus: InsightFocus) -> String {
+            ls("insights.focus.\(focus.rawValue)", comment: "")
+        }
+        static func focusDescription(_ focus: InsightFocus) -> String {
+            ls("insights.focus.\(focus.rawValue).desc", comment: "")
+        }
+
+        // Settings labels
+        static var toneLabel: String { ls("insights.toneLabel", comment: "") }
+        static var focusLabel: String { ls("insights.focusLabel", comment: "") }
     }
 
     // MARK: - Statistics

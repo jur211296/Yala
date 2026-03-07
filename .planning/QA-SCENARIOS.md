@@ -5084,3 +5084,26 @@ Para cada tema verificar:
 - [ ] Toggle OFF → card no aparece en PanelView
 - [ ] Toggle ON → card aparece si se cumplen demás condiciones
 - [ ] Cambio persiste entre sesiones (@AppStorage "panelShowAIInsight")
+
+### 44.5 Personalización: Tono
+- [ ] Personalización → Smart Insights → Tono muestra 3 opciones (Normal, Considerado, Sarcástico)
+- [ ] Cada opción muestra preview del estilo
+- [ ] Cambiar tono invalida cache AI → próxima carga genera nuevos insights
+- [ ] Tono "Considerado": textos rule-based usan variante empática
+- [ ] Tono "Sarcástico": textos rule-based usan variante con humor ligero
+- [ ] Tono se aplica también al contextual insight de PanelView
+- [ ] Preferencia se sincroniza via iCloud (PreferenceSyncService)
+
+### 44.6 Personalización: Enfoque
+- [ ] Personalización → Smart Insights → Enfoque muestra 3 opciones (Equilibrado, Ahorrador, Precavido)
+- [ ] Enfoque "Ahorrador": umbral top category baja a 30% (vs 40%), expense up a 10% (vs 15%)
+- [ ] Enfoque "Precavido": umbral budget risk baja a 75% (vs 90%), máximo 2 alertas de presupuesto
+- [ ] Cambiar enfoque invalida cache AI
+- [ ] Enfoque se aplica al prompt AI (Pro) y a umbrales rule-based (Free)
+- [ ] Preferencia se sincroniza via iCloud
+
+### 44.7 Tips en InsightCards
+- [ ] Cards rule-based muestran tip debajo del texto principal (icono lightbulb + texto gris)
+- [ ] Cards AI muestran tip cuando el LLM incluye uno
+- [ ] Tips no aparecen si el campo es nil (comportamiento por defecto)
+- [ ] Hero card de AI no muestra tip (solo cards individuales)

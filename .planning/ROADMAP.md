@@ -512,7 +512,7 @@ DoD:
 **Siguiente (en orden):**
 - [x] Refactor filtros deferred — RecordsFiltersView estado local, "Aplicar" confirma, "X" descarta ✅ (81559d6)
 - [x] Vista de Smart Insights — Tab en Statistics: KPIs, gráficas, textos (Free: rule-based, Pro: LLM) ✅
-- [ ] Integrar Smart Insights a lo largo de la app (contextuales)
+- [x] Integrar Smart Insights contextuales — PanelView contextual insight card ✅
 
 Incluye:
 - [ ] Integración con Apple Watch (registro rápido, balance, widgets)
@@ -525,7 +525,7 @@ Incluye:
 - [ ] Vista de análisis de presupuesto (detalle, tendencias, proyección)
 - [ ] Split de transacciones (dividir en múltiples partes/personas)
 - [ ] Predicción de saldo en gráfica de tendencias
-- [ ] Perfil para Smart Insights según usuario (ahorrador, justo, sobrado)
+- [x] Personalización Smart Insights — tono (normal/considerado/sarcástico), enfoque (equilibrado/ahorrador/precavido), tips ✅
 - [ ] Visualizador de ahorros (metas amarradas a cuentas de ahorro)
 - [ ] Tracking de flujo mensual (ingresos vs gastos recurrentes, saldo libre)
 
@@ -548,7 +548,7 @@ Incluye:
 - [ ] Splitwise integrado (gastos compartidos, deudas)
 - [ ] Predicción de saldo en gráficas de tendencia
 - [ ] Integración BD multiplataforma para Splitwise (sin exponer datos innecesarios)
-- [ ] Perfil para Smart Insights: ahorrador, justo, sobrado
+- [x] Perfil para Smart Insights: tono + enfoque + tips ✅
 - [ ] Visualizador de ahorros (metas amarradas a cuentas de ahorro)
 - [ ] Split de transacción (dividir en múltiples partes/personas)
 

@@ -549,7 +549,8 @@ struct InsightsTabView: View {
                     icon: card.icon,
                     text: markdownAttributed(card.text),
                     sentiment: sentiment,
-                    isProOnly: true
+                    isProOnly: true,
+                    tip: card.tip.map { markdownAttributed($0) }
                 ))
             }
         }

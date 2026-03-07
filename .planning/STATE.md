@@ -13,8 +13,8 @@ Version: 1.2 (en desarrollo)
 Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
-Status: **Fase 12 en progreso** — Smart Insights contextuales en PanelView
-Last activity: 2026-03-07 — Contextual AI insight card in PanelView (7fcdc22)
+Status: **Fase 12 en progreso** — Smart Insights personalización (tono + enfoque + tips)
+Last activity: 2026-03-07 — Personalización Smart Insights: tone/focus/tips
 
 ### Apple Review History (V1.0)
 

@@ -2373,8 +2373,39 @@
 "insights.restoreDefaults" = "Restore defaults";
 
 // MARK: - Insights Rule-Based Templates
-"insights.ruleTopCategory" = "%@ accounts for %d%% of your spending this period.";
-"insights.ruleExpenseUp" = "Your spending went up %@ compared to the previous period.";
-"insights.ruleExpenseDown" = "Nice pace: your spending dropped %@ compared to the previous period.";
-"insights.ruleBudgetRisk" = "%@ is at %d%% of its limit.";
-"insights.ruleOptionalHigh" = "Optional spending accounts for %d%% of your total.";
+// Rule-based insights — tone variants
+"insights.ruleTopCategory.normal" = "%@ accounts for %d%% of your spending this period.";
+"insights.ruleTopCategory.considerate" = "%@ accounts for %d%% of your spending — that's fine if it's a priority for you.";
+"insights.ruleTopCategory.sarcastic" = "Looks like %@ is your favorite: it's %d%% of your spending.";
+"insights.ruleExpenseUp.normal" = "Your spending went up %@ compared to the previous period.";
+"insights.ruleExpenseUp.considerate" = "Your spending went up %@ — some months are like that, the key is noticing it.";
+"insights.ruleExpenseUp.sarcastic" = "Your wallet got a workout this period: spending up %@.";
+"insights.ruleExpenseDown.normal" = "Nice pace: your spending dropped %@ compared to the previous period.";
+"insights.ruleExpenseDown.considerate" = "Well done: you managed to reduce your spending by %@ — the effort shows.";
+"insights.ruleExpenseDown.sarcastic" = "Your bank account is breathing easier: spending down %@.";
+"insights.ruleBudgetRisk.normal" = "%@ is at %d%% of its limit.";
+"insights.ruleBudgetRisk.considerate" = "%@ is at %d%% of its limit — there's still room to adjust.";
+"insights.ruleBudgetRisk.sarcastic" = "%@ is at %d%% of the limit, running hot but hasn't blown up yet.";
+"insights.ruleOptionalHigh.normal" = "Optional spending accounts for %d%% of your total.";
+"insights.ruleOptionalHigh.considerate" = "Optional spending is at %d%% — worth reviewing at your own pace.";
+"insights.ruleOptionalHigh.sarcastic" = "The little treats make up %d%% of the total. No judgment, just saying.";
+// Tips
+"insights.tipTopCategory" = "Check if any %@ expenses were one-time or part of a pattern";
+"insights.tipExpenseUp" = "Compare with your lowest-spending month to see what changed";
+"insights.tipBudgetRisk" = "There are still days left — try to hold back on %@ for the rest";
+"insights.tipOptionalHigh" = "Review your optional expenses and see which ones you could postpone";
+// Tone & Focus settings
+"insights.tone.normal" = "Normal";
+"insights.tone.considerate" = "Considerate";
+"insights.tone.sarcastic" = "Sarcastic";
+"insights.tone.normal.preview" = "Restaurants went up 32% vs last month";
+"insights.tone.considerate.preview" = "I get that eating out happens — restaurants went up 32%";
+"insights.tone.sarcastic.preview" = "Looks like the kitchen is on vacation — restaurants up 32%";
+"insights.focus.balanced" = "Balanced";
+"insights.focus.saver" = "Saver";
+"insights.focus.cautious" = "Cautious";
+"insights.focus.balanced.desc" = "Overall view of your finances";
+"insights.focus.saver.desc" = "Prioritize saving opportunities";
+"insights.focus.cautious.desc" = "Early warnings and budgets at risk";
+"insights.toneLabel" = "Tone";
+"insights.focusLabel" = "Focus";

@@ -24,6 +24,11 @@ final class InsightsViewModel {
     private(set) var isLoadingAI = false
     private(set) var aiError: String?
 
+    // MARK: - Preferences
+
+    var currentTone: InsightTone { .current }
+    var currentFocus: InsightFocus { .current }
+
     // MARK: - Calculation
 
     /// Computes all insights data from filtered transactions.
@@ -51,6 +56,8 @@ final class InsightsViewModel {
             currencyCode: currencyCode,
             customRange: customRange,
             comparisonMode: comparisonMode,
+            tone: currentTone,
+            focus: currentFocus,
             context: context
         )
     }
@@ -81,11 +88,16 @@ final class InsightsViewModel {
             return
         }
 
+        let tone = currentTone
+        let focus = currentFocus
+
         let key = InsightsLLMService.shared.cacheKey(
             period: period.rawValue,
             filterHash: filterHash,
             txnCount: txnCount,
-            comparisonMode: comparisonMode.rawValue
+            comparisonMode: comparisonMode.rawValue,
+            tone: tone,
+            focus: focus
         )
 
         // Check cache first
@@ -111,7 +123,9 @@ final class InsightsViewModel {
         do {
             let response = try await InsightsLLMService.shared.generateInsights(
                 aggregatedData: aggregated,
-                cacheKey: key
+                cacheKey: key,
+                tone: tone,
+                focus: focus
             )
             aiInsights = response
         } catch {

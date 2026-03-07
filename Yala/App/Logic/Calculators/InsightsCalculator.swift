@@ -95,12 +95,50 @@ struct InsightResult: Identifiable {
     let text: AttributedString
     let sentiment: Sentiment
     let isProOnly: Bool
+    let tip: AttributedString?
+
+    init(id: String, icon: String, text: AttributedString, sentiment: Sentiment, isProOnly: Bool, tip: AttributedString? = nil) {
+        self.id = id
+        self.icon = icon
+        self.text = text
+        self.sentiment = sentiment
+        self.isProOnly = isProOnly
+        self.tip = tip
+    }
 }
 
 enum Sentiment {
     case positive
     case neutral
     case attention
+}
+
+enum InsightTone: String, CaseIterable, Identifiable {
+    case normal, considerate, sarcastic
+
+    var id: String { rawValue }
+    static let storageKey = "insightsTone"
+
+    var displayName: String { L10n.Insights.toneName(self) }
+    var previewText: String { L10n.Insights.tonePreview(self) }
+
+    static var current: InsightTone {
+        InsightTone(rawValue: UserDefaults.standard.string(forKey: storageKey) ?? "") ?? .normal
+    }
+}
+
+enum InsightFocus: String, CaseIterable, Identifiable {
+    case balanced, saver, cautious
+
+    var id: String { rawValue }
+    static let storageKey = "insightsFocus"
+
+    var displayName: String { L10n.Insights.focusName(self) }
+    var descriptionText: String { L10n.Insights.focusDescription(self) }
+
+    static var current: InsightFocus {
+        InsightFocus(rawValue: UserDefaults.standard.string(forKey: storageKey) ?? "") ?? .balanced
+    }
 }
 
 // MARK: - Calculator
@@ -131,6 +169,8 @@ struct InsightsCalculator {
         currencyCode: String,
         customRange: DateInterval?,
         comparisonMode: ComparisonMode = .month,
+        tone: InsightTone = .normal,
+        focus: InsightFocus = .balanced,
         context: ModelContext
     ) -> InsightData {
         // Filter transactions using FilterService
@@ -285,7 +325,9 @@ struct InsightsCalculator {
             yearOverYear: yearOverYear,
             topCategories: topCategories,
             prevCashFlow: prevCashFlow,
-            currencyCode: currencyCode
+            currencyCode: currencyCode,
+            tone: tone,
+            focus: focus
         )
 
         return InsightData(
@@ -542,37 +584,48 @@ struct InsightsCalculator {
         yearOverYear: YearComparison?,
         topCategories: [CategorySpendingSummary],
         prevCashFlow: CashFlowSummary,
-        currencyCode: String
+        currencyCode: String,
+        tone: InsightTone = .normal,
+        focus: InsightFocus = .balanced
     ) -> [InsightResult] {
         var insights: [InsightResult] = []
 
+        // Focus-adjusted thresholds
+        let topCategoryThreshold: Double = focus == .saver ? 30 : 40
+        let expenseUpThreshold: Double = (focus == .saver || focus == .cautious) ? 10 : 15
+        let budgetRiskThreshold: Double = focus == .cautious ? 75 : 90
+
         // Rule 1: Top category dominance
-        if let top = topCategories.first, top.percentage > 40 {
-            let text = AttributedString(L10n.Insights.ruleTopCategory(top.category.name, Int(top.percentage)))
+        if let top = topCategories.first, top.percentage > topCategoryThreshold {
+            let text = AttributedString(L10n.Insights.ruleTopCategory(top.category.name, Int(top.percentage), tone: tone))
+            let tip = AttributedString(L10n.Insights.tipTopCategory(top.category.name))
             insights.append(InsightResult(
                 id: "top_category_dominant",
                 icon: "chart.pie",
                 text: text,
                 sentiment: .neutral,
-                isProOnly: false
+                isProOnly: false,
+                tip: tip
             ))
         }
 
         // Rule 2: Expense trend
         if let variation = periodSummary.expenseVariation {
-            if variation > 15 {
+            if variation > expenseUpThreshold {
                 let formatted = PreviousPeriodHelper.formatVariationValue(variation)
-                let text = AttributedString(L10n.Insights.ruleExpenseUp(formatted))
+                let text = AttributedString(L10n.Insights.ruleExpenseUp(formatted, tone: tone))
+                let tip = AttributedString(L10n.Insights.tipExpenseUp)
                 insights.append(InsightResult(
                     id: "expense_up",
                     icon: "arrow.up.right",
                     text: text,
                     sentiment: .attention,
-                    isProOnly: false
+                    isProOnly: false,
+                    tip: tip
                 ))
             } else if variation < -10 {
                 let formatted = PreviousPeriodHelper.formatVariationValue(abs(variation))
-                let text = AttributedString(L10n.Insights.ruleExpenseDown(formatted))
+                let text = AttributedString(L10n.Insights.ruleExpenseDown(formatted, tone: tone))
                 insights.append(InsightResult(
                     id: "expense_down",
                     icon: "arrow.down.right",
@@ -584,26 +637,31 @@ struct InsightsCalculator {
         }
 
         // Rule 3: Budgets at risk
-        if let worstBudget = commitments.budgetsAtRisk.first, worstBudget.usagePercent >= 90 {
-            let text = AttributedString(L10n.Insights.ruleBudgetRisk(worstBudget.name, Int(worstBudget.usagePercent)))
+        let maxBudgetAlerts = focus == .cautious ? 2 : 1
+        for budget in commitments.budgetsAtRisk.lazy.filter({ $0.usagePercent >= budgetRiskThreshold }).prefix(maxBudgetAlerts) {
+            let text = AttributedString(L10n.Insights.ruleBudgetRisk(budget.name, Int(budget.usagePercent), tone: tone))
+            let tip = AttributedString(L10n.Insights.tipBudgetRisk(budget.name))
             insights.append(InsightResult(
-                id: "budget_risk",
+                id: "budget_risk_\(budget.name)",
                 icon: "exclamationmark.triangle",
                 text: text,
                 sentiment: .attention,
-                isProOnly: false
+                isProOnly: false,
+                tip: tip
             ))
         }
 
         // Rule 4: Nature distribution shift
         if natureDistribution.optionalPercent > 40 {
-            let text = AttributedString(L10n.Insights.ruleOptionalHigh(Int(natureDistribution.optionalPercent)))
+            let text = AttributedString(L10n.Insights.ruleOptionalHigh(Int(natureDistribution.optionalPercent), tone: tone))
+            let tip = AttributedString(L10n.Insights.tipOptionalHigh)
             insights.append(InsightResult(
                 id: "optional_high",
                 icon: "sparkles",
                 text: text,
                 sentiment: .neutral,
-                isProOnly: false
+                isProOnly: false,
+                tip: tip
             ))
         }
 

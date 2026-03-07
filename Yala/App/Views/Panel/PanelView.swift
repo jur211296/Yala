@@ -552,7 +552,9 @@ struct PanelView: View {
 
         let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCodeRaw) ?? .pen
         let txnCount = transactions.count
-        let cacheKey = "panel_\(insightTaskKey)_\(txnCount)"
+        let tone = InsightTone.current
+        let focus = InsightFocus.current
+        let cacheKey = "panel_\(insightTaskKey)_\(txnCount)_\(tone.rawValue)_\(focus.rawValue)"
 
         // Calculate InsightData
         let criteria = viewModel.buildFilterCriteria(dateInterval: viewModel.panelDateInterval)
@@ -605,7 +607,9 @@ struct PanelView: View {
         do {
             let result = try await InsightsLLMService.shared.generateContextualInsight(
                 aggregatedData: aggregated,
-                cacheKey: cacheKey
+                cacheKey: cacheKey,
+                tone: tone,
+                focus: focus
             )
 
             guard !Task.isCancelled else { return }
