@@ -1528,14 +1528,15 @@
 "onboarding.accountBalanceGuideClosing" = "Remember: you can always adjust your balance later from the account edit screen. The important thing is to start with something close to reality.";
 "onboarding.accountImportTip" = "In Profile > Import you can import records to any of your accounts.";
 "onboarding.accountMoreTip" = "You can add more accounts anytime. Create at least one per currency if you use multiple.";
-"onboarding.budgetTitle" = "Set a spending limit";
-"onboarding.budgetSubtitle" = "Optional — you can create budgets anytime in Planning > Budgets.";
-"onboarding.budgetYes" = "I want to set a limit";
+"onboarding.budgetTitle" = "How much do you expect to spend?";
+"onboarding.budgetSubtitle" = "A budget lets you know when you're getting close to the amount you set. Pick a category and a monthly reference amount.";
+"onboarding.budgetYes" = "I want to track my spending";
 "onboarding.budgetNo" = "Not now, thanks";
 "onboarding.budgetCategoryLabel" = "Which category?";
 "onboarding.budgetAmountLabel" = "Monthly amount";
 "onboarding.budgetAmountPlaceholder" = "E.g.: 500";
 "onboarding.budgetMoreTip" = "You can create more budgets or edit existing ones in Planning > Budgets.";
+"onboarding.budgetPreviewLabel" = "This is how your budget will look";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Changing the account will update the currency of selected transactions.";

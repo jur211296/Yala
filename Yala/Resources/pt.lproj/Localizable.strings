@@ -1524,14 +1524,15 @@
 "onboarding.accountBalanceGuideClosing" = "Lembra-te: podes sempre ajustar o teu saldo mais tarde no ecrã de edição da conta. O importante é começar com algo próximo da realidade.";
 "onboarding.accountImportTip" = "Em Perfil > Importar podes importar registos para qualquer conta.";
 "onboarding.accountMoreTip" = "Podes adicionar mais contas quando quiseres. Cria pelo menos uma por moeda se usas várias.";
-"onboarding.budgetTitle" = "Define um limite para os teus gastos";
-"onboarding.budgetSubtitle" = "Opcional — podes criar orçamentos quando quiseres em Planeamento > Orçamentos.";
-"onboarding.budgetYes" = "Quero definir um limite";
+"onboarding.budgetTitle" = "Quanto esperas gastar?";
+"onboarding.budgetSubtitle" = "Um orçamento avisa-te quando te aproximas do montante que definiste. Escolhe uma categoria e um montante mensal de referência.";
+"onboarding.budgetYes" = "Quero acompanhar os meus gastos";
 "onboarding.budgetNo" = "Agora não, obrigado";
 "onboarding.budgetCategoryLabel" = "Em que categoria?";
 "onboarding.budgetAmountLabel" = "Montante mensal";
 "onboarding.budgetAmountPlaceholder" = "Ex.: 500";
 "onboarding.budgetMoreTip" = "Podes criar mais orçamentos ou editar os existentes em Planeamento > Orçamentos.";
+"onboarding.budgetPreviewLabel" = "É assim que o teu orçamento vai ficar";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Ao mudar de conta, a moeda das transações selecionadas será atualizada.";

@@ -110,6 +110,9 @@ struct OnboardingView: View {
                 .padding(.bottom, DS.Spacing.xxxl)
         }
         .background(.thBackground)
+        .onTapGesture {
+            dismissKeyboard()
+        }
         .task {
             // Pre-fill from synced preferences (populated by PreferenceSyncService.bootstrap())
             let defaults = UserDefaults.standard
@@ -660,28 +663,16 @@ struct OnboardingView: View {
                     .buttonStyle(.plain)
                 }
 
-                // Tips
-                VStack(spacing: DS.Spacing.sm) {
-                    HStack(alignment: .top, spacing: DS.Spacing.sm) {
-                        Image(systemName: "square.and.arrow.down")
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(Color.electricIndigo)
-                        Text(L10n.Onboarding.accountImportTip)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.primary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                    HStack(alignment: .top, spacing: DS.Spacing.sm) {
-                        Image(systemName: "plus.circle")
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(Color.electricIndigo)
-                        Text(L10n.Onboarding.accountMoreTip)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.primary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                // Tip
+                HStack(alignment: .top, spacing: DS.Spacing.sm) {
+                    Image(systemName: "plus.circle")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(Color.electricIndigo)
+                    Text(L10n.Onboarding.accountMoreTip)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.primary)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(DS.Spacing.md)
                 .background(Color.electricIndigo.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
@@ -690,7 +681,6 @@ struct OnboardingView: View {
             .padding(.vertical, DS.Spacing.md)
         }
         .scrollDismissesKeyboard(.interactively)
-        .onTapGesture { accountNameFocused = false }
         .onAppear {
             accountCurrency = selectedCurrency
         }
@@ -900,10 +890,6 @@ struct OnboardingView: View {
                                 .foregroundStyle(.primary)
 
                             Spacer()
-
-                            Text(L10n.Onboarding.categoriesRecommended)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(Color.electricIndigo)
                         }
                         .padding(DS.Spacing.md)
                         .background(wantsBudget ? Color.electricIndigo.opacity(0.1) : theme.card)
@@ -944,98 +930,148 @@ struct OnboardingView: View {
                 // Budget details (animated, only if wantsBudget)
                 if wantsBudget {
                     VStack(spacing: DS.Spacing.lg) {
-                        // Category selection
+                        // Category selection — horizontal scrollable pills
                         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                             Text(L10n.Onboarding.budgetCategoryLabel)
                                 .font(DS.Typography.label)
                                 .foregroundStyle(.secondary)
+                                .padding(.horizontal, DS.Spacing.xl)
 
-                            let columns = [
-                                GridItem(.flexible()),
-                                GridItem(.flexible()),
-                                GridItem(.flexible()),
-                                GridItem(.flexible())
-                            ]
-
-                            LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
-                                ForEach(Array(budgetCategories.enumerated()), id: \.offset) { index, category in
-                                    Button {
-                                        selectedBudgetCategoryIndex = index
-                                    } label: {
-                                        VStack(spacing: DS.Spacing.xs) {
-                                            ZStack {
-                                                Circle()
-                                                    .fill(Color(hex: category.colorHex).opacity(selectedBudgetCategoryIndex == index ? 0.3 : 0.15))
-                                                    .frame(width: categoryIconSize, height: categoryIconSize)
-
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: DS.Spacing.sm) {
+                                    ForEach(Array(budgetCategories.enumerated()), id: \.offset) { index, category in
+                                        Button {
+                                            selectedBudgetCategoryIndex = index
+                                        } label: {
+                                            HStack(spacing: DS.Spacing.xs) {
                                                 Image(systemName: category.iconName)
-                                                    .font(DS.Typography.body)
+                                                    .font(DS.Typography.caption)
                                                     .foregroundStyle(Color(hex: category.colorHex))
-                                            }
 
-                                            Text(category.name)
-                                                .font(DS.Typography.captionSmall)
-                                                .foregroundStyle(selectedBudgetCategoryIndex == index ? .primary : .secondary)
-                                                .lineLimit(1)
-                                                .minimumScaleFactor(0.8)
+                                                Text(category.name)
+                                                    .font(DS.Typography.subheadline)
+                                                    .foregroundStyle(selectedBudgetCategoryIndex == index ? .primary : .secondary)
+                                                    .lineLimit(1)
+                                            }
+                                            .padding(.horizontal, DS.Spacing.md)
+                                            .padding(.vertical, DS.Spacing.sm)
+                                            .background(selectedBudgetCategoryIndex == index ? Color.electricIndigo.opacity(0.1) : theme.card)
+                                            .clipShape(Capsule())
+                                            .overlay(
+                                                Capsule()
+                                                    .stroke(selectedBudgetCategoryIndex == index ? Color.electricIndigo.opacity(0.4) : DS.Colors.borderSubtle, lineWidth: 1)
+                                            )
                                         }
-                                        .padding(.vertical, DS.Spacing.xs)
-                                        .frame(maxWidth: .infinity)
-                                        .background(selectedBudgetCategoryIndex == index ? Color.electricIndigo.opacity(0.08) : Color.clear)
-                                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: DS.Radius.md)
-                                                .stroke(selectedBudgetCategoryIndex == index ? Color.electricIndigo.opacity(0.3) : Color.clear, lineWidth: 1)
-                                        )
+                                        .buttonStyle(.plain)
                                     }
-                                    .buttonStyle(.plain)
+                                }
+                                .padding(.horizontal, DS.Spacing.xl)
+                            }
+                        }
+
+                        // Amount field — modern centered style
+                        SectionBox(title: L10n.Onboarding.budgetAmountLabel) {
+                            HStack {
+                                Spacer()
+                                HStack(spacing: DS.Spacing.xs) {
+                                    Text(accountCurrency.symbol)
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.secondary)
+                                    TextField("0", text: $budgetAmountText)
+                                        .font(DS.Typography.largeTitle)
+                                        .keyboardType(.decimalPad)
+                                        .multilineTextAlignment(.trailing)
                                 }
                             }
+                            .padding()
                         }
+                        .padding(.horizontal, DS.Spacing.lg)
 
-                        // Amount field
-                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            Text(L10n.Onboarding.budgetAmountLabel)
-                                .font(DS.Typography.label)
-                                .foregroundStyle(.secondary)
-
-                            HStack(spacing: DS.Spacing.xs) {
-                                Text(selectedCurrency.symbol)
-                                    .font(DS.Typography.body)
-                                    .foregroundStyle(.secondary)
-
-                                TextField(L10n.Onboarding.budgetAmountPlaceholder, text: $budgetAmountText)
-                                    .font(DS.Typography.body)
-                                    .keyboardType(.decimalPad)
-                            }
-                            .padding(DS.Spacing.md)
-                            .background(.thCard)
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DS.Radius.md)
-                                    .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-                            )
-                        }
+                        // Live preview card — mirrors BudgetRowView
+                        budgetPreviewCard
+                            .padding(.horizontal, DS.Spacing.lg)
                     }
-                    .padding(.horizontal, DS.Spacing.xl)
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
 
-                // Footer tip
-                HStack(alignment: .top, spacing: DS.Spacing.sm) {
-                    Image(systemName: "info.circle")
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                    Text(L10n.Onboarding.budgetMoreTip)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, DS.Spacing.xl)
             }
             .padding(.bottom, DS.Spacing.xl)
             .dsAnimation(.easeInOut(duration: 0.3), value: wantsBudget, reduceMotion: reduceMotion)
         }
         .scrollBounceBehavior(.basedOnSize)
+        .scrollDismissesKeyboard(.interactively)
+    }
+
+    /// Live preview card that mirrors BudgetRowView appearance
+    private var budgetPreviewCard: some View {
+        let cats = budgetCategories
+        let selectedCategory = selectedBudgetCategoryIndex
+            .flatMap { $0 < cats.count ? cats[$0] : nil }
+
+        let budgetAmount = Double(budgetAmountText) ?? 0
+        let hasCategory = selectedCategory != nil
+        let hasAmount = budgetAmount > 0
+
+        let iconName = selectedCategory?.iconName ?? "questionmark"
+        let colorHex = selectedCategory?.colorHex ?? "#8E8E93"
+        let categoryName = selectedCategory?.name ?? L10n.Onboarding.budgetCategoryLabel
+        let formattedLimit = YalaFormatter.currency(value: budgetAmount, currencyCode: accountCurrency.rawValue)
+        let formattedZero = YalaFormatter.currency(value: 0, currencyCode: accountCurrency.rawValue)
+
+        return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Text(L10n.Onboarding.budgetPreviewLabel)
+                .font(DS.Typography.label)
+                .foregroundStyle(.secondary)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                HStack(spacing: DS.Spacing.md) {
+                    // Icon badge
+                    ZStack {
+                        Circle()
+                            .fill(Color(hex: colorHex))
+                            .frame(width: categoryIconSize, height: categoryIconSize)
+
+                        Image(systemName: iconName)
+                            .font(DS.Typography.label)
+                            .foregroundStyle(.white)
+                    }
+
+                    // Name + period
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                        Text(categoryName)
+                            .font(DS.Typography.headline)
+                            .foregroundStyle(hasCategory ? .primary : .secondary)
+                            .lineLimit(1)
+
+                        Text(NSLocalizedString("budgets.period.monthly", comment: ""))
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    // Amount
+                    VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+                        Text(formattedZero)
+                            .font(DS.Typography.headline)
+                            .foregroundStyle(.primary)
+
+                        Text(String(format: NSLocalizedString("budgets.amount.of", comment: ""), formattedLimit))
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(.secondary.opacity(hasAmount ? 1 : 0.4))
+                    }
+                }
+
+                // Progress bar (always empty)
+                BudgetProgressBar(
+                    percentage: 0,
+                    color: colorHex,
+                    isExceeded: false
+                )
+            }
+            .yalaCard(padding: DS.Spacing.lg, radius: DS.Radius.md)
+        }
+        .dsAnimation(.easeInOut(duration: 0.25), value: selectedBudgetCategoryIndex, reduceMotion: reduceMotion)
     }
 
     // MARK: - Step 6: Privacy & Finish
@@ -1255,7 +1291,7 @@ struct OnboardingView: View {
             // Next/Finish button
             Button {
                 // Dismiss keyboard (especially important on step 0)
-                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                dismissKeyboard()
 
                 if currentStep < totalSteps - 1 {
                     navigatingForward = true
@@ -1419,7 +1455,7 @@ struct OnboardingView: View {
             let subcategories = category.subcategories ?? []
 
             let budget = Budget(
-                currencyCode: selectedCurrency.rawValue,
+                currencyCode: accountCurrency.rawValue,
                 limitAmount: budgetAmount,
                 category: category,
                 name: category.name,

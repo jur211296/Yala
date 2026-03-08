@@ -1524,14 +1524,15 @@
 "onboarding.accountBalanceGuideClosing" = "Denk daran: Du kannst deinen Saldo später jederzeit im Konto-Bearbeitungsbildschirm anpassen. Wichtig ist, mit etwas Realistischem zu starten.";
 "onboarding.accountImportTip" = "Unter Profil > Importieren kannst du Einträge in jedes deiner Konten importieren.";
 "onboarding.accountMoreTip" = "Du kannst jederzeit weitere Konten hinzufügen. Erstelle mindestens eines pro Währung, wenn du mehrere nutzt.";
-"onboarding.budgetTitle" = "Setze ein Ausgabenlimit";
-"onboarding.budgetSubtitle" = "Optional — du kannst jederzeit Budgets in Planung > Budgets erstellen.";
-"onboarding.budgetYes" = "Ich möchte ein Limit setzen";
+"onboarding.budgetTitle" = "Wie viel erwartest du auszugeben?";
+"onboarding.budgetSubtitle" = "Ein Budget informiert dich, wenn du dich dem festgelegten Betrag näherst. Wähle eine Kategorie und einen monatlichen Richtwert.";
+"onboarding.budgetYes" = "Ich möchte meine Ausgaben verfolgen";
 "onboarding.budgetNo" = "Jetzt nicht, danke";
 "onboarding.budgetCategoryLabel" = "In welcher Kategorie?";
 "onboarding.budgetAmountLabel" = "Monatlicher Betrag";
 "onboarding.budgetAmountPlaceholder" = "Z.B.: 500";
 "onboarding.budgetMoreTip" = "Du kannst weitere Budgets erstellen oder bestehende bearbeiten in Planung > Budgets.";
+"onboarding.budgetPreviewLabel" = "So wird dein Budget aussehen";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Beim Kontowechsel wird die Währung der ausgewählten Transaktionen aktualisiert.";

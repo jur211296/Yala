@@ -1526,14 +1526,15 @@
 "onboarding.accountBalanceGuideClosing" = "Ricorda: puoi sempre regolare il tuo saldo più tardi dalla schermata di modifica del conto. L'importante è partire con qualcosa di vicino alla realtà.";
 "onboarding.accountImportTip" = "In Profilo > Importa puoi importare registrazioni in qualsiasi conto.";
 "onboarding.accountMoreTip" = "Puoi aggiungere altri conti quando vuoi. Crea almeno uno per valuta se ne usi più di una.";
-"onboarding.budgetTitle" = "Metti un tetto alle spese";
-"onboarding.budgetSubtitle" = "Opzionale — puoi creare budget quando vuoi in Pianificazione > Budget.";
-"onboarding.budgetYes" = "Voglio mettere un limite";
+"onboarding.budgetTitle" = "Quanto pensi di spendere?";
+"onboarding.budgetSubtitle" = "Un budget ti avvisa quando ti avvicini all'importo che hai stabilito. Scegli una categoria e un importo mensile di riferimento.";
+"onboarding.budgetYes" = "Voglio monitorare le mie spese";
 "onboarding.budgetNo" = "Non ora, grazie";
 "onboarding.budgetCategoryLabel" = "In quale categoria?";
 "onboarding.budgetAmountLabel" = "Importo mensile";
 "onboarding.budgetAmountPlaceholder" = "Es.: 500";
 "onboarding.budgetMoreTip" = "Puoi creare altri budget o modificare quelli esistenti in Pianificazione > Budget.";
+"onboarding.budgetPreviewLabel" = "Ecco come apparirà il tuo budget";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Cambiando il conto, verrà aggiornata la valuta delle transazioni selezionate.";

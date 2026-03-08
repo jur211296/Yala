@@ -2521,6 +2521,7 @@ enum L10n {
         static var budgetAmountLabel: String { ls("onboarding.budgetAmountLabel", comment: "") }
         static var budgetAmountPlaceholder: String { ls("onboarding.budgetAmountPlaceholder", comment: "") }
         static var budgetMoreTip: String { ls("onboarding.budgetMoreTip", comment: "") }
+        static var budgetPreviewLabel: String { ls("onboarding.budgetPreviewLabel", comment: "") }
     }
 
     // MARK: - Bulk Edit

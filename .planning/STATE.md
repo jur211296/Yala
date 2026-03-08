@@ -13,8 +13,8 @@ Version: 1.2 (en desarrollo)
 Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
-Status: **Fase 12 en progreso** — Onboarding redesign completado
-Last activity: 2026-03-08 — Onboarding redesign: 7 steps with account setup + quick budget (f711aab)
+Status: **Fase 12 en progreso** — Onboarding account step polished
+Last activity: 2026-03-08 — Onboarding polish: SectionBox layout, balance guide, validation (9488d0a)
 
 ### Apple Review History (V1.0)
 
@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-08] 9488d0a feat: polish onboarding account step — SectionBox layout, balance guide, validation
 - [2026-03-08] f711aab feat: redesign onboarding — 7 steps with account setup and quick budget
 - [2026-03-07] 275392d feat: add Smart Insights personalization — tone, focus, and actionable tips
 - [2026-03-07] 7fcdc22 feat: add contextual AI insight card to PanelView
@@ -52,7 +53,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-06] fe175d8 fix: restore OpenAI identification in consent strings + add Insights to privacy policy
 - [2026-03-06] 6936e33 chore: migrate LLM services from GPT-4o Mini to GPT-4.1 Nano
 - [2026-03-06] 4851b92 feat: improve Smart Insights AI — enable generation, locale-aware prompt, privacy consent
-- [2026-03-06] 2f3a042 feat: add "Simular Pro" dev toggle for testing PRO features
 - [2026-03-06] c280fcb feat: polish Smart Insights UI — remove collapsible headers, card wraps, equal heights
 - [2026-03-06] daa9b03 feat: refine Smart Insights UI — rename, card styles, colors, period selector, filter chips
 - [2026-03-06] 3439fe3 feat: add Smart Insights tab with rule-based insights, AI integration, and settings
@@ -635,12 +635,12 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Onboarding redesign completed (f711aab) — 7 steps, account setup, quick budget
+Stopped at: Onboarding account step polished (9488d0a) — SectionBox, balance guide, validation
 Next step: QA manual del onboarding en simulador + siguiente item de Fase 12
 Resume context:
-- Onboarding reduced from 9→7 steps: Welcome, Currency, Usage Mode, Categories, Account Setup (NEW), Quick Budget (NEW), Privacy
-- Removed: secondary currencies, period, notifications picker, tutorials steps
-- Account created during onboarding → user lands on populated dashboard
-- Fixed hardcoded "Ajustes de saldo" bug across InitialBalanceService, TransactionCSVImportService, Subcategory
+- Onboarding 7 steps: Welcome, Currency, Usage Mode, Categories, Account Setup, Quick Budget, Privacy
+- Account step: SectionBox layout, segmented sign picker, keyboard dismiss, balance guide sheet
+- Step validation: name required (steps 0/4), budget fields required (step 5)
+- Balance guide sheet: detailed per-type explanations in 6 languages
 - Pre-existing test failure: criteriaActiveFilterCountIsCorrect (unrelated)
-- Build passes, swift audit clean, 293/294 tests pass
+- Build passes, swift audit clean, /simplify clean
