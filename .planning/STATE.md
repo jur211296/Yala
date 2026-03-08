@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-08] 82f4e5c feat: polish onboarding budget step — reframe texts, horizontal pills, live preview card, currency fix
 - [2026-03-08] 9488d0a feat: polish onboarding account step — SectionBox layout, balance guide, validation
 - [2026-03-08] f711aab feat: redesign onboarding — 7 steps with account setup and quick budget
 - [2026-03-07] 275392d feat: add Smart Insights personalization — tone, focus, and actionable tips
@@ -52,9 +53,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-06] 38c2f0d docs: update STATE.md with OpenAI compliance fix
 - [2026-03-06] fe175d8 fix: restore OpenAI identification in consent strings + add Insights to privacy policy
 - [2026-03-06] 6936e33 chore: migrate LLM services from GPT-4o Mini to GPT-4.1 Nano
-- [2026-03-06] 4851b92 feat: improve Smart Insights AI — enable generation, locale-aware prompt, privacy consent
-- [2026-03-06] c280fcb feat: polish Smart Insights UI — remove collapsible headers, card wraps, equal heights
-- [2026-03-06] daa9b03 feat: refine Smart Insights UI — rename, card styles, colors, period selector, filter chips
 - [2026-03-06] 3439fe3 feat: add Smart Insights tab with rule-based insights, AI integration, and settings
 - [2026-03-05] 34f51b6 fix: use L10n.Filters.all instead of hardcoded Spanish string in tests
 - [2026-03-05] cc2f4a5 Merge hotfix/1.0.2 into 1.1
@@ -635,12 +633,12 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Onboarding account step polished (9488d0a) — SectionBox, balance guide, validation
+Stopped at: Onboarding budget step polished (82f4e5c) — reframed texts, pills, preview card, currency fix
 Next step: QA manual del onboarding en simulador + siguiente item de Fase 12
 Resume context:
-- Onboarding 7 steps: Welcome, Currency, Usage Mode, Categories, Account Setup, Quick Budget, Privacy
-- Account step: SectionBox layout, segmented sign picker, keyboard dismiss, balance guide sheet
-- Step validation: name required (steps 0/4), budget fields required (step 5)
-- Balance guide sheet: detailed per-type explanations in 6 languages
+- Onboarding 7 steps fully polished: Welcome, Currency, Usage Mode, Categories, Account Setup, Quick Budget, Privacy
+- Budget step: texts reframed (awareness not restriction), horizontal category pills, SectionBox amount, live preview card
+- Budget uses accountCurrency (from step 4) not selectedCurrency (step 1) — bug fixed
+- Global keyboard dismiss via dismissKeyboard() helper + scrollDismissesKeyboard
 - Pre-existing test failure: criteriaActiveFilterCountIsCorrect (unrelated)
-- Build passes, swift audit clean, /simplify clean
+- Build passes, /simplify clean
