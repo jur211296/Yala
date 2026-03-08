@@ -517,6 +517,23 @@ Fase 12 siguiente (en orden):
 
 Ver ROADMAP.md para más detalles de Fase 12.
 
+### Pendiente: Reubicación de pasos eliminados del onboarding (post-redesign 82f4e5c)
+
+Estos pasos se eliminaron del onboarding para reducirlo de 9→7 pasos. Cada uno necesita un nuevo momento y mecanismo en la app:
+
+| Funcionalidad eliminada | Nuevo momento | Mecanismo |
+|-------------------------|---------------|-----------|
+| Divisas secundarias | Settings > Divisas, o al crear cuenta en otra divisa | Ya existe en CurrencySettingsView. Falta: prompt contextual al crear cuenta con divisa diferente |
+| Periodo predeterminado | Default "Este mes", cambiable en filtros | Ya implementado (hardcode .thisMonth en onboarding). Sin trabajo adicional |
+| Notificaciones (7 toggles) | Después de 3-5 transacciones | Pendiente: pre-permission primer full-screen que invite a activar notifs |
+| Tutoriales | Primeras interacciones en Panel | Pendiente: tooltips in-context / coach marks para funciones clave |
+
+**Estado:**
+- [ ] Prompt contextual divisas secundarias
+- [x] Periodo default .thisMonth (ya funciona)
+- [ ] Pre-permission primer para notificaciones (después de N transacciones)
+- [ ] Tooltips / coach marks post-onboarding
+
 ### Refactors Pendientes: Filtros Excluir/Incluir (identificados 2026-03-05)
 
 Descubiertos durante simplify + audit de la feature de filtros excluir/incluir. No bloquean funcionalidad pero acumulan deuda técnica.

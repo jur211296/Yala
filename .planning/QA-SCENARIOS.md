@@ -5112,17 +5112,18 @@ Para cada tema verificar:
 
 ### 45.1 Happy Path — Control Total
 - [ ] Fresh launch → nombre "Test" → MXN → Control total → categorías sí
-- [ ] Cuenta: tipo "Cuenta corriente", nombre auto-llenado, saldo 5000
-- [ ] Presupuesto: sí, Alimentación, 3000/mes
+- [ ] Cuenta: tipo General (default), escribir nombre, saldo 5000
+- [ ] Presupuesto: "Quiero darle seguimiento", seleccionar categoría en pills horizontales, monto 3000
+- [ ] Preview card muestra icono, color y nombre de categoría seleccionada + "de $3,000" + barra vacía
 - [ ] Privacidad → Empezar
 - [ ] Panel muestra 1 cuenta MXN $5,000
-- [ ] Budget visible en Planificación > Presupuestos
+- [ ] Budget visible en Planificación > Presupuestos con divisa de la cuenta (no la preferida)
 - [ ] Notificaciones en Perfil > Notificaciones todas con isActive=false
 
 ### 45.2 Happy Path — Solo Gastos
 - [ ] Fresh launch → nombre → divisa → Solo gastos → categorías sí
 - [ ] Cuenta: tipo Efectivo, campo de saldo NO visible
-- [ ] Presupuesto: skip (seleccionar "Ahora no")
+- [ ] Presupuesto: skip (seleccionar "Ahora no, gracias")
 - [ ] Privacidad → Empezar
 - [ ] Panel muestra 1 cuenta sin saldo inicial
 - [ ] Sin presupuestos creados
@@ -5136,10 +5137,11 @@ Para cada tema verificar:
 - [ ] Subcategoría "Ajustes de saldo" existe en datos
 - [ ] Sin presupuestos creados
 
-### 45.4 Auto-fill Nombre Cuenta
-- [ ] Llegar a paso cuenta → seleccionar "Ahorros" → nombre auto-fill "Cuenta de ahorros"
-- [ ] Editar nombre manualmente a "Mi Ahorro"
-- [ ] Cambiar tipo a "Efectivo" → nombre queda "Mi Ahorro" (no se sobreescribe)
+### 45.4 Validación de pasos
+- [ ] Paso 0 (nombre): botón Next deshabilitado si nombre vacío
+- [ ] Paso 4 (cuenta): botón Next deshabilitado si nombre de cuenta vacío
+- [ ] Paso 5 (presupuesto) con "Quiero darle seguimiento": Next deshabilitado si no hay categoría o monto
+- [ ] Paso 5 con "Ahora no": Next habilitado siempre
 
 ### 45.5 Saldo Cero
 - [ ] Control total → cuenta → dejar saldo vacío o "0"
@@ -5158,9 +5160,33 @@ Para cada tema verificar:
 ### 45.8 Categorías filtradas por modo
 - [ ] Solo gastos: grid de categorías NO muestra "Ingresos"
 - [ ] Control total: grid de categorías muestra todas las 11 categorías
+- [ ] Presupuesto: pills de categorías NO muestran "Ingresos" en ningún modo
 
 ### 45.9 Pasos eliminados no existen
 - [ ] No hay paso de divisas secundarias
 - [ ] No hay paso de período predeterminado
 - [ ] No hay paso de notificaciones con toggles
 - [ ] No hay paso de tutoriales
+
+### 45.10 Divisa del presupuesto
+- [ ] Cambiar divisa de la cuenta en paso 4 (ej: USD en vez de MXN)
+- [ ] En paso 5: símbolo de divisa en campo de monto es el de la cuenta (USD)
+- [ ] Preview card muestra montos en divisa de la cuenta
+- [ ] Presupuesto creado usa divisa de la cuenta, no la preferida del paso 1
+
+### 45.11 Keyboard dismiss
+- [ ] En paso 0: tocar fuera del campo nombre cierra teclado
+- [ ] En paso 4: tocar fuera de campos cierra teclado; scrollear cierra teclado
+- [ ] En paso 5: tocar fuera del campo monto cierra teclado; scrollear cierra teclado
+
+### 45.12 Guía de saldo
+- [ ] En paso 4 (Control total): link "¿Cómo calculo mi saldo?" abre sheet
+- [ ] Sheet muestra 4 cards (General, Efectivo, Cuenta corriente, Ahorros) con explicaciones
+- [ ] Botón checkmark (YalaSaveButton) cierra la sheet
+
+### 45.13 Preview card dinámica
+- [ ] Sin selección: card muestra icono "?" gris, nombre placeholder, monto $0
+- [ ] Seleccionar categoría: icono, color y nombre se actualizan con animación
+- [ ] Escribir monto: "de $X" se actualiza en la card
+- [ ] Label "Así se verá tu presupuesto" visible encima de la card
+- [ ] Card muestra "Mensual" como periodo (no días restantes ficticios)
