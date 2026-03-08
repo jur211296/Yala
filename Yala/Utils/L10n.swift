@@ -2493,6 +2493,7 @@ enum L10n {
         static var accountTypeLabel: String { ls("onboarding.accountTypeLabel", comment: "") }
         static var accountNameLabel: String { ls("onboarding.accountNameLabel", comment: "") }
         static var accountNamePlaceholder: String { ls("onboarding.accountNamePlaceholder", comment: "") }
+        static var accountCurrencyLabel: String { ls("onboarding.accountCurrencyLabel", comment: "") }
         static var accountBalanceLabel: String { ls("onboarding.accountBalanceLabel", comment: "") }
         static var accountBalanceHint: String { ls("onboarding.accountBalanceHint", comment: "") }
         static var accountBalanceSkipHint: String { ls("onboarding.accountBalanceSkipHint", comment: "") }
@@ -2500,6 +2501,14 @@ enum L10n {
         static var accountBalanceHintCash: String { ls("onboarding.accountBalanceHintCash", comment: "") }
         static var accountBalanceHintChecking: String { ls("onboarding.accountBalanceHintChecking", comment: "") }
         static var accountBalanceHintSavings: String { ls("onboarding.accountBalanceHintSavings", comment: "") }
+        static var accountBalanceLearnMore: String { ls("onboarding.accountBalanceLearnMore", comment: "") }
+        static var accountBalanceGuideTitle: String { ls("onboarding.accountBalanceGuideTitle", comment: "") }
+        static var accountBalanceGuideIntro: String { ls("onboarding.accountBalanceGuideIntro", comment: "") }
+        static var accountBalanceGuideGeneral: String { ls("onboarding.accountBalanceGuideGeneral", comment: "") }
+        static var accountBalanceGuideCash: String { ls("onboarding.accountBalanceGuideCash", comment: "") }
+        static var accountBalanceGuideChecking: String { ls("onboarding.accountBalanceGuideChecking", comment: "") }
+        static var accountBalanceGuideSavings: String { ls("onboarding.accountBalanceGuideSavings", comment: "") }
+        static var accountBalanceGuideClosing: String { ls("onboarding.accountBalanceGuideClosing", comment: "") }
         static var accountImportTip: String { ls("onboarding.accountImportTip", comment: "") }
         static var accountMoreTip: String { ls("onboarding.accountMoreTip", comment: "") }
 

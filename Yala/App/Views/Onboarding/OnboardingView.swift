@@ -41,14 +41,14 @@ struct OnboardingView: View {
     @State private var expensesOnlyMode: Bool = false
 
     // Account setup state
-    @State private var selectedAccountType: AccountType = .checking
+    @State private var selectedAccountType: AccountType = .general
     @State private var accountName: String = ""
-    @State private var userEditedAccountName: Bool = false
     @State private var accountCurrency: CurrencyCode = CurrencyDefaults.detectCurrencyFromRegion()
     @State private var initialBalanceText: String = ""
     @State private var balanceIsPositive: Bool = true
     @State private var showCurrencyPicker: Bool = false
-    @State private var showAccountTips: Bool = false
+    @State private var showBalanceGuide: Bool = false
+    @FocusState private var accountNameFocused: Bool
 
     // Quick budget state
     @State private var wantsBudget: Bool = false
@@ -507,183 +507,304 @@ struct OnboardingView: View {
     // MARK: - Step 4: Account Setup
 
     private var accountSetupStep: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            // Header
-            VStack(spacing: DS.Spacing.md) {
-                Image(systemName: "building.columns.fill")
-                    .font(.system(size: heroIconSize))
-                    .foregroundStyle(Color.electricIndigo)
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
+                // Header
+                VStack(spacing: DS.Spacing.md) {
+                    Image(systemName: "building.columns.fill")
+                        .font(.system(size: heroIconSize))
+                        .foregroundStyle(Color.electricIndigo)
+                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
-                Text(L10n.Onboarding.accountTitle)
-                    .font(DS.Typography.title)
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.center)
+                    Text(L10n.Onboarding.accountTitle)
+                        .font(DS.Typography.title)
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.center)
 
-                Text(L10n.Onboarding.accountSubtitle)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, DS.Spacing.xl)
-            }
-            .padding(.top, DS.Spacing.md)
+                    Text(L10n.Onboarding.accountSubtitle)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, DS.Spacing.xl)
+                }
+                .padding(.top, DS.Spacing.md)
 
-            // Account type pills
-            HStack(spacing: DS.Spacing.sm) {
-                ForEach(onboardingAccountTypes) { type in
+                // Account type pills
+                HStack(spacing: DS.Spacing.sm) {
+                    ForEach(onboardingAccountTypes) { type in
+                        Button {
+                            selectedAccountType = type
+                        } label: {
+                            VStack(spacing: DS.Spacing.xs) {
+                                Image(systemName: iconName(for: type))
+                                    .font(DS.Typography.body)
+                                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                                Text(type.localizedName)
+                                    .font(DS.Typography.captionSmall)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, DS.Spacing.sm)
+                            .foregroundStyle(selectedAccountType == type ? Color.electricIndigo : .secondary)
+                            .background(selectedAccountType == type ? Color.electricIndigo.opacity(0.1) : theme.card)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DS.Radius.md)
+                                    .stroke(selectedAccountType == type ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+
+                // Form card (SectionBox style)
+                SectionBox(title: L10n.Common.general) {
+                    VStack(spacing: DS.Spacing.none) {
+                        // Name row
+                        HStack(spacing: DS.Spacing.md) {
+                            Image(systemName: "textformat")
+                                .foregroundStyle(.secondary)
+                            TextField(L10n.Onboarding.accountNamePlaceholder, text: $accountName)
+                                .focused($accountNameFocused)
+                        }
+                        .padding()
+
+                        SubsectionDivider()
+
+                        // Currency row (tappable to change)
+                        Button {
+                            accountNameFocused = false
+                            showCurrencyPicker = true
+                        } label: {
+                            HStack(spacing: DS.Spacing.md) {
+                                Text(accountCurrency.flag)
+                                    .font(DS.Typography.title)
+                                Text(L10n.Onboarding.accountCurrencyLabel)
+                                    .font(DS.Typography.body)
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                Text(accountCurrency.rawValue)
+                                    .foregroundStyle(.secondary)
+                                Image(systemName: "chevron.right")
+                                    .font(DS.Typography.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
+                            .padding()
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+
+                // Balance section (only in full control mode)
+                if !expensesOnlyMode {
+                    SectionBox(title: L10n.Onboarding.accountBalanceLabel) {
+                        VStack(spacing: DS.Spacing.none) {
+                            // Sign selector (segmented)
+                            HStack(spacing: DS.Spacing.md) {
+                                Text(L10n.Account.sign)
+                                    .font(DS.Typography.subheadline)
+                                Spacer()
+                                Picker(L10n.Account.sign, selection: $balanceIsPositive) {
+                                    Text(L10n.Account.positive).tag(true)
+                                    Text(L10n.Account.negative).tag(false)
+                                }
+                                .pickerStyle(.segmented)
+                            }
+                            .padding()
+
+                            SubsectionDivider()
+
+                            // Amount input
+                            HStack {
+                                Spacer()
+                                HStack(spacing: DS.Spacing.xs) {
+                                    Text(accountCurrency.symbol)
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.secondary)
+                                    TextField("0", text: $initialBalanceText)
+                                        .font(DS.Typography.largeTitle)
+                                        .keyboardType(.decimalPad)
+                                        .multilineTextAlignment(.trailing)
+                                }
+                            }
+                            .padding()
+
+                            SubsectionDivider()
+
+                            // Contextual hint per account type
+                            Text(selectedAccountType.balanceHint)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                        }
+                    }
+                    .padding(.horizontal, DS.Spacing.lg)
+
+                    // Learn more link
                     Button {
-                        selectedAccountType = type
-                        if !userEditedAccountName {
-                            accountName = type.localizedName
-                        }
+                        showBalanceGuide = true
                     } label: {
-                        VStack(spacing: DS.Spacing.xs) {
-                            Image(systemName: iconName(for: type))
-                                .font(DS.Typography.body)
-                                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                            Text(type.localizedName)
-                                .font(DS.Typography.captionSmall)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
+                        HStack(spacing: DS.Spacing.xs) {
+                            Image(systemName: "questionmark.circle")
+                                .font(DS.Typography.subheadline)
+                            Text(L10n.Onboarding.accountBalanceLearnMore)
+                                .font(DS.Typography.subheadline)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DS.Spacing.sm)
-                        .foregroundStyle(selectedAccountType == type ? Color.electricIndigo : .secondary)
-                        .background(selectedAccountType == type ? Color.electricIndigo.opacity(0.1) : theme.card)
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: DS.Radius.md)
-                                .stroke(selectedAccountType == type ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
-                        )
+                        .foregroundStyle(Color.electricIndigo)
                     }
                     .buttonStyle(.plain)
                 }
-            }
-            .padding(.horizontal, DS.Spacing.xl)
 
-            // Form fields in a single card
-            VStack(spacing: DS.Spacing.none) {
-                // Name row
-                HStack {
-                    Text(L10n.Onboarding.accountNameLabel)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    TextField(L10n.Onboarding.accountNamePlaceholder, text: $accountName)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.primary)
-                        .multilineTextAlignment(.trailing)
-                        .frame(maxWidth: 180)
-                        .onChange(of: accountName) {
-                            if !onboardingAccountTypes.contains(where: { $0.localizedName == accountName }) {
-                                userEditedAccountName = true
-                            }
-                        }
+                // Tips
+                VStack(spacing: DS.Spacing.sm) {
+                    HStack(alignment: .top, spacing: DS.Spacing.sm) {
+                        Image(systemName: "square.and.arrow.down")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(Color.electricIndigo)
+                        Text(L10n.Onboarding.accountImportTip)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.primary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    HStack(alignment: .top, spacing: DS.Spacing.sm) {
+                        Image(systemName: "plus.circle")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(Color.electricIndigo)
+                        Text(L10n.Onboarding.accountMoreTip)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.primary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(DS.Spacing.md)
-
-                Divider().padding(.leading, DS.Spacing.md)
-
-                // Currency row (tappable to change)
-                Button {
-                    showCurrencyPicker = true
-                } label: {
-                    HStack(spacing: DS.Spacing.sm) {
-                        Text(L10n.Onboarding.currencyTitle)
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        Text(accountCurrency.flag)
-                            .font(DS.Typography.body)
-                        Text(accountCurrency.rawValue)
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.primary)
-                        Image(systemName: "chevron.right")
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.tertiary)
-                    }
-                    .padding(DS.Spacing.md)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-
-                // Initial balance row (only in full control mode)
-                if !expensesOnlyMode {
-                    Divider().padding(.leading, DS.Spacing.md)
-
-                    VStack(spacing: DS.Spacing.sm) {
-                        HStack(spacing: DS.Spacing.sm) {
-                            Text(L10n.Onboarding.accountBalanceLabel)
-                                .font(DS.Typography.body)
-                                .foregroundStyle(.primary)
-
-                            Spacer()
-
-                            // Sign toggle
-                            Button {
-                                balanceIsPositive.toggle()
-                            } label: {
-                                Text(balanceIsPositive ? "+" : "−")
-                                    .font(DS.Typography.headline)
-                                    .foregroundStyle(balanceIsPositive ? Color.electricIndigo : DS.Semantic.errorForeground)
-                                    .frame(width: 32, height: 32)
-                                    .background(theme.card)
-                                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: DS.Radius.sm)
-                                            .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-                                    )
-                            }
-                            .buttonStyle(.plain)
-
-                            // Amount field
-                            HStack(spacing: DS.Spacing.xxs) {
-                                Text(accountCurrency.symbol)
-                                    .font(DS.Typography.body)
-                                    .foregroundStyle(.secondary)
-                                TextField("0", text: $initialBalanceText)
-                                    .font(DS.Typography.body)
-                                    .keyboardType(.decimalPad)
-                                    .multilineTextAlignment(.trailing)
-                                    .frame(width: 100)
-                            }
-                        }
-                        .padding(.horizontal, DS.Spacing.md)
-                        .padding(.top, DS.Spacing.md)
-
-                        Text(selectedAccountType.balanceHint)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, DS.Spacing.md)
-                            .padding(.bottom, DS.Spacing.md)
-                    }
-                }
+                .background(Color.electricIndigo.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                .padding(.horizontal, DS.Spacing.lg)
             }
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.md)
-                    .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-            )
-            .padding(.horizontal, DS.Spacing.xl)
-
-            Spacer()
+            .padding(.vertical, DS.Spacing.md)
         }
+        .scrollDismissesKeyboard(.interactively)
+        .onTapGesture { accountNameFocused = false }
         .onAppear {
             accountCurrency = selectedCurrency
-            if !userEditedAccountName {
-                accountName = selectedAccountType.localizedName
-            }
         }
         .sheet(isPresented: $showCurrencyPicker) {
             accountCurrencyPickerSheet
         }
-        .alert(L10n.Onboarding.accountTitle, isPresented: $showAccountTips) {
-            Button(L10n.Common.ok) { }
-        } message: {
-            Text(L10n.Onboarding.accountImportTip + "\n\n" + L10n.Onboarding.accountMoreTip)
+        .sheet(isPresented: $showBalanceGuide) {
+            balanceGuideSheet
         }
+    }
+
+    /// Sheet explaining how to calculate initial balance per account type
+    private var balanceGuideSheet: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    // Hero header
+                    VStack(spacing: DS.Spacing.md) {
+                        Image(systemName: "banknote.fill")
+                            .font(.system(size: heroIconSize))
+                            .foregroundStyle(Color.electricIndigo)
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+
+                        Text(L10n.Onboarding.accountBalanceGuideIntro)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.horizontal, DS.Spacing.md)
+
+                    // Account type cards
+                    VStack(spacing: DS.Spacing.lg) {
+                        balanceGuideCard(
+                            icon: "creditcard",
+                            title: AccountType.general.localizedName,
+                            body: L10n.Onboarding.accountBalanceGuideGeneral
+                        )
+
+                        balanceGuideCard(
+                            icon: "banknote.fill",
+                            title: AccountType.cash.localizedName,
+                            body: L10n.Onboarding.accountBalanceGuideCash
+                        )
+
+                        balanceGuideCard(
+                            icon: "building.columns.fill",
+                            title: AccountType.checking.localizedName,
+                            body: L10n.Onboarding.accountBalanceGuideChecking
+                        )
+
+                        balanceGuideCard(
+                            icon: "banknote",
+                            title: AccountType.savings.localizedName,
+                            body: L10n.Onboarding.accountBalanceGuideSavings
+                        )
+                    }
+
+                    // Closing tip
+                    HStack(alignment: .top, spacing: DS.Spacing.sm) {
+                        Image(systemName: "lightbulb.fill")
+                            .font(DS.Typography.body)
+                            .foregroundStyle(Color.electricIndigo)
+                        Text(L10n.Onboarding.accountBalanceGuideClosing)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(DS.Spacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.electricIndigo.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.lg)
+            }
+            .background(.thBackground)
+            .navigationTitle(L10n.Onboarding.accountBalanceGuideTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    YalaSaveButton(action: { showBalanceGuide = false })
+                }
+            }
+        }
+    }
+
+    /// Card for each account type in the balance guide sheet
+    private func balanceGuideCard(icon: String, title: String, body: String) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            // Header with icon badge
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: icon)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.white)
+                    .frame(width: 32, height: 32)
+                    .background(Color.electricIndigo)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+                Text(title)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+            }
+
+            Text(body)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(DS.Spacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.xl)
+                .stroke(Color.primary.opacity(DS.Opacity.faint), lineWidth: 1)
+        )
     }
 
     /// Sheet for changing account currency
@@ -1047,14 +1168,14 @@ struct OnboardingView: View {
     ) -> some View {
         Button(action: action) {
             HStack(spacing: DS.Spacing.md) {
-                Text(currencyFlag(currency))
+                Text(currency.flag)
                     .font(DS.Typography.title)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(currency.rawValue)
                         .font(DS.Typography.bodyBold)
                         .foregroundStyle(.primary)
-                    Text(currencyName(currency))
+                    Text(currency.localizedName)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -1083,6 +1204,28 @@ struct OnboardingView: View {
     }
 
     // MARK: - Navigation Buttons
+
+    /// Whether the Next button should be disabled for the current step
+    private var isNextDisabled: Bool {
+        switch currentStep {
+        case 0:
+            return userName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case 4:
+            return accountName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case 5:
+            // If user wants a budget, require category + valid amount
+            if wantsBudget {
+                guard let index = selectedBudgetCategoryIndex,
+                      index < budgetCategories.count,
+                      let amount = Double(budgetAmountText),
+                      amount > 0
+                else { return true }
+            }
+            return false
+        default:
+            return false
+        }
+    }
 
     private var navigationButtons: some View {
         HStack(spacing: DS.Spacing.md) {
@@ -1115,9 +1258,6 @@ struct OnboardingView: View {
                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
                 if currentStep < totalSteps - 1 {
-                    // Show tips popup when leaving account step
-                    let leavingAccountStep = currentStep == 4
-
                     navigatingForward = true
                     dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
                         // Skip budget step (5) if no seed categories
@@ -1131,10 +1271,6 @@ struct OnboardingView: View {
                     if currentStep == 3 {
                         triggerCategoryAnimation()
                     }
-
-                    if leavingAccountStep {
-                        showAccountTips = true
-                    }
                 } else {
                     completeOnboarding()
                 }
@@ -1146,21 +1282,14 @@ struct OnboardingView: View {
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DS.Spacing.md)
-                    .background(Color.electricIndigo)
+                    .background(isNextDisabled ? Color.electricIndigo.opacity(0.4) : Color.electricIndigo)
                     .clipShape(Capsule())
             }
+            .disabled(isNextDisabled)
         }
     }
 
     // MARK: - Helpers
-
-    private func currencyFlag(_ currency: CurrencyCode) -> String {
-        currency.flag
-    }
-
-    private func currencyName(_ currency: CurrencyCode) -> String {
-        currency.localizedName
-    }
 
     private func completeOnboarding() {
         // Save user preferences via PreferenceSyncService (dual-writes to UserDefaults + iCloud KV)

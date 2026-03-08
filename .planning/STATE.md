@@ -13,8 +13,8 @@ Version: 1.2 (en desarrollo)
 Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
-Status: **Fase 12 en progreso** — Smart Insights personalización completada
-Last activity: 2026-03-07 — Smart Insights personalization: tone/focus/tips (275392d)
+Status: **Fase 12 en progreso** — Onboarding redesign completado
+Last activity: 2026-03-08 — Onboarding redesign: 7 steps with account setup + quick budget (f711aab)
 
 ### Apple Review History (V1.0)
 
@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-08] f711aab feat: redesign onboarding — 7 steps with account setup and quick budget
 - [2026-03-07] 275392d feat: add Smart Insights personalization — tone, focus, and actionable tips
 - [2026-03-07] 7fcdc22 feat: add contextual AI insight card to PanelView
 - [2026-03-06] 7f01298 refactor: extract shared FilterControlBar — eliminate ~790 duplicate lines
@@ -52,7 +53,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-06] 6936e33 chore: migrate LLM services from GPT-4o Mini to GPT-4.1 Nano
 - [2026-03-06] 4851b92 feat: improve Smart Insights AI — enable generation, locale-aware prompt, privacy consent
 - [2026-03-06] 2f3a042 feat: add "Simular Pro" dev toggle for testing PRO features
-- [2026-03-06] d00b62f feat: polish Smart Insights UI round 3 — comparison selector, weekday averages, KPI enrichment
 - [2026-03-06] c280fcb feat: polish Smart Insights UI — remove collapsible headers, card wraps, equal heights
 - [2026-03-06] daa9b03 feat: refine Smart Insights UI — rename, card styles, colors, period selector, filter chips
 - [2026-03-06] 3439fe3 feat: add Smart Insights tab with rule-based insights, AI integration, and settings
@@ -634,14 +634,13 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 
 ## Session Continuity
 
-Last session: 2026-03-07
-Stopped at: Contextual AI insight card en PanelView (7fcdc22)
-Next step: Siguiente item de Fase 12 — más integración contextual de Smart Insights (ver ROADMAP.md)
+Last session: 2026-03-08
+Stopped at: Onboarding redesign completed (f711aab) — 7 steps, account setup, quick budget
+Next step: QA manual del onboarding en simulador + siguiente item de Fase 12
 Resume context:
-- ContextualInsightCard entre accountsSection y totalBalanceSection en PanelView
-- InsightsLLMService.generateContextualInsight() con cache 30 min, rate limiter independiente
-- Daily focus rotation (7 ángulos) para evitar insights repetitivos
-- Toggle en WidgetPreferencesView: Pro+consent→funcional, Pro sin consent→disabled+hint, Free→ProBadge
-- .task(id:) en VStack principal (no en conditional view — SwiftUI no monta .task en Groups vacíos)
-- Pre-existing test failure: criteriaActiveFilterCountIsCorrect
-- Build pasa, audit limpio, tests relevantes pasan
+- Onboarding reduced from 9→7 steps: Welcome, Currency, Usage Mode, Categories, Account Setup (NEW), Quick Budget (NEW), Privacy
+- Removed: secondary currencies, period, notifications picker, tutorials steps
+- Account created during onboarding → user lands on populated dashboard
+- Fixed hardcoded "Ajustes de saldo" bug across InitialBalanceService, TransactionCSVImportService, Subcategory
+- Pre-existing test failure: criteriaActiveFilterCountIsCorrect (unrelated)
+- Build passes, swift audit clean, 293/294 tests pass
