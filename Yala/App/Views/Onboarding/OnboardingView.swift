@@ -1008,7 +1008,7 @@ struct OnboardingView: View {
         let selectedCategory = selectedBudgetCategoryIndex
             .flatMap { $0 < cats.count ? cats[$0] : nil }
 
-        let budgetAmount = Double(budgetAmountText) ?? 0
+        let budgetAmount = Double(budgetAmountText.replacingOccurrences(of: ",", with: ".")) ?? 0
         let hasCategory = selectedCategory != nil
         let hasAmount = budgetAmount > 0
 
@@ -1251,9 +1251,10 @@ struct OnboardingView: View {
         case 5:
             // If user wants a budget, require category + valid amount
             if wantsBudget {
+                let cleanedAmount = budgetAmountText.replacingOccurrences(of: ",", with: ".")
                 guard let index = selectedBudgetCategoryIndex,
                       index < budgetCategories.count,
-                      let amount = Double(budgetAmountText),
+                      let amount = Double(cleanedAmount),
                       amount > 0
                 else { return true }
             }
@@ -1295,16 +1296,13 @@ struct OnboardingView: View {
 
                 if currentStep < totalSteps - 1 {
                     navigatingForward = true
+                    // Compute destination before animation to avoid reading stale state
+                    let nextStep = (currentStep == 4 && !loadSeedCategories) ? 6 : currentStep + 1
                     dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
-                        // Skip budget step (5) if no seed categories
-                        if currentStep == 4 && !loadSeedCategories {
-                            currentStep = 6
-                        } else {
-                            currentStep += 1
-                        }
+                        currentStep = nextStep
                     }
                     // Trigger category icons animation when entering categories step
-                    if currentStep == 3 {
+                    if nextStep == 3 {
                         triggerCategoryAnimation()
                     }
                 } else {
@@ -1418,6 +1416,10 @@ struct OnboardingView: View {
                         allTransactions: [],
                         context: modelContext
                     )
+                } else {
+                    #if DEBUG
+                    print("OnboardingView: Balance adjustment subcategory not found — initial balance not set")
+                    #endif
                 }
             }
         }

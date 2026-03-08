@@ -82,122 +82,219 @@ Ordenado por dependencias de datos para ejecución secuencial.
 
 ### Vista: OnboardingView
 
-**Flujo completo de 5 pasos:**
-1. Bienvenida + Nombre de usuario
-2. Moneda principal
-3. Monedas secundarias
-4. Periodo por defecto
-5. Categorías iniciales (semilla)
+**Flujo completo de 7 pasos:**
+0. Bienvenida + Nombre de usuario
+1. Moneda principal (por continente, con recomendada)
+2. Modo de uso (Control total / Solo gastos)
+3. Categorías iniciales (semilla)
+4. Cuenta inicial (tipo, nombre, divisa, balance)
+5. Presupuesto rápido (opcional, solo si hay categorías)
+6. Privacidad + Finalizar
+
+**Nota:** El paso 5 (presupuesto) se salta automáticamente si el usuario elige "Empezar desde cero" en categorías.
 
 ### Campos por Paso
 
-**Paso 1 - Bienvenida:**
+**Paso 0 - Bienvenida:**
 | Campo | Tipo | Obligatorio | Validación |
 |-------|------|-------------|------------|
-| Nombre de usuario | TextField | No | Si vacío → "Usuario" |
+| Nombre de usuario | TextField | Sí | No vacío (botón Siguiente deshabilitado si vacío) |
 
-**Paso 2 - Moneda principal:**
+**Paso 1 - Moneda principal:**
 | Campo | Tipo | Obligatorio | Opciones |
 |-------|------|-------------|----------|
-| Moneda preferida | Single select | Sí | PEN, USD, EUR, MXN, COP, BRL, GBP |
+| Moneda preferida | Single select | Sí | 48 divisas agrupadas por continente, sección "Recomendada" al inicio |
 
-**Paso 3 - Monedas secundarias:**
+**Paso 2 - Modo de uso:**
+| Campo | Tipo | Obligatorio | Opciones |
+|-------|------|-------------|----------|
+| Modo | Single select (radio cards) | Sí | "Control total" (recomendado: gastos+ingresos+transferencias+cuentas), "Solo gastos" |
+
+**Paso 3 - Categorías iniciales:**
+| Campo | Tipo | Obligatorio | Opciones |
+|-------|------|-------------|----------|
+| Cargar categorías | Single select (radio cards) | Sí | "Empezar con estas categorías" (recomendado), "Empezar desde cero" |
+
+**Paso 4 - Cuenta inicial:**
 | Campo | Tipo | Obligatorio | Validación |
 |-------|------|-------------|------------|
-| Monedas adicionales | Multi select | No | Máximo 2, excluye la principal |
+| Tipo de cuenta | Horizontal pills | Sí | General, Efectivo, Corriente, Ahorros (sin tarjeta de crédito) |
+| Nombre | TextField | Sí | No vacío (botón Siguiente deshabilitado si vacío) |
+| Divisa | Tappable row → sheet picker | Sí | Default = moneda del paso 1 |
+| Signo del balance | Segmented (Positivo/Negativo) | Sí (solo en Control total) | Default: Positivo |
+| Balance inicial | TextField decimal | No (solo en Control total) | Default: 0 |
 
-**Paso 4 - Periodo por defecto:**
-| Campo | Tipo | Obligatorio | Opciones |
-|-------|------|-------------|----------|
-| Periodo | Single select | Sí | thisWeek, last7Days, last30Days, thisMonth, lastMonth, thisYear, lastYear, allTime |
+**Paso 5 - Presupuesto rápido (solo si hay categorías):**
+| Campo | Tipo | Obligatorio | Validación |
+|-------|------|-------------|------------|
+| ¿Quieres presupuesto? | Yes/No radio cards | Sí | Default: No |
+| Categoría | Horizontal scrollable pills | Sí (si quiere) | Categorías expense del seed |
+| Monto | TextField decimal | Sí (si quiere) | > 0, usa divisa de la cuenta (paso 4) |
 
-**Paso 5 - Categorías iniciales:**
-| Campo | Tipo | Obligatorio | Opciones |
-|-------|------|-------------|----------|
-| Cargar categorías | Single select | Sí | "Empezar con estas categorías" (recomendado), "Empezar desde cero" |
+**Paso 6 - Privacidad:**
+| Campo | Tipo | Obligatorio |
+|-------|------|-------------|
+| (informativo) | Solo lectura | N/A — 4 puntos de privacidad + botón "Empezar" |
 
 ### Escenarios de Onboarding
 
-#### Escenario 1.1: Completar onboarding mínimo con categorías
+#### Escenario 1.1: Flujo completo — control total con categorías, cuenta y presupuesto
 **Precondiciones:** App recién instalada o datos vaciados
 **Pasos:**
 1. Abrir app por primera vez
-2. Verificar pantalla de bienvenida con icono 👋
-3. Dejar nombre vacío
+2. Verificar pantalla de bienvenida con icono de app y campo de nombre
+3. Ingresar nombre "María"
 4. Tap "Siguiente"
-5. Seleccionar moneda (default: PEN)
-6. Tap "Siguiente"
-7. No seleccionar monedas secundarias
-8. Tap "Siguiente"
-9. Seleccionar periodo (default: Este mes)
+5. Verificar divisa recomendada resaltada al inicio
+6. Seleccionar moneda (default según región)
+7. Tap "Siguiente"
+8. Verificar opción "Control total" seleccionada por defecto con badge "Recomendado"
+9. Dejar "Control total" seleccionado
 10. Tap "Siguiente"
-11. Verificar grid visual de categorías con animación
-12. Dejar seleccionado "Empezar con estas categorías" (default)
-13. Tap "Empezar"
+11. Verificar grid visual de categorías con animación staggered
+12. Dejar "Empezar con estas categorías" seleccionado
+13. Tap "Siguiente"
+14. Verificar paso de cuenta: pills de tipo, nombre, divisa, balance
+15. Seleccionar tipo "Corriente"
+16. Ingresar nombre "Banco BBVA"
+17. Ingresar balance: 1500
+18. Tap "Siguiente"
+19. Verificar paso de presupuesto: toggle Yes/No
+20. Seleccionar "Sí"
+21. Seleccionar categoría "Alimentación" en pills horizontales
+22. Ingresar monto: 500
+23. Verificar preview card con icono, nombre y barra de progreso
+24. Tap "Siguiente"
+25. Verificar pantalla de privacidad con 4 puntos
+26. Tap "Empezar"
 **Resultado esperado:**
-- [ ] Nombre guardado como "Usuario"
-- [ ] Moneda PEN configurada
-- [ ] Sin monedas secundarias
-- [ ] Periodo "Este mes" activo
-- [ ] 11 categorías semilla creadas (Alimentación, Compras, Transporte, etc.)
-- [ ] Subcategorías correspondientes creadas
+- [ ] Nombre "María" guardado
+- [ ] Moneda configurada correctamente
+- [ ] Modo "Control total" activo (expensesOnlyMode = false)
+- [ ] Periodo default = "Este mes"
+- [ ] 11 categorías semilla creadas (10 expense + 1 income en control total)
+- [ ] Cuenta "Banco BBVA" tipo Corriente creada con balance 1500
+- [ ] Presupuesto mensual de Alimentación creado con límite 500
+- [ ] Notificaciones creadas como inactivas
 - [ ] Navega a Panel principal
 
-#### Escenario 1.2: Completar onboarding sin categorías
+#### Escenario 1.2: Flujo mínimo — solo gastos, sin categorías
 **Precondiciones:** App recién instalada
 **Pasos:**
 1. Ingresar nombre "Juan"
-2. Tap "Siguiente"
-3. Seleccionar USD como moneda principal
-4. Tap "Siguiente"
-5. Seleccionar EUR y GBP como secundarias
-6. Tap "Siguiente"
-7. Seleccionar "Últimos 30 días"
-8. Tap "Siguiente"
-9. Seleccionar "Empezar desde cero"
-10. Tap "Empezar"
+2. Siguiente → Seleccionar USD
+3. Siguiente → Seleccionar "Solo gastos"
+4. Siguiente → Seleccionar "Empezar desde cero"
+5. Siguiente → Dejar cuenta con nombre por defecto, sin balance
+6. Siguiente → Verificar que **salta** el paso de presupuesto
+7. Verificar pantalla de privacidad directamente
+8. Tap "Empezar"
 **Resultado esperado:**
-- [ ] Nombre "Juan" visible en Panel
+- [ ] Nombre "Juan" guardado
 - [ ] Moneda USD configurada
-- [ ] EUR y GBP disponibles como secundarias
-- [ ] Periodo "Últimos 30 días" activo
-- [ ] 0 categorías creadas
-- [ ] Panel muestra empty state para categorías
+- [ ] Modo "Solo gastos" activo
+- [ ] 0 categorías creadas (excepto subcategoría de ajuste de balance si aplica)
+- [ ] Cuenta creada con nombre = tipo seleccionado (ej: "General")
+- [ ] Sin presupuesto
+- [ ] Paso de presupuesto se saltó (no se muestra)
+- [ ] Progress dots muestran 6 en vez de 7
 
 #### Escenario 1.3: Navegación entre pasos
 **Precondiciones:** En onboarding
 **Pasos:**
-1. Avanzar al paso 4
+1. Avanzar al paso 4 (cuenta)
 2. Tap "Atrás"
-3. Verificar que vuelve al paso 3 con datos intactos
-4. Avanzar hasta paso 5
-5. Tap "Atrás"
-6. Verificar que vuelve al paso 4
+3. Verificar que vuelve al paso 3 (categorías) con selección intacta
+4. Avanzar hasta paso 6 (privacidad)
+5. Tap "Atrás" → vuelve a presupuesto (si hay categorías) o cuenta (si no)
+6. Tap "Atrás" repetidamente hasta paso 0
+7. Verificar que todos los datos persisten
 **Resultado esperado:**
-- [ ] Navegación bidireccional funciona en 5 pasos
-- [ ] Datos persisten entre navegaciones
+- [ ] Navegación bidireccional funciona en 7 pasos (o 6 si se salta presupuesto)
+- [ ] Datos persisten entre navegaciones (nombre, moneda, modo, cuenta, etc.)
+- [ ] Animación de transición correcta (izquierda/derecha según dirección)
 
-#### Escenario 1.4: Límite de monedas secundarias
-**Precondiciones:** En paso 3 de onboarding
+#### Escenario 1.4: Validación de nombre obligatorio
+**Precondiciones:** App recién instalada
 **Pasos:**
-1. Seleccionar EUR
-2. Seleccionar GBP
-3. Intentar seleccionar MXN
+1. Dejar campo de nombre vacío
+2. Verificar botón "Siguiente"
 **Resultado esperado:**
-- [ ] MXN no se puede seleccionar (máximo 2)
-- [ ] Contador muestra "2/2"
+- [ ] Botón "Siguiente" deshabilitado (opacidad reducida)
+- [ ] Al ingresar al menos 1 carácter, botón se habilita
 
-#### Escenario 1.5: Animación de categorías
-**Precondiciones:** En paso 4 de onboarding
+#### Escenario 1.5: Animación de categorías + filtro por modo
+**Precondiciones:** En paso 2, seleccionar "Solo gastos"
 **Pasos:**
-1. Tap "Siguiente" para ir al paso 5
-2. Observar la pantalla de categorías
+1. Tap "Siguiente" para ir al paso 3 (categorías)
+2. Observar grid de categorías
 **Resultado esperado:**
-- [ ] Grid de 11 iconos de categorías aparece
+- [ ] Grid muestra 10 iconos (sin categoría "Ingresos")
 - [ ] Animación staggered (iconos aparecen uno por uno)
-- [ ] Cada icono muestra color correcto de la categoría
-- [ ] Nombre corto debajo de cada icono
+- [ ] Cada icono con color correcto y nombre debajo
 - [ ] Badge "Recomendado" en opción de cargar categorías
+
+#### Escenario 1.6: Cuenta con divisa diferente a la principal
+**Precondiciones:** En paso 1, seleccionar PEN como moneda principal
+**Pasos:**
+1. Avanzar al paso 4 (cuenta)
+2. Verificar que divisa de cuenta = PEN (hereda del paso 1)
+3. Tap en fila de divisa → se abre sheet de selección
+4. Seleccionar USD
+5. Verificar que símbolo cambia a $
+6. Avanzar al paso 5 (presupuesto)
+7. Verificar que el presupuesto usa USD (divisa de la cuenta)
+**Resultado esperado:**
+- [ ] Sheet de divisa muestra sección recomendada + continentes
+- [ ] Al seleccionar USD, divisa de cuenta cambia
+- [ ] Símbolo en campo de balance cambia a $
+- [ ] Presupuesto usa divisa de la cuenta (USD), no la principal (PEN)
+
+#### Escenario 1.7: Presupuesto rápido — validación
+**Precondiciones:** En paso 5 (presupuesto), seleccionar "Sí"
+**Pasos:**
+1. Sin seleccionar categoría ni monto, verificar botón Siguiente
+2. Seleccionar categoría pero sin monto
+3. Ingresar monto 0
+4. Ingresar monto válido (ej: 300)
+**Resultado esperado:**
+- [ ] Botón Siguiente deshabilitado sin categoría o sin monto válido
+- [ ] Monto 0 no habilita el botón
+- [ ] Con categoría + monto > 0, botón se habilita
+- [ ] Preview card actualiza en tiempo real (icono, nombre, barra)
+
+#### Escenario 1.8: Balance guide (ayuda de saldo)
+**Precondiciones:** En paso 4 (cuenta), modo "Control total"
+**Pasos:**
+1. Verificar que sección de balance aparece
+2. Tap "¿Cómo calcular mi saldo?" (link debajo del balance)
+3. Verificar contenido del sheet
+**Resultado esperado:**
+- [ ] Sheet con explicación por tipo de cuenta (General, Efectivo, Corriente, Ahorros)
+- [ ] Cada tipo con icono, título y descripción
+- [ ] Tip final con consejo general
+- [ ] Botón para cerrar el sheet
+
+#### Escenario 1.9: Solo gastos oculta sección de balance
+**Precondiciones:** En paso 2, seleccionar "Solo gastos"
+**Pasos:**
+1. Avanzar al paso 4 (cuenta)
+2. Observar formulario de cuenta
+**Resultado esperado:**
+- [ ] Sección de balance NO aparece (sin signo, sin monto, sin link de ayuda)
+- [ ] Solo muestra: tipo de cuenta, nombre, divisa y tip
+- [ ] Cuenta se crea con balance 0
+
+#### Escenario 1.10: Teclado se cierra al tocar fuera
+**Precondiciones:** En cualquier paso con campo de texto activo
+**Pasos:**
+1. En paso 0, tap en campo de nombre → teclado aparece
+2. Tap fuera del campo
+3. En paso 4, tap en balance → teclado aparece
+4. Tap fuera del campo
+**Resultado esperado:**
+- [ ] Teclado se cierra al tocar fuera en todos los pasos
+- [ ] ScrollView dismiss keyboard interactively en pasos 4 y 5
 
 ---
 
