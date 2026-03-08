@@ -1501,6 +1501,28 @@
 "onboarding.privacyIcloud" = "Nur du hast Zugriff auf deine Daten";
 "onboarding.privacyNoSharing" = "KI-Funktionen teilen oder speichern keine sensiblen Daten";
 "onboarding.privacyTutorialsHint" = "Entdecke die Tutorials und Tipps von Yala";
+"onboarding.accountTitle" = "Dein erstes Konto";
+"onboarding.accountSubtitle" = "Ein Konto zeigt, wo du dein Geld aufbewahrst. Jedes Konto hat eine einzige Währung.";
+"onboarding.accountTypeLabel" = "Kontotyp";
+"onboarding.accountNameLabel" = "Kontoname";
+"onboarding.accountNamePlaceholder" = "Z.B.: Mein Hauptkonto";
+"onboarding.accountBalanceLabel" = "Anfangssaldo";
+"onboarding.accountBalanceHint" = "Dein ungefährer aktueller Saldo. Girokonto: verfügbares Guthaben. Sparkonto: dein Erspartes.";
+"onboarding.accountBalanceSkipHint" = "Wenn du es nicht weißt, lass es bei 0 und passe es später im Konto an.";
+"onboarding.accountBalanceHintGeneral" = "Erspartes + Girokonto − Kreditkarte. Wenn du es nicht weißt, lass es bei 0.";
+"onboarding.accountBalanceHintCash" = "Bargeld, das du hast. Wenn du es nicht weißt, lass es bei 0.";
+"onboarding.accountBalanceHintChecking" = "Verfügbares Guthaben auf deinem Konto. Wenn du es nicht weißt, lass es bei 0.";
+"onboarding.accountBalanceHintSavings" = "Geld, das du gespart hast. Wenn du es nicht weißt, lass es bei 0.";
+"onboarding.accountImportTip" = "Unter Profil > Importieren kannst du Einträge in jedes deiner Konten importieren.";
+"onboarding.accountMoreTip" = "Du kannst jederzeit weitere Konten hinzufügen. Erstelle mindestens eines pro Währung, wenn du mehrere nutzt.";
+"onboarding.budgetTitle" = "Setze ein Ausgabenlimit";
+"onboarding.budgetSubtitle" = "Optional — du kannst jederzeit Budgets in Planung > Budgets erstellen.";
+"onboarding.budgetYes" = "Ich möchte ein Limit setzen";
+"onboarding.budgetNo" = "Jetzt nicht, danke";
+"onboarding.budgetCategoryLabel" = "In welcher Kategorie?";
+"onboarding.budgetAmountLabel" = "Monatlicher Betrag";
+"onboarding.budgetAmountPlaceholder" = "Z.B.: 500";
+"onboarding.budgetMoreTip" = "Du kannst weitere Budgets erstellen oder bestehende bearbeiten in Planung > Budgets.";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Beim Kontowechsel wird die Währung der ausgewählten Transaktionen aktualisiert.";

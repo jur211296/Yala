@@ -2486,6 +2486,32 @@ enum L10n {
         static var tutorialsSubtitle: String { ls("onboarding.tutorialsSubtitle", comment: "") }
         static var tutorialsExplore: String { ls("onboarding.tutorialsExplore", comment: "") }
         static var tutorialsSettingsHint: String { ls("onboarding.tutorialsSettingsHint", comment: "") }
+
+        // Account Setup step
+        static var accountTitle: String { ls("onboarding.accountTitle", comment: "") }
+        static var accountSubtitle: String { ls("onboarding.accountSubtitle", comment: "") }
+        static var accountTypeLabel: String { ls("onboarding.accountTypeLabel", comment: "") }
+        static var accountNameLabel: String { ls("onboarding.accountNameLabel", comment: "") }
+        static var accountNamePlaceholder: String { ls("onboarding.accountNamePlaceholder", comment: "") }
+        static var accountBalanceLabel: String { ls("onboarding.accountBalanceLabel", comment: "") }
+        static var accountBalanceHint: String { ls("onboarding.accountBalanceHint", comment: "") }
+        static var accountBalanceSkipHint: String { ls("onboarding.accountBalanceSkipHint", comment: "") }
+        static var accountBalanceHintGeneral: String { ls("onboarding.accountBalanceHintGeneral", comment: "") }
+        static var accountBalanceHintCash: String { ls("onboarding.accountBalanceHintCash", comment: "") }
+        static var accountBalanceHintChecking: String { ls("onboarding.accountBalanceHintChecking", comment: "") }
+        static var accountBalanceHintSavings: String { ls("onboarding.accountBalanceHintSavings", comment: "") }
+        static var accountImportTip: String { ls("onboarding.accountImportTip", comment: "") }
+        static var accountMoreTip: String { ls("onboarding.accountMoreTip", comment: "") }
+
+        // Quick Budget step
+        static var budgetTitle: String { ls("onboarding.budgetTitle", comment: "") }
+        static var budgetSubtitle: String { ls("onboarding.budgetSubtitle", comment: "") }
+        static var budgetYes: String { ls("onboarding.budgetYes", comment: "") }
+        static var budgetNo: String { ls("onboarding.budgetNo", comment: "") }
+        static var budgetCategoryLabel: String { ls("onboarding.budgetCategoryLabel", comment: "") }
+        static var budgetAmountLabel: String { ls("onboarding.budgetAmountLabel", comment: "") }
+        static var budgetAmountPlaceholder: String { ls("onboarding.budgetAmountPlaceholder", comment: "") }
+        static var budgetMoreTip: String { ls("onboarding.budgetMoreTip", comment: "") }
     }
 
     // MARK: - Bulk Edit

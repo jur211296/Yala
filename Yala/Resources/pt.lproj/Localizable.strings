@@ -1501,6 +1501,28 @@
 "onboarding.privacyIcloud" = "Só tu tens acesso aos teus dados";
 "onboarding.privacyNoSharing" = "As funções de IA não partilham nem armazenam dados sensíveis";
 "onboarding.privacyTutorialsHint" = "Descobre os tutoriais e dicas do Yala";
+"onboarding.accountTitle" = "A tua primeira conta";
+"onboarding.accountSubtitle" = "Uma conta representa onde guardas o teu dinheiro. Cada conta tem uma única moeda.";
+"onboarding.accountTypeLabel" = "Tipo de conta";
+"onboarding.accountNameLabel" = "Nome da conta";
+"onboarding.accountNamePlaceholder" = "Ex.: A minha conta principal";
+"onboarding.accountBalanceLabel" = "Saldo inicial";
+"onboarding.accountBalanceHint" = "O teu saldo atual aproximado. Corrente: fundos disponíveis. Poupança: o que tens poupado.";
+"onboarding.accountBalanceSkipHint" = "Se não sabes, deixa em 0 e ajusta depois na conta.";
+"onboarding.accountBalanceHintGeneral" = "Poupança + corrente − crédito usado. Se não sabes, deixa em 0.";
+"onboarding.accountBalanceHintCash" = "Dinheiro em espécie que tens. Se não sabes, deixa em 0.";
+"onboarding.accountBalanceHintChecking" = "Fundos disponíveis na tua conta. Se não sabes, deixa em 0.";
+"onboarding.accountBalanceHintSavings" = "Dinheiro que tens poupado. Se não sabes, deixa em 0.";
+"onboarding.accountImportTip" = "Em Perfil > Importar podes importar registos para qualquer conta.";
+"onboarding.accountMoreTip" = "Podes adicionar mais contas quando quiseres. Cria pelo menos uma por moeda se usas várias.";
+"onboarding.budgetTitle" = "Define um limite para os teus gastos";
+"onboarding.budgetSubtitle" = "Opcional — podes criar orçamentos quando quiseres em Planeamento > Orçamentos.";
+"onboarding.budgetYes" = "Quero definir um limite";
+"onboarding.budgetNo" = "Agora não, obrigado";
+"onboarding.budgetCategoryLabel" = "Em que categoria?";
+"onboarding.budgetAmountLabel" = "Montante mensal";
+"onboarding.budgetAmountPlaceholder" = "Ex.: 500";
+"onboarding.budgetMoreTip" = "Podes criar mais orçamentos ou editar os existentes em Planeamento > Orçamentos.";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Ao mudar de conta, a moeda das transações selecionadas será atualizada.";

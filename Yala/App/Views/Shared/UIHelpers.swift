@@ -38,6 +38,17 @@ enum AccountType: String, CaseIterable, Identifiable {
         case .creditCard: return L10n.Account.AccountType.creditCard
         }
     }
+
+    /// Contextual balance hint for onboarding (varies by account type)
+    var balanceHint: String {
+        switch self {
+        case .general: return L10n.Onboarding.accountBalanceHintGeneral
+        case .cash: return L10n.Onboarding.accountBalanceHintCash
+        case .checking: return L10n.Onboarding.accountBalanceHintChecking
+        case .savings: return L10n.Onboarding.accountBalanceHintSavings
+        case .creditCard: return L10n.Onboarding.accountBalanceHintChecking
+        }
+    }
 }
 
 enum AdjustmentMode: String, CaseIterable, Identifiable {

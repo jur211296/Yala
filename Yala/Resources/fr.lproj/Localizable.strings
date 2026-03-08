@@ -1503,6 +1503,28 @@
 "onboarding.privacyIcloud" = "Toi seul as accès à tes données";
 "onboarding.privacyNoSharing" = "Les fonctions IA ne partagent ni ne stockent de données sensibles";
 "onboarding.privacyTutorialsHint" = "Découvre les tutoriels et conseils de Yala";
+"onboarding.accountTitle" = "Ton premier compte";
+"onboarding.accountSubtitle" = "Un compte représente où tu gardes ton argent. Chaque compte a une seule devise.";
+"onboarding.accountTypeLabel" = "Type de compte";
+"onboarding.accountNameLabel" = "Nom du compte";
+"onboarding.accountNamePlaceholder" = "Ex : Mon compte principal";
+"onboarding.accountBalanceLabel" = "Solde initial";
+"onboarding.accountBalanceHint" = "Ton solde actuel approximatif. Courant : fonds disponibles. Épargne : ce que tu as épargné.";
+"onboarding.accountBalanceSkipHint" = "Si tu ne sais pas, laisse à 0 et ajuste plus tard dans le compte.";
+"onboarding.accountBalanceHintGeneral" = "Épargne + courant − crédit utilisé. Si tu ne sais pas, laisse à 0.";
+"onboarding.accountBalanceHintCash" = "Argent liquide que tu as. Si tu ne sais pas, laisse à 0.";
+"onboarding.accountBalanceHintChecking" = "Fonds disponibles sur ton compte. Si tu ne sais pas, laisse à 0.";
+"onboarding.accountBalanceHintSavings" = "Argent que tu as épargné. Si tu ne sais pas, laisse à 0.";
+"onboarding.accountImportTip" = "Dans Profil > Importer tu peux importer des enregistrements vers n'importe quel compte.";
+"onboarding.accountMoreTip" = "Tu peux ajouter d'autres comptes quand tu veux. Crée au moins un par devise si tu en utilises plusieurs.";
+"onboarding.budgetTitle" = "Fixe un plafond à tes dépenses";
+"onboarding.budgetSubtitle" = "Optionnel — tu peux créer des budgets quand tu veux dans Planification > Budgets.";
+"onboarding.budgetYes" = "Je veux fixer un plafond";
+"onboarding.budgetNo" = "Pas maintenant, merci";
+"onboarding.budgetCategoryLabel" = "Dans quelle catégorie ?";
+"onboarding.budgetAmountLabel" = "Montant mensuel";
+"onboarding.budgetAmountPlaceholder" = "Ex : 500";
+"onboarding.budgetMoreTip" = "Tu peux créer d'autres budgets ou modifier les existants dans Planification > Budgets.";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Le changement de compte mettra à jour la devise des transactions sélectionnées.";

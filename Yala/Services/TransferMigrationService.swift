@@ -29,9 +29,7 @@ import SwiftData
 
         // Find the Income category and its transfer subcategory
         let incomeCategoryName = "Ingresos"
-        let transferSubcategoryNames = Subcategory.systemSubcategoryNames.filter {
-            $0 != "Ajustes de saldo"
-        }
+        let transferSubcategoryNames = Subcategory.transferNames
 
         // Fetch Ingresos/Transferencia entre cuentas subcategory
         guard let incomeTransferSubcategory = findOrCreateIncomeTransferSubcategory(

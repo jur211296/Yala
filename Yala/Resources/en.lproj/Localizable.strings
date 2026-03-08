@@ -1505,6 +1505,28 @@
 "onboarding.tutorialsSubtitle" = "Short guides to get the most out of your finances";
 "onboarding.tutorialsExplore" = "Explore tutorials";
 "onboarding.tutorialsSettingsHint" = "You can always find these in Settings";
+"onboarding.accountTitle" = "Your first account";
+"onboarding.accountSubtitle" = "An account represents where you keep your money. Each account has a single currency.";
+"onboarding.accountTypeLabel" = "Account type";
+"onboarding.accountNameLabel" = "Account name";
+"onboarding.accountNamePlaceholder" = "E.g.: My main account";
+"onboarding.accountBalanceLabel" = "Initial balance";
+"onboarding.accountBalanceHint" = "Your approximate current balance. Checking: available funds. Savings: what you have saved.";
+"onboarding.accountBalanceSkipHint" = "If you don't know, leave it at 0 and adjust later in the account.";
+"onboarding.accountBalanceHintGeneral" = "Savings + checking − credit spent. If you don't know, leave it at 0.";
+"onboarding.accountBalanceHintCash" = "Cash you have on hand. If you don't know, leave it at 0.";
+"onboarding.accountBalanceHintChecking" = "Available funds in your account. If you don't know, leave it at 0.";
+"onboarding.accountBalanceHintSavings" = "Money you have saved. If you don't know, leave it at 0.";
+"onboarding.accountImportTip" = "In Profile > Import you can import records to any of your accounts.";
+"onboarding.accountMoreTip" = "You can add more accounts anytime. Create at least one per currency if you use multiple.";
+"onboarding.budgetTitle" = "Set a spending limit";
+"onboarding.budgetSubtitle" = "Optional — you can create budgets anytime in Planning > Budgets.";
+"onboarding.budgetYes" = "I want to set a limit";
+"onboarding.budgetNo" = "Not now, thanks";
+"onboarding.budgetCategoryLabel" = "Which category?";
+"onboarding.budgetAmountLabel" = "Monthly amount";
+"onboarding.budgetAmountPlaceholder" = "E.g.: 500";
+"onboarding.budgetMoreTip" = "You can create more budgets or edit existing ones in Planning > Budgets.";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Changing the account will update the currency of selected transactions.";

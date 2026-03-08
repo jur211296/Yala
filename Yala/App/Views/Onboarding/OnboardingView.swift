@@ -2,8 +2,9 @@
 //  OnboardingView.swift
 //  Yala
 //
-//  Simple onboarding flow for first-time users or after data wipe.
-//  Collects: user name, preferred currency, secondary currencies, default period, seed categories.
+//  Onboarding flow: 7 steps to get started.
+//  0. Welcome + name, 1. Currency, 2. Usage mode, 3. Seed categories,
+//  4. Account setup, 5. Quick budget (optional), 6. Privacy + finish.
 //
 
 import SwiftData
@@ -27,8 +28,6 @@ struct OnboardingView: View {
     // User preferences (will be saved on completion)
     @State private var userName: String = ""
     @State private var selectedCurrency: CurrencyCode = CurrencyDefaults.detectCurrencyFromRegion()
-    @State private var selectedSecondaryCurrencies: Set<CurrencyCode> = []
-    @State private var selectedPeriod: DetailPeriod = .thisMonth
     @State private var loadSeedCategories: Bool = true
 
     // Current step in the onboarding flow
@@ -41,22 +40,41 @@ struct OnboardingView: View {
     // Expenses-only mode preference
     @State private var expensesOnlyMode: Bool = false
 
-    // Notification preferences
-    @State private var selectedNotifications: Set<NotificationType> = []
-    @State private var hasRequestedPermission: Bool = false
-    @State private var budgetAlertsEnabled: Bool = false
-    @State private var showTutorialsSheet: Bool = false
+    // Account setup state
+    @State private var selectedAccountType: AccountType = .checking
+    @State private var accountName: String = ""
+    @State private var userEditedAccountName: Bool = false
+    @State private var accountCurrency: CurrencyCode = CurrencyDefaults.detectCurrencyFromRegion()
+    @State private var initialBalanceText: String = ""
+    @State private var balanceIsPositive: Bool = true
+    @State private var showCurrencyPicker: Bool = false
+    @State private var showAccountTips: Bool = false
+
+    // Quick budget state
+    @State private var wantsBudget: Bool = false
+    @State private var selectedBudgetCategoryIndex: Int? = nil
+    @State private var budgetAmountText: String = ""
 
     // Callback when onboarding completes
     var onComplete: () -> Void
 
-    // Available periods for selection (excluding custom)
-    private let availablePeriods: [DetailPeriod] = [
-        .thisWeek, .last7Days, .last30Days, .thisMonth, .lastMonth,
-        .thisYear, .lastYear, .allTime
-    ]
+    private let totalSteps = 7
 
-    private let totalSteps = 9
+    /// Account types available in onboarding (no credit card)
+    private let onboardingAccountTypes: [AccountType] = [.general, .cash, .checking, .savings]
+
+    /// Effective total steps (skips budget step if no seed categories)
+    private var effectiveTotalSteps: Int {
+        loadSeedCategories ? 7 : 6
+    }
+
+    /// Maps currentStep to visual progress index (accounts for skipped budget step)
+    private var effectiveStepIndex: Int {
+        if !loadSeedCategories && currentStep == 6 {
+            return 5 // Privacy shows as last dot when budget is skipped
+        }
+        return currentStep
+    }
 
     var body: some View {
         VStack(spacing: DS.Spacing.none) {
@@ -71,13 +89,11 @@ struct OnboardingView: View {
                 switch currentStep {
                 case 0: welcomeStep
                 case 1: currencyStep
-                case 2: secondaryCurrenciesStep
-                case 3: periodStep
-                case 4: expensesOnlyStep
-                case 5: categoriesStep
-                case 6: notificationsStep
-                case 7: tutorialsStep
-                case 8: privacyStep
+                case 2: usageModeStep
+                case 3: categoriesStep
+                case 4: accountSetupStep
+                case 5: quickBudgetStep
+                case 6: privacyStep
                 default: EmptyView()
                 }
             }
@@ -103,10 +119,7 @@ struct OnboardingView: View {
             if let raw = defaults.string(forKey: "defaultCurrencyCode"),
                let currency = CurrencyCode(rawValue: raw) {
                 selectedCurrency = currency
-            }
-            if let raw = defaults.string(forKey: "defaultPeriod"),
-               let period = DetailPeriod(rawValue: raw) {
-                selectedPeriod = period
+                accountCurrency = currency
             }
             if defaults.object(forKey: "expensesOnlyMode") != nil {
                 expensesOnlyMode = defaults.bool(forKey: "expensesOnlyMode")
@@ -118,16 +131,16 @@ struct OnboardingView: View {
 
     private var progressIndicator: some View {
         HStack(spacing: DS.Spacing.sm) {
-            ForEach(0..<totalSteps, id: \.self) { step in
+            ForEach(0..<effectiveTotalSteps, id: \.self) { step in
                 Capsule()
-                    .fill(step <= currentStep ? Color.electricIndigo : theme.secondaryText.opacity(0.2))
-                    .frame(width: step == currentStep ? 24 : 8, height: 8)
-                    .dsAnimation(.spring(response: 0.3), value: currentStep, reduceMotion: reduceMotion)
+                    .fill(step <= effectiveStepIndex ? Color.electricIndigo : theme.secondaryText.opacity(0.2))
+                    .frame(width: step == effectiveStepIndex ? 24 : 8, height: 8)
+                    .dsAnimation(.spring(response: 0.3), value: effectiveStepIndex, reduceMotion: reduceMotion)
             }
         }
     }
 
-    // MARK: - Step 1: Welcome & Name
+    // MARK: - Step 0: Welcome & Name
 
     private var welcomeStep: some View {
         VStack(spacing: DS.Spacing.xl) {
@@ -176,7 +189,7 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 2: Preferred Currency
+    // MARK: - Step 1: Preferred Currency
 
     private var recommendedCurrency: CurrencyCode {
         CurrencyDefaults.detectCurrencyFromRegion()
@@ -215,7 +228,9 @@ struct OnboardingView: View {
             ScrollView {
                 LazyVStack(spacing: DS.Spacing.lg) {
                     // Recommended currency section
-                    recommendedCurrencySection
+                    recommendedCurrencySection(selected: selectedCurrency) {
+                        selectedCurrency = recommendedCurrency
+                    }
 
                     // Currencies by continent (excluding recommended)
                     ForEach(filteredContinentGroups, id: \.continent) { group in
@@ -227,7 +242,10 @@ struct OnboardingView: View {
         }
     }
 
-    private var recommendedCurrencySection: some View {
+    private func recommendedCurrencySection(
+        selected: CurrencyCode,
+        onSelect: @escaping () -> Void
+    ) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Onboarding.recommended)
                 .font(DS.Typography.labelSmall)
@@ -235,12 +253,9 @@ struct OnboardingView: View {
                 .textCase(.uppercase)
                 .padding(.leading, DS.Spacing.xs)
 
-            currencyRow(recommendedCurrency, isSelected: selectedCurrency == recommendedCurrency) {
-                selectedCurrency = recommendedCurrency
-                selectedSecondaryCurrencies.remove(recommendedCurrency)
-            }
-            .background(Color.electricIndigo.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+            currencyRow(recommendedCurrency, isSelected: selected == recommendedCurrency, action: onSelect)
+                .background(Color.electricIndigo.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
         }
     }
 
@@ -256,7 +271,6 @@ struct OnboardingView: View {
                 ForEach(group.currencies) { currency in
                     currencyRow(currency, isSelected: selectedCurrency == currency) {
                         selectedCurrency = currency
-                        selectedSecondaryCurrencies.remove(currency)
                     }
                 }
             }
@@ -265,157 +279,9 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 3: Secondary Currencies
+    // MARK: - Step 2: Usage Mode
 
-    /// Currencies to show in the recommended section
-    private let recommendedCurrencyPool: [CurrencyCode] = [.usd, .eur, .gbp]
-
-    /// Recommended currencies (excluding the preferred one, but including already selected)
-    private var recommendedSecondaryCurrencies: [CurrencyCode] {
-        recommendedCurrencyPool.filter { currency in
-            currency != selectedCurrency
-        }
-    }
-
-    /// Other currencies (excluding recommended and selected)
-    private var otherSecondaryCurrencies: [CurrencyCode] {
-        CurrencyCode.allCases.filter { currency in
-            currency != selectedCurrency && !recommendedCurrencyPool.contains(currency)
-        }
-    }
-
-    private var secondaryCurrenciesStep: some View {
-        VStack(spacing: DS.Spacing.xl) {
-            VStack(spacing: DS.Spacing.md) {
-                Image(systemName: "arrow.left.arrow.right.circle.fill")
-                    .font(.system(size: heroIconSize))
-                    .foregroundStyle(Color.electricIndigo)
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-
-                Text(L10n.Onboarding.secondaryTitle)
-                    .font(DS.Typography.title)
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.center)
-
-                Text(L10n.Onboarding.secondarySubtitle)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, DS.Spacing.xl)
-            }
-            .padding(.top, DS.Spacing.xl)
-
-            ScrollView {
-                LazyVStack(spacing: DS.Spacing.lg) {
-                    // Recommended section (if any available)
-                    if !recommendedSecondaryCurrencies.isEmpty {
-                        recommendedSecondaryCurrenciesSection
-                    }
-
-                    // Other currencies section
-                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                        Text(L10n.Common.others)
-                            .font(DS.Typography.labelSmall)
-                            .foregroundStyle(.secondary)
-                            .textCase(.uppercase)
-                            .padding(.leading, DS.Spacing.xs)
-
-                        VStack(spacing: DS.Spacing.none) {
-                            ForEach(otherSecondaryCurrencies) { currency in
-                                let isSelected = selectedSecondaryCurrencies.contains(currency)
-                                currencyRow(currency, isSelected: isSelected, showCheckmark: true) {
-                                    if isSelected {
-                                        selectedSecondaryCurrencies.remove(currency)
-                                    } else if selectedSecondaryCurrencies.count < 2 {
-                                        selectedSecondaryCurrencies.insert(currency)
-                                    }
-                                }
-                            }
-                        }
-                        .background(.thCard)
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                    }
-                }
-                .padding(.horizontal, DS.Spacing.xl)
-            }
-
-            // Selection hint
-            Text(L10n.Onboarding.secondaryHint(selectedSecondaryCurrencies.count, 2))
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-                .padding(.bottom, DS.Spacing.md)
-        }
-    }
-
-    /// Recommended currencies section with highlighted background
-    private var recommendedSecondaryCurrenciesSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text(L10n.Settings.recommendedCurrencies)
-                .font(DS.Typography.labelSmall)
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-                .padding(.leading, DS.Spacing.xs)
-
-            VStack(spacing: DS.Spacing.none) {
-                ForEach(recommendedSecondaryCurrencies) { currency in
-                    let isSelected = selectedSecondaryCurrencies.contains(currency)
-                    currencyRow(currency, isSelected: isSelected, showCheckmark: true) {
-                        if isSelected {
-                            selectedSecondaryCurrencies.remove(currency)
-                        } else if selectedSecondaryCurrencies.count < 2 {
-                            selectedSecondaryCurrencies.insert(currency)
-                        }
-                    }
-                }
-            }
-            .background(Color.electricIndigo.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.md)
-                    .stroke(Color.electricIndigo.opacity(0.15), lineWidth: 1)
-            )
-        }
-    }
-
-    // MARK: - Step 4: Default Period
-
-    private var periodStep: some View {
-        VStack(spacing: DS.Spacing.xl) {
-            VStack(spacing: DS.Spacing.md) {
-                Image(systemName: "calendar.circle.fill")
-                    .font(.system(size: heroIconSize))
-                    .foregroundStyle(Color.electricIndigo)
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-
-                Text(L10n.Onboarding.periodTitle)
-                    .font(DS.Typography.title)
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.center)
-
-                Text(L10n.Onboarding.periodSubtitle)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, DS.Spacing.xl)
-            }
-            .padding(.top, DS.Spacing.xl)
-
-            VStack(spacing: DS.Spacing.sm) {
-                ForEach(availablePeriods) { period in
-                    periodRow(period, isSelected: selectedPeriod == period) {
-                        selectedPeriod = period
-                    }
-                }
-            }
-            .padding(.horizontal, DS.Spacing.xl)
-
-            Spacer()
-        }
-    }
-
-    // MARK: - Step 5: Expenses Only Mode
-
-    private var expensesOnlyStep: some View {
+    private var usageModeStep: some View {
         VStack(spacing: DS.Spacing.xl) {
             VStack(spacing: DS.Spacing.md) {
                 Image(systemName: "gearshape.fill")
@@ -530,7 +396,15 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 6: Seed Categories
+    // MARK: - Step 3: Seed Categories
+
+    /// Seed categories filtered by usage mode (exclude income in expenses-only)
+    private var filteredSeedCategories: [SeedCategoryPreview.CategoryInfo] {
+        if expensesOnlyMode {
+            return SeedCategoryPreview.categories.filter { $0.name != L10n.Category.incomeCategory }
+        }
+        return SeedCategoryPreview.categories
+    }
 
     private var categoriesStep: some View {
         VStack(spacing: DS.Spacing.lg) {
@@ -630,22 +504,23 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 7: Notifications
+    // MARK: - Step 4: Account Setup
 
-    private var notificationsStep: some View {
+    private var accountSetupStep: some View {
         VStack(spacing: DS.Spacing.lg) {
+            // Header
             VStack(spacing: DS.Spacing.md) {
-                Image(systemName: "bell.badge.fill")
+                Image(systemName: "building.columns.fill")
                     .font(.system(size: heroIconSize))
                     .foregroundStyle(Color.electricIndigo)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
-                Text(L10n.Onboarding.notificationsTitle)
+                Text(L10n.Onboarding.accountTitle)
                     .font(DS.Typography.title)
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
 
-                Text(L10n.Onboarding.notificationsSubtitle)
+                Text(L10n.Onboarding.accountSubtitle)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -653,325 +528,366 @@ struct OnboardingView: View {
             }
             .padding(.top, DS.Spacing.md)
 
-            ScrollView {
-                VStack(spacing: DS.Spacing.sm) {
-                    // Enable all / Disable all button
+            // Account type pills
+            HStack(spacing: DS.Spacing.sm) {
+                ForEach(onboardingAccountTypes) { type in
                     Button {
-                        Task { await toggleAllNotifications() }
-                    } label: {
-                        HStack {
-                            Text(allNotificationsSelected
-                                 ? L10n.Onboarding.notificationsDeselectAll
-                                 : L10n.Onboarding.notificationsSelectAll)
-                                .font(DS.Typography.headline)
-                                .foregroundStyle(Color.electricIndigo)
-                            Spacer()
-                            Image(systemName: allNotificationsSelected ? "checkmark.circle.fill" : "circle")
-                                .font(DS.Typography.title)
-                                .foregroundStyle(allNotificationsSelected ? Color.electricIndigo : .secondary)
+                        selectedAccountType = type
+                        if !userEditedAccountName {
+                            accountName = type.localizedName
                         }
-                        .padding(DS.Spacing.md)
-                        .background(.thCard)
+                    } label: {
+                        VStack(spacing: DS.Spacing.xs) {
+                            Image(systemName: iconName(for: type))
+                                .font(DS.Typography.body)
+                                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                            Text(type.localizedName)
+                                .font(DS.Typography.captionSmall)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .foregroundStyle(selectedAccountType == type ? Color.electricIndigo : .secondary)
+                        .background(selectedAccountType == type ? Color.electricIndigo.opacity(0.1) : theme.card)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                         .overlay(
                             RoundedRectangle(cornerRadius: DS.Radius.md)
-                                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
+                                .stroke(selectedAccountType == type ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
                         )
                     }
                     .buttonStyle(.plain)
-
-                    // Reminders section
-                    notificationGroupHeader(L10n.Notifications.sectionReminders)
-                    notificationToggleRow(.endOfDay)
-                    notificationToggleRow(.lunchTime)
-
-                    // Reports section
-                    notificationGroupHeader(L10n.Notifications.sectionReports)
-                    notificationToggleRow(.dailyReport)
-                    notificationToggleRow(.weeklyReport)
-                    notificationToggleRow(.monthlyReport)
-
-                    // System section
-                    notificationGroupHeader(L10n.Notifications.sectionSystem)
-                    notificationToggleRow(.scheduledPayments)
-                    budgetAlertsToggleRow
                 }
-                .padding(.horizontal, DS.Spacing.xl)
             }
+            .padding(.horizontal, DS.Spacing.xl)
 
-        }
-    }
-
-    private func notificationGroupHeader(_ title: String) -> some View {
-        HStack {
-            Text(title)
-                .font(DS.Typography.labelSmall)
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-            Spacer()
-        }
-        .padding(.top, DS.Spacing.md)
-        .padding(.bottom, DS.Spacing.xs)
-    }
-
-    private func notificationToggleRow(_ type: NotificationType) -> some View {
-        let isSelected = selectedNotifications.contains(type)
-
-        return Button {
-            Task {
-                await toggleNotification(type)
-            }
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                // Icon
-                ZStack {
-                    Circle()
-                        .fill(Color(hex: type.defaultColor).opacity(0.2))
-                        .frame(width: categoryIconSize, height: categoryIconSize)
-
-                    Image(systemName: type.defaultIcon)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(Color(hex: type.defaultColor))
-                }
-
-                // Name and description
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(notificationName(for: type))
+            // Form fields in a single card
+            VStack(spacing: DS.Spacing.none) {
+                // Name row
+                HStack {
+                    Text(L10n.Onboarding.accountNameLabel)
                         .font(DS.Typography.body)
                         .foregroundStyle(.primary)
-
-                    Text(notificationHint(for: type))
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    Spacer()
+                    TextField(L10n.Onboarding.accountNamePlaceholder, text: $accountName)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.trailing)
+                        .frame(maxWidth: 180)
+                        .onChange(of: accountName) {
+                            if !onboardingAccountTypes.contains(where: { $0.localizedName == accountName }) {
+                                userEditedAccountName = true
+                            }
+                        }
                 }
+                .padding(DS.Spacing.md)
 
-                Spacer()
+                Divider().padding(.leading, DS.Spacing.md)
 
-                // Toggle indicator
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(DS.Typography.title)
-                    .foregroundStyle(isSelected ? Color.electricIndigo : .secondary)
-            }
-            .padding(DS.Spacing.md)
-            .background(isSelected ? Color.electricIndigo.opacity(0.1) : theme.card)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.md)
-                    .stroke(isSelected ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
+                // Currency row (tappable to change)
+                Button {
+                    showCurrencyPicker = true
+                } label: {
+                    HStack(spacing: DS.Spacing.sm) {
+                        Text(L10n.Onboarding.currencyTitle)
+                            .font(DS.Typography.body)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Text(accountCurrency.flag)
+                            .font(DS.Typography.body)
+                        Text(accountCurrency.rawValue)
+                            .font(DS.Typography.body)
+                            .foregroundStyle(.primary)
+                        Image(systemName: "chevron.right")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(DS.Spacing.md)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
 
-    private var allNotificationsSelected: Bool {
-        let allTypes: Set<NotificationType> = [
-            .endOfDay, .lunchTime, .dailyReport, .weeklyReport,
-            .monthlyReport, .scheduledPayments
-        ]
-        return selectedNotifications == allTypes && budgetAlertsEnabled
-    }
+                // Initial balance row (only in full control mode)
+                if !expensesOnlyMode {
+                    Divider().padding(.leading, DS.Spacing.md)
 
-    private func toggleAllNotifications() async {
-        if allNotificationsSelected {
-            selectedNotifications.removeAll()
-            budgetAlertsEnabled = false
-        } else {
-            if !hasRequestedPermission {
-                let granted = await NotificationService.shared.requestPermission()
-                hasRequestedPermission = true
-                if !granted { return }
-            }
-            selectedNotifications = [
-                .endOfDay, .lunchTime, .dailyReport, .weeklyReport,
-                .monthlyReport, .scheduledPayments
-            ]
-            budgetAlertsEnabled = true
-        }
-    }
+                    VStack(spacing: DS.Spacing.sm) {
+                        HStack(spacing: DS.Spacing.sm) {
+                            Text(L10n.Onboarding.accountBalanceLabel)
+                                .font(DS.Typography.body)
+                                .foregroundStyle(.primary)
 
-    private func toggleNotification(_ type: NotificationType) async {
-        // Request permission on first activation
-        if !hasRequestedPermission && !selectedNotifications.contains(type) {
-            let granted = await NotificationService.shared.requestPermission()
-            hasRequestedPermission = true
+                            Spacer()
 
-            if !granted {
-                return // Don't activate if permission denied
-            }
-        }
+                            // Sign toggle
+                            Button {
+                                balanceIsPositive.toggle()
+                            } label: {
+                                Text(balanceIsPositive ? "+" : "−")
+                                    .font(DS.Typography.headline)
+                                    .foregroundStyle(balanceIsPositive ? Color.electricIndigo : DS.Semantic.errorForeground)
+                                    .frame(width: 32, height: 32)
+                                    .background(theme.card)
+                                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: DS.Radius.sm)
+                                            .stroke(DS.Colors.borderSubtle, lineWidth: 1)
+                                    )
+                            }
+                            .buttonStyle(.plain)
 
-        // Toggle selection
-        if selectedNotifications.contains(type) {
-            selectedNotifications.remove(type)
-        } else {
-            selectedNotifications.insert(type)
-        }
-    }
+                            // Amount field
+                            HStack(spacing: DS.Spacing.xxs) {
+                                Text(accountCurrency.symbol)
+                                    .font(DS.Typography.body)
+                                    .foregroundStyle(.secondary)
+                                TextField("0", text: $initialBalanceText)
+                                    .font(DS.Typography.body)
+                                    .keyboardType(.decimalPad)
+                                    .multilineTextAlignment(.trailing)
+                                    .frame(width: 100)
+                            }
+                        }
+                        .padding(.horizontal, DS.Spacing.md)
+                        .padding(.top, DS.Spacing.md)
 
-    private var budgetAlertsToggleRow: some View {
-        Button {
-            Task {
-                // Request permission on first activation
-                if !hasRequestedPermission && !budgetAlertsEnabled {
-                    let granted = await NotificationService.shared.requestPermission()
-                    hasRequestedPermission = true
-
-                    if !granted {
-                        return
+                        Text(selectedAccountType.balanceHint)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, DS.Spacing.md)
+                            .padding(.bottom, DS.Spacing.md)
                     }
                 }
-                budgetAlertsEnabled.toggle()
             }
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                // Icon
-                ZStack {
-                    Circle()
-                        .fill(Color.hotPink.opacity(0.2))
-                        .frame(width: categoryIconSize, height: categoryIconSize)
-
-                    Image(systemName: "chart.bar.fill")
-                        .font(DS.Typography.body)
-                        .foregroundStyle(Color.hotPink)
-                }
-
-                // Name and description
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.Notifications.budgetAlertsTitle)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.primary)
-
-                    Text(L10n.Notifications.budgetAlertsHint)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-
-                Spacer()
-
-                // Toggle indicator
-                Image(systemName: budgetAlertsEnabled ? "checkmark.circle.fill" : "circle")
-                    .font(DS.Typography.title)
-                    .foregroundStyle(budgetAlertsEnabled ? Color.electricIndigo : .secondary)
-            }
-            .padding(DS.Spacing.md)
-            .background(budgetAlertsEnabled ? Color.electricIndigo.opacity(0.1) : theme.card)
+            .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.md)
-                    .stroke(budgetAlertsEnabled ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
+                    .stroke(DS.Colors.borderSubtle, lineWidth: 1)
             )
-            .contentShape(Rectangle())
+            .padding(.horizontal, DS.Spacing.xl)
+
+            Spacer()
         }
-        .buttonStyle(.plain)
-    }
-
-    private func notificationName(for type: NotificationType) -> String {
-        switch type {
-        case .endOfDay: return L10n.Notifications.endOfDayName
-        case .lunchTime: return L10n.Notifications.lunchTimeName
-        case .dailyReport: return L10n.Notifications.dailyReportName
-        case .weeklyReport: return L10n.Notifications.weeklyReportName
-        case .monthlyReport: return L10n.Notifications.monthlyReportName
-        case .scheduledPayments: return L10n.Notifications.scheduledPaymentsName
-        case .custom: return ""
-        }
-    }
-
-    private static let hintTimeFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateStyle = .none
-        f.timeStyle = .short
-        return f
-    }()
-
-    private func formattedTime(hour: Int, minute: Int) -> String {
-        var components = DateComponents()
-        components.hour = hour
-        components.minute = minute
-        guard let date = Calendar.current.date(from: components) else { return "" }
-        return Self.hintTimeFormatter.string(from: date)
-    }
-
-    private func notificationHint(for type: NotificationType) -> String {
-        switch type {
-        case .endOfDay: return formattedTime(hour: 20, minute: 0)
-        case .lunchTime: return formattedTime(hour: 13, minute: 30)
-        case .dailyReport: return formattedTime(hour: 21, minute: 0)
-        case .weeklyReport: return L10n.Notifications.dayMonday + " " + formattedTime(hour: 9, minute: 0)
-        case .monthlyReport: return L10n.Notifications.dayFirstOfMonth
-        case .scheduledPayments: return L10n.Notifications.scheduledPaymentsHint
-        case .custom: return ""
-        }
-    }
-
-    // MARK: - Step 8: Tutorials
-
-    private var tutorialsStep: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            // Fixed header (same pattern as notifications step)
-            VStack(spacing: DS.Spacing.md) {
-                Image(systemName: "lightbulb.fill")
-                    .font(.system(size: heroIconSize))
-                    .foregroundStyle(Color.electricIndigo)
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-
-                Text(L10n.Onboarding.tutorialsTitle)
-                    .font(DS.Typography.title)
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.center)
-
-                Text(L10n.Onboarding.tutorialsSubtitle)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, DS.Spacing.xl)
+        .onAppear {
+            accountCurrency = selectedCurrency
+            if !userEditedAccountName {
+                accountName = selectedAccountType.localizedName
             }
-            .padding(.top, DS.Spacing.md)
+        }
+        .sheet(isPresented: $showCurrencyPicker) {
+            accountCurrencyPickerSheet
+        }
+        .alert(L10n.Onboarding.accountTitle, isPresented: $showAccountTips) {
+            Button(L10n.Common.ok) { }
+        } message: {
+            Text(L10n.Onboarding.accountImportTip + "\n\n" + L10n.Onboarding.accountMoreTip)
+        }
+    }
 
-            // Scrollable tutorial categories in cards
+    /// Sheet for changing account currency
+    private var accountCurrencyPickerSheet: some View {
+        NavigationStack {
             ScrollView {
-                VStack(spacing: DS.Spacing.lg) {
-                    ForEach(TutorialCategory.allCases) { category in
+                LazyVStack(spacing: DS.Spacing.lg) {
+                    recommendedCurrencySection(selected: accountCurrency) {
+                        accountCurrency = recommendedCurrency
+                        showCurrencyPicker = false
+                    }
+
+                    ForEach(filteredContinentGroups, id: \.continent) { group in
                         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            Text(category.title)
+                            Text(group.continent.localizedName)
                                 .font(DS.Typography.labelSmall)
                                 .foregroundStyle(.secondary)
                                 .textCase(.uppercase)
                                 .padding(.leading, DS.Spacing.xs)
 
-                            // Card with tutorial rows
                             VStack(spacing: DS.Spacing.none) {
-                                ForEach(Array(category.tutorials.enumerated()), id: \.element.id) { index, tutorial in
-                                    HStack(spacing: DS.Spacing.md) {
-                                        ZStack {
-                                            Circle()
-                                                .fill(tutorial.color.opacity(0.15))
-                                                .frame(width: badgeSize, height: badgeSize)
-
-                                            Image(systemName: tutorial.icon)
-                                                .font(DS.Typography.caption)
-                                                .foregroundStyle(tutorial.color)
-                                        }
-
-                                        Text(tutorial.title)
-                                            .font(DS.Typography.body)
-                                            .foregroundStyle(.primary)
-
-                                        Spacer()
-                                    }
-                                    .padding(.horizontal, DS.Spacing.md)
-                                    .padding(.vertical, DS.Spacing.sm)
-
-                                    if index < category.tutorials.count - 1 {
-                                        Divider()
-                                            .padding(.leading, DS.Spacing.md + badgeSize + DS.Spacing.md)
+                                ForEach(group.currencies) { currency in
+                                    currencyRow(currency, isSelected: accountCurrency == currency) {
+                                        accountCurrency = currency
+                                        showCurrencyPicker = false
                                     }
                                 }
                             }
+                            .background(.thCard)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                        }
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.top, DS.Spacing.md)
+            }
+            .navigationTitle(L10n.Onboarding.currencyTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(L10n.Action.cancel) {
+                        showCurrencyPicker = false
+                    }
+                }
+            }
+            .background(.thBackground)
+        }
+    }
+
+
+    // MARK: - Step 5: Quick Budget
+
+    /// Budget-eligible categories (expense categories from seed, excluding income)
+    private var budgetCategories: [SeedCategoryPreview.CategoryInfo] {
+        SeedCategoryPreview.categories.filter { $0.name != L10n.Category.incomeCategory }
+    }
+
+    private var quickBudgetStep: some View {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xl) {
+                // Header
+                VStack(spacing: DS.Spacing.md) {
+                    Image(systemName: "chart.bar.fill")
+                        .font(.system(size: heroIconSize))
+                        .foregroundStyle(Color.electricIndigo)
+                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+
+                    Text(L10n.Onboarding.budgetTitle)
+                        .font(DS.Typography.title)
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.center)
+
+                    Text(L10n.Onboarding.budgetSubtitle)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, DS.Spacing.xl)
+                }
+                .padding(.top, DS.Spacing.md)
+
+                // Yes/No toggle cards
+                VStack(spacing: DS.Spacing.sm) {
+                    Button {
+                        wantsBudget = true
+                    } label: {
+                        HStack {
+                            Image(systemName: wantsBudget ? "checkmark.circle.fill" : "circle")
+                                .font(DS.Typography.title)
+                                .foregroundStyle(wantsBudget ? Color.electricIndigo : .secondary)
+
+                            Text(L10n.Onboarding.budgetYes)
+                                .font(DS.Typography.body)
+                                .foregroundStyle(.primary)
+
+                            Spacer()
+
+                            Text(L10n.Onboarding.categoriesRecommended)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(Color.electricIndigo)
+                        }
+                        .padding(DS.Spacing.md)
+                        .background(wantsBudget ? Color.electricIndigo.opacity(0.1) : theme.card)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DS.Radius.md)
+                                .stroke(wantsBudget ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        wantsBudget = false
+                    } label: {
+                        HStack {
+                            Image(systemName: wantsBudget ? "circle" : "checkmark.circle.fill")
+                                .font(DS.Typography.title)
+                                .foregroundStyle(wantsBudget ? .secondary : Color.electricIndigo)
+
+                            Text(L10n.Onboarding.budgetNo)
+                                .font(DS.Typography.body)
+                                .foregroundStyle(.primary)
+
+                            Spacer()
+                        }
+                        .padding(DS.Spacing.md)
+                        .background(wantsBudget ? theme.card : Color.electricIndigo.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DS.Radius.md)
+                                .stroke(wantsBudget ? DS.Colors.borderSubtle : Color.electricIndigo.opacity(0.3), lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+
+                // Budget details (animated, only if wantsBudget)
+                if wantsBudget {
+                    VStack(spacing: DS.Spacing.lg) {
+                        // Category selection
+                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                            Text(L10n.Onboarding.budgetCategoryLabel)
+                                .font(DS.Typography.label)
+                                .foregroundStyle(.secondary)
+
+                            let columns = [
+                                GridItem(.flexible()),
+                                GridItem(.flexible()),
+                                GridItem(.flexible()),
+                                GridItem(.flexible())
+                            ]
+
+                            LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
+                                ForEach(Array(budgetCategories.enumerated()), id: \.offset) { index, category in
+                                    Button {
+                                        selectedBudgetCategoryIndex = index
+                                    } label: {
+                                        VStack(spacing: DS.Spacing.xs) {
+                                            ZStack {
+                                                Circle()
+                                                    .fill(Color(hex: category.colorHex).opacity(selectedBudgetCategoryIndex == index ? 0.3 : 0.15))
+                                                    .frame(width: categoryIconSize, height: categoryIconSize)
+
+                                                Image(systemName: category.iconName)
+                                                    .font(DS.Typography.body)
+                                                    .foregroundStyle(Color(hex: category.colorHex))
+                                            }
+
+                                            Text(category.name)
+                                                .font(DS.Typography.captionSmall)
+                                                .foregroundStyle(selectedBudgetCategoryIndex == index ? .primary : .secondary)
+                                                .lineLimit(1)
+                                                .minimumScaleFactor(0.8)
+                                        }
+                                        .padding(.vertical, DS.Spacing.xs)
+                                        .frame(maxWidth: .infinity)
+                                        .background(selectedBudgetCategoryIndex == index ? Color.electricIndigo.opacity(0.08) : Color.clear)
+                                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: DS.Radius.md)
+                                                .stroke(selectedBudgetCategoryIndex == index ? Color.electricIndigo.opacity(0.3) : Color.clear, lineWidth: 1)
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+
+                        // Amount field
+                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                            Text(L10n.Onboarding.budgetAmountLabel)
+                                .font(DS.Typography.label)
+                                .foregroundStyle(.secondary)
+
+                            HStack(spacing: DS.Spacing.xs) {
+                                Text(selectedCurrency.symbol)
+                                    .font(DS.Typography.body)
+                                    .foregroundStyle(.secondary)
+
+                                TextField(L10n.Onboarding.budgetAmountPlaceholder, text: $budgetAmountText)
+                                    .font(DS.Typography.body)
+                                    .keyboardType(.decimalPad)
+                            }
+                            .padding(DS.Spacing.md)
                             .background(.thCard)
                             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                             .overlay(
@@ -980,49 +896,28 @@ struct OnboardingView: View {
                             )
                         }
                     }
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
+                // Footer tip
+                HStack(alignment: .top, spacing: DS.Spacing.sm) {
+                    Image(systemName: "info.circle")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                    Text(L10n.Onboarding.budgetMoreTip)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, DS.Spacing.xl)
             }
-
-            // Fixed footer: CTA + hint (always visible above nav buttons)
-            VStack(spacing: DS.Spacing.sm) {
-                Button {
-                    showTutorialsSheet = true
-                } label: {
-                    HStack(spacing: DS.Spacing.sm) {
-                        Text(L10n.Onboarding.tutorialsExplore)
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(Color.electricIndigo)
-
-                        Image(systemName: "chevron.right")
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(Color.electricIndigo.opacity(0.6))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, DS.Spacing.md)
-                    .background(Color.electricIndigo.opacity(0.08))
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.md)
-                            .stroke(Color.electricIndigo.opacity(0.15), lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-
-                Text(L10n.Onboarding.tutorialsSettingsHint)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.xl)
+            .dsAnimation(.easeInOut(duration: 0.3), value: wantsBudget, reduceMotion: reduceMotion)
         }
-        .sheet(isPresented: $showTutorialsSheet) {
-            NavigationStack {
-                TutorialsListView()
-            }
-        }
+        .scrollBounceBehavior(.basedOnSize)
     }
 
-    // MARK: - Step 9: Privacy & Finish
+    // MARK: - Step 6: Privacy & Finish
 
     private var privacyStep: some View {
         GeometryReader { geometry in
@@ -1096,7 +991,6 @@ struct OnboardingView: View {
 
     /// Preview grid showing seed category icons with staggered animation
     private var categoryIconsGrid: some View {
-        let seedCategories = SeedCategoryPreview.categories
         let columns = [
             GridItem(.flexible()),
             GridItem(.flexible()),
@@ -1105,7 +999,7 @@ struct OnboardingView: View {
         ]
 
         return LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
-            ForEach(Array(seedCategories.enumerated()), id: \.offset) { index, category in
+            ForEach(Array(filteredSeedCategories.enumerated()), id: \.offset) { index, category in
                 VStack(spacing: DS.Spacing.xs) {
                     ZStack {
                         Circle()
@@ -1188,36 +1082,6 @@ struct OnboardingView: View {
         .buttonStyle(.plain)
     }
 
-    private func periodRow(
-        _ period: DetailPeriod,
-        isSelected: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack {
-                Text(period.displayName)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.primary)
-
-                Spacer()
-
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(Color.electricIndigo)
-                }
-            }
-            .padding(DS.Spacing.md)
-            .background(isSelected ? Color.electricIndigo.opacity(0.1) : theme.card)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.md)
-                    .stroke(isSelected ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
     // MARK: - Navigation Buttons
 
     private var navigationButtons: some View {
@@ -1227,7 +1091,12 @@ struct OnboardingView: View {
                 Button {
                     navigatingForward = false
                     dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
-                        currentStep -= 1
+                        // Skip budget step on back if no seed categories
+                        if currentStep == 6 && !loadSeedCategories {
+                            currentStep = 4
+                        } else {
+                            currentStep -= 1
+                        }
                     }
                 } label: {
                     Text(L10n.Action.back)
@@ -1242,17 +1111,29 @@ struct OnboardingView: View {
 
             // Next/Finish button
             Button {
-                // Dismiss keyboard (especially important on step 1)
+                // Dismiss keyboard (especially important on step 0)
                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
                 if currentStep < totalSteps - 1 {
+                    // Show tips popup when leaving account step
+                    let leavingAccountStep = currentStep == 4
+
                     navigatingForward = true
                     dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
-                        currentStep += 1
+                        // Skip budget step (5) if no seed categories
+                        if currentStep == 4 && !loadSeedCategories {
+                            currentStep = 6
+                        } else {
+                            currentStep += 1
+                        }
                     }
                     // Trigger category icons animation when entering categories step
-                    if currentStep == 5 {
+                    if currentStep == 3 {
                         triggerCategoryAnimation()
+                    }
+
+                    if leavingAccountStep {
+                        showAccountTips = true
                     }
                 } else {
                     completeOnboarding()
@@ -1292,30 +1173,43 @@ struct OnboardingView: View {
         // Preferred currency
         sync.set(string: selectedCurrency.rawValue, forKey: "defaultCurrencyCode")
 
-        // Secondary currencies (store as comma-separated string)
-        let secondaryArray = selectedSecondaryCurrencies.map { $0.rawValue }
-        sync.set(string: secondaryArray.joined(separator: ","), forKey: "secondaryCurrencies")
-
-        // Default period
-        sync.set(string: selectedPeriod.rawValue, forKey: "defaultPeriod")
+        // Default period (hardcode .thisMonth — 80%+ of users don't need to change it)
+        sync.set(string: DetailPeriod.thisMonth.rawValue, forKey: "defaultPeriod")
+        sessionState.selectedPeriod = .thisMonth
 
         // Expenses-only mode (didSet propagates to app group)
         sync.set(bool: expensesOnlyMode, forKey: "expensesOnlyMode")
         sessionState.isExpensesOnlyMode = expensesOnlyMode
-
-        // Budget alerts preference
-        sync.set(bool: budgetAlertsEnabled, forKey: "budgetAlertsEnabled")
-
-        // Apply period to SessionState immediately (since it was created before onboarding)
-        sessionState.selectedPeriod = selectedPeriod
 
         // Seed categories if user chose to
         if loadSeedCategories {
             seedCategoriesIfNeeded(in: modelContext)
         }
 
-        // Create notifications based on user selection
-        createSelectedNotifications()
+        // Ensure balance adjustment subcategory exists when no seed categories + control total
+        if !loadSeedCategories && !expensesOnlyMode {
+            InitialBalanceService.ensureBalanceAdjustmentSubcategoryExists(context: modelContext)
+        }
+
+        // Create account from step 4
+        createOnboardingAccount()
+
+        // Create budget if selected in step 5
+        if wantsBudget && loadSeedCategories {
+            createOnboardingBudget()
+        }
+
+        // Create all notifications as inactive (no user selection step)
+        createDefaultNotifications()
+
+        // Single save for all data created above (account, budget, notifications, subcategory)
+        do {
+            try modelContext.save()
+        } catch {
+            #if DEBUG
+            print("OnboardingView: Error saving onboarding data: \(error)")
+            #endif
+        }
 
         // Mark onboarding as complete AFTER data creation (prevents inconsistent state on crash)
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
@@ -1323,47 +1217,98 @@ struct OnboardingView: View {
         // Signal other devices that onboarding is done (cross-device wipe coordination)
         PreferenceSyncService.shared.signalOnboardingCompleted()
 
-        // Load historical exchange rates for secondary currencies (in background)
-        loadHistoricalRatesForSecondaryCurrencies()
+        // Force update today's exchange rate in background
+        Task {
+            await ExchangeRateService.shared.forceUpdateToday(context: modelContext)
+            SessionState.shared.needsExchangeRateWidgetRefresh = true
+        }
 
         // Notify completion
         onComplete()
     }
 
-    private func loadHistoricalRatesForSecondaryCurrencies() {
-        // Load exchange rates in background (after onboarding dismisses)
-        Task {
-            // 1. First, force update TODAY's rate with ALL 7 currencies
-            // This ensures the Settings "Tipo de cambio" section shows all currencies
-            await ExchangeRateService.shared.forceUpdateToday(context: modelContext)
+    private func createOnboardingAccount() {
+        let finalName = accountName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let name = finalName.isEmpty ? selectedAccountType.localizedName : finalName
 
-            // 2. Then load historical rates if secondary currencies were selected
-            if !selectedSecondaryCurrencies.isEmpty {
-                let calendar = Calendar.current
-                let today = Date()
-                guard let oneYearAgo = calendar.date(byAdding: .year, value: -1, to: today) else {
-                    return
+        let account = Account(
+            name: name,
+            currencyCode: accountCurrency.rawValue,
+            colorHex: AppConstants.defaultColorHex,
+            iconName: iconName(for: selectedAccountType),
+            type: selectedAccountType.rawValue
+        )
+        modelContext.insert(account)
+
+        // Set initial balance if in full control mode and amount > 0
+        if !expensesOnlyMode {
+            let cleanedText = initialBalanceText.replacingOccurrences(of: ",", with: ".")
+            if let amount = Double(cleanedText), amount != 0 {
+                let signedAmount = balanceIsPositive ? amount : -amount
+                if let sub = InitialBalanceService.findBalanceAdjustmentSubcategory(context: modelContext) {
+                    _ = InitialBalanceService.setInitialBalance(
+                        amount: signedAmount,
+                        for: account,
+                        subcategory: sub,
+                        allTransactions: [],
+                        context: modelContext
+                    )
                 }
-
-                let dateInterval = DateInterval(start: oneYearAgo, end: today)
-
-                // FORCE refresh historical rates to ensure ALL currencies are included
-                // This handles cases where rates were fetched before all currencies were selected
-                await ExchangeRateService.shared.forceRefreshRates(for: dateInterval, context: modelContext)
-
-                #if DEBUG
-                print(
-                    "OnboardingView: Force refreshed historical rates for secondary currencies: \(selectedSecondaryCurrencies.map { $0.rawValue })"
-                )
-                #endif
             }
-
-            // Signal widget to refresh when user opens Panel
-            SessionState.shared.needsExchangeRateWidgetRefresh = true
         }
     }
 
-    private func createSelectedNotifications() {
+    private func createOnboardingBudget() {
+        guard let catIndex = selectedBudgetCategoryIndex else { return }
+
+        let cleanedText = budgetAmountText.replacingOccurrences(of: ",", with: ".")
+        guard let budgetAmount = Double(cleanedText), budgetAmount > 0 else { return }
+
+        // Get the category info from preview
+        let cats = budgetCategories
+        guard catIndex < cats.count else { return }
+        let catInfo = cats[catIndex]
+
+        // Find the real Category by name in context (just seeded)
+        let categoryName = catInfo.name
+        let descriptor = FetchDescriptor<Category>(
+            predicate: #Predicate<Category> { category in
+                category.name == categoryName
+            }
+        )
+
+        do {
+            let categories = try modelContext.fetch(descriptor)
+            guard let category = categories.first else {
+                #if DEBUG
+                print("OnboardingView: Could not find category '\(categoryName)' for budget")
+                #endif
+                return
+            }
+
+            // Get all subcategories for this category
+            let subcategories = category.subcategories ?? []
+
+            let budget = Budget(
+                currencyCode: selectedCurrency.rawValue,
+                limitAmount: budgetAmount,
+                category: category,
+                name: category.name,
+                periodType: "monthly",
+                subcategories: subcategories
+            )
+            modelContext.insert(budget)
+            #if DEBUG
+            print("OnboardingView: Created budget '\(category.name)' with limit \(budgetAmount)")
+            #endif
+        } catch {
+            #if DEBUG
+            print("OnboardingView: Error finding category for budget: \(error)")
+            #endif
+        }
+    }
+
+    private func createDefaultNotifications() {
         // R9: Guard against duplicate creation if called twice or iCloud delivers mid-save
         let defaults = UserDefaults.standard
         if defaults.bool(forKey: "notificationsSeeded") { return }
@@ -1382,46 +1327,22 @@ struct OnboardingView: View {
         }
         let existingTypes = Set(existing.map { $0.typeRaw })
 
-        // Create all default notifications
+        // Create all default notifications as inactive
         let allDefaults = NotificationItem.createDefaults()
         var inserted = 0
 
         for notification in allDefaults {
-            // Skip if this type already exists
             guard !existingTypes.contains(notification.typeRaw) else { continue }
-
-            // Set active state based on user selection
-            let isSelected = selectedNotifications.contains(notification.notificationType)
-            notification.isActive = isSelected
-
+            notification.isActive = false
             modelContext.insert(notification)
             inserted += 1
-
-            // Schedule if active (and not a dynamic type)
-            if isSelected && !notification.notificationType.requiresDynamicContent {
-                Task {
-                    await NotificationService.shared.scheduleNotification(for: notification)
-                }
-            }
         }
 
-        guard inserted > 0 else {
-            #if DEBUG
-            print("OnboardingView: All notification types already exist, skipping creation")
-            #endif
-            return
+        #if DEBUG
+        if inserted > 0 {
+            print("OnboardingView: Created \(inserted) notification types (all inactive)")
         }
-
-        do {
-            try modelContext.save()
-            #if DEBUG
-            print("OnboardingView: Created \(inserted) notification types")
-            #endif
-        } catch {
-            #if DEBUG
-            print("OnboardingView: Error saving notifications: \(error)")
-            #endif
-        }
+        #endif
     }
 }
 

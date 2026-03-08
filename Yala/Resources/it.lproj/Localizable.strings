@@ -1503,6 +1503,28 @@
 "onboarding.privacyIcloud" = "Solo tu hai accesso ai tuoi dati";
 "onboarding.privacyNoSharing" = "Le funzioni IA non condividono né archiviano dati sensibili";
 "onboarding.privacyTutorialsHint" = "Scopri i tutorial e i consigli di Yala";
+"onboarding.accountTitle" = "Il tuo primo conto";
+"onboarding.accountSubtitle" = "Un conto rappresenta dove tieni i tuoi soldi. Ogni conto ha un'unica valuta.";
+"onboarding.accountTypeLabel" = "Tipo di conto";
+"onboarding.accountNameLabel" = "Nome del conto";
+"onboarding.accountNamePlaceholder" = "Es.: Il mio conto principale";
+"onboarding.accountBalanceLabel" = "Saldo iniziale";
+"onboarding.accountBalanceHint" = "Il tuo saldo attuale approssimativo. Corrente: fondi disponibili. Risparmio: quanto hai risparmiato.";
+"onboarding.accountBalanceSkipHint" = "Se non lo sai, lascia a 0 e regola dopo nel conto.";
+"onboarding.accountBalanceHintGeneral" = "Risparmi + conto corrente − credito utilizzato. Se non lo sai, lascia a 0.";
+"onboarding.accountBalanceHintCash" = "Contanti che hai. Se non lo sai, lascia a 0.";
+"onboarding.accountBalanceHintChecking" = "Fondi disponibili nel tuo conto. Se non lo sai, lascia a 0.";
+"onboarding.accountBalanceHintSavings" = "Soldi che hai risparmiato. Se non lo sai, lascia a 0.";
+"onboarding.accountImportTip" = "In Profilo > Importa puoi importare registrazioni in qualsiasi conto.";
+"onboarding.accountMoreTip" = "Puoi aggiungere altri conti quando vuoi. Crea almeno uno per valuta se ne usi più di una.";
+"onboarding.budgetTitle" = "Metti un tetto alle spese";
+"onboarding.budgetSubtitle" = "Opzionale — puoi creare budget quando vuoi in Pianificazione > Budget.";
+"onboarding.budgetYes" = "Voglio mettere un limite";
+"onboarding.budgetNo" = "Non ora, grazie";
+"onboarding.budgetCategoryLabel" = "In quale categoria?";
+"onboarding.budgetAmountLabel" = "Importo mensile";
+"onboarding.budgetAmountPlaceholder" = "Es.: 500";
+"onboarding.budgetMoreTip" = "Puoi creare altri budget o modificare quelli esistenti in Pianificazione > Budget.";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Cambiando il conto, verrà aggiornata la valuta delle transazioni selezionate.";

@@ -195,7 +195,7 @@ enum TransactionCSVImportService {
             // Mark transfers and adjustments so they're excluded from income/expense stats
             if draft.subcategory.isSystemSubcategory {
                 let subcategoryName = draft.subcategory.name
-                if subcategoryName == "Ajustes de saldo" {
+                if subcategoryName == L10n.Subcategory.balanceAdjustment {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
                 } else {
                     // All other system subcategories are transfers
@@ -1106,7 +1106,7 @@ enum TransactionCSVImportService {
             // Mark transfers and adjustments so they're excluded from income/expense stats
             if draft.subcategory.isSystemSubcategory {
                 let subcategoryName = draft.subcategory.name
-                if subcategoryName == "Ajustes de saldo" {
+                if subcategoryName == L10n.Subcategory.balanceAdjustment {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
                 } else {
                     // All other system subcategories are transfers
@@ -1490,7 +1490,7 @@ enum TransactionCSVImportService {
 
             if draft.subcategory.isSystemSubcategory {
                 let subcategoryName = draft.subcategory.name
-                if subcategoryName == "Ajustes de saldo" {
+                if subcategoryName == L10n.Subcategory.balanceAdjustment {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
                 } else {
                     transaction.balanceAdjustmentType = "transfer"
@@ -1641,7 +1641,7 @@ enum TransactionCSVImportService {
 
             if draft.subcategory.isSystemSubcategory {
                 let subcategoryName = draft.subcategory.name
-                if subcategoryName == "Ajustes de saldo" {
+                if subcategoryName == L10n.Subcategory.balanceAdjustment {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
                 } else {
                     transaction.balanceAdjustmentType = "transfer"

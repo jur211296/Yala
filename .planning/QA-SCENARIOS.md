@@ -5107,3 +5107,60 @@ Para cada tema verificar:
 - [ ] Cards AI muestran tip cuando el LLM incluye uno
 - [ ] Tips no aparecen si el campo es nil (comportamiento por defecto)
 - [ ] Hero card de AI no muestra tip (solo cards individuales)
+
+## Sección 45: Rediseño del Onboarding (7 pasos)
+
+### 45.1 Happy Path — Control Total
+- [ ] Fresh launch → nombre "Test" → MXN → Control total → categorías sí
+- [ ] Cuenta: tipo "Cuenta corriente", nombre auto-llenado, saldo 5000
+- [ ] Presupuesto: sí, Alimentación, 3000/mes
+- [ ] Privacidad → Empezar
+- [ ] Panel muestra 1 cuenta MXN $5,000
+- [ ] Budget visible en Planificación > Presupuestos
+- [ ] Notificaciones en Perfil > Notificaciones todas con isActive=false
+
+### 45.2 Happy Path — Solo Gastos
+- [ ] Fresh launch → nombre → divisa → Solo gastos → categorías sí
+- [ ] Cuenta: tipo Efectivo, campo de saldo NO visible
+- [ ] Presupuesto: skip (seleccionar "Ahora no")
+- [ ] Privacidad → Empezar
+- [ ] Panel muestra 1 cuenta sin saldo inicial
+- [ ] Sin presupuestos creados
+
+### 45.3 Sin Categorías Semilla
+- [ ] Fresh launch → nombre → divisa → Control total → categorías NO
+- [ ] Cuenta: tipo General, saldo 1000
+- [ ] Paso presupuesto se salta automáticamente (dots muestran 6, no 7)
+- [ ] Privacidad → Empezar
+- [ ] Panel muestra cuenta con saldo
+- [ ] Subcategoría "Ajustes de saldo" existe en datos
+- [ ] Sin presupuestos creados
+
+### 45.4 Auto-fill Nombre Cuenta
+- [ ] Llegar a paso cuenta → seleccionar "Ahorros" → nombre auto-fill "Cuenta de ahorros"
+- [ ] Editar nombre manualmente a "Mi Ahorro"
+- [ ] Cambiar tipo a "Efectivo" → nombre queda "Mi Ahorro" (no se sobreescribe)
+
+### 45.5 Saldo Cero
+- [ ] Control total → cuenta → dejar saldo vacío o "0"
+- [ ] Cuenta creada sin transacción initial_balance
+
+### 45.6 Back Navigation
+- [ ] Ir a paso 4 (cuenta) → Back → cambiar de Control total a Solo gastos → Next
+- [ ] Campo de saldo desaparece en paso cuenta
+- [ ] Sin categorías semilla: Back desde paso 6 (privacidad) → va a paso 4 (cuenta), no paso 5
+
+### 45.7 Progress Indicator
+- [ ] Con categorías semilla: 7 dots visibles
+- [ ] Sin categorías semilla: 6 dots visibles (paso presupuesto oculto)
+- [ ] Dot activo se expande y colorea correctamente
+
+### 45.8 Categorías filtradas por modo
+- [ ] Solo gastos: grid de categorías NO muestra "Ingresos"
+- [ ] Control total: grid de categorías muestra todas las 11 categorías
+
+### 45.9 Pasos eliminados no existen
+- [ ] No hay paso de divisas secundarias
+- [ ] No hay paso de período predeterminado
+- [ ] No hay paso de notificaciones con toggles
+- [ ] No hay paso de tutoriales

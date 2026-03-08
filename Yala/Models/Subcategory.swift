@@ -80,11 +80,18 @@ final class Subcategory {
 // MARK: - System Subcategories
 
 extension Subcategory {
-    /// System subcategory names that cannot be deleted (all localizations)
-    static let systemSubcategoryNames: Set<String> = [
-        // Balance adjustments (Spanish seed name)
+    /// Balance adjustment subcategory names (all localizations)
+    static let balanceAdjustmentNames: Set<String> = [
         "Ajustes de saldo",
-        // Transfers (Spanish seed name + all localizations)
+        "Balance adjustments", "Balance adjustment",
+        "Saldoanpassungen", "Saldoanpassung",
+        "Ajustements de solde", "Ajustement de solde",
+        "Rettifiche del saldo", "Aggiustamento saldo",
+        "Ajuste de saldo",
+    ]
+
+    /// Transfer subcategory names (all localizations)
+    static let transferNames: Set<String> = [
         "Transferencia entre cuentas",
         "Transfer between accounts",
         "Überweisung zwischen Konten",
@@ -92,6 +99,9 @@ extension Subcategory {
         "Trasferimento tra conti",
         "Transferencia entre contas",
     ]
+
+    /// System subcategory names that cannot be deleted (all localizations)
+    static let systemSubcategoryNames: Set<String> = balanceAdjustmentNames.union(transferNames)
 
     /// Whether this subcategory is a system subcategory that cannot be deleted
     var isSystemSubcategory: Bool {
