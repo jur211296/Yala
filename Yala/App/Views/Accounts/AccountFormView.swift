@@ -19,6 +19,7 @@ struct AccountFormView: View {
 
     @State private var viewModel: AccountFormViewModel
     @State private var showBalanceCalculator: Bool = false
+    @State private var calcFieldState = BalanceCalculatorFieldState()
     @FocusState private var focusedField: Field?
 
     private enum Field {
@@ -63,6 +64,7 @@ struct AccountFormView: View {
                                         .font(DS.Typography.subheadline)
                                     Text(L10n.Onboarding.accountBalanceLearnMore)
                                         .font(DS.Typography.subheadline)
+                                        .fontWeight(.semibold)
                                 }
                                 .foregroundStyle(Color.electricIndigo)
                             }
@@ -115,6 +117,7 @@ struct AccountFormView: View {
                     accountType: viewModel.selectedType,
                     mindset: SessionState.shared.financialMindset,
                     currencySymbol: viewModel.selectedCurrency.symbol,
+                    fieldState: calcFieldState,
                     onUseBalance: { amount in
                         if amount >= 0 {
                             viewModel.isPositive = true
@@ -129,6 +132,9 @@ struct AccountFormView: View {
             }
             .onChange(of: viewModel.isPresentingColorPicker) { _, isPresenting in
                 if isPresenting { focusedField = nil }
+            }
+            .onChange(of: viewModel.selectedType) {
+                calcFieldState.reset()
             }
             .onAppear {
                 viewModel.setContext(modelContext)

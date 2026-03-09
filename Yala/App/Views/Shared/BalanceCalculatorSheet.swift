@@ -8,29 +8,49 @@
 
 import SwiftUI
 
+// MARK: - Field State (persists across sheet open/close)
+
+@Observable
+final class BalanceCalculatorFieldState {
+    // General calculator fields
+    var bankAccountsText: String = ""
+    var savingsText: String = ""
+    var cashText: String = ""
+    var creditCardSpendingText: String = ""
+    var othersOweMeText: String = ""
+    var iOweText: String = ""
+
+    // Credit card calculator fields
+    var creditLineText: String = ""
+    var availableCreditText: String = ""
+
+    // Simple account single field
+    var simpleAmountText: String = ""
+
+    func reset() {
+        bankAccountsText = ""
+        savingsText = ""
+        cashText = ""
+        creditCardSpendingText = ""
+        othersOweMeText = ""
+        iOweText = ""
+        creditLineText = ""
+        availableCreditText = ""
+        simpleAmountText = ""
+    }
+}
+
+// MARK: - Calculator Sheet
+
 struct BalanceCalculatorSheet: View {
     let accountType: AccountType
     let mindset: String // "cashFlow" | "patrimonial"
     let currencySymbol: String
+    @Bindable var fieldState: BalanceCalculatorFieldState
     let onUseBalance: (Double) -> Void
     let onDismiss: () -> Void
 
     @Environment(\.yalaTheme) private var theme
-
-    // General calculator fields
-    @State private var bankAccountsText: String = ""
-    @State private var savingsText: String = ""
-    @State private var cashText: String = ""
-    @State private var creditCardSpendingText: String = ""
-    @State private var othersOweMeText: String = ""
-    @State private var iOweText: String = ""
-
-    // Credit card calculator fields
-    @State private var creditLineText: String = ""
-    @State private var availableCreditText: String = ""
-
-    // Simple account single field
-    @State private var simpleAmountText: String = ""
 
     @FocusState private var focusedField: CalcField?
 
@@ -63,12 +83,12 @@ struct BalanceCalculatorSheet: View {
     }
 
     private var generalTotal: Double {
-        let bank = parseAmount(bankAccountsText)
-        let savings = parseAmount(savingsText)
-        let cash = parseAmount(cashText)
-        let creditSpending = parseAmount(creditCardSpendingText)
-        let othersOweMe = parseAmount(othersOweMeText)
-        let iOwe = parseAmount(iOweText)
+        let bank = parseAmount(fieldState.bankAccountsText)
+        let savings = parseAmount(fieldState.savingsText)
+        let cash = parseAmount(fieldState.cashText)
+        let creditSpending = parseAmount(fieldState.creditCardSpendingText)
+        let othersOweMe = parseAmount(fieldState.othersOweMeText)
+        let iOwe = parseAmount(fieldState.iOweText)
 
         if mindset == "patrimonial" {
             return bank + savings + cash - creditSpending + othersOweMe - iOwe
@@ -78,8 +98,8 @@ struct BalanceCalculatorSheet: View {
     }
 
     private var creditCardSpending: Double {
-        let line = parseAmount(creditLineText)
-        let available = parseAmount(availableCreditText)
+        let line = parseAmount(fieldState.creditLineText)
+        let available = parseAmount(fieldState.availableCreditText)
         return max(line - available, 0)
     }
 
@@ -88,7 +108,7 @@ struct BalanceCalculatorSheet: View {
     }
 
     private var simpleAmount: Double {
-        parseAmount(simpleAmountText)
+        parseAmount(fieldState.simpleAmountText)
     }
 
     // MARK: - Body
@@ -147,16 +167,16 @@ struct BalanceCalculatorSheet: View {
 
             // Input fields
             VStack(spacing: DS.Spacing.none) {
-                calcRow(label: L10n.Onboarding.calcBankAccounts, text: $bankAccountsText, field: .bankAccounts)
+                calcRow(label: L10n.Onboarding.calcBankAccounts, text: $fieldState.bankAccountsText, field: .bankAccounts)
                 SubsectionDivider()
-                calcRow(label: L10n.Onboarding.calcSavings, text: $savingsText, field: .savings)
+                calcRow(label: L10n.Onboarding.calcSavings, text: $fieldState.savingsText, field: .savings)
                 SubsectionDivider()
-                calcRow(label: L10n.Onboarding.calcCash, text: $cashText, field: .cash)
+                calcRow(label: L10n.Onboarding.calcCash, text: $fieldState.cashText, field: .cash)
 
                 if mindset == "patrimonial" {
                     SubsectionDivider()
                     VStack(spacing: DS.Spacing.none) {
-                        calcRow(label: L10n.Onboarding.calcCreditCardSpending, text: $creditCardSpendingText, field: .creditCardSpending)
+                        calcRow(label: L10n.Onboarding.calcCreditCardSpending, text: $fieldState.creditCardSpendingText, field: .creditCardSpending)
                         Text(L10n.Onboarding.calcOptional)
                             .font(DS.Typography.caption)
                             .foregroundStyle(.tertiary)
@@ -183,10 +203,10 @@ struct BalanceCalculatorSheet: View {
 
                     SubsectionDivider()
 
-                    calcRow(label: L10n.Onboarding.calcOthersOweMe, text: $othersOweMeText, field: .othersOweMe)
+                    calcRow(label: L10n.Onboarding.calcOthersOweMe, text: $fieldState.othersOweMeText, field: .othersOweMe)
                     SubsectionDivider()
                     VStack(spacing: DS.Spacing.none) {
-                        calcRow(label: L10n.Onboarding.calcIOwe, text: $iOweText, field: .iOwe)
+                        calcRow(label: L10n.Onboarding.calcIOwe, text: $fieldState.iOweText, field: .iOwe)
                         Text(L10n.Onboarding.calcOptional)
                             .font(DS.Typography.caption)
                             .foregroundStyle(.tertiary)
@@ -205,8 +225,13 @@ struct BalanceCalculatorSheet: View {
                 amount: generalTotal
             )
 
-            // Tip
-            tipView(text: mindset == "patrimonial" ? L10n.Onboarding.calcTipPatrimonial : L10n.Onboarding.calcTipCashFlow)
+            // Tips
+            if mindset == "patrimonial" {
+                tipView(text: L10n.Onboarding.calcTipPatrimonial)
+                tipView(text: L10n.Onboarding.calcTipCashFlow)
+            } else {
+                tipView(text: L10n.Onboarding.calcTipCashFlow)
+            }
 
             // Use balance button
             useBalanceButton(amount: generalTotal, isPositive: generalTotal >= 0)
@@ -214,7 +239,7 @@ struct BalanceCalculatorSheet: View {
             // Closing note
             Text(L10n.Onboarding.calcAdjustLater)
                 .font(DS.Typography.caption)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -224,9 +249,9 @@ struct BalanceCalculatorSheet: View {
         VStack(spacing: DS.Spacing.xl) {
             // Input fields
             VStack(spacing: DS.Spacing.none) {
-                calcRow(label: L10n.Onboarding.calcCreditLine, text: $creditLineText, field: .creditLine)
+                calcRow(label: L10n.Onboarding.calcCreditLine, text: $fieldState.creditLineText, field: .creditLine)
                 SubsectionDivider()
-                calcRow(label: L10n.Onboarding.calcAvailableCredit, text: $availableCreditText, field: .availableCredit)
+                calcRow(label: L10n.Onboarding.calcAvailableCredit, text: $fieldState.availableCreditText, field: .availableCredit)
             }
             .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
@@ -246,7 +271,7 @@ struct BalanceCalculatorSheet: View {
             // Closing note
             Text(L10n.Onboarding.calcAdjustLater)
                 .font(DS.Typography.caption)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -263,7 +288,7 @@ struct BalanceCalculatorSheet: View {
 
             // Single amount field
             VStack(spacing: DS.Spacing.none) {
-                calcRow(label: L10n.Account.balance, text: $simpleAmountText, field: .simpleAmount)
+                calcRow(label: L10n.Account.balance, text: $fieldState.simpleAmountText, field: .simpleAmount)
             }
             .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
@@ -274,7 +299,7 @@ struct BalanceCalculatorSheet: View {
             // Closing note
             Text(L10n.Onboarding.calcAdjustLater)
                 .font(DS.Typography.caption)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.secondary)
         }
     }
 

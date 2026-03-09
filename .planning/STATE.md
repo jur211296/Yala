@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
 Status: **Fase 12 en progreso** — Onboarding balance communication + calculator
-Last activity: 2026-03-09 — Onboarding: 3 usage modes, balance calculator, TC sign picker, softened strings
+Last activity: 2026-03-09 — Onboarding: floating nav buttons + scrollable steps
 
 ### Apple Review History (V1.0)
 
@@ -43,6 +43,8 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-09] 8352e2b layout: make onboarding steps scrollable with floating navigation buttons
+- [2026-03-09] 238cda3 feat: add shared expenses section to patrimonial balance calculator
 - [2026-03-09] 48732b8 feat: enrich onboarding with 3 usage modes, interactive balance calculator and contextual TC labels
 - [2026-03-08] 1220dd5 feat: add post-onboarding contextual prompts — secondary currency + notification primer
 - [2026-03-08] b0be795 fix: onboarding QA — comma-locale budget bug, animation timing, updated scenarios
@@ -664,10 +666,9 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Onboarding balance communication — 3 usage modes, balance calculator, sign picker, softened strings
-Next step: QA scenarios for onboarding balance changes
+Stopped at: Onboarding floating nav buttons + scrollable steps layout
+Next step: Continue with next item from /next
 Resume context:
-- Implemented: 3 usage modes (Solo gastos/Día a día/Control total), BalanceCalculatorSheet (shared onboarding+AccountForm), contextual TC sign picker ("A favor/Consumido"), softened balance guide strings, financialMindset pref synced via iCloud KV
-- 22 AccountFormViewModelTests pass, build clean
-- Deferred: Panel balance breakdown documented above
-- Pending: QA scenarios in QA-SCENARIOS.md
+- Onboarding layout restructured: safeAreaInset floating buttons with fade gradient, steps 0/2/3 wrapped in GeometryReader+ScrollView
+- Still uncommitted: AccountFormView, BalanceCalculatorSheet, STATE.md changes (pre-existing)
+- Build clean, swift audit clean
