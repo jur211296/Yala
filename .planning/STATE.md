@@ -13,8 +13,8 @@ Version: 1.2 (en desarrollo)
 Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
-Status: **Fase 12 en progreso** — Coach mark tours + onboarding improvements
-Last activity: 2026-03-09 — Coach mark tours post-onboarding (4 tours, custom overlay system)
+Status: **Fase 12 en progreso** — What's New sheet + coach mark tours + onboarding improvements
+Last activity: 2026-03-09 — What's New sheet post-actualización con prioridad sobre tours/inbox
 
 ### Apple Review History (V1.0)
 
@@ -43,6 +43,9 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-09] c675e9c fix: resolve notification bugs — time window, paid status, warm resume, off-by-one (BUG-36, BUG-37, BUG-38, BUG-39)
+- [2026-03-09] 0d9f04d fix: resolve Inbox crashes — delayed SwiftData deletion and Mac sheet detents (BUG-34, BUG-35)
+- [2026-03-09] 792479a feat: add What's New sheet — post-update feature showcase with race condition priority
 - [2026-03-09] a32a084 fix: activate all default notification toggles when user accepts primer
 - [2026-03-09] 07d420f feat: add coach mark tours — custom overlay system with 4 guided tours post-onboarding
 - [2026-03-09] cadba76 refactor: persist balance calculator field state across sheet open/close
@@ -476,6 +479,49 @@ Agregado `SortDescriptor(\.createdAt, order: .reverse)` como tiebreaker en 4 Fet
 - ✅ **BUG-29 (prev): Selector de mes falta en Presupuestos** — Resuelto (71d6e92): periodNavigationHeader con chevrones idéntico a ScheduledPaymentsListView
 - ✅ **BUG-30: Notificación de resumen del día se envía duplicada** — Resuelto (71d6e92): isSendingReports guard en ReportNotificationService
 
+### Bugs Producción V1.0.1 (reportados 2026-03-09)
+
+Todos deben resolverse para V1.1 (próxima release). Prioridad: crashes > lógica incorrecta > UX > visual.
+
+**Crashes:**
+- [x] **BUG-34: Crash en Mac (Designed for Mac) al abrir registro de bandeja** — Resuelto (0d9f04d): conditional `.large` detents on Mac, remove assertionFailure, guard approve-next flows
+- [x] **BUG-35: Crash intermitente al eliminar draft en bandeja (swipe + botón)** — Resuelto (0d9f04d): delay SwiftData deletion 400ms post-animation, extract removeDraftWithAnimation helper
+
+**Notificaciones (lógica incorrecta):**
+- [x] **BUG-36: Notificaciones llegan a cualquier hora** — Llegan mucho antes de la hora configurada. ✅ c675e9c
+- [x] **BUG-37: Notificación de pago planificado ya pagado (vinculado)** — Llega notificación de vencimiento hoy aunque el pago ya fue vinculado a un gasto. ✅ c675e9c
+- [x] **BUG-38: Pago no vinculado no crea registro en bandeja** — Tenía 2 pagos venciendo hoy (1 vinculado, 1 no). Llegaron ambas notificaciones pero no se creó draft en bandeja para el no vinculado. ✅ c675e9c
+- [x] **BUG-39: Notificación "vence en 3 días" pero realmente son 4** — Cálculo de días restantes off-by-one. ✅ c675e9c
+
+**Filtros / Lógica:**
+- [ ] **BUG-40: Filtro subcategoría ingreso bloquea mal en PanelView** — Al filtrar subcategoría de ingresos, se queda en vista balance y bloquea ingreso+balance pero no gasto. Debería bloquear gasto+balance (como hace al filtrar subcategoría de gasto que bloquea gasto+balance+ingreso).
+- [ ] **BUG-41: Orden de búsqueda diferente a registros** — Tab de búsqueda no ordena igual que tab de registros para transacciones del mismo día (falta tiebreaker createdAt).
+
+**Race Conditions:**
+- [ ] **BUG-42: Race condition Share Sheet imagen + notificación in-app de bandeja** — Conflicto cuando se usa registro por imagen desde Share Extension y hay un pago automatizado reciente con notificación in-app.
+- [ ] **BUG-43: Race condition Share Sheet imagen + Face ID** — Conflicto cuando se usa registro por imagen desde Share Extension y Face ID está activo.
+
+**Widget:**
+- [ ] **BUG-44: Widget de presupuestos no se actualiza automáticamente** — No refleja nuevas transacciones hasta reabrir la app.
+
+**iPad / Layout:**
+- [ ] **BUG-45: Calendario de fecha recortado en iPad (registro)** — DatePicker en NewTransactionView se corta en iPad.
+- [ ] **BUG-46: Sheet de success recortada en iPad** — La pantalla de éxito post-registro se ve cortada en iPad.
+
+**UX / Visual:**
+- [ ] **BUG-47: Animación de success pestañea** — La animación de éxito no siempre carga smooth, a veces parpadea.
+- [ ] **BUG-48: Pago recurrente muestra PEN aunque cuenta sea otra moneda** — Al crear pago planificado, muestra PEN en vez de la divisa de la cuenta seleccionada.
+- [ ] **BUG-49: Exportación dice CSV pero permite Excel, periodo va 10 años atrás** — Textos del flujo de exportación inconsistentes + rango de fecha incorrecto en pantalla final.
+- [ ] **BUG-50: Selectores de fecha sin botón de guardar** — Todos los date pickers se cierran al tocar fuera, deberían tener botón explícito de confirmar.
+- [ ] **BUG-51: Ocultar naturaleza para ingresos en registro/edición/aprobación** — El selector de naturaleza (fijo/variable/etc.) no aplica a ingresos, confunde al usuario.
+- [ ] **BUG-52: Etiquetas de datos en CashFlow filtrado** — Agregar data labels a gráficas CashFlow cuando solo ingreso o solo gasto está filtrado. En balance, mostrar si hay ≤10 barras.
+
+**Rediseños pendientes (UX crítico):**
+- [ ] **BUG-53: Rediseño flujo pagos planificados/recurrentes** — URGENTE. El flujo actual es confuso: teclado se levanta innecesariamente, no se puede editar nota, interfaz no intuitiva. Requiere rediseño completo.
+
+**Infraestructura:**
+- [ ] **BUG-54: Implementar Telemetry Deck** — Analytics para entender uso real de la app.
+
 ### Fase 11: Sistema de Temas Independientes (V1.2) — ✅ COMPLETADA (2026-02-19)
 
 Refactorización completa del sistema de colores. 6 temas (3 free + 3 PRO). YalaTheme struct + ThemeColor ShapeStyle + @Observable ThemeManager. Cambio de tema sin reinicio (eliminado `.id(userThemeRaw)`). 0 usos de colores legacy. 12 escenarios QA (Sección 38).
@@ -668,9 +714,10 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Committed balance calculator field state persistence
-Next step: Continue with next Fase 12 item from /next
+Stopped at: BUG-36/37/38/39 notification bugs fixed
+Next step: Continue with remaining V1.0.1 bugs (BUG-40+) or next Fase 12 item from /next
 Resume context:
-- BalanceCalculatorFieldState extracted as @Observable class — fields persist across sheet open/close
-- AccountFormView resets calcFieldState on account type change
-- All onboarding work committed and clean
+- BUG-36: Added isWithinNotificationWindow() — checks user's configured hour before sending
+- BUG-37: Added batch paidStatus check via ScheduledPaymentPaidStatusHelper in 3 notification methods
+- BUG-38: Added processDueScheduledPayments() call in handleBecameActive() for warm resume
+- BUG-39: Normalized dates to startOfDay before dateComponents calculation
