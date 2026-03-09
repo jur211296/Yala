@@ -60,6 +60,9 @@ final class AccountFormViewModel {
     var isShowingSaveError: Bool = false
     var hasInitializedBalance: Bool = false  // Track if balance was initialized from transactions
 
+    // MARK: - Secondary Currency Suggestion
+    var currencyToSuggestAsSecondary: CurrencyCode? = nil
+
     // MARK: - Computed Balance Properties
 
     /// Current balance calculated from all transactions
@@ -369,6 +372,17 @@ final class AccountFormViewModel {
         } catch {
             isShowingSaveError = true
             return false
+        }
+
+        // Suggest adding currency as secondary if applicable
+        let savedCurrency = normalizeCurrencyCode(selectedCurrency.rawValue)
+        let preferred = CurrencyDefaults.currentPreferred
+        if savedCurrency != preferred, let code = CurrencyCode(rawValue: savedCurrency) {
+            let raw = UserDefaults.standard.string(forKey: "secondaryCurrencies") ?? ""
+            let existing = raw.split(separator: ",").map(String.init)
+            if existing.count < 2, !existing.contains(savedCurrency) {
+                currencyToSuggestAsSecondary = code
+            }
         }
 
         return true

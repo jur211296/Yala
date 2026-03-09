@@ -13,8 +13,8 @@ Version: 1.2 (en desarrollo)
 Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
-Status: **Fase 12 en progreso** — Onboarding account step polished
-Last activity: 2026-03-08 — Onboarding polish: SectionBox layout, balance guide, validation (9488d0a)
+Status: **Fase 12 en progreso** — Post-onboarding relocation: currency prompt + notification primer
+Last activity: 2026-03-08 — Post-onboarding: contextual secondary currency prompt + notification primer sheet
 
 ### Apple Review History (V1.0)
 
@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-08] b0be795 fix: onboarding QA — comma-locale budget bug, animation timing, updated scenarios
 - [2026-03-08] 82f4e5c feat: polish onboarding budget step — reframe texts, horizontal pills, live preview card, currency fix
 - [2026-03-08] 9488d0a feat: polish onboarding account step — SectionBox layout, balance guide, validation
 - [2026-03-08] f711aab feat: redesign onboarding — 7 steps with account setup and quick budget
@@ -529,9 +530,9 @@ Estos pasos se eliminaron del onboarding para reducirlo de 9→7 pasos. Cada uno
 | Tutoriales | Primeras interacciones en Panel | Pendiente: tooltips in-context / coach marks para funciones clave |
 
 **Estado:**
-- [ ] Prompt contextual divisas secundarias
+- [x] Prompt contextual divisas secundarias — alert en AccountFormView al crear cuenta con divisa ≠ preferred (max 2 slots)
 - [x] Periodo default .thisMonth (ya funciona)
-- [ ] Pre-permission primer para notificaciones (después de N transacciones)
+- [x] Pre-permission primer para notificaciones — NotificationPrimerSheet después de 3ra transacción nueva
 - [ ] Tooltips / coach marks post-onboarding
 
 ### Refactors Pendientes: Filtros Excluir/Incluir (identificados 2026-03-05)
@@ -650,12 +651,10 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Onboarding budget step polished (82f4e5c) — reframed texts, pills, preview card, currency fix
-Next step: QA manual del onboarding en simulador + siguiente item de Fase 12
+Stopped at: Onboarding manual QA ✅ complete. Starting post-onboarding relocation items.
+Next step: Integrate removed onboarding steps into app (contextual currency prompt, notification primer, coach marks)
 Resume context:
-- Onboarding 7 steps fully polished: Welcome, Currency, Usage Mode, Categories, Account Setup, Quick Budget, Privacy
-- Budget step: texts reframed (awareness not restriction), horizontal category pills, SectionBox amount, live preview card
-- Budget uses accountCurrency (from step 4) not selectedCurrency (step 1) — bug fixed
-- Global keyboard dismiss via dismissKeyboard() helper + scrollDismissesKeyboard
+- Onboarding 7-step polish + QA fully done (b0be795)
+- Post-onboarding relocation: 2 of 4 items pending (notif primer, tooltips). Currency prompt pending. Period default already works.
 - Pre-existing test failure: criteriaActiveFilterCountIsCorrect (unrelated)
-- Build passes, /simplify clean
+- Build passes

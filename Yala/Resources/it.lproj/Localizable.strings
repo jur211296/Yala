@@ -2455,3 +2455,18 @@
 "insights.focus.cautious.desc" = "Allerte anticipate e budget a rischio";
 "insights.toneLabel" = "Tono";
 "insights.focusLabel" = "Approccio";
+
+// Secondary Currency Suggestion
+"account.secondaryCurrency.title" = "Valuta secondaria";
+"account.secondaryCurrency.message" = "Hai aggiunto un conto in %@. Vuoi vedere il tasso di cambio %@ → %@? Puoi modificarlo in Profilo > Valuta.";
+"account.secondaryCurrency.accept" = "Aggiungi";
+"account.secondaryCurrency.reject" = "No, grazie";
+
+// Notification Primer
+"notificationPrimer.title" = "Attivare le notifiche?";
+"notificationPrimer.benefit1" = "Report finanziari giornalieri";
+"notificationPrimer.benefit2" = "Promemoria per pagamenti pianificati";
+"notificationPrimer.benefit3" = "Avvisi all'avvicinarsi dei limiti di budget";
+"notificationPrimer.accept" = "Attiva notifiche";
+"notificationPrimer.reject" = "Non ora";
+"notificationPrimer.hint" = "Puoi attivarle in Profilo > Notifiche";

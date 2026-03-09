@@ -127,6 +127,32 @@ struct AccountFormView: View {
                 Text(L10n.Common.saveError)
             }
         )
+        .alert(
+            L10n.Account.secondaryCurrencyTitle,
+            isPresented: Binding(
+                get: { viewModel.currencyToSuggestAsSecondary != nil },
+                set: { if !$0 { viewModel.currencyToSuggestAsSecondary = nil } }
+            ),
+            actions: {
+                Button(L10n.Account.secondaryCurrencyAccept) {
+                    acceptSecondaryCurrency()
+                    dismiss()
+                }
+                Button(L10n.Account.secondaryCurrencyReject, role: .cancel) {
+                    viewModel.currencyToSuggestAsSecondary = nil
+                    dismiss()
+                }
+            },
+            message: {
+                if let code = viewModel.currencyToSuggestAsSecondary {
+                    Text(L10n.Account.secondaryCurrencyMessage(
+                        code.rawValue,
+                        CurrencyDefaults.currentPreferred,
+                        code.rawValue
+                    ))
+                }
+            }
+        )
     }
 
     // MARK: Secciones de la vista
@@ -550,7 +576,31 @@ struct AccountFormView: View {
 
     private func saveAccount() {
         if viewModel.saveAccount(context: modelContext) {
-            dismiss()
+            if viewModel.currencyToSuggestAsSecondary == nil {
+                dismiss()
+            }
+            // else: alert will show and dismiss after user responds
+        }
+    }
+
+    private func acceptSecondaryCurrency() {
+        guard let code = viewModel.currencyToSuggestAsSecondary else { return }
+        let raw = UserDefaults.standard.string(forKey: "secondaryCurrencies") ?? ""
+        var existing = raw.split(separator: ",").map(String.init).filter { !$0.isEmpty }
+        existing.append(code.rawValue)
+        let newValue = existing.joined(separator: ",")
+        PreferenceSyncService.shared.set(string: newValue, forKey: "secondaryCurrencies")
+        SessionState.shared.needsExchangeRateWidgetRefresh = true
+
+        Task {
+            // Load historical exchange rates for the new currency
+            let calendar = Calendar.current
+            let today = Date()
+            guard let oneYearAgo = calendar.date(byAdding: .year, value: -1, to: today) else { return }
+            let dateInterval = DateInterval(start: oneYearAgo, end: today)
+            await ExchangeRateService.shared.forceUpdateToday(context: modelContext)
+            await ExchangeRateService.shared.forceRefreshRates(for: dateInterval, context: modelContext)
+            SessionState.shared.needsExchangeRateWidgetRefresh = true
         }
     }
 

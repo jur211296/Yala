@@ -992,6 +992,20 @@ enum L10n {
             ls("account.changeInitialBalanceDesc", comment: "")
         }
 
+        // MARK: - Secondary Currency Suggestion
+        static var secondaryCurrencyTitle: String {
+            ls("account.secondaryCurrency.title", comment: "")
+        }
+        static func secondaryCurrencyMessage(_ currency: String, _ preferred: String, _ target: String) -> String {
+            String(format: ls("account.secondaryCurrency.message", comment: ""), currency, preferred, target)
+        }
+        static var secondaryCurrencyAccept: String {
+            ls("account.secondaryCurrency.accept", comment: "")
+        }
+        static var secondaryCurrencyReject: String {
+            ls("account.secondaryCurrency.reject", comment: "")
+        }
+
         // MARK: - Credit Card
         enum CreditCard {
             static var sectionTitle: String { ls("account.creditCard.sectionTitle", comment: "") }
@@ -3427,6 +3441,18 @@ enum L10n {
         static var emptyExpensesMonthly: String { ls("notifications.report.empty.expenses.monthly", comment: "") }
         static var emptyIncome: String { ls("notifications.report.empty.income", comment: "") }
         static var emptyTopCategory: String { ls("notifications.report.empty.topCategory", comment: "") }
+    }
+
+    // MARK: - Notification Primer
+
+    enum NotificationPrimer {
+        static var title: String { ls("notificationPrimer.title", comment: "") }
+        static var benefit1: String { ls("notificationPrimer.benefit1", comment: "") }
+        static var benefit2: String { ls("notificationPrimer.benefit2", comment: "") }
+        static var benefit3: String { ls("notificationPrimer.benefit3", comment: "") }
+        static var accept: String { ls("notificationPrimer.accept", comment: "") }
+        static var reject: String { ls("notificationPrimer.reject", comment: "") }
+        static var hint: String { ls("notificationPrimer.hint", comment: "") }
     }
 
     // MARK: - Weekday

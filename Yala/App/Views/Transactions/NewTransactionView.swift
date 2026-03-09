@@ -43,6 +43,9 @@ struct NewTransactionView: View {
     @State private var savedToastMessage = ""
     @State private var duplicateAnimationVisible = true
 
+    // Notification primer
+    @State private var showingNotificationPrimer = false
+
     // Prefill parameters
     let prefillAccountID: PersistentIdentifier?
     let prefillCategoryID: PersistentIdentifier?
@@ -68,7 +71,11 @@ struct NewTransactionView: View {
             TransactionSuccessView(
                 data: data,
                 onAccept: {
-                    dismiss()
+                    if viewModel.showNotificationPrimer {
+                        showingNotificationPrimer = true
+                    } else {
+                        dismiss()
+                    }
                 },
                 onCreateAnother: {
                     // Reset form for new transaction
@@ -102,6 +109,9 @@ struct NewTransactionView: View {
                 }
             )
             .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            .sheet(isPresented: $showingNotificationPrimer, onDismiss: { dismiss() }) {
+                NotificationPrimerSheet()
+            }
         } else {
             transactionFormView
                 .transition(.opacity)
@@ -1079,6 +1089,9 @@ struct NewTransactionView: View {
                 destinationAmount: Decimal(viewModel.destinationAmount),
                 destinationCurrencyCode: destAccount?.currencyCode
             )
+
+            // Check notification primer eligibility
+            Task { await viewModel.checkNotificationPrimer() }
 
             // Delay animation to let keyboard dismiss
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {

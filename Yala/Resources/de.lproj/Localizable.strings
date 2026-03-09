@@ -2453,3 +2453,18 @@
 "insights.focus.cautious.desc" = "Frühwarnungen und gefährdete Budgets";
 "insights.toneLabel" = "Ton";
 "insights.focusLabel" = "Fokus";
+
+// Secondary Currency Suggestion
+"account.secondaryCurrency.title" = "Sekundäre Währung";
+"account.secondaryCurrency.message" = "Du hast ein Konto in %@ hinzugefügt. Möchtest du den Wechselkurs %@ → %@ sehen? Du kannst es unter Profil > Währung ändern.";
+"account.secondaryCurrency.accept" = "Hinzufügen";
+"account.secondaryCurrency.reject" = "Nein, danke";
+
+// Notification Primer
+"notificationPrimer.title" = "Benachrichtigungen aktivieren?";
+"notificationPrimer.benefit1" = "Tägliche Finanzberichte";
+"notificationPrimer.benefit2" = "Erinnerungen an geplante Zahlungen";
+"notificationPrimer.benefit3" = "Warnungen bei Annäherung an Budgetgrenzen";
+"notificationPrimer.accept" = "Benachrichtigungen aktivieren";
+"notificationPrimer.reject" = "Jetzt nicht";
+"notificationPrimer.hint" = "Du kannst sie unter Profil > Benachrichtigungen aktivieren";

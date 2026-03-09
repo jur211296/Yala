@@ -5287,3 +5287,33 @@ Para cada tema verificar:
 - [ ] Escribir monto: "de $X" se actualiza en la card
 - [ ] Label "Así se verá tu presupuesto" visible encima de la card
 - [ ] Card muestra "Mensual" como periodo (no días restantes ficticios)
+
+## 46. Post-Onboarding: Divisas Secundarias + Notification Primer
+
+### 46.1 Prompt Divisas Secundarias (AccountForm)
+- [ ] Crear cuenta en USD (preferred PEN) → alert "Divisa secundaria" aparece
+- [ ] Alert muestra mensaje con USD y PEN → aceptar "Agregar"
+- [ ] Verificar secondaryCurrencies contiene "USD" en UserDefaults
+- [ ] SessionState.needsExchangeRateWidgetRefresh se activa
+- [ ] Crear segunda cuenta en EUR → alert aparece → aceptar
+- [ ] Verificar secondaryCurrencies contiene "USD,EUR"
+- [ ] Crear tercera cuenta en GBP → NO aparece alert (slots llenos, max 2)
+- [ ] Crear cuenta en PEN (= preferred) → NO aparece alert
+- [ ] Crear cuenta en USD cuando USD ya es secundaria → NO aparece alert
+- [ ] Editar cuenta existente (cambiar nombre) → NO aparece alert de divisa
+- [ ] Botón "No, gracias" → dismiss sin cambiar secondaryCurrencies
+- [ ] En ambos botones (aceptar/rechazar) → la vista se cierra correctamente
+
+### 46.2 Notification Permission Primer
+- [ ] Crear 1ra transacción nueva → sin primer
+- [ ] Crear 2da transacción nueva → sin primer
+- [ ] Crear 3ra transacción nueva → success screen → "Aceptar" → NotificationPrimerSheet aparece
+- [ ] Sheet muestra icono bell, título, 3 beneficios, CTA y botón secundario
+- [ ] "Activar notificaciones" → solicita permiso del sistema → dismiss → notificaciones activas
+- [ ] Si se acepta, se ejecuta seedDefaultNotificationsIfNeeded
+- [ ] "Ahora no" → dismiss → nunca más aparece (hasSeenNotificationPrimer = true)
+- [ ] Editar transacciones existentes NO incrementa el contador
+- [ ] Si permisos ya otorgados (no .notDetermined) → primer NO aparece
+- [ ] Transferencias nuevas SÍ incrementan el contador
+- [ ] presentationDetents([.medium]) aplicado correctamente
+- [ ] Sheet se ve correctamente con Dynamic Type

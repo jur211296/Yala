@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 import SwiftUI
+import UserNotifications
 import WidgetKit
 
 // MARK: - New Transaction ViewModel
@@ -97,6 +98,9 @@ final class NewTransactionViewModel {
     var showDeleteConfirmation: Bool = false
     var showSaveAsFavoriteSheet: Bool = false
     var showSaveAsRecurringSheet: Bool = false
+
+    // Notification primer
+    var showNotificationPrimer: Bool = false
 
     // MARK: - Validation State
 
@@ -470,6 +474,9 @@ final class NewTransactionViewModel {
             return nil
         }
 
+        // Capture before save — editingTransaction gets set during saveNormalTransaction
+        let isNewTransaction = editingTransaction == nil && editingTransferPair == nil
+
         isSaving = true
 
         do {
@@ -486,6 +493,13 @@ final class NewTransactionViewModel {
             try context.save()
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
+
+            // Track new transaction count for notification primer
+            if isNewTransaction {
+                let count = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + 1
+                UserDefaults.standard.set(count, forKey: "transactionsSavedCount")
+            }
+
             isSaving = false
             return result
         } catch {
@@ -808,6 +822,18 @@ final class NewTransactionViewModel {
         context.insert(subcategory)
 
         return subcategory
+    }
+
+    // MARK: - Notification Primer
+
+    func checkNotificationPrimer() async {
+        let count = UserDefaults.standard.integer(forKey: "transactionsSavedCount")
+        guard count >= 3, !UserDefaults.standard.bool(forKey: "hasSeenNotificationPrimer") else { return }
+        let status = await NotificationService.shared.checkPermissionStatus()
+        UserDefaults.standard.set(true, forKey: "hasSeenNotificationPrimer")
+        if status == .notDetermined {
+            showNotificationPrimer = true
+        }
     }
 
     // MARK: - Reset

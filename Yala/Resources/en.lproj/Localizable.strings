@@ -2441,3 +2441,18 @@
 "insights.focus.cautious.desc" = "Early warnings and budgets at risk";
 "insights.toneLabel" = "Tone";
 "insights.focusLabel" = "Focus";
+
+// Secondary Currency Suggestion
+"account.secondaryCurrency.title" = "Secondary Currency";
+"account.secondaryCurrency.message" = "You added an account in %@. Want to see the %@ → %@ exchange rate? You can change it in Profile > Currency.";
+"account.secondaryCurrency.accept" = "Add";
+"account.secondaryCurrency.reject" = "No, thanks";
+
+// Notification Primer
+"notificationPrimer.title" = "Enable notifications?";
+"notificationPrimer.benefit1" = "Daily financial reports";
+"notificationPrimer.benefit2" = "Scheduled payment reminders";
+"notificationPrimer.benefit3" = "Alerts when approaching budget limits";
+"notificationPrimer.accept" = "Enable notifications";
+"notificationPrimer.reject" = "Not now";
+"notificationPrimer.hint" = "You can enable them in Profile > Notifications";
