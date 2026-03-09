@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-08] 1220dd5 feat: add post-onboarding contextual prompts — secondary currency + notification primer
 - [2026-03-08] b0be795 fix: onboarding QA — comma-locale budget bug, animation timing, updated scenarios
 - [2026-03-08] 82f4e5c feat: polish onboarding budget step — reframe texts, horizontal pills, live preview card, currency fix
 - [2026-03-08] 9488d0a feat: polish onboarding account step — SectionBox layout, balance guide, validation
@@ -52,10 +53,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-06] 7f01298 refactor: extract shared FilterControlBar — eliminate ~790 duplicate lines
 - [2026-03-06] f1ea108 fix: restore exclude mode filters — batch commit + AI filter context + Insights layout
 - [2026-03-06] 38c2f0d docs: update STATE.md with OpenAI compliance fix
-- [2026-03-06] fe175d8 fix: restore OpenAI identification in consent strings + add Insights to privacy policy
-- [2026-03-06] 6936e33 chore: migrate LLM services from GPT-4o Mini to GPT-4.1 Nano
-- [2026-03-06] 3439fe3 feat: add Smart Insights tab with rule-based insights, AI integration, and settings
-- [2026-03-05] 34f51b6 fix: use L10n.Filters.all instead of hardcoded Spanish string in tests
 - [2026-03-05] cc2f4a5 Merge hotfix/1.0.2 into 1.1
 - [2026-03-05] 2700d6d Merge hotfix/1.0.1 into 1.1
 - [2026-02-24] 328ba03 fix: scheduled payments visual consistency — hot pink expenses, sign prefix, currency conversion
@@ -651,10 +648,9 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Onboarding manual QA ✅ complete. Starting post-onboarding relocation items.
-Next step: Integrate removed onboarding steps into app (contextual currency prompt, notification primer, coach marks)
+Stopped at: Post-onboarding relocation — currency prompt + notification primer implemented (1220dd5)
+Next step: Tooltips / coach marks post-onboarding (last pending relocation item)
 Resume context:
-- Onboarding 7-step polish + QA fully done (b0be795)
-- Post-onboarding relocation: 2 of 4 items pending (notif primer, tooltips). Currency prompt pending. Period default already works.
-- Pre-existing test failure: criteriaActiveFilterCountIsCorrect (unrelated)
-- Build passes
+- Post-onboarding relocation: 3 of 4 items done (currency prompt ✅, period default ✅, notif primer ✅). Only tooltips/coach marks pending.
+- 57 relevant tests pass, build clean
+- QA scenarios added in section 46
