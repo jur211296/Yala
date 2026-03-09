@@ -5413,3 +5413,63 @@ Para cada tema verificar:
 - [ ] Calculadora en EN: "How much money do you have?", "Use this balance"
 - [ ] Sign picker TC en EN: "In your favor / Spent"
 - [ ] Sign picker TC en FR: "En ta faveur / Consommé"
+
+## 48. Coach Mark Tours (Guías contextuales post-onboarding)
+
+### 48.1 Tour del Panel (Grupo A — 5 pasos)
+- [ ] Completar onboarding → cerrar trial sheet → tour Panel aparece automáticamente
+- [ ] Paso 1 (Cuentas): spotlight en carrusel de cuentas, tooltip visible
+- [ ] Paso 2 (Widgets): spotlight en header + primer widget
+- [ ] Paso 3 (Preferencias widgets): spotlight en botón ajustes de widgets
+- [ ] Paso 4 (FAB): spotlight en botón flotante — texto varía Free/Pro
+- [ ] Paso 5 (Perfil): spotlight en botón perfil toolbar
+- [ ] Transiciones animadas con spring entre pasos (no parpadea)
+- [ ] "Omitir" en cualquier paso cierra todo el tour
+- [ ] "Siguiente" avanza; último paso dice "Listo"
+- [ ] Indicador "N/5" correcto en cada paso
+- [ ] Cerrar app → reabrir → tour no reaparece (hasSeenPanelTour persistido)
+
+### 48.2 Tour de Registro (Grupo B — 3 pasos)
+- [ ] Abrir NewTransactionView por primera vez → tour Registro aparece
+- [ ] Paso 1 (Tipos): spotlight en selector de tipo (gasto/ingreso/transferencia)
+- [ ] Paso 2 (Favoritos): spotlight en estrella toolbar
+- [ ] Paso 3 (Acciones rápidas): spotlight en barra de acciones rápidas
+- [ ] Solo aparece en transacción nueva (no al editar)
+- [ ] "Omitir" cierra todo el tour
+- [ ] Cerrar app → reabrir → tour no reaparece
+
+### 48.3 Tour de Settings (Grupo D — 7 pasos)
+- [ ] Abrir ProfileView por primera vez → tour Settings aparece
+- [ ] Scroll deshabilitado durante el tour (no se puede scrollear manualmente)
+- [ ] Pasos: Cuentas → Categorías → Tags → Presupuestos → Planificados → Personalización → Tutoriales
+- [ ] Auto-scroll a pasos fuera de pantalla (ej: Personalización, Tutoriales)
+- [ ] Spotlight se mueve con animación spring suave
+- [ ] "Omitir" cierra todo el tour
+- [ ] Cerrar app → reabrir → tour no reaparece
+
+### 48.4 Tour de Interactividad (Grupo C — 2 pasos)
+- [ ] Requiere: tour Panel completado + ≥2 días distintos con transacciones
+- [ ] Paso 1 (Filtrar cuenta): spotlight en carrusel completo
+- [ ] Paso 2 (Widgets interactivos): spotlight en zona widgets
+- [ ] Aparece automáticamente al cargar PanelView cuando se cumplen condiciones
+- [ ] No aparece si tour Panel aún no se ha completado
+
+### 48.5 ComparisonTip (TipKit — independiente)
+- [ ] Abrir Statistics con periodo ≠ allTime → popover tip aparece en ComparisonModeSelector
+- [ ] Dismiss → no reaparece
+
+### 48.6 Coordinación con Trial
+- [ ] Si usuario NO se suscribe: tour Panel inicia tras cerrar trial sheet
+- [ ] Si usuario SÍ se suscribe: tour Panel inicia tras cerrar trial sheet (FAB muestra texto Pro)
+- [ ] Si usuario no es elegible para trial: tour Panel inicia tras cerrar onboarding
+- [ ] Tour NO aparece mientras trial sheet está abierta
+
+### 48.7 Reset con Data Wipe
+- [ ] Hacer wipe completo → completar onboarding de nuevo → TODOS los tours reaparecen
+- [ ] hasSeenPanelTour, hasSeenRegistroTour, hasSeenInteractivityTour, hasSeenSettingsTour reseteados
+- [ ] ComparisonTip (TipKit) también se resetea
+
+### 48.8 Localización de tours
+- [ ] Cambiar idioma a EN → textos de tours en inglés
+- [ ] Cambiar idioma a DE → textos de tours en alemán
+- [ ] Verificar que las 6 localizations tienen todas las keys tipkit.*

@@ -1,0 +1,379 @@
+//
+//  CoachMarkOverlay.swift
+//  Yala
+//
+//  Custom coach mark overlay with spotlight dimming and guided navigation.
+//  Replaces TipKit popoverTip for guided tours (Groups A and B).
+//
+
+import SwiftUI
+
+// MARK: - CoachMarkStep
+
+struct CoachMarkStep: Identifiable {
+    let id: String
+    let title: String
+    let message: String
+    let spotlightPadding: CGFloat
+
+    init(id: String, title: String, message: String, spotlightPadding: CGFloat = DS.Spacing.sm) {
+        self.id = id
+        self.title = title
+        self.message = message
+        self.spotlightPadding = spotlightPadding
+    }
+}
+
+// MARK: - Anchor Preference Key
+
+struct CoachMarkAnchorKey: PreferenceKey {
+    static var defaultValue: [String: Anchor<CGRect>] = [:]
+    static func reduce(value: inout [String: Anchor<CGRect>], nextValue: () -> [String: Anchor<CGRect>]) {
+        value.merge(nextValue()) { $1 }
+    }
+}
+
+// MARK: - Anchor Modifier
+
+extension View {
+    /// Registers this view as a coach mark anchor with the given ID.
+    /// Sets `.id()` for ScrollViewReader and uses `transformAnchorPreference`
+    /// so multiple anchors on the same view don't overwrite each other.
+    func coachMarkAnchor(_ id: String) -> some View {
+        self
+            .id(id)
+            .transformAnchorPreference(key: CoachMarkAnchorKey.self, value: .bounds) { dict, anchor in
+                dict[id] = anchor
+            }
+    }
+}
+
+// MARK: - Animatable Spotlight Rect
+
+/// Wrapper around CGRect that conforms to Animatable without polluting the global CGRect type.
+private struct AnimatableRect: Animatable {
+    var x, y, width, height: CGFloat
+
+    init(_ rect: CGRect) {
+        self.x = rect.origin.x
+        self.y = rect.origin.y
+        self.width = rect.size.width
+        self.height = rect.size.height
+    }
+
+    var rect: CGRect { CGRect(x: x, y: y, width: width, height: height) }
+
+    var animatableData: AnimatablePair<AnimatablePair<CGFloat, CGFloat>, AnimatablePair<CGFloat, CGFloat>> {
+        get { .init(.init(x, y), .init(width, height)) }
+        set {
+            x = newValue.first.first
+            y = newValue.first.second
+            width = newValue.second.first
+            height = newValue.second.second
+        }
+    }
+}
+
+// MARK: - Animatable Spotlight Shape
+
+/// A shape that fills everything EXCEPT a rounded rect hole (the spotlight).
+/// Because it's a Shape, SwiftUI can animate changes to the hole's position and size.
+private struct SpotlightCutoutShape: Shape {
+    var spotlight: AnimatableRect
+    var cornerRadius: CGFloat
+
+    var animatableData: AnimatablePair<AnimatableRect.AnimatableData, CGFloat> {
+        get { .init(spotlight.animatableData, cornerRadius) }
+        set {
+            spotlight.animatableData = newValue.first
+            cornerRadius = newValue.second
+        }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.addRect(rect)
+        path.addRoundedRect(
+            in: spotlight.rect,
+            cornerSize: CGSize(width: cornerRadius, height: cornerRadius)
+        )
+        return path
+    }
+}
+
+// MARK: - Layout Constants
+
+private enum CoachMarkLayout {
+    static let dimOpacity: Double = 0.65
+    static let tooltipGap: CGFloat = 80
+    static let visibilityMargin: CGFloat = 100
+}
+
+// MARK: - Coach Mark Overlay
+
+struct CoachMarkOverlay: View {
+    let steps: [CoachMarkStep]
+    let anchors: [String: Anchor<CGRect>]
+    let proxy: GeometryProxy
+    let scrollProxy: ScrollViewProxy?
+    @Binding var currentIndex: Int
+    @Binding var isPresented: Bool
+    let onComplete: () -> Void
+
+    @Environment(\.yalaTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isVisible = false
+    @State private var showTooltip = false
+    /// Prevents interaction during transitions and initial appearance
+    @State private var isTransitioning = false
+
+    private var currentStep: CoachMarkStep? {
+        guard currentIndex < steps.count else { return nil }
+        return steps[currentIndex]
+    }
+
+    /// Resolves the current anchor frame, returning nil if off-screen
+    private func resolveFrame(for step: CoachMarkStep) -> CGRect? {
+        guard let anchor = anchors[step.id] else { return nil }
+        let frame = proxy[anchor]
+        let visibleBounds = CGRect(origin: .zero, size: proxy.size)
+        let expandedBounds = visibleBounds.insetBy(dx: 0, dy: -CoachMarkLayout.visibilityMargin)
+        guard expandedBounds.intersects(frame) else { return nil }
+        return frame
+    }
+
+    /// Padded spotlight rect for the given step and frame
+    private func spotlightRect(for step: CoachMarkStep, frame: CGRect) -> CGRect {
+        let padding = step.spotlightPadding
+        return CGRect(
+            x: frame.minX - padding,
+            y: frame.minY - padding,
+            width: frame.width + padding * 2,
+            height: frame.height + padding * 2
+        )
+    }
+
+    var body: some View {
+        ZStack {
+            if let step = currentStep, let frame = resolveFrame(for: step) {
+                let rect = spotlightRect(for: step, frame: frame)
+                let cornerRadius = min(DS.Radius.lg, rect.height / 2)
+
+                // Dimmed background with animated spotlight cutout
+                SpotlightCutoutShape(spotlight: AnimatableRect(rect), cornerRadius: cornerRadius)
+                    .fill(.black.opacity(CoachMarkLayout.dimOpacity), style: FillStyle(eoFill: true))
+                    .ignoresSafeArea()
+                    .opacity(isVisible ? 1 : 0)
+                    .allowsHitTesting(true)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        guard !isTransitioning else { return }
+                        advance()
+                    }
+
+                // Tooltip card
+                tooltipCard(step: step, targetFrame: frame)
+                    .opacity(showTooltip ? 1 : 0)
+                    .offset(y: showTooltip ? 0 : 8)
+            }
+        }
+        .onAppear {
+            handleStepTransition(initial: true)
+        }
+        .onChange(of: currentIndex) { _, _ in
+            handleStepTransition(initial: false)
+        }
+    }
+
+    // MARK: - Step Transitions
+
+    private func handleStepTransition(initial: Bool) {
+        guard let step = currentStep else { return }
+        isTransitioning = true
+
+        // Check if target is already visible (no scroll needed)
+        let needsScroll = resolveFrame(for: step) == nil && scrollProxy != nil
+
+        if needsScroll {
+            scrollThenShow(step: step, initial: initial)
+        } else if initial {
+            // First appearance — fade in dim, then tooltip
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.slow)) {
+                    isVisible = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.fast) {
+                    isTransitioning = false
+                    dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
+                        showTooltip = true
+                    }
+                }
+            }
+        } else {
+            // Target visible — crossfade tooltip while spotlight animates
+            dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
+                showTooltip = false
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.fast) {
+                isTransitioning = false
+                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
+                    showTooltip = true
+                }
+            }
+        }
+    }
+
+    private func scrollThenShow(step: CoachMarkStep, initial: Bool) {
+        // Hide tooltip during scroll (spotlight stays dimmed)
+        if !initial {
+            dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.fast)) {
+                showTooltip = false
+            }
+        }
+
+        // Scroll to the target
+        withAnimation(.easeInOut(duration: DS.Animation.normal)) {
+            scrollProxy?.scrollTo(step.id, anchor: .center)
+        }
+
+        // Wait for scroll to settle, then show
+        DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.normal + 0.15) {
+            isTransitioning = false
+            if !isVisible {
+                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.slow)) {
+                    isVisible = true
+                }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.fast) {
+                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
+                    showTooltip = true
+                }
+            }
+        }
+    }
+
+    // MARK: - Tooltip Card
+
+    private func tooltipCard(step: CoachMarkStep, targetFrame: CGRect) -> some View {
+        let screenHeight = proxy.size.height
+        let isAbove = targetFrame.midY > screenHeight * 0.4
+
+        return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Text(step.title)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.primary)
+
+            Text(step.message)
+                .font(DS.Typography.body)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // Navigation buttons
+            HStack {
+                // Skip button
+                Button {
+                    dismissAndComplete()
+                } label: {
+                    Text(L10n.TipKit.skip)
+                        .font(DS.Typography.labelSmall)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+
+                // Step indicator
+                Text("\(currentIndex + 1)/\(steps.count)")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.tertiary)
+
+                // Next / Done button
+                Button {
+                    advance()
+                } label: {
+                    Text(currentIndex < steps.count - 1 ? L10n.TipKit.next : L10n.TipKit.done)
+                        .font(DS.Typography.bodyBold)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .background(theme.accent)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.top, DS.Spacing.xs)
+        }
+        .padding(DS.Spacing.xl)
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .shadow(
+            color: Color.black.opacity(0.2),
+            radius: 16, x: 0, y: 8
+        )
+        .padding(.horizontal, DS.Spacing.xl)
+        .position(
+            x: proxy.size.width / 2,
+            y: isAbove
+                ? targetFrame.minY - CoachMarkLayout.tooltipGap
+                : targetFrame.maxY + CoachMarkLayout.tooltipGap
+        )
+    }
+
+    // MARK: - Navigation
+
+    private func advance() {
+        guard !isTransitioning else { return }
+        if currentIndex < steps.count - 1 {
+            // The spotlight shape animates automatically via animatableData
+            dsWithAnimation(reduceMotion, .spring(duration: 0.45, bounce: 0.15)) {
+                currentIndex += 1
+            }
+        } else {
+            dismissAndComplete()
+        }
+    }
+
+    private func dismissAndComplete() {
+        isTransitioning = true
+        dsWithAnimation(reduceMotion, .easeIn(duration: DS.Animation.fast)) {
+            showTooltip = false
+            isVisible = false
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.fast + 0.05) {
+            isPresented = false
+            onComplete()
+        }
+    }
+}
+
+// MARK: - View Modifier
+
+extension View {
+    /// Attaches a coach mark tour overlay to this view.
+    /// The view must contain children with `.coachMarkAnchor("id")` matching the step IDs.
+    /// Pass a `ScrollViewProxy` to auto-scroll to off-screen targets.
+    func coachMarkOverlay(
+        steps: [CoachMarkStep],
+        isPresented: Binding<Bool>,
+        currentIndex: Binding<Int>,
+        scrollProxy: ScrollViewProxy? = nil,
+        onComplete: @escaping () -> Void
+    ) -> some View {
+        self.overlayPreferenceValue(CoachMarkAnchorKey.self) { anchors in
+            if isPresented.wrappedValue {
+                GeometryReader { proxy in
+                    CoachMarkOverlay(
+                        steps: steps,
+                        anchors: anchors,
+                        proxy: proxy,
+                        scrollProxy: scrollProxy,
+                        currentIndex: currentIndex,
+                        isPresented: isPresented,
+                        onComplete: onComplete
+                    )
+                }
+                .ignoresSafeArea()
+            }
+        }
+    }
+}

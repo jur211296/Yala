@@ -1769,6 +1769,51 @@
 "tips.siri.detail" = "Dis : « Crée un enregistrement dans Yala »";
 "tips.siri.close" = "Fermer la suggestion Siri";
 
+// MARK: - TipKit (guides contextuels)
+"tipkit.skip" = "Passer le guide";
+"tipkit.next" = "Suivant";
+"tipkit.done" = "Terminé";
+"tipkit.accounts.title" = "Tes comptes";
+"tipkit.accounts.message" = "Ici tu vois tes comptes actifs et leurs soldes à tout moment.";
+"tipkit.widgets.title" = "Tes graphiques";
+"tipkit.widgets.message" = "Des widgets avec des résumés et graphiques de tes dépenses et revenus. Personnalise lesquels afficher depuis le bouton de réglages.";
+"tipkit.fab.title" = "Enregistre vite";
+"tipkit.fab.free.message" = "Appuie ici pour enregistrer tes dépenses et revenus.";
+"tipkit.fab.pro.message" = "Enregistre manuellement, par voix ou avec une photo.";
+"tipkit.profile.title" = "Ton profil";
+"tipkit.profile.message" = "Configure tout pour que Yala fonctionne exactement comme tu en as besoin.";
+"tipkit.transactionTypes.title" = "Trois types d'enregistrement";
+"tipkit.transactionTypes.message" = "Enregistre des dépenses, des revenus et des transferts entre tes comptes.";
+"tipkit.favoritePayments.title" = "Paiements favoris";
+"tipkit.favoritePayments.message" = "Enregistre les dépenses fréquentes pour ne pas tout remplir à chaque fois.";
+"tipkit.quickActions.title" = "Actions rapides";
+"tipkit.quickActions.message" = "Crée des favoris et des paiements programmés depuis ici.";
+"tipkit.filterAccount.title" = "Filtre en un toucher";
+"tipkit.filterAccount.message" = "Touche un compte pour filtrer tous les graphiques uniquement pour celui-ci.";
+"tipkit.interactiveWidgets.title" = "Touche et explore";
+"tipkit.interactiveWidgets.message" = "Les widgets sont interactifs : touche-les pour filtrer et découvrir des tendances.";
+"tipkit.widgetPreferences.title" = "Préférences de widgets";
+"tipkit.widgetPreferences.message" = "Choisis quels graphiques afficher et dans quel ordre depuis ici.";
+
+// Groupe D : Tour des réglages
+"tipkit.settings.accounts.title" = "Tes comptes";
+"tipkit.settings.accounts.message" = "Ajoute et organise tes comptes bancaires, espèces et plus.";
+"tipkit.settings.categories.title" = "Catégories";
+"tipkit.settings.categories.message" = "Personnalise les catégories pour classer tes dépenses et revenus.";
+"tipkit.settings.tags.title" = "Étiquettes";
+"tipkit.settings.tags.message" = "Crée des étiquettes pour regrouper tes dépenses par projet, voyage ou ce dont tu as besoin.";
+"tipkit.settings.budgets.title" = "Budgets";
+"tipkit.settings.budgets.message" = "Définis des limites de dépenses et reçois des alertes quand tu t'en approches.";
+"tipkit.settings.planned.title" = "Paiements programmés";
+"tipkit.settings.planned.message" = "Programme des paiements récurrents pour que Yala te rappelle à temps.";
+"tipkit.settings.personalization.title" = "Personnalisation";
+"tipkit.settings.personalization.message" = "Ajuste la langue, la devise et l'apparence pour que Yala te ressemble.";
+"tipkit.settings.tutorials.title" = "Tutoriels";
+"tipkit.settings.tutorials.message" = "Des guides pas à pas pour tirer le meilleur de Yala.";
+
+"tipkit.comparison.title" = "Compare et apprends";
+"tipkit.comparison.message" = "Compare avec la période précédente ou l'année dernière pour voir comment tu progresses.";
+
 // MARK: - FAQ
 "faq.subtitle" = "Réponses aux questions les plus courantes";
 "faq.section.general" = "Général";

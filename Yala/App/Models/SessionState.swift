@@ -434,6 +434,10 @@ class SessionState {
     /// Flag to show downgrade resolution sheet
     var shouldShowDowngradeResolution: Bool = false
 
+    /// Signals that post-onboarding flow is complete (trial sheet dismissed or skipped).
+    /// Coach mark tours wait for this before starting.
+    var isReadyForTours: Bool = false
+
     /// Deep link destination from widgets
     /// When set, app navigates to specified destination and clears this
     var deepLinkDestination: DeepLinkDestination?

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TipKit
 
 struct ComparisonModeSelector: View {
     @Environment(SessionState.self) private var sessionState
@@ -13,11 +14,17 @@ struct ComparisonModeSelector: View {
     @Environment(\.yalaTheme) private var theme
     @Namespace private var namespace
 
+    private let comparisonTip = ComparisonTip()
+
     var body: some View {
         HStack(spacing: DS.Spacing.sm) {
             ForEach(ComparisonMode.allCases) { mode in
                 selectorButton(for: mode)
             }
+        }
+        .popoverTip(comparisonTip)
+        .onAppear {
+            ComparisonTip.hasVisitedStatistics = true
         }
     }
 

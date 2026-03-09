@@ -201,6 +201,7 @@ final class PanelViewModel {
             print("PanelViewModel: Error loading pending drafts: \(error)")
             #endif
         }
+
     }
 
     var topSpendingCategories: [CategorySpendingSummary] = []

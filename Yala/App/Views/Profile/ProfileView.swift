@@ -55,6 +55,12 @@ struct ProfileView: View {
     @State private var showUpgradeForImage = false
     @State private var showSupportSheet = false
 
+    // Coach mark: Settings tour
+    @AppStorage("hasSeenSettingsTour") private var hasSeenSettingsTour = false
+    @State private var showSettingsTour = false
+    @State private var settingsTourIndex = 0
+    @State private var settingsScrollProxy: ScrollViewProxy?
+
     private var isProUser: Bool {
         FeatureGateService.shared.isProUser
     }
@@ -104,26 +110,30 @@ struct ProfileView: View {
             ZStack {
                 PanelBackgroundView()
 
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
-                        // Header
-                        profileHeader
+                ScrollViewReader { scrollProxy in
+                    ScrollView {
+                        VStack(spacing: DS.Spacing.xxl) {
+                            // Header
+                            profileHeader
 
-                        // Sections
-                        organizacionSection
-                        preferenciasSection
-                        datosSection
-                        seguridadSection
-                        ayudaSection
-                        legalSection
+                            // Sections
+                            organizacionSection
+                            preferenciasSection
+                            datosSection
+                            seguridadSection
+                            ayudaSection
+                            legalSection
 
-                        // Version info
-                        Text(L10n.Settings.versionInfo)
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.tertiary)
-                            .padding(.top, DS.Spacing.sm)
+                            // Version info
+                            Text(L10n.Settings.versionInfo)
+                                .font(DS.Typography.captionSmall)
+                                .foregroundStyle(.tertiary)
+                                .padding(.top, DS.Spacing.sm)
+                        }
+                        .padding(.vertical, DS.Spacing.xxl)
                     }
-                    .padding(.vertical, DS.Spacing.xxl)
+                    .scrollDisabled(showSettingsTour)
+                    .onAppear { settingsScrollProxy = scrollProxy }
                 }
             }
             .navigationTitle(L10n.Profile.title)
@@ -248,6 +258,21 @@ struct ProfileView: View {
             .onAppear {
                 viewModel.setContext(modelContext)
                 profileStorage.migrateFromUserDefaultsIfNeeded()
+            }
+        }
+        .coachMarkOverlay(
+            steps: SettingsTourSteps.steps,
+            isPresented: $showSettingsTour,
+            currentIndex: $settingsTourIndex,
+            scrollProxy: settingsScrollProxy,
+            onComplete: { hasSeenSettingsTour = true }
+        )
+        .task {
+            if !hasSeenSettingsTour {
+                try? await Task.sleep(for: .seconds(0.8))
+                if !hasSeenSettingsTour {
+                    showSettingsTour = true
+                }
             }
         }
     }
@@ -383,25 +408,30 @@ struct ProfileView: View {
                 profileRow(
                     icon: "creditcard.fill", title: L10n.Settings.accounts, iconColor: DS.Semantic.successForeground,
                     destination: .accounts)
+                    .coachMarkAnchor("settingsAccounts")
                 SubsectionDivider()
                 profileRow(
                     icon: "tag.fill", title: L10n.Settings.categories, iconColor: .orange,
                     destination: .categories)
+                    .coachMarkAnchor("settingsCategories")
                 SubsectionDivider()
                 profileRow(
                     icon: "number", title: L10n.Settings.tags, iconColor: .purple,
                     destination: .tags)
+                    .coachMarkAnchor("settingsTags")
                 SubsectionDivider()
                 profileRow(
                     icon: "chart.pie.fill", title: L10n.Settings.budgetsFavorites,
                     iconColor: .mint,
                     destination: .budgetsFavorites)
+                    .coachMarkAnchor("settingsBudgets")
                 SubsectionDivider()
                 profileRow(
                     icon: "calendar.badge.clock", title: L10n.Settings.plannedPayments,
                     iconColor: .cyan,
                     destination: .planned
                 )
+                .coachMarkAnchor("settingsPlanned")
                 SubsectionDivider()
                 profileRow(
                     icon: "star.fill", title: L10n.Settings.favorites, iconColor: .yellow,
@@ -417,6 +447,7 @@ struct ProfileView: View {
                 profileRow(
                     icon: "slider.horizontal.3", title: L10n.Settings.personalization,
                     iconColor: .indigo, destination: .personalization)
+                .coachMarkAnchor("settingsPersonalization")
                 SubsectionDivider()
                 profileRow(
                     icon: "bell.fill", title: L10n.Settings.notifications, iconColor: .red,
@@ -772,6 +803,7 @@ struct ProfileView: View {
                 profileRow(
                     icon: "book.fill", title: L10n.Settings.tutorials,
                     iconColor: .electricIndigo, destination: .tips)
+                .coachMarkAnchor("settingsTutorials")
                 SubsectionDivider()
                 profileRow(
                     icon: "questionmark.circle.fill", title: L10n.Settings.faq,

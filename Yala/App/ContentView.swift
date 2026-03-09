@@ -175,8 +175,13 @@ struct ContentView: View {
                     }
                     if eligible {
                         showProTrialOffer = true
+                    } else {
+                        SessionState.shared.isReadyForTours = true
                     }
                 }
+            } else {
+                // Pro user or onboarding not completed — ready immediately
+                SessionState.shared.isReadyForTours = true
             }
         }) {
             OnboardingView {
@@ -185,7 +190,9 @@ struct ContentView: View {
             }
             .environment(SessionState.shared)
         }
-        .sheet(isPresented: $showProTrialOffer) {
+        .sheet(isPresented: $showProTrialOffer, onDismiss: {
+            SessionState.shared.isReadyForTours = true
+        }) {
             ProTrialOfferSheet {
                 showProTrialOffer = false
             }
@@ -313,6 +320,7 @@ struct ContentView: View {
         remoteWipeTask?.cancel()
         remoteWipeTask = Task {
             let sessionState = SessionState.shared
+            sessionState.isReadyForTours = false
             sessionState.isWipingData = true
 
             // Wait for MainTabView to dismount (prevents @Query crash)
@@ -367,6 +375,8 @@ struct ContentView: View {
             if hasExistingData {
                 hasCompletedOnboarding = true
             }
+            // Returning user — no trial sheet, tours can start immediately
+            SessionState.shared.isReadyForTours = true
             // Still check if language selection is needed (new feature, per-device)
             if needsLanguageSelection {
                 showLanguageSelection = true

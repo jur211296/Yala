@@ -8,6 +8,7 @@
 
 import Foundation
 import SwiftData
+import TipKit
 import WidgetKit
 
 // Clase de utilidad para operaciones de borrado masivo de datos de usuario.
@@ -186,9 +187,16 @@ final class DataWipeService {
         resetAllUserPreferences()
 
         // ============================================================
-        // PASO 3: Limpiar cache de widgets
+        // PASO 3: Limpiar cache de widgets + TipKit
         // ============================================================
         WidgetDataCache.clearCache()
+        do {
+            try Tips.resetDatastore()
+        } catch {
+            #if DEBUG
+            print("DataWipeService: TipKit reset failed: \(error)")
+            #endif
+        }
 
         // ============================================================
         // PASO 4: Reseed de datos iniciales si corresponde
@@ -249,6 +257,12 @@ final class DataWipeService {
         // --- Cross-device wipe coordination ---
         // DO NOT clear lastKnownWipeTimestamp — it protects against reacting to our own wipe signal
         defaults.removeObject(forKey: "lastKnownOnboardingTimestamp")  // Allow re-processing remote onboarding
+
+        // --- Coach mark tours ---
+        defaults.removeObject(forKey: "hasSeenPanelTour")         // Re-show panel tour
+        defaults.removeObject(forKey: "hasSeenRegistroTour")      // Re-show registro tour
+        defaults.removeObject(forKey: "hasSeenInteractivityTour") // Re-show interactivity tour
+        defaults.removeObject(forKey: "hasSeenSettingsTour")      // Re-show settings tour
 
         // --- Seed guards ---
         defaults.removeObject(forKey: "seedCategoriesExecuted") // Allow re-seed after wipe

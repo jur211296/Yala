@@ -13,8 +13,8 @@ Version: 1.2 (en desarrollo)
 Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
-Status: **Fase 12 en progreso** — Onboarding balance communication + calculator
-Last activity: 2026-03-09 — Onboarding: floating nav buttons + scrollable steps
+Status: **Fase 12 en progreso** — Coach mark tours + onboarding improvements
+Last activity: 2026-03-09 — Coach mark tours post-onboarding (4 tours, custom overlay system)
 
 ### Apple Review History (V1.0)
 
@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-09] cadba76 refactor: persist balance calculator field state across sheet open/close
 - [2026-03-09] 8352e2b layout: make onboarding steps scrollable with floating navigation buttons
 - [2026-03-09] 238cda3 feat: add shared expenses section to patrimonial balance calculator
 - [2026-03-09] 48732b8 feat: enrich onboarding with 3 usage modes, interactive balance calculator and contextual TC labels
@@ -50,7 +51,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-08] b0be795 fix: onboarding QA — comma-locale budget bug, animation timing, updated scenarios
 - [2026-03-08] 82f4e5c feat: polish onboarding budget step — reframe texts, horizontal pills, live preview card, currency fix
 - [2026-03-08] 9488d0a feat: polish onboarding account step — SectionBox layout, balance guide, validation
-- [2026-03-08] f711aab feat: redesign onboarding — 7 steps with account setup and quick budget
 - [2026-03-07] 275392d feat: add Smart Insights personalization — tone, focus, and actionable tips
 - [2026-03-07] 7fcdc22 feat: add contextual AI insight card to PanelView
 - [2026-03-06] 7f01298 refactor: extract shared FilterControlBar — eliminate ~790 duplicate lines
@@ -533,7 +533,7 @@ Estos pasos se eliminaron del onboarding para reducirlo de 9→7 pasos. Cada uno
 - [x] Prompt contextual divisas secundarias — alert en AccountFormView al crear cuenta con divisa ≠ preferred (max 2 slots)
 - [x] Periodo default .thisMonth (ya funciona)
 - [x] Pre-permission primer para notificaciones — NotificationPrimerSheet después de 3ra transacción nueva
-- [ ] Tooltips / coach marks post-onboarding
+- [x] Tooltips / coach marks post-onboarding — custom CoachMarkOverlay system with 4 tours (Panel 5 steps, Registro 3 steps, Settings 7 steps, Interactivity 2 steps) + ComparisonTip (TipKit)
 
 ### Refactors Pendientes: Filtros Excluir/Incluir (identificados 2026-03-05)
 
@@ -666,9 +666,9 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Onboarding floating nav buttons + scrollable steps layout
-Next step: Continue with next item from /next
+Stopped at: Committed balance calculator field state persistence
+Next step: Continue with next Fase 12 item from /next
 Resume context:
-- Onboarding layout restructured: safeAreaInset floating buttons with fade gradient, steps 0/2/3 wrapped in GeometryReader+ScrollView
-- Still uncommitted: AccountFormView, BalanceCalculatorSheet, STATE.md changes (pre-existing)
-- Build clean, swift audit clean
+- BalanceCalculatorFieldState extracted as @Observable class — fields persist across sheet open/close
+- AccountFormView resets calcFieldState on account type change
+- All onboarding work committed and clean

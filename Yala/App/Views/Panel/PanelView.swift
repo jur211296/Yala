@@ -80,6 +80,17 @@ struct PanelView: View {
     /// FAB menu expanded state
     @State private var showFABMenu = false
 
+    /// Coach mark: Panel tour (A1-A4)
+    @AppStorage("hasSeenPanelTour") private var hasSeenPanelTour = false
+    @State private var showPanelTour = false
+    @State private var panelTourIndex = 0
+
+    /// Coach mark: Interactivity tour (C1-C2)
+    @AppStorage("hasSeenInteractivityTour") private var hasSeenInteractivityTour = false
+    @State private var showInteractivityTour = false
+    @State private var interactivityTourIndex = 0
+    @State private var panelScrollProxy: ScrollViewProxy?
+
     /// Upgrade prompt sheets for gated features
     @State private var showUpgradeForVoice = false
     @State private var showUpgradeForImage = false
@@ -173,6 +184,24 @@ struct PanelView: View {
                     }
                 }
         }
+        .coachMarkOverlay(
+            steps: PanelTourSteps.steps(isProUser: FeatureGateService.shared.isProUser),
+            isPresented: $showPanelTour,
+            currentIndex: $panelTourIndex,
+            scrollProxy: panelScrollProxy,
+            onComplete: {
+                hasSeenPanelTour = true
+            }
+        )
+        .coachMarkOverlay(
+            steps: InteractivityTourSteps.steps,
+            isPresented: $showInteractivityTour,
+            currentIndex: $interactivityTourIndex,
+            scrollProxy: panelScrollProxy,
+            onComplete: {
+                hasSeenInteractivityTour = true
+            }
+        )
         .modifier(
             PanelSheetsModifier(
                 accountFormSheet: $accountFormSheet,
@@ -222,6 +251,26 @@ struct PanelView: View {
         .onChange(of: sizeClass) { _, newValue in
             viewModel.widgetConfig.columns = DS.Adaptive.columns(newValue)
         }
+        .task {
+            // Wait for post-onboarding flow (trial sheet) to complete
+            while !sessionState.isReadyForTours {
+                try? await Task.sleep(for: .milliseconds(200))
+            }
+            if !hasSeenPanelTour {
+                try? await Task.sleep(for: .seconds(0.6))
+                if !hasSeenPanelTour {
+                    showPanelTour = true
+                }
+            }
+        }
+        .onChange(of: showPanelTour) { _, isShowing in
+            if !isShowing && hasSeenPanelTour {
+                triggerInteractivityTourIfEligible()
+            }
+        }
+        .onChange(of: transactions.count) { _, _ in
+            triggerInteractivityTourIfEligible()
+        }
         .modifier(
             PanelDataObservers(
                 accounts: accounts,
@@ -261,27 +310,30 @@ struct PanelView: View {
         ZStack {
             PanelBackgroundView()
 
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                    if showSiriTip {
-                        SiriTipCard(isVisible: $showSiriTip)
-                    }
+            ScrollViewReader { scrollProxy in
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                        if showSiriTip {
+                            SiriTipCard(isVisible: $showSiriTip)
+                        }
 
-                    accountsSection
-                    contextualInsightSection
-                    totalBalanceSection
+                        accountsSection
+                        contextualInsightSection
+                        totalBalanceSection
+                    }
+                    .padding(.horizontal, DS.Adaptive.horizontalPadding(sizeClass))
+                    .padding(.top, DS.Spacing.lg)
+                    .padding(.bottom, DS.Spacing.xxxl)
+                    // Force complete re-render when formatting settings change
+                    .id(sessionState.formattingVersion)
+                    .task(id: insightTaskKey) {
+                        await loadContextualInsight()
+                    }
                 }
-                .padding(.horizontal, DS.Adaptive.horizontalPadding(sizeClass))
-                .padding(.top, DS.Spacing.lg)
-                .padding(.bottom, DS.Spacing.xxxl)
-                // Force complete re-render when formatting settings change
-                .id(sessionState.formattingVersion)
-                .task(id: insightTaskKey) {
-                    await loadContextualInsight()
+                .refreshable {
+                    await refreshData()
                 }
-            }
-            .refreshable {
-                await refreshData()
+                .onAppear { panelScrollProxy = scrollProxy }
             }
 
             // Botón flotante de nuevo registro
@@ -383,6 +435,7 @@ struct PanelView: View {
                 .glassEffect(.regular.interactive())
                 .dsFloatingShadow()
                 .accessibilityLabel(showFABMenu ? L10n.Accessibility.closeMenu : L10n.Accessibility.newRecord)
+                .coachMarkAnchor("fab")
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
@@ -403,6 +456,7 @@ struct PanelView: View {
             .buttonStyle(.plain)
             .glassEffect(.regular.interactive())
             .dsFloatingShadow()
+            .coachMarkAnchor("fab")
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
             .disabled(!canUseVoiceInput)
@@ -486,6 +540,8 @@ struct PanelView: View {
                         accountFormSheet = AccountFormSheet(account: account)
                     }
                 )
+                .coachMarkAnchor("accounts")
+                .coachMarkAnchor("filterAccount")
             }
         }
     }
@@ -864,46 +920,38 @@ struct PanelView: View {
             }
             .padding(.bottom, DS.Spacing.sm)
 
-            HStack {
-                Text(L10n.Panel.widgets)
-                    .font(DS.Typography.title)
+            // Widgets section header + first widget — spotlight anchor for tour
+            VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                HStack {
+                    Text(L10n.Panel.widgets)
+                        .font(DS.Typography.title)
 
-                Spacer()
+                    Spacer()
 
-                Button {
-                    showWidgetPreferences = true
-                } label: {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(DS.Typography.body).fontWeight(.medium)
-                        .foregroundStyle(Color.primary)
-                }
-                .accessibilityLabel(L10n.Accessibility.widgetPreferences)
-            }
-            .padding(.trailing, DS.Spacing.xxs)
-
-            // Custom Grid Layout (VStack of Rows)
-            VStack(spacing: DS.Spacing.lg) {
-                ForEach(viewModel.layoutRows) { row in
-                    switch row.type {
-                    case .fullWidth(let config):
-                        widgetView(for: config)
-                            .clipped()  // Prevent content overflow
-                    case .halfWidthPair(let left, let right):
-                        HStack(alignment: .top, spacing: DS.Spacing.lg) {
-                            widgetView(for: left)
-                                .frame(maxWidth: .infinity)
-                                .clipped()
-
-                            if let right = right {
-                                widgetView(for: right)
-                                    .frame(maxWidth: .infinity)
-                                    .clipped()
-                            } else {
-                                Color.clear
-                                    .frame(maxWidth: .infinity)
-                            }
-                        }
+                    Button {
+                        showWidgetPreferences = true
+                    } label: {
+                        Image(systemName: "slider.horizontal.3")
+                            .font(DS.Typography.body).fontWeight(.medium)
+                            .foregroundStyle(Color.primary)
                     }
+                    .accessibilityLabel(L10n.Accessibility.widgetPreferences)
+                    .coachMarkAnchor("widgetPreferences")
+                }
+                .padding(.trailing, DS.Spacing.xxs)
+
+                // First widget row (included in "widgets" spotlight)
+                if let firstRow = viewModel.layoutRows.first {
+                    widgetRow(for: firstRow)
+                }
+            }
+            .coachMarkAnchor("widgets")
+            .coachMarkAnchor("interactiveWidgets")
+
+            // Remaining widget rows
+            VStack(spacing: DS.Spacing.lg) {
+                ForEach(viewModel.layoutRows.dropFirst()) { row in
+                    widgetRow(for: row)
                 }
             }
 
@@ -938,6 +986,44 @@ struct PanelView: View {
         recalculateData()
         try? await Task.sleep(for: .milliseconds(300))
         DS.Haptic.light()
+    }
+
+    /// Renders a single widget layout row (full-width or half-width pair)
+    @ViewBuilder
+    private func widgetRow(for row: WidgetConfigManager.WidgetRow) -> some View {
+        switch row.type {
+        case .fullWidth(let config):
+            widgetView(for: config)
+                .clipped()
+        case .halfWidthPair(let left, let right):
+            HStack(alignment: .top, spacing: DS.Spacing.lg) {
+                widgetView(for: left)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
+
+                if let right = right {
+                    widgetView(for: right)
+                        .frame(maxWidth: .infinity)
+                        .clipped()
+                } else {
+                    Color.clear
+                        .frame(maxWidth: .infinity)
+                }
+            }
+        }
+    }
+
+    /// Check and trigger interactivity tour if conditions are met
+    private func triggerInteractivityTourIfEligible() {
+        guard hasSeenPanelTour, !hasSeenInteractivityTour, !showPanelTour, !showInteractivityTour else { return }
+        let uniqueDays = Set(transactions.map { Calendar.current.startOfDay(for: $0.date) }).count
+        guard uniqueDays >= 2 else { return }
+        Task {
+            try? await Task.sleep(for: .seconds(1.0))
+            if !showInteractivityTour {
+                showInteractivityTour = true
+            }
+        }
     }
 
     /// Recalculate trend data with smooth animation

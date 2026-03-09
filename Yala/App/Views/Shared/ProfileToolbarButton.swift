@@ -51,6 +51,7 @@ struct ProfileToolbarButton: View {
                     .offset(x: 4, y: 4)
             }
         }
+        .coachMarkAnchor("profile")
     }
 
     // MARK: - Avatar

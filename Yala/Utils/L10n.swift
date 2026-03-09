@@ -3610,6 +3610,56 @@ enum L10n {
         }
     }
 
+    // MARK: - TipKit
+
+    enum TipKit {
+        static var skip: String { ls("tipkit.skip", comment: "") }
+        static var next: String { ls("tipkit.next", comment: "") }
+        static var done: String { ls("tipkit.done", comment: "") }
+        // Grupo A
+        static var accounts: String { ls("tipkit.accounts.title", comment: "") }
+        static var accountsMessage: String { ls("tipkit.accounts.message", comment: "") }
+        static var widgets: String { ls("tipkit.widgets.title", comment: "") }
+        static var widgetsMessage: String { ls("tipkit.widgets.message", comment: "") }
+        static var fab: String { ls("tipkit.fab.title", comment: "") }
+        static var fabFreeMessage: String { ls("tipkit.fab.free.message", comment: "") }
+        static var fabProMessage: String { ls("tipkit.fab.pro.message", comment: "") }
+        static var profile: String { ls("tipkit.profile.title", comment: "") }
+        static var profileMessage: String { ls("tipkit.profile.message", comment: "") }
+        // Grupo B
+        static var transactionTypes: String { ls("tipkit.transactionTypes.title", comment: "") }
+        static var transactionTypesMessage: String { ls("tipkit.transactionTypes.message", comment: "") }
+        static var favoritePayments: String { ls("tipkit.favoritePayments.title", comment: "") }
+        static var favoritePaymentsMessage: String { ls("tipkit.favoritePayments.message", comment: "") }
+        static var quickActions: String { ls("tipkit.quickActions.title", comment: "") }
+        static var quickActionsMessage: String { ls("tipkit.quickActions.message", comment: "") }
+        // Grupo A extra
+        static var widgetPreferences: String { ls("tipkit.widgetPreferences.title", comment: "") }
+        static var widgetPreferencesMessage: String { ls("tipkit.widgetPreferences.message", comment: "") }
+        // Grupo C
+        static var filterAccount: String { ls("tipkit.filterAccount.title", comment: "") }
+        static var filterAccountMessage: String { ls("tipkit.filterAccount.message", comment: "") }
+        static var interactiveWidgets: String { ls("tipkit.interactiveWidgets.title", comment: "") }
+        static var interactiveWidgetsMessage: String { ls("tipkit.interactiveWidgets.message", comment: "") }
+        static var comparison: String { ls("tipkit.comparison.title", comment: "") }
+        static var comparisonMessage: String { ls("tipkit.comparison.message", comment: "") }
+        // Grupo D: Settings
+        static var settingsAccounts: String { ls("tipkit.settings.accounts.title", comment: "") }
+        static var settingsAccountsMessage: String { ls("tipkit.settings.accounts.message", comment: "") }
+        static var settingsCategories: String { ls("tipkit.settings.categories.title", comment: "") }
+        static var settingsCategoriesMessage: String { ls("tipkit.settings.categories.message", comment: "") }
+        static var settingsTags: String { ls("tipkit.settings.tags.title", comment: "") }
+        static var settingsTagsMessage: String { ls("tipkit.settings.tags.message", comment: "") }
+        static var settingsBudgets: String { ls("tipkit.settings.budgets.title", comment: "") }
+        static var settingsBudgetsMessage: String { ls("tipkit.settings.budgets.message", comment: "") }
+        static var settingsPlanned: String { ls("tipkit.settings.planned.title", comment: "") }
+        static var settingsPlannedMessage: String { ls("tipkit.settings.planned.message", comment: "") }
+        static var settingsPersonalization: String { ls("tipkit.settings.personalization.title", comment: "") }
+        static var settingsPersonalizationMessage: String { ls("tipkit.settings.personalization.message", comment: "") }
+        static var settingsTutorials: String { ls("tipkit.settings.tutorials.title", comment: "") }
+        static var settingsTutorialsMessage: String { ls("tipkit.settings.tutorials.message", comment: "") }
+    }
+
 }
 
 // MARK: - App Locale
