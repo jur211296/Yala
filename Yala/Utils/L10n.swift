@@ -2561,6 +2561,10 @@ enum L10n {
         static var calcYourBalance: String { ls("onboarding.calc.yourBalance", comment: "") }
         static var calcCreditCardTip: String { ls("onboarding.calc.creditCard.tip", comment: "") }
         // Simple account explanations (cash/checking/savings)
+        // Shared expenses (patrimonial only)
+        static var calcSharedExpenses: String { ls("onboarding.calc.sharedExpenses", comment: "") }
+        static var calcOthersOweMe: String { ls("onboarding.calc.othersOweMe", comment: "") }
+        static var calcIOwe: String { ls("onboarding.calc.iOwe", comment: "") }
         static var calcCashExplanation: String { ls("onboarding.calc.cashExplanation", comment: "") }
         static var calcCheckingExplanation: String { ls("onboarding.calc.checkingExplanation", comment: "") }
         static var calcSavingsExplanation: String { ls("onboarding.calc.savingsExplanation", comment: "") }

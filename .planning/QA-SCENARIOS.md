@@ -5347,11 +5347,24 @@ Para cada tema verificar:
 
 ### 47.3 Calculadora de saldo: General + Control total (patrimonial)
 - [ ] Seleccionar "Control total" en paso 2 → llegar a paso 4 → abrir calculadora
-- [ ] 4 campos: Cuentas de banco, Ahorros, Efectivo, Consumo en tarjetas (con "(opcional)")
-- [ ] Tip: "También puedes crear una cuenta por cada tarjeta..."
-- [ ] Resultado: "Tu saldo →" con fórmula: bank + savings + cash - creditCards
-- [ ] Escribir 3000 + 500 + 200 + 1200 → resultado muestra 2,500.00
+- [ ] 4 campos principales: Cuentas de banco, Ahorros, Efectivo, Consumo en tarjetas (con "(opcional)")
+- [ ] Sección "Gastos compartidos" visible debajo de campos principales (card separada)
+- [ ] 2 campos compartidos: "Te deben" y "Debes" (con "(opcional)")
+- [ ] Tip: menciona gastos compartidos, no apps específicas
+- [ ] Resultado: "Tu saldo →" con fórmula: bank + savings + cash - creditCards + othersOweMe - iOwe
+- [ ] Escribir 3000 + 500 + 200 - 1200 + 300 - 150 → resultado muestra 2,650.00
+- [ ] Solo campos principales llenos (sin compartidos): 3000 + 500 + 200 - 1200 → muestra 2,500.00
 - [ ] "Usar este saldo" → balance pre-llenado correctamente
+
+### 47.3b Gastos compartidos (solo patrimonial)
+- [ ] Sección "Gastos compartidos" NO aparece en modo "Día a día" (cashFlow)
+- [ ] Sección SÍ aparece en modo "Control total" (patrimonial)
+- [ ] Campo "Te deben" vacío → se trata como 0 en la fórmula
+- [ ] Campo "Debes" vacío → se trata como 0 en la fórmula
+- [ ] "Te deben" suma al saldo (es dinero que te deben)
+- [ ] "Debes" resta al saldo (es dinero que debes)
+- [ ] Ambos campos vacíos → resultado igual que sin sección compartidos
+- [ ] No se menciona ninguna app específica (Splitwise, etc.) en textos
 
 ### 47.4 Calculadora: Cuentas simples (Cash/Checking/Savings)
 - [ ] Seleccionar tipo Cash en paso 4 → "¿Cómo calculo mi saldo?" → explicación + 1 campo

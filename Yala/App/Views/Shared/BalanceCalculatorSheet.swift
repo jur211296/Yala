@@ -22,6 +22,8 @@ struct BalanceCalculatorSheet: View {
     @State private var savingsText: String = ""
     @State private var cashText: String = ""
     @State private var creditCardSpendingText: String = ""
+    @State private var othersOweMeText: String = ""
+    @State private var iOweText: String = ""
 
     // Credit card calculator fields
     @State private var creditLineText: String = ""
@@ -34,6 +36,7 @@ struct BalanceCalculatorSheet: View {
 
     private enum CalcField: Hashable {
         case bankAccounts, savings, cash, creditCardSpending
+        case othersOweMe, iOwe
         case creditLine, availableCredit
         case simpleAmount
     }
@@ -64,9 +67,11 @@ struct BalanceCalculatorSheet: View {
         let savings = parseAmount(savingsText)
         let cash = parseAmount(cashText)
         let creditSpending = parseAmount(creditCardSpendingText)
+        let othersOweMe = parseAmount(othersOweMeText)
+        let iOwe = parseAmount(iOweText)
 
         if mindset == "patrimonial" {
-            return bank + savings + cash - creditSpending
+            return bank + savings + cash - creditSpending + othersOweMe - iOwe
         } else {
             return bank + savings + cash
         }
@@ -163,6 +168,36 @@ struct BalanceCalculatorSheet: View {
             }
             .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+
+            // Shared expenses section (patrimonial only)
+            if mindset == "patrimonial" {
+                VStack(spacing: DS.Spacing.none) {
+                    // Section header
+                    Text(L10n.Onboarding.calcSharedExpenses)
+                        .font(DS.Typography.label)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, DS.Spacing.md)
+                        .padding(.top, DS.Spacing.md)
+                        .padding(.bottom, DS.Spacing.xs)
+
+                    SubsectionDivider()
+
+                    calcRow(label: L10n.Onboarding.calcOthersOweMe, text: $othersOweMeText, field: .othersOweMe)
+                    SubsectionDivider()
+                    VStack(spacing: DS.Spacing.none) {
+                        calcRow(label: L10n.Onboarding.calcIOwe, text: $iOweText, field: .iOwe)
+                        Text(L10n.Onboarding.calcOptional)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.tertiary)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .padding(.horizontal, DS.Spacing.md)
+                            .padding(.bottom, DS.Spacing.sm)
+                    }
+                }
+                .background(.thCard)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+            }
 
             // Result
             resultRow(

@@ -1550,9 +1550,13 @@
 "onboarding.calc.available" = "Your available →";
 "onboarding.calc.balance" = "Your balance →";
 "onboarding.calc.tipCashFlow" = "If you use credit cards, you can add them as separate accounts whenever you want.";
-"onboarding.calc.tipPatrimonial" = "You can also create one account per card for more detailed tracking.";
+"onboarding.calc.tipPatrimonial" = "If you share expenses with others, include what they owe you and what you owe for a more precise balance.";
 "onboarding.calc.useBalance" = "Use this balance";
 "onboarding.calc.adjustLater" = "You can always adjust it later.";
+// Shared expenses (patrimonial only)
+"onboarding.calc.sharedExpenses" = "Shared expenses";
+"onboarding.calc.othersOweMe" = "Others owe you";
+"onboarding.calc.iOwe" = "You owe";
 // Credit card calculator
 "onboarding.calc.creditCard.title" = "Your credit card";
 "onboarding.calc.creditLine" = "Credit line";

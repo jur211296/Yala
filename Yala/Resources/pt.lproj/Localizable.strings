@@ -1546,9 +1546,13 @@
 "onboarding.calc.available" = "O teu disponível →";
 "onboarding.calc.balance" = "O teu saldo →";
 "onboarding.calc.tipCashFlow" = "Se usas cartões de crédito, podes adicioná-los como contas separadas quando quiseres.";
-"onboarding.calc.tipPatrimonial" = "Também podes criar uma conta por cartão para um acompanhamento mais detalhado.";
+"onboarding.calc.tipPatrimonial" = "Se partilhas despesas com outras pessoas, inclui o que te devem e o que deves para um saldo mais preciso.";
 "onboarding.calc.useBalance" = "Usar este saldo";
 "onboarding.calc.adjustLater" = "Podes sempre ajustá-lo depois.";
+// Shared expenses (patrimonial only)
+"onboarding.calc.sharedExpenses" = "Despesas partilhadas";
+"onboarding.calc.othersOweMe" = "Devem-te";
+"onboarding.calc.iOwe" = "Deves";
 // Credit card calculator
 "onboarding.calc.creditCard.title" = "O teu cartão de crédito";
 "onboarding.calc.creditLine" = "Limite de crédito";
