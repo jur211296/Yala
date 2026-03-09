@@ -43,6 +43,9 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-09] 080c51f style: rewrite notification texts with brand voice across 6 languages
+- [2026-03-09] 74976a4 fix: add missing onDismiss to notification edit sheet + QA scenarios
+- [2026-03-09] a34e674 fix: resolve notification system bugs — double completion, debounce, POSIX locale
 - [2026-03-09] cc1da63 refactor: consolidate notification service into single-fetch orchestrator
 - [2026-03-09] c675e9c fix: resolve notification bugs — time window, paid status, warm resume, off-by-one (BUG-36, BUG-37, BUG-38, BUG-39)
 - [2026-03-09] 0d9f04d fix: resolve Inbox crashes — delayed SwiftData deletion and Mac sheet detents (BUG-34, BUG-35)
@@ -50,9 +53,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-09] a32a084 fix: activate all default notification toggles when user accepts primer
 - [2026-03-09] 07d420f feat: add coach mark tours — custom overlay system with 4 guided tours post-onboarding
 - [2026-03-09] cadba76 refactor: persist balance calculator field state across sheet open/close
-- [2026-03-09] 8352e2b layout: make onboarding steps scrollable with floating navigation buttons
-- [2026-03-09] 238cda3 feat: add shared expenses section to patrimonial balance calculator
-- [2026-03-09] 48732b8 feat: enrich onboarding with 3 usage modes, interactive balance calculator and contextual TC labels
 - [2026-03-08] 1220dd5 feat: add post-onboarding contextual prompts — secondary currency + notification primer
 - [2026-03-08] b0be795 fix: onboarding QA — comma-locale budget bug, animation timing, updated scenarios
 - [2026-03-08] 82f4e5c feat: polish onboarding budget step — reframe texts, horizontal pills, live preview card, currency fix
@@ -715,10 +715,11 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: BUG-36/37/38/39 fixed + notification service refactored to single-fetch orchestrator
-Next step: Continue with remaining V1.0.1 bugs (BUG-40+) or next Fase 12 item from /next
+Stopped at: Notification system hardening complete — 3 commits (bugs, robustness, brand voice)
+Next step: Continue with next Fase 12 item from /next
 Resume context:
-- BUG-36: Added isWithinNotificationWindow() — checks user's configured hour before sending
-- BUG-37: Added batch paidStatus check via ScheduledPaymentPaidStatusHelper in 3 notification methods
-- BUG-38: Added processDueScheduledPayments() call in handleBecameActive() for warm resume
-- BUG-39: Normalized dates to startOfDay before dateComponents calculation
+- Fixed double setTaskCompleted in BackgroundTaskManager (Task cancellation + isCancelled guard)
+- Fixed cold launch double notification check (debounce with 5s window)
+- POSIX locale on all notification trackers (non-Gregorian calendar safety)
+- Brand voice rewrite across 84 notification strings in 6 languages
+- QA scenarios section 51 added for notification robustness

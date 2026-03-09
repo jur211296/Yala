@@ -245,7 +245,7 @@ struct FavoriteEditorView: View {
             amountDisplay
 
             // Nature chip (visible when subcategory is selected)
-            if selectedSubcategory != nil {
+            if selectedSubcategory != nil, transactionType != .income {
                 NatureEditChip(
                     nature: selectedNature ?? selectedSubcategory?.nature ?? .unclassified
                 ) {

@@ -132,7 +132,7 @@ struct SearchContentView: View {
             calendar.startOfDay(for: record.date)
         }
         return grouped.sorted { $0.key > $1.key }
-            .map { (date: $0.key, records: $0.value) }
+            .map { (date: $0.key, records: $0.value.sorted { $0.createdAt > $1.createdAt }) }
     }
 
     var body: some View {

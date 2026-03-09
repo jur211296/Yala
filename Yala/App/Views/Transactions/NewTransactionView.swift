@@ -496,10 +496,12 @@ struct NewTransactionView: View {
                         Capsule().fill(categoryColor.opacity(0.12))
                     )
 
-                    NatureEditChip(
-                        nature: viewModel.selectedNature ?? subcategory.nature
-                    ) {
-                        viewModel.showNatureSelector = true
+                    if viewModel.transactionType != .income {
+                        NatureEditChip(
+                            nature: viewModel.selectedNature ?? subcategory.nature
+                        ) {
+                            viewModel.showNatureSelector = true
+                        }
                     }
 
                     if transactionToEdit?.scheduledPaymentID != nil {

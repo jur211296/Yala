@@ -1613,9 +1613,13 @@ private struct PanelSessionObservers: ViewModifier {
                     let selectedCats = categories.filter {
                         sessionState.selectedCategoryIDs.contains($0.persistentModelID)
                     }
-                    // Only set expense if we found matching categories AND all are expense categories
-                    if !selectedCats.isEmpty && selectedCats.allSatisfy({ !$0.isIncome }) {
-                        sessionState.selectedTransactionNatures = [.expense]
+                    // Only set expense/income if we found matching categories AND all share the same type
+                    if !selectedCats.isEmpty {
+                        if selectedCats.allSatisfy({ !$0.isIncome }) {
+                            sessionState.selectedTransactionNatures = [.expense]
+                        } else if selectedCats.allSatisfy({ $0.isIncome }) {
+                            sessionState.selectedTransactionNatures = [.income]
+                        }
                     }
                 }
                 recalculateData()
@@ -1635,9 +1639,13 @@ private struct PanelSessionObservers: ViewModifier {
                     let selectedSubs = subcategories.filter {
                         sessionState.selectedSubcategoryIDs.contains($0.persistentModelID)
                     }
-                    // Only set expense if we found matching subcategories AND all are from expense categories
-                    if !selectedSubs.isEmpty && selectedSubs.allSatisfy({ !$0.safeCategory.isIncome }) {
-                        sessionState.selectedTransactionNatures = [.expense]
+                    // Only set expense/income if we found matching subcategories AND all share the same type
+                    if !selectedSubs.isEmpty {
+                        if selectedSubs.allSatisfy({ !$0.safeCategory.isIncome }) {
+                            sessionState.selectedTransactionNatures = [.expense]
+                        } else if selectedSubs.allSatisfy({ $0.safeCategory.isIncome }) {
+                            sessionState.selectedTransactionNatures = [.income]
+                        }
                     }
                 }
                 recalculateData()

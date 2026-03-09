@@ -438,10 +438,12 @@ struct InboxDraftEditSheet: View {
                         Capsule().fill(categoryColor.opacity(0.12))
                     )
 
-                    NatureEditChip(
-                        nature: selectedNature ?? subcategory.nature
-                    ) {
-                        showNatureSelector = true
+                    if isExpense {
+                        NatureEditChip(
+                            nature: selectedNature ?? subcategory.nature
+                        ) {
+                            showNatureSelector = true
+                        }
                     }
                 }
                 .padding(.top, DS.Spacing.sm)
