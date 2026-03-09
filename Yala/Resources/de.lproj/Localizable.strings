@@ -427,10 +427,10 @@
 "budgets.alerts.title" = "Benachrichtigungen";
 "budgets.alerts.enable" = "Bei Erreichen des Limits benachrichtigen";
 "budgets.alerts.thresholds" = "Benachrichtigen bei:";
-"budgets.alerts.message.50" = "Budget \"%@\" bei 50%% — %@ von %@ ausgegeben";
-"budgets.alerts.message.75" = "Budget \"%@\" bei 75%% — %@ von %@ ausgegeben";
-"budgets.alerts.message.90" = "Achtung: \"%@\" fast aufgebraucht — %@ von %@";
-"budgets.alerts.message.100" = "Budget \"%@\" aufgebraucht — %@ von %@ ausgegeben";
+"budgets.alerts.message.50" = "Halbzeit bei \"%1$@\" — %2$@ von %3$@ verbraucht";
+"budgets.alerts.message.75" = "75%% von \"%1$@\" verbraucht — %2$@ von %3$@";
+"budgets.alerts.message.90" = "\"%1$@\" wird knapp — %2$@ von %3$@ verbraucht";
+"budgets.alerts.message.100" = "Limit bei \"%1$@\" erreicht — %2$@ von %3$@";
 "budgets.alerts.globalDisabledHint" = "Aktiviere Budget-Benachrichtigungen unter Profil > Benachrichtigungen";
 "budgets.new" = "Neues Budget";
 "budgets.edit" = "Budget bearbeiten";
@@ -2039,24 +2039,24 @@
 "notifications.budgetAlerts.hint" = "Erhalte Benachrichtigungen bei Budgetgrenzen";
 
 // Scheduled Payment Notifications (personalized)
-"notifications.scheduledPayment.dueToday" = "Heute fällig: %@ für %@";
-"notifications.scheduledPayment.dueSoon" = "In %d Tag(en) fällig: %@ für %@";
-"notifications.scheduledPayment.overdue" = "Überfällige Zahlung: %@ für %@";
-"notifications.scheduledPayment.dueToday.income" = "Heute erwartet: %@ von %@";
-"notifications.scheduledPayment.dueSoon.income" = "In %d Tag(en) erwartet: %@ von %@";
-"notifications.scheduledPayment.overdue.income" = "Ausstehende Einnahme: %@ von %@";
+"notifications.scheduledPayment.dueToday" = "%1$@ ist heute fällig — %2$@ bereit 💰";
+"notifications.scheduledPayment.dueSoon" = "%2$@ ist in %1$d Tagen fällig — %3$@";
+"notifications.scheduledPayment.overdue" = "%1$@ (%2$@) war fällig — schon erledigt?";
+"notifications.scheduledPayment.dueToday.income" = "Heute kommt %1$@ von %2$@!";
+"notifications.scheduledPayment.dueSoon.income" = "%2$@ von %3$@ kommt in %1$d Tagen";
+"notifications.scheduledPayment.overdue.income" = "%1$@ von %2$@ war erwartet — schon angekommen?";
 
 // Report Notifications (with real data)
-"notifications.report.balance" = "Dein aktueller Kontostand: %@";
-"notifications.report.expenses" = "Du hast ausgegeben: %@";
-"notifications.report.income" = "Du hast erhalten: %@";
+"notifications.report.balance" = "Dein Kontostand heute: %@";
+"notifications.report.expenses" = "Heute ausgegeben: %@";
+"notifications.report.income" = "Du hast %@ erhalten 🎉";
 "notifications.report.topCategory" = "Dein größter Ausgabeposten: %@";
 
 // Report Notifications (empty state)
 "notifications.report.empty.expenses.daily" = "Ruhiger Tag! Keine Ausgaben ✨";
 "notifications.report.empty.expenses.weekly" = "Ruhige Woche! Keine Ausgaben erfasst ✨";
 "notifications.report.empty.expenses.monthly" = "Ruhiger Monat! Keine Ausgaben erfasst ✨";
-"notifications.report.empty.income" = "Keine Einnahmen in diesem Zeitraum";
+"notifications.report.empty.income" = "Keine Einnahmen in diesem Zeitraum — alles ruhig";
 "notifications.report.empty.topCategory" = "Keine Ausgaben! Dein Geldbeutel hat sich ausgeruht 😊";
 
 // Test report samples

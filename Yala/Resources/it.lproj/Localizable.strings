@@ -427,10 +427,10 @@
 "budgets.alerts.title" = "Avvisi";
 "budgets.alerts.enable" = "Notifica al raggiungimento del limite";
 "budgets.alerts.thresholds" = "Notifica al:";
-"budgets.alerts.message.50" = "Budget \"%@\" al 50%% — %@ di %@ spesi";
-"budgets.alerts.message.75" = "Budget \"%@\" al 75%% — %@ di %@ spesi";
-"budgets.alerts.message.90" = "Attenzione: \"%@\" quasi esaurito — %@ di %@";
-"budgets.alerts.message.100" = "Budget \"%@\" esaurito — Hai speso %@ di %@";
+"budgets.alerts.message.50" = "A metà su \"%1$@\" — %2$@ di %3$@ usati";
+"budgets.alerts.message.75" = "75%% di \"%1$@\" usato — %2$@ di %3$@";
+"budgets.alerts.message.90" = "\"%1$@\" sta finendo — %2$@ di %3$@ usati";
+"budgets.alerts.message.100" = "Limite raggiunto su \"%1$@\" — %2$@ di %3$@";
 "budgets.alerts.globalDisabledHint" = "Attiva le notifiche per i budget in Profilo > Notifiche per riceverle";
 "budgets.new" = "Nuovo budget";
 "budgets.edit" = "Modifica budget";
@@ -2041,24 +2041,24 @@
 "notifications.budgetAlerts.hint" = "Ricevi avvisi quando ti avvicini ai limiti";
 
 // Scheduled Payment Notifications (personalized)
-"notifications.scheduledPayment.dueToday" = "Oggi scade: %@ per %@";
-"notifications.scheduledPayment.dueSoon" = "Tra %d giorno(i) scade: %@ per %@";
-"notifications.scheduledPayment.overdue" = "Pagamento scaduto: %@ per %@";
-"notifications.scheduledPayment.dueToday.income" = "Oggi ricevi: %@ da %@";
-"notifications.scheduledPayment.dueSoon.income" = "Tra %d giorno(i) ricevi: %@ da %@";
-"notifications.scheduledPayment.overdue.income" = "Entrata in sospeso: %@ da %@";
+"notifications.scheduledPayment.dueToday" = "%1$@ scade oggi — %2$@ pronti 💰";
+"notifications.scheduledPayment.dueSoon" = "%2$@ scade tra %1$d giorni — %3$@";
+"notifications.scheduledPayment.overdue" = "%1$@ (%2$@) era in scadenza — già coperto?";
+"notifications.scheduledPayment.dueToday.income" = "Oggi arriva %1$@ da %2$@!";
+"notifications.scheduledPayment.dueSoon.income" = "%2$@ da %3$@ arriva tra %1$d giorni";
+"notifications.scheduledPayment.overdue.income" = "%1$@ da %2$@ era atteso — è arrivato?";
 
 // Report Notifications (with real data)
-"notifications.report.balance" = "Il tuo saldo attuale: %@";
-"notifications.report.expenses" = "Hai speso: %@";
-"notifications.report.income" = "Hai ricevuto: %@";
+"notifications.report.balance" = "Il tuo saldo oggi: %@";
+"notifications.report.expenses" = "Oggi hai speso %@";
+"notifications.report.income" = "Hai ricevuto %@ 🎉";
 "notifications.report.topCategory" = "La tua spesa maggiore: %@";
 
 // Report Notifications (empty state)
 "notifications.report.empty.expenses.daily" = "Giornata tranquilla! Nessuna spesa ✨";
 "notifications.report.empty.expenses.weekly" = "Settimana tranquilla! Nessuna spesa registrata ✨";
 "notifications.report.empty.expenses.monthly" = "Mese tranquillo! Nessuna spesa registrata ✨";
-"notifications.report.empty.income" = "Nessuna entrata registrata in questo periodo";
+"notifications.report.empty.income" = "Nessuna entrata questo periodo — tutto tranquillo";
 "notifications.report.empty.topCategory" = "Nessuna spesa! Il tuo portafoglio si è riposato 😊";
 
 // Test report samples
