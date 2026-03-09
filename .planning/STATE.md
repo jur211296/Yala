@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-09] cc1da63 refactor: consolidate notification service into single-fetch orchestrator
 - [2026-03-09] c675e9c fix: resolve notification bugs — time window, paid status, warm resume, off-by-one (BUG-36, BUG-37, BUG-38, BUG-39)
 - [2026-03-09] 0d9f04d fix: resolve Inbox crashes — delayed SwiftData deletion and Mac sheet detents (BUG-34, BUG-35)
 - [2026-03-09] 792479a feat: add What's New sheet — post-update feature showcase with race condition priority
@@ -714,7 +715,7 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: BUG-36/37/38/39 notification bugs fixed
+Stopped at: BUG-36/37/38/39 fixed + notification service refactored to single-fetch orchestrator
 Next step: Continue with remaining V1.0.1 bugs (BUG-40+) or next Fase 12 item from /next
 Resume context:
 - BUG-36: Added isWithinNotificationWindow() — checks user's configured hour before sending
