@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-09] 48732b8 feat: enrich onboarding with 3 usage modes, interactive balance calculator and contextual TC labels
 - [2026-03-08] 1220dd5 feat: add post-onboarding contextual prompts — secondary currency + notification primer
 - [2026-03-08] b0be795 fix: onboarding QA — comma-locale budget bug, animation timing, updated scenarios
 - [2026-03-08] 82f4e5c feat: polish onboarding budget step — reframe texts, horizontal pills, live preview card, currency fix
