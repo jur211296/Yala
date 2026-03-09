@@ -2543,3 +2543,16 @@
 "notificationPrimer.accept" = "Activar notificaciones";
 "notificationPrimer.reject" = "Ahora no";
 "notificationPrimer.hint" = "Puedes activarlas en Perfil > Notificaciones";
+
+// MARK: - What's New
+"whatsNew.title" = "Mira lo nuevo en Yala";
+"whatsNew.subtitle" = "Versión %@";
+"whatsNew.continue" = "Continuar";
+"whatsNew.v12.coachMarks.title" = "Guías paso a paso";
+"whatsNew.v12.coachMarks.description" = "Ahora te mostramos cómo usar cada sección con guías interactivas.";
+"whatsNew.v12.notifications.title" = "Notificaciones más inteligentes";
+"whatsNew.v12.notifications.description" = "Activa recordatorios y reportes para no perder de vista tus finanzas.";
+"whatsNew.v12.insights.title" = "Insights con IA";
+"whatsNew.v12.insights.description" = "Descubre patrones en tus gastos con análisis personalizados.";
+"whatsNew.v12.sharedBalances.title" = "Saldos compartidos";
+"whatsNew.v12.sharedBalances.description" = "Calcula saldos entre amigos y pareja directo desde el onboarding.";

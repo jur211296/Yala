@@ -258,6 +258,9 @@ final class DataWipeService {
         // DO NOT clear lastKnownWipeTimestamp — it protects against reacting to our own wipe signal
         defaults.removeObject(forKey: "lastKnownOnboardingTimestamp")  // Allow re-processing remote onboarding
 
+        // --- What's New ---
+        defaults.removeObject(forKey: "lastSeenAppVersion")       // Re-show What's New post-wipe
+
         // --- Coach mark tours ---
         defaults.removeObject(forKey: "hasSeenPanelTour")         // Re-show panel tour
         defaults.removeObject(forKey: "hasSeenRegistroTour")      // Re-show registro tour

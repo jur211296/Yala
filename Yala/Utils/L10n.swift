@@ -3500,6 +3500,26 @@ enum L10n {
         static var hint: String { ls("notificationPrimer.hint", comment: "") }
     }
 
+    // MARK: - What's New
+
+    enum WhatsNew {
+        static var title: String { ls("whatsNew.title", comment: "") }
+        static func subtitle(_ version: String) -> String {
+            String(format: ls("whatsNew.subtitle", comment: ""), version)
+        }
+        static var continueButton: String { ls("whatsNew.continue", comment: "") }
+
+        // v1.2 features
+        static var v12CoachMarksTitle: String { ls("whatsNew.v12.coachMarks.title", comment: "") }
+        static var v12CoachMarksDescription: String { ls("whatsNew.v12.coachMarks.description", comment: "") }
+        static var v12NotificationsTitle: String { ls("whatsNew.v12.notifications.title", comment: "") }
+        static var v12NotificationsDescription: String { ls("whatsNew.v12.notifications.description", comment: "") }
+        static var v12InsightsTitle: String { ls("whatsNew.v12.insights.title", comment: "") }
+        static var v12InsightsDescription: String { ls("whatsNew.v12.insights.description", comment: "") }
+        static var v12SharedBalancesTitle: String { ls("whatsNew.v12.sharedBalances.title", comment: "") }
+        static var v12SharedBalancesDescription: String { ls("whatsNew.v12.sharedBalances.description", comment: "") }
+    }
+
     // MARK: - Weekday
 
     enum Weekday {

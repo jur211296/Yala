@@ -2555,3 +2555,16 @@
 "notificationPrimer.accept" = "Benachrichtigungen aktivieren";
 "notificationPrimer.reject" = "Jetzt nicht";
 "notificationPrimer.hint" = "Du kannst sie unter Profil > Benachrichtigungen aktivieren";
+
+// MARK: - What's New
+"whatsNew.title" = "Neu in Yala";
+"whatsNew.subtitle" = "Version %@";
+"whatsNew.continue" = "Weiter";
+"whatsNew.v12.coachMarks.title" = "Schritt-für-Schritt-Anleitungen";
+"whatsNew.v12.coachMarks.description" = "Wir zeigen dir jetzt, wie du jeden Bereich mit interaktiven Guides nutzt.";
+"whatsNew.v12.notifications.title" = "Intelligentere Benachrichtigungen";
+"whatsNew.v12.notifications.description" = "Aktiviere Erinnerungen und Berichte, um deine Finanzen im Blick zu behalten.";
+"whatsNew.v12.insights.title" = "KI-gestützte Insights";
+"whatsNew.v12.insights.description" = "Entdecke Ausgabenmuster mit personalisierten Analysen.";
+"whatsNew.v12.sharedBalances.title" = "Geteilte Salden";
+"whatsNew.v12.sharedBalances.description" = "Berechne Salden zwischen Freunden und Partner direkt beim Onboarding.";

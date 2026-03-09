@@ -25,6 +25,9 @@ struct ContentView: View {
     @State private var remoteWipeTask: Task<Void, Never>?
     @State private var showRemoteWipeAlert: Bool = false
     @State private var showProTrialOffer: Bool = false
+    @State private var showWhatsNew: Bool = false
+    @State private var whatsNewData: (features: [WhatsNewFeature], version: String)?
+    @AppStorage("lastSeenAppVersion") private var lastSeenAppVersion: String = ""
     @State private var isInitialCheckDone: Bool = false
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
@@ -197,6 +200,19 @@ struct ContentView: View {
                 showProTrialOffer = false
             }
         }
+        .sheet(isPresented: $showWhatsNew, onDismiss: {
+            if let data = whatsNewData {
+                lastSeenAppVersion = data.version
+            }
+            whatsNewData = nil
+            SessionState.shared.isReadyForTours = true
+        }) {
+            if let data = whatsNewData {
+                WhatsNewSheet(features: data.features, version: data.version) {
+                    showWhatsNew = false
+                }
+            }
+        }
         // Biometric lock as fullScreenCover (covers everything including sheets)
         .fullScreenCover(isPresented: Binding(
             get: { authService.isLocked && !showSplash },
@@ -357,6 +373,16 @@ struct ContentView: View {
         !LanguageManager.deviceLanguageIsSupported && LanguageManager.overrideLanguage == nil
     }
 
+    /// Prepares What's New data if version changed and features exist.
+    /// Returns true if there's something to show.
+    private func prepareWhatsNewIfNeeded() -> Bool {
+        let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+        guard !currentVersion.isEmpty, currentVersion != lastSeenAppVersion,
+              let features = WhatsNewConfig.features(for: currentVersion) else { return false }
+        whatsNewData = (features: features, version: currentVersion)
+        return true
+    }
+
     /// Check initial state and decide whether to show language selection, onboarding, or go straight to app.
     /// Runs during splash so the wait is invisible to the user.
     private func checkInitialSyncState() async {
@@ -375,8 +401,13 @@ struct ContentView: View {
             if hasExistingData {
                 hasCompletedOnboarding = true
             }
-            // Returning user — no trial sheet, tours can start immediately
-            SessionState.shared.isReadyForTours = true
+            // Returning user — check for What's New before enabling tours
+            if prepareWhatsNewIfNeeded() {
+                showWhatsNew = true
+                // isReadyForTours set in onDismiss
+            } else {
+                SessionState.shared.isReadyForTours = true
+            }
             // Still check if language selection is needed (new feature, per-device)
             if needsLanguageSelection {
                 showLanguageSelection = true

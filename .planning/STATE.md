@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-09] a32a084 fix: activate all default notification toggles when user accepts primer
 - [2026-03-09] 07d420f feat: add coach mark tours — custom overlay system with 4 guided tours post-onboarding
 - [2026-03-09] cadba76 refactor: persist balance calculator field state across sheet open/close
 - [2026-03-09] 8352e2b layout: make onboarding steps scrollable with floating navigation buttons
