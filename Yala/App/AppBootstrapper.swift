@@ -38,6 +38,7 @@ final class AppBootstrapper {
     private(set) var isInitialized = false
     var deferredInboxNotification: PendingInboxNotification?
     private var lastRemoteChangeDate = Date.distantPast
+    private var lastNotificationCheckDate = Date.distantPast
 
     // MARK: - Initialization
 
@@ -148,15 +149,14 @@ final class AppBootstrapper {
 
         checkForPendingInboxDrafts(context: context)
 
-        // Verify and reschedule notifications if needed
-        Task {
-            await ensureNotificationsScheduled(context: context)
-        }
+        // Skip notification checks if bootstrap just ran (< 5 seconds ago)
+        let shouldCheckNotifications = Date().timeIntervalSince(lastNotificationCheckDate) > 5.0
 
-        // Check if any report notifications should be sent now
-        // This handles the case where user opens app during the notification window
-        Task {
-            await ReportNotificationService.shared.sendDueReports(context: context)
+        if shouldCheckNotifications {
+            Task {
+                await ensureNotificationsScheduled(context: context)
+                await ReportNotificationService.shared.sendDueReports(context: context)
+            }
         }
     }
 
@@ -500,6 +500,8 @@ final class AppBootstrapper {
         BudgetAlertService.shared.setContext(context)
         await BudgetAlertService.shared.checkBudgetsAndNotify()
         BudgetAlertTracker.shared.cleanupOldEntries()
+
+        lastNotificationCheckDate = Date()
     }
 
     /// Fetches active NotificationItems from database

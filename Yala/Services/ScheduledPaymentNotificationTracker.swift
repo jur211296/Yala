@@ -9,6 +9,7 @@
 import Foundation
 
 /// Tracks which scheduled payment notifications have been sent per date
+@MainActor
 final class ScheduledPaymentNotificationTracker {
     static let shared = ScheduledPaymentNotificationTracker()
 
@@ -18,6 +19,8 @@ final class ScheduledPaymentNotificationTracker {
     private static let dateKeyFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "yyyyMMdd"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
         return f
     }()
 
