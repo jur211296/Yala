@@ -5529,3 +5529,24 @@ Para cada tema verificar:
 #### 50.4 Días restantes (BUG-39)
 - [ ] Pago vence en 3 días, notifyDaysBefore=3 → notificación dice "3 días"
 - [ ] Verificar a distintas horas del día (mañana vs noche) → mismo resultado
+
+### 51. Notification System Robustness
+
+#### 51.1 Background task lifecycle
+- [ ] Background report task completes normally → success logged
+- [ ] Background task expires before completion → no crash, task marked failed
+- [ ] Task type mismatch → task completed with failure, no hang
+
+#### 51.2 Cold launch debounce
+- [ ] Cold launch → notification checks run once (not twice)
+- [ ] Warm resume after >5s → notification checks run normally
+- [ ] Rapid active/inactive toggling → no duplicate notifications
+
+#### 51.3 Non-Gregorian calendar
+- [ ] Set device to Arabic (Saudi) locale → notification dedup still works
+- [ ] Budget alert tracker keys use Gregorian dates regardless of locale
+
+#### 51.4 Brand voice spot check
+- [ ] ES: Scheduled payment due today → text is warm, not telegraphic
+- [ ] EN: Budget at 90% → text says "running low", not "Warning"
+- [ ] All 6 languages: No "(s)" pluralization hack remaining

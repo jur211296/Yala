@@ -59,7 +59,7 @@ struct NotificationsSettingsView: View {
                 }
             }
         }
-        .sheet(item: $viewModel.selectedNotification) { notification in
+        .sheet(item: $viewModel.selectedNotification, onDismiss: { viewModel.closeEditor() }) { notification in
             NotificationEditorSheet(notification: notification) { _ in
                 viewModel.saveContext()
                 Task {
