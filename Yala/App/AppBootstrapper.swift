@@ -486,11 +486,9 @@ final class AppBootstrapper {
             await NotificationService.shared.rescheduleAllNotifications(items: activeItems)
         }
 
-        // Check scheduled payment notifications
+        // Check scheduled payment notifications (single call fetches data once)
         ScheduledPaymentNotificationService.shared.setContext(context)
-        await ScheduledPaymentNotificationService.shared.checkAndNotifyOverduePayments()
-        await ScheduledPaymentNotificationService.shared.checkAndNotifyDuePayments()
-        await ScheduledPaymentNotificationService.shared.checkAndNotifyUpcomingPayments()
+        await ScheduledPaymentNotificationService.shared.checkAllPaymentNotifications()
 
         // Check credit card payment reminders
         await ScheduledPaymentNotificationService.shared.checkAndNotifyCreditCardPayments()
