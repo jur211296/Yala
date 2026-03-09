@@ -5473,3 +5473,59 @@ Para cada tema verificar:
 - [ ] Cambiar idioma a EN → textos de tours en inglés
 - [ ] Cambiar idioma a DE → textos de tours en alemán
 - [ ] Verificar que las 6 localizations tienen todas las keys tipkit.*
+
+## 49. What's New Sheet
+
+### 49.1 Returning user — versión actualizada
+- [ ] Instalar v1.1, actualizar a v1.2 → WhatsNew aparece ANTES de tours/inbox
+- [ ] Sheet muestra 4 features con iconos, títulos y descripciones correctos
+- [ ] Botón "Continuar" cierra la sheet
+- [ ] Después de cerrar, tours se activan (isReadyForTours)
+
+### 49.2 Fresh install
+- [ ] Completar onboarding → WhatsNew NO aparece (misma versión)
+
+### 49.3 Race conditions
+- [ ] Con inbox drafts pendientes → WhatsNew aparece primero, inbox después
+- [ ] Tours esperan a que WhatsNew se cierre (isReadyForTours bloqueado)
+- [ ] Biometric lock: WhatsNew no se muestra detrás del lock
+
+### 49.4 Persistencia
+- [ ] Cerrar app → reabrir → WhatsNew no reaparece (lastSeenAppVersion guardado)
+
+### 49.5 Data wipe
+- [ ] Wipe → re-onboard → actualizar → WhatsNew reaparece
+
+### 49.6 Sin features configuradas
+- [ ] Si WhatsNewConfig retorna nil para la versión, no se muestra nada (hotfixes)
+
+### 49.7 Localización
+- [ ] Verificar textos en los 6 idiomas (es/en/de/fr/it/pt)
+
+### 49.8 Animación
+- [ ] Rows aparecen con stagger animado (fade + slide)
+- [ ] Con Reduce Motion activado: todo aparece instantáneamente sin delays
+
+---
+
+### 50. Notificaciones de Pagos Planificados
+
+#### 50.1 Hora configurada (BUG-36)
+- [ ] Configurar hora de notificación de pagos a 23:00 → abrir app a las 10:00 → NO llega notificación
+- [ ] Misma config → abrir app a las 23:30 → SÍ llega notificación
+- [ ] Desactivar notificación de pagos → abrir app → NUNCA llega notificación
+- [ ] Sin NotificationItem configurado (fresh install sin completar setup) → notificaciones se envían (backward compat)
+
+#### 50.2 Pago ya pagado (BUG-37)
+- [ ] Aprobar draft de pago planificado → cerrar y reabrir app → NO llega notificación para ese pago
+- [ ] Vincular transacción directamente a pago planificado → NO llega notificación
+- [ ] Tener 2 pagos hoy: 1 pagado, 1 pendiente → solo llega notificación del pendiente
+
+#### 50.3 Draft en warm resume (BUG-38)
+- [ ] Tener pago venciendo hoy → abrir app (cold) → draft creado en bandeja
+- [ ] Cerrar app (no kill) → esperar → reabrir (warm) → draft creado si faltaba
+- [ ] Draft ya existente → reabrir → NO duplica draft
+
+#### 50.4 Días restantes (BUG-39)
+- [ ] Pago vence en 3 días, notifyDaysBefore=3 → notificación dice "3 días"
+- [ ] Verificar a distintas horas del día (mañana vs noche) → mismo resultado

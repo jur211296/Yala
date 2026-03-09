@@ -143,8 +143,9 @@ final class AppBootstrapper {
         // Check for pending Control Center action first
         checkForPendingControlAction()
 
-        // Note: shared image check removed here — deep link is the sole trigger
-        // for warm launch. Cold launch is covered by bootstrap() step 7.
+        // Process due scheduled payments (creates inbox drafts for warm resume)
+        processDueScheduledPayments(context: context)
+
         checkForPendingInboxDrafts(context: context)
 
         // Verify and reschedule notifications if needed
