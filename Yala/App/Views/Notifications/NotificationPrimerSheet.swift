@@ -90,7 +90,20 @@ struct NotificationPrimerSheet: View {
         Task { @MainActor in
             let granted = await NotificationService.shared.requestPermission()
             if granted {
-                NotificationService.shared.seedDefaultNotificationsIfNeeded(context: modelContext)
+                // Activate all existing notifications (seeded as inactive during onboarding)
+                let descriptor = FetchDescriptor<NotificationItem>()
+                do {
+                    let items = try modelContext.fetch(descriptor)
+                    for item in items {
+                        item.isActive = true
+                    }
+                    try modelContext.save()
+                    await NotificationService.shared.rescheduleAllNotifications(items: items)
+                } catch {
+                    #if DEBUG
+                    print("NotificationPrimerSheet: Error activating notifications: \(error)")
+                    #endif
+                }
             }
             isRequesting = false
             dismiss()
