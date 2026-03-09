@@ -1528,7 +1528,7 @@
 "onboarding.accountBalanceHintCash" = "L'argent liquide que tu as en ce moment. Pas besoin d'être exact, tu pourras l'ajuster plus tard.";
 "onboarding.accountBalanceHintChecking" = "Le solde disponible sur ton compte bancaire aujourd'hui. Pas besoin d'être exact, tu pourras l'ajuster plus tard.";
 "onboarding.accountBalanceHintSavings" = "Le total que tu as épargné sur ce compte. Pas besoin d'être exact, tu pourras l'ajuster plus tard.";
-"onboarding.accountBalanceLearnMore" = "Comment calculer mon solde ?";
+"onboarding.accountBalanceLearnMore" = "Calculons ton solde ensemble";
 "onboarding.accountBalanceGuideTitle" = "Comment calculer mon solde ?";
 "onboarding.accountBalanceGuideIntro" = "Ton solde initial indique à Yala avec combien d'argent tu démarres. Pas besoin d'être exact au centime — une approximation suffit. Voici comment y réfléchir selon le type de compte que tu as choisi.";
 "onboarding.accountBalanceGuideGeneral" = "Si tu utilises un compte général pour regrouper tous tes moyens de paiement dans une devise, ton solde reflète combien d'argent tu as disponible.\n\nPour le calculer, additionne tout : comptes courants, épargne, espèces. Si tu as des dépenses en cours sur des cartes de crédit, tu peux les soustraire pour une image plus précise — ou suivre chaque carte comme un compte séparé plus tard.\n\nCe chiffre final est ton solde initial.";

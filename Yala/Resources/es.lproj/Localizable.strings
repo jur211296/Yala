@@ -1528,7 +1528,7 @@
 "onboarding.accountBalanceHintCash" = "El dinero en efectivo que tienes ahora mismo. No necesita ser exacto, puedes ajustarlo después.";
 "onboarding.accountBalanceHintChecking" = "El saldo disponible en tu cuenta bancaria hoy. No necesita ser exacto, puedes ajustarlo después.";
 "onboarding.accountBalanceHintSavings" = "El total que tienes ahorrado en esta cuenta. No necesita ser exacto, puedes ajustarlo después.";
-"onboarding.accountBalanceLearnMore" = "¿Cómo calculo mi saldo?";
+"onboarding.accountBalanceLearnMore" = "Calculemos tu saldo juntos";
 "onboarding.accountBalanceGuideTitle" = "¿Cómo calculo mi saldo?";
 "onboarding.accountBalanceGuideIntro" = "Tu saldo inicial le dice a Yala con cuánto dinero arrancas. No necesita ser exacto al centavo — una aproximación está bien. Aquí te explicamos cómo pensarlo según el tipo de cuenta que elegiste.";
 "onboarding.accountBalanceGuideGeneral" = "Si usas una cuenta general para agrupar todos tus medios de pago en una divisa, tu saldo refleja cuánto dinero tienes disponible.\n\nPara calcularlo, suma todo lo que tienes: cuentas de débito, ahorros, efectivo. Si tienes consumos pendientes en tarjetas de crédito, puedes restarlos para una foto más precisa — o llevar cada tarjeta como cuenta aparte más adelante.\n\nEsa cifra final es tu saldo inicial.";
