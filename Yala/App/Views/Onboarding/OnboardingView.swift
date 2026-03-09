@@ -55,6 +55,7 @@ struct OnboardingView: View {
     @State private var balanceIsPositive: Bool = true
     @State private var showCurrencyPicker: Bool = false
     @State private var showBalanceGuide: Bool = false
+    @State private var calcFieldState = BalanceCalculatorFieldState()
     @FocusState private var accountNameFocused: Bool
 
     // Quick budget state
@@ -108,13 +109,9 @@ struct OnboardingView: View {
                 insertion: .move(edge: navigatingForward ? .trailing : .leading),
                 removal: .move(edge: navigatingForward ? .leading : .trailing)
             ))
-
-            Spacer()
-
-            // Navigation buttons
-            navigationButtons
-                .padding(.horizontal, DS.Spacing.xl)
-                .padding(.bottom, DS.Spacing.xxxl)
+        }
+        .safeAreaInset(edge: .bottom) {
+            floatingNavigationButtons
         }
         .background(.thBackground)
         .onTapGesture {
@@ -159,49 +156,56 @@ struct OnboardingView: View {
     // MARK: - Step 0: Welcome & Name
 
     private var welcomeStep: some View {
-        VStack(spacing: DS.Spacing.xl) {
-            Spacer()
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: DS.Spacing.xl) {
+                    Spacer()
 
-            // App icon with proper sizing (uses preview icon from Resources)
-            Image(uiImage: UIImage(named: "IconOriginal@3x") ?? UIImage())
-                .resizable()
-                .scaledToFit()
-                .frame(width: appIconSize, height: appIconSize)
-                .clipShape(RoundedRectangle(cornerRadius: 26))
+                    // App icon with proper sizing (uses preview icon from Resources)
+                    Image(uiImage: UIImage(named: "IconOriginal@3x") ?? UIImage())
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: appIconSize, height: appIconSize)
+                        .clipShape(RoundedRectangle(cornerRadius: 26))
 
-            VStack(spacing: DS.Spacing.md) {
-                Text(L10n.Onboarding.welcomeTitle)
-                    .font(DS.Typography.largeTitle)
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.center)
+                    VStack(spacing: DS.Spacing.md) {
+                        Text(L10n.Onboarding.welcomeTitle)
+                            .font(DS.Typography.largeTitle)
+                            .foregroundStyle(.primary)
+                            .multilineTextAlignment(.center)
 
-                Text(L10n.Onboarding.welcomeSubtitle)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                        Text(L10n.Onboarding.welcomeSubtitle)
+                            .font(DS.Typography.body)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, DS.Spacing.xl)
+                    }
+
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                        Text(L10n.Onboarding.nameLabel)
+                            .font(DS.Typography.label)
+                            .foregroundStyle(.secondary)
+
+                        TextField(L10n.Onboarding.namePlaceholder, text: $userName)
+                            .font(DS.Typography.body)
+                            .padding(DS.Spacing.md)
+                            .background(.thCard)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DS.Radius.md)
+                                    .stroke(DS.Colors.borderSubtle, lineWidth: 1)
+                            )
+                    }
                     .padding(.horizontal, DS.Spacing.xl)
+                    .padding(.top, DS.Spacing.xl)
+
+                    Spacer()
+                    Spacer()
+                }
+                .frame(minHeight: geometry.size.height)
             }
-
-            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                Text(L10n.Onboarding.nameLabel)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.secondary)
-
-                TextField(L10n.Onboarding.namePlaceholder, text: $userName)
-                    .font(DS.Typography.body)
-                    .padding(DS.Spacing.md)
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.md)
-                            .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-                    )
-            }
-            .padding(.horizontal, DS.Spacing.xl)
-            .padding(.top, DS.Spacing.xl)
-
-            Spacer()
-            Spacer()
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollDismissesKeyboard(.interactively)
         }
     }
 
@@ -298,55 +302,59 @@ struct OnboardingView: View {
     // MARK: - Step 2: Usage Mode
 
     private var usageModeStep: some View {
-        VStack(spacing: DS.Spacing.xl) {
-            VStack(spacing: DS.Spacing.md) {
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: heroIconSize))
-                    .foregroundStyle(Color.electricIndigo)
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: DS.Spacing.xl) {
+                    VStack(spacing: DS.Spacing.md) {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: heroIconSize))
+                            .foregroundStyle(Color.electricIndigo)
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
-                Text(L10n.Onboarding.expensesOnlyTitle)
-                    .font(DS.Typography.title)
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.center)
+                        Text(L10n.Onboarding.expensesOnlyTitle)
+                            .font(DS.Typography.title)
+                            .foregroundStyle(.primary)
+                            .multilineTextAlignment(.center)
 
-                Text(L10n.Onboarding.expensesOnlySubtitle)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                        Text(L10n.Onboarding.expensesOnlySubtitle)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, DS.Spacing.xl)
+                    }
+                    .padding(.top, DS.Spacing.xl)
+
+                    VStack(spacing: DS.Spacing.sm) {
+                        // Option 1: Expenses only
+                        usageModeCard(
+                            mode: .expensesOnly,
+                            title: L10n.Onboarding.usageModeExpensesOnly,
+                            quote: L10n.Onboarding.usageModeExpensesOnlyQuote,
+                            description: L10n.Onboarding.usageModeExpensesOnlyDesc
+                        )
+
+                        // Option 2: Day to day (default)
+                        usageModeCard(
+                            mode: .dayToDay,
+                            title: L10n.Onboarding.usageModeDayToDay,
+                            quote: L10n.Onboarding.usageModeDayToDayQuote,
+                            description: L10n.Onboarding.usageModeDayToDayDesc,
+                            showRecommended: true
+                        )
+
+                        // Option 3: Full control
+                        usageModeCard(
+                            mode: .fullControl,
+                            title: L10n.Onboarding.usageModeFullControl,
+                            quote: L10n.Onboarding.usageModeFullControlQuote,
+                            description: L10n.Onboarding.usageModeFullControlDesc
+                        )
+                    }
                     .padding(.horizontal, DS.Spacing.xl)
+                }
+                .frame(minHeight: geometry.size.height)
             }
-            .padding(.top, DS.Spacing.xl)
-
-            VStack(spacing: DS.Spacing.sm) {
-                // Option 1: Expenses only
-                usageModeCard(
-                    mode: .expensesOnly,
-                    title: L10n.Onboarding.usageModeExpensesOnly,
-                    quote: L10n.Onboarding.usageModeExpensesOnlyQuote,
-                    description: L10n.Onboarding.usageModeExpensesOnlyDesc
-                )
-
-                // Option 2: Day to day (default)
-                usageModeCard(
-                    mode: .dayToDay,
-                    title: L10n.Onboarding.usageModeDayToDay,
-                    quote: L10n.Onboarding.usageModeDayToDayQuote,
-                    description: L10n.Onboarding.usageModeDayToDayDesc,
-                    showRecommended: true
-                )
-
-                // Option 3: Full control
-                usageModeCard(
-                    mode: .fullControl,
-                    title: L10n.Onboarding.usageModeFullControl,
-                    quote: L10n.Onboarding.usageModeFullControlQuote,
-                    description: L10n.Onboarding.usageModeFullControlDesc
-                )
-            }
-            .padding(.horizontal, DS.Spacing.xl)
-
-            Spacer()
+            .scrollBounceBehavior(.basedOnSize)
         }
     }
 
@@ -407,100 +415,105 @@ struct OnboardingView: View {
     }
 
     private var categoriesStep: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            VStack(spacing: DS.Spacing.md) {
-                Image(systemName: "square.grid.2x2.fill")
-                    .font(.system(size: heroIconSize))
-                    .foregroundStyle(Color.electricIndigo)
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-
-                Text(L10n.Onboarding.categoriesTitle)
-                    .font(DS.Typography.title)
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.center)
-
-                Text(L10n.Onboarding.categoriesSubtitle)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, DS.Spacing.xl)
-            }
-            .padding(.top, DS.Spacing.md)
-
-            // Visual grid of category icons
-            categoryIconsGrid
-                .padding(.horizontal, DS.Spacing.lg)
-
-            // Info text about subcategories
-            HStack(spacing: DS.Spacing.xs) {
-                Image(systemName: "info.circle")
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-                Text(L10n.Onboarding.categoriesInfo)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.leading)
-            }
-            .padding(.horizontal, DS.Spacing.xl)
-
-            Spacer()
-
-            // Selection buttons
-            VStack(spacing: DS.Spacing.sm) {
-                Button {
-                    loadSeedCategories = true
-                } label: {
-                    HStack {
-                        Image(systemName: loadSeedCategories ? "checkmark.circle.fill" : "circle")
-                            .font(DS.Typography.title)
-                            .foregroundStyle(loadSeedCategories ? Color.electricIndigo : .secondary)
-
-                        Text(L10n.Onboarding.categoriesYes)
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.primary)
-
-                        Spacer()
-
-                        Text(L10n.Onboarding.categoriesRecommended)
-                            .font(DS.Typography.caption)
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: DS.Spacing.lg) {
+                    VStack(spacing: DS.Spacing.md) {
+                        Image(systemName: "square.grid.2x2.fill")
+                            .font(.system(size: heroIconSize))
                             .foregroundStyle(Color.electricIndigo)
-                    }
-                    .padding(DS.Spacing.md)
-                    .background(loadSeedCategories ? Color.electricIndigo.opacity(0.1) : theme.card)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.md)
-                            .stroke(loadSeedCategories ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
 
-                Button {
-                    loadSeedCategories = false
-                } label: {
-                    HStack {
-                        Image(systemName: loadSeedCategories ? "circle" : "checkmark.circle.fill")
+                        Text(L10n.Onboarding.categoriesTitle)
                             .font(DS.Typography.title)
-                            .foregroundStyle(loadSeedCategories ? .secondary : Color.electricIndigo)
-
-                        Text(L10n.Onboarding.categoriesNo)
-                            .font(DS.Typography.body)
                             .foregroundStyle(.primary)
+                            .multilineTextAlignment(.center)
 
-                        Spacer()
+                        Text(L10n.Onboarding.categoriesSubtitle)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, DS.Spacing.xl)
                     }
-                    .padding(DS.Spacing.md)
-                    .background(loadSeedCategories ? theme.card : Color.electricIndigo.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.md)
-                            .stroke(loadSeedCategories ? DS.Colors.borderSubtle : Color.electricIndigo.opacity(0.3), lineWidth: 1)
-                    )
+                    .padding(.top, DS.Spacing.md)
+
+                    // Visual grid of category icons
+                    categoryIconsGrid
+                        .padding(.horizontal, DS.Spacing.lg)
+
+                    // Info text about subcategories
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "info.circle")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                        Text(L10n.Onboarding.categoriesInfo)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.leading)
+                    }
+                    .padding(.horizontal, DS.Spacing.xl)
+
+                    // Selection buttons
+                    VStack(spacing: DS.Spacing.sm) {
+                        Button {
+                            loadSeedCategories = true
+                        } label: {
+                            HStack {
+                                Image(systemName: loadSeedCategories ? "checkmark.circle.fill" : "circle")
+                                    .font(DS.Typography.title)
+                                    .foregroundStyle(loadSeedCategories ? Color.electricIndigo : .secondary)
+
+                                Text(L10n.Onboarding.categoriesYes)
+                                    .font(DS.Typography.body)
+                                    .foregroundStyle(.primary)
+
+                                Spacer()
+
+                                Text(L10n.Onboarding.categoriesRecommended)
+                                    .font(DS.Typography.caption)
+                                    .foregroundStyle(Color.electricIndigo)
+                            }
+                            .padding(DS.Spacing.md)
+                            .background(loadSeedCategories ? Color.electricIndigo.opacity(0.1) : theme.card)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DS.Radius.md)
+                                    .stroke(loadSeedCategories ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            loadSeedCategories = false
+                        } label: {
+                            HStack {
+                                Image(systemName: loadSeedCategories ? "circle" : "checkmark.circle.fill")
+                                    .font(DS.Typography.title)
+                                    .foregroundStyle(loadSeedCategories ? .secondary : Color.electricIndigo)
+
+                                Text(L10n.Onboarding.categoriesNo)
+                                    .font(DS.Typography.body)
+                                    .foregroundStyle(.primary)
+
+                                Spacer()
+                            }
+                            .padding(DS.Spacing.md)
+                            .background(loadSeedCategories ? theme.card : Color.electricIndigo.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DS.Radius.md)
+                                    .stroke(loadSeedCategories ? DS.Colors.borderSubtle : Color.electricIndigo.opacity(0.3), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .padding(.top, DS.Spacing.xl)
+                    .padding(.bottom, DS.Spacing.md)
                 }
-                .buttonStyle(.plain)
+                .frame(minHeight: geometry.size.height)
             }
-            .padding(.horizontal, DS.Spacing.xl)
-            .padding(.bottom, DS.Spacing.md)
+            .scrollBounceBehavior(.basedOnSize)
         }
     }
 
@@ -533,7 +546,10 @@ struct OnboardingView: View {
                 HStack(spacing: DS.Spacing.sm) {
                     ForEach(onboardingAccountTypes) { type in
                         Button {
-                            selectedAccountType = type
+                            if selectedAccountType != type {
+                                selectedAccountType = type
+                                calcFieldState.reset()
+                            }
                         } label: {
                             VStack(spacing: DS.Spacing.xs) {
                                 Image(systemName: iconName(for: type))
@@ -654,6 +670,7 @@ struct OnboardingView: View {
                                 .font(DS.Typography.subheadline)
                             Text(L10n.Onboarding.accountBalanceLearnMore)
                                 .font(DS.Typography.subheadline)
+                                .fontWeight(.semibold)
                         }
                         .foregroundStyle(Color.electricIndigo)
                     }
@@ -689,6 +706,7 @@ struct OnboardingView: View {
                 accountType: selectedAccountType,
                 mindset: selectedUsageMode == .fullControl ? "patrimonial" : "cashFlow",
                 currencySymbol: accountCurrency.symbol,
+                fieldState: calcFieldState,
                 onUseBalance: { amount in
                     if amount >= 0 {
                         balanceIsPositive = true
@@ -1169,6 +1187,30 @@ struct OnboardingView: View {
             return false
         default:
             return false
+        }
+    }
+
+    private var floatingNavigationButtons: some View {
+        VStack(spacing: DS.Spacing.none) {
+            // Fade gradient — content fades behind buttons
+            Rectangle()
+                .fill(.thBackground)
+                .mask(
+                    LinearGradient(
+                        colors: [.clear, .black],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(height: DS.Spacing.xxl)
+                .allowsHitTesting(false)
+
+            // Buttons over solid background
+            navigationButtons
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.bottom, DS.Spacing.xxxl)
+                .padding(.top, DS.Spacing.sm)
+                .background(.thBackground)
         }
     }
 
