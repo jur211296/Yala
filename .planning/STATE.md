@@ -13,8 +13,8 @@ Version: 1.2 (en desarrollo)
 Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
-Status: **Fase 12 en progreso** — Post-onboarding relocation: currency prompt + notification primer
-Last activity: 2026-03-08 — Post-onboarding: contextual secondary currency prompt + notification primer sheet
+Status: **Fase 12 en progreso** — Onboarding balance communication + calculator
+Last activity: 2026-03-09 — Onboarding: 3 usage modes, balance calculator, TC sign picker, softened strings
 
 ### Apple Review History (V1.0)
 
@@ -645,12 +645,28 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 - Design System (DS) en `DesignTokens.swift` con: Spacing, Radius, FormRow, ListRow, Typography
 - SwiftData N:N requiere `@Relationship(inverse:)` explícito en un lado; arrays sin inverse se tratan como 1:N
 
+## Deferred Features
+
+### Panel Balance Breakdown (saldo desglosado)
+
+**Status:** Diferido — documentado para implementación futura.
+
+**Concepto:** Mostrar desglose "Disponible / Pendiente" en Panel cuando el usuario tiene tarjetas de crédito con saldo ≠ 0, dando contexto sobre cuánto del saldo total es realmente disponible vs consumo pendiente.
+
+**Complejidades identificadas:**
+- **Panel:** Fila "Disponible / Pendiente" debajo del carousel — requiere patrón visual nuevo (no hay precedente de 2 KPIs lado a lado ahí). Solo mostrar cuando no hay cuenta seleccionada AND existen TCs con saldo ≠ 0.
+- **TrendsTabView:** La gráfica de tendencia de saldo muestra una línea. Si queremos desglose visual, necesitaríamos dos líneas o área apilada — cambio significativo en `TrendChartView`, `TrendWidget`, y procesamiento de datos en `PanelViewModel`.
+- **Conversión multi-divisa:** El desglose necesita convertir saldos de cuentas en distintas divisas a la preferida, usando `BalanceHelper` pattern.
+- **Redundancia parcial:** El carousel ya muestra saldos individuales por cuenta. Evaluar si el desglose agrega valor suficiente vs ruido visual.
+- **Archivos impactados:** `PanelViewModel.swift` (nuevo método `balanceBreakdown()`), `PanelView.swift` (fila condicional), `TrendWidget.swift`, `TrendsTabView.swift`, `TrendChartView.swift`, localization (×6).
+
 ## Session Continuity
 
-Last session: 2026-03-08
-Stopped at: Post-onboarding relocation — currency prompt + notification primer implemented (1220dd5)
-Next step: Tooltips / coach marks post-onboarding (last pending relocation item)
+Last session: 2026-03-09
+Stopped at: Onboarding balance communication — 3 usage modes, balance calculator, sign picker, softened strings
+Next step: QA scenarios for onboarding balance changes
 Resume context:
-- Post-onboarding relocation: 3 of 4 items done (currency prompt ✅, period default ✅, notif primer ✅). Only tooltips/coach marks pending.
-- 57 relevant tests pass, build clean
-- QA scenarios added in section 46
+- Implemented: 3 usage modes (Solo gastos/Día a día/Control total), BalanceCalculatorSheet (shared onboarding+AccountForm), contextual TC sign picker ("A favor/Consumido"), softened balance guide strings, financialMindset pref synced via iCloud KV
+- 22 AccountFormViewModelTests pass, build clean
+- Deferred: Panel balance breakdown documented above
+- Pending: QA scenarios in QA-SCENARIOS.md

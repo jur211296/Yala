@@ -222,6 +222,8 @@
 "account.sign" = "Sign";
 "account.positive" = "Positive";
 "account.negative" = "Negative";
+"account.sign.inFavor" = "In your favor";
+"account.sign.consumed" = "Spent";
 "account.adjustment" = "Adjustment";
 "account.selected" = "Selected";
 "account.selectAccount" = "Select account";
@@ -1494,6 +1496,16 @@
 "onboarding.expensesOnlyOptionExpenses" = "Expenses only";
 "onboarding.expensesOnlyDescAll" = "Expenses, income, transfers and account balances";
 "onboarding.expensesOnlyDescExpenses" = "Track only what you spend, no complications";
+// Usage Mode: 3 options
+"onboarding.usageMode.expensesOnly" = "Expenses only";
+"onboarding.usageMode.expensesOnly.quote" = "\"I just want to know where my money goes\"";
+"onboarding.usageMode.expensesOnly.desc" = "Track your expenses and that's it. No balances, no fuss.";
+"onboarding.usageMode.dayToDay" = "Day to day";
+"onboarding.usageMode.dayToDay.quote" = "\"I want to know how much I have available to spend\"";
+"onboarding.usageMode.dayToDay.desc" = "Expenses, income and your account balances. Quick and practical.";
+"onboarding.usageMode.fullControl" = "Full control";
+"onboarding.usageMode.fullControl.quote" = "\"I want the full picture of my finances\"";
+"onboarding.usageMode.fullControl.desc" = "Same features, but Yala will guide you to include everything: credit card spending, pending details and precise balances.";
 "onboarding.privacyTitle" = "All Set";
 "onboarding.privacySubtitle" = "You're ready to start using Yala";
 "onboarding.privacyLocal" = "Your financial data stays on your device";
@@ -1514,18 +1526,44 @@
 "onboarding.accountBalanceLabel" = "Initial balance";
 "onboarding.accountBalanceHint" = "Your approximate current balance. Checking: available funds. Savings: what you have saved.";
 "onboarding.accountBalanceSkipHint" = "If you don't know, leave it at 0 and adjust later in the account.";
-"onboarding.accountBalanceHintGeneral" = "Your approximate total balance across all accounts. It doesn't need to be exact — you can adjust it later.";
+"onboarding.accountBalanceHintGeneral" = "Think about how much money you have available today across all your payment methods. A rough estimate is fine.";
 "onboarding.accountBalanceHintCash" = "The cash you have on hand right now. It doesn't need to be exact — you can adjust it later.";
 "onboarding.accountBalanceHintChecking" = "Your available bank balance today. It doesn't need to be exact — you can adjust it later.";
 "onboarding.accountBalanceHintSavings" = "The total you have saved in this account. It doesn't need to be exact — you can adjust it later.";
 "onboarding.accountBalanceLearnMore" = "How do I calculate my balance?";
 "onboarding.accountBalanceGuideTitle" = "How do I calculate my balance?";
 "onboarding.accountBalanceGuideIntro" = "Your initial balance tells Yala how much money you're starting with. It doesn't need to be exact to the penny — a rough estimate works great. Here's how to think about it depending on the type of account you chose.";
-"onboarding.accountBalanceGuideGeneral" = "If you're using a general account to group all your payment methods in one currency, your balance reflects how much money you actually have available in that currency.\n\nTo calculate it, add up everything: checking accounts, savings, cash. Then subtract anything you've already spent on credit cards (that money is already gone). If you use expense-splitting apps, add what others owe you and subtract what you owe.\n\nThat final number is your initial balance. If you have multiple general accounts (say, one per bank), apply the same logic to each one.";
+"onboarding.accountBalanceGuideGeneral" = "If you're using a general account to group all your payment methods in one currency, your balance reflects how much money you have available.\n\nTo calculate it, add up everything: checking accounts, savings, cash. If you have pending credit card charges, you can subtract them for a more precise picture — or track each card as a separate account later.\n\nThat final number is your initial balance.";
 "onboarding.accountBalanceGuideCash" = "This one's the most straightforward: how much cash do you have right now? Check your wallet, that drawer, or wherever you keep your physical money.\n\nDon't worry about being exact — if you think you have \"around 50\", go with 50. You can always adjust it later.";
 "onboarding.accountBalanceGuideChecking" = "Your checking (or debit) account has an available balance you can look up in your banking app or at an ATM.\n\nEnter the available balance you see today. If you have several checking accounts, you can create one account in Yala for each, or group them together — whatever works for you.";
 "onboarding.accountBalanceGuideSavings" = "How much do you have saved up in your savings accounts? If you have several, you can create one account in Yala for each or combine them into one.\n\nEnter the total you have saved. If your bank shows accrued interest, include it in the total.";
-"onboarding.accountBalanceGuideClosing" = "Remember: you can always adjust your balance later from the account edit screen. The important thing is to start with something close to reality.";
+"onboarding.accountBalanceGuideClosing" = "Don't worry if it's not perfect — the important thing is to get started.";
+"onboarding.accountBalanceHintCreditCard" = "What you've spent with this card so far. It doesn't need to be exact — you can adjust it later.";
+// Balance Calculator Sheet
+"onboarding.calc.title" = "How much money do you have?";
+"onboarding.calc.intro" = "You don't need to be exact — a rough estimate is fine.";
+"onboarding.calc.bankAccounts" = "Bank accounts";
+"onboarding.calc.savings" = "Savings";
+"onboarding.calc.cash" = "Cash";
+"onboarding.calc.creditCardSpending" = "Credit card spending";
+"onboarding.calc.optional" = "(optional)";
+"onboarding.calc.available" = "Your available →";
+"onboarding.calc.balance" = "Your balance →";
+"onboarding.calc.tipCashFlow" = "If you use credit cards, you can add them as separate accounts whenever you want.";
+"onboarding.calc.tipPatrimonial" = "You can also create one account per card for more detailed tracking.";
+"onboarding.calc.useBalance" = "Use this balance";
+"onboarding.calc.adjustLater" = "You can always adjust it later.";
+// Credit card calculator
+"onboarding.calc.creditCard.title" = "Your credit card";
+"onboarding.calc.creditLine" = "Credit line";
+"onboarding.calc.availableCredit" = "Available";
+"onboarding.calc.currentSpending" = "Current spending →";
+"onboarding.calc.yourBalance" = "Your balance →";
+"onboarding.calc.creditCard.tip" = "Your balance reflects what you've spent and haven't paid yet.";
+// Simple account explanations
+"onboarding.calc.cashExplanation" = "Check your wallet and anywhere you keep cash. Add it all up — a rough estimate is fine.";
+"onboarding.calc.checkingExplanation" = "Check the available balance in your banking app or ATM. Enter the number you see today.";
+"onboarding.calc.savingsExplanation" = "How much do you have saved? If you have several savings accounts, you can add them all up or create one account for each.";
 "onboarding.accountImportTip" = "In Profile > Import you can import records to any of your accounts.";
 "onboarding.accountMoreTip" = "You can add more accounts anytime. Create at least one per currency if you use multiple.";
 "onboarding.budgetTitle" = "How much do you expect to spend?";

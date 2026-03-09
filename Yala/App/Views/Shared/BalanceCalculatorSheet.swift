@@ -1,0 +1,358 @@
+//
+//  BalanceCalculatorSheet.swift
+//  Yala
+//
+//  Interactive balance calculator that adapts to account type and financial mindset.
+//  Shared between OnboardingView and AccountFormView.
+//
+
+import SwiftUI
+
+struct BalanceCalculatorSheet: View {
+    let accountType: AccountType
+    let mindset: String // "cashFlow" | "patrimonial"
+    let currencySymbol: String
+    let onUseBalance: (Double) -> Void
+    let onDismiss: () -> Void
+
+    @Environment(\.yalaTheme) private var theme
+
+    // General calculator fields
+    @State private var bankAccountsText: String = ""
+    @State private var savingsText: String = ""
+    @State private var cashText: String = ""
+    @State private var creditCardSpendingText: String = ""
+
+    // Credit card calculator fields
+    @State private var creditLineText: String = ""
+    @State private var availableCreditText: String = ""
+
+    // Simple account single field
+    @State private var simpleAmountText: String = ""
+
+    @FocusState private var focusedField: CalcField?
+
+    private enum CalcField: Hashable {
+        case bankAccounts, savings, cash, creditCardSpending
+        case creditLine, availableCredit
+        case simpleAmount
+    }
+
+    private var variant: CalculatorVariant {
+        switch accountType {
+        case .general:
+            return .general
+        case .creditCard:
+            return .creditCard
+        case .cash, .checking, .savings:
+            return .simple
+        }
+    }
+
+    private enum CalculatorVariant {
+        case general, creditCard, simple
+    }
+
+    // MARK: - Computed Balances
+
+    private func parseAmount(_ text: String) -> Double {
+        Double(text.replacingOccurrences(of: ",", with: ".")) ?? 0
+    }
+
+    private var generalTotal: Double {
+        let bank = parseAmount(bankAccountsText)
+        let savings = parseAmount(savingsText)
+        let cash = parseAmount(cashText)
+        let creditSpending = parseAmount(creditCardSpendingText)
+
+        if mindset == "patrimonial" {
+            return bank + savings + cash - creditSpending
+        } else {
+            return bank + savings + cash
+        }
+    }
+
+    private var creditCardSpending: Double {
+        let line = parseAmount(creditLineText)
+        let available = parseAmount(availableCreditText)
+        return max(line - available, 0)
+    }
+
+    private var creditCardBalance: Double {
+        -creditCardSpending
+    }
+
+    private var simpleAmount: Double {
+        parseAmount(simpleAmountText)
+    }
+
+    // MARK: - Body
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    switch variant {
+                    case .general:
+                        generalCalculator
+                    case .creditCard:
+                        creditCardCalculator
+                    case .simple:
+                        simpleExplanation
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.lg)
+            }
+            .background(.thBackground)
+            .scrollDismissesKeyboard(.interactively)
+            .navigationTitle(sheetTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
+                        onDismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private var sheetTitle: String {
+        switch variant {
+        case .general:
+            return L10n.Onboarding.calcTitle
+        case .creditCard:
+            return L10n.Onboarding.calcCreditCardTitle
+        case .simple:
+            return L10n.Onboarding.accountBalanceLearnMore
+        }
+    }
+
+    // MARK: - General Calculator
+
+    private var generalCalculator: some View {
+        VStack(spacing: DS.Spacing.xl) {
+            // Intro
+            Text(L10n.Onboarding.calcIntro)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, DS.Spacing.md)
+
+            // Input fields
+            VStack(spacing: DS.Spacing.none) {
+                calcRow(label: L10n.Onboarding.calcBankAccounts, text: $bankAccountsText, field: .bankAccounts)
+                SubsectionDivider()
+                calcRow(label: L10n.Onboarding.calcSavings, text: $savingsText, field: .savings)
+                SubsectionDivider()
+                calcRow(label: L10n.Onboarding.calcCash, text: $cashText, field: .cash)
+
+                if mindset == "patrimonial" {
+                    SubsectionDivider()
+                    VStack(spacing: DS.Spacing.none) {
+                        calcRow(label: L10n.Onboarding.calcCreditCardSpending, text: $creditCardSpendingText, field: .creditCardSpending)
+                        Text(L10n.Onboarding.calcOptional)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.tertiary)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .padding(.horizontal, DS.Spacing.md)
+                            .padding(.bottom, DS.Spacing.sm)
+                    }
+                }
+            }
+            .background(.thCard)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+
+            // Result
+            resultRow(
+                label: mindset == "patrimonial" ? L10n.Onboarding.calcBalance : L10n.Onboarding.calcAvailable,
+                amount: generalTotal
+            )
+
+            // Tip
+            tipView(text: mindset == "patrimonial" ? L10n.Onboarding.calcTipPatrimonial : L10n.Onboarding.calcTipCashFlow)
+
+            // Use balance button
+            useBalanceButton(amount: generalTotal, isPositive: generalTotal >= 0)
+
+            // Closing note
+            Text(L10n.Onboarding.calcAdjustLater)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.tertiary)
+        }
+    }
+
+    // MARK: - Credit Card Calculator
+
+    private var creditCardCalculator: some View {
+        VStack(spacing: DS.Spacing.xl) {
+            // Input fields
+            VStack(spacing: DS.Spacing.none) {
+                calcRow(label: L10n.Onboarding.calcCreditLine, text: $creditLineText, field: .creditLine)
+                SubsectionDivider()
+                calcRow(label: L10n.Onboarding.calcAvailableCredit, text: $availableCreditText, field: .availableCredit)
+            }
+            .background(.thCard)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+
+            // Results
+            VStack(spacing: DS.Spacing.sm) {
+                resultRow(label: L10n.Onboarding.calcCurrentSpending, amount: creditCardSpending)
+                resultRow(label: L10n.Onboarding.calcYourBalance, amount: creditCardBalance)
+            }
+
+            // Tip
+            tipView(text: L10n.Onboarding.calcCreditCardTip)
+
+            // Use balance button
+            useBalanceButton(amount: creditCardSpending, isPositive: false)
+
+            // Closing note
+            Text(L10n.Onboarding.calcAdjustLater)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.tertiary)
+        }
+    }
+
+    // MARK: - Simple Explanation (Cash / Checking / Savings)
+
+    private var simpleExplanation: some View {
+        VStack(spacing: DS.Spacing.xl) {
+            // Explanation text
+            Text(simpleExplanationText)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Single amount field
+            VStack(spacing: DS.Spacing.none) {
+                calcRow(label: L10n.Account.balance, text: $simpleAmountText, field: .simpleAmount)
+            }
+            .background(.thCard)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+
+            // Use balance button
+            useBalanceButton(amount: simpleAmount, isPositive: true)
+
+            // Closing note
+            Text(L10n.Onboarding.calcAdjustLater)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.tertiary)
+        }
+    }
+
+    private var simpleExplanationText: String {
+        switch accountType {
+        case .cash:
+            return L10n.Onboarding.calcCashExplanation
+        case .checking:
+            return L10n.Onboarding.calcCheckingExplanation
+        case .savings:
+            return L10n.Onboarding.calcSavingsExplanation
+        default:
+            return ""
+        }
+    }
+
+    // MARK: - Reusable Components
+
+    private func calcRow(label: String, text: Binding<String>, field: CalcField) -> some View {
+        HStack {
+            Text(label)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+
+            Spacer()
+
+            HStack(spacing: DS.Spacing.xs) {
+                Text(currencySymbol)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.secondary)
+                TextField("0", text: text)
+                    .font(DS.Typography.headline)
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
+                    .frame(minWidth: 80)
+                    .focused($focusedField, equals: field)
+                    .onChange(of: text.wrappedValue) { _, newValue in
+                        let filtered = filterCalcInput(newValue)
+                        if filtered != newValue {
+                            text.wrappedValue = filtered
+                        }
+                    }
+            }
+        }
+        .padding(DS.Spacing.md)
+    }
+
+    private func resultRow(label: String, amount: Double) -> some View {
+        HStack {
+            Text(label)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.primary)
+            Spacer()
+            Text("\(currencySymbol) \(YalaFormatter.number(value: amount, forceFullPrecision: true))")
+                .font(DS.Typography.title2)
+                .foregroundStyle(amount >= 0 ? Color.electricIndigo : DS.Semantic.errorForeground)
+        }
+        .padding(DS.Spacing.md)
+        .background(Color.electricIndigo.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+    }
+
+    private func tipView(text: String) -> some View {
+        HStack(alignment: .top, spacing: DS.Spacing.sm) {
+            Image(systemName: "lightbulb.fill")
+                .font(DS.Typography.body)
+                .foregroundStyle(Color.electricIndigo)
+            Text(text)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(DS.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.electricIndigo.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+    }
+
+    private func useBalanceButton(amount: Double, isPositive: Bool) -> some View {
+        Button {
+            onUseBalance(isPositive ? amount : -abs(amount))
+            onDismiss()
+        } label: {
+            Text(L10n.Onboarding.calcUseBalance)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DS.Spacing.md)
+                .background(Color.electricIndigo)
+                .clipShape(Capsule())
+        }
+    }
+
+    // MARK: - Input Filtering
+
+    private func filterCalcInput(_ text: String) -> String {
+        var result = ""
+        var hasDecimalPoint = false
+        var decimalCount = 0
+
+        for char in text {
+            if char.isNumber {
+                if hasDecimalPoint {
+                    guard decimalCount < 2 else { continue }
+                    decimalCount += 1
+                }
+                result.append(char)
+            } else if (char == "." || char == ",") && !hasDecimalPoint {
+                hasDecimalPoint = true
+                result.append(".")
+            }
+        }
+        return result
+    }
+}

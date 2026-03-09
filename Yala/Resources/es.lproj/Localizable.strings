@@ -222,6 +222,8 @@
 "account.sign" = "Signo";
 "account.positive" = "Positivo";
 "account.negative" = "Negativo";
+"account.sign.inFavor" = "A favor";
+"account.sign.consumed" = "Consumido";
 "account.adjustment" = "Ajuste";
 "account.selected" = "Seleccionado";
 "account.selectAccount" = "Seleccionar cuenta";
@@ -1492,6 +1494,16 @@
 "onboarding.expensesOnlyOptionExpenses" = "Solo gastos";
 "onboarding.expensesOnlyDescAll" = "Gastos, ingresos, transferencias y saldos de tus cuentas";
 "onboarding.expensesOnlyDescExpenses" = "Registra solo lo que gastas, sin complicaciones";
+// Usage Mode: 3 options
+"onboarding.usageMode.expensesOnly" = "Solo gastos";
+"onboarding.usageMode.expensesOnly.quote" = "\"Solo me interesa saber en qué se va mi dinero\"";
+"onboarding.usageMode.expensesOnly.desc" = "Registra tus gastos y ya. Sin saldos, sin complicaciones.";
+"onboarding.usageMode.dayToDay" = "Día a día";
+"onboarding.usageMode.dayToDay.quote" = "\"Quiero saber cuánto tengo disponible para gastar\"";
+"onboarding.usageMode.dayToDay.desc" = "Gastos, ingresos y el saldo de tus cuentas. Rápido y práctico.";
+"onboarding.usageMode.fullControl" = "Control total";
+"onboarding.usageMode.fullControl.quote" = "\"Quiero la foto completa de mis finanzas\"";
+"onboarding.usageMode.fullControl.desc" = "Lo mismo, pero Yala te guiará a incluir todo: consumos en tarjetas, detalles pendientes y saldos precisos.";
 "onboarding.privacyTitle" = "Todo listo";
 "onboarding.privacySubtitle" = "Ya puedes empezar a usar Yala";
 "onboarding.privacyLocal" = "Tus datos financieros se guardan en tu dispositivo";
@@ -1512,18 +1524,44 @@
 "onboarding.accountBalanceLabel" = "Saldo inicial";
 "onboarding.accountBalanceHint" = "Es tu saldo actual aproximado. En débito: dinero disponible. En ahorros: lo que tienes ahorrado.";
 "onboarding.accountBalanceSkipHint" = "Si no lo sabes, déjalo en 0 y ajústalo después en la cuenta.";
-"onboarding.accountBalanceHintGeneral" = "Tu saldo total aproximado sumando todas tus cuentas. No necesita ser exacto, puedes ajustarlo después.";
+"onboarding.accountBalanceHintGeneral" = "Piensa en cuánto dinero tienes disponible hoy sumando todos tus medios de pago. Un aproximado está bien.";
 "onboarding.accountBalanceHintCash" = "El dinero en efectivo que tienes ahora mismo. No necesita ser exacto, puedes ajustarlo después.";
 "onboarding.accountBalanceHintChecking" = "El saldo disponible en tu cuenta bancaria hoy. No necesita ser exacto, puedes ajustarlo después.";
 "onboarding.accountBalanceHintSavings" = "El total que tienes ahorrado en esta cuenta. No necesita ser exacto, puedes ajustarlo después.";
 "onboarding.accountBalanceLearnMore" = "¿Cómo calculo mi saldo?";
 "onboarding.accountBalanceGuideTitle" = "¿Cómo calculo mi saldo?";
 "onboarding.accountBalanceGuideIntro" = "Tu saldo inicial le dice a Yala con cuánto dinero arrancas. No necesita ser exacto al centavo — una aproximación está bien. Aquí te explicamos cómo pensarlo según el tipo de cuenta que elegiste.";
-"onboarding.accountBalanceGuideGeneral" = "Si usas una cuenta general para agrupar todos tus medios de pago en una divisa, tu saldo refleja cuánto dinero tienes realmente disponible en esa divisa.\n\nPara calcularlo, suma todo lo que tienes: cuentas de débito, ahorros, efectivo. Después, resta lo que ya hayas consumido con tarjetas de crédito (es dinero que ya gastaste). Si usas apps para dividir gastos, suma lo que te deben y resta lo que debas.\n\nEsa cifra final es tu saldo inicial. Si tienes varias cuentas generales (por ejemplo, una por banco), aplica la misma lógica para cada una.";
+"onboarding.accountBalanceGuideGeneral" = "Si usas una cuenta general para agrupar todos tus medios de pago en una divisa, tu saldo refleja cuánto dinero tienes disponible.\n\nPara calcularlo, suma todo lo que tienes: cuentas de débito, ahorros, efectivo. Si tienes consumos pendientes en tarjetas de crédito, puedes restarlos para una foto más precisa — o llevar cada tarjeta como cuenta aparte más adelante.\n\nEsa cifra final es tu saldo inicial.";
 "onboarding.accountBalanceGuideCash" = "Esta es la más directa: ¿cuánto dinero en efectivo tienes ahora mismo? Revisa tu billetera, algún cajón o donde guardes tu dinero físico.\n\nNo te preocupes por ser exacto — si crees que tienes \"como 200\", pon 200. Siempre puedes ajustarlo después.";
 "onboarding.accountBalanceGuideChecking" = "Tu cuenta corriente (o de débito) tiene un saldo disponible que puedes consultar en la app de tu banco o en un cajero automático.\n\nPon el saldo disponible que ves hoy. Si tienes varias cuentas corrientes, puedes crear una cuenta en Yala para cada una, o agruparlas en una sola — como prefieras.";
 "onboarding.accountBalanceGuideSavings" = "¿Cuánto tienes acumulado en tus cuentas de ahorro? Si tienes varias, puedes crear una cuenta en Yala para cada una o sumarlas todas en una sola.\n\nPon el total que tienes ahorrado. Si tu banco muestra intereses acumulados, inclúyelos en el total.";
-"onboarding.accountBalanceGuideClosing" = "Recuerda: siempre puedes ajustar tu saldo después desde la pantalla de edición de la cuenta. Lo importante es arrancar con algo cercano a la realidad.";
+"onboarding.accountBalanceGuideClosing" = "No te preocupes si no es perfecto — lo importante es empezar.";
+"onboarding.accountBalanceHintCreditCard" = "Lo que has consumido con esta tarjeta hasta hoy. No necesita ser exacto, puedes ajustarlo después.";
+// Balance Calculator Sheet
+"onboarding.calc.title" = "¿Cuánto dinero tienes?";
+"onboarding.calc.intro" = "No necesitas ser exacto — un aproximado está bien.";
+"onboarding.calc.bankAccounts" = "Cuentas de banco";
+"onboarding.calc.savings" = "Ahorros";
+"onboarding.calc.cash" = "Efectivo";
+"onboarding.calc.creditCardSpending" = "Consumo en tarjetas";
+"onboarding.calc.optional" = "(opcional)";
+"onboarding.calc.available" = "Tu disponible →";
+"onboarding.calc.balance" = "Tu saldo →";
+"onboarding.calc.tipCashFlow" = "Si usas tarjetas de crédito, puedes agregarlas como cuentas aparte cuando quieras.";
+"onboarding.calc.tipPatrimonial" = "También puedes crear una cuenta por cada tarjeta para un seguimiento más detallado.";
+"onboarding.calc.useBalance" = "Usar este saldo";
+"onboarding.calc.adjustLater" = "Siempre puedes ajustarlo después.";
+// Credit card calculator
+"onboarding.calc.creditCard.title" = "Tu tarjeta de crédito";
+"onboarding.calc.creditLine" = "Línea de crédito";
+"onboarding.calc.availableCredit" = "Disponible";
+"onboarding.calc.currentSpending" = "Consumo actual →";
+"onboarding.calc.yourBalance" = "Tu saldo →";
+"onboarding.calc.creditCard.tip" = "Tu saldo refleja lo que has consumido y aún no pagas.";
+// Simple account explanations
+"onboarding.calc.cashExplanation" = "Revisa tu billetera y donde guardes efectivo. Suma todo — un aproximado está bien.";
+"onboarding.calc.checkingExplanation" = "Consulta el saldo disponible en tu app bancaria o cajero. Pon el número que ves hoy.";
+"onboarding.calc.savingsExplanation" = "¿Cuánto tienes ahorrado? Si tienes varias cuentas de ahorro, puedes sumar todas o crear una cuenta por cada una.";
 "onboarding.accountImportTip" = "En Perfil > Importar puedes importar registros a cualquiera de tus cuentas.";
 "onboarding.accountMoreTip" = "Puedes agregar más cuentas cuando quieras. Crea al menos una por divisa si manejas varias monedas.";
 "onboarding.budgetTitle" = "¿Cuánto esperas gastar?";

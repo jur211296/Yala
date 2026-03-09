@@ -5317,3 +5317,86 @@ Para cada tema verificar:
 - [ ] Transferencias nuevas SÍ incrementan el contador
 - [ ] presentationDetents([.medium]) aplicado correctamente
 - [ ] Sheet se ve correctamente con Dynamic Type
+
+## 47. Onboarding: Modos de Uso + Calculadora de Saldo + TC Sign Picker
+
+### 47.1 Paso 2: Tres modos de uso
+- [ ] Paso 2 muestra 3 opciones: "Solo gastos", "Día a día", "Control total"
+- [ ] Cada opción tiene título, frase en primera persona (italic) y descripción
+- [ ] Por defecto "Día a día" está seleccionada (checkmark azul)
+- [ ] Tocar "Solo gastos" → selecciona, deselecciona la anterior
+- [ ] Tocar "Control total" → selecciona, deselecciona la anterior
+- [ ] "Día a día" muestra badge "Recomendado" cuando está seleccionada
+- [ ] Solo gastos → paso 4 no muestra sección de balance (como antes)
+- [ ] Día a día → paso 4 muestra balance + "¿Cómo calculo mi saldo?" (calculadora sin tarjetas)
+- [ ] Control total → paso 4 muestra balance + calculadora con campo "Consumo en tarjetas"
+- [ ] `expensesOnlyMode` se guarda correctamente: true solo para "Solo gastos"
+- [ ] `financialMindset` se guarda correctamente: "cashFlow" para Solo gastos y Día a día, "patrimonial" para Control total
+- [ ] Ambas preferencias sincronizan via iCloud KV (PreferenceSyncService)
+- [ ] Re-onboarding (data wipe + onboarding) recupera valores guardados
+
+### 47.2 Calculadora de saldo: General + Día a día (cashFlow)
+- [ ] Tocar "¿Cómo calculo mi saldo?" → BalanceCalculatorSheet aparece
+- [ ] Título: "¿Cuánto dinero tienes?" + intro warm
+- [ ] 3 campos: Cuentas de banco, Ahorros, Efectivo (NO campo tarjetas)
+- [ ] Tip: "Si usas tarjetas de crédito, puedes agregarlas como cuentas aparte..."
+- [ ] Resultado: "Tu disponible →" con suma de los 3 campos
+- [ ] Escribir 3000 + 500 + 200 → resultado muestra 3,700.00
+- [ ] "Usar este saldo" → sheet se cierra → monto 3700.00 aparece en input de balance, signo Positivo
+- [ ] Símbolo de moneda correcto (según accountCurrency)
+
+### 47.3 Calculadora de saldo: General + Control total (patrimonial)
+- [ ] Seleccionar "Control total" en paso 2 → llegar a paso 4 → abrir calculadora
+- [ ] 4 campos: Cuentas de banco, Ahorros, Efectivo, Consumo en tarjetas (con "(opcional)")
+- [ ] Tip: "También puedes crear una cuenta por cada tarjeta..."
+- [ ] Resultado: "Tu saldo →" con fórmula: bank + savings + cash - creditCards
+- [ ] Escribir 3000 + 500 + 200 + 1200 → resultado muestra 2,500.00
+- [ ] "Usar este saldo" → balance pre-llenado correctamente
+
+### 47.4 Calculadora: Cuentas simples (Cash/Checking/Savings)
+- [ ] Seleccionar tipo Cash en paso 4 → "¿Cómo calculo mi saldo?" → explicación + 1 campo
+- [ ] Texto Cash: "Revisa tu billetera y donde guardes efectivo..."
+- [ ] Seleccionar tipo Checking → texto: "Consulta el saldo disponible en tu app bancaria..."
+- [ ] Seleccionar tipo Savings → texto: "¿Cuánto tienes ahorrado?..."
+- [ ] Cada uno tiene solo 1 campo de monto + "Usar este saldo"
+- [ ] "Usar este saldo" pre-llena correctamente con signo positivo
+
+### 47.5 AccountFormView: Calculadora de saldo
+- [ ] Crear nueva cuenta General → link "¿Cómo calculo mi saldo?" visible debajo de balance
+- [ ] Tocar → BalanceCalculatorSheet con variante según tipo de cuenta
+- [ ] Cambiar tipo a Cash → calculadora muestra variante simple
+- [ ] Cambiar tipo a Credit Card → calculadora muestra variante TC (línea/disponible)
+- [ ] "Usar este saldo" pre-llena balanceText e isPositive correctamente
+- [ ] Editar cuenta existente → link NO visible (solo para cuentas nuevas)
+- [ ] Modo expenses-only → link NO visible (sin sección de balance)
+
+### 47.6 Calculadora: Tarjeta de crédito (solo AccountFormView)
+- [ ] Crear cuenta TC → abrir calculadora → 2 campos: Línea de crédito, Disponible
+- [ ] Línea 10000, Disponible 7500 → "Consumo actual → 2,500.00" y "Tu saldo → -2,500.00"
+- [ ] "Usar este saldo" → balance = 2500.00, signo = Negativo (Consumido)
+- [ ] Tip: "Tu saldo refleja lo que has consumido y aún no pagas."
+
+### 47.7 Sign picker contextual para TC
+- [ ] AccountFormView: crear cuenta tipo Checking → sign picker dice "Positivo / Negativo"
+- [ ] Cambiar tipo a Credit Card → sign picker dice "A favor / Consumido"
+- [ ] Cambiar de vuelta a General → sign picker dice "Positivo / Negativo"
+- [ ] Editar cuenta TC existente → sign picker dice "A favor / Consumido"
+
+### 47.8 Balance hint contextual para TC
+- [ ] AccountFormView: crear cuenta TC → hint debajo del balance dice texto sobre consumo con tarjeta
+- [ ] Hint NO reutiliza el de checking (texto distinto y específico)
+
+### 47.9 Strings suavizados
+- [ ] Guide General (paso 4 legacy text) NO contiene "es dinero que ya gastaste"
+- [ ] Guide General NO contiene "resta lo que debas"
+- [ ] Guide Closing: "No te preocupes si no es perfecto — lo importante es empezar."
+- [ ] Hint General: "Piensa en cuánto dinero tienes disponible hoy..."
+- [ ] Ningún string contiene la palabra "deuda"
+- [ ] Verificar en 6 idiomas (ES, EN, DE, FR, IT, PT) que las keys calc.* existen
+
+### 47.10 Localización completa
+- [ ] Cambiar idioma a EN → paso 2 muestra "Expenses only", "Day to day", "Full control"
+- [ ] Cambiar idioma a DE → paso 2 muestra "Nur Ausgaben", "Alltag", "Volle Kontrolle"
+- [ ] Calculadora en EN: "How much money do you have?", "Use this balance"
+- [ ] Sign picker TC en EN: "In your favor / Spent"
+- [ ] Sign picker TC en FR: "En ta faveur / Consommé"

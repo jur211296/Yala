@@ -18,6 +18,7 @@ struct AccountFormView: View {
     @Environment(SessionState.self) private var sessionState
 
     @State private var viewModel: AccountFormViewModel
+    @State private var showBalanceCalculator: Bool = false
     @FocusState private var focusedField: Field?
 
     private enum Field {
@@ -51,6 +52,23 @@ struct AccountFormView: View {
                             adjustmentSection
                         }
                         balanceSection
+
+                        // Balance calculator link (only for new accounts, not editing)
+                        if !viewModel.isEditing && !sessionState.isExpensesOnlyMode {
+                            Button {
+                                showBalanceCalculator = true
+                            } label: {
+                                HStack(spacing: DS.Spacing.xs) {
+                                    Image(systemName: "questionmark.circle")
+                                        .font(DS.Typography.subheadline)
+                                    Text(L10n.Onboarding.accountBalanceLearnMore)
+                                        .font(DS.Typography.subheadline)
+                                }
+                                .foregroundStyle(Color.electricIndigo)
+                            }
+                            .buttonStyle(.plain)
+                        }
+
                         actionsSection
                     }
                     .padding(.horizontal, DS.Spacing.lg)
@@ -91,6 +109,23 @@ struct AccountFormView: View {
                     .navigationTitle(L10n.Common.newColor)
                     .navigationBarTitleDisplayMode(.inline)
                 }
+            }
+            .sheet(isPresented: $showBalanceCalculator) {
+                BalanceCalculatorSheet(
+                    accountType: viewModel.selectedType,
+                    mindset: SessionState.shared.financialMindset,
+                    currencySymbol: viewModel.selectedCurrency.symbol,
+                    onUseBalance: { amount in
+                        if amount >= 0 {
+                            viewModel.isPositive = true
+                            viewModel.balanceText = String(format: "%.2f", amount)
+                        } else {
+                            viewModel.isPositive = false
+                            viewModel.balanceText = String(format: "%.2f", abs(amount))
+                        }
+                    },
+                    onDismiss: { showBalanceCalculator = false }
+                )
             }
             .onChange(of: viewModel.isPresentingColorPicker) { _, isPresenting in
                 if isPresenting { focusedField = nil }
@@ -307,14 +342,19 @@ struct AccountFormView: View {
                     SubsectionDivider()
                 }
 
-                // Sign selector
+                // Sign selector (contextual labels for credit cards)
                 HStack(spacing: DS.Spacing.md) {
                     Text(L10n.Account.sign)
                         .font(DS.Typography.subheadline)
                     Spacer()
                     Picker(L10n.Account.sign, selection: $viewModel.isPositive) {
-                        Text(L10n.Account.positive).tag(true)
-                        Text(L10n.Account.negative).tag(false)
+                        if viewModel.selectedType == .creditCard {
+                            Text(L10n.Account.Sign.inFavor).tag(true)
+                            Text(L10n.Account.Sign.consumed).tag(false)
+                        } else {
+                            Text(L10n.Account.positive).tag(true)
+                            Text(L10n.Account.negative).tag(false)
+                        }
                     }
                     .pickerStyle(.segmented)
                 }

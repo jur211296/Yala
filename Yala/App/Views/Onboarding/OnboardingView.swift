@@ -37,8 +37,15 @@ struct OnboardingView: View {
     // Animation state for category grid
     @State private var showCategoryIcons: Bool = false
 
-    // Expenses-only mode preference
-    @State private var expensesOnlyMode: Bool = false
+    // Usage mode preference (replaces simple expensesOnlyMode toggle)
+    @State private var selectedUsageMode: UsageMode = .dayToDay
+
+    /// Derived from selectedUsageMode for backward compatibility with existing logic
+    private var expensesOnlyMode: Bool { selectedUsageMode == .expensesOnly }
+
+    private enum UsageMode {
+        case expensesOnly, dayToDay, fullControl
+    }
 
     // Account setup state
     @State private var selectedAccountType: AccountType = .general
@@ -125,7 +132,13 @@ struct OnboardingView: View {
                 accountCurrency = currency
             }
             if defaults.object(forKey: "expensesOnlyMode") != nil {
-                expensesOnlyMode = defaults.bool(forKey: "expensesOnlyMode")
+                if defaults.bool(forKey: "expensesOnlyMode") {
+                    selectedUsageMode = .expensesOnly
+                } else if defaults.string(forKey: "financialMindset") == "patrimonial" {
+                    selectedUsageMode = .fullControl
+                } else {
+                    selectedUsageMode = .dayToDay
+                }
             }
         }
     }
@@ -306,97 +319,81 @@ struct OnboardingView: View {
             .padding(.top, DS.Spacing.xl)
 
             VStack(spacing: DS.Spacing.sm) {
-                // Option 1: Track everything (default)
-                Button {
-                    expensesOnlyMode = false
-                } label: {
-                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                        HStack {
-                            Image(systemName: expensesOnlyMode ? "circle" : "checkmark.circle.fill")
-                                .font(DS.Typography.title)
-                                .foregroundStyle(expensesOnlyMode ? .secondary : Color.electricIndigo)
+                // Option 1: Expenses only
+                usageModeCard(
+                    mode: .expensesOnly,
+                    title: L10n.Onboarding.usageModeExpensesOnly,
+                    quote: L10n.Onboarding.usageModeExpensesOnlyQuote,
+                    description: L10n.Onboarding.usageModeExpensesOnlyDesc
+                )
 
-                            Text(L10n.Onboarding.expensesOnlyOptionAll)
-                                .font(DS.Typography.body)
-                                .foregroundStyle(.primary)
+                // Option 2: Day to day (default)
+                usageModeCard(
+                    mode: .dayToDay,
+                    title: L10n.Onboarding.usageModeDayToDay,
+                    quote: L10n.Onboarding.usageModeDayToDayQuote,
+                    description: L10n.Onboarding.usageModeDayToDayDesc,
+                    showRecommended: true
+                )
 
-                            Spacer()
-
-                            if !expensesOnlyMode {
-                                Text(L10n.Onboarding.categoriesRecommended)
-                                    .font(DS.Typography.caption)
-                                    .foregroundStyle(Color.electricIndigo)
-                            }
-                        }
-
-                        Text(L10n.Onboarding.expensesOnlyDescAll)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.leading, DS.Spacing.xl + DS.Spacing.xs)
-
-                        HStack(spacing: DS.Spacing.sm) {
-                            Image(systemName: "arrow.down.circle.fill")
-                            Image(systemName: "arrow.up.circle.fill")
-                            Image(systemName: "arrow.left.arrow.right.circle.fill")
-                            Image(systemName: "building.columns.fill")
-                        }
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                        .padding(.leading, DS.Spacing.xl + DS.Spacing.xs)
-                    }
-                    .padding(DS.Spacing.md)
-                    .background(!expensesOnlyMode ? Color.electricIndigo.opacity(0.1) : theme.card)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.md)
-                            .stroke(!expensesOnlyMode ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-
-                // Option 2: Only expenses
-                Button {
-                    expensesOnlyMode = true
-                } label: {
-                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                        HStack {
-                            Image(systemName: expensesOnlyMode ? "checkmark.circle.fill" : "circle")
-                                .font(DS.Typography.title)
-                                .foregroundStyle(expensesOnlyMode ? Color.electricIndigo : .secondary)
-
-                            Text(L10n.Onboarding.expensesOnlyOptionExpenses)
-                                .font(DS.Typography.body)
-                                .foregroundStyle(.primary)
-
-                            Spacer()
-                        }
-
-                        Text(L10n.Onboarding.expensesOnlyDescExpenses)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.leading, DS.Spacing.xl + DS.Spacing.xs)
-
-                        Image(systemName: "arrow.down.circle.fill")
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                            .padding(.leading, DS.Spacing.xl + DS.Spacing.xs)
-                    }
-                    .padding(DS.Spacing.md)
-                    .background(expensesOnlyMode ? Color.electricIndigo.opacity(0.1) : theme.card)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.md)
-                            .stroke(expensesOnlyMode ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
+                // Option 3: Full control
+                usageModeCard(
+                    mode: .fullControl,
+                    title: L10n.Onboarding.usageModeFullControl,
+                    quote: L10n.Onboarding.usageModeFullControlQuote,
+                    description: L10n.Onboarding.usageModeFullControlDesc
+                )
             }
             .padding(.horizontal, DS.Spacing.xl)
 
             Spacer()
         }
+    }
+
+    private func usageModeCard(mode: UsageMode, title: String, quote: String, description: String, showRecommended: Bool = false) -> some View {
+        let isSelected = selectedUsageMode == mode
+        return Button {
+            selectedUsageMode = mode
+        } label: {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                HStack {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(DS.Typography.title)
+                        .foregroundStyle(isSelected ? Color.electricIndigo : .secondary)
+
+                    Text(title)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.primary)
+
+                    Spacer()
+
+                    if showRecommended && isSelected {
+                        Text(L10n.Onboarding.categoriesRecommended)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(Color.electricIndigo)
+                    }
+                }
+
+                Text(quote)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .italic()
+                    .padding(.leading, DS.Spacing.xl + DS.Spacing.xs)
+
+                Text(description)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.tertiary)
+                    .padding(.leading, DS.Spacing.xl + DS.Spacing.xs)
+            }
+            .padding(DS.Spacing.md)
+            .background(isSelected ? Color.electricIndigo.opacity(0.1) : theme.card)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.md)
+                    .stroke(isSelected ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Step 3: Seed Categories
@@ -688,114 +685,25 @@ struct OnboardingView: View {
             accountCurrencyPickerSheet
         }
         .sheet(isPresented: $showBalanceGuide) {
-            balanceGuideSheet
+            BalanceCalculatorSheet(
+                accountType: selectedAccountType,
+                mindset: selectedUsageMode == .fullControl ? "patrimonial" : "cashFlow",
+                currencySymbol: accountCurrency.symbol,
+                onUseBalance: { amount in
+                    if amount >= 0 {
+                        balanceIsPositive = true
+                        initialBalanceText = String(format: "%.2f", amount)
+                    } else {
+                        balanceIsPositive = false
+                        initialBalanceText = String(format: "%.2f", abs(amount))
+                    }
+                },
+                onDismiss: { showBalanceGuide = false }
+            )
         }
     }
 
-    /// Sheet explaining how to calculate initial balance per account type
-    private var balanceGuideSheet: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
-                    // Hero header
-                    VStack(spacing: DS.Spacing.md) {
-                        Image(systemName: "banknote.fill")
-                            .font(.system(size: heroIconSize))
-                            .foregroundStyle(Color.electricIndigo)
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-
-                        Text(L10n.Onboarding.accountBalanceGuideIntro)
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding(.horizontal, DS.Spacing.md)
-
-                    // Account type cards
-                    VStack(spacing: DS.Spacing.lg) {
-                        balanceGuideCard(
-                            icon: "creditcard",
-                            title: AccountType.general.localizedName,
-                            body: L10n.Onboarding.accountBalanceGuideGeneral
-                        )
-
-                        balanceGuideCard(
-                            icon: "banknote.fill",
-                            title: AccountType.cash.localizedName,
-                            body: L10n.Onboarding.accountBalanceGuideCash
-                        )
-
-                        balanceGuideCard(
-                            icon: "building.columns.fill",
-                            title: AccountType.checking.localizedName,
-                            body: L10n.Onboarding.accountBalanceGuideChecking
-                        )
-
-                        balanceGuideCard(
-                            icon: "banknote",
-                            title: AccountType.savings.localizedName,
-                            body: L10n.Onboarding.accountBalanceGuideSavings
-                        )
-                    }
-
-                    // Closing tip
-                    HStack(alignment: .top, spacing: DS.Spacing.sm) {
-                        Image(systemName: "lightbulb.fill")
-                            .font(DS.Typography.body)
-                            .foregroundStyle(Color.electricIndigo)
-                        Text(L10n.Onboarding.accountBalanceGuideClosing)
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(DS.Spacing.md)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.electricIndigo.opacity(0.08))
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.lg)
-            }
-            .background(.thBackground)
-            .navigationTitle(L10n.Onboarding.accountBalanceGuideTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    YalaSaveButton(action: { showBalanceGuide = false })
-                }
-            }
-        }
-    }
-
-    /// Card for each account type in the balance guide sheet
-    private func balanceGuideCard(icon: String, title: String, body: String) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            // Header with icon badge
-            HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: icon)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.white)
-                    .frame(width: 32, height: 32)
-                    .background(Color.electricIndigo)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
-                Text(title)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
-            }
-
-            Text(body)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(DS.Spacing.lg)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl)
-                .stroke(Color.primary.opacity(DS.Opacity.faint), lineWidth: 1)
-        )
-    }
+    // Balance guide sheet replaced by BalanceCalculatorSheet (shared component)
 
     /// Sheet for changing account currency
     private var accountCurrencyPickerSheet: some View {
@@ -1343,6 +1251,11 @@ struct OnboardingView: View {
         // Expenses-only mode (didSet propagates to app group)
         sync.set(bool: expensesOnlyMode, forKey: "expensesOnlyMode")
         sessionState.isExpensesOnlyMode = expensesOnlyMode
+
+        // Financial mindset (educational UI only)
+        let mindset = selectedUsageMode == .fullControl ? "patrimonial" : "cashFlow"
+        sync.set(string: mindset, forKey: "financialMindset")
+        sessionState.financialMindset = mindset
 
         // Seed categories if user chose to
         if loadSeedCategories {

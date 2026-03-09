@@ -220,6 +220,8 @@
 "account.sign" = "Vorzeichen";
 "account.positive" = "Positiv";
 "account.negative" = "Negativ";
+"account.sign.inFavor" = "Zu deinen Gunsten";
+"account.sign.consumed" = "Verbraucht";
 "account.adjustment" = "Anpassung";
 "account.selected" = "Ausgewählt";
 "account.selectAccount" = "Konto auswählen";
@@ -1494,6 +1496,16 @@
 "onboarding.expensesOnlyOptionExpenses" = "Nur Ausgaben";
 "onboarding.expensesOnlyDescAll" = "Ausgaben, Einnahmen, Überweisungen und Kontostände";
 "onboarding.expensesOnlyDescExpenses" = "Erfasse nur deine Ausgaben, ohne Komplikationen";
+// Usage Mode: 3 options
+"onboarding.usageMode.expensesOnly" = "Nur Ausgaben";
+"onboarding.usageMode.expensesOnly.quote" = "\"Ich will nur wissen, wofür mein Geld draufgeht\"";
+"onboarding.usageMode.expensesOnly.desc" = "Erfasse deine Ausgaben und fertig. Keine Salden, kein Aufwand.";
+"onboarding.usageMode.dayToDay" = "Alltag";
+"onboarding.usageMode.dayToDay.quote" = "\"Ich will wissen, wie viel ich noch ausgeben kann\"";
+"onboarding.usageMode.dayToDay.desc" = "Ausgaben, Einnahmen und deine Kontostände. Schnell und praktisch.";
+"onboarding.usageMode.fullControl" = "Volle Kontrolle";
+"onboarding.usageMode.fullControl.quote" = "\"Ich will das vollständige Bild meiner Finanzen\"";
+"onboarding.usageMode.fullControl.desc" = "Gleiche Funktionen, aber Yala hilft dir alles einzubeziehen: Kreditkartenausgaben, offene Details und genaue Salden.";
 "onboarding.privacyTitle" = "Alles bereit";
 "onboarding.privacySubtitle" = "Du kannst jetzt Yala nutzen";
 "onboarding.privacyLocal" = "Deine Finanzdaten bleiben auf deinem Gerät";
@@ -1510,18 +1522,44 @@
 "onboarding.accountBalanceLabel" = "Anfangssaldo";
 "onboarding.accountBalanceHint" = "Dein ungefährer aktueller Saldo. Girokonto: verfügbares Guthaben. Sparkonto: dein Erspartes.";
 "onboarding.accountBalanceSkipHint" = "Wenn du es nicht weißt, lass es bei 0 und passe es später im Konto an.";
-"onboarding.accountBalanceHintGeneral" = "Dein ungefährer Gesamtsaldo über alle Konten. Muss nicht exakt sein — du kannst ihn später anpassen.";
+"onboarding.accountBalanceHintGeneral" = "Überlege, wie viel Geld du heute insgesamt über alle Zahlungsmittel verfügbar hast. Eine Schätzung reicht.";
 "onboarding.accountBalanceHintCash" = "Das Bargeld, das du gerade hast. Muss nicht exakt sein — du kannst es später anpassen.";
 "onboarding.accountBalanceHintChecking" = "Dein verfügbares Bankguthaben heute. Muss nicht exakt sein — du kannst es später anpassen.";
 "onboarding.accountBalanceHintSavings" = "Der Gesamtbetrag, den du auf diesem Konto gespart hast. Muss nicht exakt sein — du kannst ihn später anpassen.";
 "onboarding.accountBalanceLearnMore" = "Wie berechne ich meinen Saldo?";
 "onboarding.accountBalanceGuideTitle" = "Wie berechne ich meinen Saldo?";
 "onboarding.accountBalanceGuideIntro" = "Dein Anfangssaldo zeigt Yala, mit wie viel Geld du startest. Es muss nicht auf den Cent genau sein — eine Schätzung reicht völlig. Hier erfährst du, wie du es je nach gewähltem Kontotyp berechnen kannst.";
-"onboarding.accountBalanceGuideGeneral" = "Wenn du ein allgemeines Konto verwendest, um alle Zahlungsmittel in einer Währung zusammenzufassen, zeigt dein Saldo, wie viel Geld du in dieser Währung tatsächlich verfügbar hast.\n\nUm ihn zu berechnen, addiere alles: Girokonten, Sparguthaben, Bargeld. Dann ziehe ab, was du bereits mit Kreditkarten ausgegeben hast (dieses Geld ist schon weg). Wenn du Apps zur Kostenaufteilung nutzt, addiere was andere dir schulden und ziehe ab was du schuldest.\n\nDiese Endsumme ist dein Anfangssaldo. Wenn du mehrere allgemeine Konten hast (z.B. eines pro Bank), wende die gleiche Logik auf jedes an.";
+"onboarding.accountBalanceGuideGeneral" = "Wenn du ein allgemeines Konto verwendest, um alle Zahlungsmittel in einer Währung zusammenzufassen, zeigt dein Saldo, wie viel Geld du verfügbar hast.\n\nUm ihn zu berechnen, addiere alles: Girokonten, Sparguthaben, Bargeld. Wenn du ausstehende Kreditkartenausgaben hast, kannst du sie abziehen für ein genaueres Bild — oder jede Karte später als eigenes Konto führen.\n\nDiese Endsumme ist dein Anfangssaldo.";
 "onboarding.accountBalanceGuideCash" = "Das ist am einfachsten: Wie viel Bargeld hast du gerade? Schau in dein Portemonnaie, die Schublade oder wo du dein Bargeld aufbewahrst.\n\nMach dir keine Sorgen wegen der Genauigkeit — wenn du denkst du hast 'ungefähr 50', dann nimm 50. Du kannst es später immer anpassen.";
 "onboarding.accountBalanceGuideChecking" = "Dein Girokonto hat einen verfügbaren Saldo, den du in deiner Banking-App oder am Geldautomaten nachschauen kannst.\n\nGib den verfügbaren Saldo ein, den du heute siehst. Wenn du mehrere Girokonten hast, kannst du in Yala für jedes ein Konto anlegen oder sie zusammenfassen — ganz wie du möchtest.";
 "onboarding.accountBalanceGuideSavings" = "Wie viel hast du auf deinen Sparkonten angespart? Wenn du mehrere hast, kannst du in Yala für jedes ein Konto anlegen oder sie in einem zusammenfassen.\n\nGib den Gesamtbetrag ein, den du gespart hast. Wenn deine Bank aufgelaufene Zinsen anzeigt, rechne sie mit ein.";
-"onboarding.accountBalanceGuideClosing" = "Denk daran: Du kannst deinen Saldo später jederzeit im Konto-Bearbeitungsbildschirm anpassen. Wichtig ist, mit etwas Realistischem zu starten.";
+"onboarding.accountBalanceGuideClosing" = "Mach dir keine Sorgen, wenn es nicht perfekt ist — wichtig ist anzufangen.";
+"onboarding.accountBalanceHintCreditCard" = "Was du mit dieser Karte bisher ausgegeben hast. Muss nicht exakt sein — du kannst es später anpassen.";
+// Balance Calculator Sheet
+"onboarding.calc.title" = "Wie viel Geld hast du?";
+"onboarding.calc.intro" = "Muss nicht exakt sein — eine Schätzung reicht.";
+"onboarding.calc.bankAccounts" = "Bankkonten";
+"onboarding.calc.savings" = "Ersparnisse";
+"onboarding.calc.cash" = "Bargeld";
+"onboarding.calc.creditCardSpending" = "Kreditkartenausgaben";
+"onboarding.calc.optional" = "(optional)";
+"onboarding.calc.available" = "Dein Verfügbares →";
+"onboarding.calc.balance" = "Dein Saldo →";
+"onboarding.calc.tipCashFlow" = "Wenn du Kreditkarten nutzt, kannst du sie jederzeit als separate Konten hinzufügen.";
+"onboarding.calc.tipPatrimonial" = "Du kannst auch ein Konto pro Karte erstellen für eine detailliertere Nachverfolgung.";
+"onboarding.calc.useBalance" = "Diesen Saldo verwenden";
+"onboarding.calc.adjustLater" = "Du kannst ihn später jederzeit anpassen.";
+// Credit card calculator
+"onboarding.calc.creditCard.title" = "Deine Kreditkarte";
+"onboarding.calc.creditLine" = "Kreditrahmen";
+"onboarding.calc.availableCredit" = "Verfügbar";
+"onboarding.calc.currentSpending" = "Aktuelle Ausgaben →";
+"onboarding.calc.yourBalance" = "Dein Saldo →";
+"onboarding.calc.creditCard.tip" = "Dein Saldo zeigt, was du ausgegeben und noch nicht bezahlt hast.";
+// Simple account explanations
+"onboarding.calc.cashExplanation" = "Schau in dein Portemonnaie und überall, wo du Bargeld aufbewahrst. Zähle alles zusammen — eine Schätzung reicht.";
+"onboarding.calc.checkingExplanation" = "Schau den verfügbaren Saldo in deiner Banking-App oder am Geldautomaten nach. Gib die Zahl ein, die du heute siehst.";
+"onboarding.calc.savingsExplanation" = "Wie viel hast du gespart? Wenn du mehrere Sparkonten hast, kannst du alles zusammenrechnen oder ein Konto für jedes erstellen.";
 "onboarding.accountImportTip" = "Unter Profil > Importieren kannst du Einträge in jedes deiner Konten importieren.";
 "onboarding.accountMoreTip" = "Du kannst jederzeit weitere Konten hinzufügen. Erstelle mindestens eines pro Währung, wenn du mehrere nutzt.";
 "onboarding.budgetTitle" = "Wie viel erwartest du auszugeben?";

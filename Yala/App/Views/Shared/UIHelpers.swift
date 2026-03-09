@@ -46,7 +46,7 @@ enum AccountType: String, CaseIterable, Identifiable {
         case .cash: return L10n.Onboarding.accountBalanceHintCash
         case .checking: return L10n.Onboarding.accountBalanceHintChecking
         case .savings: return L10n.Onboarding.accountBalanceHintSavings
-        case .creditCard: return L10n.Onboarding.accountBalanceHintChecking
+        case .creditCard: return L10n.Onboarding.accountBalanceHintCreditCard
         }
     }
 }

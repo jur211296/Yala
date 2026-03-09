@@ -923,6 +923,11 @@ enum L10n {
         static var positive: String { ls("account.positive", comment: "") }
         static var negative: String { ls("account.negative", comment: "") }
         static var adjustment: String { ls("account.adjustment", comment: "") }
+
+        enum Sign {
+            static var inFavor: String { ls("account.sign.inFavor", comment: "") }
+            static var consumed: String { ls("account.sign.consumed", comment: "") }
+        }
         static var selected: String { ls("account.selected", comment: "") }
         static var selectAccount: String { ls("account.selectAccount", comment: "") }
         static var archived: String { ls("account.archived", comment: "") }
@@ -2489,6 +2494,16 @@ enum L10n {
         static var expensesOnlyDescExpenses: String {
             ls("onboarding.expensesOnlyDescExpenses", comment: "")
         }
+        // Usage mode: 3 options (Solo gastos, Día a día, Control total)
+        static var usageModeExpensesOnly: String { ls("onboarding.usageMode.expensesOnly", comment: "") }
+        static var usageModeExpensesOnlyQuote: String { ls("onboarding.usageMode.expensesOnly.quote", comment: "") }
+        static var usageModeExpensesOnlyDesc: String { ls("onboarding.usageMode.expensesOnly.desc", comment: "") }
+        static var usageModeDayToDay: String { ls("onboarding.usageMode.dayToDay", comment: "") }
+        static var usageModeDayToDayQuote: String { ls("onboarding.usageMode.dayToDay.quote", comment: "") }
+        static var usageModeDayToDayDesc: String { ls("onboarding.usageMode.dayToDay.desc", comment: "") }
+        static var usageModeFullControl: String { ls("onboarding.usageMode.fullControl", comment: "") }
+        static var usageModeFullControlQuote: String { ls("onboarding.usageMode.fullControl.quote", comment: "") }
+        static var usageModeFullControlDesc: String { ls("onboarding.usageMode.fullControl.desc", comment: "") }
         static var privacyTitle: String { ls("onboarding.privacyTitle", comment: "") }
         static var privacySubtitle: String { ls("onboarding.privacySubtitle", comment: "") }
         static var privacyLocal: String { ls("onboarding.privacyLocal", comment: "") }
@@ -2523,6 +2538,32 @@ enum L10n {
         static var accountBalanceGuideChecking: String { ls("onboarding.accountBalanceGuideChecking", comment: "") }
         static var accountBalanceGuideSavings: String { ls("onboarding.accountBalanceGuideSavings", comment: "") }
         static var accountBalanceGuideClosing: String { ls("onboarding.accountBalanceGuideClosing", comment: "") }
+        static var accountBalanceHintCreditCard: String { ls("onboarding.accountBalanceHintCreditCard", comment: "") }
+        // Balance Calculator Sheet
+        static var calcTitle: String { ls("onboarding.calc.title", comment: "") }
+        static var calcIntro: String { ls("onboarding.calc.intro", comment: "") }
+        static var calcBankAccounts: String { ls("onboarding.calc.bankAccounts", comment: "") }
+        static var calcSavings: String { ls("onboarding.calc.savings", comment: "") }
+        static var calcCash: String { ls("onboarding.calc.cash", comment: "") }
+        static var calcCreditCardSpending: String { ls("onboarding.calc.creditCardSpending", comment: "") }
+        static var calcOptional: String { ls("onboarding.calc.optional", comment: "") }
+        static var calcAvailable: String { ls("onboarding.calc.available", comment: "") }
+        static var calcBalance: String { ls("onboarding.calc.balance", comment: "") }
+        static var calcTipCashFlow: String { ls("onboarding.calc.tipCashFlow", comment: "") }
+        static var calcTipPatrimonial: String { ls("onboarding.calc.tipPatrimonial", comment: "") }
+        static var calcUseBalance: String { ls("onboarding.calc.useBalance", comment: "") }
+        static var calcAdjustLater: String { ls("onboarding.calc.adjustLater", comment: "") }
+        // Credit card calculator
+        static var calcCreditCardTitle: String { ls("onboarding.calc.creditCard.title", comment: "") }
+        static var calcCreditLine: String { ls("onboarding.calc.creditLine", comment: "") }
+        static var calcAvailableCredit: String { ls("onboarding.calc.availableCredit", comment: "") }
+        static var calcCurrentSpending: String { ls("onboarding.calc.currentSpending", comment: "") }
+        static var calcYourBalance: String { ls("onboarding.calc.yourBalance", comment: "") }
+        static var calcCreditCardTip: String { ls("onboarding.calc.creditCard.tip", comment: "") }
+        // Simple account explanations (cash/checking/savings)
+        static var calcCashExplanation: String { ls("onboarding.calc.cashExplanation", comment: "") }
+        static var calcCheckingExplanation: String { ls("onboarding.calc.checkingExplanation", comment: "") }
+        static var calcSavingsExplanation: String { ls("onboarding.calc.savingsExplanation", comment: "") }
         static var accountImportTip: String { ls("onboarding.accountImportTip", comment: "") }
         static var accountMoreTip: String { ls("onboarding.accountMoreTip", comment: "") }
 

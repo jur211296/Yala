@@ -118,6 +118,16 @@ class SessionState {
     /// Used to determine if we should auto-reset to Balance when filters are cleared
     var isExpenseAutomatic: Bool = false
 
+    // MARK: - Financial Mindset
+
+    /// User's financial mindset chosen during onboarding: "cashFlow" (Día a día) or "patrimonial" (Control total).
+    /// Affects educational UI (balance calculator variants, tips) but NOT features or calculations.
+    var financialMindset: String = UserDefaults.standard.string(forKey: "financialMindset") ?? "cashFlow" {
+        didSet {
+            UserDefaults.standard.set(financialMindset, forKey: "financialMindset")
+        }
+    }
+
     // MARK: - Expenses Only Mode
 
     /// When true, hides income/transfer UI throughout the app. Data is NOT deleted, only hidden.
