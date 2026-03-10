@@ -76,8 +76,8 @@
 
 // MARK: - Nature
 
-"nature.expensesByNature" = "Gastos por naturaleza";
-"nature.title" = "Naturaleza";
+"nature.expensesByNature" = "Gastos por necesidad";
+"nature.title" = "Necesidad";
 "nature.essential" = "Esencial";
 "nature.discretionary" = "Discrecional";
 "nature.unclassified" = "Sin clasificar";
@@ -110,12 +110,12 @@
 "filters.allTags" = "Todas las etiquetas";
 "filters.noTags" = "Sin etiquetas";
 "filters.allCurrencies" = "Todas las disponibles";
-"filters.allNatures" = "Todas";
+"filters.allNatures" = "Todas las necesidades";
 "filters.selectedCount" = "%d seleccionadas";
 "filters.subcategoriesSelectedCount" = "%d subcategorías seleccionadas";
 "filters.categories" = "Categorías";
 "filters.type" = "Tipo";
-"filters.nature" = "Naturaleza";
+"filters.nature" = "Necesidad";
 "filters.currency" = "Moneda";
 "filters.includeMode" = "Incluir";
 "filters.excludeMode" = "Excluir";
@@ -160,7 +160,7 @@
 "search.filter.category" = "Categoría";
 "search.filter.subcategory" = "Subcategoría";
 "search.filter.account" = "Cuenta";
-"search.filter.nature" = "Naturaleza";
+"search.filter.nature" = "Necesidad";
 "search.filter.tag" = "Etiqueta";
 
 // MARK: - Exchange Rate
@@ -238,7 +238,7 @@
 "category.new" = "Nueva categoría";
 "category.edit" = "Editar categoría";
 "category.name" = "Nombre";
-"category.nature" = "Naturaleza";
+"category.nature" = "Necesidad";
 "category.show" = "Mostrar";
 "category.addSubcategory" = "Añadir subcategoría";
 "category.subcategories" = "Subcategorías";
@@ -322,6 +322,7 @@
 "scheduled.skip.overdue.title" = "Saltar ocurrencia vencida";
 "scheduled.status.skipped" = "Saltado";
 "scheduled.status.paid" = "Pagado";
+"scheduled.unlink" = "Desvincular transacción";
 "scheduled.status.overdue" = "Vencido";
 "scheduled.draftCreatedTitle" = "¡Tienes pagos pendientes!";
 "scheduled.draftCreatedMessage" = "Se añadieron %d pagos planificados a tu bandeja. Revísalos cuando quieras.";
@@ -357,6 +358,8 @@
 "settings.budgetsFavoritesInfo" = "Los presupuestos favoritos aparecen en el widget de Presupuestos (3 en mediano, 5 en grande).";
 "settings.budgetsFavoritesEmptyHint" = "Crea presupuestos en la pestaña Planificación.";
 "settings.budgetsFavoritesReorder" = "Ordenar favoritos";
+"budgets.favorites.previewTitle" = "Así se verá tu widget";
+"budgets.favorites.previewEmpty" = "Selecciona favoritos para ver el preview";
 "settings.tabBarConfig" = "Personalizar navegación";
 "settings.tabBarConfigInfo" = "Elige qué secciones mostrar en la barra inferior. Mínimo 1, máximo 3.";
 "settings.tabBarConfigActive" = "Tabs activos";
@@ -434,6 +437,8 @@
 "budgets.alerts.message.90" = "Queda poco en \"%1$@\" — %2$@ de %3$@ usados";
 "budgets.alerts.message.100" = "Llegaste al límite de \"%1$@\" — %2$@ de %3$@";
 "budgets.alerts.globalDisabledHint" = "Activa las alertas de presupuesto en Perfil > Notificaciones para recibirlas";
+"budgets.alerts.custom" = "Personalizar";
+"budgets.alerts.addThreshold" = "Agregar";
 "budgets.new" = "Nuevo presupuesto";
 "budgets.edit" = "Editar presupuesto";
 "budgets.delete" = "Eliminar presupuesto";
@@ -458,6 +463,7 @@
 "budgets.days.remaining" = "%@ días restantes";
 "budgets.period.past" = "Pasado";
 "budgets.amount.of" = "de %@";
+"budgets.exceeded.encouragement" = "Pasaste tu presupuesto, ¡el próximo período será mejor!";
 
 // Budget Editor
 "budgets.editor.name.placeholder" = "Nombre del presupuesto";
@@ -478,6 +484,7 @@
 "budgets.period.current.month" = "Este mes";
 "budgets.period.current.year" = "Este año";
 "budgets.period.confirm" = "Listo";
+"budgets.period.goToToday" = "Ir a hoy";
 
 // MARK: - Profile
 
@@ -589,7 +596,7 @@
 "widgetType.categoriesPie" = "Distribución de categorías";
 "widgetType.subcategoriesPie" = "Distribución de subcategorías";
 "widgetType.latestRecords" = "Últimos registros";
-"widgetType.expensesByNature" = "Gastos por naturaleza";
+"widgetType.expensesByNature" = "Gastos por necesidad";
 "widgetType.expensesByTag" = "Gastos por etiqueta";
 "widgetType.exchangeRate" = "Tipo de cambio";
 "widgetType.budgets" = "Presupuestos";
@@ -629,7 +636,7 @@
 "widget.noExpensesSubcategoriesPeriod" = "Aún no hay gastos en subcategorías para este periodo.";
 "widget.distributionByCategory" = "Categorías";
 "widget.distributionBySubcategory" = "Subcategorías";
-"widget.distributionByNature" = "Naturalezas";
+"widget.distributionByNature" = "Necesidades";
 "widget.distributionByTag" = "Distribución por etiqueta";
 "widget.noDataForPeriod" = "Aún no hay datos para este periodo";
 "widget.selectCurrencies" = "Selecciona hasta 2 divisas para comparar con %@";
@@ -647,7 +654,7 @@
 "common.unknownError" = "Algo salió mal";
 "common.saveError" = "Los cambios no se guardaron. Intenta de nuevo.";
 "common.deleteError" = "No se pudo eliminar. Intenta una vez más.";
-"widget.noExpensesNaturePeriod" = "No hay gastos registrados por naturaleza para este periodo.";
+"widget.noExpensesNaturePeriod" = "No hay gastos registrados por necesidad para este periodo.";
 
 
 "account.addAccount" = "Agregar cuenta";
@@ -737,7 +744,7 @@
 "insights.quickStats" = "Resumen rapido";
 "insights.comparison" = "Comparativa";
 "insights.weekdayAverage" = "Gasto promedio por día";
-"insights.natureDistribution" = "Por naturaleza";
+"insights.natureDistribution" = "Por necesidad";
 "insights.commitments" = "Compromisos";
 "insights.pendingPayments" = "Pagos pendientes";
 "insights.activeSubscriptions" = "Suscripciones activas";
@@ -1151,8 +1158,8 @@
 "iconPicker.other" = "Otros";
 
 
-"nature.title" = "Naturaleza";
-"nature.incomeNotApplicable" = "La clasificación por naturaleza solo aplica a gastos";
+"nature.title" = "Necesidad del gasto";
+"nature.incomeNotApplicable" = "La clasificación por necesidad solo aplica a gastos";
 
 // MARK: - Balance Adjustments
 
@@ -1250,6 +1257,7 @@
 "scheduled.editor.day.of.month" = "Día del mes";
 "scheduled.editor.day.of.week" = "Día de la semana";
 "scheduled.editor.notifications" = "Notificaciones";
+"scheduled.editor.preview" = "Próximas fechas";
 "scheduled.notify.on.due" = "Notificar en fecha de vencimiento";
 "scheduled.notify.days.before" = "Notificar días antes";
 "scheduled.select.subcategory" = "Seleccionar subcategoría";
@@ -1361,7 +1369,7 @@
 "accessibility.processAudio" = "Procesar audio";
 "accessibility.exchangeRateChart" = "Gráfica de tipo de cambio";
 "accessibility.periodComparison" = "Gráfica de comparación entre periodos";
-"accessibility.natureTrend" = "Gráfica de gastos por naturaleza";
+"accessibility.natureTrend" = "Gráfica de gastos por necesidad";
 "accessibility.noData" = "Sin datos";
 "accessibility.completeFormHint" = "Para guardar, completa monto, cuenta y categoría";
 "accessibility.completeSelectionHint" = "Completa la selección requerida";

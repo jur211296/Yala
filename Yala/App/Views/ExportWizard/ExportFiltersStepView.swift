@@ -399,7 +399,7 @@ struct ExportFiltersStepView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             // Header
             FilterSectionHeader(
-                icon: "leaf.fill",
+                icon: "chart.bar.fill",
                 title: L10n.Nature.label,
                 status: selectedNaturesText
             )

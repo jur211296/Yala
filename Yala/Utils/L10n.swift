@@ -1626,6 +1626,7 @@ enum L10n {
             static var nextSecond: String { ls("scheduled.next.second", comment: "") }
             static var nextThird: String { ls("scheduled.next.third", comment: "") }
             static var associateTitle: String { ls("scheduled.associate.title", comment: "") }
+            static var unlink: String { ls("scheduled.unlink", comment: "") }
         }
     }
 
