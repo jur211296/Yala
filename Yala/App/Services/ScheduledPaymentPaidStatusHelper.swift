@@ -20,6 +20,7 @@ enum ScheduledPaymentPaidStatusHelper {
 
         var result: [String: Int] = [:]
         let paymentIDs = Set(payments.map { $0.id.uuidString })
+        var countedTransactionIDs: Set<PersistentIdentifier> = []
 
         // Query 1: InboxDrafts approved with sourceScheduledPaymentID
         do {
@@ -36,6 +37,9 @@ enum ScheduledPaymentPaidStatusHelper {
                 let draftDate = draft.approvedTransaction?.date ?? draft.date ?? draft.createdAt
                 if draftDate >= monthInterval.start && draftDate < monthInterval.end {
                     result[spID, default: 0] += 1
+                    if let tx = draft.approvedTransaction {
+                        countedTransactionIDs.insert(tx.persistentModelID)
+                    }
                 }
             }
         } catch {
@@ -44,7 +48,7 @@ enum ScheduledPaymentPaidStatusHelper {
             #endif
         }
 
-        // Query 2: TransactionItems with scheduledPaymentID
+        // Query 2: TransactionItems with scheduledPaymentID (skip already counted from drafts)
         do {
             var txDescriptor = FetchDescriptor<TransactionItem>(
                 predicate: #Predicate<TransactionItem> { tx in
@@ -55,6 +59,7 @@ enum ScheduledPaymentPaidStatusHelper {
             let linkedTransactions = try context.fetch(txDescriptor)
 
             for tx in linkedTransactions {
+                guard !countedTransactionIDs.contains(tx.persistentModelID) else { continue }
                 guard let spID = tx.scheduledPaymentID, paymentIDs.contains(spID) else { continue }
                 if tx.date >= monthInterval.start && tx.date < monthInterval.end {
                     result[spID, default: 0] += 1

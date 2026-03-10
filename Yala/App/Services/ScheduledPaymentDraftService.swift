@@ -274,6 +274,9 @@ struct ScheduledPaymentDraftService {
         // Update paid date
         payment.lastPaidDate = Date()
 
+        // Link approved transaction to this scheduled payment
+        draft.approvedTransaction?.scheduledPaymentID = payment.id.uuidString
+
         // Advance to next due date
         advanceToNextDueDate(payment: payment)
 

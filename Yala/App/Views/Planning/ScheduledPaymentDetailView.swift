@@ -395,6 +395,15 @@ struct ScheduledPaymentDetailView: View {
         }
         .buttonStyle(.plain)
         .opacity(isSkipped ? 0.6 : 1.0)
+        .contextMenu {
+            if isPaidForDate {
+                Button(role: .destructive) {
+                    unlinkTransactionsForDate(date)
+                } label: {
+                    Label(L10n.Scheduled.Detail.unlink, systemImage: "link.badge.minus")
+                }
+            }
+        }
         .confirmationDialog(
             formatFullDate(date),
             isPresented: isDialogPresented,
@@ -422,6 +431,11 @@ struct ScheduledPaymentDetailView: View {
             .sorted()
         guard let index = dates.firstIndex(where: { Calendar.current.isDate($0, inSameDayAs: date) }) else { return false }
         return index < paidCount
+    }
+
+    /// Unlink transactions associated with this payment for a specific date
+    private func unlinkTransactionsForDate(_ date: Date) {
+        viewModel.unlinkTransactionsForDate(paymentID: payment.id, date: date)
     }
 
     // MARK: - Info Note

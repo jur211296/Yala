@@ -679,7 +679,11 @@ struct NewTransactionView: View {
                 icon: "repeat",
                 label: L10n.Action.recurring
             ) {
-                viewModel.showSaveAsRecurringSheet = true
+                if viewModel.canSave {
+                    viewModel.showSaveAsRecurringSheet = true
+                } else {
+                    viewModel.showValidationErrors = true
+                }
             }
         }
     }
@@ -727,18 +731,21 @@ struct NewTransactionView: View {
     }
 
     private var recurringSheetContent: some View {
-        SaveAsRecurringSheet(
-            transactionType: viewModel.transactionType,
-            amount: viewModel.amount,
-            note: viewModel.note,
-            account: viewModel.selectedAccount,
-            subcategory: viewModel.selectedSubcategory,
-            tags: viewModel.selectedTags,
-            natureOverride: viewModel.selectedNature,
-            currencyCode: viewModel.effectiveCurrencyCode,
-            transactionDate: viewModel.transactionDate,
-            onSaved: { message in
-                showToast(message)
+        ScheduledPaymentEditorView(
+            payment: nil,
+            prefill: ScheduledPaymentPrefill(
+                transactionType: viewModel.transactionType.rawValue,
+                amount: String(format: "%.2f", viewModel.amount),
+                note: viewModel.note,
+                account: viewModel.selectedAccount,
+                subcategory: viewModel.selectedSubcategory,
+                tagIDs: Set(viewModel.selectedTags.map { $0.persistentModelID }),
+                natureOverride: viewModel.selectedNature,
+                currencyCode: viewModel.effectiveCurrencyCode,
+                transactionDate: viewModel.transactionDate
+            ),
+            onSaved: { paymentID in
+                handleRecurringSaved(paymentID: paymentID)
             }
         )
     }
@@ -1312,6 +1319,26 @@ struct NewTransactionView: View {
             print("Error deleting transaction: \(error)")
             #endif
         }
+    }
+
+    private func handleRecurringSaved(paymentID: UUID) {
+        let txToLink: TransactionItem?
+        if let existingTx = viewModel.editingTransaction {
+            txToLink = existingTx
+        } else {
+            txToLink = viewModel.save(context: modelContext)?.first
+        }
+        txToLink?.scheduledPaymentID = paymentID.uuidString
+        do {
+            try modelContext.save()
+            WidgetDataCache.updateCache(context: modelContext)
+            SessionState.shared.incrementDataVersion()
+        } catch {
+            #if DEBUG
+            print("NewTransactionView: Error linking to scheduled payment: \(error)")
+            #endif
+        }
+        showToast(L10n.Action.savedAsRecurring)
     }
 
     private func showToast(_ message: String) {

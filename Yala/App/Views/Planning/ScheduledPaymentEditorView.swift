@@ -8,6 +8,18 @@
 import SwiftData
 import SwiftUI
 
+struct ScheduledPaymentPrefill {
+    let transactionType: String
+    let amount: String
+    let note: String
+    let account: Account?
+    let subcategory: Subcategory?
+    let tagIDs: Set<PersistentIdentifier>
+    let natureOverride: SubcategoryNature?
+    let currencyCode: String
+    let transactionDate: Date
+}
+
 struct ScheduledPaymentEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -23,6 +35,8 @@ struct ScheduledPaymentEditorView: View {
     let payment: ScheduledPayment?
     let defaultCategory: String?
     var onDelete: (() -> Void)?
+    let prefill: ScheduledPaymentPrefill?
+    let onSaved: ((UUID) -> Void)?
 
     // Basic Info
     @State private var name: String = ""
@@ -38,11 +52,14 @@ struct ScheduledPaymentEditorView: View {
     @State private var selectedSubcategory: Subcategory?
     @State private var selectedTags: Set<PersistentIdentifier> = []
 
+    // Nature override
+    @State private var selectedNature: SubcategoryNature?
+
     // Recurrence
     @State private var isRecurring: Bool = true
     @State private var recurrenceType: RecurrenceType = .monthly
     @State private var recurrenceInterval: Int = 1
-    @State private var paymentDate: Date = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: Date())) ?? Date()  // For one-time or start date
+    @State private var paymentDate: Date = Calendar.current.startOfDay(for: Date())  // For one-time or start date
     @State private var dayOfMonth: Int = 1
     @State private var selectedWeekdays: Set<Int> = [2]  // Default Monday (2)
     @State private var yearlyMonth: Int = 1
@@ -57,6 +74,9 @@ struct ScheduledPaymentEditorView: View {
     // Status
     @State private var isActive: Bool = true
 
+    // Preview
+    @State private var previewDates: [Date] = []
+
     // Sheet states
     @State private var showAccountSheet = false
     @State private var showCategoriesSheet = false
@@ -64,114 +84,148 @@ struct ScheduledPaymentEditorView: View {
 
     // Focus state
     @FocusState private var isNameFieldFocused: Bool
+    @FocusState private var isAmountFieldFocused: Bool
 
-    private var tomorrow: Date {
-        Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: Date())) ?? Date()
+    private var today: Date {
+        Calendar.current.startOfDay(for: Date())
     }
 
-    init(payment: ScheduledPayment?, defaultCategory: String? = nil, onDelete: (() -> Void)? = nil) {
+    init(
+        payment: ScheduledPayment?,
+        defaultCategory: String? = nil,
+        onDelete: (() -> Void)? = nil,
+        prefill: ScheduledPaymentPrefill? = nil,
+        onSaved: ((UUID) -> Void)? = nil
+    ) {
         self.payment = payment
         self.defaultCategory = defaultCategory
         self.onDelete = onDelete
+        self.prefill = prefill
+        self.onSaved = onSaved
     }
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
-                    // Basic Information Section
-                    basicInfoSection
-
-                    // Toggles Section (Activa + Suscripción)
-                    togglesSection
-
-                    // Classification Section
-                    classificationSection
-
-                    // Recurrence Section
-                    recurrenceSection
-
-                    // Notifications Section
-                    notificationsSection
-
-                    // Delete Button (only for existing payments)
-                    if payment != nil {
-                        deleteSection
+            editorScrollView
+                .navigationTitle(editorTitle)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar { editorToolbar }
+                .sheet(isPresented: $showCategoriesSheet) {
+                    SubcategorySelectorSheet(
+                        selectedSubcategory: $selectedSubcategory,
+                        transactionType: transactionType == "income" ? .income : .expense
+                    )
+                }
+                .onAppear { handleOnAppear() }
+                .onChange(of: isRecurring) { _, _ in dismissEditorKeyboard(); updatePreviewDates() }
+                .onChange(of: recurrenceType) { _, _ in dismissEditorKeyboard(); updatePreviewDates() }
+                .onChange(of: recurrenceInterval) { _, _ in updatePreviewDates() }
+                .onChange(of: paymentDate) { _, _ in updatePreviewDates() }
+                .onChange(of: dayOfMonth) { _, _ in updatePreviewDates() }
+                .onChange(of: selectedWeekdays) { _, _ in updatePreviewDates() }
+                .onChange(of: yearlyMonth) { _, _ in updatePreviewDates() }
+                .onChange(of: yearlyDay) { _, _ in updatePreviewDates() }
+                .onChange(of: hasEndDate) { _, _ in updatePreviewDates() }
+                .onChange(of: endDate) { _, _ in updatePreviewDates() }
+                .onChange(of: showCategoriesSheet) { _, isPresenting in
+                    if isPresenting { dismissEditorKeyboard() }
+                }
+                .alert(deleteAlertTitle, isPresented: $showDeleteConfirmation) {
+                    Button(NSLocalizedString("action.cancel", comment: ""), role: .cancel) {}
+                    Button(NSLocalizedString("action.delete", comment: ""), role: .destructive) {
+                        deletePayment()
                     }
+                } message: {
+                    Text(NSLocalizedString("scheduled.delete.confirm.message", comment: ""))
                 }
-                .padding(.vertical, DS.Spacing.xxl)
-                .padding(.horizontal, DS.Spacing.lg)
-            }
-            .scrollDismissesKeyboard(.interactively)
-            .background(
-                PanelBackgroundView()
-                    .dismissKeyboardOnTap()
-            )
-            .alert(
-                NSLocalizedString("scheduled.delete.confirm.title", comment: ""),
-                isPresented: $showDeleteConfirmation
-            ) {
-                Button(NSLocalizedString("action.cancel", comment: ""), role: .cancel) {}
-                Button(NSLocalizedString("action.delete", comment: ""), role: .destructive) {
-                    deletePayment()
-                }
-            } message: {
-                Text(NSLocalizedString("scheduled.delete.confirm.message", comment: ""))
-            }
-            .navigationTitle(
-                payment == nil
-                    ? NSLocalizedString("scheduled.new", comment: "")
-                    : NSLocalizedString("scheduled.edit", comment: "")
-            )
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                        dismiss()
+                .alert(
+                    L10n.Common.error,
+                    isPresented: Binding(
+                        get: { viewModel.showSaveError },
+                        set: { _ in viewModel.dismissSaveError() }
+                    ),
+                    actions: {
+                        Button(L10n.Common.understood, role: .cancel) {}
+                    },
+                    message: {
+                        Text(L10n.Common.saveError)
                     }
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    YalaSaveButton(action: savePayment, isDisabled: !canSave)
-                        .accessibilityHint(!canSave ? L10n.Accessibility.createAccountFirst : "")
-                }
-            }
-            .sheet(isPresented: $showCategoriesSheet) {
-                SubcategorySelectorSheet(
-                    selectedSubcategory: $selectedSubcategory,
-                    transactionType: transactionType == "income" ? .income : .expense
                 )
-            }
-            .onChange(of: showCategoriesSheet) { _, isPresenting in
-                if isPresenting { dismissKeyboard() }
-            }
-            .onAppear {
-                viewModel.setContext(modelContext, deletionService: deletionService)
-                loadPaymentData()
-                if sessionState.isExpensesOnlyMode {
-                    transactionType = "expense"
-                }
-                // Auto-focus name field for new payments
-                if payment == nil {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        isNameFieldFocused = true
-                    }
-                }
-            }
-            .alert(
-                L10n.Common.error,
-                isPresented: Binding(
-                    get: { viewModel.showSaveError },
-                    set: { _ in viewModel.dismissSaveError() }
-                ),
-                actions: {
-                    Button(L10n.Common.understood, role: .cancel) {}
-                },
-                message: {
-                    Text(L10n.Common.saveError)
-                }
-            )
         }
+    }
+
+    private var editorTitle: String {
+        payment == nil
+            ? NSLocalizedString("scheduled.new", comment: "")
+            : NSLocalizedString("scheduled.edit", comment: "")
+    }
+
+    private var deleteAlertTitle: String {
+        NSLocalizedString("scheduled.delete.confirm.title", comment: "")
+    }
+
+    private var editorScrollView: some View {
+        ScrollView {
+            editorContent
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .background(
+            PanelBackgroundView()
+                .dismissKeyboardOnTap()
+        )
+    }
+
+    @ToolbarContentBuilder
+    private var editorToolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
+                dismiss()
+            }
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            YalaSaveButton(action: savePayment, isDisabled: !canSave)
+                .accessibilityHint(!canSave ? L10n.Accessibility.createAccountFirst : "")
+        }
+        ToolbarItemGroup(placement: .keyboard) {
+            Spacer()
+            Button(L10n.Action.done) {
+                dismissEditorKeyboard()
+            }
+        }
+    }
+
+    private func handleOnAppear() {
+        viewModel.setContext(modelContext, deletionService: deletionService)
+        loadPaymentData()
+        if sessionState.isExpensesOnlyMode {
+            transactionType = "expense"
+        }
+        if payment == nil && prefill == nil {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                isNameFieldFocused = true
+            }
+        }
+        updatePreviewDates()
+    }
+
+    // MARK: - Editor Content
+
+    private var editorContent: some View {
+        VStack(spacing: DS.Spacing.xxl) {
+            basicInfoSection
+            togglesSection
+            classificationSection
+            recurrenceSection
+            if isRecurring {
+                recurrencePreviewSection
+            }
+            notificationsSection
+            if payment != nil {
+                deleteSection
+            }
+        }
+        .padding(.vertical, DS.Spacing.xxl)
+        .padding(.horizontal, DS.Spacing.lg)
     }
 
     // MARK: - Basic Information Section
@@ -221,6 +275,7 @@ struct ScheduledPaymentEditorView: View {
                             .font(.system(size: scaledAmountSize, weight: .bold))
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .foregroundStyle(transactionType == "income" ? Color.electricIndigo : .primary)
+                            .focused($isAmountFieldFocused)
                     }
                 }
                 .padding()
@@ -513,11 +568,11 @@ struct ScheduledPaymentEditorView: View {
 
             Spacer()
 
-            if payment == nil {
+            if payment == nil && prefill == nil {
                 DatePicker(
                     "",
                     selection: $paymentDate,
-                    in: tomorrow...,
+                    in: today...,
                     displayedComponents: .date
                 )
                 .labelsHidden()
@@ -707,11 +762,11 @@ struct ScheduledPaymentEditorView: View {
 
             Spacer()
 
-            if payment == nil {
+            if payment == nil && prefill == nil {
                 DatePicker(
                     "",
                     selection: $paymentDate,
-                    in: tomorrow...,
+                    in: today...,
                     displayedComponents: .date
                 )
                 .labelsHidden()
@@ -768,6 +823,64 @@ struct ScheduledPaymentEditorView: View {
                 .padding()
             }
         }
+    }
+
+    // MARK: - Recurrence Preview
+
+    private func updatePreviewDates() {
+        let weekdaysStr = selectedWeekdays.sorted().map { String($0) }.joined(separator: ",")
+        let effectiveEndDate = hasEndDate ? endDate : nil
+        let params = ScheduledPaymentDateCalculator.PaymentParams(
+            isRecurring: isRecurring,
+            recurrenceType: recurrenceType.rawValue,
+            recurrenceInterval: recurrenceInterval,
+            nextDueDate: paymentDate,
+            createdAt: payment?.createdAt ?? Date(),
+            endDate: effectiveEndDate,
+            dayOfMonth: recurrenceType == .monthly ? dayOfMonth : nil,
+            selectedWeekdays: recurrenceType == .weekly ? weekdaysStr : nil,
+            yearlyMonth: recurrenceType == .yearly ? yearlyMonth : nil,
+            yearlyDay: recurrenceType == .yearly ? yearlyDay : nil
+        )
+
+        let calendar = Calendar.current
+        let now = Date()
+        var allDates: [Date] = []
+        for offset in 0...2 {
+            if let month = calendar.date(byAdding: .month, value: offset, to: now) {
+                allDates.append(contentsOf: ScheduledPaymentDateCalculator.paymentDatesInMonth(params: params, month: month))
+            }
+        }
+        previewDates = Array(Set(allDates)).sorted().prefix(5).map { $0 }
+    }
+
+    @ViewBuilder
+    private var recurrencePreviewSection: some View {
+        if !previewDates.isEmpty {
+            SectionBox(title: NSLocalizedString("scheduled.editor.preview", comment: "")) {
+                VStack(spacing: DS.Spacing.none) {
+                    ForEach(Array(previewDates.enumerated()), id: \.offset) { index, date in
+                        if index > 0 {
+                            SubsectionDivider()
+                        }
+                        previewDateRow(date)
+                    }
+                }
+            }
+        }
+    }
+
+    private func previewDateRow(_ date: Date) -> some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "calendar")
+                .foregroundStyle(.secondary)
+                .frame(width: 24)
+            Text(date, format: .dateTime.day().month(.abbreviated).year())
+                .font(DS.Typography.body)
+            Spacer()
+        }
+        .padding(.horizontal)
+        .padding(.vertical, DS.Spacing.sm)
     }
 
     // MARK: - Notifications Section
@@ -863,6 +976,25 @@ struct ScheduledPaymentEditorView: View {
             paymentCategory = PaymentCategory(rawValue: defaultCat) ?? .recurring
         }
 
+        // Pre-fill from transaction data (when creating from "Save as Recurring")
+        if payment == nil, let prefill = prefill {
+            let calendar = Calendar.current
+            name = prefill.subcategory?.name ?? prefill.note
+            amount = prefill.amount
+            note = prefill.note
+            transactionType = prefill.transactionType
+            selectedAccount = prefill.account
+            selectedSubcategory = prefill.subcategory
+            selectedTags = prefill.tagIDs
+            selectedNature = prefill.natureOverride
+            let todayStart = calendar.startOfDay(for: Date())
+            paymentDate = calendar.startOfDay(for: prefill.transactionDate)
+            dayOfMonth = calendar.component(.day, from: prefill.transactionDate)
+            yearlyMonth = calendar.component(.month, from: prefill.transactionDate)
+            yearlyDay = calendar.component(.day, from: prefill.transactionDate)
+            return
+        }
+
         guard let payment = payment else { return }
 
         name = payment.name
@@ -907,7 +1039,7 @@ struct ScheduledPaymentEditorView: View {
 
         let effectiveEndDate = hasEndDate ? endDate : nil
 
-        let saved = viewModel.savePayment(
+        let savedID = viewModel.savePayment(
             existing: payment,
             name: name,
             amount: amountValue,
@@ -929,12 +1061,19 @@ struct ScheduledPaymentEditorView: View {
             endDate: effectiveEndDate,
             notifyOnDueDate: notifyOnDueDate,
             notifyDaysBefore: notifyDaysBefore,
-            isActive: isActive
+            isActive: isActive,
+            natureOverride: selectedNature?.rawValue
         )
 
-        if saved {
+        if let id = savedID {
+            onSaved?(id)
             dismiss()
         }
+    }
+
+    private func dismissEditorKeyboard() {
+        isNameFieldFocused = false
+        isAmountFieldFocused = false
     }
 
     private func deletePayment() {

@@ -97,15 +97,18 @@ final class ScheduledPaymentEditorViewModel {
         endDate: Date?,
         notifyOnDueDate: Bool,
         notifyDaysBefore: Int,
-        isActive: Bool
-    ) -> Bool {
-        guard let context = modelContext else { return false }
+        isActive: Bool,
+        natureOverride: String? = nil
+    ) -> UUID? {
+        guard let context = modelContext else { return nil }
 
         // Get tags array
         let tagsArray = activeTags.filter { selectedTags.contains($0.persistentModelID) }
 
         // Convert selectedWeekdays set to comma-separated string
         let weekdaysStr = selectedWeekdays.sorted().map { String($0) }.joined(separator: ",")
+
+        let paymentID: UUID
 
         if let existingPayment = existing {
             // Update existing
@@ -118,6 +121,7 @@ final class ScheduledPaymentEditorViewModel {
             existingPayment.account = account
             existingPayment.subcategory = subcategory
             existingPayment.tags = tagsArray
+            existingPayment.natureOverride = natureOverride
 
             // Recurrence
             existingPayment.isRecurring = isRecurring
@@ -133,6 +137,8 @@ final class ScheduledPaymentEditorViewModel {
             existingPayment.notifyOnDueDate = notifyOnDueDate
             existingPayment.notifyDaysBefore = notifyDaysBefore
             existingPayment.isActive = isActive
+
+            paymentID = existingPayment.id
         } else {
             // Create new
             let newPayment = ScheduledPayment(
@@ -144,6 +150,7 @@ final class ScheduledPaymentEditorViewModel {
                 account: account,
                 subcategory: subcategory,
                 tags: tagsArray,
+                natureOverride: natureOverride,
                 isRecurring: isRecurring,
                 recurrenceType: recurrenceType.rawValue,
                 recurrenceInterval: recurrenceInterval,
@@ -159,19 +166,20 @@ final class ScheduledPaymentEditorViewModel {
                 isActive: isActive
             )
             context.insert(newPayment)
+            paymentID = newPayment.id
         }
 
         do {
             try context.save()
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
-            return true
+            return paymentID
         } catch {
             #if DEBUG
             print("ScheduledPaymentEditorViewModel: Error saving payment: \(error)")
             #endif
             showSaveError = true
-            return false
+            return nil
         }
     }
 

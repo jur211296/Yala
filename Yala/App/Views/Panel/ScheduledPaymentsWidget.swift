@@ -362,7 +362,9 @@ struct ScheduledPaymentsWidget: View {
 
             let icon = payment.subcategory?.iconName
                 ?? payment.subcategory?.category?.iconName
-                ?? "creditcard.fill"
+                ?? (payment.paymentCategory == PaymentCategory.subscription.rawValue
+                    ? PaymentCategory.subscription.iconName
+                    : PaymentCategory.recurring.iconName)
             let color = payment.subcategory?.colorHex
                 ?? payment.subcategory?.category?.colorHex
                 ?? AppConstants.defaultColorHex
