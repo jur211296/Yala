@@ -84,6 +84,7 @@ struct PeriodOption: Identifiable {
     let title: String
     let subtitle: String
     let isCurrent: Bool
+    var isSelected: Bool = false
 
     var id: Date { date }
 }

@@ -20,6 +20,8 @@ struct BudgetPeriodSelectorSheet: View {
     @State private var selectedIndex: Int = 0
     @State private var isScrolling: Bool = false
     @State private var lastScrollTime: Date = Date()
+    @State private var scrollProxy: ScrollViewProxy?
+    @State private var currentPeriodIndex: Int?
 
     var body: some View {
         VStack(spacing: DS.Spacing.none) {
@@ -114,9 +116,12 @@ struct BudgetPeriodSelectorSheet: View {
                     }
                     .coordinateSpace(name: "scroll")
                     .frame(height: 240)
+                    .onAppear {
+                        scrollProxy = proxy
+                    }
                     .onChange(of: periods.count) { _, _ in
                         // Scroll to currently selected period when periods are loaded
-                        if !periods.isEmpty, let currentIndex = periods.firstIndex(where: { $0.isCurrent }) {
+                        if !periods.isEmpty, let currentIndex = periods.firstIndex(where: { $0.isSelected }) {
                             selectedIndex = currentIndex
                             Task {
                                 try? await Task.sleep(for: .milliseconds(200))
@@ -157,6 +162,24 @@ struct BudgetPeriodSelectorSheet: View {
             .frame(height: 240)
 
             Spacer()
+
+            // Go to today button
+            if let currentIndex = currentPeriodIndex,
+               selectedIndex != currentIndex {
+                Button {
+                    goToToday()
+                } label: {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "arrow.uturn.backward")
+                            .font(DS.Typography.caption)
+                        Text(NSLocalizedString("budgets.period.goToToday", comment: ""))
+                            .font(DS.Typography.subheadline)
+                    }
+                    .foregroundStyle(.thAccent)
+                }
+                .buttonStyle(.plain)
+                .padding(.bottom, DS.Spacing.md)
+            }
 
             // Confirm button
             Button {
@@ -210,10 +233,26 @@ struct BudgetPeriodSelectorSheet: View {
         // Check if scrolling has stopped
         let timeSinceLastScroll = Date().timeIntervalSince(lastScrollTime)
         if timeSinceLastScroll >= 0.15 && !isScrolling {
+            // Haptic feedback on snap
+            DS.Haptic.light()
             // Snap to the selected index
             dsWithAnimation(reduceMotion) {
                 proxy.scrollTo(periods[selectedIndex].id, anchor: .center)
             }
+        }
+    }
+
+    private func goToToday() {
+        guard let currentIndex = currentPeriodIndex,
+              let proxy = scrollProxy else { return }
+        isScrolling = true
+        dsWithAnimation(reduceMotion) {
+            selectedIndex = currentIndex
+            proxy.scrollTo(periods[currentIndex].id, anchor: .center)
+        }
+        Task {
+            try? await Task.sleep(for: .milliseconds(500))
+            isScrolling = false
         }
     }
 
@@ -276,8 +315,10 @@ struct BudgetPeriodSelectorSheet: View {
                 let startStr = Self.weekDateFormatter.string(from: weekDate)
                 let endStr = Self.weekDateFormatter.string(from: weekEnd)
 
-                let isCurrent = calendar.isDate(weekDate, equalTo: viewModel.selectedWeek, toGranularity: .weekOfYear) &&
-                                calendar.isDate(weekDate, equalTo: viewModel.selectedWeek, toGranularity: .year)
+                let isCurrent = calendar.isDate(weekDate, equalTo: currentWeek, toGranularity: .weekOfYear) &&
+                                calendar.isDate(weekDate, equalTo: currentWeek, toGranularity: .year)
+                let isSelected = calendar.isDate(weekDate, equalTo: viewModel.selectedWeek, toGranularity: .weekOfYear) &&
+                                 calendar.isDate(weekDate, equalTo: viewModel.selectedWeek, toGranularity: .year)
 
                 // Special text for current, previous, and next week
                 let specialText: String
@@ -297,7 +338,8 @@ struct BudgetPeriodSelectorSheet: View {
                     date: weekDate,
                     title: "\(startStr) - \(endStr)",
                     subtitle: specialText,
-                    isCurrent: isCurrent
+                    isCurrent: isCurrent,
+                    isSelected: isSelected
                 ))
 
                 // Move to next week
@@ -315,7 +357,8 @@ struct BudgetPeriodSelectorSheet: View {
             while monthDate <= endMonth {
                 let monthStr = Self.monthDateFormatter.string(from: monthDate)
 
-                let isCurrent = calendar.isDate(monthDate, equalTo: viewModel.selectedMonth, toGranularity: .month)
+                let isCurrent = calendar.isDate(monthDate, equalTo: currentMonth, toGranularity: .month)
+                let isSelected = calendar.isDate(monthDate, equalTo: viewModel.selectedMonth, toGranularity: .month)
 
                 // Special text for current, previous, and next month
                 let specialText: String
@@ -335,7 +378,8 @@ struct BudgetPeriodSelectorSheet: View {
                     date: monthDate,
                     title: monthStr.capitalized,
                     subtitle: specialText,
-                    isCurrent: isCurrent
+                    isCurrent: isCurrent,
+                    isSelected: isSelected
                 ))
 
                 // Move to next month
@@ -350,7 +394,8 @@ struct BudgetPeriodSelectorSheet: View {
             let currentYear = calendar.component(.year, from: today)
 
             for year in oldestYear...endYear {
-                let isCurrent = year == viewModel.selectedYear
+                let isCurrent = year == currentYear
+                let isSelected = year == viewModel.selectedYear
 
                 // Special text for current, previous, and next year
                 let specialText: String
@@ -368,7 +413,8 @@ struct BudgetPeriodSelectorSheet: View {
                     date: calendar.date(from: DateComponents(year: year)) ?? Date(),
                     title: "\(year)",
                     subtitle: specialText,
-                    isCurrent: isCurrent
+                    isCurrent: isCurrent,
+                    isSelected: isSelected
                 ))
             }
 
@@ -377,6 +423,7 @@ struct BudgetPeriodSelectorSheet: View {
         }
 
         periods = generatedPeriods
+        currentPeriodIndex = generatedPeriods.firstIndex(where: { $0.isCurrent })
     }
 }
 

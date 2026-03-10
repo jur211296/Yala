@@ -26,7 +26,7 @@ final class Budget {
     var periodType: String = "monthly"  // "weekly", "monthly", "yearly", "unique"
     var startDate: Date?    // For unique budgets
     var endDate: Date?      // For unique budgets
-    var currentPeriodStart: Date?  // For tracking which week/month/year
+    var currentPeriodStart: Date?  // LEGACY: unused, kept for CloudKit compat with older versions
 
     // Many-to-many relationships - CloudKit: must be optional
     @Relationship(deleteRule: .nullify, inverse: \Account.budgets)
@@ -87,5 +87,31 @@ final class Budget {
         self.favoriteOrder = favoriteOrder
         self.alertEnabled = alertEnabled
         self.alertThresholds = alertThresholds
+    }
+
+    // MARK: - Display Properties
+
+    /// Returns the icon and color for this budget based on its subcategories.
+    /// Single source of truth — used by widgets, views, and previews.
+    var displayProperties: (icon: String, color: String) {
+        let subs = subcategories ?? []
+        guard !subs.isEmpty else {
+            return ("chart.pie.fill", AppConstants.defaultColorHex)
+        }
+
+        if subs.count == 1, let sub = subs.first {
+            let icon = sub.iconName ?? sub.safeCategory.iconName ?? "tag.fill"
+            let color = sub.colorHex ?? sub.safeCategory.colorHex
+            return (icon, color)
+        }
+
+        let uniqueCategories = Set(subs.map { $0.safeCategory.persistentModelID })
+        if uniqueCategories.count == 1, let first = subs.first {
+            let icon = first.safeCategory.iconName ?? "tag.fill"
+            let color = first.colorHex ?? first.safeCategory.colorHex
+            return (icon, color)
+        }
+
+        return ("chart.pie.fill", AppConstants.defaultColorHex)
     }
 }

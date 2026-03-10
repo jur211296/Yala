@@ -1569,7 +1569,7 @@ final class PanelViewModel {
         let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
         let daysRemaining = getBudgetDaysRemaining(budget: budget, interval: interval)
         let status = getBudgetStatus(budget: budget, spending: spent)
-        let (icon, color) = getBudgetDisplayProperties(budget: budget)
+        let (icon, color) = budget.displayProperties
 
         return BudgetSummary(
             budget: budget,
@@ -1641,29 +1641,6 @@ final class PanelViewModel {
     }
 
     /// Get display properties for budget
-    private func getBudgetDisplayProperties(budget: Budget) -> (icon: String, color: String) {
-        let subcategories = budget.subcategories ?? []
-        guard !subcategories.isEmpty else {
-            return ("chart.pie.fill", AppConstants.defaultColorHex)
-        }
-
-        if subcategories.count == 1, let subcategory = subcategories.first {
-            let icon = subcategory.iconName ?? subcategory.safeCategory.iconName ?? "tag.fill"
-            let color = subcategory.colorHex ?? subcategory.safeCategory.colorHex
-            return (icon, color)
-        }
-
-        let uniqueCategories = Set(subcategories.map { $0.safeCategory.persistentModelID })
-
-        if uniqueCategories.count == 1, let firstSubcategory = subcategories.first {
-            let category = firstSubcategory.safeCategory
-            let icon = category.iconName ?? "tag.fill"
-            let color = category.colorHex
-            return (icon, color)
-        } else {
-            return ("chart.pie.fill", AppConstants.defaultColorHex)
-        }
-    }
 }
 
 // MARK: - Calendar Extension for Budget Calculations

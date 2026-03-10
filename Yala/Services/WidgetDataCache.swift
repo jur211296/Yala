@@ -280,11 +280,19 @@ enum WidgetDataCache {
             )
         }
 
-        // Build widget budgets with spent calculation (using recent transactions)
+        // Build widget budgets with spent calculation
+        // For yearly/unique budgets, use allTransactions (90-day window is insufficient)
         let widgetBudgets = budgets.map { budget in
-            let spent = calculateBudgetSpent(budget: budget, transactions: recentTransactions)
+            let transactionsForBudget: [TransactionItem]
+            let periodType = BudgetPeriodType(rawValue: budget.periodType)
+            if periodType == .yearly || periodType == .unique {
+                transactionsForBudget = allTransactions
+            } else {
+                transactionsForBudget = recentTransactions
+            }
+            let spent = calculateBudgetSpent(budget: budget, transactions: transactionsForBudget)
             let percentUsed = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100 : 0
-            let (icon, color) = getBudgetDisplayProperties(budget: budget)
+            let (icon, color) = budget.displayProperties
 
             return WidgetBudget(
                 id: budget.id.uuidString,
@@ -446,11 +454,21 @@ enum WidgetDataCache {
             tx.date >= startDate && tx.date <= endDate
         }
 
+        // Determine currency logic: single account → use tx.amount, else → preferred currency
+        let budgetAccounts = budget.accounts ?? []
+        let useSingleAccountCurrency = budgetAccounts.count == 1
+
         // Sum expenses that match budget criteria
         var spent: Double = 0
         for tx in periodTransactions {
+            // Use same currency logic as UI: single account uses tx.amount
+            let txAmount: Double
+            if useSingleAccountCurrency {
+                txAmount = tx.amount
+            } else {
+                txAmount = tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
+            }
             // Skip income (positive amounts are income)
-            let txAmount = tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
             if txAmount > 0 { continue }
 
             // Subcategory filter (by ID, not name)
@@ -490,32 +508,6 @@ enum WidgetDataCache {
     }
 
     /// Extracts display properties (icon, color) from a budget based on its subcategories
-    private static func getBudgetDisplayProperties(budget: Budget) -> (icon: String, color: String) {
-        let subcategories = budget.subcategories ?? []
-        guard !subcategories.isEmpty else {
-            return ("chart.pie.fill", "#6366F1")
-        }
-
-        if subcategories.count == 1, let subcategory = subcategories.first {
-            // Single subcategory: use its icon/color, or fallback to category
-            let icon = subcategory.iconName ?? subcategory.safeCategory.iconName ?? "tag.fill"
-            let color = subcategory.colorHex ?? subcategory.safeCategory.colorHex
-            return (icon, color)
-        }
-
-        // Multiple subcategories: check if all from same category
-        let uniqueCategories = Set(subcategories.map { $0.safeCategory.persistentModelID })
-        if uniqueCategories.count == 1, let firstSubcategory = subcategories.first {
-            let category = firstSubcategory.safeCategory
-            let icon = category.iconName ?? "tag.fill"
-            let color = category.colorHex
-            return (icon, color)
-        }
-
-        // Multiple categories: use generic icon
-        return ("chart.pie.fill", "#6366F1")
-    }
-
     /// Extracts display properties (icon, color) from a scheduled payment
     private static func getPaymentDisplayProperties(payment: ScheduledPayment) -> (icon: String, color: String) {
         if let subcategory = payment.subcategory {

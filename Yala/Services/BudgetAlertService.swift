@@ -86,7 +86,16 @@ final class BudgetAlertService {
         // Parse configured thresholds
         guard let thresholdsString = budget.alertThresholds else { return }
         let configuredThresholds = Set(
-            thresholdsString.split(separator: ",").compactMap { Int($0) }
+            thresholdsString.split(separator: ",").compactMap { component -> Int? in
+                let trimmed = component.trimmingCharacters(in: .whitespaces)
+                guard let value = Int(trimmed) else {
+                    #if DEBUG
+                    print("BudgetAlertService: Warning — unparseable threshold component: '\(component)'")
+                    #endif
+                    return nil
+                }
+                return value
+            }
         )
         guard !configuredThresholds.isEmpty else { return }
 

@@ -49,6 +49,8 @@ struct BudgetEditorView: View {
     // Sheet states
     @State private var showCategoriesSheet = false
     @State private var showDeleteConfirmation = false
+    @State private var showCustomThreshold = false
+    @State private var customThresholdText: String = ""
 
     // Focus state
     @FocusState private var isNameFieldFocused: Bool
@@ -313,16 +315,79 @@ struct BudgetEditorView: View {
                             .padding(.top, DS.Spacing.sm)
 
                         FlowLayout(spacing: DS.Spacing.sm) {
-                            ForEach([50, 75, 90, 100], id: \.self) { threshold in
+                            ForEach(allThresholds, id: \.self) { threshold in
                                 thresholdChip(threshold)
                             }
+
+                            // Custom threshold toggle
+                            Button {
+                                showCustomThreshold.toggle()
+                                if !showCustomThreshold {
+                                    customThresholdText = ""
+                                }
+                            } label: {
+                                HStack(spacing: DS.Spacing.xs) {
+                                    Image(systemName: "plus")
+                                        .font(DS.Typography.captionSmall)
+                                    Text(NSLocalizedString("budgets.alerts.custom", comment: ""))
+                                        .font(DS.Typography.subheadline)
+                                }
+                                .foregroundStyle(showCustomThreshold ? .white : .primary)
+                                .padding(.horizontal, DS.Spacing.md)
+                                .padding(.vertical, DS.Spacing.sm)
+                                .background(
+                                    Capsule()
+                                        .fill(showCustomThreshold ? theme.accent : Color(.tertiarySystemFill))
+                                )
+                            }
+                            .buttonStyle(.plain)
                         }
                         .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.bottom, DS.Spacing.md)
+
+                        // Custom threshold input
+                        if showCustomThreshold {
+                            HStack(spacing: DS.Spacing.sm) {
+                                TextField("1–100", text: $customThresholdText)
+                                    .keyboardType(.numberPad)
+                                    .textFieldStyle(.roundedBorder)
+                                    .frame(width: 80)
+
+                                Text("%")
+                                    .font(DS.Typography.subheadline)
+                                    .foregroundStyle(.secondary)
+
+                                Button {
+                                    if let value = Int(customThresholdText),
+                                       value >= 1, value <= 100 {
+                                        selectedThresholds.insert(value)
+                                        customThresholdText = ""
+                                        showCustomThreshold = false
+                                    }
+                                } label: {
+                                    Text(NSLocalizedString("budgets.alerts.addThreshold", comment: ""))
+                                        .font(DS.Typography.subheadline)
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, DS.Spacing.md)
+                                        .padding(.vertical, DS.Spacing.sm)
+                                        .background(
+                                            Capsule()
+                                                .fill(theme.accent)
+                                        )
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(!isValidCustomThreshold)
+                            }
+                            .padding(.horizontal, DS.Spacing.lg)
+                        }
                     }
+                    .padding(.bottom, DS.Spacing.md)
                 }
             }
         }
+    }
+
+    private var allThresholds: [Int] {
+        Set([50, 75, 90, 100]).union(selectedThresholds).sorted()
     }
 
     private func thresholdChip(_ threshold: Int) -> some View {
@@ -503,7 +568,7 @@ struct BudgetEditorView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             // Header
             FilterSectionHeader(
-                icon: "leaf.fill",
+                icon: "chart.bar.fill",
                 title: NSLocalizedString("nature.title", comment: ""),
                 status: selectedNaturesText
             )
@@ -595,7 +660,19 @@ struct BudgetEditorView: View {
     // MARK: - Validation
 
     private var canSave: Bool {
-        !name.isEmpty && !limitAmount.isEmpty && Double(limitAmount) != nil
+        guard !name.isEmpty, !limitAmount.isEmpty, let amount = Double(limitAmount), amount > 0 else {
+            return false
+        }
+        // For unique budgets, validate date range
+        if selectedPeriodType == .unique && startDate >= endDate {
+            return false
+        }
+        return true
+    }
+
+    private var isValidCustomThreshold: Bool {
+        guard let value = Int(customThresholdText) else { return false }
+        return value >= 1 && value <= 100
     }
 
     // MARK: - Data Management

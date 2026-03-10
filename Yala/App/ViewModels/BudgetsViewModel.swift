@@ -283,7 +283,7 @@ final class BudgetsViewModel {
             let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
             let daysRemaining = getDaysRemaining(budget: budget)
             let status = getBudgetStatus(budget: budget, spending: spent)
-            let (icon, color) = getBudgetDisplayProperties(budget: budget)
+            let (icon, color) = budget.displayProperties
 
             return BudgetSummary(
                 budget: budget,
@@ -466,26 +466,6 @@ final class BudgetsViewModel {
     }
 
     // MARK: - Icon and Color Logic
-
-    /// Determine display icon and color for a budget
-    func getBudgetDisplayProperties(budget: Budget) -> (icon: String, color: String) {
-        // Extract data for pure logic function
-        let subcategories = budget.subcategories ?? []
-        let subcategoryCount = subcategories.count
-        let firstSubcategory = subcategories.first
-        let firstSubcategoryIcon = firstSubcategory?.iconName ?? firstSubcategory?.safeCategory.iconName
-        let firstCategoryColor = firstSubcategory?.colorHex ?? firstSubcategory?.safeCategory.colorHex
-        let firstCategoryIcon = firstSubcategory?.safeCategory.iconName
-        let uniqueCategoryCount = Set(subcategories.map { $0.safeCategory.persistentModelID }).count
-
-        return calculateDisplayProperties(
-            subcategoryCount: subcategoryCount,
-            firstSubcategoryIcon: firstSubcategoryIcon,
-            firstCategoryColor: firstCategoryColor,
-            uniqueCategoryCount: uniqueCategoryCount,
-            firstCategoryIcon: firstCategoryIcon
-        )
-    }
 
     /// Pure logic for display properties calculation (testable without SwiftData)
     func calculateDisplayProperties(

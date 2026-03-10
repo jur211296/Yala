@@ -73,6 +73,17 @@ struct BudgetsWidget: View {
 
             Spacer()
 
+            if !budgets.isEmpty, let onEditFavorites {
+                Button {
+                    onEditFavorites()
+                } label: {
+                    Image(systemName: "star")
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+
             if onShowMore != nil {
                 Button {
                     onShowMore?()

@@ -27,6 +27,11 @@ struct BudgetsFavoritesSettingsView: View {
                     // Info header
                     infoHeader
 
+                    // Widget preview
+                    if viewModel.hasFavorites && !viewModel.isEditMode {
+                        widgetPreview
+                    }
+
                     if viewModel.isEmpty {
                         emptyState
                     } else if viewModel.isEditMode {
@@ -74,6 +79,74 @@ struct BudgetsFavoritesSettingsView: View {
         )
         .onAppear {
             viewModel.setContext(modelContext, sessionState: sessionState)
+        }
+    }
+
+    // MARK: - Widget Preview
+
+    private var widgetPreview: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Text(NSLocalizedString("budgets.favorites.previewTitle", comment: ""))
+                .font(DS.Typography.headline)
+                .foregroundStyle(Color.primary.opacity(0.6))
+                .padding(.leading, DS.Chip.paddingV)
+
+            VStack(spacing: DS.Spacing.md) {
+                ForEach(Array(viewModel.favoriteBudgets.prefix(3).enumerated()), id: \.element.persistentModelID) { _, budget in
+                    previewBudgetRow(budget)
+                }
+            }
+            .padding(DS.Spacing.lg)
+            .background(
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                    .fill(.thCard)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                    .stroke(theme.accent.opacity(0.2), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
+        }
+    }
+
+    private func previewBudgetRow(_ budget: Budget) -> some View {
+        let (icon, colorHex) = budget.displayProperties
+
+        return HStack(spacing: DS.Spacing.md) {
+            // Icon badge (matches BudgetWidgetRow)
+            ZStack {
+                Circle()
+                    .fill(Color(hex: colorHex))
+                    .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
+
+                Image(systemName: icon)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.white)
+            }
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                // Name and limit row
+                HStack {
+                    Text(budget.name)
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+
+                    Spacer()
+
+                    Text(formatAmount(budget.limitAmount, currency: budget.currencyCode))
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.primary)
+                }
+
+                // Placeholder progress bar (empty)
+                BudgetProgressBar(
+                    percentage: 0,
+                    color: colorHex,
+                    isExceeded: false
+                )
+            }
         }
     }
 
