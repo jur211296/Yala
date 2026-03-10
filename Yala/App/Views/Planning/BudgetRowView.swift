@@ -11,12 +11,11 @@ import SwiftUI
 struct BudgetRowView: View {
     let summary: BudgetSummary
     let currencyCode: String
-    let onTap: () -> Void
 
     @Environment(\.yalaTheme) private var theme
 
     var body: some View {
-        Button(action: onTap) {
+        NavigationLink(value: BudgetNavigationID(id: summary.budget.persistentModelID)) {
             VStack(alignment: .leading, spacing: DS.Spacing.md) {
                 // Top row: Icon + Name + Amount
                 HStack(spacing: DS.Spacing.md) {

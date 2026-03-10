@@ -59,19 +59,14 @@ struct BudgetsListView: View {
             // FAB button for new budget
             newBudgetFAB
         }
+        .navigationDestination(for: BudgetNavigationID.self) { navID in
+            BudgetDetailDestination(budgetID: navID.id, viewModel: viewModel)
+        }
         .sheet(isPresented: $viewModel.showBudgetEditor) {
-            if let budget = viewModel.editingBudget {
-                BudgetEditorView(budget: budget)
-                    .onDisappear {
-                        viewModel.editingBudget = nil
-                        refreshData()
-                    }
-            } else {
-                BudgetEditorView(budget: nil)
-                    .onDisappear {
-                        refreshData()
-                    }
-            }
+            BudgetEditorView(budget: nil)
+                .onDisappear {
+                    refreshData()
+                }
         }
         .sheet(isPresented: $showPeriodSelector) {
             BudgetPeriodSelectorSheet(
@@ -259,10 +254,7 @@ struct BudgetsListView: View {
                         BudgetRowView(
                             summary: summary,
                             currencyCode: summary.budget.currencyCode
-                        ) {
-                            viewModel.editingBudget = summary.budget
-                            viewModel.showBudgetEditor = true
-                        }
+                        )
                         .padding(.horizontal, DS.Spacing.lg)
                     }
                 }
@@ -317,8 +309,26 @@ struct BudgetsListView: View {
 
 }
 
-// MARK: - Calendar Extension
+// MARK: - Budget Detail Destination
 
+/// Helper view that resolves PersistentIdentifier to Budget for navigation
+private struct BudgetDetailDestination: View {
+    let budgetID: PersistentIdentifier
+    @Bindable var viewModel: BudgetsViewModel
+
+    @Environment(\.modelContext) private var modelContext
+
+    var body: some View {
+        if let budget = modelContext.model(for: budgetID) as? Budget {
+            BudgetDetailView(budget: budget, viewModel: viewModel)
+        } else {
+            ContentUnavailableView(
+                L10n.BudgetDetail.notFound,
+                systemImage: "exclamationmark.triangle"
+            )
+        }
+    }
+}
 
 // MARK: - Preview
 

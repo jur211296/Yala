@@ -484,6 +484,28 @@
 "budgets.period.confirm" = "Termine";
 "budgets.period.goToToday" = "Aller à aujourd'hui";
 
+// Budget Detail
+"budgets.detail.info" = "Détails";
+"budgets.detail.period" = "Période";
+"budgets.detail.accounts" = "Comptes";
+"budgets.detail.categories" = "Catégories";
+"budgets.detail.tags" = "Tags";
+"budgets.detail.needs" = "Besoins";
+"budgets.detail.alerts" = "Alertes";
+"budgets.detail.allAccounts" = "Tous les comptes";
+"budgets.detail.allCategories" = "Toutes les catégories";
+"budgets.detail.subcategories" = "Sous-catégories";
+"budgets.detail.allSubcategories" = "Toutes les sous-catégories";
+"budgets.detail.notFound" = "Budget introuvable";
+"budgets.detail.status" = "Statut";
+
+// Budget Charts
+"budgets.charts.title" = "Graphiques";
+"budgets.charts.compliance" = "Dépenses vs Limite";
+"budgets.charts.dailySpending" = "Dépenses cumulées";
+"budgets.charts.categoryBreakdown" = "Par catégorie";
+"budgets.charts.noData" = "Aucune donnée pour cette période";
+
 // MARK: - Profile
 
 "profile.title" = "Profil";

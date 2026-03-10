@@ -2262,6 +2262,29 @@ enum L10n {
         static var alertsGlobalDisabledHint: String { ls("budgets.alerts.globalDisabledHint", comment: "") }
     }
 
+    // MARK: - Budget Detail
+
+    enum BudgetDetail {
+        static var infoTitle: String { ls("budgets.detail.info", comment: "") }
+        static var period: String { ls("budgets.detail.period", comment: "") }
+        static var accounts: String { ls("budgets.detail.accounts", comment: "") }
+        static var categories: String { ls("budgets.detail.categories", comment: "") }
+        static var tags: String { ls("budgets.detail.tags", comment: "") }
+        static var needs: String { ls("budgets.detail.needs", comment: "") }
+        static var alerts: String { ls("budgets.detail.alerts", comment: "") }
+        static var allAccounts: String { ls("budgets.detail.allAccounts", comment: "") }
+        static var allCategories: String { ls("budgets.detail.allCategories", comment: "") }
+        static var subcategories: String { ls("budgets.detail.subcategories", comment: "") }
+        static var allSubcategories: String { ls("budgets.detail.allSubcategories", comment: "") }
+        static var notFound: String { ls("budgets.detail.notFound", comment: "") }
+        static var statusTitle: String { ls("budgets.detail.status", comment: "") }
+        static var chartsTitle: String { ls("budgets.charts.title", comment: "") }
+        static var chartsCompliance: String { ls("budgets.charts.compliance", comment: "") }
+        static var chartsDailySpending: String { ls("budgets.charts.dailySpending", comment: "") }
+        static var chartsCategoryBreakdown: String { ls("budgets.charts.categoryBreakdown", comment: "") }
+        static var chartsNoData: String { ls("budgets.charts.noData", comment: "") }
+    }
+
     // MARK: - Planning
 
     enum Planning {

@@ -484,6 +484,28 @@
 "budgets.period.confirm" = "Concluido";
 "budgets.period.goToToday" = "Ir para hoje";
 
+// Budget Detail
+"budgets.detail.info" = "Detalhes";
+"budgets.detail.period" = "Período";
+"budgets.detail.accounts" = "Contas";
+"budgets.detail.categories" = "Categorias";
+"budgets.detail.tags" = "Tags";
+"budgets.detail.needs" = "Necessidades";
+"budgets.detail.alerts" = "Alertas";
+"budgets.detail.allAccounts" = "Todas as contas";
+"budgets.detail.allCategories" = "Todas as categorias";
+"budgets.detail.subcategories" = "Subcategorias";
+"budgets.detail.allSubcategories" = "Todas as subcategorias";
+"budgets.detail.notFound" = "Orçamento não encontrado";
+"budgets.detail.status" = "Status";
+
+// Budget Charts
+"budgets.charts.title" = "Gráficos";
+"budgets.charts.compliance" = "Gastos vs Limite";
+"budgets.charts.dailySpending" = "Gastos acumulados";
+"budgets.charts.categoryBreakdown" = "Por categoria";
+"budgets.charts.noData" = "Sem dados para este período";
+
 // MARK: - Profile
 
 "profile.title" = "Perfil";

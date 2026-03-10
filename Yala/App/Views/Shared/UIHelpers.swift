@@ -322,6 +322,17 @@ struct YalaFormatter {
         value.formatted(.number.notation(.compactName).precision(.fractionLength(0...1)))
     }
 
+    /// Compact axis label: 1500 → "2K", -40000 → "-40K", 500 → "500"
+    static func axisK(_ value: Double) -> String {
+        let absValue = abs(value)
+        let sign = value < 0 ? "-" : ""
+        if absValue >= 1000 {
+            return String(format: "%@%.0fK", sign, absValue / 1000.0)
+        } else {
+            return String(format: "%@%.0f", sign, absValue)
+        }
+    }
+
     /// Formats a number with standard format: `20,000.00` or `-20,000.00` (no currency)
     /// - Parameters:
     ///   - value: The numeric value to format

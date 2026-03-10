@@ -486,6 +486,28 @@
 "budgets.period.confirm" = "Done";
 "budgets.period.goToToday" = "Go to today";
 
+// Budget Detail
+"budgets.detail.info" = "Details";
+"budgets.detail.period" = "Period";
+"budgets.detail.accounts" = "Accounts";
+"budgets.detail.categories" = "Categories";
+"budgets.detail.tags" = "Tags";
+"budgets.detail.needs" = "Needs";
+"budgets.detail.alerts" = "Alerts";
+"budgets.detail.allAccounts" = "All accounts";
+"budgets.detail.allCategories" = "All categories";
+"budgets.detail.subcategories" = "Subcategories";
+"budgets.detail.allSubcategories" = "All subcategories";
+"budgets.detail.notFound" = "Budget not found";
+"budgets.detail.status" = "Status";
+
+// Budget Charts
+"budgets.charts.title" = "Charts";
+"budgets.charts.compliance" = "Spending vs Limit";
+"budgets.charts.dailySpending" = "Cumulative Spending";
+"budgets.charts.categoryBreakdown" = "By Category";
+"budgets.charts.noData" = "No data for this period";
+
 // MARK: - Profile
 
 "profile.title" = "Profile";

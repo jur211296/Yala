@@ -1221,6 +1221,24 @@ Ordenado por dependencias de datos para ejecución secuencial.
 
 ## Sección 6: Presupuestos
 
+### Vista: BudgetDetailView (Detalle de presupuesto)
+
+| # | Escenario | Pasos | Resultado esperado |
+|---|-----------|-------|--------------------|
+| 6.D.1 | Tap presupuesto abre detalle | Tap en card de presupuesto | Abre BudgetDetailView (NO editor directamente) |
+| 6.D.2 | Datos correctos en detalle | Verificar gasto/límite/porcentaje/días | Valores coinciden con la card de la lista |
+| 6.D.3 | Editar desde detalle | Tap pencil en toolbar → editar → cerrar | Detalle se actualiza con datos nuevos |
+| 6.D.4 | Gráficas desde detalle | Tap chart.bar.fill en toolbar | Push a BudgetChartsView con 3 gráficas |
+| 6.D.5 | FAB crea nuevo presupuesto | Tap FAB (+) | Sheet editor con presupuesto nuevo (no detalle) |
+| 6.D.6 | Back/swipe regresa a lista | Tap chevron.left o swipe back | Regresa a BudgetsListView |
+| 6.D.7 | Presupuesto inactivo | Abrir detalle de presupuesto inactivo | Muestra indicador "Inactivo" en sección Status |
+| 6.D.8 | Presupuesto excedido | Abrir detalle de presupuesto excedido | Muestra texto motivacional + colores hotPink |
+| 6.D.9 | Sin subcategorías/cuentas | Abrir presupuesto sin filtros | Muestra "Todas las cuentas" / "Todas las categorías" |
+| 6.D.10 | Tab switch conserva navegación | Budgets → Scheduled → Budgets | Navegación sigue funcionando |
+| 6.D.11 | Gráfica cumplimiento (único) | Abrir gráficas de presupuesto único | Gráfica "Gasto vs Límite" oculta (sin períodos) |
+| 6.D.12 | Gráfica gasto acumulado | Abrir gráficas de cualquier presupuesto | AreaMark acumulativo + línea de límite visible |
+| 6.D.13 | Desglose por categoría | Abrir gráficas con subcategorías | BarMark horizontal con colores de subcategoría |
+
 ### Vista: BudgetEditorView
 
 ### Campos del Formulario
