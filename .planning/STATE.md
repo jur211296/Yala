@@ -43,15 +43,16 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-10] 6733827 fix: budget period selector, widget preview, custom thresholds + displayProperties SSOT
+- [2026-03-10] abe0cb8 style: rename Nature to Need across 6 languages + new l10n keys
+- [2026-03-10] 847b4eb refactor: replace SaveAsRecurringSheet with ScheduledPaymentEditorView prefill
+- [2026-03-09] 1b9d9fc fix: filter auto-switch, search sort, and nature chip for income (BUG-40, BUG-41, BUG-51)
 - [2026-03-09] 080c51f style: rewrite notification texts with brand voice across 6 languages
 - [2026-03-09] 74976a4 fix: add missing onDismiss to notification edit sheet + QA scenarios
 - [2026-03-09] a34e674 fix: resolve notification system bugs — double completion, debounce, POSIX locale
 - [2026-03-09] cc1da63 refactor: consolidate notification service into single-fetch orchestrator
 - [2026-03-09] c675e9c fix: resolve notification bugs — time window, paid status, warm resume, off-by-one (BUG-36, BUG-37, BUG-38, BUG-39)
 - [2026-03-09] 0d9f04d fix: resolve Inbox crashes — delayed SwiftData deletion and Mac sheet detents (BUG-34, BUG-35)
-- [2026-03-09] 792479a feat: add What's New sheet — post-update feature showcase with race condition priority
-- [2026-03-09] a32a084 fix: activate all default notification toggles when user accepts primer
-- [2026-03-09] 07d420f feat: add coach mark tours — custom overlay system with 4 guided tours post-onboarding
 - [2026-03-09] cadba76 refactor: persist balance calculator field state across sheet open/close
 - [2026-03-08] 1220dd5 feat: add post-onboarding contextual prompts — secondary currency + notification primer
 - [2026-03-08] b0be795 fix: onboarding QA — comma-locale budget bug, animation timing, updated scenarios
@@ -714,12 +715,10 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 
 ## Session Continuity
 
-Last session: 2026-03-09
-Stopped at: Notification system hardening complete — 3 commits (bugs, robustness, brand voice)
+Last session: 2026-03-10
+Stopped at: Committed scheduled payments refactor, Nature→Need rename, budget bug fixes (period selector, widget preview, custom thresholds, displayProperties SSOT)
 Next step: Continue with next Fase 12 item from /next
 Resume context:
-- Fixed double setTaskCompleted in BackgroundTaskManager (Task cancellation + isCancelled guard)
-- Fixed cold launch double notification check (debounce with 5s window)
-- POSIX locale on all notification trackers (non-Gregorian calendar safety)
-- Brand voice rewrite across 84 notification strings in 6 languages
-- QA scenarios section 51 added for notification robustness
+- BUG-40: Category/subcategory onChange now auto-sets income tab symmetrically
+- BUG-41: GlobalSearchView sorts within day groups by createdAt (matches FilterService)
+- BUG-51: NatureEditChip hidden for income in NewTransaction, InboxDraftEdit, FavoriteEditor
