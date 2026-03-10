@@ -527,9 +527,9 @@
 "export.confirmExport" = "Confirme sua exportacao";
 "export.selectColumns" = "Selecionar colunas";
 "export.availableColumns" = "Colunas disponiveis";
-"export.columnsDescription" = "Escolha quais colunas incluir no arquivo CSV exportado. Voce deve selecionar pelo menos uma.";
+"export.columnsDescription" = "Escolha quais colunas incluir no arquivo exportado. Voce deve selecionar pelo menos uma.";
 "export.summaryAndExport" = "Resumo e Exportar";
-"export.summaryDescription" = "Revise os filtros e colunas selecionados antes de gerar o arquivo CSV.";
+"export.summaryDescription" = "Revise os filtros e colunas selecionados antes de gerar o arquivo.";
 "export.filtersSummary" = "Resumo dos filtros";
 "export.columnsToExport" = "Colunas a exportar";
 "export.exportToCSV" = "Exportar para CSV";
@@ -1215,6 +1215,7 @@
 "validation.accountsMustBeDifferent" = "As contas devem ser diferentes";
 "validation.selectAccount" = "Selecione uma conta";
 "validation.selectSubcategory" = "Selecione uma subcategoria";
+"validation.completeFieldsFirst" = "Preenche valor, conta e categoria primeiro";
 "validation.futureDateTitle" = "Data futura não permitida";
 "validation.futureDateMessage" = "Não podes registar transações com uma data futura. Usa os pagamentos agendados para despesas recorrentes.";
 
@@ -1277,6 +1278,8 @@
 "scheduled.editor.account" = "Conta";
 "scheduled.editor.subcategory" = "Subcategoria";
 "scheduled.editor.recurrence" = "Recorrencia";
+"scheduled.help.title" = "O que é um pagamento agendado?";
+"scheduled.help.message" = "Regista pagamentos recorrentes como assinaturas, renda ou contas. O Yala avisa-te quando vencem e guarda o historico do que pagaste.";
 "scheduled.editor.next.due" = "Proximo vencimento";
 "scheduled.editor.day.of.month" = "Dia do mes";
 "scheduled.editor.day.of.week" = "Dia da semana";

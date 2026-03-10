@@ -458,28 +458,12 @@ struct ExportFiltersStepView: View {
 
     // MARK: - Static Formatters
 
-    private static let periodLongFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale.current
-        f.dateFormat = "d MMM yyyy"
-        return f
-    }()
-
     private static let periodShortFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "d MMM yy"
         f.locale = AppLocale.current
         return f
     }()
-
-    private var periodSubtitle: String {
-        let interval = selectedPeriod.dateInterval()
-
-        let calendar = Calendar.current
-        let displayEnd = calendar.date(byAdding: .day, value: -1, to: interval.end) ?? interval.end
-
-        return "\(Self.periodLongFormatter.string(from: interval.start)) - \(Self.periodLongFormatter.string(from: displayEnd))"
-    }
 
     // MARK: - Period Row (inside SectionBox)
 

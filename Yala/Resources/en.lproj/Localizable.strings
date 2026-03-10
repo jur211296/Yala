@@ -529,9 +529,9 @@
 "export.confirmExport" = "Confirm your export";
 "export.selectColumns" = "Select columns";
 "export.availableColumns" = "Available columns";
-"export.columnsDescription" = "Choose which columns to include in the exported CSV file. You must select at least one.";
+"export.columnsDescription" = "Choose which columns to include in the exported file. You must select at least one.";
 "export.summaryAndExport" = "Summary and Export";
-"export.summaryDescription" = "Review the selected filters and columns before generating the CSV file.";
+"export.summaryDescription" = "Review the selected filters and columns before generating the file.";
 "export.filtersSummary" = "Filters summary";
 "export.columnsToExport" = "Columns to export";
 "export.exportToCSV" = "Export to CSV";
@@ -1213,6 +1213,7 @@
 "validation.accountsMustBeDifferent" = "Accounts must be different";
 "validation.selectAccount" = "Select an account";
 "validation.selectSubcategory" = "Select a subcategory";
+"validation.completeFieldsFirst" = "Fill in amount, account, and category first";
 "validation.futureDateTitle" = "Future date not allowed";
 "validation.futureDateMessage" = "You can't record transactions with a future date. Use Scheduled Payments for recurring expenses.";
 
@@ -1275,6 +1276,8 @@
 "scheduled.editor.account" = "Account";
 "scheduled.editor.subcategory" = "Subcategory";
 "scheduled.editor.recurrence" = "Recurrence";
+"scheduled.help.title" = "What is a scheduled payment?";
+"scheduled.help.message" = "Track payments that repeat — like subscriptions, rent, or bills. Yala reminds you when they're due and keeps a history of what you've paid.";
 "scheduled.editor.next.due" = "Next due date";
 "scheduled.editor.day.of.month" = "Day of month";
 "scheduled.editor.day.of.week" = "Day of week";

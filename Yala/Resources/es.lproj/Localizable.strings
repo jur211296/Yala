@@ -529,9 +529,9 @@
 "export.confirmExport" = "Confirma tu exportación";
 "export.selectColumns" = "Seleccionar columnas";
 "export.availableColumns" = "Columnas disponibles";
-"export.columnsDescription" = "Elige qué columnas quieres incluir en el archivo CSV exportado. Debes seleccionar al menos una.";
+"export.columnsDescription" = "Elige qué columnas quieres incluir en el archivo exportado. Debes seleccionar al menos una.";
 "export.summaryAndExport" = "Resumen y Exportar";
-"export.summaryDescription" = "Revisa los filtros y columnas seleccionadas antes de generar el archivo CSV.";
+"export.summaryDescription" = "Revisa los filtros y columnas seleccionadas antes de generar el archivo.";
 "export.filtersSummary" = "Resumen de filtros";
 "export.columnsToExport" = "Columnas a exportar";
 "export.exportToCSV" = "Exportar a CSV";
@@ -1213,6 +1213,7 @@
 "validation.accountsMustBeDifferent" = "Las cuentas deben ser diferentes";
 "validation.selectAccount" = "Selecciona una cuenta";
 "validation.selectSubcategory" = "Selecciona una subcategoría";
+"validation.completeFieldsFirst" = "Completa monto, cuenta y categoría primero";
 "validation.futureDateTitle" = "Fecha futura no permitida";
 "validation.futureDateMessage" = "No puedes registrar transacciones con fecha futura. Usa Pagos Planificados para gastos recurrentes.";
 
@@ -1275,6 +1276,8 @@
 "scheduled.editor.account" = "Cuenta";
 "scheduled.editor.subcategory" = "Subcategoría";
 "scheduled.editor.recurrence" = "Recurrencia";
+"scheduled.help.title" = "¿Qué es un pago planificado?";
+"scheduled.help.message" = "Registra pagos que se repiten, como suscripciones, alquiler o servicios. Yala te avisa cuando toca pagar y lleva el historial de lo pagado.";
 "scheduled.editor.next.due" = "Próximo vencimiento";
 "scheduled.editor.day.of.month" = "Día del mes";
 "scheduled.editor.day.of.week" = "Día de la semana";

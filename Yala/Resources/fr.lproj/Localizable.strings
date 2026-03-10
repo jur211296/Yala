@@ -527,9 +527,9 @@
 "export.confirmExport" = "Confirmez votre exportation";
 "export.selectColumns" = "Selectionner les colonnes";
 "export.availableColumns" = "Colonnes disponibles";
-"export.columnsDescription" = "Choisissez les colonnes a inclure dans le fichier CSV exporte. Vous devez en selectionner au moins une.";
+"export.columnsDescription" = "Choisissez les colonnes a inclure dans le fichier exporte. Vous devez en selectionner au moins une.";
 "export.summaryAndExport" = "Resume et Exporter";
-"export.summaryDescription" = "Verifiez les filtres et colonnes selectionnes avant de generer le fichier CSV.";
+"export.summaryDescription" = "Verifiez les filtres et colonnes selectionnes avant de generer le fichier.";
 "export.filtersSummary" = "Resume des filtres";
 "export.columnsToExport" = "Colonnes a exporter";
 "export.exportToCSV" = "Exporter en CSV";
@@ -1215,6 +1215,7 @@
 "validation.accountsMustBeDifferent" = "Les comptes doivent etre differents";
 "validation.selectAccount" = "Selectionnez un compte";
 "validation.selectSubcategory" = "Selectionnez une sous-categorie";
+"validation.completeFieldsFirst" = "Remplis le montant, le compte et la categorie d'abord";
 "validation.futureDateTitle" = "Date future non autorisée";
 "validation.futureDateMessage" = "Tu ne peux pas enregistrer de transactions avec une date future. Utilise les paiements planifiés pour les dépenses récurrentes.";
 
@@ -1277,6 +1278,8 @@
 "scheduled.editor.account" = "Compte";
 "scheduled.editor.subcategory" = "Sous-categorie";
 "scheduled.editor.recurrence" = "Recurrence";
+"scheduled.help.title" = "Qu'est-ce qu'un paiement planifie ?";
+"scheduled.help.message" = "Suis les paiements recurrents comme les abonnements, le loyer ou les factures. Yala te rappelle les echeances et garde l'historique des paiements.";
 "scheduled.editor.next.due" = "Prochaine echeance";
 "scheduled.editor.day.of.month" = "Jour du mois";
 "scheduled.editor.day.of.week" = "Jour de la semaine";

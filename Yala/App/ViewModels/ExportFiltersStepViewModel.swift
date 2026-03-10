@@ -23,6 +23,7 @@ final class ExportFiltersStepViewModel {
     private(set) var allCategories: [Category] = []
     private(set) var allTags: [Tag] = []
     private(set) var allSubcategories: [Subcategory] = []
+    private(set) var earliestTransactionDate: Date?
 
     // MARK: - Context Injection
 
@@ -79,6 +80,19 @@ final class ExportFiltersStepViewModel {
             #endif
             allSubcategories = []
         }
+
+        // Load earliest transaction date for allTime period
+        var earliestDescriptor = FetchDescriptor<TransactionItem>(
+            sortBy: [SortDescriptor(\TransactionItem.date, order: .forward)]
+        )
+        earliestDescriptor.fetchLimit = 1
+        do {
+            earliestTransactionDate = try context.fetch(earliestDescriptor).first?.date
+        } catch {
+            #if DEBUG
+            print("ExportFiltersStepViewModel: Error fetching earliest transaction: \(error)")
+            #endif
+        }
     }
 
     // MARK: - Helper Methods
@@ -132,6 +146,19 @@ final class ExportFiltersStepViewModel {
         }
     }
 
+    // MARK: - All-Time Date Range
+
+    /// Returns a date interval from the earliest transaction to end of today
+    func allTimeDateInterval() -> DateInterval {
+        guard let earliest = earliestTransactionDate else {
+            return DetailPeriod.allTime.dateInterval()
+        }
+        let calendar = Calendar.current
+        let startOfToday = calendar.startOfDay(for: Date())
+        let endOfToday = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? Date()
+        return DateInterval(start: calendar.startOfDay(for: earliest), end: endOfToday)
+    }
+
     // MARK: - Export Filters
 
     func buildExportFilters(
@@ -166,6 +193,8 @@ final class ExportFiltersStepViewModel {
         let dateInterval: DateInterval
         if selectedPeriod == .custom, let customRange = customDateRange {
             dateInterval = customRange
+        } else if selectedPeriod == .allTime {
+            dateInterval = allTimeDateInterval()
         } else {
             dateInterval = selectedPeriod.dateInterval()
         }

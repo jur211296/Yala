@@ -527,9 +527,9 @@
 "export.confirmExport" = "Conferma la tua esportazione";
 "export.selectColumns" = "Seleziona colonne";
 "export.availableColumns" = "Colonne disponibili";
-"export.columnsDescription" = "Scegli quali colonne includere nel file CSV esportato. Devi selezionarne almeno una.";
+"export.columnsDescription" = "Scegli quali colonne includere nel file esportato. Devi selezionarne almeno una.";
 "export.summaryAndExport" = "Riepilogo ed Esporta";
-"export.summaryDescription" = "Verifica i filtri e le colonne selezionate prima di generare il file CSV.";
+"export.summaryDescription" = "Verifica i filtri e le colonne selezionate prima di generare il file.";
 "export.filtersSummary" = "Riepilogo filtri";
 "export.columnsToExport" = "Colonne da esportare";
 "export.exportToCSV" = "Esporta in CSV";
@@ -1215,6 +1215,7 @@
 "validation.accountsMustBeDifferent" = "I conti devono essere diversi";
 "validation.selectAccount" = "Seleziona un conto";
 "validation.selectSubcategory" = "Seleziona una sottocategoria";
+"validation.completeFieldsFirst" = "Compila importo, conto e categoria prima";
 "validation.futureDateTitle" = "Data futura non consentita";
 "validation.futureDateMessage" = "Non puoi registrare transazioni con una data futura. Usa i pagamenti programmati per le spese ricorrenti.";
 
@@ -1277,6 +1278,8 @@
 "scheduled.editor.account" = "Conto";
 "scheduled.editor.subcategory" = "Sottocategoria";
 "scheduled.editor.recurrence" = "Ricorrenza";
+"scheduled.help.title" = "Cos'è un pagamento programmato?";
+"scheduled.help.message" = "Registra i pagamenti ricorrenti come abbonamenti, affitto o bollette. Yala ti avvisa quando sono dovuti e tiene traccia di quelli pagati.";
 "scheduled.editor.next.due" = "Prossima scadenza";
 "scheduled.editor.day.of.month" = "Giorno del mese";
 "scheduled.editor.day.of.week" = "Giorno della settimana";

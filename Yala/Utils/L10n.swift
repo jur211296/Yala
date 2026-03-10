@@ -2401,6 +2401,9 @@ enum L10n {
         static var selectSubcategory: String {
             ls("validation.selectSubcategory", comment: "")
         }
+        static var completeFieldsFirst: String {
+            ls("validation.completeFieldsFirst", comment: "")
+        }
         static var futureDateTitle: String {
             ls("validation.futureDateTitle", comment: "")
         }

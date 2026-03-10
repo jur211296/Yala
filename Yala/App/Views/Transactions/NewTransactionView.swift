@@ -683,6 +683,7 @@ struct NewTransactionView: View {
                     viewModel.showSaveAsRecurringSheet = true
                 } else {
                     viewModel.showValidationErrors = true
+                    showToast(L10n.Validation.completeFieldsFirst)
                 }
             }
         }
@@ -1093,43 +1094,45 @@ struct NewTransactionView: View {
 
     private func saveTransaction() {
         if viewModel.save(context: modelContext) != nil {
-            DS.Haptic.success()
-            // Dismiss keyboard first
-            dismissKeyboard()
+            showTransactionSuccess()
+        }
+    }
 
-            // Build success data from saved transaction
-            let account = viewModel.isTransfer ? viewModel.sourceAccount : viewModel.selectedAccount
-            let destAccount = viewModel.destinationAccount
+    private func showTransactionSuccess() {
+        DS.Haptic.success()
+        dismissKeyboard()
 
-            successData = TransactionSuccessData(
-                transactionType: viewModel.transactionType,
-                date: viewModel.transactionDate,
-                accountName: account?.name ?? L10n.Transaction.account,
-                accountColorHex: account?.colorHex ?? AppConstants.defaultColorHex,
-                note: viewModel.note,
-                amount: Decimal(string: viewModel.amountString.replacingOccurrences(of: Locale.current.decimalSeparator ?? ".", with: ".")) ?? 0,
-                currencyCode: viewModel.effectiveCurrencyCode,
-                subcategoryName: viewModel.selectedSubcategory?.name,
-                subcategoryColorHex: viewModel.selectedSubcategory?.colorHex,
-                categoryName: viewModel.selectedSubcategory?.safeCategory.name,
-                categoryColorHex: viewModel.selectedSubcategory?.safeCategory.colorHex,
-                tags: viewModel.selectedTags.map { ($0.name, $0.colorHex) },
-                nature: viewModel.selectedNature ?? viewModel.selectedSubcategory?.nature,
-                isTransfer: viewModel.isTransfer,
-                destinationAccountName: destAccount?.name,
-                destinationAccountColorHex: destAccount?.colorHex,
-                destinationAmount: Decimal(viewModel.destinationAmount),
-                destinationCurrencyCode: destAccount?.currencyCode
-            )
+        let account = viewModel.isTransfer ? viewModel.sourceAccount : viewModel.selectedAccount
+        let destAccount = viewModel.destinationAccount
 
-            // Check notification primer eligibility
-            Task { await viewModel.checkNotificationPrimer() }
+        successData = TransactionSuccessData(
+            transactionType: viewModel.transactionType,
+            date: viewModel.transactionDate,
+            accountName: account?.name ?? L10n.Transaction.account,
+            accountColorHex: account?.colorHex ?? AppConstants.defaultColorHex,
+            note: viewModel.note,
+            amount: Decimal(string: viewModel.amountString.replacingOccurrences(of: Locale.current.decimalSeparator ?? ".", with: ".")) ?? 0,
+            currencyCode: viewModel.effectiveCurrencyCode,
+            subcategoryName: viewModel.selectedSubcategory?.name,
+            subcategoryColorHex: viewModel.selectedSubcategory?.colorHex,
+            categoryName: viewModel.selectedSubcategory?.safeCategory.name,
+            categoryColorHex: viewModel.selectedSubcategory?.safeCategory.colorHex,
+            tags: viewModel.selectedTags.map { ($0.name, $0.colorHex) },
+            nature: viewModel.selectedNature ?? viewModel.selectedSubcategory?.nature,
+            isTransfer: viewModel.isTransfer,
+            destinationAccountName: destAccount?.name,
+            destinationAccountColorHex: destAccount?.colorHex,
+            destinationAmount: Decimal(viewModel.destinationAmount),
+            destinationCurrencyCode: destAccount?.currencyCode
+        )
 
-            // Delay animation to let keyboard dismiss
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                dsWithAnimation(reduceMotion) {
-                    showSuccessScreen = true
-                }
+        // Check notification primer eligibility
+        Task { await viewModel.checkNotificationPrimer() }
+
+        // Delay animation to let keyboard dismiss
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            dsWithAnimation(reduceMotion) {
+                showSuccessScreen = true
             }
         }
     }
@@ -1322,13 +1325,27 @@ struct NewTransactionView: View {
     }
 
     private func handleRecurringSaved(paymentID: UUID) {
-        let txToLink: TransactionItem?
-        if let existingTx = viewModel.editingTransaction {
-            txToLink = existingTx
-        } else {
-            txToLink = viewModel.save(context: modelContext)?.first
-        }
+        // Always save the transaction (new or edited) before linking
+        let txToLink = viewModel.save(context: modelContext)?.first
         txToLink?.scheduledPaymentID = paymentID.uuidString
+
+        // Advance nextDueDate so the system doesn't create a duplicate draft
+        let paymentIDString = paymentID.uuidString
+        do {
+            let descriptor = FetchDescriptor<ScheduledPayment>()
+            if let payment = try modelContext.fetch(descriptor).first(where: { $0.id.uuidString == paymentIDString }) {
+                let calendar = Calendar.current
+                if calendar.startOfDay(for: payment.nextDueDate) <= calendar.startOfDay(for: Date()) {
+                    payment.lastPaidDate = Date()
+                    ScheduledPaymentDraftService.advanceToNextDueDate(payment: payment)
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("NewTransactionView: Error fetching scheduled payment: \(error)")
+            #endif
+        }
+
         do {
             try modelContext.save()
             WidgetDataCache.updateCache(context: modelContext)
@@ -1338,7 +1355,8 @@ struct NewTransactionView: View {
             print("NewTransactionView: Error linking to scheduled payment: \(error)")
             #endif
         }
-        showToast(L10n.Action.savedAsRecurring)
+
+        showTransactionSuccess()
     }
 
     private func showToast(_ message: String) {

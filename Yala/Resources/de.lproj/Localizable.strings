@@ -527,9 +527,9 @@
 "export.confirmExport" = "Export bestätigen";
 "export.selectColumns" = "Spalten auswählen";
 "export.availableColumns" = "Verfügbare Spalten";
-"export.columnsDescription" = "Wähle, welche Spalten in der exportierten CSV-Datei enthalten sein sollen. Mindestens eine muss ausgewählt sein.";
+"export.columnsDescription" = "Wähle, welche Spalten in der exportierten Datei enthalten sein sollen. Mindestens eine muss ausgewählt sein.";
 "export.summaryAndExport" = "Zusammenfassung und Export";
-"export.summaryDescription" = "Überprüfe die ausgewählten Filter und Spalten, bevor du die CSV-Datei erstellst.";
+"export.summaryDescription" = "Überprüfe die ausgewählten Filter und Spalten, bevor du die Datei erstellst.";
 "export.filtersSummary" = "Filterzusammenfassung";
 "export.columnsToExport" = "Zu exportierende Spalten";
 "export.exportToCSV" = "Als CSV exportieren";
@@ -1215,6 +1215,7 @@
 "validation.accountsMustBeDifferent" = "Die Konten müssen unterschiedlich sein";
 "validation.selectAccount" = "Wähle ein Konto";
 "validation.selectSubcategory" = "Wähle eine Unterkategorie";
+"validation.completeFieldsFirst" = "Betrag, Konto und Kategorie zuerst ausfüllen";
 "validation.futureDateTitle" = "Zukünftiges Datum nicht erlaubt";
 "validation.futureDateMessage" = "Du kannst keine Transaktionen mit einem zukünftigen Datum erfassen. Verwende geplante Zahlungen für wiederkehrende Ausgaben.";
 
@@ -1277,6 +1278,8 @@
 "scheduled.editor.account" = "Konto";
 "scheduled.editor.subcategory" = "Unterkategorie";
 "scheduled.editor.recurrence" = "Wiederholung";
+"scheduled.help.title" = "Was ist eine geplante Zahlung?";
+"scheduled.help.message" = "Verfolge wiederkehrende Zahlungen wie Abos, Miete oder Rechnungen. Yala erinnert dich bei Fälligkeit und speichert den Zahlungsverlauf.";
 "scheduled.editor.next.due" = "Nächstes Fälligkeitsdatum";
 "scheduled.editor.day.of.month" = "Tag des Monats";
 "scheduled.editor.day.of.week" = "Wochentag";
