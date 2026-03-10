@@ -2483,6 +2483,8 @@
 "scheduled.associate.confirm" = "Collegare questa spesa al pagamento pianificato?";
 "scheduled.associate.success" = "Spesa collegata";
 "scheduled.associate.empty" = "Nessuna spesa simile trovata questo mese";
+"scheduled.associate.paymentHeader" = "Pagamento programmato";
+"scheduled.associate.candidatesHeader" = "Spese del mese";
 "scheduled.associate.already" = "Questa spesa è già collegata";
 
 // MARK: - Siri Shortcuts

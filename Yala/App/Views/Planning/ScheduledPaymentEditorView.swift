@@ -85,6 +85,7 @@ struct ScheduledPaymentEditorView: View {
     // Focus state
     @FocusState private var isNameFieldFocused: Bool
     @FocusState private var isAmountFieldFocused: Bool
+    @FocusState private var isNoteFieldFocused: Bool
 
     private var today: Date {
         Calendar.current.startOfDay(for: Date())
@@ -167,12 +168,10 @@ struct ScheduledPaymentEditorView: View {
     private var editorScrollView: some View {
         ScrollView {
             editorContent
+                .dismissKeyboardOnTap()
         }
         .scrollDismissesKeyboard(.interactively)
-        .background(
-            PanelBackgroundView()
-                .dismissKeyboardOnTap()
-        )
+        .background(PanelBackgroundView())
     }
 
     @ToolbarContentBuilder
@@ -185,12 +184,6 @@ struct ScheduledPaymentEditorView: View {
         ToolbarItem(placement: .topBarTrailing) {
             YalaSaveButton(action: savePayment, isDisabled: !canSave)
                 .accessibilityHint(!canSave ? L10n.Accessibility.createAccountFirst : "")
-        }
-        ToolbarItemGroup(placement: .keyboard) {
-            Spacer()
-            Button(L10n.Action.done) {
-                dismissEditorKeyboard()
-            }
         }
     }
 
@@ -290,6 +283,7 @@ struct ScheduledPaymentEditorView: View {
                         NSLocalizedString("scheduled.editor.note.placeholder", comment: ""),
                         text: $note
                     )
+                    .focused($isNoteFieldFocused)
                 }
                 .padding()
             }
@@ -508,7 +502,18 @@ struct ScheduledPaymentEditorView: View {
     // MARK: - Recurrence Section
 
     private var recurrenceSection: some View {
-        SectionBox(title: NSLocalizedString("scheduled.editor.recurrence", comment: "")) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack {
+                Text(L10n.Scheduled.Editor.recurrence)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.thSecondaryText)
+                InfoHintButton(
+                    title: L10n.Scheduled.Help.title,
+                    message: L10n.Scheduled.Help.message
+                )
+            }
+            .padding(.leading, DS.Spacing.sm)
+
             VStack(spacing: DS.Spacing.none) {
                 // One-time vs Recurring toggle
                 Picker("", selection: $isRecurring) {
@@ -554,6 +559,9 @@ struct ScheduledPaymentEditorView: View {
                     endDateSection
                 }
             }
+            .background(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous).fill(.thCard))
+            .overlay(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous).stroke(Color.primary.opacity(0.05), lineWidth: 1))
+            .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
         }
     }
 
@@ -857,26 +865,41 @@ struct ScheduledPaymentEditorView: View {
     @ViewBuilder
     private var recurrencePreviewSection: some View {
         if !previewDates.isEmpty {
-            SectionBox(title: NSLocalizedString("scheduled.editor.preview", comment: "")) {
+            SectionBox(title: L10n.Scheduled.Editor.preview) {
                 VStack(spacing: DS.Spacing.none) {
                     ForEach(Array(previewDates.enumerated()), id: \.offset) { index, date in
-                        if index > 0 {
+                        previewDateRow(date, index: index + 1)
+
+                        if index < previewDates.count - 1 {
                             SubsectionDivider()
                         }
-                        previewDateRow(date)
                     }
                 }
             }
         }
     }
 
-    private func previewDateRow(_ date: Date) -> some View {
+    private func previewDateRow(_ date: Date, index: Int) -> some View {
         HStack(spacing: DS.Spacing.md) {
-            Image(systemName: "calendar")
-                .foregroundStyle(.secondary)
-                .frame(width: 24)
-            Text(date, format: .dateTime.day().month(.abbreviated).year())
-                .font(DS.Typography.body)
+            VStack(spacing: DS.Spacing.xxs) {
+                Text(date, format: .dateTime.day())
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.primary)
+                Text(date, format: .dateTime.month(.abbreviated))
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(width: 40)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(date, format: .dateTime.weekday(.wide).day().month(.wide).year())
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.primary)
+                Text("#\(index)")
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+            }
+
             Spacer()
         }
         .padding(.horizontal)
@@ -987,7 +1010,6 @@ struct ScheduledPaymentEditorView: View {
             selectedSubcategory = prefill.subcategory
             selectedTags = prefill.tagIDs
             selectedNature = prefill.natureOverride
-            let todayStart = calendar.startOfDay(for: Date())
             paymentDate = calendar.startOfDay(for: prefill.transactionDate)
             dayOfMonth = calendar.component(.day, from: prefill.transactionDate)
             yearlyMonth = calendar.component(.month, from: prefill.transactionDate)
@@ -1074,6 +1096,7 @@ struct ScheduledPaymentEditorView: View {
     private func dismissEditorKeyboard() {
         isNameFieldFocused = false
         isAmountFieldFocused = false
+        isNoteFieldFocused = false
     }
 
     private func deletePayment() {

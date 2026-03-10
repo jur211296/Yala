@@ -2469,6 +2469,8 @@
 "scheduled.associate.confirm" = "¿Vincular este gasto al pago planificado?";
 "scheduled.associate.success" = "Gasto vinculado";
 "scheduled.associate.empty" = "No encontramos gastos similares este mes";
+"scheduled.associate.paymentHeader" = "Pago planificado";
+"scheduled.associate.candidatesHeader" = "Gastos del mes";
 "scheduled.associate.already" = "Este gasto ya está vinculado";
 
 // MARK: - Siri Shortcuts

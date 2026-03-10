@@ -1592,6 +1592,16 @@ enum L10n {
             static var inDays: String { ls("scheduled.widget.inDays", comment: "") }
         }
 
+        enum Help {
+            static var title: String { ls("scheduled.help.title", comment: "") }
+            static var message: String { ls("scheduled.help.message", comment: "") }
+        }
+
+        enum Associate {
+            static var paymentHeader: String { ls("scheduled.associate.paymentHeader", comment: "") }
+            static var candidatesHeader: String { ls("scheduled.associate.candidatesHeader", comment: "") }
+        }
+
         enum Editor {
             static var recurrence: String { ls("scheduled.editor.recurrence", comment: "") }
             static var dayOfMonth: String { ls("scheduled.editor.day.of.month", comment: "") }
@@ -1607,6 +1617,7 @@ enum L10n {
             static var yearlyDate: String { ls("scheduled.yearly.date", comment: "") }
             static var account: String { ls("scheduled.editor.account", comment: "") }
             static var subcategory: String { ls("scheduled.editor.subcategory", comment: "") }
+            static var preview: String { ls("scheduled.editor.preview", comment: "") }
         }
 
         enum Detail {

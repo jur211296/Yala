@@ -2481,6 +2481,8 @@
 "scheduled.associate.confirm" = "Vincular esta despesa ao pagamento agendado?";
 "scheduled.associate.success" = "Despesa vinculada";
 "scheduled.associate.empty" = "Nenhuma despesa semelhante encontrada neste mês";
+"scheduled.associate.paymentHeader" = "Pagamento agendado";
+"scheduled.associate.candidatesHeader" = "Despesas do mes";
 "scheduled.associate.already" = "Esta despesa já está vinculada";
 
 // MARK: - Siri Shortcuts

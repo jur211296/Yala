@@ -2482,6 +2482,8 @@
 "scheduled.associate.confirm" = "Lier cette dépense au paiement planifié ?";
 "scheduled.associate.success" = "Dépense liée";
 "scheduled.associate.empty" = "Aucune dépense similaire trouvée ce mois-ci";
+"scheduled.associate.paymentHeader" = "Paiement planifie";
+"scheduled.associate.candidatesHeader" = "Depenses du mois";
 "scheduled.associate.already" = "Cette dépense est déjà liée";
 
 // MARK: - Siri Shortcuts

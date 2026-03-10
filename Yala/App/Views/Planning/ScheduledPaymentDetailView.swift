@@ -77,11 +77,6 @@ struct ScheduledPaymentDetailView: View {
                     // Summary Card
                     summaryCard
 
-                    // Associate transaction button (if not paid for this month)
-                    if !isPaidForSelectedMonth {
-                        associateTransactionButton
-                    }
-
                     // Upcoming Section
                     if payment.isRecurring && !upcomingOccurrences.isEmpty {
                         upcomingSection
@@ -306,8 +301,6 @@ struct ScheduledPaymentDetailView: View {
     private func occurrenceRow(date: Date, isPast: Bool, index: Int?) -> some View {
         let isSkipped = payment.isDateSkipped(date)
         let isPaidForDate = occurrenceIsPaid(date: date, isPast: isPast)
-        // Tappable if skipped (to undo) or not paid (to skip)
-        let hasTapAction = isSkipped || !isPaidForDate
 
         // Binding: true only when THIS row's date is the selected one
         let isDialogPresented = Binding<Bool>(
@@ -321,7 +314,6 @@ struct ScheduledPaymentDetailView: View {
         )
 
         return Button {
-            guard hasTapAction else { return }
             selectedOccurrenceDate = date
             showOccurrenceActions = true
         } label: {
@@ -382,11 +374,9 @@ struct ScheduledPaymentDetailView: View {
                         .font(DS.Typography.label)
                         .foregroundStyle(isSkipped ? .secondary : (isPast ? .secondary : (payment.transactionType == "income" ? Color.electricIndigo : .primary)))
 
-                    if hasTapAction {
-                        Image(systemName: "chevron.right")
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.tertiary)
-                    }
+                    Image(systemName: "chevron.right")
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.tertiary)
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -395,25 +385,27 @@ struct ScheduledPaymentDetailView: View {
         }
         .buttonStyle(.plain)
         .opacity(isSkipped ? 0.6 : 1.0)
-        .contextMenu {
-            if isPaidForDate {
-                Button(role: .destructive) {
-                    unlinkTransactionsForDate(date)
-                } label: {
-                    Label(L10n.Scheduled.Detail.unlink, systemImage: "link.badge.minus")
-                }
-            }
-        }
         .confirmationDialog(
             formatFullDate(date),
             isPresented: isDialogPresented,
             titleVisibility: .visible
         ) {
-            if isSkipped {
+            if isPaidForDate {
+                Button(role: .destructive) {
+                    unlinkTransactionsForDate(date)
+                } label: {
+                    Label(L10n.Scheduled.Detail.unlink, systemImage: "minus.circle")
+                }
+            } else if isSkipped {
                 Button(L10n.Scheduled.Detail.skipUndo) {
                     viewModel.unskipOccurrence(payment: payment, date: date)
                 }
             } else {
+                Button {
+                    showAssociationSheet = true
+                } label: {
+                    Label(L10n.Scheduled.Detail.associateTitle, systemImage: "link.badge.plus")
+                }
                 Button(L10n.Scheduled.Detail.skip, role: .destructive) {
                     viewModel.skipOccurrence(payment: payment, date: date)
                 }
@@ -456,45 +448,6 @@ struct ScheduledPaymentDetailView: View {
             RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
                 .fill(theme.accent.opacity(0.1))
         )
-    }
-
-    // MARK: - Transaction Association
-
-    private var isPaidForSelectedMonth: Bool {
-        let dates = viewModel.getPaymentDatesInMonth(payment: payment, month: viewModel.selectedMonth)
-        let skippedCount = dates.filter { payment.isDateSkipped($0) }.count
-        let requiredOccurrences = dates.count - skippedCount
-        let paidCount = viewModel.paidStatusForMonth[payment.id.uuidString] ?? 0
-        return requiredOccurrences > 0 ? paidCount >= requiredOccurrences : true
-    }
-
-    private var associateTransactionButton: some View {
-        Button {
-            showAssociationSheet = true
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                Image(systemName: "link.badge.plus")
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.thAccent)
-
-                Text(L10n.Scheduled.Detail.associateTitle)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.thAccent)
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.tertiary)
-            }
-            .padding(DS.Spacing.lg)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                    .fill(theme.accent.opacity(0.1))
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Helpers
