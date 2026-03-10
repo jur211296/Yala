@@ -166,13 +166,13 @@ final class InsightsViewModel {
             result["top_category"] = ["name": top.category.name, "pct": Int(top.percentage)]
         }
 
-        // Nature split
-        let nature = data.natureDistribution
-        if nature.total > 0 {
-            result["nature_split"] = [
-                "essential": Int(nature.essentialPercent),
-                "priority": Int(nature.priorityPercent),
-                "optional": Int(nature.optionalPercent)
+        // Need split
+        let needDist = data.needDistribution
+        if needDist.total > 0 {
+            result["need_split"] = [
+                "essential": Int(needDist.essentialPercent),
+                "priority": Int(needDist.priorityPercent),
+                "optional": Int(needDist.optionalPercent)
             ]
         }
 
@@ -261,10 +261,10 @@ final class InsightsViewModel {
             }
         }
 
-        // Natures
-        if !criteria.selectedNatures.isEmpty {
-            let names = criteria.selectedNatures.map { $0.displayName }
-            filters["natures"] = names
+        // Needs
+        if !criteria.selectedNeeds.isEmpty {
+            let names = criteria.selectedNeeds.map { $0.displayName }
+            filters["needs"] = names
             let verb = criteria.isExcludeMode ? "Excluyendo" : "Solo"
             descriptions.append("\(verb) naturalezas: \(names.joined(separator: ", "))")
         }

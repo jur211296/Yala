@@ -568,7 +568,7 @@ private struct RecordsSessionObservers2a: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: sessionState.selectedNatures) { _, _ in refreshRecordsData() }
+            .onChange(of: sessionState.selectedNeeds) { _, _ in refreshRecordsData() }
             .onChange(of: sessionState.selectedTransactionNatures) { _, _ in refreshRecordsData() }
             .onChange(of: sessionState.selectedCurrencies) { _, _ in refreshRecordsData() }
     }
@@ -612,7 +612,7 @@ private struct RecordsViewModelObservers2: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: recordsViewModel.selectedNatures) { _, _ in refreshRecordsData() }
+            .onChange(of: recordsViewModel.selectedNeeds) { _, _ in refreshRecordsData() }
             .onChange(of: recordsViewModel.selectedTransactionNatures) { _, _ in refreshRecordsData() }
             .onChange(of: recordsViewModel.selectedCurrencies) { _, _ in refreshRecordsData() }
             .onChange(of: recordsViewModel.amountCondition) { _, _ in refreshRecordsData() }

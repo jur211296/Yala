@@ -230,14 +230,14 @@ struct NewTransactionView: View {
                         }
                     }
             }
-            .sheet(isPresented: $viewModel.showNatureSelector) {
-                NatureSelectorSheet(
-                    selectedNature: Binding(
+            .sheet(isPresented: $viewModel.showNeedSelector) {
+                NeedSelectorSheet(
+                    selectedNeed: Binding(
                         get: {
-                            viewModel.selectedNature ?? viewModel.selectedSubcategory?.nature
+                            viewModel.selectedNeed ?? viewModel.selectedSubcategory?.need
                                 ?? .unclassified
                         },
-                        set: { viewModel.selectedNature = $0 }
+                        set: { viewModel.selectedNeed = $0 }
                     )
                 )
                 .presentationDetents([.medium])
@@ -284,7 +284,7 @@ struct NewTransactionView: View {
                     isAmountFieldFocused = false
                 }
             }
-            .onChange(of: viewModel.showNatureSelector) { _, isPresenting in
+            .onChange(of: viewModel.showNeedSelector) { _, isPresenting in
                 if isPresenting {
                     isNoteFieldFocused = false
                     isAmountFieldFocused = false
@@ -480,7 +480,7 @@ struct NewTransactionView: View {
             // Category chip + Nature chip (visible when subcategory is selected, not for transfers)
             if !viewModel.isTransfer, let subcategory = viewModel.selectedSubcategory {
                 HStack(spacing: DS.Spacing.sm) {
-                    // Category chip (read-only, styled like NatureEditChip)
+                    // Category chip (read-only, styled like NeedEditChip)
                     let category = subcategory.safeCategory
                     let categoryColor = Color(hex: category.colorHex)
                     HStack(spacing: DS.Spacing.xs) {
@@ -497,10 +497,10 @@ struct NewTransactionView: View {
                     )
 
                     if viewModel.transactionType != .income {
-                        NatureEditChip(
-                            nature: viewModel.selectedNature ?? subcategory.nature
+                        NeedEditChip(
+                            need: viewModel.selectedNeed ?? subcategory.need
                         ) {
-                            viewModel.showNatureSelector = true
+                            viewModel.showNeedSelector = true
                         }
                     }
 
@@ -525,9 +525,9 @@ struct NewTransactionView: View {
         .onChange(of: viewModel.selectedSubcategory) { _, newSubcategory in
             // Sync nature when subcategory changes
             if let subcategory = newSubcategory {
-                viewModel.selectedNature = subcategory.nature
+                viewModel.selectedNeed = subcategory.need
             } else {
-                viewModel.selectedNature = nil
+                viewModel.selectedNeed = nil
             }
         }
     }
@@ -723,7 +723,7 @@ struct NewTransactionView: View {
             account: viewModel.selectedAccount,
             subcategory: viewModel.selectedSubcategory,
             tags: viewModel.selectedTags,
-            natureOverride: viewModel.selectedNature,
+            needOverride: viewModel.selectedNeed,
             currencyCode: viewModel.effectiveCurrencyCode,
             onSaved: { message in
                 showToast(message)
@@ -741,7 +741,7 @@ struct NewTransactionView: View {
                 account: viewModel.selectedAccount,
                 subcategory: viewModel.selectedSubcategory,
                 tagIDs: Set(viewModel.selectedTags.map { $0.persistentModelID }),
-                natureOverride: viewModel.selectedNature,
+                needOverride: viewModel.selectedNeed,
                 currencyCode: viewModel.effectiveCurrencyCode,
                 transactionDate: viewModel.transactionDate
             ),
@@ -1118,7 +1118,7 @@ struct NewTransactionView: View {
             categoryName: viewModel.selectedSubcategory?.safeCategory.name,
             categoryColorHex: viewModel.selectedSubcategory?.safeCategory.colorHex,
             tags: viewModel.selectedTags.map { ($0.name, $0.colorHex) },
-            nature: viewModel.selectedNature ?? viewModel.selectedSubcategory?.nature,
+            need: viewModel.selectedNeed ?? viewModel.selectedSubcategory?.need,
             isTransfer: viewModel.isTransfer,
             destinationAccountName: destAccount?.name,
             destinationAccountColorHex: destAccount?.colorHex,
@@ -1392,10 +1392,10 @@ struct NewTransactionView: View {
         viewModel.selectedSubcategory = favorite.subcategory
 
         // Set nature override if available
-        if let natureRaw = favorite.natureOverride {
-            viewModel.selectedNature = SubcategoryNature(rawValue: natureRaw)
+        if let needRaw = favorite.needOverride {
+            viewModel.selectedNeed = SubcategoryNeed(rawValue: needRaw)
         } else {
-            viewModel.selectedNature = favorite.subcategory?.nature
+            viewModel.selectedNeed = favorite.subcategory?.need
         }
 
         // Set tags

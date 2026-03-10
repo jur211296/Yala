@@ -48,7 +48,7 @@ struct InsightsTabView: View {
     @AppStorage("insightsShowSubscriptions") private var showSubscriptions = true
     @AppStorage("insightsShowBudgetsAtRisk") private var showBudgetsAtRisk = true
     @AppStorage("insightsShowWeekday") private var showWeekday = true
-    @AppStorage("insightsShowNature") private var showNature = true
+    @AppStorage("insightsShowNature") private var showNeed = true
     @AppStorage("insightsShowTexts") private var showTexts = true
 
     // MARK: - Pro State
@@ -127,8 +127,8 @@ struct InsightsTabView: View {
                             }
 
                             // Section 8: Nature Distribution
-                            if showNature, data.natureDistribution.total > 0 {
-                                natureSection(data.natureDistribution)
+                            if showNeed, data.needDistribution.total > 0 {
+                                needSection(data.needDistribution)
                             }
 
                             // Section 10: Text Insights
@@ -511,11 +511,11 @@ struct InsightsTabView: View {
     // MARK: - Section 8: Nature Distribution
 
     @ViewBuilder
-    private func natureSection(_ distribution: NatureDistribution) -> some View {
+    private func needSection(_ distribution: NeedDistribution) -> some View {
         VStack(spacing: DS.Spacing.sm) {
-            YalaSectionHeader(L10n.Insights.natureDistribution)
+            YalaSectionHeader(L10n.Insights.needDistribution)
 
-            NatureBar(distribution: distribution)
+            NeedBar(distribution: distribution)
                 .yalaCard(padding: DS.Spacing.lg, shadow: false)
         }
     }

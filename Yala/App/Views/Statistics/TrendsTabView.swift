@@ -168,7 +168,7 @@ struct TrendsTabView: View {
             calculateCashFlowData()
             calculatePeriodComparisonData()
         }
-        .onChange(of: trendsViewModel.selectedNatures) {
+        .onChange(of: trendsViewModel.selectedNeeds) {
             calculateCashFlowData()
             calculatePeriodComparisonData()
         }
@@ -557,7 +557,7 @@ struct TrendsTabView: View {
         guard !sessionState.isExcludeMode else { return false }
         return !sessionState.selectedCategoryIDs.isEmpty
             || !sessionState.selectedSubcategoryIDs.isEmpty
-            || !sessionState.selectedNatures.isEmpty
+            || !sessionState.selectedNeeds.isEmpty
     }
 
     private var metricSelector: some View {
@@ -1055,7 +1055,7 @@ struct TrendsTabView: View {
             selectedCategories: trendsViewModel.selectedCategories,
             selectedSubcategories: trendsViewModel.selectedSubcategories,
             selectedTags: trendsViewModel.selectedTags,
-            selectedNatures: trendsViewModel.selectedNatures,
+            selectedNeeds: trendsViewModel.selectedNeeds,
             selectedCurrencies: trendsViewModel.selectedCurrencies,
             isExcludeMode: trendsViewModel.isExcludeMode,
             transactionTypeFilter: .all,
@@ -1137,7 +1137,7 @@ struct TrendsTabView: View {
             selectedCategories: trendsViewModel.selectedCategories,
             selectedSubcategories: trendsViewModel.selectedSubcategories,
             selectedTags: trendsViewModel.selectedTags,
-            selectedNatures: trendsViewModel.selectedNatures,
+            selectedNeeds: trendsViewModel.selectedNeeds,
             selectedCurrencies: trendsViewModel.selectedCurrencies,
             isExcludeMode: trendsViewModel.isExcludeMode,
             transactionTypeFilter: .all,
@@ -1231,7 +1231,7 @@ struct TrendsTabView: View {
             selectedCategories: trendsViewModel.selectedCategories,
             selectedSubcategories: trendsViewModel.selectedSubcategories,
             selectedTags: trendsViewModel.selectedTags,
-            selectedNatures: trendsViewModel.selectedNatures,
+            selectedNeeds: trendsViewModel.selectedNeeds,
             selectedCurrencies: trendsViewModel.selectedCurrencies,
             isExcludeMode: trendsViewModel.isExcludeMode,
             transactionTypeFilter: .all,
@@ -1272,7 +1272,7 @@ struct TrendsTabView: View {
                 selectedCategories: trendsViewModel.selectedCategories,
                 selectedSubcategories: trendsViewModel.selectedSubcategories,
                 selectedTags: trendsViewModel.selectedTags,
-                selectedNatures: trendsViewModel.selectedNatures,
+                selectedNeeds: trendsViewModel.selectedNeeds,
                 selectedCurrencies: trendsViewModel.selectedCurrencies,
                 isExcludeMode: trendsViewModel.isExcludeMode,
                 transactionTypeFilter: .all,
@@ -1385,7 +1385,7 @@ struct CompactRecordRow: View {
 
                 // Nature indicator (if available)
                 if let subcategory = record.subcategory {
-                    natureIndicator(for: subcategory.nature)
+                    needIndicator(for: subcategory.need)
                 }
             }
         }
@@ -1393,13 +1393,13 @@ struct CompactRecordRow: View {
 
     // MARK: - Nature Indicator
 
-    private func natureIndicator(for nature: SubcategoryNature) -> some View {
+    private func needIndicator(for need: SubcategoryNeed) -> some View {
         HStack(spacing: DS.Spacing.xs) {
             Circle()
-                .fill(nature.color)
+                .fill(need.color)
                 .frame(width: 6, height: 6)
 
-            Text(nature.displayName)
+            Text(need.displayName)
                 .font(DS.Typography.labelTiny)
                 .foregroundStyle(.secondary)
         }
@@ -1407,7 +1407,7 @@ struct CompactRecordRow: View {
         .padding(.vertical, DS.Spacing.xxs)
         .background(
             Capsule()
-                .fill(nature.color.opacity(0.1))
+                .fill(need.color.opacity(0.1))
         )
     }
 

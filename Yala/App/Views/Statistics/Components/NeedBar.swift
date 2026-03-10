@@ -1,5 +1,5 @@
 //
-//  NatureBar.swift
+//  NeedBar.swift
 //  Yala
 //
 //  Stacked horizontal bar showing essential/priority/optional percentages.
@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-struct NatureBar: View {
-    let distribution: NatureDistribution
+struct NeedBar: View {
+    let distribution: NeedDistribution
 
     @Environment(\.yalaTheme) private var theme
 
@@ -19,17 +19,17 @@ struct NatureBar: View {
                 HStack(spacing: 2) {
                     if distribution.essentialPercent > 0 {
                         RoundedRectangle(cornerRadius: DS.Radius.xs)
-                            .fill(Color.essentialNature)
+                            .fill(Color.essentialNeed)
                             .frame(width: geo.size.width * distribution.essentialPercent / 100)
                     }
                     if distribution.priorityPercent > 0 {
                         RoundedRectangle(cornerRadius: DS.Radius.xs)
-                            .fill(Color.priorityNatureNew)
+                            .fill(Color.priorityNeedNew)
                             .frame(width: geo.size.width * distribution.priorityPercent / 100)
                     }
                     if distribution.optionalPercent > 0 {
                         RoundedRectangle(cornerRadius: DS.Radius.xs)
-                            .fill(Color.optionalNature)
+                            .fill(Color.optionalNeed)
                             .frame(width: geo.size.width * distribution.optionalPercent / 100)
                     }
                 }
@@ -39,9 +39,9 @@ struct NatureBar: View {
 
             // Legend
             HStack(spacing: DS.Spacing.lg) {
-                legendItem(color: .essentialNature, label: L10n.Nature.essential, percent: distribution.essentialPercent)
-                legendItem(color: .priorityNatureNew, label: L10n.Nature.priority, percent: distribution.priorityPercent)
-                legendItem(color: .optionalNature, label: L10n.Nature.optional, percent: distribution.optionalPercent)
+                legendItem(color: .essentialNeed, label: L10n.Need.essential, percent: distribution.essentialPercent)
+                legendItem(color: .priorityNeedNew, label: L10n.Need.priority, percent: distribution.priorityPercent)
+                legendItem(color: .optionalNeed, label: L10n.Need.optional, percent: distribution.optionalPercent)
             }
         }
     }

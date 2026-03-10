@@ -1,5 +1,5 @@
 //
-//  SubcategoryNatureSelectorView.swift
+//  SubcategoryNeedSelectorView.swift
 //  Yala
 //
 //  Created by Yala Refactoring.
@@ -8,9 +8,9 @@
 import SwiftUI
 
 /// Selector de naturaleza de subcategoría (Esencial, Prioritaria, Opcional, Sin clasificación)
-struct SubcategoryNatureSelectorView: View {
+struct SubcategoryNeedSelectorView: View {
     @Environment(\.dismiss) private var dismiss
-    @Binding var selectedNature: SubcategoryNature
+    @Binding var selectedNeed: SubcategoryNeed
 
     var body: some View {
         ZStack {
@@ -20,29 +20,29 @@ struct SubcategoryNatureSelectorView: View {
                 VStack(spacing: DS.Spacing.xxl) {
                     SectionBox(title: "") {
                         VStack(spacing: DS.Spacing.none) {
-                            ForEach(Array(SubcategoryNature.allCases.enumerated()), id: \.element) {
-                                index, nature in
+                            ForEach(Array(SubcategoryNeed.allCases.enumerated()), id: \.element) {
+                                index, need in
                                 if index > 0 {
                                     SubsectionDivider()
                                 }
 
                                 Button {
-                                    selectedNature = nature
+                                    selectedNeed = need
                                     dismiss()
                                 } label: {
                                     HStack(spacing: DS.Spacing.md) {
                                         VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                                            Text(nature.displayName)
+                                            Text(need.displayName)
                                                 .font(DS.Typography.body)
                                                 .foregroundStyle(.primary)
-                                            Text(nature.description)
+                                            Text(need.description)
                                                 .font(DS.Typography.caption)
                                                 .foregroundStyle(.secondary)
                                         }
 
                                         Spacer()
 
-                                        if nature == selectedNature {
+                                        if need == selectedNeed {
                                             Image(systemName: "checkmark")
                                                 .foregroundStyle(.thAccent)
                                                 .font(DS.Typography.headline)
@@ -61,7 +61,7 @@ struct SubcategoryNatureSelectorView: View {
                 .padding(.vertical, DS.Spacing.xxl)
             }
         }
-        .navigationTitle(L10n.Nature.title)
+        .navigationTitle(L10n.Need.title)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {

@@ -42,14 +42,14 @@ func buildTagChips(
         }
 }
 
-// MARK: - Nature Chips
+// MARK: - Need Chips
 
-/// Generates nature chip data from selected natures.
-func buildNatureChips(
-    selectedNatures: Set<SubcategoryNature>
-) -> [NatureChipData] {
-    selectedNatures.sorted(by: { $0.rawValue < $1.rawValue })
-        .map { NatureChipData(nature: $0) }
+/// Generates need chip data from selected needs.
+func buildNeedChips(
+    selectedNeeds: Set<SubcategoryNeed>
+) -> [NeedChipData] {
+    selectedNeeds.sorted(by: { $0.rawValue < $1.rawValue })
+        .map { NeedChipData(need: $0) }
 }
 
 /// Data for an aggregated filter chip

@@ -480,13 +480,13 @@ enum WidgetDataCache {
                 (budget.accounts ?? []).contains(where: { $0.persistentModelID == tx.account?.persistentModelID })
 
             // Nature filter
-            let matchesNature: Bool
+            let matchesNeed: Bool
             if let naturesString = budget.natures, !naturesString.isEmpty {
                 let natures = naturesString.split(separator: ",")
-                    .compactMap { SubcategoryNature(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
-                matchesNature = natures.contains(tx.effectiveNature)
+                    .compactMap { SubcategoryNeed(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
+                matchesNeed = natures.contains(tx.effectiveNeed)
             } else {
-                matchesNature = true
+                matchesNeed = true
             }
 
             // Tag filter
@@ -499,7 +499,7 @@ enum WidgetDataCache {
                 matchesTags = true
             }
 
-            if matchesSubcategory && matchesAccount && matchesNature && matchesTags {
+            if matchesSubcategory && matchesAccount && matchesNeed && matchesTags {
                 spent += abs(txAmount)
             }
         }

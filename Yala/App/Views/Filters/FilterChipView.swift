@@ -149,13 +149,13 @@ extension FilterChipView {
     // MARK: - Nature chip (color dot, always individual)
 
     /// Nature filter chip with color dot
-    /// - Each nature is shown as a separate chip
+    /// - Each need is shown as a separate chip
     init(
-        nature: SubcategoryNature,
+        need: SubcategoryNeed,
         onClear: @escaping () -> Void
     ) {
-        self.text = nature.displayName
-        self.indicator = .colorDot(nature.color)
+        self.text = need.displayName
+        self.indicator = .colorDot(need.color)
         self.onClear = onClear
     }
 
@@ -292,7 +292,7 @@ extension FilterChipView {
             onClear: {}
         )
         FilterChipView(
-            nature: .essential,
+            need: .essential,
             onClear: {}
         )
         FilterChipView(

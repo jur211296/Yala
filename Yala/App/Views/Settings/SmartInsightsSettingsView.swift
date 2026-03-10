@@ -23,7 +23,7 @@ struct SmartInsightsSettingsView: View {
     @AppStorage("insightsShowSubscriptions") private var showSubscriptions = true
     @AppStorage("insightsShowBudgetsAtRisk") private var showBudgetsAtRisk = true
     @AppStorage("insightsShowWeekday") private var showWeekday = true
-    @AppStorage("insightsShowNature") private var showNature = true
+    @AppStorage("insightsShowNature") private var showNeed = true
     @AppStorage("insightsShowTexts") private var showTexts = true
 
     private var isProUser: Bool {
@@ -104,7 +104,7 @@ struct SmartInsightsSettingsView: View {
                         // Analysis Section
                         SectionBox(title: L10n.Insights.analysisSection) {
                             VStack(spacing: DS.Spacing.none) {
-                                settingsToggle(L10n.Insights.natureDistribution, isOn: $showNature)
+                                settingsToggle(L10n.Insights.needDistribution, isOn: $showNeed)
                                 SubsectionDivider()
                                 settingsToggle(L10n.Insights.intelligentInsights, isOn: $showTexts)
                             }
@@ -161,7 +161,7 @@ struct SmartInsightsSettingsView: View {
         showSubscriptions = true
         showBudgetsAtRisk = true
         showWeekday = true
-        showNature = true
+        showNeed = true
         showTexts = true
     }
 }

@@ -20,12 +20,12 @@ struct SubcategoryDetailView: View {
     private var isEditing: Bool { subcategoryToEdit != nil }
 
     @State private var name: String
-    @State private var selectedNature: SubcategoryNature
+    @State private var selectedNeed: SubcategoryNeed
     @State private var isVisible: Bool
     @State private var selectedColorHex: String
     @State private var selectedIconName: String
 
-    @State private var isPresentingNatureSelector: Bool = false
+    @State private var isPresentingNeedSelector: Bool = false
     @State private var showDiscardDialog: Bool = false
     @State private var showIconColorPicker: Bool = false
     @State private var showDeleteConfirmation: Bool = false
@@ -36,7 +36,7 @@ struct SubcategoryDetailView: View {
     @FocusState private var isNameFieldFocused: Bool
 
     private let initialName: String
-    private let initialNature: SubcategoryNature
+    private let initialNeed: SubcategoryNeed
     private let initialIsVisible: Bool
     private let initialColorHex: String
     private let initialIconName: String
@@ -47,24 +47,24 @@ struct SubcategoryDetailView: View {
 
         if let sub = subcategoryToEdit {
             self.initialName = sub.name
-            self.initialNature = sub.nature
+            self.initialNeed = sub.need
             self.initialIsVisible = sub.isVisible
             self.initialColorHex = sub.colorHex ?? parentCategory.colorHex
             self.initialIconName = sub.iconName ?? parentCategory.iconName ?? "tag"
             _name = State(initialValue: sub.name)
-            _selectedNature = State(initialValue: sub.nature)
+            _selectedNeed = State(initialValue: sub.need)
             _isVisible = State(initialValue: sub.isVisible)
             _selectedColorHex = State(initialValue: sub.colorHex ?? parentCategory.colorHex)
             _selectedIconName = State(
                 initialValue: sub.iconName ?? parentCategory.iconName ?? "tag")
         } else {
             self.initialName = ""
-            self.initialNature = .unclassified
+            self.initialNeed = .unclassified
             self.initialIsVisible = true
             self.initialColorHex = parentCategory.colorHex
             self.initialIconName = parentCategory.iconName ?? "tag"
             _name = State(initialValue: "")
-            _selectedNature = State(initialValue: .unclassified)
+            _selectedNeed = State(initialValue: .unclassified)
             _isVisible = State(initialValue: true)
             _selectedColorHex = State(initialValue: parentCategory.colorHex)
             _selectedIconName = State(initialValue: parentCategory.iconName ?? "tag")
@@ -75,7 +75,7 @@ struct SubcategoryDetailView: View {
         let trimmedCurrentName = trimmedName
         let trimmedInitialName = initialName.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmedCurrentName != trimmedInitialName
-            || selectedNature != initialNature
+            || selectedNeed != initialNeed
             || isVisible != initialIsVisible
             || selectedColorHex != initialColorHex
             || selectedIconName != initialIconName
@@ -128,9 +128,9 @@ struct SubcategoryDetailView: View {
                 )
             }
         }
-        .sheet(isPresented: $isPresentingNatureSelector) {
+        .sheet(isPresented: $isPresentingNeedSelector) {
             NavigationStack {
-                SubcategoryNatureSelectorView(selectedNature: $selectedNature)
+                SubcategoryNeedSelectorView(selectedNeed: $selectedNeed)
             }
         }
         .confirmationDialog(
@@ -169,7 +169,7 @@ struct SubcategoryDetailView: View {
                 .presentationDragIndicator(.visible)
             }
         }
-        .onChange(of: isPresentingNatureSelector) { _, isPresenting in
+        .onChange(of: isPresentingNeedSelector) { _, isPresenting in
             if isPresenting { dismissKeyboard() }
         }
         .onChange(of: showTransferSheet) { _, isPresenting in
@@ -259,15 +259,15 @@ struct SubcategoryDetailView: View {
                         SubsectionDivider()
 
                         Button {
-                            isPresentingNatureSelector = true
+                            isPresentingNeedSelector = true
                         } label: {
                             HStack(spacing: DS.Spacing.md) {
                                 Image(systemName: "circle.lefthalf.filled")
                                     .foregroundStyle(.secondary)
                                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                                    Text(L10n.Category.nature)
+                                    Text(L10n.Category.need)
                                         .foregroundStyle(.primary)
-                                    Text(selectedNature.displayName)
+                                    Text(selectedNeed.displayName)
                                         .font(DS.Typography.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
@@ -342,13 +342,13 @@ struct SubcategoryDetailView: View {
         guard !finalName.isEmpty else { return }
 
         // Income subcategories always use unclassified nature
-        let finalNature: SubcategoryNature = parentCategory.isIncome ? .unclassified : selectedNature
+        let finalNeed: SubcategoryNeed = parentCategory.isIncome ? .unclassified : selectedNeed
 
         if let sub = subcategoryToEdit {
             // Edición
             sub.name = finalName
             sub.isVisible = isVisible
-            sub.nature = finalNature
+            sub.need = finalNeed
             sub.colorHex = parentCategory.colorHex  // Enforce parent color
             sub.iconName = selectedIconName
         } else {
@@ -359,7 +359,7 @@ struct SubcategoryDetailView: View {
                 isDefaultSeed: false,
                 isVisible: isVisible,
                 sortOrder: 0,  // Temporary, will be recalculated
-                natureRawValue: finalNature.rawValue,
+                natureRawValue: finalNeed.rawValue,
                 iconName: selectedIconName,
                 category: parentCategory
             )

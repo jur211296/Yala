@@ -51,8 +51,8 @@ final class ScheduledPayment {
     @Relationship(deleteRule: .nullify, inverse: \Tag.scheduledPayments)
     var tags: [Tag]?
 
-    /// Optional nature override (nil = use subcategory's nature)
-    var natureOverride: String?
+    /// Optional need override (nil = use subcategory's need)
+    var needOverride: String?
 
     // MARK: - Recurrence (CloudKit: defaults required)
 
@@ -168,7 +168,7 @@ final class ScheduledPayment {
         account: Account? = nil,
         subcategory: Subcategory? = nil,
         tags: [Tag] = [],
-        natureOverride: String? = nil,
+        needOverride: String? = nil,
         isRecurring: Bool = true,
         recurrenceType: String = "monthly",
         recurrenceInterval: Int = 1,
@@ -191,7 +191,7 @@ final class ScheduledPayment {
         self.account = account
         self.subcategory = subcategory
         self.tags = tags
-        self.natureOverride = natureOverride
+        self.needOverride = needOverride
         self.isRecurring = isRecurring
         self.recurrenceType = recurrenceType
         self.recurrenceInterval = recurrenceInterval
@@ -216,12 +216,12 @@ final class ScheduledPayment {
         TransactionType(rawValue: transactionType) ?? .expense
     }
 
-    /// Effective nature (override or subcategory's nature)
-    var effectiveNature: SubcategoryNature? {
-        if let override = natureOverride {
-            return SubcategoryNature(rawValue: override)
+    /// Effective need (override or subcategory's need)
+    var effectiveNeed: SubcategoryNeed? {
+        if let override = needOverride {
+            return SubcategoryNeed(rawValue: override)
         }
-        return subcategory?.nature
+        return subcategory?.need
     }
 
 }

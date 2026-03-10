@@ -47,7 +47,7 @@ final class FavoriteEditorViewModel {
         account: Account?,
         subcategory: Subcategory?,
         tags: [Tag],
-        natureOverride: SubcategoryNature?
+        needOverride: SubcategoryNeed?
     ) -> Bool {
         guard let context = modelContext else { return false }
 
@@ -55,9 +55,9 @@ final class FavoriteEditorViewModel {
         guard !trimmedName.isEmpty else { return false }
 
         let amount: Double? = amountString.isEmpty ? nil : Double(amountString)
-        let natureRaw: String? =
-            natureOverride != subcategory?.nature
-            ? natureOverride?.rawValue
+        let needRaw: String? =
+            needOverride != subcategory?.need
+            ? needOverride?.rawValue
             : nil
 
         if let existing = existing {
@@ -69,7 +69,7 @@ final class FavoriteEditorViewModel {
             existing.account = account
             existing.subcategory = subcategory
             existing.tags = tags
-            existing.natureOverride = natureRaw
+            existing.needOverride = needRaw
             existing.currencyCode = account?.currencyCode
         } else {
             // Create new
@@ -81,7 +81,7 @@ final class FavoriteEditorViewModel {
                 account: account,
                 subcategory: subcategory,
                 tags: tags,
-                natureOverride: natureRaw,
+                needOverride: needRaw,
                 currencyCode: account?.currencyCode,
                 displayOrder: existingFavoritesCount
             )

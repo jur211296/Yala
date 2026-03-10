@@ -83,7 +83,7 @@ struct DetailContainerView: View {
             cleanContext.period = .thisMonth
             cleanContext.accountID = nil
             cleanContext.categoryID = nil
-            cleanContext.nature = nil
+            cleanContext.need = nil
         }
         _recordsViewModel = State(initialValue: RecordsViewModel(context: cleanContext))
 
@@ -94,7 +94,7 @@ struct DetailContainerView: View {
             accountID: nil,
             categoryID: nil,
             subcategoryName: nil,
-            nature: nil,
+            need: nil,
             dateInterval: nil
         )
         _trendsViewModel = State(initialValue: StatisticsViewModel(context: trendsContext))
@@ -716,7 +716,7 @@ extension View {
             .onChange(of: viewModel.selectedCategories) { _, _ in action() }
             .onChange(of: viewModel.selectedSubcategories) { _, _ in action() }
             .onChange(of: viewModel.selectedTags) { _, _ in action() }
-            .onChange(of: viewModel.selectedNatures) { _, _ in action() }
+            .onChange(of: viewModel.selectedNeeds) { _, _ in action() }
             .onChange(of: viewModel.selectedTransactionNatures) { _, _ in action() }
             .onChange(of: viewModel.selectedCurrencies) { _, _ in action() }
             .onChange(of: viewModel.amountCondition) { _, _ in action() }
@@ -734,7 +734,7 @@ extension View {
             .onChange(of: viewModel.selectedCategories) { _, _ in action() }
             .onChange(of: viewModel.selectedSubcategories) { _, _ in action() }
             .onChange(of: viewModel.selectedTags) { _, _ in action() }
-            .onChange(of: viewModel.selectedNatures) { _, _ in action() }
+            .onChange(of: viewModel.selectedNeeds) { _, _ in action() }
             .onChange(of: viewModel.selectedTransactionNatures) { _, _ in action() }
             .onChange(of: viewModel.selectedCurrencies) { _, _ in action() }
             .onChange(of: viewModel.amountCondition) { _, _ in action() }
@@ -878,8 +878,8 @@ private struct SessionStateObservers: ViewModifier {
                 }
                 handleSessionStateFilterChange()
             }
-            .onChange(of: sessionState.selectedNatures) {
-                if !sessionState.isExcludeMode && !sessionState.selectedNatures.isEmpty {
+            .onChange(of: sessionState.selectedNeeds) {
+                if !sessionState.isExcludeMode && !sessionState.selectedNeeds.isEmpty {
                     sessionState.selectedTransactionNatures = [.expense]
                 }
                 handleSessionStateFilterChange()

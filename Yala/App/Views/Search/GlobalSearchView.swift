@@ -96,8 +96,8 @@ struct SearchContentView: View {
             return transaction.subcategory?.name.lowercased().contains(lowercasedSearch) ?? false
         case .account:
             return transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
-        case .nature:
-            return transaction.subcategory?.nature.displayName.lowercased().contains(lowercasedSearch) ?? false
+        case .need:
+            return transaction.subcategory?.need.displayName.lowercased().contains(lowercasedSearch) ?? false
         case .tag:
             return (transaction.tags ?? []).contains { $0.name.lowercased().contains(lowercasedSearch) }
         }
@@ -307,7 +307,7 @@ enum SearchFilter: String, CaseIterable, Identifiable {
     case category
     case subcategory
     case account
-    case nature
+    case need
     case tag
 
     var id: String { rawValue }
@@ -319,7 +319,7 @@ enum SearchFilter: String, CaseIterable, Identifiable {
         case .category: return L10n.Search.Filter.category
         case .subcategory: return L10n.Search.Filter.subcategory
         case .account: return L10n.Search.Filter.account
-        case .nature: return L10n.Search.Filter.nature
+        case .need: return L10n.Search.Filter.need
         case .tag: return L10n.Search.Filter.tag
         }
     }

@@ -38,7 +38,7 @@ final class FavoritePayment {
     var tags: [Tag]?
 
     /// Optional nature override (nil = use subcategory's nature)
-    var natureOverride: String?
+    var needOverride: String?
 
     /// Optional currency code
     var currencyCode: String?
@@ -57,7 +57,7 @@ final class FavoritePayment {
         account: Account? = nil,
         subcategory: Subcategory? = nil,
         tags: [Tag] = [],
-        natureOverride: String? = nil,
+        needOverride: String? = nil,
         currencyCode: String? = nil,
         displayOrder: Int = 0
     ) {
@@ -68,7 +68,7 @@ final class FavoritePayment {
         self.account = account
         self.subcategory = subcategory
         self.tags = tags
-        self.natureOverride = natureOverride
+        self.needOverride = needOverride
         self.currencyCode = currencyCode
         self.createdAt = Date()
         self.displayOrder = displayOrder
@@ -82,10 +82,10 @@ final class FavoritePayment {
     }
 
     /// Effective nature (override or subcategory's nature)
-    var effectiveNature: SubcategoryNature? {
-        if let override = natureOverride {
-            return SubcategoryNature(rawValue: override)
+    var effectiveNeed: SubcategoryNeed? {
+        if let override = needOverride {
+            return SubcategoryNeed(rawValue: override)
         }
-        return subcategory?.nature
+        return subcategory?.need
     }
 }

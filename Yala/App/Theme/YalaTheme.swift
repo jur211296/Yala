@@ -24,9 +24,9 @@ struct YalaTheme: Equatable, Sendable {
     let transfer: Color
     let toolbarIcon: Color
     let destructive: Color
-    let priorityNature: Color
-    let essentialNature: Color
-    let optionalNature: Color
+    let priorityNeed: Color
+    let essentialNeed: Color
+    let optionalNeed: Color
     let shadowOpacity: Double
     let hasGradient: Bool
     let baseColorScheme: ColorScheme
@@ -44,15 +44,15 @@ extension YalaTheme {
         secondaryText: Color.secondary,
         accent: .electricIndigo,
         accentSecondary: .hotPink,
-        income: .priorityNature,
+        income: .priorityNeed,
         expense: .hotPink,
         tagChip: Color(hex: "0891B2"),
         transfer: Color(.label),
         toolbarIcon: .electricIndigo,
         destructive: .red,
-        priorityNature: .priorityNature,
-        essentialNature: .essentialNature,
-        optionalNature: .optionalNature,
+        priorityNeed: .priorityNeed,
+        essentialNeed: .essentialNeed,
+        optionalNeed: .optionalNeed,
         shadowOpacity: 0.05,
         hasGradient: true,
         baseColorScheme: .light
@@ -66,15 +66,15 @@ extension YalaTheme {
         secondaryText: Color.secondary,
         accent: .electricIndigo,
         accentSecondary: .hotPink,
-        income: .priorityNature,
+        income: .priorityNeed,
         expense: .hotPink,
         tagChip: .neonCyan,
         transfer: Color(hex: "64748B"),
         toolbarIcon: .electricIndigo,
         destructive: .red,
-        priorityNature: .priorityNature,
-        essentialNature: .essentialNature,
-        optionalNature: .optionalNature,
+        priorityNeed: .priorityNeed,
+        essentialNeed: .essentialNeed,
+        optionalNeed: .optionalNeed,
         shadowOpacity: 0.25,
         hasGradient: false,
         baseColorScheme: .dark
@@ -93,15 +93,15 @@ extension YalaTheme {
         secondaryText: Color(hex: "94A3B8"),  // slate 60%
         accent: .electricIndigo,
         accentSecondary: .hotPink,
-        income: .priorityNature,
+        income: .priorityNeed,
         expense: .hotPink,
         tagChip: .neonCyan,
         transfer: Color(hex: "64748B"),
         toolbarIcon: .electricIndigo,
         destructive: .red,
-        priorityNature: .priorityNature,
-        essentialNature: .essentialNature,
-        optionalNature: .optionalNature,
+        priorityNeed: .priorityNeed,
+        essentialNeed: .essentialNeed,
+        optionalNeed: .optionalNeed,
         shadowOpacity: 0.20,
         hasGradient: false,
         baseColorScheme: .dark
@@ -115,15 +115,15 @@ extension YalaTheme {
         secondaryText: Color(hex: "C9849E"),  // rose 60%
         accent: .hotPink,
         accentSecondary: .electricIndigo,
-        income: .priorityNature,
+        income: .priorityNeed,
         expense: .hotPink,
         tagChip: .neonCyan,
         transfer: Color(hex: "64748B"),
         toolbarIcon: .hotPink,
         destructive: .red,
-        priorityNature: .priorityNature,
-        essentialNature: .essentialNature,
-        optionalNature: .optionalNature,
+        priorityNeed: .priorityNeed,
+        essentialNeed: .essentialNeed,
+        optionalNeed: .optionalNeed,
         shadowOpacity: 0.20,
         hasGradient: false,
         baseColorScheme: .dark
@@ -132,20 +132,20 @@ extension YalaTheme {
     static let teal = YalaTheme(
         background: Color(hex: "0A1A1A"),
         card: Color(hex: "0F2828"),
-        cardBorder: Color.priorityNature.opacity(0.15),
+        cardBorder: Color.priorityNeed.opacity(0.15),
         primaryText: .white,
         secondaryText: Color(hex: "7BBFBF"),  // teal 60%
-        accent: Color.priorityNature,  // #00C2CB — legible over white icons
+        accent: Color.priorityNeed,  // #00C2CB — legible over white icons
         accentSecondary: .hotPink,
-        income: .priorityNature,
+        income: .priorityNeed,
         expense: .hotPink,
-        tagChip: .priorityNature,
+        tagChip: .priorityNeed,
         transfer: Color(hex: "64748B"),
-        toolbarIcon: Color.priorityNature,
+        toolbarIcon: Color.priorityNeed,
         destructive: .red,
-        priorityNature: .priorityNature,
-        essentialNature: .essentialNature,
-        optionalNature: .optionalNature,
+        priorityNeed: .priorityNeed,
+        essentialNeed: .essentialNeed,
+        optionalNeed: .optionalNeed,
         shadowOpacity: 0.20,
         hasGradient: false,
         baseColorScheme: .dark

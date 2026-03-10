@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Calculator for Smart Insights data. Accepts ModelContext for currency conversion.
-//  Computes: period summary, quick stats, nature distribution, weekday spending,
+//  Computes: period summary, quick stats, need distribution, weekday spending,
 //  year-over-year, budgets at risk.
 //
 
@@ -17,7 +17,7 @@ struct InsightData {
     let quickStats: QuickStats
     let commitments: Commitments
     let weekdaySpending: [WeekdaySpending]
-    let natureDistribution: NatureDistribution
+    let needDistribution: NeedDistribution
     let yearOverYear: YearComparison?
     let ruleBasedInsights: [InsightResult]
 }
@@ -72,7 +72,7 @@ struct BudgetAtRisk: Identifiable {
     let colorHex: String?
 }
 
-struct NatureDistribution {
+struct NeedDistribution {
     let essential: Double
     let priority: Double
     let optional: Double
@@ -303,8 +303,8 @@ struct InsightsCalculator {
             context: context
         )
 
-        // Nature Distribution
-        let natureDistribution = calculateNatureDistribution(periodTxns, currencyCode: currencyCode, context: context)
+        // Need Distribution
+        let needDistribution = calculateNeedDistribution(periodTxns, currencyCode: currencyCode, context: context)
 
         // Year-over-Year
         let yearOverYear = calculateYearOverYear(
@@ -321,7 +321,7 @@ struct InsightsCalculator {
             periodSummary: periodSummary,
             quickStats: quickStats,
             commitments: commitments,
-            natureDistribution: natureDistribution,
+            needDistribution: needDistribution,
             yearOverYear: yearOverYear,
             topCategories: topCategories,
             prevCashFlow: prevCashFlow,
@@ -335,7 +335,7 @@ struct InsightsCalculator {
             quickStats: quickStats,
             commitments: commitments,
             weekdaySpending: weekdaySpending,
-            natureDistribution: natureDistribution,
+            needDistribution: needDistribution,
             yearOverYear: yearOverYear,
             ruleBasedInsights: ruleBasedInsights
         )
@@ -504,11 +504,11 @@ struct InsightsCalculator {
         )
     }
 
-    private static func calculateNatureDistribution(
+    private static func calculateNeedDistribution(
         _ transactions: [TransactionItem],
         currencyCode: String,
         context: ModelContext
-    ) -> NatureDistribution {
+    ) -> NeedDistribution {
         var essential: Double = 0
         var priority: Double = 0
         var optional: Double = 0
@@ -519,8 +519,8 @@ struct InsightsCalculator {
 
             let amount = txAmount(tx, currencyCode: currencyCode, context: context)
 
-            let nature = tx.subcategory?.nature
-            switch nature {
+            let need = tx.subcategory?.need
+            switch need {
             case .essential:
                 essential += amount
             case .priority:
@@ -533,7 +533,7 @@ struct InsightsCalculator {
             }
         }
 
-        return NatureDistribution(
+        return NeedDistribution(
             essential: essential,
             priority: priority,
             optional: optional,
@@ -580,7 +580,7 @@ struct InsightsCalculator {
         periodSummary: PeriodSummary,
         quickStats: QuickStats,
         commitments: Commitments,
-        natureDistribution: NatureDistribution,
+        needDistribution: NeedDistribution,
         yearOverYear: YearComparison?,
         topCategories: [CategorySpendingSummary],
         prevCashFlow: CashFlowSummary,
@@ -651,9 +651,9 @@ struct InsightsCalculator {
             ))
         }
 
-        // Rule 4: Nature distribution shift
-        if natureDistribution.optionalPercent > 40 {
-            let text = AttributedString(L10n.Insights.ruleOptionalHigh(Int(natureDistribution.optionalPercent), tone: tone))
+        // Rule 4: Need distribution shift
+        if needDistribution.optionalPercent > 40 {
+            let text = AttributedString(L10n.Insights.ruleOptionalHigh(Int(needDistribution.optionalPercent), tone: tone))
             let tip = AttributedString(L10n.Insights.tipOptionalHigh)
             insights.append(InsightResult(
                 id: "optional_high",

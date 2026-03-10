@@ -32,7 +32,7 @@ struct FilterServiceTests {
         criteria.searchText = "test"
         #expect(criteria.activeFilterCount == 0)  // searchText doesn't count in activeFilterCount
 
-        criteria.selectedNatures.insert(.essential)
+        criteria.selectedNeeds.insert(.essential)
         #expect(criteria.activeFilterCount == 1)
 
         criteria.transactionTypeFilter = .expense
@@ -42,7 +42,7 @@ struct FilterServiceTests {
     @Test func clearAllResetsCriteria() throws {
         var criteria = FilterCriteria.empty
         criteria.searchText = "test"
-        criteria.selectedNatures.insert(.essential)
+        criteria.selectedNeeds.insert(.essential)
         criteria.transactionTypeFilter = .expense
         criteria.amountCondition = .greaterThan(100)
 
@@ -52,7 +52,7 @@ struct FilterServiceTests {
         #expect(!criteria.hasActiveFilters)
         #expect(criteria.activeFilterCount == 0)
         #expect(criteria.searchText.isEmpty)
-        #expect(criteria.selectedNatures.isEmpty)
+        #expect(criteria.selectedNeeds.isEmpty)
         #expect(criteria.transactionTypeFilter == .all)
         #expect(criteria.amountCondition == .any)
         // dateInterval should NOT be cleared
@@ -140,7 +140,7 @@ struct FilterServiceTests {
     @Test func clearAllResetsExcludeMode() throws {
         var criteria = FilterCriteria.empty
         criteria.isExcludeMode = true
-        criteria.selectedNatures.insert(.essential)
+        criteria.selectedNeeds.insert(.essential)
         criteria.selectedAccounts.insert(Account(name: "A", currencyCode: "PEN", colorHex: "#000", iconName: "creditcard", type: "bank").persistentModelID)
         criteria.clearAll()
         #expect(!criteria.isExcludeMode)
@@ -192,7 +192,7 @@ struct FilterServiceTests {
         #expect(FilterService.matchesCriteria(txB, criteria: criteria))
     }
 
-    @Test func excludeNatureFiltersOutMatchingTransaction() throws {
+    @Test func excludeNeedFiltersOutMatchingTransaction() throws {
         let cat = YalaCategory(name: "Food", colorHex: "#000", isIncome: false)
         let subEssential = Subcategory(name: "SubE", colorHex: nil, natureRawValue: "esencial", iconName: "cart", category: cat)
         let subOptional = Subcategory(name: "SubO", colorHex: nil, natureRawValue: "opcional", iconName: "cart", category: cat)
@@ -201,7 +201,7 @@ struct FilterServiceTests {
 
         var criteria = FilterCriteria.empty
         criteria.isExcludeMode = true
-        criteria.selectedNatures.insert(.essential)
+        criteria.selectedNeeds.insert(.essential)
 
         #expect(!FilterService.matchesCriteria(txE, criteria: criteria))
         #expect(FilterService.matchesCriteria(txO, criteria: criteria))

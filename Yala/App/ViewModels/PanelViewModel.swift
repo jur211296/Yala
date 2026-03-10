@@ -225,11 +225,11 @@ final class PanelViewModel {
         SessionState.shared.selectedBudgetID
     }
 
-    var selectedNature: SubcategoryNature? {
-        get { SessionState.shared.selectedNatures.first }
+    var selectedNeed: SubcategoryNeed? {
+        get { SessionState.shared.selectedNeeds.first }
         set {
-            SessionState.shared.selectedNatures.removeAll()
-            if let n = newValue { SessionState.shared.selectedNatures.insert(n) }
+            SessionState.shared.selectedNeeds.removeAll()
+            if let n = newValue { SessionState.shared.selectedNeeds.insert(n) }
         }
     }
 
@@ -263,10 +263,10 @@ final class PanelViewModel {
         set { SessionState.shared.isExcludeMode = newValue }
     }
 
-    // Nature Widget State
-    var natureTrendPoints: [NatureTrendPoint] = []
-    var previousNatureTotalAmount: Double? = nil
-    var previousNatureAmounts: [SubcategoryNature: Double] = [:]
+    // Need Widget State
+    var needTrendPoints: [NeedTrendPoint] = []
+    var previousNeedTotalAmount: Double? = nil
+    var previousNeedAmounts: [SubcategoryNeed: Double] = [:]
 
     // Cash Flow State
     var cashFlowSummary: CashFlowSummary?
@@ -605,7 +605,7 @@ final class PanelViewModel {
     var historicalThreshold: Double = 0
     var trendGrouping: TrendGrouping = .day
     var cashFlowGrouping: TrendGrouping = .day  // Explicit grouping for Cash Flow widget
-    var natureGrouping: TrendGrouping = .day  // Explicit grouping for Nature widget
+    var needGrouping: TrendGrouping = .day  // Explicit grouping for Need widget
     var trendType: TrendType = .balance
     /// Tracks the trendType for which current data was calculated.
     /// Used to prevent rendering stale data with wrong colors during metric transitions.
@@ -673,27 +673,27 @@ final class PanelViewModel {
         // Latest Records
         let newLatestRecords = calculateLatestRecordsWidget(context: calcContext)
 
-        // Nature Trend
-        let natureResult = calculateNatureWidget(context: calcContext)
-        let newNatureTrendPoints = natureResult.points
-        let newPreviousNatureTotal = natureResult.previousTotal
-        let newPreviousNatureAmounts = natureResult.previousAmounts
+        // Need Trend
+        let needResult = calculateNeedWidget(context: calcContext)
+        let newNeedTrendPoints = needResult.points
+        let newPreviousNeedTotal = needResult.previousTotal
+        let newPreviousNeedAmounts = needResult.previousAmounts
 
         // 3. BATCH STATE UPDATE - Single render cycle
         enforceTrendLock(sessionState: sessionState)
 
         self.trendGrouping = calcContext.trendGrouping
         self.cashFlowGrouping = calcContext.cashFlowGrouping
-        self.natureGrouping = calcContext.natureGrouping
+        self.needGrouping = calcContext.needGrouping
         self.topSpendingCategories = newTopSpendingCategories
         self.previousCategoriesTotalAmount = newPreviousCategoriesTotal
         self.topSubcategories = newTopSubcategories
         self.previousSubcategoriesTotalAmount = newPreviousSubcategoriesTotal
         self.cashFlowSummary = newCashFlowSummary
         self.latestRecords = newLatestRecords
-        self.natureTrendPoints = newNatureTrendPoints
-        self.previousNatureTotalAmount = newPreviousNatureTotal
-        self.previousNatureAmounts = newPreviousNatureAmounts
+        self.needTrendPoints = newNeedTrendPoints
+        self.previousNeedTotalAmount = newPreviousNeedTotal
+        self.previousNeedAmounts = newPreviousNeedAmounts
         self.processedTrendPoints = newProcessedData.points
         self.rawTrendPoints = newProcessedData.rawPoints
         self.processedYDomain = newProcessedData.yDomain
@@ -743,7 +743,7 @@ final class PanelViewModel {
         if includeCategories {
             criteria.selectedCategories = SessionState.shared.selectedCategoryIDs
             criteria.selectedSubcategories = selectedSubcategoryIDs
-            criteria.selectedNatures = SessionState.shared.selectedNatures
+            criteria.selectedNeeds = SessionState.shared.selectedNeeds
         }
 
         return criteria
@@ -762,9 +762,9 @@ final class PanelViewModel {
 
         // Determine groupings based on period
         // NOTE: TrendWidget (line chart) always uses day for smooth interpolation
-        // But CashFlow and Nature (bar charts) need coarser grouping for long periods
+        // But CashFlow and Need (bar charts) need coarser grouping for long periods
         let newTrendGrouping = selectedPeriod.chartGrouping
-        let (newCashFlowGrouping, newNatureGrouping): (TrendGrouping, TrendGrouping) = {
+        let (newCashFlowGrouping, newNeedGrouping): (TrendGrouping, TrendGrouping) = {
             switch selectedPeriod {
             case .thisWeek, .last7Days:
                 return (.day, .day)  // Daily bars for week
@@ -889,12 +889,12 @@ final class PanelViewModel {
                 }
             }
 
-            // Nature Filter (still applies to pie charts)
-            if let nature = selectedNature {
+            // Need Filter (still applies to pie charts)
+            if let need = selectedNeed {
                 if let sub = transaction.subcategory {
-                    if sub.nature != nature { return false }
+                    if sub.need != need { return false }
                 } else {
-                    if nature != .unclassified { return false }
+                    if need != .unclassified { return false }
                 }
             }
 
@@ -927,35 +927,35 @@ final class PanelViewModel {
             return true
         }
 
-        // Pre-compute nature-filtered transactions for pie widgets
+        // Pre-compute need-filtered transactions for pie widgets
         // Uses pieContextTransactions (excludes category/subcategory filters) for dimming behavior
-        let natureFiltered: [TransactionItem]
-        if let nature = selectedNature {
-            natureFiltered = pieContextTransactions.filter { txn in
+        let needFiltered: [TransactionItem]
+        if let need = selectedNeed {
+            needFiltered = pieContextTransactions.filter { txn in
                 if let sub = txn.subcategory {
-                    return sub.nature == nature
+                    return sub.need == need
                 } else {
-                    return nature == .unclassified
+                    return need == .unclassified
                 }
             }
         } else {
-            natureFiltered = pieContextTransactions
+            needFiltered = pieContextTransactions
         }
 
-        // Pre-compute fully-filtered transactions (nature + subcategory)
+        // Pre-compute fully-filtered transactions (need + subcategory)
         let fullyFiltered: [TransactionItem]
         if !selectedSubcategoryIDs.isEmpty {
-            fullyFiltered = natureFiltered.filter { tx in
+            fullyFiltered = needFiltered.filter { tx in
                 guard let subID = tx.subcategory?.persistentModelID else { return false }
                 return selectedSubcategoryIDs.contains(subID)
             }
         } else {
-            fullyFiltered = natureFiltered
+            fullyFiltered = needFiltered
         }
 
-        // Transactions for nature widget - has cat/subcat filters but NO nature filter
-        // This allows the nature widget to show ALL natures with visual dimming
-        let natureWidgetTxns = expenseFiltered.filter { txn in
+        // Transactions for need widget - has cat/subcat filters but NO need filter
+        // This allows the need widget to show ALL needs with visual dimming
+        let needWidgetTxns = expenseFiltered.filter { txn in
             effectiveInterval.contains(txn.date)
         }
 
@@ -969,20 +969,20 @@ final class PanelViewModel {
             filteredTransactions: filtered,
             expenseFilteredTransactions: expenseFiltered,
             contextTransactions: finalContextTransactions,
-            natureFilteredTransactions: natureFiltered,
+            needFilteredTransactions: needFiltered,
             fullyFilteredTransactions: fullyFiltered,
-            natureWidgetTransactions: natureWidgetTxns,
+            needWidgetTransactions: needWidgetTxns,
             transactionsWithoutDateFilter: transactionsWithoutDateFilter,
             balanceTransactions: balanceTransactions,
             period: selectedPeriod,
             effectiveInterval: effectiveInterval,
             trendGrouping: newTrendGrouping,
             cashFlowGrouping: newCashFlowGrouping,
-            natureGrouping: newNatureGrouping,
+            needGrouping: newNeedGrouping,
             focusedDate: focusedDate,
             selectedCategoryID: selectedCategoryID,
             selectedSubcategoryIDs: selectedSubcategoryIDs,
-            selectedNature: selectedNature,
+            selectedNeed: selectedNeed,
             subcategoriesWidgetFilter: subcategoriesWidgetFilter,
             selectedTransactionNatures: selectedTransactionNatures
         )
@@ -1051,13 +1051,13 @@ final class PanelViewModel {
     }
 
     /// Calculate top spending categories with period comparison
-    /// Uses natureFilteredTransactions (not fullyFiltered) so that subcategory selection
+    /// Uses needFilteredTransactions (not fullyFiltered) so that subcategory selection
     /// only dims categories visually, rather than filtering out other categories' data
     /// Returns: (categories, previousPeriodTotal)
     private func calculateCategoriesWidget(context: PanelCalculationContext)
         -> (categories: [CategorySpendingSummary], previousTotal: Double?)
     {
-        // Calculate current period data using nature-filtered transactions
+        // Calculate current period data using need-filtered transactions
         // This ensures category pie shows ALL categories (selection = visual dim, not data filter)
         // Pass transactionNatures filter - empty means show expenses only (default)
         let naturesFilter: Set<TransactionNature>? = context.selectedTransactionNatures.isEmpty
@@ -1065,7 +1065,7 @@ final class PanelViewModel {
             : context.selectedTransactionNatures
 
         var currentData = TopSpendingCategoriesCalculator.calculateTopSpending(
-            transactions: context.natureFilteredTransactions,
+            transactions: context.needFilteredTransactions,
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
             transactionNatures: naturesFilter,
@@ -1115,17 +1115,17 @@ final class PanelViewModel {
     }
 
     /// Calculate top subcategories with period comparison
-    /// Uses natureFilteredTransactions (not fullyFiltered) so that subcategory selection
+    /// Uses needFilteredTransactions (not fullyFiltered) so that subcategory selection
     /// only dims subcategories visually, rather than filtering out other subcategories' data
     /// Returns: (subcategories, previousPeriodTotal)
     private func calculateSubcategoriesWidget(context: PanelCalculationContext)
         -> (subcategories: [SubcategorySpendingSummary], previousTotal: Double?)
     {
-        // Use pre-filtered transactions from context (nature already applied)
+        // Use pre-filtered transactions from context (need already applied)
         let effectiveCategoryFilter =
             context.selectedCategoryID ?? context.subcategoriesWidgetFilter
 
-        // Use nature-filtered transactions (category filter applies separately)
+        // Use need-filtered transactions (category filter applies separately)
         // This ensures subcategory pie shows ALL subcategories (selection = visual dim, not data filter)
         // Pass transactionNatures filter - empty means show expenses only (default)
         let naturesFilter: Set<TransactionNature>? = context.selectedTransactionNatures.isEmpty
@@ -1133,7 +1133,7 @@ final class PanelViewModel {
             : context.selectedTransactionNatures
 
         var currentData = TopSubcategoriesCalculator.calculateTopSubcategories(
-            transactions: context.natureFilteredTransactions,
+            transactions: context.needFilteredTransactions,
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
             categoryFilter: effectiveCategoryFilter,
@@ -1220,18 +1220,18 @@ final class PanelViewModel {
         )
     }
 
-    /// Calculate nature trend points with period comparison
-    /// Uses natureWidgetTransactions (has cat/subcat filters but NO nature filter)
-    /// This allows the nature widget to show ALL natures with visual dimming
-    /// Returns: (points, previousTotal, previousAmountsByNature)
-    private func calculateNatureWidget(context: PanelCalculationContext)
-        -> (points: [NatureTrendPoint], previousTotal: Double?, previousAmounts: [SubcategoryNature: Double])
+    /// Calculate need trend points with period comparison
+    /// Uses needWidgetTransactions (has cat/subcat filters but NO need filter)
+    /// This allows the need widget to show ALL needs with visual dimming
+    /// Returns: (points, previousTotal, previousAmountsByNeed)
+    private func calculateNeedWidget(context: PanelCalculationContext)
+        -> (points: [NeedTrendPoint], previousTotal: Double?, previousAmounts: [SubcategoryNeed: Double])
     {
         let preferredCurrency = CurrencyCode(rawValue: context.defaultCurrencyCode) ?? .pen
 
-        let currentPoints = NatureTrendHelper.calculateTrend(
-            transactions: context.natureWidgetTransactions,
-            grouping: context.natureGrouping,
+        let currentPoints = NeedTrendHelper.calculateTrend(
+            transactions: context.needWidgetTransactions,
+            grouping: context.needGrouping,
             interval: context.effectiveInterval,
             preferredCurrency: preferredCurrency,
             context: context.modelContext
@@ -1254,26 +1254,26 @@ final class PanelViewModel {
             previousInterval.contains($0.date)
         }
 
-        let previousPoints = NatureTrendHelper.calculateTrend(
+        let previousPoints = NeedTrendHelper.calculateTrend(
             transactions: previousTransactions,
-            grouping: context.natureGrouping,
+            grouping: context.needGrouping,
             interval: previousInterval,
             preferredCurrency: preferredCurrency,
             context: context.modelContext
         )
 
-        // Calculate totals by nature for previous period
-        var prevNatureAmounts: [SubcategoryNature: Double] = [:]
-        var prevNatureTotal: Double = 0
+        // Calculate totals by need for previous period
+        var prevNeedAmounts: [SubcategoryNeed: Double] = [:]
+        var prevNeedTotal: Double = 0
         for point in previousPoints {
-            prevNatureAmounts[.essential, default: 0] += point.essential
-            prevNatureAmounts[.priority, default: 0] += point.priority
-            prevNatureAmounts[.optional, default: 0] += point.optional
-            prevNatureAmounts[.unclassified, default: 0] += point.unclassified
-            prevNatureTotal += point.total
+            prevNeedAmounts[.essential, default: 0] += point.essential
+            prevNeedAmounts[.priority, default: 0] += point.priority
+            prevNeedAmounts[.optional, default: 0] += point.optional
+            prevNeedAmounts[.unclassified, default: 0] += point.unclassified
+            prevNeedTotal += point.total
         }
 
-        return (currentPoints, prevNatureTotal > 0 ? prevNatureTotal : nil, prevNatureAmounts)
+        return (currentPoints, prevNeedTotal > 0 ? prevNeedTotal : nil, prevNeedAmounts)
     }
 
     // State for Filter Logic
@@ -1340,11 +1340,11 @@ final class PanelViewModel {
         )
     }
 
-    func toggleNatureFilter(_ nature: SubcategoryNature) {
-        if selectedNature == nature {
-            selectedNature = nil
+    func toggleNeedFilter(_ need: SubcategoryNeed) {
+        if selectedNeed == need {
+            selectedNeed = nil
         } else {
-            selectedNature = nature
+            selectedNeed = need
         }
     }
 
@@ -1527,13 +1527,13 @@ final class PanelViewModel {
             }
         }
 
-        // Nature filter
+        // Need filter
         if let naturesString = budget.natures, !naturesString.isEmpty {
             let natures = naturesString.split(separator: ",")
-                .compactMap { SubcategoryNature(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
+                .compactMap { SubcategoryNeed(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
 
             filtered = filtered.filter { transaction in
-                natures.contains(transaction.effectiveNature)
+                natures.contains(transaction.effectiveNeed)
             }
         }
 

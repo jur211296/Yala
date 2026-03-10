@@ -641,12 +641,12 @@ struct PanelView: View {
             aggregated["top_category"] = ["name": top.category.name, "pct": Int(top.percentage)]
         }
 
-        let nature = data.natureDistribution
-        if nature.total > 0 {
-            aggregated["nature_split"] = [
-                "essential": Int(nature.essentialPercent),
-                "priority": Int(nature.priorityPercent),
-                "optional": Int(nature.optionalPercent)
+        let needDist = data.needDistribution
+        if needDist.total > 0 {
+            aggregated["need_split"] = [
+                "essential": Int(needDist.essentialPercent),
+                "priority": Int(needDist.priorityPercent),
+                "optional": Int(needDist.optionalPercent)
             ]
         }
 
@@ -697,7 +697,7 @@ struct PanelView: View {
                 let hasAccountFilter = viewModel.selectedAccountID != nil
                 let hasDateFilter = viewModel.focusedDate != nil
                 let hasCategoryFilter = viewModel.selectedCategoryID != nil
-                let hasNatureFilter = viewModel.selectedNature != nil
+                let hasNeedFilter = viewModel.selectedNeed != nil
                 let hasSubcategoryFilter = !viewModel.selectedSubcategoryIDs.isEmpty
                 let hasTagFilter = !viewModel.selectedTags.isEmpty
                 let hasCurrencyFilter = !viewModel.selectedCurrencies.isEmpty
@@ -707,7 +707,7 @@ struct PanelView: View {
 
                 let activeFilterCount = [
                     hasAccountFilter, hasDateFilter, hasCategoryFilter,
-                    hasNatureFilter, hasSubcategoryFilter, hasTagFilter,
+                    hasNeedFilter, hasSubcategoryFilter, hasTagFilter,
                     hasCurrencyFilter, hasAmountFilter, hasNoteFilter,
                     hasTransactionNatureFilter,
                 ].filter { $0 }.count
@@ -821,11 +821,11 @@ struct PanelView: View {
                             }
 
                             // Nature Chip (Subcategory Nature: essential/priority/optional)
-                            if let nature = viewModel.selectedNature {
+                            if let need = viewModel.selectedNeed {
                                 FilterChipView(
-                                    nature: nature,
+                                    need: need,
                                     onClear: {
-                                        dsWithAnimation(reduceMotion) { viewModel.selectedNature = nil }
+                                        dsWithAnimation(reduceMotion) { viewModel.selectedNeed = nil }
                                     }
                                 ).excludeMode(viewModel.isExcludeMode)
                             }
@@ -962,7 +962,7 @@ struct PanelView: View {
                 .onChange(of: viewModel.focusedDate) {
                     recalculateData()
                 }
-                .onChange(of: viewModel.selectedNature) {
+                .onChange(of: viewModel.selectedNeed) {
                     recalculateData()
                 }
         }
@@ -1214,23 +1214,23 @@ struct PanelView: View {
                 currencyCode: preferredCurrency.rawValue,
                 onShowMore: { navigateToStatistics(.records) }
             )
-        } else if config.type == .expensesByNature {
-            NatureTrendWidget(
-                trendPoints: viewModel.natureTrendPoints,
-                selectedNature: viewModel.selectedNature,
+        } else if config.type == .expensesByNeed {
+            NeedTrendWidget(
+                trendPoints: viewModel.needTrendPoints,
+                selectedNeed: viewModel.selectedNeed,
                 currencyCode: preferredCurrency.rawValue,
                 size: mapWidgetSize(config.size),
-                grouping: viewModel.natureGrouping,
+                grouping: viewModel.needGrouping,
                 interval: viewModel.currentInterval,
-                onSelectNature: { nature in
+                onSelectNeed: { need in
                     dsWithAnimation(reduceMotion) {
-                        viewModel.toggleNatureFilter(nature)
+                        viewModel.toggleNeedFilter(need)
                     }
                 },
                 onShowDetail: { navigateToStatistics(.categories) },
                 period: viewModel.selectedPeriod,
-                previousTotalAmount: viewModel.previousNatureTotalAmount,
-                previousAmountByNature: viewModel.previousNatureAmounts,
+                previousTotalAmount: viewModel.previousNeedTotalAmount,
+                previousAmountByNeed: viewModel.previousNeedAmounts,
                 showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime,
                 isIncomeMode: viewModel.selectedTransactionNatures == [.income]
             )
@@ -1315,7 +1315,7 @@ struct PanelView: View {
         viewModel.selectedCategoryID = nil
         viewModel.selectedSubcategoryIDs.removeAll()
         viewModel.subcategoriesWidgetFilter = nil
-        viewModel.selectedNature = nil
+        viewModel.selectedNeed = nil
         viewModel.selectedTags.removeAll()
         viewModel.selectedCurrencies.removeAll()
         viewModel.amountCondition = .any
@@ -1624,10 +1624,10 @@ private struct PanelSessionObservers: ViewModifier {
                 }
                 recalculateData()
             }
-            .onChange(of: sessionState.selectedNatures) {
+            .onChange(of: sessionState.selectedNeeds) {
                 // Auto-create expense chip when nature filter applied (natures are expense-only)
                 // Skip in exclude mode
-                if !sessionState.isExcludeMode && !sessionState.selectedNatures.isEmpty {
+                if !sessionState.isExcludeMode && !sessionState.selectedNeeds.isEmpty {
                     sessionState.selectedTransactionNatures = [.expense]
                 }
                 recalculateData()

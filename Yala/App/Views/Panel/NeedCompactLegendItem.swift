@@ -1,7 +1,7 @@
 import SwiftUI
 
-struct NatureCompactLegendItem: View {
-    let nature: SubcategoryNature
+struct NeedCompactLegendItem: View {
+    let need: SubcategoryNeed
     let isSelected: Bool
     let total: Double
     let currencyCode: String
@@ -13,10 +13,10 @@ struct NatureCompactLegendItem: View {
         Button(action: onTap) {
             HStack(spacing: DS.Spacing.xs) {
                 Circle()
-                    .fill(nature.color)
+                    .fill(need.color)
                     .frame(width: 8, height: 8)
 
-                Text(nature.displayName)
+                Text(need.displayName)
                     .font(DS.Typography.caption)
                     .foregroundStyle(Color.primary)
 

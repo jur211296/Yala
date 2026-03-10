@@ -33,7 +33,7 @@ struct RecordsFiltersView: View {
     @State private var localSelectedCategories: Set<PersistentIdentifier> = []
     @State private var localSelectedSubcategories: Set<PersistentIdentifier> = []
     @State private var localSelectedTags: Set<PersistentIdentifier> = []
-    @State private var localSelectedNatures: Set<SubcategoryNature> = []
+    @State private var localSelectedNeeds: Set<SubcategoryNeed> = []
     @State private var localSelectedTransactionNatures: Set<TransactionNature> = []
     @State private var localSelectedCurrencies: Set<CurrencyCode> = []
     @State private var localAmountCondition: AmountFilterCondition = .any
@@ -88,7 +88,7 @@ struct RecordsFiltersView: View {
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 tagsContent
                                 Divider().padding(.leading, DS.Spacing.lg)
-                                naturesContent
+                                needsContent
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 currencyContent
                                 Divider().padding(.leading, DS.Spacing.lg)
@@ -133,7 +133,7 @@ struct RecordsFiltersView: View {
                 localSelectedAccounts.removeAll()
                 localSelectedCategories.removeAll()
                 localSelectedSubcategories.removeAll()
-                localSelectedNatures.removeAll()
+                localSelectedNeeds.removeAll()
                 localSelectedTags.removeAll()
                 localSelectedCurrencies.removeAll()
                 if sessionState.isExpensesOnlyMode {
@@ -366,23 +366,23 @@ struct RecordsFiltersView: View {
         return localSelectedTransactionNatures.first?.displayName ?? L10n.Filters.all
     }
 
-    // MARK: - Natures Content
+    // MARK: - Needs Content
 
-    private var naturesContent: some View {
+    private var needsContent: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             // Header
             FilterSectionHeader(
                 icon: "chart.bar.fill",
-                title: L10n.Filters.nature,
-                status: selectedNaturesText
+                title: L10n.Filters.need,
+                status: selectedNeedsText
             )
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.md)
 
             // Chips
             FlowLayout(spacing: DS.Spacing.sm) {
-                ForEach(SubcategoryNature.allCases, id: \.self) { nature in
-                    natureChip(nature)
+                ForEach(SubcategoryNeed.allCases, id: \.self) { need in
+                    needChip(need)
                 }
             }
             .padding(.leading, DS.Spacing.lg + DS.FormRow.iconWidth + DS.Spacing.md)
@@ -391,18 +391,18 @@ struct RecordsFiltersView: View {
         }
     }
 
-    private func natureChip(_ nature: SubcategoryNature) -> some View {
-        let isSelected = localSelectedNatures.contains(nature)
+    private func needChip(_ need: SubcategoryNeed) -> some View {
+        let isSelected = localSelectedNeeds.contains(need)
 
         return Button {
             if isSelected {
-                localSelectedNatures.remove(nature)
+                localSelectedNeeds.remove(need)
             } else {
-                localSelectedNatures.insert(nature)
+                localSelectedNeeds.insert(need)
             }
         } label: {
             HStack(spacing: DS.Spacing.sm) {
-                Text(nature.displayName)
+                Text(need.displayName)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
@@ -417,11 +417,11 @@ struct RecordsFiltersView: View {
         .buttonStyle(.plain)
     }
 
-    private var selectedNaturesText: String {
-        if localSelectedNatures.isEmpty {
-            return localIsExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.allNatures
+    private var selectedNeedsText: String {
+        if localSelectedNeeds.isEmpty {
+            return localIsExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.allNeeds
         }
-        return "\(localSelectedNatures.count)"
+        return "\(localSelectedNeeds.count)"
     }
 
     @ViewBuilder
@@ -658,7 +658,7 @@ struct RecordsFiltersView: View {
         localSelectedCategories = recordsViewModel.selectedCategories
         localSelectedSubcategories = recordsViewModel.selectedSubcategories
         localSelectedTags = recordsViewModel.selectedTags
-        localSelectedNatures = recordsViewModel.selectedNatures
+        localSelectedNeeds = recordsViewModel.selectedNeeds
         localSelectedTransactionNatures = recordsViewModel.selectedTransactionNatures
         localSelectedCurrencies = recordsViewModel.selectedCurrencies
         localAmountCondition = recordsViewModel.amountCondition
@@ -676,7 +676,7 @@ struct RecordsFiltersView: View {
             recordsViewModel.selectedCategories = localSelectedCategories
             recordsViewModel.selectedSubcategories = localSelectedSubcategories
             recordsViewModel.selectedTags = localSelectedTags
-            recordsViewModel.selectedNatures = localSelectedNatures
+            recordsViewModel.selectedNeeds = localSelectedNeeds
             recordsViewModel.selectedTransactionNatures = localSelectedTransactionNatures
             recordsViewModel.selectedCurrencies = localSelectedCurrencies
             recordsViewModel.amountCondition = localAmountCondition
@@ -688,7 +688,7 @@ struct RecordsFiltersView: View {
         localSelectedAccounts.removeAll()
         localSelectedCategories.removeAll()
         localSelectedSubcategories.removeAll()
-        localSelectedNatures.removeAll()
+        localSelectedNeeds.removeAll()
         if sessionState.isExpensesOnlyMode {
             localSelectedTransactionNatures = [.expense]
         } else {

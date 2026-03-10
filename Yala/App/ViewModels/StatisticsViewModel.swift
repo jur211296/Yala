@@ -37,16 +37,16 @@ final class StatisticsViewModel: Filterable {
     enum MetricLockState {
         case none           // No lock, user can select any metric
         case lockedIncome   // Locked to income (only income filter selected)
-        case lockedExpense  // Locked to expense (category/nature filters or only expense filter)
+        case lockedExpense  // Locked to expense (category/need filters or only expense filter)
     }
 
-    // Check if category/subcategory/nature filters require expense mode
+    // Check if category/subcategory/need filters require expense mode
     var hasExpenseOnlyFilters: Bool {
-        !selectedCategories.isEmpty || !selectedSubcategories.isEmpty || !selectedNatures.isEmpty
+        !selectedCategories.isEmpty || !selectedSubcategories.isEmpty || !selectedNeeds.isEmpty
     }
 
     /// Enforce metric logic based on filters
-    /// Simple rule: chip is source of truth, category/nature filters auto-create expense chip
+    /// Simple rule: chip is source of truth, category/need filters auto-create expense chip
     private func enforceMetricLock() {
         // In expenses-only mode, always force expense metric
         if SessionState.shared.isExpensesOnlyMode {
@@ -99,10 +99,10 @@ final class StatisticsViewModel: Filterable {
         set { SessionState.shared.selectedTags = newValue }
     }
 
-    /// Selected natures for filtering
-    var selectedNatures: Set<SubcategoryNature> {
-        get { SessionState.shared.selectedNatures }
-        set { SessionState.shared.selectedNatures = newValue }
+    /// Selected needs for filtering
+    var selectedNeeds: Set<SubcategoryNeed> {
+        get { SessionState.shared.selectedNeeds }
+        set { SessionState.shared.selectedNeeds = newValue }
     }
 
     /// Selected transaction natures for filtering (empty = all)
@@ -233,8 +233,8 @@ final class StatisticsViewModel: Filterable {
             self.selectedCategories = [categoryID]
         }
 
-        if let nature = context.nature {
-            self.selectedNatures = [nature]
+        if let need = context.need {
+            self.selectedNeeds = [need]
         }
 
         if let interval = context.dateInterval {
@@ -261,7 +261,7 @@ final class StatisticsViewModel: Filterable {
         selectedCategories.removeAll()
         selectedSubcategories.removeAll()
         selectedTags.removeAll()
-        selectedNatures.removeAll()
+        selectedNeeds.removeAll()
         selectedTransactionNatures.removeAll()
         selectedCurrencies.removeAll()
         searchText = ""
@@ -307,7 +307,7 @@ final class StatisticsViewModel: Filterable {
             selectedCategories: selectedCategories,
             selectedSubcategories: selectedSubcategories,
             selectedTags: selectedTags,
-            selectedNatures: selectedNatures,
+            selectedNeeds: selectedNeeds,
             selectedCurrencies: selectedCurrencies,
             isExcludeMode: isExcludeMode,
             transactionTypeFilter: .all,  // TrendsView handles metric filtering separately
@@ -551,7 +551,7 @@ final class StatisticsViewModel: Filterable {
             accountID: selectedAccounts.first,
             categoryID: selectedCategories.first,
             subcategoryName: nil,
-            nature: selectedNatures.first,
+            need: selectedNeeds.first,
             transactionType: transactionType,
             period: detailPeriod
         )

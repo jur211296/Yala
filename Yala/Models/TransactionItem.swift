@@ -47,7 +47,7 @@ final class TransactionItem {
 
     // MARK: - Nature Override
     /// Override manual de naturaleza (nil = usar la de subcategoría)
-    var natureOverride: String?
+    var needOverride: String?
 
     // MARK: - Scheduled Payment Link
     /// ID of the scheduled payment this transaction is associated with (manual association)
@@ -66,11 +66,11 @@ final class TransactionItem {
     var createdAt: Date = Date()
 
     /// Naturaleza efectiva del registro (usa override si existe, sino la de subcategoría)
-    var effectiveNature: SubcategoryNature {
-        if let override = natureOverride {
-            return SubcategoryNature(rawValue: override) ?? .unclassified
+    var effectiveNeed: SubcategoryNeed {
+        if let override = needOverride {
+            return SubcategoryNeed(rawValue: override) ?? .unclassified
         }
-        return subcategory?.nature ?? .unclassified
+        return subcategory?.need ?? .unclassified
     }
 
     // MARK: - Currency Recalculation

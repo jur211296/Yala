@@ -29,7 +29,7 @@ enum FirstWeekday: Int, CaseIterable, Identifiable {
 }
 
 /// Naturaleza de subcategoría (esencial, prioritaria, opcional, sin clasificar)
-enum SubcategoryNature: String, CaseIterable, Identifiable {
+enum SubcategoryNeed: String, CaseIterable, Identifiable {
     case essential = "esencial"
     case priority = "prioritaria"
     case optional = "opcional"
@@ -40,29 +40,29 @@ enum SubcategoryNature: String, CaseIterable, Identifiable {
     /// Nombre visible en la UI
     var displayName: String {
         switch self {
-        case .essential: return L10n.Nature.essential
-        case .priority: return L10n.Nature.priority
-        case .optional: return L10n.Nature.optional
-        case .unclassified: return L10n.Nature.unclassified
+        case .essential: return L10n.Need.essential
+        case .priority: return L10n.Need.priority
+        case .optional: return L10n.Need.optional
+        case .unclassified: return L10n.Need.unclassified
         }
     }
 
     /// Descripción corta para ayudar al usuario
     var description: String {
         switch self {
-        case .essential: return L10n.Nature.essentialDesc
-        case .priority: return L10n.Nature.priorityDesc
-        case .optional: return L10n.Nature.optionalDesc
-        case .unclassified: return L10n.Nature.unclassifiedDesc
+        case .essential: return L10n.Need.essentialDesc
+        case .priority: return L10n.Need.priorityDesc
+        case .optional: return L10n.Need.optionalDesc
+        case .unclassified: return L10n.Need.unclassifiedDesc
         }
     }
 }
 
 /// Acceso cómodo a la naturaleza desde el modelo SwiftData
 extension Subcategory {
-    var nature: SubcategoryNature {
+    var need: SubcategoryNeed {
         get {
-            SubcategoryNature(rawValue: natureRawValue ?? "") ?? .unclassified
+            SubcategoryNeed(rawValue: natureRawValue ?? "") ?? .unclassified
         }
         set {
             natureRawValue = newValue.rawValue
@@ -361,28 +361,28 @@ struct SubcategorySpendingSummary: Identifiable {
     }
 }
 
-struct NatureSpendingSummary: Identifiable {
-    let nature: SubcategoryNature
+struct NeedSpendingSummary: Identifiable {
+    let need: SubcategoryNeed
     let amount: Double
     let percentage: Double
 
-    var id: String { nature.rawValue }
+    var id: String { need.rawValue }
 
-    // Color helper - uses distinct nature colors (not brand colors)
+    // Color helper - uses distinct need colors (not brand colors)
     var color: Color {
-        switch nature {
-        case .essential: return .essentialNature    // Amber
-        case .priority: return .priorityNatureNew   // Violet
-        case .optional: return .optionalNature      // Rose
+        switch need {
+        case .essential: return .essentialNeed    // Amber
+        case .priority: return .priorityNeedNew   // Violet
+        case .optional: return .optionalNeed      // Rose
         case .unclassified: return .gray.opacity(0.5)
         }
     }
 }
 
-struct NatureTrendPoint: Identifiable {
+struct NeedTrendPoint: Identifiable {
     let id: UUID = UUID()
     let date: Date  // X axis
-    // Amounts per nature
+    // Amounts per need
     let essential: Double
     let priority: Double
     let optional: Double
@@ -390,8 +390,8 @@ struct NatureTrendPoint: Identifiable {
 
     var total: Double { essential + priority + optional + unclassified }
 
-    func amount(for nature: SubcategoryNature) -> Double {
-        switch nature {
+    func amount(for need: SubcategoryNeed) -> Double {
+        switch need {
         case .essential: return essential
         case .priority: return priority
         case .optional: return optional

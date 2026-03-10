@@ -31,7 +31,7 @@ struct FilterCriteria: Hashable {
     var selectedTags: Set<PersistentIdentifier> = []
 
     /// Selected natures for filtering (empty = all natures)
-    var selectedNatures: Set<SubcategoryNature> = []
+    var selectedNeeds: Set<SubcategoryNeed> = []
 
     /// Selected transaction natures for filtering (empty = all, income/expense)
     var selectedTransactionNatures: Set<TransactionNature> = []
@@ -73,7 +73,7 @@ struct FilterCriteria: Hashable {
         !selectedAccounts.isEmpty
             || !selectedCategories.isEmpty
             || !selectedSubcategories.isEmpty
-            || !selectedNatures.isEmpty
+            || !selectedNeeds.isEmpty
             || !selectedTags.isEmpty
             || transactionTypeFilter != .all
             || amountCondition.isActive
@@ -87,7 +87,7 @@ struct FilterCriteria: Hashable {
         var count = 0
         if !selectedAccounts.isEmpty { count += 1 }
         if !selectedCategories.isEmpty || !selectedSubcategories.isEmpty { count += 1 }
-        if !selectedNatures.isEmpty { count += 1 }
+        if !selectedNeeds.isEmpty { count += 1 }
         if !selectedTags.isEmpty { count += 1 }
         if transactionTypeFilter != .all { count += 1 }
         if amountCondition.isActive { count += 1 }
@@ -109,7 +109,7 @@ struct FilterCriteria: Hashable {
         selectedAccounts.removeAll()
         selectedCategories.removeAll()
         selectedSubcategories.removeAll()
-        selectedNatures.removeAll()
+        selectedNeeds.removeAll()
         selectedTransactionNatures.removeAll()
         selectedTags.removeAll()
         selectedCurrencies.removeAll()
@@ -129,7 +129,7 @@ enum FilterType {
     case categories
     case subcategories
     case tags
-    case natures
+    case needs
     case currencies
     case transactionType
     case amount
@@ -218,7 +218,7 @@ struct FilterService {
         if !matchesEntityFilter(transaction.category?.persistentModelID, selected: criteria.selectedCategories, isExclude: isExclude) { return false }
         if !matchesEntityFilter(transaction.subcategory?.persistentModelID, selected: criteria.selectedSubcategories, isExclude: isExclude) { return false }
         // Transactions without subcategory are treated as .unclassified (consistent with PanelVM behavior)
-        if !matchesEntityFilter(transaction.subcategory?.nature ?? .unclassified, selected: criteria.selectedNatures, isExclude: isExclude) { return false }
+        if !matchesEntityFilter(transaction.subcategory?.need ?? .unclassified, selected: criteria.selectedNeeds, isExclude: isExclude) { return false }
 
         // Tags filter (ANY match semantics)
         if !criteria.selectedTags.isEmpty {

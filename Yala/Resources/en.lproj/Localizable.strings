@@ -74,13 +74,9 @@
 "subcategories.title" = "Subcategories";
 "subcategories.noSubcategory" = "No subcategory";
 
-// MARK: - Nature
+// MARK: - Need
 
-"nature.expensesByNature" = "Expenses by Need";
-"nature.title" = "Need";
-"nature.essential" = "Essential";
-"nature.discretionary" = "Discretionary";
-"nature.unclassified" = "Unclassified";
+"need.expensesByNeed" = "Expenses by Need";
 
 // MARK: - Records
 
@@ -110,12 +106,12 @@
 "filters.allTags" = "All tags";
 "filters.noTags" = "No tags";
 "filters.allCurrencies" = "All available";
-"filters.allNatures" = "All needs";
+"filters.allNeeds" = "All needs";
 "filters.selectedCount" = "%d selected";
 "filters.subcategoriesSelectedCount" = "%d subcategories selected";
 "filters.categories" = "Categories";
 "filters.type" = "Type";
-"filters.nature" = "Need";
+"filters.need" = "Need";
 "filters.currency" = "Currency";
 "filters.includeMode" = "Include";
 "filters.excludeMode" = "Exclude";
@@ -160,7 +156,7 @@
 "search.filter.category" = "Category";
 "search.filter.subcategory" = "Subcategory";
 "search.filter.account" = "Account";
-"search.filter.nature" = "Need";
+"search.filter.need" = "Need";
 "search.filter.tag" = "Tag";
 
 // MARK: - Exchange Rate
@@ -238,7 +234,7 @@
 "category.new" = "New Category";
 "category.edit" = "Edit Category";
 "category.name" = "Name";
-"category.nature" = "Need";
+"category.need" = "Need";
 "category.show" = "Show";
 "category.addSubcategory" = "Add subcategory";
 "category.subcategories" = "Subcategories";
@@ -618,7 +614,7 @@
 "widgetType.categoriesPie" = "Category Distribution";
 "widgetType.subcategoriesPie" = "Subcategory Distribution";
 "widgetType.latestRecords" = "Latest Records";
-"widgetType.expensesByNature" = "Expenses by Need";
+"widgetType.expensesByNeed" = "Expenses by Need";
 "widgetType.expensesByTag" = "Expenses by Tag";
 "widgetType.exchangeRate" = "Exchange Rate";
 "widgetType.budgets" = "Budgets";
@@ -658,7 +654,7 @@
 "widget.noExpensesSubcategoriesPeriod" = "No subcategory expenses yet for this period.";
 "widget.distributionByCategory" = "Categories";
 "widget.distributionBySubcategory" = "Subcategories";
-"widget.distributionByNature" = "Needs";
+"widget.distributionByNeed" = "Needs";
 "widget.distributionByTag" = "Distribution by tag";
 "widget.noDataForPeriod" = "No data yet for this period";
 "widget.selectCurrencies" = "Select up to 2 currencies to compare with %@";
@@ -676,7 +672,7 @@
 "common.unknownError" = "Something went wrong";
 "common.saveError" = "Changes weren't saved. Try again.";
 "common.deleteError" = "Couldn't delete. Try once more.";
-"widget.noExpensesNaturePeriod" = "No expenses recorded by need for this period.";
+"widget.noExpensesNeedPeriod" = "No expenses recorded by need for this period.";
 
 
 "account.addAccount" = "Add Account";
@@ -707,14 +703,14 @@
 "period.lastYear" = "Last Year";
 "period.allTime" = "All Time";
 
-"nature.essential" = "Essential";
-"nature.priority" = "Priority";
-"nature.optional" = "Optional";
-"nature.unclassified" = "Unclassified";
-"nature.essential.desc" = "Essential expenses, hard to cut.";
-"nature.priority.desc" = "Important but with some flexibility.";
-"nature.optional.desc" = "Discretionary or leisure expenses.";
-"nature.unclassified.desc" = "No specific nature tag.";
+"need.essential" = "Essential";
+"need.priority" = "Priority";
+"need.optional" = "Optional";
+"need.unclassified" = "Unclassified";
+"need.essential.desc" = "Essential expenses, hard to cut.";
+"need.priority.desc" = "Important but with some flexibility.";
+"need.optional.desc" = "Discretionary or leisure expenses.";
+"need.unclassified.desc" = "No specific nature tag.";
 
 "trendType.balance" = "Balance";
 "trendType.income" = "Income";
@@ -766,7 +762,7 @@
 "insights.quickStats" = "Quick Stats";
 "insights.comparison" = "Period Comparison";
 "insights.weekdayAverage" = "Average spending by day";
-"insights.natureDistribution" = "By Need";
+"insights.needDistribution" = "By Need";
 "insights.commitments" = "Commitments";
 "insights.pendingPayments" = "Pending payments";
 "insights.activeSubscriptions" = "Active subscriptions";
@@ -1145,14 +1141,6 @@
 "account.type.other" = "Other";
 
 
-"nature.essential" = "Essential";
-"nature.essentialDesc" = "Vital expenses you cannot avoid (rent, basic food, health).";
-"nature.priority" = "Priority";
-"nature.priorityDesc" = "Important for your well-being or future, but adjustable if necessary.";
-"nature.optional" = "Optional";
-"nature.optionalDesc" = "Expenses for pleasure or desire, the first to cut if there are problems.";
-"nature.unclassified" = "Unclassified";
-"nature.unclassifiedDesc" = "No specific nature defined.";
 
 "iconPicker.title" = "Customize";
 "iconPicker.preview" = "Preview";
@@ -1169,7 +1157,7 @@
 "iconPicker.education" = "Education";
 "iconPicker.work" = "Work";
 "iconPicker.pets" = "Pets";
-"iconPicker.nature" = "Nature";
+"iconPicker.need" = "Nature";
 "iconPicker.tech" = "Technology";
 "iconPicker.travel" = "Travel";
 "iconPicker.communication" = "Communication";
@@ -1180,8 +1168,8 @@
 "iconPicker.other" = "Other";
 
 
-"nature.title" = "Spending need";
-"nature.incomeNotApplicable" = "Need classification only applies to expenses";
+"need.title" = "Spending need";
+"need.incomeNotApplicable" = "Need classification only applies to expenses";
 
 // MARK: - Balance Adjustments
 
@@ -1394,7 +1382,7 @@
 "accessibility.processAudio" = "Process audio";
 "accessibility.exchangeRateChart" = "Exchange rate chart";
 "accessibility.periodComparison" = "Period comparison chart";
-"accessibility.natureTrend" = "Spending by need chart";
+"accessibility.needTrend" = "Spending by need chart";
 "accessibility.noData" = "No data";
 "accessibility.completeFormHint" = "To save, complete amount, account, and category";
 "accessibility.completeSelectionHint" = "Complete the required selection";
@@ -1484,7 +1472,7 @@
 "widget.hint.categoriesPie" = "Percentage distribution of spending by category.";
 "widget.hint.subcategoriesPie" = "Percentage distribution of spending by subcategory.";
 "widget.hint.tagsPie" = "Distribution of spending by assigned tags.";
-"widget.hint.natureTrend" = "Classifies your expenses as essential, priority, or optional.";
+"widget.hint.needTrend" = "Classifies your expenses as essential, priority, or optional.";
 "widget.hint.cashFlow" = "Compare your income and expenses to see the net flow.";
 "widget.hint.recentRecords" = "Your most recent transactions.";
 "widget.hint.budgets" = "Status of your active budgets.";

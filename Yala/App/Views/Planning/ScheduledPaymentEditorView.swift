@@ -15,7 +15,7 @@ struct ScheduledPaymentPrefill {
     let account: Account?
     let subcategory: Subcategory?
     let tagIDs: Set<PersistentIdentifier>
-    let natureOverride: SubcategoryNature?
+    let needOverride: SubcategoryNeed?
     let currencyCode: String
     let transactionDate: Date
 }
@@ -53,7 +53,7 @@ struct ScheduledPaymentEditorView: View {
     @State private var selectedTags: Set<PersistentIdentifier> = []
 
     // Nature override
-    @State private var selectedNature: SubcategoryNature?
+    @State private var selectedNeed: SubcategoryNeed?
 
     // Recurrence
     @State private var isRecurring: Bool = true
@@ -1009,7 +1009,7 @@ struct ScheduledPaymentEditorView: View {
             selectedAccount = prefill.account
             selectedSubcategory = prefill.subcategory
             selectedTags = prefill.tagIDs
-            selectedNature = prefill.natureOverride
+            selectedNeed = prefill.needOverride
             paymentDate = calendar.startOfDay(for: prefill.transactionDate)
             dayOfMonth = calendar.component(.day, from: prefill.transactionDate)
             yearlyMonth = calendar.component(.month, from: prefill.transactionDate)
@@ -1084,7 +1084,7 @@ struct ScheduledPaymentEditorView: View {
             notifyOnDueDate: notifyOnDueDate,
             notifyDaysBefore: notifyDaysBefore,
             isActive: isActive,
-            natureOverride: selectedNature?.rawValue
+            needOverride: selectedNeed?.rawValue
         )
 
         if let id = savedID {

@@ -45,14 +45,14 @@ struct CategoriesTabView: View {
     @State private var categorySpending: [CategorySpendingSummary] = []
     @State private var subcategorySpending: [SubcategorySpendingSummary] = []
     @State private var tagSpending: [TagSpendingSummary] = []
-    @State private var natureTrendPoints: [NatureTrendPoint] = []
-    @State private var selectedNature: SubcategoryNature?
+    @State private var needTrendPoints: [NeedTrendPoint] = []
+    @State private var selectedNeed: SubcategoryNeed?
     @State private var chartsCarouselPosition: String? = "category"
     @State private var listViewType: ListViewType = .categories
     @State private var isListExpanded: Bool = false
     @State private var isSubcategoriesAutomatic: Bool = false  // Track if switch was automatic
     @State private var showCustomPeriodPicker: Bool = false  // Custom period picker sheet
-    @State private var isSyncingFilters: Bool = false  // Anti-loop flag for Nature sync functions only
+    @State private var isSyncingFilters: Bool = false  // Anti-loop flag for Need sync functions only
     @Namespace private var listSelectorNamespace
     @Namespace private var comparisonSelectorNamespace
 
@@ -60,11 +60,11 @@ struct CategoriesTabView: View {
     @State private var previousCategoryTotal: Double? = nil
     @State private var previousSubcategoryTotal: Double? = nil
     @State private var previousTagTotal: Double? = nil
-    @State private var previousNatureTotal: Double? = nil
-    @State private var previousNatureAmounts: [SubcategoryNature: Double] = [:]
+    @State private var previousNeedTotal: Double? = nil
+    @State private var previousNeedAmounts: [SubcategoryNeed: Double] = [:]
 
-    // Nature Carousel State
-    @State private var natureCarouselIndex: Int? = 0
+    // Need Carousel State
+    @State private var needCarouselIndex: Int? = 0
 
     /// Effective category ID for subcategory filtering (uses first selected category or derives parent from subcategory)
     private var effectiveCategoryID: PersistentIdentifier? {
@@ -115,7 +115,7 @@ struct CategoriesTabView: View {
 
     // MARK: - Body
 
-    /// Check if income-only filter is active (nature carousel not applicable)
+    /// Check if income-only filter is active (need carousel not applicable)
     private var isIncomeMode: Bool {
         viewModel.selectedTransactionNatures == [.income]
     }
@@ -126,9 +126,9 @@ struct CategoriesTabView: View {
                 controlBar
                 spendingAnalysisHeader
                 chartsCarousel
-                // Nature carousel only shows for expenses (nature classification doesn't apply to income)
+                // Need carousel only shows for expenses (need classification doesn't apply to income)
                 if !isIncomeMode {
-                    natureCarousel
+                    needCarousel
                 }
                 categoriesListSection
                 recentRecordsSection
@@ -155,9 +155,9 @@ struct CategoriesTabView: View {
         .onChange(of: viewModel.selectedTags) {
             calculateData()
         }
-        .onChange(of: viewModel.selectedNatures) {
+        .onChange(of: viewModel.selectedNeeds) {
             calculateData()
-            syncNatureFilterToSelection()
+            syncNeedFilterToSelection()
         }
         .onChange(of: viewModel.selectedTransactionNatures) {
             calculateData()
@@ -165,8 +165,8 @@ struct CategoriesTabView: View {
         .onChange(of: allSubcategories) {
             calculateData()
         }
-        .onChange(of: selectedNature) {
-            syncSelectionToNatureFilter()
+        .onChange(of: selectedNeed) {
+            syncSelectionToNeedFilter()
             calculateData()
         }
         .onChange(of: sessionState.customDateRange) {
@@ -215,7 +215,7 @@ struct CategoriesTabView: View {
         )
         .onChange(of: viewModel.hasActiveFilters) {
             if !viewModel.hasActiveFilters {
-                selectedNature = nil
+                selectedNeed = nil
             }
         }
     }
@@ -305,7 +305,7 @@ struct CategoriesTabView: View {
     private var carouselPageCount: Int {
         let isWide = DS.Adaptive.isWideScreen(sizeClass)
         if isWide {
-            // iPad: tags moved to nature row, only category + subcategory (or just subcategory in income)
+            // iPad: tags moved to need row, only category + subcategory (or just subcategory in income)
             return isIncomeMode ? 1 : 2
         }
         return isIncomeMode ? 2 : 3
@@ -335,7 +335,7 @@ struct CategoriesTabView: View {
                             .frame(width: cardWidth)
                             .id("subcategory")
 
-                        // Tags Chart - on iPad, tags moves next to nature
+                        // Tags Chart - on iPad, tags moves next to need
                         if !isWide {
                             tagChartCard
                                 .frame(width: cardWidth)
@@ -510,15 +510,15 @@ struct CategoriesTabView: View {
         .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
 
-    // MARK: - Nature Carousel
+    // MARK: - Need Carousel
 
-    /// Count of natures with data (for dynamic height calculation)
-    private var visibleNatureCount: Int {
-        guard !natureTrendPoints.isEmpty else { return 3 }
-        let essentialTotal = natureTrendPoints.reduce(0) { $0 + $1.essential }
-        let priorityTotal = natureTrendPoints.reduce(0) { $0 + $1.priority }
-        let optionalTotal = natureTrendPoints.reduce(0) { $0 + $1.optional }
-        let unclassifiedTotal = natureTrendPoints.reduce(0) { $0 + $1.unclassified }
+    /// Count of needs with data (for dynamic height calculation)
+    private var visibleNeedCount: Int {
+        guard !needTrendPoints.isEmpty else { return 3 }
+        let essentialTotal = needTrendPoints.reduce(0) { $0 + $1.essential }
+        let priorityTotal = needTrendPoints.reduce(0) { $0 + $1.priority }
+        let optionalTotal = needTrendPoints.reduce(0) { $0 + $1.optional }
+        let unclassifiedTotal = needTrendPoints.reduce(0) { $0 + $1.unclassified }
 
         var count = 0
         if essentialTotal > 0 { count += 1 }
@@ -528,33 +528,33 @@ struct CategoriesTabView: View {
         return max(count, 3)  // Always show at least 3 bars
     }
 
-    /// Dynamic height based on current carousel page and visible natures
-    private var natureCarouselHeight: CGFloat {
-        if (natureCarouselIndex ?? 0) == 0 {
+    /// Dynamic height based on current carousel page and visible needs
+    private var needCarouselHeight: CGFloat {
+        if (needCarouselIndex ?? 0) == 0 {
             return 340  // Large chart view
         } else {
-            // Compact view: dynamic height based on number of visible natures
+            // Compact view: dynamic height based on number of visible needs
             // Each bar ~52 points (row + progress + spacing) + container padding (~56)
             let barHeight: CGFloat = 52
             let containerPadding: CGFloat = 56
-            return CGFloat(visibleNatureCount) * barHeight + containerPadding
+            return CGFloat(visibleNeedCount) * barHeight + containerPadding
         }
     }
 
     @ViewBuilder
-    private var natureCarousel: some View {
+    private var needCarousel: some View {
         let isWide = DS.Adaptive.isWideScreen(sizeClass)
 
         if isWide {
-            // iPad: tags pie + nature large side by side, no compact nature
+            // iPad: tags pie + need large side by side, no compact need
             HStack(alignment: .top, spacing: DS.Spacing.lg) {
                 tagChartCard
                     .frame(maxWidth: .infinity)
-                natureWidgetLarge
+                needWidgetLarge
                     .frame(maxWidth: .infinity)
             }
         } else {
-            // iPhone: carousel with large/compact nature slides
+            // iPhone: carousel with large/compact need slides
             VStack(spacing: DS.Spacing.sm) {
                 GeometryReader { geo in
                     let totalWidth = geo.size.width
@@ -562,28 +562,28 @@ struct CategoriesTabView: View {
 
                     ScrollView(.horizontal, showsIndicators: false) {
                         LazyHStack(alignment: .top, spacing: spacing) {
-                            natureWidgetLarge
+                            needWidgetLarge
                                 .frame(width: totalWidth)
                                 .id(0)
 
-                            natureWidgetCompact
+                            needWidgetCompact
                                 .frame(width: totalWidth)
                                 .id(1)
                         }
                         .scrollTargetLayout()
                     }
                     .scrollTargetBehavior(.viewAligned)
-                    .scrollPosition(id: $natureCarouselIndex)
+                    .scrollPosition(id: $needCarouselIndex)
                     .frame(width: totalWidth)
                 }
-                .frame(height: natureCarouselHeight)
-                .dsAnimation(.easeInOut(duration: 0.3), value: natureCarouselIndex, reduceMotion: reduceMotion)
+                .frame(height: needCarouselHeight)
+                .dsAnimation(.easeInOut(duration: 0.3), value: needCarouselIndex, reduceMotion: reduceMotion)
 
                 HStack(spacing: DS.Spacing.sm) {
                     ForEach(0..<2, id: \.self) { page in
                         Circle()
                             .fill(
-                                page == (natureCarouselIndex ?? 0)
+                                page == (needCarouselIndex ?? 0)
                                     ? theme.primaryText.opacity(0.3)
                                     : theme.secondaryText.opacity(0.2)
                             )
@@ -595,63 +595,63 @@ struct CategoriesTabView: View {
         }
     }
 
-    private var natureWidgetLarge: some View {
-        NatureTrendWidget(
-            trendPoints: natureTrendPoints,
-            selectedNature: selectedNature,
+    private var needWidgetLarge: some View {
+        NeedTrendWidget(
+            trendPoints: needTrendPoints,
+            selectedNeed: selectedNeed,
             currencyCode: defaultCurrencyCode,
             size: .large,
-            grouping: natureGrouping,
+            grouping: needGrouping,
             interval: viewModel.panelDateInterval,
-            onSelectNature: { nature in
+            onSelectNeed: { need in
                 dsWithAnimation(reduceMotion) {
-                    if selectedNature == nature {
-                        selectedNature = nil
+                    if selectedNeed == need {
+                        selectedNeed = nil
                     } else {
-                        selectedNature = nature
+                        selectedNeed = need
                     }
                 }
             },
             onShowDetail: nil,
             period: viewModel.detailPeriod,
-            previousTotalAmount: previousNatureTotal,
-            previousAmountByNature: previousNatureAmounts,
+            previousTotalAmount: previousNeedTotal,
+            previousAmountByNeed: previousNeedAmounts,
             showVariationHeader: showVariations && viewModel.detailPeriod != .allTime,
             comparisonMode: sessionState.comparisonMode,
             isIncomeMode: viewModel.selectedTransactionNatures == [.income]
         )
     }
 
-    private var natureWidgetCompact: some View {
-        NatureTrendWidget(
-            trendPoints: natureTrendPoints,
-            selectedNature: selectedNature,
+    private var needWidgetCompact: some View {
+        NeedTrendWidget(
+            trendPoints: needTrendPoints,
+            selectedNeed: selectedNeed,
             currencyCode: defaultCurrencyCode,
             size: .medium,
-            grouping: natureGrouping,
+            grouping: needGrouping,
             interval: viewModel.panelDateInterval,
-            onSelectNature: { nature in
+            onSelectNeed: { need in
                 dsWithAnimation(reduceMotion) {
-                    if selectedNature == nature {
-                        selectedNature = nil
+                    if selectedNeed == need {
+                        selectedNeed = nil
                     } else {
-                        selectedNature = nature
+                        selectedNeed = need
                     }
                 }
             },
             onShowDetail: nil,
             period: viewModel.detailPeriod,
-            previousTotalAmount: previousNatureTotal,
-            previousAmountByNature: previousNatureAmounts,
+            previousTotalAmount: previousNeedTotal,
+            previousAmountByNeed: previousNeedAmounts,
             showVariationHeader: showVariations && viewModel.detailPeriod != .allTime,
             comparisonMode: sessionState.comparisonMode,
             isIncomeMode: viewModel.selectedTransactionNatures == [.income]
         )
     }
 
-    /// Determine grouping for nature widget based on selected period
+    /// Determine grouping for need widget based on selected period
     /// Matches PanelViewModel logic for consistent bar chart grouping
-    private var natureGrouping: TrendGrouping {
+    private var needGrouping: TrendGrouping {
         switch viewModel.detailPeriod {
         case .thisWeek, .last7Days:
             return .day  // Daily bars for week
@@ -851,7 +851,7 @@ struct CategoriesTabView: View {
             selectedCategories: viewModel.isExcludeMode ? viewModel.selectedCategories : [],
             selectedSubcategories: viewModel.isExcludeMode ? viewModel.selectedSubcategories : [],
             selectedTags: viewModel.selectedTags,
-            selectedNatures: viewModel.selectedNatures,
+            selectedNeeds: viewModel.selectedNeeds,
             selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
             isExcludeMode: viewModel.isExcludeMode,
@@ -868,13 +868,13 @@ struct CategoriesTabView: View {
             criteria: pieChartCriteria
         )
 
-        // Create criteria for nature widget (respects cat/subcat filters, but NOT nature filter - show all with dim)
-        let natureCriteria = FilterCriteria(
+        // Create criteria for need widget (respects cat/subcat filters, but NOT need filter - show all with dim)
+        let needCriteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
             selectedCategories: viewModel.selectedCategories,
             selectedSubcategories: viewModel.selectedSubcategories,
             selectedTags: viewModel.selectedTags,
-            selectedNatures: [],  // Don't filter by nature - show all with dim
+            selectedNeeds: [],  // Don't filter by need - show all with dim
             selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
             isExcludeMode: viewModel.isExcludeMode,
@@ -884,11 +884,11 @@ struct CategoriesTabView: View {
             dateInterval: interval
         )
 
-        // Filter transactions for nature widget
-        let natureFiltered = FilterService.filterForTrends(
+        // Filter transactions for need widget
+        let needFiltered = FilterService.filterForTrends(
             transactions: allTransactions,
             accounts: accounts,
-            criteria: natureCriteria
+            criteria: needCriteria
         )
 
         // Calculate category spending (show ALL categories, dim applied in widget)
@@ -932,7 +932,7 @@ struct CategoriesTabView: View {
             selectedCategories: viewModel.selectedCategories,
             selectedSubcategories: viewModel.selectedSubcategories,
             selectedTags: [],  // Don't filter by tag — show all with dim
-            selectedNatures: viewModel.selectedNatures,
+            selectedNeeds: viewModel.selectedNeeds,
             selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
             transactionTypeFilter: .all,
@@ -950,12 +950,12 @@ struct CategoriesTabView: View {
             transactionNatures: naturesFilter
         )
 
-        // Calculate nature trend data with correct grouping based on period
-        // Uses natureFiltered (no nature filter) so selection = visual dim, not data filter
+        // Calculate need trend data with correct grouping based on period
+        // Uses needFiltered (no need filter) so selection = visual dim, not data filter
         let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen
-        natureTrendPoints = NatureTrendHelper.calculateTrend(
-            transactions: natureFiltered,
-            grouping: natureGrouping,
+        needTrendPoints = NeedTrendHelper.calculateTrend(
+            transactions: needFiltered,
+            grouping: needGrouping,
             interval: interval,
             preferredCurrency: preferredCurrency,
             context: modelContext
@@ -976,8 +976,8 @@ struct CategoriesTabView: View {
             previousCategoryTotal = nil
             previousSubcategoryTotal = nil
             previousTagTotal = nil
-            previousNatureTotal = nil
-            previousNatureAmounts = [:]
+            previousNeedTotal = nil
+            previousNeedAmounts = [:]
             return
         }
 
@@ -996,7 +996,7 @@ struct CategoriesTabView: View {
             selectedCategories: viewModel.isExcludeMode ? viewModel.selectedCategories : [],
             selectedSubcategories: viewModel.isExcludeMode ? viewModel.selectedSubcategories : [],
             selectedTags: viewModel.selectedTags,
-            selectedNatures: viewModel.selectedNatures,
+            selectedNeeds: viewModel.selectedNeeds,
             selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
             isExcludeMode: viewModel.isExcludeMode,
@@ -1014,7 +1014,7 @@ struct CategoriesTabView: View {
         )
 
         // Calculate previous period category spending
-        // Use same nature filter as current period for consistent comparison
+        // Use same need filter as current period for consistent comparison
         let naturesFilter: Set<TransactionNature>? = viewModel.selectedTransactionNatures.isEmpty
             ? nil
             : viewModel.selectedTransactionNatures
@@ -1076,7 +1076,7 @@ struct CategoriesTabView: View {
             selectedCategories: viewModel.selectedCategories,
             selectedSubcategories: viewModel.selectedSubcategories,
             selectedTags: [],  // Don't filter by tag — show all
-            selectedNatures: viewModel.selectedNatures,
+            selectedNeeds: viewModel.selectedNeeds,
             selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
             transactionTypeFilter: .all,
@@ -1103,14 +1103,14 @@ struct CategoriesTabView: View {
             tagSpending[index].previousAmount = prevTagAmounts[tagSpending[index].tag.persistentModelID]
         }
 
-        // Calculate previous period nature trend data
+        // Calculate previous period need trend data
         // Use separate criteria WITHOUT nature filter for consistent comparison
-        let prevNatureCriteria = FilterCriteria(
+        let prevNeedCriteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
             selectedCategories: [],
             selectedSubcategories: [],
             selectedTags: viewModel.selectedTags,
-            selectedNatures: [],  // Don't filter by nature
+            selectedNeeds: [],  // Don't filter by nature
             selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
             isExcludeMode: viewModel.isExcludeMode,
@@ -1119,33 +1119,33 @@ struct CategoriesTabView: View {
             searchText: viewModel.searchText,
             dateInterval: previousInterval
         )
-        let prevNatureFiltered = FilterService.filterForTrends(
+        let prevNeedFiltered = FilterService.filterForTrends(
             transactions: allTransactions,
             accounts: accounts,
-            criteria: prevNatureCriteria
+            criteria: prevNeedCriteria
         )
 
         let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen
-        let previousNaturePoints = NatureTrendHelper.calculateTrend(
-            transactions: prevNatureFiltered,
-            grouping: natureGrouping,
+        let previousNeedPoints = NeedTrendHelper.calculateTrend(
+            transactions: prevNeedFiltered,
+            grouping: needGrouping,
             interval: previousInterval,
             preferredCurrency: preferredCurrency,
             context: modelContext
         )
 
         // Calculate totals by nature for previous period
-        var prevNatureAmounts: [SubcategoryNature: Double] = [:]
-        var prevNatureTotal: Double = 0
-        for point in previousNaturePoints {
-            prevNatureAmounts[.essential, default: 0] += point.essential
-            prevNatureAmounts[.priority, default: 0] += point.priority
-            prevNatureAmounts[.optional, default: 0] += point.optional
-            prevNatureAmounts[.unclassified, default: 0] += point.unclassified
-            prevNatureTotal += point.total
+        var prevNeedAmounts: [SubcategoryNeed: Double] = [:]
+        var prevNeedTotal: Double = 0
+        for point in previousNeedPoints {
+            prevNeedAmounts[.essential, default: 0] += point.essential
+            prevNeedAmounts[.priority, default: 0] += point.priority
+            prevNeedAmounts[.optional, default: 0] += point.optional
+            prevNeedAmounts[.unclassified, default: 0] += point.unclassified
+            prevNeedTotal += point.total
         }
-        previousNatureAmounts = prevNatureAmounts
-        previousNatureTotal = prevNatureTotal > 0 ? prevNatureTotal : nil
+        previousNeedAmounts = prevNeedAmounts
+        previousNeedTotal = prevNeedTotal > 0 ? prevNeedTotal : nil
 
         // Handle case where there's no data in previous period
         if previousCategoryTotal == 0 { previousCategoryTotal = nil }
@@ -1155,29 +1155,29 @@ struct CategoriesTabView: View {
 
     // MARK: - Filter Synchronization
 
-    private func syncSelectionToNatureFilter() {
+    private func syncSelectionToNeedFilter() {
         guard !isSyncingFilters else { return }
         isSyncingFilters = true
         defer { isSyncingFilters = false }
 
-        if let nature = selectedNature {
+        if let need = selectedNeed {
             // Replace all selected natures with the new one (single selection)
-            viewModel.selectedNatures = [nature]
+            viewModel.selectedNeeds = [need]
         } else {
             // Clear all when deselected
-            viewModel.selectedNatures.removeAll()
+            viewModel.selectedNeeds.removeAll()
         }
     }
 
-    private func syncNatureFilterToSelection() {
+    private func syncNeedFilterToSelection() {
         guard !isSyncingFilters else { return }
         isSyncingFilters = true
         defer { isSyncingFilters = false }
 
-        if viewModel.selectedNatures.count == 1 {
-            selectedNature = viewModel.selectedNatures.first
-        } else if viewModel.selectedNatures.isEmpty {
-            selectedNature = nil
+        if viewModel.selectedNeeds.count == 1 {
+            selectedNeed = viewModel.selectedNeeds.first
+        } else if viewModel.selectedNeeds.isEmpty {
+            selectedNeed = nil
         }
     }
 

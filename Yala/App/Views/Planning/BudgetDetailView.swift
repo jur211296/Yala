@@ -217,7 +217,7 @@ struct BudgetDetailView: View {
                     detailRow(
                         icon: "leaf",
                         label: L10n.BudgetDetail.needs,
-                        value: naturesDescription
+                        value: needsDescription
                     )
                 }
             }
@@ -379,10 +379,10 @@ struct BudgetDetailView: View {
         return subcategories.map(\.name).joined(separator: ", ")
     }
 
-    private var naturesDescription: String {
+    private var needsDescription: String {
         guard let naturesString = budget.natures else { return "" }
         return naturesString.split(separator: ",")
-            .compactMap { SubcategoryNature(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
+            .compactMap { SubcategoryNeed(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
             .map(\.displayName)
             .joined(separator: ", ")
     }

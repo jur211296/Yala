@@ -58,7 +58,7 @@ final class NewTransactionViewModel {
     var selectedSubcategory: Subcategory?
 
     /// Naturaleza seleccionada (nil = usar la de subcategoría)
-    var selectedNature: SubcategoryNature?
+    var selectedNeed: SubcategoryNeed?
 
     /// Fecha de la transacción
     var transactionDate: Date = Date()
@@ -92,7 +92,7 @@ final class NewTransactionViewModel {
     var showTagSelector: Bool = false
     var showFavoritesSheet: Bool = false
     var showDatePicker: Bool = false
-    var showNatureSelector: Bool = false
+    var showNeedSelector: Bool = false
 
     // Quick actions sheets
     var showDeleteConfirmation: Bool = false
@@ -552,8 +552,8 @@ final class NewTransactionViewModel {
             transaction.amountInPreferredCurrency =
                 (amountInPreferred as NSDecimalNumber).doubleValue
             transaction.preferredCurrencyCode = preferredCode
-            // Save nature override if different from subcategory's nature
-            transaction.natureOverride = selectedNature?.rawValue
+            // Save need override if different from subcategory's need
+            transaction.needOverride = selectedNeed?.rawValue
         } else {
             transaction = TransactionItem(
                 date: transactionDate,
@@ -568,8 +568,8 @@ final class NewTransactionViewModel {
                 amountInPreferredCurrency: (amountInPreferred as NSDecimalNumber).doubleValue,
                 preferredCurrencyCode: preferredCode
             )
-            // Save nature override for new transactions
-            transaction.natureOverride = selectedNature?.rawValue
+            // Save need override for new transactions
+            transaction.needOverride = selectedNeed?.rawValue
             context.insert(transaction)
         }
 
@@ -751,7 +751,7 @@ final class NewTransactionViewModel {
         let subcategory = Subcategory(
             name: subcategoryName,
             colorHex: nil,
-            natureRawValue: SubcategoryNature.unclassified.rawValue,
+            natureRawValue: SubcategoryNeed.unclassified.rawValue,
             iconName: "arrow.left.arrow.right",
             category: category
         )
@@ -815,7 +815,7 @@ final class NewTransactionViewModel {
         let subcategory = Subcategory(
             name: subcategoryName,
             colorHex: nil,
-            natureRawValue: SubcategoryNature.unclassified.rawValue,
+            natureRawValue: SubcategoryNeed.unclassified.rawValue,
             iconName: "arrow.left.arrow.right",
             category: category
         )

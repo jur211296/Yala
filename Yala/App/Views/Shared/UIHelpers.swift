@@ -187,18 +187,18 @@ extension Color {
     static let deepSlate = Color(hex: "000000")
 
     /// Priority Nature: Softer Cyan for „Priority" expenses.
-    static let priorityNature = Color(hex: "00C2CB")
+    static let priorityNeed = Color(hex: "00C2CB")
 
-    // MARK: - Nature Colors (Distinct from brand colors)
+    // MARK: - Need Colors (Distinct from brand colors)
 
-    /// Essential Nature: Warm amber for basic necessities
-    static let essentialNature = Color(hex: "F59E0B")
+    /// Essential Need: Warm amber for basic necessities
+    static let essentialNeed = Color(hex: "F59E0B")
 
-    /// Priority Nature (Violet): Attention-grabbing but not urgent
-    static let priorityNatureNew = Color(hex: "8B5CF6")
+    /// Priority Need (Violet): Attention-grabbing but not urgent
+    static let priorityNeedNew = Color(hex: "8B5CF6")
 
-    /// Optional Nature: Soft rose for discretionary spending
-    static let optionalNature = Color(hex: "FB7185")
+    /// Optional Need: Soft rose for discretionary spending
+    static let optionalNeed = Color(hex: "FB7185")
 
     // Legacy adaptive colors removed — use ThemeColor (.thBackground, .thCard, etc.)
     // or @Environment(\.yalaTheme) for raw Color access.
@@ -215,8 +215,8 @@ extension Color {
     // MARK: - Semantic Aliases
     static let brandPrimary = electricIndigo
     static let brandSecondary = hotPink
-    static let brandTertiary = priorityNature  // Teal - third main color
-    static let incomeGraph = priorityNature  // Changed from neonCyan to teal
+    static let brandTertiary = priorityNeed  // Teal - third main color
+    static let incomeGraph = priorityNeed  // Changed from neonCyan to teal
     static let expenseGraph = hotPink
     static let darkBackground = deepSlate
 

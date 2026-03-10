@@ -9,7 +9,7 @@
 import SwiftUI
 
 /// Semantic colors for widget UI elements
-/// Aligned with main app: electricIndigo, hotPink, priorityNature (teal)
+/// Aligned with main app: electricIndigo, hotPink, priorityNeed (teal)
 enum WidgetColors {
     // MARK: - Brand Colors (from UIHelpers.swift)
 

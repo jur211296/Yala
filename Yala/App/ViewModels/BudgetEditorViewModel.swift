@@ -139,7 +139,7 @@ final class BudgetEditorViewModel {
         selectedAccounts: Set<PersistentIdentifier>,
         selectedSubcategories: Set<PersistentIdentifier>,
         selectedTags: Set<PersistentIdentifier>,
-        selectedNatures: Set<SubcategoryNature>,
+        selectedNeeds: Set<SubcategoryNeed>,
         alertEnabled: Bool,
         alertThresholds: Set<Int>
     ) -> Bool {
@@ -149,7 +149,7 @@ final class BudgetEditorViewModel {
         let accountsArray = activeAccounts.filter { selectedAccounts.contains($0.persistentModelID) }
         let subcategoriesArray = allSubcategories.filter { selectedSubcategories.contains($0.persistentModelID) }
         let tagsArray = activeTags.filter { selectedTags.contains($0.persistentModelID) }
-        let naturesString = selectedNatures.isEmpty ? nil : selectedNatures.map { $0.rawValue }.joined(separator: ",")
+        let naturesString = selectedNeeds.isEmpty ? nil : selectedNeeds.map { $0.rawValue }.joined(separator: ",")
         let thresholdsString = alertThresholds.isEmpty ? nil : alertThresholds.sorted().map { String($0) }.joined(separator: ",")
 
         if let existingBudget = existing {

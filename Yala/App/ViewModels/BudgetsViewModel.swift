@@ -518,8 +518,8 @@ final class BudgetsViewModel {
 
         if let naturesString = budget.natures, !naturesString.isEmpty {
             let natures = naturesString.split(separator: ",")
-                .compactMap { SubcategoryNature(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
-            filtered = filtered.filter { natures.contains($0.effectiveNature) }
+                .compactMap { SubcategoryNeed(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
+            filtered = filtered.filter { natures.contains($0.effectiveNeed) }
         }
 
         return filtered.filter { $0.category?.isIncome == false }

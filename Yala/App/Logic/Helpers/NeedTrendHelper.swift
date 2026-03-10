@@ -1,19 +1,19 @@
 //
-//  NatureTrendHelper.swift
+//  NeedTrendHelper.swift
 //  Yala
 //
-//  Helper struct for nature trend calculations.
+//  Helper struct for need trend calculations.
 //  Extracted from PanelViewModel to reduce God Class complexity.
 //
 
 import Foundation
 import SwiftData
 
-/// Pure calculation helper for nature trend widget data.
+/// Pure calculation helper for need trend widget data.
 /// Contains no state - all methods are static.
-struct NatureTrendHelper {
+struct NeedTrendHelper {
 
-    /// Calculates nature trend points by grouping transactions by date bucket.
+    /// Calculates need trend points by grouping transactions by date bucket.
     /// Categorizes expenses into essential, priority, optional, and unclassified.
     ///
     /// - Parameters:
@@ -22,14 +22,14 @@ struct NatureTrendHelper {
     ///   - interval: The total date interval for the chart.
     ///   - preferredCurrency: The user's preferred currency.
     ///   - context: SwiftData context.
-    /// - Returns: An array of `NatureTrendPoint` sorted by date.
+    /// - Returns: An array of `NeedTrendPoint` sorted by date.
     static func calculateTrend(
         transactions: [TransactionItem],
         grouping: TrendGrouping,
         interval: DateInterval,
         preferredCurrency: CurrencyCode,
         context: ModelContext
-    ) -> [NatureTrendPoint] {
+    ) -> [NeedTrendPoint] {
         // Group transactions by Date bucket
         var grouped: [Date: [TransactionItem]] = [:]
         let calendar = Calendar.current
@@ -48,7 +48,7 @@ struct NatureTrendHelper {
             grouped[dateKey, default: []].append(tx)
         }
 
-        var points: [NatureTrendPoint] = []
+        var points: [NeedTrendPoint] = []
         for (date, txs) in grouped {
             var essential: Double = 0
             var priority: Double = 0
@@ -83,9 +83,9 @@ struct NatureTrendHelper {
                 // Accumulate signed amount (Expenses usually negative, Refunds positive)
                 let amount = doubleAmount
 
-                let nature = tx.subcategory?.nature ?? .unclassified
+                let need = tx.subcategory?.need ?? .unclassified
 
-                switch nature {
+                switch need {
                 case .essential: essential += amount
                 case .priority: priority += amount
                 case .optional: optional += amount
@@ -95,7 +95,7 @@ struct NatureTrendHelper {
 
             // Store ABSOLUTE magnitude for the chart (Expenses are negative total -> Positive height)
             points.append(
-                NatureTrendPoint(
+                NeedTrendPoint(
                     date: date,
                     essential: abs(essential),
                     priority: abs(priority),

@@ -252,7 +252,7 @@ enum L10n {
         static var quickStats: String { ls("insights.quickStats", comment: "") }
         static var comparison: String { ls("insights.comparison", comment: "") }
         static var weekdayAverage: String { ls("insights.weekdayAverage", comment: "") }
-        static var natureDistribution: String { ls("insights.natureDistribution", comment: "") }
+        static var needDistribution: String { ls("insights.needDistribution", comment: "") }
         static var commitments: String { ls("insights.commitments", comment: "") }
         static var pendingPayments: String { ls("insights.pendingPayments", comment: "") }
         static var activeSubscriptions: String { ls("insights.activeSubscriptions", comment: "") }
@@ -400,35 +400,35 @@ enum L10n {
     }
 
     // MARK: - Nature
-    enum Nature {
+    enum Need {
         static var title: String {
-            ls("nature.expensesByNature", comment: "Expenses by nature")
+            ls("need.expensesByNeed", comment: "Expenses by need")
         }
         static var label: String {
-            ls("nature.title", comment: "Nature label")
+            ls("need.title", comment: "Need label")
         }
-        static var essential: String { ls("nature.essential", comment: "") }
+        static var essential: String { ls("need.essential", comment: "") }
         static var essentialDesc: String {
-            ls("nature.essential.desc", comment: "")
+            ls("need.essential.desc", comment: "")
         }
-        static var priority: String { ls("nature.priority", comment: "") }
+        static var priority: String { ls("need.priority", comment: "") }
         static var priorityDesc: String {
-            ls("nature.priority.desc", comment: "")
+            ls("need.priority.desc", comment: "")
         }
-        static var optional: String { ls("nature.optional", comment: "") }
+        static var optional: String { ls("need.optional", comment: "") }
         static var optionalDesc: String {
-            ls("nature.optional.desc", comment: "")
+            ls("need.optional.desc", comment: "")
         }
         static var unclassified: String {
-            ls("nature.unclassified", comment: "")
+            ls("need.unclassified", comment: "")
         }
         static var unclassifiedDesc: String {
-            ls("nature.unclassified.desc", comment: "")
+            ls("need.unclassified.desc", comment: "")
         }
         static var incomeNotApplicable: String {
             ls(
-                "nature.incomeNotApplicable",
-                comment: "Message shown when income filter is active - nature classification doesn't apply"
+                "need.incomeNotApplicable",
+                comment: "Message shown when income filter is active - need classification doesn't apply"
             )
         }
     }
@@ -494,8 +494,8 @@ enum L10n {
         static var allCurrencies: String {
             ls("filters.allCurrencies", comment: "")
         }
-        static var allNatures: String {
-            ls("filters.allNatures", comment: "")
+        static var allNeeds: String {
+            ls("filters.allNeeds", comment: "")
         }
         static func selectedCount(_ count: Int) -> String {
             String(format: ls("filters.selectedCount", comment: ""), count)
@@ -505,7 +505,7 @@ enum L10n {
         }
         static var categories: String { ls("filters.categories", comment: "") }
         static var type: String { ls("filters.type", comment: "") }
-        static var nature: String { ls("filters.nature", comment: "") }
+        static var need: String { ls("filters.need", comment: "") }
         static var currency: String { ls("filters.currency", comment: "") }
         static var includeMode: String { ls("filters.includeMode", comment: "") }
         static var excludeMode: String { ls("filters.excludeMode", comment: "") }
@@ -586,7 +586,7 @@ enum L10n {
         static var processAudio: String { ls("accessibility.processAudio", comment: "") }
         static var exchangeRateChart: String { ls("accessibility.exchangeRateChart", comment: "") }
         static var periodComparison: String { ls("accessibility.periodComparison", comment: "") }
-        static var natureTrend: String { ls("accessibility.natureTrend", comment: "") }
+        static var needTrend: String { ls("accessibility.needTrend", comment: "") }
         static var noData: String { ls("accessibility.noData", comment: "") }
         static var completeFormHint: String { ls("accessibility.completeFormHint", comment: "") }
         static var completeSelectionHint: String { ls("accessibility.completeSelectionHint", comment: "") }
@@ -642,7 +642,7 @@ enum L10n {
             static var category: String { ls("search.filter.category", comment: "") }
             static var subcategory: String { ls("search.filter.subcategory", comment: "") }
             static var account: String { ls("search.filter.account", comment: "") }
-            static var nature: String { ls("search.filter.nature", comment: "") }
+            static var need: String { ls("search.filter.need", comment: "") }
             static var tag: String { ls("search.filter.tag", comment: "") }
         }
     }
@@ -1030,7 +1030,7 @@ enum L10n {
         static var edit: String { ls("category.edit", comment: "") }
         static var editTitle: String { ls("category.editTitle", comment: "") }
         static var name: String { ls("category.name", comment: "") }
-        static var nature: String { ls("category.nature", comment: "") }
+        static var need: String { ls("category.need", comment: "") }
         static var show: String { ls("category.show", comment: "") }
         static var hiddenTitle: String { ls("category.hiddenTitle", comment: "") }
         static var hiddenDescription: String {
@@ -2096,8 +2096,8 @@ enum L10n {
         static var noExpensesSubcategoriesPeriod: String {
             ls("widget.noExpensesSubcategoriesPeriod", comment: "")
         }
-        static var noExpensesNaturePeriod: String {
-            ls("widget.noExpensesNaturePeriod", comment: "")
+        static var noExpensesNeedPeriod: String {
+            ls("widget.noExpensesNeedPeriod", comment: "")
         }
         static var noExpensesDescriptionCategories: String {
             ls("widget.noExpensesDescriptionCategories", comment: "")
@@ -2115,8 +2115,8 @@ enum L10n {
         static var distributionBySubcategory: String {
             ls("widget.distributionBySubcategory", comment: "")
         }
-        static var distributionByNature: String {
-            ls("widget.distributionByNature", comment: "")
+        static var distributionByNeed: String {
+            ls("widget.distributionByNeed", comment: "")
         }
         static var distributionByTag: String {
             ls("widget.distributionByTag", comment: "")
@@ -2159,8 +2159,8 @@ enum L10n {
             static var tagsPie: String {
                 ls("widget.hint.tagsPie", comment: "")
             }
-            static var natureTrend: String {
-                ls("widget.hint.natureTrend", comment: "")
+            static var needTrend: String {
+                ls("widget.hint.needTrend", comment: "")
             }
             static var cashFlow: String {
                 ls("widget.hint.cashFlow", comment: "")
@@ -2204,8 +2204,8 @@ enum L10n {
         static var latestRecords: String {
             ls("widgetType.latestRecords", comment: "")
         }
-        static var expensesByNature: String {
-            ls("widgetType.expensesByNature", comment: "")
+        static var expensesByNeed: String {
+            ls("widgetType.expensesByNeed", comment: "")
         }
         static var expensesByTag: String {
             ls("widgetType.expensesByTag", comment: "")
@@ -2335,7 +2335,7 @@ enum L10n {
         }
         static var work: String { ls("iconPicker.work", comment: "") }
         static var pets: String { ls("iconPicker.pets", comment: "") }
-        static var nature: String { ls("iconPicker.nature", comment: "") }
+        static var need: String { ls("iconPicker.need", comment: "") }
         static var tech: String { ls("iconPicker.tech", comment: "") }
         static var travel: String { ls("iconPicker.travel", comment: "") }
         static var communication: String {

@@ -37,10 +37,10 @@ final class RecordsViewModel: Filterable {
         set { SessionState.shared.selectedSubcategoryIDs = newValue }
     }
 
-    /// Selected natures for filtering
-    var selectedNatures: Set<SubcategoryNature> {
-        get { SessionState.shared.selectedNatures }
-        set { SessionState.shared.selectedNatures = newValue }
+    /// Selected needs for filtering
+    var selectedNeeds: Set<SubcategoryNeed> {
+        get { SessionState.shared.selectedNeeds }
+        set { SessionState.shared.selectedNeeds = newValue }
     }
 
     /// Selected transaction natures for filtering (empty = all)
@@ -157,8 +157,8 @@ final class RecordsViewModel: Filterable {
         if let categoryID = context.categoryID {
             selectedCategories = [categoryID]
         }
-        if let nature = context.nature {
-            selectedNatures = [nature]
+        if let need = context.need {
+            selectedNeeds = [need]
         }
         // Note: period is NOT set here because it's a computed property that writes to SessionState.
         // Setting it would overwrite the user's period selection. The period comes from SessionState directly.
@@ -189,7 +189,7 @@ final class RecordsViewModel: Filterable {
             selectedCategories: selectedCategories,
             selectedSubcategories: selectedSubcategories,
             selectedTags: selectedTags,
-            selectedNatures: selectedNatures,
+            selectedNeeds: selectedNeeds,
             selectedTransactionNatures: effectiveTransactionNatures,
             selectedCurrencies: selectedCurrencies,
             isExcludeMode: isExcludeMode,
@@ -346,7 +346,7 @@ final class RecordsViewModel: Filterable {
         selectedAccounts.removeAll()
         selectedCategories.removeAll()
         selectedSubcategories.removeAll()
-        selectedNatures.removeAll()
+        selectedNeeds.removeAll()
         // In expenses-only mode, keep expense filter forced
         if SessionState.shared.isExpensesOnlyMode {
             selectedTransactionNatures = [.expense]

@@ -64,7 +64,7 @@ final class SaveAsFavoriteViewModel {
         account: Account?,
         subcategory: Subcategory?,
         selectedTagIDs: Set<PersistentIdentifier>,
-        natureOverride: SubcategoryNature?,
+        needOverride: SubcategoryNeed?,
         currencyCode: String
     ) throws {
         guard let context = modelContext else { return }
@@ -94,7 +94,7 @@ final class SaveAsFavoriteViewModel {
             account: account,
             subcategory: subcategory,
             tags: selectedTags,
-            natureOverride: natureOverride?.rawValue,
+            needOverride: needOverride?.rawValue,
             currencyCode: currencyCode,
             displayOrder: nextOrder
         )

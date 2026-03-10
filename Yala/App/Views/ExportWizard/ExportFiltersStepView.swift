@@ -28,7 +28,7 @@ struct ExportFiltersStepView: View {
     @State private var selectedTags: Set<PersistentIdentifier> = []
 
     // Naturaleza
-    @State private var selectedNatures: Set<SubcategoryNature> = Set(SubcategoryNature.allCases)
+    @State private var selectedNeeds: Set<SubcategoryNeed> = Set(SubcategoryNeed.allCases)
 
     // Moneda
     @State private var selectedCurrencies: Set<CurrencyCode> = Set(CurrencyCode.allCases)
@@ -129,7 +129,7 @@ struct ExportFiltersStepView: View {
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 tagsContent
                                 Divider().padding(.leading, DS.Spacing.lg)
-                                naturesContent
+                                needsContent
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 currencyContent
                                 Divider().padding(.leading, DS.Spacing.lg)
@@ -395,21 +395,21 @@ struct ExportFiltersStepView: View {
 
     // MARK: - Natures Content
 
-    private var naturesContent: some View {
+    private var needsContent: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             // Header
             FilterSectionHeader(
                 icon: "chart.bar.fill",
-                title: L10n.Nature.label,
-                status: selectedNaturesText
+                title: L10n.Need.label,
+                status: selectedNeedsText
             )
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.md)
 
             // Chips
             FlowLayout(spacing: DS.Spacing.sm) {
-                ForEach(SubcategoryNature.allCases, id: \.self) { nature in
-                    natureChip(nature)
+                ForEach(SubcategoryNeed.allCases, id: \.self) { need in
+                    needChip(need)
                 }
             }
             .padding(.leading, DS.Spacing.formIndent)
@@ -418,18 +418,18 @@ struct ExportFiltersStepView: View {
         }
     }
 
-    private func natureChip(_ nature: SubcategoryNature) -> some View {
-        let isSelected = selectedNatures.contains(nature)
+    private func needChip(_ need: SubcategoryNeed) -> some View {
+        let isSelected = selectedNeeds.contains(need)
 
         return Button {
             if isSelected {
-                selectedNatures.remove(nature)
+                selectedNeeds.remove(need)
             } else {
-                selectedNatures.insert(nature)
+                selectedNeeds.insert(need)
             }
         } label: {
             HStack(spacing: DS.Spacing.xs) {
-                Text(nature.displayName)
+                Text(need.displayName)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
@@ -444,9 +444,9 @@ struct ExportFiltersStepView: View {
         .buttonStyle(.plain)
     }
 
-    private var selectedNaturesText: String {
-        if selectedNatures.isEmpty { return L10n.Filters.allNatures }
-        return "\(selectedNatures.count)"
+    private var selectedNeedsText: String {
+        if selectedNeeds.isEmpty { return L10n.Filters.allNeeds }
+        return "\(selectedNeeds.count)"
     }
 
     private var amountContent: some View {

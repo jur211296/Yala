@@ -169,7 +169,7 @@ class SessionState {
     var selectedSubcategoryIDs: Set<PersistentIdentifier> = [] { didSet { resetExcludeModeIfNeeded() } }
 
     /// Selected natures (empty = all natures)
-    var selectedNatures: Set<SubcategoryNature> = [] { didSet { resetExcludeModeIfNeeded() } }
+    var selectedNeeds: Set<SubcategoryNeed> = [] { didSet { resetExcludeModeIfNeeded() } }
 
     /// Selected tags (empty = all tags)
     var selectedTags: Set<PersistentIdentifier> = [] { didSet { resetExcludeModeIfNeeded() } }
@@ -202,7 +202,7 @@ class SessionState {
             selectedAccountIDs.removeAll()
             selectedCategoryIDs.removeAll()
             selectedSubcategoryIDs.removeAll()
-            selectedNatures.removeAll()
+            selectedNeeds.removeAll()
             selectedTags.removeAll()
             selectedCurrencies.removeAll()
             selectedTransactionNatures.removeAll()
@@ -229,7 +229,7 @@ class SessionState {
     /// Check if any global filter is active
     var hasActiveFilters: Bool {
         !selectedAccountIDs.isEmpty || !selectedCategoryIDs.isEmpty
-            || !selectedSubcategoryIDs.isEmpty || !selectedNatures.isEmpty
+            || !selectedSubcategoryIDs.isEmpty || !selectedNeeds.isEmpty
             || !selectedTags.isEmpty || !selectedCurrencies.isEmpty
             || !selectedTransactionNatures.isEmpty
             || amountCondition.isActive || !searchText.isEmpty
@@ -238,7 +238,7 @@ class SessionState {
     /// Check if any exclude-eligible filter is active (transaction type is NOT excludable)
     private var hasActiveExcludeFilters: Bool {
         !selectedAccountIDs.isEmpty || !selectedCategoryIDs.isEmpty
-            || !selectedSubcategoryIDs.isEmpty || !selectedNatures.isEmpty
+            || !selectedSubcategoryIDs.isEmpty || !selectedNeeds.isEmpty
             || !selectedTags.isEmpty || !selectedCurrencies.isEmpty
             || amountCondition.isActive || !searchText.isEmpty
     }
@@ -269,7 +269,7 @@ class SessionState {
         selectedAccountIDs.removeAll()
         selectedCategoryIDs.removeAll()
         selectedSubcategoryIDs.removeAll()
-        selectedNatures.removeAll()
+        selectedNeeds.removeAll()
         selectedTags.removeAll()
         selectedCurrencies.removeAll()
         selectedTransactionNatures.removeAll()
@@ -312,13 +312,13 @@ class SessionState {
         }
     }
 
-    /// Toggle nature filter
-    func toggleNatureFilter(_ nature: SubcategoryNature) {
-        if selectedNatures.contains(nature) {
-            selectedNatures.remove(nature)
+    /// Toggle need filter
+    func toggleNeedFilter(_ need: SubcategoryNeed) {
+        if selectedNeeds.contains(need) {
+            selectedNeeds.remove(need)
         } else {
-            selectedNatures.removeAll()  // Single-select for Panel
-            selectedNatures.insert(nature)
+            selectedNeeds.removeAll()  // Single-select for Panel
+            selectedNeeds.insert(need)
         }
     }
 
@@ -511,10 +511,10 @@ class SessionState {
             selectedTags = Set(tags.map { $0.persistentModelID })
         }
 
-        // Apply nature filters (parse comma-separated string)
+        // Apply need filters (parse comma-separated string)
         if let naturesString = budget.natures, !naturesString.isEmpty {
-            let natureValues = naturesString.split(separator: ",").map { String($0).trimmingCharacters(in: .whitespaces) }
-            selectedNatures = Set(natureValues.compactMap { SubcategoryNature(rawValue: $0) })
+            let needValues = naturesString.split(separator: ",").map { String($0).trimmingCharacters(in: .whitespaces) }
+            selectedNeeds = Set(needValues.compactMap { SubcategoryNeed(rawValue: $0) })
         }
     }
 

@@ -198,7 +198,7 @@ final class SubcategoryTransferViewModel {
                 isDefaultSeed: false,
                 isVisible: true,
                 sortOrder: maxSortOrder + 1,
-                natureRawValue: SubcategoryNature.unclassified.rawValue,
+                natureRawValue: SubcategoryNeed.unclassified.rawValue,
                 iconName: "questionmark",
                 category: category
             )

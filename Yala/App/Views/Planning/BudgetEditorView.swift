@@ -44,7 +44,7 @@ struct BudgetEditorView: View {
     @State private var selectedAccounts: Set<PersistentIdentifier> = []
     @State private var selectedSubcategories: Set<PersistentIdentifier> = []
     @State private var selectedTags: Set<PersistentIdentifier> = []
-    @State private var selectedNatures: Set<SubcategoryNature> = []
+    @State private var selectedNeeds: Set<SubcategoryNeed> = []
 
     // Sheet states
     @State private var showCategoriesSheet = false
@@ -424,7 +424,7 @@ struct BudgetEditorView: View {
                 Divider().padding(.leading, DS.Spacing.lg)
                 tagsContent
                 Divider().padding(.leading, DS.Spacing.lg)
-                naturesContent
+                needsContent
             }
         }
     }
@@ -564,21 +564,21 @@ struct BudgetEditorView: View {
 
     // MARK: - Natures Content
 
-    private var naturesContent: some View {
+    private var needsContent: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             // Header
             FilterSectionHeader(
                 icon: "chart.bar.fill",
-                title: NSLocalizedString("nature.title", comment: ""),
-                status: selectedNaturesText
+                title: NSLocalizedString("need.title", comment: ""),
+                status: selectedNeedsText
             )
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.md)
 
             // Chips
             FlowLayout(spacing: DS.Spacing.sm) {
-                ForEach(SubcategoryNature.allCases, id: \.self) { nature in
-                    natureChip(nature)
+                ForEach(SubcategoryNeed.allCases, id: \.self) { need in
+                    needChip(need)
                 }
             }
             .padding(.leading, DS.Spacing.formIndent)
@@ -587,18 +587,18 @@ struct BudgetEditorView: View {
         }
     }
 
-    private func natureChip(_ nature: SubcategoryNature) -> some View {
-        let isSelected = selectedNatures.contains(nature)
+    private func needChip(_ need: SubcategoryNeed) -> some View {
+        let isSelected = selectedNeeds.contains(need)
 
         return Button {
             if isSelected {
-                selectedNatures.remove(nature)
+                selectedNeeds.remove(need)
             } else {
-                selectedNatures.insert(nature)
+                selectedNeeds.insert(need)
             }
         } label: {
             HStack(spacing: DS.Spacing.xs) {
-                Text(nature.displayName)
+                Text(need.displayName)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
@@ -613,11 +613,11 @@ struct BudgetEditorView: View {
         .buttonStyle(.plain)
     }
 
-    private var selectedNaturesText: String {
-        if selectedNatures.isEmpty {
+    private var selectedNeedsText: String {
+        if selectedNeeds.isEmpty {
             return NSLocalizedString("filters.all", comment: "")
         }
-        return "\(selectedNatures.count)"
+        return "\(selectedNeeds.count)"
     }
 
     // MARK: - Delete Section
@@ -716,8 +716,8 @@ struct BudgetEditorView: View {
 
         // Parse natures string
         if let naturesString = budget.natures {
-            let natureStrings = naturesString.components(separatedBy: ",")
-            selectedNatures = Set(natureStrings.compactMap { SubcategoryNature(rawValue: $0) })
+            let needStrings = naturesString.components(separatedBy: ",")
+            selectedNeeds = Set(needStrings.compactMap { SubcategoryNeed(rawValue: $0) })
         }
 
         // Load alert settings
@@ -744,7 +744,7 @@ struct BudgetEditorView: View {
             selectedAccounts: selectedAccounts,
             selectedSubcategories: selectedSubcategories,
             selectedTags: selectedTags,
-            selectedNatures: selectedNatures,
+            selectedNeeds: selectedNeeds,
             alertEnabled: alertEnabled,
             alertThresholds: selectedThresholds
         )

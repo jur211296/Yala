@@ -1,5 +1,5 @@
 //
-//  NatureTrendWidget.swift
+//  NeedTrendWidget.swift
 //  Yala
 //
 //  Created by Yala Refactoring.
@@ -8,45 +8,45 @@
 import Charts
 import SwiftUI
 
-private let naturePercentFormatter: NumberFormatter = {
+private let needPercentFormatter: NumberFormatter = {
     let f = NumberFormatter()
     f.numberStyle = .percent
     f.maximumFractionDigits = 0
     return f
 }()
 
-struct NatureTrendWidget: View {
-    let trendPoints: [NatureTrendPoint]
-    let selectedNature: SubcategoryNature?
+struct NeedTrendWidget: View {
+    let trendPoints: [NeedTrendPoint]
+    let selectedNeed: SubcategoryNeed?
     let currencyCode: String
     let size: TopCategoriesWidget.CardSize  // Reusing comparable size enum or WidgetSize
     let grouping: TrendGrouping
     let interval: DateInterval
-    let onSelectNature: (SubcategoryNature) -> Void
+    let onSelectNeed: (SubcategoryNeed) -> Void
     let onShowDetail: (() -> Void)?
 
     // MARK: - Period Comparison
 
     var period: DetailPeriod = .thisMonth
     var previousTotalAmount: Double? = nil
-    var previousAmountByNature: [SubcategoryNature: Double] = [:]
+    var previousAmountByNeed: [SubcategoryNeed: Double] = [:]
     var showVariationHeader: Bool = false
     var comparisonMode: ComparisonMode = .month
 
-    /// When true, shows a message that nature classification doesn't apply to income
+    /// When true, shows a message that need classification doesn't apply to income
     var isIncomeMode: Bool = false
 
     private var totalAmount: Double {
-        guard let nature = selectedNature else {
+        guard let need = selectedNeed else {
             return trendPoints.reduce(0) { $0 + $1.total }
         }
-        return trendPoints.reduce(0) { $0 + $1.amount(for: nature) }
+        return trendPoints.reduce(0) { $0 + $1.amount(for: need) }
     }
 
     private var variation: Double? {
         let previousAmount: Double?
-        if let nature = selectedNature {
-            previousAmount = previousAmountByNature[nature]
+        if let need = selectedNeed {
+            previousAmount = previousAmountByNeed[need]
         } else {
             previousAmount = previousTotalAmount
         }
@@ -69,9 +69,9 @@ struct NatureTrendWidget: View {
         )
     }
 
-    /// Calculate variation for a specific nature
-    private func variationForNature(_ nature: SubcategoryNature, currentAmount: Double) -> Double? {
-        guard let previousAmount = previousAmountByNature[nature] else { return nil }
+    /// Calculate variation for a specific need
+    private func variationForNeed(_ need: SubcategoryNeed, currentAmount: Double) -> Double? {
+        guard let previousAmount = previousAmountByNeed[need] else { return nil }
         return PreviousPeriodHelper.calculateVariation(
             currentAmount: currentAmount,
             previousAmount: previousAmount
@@ -79,32 +79,32 @@ struct NatureTrendWidget: View {
     }
 
     init(
-        trendPoints: [NatureTrendPoint],
-        selectedNature: SubcategoryNature?,
+        trendPoints: [NeedTrendPoint],
+        selectedNeed: SubcategoryNeed?,
         currencyCode: String,
         size: TopCategoriesWidget.CardSize,
         grouping: TrendGrouping,
         interval: DateInterval,
-        onSelectNature: @escaping (SubcategoryNature) -> Void,
+        onSelectNeed: @escaping (SubcategoryNeed) -> Void,
         onShowDetail: (() -> Void)? = nil,
         period: DetailPeriod = .thisMonth,
         previousTotalAmount: Double? = nil,
-        previousAmountByNature: [SubcategoryNature: Double] = [:],
+        previousAmountByNeed: [SubcategoryNeed: Double] = [:],
         showVariationHeader: Bool = false,
         comparisonMode: ComparisonMode = .month,
         isIncomeMode: Bool = false
     ) {
         self.trendPoints = trendPoints
-        self.selectedNature = selectedNature
+        self.selectedNeed = selectedNeed
         self.currencyCode = currencyCode
         self.size = size
         self.grouping = grouping
         self.interval = interval
-        self.onSelectNature = onSelectNature
+        self.onSelectNeed = onSelectNeed
         self.onShowDetail = onShowDetail
         self.period = period
         self.previousTotalAmount = previousTotalAmount
-        self.previousAmountByNature = previousAmountByNature
+        self.previousAmountByNeed = previousAmountByNeed
         self.showVariationHeader = showVariationHeader
         self.comparisonMode = comparisonMode
         self.isIncomeMode = isIncomeMode
@@ -116,7 +116,7 @@ struct NatureTrendWidget: View {
             HStack(alignment: .top) {
                 // Left: Title and total amount (hide KPI in income mode or when no data)
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Text(L10n.Widget.distributionByNature)
+                    Text(L10n.Widget.distributionByNeed)
                         .font(DS.Typography.headline)
                         .foregroundStyle(.thPrimaryText)
 
@@ -145,8 +145,8 @@ struct NatureTrendWidget: View {
                 }
 
                 InfoHintButton(
-                    title: L10n.WidgetType.expensesByNature,
-                    message: L10n.Widget.Hint.natureTrend
+                    title: L10n.WidgetType.expensesByNeed,
+                    message: L10n.Widget.Hint.needTrend
                 )
 
                 Spacer()
@@ -181,14 +181,14 @@ struct NatureTrendWidget: View {
 
             // Content
             if isIncomeMode {
-                // Income mode: nature classification doesn't apply
+                // Income mode: need classification doesn't apply
                 // Show centered message without KPI (header already hidden via conditional)
                 Spacer()
                 VStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "info.circle")
                         .font(DS.Typography.title)
                         .foregroundStyle(.secondary)
-                    Text(L10n.Nature.incomeNotApplicable)
+                    Text(L10n.Need.incomeNotApplicable)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -214,16 +214,16 @@ struct NatureTrendWidget: View {
         if size == .large {
             // Large: Chart + Legend (legend handles filtering)
             VStack(spacing: DS.Spacing.lg) {
-                NatureTrendChartView(
-                    points: trendPoints, selectedNature: selectedNature, currencyCode: currencyCode,
+                NeedTrendChartView(
+                    points: trendPoints, selectedNeed: selectedNeed, currencyCode: currencyCode,
                     grouping: grouping, interval: interval,
-                    onSelectNature: nil  // Legend handles explicit selection
+                    onSelectNeed: nil  // Legend handles explicit selection
                 )
 
-                NatureLegendView(
+                NeedLegendView(
                     points: trendPoints,
-                    selectedNature: selectedNature,
-                    onSelect: onSelectNature
+                    selectedNeed: selectedNeed,
+                    onSelect: onSelectNeed
                 )
             }
         } else {
@@ -239,51 +239,51 @@ struct NatureTrendWidget: View {
 
                 VStack(spacing: DS.Spacing.md) {
                     // Essential Bar
-                    NatureCompactBar(
-                        nature: .essential,
+                    NeedCompactBar(
+                        need: .essential,
                         amount: essentialTotal,
                         maxAmount: maxVal,
                         currencyCode: currencyCode,
-                        isSelected: selectedNature == nil || selectedNature == .essential,
-                        onTap: { onSelectNature(.essential) },
-                        variation: variationForNature(.essential, currentAmount: essentialTotal),
+                        isSelected: selectedNeed == nil || selectedNeed == .essential,
+                        onTap: { onSelectNeed(.essential) },
+                        variation: variationForNeed(.essential, currentAmount: essentialTotal),
                         showNAWhenNil: showVariationHeader
                     )
 
                     // Priority Bar
-                    NatureCompactBar(
-                        nature: .priority,
+                    NeedCompactBar(
+                        need: .priority,
                         amount: priorityTotal,
                         maxAmount: maxVal,
                         currencyCode: currencyCode,
-                        isSelected: selectedNature == nil || selectedNature == .priority,
-                        onTap: { onSelectNature(.priority) },
-                        variation: variationForNature(.priority, currentAmount: priorityTotal),
+                        isSelected: selectedNeed == nil || selectedNeed == .priority,
+                        onTap: { onSelectNeed(.priority) },
+                        variation: variationForNeed(.priority, currentAmount: priorityTotal),
                         showNAWhenNil: showVariationHeader
                     )
 
                     // Optional Bar
-                    NatureCompactBar(
-                        nature: .optional,
+                    NeedCompactBar(
+                        need: .optional,
                         amount: optionalTotal,
                         maxAmount: maxVal,
                         currencyCode: currencyCode,
-                        isSelected: selectedNature == nil || selectedNature == .optional,
-                        onTap: { onSelectNature(.optional) },
-                        variation: variationForNature(.optional, currentAmount: optionalTotal),
+                        isSelected: selectedNeed == nil || selectedNeed == .optional,
+                        onTap: { onSelectNeed(.optional) },
+                        variation: variationForNeed(.optional, currentAmount: optionalTotal),
                         showNAWhenNil: showVariationHeader
                     )
 
                     // Unclassified Bar (only if has value)
                     if unclassifiedTotal > 0 {
-                        NatureCompactBar(
-                            nature: .unclassified,
+                        NeedCompactBar(
+                            need: .unclassified,
                             amount: unclassifiedTotal,
                             maxAmount: maxVal,
                             currencyCode: currencyCode,
-                            isSelected: selectedNature == nil || selectedNature == .unclassified,
-                            onTap: { onSelectNature(.unclassified) },
-                            variation: variationForNature(.unclassified, currentAmount: unclassifiedTotal),
+                            isSelected: selectedNeed == nil || selectedNeed == .unclassified,
+                            onTap: { onSelectNeed(.unclassified) },
+                            variation: variationForNeed(.unclassified, currentAmount: unclassifiedTotal),
                             showNAWhenNil: showVariationHeader
                         )
                     }
@@ -292,9 +292,9 @@ struct NatureTrendWidget: View {
         }
     }
 
-    private func getTotal(for nature: SubcategoryNature) -> Double {
+    private func getTotal(for need: SubcategoryNeed) -> Double {
         trendPoints.reduce(0) { partialResult, point in
-            switch nature {
+            switch need {
             case .essential: return partialResult + point.essential
             case .priority: return partialResult + point.priority
             case .optional: return partialResult + point.optional
@@ -305,23 +305,23 @@ struct NatureTrendWidget: View {
 
 }
 
-struct NatureTrendChartView: View {
+struct NeedTrendChartView: View {
     @Environment(\.yalaTheme) private var theme
     @AppStorage("averageLineMode") private var averageLineMode: Int = 1
 
-    let points: [NatureTrendPoint]
-    let selectedNature: SubcategoryNature?
+    let points: [NeedTrendPoint]
+    let selectedNeed: SubcategoryNeed?
     let currencyCode: String
     let grouping: TrendGrouping
     let interval: DateInterval
-    let onSelectNature: ((SubcategoryNature) -> Void)?
+    let onSelectNeed: ((SubcategoryNeed) -> Void)?
     @State private var selectedDate: Date?
 
     // Flattened data struct for the chart
     struct ChartItem: Identifiable {
-        var id: String { "\(nature.rawValue)-\(Int(date.timeIntervalSince1970))" }
+        var id: String { "\(need.rawValue)-\(Int(date.timeIntervalSince1970))" }
         let date: Date
-        let nature: SubcategoryNature
+        let need: SubcategoryNeed
         let amount: Double
     }
 
@@ -403,8 +403,8 @@ struct NatureTrendChartView: View {
 
     private var totalAverageValue: Double {
         guard !points.isEmpty else { return 0 }
-        if let nature = selectedNature {
-            let values = points.map { $0.amount(for: nature) }
+        if let need = selectedNeed {
+            let values = points.map { $0.amount(for: need) }
             return values.reduce(0, +) / Double(values.count)
         } else {
             let values = points.map { $0.total }
@@ -414,8 +414,8 @@ struct NatureTrendChartView: View {
 
     private var averageSegments: [AverageSegment] {
         let values: [(date: Date, amount: Double)]
-        if let nature = selectedNature {
-            values = points.map { (date: $0.date, amount: $0.amount(for: nature)) }
+        if let need = selectedNeed {
+            values = points.map { (date: $0.date, amount: $0.amount(for: need)) }
         } else {
             values = points.map { (date: $0.date, amount: $0.total) }
         }
@@ -431,20 +431,20 @@ struct NatureTrendChartView: View {
 
         Chart {
             ForEach(flattenData(points)) { item in
-                // If a nature is selected, only show that nature (or dim others)
+                // If a need is selected, only show that nature (or dim others)
                 // Design Choice: If filtered, show ONLY that line. If not, show ALL lines stacked?
                 // Or show all lines but highlight selected?
                 // Let's match typical behavior: If filtered, show only that ONE series.
                 // If ALL (nil), show stacked area or multiple lines.
                 // Given "Gastos por naturaleza", Stacked Bar is good for composition.
 
-                if let selected = selectedNature {
-                    if item.nature == selected {
+                if let selected = selectedNeed {
+                    if item.need == selected {
                         BarMark(
                             x: .value("Fecha", item.date, unit: chartUnit),
                             y: .value("Monto", item.amount)
                         )
-                        .foregroundStyle(item.nature.color.gradient)
+                        .foregroundStyle(item.need.color.gradient)
                         .cornerRadius(DS.Radius.xs)
                                             }
                 } else {
@@ -452,7 +452,7 @@ struct NatureTrendChartView: View {
                         x: .value("Fecha", item.date, unit: chartUnit),
                         y: .value("Monto", item.amount)
                     )
-                    .foregroundStyle(item.nature.color.gradient)
+                    .foregroundStyle(item.need.color.gradient)
                     .cornerRadius(DS.Radius.xs)
                                     }
             }
@@ -460,16 +460,16 @@ struct NatureTrendChartView: View {
             averageLineMarks
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(L10n.Accessibility.natureTrend)
+        .accessibilityLabel(L10n.Accessibility.needTrend)
         .accessibilityValue(points.isEmpty ? L10n.Accessibility.noData :
             L10n.Accessibility.periodsCount(points.count))
         .chartXScale(domain: dataXDomain)
         .chartYScale(domain: yDomain)
         .chartForegroundStyleScale([
-            L10n.Nature.essential: Color.essentialNature,
-            L10n.Nature.priority: Color.priorityNatureNew,
-            L10n.Nature.optional: Color.optionalNature,
-            L10n.Nature.unclassified: DS.Semantic.disabledForeground,
+            L10n.Need.essential: Color.essentialNeed,
+            L10n.Need.priority: Color.priorityNeedNew,
+            L10n.Need.optional: Color.optionalNeed,
+            L10n.Need.unclassified: DS.Semantic.disabledForeground,
         ])
         .chartLegend(.hidden)
         // X-Axis: Smart dynamic labels matching TrendChartView
@@ -541,22 +541,22 @@ struct NatureTrendChartView: View {
                         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                             if selectedData.essential > 0 {
                                 TooltipRow(
-                                    nature: .essential, amount: selectedData.essential,
+                                    need: .essential, amount: selectedData.essential,
                                     currencyCode: currencyCode)
                             }
                             if selectedData.priority > 0 {
                                 TooltipRow(
-                                    nature: .priority, amount: selectedData.priority,
+                                    need: .priority, amount: selectedData.priority,
                                     currencyCode: currencyCode)
                             }
                             if selectedData.optional > 0 {
                                 TooltipRow(
-                                    nature: .optional, amount: selectedData.optional,
+                                    need: .optional, amount: selectedData.optional,
                                     currencyCode: currencyCode)
                             }
                             if selectedData.unclassified > 0 {
                                 TooltipRow(
-                                    nature: .unclassified, amount: selectedData.unclassified,
+                                    need: .unclassified, amount: selectedData.unclassified,
                                     currencyCode: currencyCode)
                             }
                             Divider()
@@ -678,8 +678,8 @@ struct NatureTrendChartView: View {
     private func calculateMaxValue() -> Double {
         guard !points.isEmpty else { return 100 }
 
-        if let selected = selectedNature {
-            // If a nature is selected, find max for that nature
+        if let selected = selectedNeed {
+            // If a need is selected, find max for that need
             return points.map { point in
                 switch selected {
                 case .essential: return point.essential
@@ -718,14 +718,14 @@ struct NatureTrendChartView: View {
     }
 
     struct TooltipRow: View {
-        let nature: SubcategoryNature
+        let need: SubcategoryNeed
         let amount: Double
         let currencyCode: String
 
         var body: some View {
             HStack {
-                Circle().fill(nature.color).frame(width: 6, height: 6)
-                Text(nature.displayName)
+                Circle().fill(need.color).frame(width: 6, height: 6)
+                Text(need.displayName)
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(Color.primary)
                 Spacer()
@@ -745,31 +745,31 @@ struct NatureTrendChartView: View {
         }
     }
 
-    private func flattenData(_ points: [NatureTrendPoint]) -> [ChartItem] {
+    private func flattenData(_ points: [NeedTrendPoint]) -> [ChartItem] {
         var items: [ChartItem] = []
         for point in points {
             // Add all natures
             if shouldShow(.essential) {
                 items.append(
-                    ChartItem(date: point.date, nature: .essential, amount: point.essential))
+                    ChartItem(date: point.date, need: .essential, amount: point.essential))
             }
             if shouldShow(.priority) {
-                items.append(ChartItem(date: point.date, nature: .priority, amount: point.priority))
+                items.append(ChartItem(date: point.date, need: .priority, amount: point.priority))
             }
             if shouldShow(.optional) {
-                items.append(ChartItem(date: point.date, nature: .optional, amount: point.optional))
+                items.append(ChartItem(date: point.date, need: .optional, amount: point.optional))
             }
             if shouldShow(.unclassified) {  // Only show if > 0 or if logic requires?
                 items.append(
-                    ChartItem(date: point.date, nature: .unclassified, amount: point.unclassified))
+                    ChartItem(date: point.date, need: .unclassified, amount: point.unclassified))
             }
         }
         return items
     }
 
-    private func shouldShow(_ nature: SubcategoryNature) -> Bool {
-        if let selected = selectedNature {
-            return selected == nature
+    private func shouldShow(_ need: SubcategoryNeed) -> Bool {
+        if let selected = selectedNeed {
+            return selected == need
         }
         return true
     }
@@ -785,10 +785,10 @@ struct NatureTrendChartView: View {
     }
 }
 
-struct NatureLegendView: View {
-    let points: [NatureTrendPoint]
-    let selectedNature: SubcategoryNature?
-    let onSelect: (SubcategoryNature) -> Void
+struct NeedLegendView: View {
+    let points: [NeedTrendPoint]
+    let selectedNeed: SubcategoryNeed?
+    let onSelect: (SubcategoryNeed) -> Void
 
     var body: some View {
         // Horizontal Grid or Flex
@@ -801,21 +801,21 @@ struct NatureLegendView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: DS.Spacing.sm) {
                 CompactLegendChip(
-                    nature: .essential, amount: essentials, total: total,
-                    isSelected: selectedNature == .essential || selectedNature == nil,
+                    need: .essential, amount: essentials, total: total,
+                    isSelected: selectedNeed == .essential || selectedNeed == nil,
                     onTap: { onSelect(.essential) })
                 CompactLegendChip(
-                    nature: .priority, amount: priorities, total: total,
-                    isSelected: selectedNature == .priority || selectedNature == nil,
+                    need: .priority, amount: priorities, total: total,
+                    isSelected: selectedNeed == .priority || selectedNeed == nil,
                     onTap: { onSelect(.priority) })
                 CompactLegendChip(
-                    nature: .optional, amount: optionals, total: total,
-                    isSelected: selectedNature == .optional || selectedNature == nil,
+                    need: .optional, amount: optionals, total: total,
+                    isSelected: selectedNeed == .optional || selectedNeed == nil,
                     onTap: { onSelect(.optional) })
                 if unclassified > 0 {
                     CompactLegendChip(
-                        nature: .unclassified, amount: unclassified, total: total,
-                        isSelected: selectedNature == .unclassified || selectedNature == nil,
+                        need: .unclassified, amount: unclassified, total: total,
+                        isSelected: selectedNeed == .unclassified || selectedNeed == nil,
                         onTap: { onSelect(.unclassified) })
                 }
             }
@@ -824,7 +824,7 @@ struct NatureLegendView: View {
 }
 
 struct LegendItem: View {
-    let nature: SubcategoryNature
+    let need: SubcategoryNeed
     let amount: Double
     let total: Double
     let isSelected: Bool
@@ -836,11 +836,11 @@ struct LegendItem: View {
         Button(action: onTap) {
             HStack(spacing: DS.Spacing.sm) {
                 Circle()
-                    .fill(extensionColor(for: nature))
+                    .fill(extensionColor(for: need))
                     .frame(width: 8, height: 8)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.none) {
-                    Text(nature.displayName)
+                    Text(need.displayName)
                         .font(DS.Typography.caption)
                         .foregroundStyle(Color.primary)
 
@@ -857,14 +857,14 @@ struct LegendItem: View {
         }
     }
 
-    private func extensionColor(for nature: SubcategoryNature) -> Color {
-        nature.color
+    private func extensionColor(for need: SubcategoryNeed) -> Color {
+        need.color
     }
 
     private func formattedPercent(_ value: Double, _ total: Double) -> String {
         guard total > 0 else { return "0%" }
         let pct = value / total
-        return naturePercentFormatter.string(from: NSNumber(value: pct)) ?? "0%"
+        return needPercentFormatter.string(from: NSNumber(value: pct)) ?? "0%"
     }
 }
 
@@ -873,7 +873,7 @@ struct LegendItem: View {
 struct CompactLegendChip: View {
     @Environment(\.yalaTheme) private var theme
 
-    let nature: SubcategoryNature
+    let need: SubcategoryNeed
     let amount: Double
     let total: Double
     let isSelected: Bool
@@ -883,10 +883,10 @@ struct CompactLegendChip: View {
         Button(action: onTap) {
             HStack(spacing: DS.Spacing.xs) {
                 Circle()
-                    .fill(chipColor(for: nature))
+                    .fill(chipColor(for: need))
                     .frame(width: 6, height: 6)
 
-                Text(nature.displayName)
+                Text(need.displayName)
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(Color.primary)
 
@@ -902,37 +902,37 @@ struct CompactLegendChip: View {
         }
     }
 
-    private func chipColor(for nature: SubcategoryNature) -> Color {
-        nature.color
+    private func chipColor(for need: SubcategoryNeed) -> Color {
+        need.color
     }
 
     private func formattedPercent(_ value: Double, _ total: Double) -> String {
         guard total > 0 else { return "0%" }
         let pct = value / total
-        return naturePercentFormatter.string(from: NSNumber(value: pct)) ?? "0%"
+        return needPercentFormatter.string(from: NSNumber(value: pct)) ?? "0%"
     }
 }
 
 // MARK: - Compact Mini Legend for Medium Size
 
-struct CompactNatureLegendView: View {
-    let selectedNature: SubcategoryNature?
-    let onSelect: (SubcategoryNature) -> Void
+struct CompactNeedLegendView: View {
+    let selectedNeed: SubcategoryNeed?
+    let onSelect: (SubcategoryNeed) -> Void
 
-    private let allNatures: [SubcategoryNature] = [.essential, .priority, .optional, .unclassified]
+    private let allNeeds: [SubcategoryNeed] = [.essential, .priority, .optional, .unclassified]
 
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
-            ForEach(allNatures, id: \.self) { nature in
+            ForEach(allNeeds, id: \.self) { need in
                 Button {
-                    onSelect(nature)
+                    onSelect(need)
                 } label: {
                     HStack(spacing: DS.Spacing.xs) {
                         Circle()
-                            .fill(nature.color)
+                            .fill(need.color)
                             .frame(width: 8, height: 8)
 
-                        Text(nature.displayName)
+                        Text(need.displayName)
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(Color.primary)
                     }
@@ -940,32 +940,32 @@ struct CompactNatureLegendView: View {
                     .padding(.vertical, DS.Spacing.xs)
                     .background(
                         RoundedRectangle(cornerRadius: DS.Radius.xs)
-                            .fill(isSelected(nature) ? nature.color.opacity(0.15) : Color.clear)
+                            .fill(isSelected(need) ? need.color.opacity(0.15) : Color.clear)
                     )
-                    .opacity(isActiveOrNoFilter(nature) ? 1.0 : 0.4)
+                    .opacity(isActiveOrNoFilter(need) ? 1.0 : 0.4)
                 }
                 .buttonStyle(.plain)
             }
         }
     }
 
-    private func isSelected(_ nature: SubcategoryNature) -> Bool {
-        selectedNature == nature
+    private func isSelected(_ need: SubcategoryNeed) -> Bool {
+        selectedNeed == need
     }
 
-    private func isActiveOrNoFilter(_ nature: SubcategoryNature) -> Bool {
-        selectedNature == nil || selectedNature == nature
+    private func isActiveOrNoFilter(_ need: SubcategoryNeed) -> Bool {
+        selectedNeed == nil || selectedNeed == need
     }
 }
 
-// Extension to map nature to color in View
+// Extension to map need to color in View
 // Uses distinct colors from brand palette to avoid confusion
-extension SubcategoryNature {
+extension SubcategoryNeed {
     var color: Color {
         switch self {
-        case .essential: return .essentialNature    // Amber
-        case .priority: return .priorityNatureNew   // Violet
-        case .optional: return .optionalNature      // Rose
+        case .essential: return .essentialNeed    // Amber
+        case .priority: return .priorityNeedNew   // Violet
+        case .optional: return .optionalNeed      // Rose
         case .unclassified: return .gray
         }
     }
@@ -973,8 +973,8 @@ extension SubcategoryNature {
 
 // MARK: - Compact Bar Component (CashFlow Style)
 
-struct NatureCompactBar: View {
-    let nature: SubcategoryNature
+struct NeedCompactBar: View {
+    let need: SubcategoryNeed
     let amount: Double
     let maxAmount: Double
     let currencyCode: String
@@ -988,7 +988,7 @@ struct NatureCompactBar: View {
             VStack(spacing: DS.Spacing.xs) {
                 // Name and Amount + Variation
                 HStack {
-                    Text(nature.displayName)
+                    Text(need.displayName)
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(isSelected ? Color.primary : Color.secondary)
                     Spacer()
@@ -1011,7 +1011,7 @@ struct NatureCompactBar: View {
                         // Fill
                         let width = maxAmount > 0 ? (amount / maxAmount) * geo.size.width : 0
                         Capsule()
-                            .fill(nature.color)
+                            .fill(need.color)
                             .frame(width: max(width, 6), height: 8)
                     }
                 }

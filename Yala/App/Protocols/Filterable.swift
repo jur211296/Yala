@@ -24,7 +24,7 @@ protocol Filterable: AnyObject {
     var selectedSubcategories: Set<PersistentIdentifier> { get set }
 
     /// Selected natures for filtering
-    var selectedNatures: Set<SubcategoryNature> { get set }
+    var selectedNeeds: Set<SubcategoryNeed> { get set }
 
     /// Selected tags for filtering
     var selectedTags: Set<PersistentIdentifier> { get set }
@@ -69,7 +69,7 @@ extension Filterable {
         c.selectedCategories = selectedCategories
         c.selectedSubcategories = selectedSubcategories
         c.selectedTags = selectedTags
-        c.selectedNatures = selectedNatures
+        c.selectedNeeds = selectedNeeds
         c.selectedTransactionNatures = selectedTransactionNatures
         c.selectedCurrencies = selectedCurrencies
         c.isExcludeMode = isExcludeMode
@@ -93,7 +93,7 @@ extension Filterable {
         selectedAccounts.removeAll()
         selectedCategories.removeAll()
         selectedSubcategories.removeAll()
-        selectedNatures.removeAll()
+        selectedNeeds.removeAll()
         selectedTransactionNatures.removeAll()
         selectedTags.removeAll()
         selectedCurrencies.removeAll()

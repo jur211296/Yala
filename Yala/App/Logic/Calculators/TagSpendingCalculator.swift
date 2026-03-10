@@ -27,7 +27,7 @@ struct TagSpendingCalculator {
 
         // 1. Filter Transactions
         // - Within interval
-        // - Has a category (to determine nature)
+        // - Has a category (to determine need)
         // - Matches requested transaction natures
         // - Has at least one tag
         // - Excludes balance adjustments and transfers

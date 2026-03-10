@@ -72,13 +72,9 @@
 "subcategories.title" = "Subcategorias";
 "subcategories.noSubcategory" = "Sem subcategoria";
 
-// MARK: - Nature
+// MARK: - Need
 
-"nature.expensesByNature" = "Despesas por necessidade";
-"nature.title" = "Necessidade";
-"nature.essential" = "Essencial";
-"nature.discretionary" = "Discricionario";
-"nature.unclassified" = "Sem classificacao";
+"need.expensesByNeed" = "Despesas por necessidade";
 
 // MARK: - Records
 
@@ -108,12 +104,12 @@
 "filters.allTags" = "Todas as etiquetas";
 "filters.noTags" = "Sem etiquetas";
 "filters.allCurrencies" = "Todas disponiveis";
-"filters.allNatures" = "Todas as necessidades";
+"filters.allNeeds" = "Todas as necessidades";
 "filters.selectedCount" = "%d selecionadas";
 "filters.subcategoriesSelectedCount" = "%d subcategorias selecionadas";
 "filters.categories" = "Categorias";
 "filters.type" = "Tipo";
-"filters.nature" = "Necessidade";
+"filters.need" = "Necessidade";
 "filters.currency" = "Moeda";
 "filters.includeMode" = "Incluir";
 "filters.excludeMode" = "Excluir";
@@ -158,7 +154,7 @@
 "search.filter.category" = "Categoria";
 "search.filter.subcategory" = "Subcategoria";
 "search.filter.account" = "Conta";
-"search.filter.nature" = "Necessidade";
+"search.filter.need" = "Necessidade";
 "search.filter.tag" = "Etiqueta";
 
 // MARK: - Exchange Rate
@@ -236,7 +232,7 @@
 "category.new" = "Nova categoria";
 "category.edit" = "Editar categoria";
 "category.name" = "Nome";
-"category.nature" = "Necessidade";
+"category.need" = "Necessidade";
 "category.show" = "Mostrar";
 "category.addSubcategory" = "Adicionar subcategoria";
 "category.subcategories" = "Subcategorias";
@@ -616,7 +612,7 @@
 "widgetType.categoriesPie" = "Distribuicao de categorias";
 "widgetType.subcategoriesPie" = "Distribuicao de subcategorias";
 "widgetType.latestRecords" = "Ultimos registros";
-"widgetType.expensesByNature" = "Despesas por necessidade";
+"widgetType.expensesByNeed" = "Despesas por necessidade";
 "widgetType.expensesByTag" = "Despesas por etiqueta";
 "widgetType.exchangeRate" = "Taxa de cambio";
 "widgetType.budgets" = "Orcamentos";
@@ -656,7 +652,7 @@
 "widget.noExpensesSubcategoriesPeriod" = "Ainda nao ha despesas em subcategorias para este periodo.";
 "widget.distributionByCategory" = "Categorias";
 "widget.distributionBySubcategory" = "Subcategorias";
-"widget.distributionByNature" = "Necessidades";
+"widget.distributionByNeed" = "Necessidades";
 "widget.distributionByTag" = "Distribuicao por etiqueta";
 "widget.noDataForPeriod" = "Sem dados para este periodo";
 "widget.selectCurrencies" = "Selecione ate 2 moedas para comparar com %@";
@@ -674,7 +670,7 @@
 "common.unknownError" = "Erro desconhecido";
 "common.saveError" = "Não foi possível salvar as alterações. Tente novamente.";
 "common.deleteError" = "Não foi possível excluir. Tente novamente.";
-"widget.noExpensesNaturePeriod" = "Não há despesas registradas por necessidade para este período.";
+"widget.noExpensesNeedPeriod" = "Não há despesas registradas por necessidade para este período.";
 
 
 "account.addAccount" = "Adicionar conta";
@@ -705,14 +701,14 @@
 "period.lastYear" = "Ano passado";
 "period.allTime" = "Todo o tempo";
 
-"nature.essential" = "Essencial";
-"nature.priority" = "Prioritaria";
-"nature.optional" = "Opcional";
-"nature.unclassified" = "Sem classificacao";
-"nature.essential.desc" = "Despesas imprescindiveis, dificeis de cortar.";
-"nature.priority.desc" = "Importantes mas com alguma flexibilidade.";
-"nature.optional.desc" = "Despesas discricionarias ou de lazer.";
-"nature.unclassified.desc" = "Sem etiqueta de natureza especifica.";
+"need.essential" = "Essencial";
+"need.priority" = "Prioritaria";
+"need.optional" = "Opcional";
+"need.unclassified" = "Sem classificacao";
+"need.essential.desc" = "Despesas imprescindiveis, dificeis de cortar.";
+"need.priority.desc" = "Importantes mas com alguma flexibilidade.";
+"need.optional.desc" = "Despesas discricionarias ou de lazer.";
+"need.unclassified.desc" = "Sem etiqueta de natureza especifica.";
 
 "trendType.balance" = "Saldo";
 "trendType.income" = "Receita";
@@ -764,7 +760,7 @@
 "insights.quickStats" = "Resumo rápido";
 "insights.comparison" = "Comparação";
 "insights.weekdayAverage" = "Gasto médio por dia";
-"insights.natureDistribution" = "Por necessidade";
+"insights.needDistribution" = "Por necessidade";
 "insights.commitments" = "Compromissos";
 "insights.pendingPayments" = "Pagamentos pendentes";
 "insights.activeSubscriptions" = "Assinaturas ativas";
@@ -792,7 +788,7 @@
 
 "trend.filterBlockedMessage" = "Remova primeiro os filtros de categoria ou natureza";
 "trend.filterBlockedTitle" = "Opção não disponível";
-"nature.incomeNotApplicable" = "A classificação por necessidade aplica-se apenas a despesas";
+"need.incomeNotApplicable" = "A classificação por necessidade aplica-se apenas a despesas";
 
 
 "settings.organization" = "Organizacao";
@@ -1148,14 +1144,6 @@
 "account.type.other" = "Outro";
 
 
-"nature.essential" = "Essencial";
-"nature.essentialDesc" = "Despesas vitais que voce nao pode evitar (aluguel, alimentacao basica, saude).";
-"nature.priority" = "Prioritario";
-"nature.priorityDesc" = "Importantes para seu bem-estar ou futuro, mas ajustaveis se necessario.";
-"nature.optional" = "Opcional";
-"nature.optionalDesc" = "Despesas por gosto ou desejo, as primeiras a cortar se houver problemas.";
-"nature.unclassified" = "Sem classificacao";
-"nature.unclassifiedDesc" = "Nao foi definida uma natureza especifica.";
 
 "iconPicker.title" = "Personalizar";
 "iconPicker.preview" = "Visualizacao";
@@ -1172,7 +1160,7 @@
 "iconPicker.education" = "Educacao";
 "iconPicker.work" = "Trabalho";
 "iconPicker.pets" = "Animais";
-"iconPicker.nature" = "Natureza";
+"iconPicker.need" = "Natureza";
 "iconPicker.tech" = "Tecnologia";
 "iconPicker.travel" = "Viagens";
 "iconPicker.communication" = "Comunicacao";
@@ -1183,7 +1171,7 @@
 "iconPicker.other" = "Outros";
 
 
-"nature.title" = "Necessidade do gasto";
+"need.title" = "Necessidade do gasto";
 
 // MARK: - Balance Adjustments
 
@@ -1396,7 +1384,7 @@
 "accessibility.processAudio" = "Processar áudio";
 "accessibility.exchangeRateChart" = "Gráfico de taxa de câmbio";
 "accessibility.periodComparison" = "Gráfico de comparação entre períodos";
-"accessibility.natureTrend" = "Gráfico de gastos por necessidade";
+"accessibility.needTrend" = "Gráfico de gastos por necessidade";
 "accessibility.noData" = "Sem dados";
 "accessibility.completeFormHint" = "Para salvar, complete valor, conta e categoria";
 "accessibility.completeSelectionHint" = "Complete a seleção obrigatória";
@@ -1485,7 +1473,7 @@
 "widget.hint.categoriesPie" = "Distribuicao percentual do gasto por categoria.";
 "widget.hint.subcategoriesPie" = "Distribuicao percentual do gasto por subcategoria.";
 "widget.hint.tagsPie" = "Distribuicao do gasto por etiquetas atribuidas.";
-"widget.hint.natureTrend" = "Classifica suas despesas como essenciais, prioritarias ou opcionais.";
+"widget.hint.needTrend" = "Classifica suas despesas como essenciais, prioritarias ou opcionais.";
 "widget.hint.cashFlow" = "Compare suas receitas e despesas para ver o fluxo liquido.";
 "widget.hint.recentRecords" = "Suas transacoes mais recentes.";
 "widget.hint.budgets" = "Estado dos seus orcamentos ativos.";

@@ -22,7 +22,7 @@ struct SaveAsFavoriteSheet: View {
     let initialAccount: Account?
     let initialSubcategory: Subcategory?
     let initialTags: [Tag]
-    let natureOverride: SubcategoryNature?
+    let needOverride: SubcategoryNeed?
     let currencyCode: String
 
     // Callback for success
@@ -52,7 +52,7 @@ struct SaveAsFavoriteSheet: View {
         account: Account?,
         subcategory: Subcategory?,
         tags: [Tag],
-        natureOverride: SubcategoryNature?,
+        needOverride: SubcategoryNeed?,
         currencyCode: String,
         onSaved: @escaping (String) -> Void
     ) {
@@ -62,7 +62,7 @@ struct SaveAsFavoriteSheet: View {
         self.initialAccount = account
         self.initialSubcategory = subcategory
         self.initialTags = tags
-        self.natureOverride = natureOverride
+        self.needOverride = needOverride
         self.currencyCode = currencyCode
         self.onSaved = onSaved
 
@@ -436,7 +436,7 @@ struct SaveAsFavoriteSheet: View {
                 account: selectedAccount,
                 subcategory: selectedSubcategory,
                 selectedTagIDs: selectedTags,
-                natureOverride: natureOverride,
+                needOverride: needOverride,
                 currencyCode: currencyCode
             )
             onSaved(L10n.Action.savedAsFavorite)

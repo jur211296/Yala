@@ -126,11 +126,11 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                         }
 
                         // Nature chips
-                        ForEach(buildNatureChips(selectedNatures: viewModel.selectedNatures), id: \.nature.rawValue) { chipData in
+                        ForEach(buildNeedChips(selectedNeeds: viewModel.selectedNeeds), id: \.need.rawValue) { chipData in
                             FilterChipView(
-                                nature: chipData.nature,
+                                need: chipData.need,
                                 onClear: {
-                                    viewModel.selectedNatures.remove(chipData.nature)
+                                    viewModel.selectedNeeds.remove(chipData.need)
                                     onFilterChange?()
                                 }
                             ).excludeMode(viewModel.isExcludeMode)

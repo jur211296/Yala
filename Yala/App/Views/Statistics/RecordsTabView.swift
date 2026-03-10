@@ -99,7 +99,7 @@ struct RecordsTabView: View {
     private var summaryRow: some View {
         let isIncomeFiltered = viewModel.selectedTransactionNatures == [.income]
         let isExpenseFiltered = viewModel.selectedTransactionNatures == [.expense]
-        let hasNatureFilter = isIncomeFiltered || isExpenseFiltered
+        let hasNeedFilter = isIncomeFiltered || isExpenseFiltered
 
         return VStack(alignment: .center, spacing: DS.Spacing.xs) {
             // Balance (Saldo) - Large and centered (hidden in expenses-only mode)
@@ -138,7 +138,7 @@ struct RecordsTabView: View {
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                         }
-                        .opacity(hasNatureFilter && !isIncomeFiltered ? 0.3 : 1.0)
+                        .opacity(hasNeedFilter && !isIncomeFiltered ? 0.3 : 1.0)
                     }
                     .buttonStyle(.plain)
                 }
@@ -169,7 +169,7 @@ struct RecordsTabView: View {
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
                     }
-                    .opacity(hasNatureFilter && !isExpenseFiltered ? 0.3 : 1.0)
+                    .opacity(hasNeedFilter && !isExpenseFiltered ? 0.3 : 1.0)
                 }
                 .buttonStyle(.plain)
             }

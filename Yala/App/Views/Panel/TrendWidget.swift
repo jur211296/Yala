@@ -22,7 +22,7 @@ struct TrendWidget: View {
     private var hasExpenseOnlyFilters: Bool {
         !sessionState.selectedCategoryIDs.isEmpty
             || !sessionState.selectedSubcategoryIDs.isEmpty
-            || !sessionState.selectedNatures.isEmpty
+            || !sessionState.selectedNeeds.isEmpty
     }
 
     /// Check if we have no data to display

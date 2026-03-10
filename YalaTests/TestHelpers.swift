@@ -80,12 +80,12 @@ func makeTestSubcategory(
     context: ModelContext,
     name: String = "Test Subcategory",
     category: YalaCategory,
-    nature: SubcategoryNature = .essential
+    need: SubcategoryNeed = .essential
 ) -> Subcategory {
     let subcategory = Subcategory(
         name: name,
         colorHex: nil,
-        natureRawValue: nature.rawValue,
+        natureRawValue: need.rawValue,
         iconName: "cart.fill",
         category: category
     )

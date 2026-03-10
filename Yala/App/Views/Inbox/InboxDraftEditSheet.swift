@@ -35,14 +35,14 @@ struct InboxDraftEditSheet: View {
     @State private var isExpense: Bool = true
 
     // Nature
-    @State private var selectedNature: SubcategoryNature?
+    @State private var selectedNeed: SubcategoryNeed?
 
     // Sheet states
     @State private var showAccountSelector = false
     @State private var showSubcategorySelector = false
     @State private var showTagSelector = false
     @State private var showDatePicker = false
-    @State private var showNatureSelector = false
+    @State private var showNeedSelector = false
 
     @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
 
@@ -186,7 +186,7 @@ struct InboxDraftEditSheet: View {
                 .sheet(isPresented: $showSubcategorySelector) { subcategorySheet }
                 .sheet(isPresented: $showTagSelector) { tagSheet }
                 .sheet(isPresented: $showDatePicker) { dateSheet }
-                .sheet(isPresented: $showNatureSelector) { natureSheet }
+                .sheet(isPresented: $showNeedSelector) { needSheet }
                 .onChange(of: showAccountSelector) { _, isPresenting in
                     if isPresenting { dismissKeyboard() }
                 }
@@ -199,14 +199,14 @@ struct InboxDraftEditSheet: View {
                 .onChange(of: showDatePicker) { _, isPresenting in
                     if isPresenting { dismissKeyboard() }
                 }
-                .onChange(of: showNatureSelector) { _, isPresenting in
+                .onChange(of: showNeedSelector) { _, isPresenting in
                     if isPresenting { dismissKeyboard() }
                 }
                 .onChange(of: selectedSubcategory) { _, newSubcategory in
                     if let subcategory = newSubcategory {
-                        selectedNature = subcategory.nature
+                        selectedNeed = subcategory.need
                     } else {
-                        selectedNature = nil
+                        selectedNeed = nil
                     }
                 }
                 .alert(L10n.Inbox.cannotApprove, isPresented: $showApproveError) {
@@ -369,13 +369,13 @@ struct InboxDraftEditSheet: View {
             .presentationDetents(ProcessInfo.processInfo.isiOSAppOnMac ? [.large] : [.medium, .large])
     }
 
-    private var natureSheet: some View {
-        NatureSelectorSheet(
-            selectedNature: Binding(
+    private var needSheet: some View {
+        NeedSelectorSheet(
+            selectedNeed: Binding(
                 get: {
-                    selectedNature ?? selectedSubcategory?.nature ?? .unclassified
+                    selectedNeed ?? selectedSubcategory?.need ?? .unclassified
                 },
-                set: { selectedNature = $0 }
+                set: { selectedNeed = $0 }
             )
         )
         .presentationDetents(ProcessInfo.processInfo.isiOSAppOnMac ? [.large] : [.medium])
@@ -439,10 +439,10 @@ struct InboxDraftEditSheet: View {
                     )
 
                     if isExpense {
-                        NatureEditChip(
-                            nature: selectedNature ?? subcategory.nature
+                        NeedEditChip(
+                            need: selectedNeed ?? subcategory.need
                         ) {
-                            showNatureSelector = true
+                            showNeedSelector = true
                         }
                     }
                 }
@@ -941,8 +941,8 @@ struct InboxDraftEditSheet: View {
         transaction.preferredCurrencyCode = preferredCode
 
         // Set nature override if user changed it
-        if let nature = selectedNature, nature != subcategory.nature {
-            transaction.natureOverride = nature.rawValue
+        if let need = selectedNeed, need != subcategory.need {
+            transaction.needOverride = need.rawValue
         }
 
         modelContext.insert(transaction)

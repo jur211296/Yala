@@ -131,7 +131,7 @@ import SwiftData
         let subcategory = Subcategory(
             name: "Transferencia entre cuentas",
             colorHex: nil,
-            natureRawValue: SubcategoryNature.unclassified.rawValue,
+            natureRawValue: SubcategoryNeed.unclassified.rawValue,
             iconName: "arrow.left.arrow.right",
             category: incomeCategory
         )

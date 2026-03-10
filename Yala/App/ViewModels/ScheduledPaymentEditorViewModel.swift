@@ -98,7 +98,7 @@ final class ScheduledPaymentEditorViewModel {
         notifyOnDueDate: Bool,
         notifyDaysBefore: Int,
         isActive: Bool,
-        natureOverride: String? = nil
+        needOverride: String? = nil
     ) -> UUID? {
         guard let context = modelContext else { return nil }
 
@@ -121,7 +121,7 @@ final class ScheduledPaymentEditorViewModel {
             existingPayment.account = account
             existingPayment.subcategory = subcategory
             existingPayment.tags = tagsArray
-            existingPayment.natureOverride = natureOverride
+            existingPayment.needOverride = needOverride
 
             // Recurrence
             existingPayment.isRecurring = isRecurring
@@ -150,7 +150,7 @@ final class ScheduledPaymentEditorViewModel {
                 account: account,
                 subcategory: subcategory,
                 tags: tagsArray,
-                natureOverride: natureOverride,
+                needOverride: needOverride,
                 isRecurring: isRecurring,
                 recurrenceType: recurrenceType.rawValue,
                 recurrenceInterval: recurrenceInterval,

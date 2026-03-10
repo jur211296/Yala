@@ -166,7 +166,7 @@ final class WidgetConfigManager {
 
     /// Widget types that always need full width (charts/trends that need horizontal space)
     private static let fullWidthOnlyTypes: Set<WidgetType> = [
-        .trend, .cashFlow, .expensesByNature, .exchangeRate
+        .trend, .cashFlow, .expensesByNeed, .exchangeRate
     ]
 
     /// Computes layout rows based on current active widgets and column count

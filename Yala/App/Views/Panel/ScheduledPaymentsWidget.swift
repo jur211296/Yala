@@ -317,7 +317,7 @@ struct ScheduledPaymentsWidget: View {
                 let prefix = isIncome ? "+" : "-"
                 Text(prefix + YalaFormatter.currency(value: item.payment.amount, currencyCode: item.payment.currencyCode, forceFullPrecision: true))
                     .font(DS.Typography.headline)
-                    .foregroundStyle(isIncome ? Color.priorityNature : Color.hotPink)
+                    .foregroundStyle(isIncome ? Color.priorityNeed : Color.hotPink)
                     .opacity(item.isPaid || item.isSkipped ? 0.6 : 1.0)
 
                 if item.isSkipped {

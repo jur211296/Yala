@@ -2,7 +2,7 @@
 //  SmartAxisHelper.swift
 //  YalaWidgets
 //
-//  Shared smart axis logic for bar charts (CashFlowWidget, NatureTrendWidget)
+//  Shared smart axis logic for bar charts (CashFlowWidget, NeedTrendWidget)
 //  Replicates the dynamic axis spacing from TrendChartView
 //
 //  Note: This is a copy adapted for YalaWidgets target (can't import from Yala)

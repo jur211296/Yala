@@ -1,5 +1,5 @@
 //
-//  NatureSelectorSheet.swift
+//  NeedSelectorSheet.swift
 //  Yala
 //
 //  Sheet for selecting transaction nature
@@ -9,10 +9,10 @@ import SwiftUI
 
 // MARK: - Nature Selector Sheet
 
-struct NatureSelectorSheet: View {
+struct NeedSelectorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
-    @Binding var selectedNature: SubcategoryNature
+    @Binding var selectedNeed: SubcategoryNeed
 
     var body: some View {
         NavigationStack {
@@ -21,12 +21,12 @@ struct NatureSelectorSheet: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.md) {
-                        ForEach(SubcategoryNature.allCases) { nature in
-                            NatureOptionRow(
-                                nature: nature,
-                                isSelected: selectedNature == nature
+                        ForEach(SubcategoryNeed.allCases) { need in
+                            NeedOptionRow(
+                                need: need,
+                                isSelected: selectedNeed == need
                             ) {
-                                selectedNature = nature
+                                selectedNeed = need
                                 dismiss()
                             }
                         }
@@ -34,7 +34,7 @@ struct NatureSelectorSheet: View {
                     .padding()
                 }
             }
-            .navigationTitle(L10n.Category.nature)
+            .navigationTitle(L10n.Category.need)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -50,9 +50,9 @@ struct NatureSelectorSheet: View {
 
 // MARK: - Nature Option Row
 
-private struct NatureOptionRow: View {
+private struct NeedOptionRow: View {
     @Environment(\.yalaTheme) private var theme
-    let nature: SubcategoryNature
+    let need: SubcategoryNeed
     let isSelected: Bool
     let onTap: () -> Void
 
@@ -61,16 +61,16 @@ private struct NatureOptionRow: View {
             HStack(spacing: DS.Spacing.md) {
                 // Color indicator
                 Circle()
-                    .fill(nature.color)
+                    .fill(need.color)
                     .frame(width: 12, height: 12)
 
                 // Text content
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(nature.displayName)
+                    Text(need.displayName)
                         .font(DS.Typography.label)
                         .foregroundStyle(.primary)
 
-                    Text(nature.description)
+                    Text(need.description)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
@@ -89,11 +89,11 @@ private struct NatureOptionRow: View {
             .padding(.vertical, DS.FormRow.paddingV)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                    .fill(isSelected ? nature.color.opacity(0.1) : theme.card)
+                    .fill(isSelected ? need.color.opacity(0.1) : theme.card)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                    .stroke(isSelected ? nature.color.opacity(0.3) : Color.clear, lineWidth: 1)
+                    .stroke(isSelected ? need.color.opacity(0.3) : Color.clear, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
