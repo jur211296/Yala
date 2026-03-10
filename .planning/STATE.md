@@ -43,6 +43,9 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-10] 0f85f55 fix: export allTime date range, transaction recurring save flow, validation toast
+- [2026-03-10] dd86e0c fix: scheduled payments — duplicate draft prevention, unified occurrence actions, editor UX
+- [2026-03-10] 328badc feat: add BudgetDetailView with subcategories + BudgetChartsView with interactive breakdown
 - [2026-03-10] 6733827 fix: budget period selector, widget preview, custom thresholds + displayProperties SSOT
 - [2026-03-10] abe0cb8 style: rename Nature to Need across 6 languages + new l10n keys
 - [2026-03-10] 847b4eb refactor: replace SaveAsRecurringSheet with ScheduledPaymentEditorView prefill
@@ -716,9 +719,9 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Committed scheduled payments refactor, Nature→Need rename, budget bug fixes (period selector, widget preview, custom thresholds, displayProperties SSOT)
+Stopped at: All pending work committed in 3 atomic commits (328badc, dd86e0c, 0f85f55)
 Next step: Continue with next Fase 12 item from /next
 Resume context:
-- BUG-40: Category/subcategory onChange now auto-sets income tab symmetrically
-- BUG-41: GlobalSearchView sorts within day groups by createdAt (matches FilterService)
-- BUG-51: NatureEditChip hidden for income in NewTransaction, InboxDraftEdit, FavoriteEditor
+- BudgetDetailView + BudgetChartsView: fully implemented with interactive breakdown
+- Scheduled payments: duplicate draft prevention, unified occurrence actions
+- Export: allTime date range fix, transaction recurring save flow fixed
