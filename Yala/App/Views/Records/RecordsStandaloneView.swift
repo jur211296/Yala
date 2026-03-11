@@ -53,6 +53,9 @@ struct RecordsStandaloneView: View {
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
+    @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
+    @State private var showAIConsentAlert = false
+    @State private var pendingAIInput: PendingAIInput = .voice
 
     /// Check if voice input can be used (requires accounts and subcategories)
     private var canUseVoiceInput: Bool {
@@ -88,6 +91,12 @@ struct RecordsStandaloneView: View {
             }
             .onChange(of: sessionState.dataVersion) { _, _ in
                 refreshRecordsData()
+            }
+            .aiConsentAlert(isPresented: $showAIConsentAlert, pendingInput: $pendingAIInput) { input in
+                switch input {
+                case .voice: showVoiceRecording = true
+                case .image: showImageSelection = true
+                }
             }
     }
 
@@ -205,53 +214,56 @@ struct RecordsStandaloneView: View {
     @ViewBuilder
     private var newRecordFAB: some View {
         let fabBackground = canUseVoiceInput ? theme.accent : DS.Semantic.disabledForeground.opacity(0.5)
-        let hasMultipleInputs = voiceInputEnabled || imageInputEnabled
 
-        if hasMultipleInputs && canUseVoiceInput {
+        if canUseVoiceInput {
             VStack {
                 Spacer()
                 HStack {
                     Spacer()
-                    // Custom FAB with popup menu above
+                    // Custom FAB with popup menu above (always 3 options)
                     VStack(alignment: .trailing, spacing: DS.Spacing.md) {
                         // Menu options (shown when expanded)
                         if showFABMenu {
                             VStack(spacing: DS.Spacing.sm) {
-                                // Voice option (if enabled)
-                                if voiceInputEnabled {
-                                    fabMenuButton(
-                                        icon: "waveform",
-                                        text: L10n.Panel.fabVoice,
-                                        color: .hotPink,
-                                        isLocked: isVoiceLocked
-                                    ) {
-                                        dsWithAnimation(reduceMotion) {
-                                            showFABMenu = false
-                                        }
-                                        if isVoiceLocked {
-                                            showUpgradeForVoice = true
-                                        } else {
-                                            showVoiceRecording = true
-                                        }
+                                // Voice option
+                                fabMenuButton(
+                                    icon: "waveform",
+                                    text: L10n.Panel.fabVoice,
+                                    color: .hotPink,
+                                    isLocked: isVoiceLocked
+                                ) {
+                                    dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
+                                        showFABMenu = false
+                                    }
+                                    if isVoiceLocked {
+                                        showUpgradeForVoice = true
+                                    } else if !aiDataConsentAccepted {
+                                        pendingAIInput = .voice
+                                        showAIConsentAlert = true
+                                    } else {
+                                        if !voiceInputEnabled { voiceInputEnabled = true }
+                                        showVoiceRecording = true
                                     }
                                 }
 
-                                // Image option (if enabled)
-                                if imageInputEnabled {
-                                    fabMenuButton(
-                                        icon: "photo",
-                                        text: L10n.Panel.fabImage,
-                                        color: .teal,
-                                        isLocked: isImageLocked
-                                    ) {
-                                        dsWithAnimation(reduceMotion) {
-                                            showFABMenu = false
-                                        }
-                                        if isImageLocked {
-                                            showUpgradeForImage = true
-                                        } else {
-                                            showImageSelection = true
-                                        }
+                                // Image option
+                                fabMenuButton(
+                                    icon: "photo",
+                                    text: L10n.Panel.fabImage,
+                                    color: .teal,
+                                    isLocked: isImageLocked
+                                ) {
+                                    dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
+                                        showFABMenu = false
+                                    }
+                                    if isImageLocked {
+                                        showUpgradeForImage = true
+                                    } else if !aiDataConsentAccepted {
+                                        pendingAIInput = .image
+                                        showAIConsentAlert = true
+                                    } else {
+                                        if !imageInputEnabled { imageInputEnabled = true }
+                                        showImageSelection = true
                                     }
                                 }
 
@@ -261,7 +273,7 @@ struct RecordsStandaloneView: View {
                                     text: L10n.Panel.fabManual,
                                     color: .electricIndigo
                                 ) {
-                                    dsWithAnimation(reduceMotion) {
+                                    dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
                                         showFABMenu = false
                                     }
                                     recordsViewModel.showNewTransaction = true
@@ -276,12 +288,12 @@ struct RecordsStandaloneView: View {
                         // FAB button
                         Button {
                             DS.Haptic.medium()
-                            dsWithAnimation(reduceMotion) {
+                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
                                 showFABMenu.toggle()
                             }
                         } label: {
                             Image(systemName: showFABMenu ? "xmark" : "plus")
-                                .font(DS.Typography.title.weight(.bold))
+                                .font(DS.Typography.title)
                                 .foregroundStyle(.white)
                                 .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                                 .background(showFABMenu ? DS.Semantic.disabledForeground : fabBackground)
@@ -289,6 +301,7 @@ struct RecordsStandaloneView: View {
                                 .rotationEffect(.degrees(showFABMenu ? 90 : 0))
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(showFABMenu ? L10n.Accessibility.closeMenu : L10n.Accessibility.newRecord)
                         .glassEffect(.regular.interactive())
                         .dsFloatingShadow()
                     }
@@ -301,26 +314,25 @@ struct RecordsStandaloneView: View {
                 Spacer()
                 HStack {
                     Spacer()
-                    // Simple FAB (no special inputs enabled)
+                    // Simple FAB (no accounts/subcategories — disabled)
                     Button {
-                        if canUseVoiceInput {
-                            recordsViewModel.showNewTransaction = true
-                        }
+                        // No-op: disabled state
                     } label: {
                         Image(systemName: "plus")
-                            .font(DS.Typography.title.weight(.bold))
+                            .font(DS.Typography.title)
                             .foregroundStyle(.white)
                             .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                             .background(fabBackground)
                             .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.Accessibility.newRecord)
                     .glassEffect(.regular.interactive())
                     .dsFloatingShadow()
                     .padding(.trailing, DS.Spacing.xl)
                     .padding(.bottom, DS.Spacing.xxl)
-                    .disabled(!canUseVoiceInput)
-                    .accessibilityHint(!canUseVoiceInput ? L10n.Accessibility.createAccountFirst : "")
+                    .disabled(true)
+                    .accessibilityHint(L10n.Accessibility.createAccountFirst)
                 }
             }
         }
@@ -339,7 +351,7 @@ struct RecordsStandaloneView: View {
         } label: {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: icon)
-                    .font(DS.Typography.body.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .frame(width: DS.Button.fabMenuIconSize)
 
                 Text(text)
@@ -355,9 +367,9 @@ struct RecordsStandaloneView: View {
             .frame(width: DS.Button.fabMenuWidth)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)
-            .background(isLocked ? Color.gray : color)
+            .background(isLocked ? DS.Semantic.disabledForeground : color)
             .clipShape(Capsule())
-            .shadow(color: (isLocked ? Color.gray : color).opacity(0.3), radius: 8, x: 0, y: 4)
+            .shadow(color: (isLocked ? DS.Semantic.disabledForeground : color).opacity(0.3), radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
         }
         .buttonStyle(.plain)
         .phaseAnimator(reduceMotion ? [false] : [false, true]) { content, phase in

@@ -221,6 +221,69 @@ extension View {
     }
 }
 
+// MARK: - AI Consent Alert
+
+/// Which AI input feature the user was trying to activate when consent was requested
+enum PendingAIInput {
+    case voice
+    case image
+}
+
+/// Shared consent alert for AI-powered features (voice input, image input).
+/// Reused across PanelView, DetailContainerView, RecordsStandaloneView, ProfileView.
+struct AIConsentAlertModifier: ViewModifier {
+    @Binding var isPresented: Bool
+    @Binding var pendingInput: PendingAIInput
+    @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
+    @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
+    @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
+    @Environment(\.openURL) private var openURL
+
+    /// Called after consent is accepted and alert dismisses, to show the appropriate sheet
+    var onAccepted: (PendingAIInput) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .alert(L10n.AIConsent.title, isPresented: $isPresented) {
+                Button(L10n.AIConsent.accept) {
+                    aiDataConsentAccepted = true
+                    let input = pendingInput
+                    switch input {
+                    case .voice:
+                        voiceInputEnabled = true
+                    case .image:
+                        imageInputEnabled = true
+                    }
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(500))
+                        onAccepted(input)
+                    }
+                }
+                Button(L10n.AIConsent.privacyPolicy) {
+                    openURL(AppConstants.privacyURL)
+                }
+                Button(L10n.Action.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.AIConsent.message)
+            }
+    }
+}
+
+extension View {
+    /// Adds the AI consent alert for voice/image input features
+    func aiConsentAlert(
+        isPresented: Binding<Bool>,
+        pendingInput: Binding<PendingAIInput>,
+        onAccepted: @escaping (PendingAIInput) -> Void
+    ) -> some View {
+        modifier(AIConsentAlertModifier(
+            isPresented: isPresented,
+            pendingInput: pendingInput,
+            onAccepted: onAccepted
+        ))
+    }
+}
+
 // MARK: - Dismiss Keyboard on Tap
 
 /// Global function to dismiss keyboard from anywhere

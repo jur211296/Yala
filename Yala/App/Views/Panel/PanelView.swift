@@ -60,6 +60,9 @@ struct PanelView: View {
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
+    @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
+    @State private var showAIConsentAlert = false
+    @State private var pendingAIInput: PendingAIInput = .voice
     @AppStorage("showSiriTip") private var showSiriTip: Bool = true
     @AppStorage("panelShowAIInsight") private var showAIInsight: Bool = true
 
@@ -351,50 +354,53 @@ struct PanelView: View {
 
     @ViewBuilder
     private var newRecordFAB: some View {
-        let fabBackground = canUseVoiceInput ? theme.accent : Color.gray.opacity(0.5)
-        let hasAlternativeInputs = voiceInputEnabled || imageInputEnabled
+        let fabBackground = canUseVoiceInput ? theme.accent : DS.Semantic.disabledForeground.opacity(0.5)
 
-        if hasAlternativeInputs && canUseVoiceInput {
-            // Custom FAB with popup menu above
+        if canUseVoiceInput {
+            // Custom FAB with popup menu above (always 3 options)
             VStack(alignment: .trailing, spacing: DS.Spacing.md) {
                 // Menu options (shown when expanded)
                 if showFABMenu {
                     VStack(spacing: DS.Spacing.sm) {
-                        // Voice option (if enabled)
-                        if voiceInputEnabled {
-                            fabMenuButton(
-                                icon: "waveform",
-                                text: L10n.Panel.fabVoice,
-                                color: .hotPink,
-                                isLocked: isVoiceLocked
-                            ) {
-                                dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                    showFABMenu = false
-                                }
-                                if isVoiceLocked {
-                                    showUpgradeForVoice = true
-                                } else {
-                                    showVoiceRecording = true
-                                }
+                        // Voice option
+                        fabMenuButton(
+                            icon: "waveform",
+                            text: L10n.Panel.fabVoice,
+                            color: .hotPink,
+                            isLocked: isVoiceLocked
+                        ) {
+                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
+                                showFABMenu = false
+                            }
+                            if isVoiceLocked {
+                                showUpgradeForVoice = true
+                            } else if !aiDataConsentAccepted {
+                                pendingAIInput = .voice
+                                showAIConsentAlert = true
+                            } else {
+                                if !voiceInputEnabled { voiceInputEnabled = true }
+                                showVoiceRecording = true
                             }
                         }
 
-                        // Image option (if enabled)
-                        if imageInputEnabled {
-                            fabMenuButton(
-                                icon: "photo",
-                                text: L10n.Panel.fabImage,
-                                color: .teal,
-                                isLocked: isImageLocked
-                            ) {
-                                dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                    showFABMenu = false
-                                }
-                                if isImageLocked {
-                                    showUpgradeForImage = true
-                                } else {
-                                    showImageSelection = true
-                                }
+                        // Image option
+                        fabMenuButton(
+                            icon: "photo",
+                            text: L10n.Panel.fabImage,
+                            color: .teal,
+                            isLocked: isImageLocked
+                        ) {
+                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
+                                showFABMenu = false
+                            }
+                            if isImageLocked {
+                                showUpgradeForImage = true
+                            } else if !aiDataConsentAccepted {
+                                pendingAIInput = .image
+                                showAIConsentAlert = true
+                            } else {
+                                if !imageInputEnabled { imageInputEnabled = true }
+                                showImageSelection = true
                             }
                         }
 
@@ -402,7 +408,7 @@ struct PanelView: View {
                         fabMenuButton(
                             icon: "square.and.pencil",
                             text: L10n.Panel.fabManual,
-                            color: theme.accent
+                            color: .electricIndigo
                         ) {
                             dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
                                 showFABMenu = false
@@ -440,11 +446,9 @@ struct PanelView: View {
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
         } else {
-            // Simple FAB (no special inputs enabled)
+            // Simple FAB (no accounts/subcategories — disabled)
             Button {
-                if canUseVoiceInput {
-                    showNewTransaction = true
-                }
+                // No-op: disabled state
             } label: {
                 Image(systemName: "plus")
                     .font(DS.Typography.title)
@@ -459,9 +463,9 @@ struct PanelView: View {
             .coachMarkAnchor("fab")
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
-            .disabled(!canUseVoiceInput)
+            .disabled(true)
             .accessibilityLabel(L10n.Accessibility.newRecord)
-            .accessibilityHint(!canUseVoiceInput ? L10n.Accessibility.createAccountFirst : "")
+            .accessibilityHint(L10n.Accessibility.createAccountFirst)
         }
     }
 
@@ -479,7 +483,7 @@ struct PanelView: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: icon)
                     .font(DS.Typography.headline)
-                    .frame(width: DS.Icon.badgeSmall)
+                    .frame(width: DS.Button.fabMenuIconSize)
 
                 Text(text)
                     .font(DS.Typography.headline)
@@ -1562,6 +1566,12 @@ private struct PanelSheetsModifier: ViewModifier {
             }
             .sheet(isPresented: $showUpgradeForAccounts) {
                 UpgradePromptSheet(feature: .accounts, context: .limitReached)
+            }
+            .aiConsentAlert(isPresented: $showAIConsentAlert, pendingInput: $pendingAIInput) { input in
+                switch input {
+                case .voice: showVoiceRecording = true
+                case .image: showImageSelection = true
+                }
             }
     }
 

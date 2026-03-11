@@ -522,6 +522,12 @@ Todos deben resolverse para V1.1 (próxima release). Prioridad: crashes > lógic
 **Infraestructura:**
 - [ ] **BUG-54: Implementar Telemetry Deck** — Analytics para entender uso real de la app.
 
+**FAB / Registro:**
+- [ ] **BUG-55: FAB no muestra las 3 opciones de registro intermitentemente** — A veces el FAB (en PanelView, DetailContainerView, RecordsStandaloneView) no despliega el menú con las 3 opciones (manual, voz, imagen). Causa probable: el menú expandido requiere `hasAlternativeInputs && canUseVoiceInput` — si `voiceInputEnabled`/`imageInputEnabled` (AppStorage) están en false, el FAB se convierte en botón directo a manual sin menú. Debería siempre mostrar las 3 opciones, con ProBadge en voz e imagen para usuarios Free.
+
+**Suscripción:**
+- [ ] **BUG-56: Expiración de suscripción Pro no se refleja en tiempo real** — Al expirar la suscripción Pro, el usuario sigue con acceso Pro hasta cerrar la app por completo en multitarea. `updateSubscriptionStatus()` solo se llama en cold launch, `Transaction.updates` (pasivo), SubscriptionView `.task`, y post-compra. `handleBecameActive()` NO re-verifica estado de suscripción — falta llamar `updateSubscriptionStatus()` al volver a foreground.
+
 ### Fase 11: Sistema de Temas Independientes (V1.2) — ✅ COMPLETADA (2026-02-19)
 
 Refactorización completa del sistema de colores. 6 temas (3 free + 3 PRO). YalaTheme struct + ThemeColor ShapeStyle + @Observable ThemeManager. Cambio de tema sin reinicio (eliminado `.id(userThemeRaw)`). 0 usos de colores legacy. 12 escenarios QA (Sección 38).
