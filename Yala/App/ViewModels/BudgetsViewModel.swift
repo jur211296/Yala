@@ -391,7 +391,11 @@ final class BudgetsViewModel {
 
     /// Returns daily cumulative spending for the current budget period (for area chart).
     func getDailyCumulativeSpending(budget: Budget) -> [(date: Date, cumulative: Double)] {
-        let interval = getBudgetDateInterval(budget: budget)
+        getDailyCumulativeSpending(budget: budget, in: getBudgetDateInterval(budget: budget))
+    }
+
+    /// Returns daily cumulative spending for an explicit date interval.
+    func getDailyCumulativeSpending(budget: Budget, in interval: DateInterval) -> [(date: Date, cumulative: Double)] {
         let calendar = Calendar.current
         let today = Date()
         let endDate = min(today, interval.end)
@@ -432,7 +436,14 @@ final class BudgetsViewModel {
         subcategories: [(name: String, icon: String, color: String, amount: Double, parentCategoryName: String)],
         parentCategories: [(name: String, icon: String, color: String, amount: Double)]
     ) {
-        let interval = getBudgetDateInterval(budget: budget)
+        getCombinedBreakdown(budget: budget, in: getBudgetDateInterval(budget: budget))
+    }
+
+    /// Returns spending breakdown for an explicit date interval.
+    func getCombinedBreakdown(budget: Budget, in interval: DateInterval) -> (
+        subcategories: [(name: String, icon: String, color: String, amount: Double, parentCategoryName: String)],
+        parentCategories: [(name: String, icon: String, color: String, amount: Double)]
+    ) {
         let filtered = Self.filterTransactions(allTransactions, forBudget: budget, in: interval)
         guard !filtered.isEmpty else { return ([], []) }
 

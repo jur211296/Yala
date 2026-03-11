@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
 Status: **Fase 12 en progreso** — What's New sheet + coach mark tours + onboarding improvements
-Last activity: 2026-03-09 — What's New sheet post-actualización con prioridad sobre tours/inbox
+Last activity: 2026-03-10 — Rename Nature → Need across codebase (83 files, types, L10n keys, theme colors)
 
 ### Apple Review History (V1.0)
 
@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-10] 720ffe3 refactor: rename Nature → Need across codebase
 - [2026-03-10] 0f85f55 fix: export allTime date range, transaction recurring save flow, validation toast
 - [2026-03-10] dd86e0c fix: scheduled payments — duplicate draft prevention, unified occurrence actions, editor UX
 - [2026-03-10] 328badc feat: add BudgetDetailView with subcategories + BudgetChartsView with interactive breakdown
