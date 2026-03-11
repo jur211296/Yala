@@ -214,6 +214,8 @@ final class DraftService: DraftServiceProtocol {
 
         try context.save()
 
+        TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
+
         // Update widgets
         WidgetDataCache.updateCache(context: context)
         SessionState.shared.incrementDataVersion()
@@ -325,6 +327,8 @@ final class DraftService: DraftServiceProtocol {
         draft.updatedAt = Date()
 
         try context.save()
+
+        TelemetryService.track(.draftRejected, parameters: ["source": draft.sourceTypeRaw])
     }
 
     func bulkReject(_ drafts: [InboxDraft]) throws {

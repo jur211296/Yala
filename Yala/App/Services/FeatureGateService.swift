@@ -90,6 +90,9 @@ final class FeatureGateService {
     /// - Returns: true if user has access (either Pro or feature isn't Pro-only)
     func canAccess(_ feature: ProFeature) -> Bool {
         if isProUser { return true }
+        if feature.isProOnly {
+            TelemetryService.trackOnce(.featureGateHit, key: feature.rawValue, parameters: ["feature": feature.rawValue])
+        }
         return !feature.isProOnly
     }
 

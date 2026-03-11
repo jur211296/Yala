@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		96CFFFC42EC3D721002AC31C /* CoreXLSX in Frameworks */ = {isa = PBXBuildFile; productRef = 96CFFFC32EC3D721002AC31C /* CoreXLSX */; };
 		96CFFFC52EC3D721002AC31C /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 96CFFFC72EC3D721002AC31C /* OpenAI */; };
+		AEB9EB328BE2E1077D2F522E /* TelemetryDeck in Frameworks */ = {isa = PBXBuildFile; productRef = B6B43726ABA640E1D7F2C50D /* TelemetryDeck */; };
 		CFADC3C22F2A42810040D198 /* YalaShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CFADC3B82F2A42810040D198 /* YalaShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CFB1B6AF2F30EC930083BC08 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CFB1B6AE2F30EC930083BC08 /* WidgetKit.framework */; };
 		CFB1B6B12F30EC930083BC08 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CFB1B6B02F30EC930083BC08 /* SwiftUI.framework */; };
@@ -148,6 +149,7 @@
 			files = (
 				96CFFFC42EC3D721002AC31C /* CoreXLSX in Frameworks */,
 				96CFFFC52EC3D721002AC31C /* OpenAI in Frameworks */,
+				AEB9EB328BE2E1077D2F522E /* TelemetryDeck in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -244,6 +246,7 @@
 			packageProductDependencies = (
 				96CFFFC32EC3D721002AC31C /* CoreXLSX */,
 				96CFFFC72EC3D721002AC31C /* OpenAI */,
+				B6B43726ABA640E1D7F2C50D /* TelemetryDeck */,
 			);
 			productName = Yala;
 			productReference = 96CFFF932EC3CF06002AC31C /* Yala.app */;
@@ -385,6 +388,7 @@
 			packageReferences = (
 				96CFFFC22EC3D721002AC31C /* XCRemoteSwiftPackageReference "CoreXLSX" */,
 				96CFFFC62EC3D721002AC31C /* XCRemoteSwiftPackageReference "OpenAI" */,
+				4E97FB9187BF6FE7F4D701D1 /* XCRemoteSwiftPackageReference "SwiftSDK" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 96CFFF942EC3CF06002AC31C /* Products */;
@@ -1488,6 +1492,14 @@
 				minimumVersion = 0.3.0;
 			};
 		};
+		4E97FB9187BF6FE7F4D701D1 /* XCRemoteSwiftPackageReference "SwiftSDK" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/TelemetryDeck/SwiftSDK";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1500,6 +1512,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 96CFFFC62EC3D721002AC31C /* XCRemoteSwiftPackageReference "OpenAI" */;
 			productName = OpenAI;
+		};
+		B6B43726ABA640E1D7F2C50D /* TelemetryDeck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4E97FB9187BF6FE7F4D701D1 /* XCRemoteSwiftPackageReference "SwiftSDK" */;
+			productName = TelemetryDeck;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

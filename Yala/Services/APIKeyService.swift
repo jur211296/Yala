@@ -29,4 +29,19 @@ enum APIKeyService {
     static var hasOpenAIAPIKey: Bool {
         openAIAPIKey != nil
     }
+
+    // MARK: - TelemetryDeck
+
+    /// TelemetryDeck App ID for privacy-first analytics.
+    /// Injected from Secrets.xcconfig via Info.plist at build time.
+    static var telemetryDeckAppID: String? {
+        guard let key = Bundle.main.object(forInfoDictionaryKey: "TELEMETRY_DECK_APP_ID") as? String,
+              !key.isEmpty,
+              key != "$(TELEMETRY_DECK_APP_ID)",
+              !key.hasPrefix("YOUR_")
+        else {
+            return nil
+        }
+        return key
+    }
 }

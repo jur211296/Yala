@@ -200,10 +200,14 @@ struct TransactionsExportService {
             throw TransactionsExportError.fileWriteFailed(underlying: error)
         }
 
-        return TransactionsExportResult(
+        let result = TransactionsExportResult(
             fileURL: fileURL,
             exportedCount: filteredTransactions.count
         )
+
+        TelemetryService.track(.exportCompleted, parameters: ["format": format.rawValue])
+
+        return result
     }
 
     // MARK: - Construcción de FetchDescriptor (filtro por fecha)

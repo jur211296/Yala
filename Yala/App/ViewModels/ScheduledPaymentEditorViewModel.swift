@@ -173,6 +173,13 @@ final class ScheduledPaymentEditorViewModel {
             try context.save()
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
+
+            TelemetryService.track(.scheduledPaymentSaved, parameters: [
+                "recurrence": recurrenceType.rawValue,
+                "category": paymentCategory.rawValue,
+                "isNew": String(existing == nil),
+            ])
+
             return paymentID
         } catch {
             #if DEBUG

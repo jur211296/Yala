@@ -181,18 +181,22 @@ final class StoreKitManager {
                 #endif
                 await updateSubscriptionStatus()
                 didJustSubscribe = true
+                TelemetryService.track(.purchaseAttempted, parameters: ["productId": product.id, "result": "success"])
                 return true
 
             case .userCancelled:
+                TelemetryService.track(.purchaseAttempted, parameters: ["productId": product.id, "result": "cancelled"])
                 return false
 
             case .pending:
+                TelemetryService.track(.purchaseAttempted, parameters: ["productId": product.id, "result": "pending"])
                 return false
 
             @unknown default:
                 return false
             }
         } catch {
+            TelemetryService.track(.purchaseAttempted, parameters: ["productId": product.id, "result": "error"])
             errorMessage = error.localizedDescription
             return false
         }

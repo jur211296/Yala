@@ -1329,6 +1329,12 @@ struct OnboardingView: View {
             #endif
         }
 
+        // Analytics
+        TelemetryService.track(.onboardingCompleted, parameters: [
+            "expensesOnly": String(expensesOnlyMode),
+            "usedSeedCategories": String(loadSeedCategories),
+        ])
+
         // Mark onboarding as complete AFTER data creation (prevents inconsistent state on crash)
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
 

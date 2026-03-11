@@ -500,6 +500,12 @@ final class NewTransactionViewModel {
                 UserDefaults.standard.set(count, forKey: "transactionsSavedCount")
             }
 
+            // Analytics
+            TelemetryService.track(.transactionSaved, parameters: [
+                "type": transactionType.rawValue,
+                "isNew": String(isNewTransaction),
+            ])
+
             isSaving = false
             return result
         } catch {

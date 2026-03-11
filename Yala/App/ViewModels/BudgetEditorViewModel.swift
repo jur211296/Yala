@@ -191,6 +191,12 @@ final class BudgetEditorViewModel {
             try context.save()
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
+
+            TelemetryService.track(.budgetSaved, parameters: [
+                "periodType": periodType.rawValue,
+                "isNew": String(existing == nil),
+            ])
+
             return true
         } catch {
             #if DEBUG

@@ -74,6 +74,10 @@ final class AppBootstrapper {
         // 0. Sync preferences from iCloud (must be FIRST — other services read these)
         PreferenceSyncService.shared.bootstrap()
 
+        // 0.5. Configure analytics (no-op if API key missing)
+        TelemetryService.configure()
+        TelemetryService.track(.appLaunched)
+
         // 1. Initialize notification delegate (must be early for foreground display)
         _ = NotificationService.shared
 
