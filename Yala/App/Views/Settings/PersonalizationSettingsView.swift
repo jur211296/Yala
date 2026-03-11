@@ -700,7 +700,7 @@ struct PersonalizationSettingsView: View {
                     showingWeekdayPicker = false
                 }
             )
-            .presentationDetents([.height(280)])
+            .presentationDetents(DS.Adaptive.sheetDetents([.height(280)]))
         }
         .sheet(isPresented: $showingDecimalsPicker) {
             DecimalsPickerSheet(
@@ -713,7 +713,7 @@ struct PersonalizationSettingsView: View {
                     showingDecimalsPicker = false
                 }
             )
-            .presentationDetents([.height(320)])
+            .presentationDetents(DS.Adaptive.sheetDetents([.height(320)]))
         }
         .sheet(isPresented: $showingCurrencyFormatPicker) {
             CurrencyFormatPickerSheet(
@@ -726,7 +726,7 @@ struct PersonalizationSettingsView: View {
                     showingCurrencyFormatPicker = false
                 }
             )
-            .presentationDetents([.height(280)])
+            .presentationDetents(DS.Adaptive.sheetDetents([.height(280)]))
         }
         .sheet(isPresented: $showingAutoFocusPicker) {
             AutoFocusPickerSheet(
@@ -737,7 +737,7 @@ struct PersonalizationSettingsView: View {
                     showingAutoFocusPicker = false
                 }
             )
-            .presentationDetents([.height(320)])
+            .presentationDetents(DS.Adaptive.sheetDetents([.height(320)]))
         }
         .sheet(isPresented: $showingAverageLinePicker) {
             AverageLinePickerSheet(
@@ -748,7 +748,7 @@ struct PersonalizationSettingsView: View {
                     showingAverageLinePicker = false
                 }
             )
-            .presentationDetents([.height(320)])
+            .presentationDetents(DS.Adaptive.sheetDetents([.height(320)]))
         }
         .sheet(isPresented: $showingLanguagePicker) {
             LanguagePickerSheet(
@@ -758,7 +758,7 @@ struct PersonalizationSettingsView: View {
                     showingLanguagePicker = false
                 }
             )
-            .presentationDetents([.medium])
+            .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
         }
         .sheet(isPresented: $showingSmartInsightsSettings) {
             SmartInsightsSettingsView()
@@ -867,7 +867,7 @@ struct PersonalizationSettingsView: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
     }
 }
 

@@ -66,7 +66,7 @@ struct NotificationPrimerSheet: View {
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.xl)
         }
-        .presentationDetents([.medium])
+        .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
     }
 
     // MARK: - Components

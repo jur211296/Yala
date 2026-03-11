@@ -366,7 +366,7 @@ struct InboxDraftEditSheet: View {
 
     private var dateSheet: some View {
         DatePickerSheet(selectedDate: $transactionDate)
-            .presentationDetents(ProcessInfo.processInfo.isiOSAppOnMac ? [.large] : [.medium, .large])
+            .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
     }
 
     private var needSheet: some View {
@@ -378,7 +378,7 @@ struct InboxDraftEditSheet: View {
                 set: { selectedNeed = $0 }
             )
         )
-        .presentationDetents(ProcessInfo.processInfo.isiOSAppOnMac ? [.large] : [.medium])
+        .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
     }
 
     // MARK: - Central Content

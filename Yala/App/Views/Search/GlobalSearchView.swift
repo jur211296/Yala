@@ -152,6 +152,7 @@ struct SearchContentView: View {
         }
         .sheet(item: $editingTransaction) { transaction in
             NewTransactionView(transactionToEdit: transaction)
+                .presentationDetents([.large])
         }
     }
 

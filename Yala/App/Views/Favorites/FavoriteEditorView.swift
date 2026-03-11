@@ -122,7 +122,7 @@ struct FavoriteEditorView: View {
                         set: { selectedNeed = $0 }
                     )
                 )
-                .presentationDetents([.medium])
+                .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
             }
             .onChange(of: showAccountSelector) { _, isPresenting in
                 if isPresenting {

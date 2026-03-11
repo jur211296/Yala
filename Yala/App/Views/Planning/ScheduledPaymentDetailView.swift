@@ -120,7 +120,7 @@ struct ScheduledPaymentDetailView: View {
                 selectedMonth: viewModel.selectedMonth,
                 viewModel: viewModel
             )
-            .presentationDetents([.medium, .large])
+            .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
         }
     }
 

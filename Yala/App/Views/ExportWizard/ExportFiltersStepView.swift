@@ -721,7 +721,7 @@ private struct ExportCustomPeriodPickerSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
         .presentationDragIndicator(.visible)
     }
 

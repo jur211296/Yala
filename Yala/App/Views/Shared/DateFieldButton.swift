@@ -31,7 +31,7 @@ struct DateFieldButton: View {
                 maxDate: maxDate,
                 title: title
             )
-            .presentationDetents([.medium, .large])
+            .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
         }
     }
 }

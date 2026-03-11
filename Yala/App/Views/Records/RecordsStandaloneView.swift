@@ -470,6 +470,7 @@ private struct RecordsStandaloneSheets: ViewModifier {
             }
             .sheet(isPresented: $recordsViewModel.showNewTransaction) {
                 NewTransactionView()
+                    .presentationDetents([.large])
                     .onDisappear { refreshRecordsData() }
             }
             .sheet(isPresented: $showVoiceRecording) {
@@ -487,6 +488,7 @@ private struct RecordsStandaloneSheets: ViewModifier {
             .sheet(isPresented: $recordsViewModel.showEditTransaction) {
                 if let transaction = recordsViewModel.editingTransaction {
                     NewTransactionView(transactionToEdit: transaction)
+                        .presentationDetents([.large])
                         .onDisappear {
                             recordsViewModel.editingTransaction = nil
                             refreshRecordsData()

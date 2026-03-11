@@ -418,7 +418,7 @@ struct SaveAsFavoriteSheet: View {
             }
         }
 
-        .presentationDetents([.medium, .large])
+        .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
     }
 
     // MARK: - Save

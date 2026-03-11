@@ -344,6 +344,14 @@ enum DS {
         static func horizontalPadding(_ sizeClass: UserInterfaceSizeClass?) -> CGFloat {
             isWideScreen(sizeClass) ? DS.Spacing.xxxl : DS.Spacing.lg
         }
+
+        /// Forces .large detents on iPad and Mac Catalyst where
+        /// medium/fixed-height sheets are too small for pickers and complex content.
+        static func sheetDetents(_ detents: Set<PresentationDetent>) -> Set<PresentationDetent> {
+            let needsLargeSheet = UIDevice.current.userInterfaceIdiom == .pad
+                || ProcessInfo.processInfo.isiOSAppOnMac
+            return needsLargeSheet ? [.large] : detents
+        }
     }
 
     // MARK: - Form Row Dimensions

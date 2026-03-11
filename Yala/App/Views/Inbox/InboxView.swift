@@ -161,6 +161,7 @@ struct InboxView: View {
             }
             .sheet(item: $selectedTransaction, onDismiss: { viewModel.loadData() }) { transaction in
                 NewTransactionView(transactionToEdit: transaction)
+                    .presentationDetents([.large])
             }
             .sheet(isPresented: $showBulkActions, onDismiss: { viewModel.loadData() }) {
                 InboxBulkActionsSheet(

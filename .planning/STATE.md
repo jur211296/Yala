@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-11] e1f1a70 fix: defer notification primer check to prevent success animation flicker (BUG-47)
 - [2026-03-11] b28c7c2 fix: replace compact DatePickers with DateFieldButton + confirm/cancel sheet (BUG-50)
 - [2026-03-10] ecc7758 fix: defer panel actions when UI is blocked by Face ID or inbox modal (BUG-42, BUG-43)
 - [2026-03-10] a905cb1 feat: BudgetChartsView — data labels, local period navigator, drag-scrub interaction
@@ -52,9 +53,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-10] 328badc feat: add BudgetDetailView with subcategories + BudgetChartsView with interactive breakdown
 - [2026-03-10] 6733827 fix: budget period selector, widget preview, custom thresholds + displayProperties SSOT
 - [2026-03-10] abe0cb8 style: rename Nature to Need across 6 languages + new l10n keys
-- [2026-03-09] 1b9d9fc fix: filter auto-switch, search sort, and nature chip for income (BUG-40, BUG-41, BUG-51)
-- [2026-03-09] cadba76 refactor: persist balance calculator field state across sheet open/close
-- [2026-03-08] 1220dd5 feat: add post-onboarding contextual prompts — secondary currency + notification primer
 - [2026-03-08] b0be795 fix: onboarding QA — comma-locale budget bug, animation timing, updated scenarios
 - [2026-03-08] 82f4e5c feat: polish onboarding budget step — reframe texts, horizontal pills, live preview card, currency fix
 - [2026-03-08] 9488d0a feat: polish onboarding account step — SectionBox layout, balance guide, validation
@@ -511,7 +509,7 @@ Todos deben resolverse para V1.1 (próxima release). Prioridad: crashes > lógic
 - [ ] **BUG-46: Sheet de success recortada en iPad** — La pantalla de éxito post-registro se ve cortada en iPad.
 
 **UX / Visual:**
-- [ ] **BUG-47: Animación de success pestañea** — La animación de éxito no siempre carga smooth, a veces parpadea.
+- [x] **BUG-47: Animación de success pestañea** — Resuelto (e1f1a70)
 - [x] **BUG-48: Pago recurrente muestra PEN aunque cuenta sea otra moneda** — Desestimado
 - [x] **BUG-49: Exportación dice CSV pero permite Excel, periodo va 10 años atrás** — Resuelto (0f85f55)
 - [x] **BUG-50: Selectores de fecha sin botón de guardar** — Resuelto (b28c7c2)
@@ -716,9 +714,8 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: BUG-50 fix — DatePickers with confirm/cancel sheet (b28c7c2)
+Stopped at: BUG-47 fix — success animation flicker (e1f1a70)
 Next step: Continue with next bug or Fase 12 item from /next
 Resume context:
-- DatePickerSheet: generalized with minDate/maxDate/title + workingDate cancel pattern
-- DateFieldButton: new shared component in Views/Shared/
-- Replaced 8 compact DatePickers across BudgetEditor, ScheduledPaymentEditor, AccountForm
+- Moved checkNotificationPrimer() to run 800ms after animation starts (was race condition)
+- Only NewTransactionView affected; other success views (Inbox, Subscription) had no risk

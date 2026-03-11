@@ -206,7 +206,7 @@ struct BudgetChartsView: View {
                     selectedYear: $localSelectedYear,
                     transactions: viewModel.allTransactions
                 )
-                .presentationDetents([.medium])
+                .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
                 .presentationDragIndicator(.visible)
             }
         }

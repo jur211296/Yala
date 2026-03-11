@@ -1512,6 +1512,7 @@ private struct PanelSheetsModifier: ViewModifier {
                     prefillCategoryID: prefillCategoryID,
                     prefillSubcategoryName: prefillSubcategoryName
                 )
+                .presentationDetents([.large])
             }
             .sheet(isPresented: $showVoiceRecording, onDismiss: {
                 handleVoiceRecordingDismiss()

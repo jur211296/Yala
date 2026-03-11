@@ -180,7 +180,7 @@ struct CustomPeriodPickerSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
         .presentationDragIndicator(.visible)
     }
 
