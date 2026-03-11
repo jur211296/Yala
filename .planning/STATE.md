@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
 Status: **Fase 12 en progreso** — What's New sheet + coach mark tours + onboarding improvements
-Last activity: 2026-03-11 — BUG-56: Pro subscription re-verification on foreground resume
+Last activity: 2026-03-11 — 75 unit tests added across 7 new test suites (294→369 tests)
 
 ### Apple Review History (V1.0)
 
@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-11] acd61b4 test: add 75 unit tests across 7 new test suites
 - [2026-03-11] 8474ddf fix: re-verify Pro subscription on foreground resume (BUG-56)
 - [2026-03-11] 701d743 fix: FAB always shows 3 registration options with consent flow (BUG-55)
 - [2026-03-11] f890824 feat: integrate TelemetryDeck analytics with 12 privacy-first events (BUG-54)
@@ -799,10 +800,10 @@ Resolver el crash de `ModelContainer` en tests directamente. El crash es por la 
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: BUG-56 — Pro subscription re-verification on foreground resume (8474ddf)
+Stopped at: Added 75 unit tests across 7 new suites (acd61b4) — coverage 294→369
 Next step: Continue with next bug or Fase 12 item from /next
 Resume context:
-- refreshSubscriptionStatus() extracted as shared method in AppBootstrapper
-- Also fixed PanelSheetsModifier missing AI consent bindings (BUG-55 regression)
-- Privacy policy updated in 6 languages with new "Anonymous Analytics" section
-- App ID configured in Secrets.xcconfig (9D2922BB-2BCB-4B63-A0EB-B3AAD33CD6CA)
+- 7 new test suites: TagSpendingCalculator, BudgetAlertTracker, BudgetAlertService, ScheduledPaymentsVM, InsightsRuleBased, RecordsVM, PanelVM
+- 2 visibility changes: BudgetAlertService.getCurrentPeriodInterval, InsightsCalculator.generateRuleBasedInsights (private→internal for testability)
+- CurrencyConverting protocol refactor documented in STATE.md — would unblock ~50 more tests
+- Shared makeBudget() factory added to TestHelpers.swift
