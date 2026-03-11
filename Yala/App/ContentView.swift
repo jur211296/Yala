@@ -256,12 +256,24 @@ struct ContentView: View {
             }
         }
         .onChange(of: authService.isLocked) { _, isLocked in
-            if !isLocked, let deferred = AppBootstrapper.shared.deferredInboxNotification {
-                AppBootstrapper.shared.deferredInboxNotification = nil
-                Task {
-                    try? await Task.sleep(for: .seconds(0.3))
-                    SessionState.shared.pendingInboxNotification = deferred
+            if !isLocked {
+                if let deferred = AppBootstrapper.shared.deferredInboxNotification {
+                    AppBootstrapper.shared.deferredInboxNotification = nil
+                    Task {
+                        try? await Task.sleep(for: .seconds(0.3))
+                        SessionState.shared.pendingInboxNotification = deferred
+                    }
+                    // Panel actions resolve when inbox modal dismisses (onChange below)
+                } else {
+                    // No inbox to show — resolve panel actions directly
+                    AppBootstrapper.shared.showDeferredActionsIfNeeded()
                 }
+            }
+        }
+        .onChange(of: SessionState.shared.pendingInboxNotification.isEmpty) { oldEmpty, newEmpty in
+            if !oldEmpty && newEmpty {
+                // Inbox modal just dismissed — show any deferred panel actions
+                AppBootstrapper.shared.showDeferredActionsIfNeeded()
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .remoteWipeDetected)) { notification in

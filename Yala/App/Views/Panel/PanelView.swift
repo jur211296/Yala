@@ -1584,6 +1584,10 @@ private struct PanelSheetsModifier: ViewModifier {
             showInbox = true
         }
         recalculateData()
+
+        // If there's a deferred panel action (e.g., Control Center "new-transaction"
+        // that arrived while shared image was showing), resolve it now
+        AppBootstrapper.shared.showDeferredActionsIfNeeded()
     }
 }
 
