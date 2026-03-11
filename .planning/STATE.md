@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
 Status: **Fase 12 en progreso** — What's New sheet + coach mark tours + onboarding improvements
-Last activity: 2026-03-11 — BUG-55: FAB always shows 3 registration options with consent flow
+Last activity: 2026-03-11 — BUG-56: Pro subscription re-verification on foreground resume
 
 ### Apple Review History (V1.0)
 
@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-11] 8474ddf fix: re-verify Pro subscription on foreground resume (BUG-56)
 - [2026-03-11] 701d743 fix: FAB always shows 3 registration options with consent flow (BUG-55)
 - [2026-03-11] f890824 feat: integrate TelemetryDeck analytics with 12 privacy-first events (BUG-54)
 - [2026-03-11] 56968cb fix: add data labels to CashFlow chart bars when ≤10 data points (BUG-52)
@@ -527,7 +528,7 @@ Todos deben resolverse para V1.1 (próxima release). Prioridad: crashes > lógic
 - [x] **BUG-55: FAB no muestra las 3 opciones de registro intermitentemente** — Resuelto (701d743): FAB siempre muestra 3 opciones, consent alert inline para Pro, ProBadge para Free. AIConsentAlertModifier extraído a ViewModifiers.swift.
 
 **Suscripción:**
-- [ ] **BUG-56: Expiración de suscripción Pro no se refleja en tiempo real** — Al expirar la suscripción Pro, el usuario sigue con acceso Pro hasta cerrar la app por completo en multitarea. `updateSubscriptionStatus()` solo se llama en cold launch, `Transaction.updates` (pasivo), SubscriptionView `.task`, y post-compra. `handleBecameActive()` NO re-verifica estado de suscripción — falta llamar `updateSubscriptionStatus()` al volver a foreground.
+- [x] **BUG-56: Expiración de suscripción Pro no se refleja en tiempo real** — Resuelto (8474ddf): refreshSubscriptionStatus() en handleBecameActive con cancel-before-create Task.
 
 ### Fase 11: Sistema de Temas Independientes (V1.2) — ✅ COMPLETADA (2026-02-19)
 
@@ -721,10 +722,10 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: BUG-54 — TelemetryDeck analytics integration (f890824)
+Stopped at: BUG-56 — Pro subscription re-verification on foreground resume (8474ddf)
 Next step: Continue with next bug or Fase 12 item from /next
 Resume context:
-- TelemetryDeck SDK added via SPM, TelemetryService.swift with 12 AnalyticsEvent cases
-- Tracking calls in 10 files: ViewModels, Services, OnboardingView, StoreKitManager, FeatureGateService
+- refreshSubscriptionStatus() extracted as shared method in AppBootstrapper
+- Also fixed PanelSheetsModifier missing AI consent bindings (BUG-55 regression)
 - Privacy policy updated in 6 languages with new "Anonymous Analytics" section
 - App ID configured in Secrets.xcconfig (9D2922BB-2BCB-4B63-A0EB-B3AAD33CD6CA)
