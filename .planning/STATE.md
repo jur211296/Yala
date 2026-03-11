@@ -521,7 +521,7 @@ Todos deben resolverse para V1.1 (próxima release). Prioridad: crashes > lógic
 - [x] **BUG-53: Rediseño flujo pagos planificados/recurrentes** — Resuelto (dd86e0c + 847b4eb)
 
 **Infraestructura:**
-- [ ] **BUG-54: Implementar Telemetry Deck** — Analytics para entender uso real de la app.
+- [x] **BUG-54: Implementar Telemetry Deck** — Resuelto (f890824): 12 eventos privacy-first via TelemetryDeck SDK.
 
 **FAB / Registro:**
 - [x] **BUG-55: FAB no muestra las 3 opciones de registro intermitentemente** — Resuelto (701d743): FAB siempre muestra 3 opciones, consent alert inline para Pro, ProBadge para Free. AIConsentAlertModifier extraído a ViewModifiers.swift.

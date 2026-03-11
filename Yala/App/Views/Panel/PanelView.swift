@@ -222,6 +222,8 @@ struct PanelView: View {
                 navigateToInboxAfterVoice: $navigateToInboxAfterVoice,
                 switchToImageAfterVoice: $switchToImageAfterVoice,
                 navigateToInboxAfterImage: $navigateToInboxAfterImage,
+                showAIConsentAlert: $showAIConsentAlert,
+                pendingAIInput: $pendingAIInput,
                 existingAccountNames: existingAccountNames,
                 prefillAccountID: viewModel.selectedAccountID,
                 prefillCategoryID: viewModel.selectedCategoryID,
@@ -1477,6 +1479,8 @@ private struct PanelSheetsModifier: ViewModifier {
     @Binding var navigateToInboxAfterVoice: Bool
     @Binding var switchToImageAfterVoice: Bool
     @Binding var navigateToInboxAfterImage: Bool
+    @Binding var showAIConsentAlert: Bool
+    @Binding var pendingAIInput: PendingAIInput
 
     let existingAccountNames: (Account?) -> [String]
     let prefillAccountID: PersistentIdentifier?

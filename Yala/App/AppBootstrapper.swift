@@ -48,6 +48,7 @@ final class AppBootstrapper {
     var deferredSharedImageURL: URL?
     var deferredPanelAction: DeferredPanelAction?
     private var controlActionTask: Task<Void, Never>?
+    private var subscriptionCheckTask: Task<Void, Never>?
     private var lastRemoteChangeDate = Date.distantPast
     private var lastNotificationCheckDate = Date.distantPast
 
@@ -161,6 +162,12 @@ final class AppBootstrapper {
 
     /// Llamar cuando la app se activa (scenePhase == .active)
     func handleBecameActive(context: ModelContext) {
+        // Re-verify subscription status on foreground resume
+        subscriptionCheckTask?.cancel()
+        subscriptionCheckTask = Task {
+            await refreshSubscriptionStatus()
+        }
+
         // Process due scheduled payments (creates inbox drafts for warm resume)
         processDueScheduledPayments(context: context)
         checkForPendingInboxDrafts(context: context)
@@ -367,13 +374,19 @@ final class AppBootstrapper {
     private func loadSubscriptionStatus() async {
         let store = StoreKitManager.shared
         await store.loadProducts()
+        await refreshSubscriptionStatus()
+    }
+
+    /// Re-checks entitlements (local StoreKit cache, no network) and syncs state.
+    /// Used by both cold launch and foreground resume.
+    private func refreshSubscriptionStatus() async {
+        let store = StoreKitManager.shared
         await store.updateSubscriptionStatus()
-        sessionState.isProUser = store.isProUser
 
-        // Sync to App Group for widgets
-        store.syncToAppGroup()
+        if sessionState.isProUser != store.isProUser {
+            sessionState.isProUser = store.isProUser
+        }
 
-        // Check for downgrade (user was Pro but no longer is)
         checkForDowngrade()
     }
 
