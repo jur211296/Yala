@@ -13,6 +13,17 @@ struct DatePickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
     @Binding var selectedDate: Date
+    var minDate: Date = .distantPast
+    var maxDate: Date? = nil         // nil = Date() at runtime (avoids stale capture)
+    var title: String = L10n.Common.date
+
+    @State private var workingDate: Date = .now
+
+    /// Computed range: nil maxDate means "up to today" at render time
+    private var dateRange: ClosedRange<Date> {
+        let upper = maxDate ?? Date()
+        return minDate...upper
+    }
 
     var body: some View {
         NavigationStack {
@@ -21,9 +32,9 @@ struct DatePickerSheet: View {
 
                 VStack {
                     DatePicker(
-                        L10n.Common.date,
-                        selection: $selectedDate,
-                        in: ...Date(),
+                        title,
+                        selection: $workingDate,
+                        in: dateRange,
                         displayedComponents: [.date]
                     )
                     .datePickerStyle(.graphical)
@@ -32,7 +43,7 @@ struct DatePickerSheet: View {
                     Spacer()
                 }
             }
-            .navigationTitle(L10n.Common.date)
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -42,20 +53,14 @@ struct DatePickerSheet: View {
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        // Resign first responder to ensure DatePicker commits its selection
-                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    YalaSaveButton(action: {
+                        selectedDate = workingDate
                         dismiss()
-                    } label: {
-                        Image(systemName: "checkmark")
-                            .font(DS.Typography.body.weight(.bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 20, height: 20)
-                    }
-                    .buttonStyle(.borderedProminent)
-
-                    .buttonBorderShape(.circle)
+                    })
                 }
+            }
+            .onAppear {
+                workingDate = selectedDate
             }
         }
 

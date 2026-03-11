@@ -227,12 +227,10 @@ struct BudgetEditorView: View {
 
                     Spacer()
 
-                    DatePicker(
-                        "",
-                        selection: $startDate,
-                        displayedComponents: .date
+                    DateFieldButton(
+                        date: $startDate,
+                        title: NSLocalizedString("budgets.editor.start.date", comment: "")
                     )
-                    .labelsHidden()
                 }
                 .padding()
 
@@ -251,13 +249,11 @@ struct BudgetEditorView: View {
 
                     Spacer()
 
-                    DatePicker(
-                        "",
-                        selection: $endDate,
-                        in: startDate...,
-                        displayedComponents: .date
+                    DateFieldButton(
+                        date: $endDate,
+                        minDate: startDate,
+                        title: NSLocalizedString("budgets.editor.end.date", comment: "")
                     )
-                    .labelsHidden()
                 }
                 .padding()
             }

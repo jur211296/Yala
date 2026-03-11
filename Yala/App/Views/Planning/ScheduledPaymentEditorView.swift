@@ -576,22 +576,11 @@ struct ScheduledPaymentEditorView: View {
 
             Spacer()
 
-            if payment == nil && prefill == nil {
-                DatePicker(
-                    "",
-                    selection: $paymentDate,
-                    in: today...,
-                    displayedComponents: .date
-                )
-                .labelsHidden()
-            } else {
-                DatePicker(
-                    "",
-                    selection: $paymentDate,
-                    displayedComponents: .date
-                )
-                .labelsHidden()
-            }
+            DateFieldButton(
+                date: $paymentDate,
+                minDate: (payment == nil && prefill == nil) ? today : .distantPast,
+                title: NSLocalizedString("scheduled.payment.date", comment: "")
+            )
         }
         .padding()
     }
@@ -770,22 +759,11 @@ struct ScheduledPaymentEditorView: View {
 
             Spacer()
 
-            if payment == nil && prefill == nil {
-                DatePicker(
-                    "",
-                    selection: $paymentDate,
-                    in: today...,
-                    displayedComponents: .date
-                )
-                .labelsHidden()
-            } else {
-                DatePicker(
-                    "",
-                    selection: $paymentDate,
-                    displayedComponents: .date
-                )
-                .labelsHidden()
-            }
+            DateFieldButton(
+                date: $paymentDate,
+                minDate: (payment == nil && prefill == nil) ? today : .distantPast,
+                title: NSLocalizedString("scheduled.start.date", comment: "")
+            )
         }
         .padding()
     }
@@ -817,16 +795,14 @@ struct ScheduledPaymentEditorView: View {
 
                     Spacer()
 
-                    DatePicker(
-                        "",
-                        selection: Binding(
+                    DateFieldButton(
+                        date: Binding(
                             get: { endDate ?? Calendar.current.date(byAdding: .year, value: 1, to: paymentDate) ?? paymentDate },
                             set: { endDate = $0 }
                         ),
-                        in: paymentDate...,
-                        displayedComponents: .date
+                        minDate: paymentDate,
+                        title: NSLocalizedString("scheduled.end.date", comment: "")
                     )
-                    .labelsHidden()
                 }
                 .padding()
             }

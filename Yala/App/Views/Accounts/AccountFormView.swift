@@ -309,11 +309,15 @@ struct AccountFormView: View {
                 if viewModel.selectedAdjustmentMode == .byEntry && viewModel.isEditing {
                     SubsectionDivider()
 
-                    DatePicker(
-                        L10n.Account.adjustmentDate,
-                        selection: $viewModel.adjustmentDate,
-                        displayedComponents: .date
-                    )
+                    HStack {
+                        Text(L10n.Account.adjustmentDate)
+                            .font(DS.Typography.body)
+                        Spacer()
+                        DateFieldButton(
+                            date: $viewModel.adjustmentDate,
+                            title: L10n.Account.adjustmentDate
+                        )
+                    }
                     .padding()
                 }
             }
