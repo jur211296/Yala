@@ -43,6 +43,8 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-11] b28c7c2 fix: replace compact DatePickers with DateFieldButton + confirm/cancel sheet (BUG-50)
+- [2026-03-10] ecc7758 fix: defer panel actions when UI is blocked by Face ID or inbox modal (BUG-42, BUG-43)
 - [2026-03-10] a905cb1 feat: BudgetChartsView — data labels, local period navigator, drag-scrub interaction
 - [2026-03-10] 720ffe3 refactor: rename Nature → Need across codebase
 - [2026-03-10] 0f85f55 fix: export allTime date range, transaction recurring save flow, validation toast
@@ -50,14 +52,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-10] 328badc feat: add BudgetDetailView with subcategories + BudgetChartsView with interactive breakdown
 - [2026-03-10] 6733827 fix: budget period selector, widget preview, custom thresholds + displayProperties SSOT
 - [2026-03-10] abe0cb8 style: rename Nature to Need across 6 languages + new l10n keys
-- [2026-03-10] 847b4eb refactor: replace SaveAsRecurringSheet with ScheduledPaymentEditorView prefill
 - [2026-03-09] 1b9d9fc fix: filter auto-switch, search sort, and nature chip for income (BUG-40, BUG-41, BUG-51)
-- [2026-03-09] 080c51f style: rewrite notification texts with brand voice across 6 languages
-- [2026-03-09] 74976a4 fix: add missing onDismiss to notification edit sheet + QA scenarios
-- [2026-03-09] a34e674 fix: resolve notification system bugs — double completion, debounce, POSIX locale
-- [2026-03-09] cc1da63 refactor: consolidate notification service into single-fetch orchestrator
-- [2026-03-09] c675e9c fix: resolve notification bugs — time window, paid status, warm resume, off-by-one (BUG-36, BUG-37, BUG-38, BUG-39)
-- [2026-03-09] 0d9f04d fix: resolve Inbox crashes — delayed SwiftData deletion and Mac sheet detents (BUG-34, BUG-35)
 - [2026-03-09] cadba76 refactor: persist balance calculator field state across sheet open/close
 - [2026-03-08] 1220dd5 feat: add post-onboarding contextual prompts — secondary currency + notification primer
 - [2026-03-08] b0be795 fix: onboarding QA — comma-locale budget bug, animation timing, updated scenarios
@@ -501,15 +496,15 @@ Todos deben resolverse para V1.1 (próxima release). Prioridad: crashes > lógic
 - [x] **BUG-39: Notificación "vence en 3 días" pero realmente son 4** — Cálculo de días restantes off-by-one. ✅ c675e9c
 
 **Filtros / Lógica:**
-- [ ] **BUG-40: Filtro subcategoría ingreso bloquea mal en PanelView** — Al filtrar subcategoría de ingresos, se queda en vista balance y bloquea ingreso+balance pero no gasto. Debería bloquear gasto+balance (como hace al filtrar subcategoría de gasto que bloquea gasto+balance+ingreso).
-- [ ] **BUG-41: Orden de búsqueda diferente a registros** — Tab de búsqueda no ordena igual que tab de registros para transacciones del mismo día (falta tiebreaker createdAt).
+- [x] **BUG-40: Filtro subcategoría ingreso bloquea mal en PanelView** — Resuelto (1b9d9fc)
+- [x] **BUG-41: Orden de búsqueda diferente a registros** — Resuelto (1b9d9fc)
 
 **Race Conditions:**
-- [ ] **BUG-42: Race condition Share Sheet imagen + notificación in-app de bandeja** — Conflicto cuando se usa registro por imagen desde Share Extension y hay un pago automatizado reciente con notificación in-app.
-- [ ] **BUG-43: Race condition Share Sheet imagen + Face ID** — Conflicto cuando se usa registro por imagen desde Share Extension y Face ID está activo.
+- [x] **BUG-42: Race condition Share Sheet imagen + notificación in-app de bandeja** — Resuelto (ecc7758), QA pendiente
+- [x] **BUG-43: Race condition Share Sheet imagen + Face ID** — Resuelto (ecc7758), QA pendiente
 
 **Widget:**
-- [ ] **BUG-44: Widget de presupuestos no se actualiza automáticamente** — No refleja nuevas transacciones hasta reabrir la app.
+- [x] **BUG-44: Widget de presupuestos no se actualiza automáticamente** — Desestimado
 
 **iPad / Layout:**
 - [ ] **BUG-45: Calendario de fecha recortado en iPad (registro)** — DatePicker en NewTransactionView se corta en iPad.
@@ -517,14 +512,14 @@ Todos deben resolverse para V1.1 (próxima release). Prioridad: crashes > lógic
 
 **UX / Visual:**
 - [ ] **BUG-47: Animación de success pestañea** — La animación de éxito no siempre carga smooth, a veces parpadea.
-- [ ] **BUG-48: Pago recurrente muestra PEN aunque cuenta sea otra moneda** — Al crear pago planificado, muestra PEN en vez de la divisa de la cuenta seleccionada.
-- [ ] **BUG-49: Exportación dice CSV pero permite Excel, periodo va 10 años atrás** — Textos del flujo de exportación inconsistentes + rango de fecha incorrecto en pantalla final.
-- [ ] **BUG-50: Selectores de fecha sin botón de guardar** — Todos los date pickers se cierran al tocar fuera, deberían tener botón explícito de confirmar.
-- [ ] **BUG-51: Ocultar naturaleza para ingresos en registro/edición/aprobación** — El selector de naturaleza (fijo/variable/etc.) no aplica a ingresos, confunde al usuario.
+- [x] **BUG-48: Pago recurrente muestra PEN aunque cuenta sea otra moneda** — Desestimado
+- [x] **BUG-49: Exportación dice CSV pero permite Excel, periodo va 10 años atrás** — Resuelto (0f85f55)
+- [x] **BUG-50: Selectores de fecha sin botón de guardar** — Resuelto (b28c7c2)
+- [x] **BUG-51: Ocultar naturaleza para ingresos en registro/edición/aprobación** — Resuelto (1b9d9fc)
 - [ ] **BUG-52: Etiquetas de datos en CashFlow filtrado** — Agregar data labels a gráficas CashFlow cuando solo ingreso o solo gasto está filtrado. En balance, mostrar si hay ≤10 barras.
 
 **Rediseños pendientes (UX crítico):**
-- [ ] **BUG-53: Rediseño flujo pagos planificados/recurrentes** — URGENTE. El flujo actual es confuso: teclado se levanta innecesariamente, no se puede editar nota, interfaz no intuitiva. Requiere rediseño completo.
+- [x] **BUG-53: Rediseño flujo pagos planificados/recurrentes** — Resuelto (dd86e0c + 847b4eb)
 
 **Infraestructura:**
 - [ ] **BUG-54: Implementar Telemetry Deck** — Analytics para entender uso real de la app.
@@ -720,10 +715,10 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 
 ## Session Continuity
 
-Last session: 2026-03-10
-Stopped at: BudgetChartsView enhancements — data labels, local period nav, drag-scrub (a905cb1)
-Next step: Continue with next Fase 12 item from /next
+Last session: 2026-03-11
+Stopped at: BUG-50 fix — DatePickers with confirm/cancel sheet (b28c7c2)
+Next step: Continue with next bug or Fase 12 item from /next
 Resume context:
-- BudgetChartsView: 3 enhancements shipped — bar data labels, independent period selector, line chart scrub
-- BudgetChartsPeriodSelector: new binding-based component (no viewModel coupling)
-- BudgetsViewModel: overloaded getDailyCumulativeSpending/getCombinedBreakdown with explicit DateInterval
+- DatePickerSheet: generalized with minDate/maxDate/title + workingDate cancel pattern
+- DateFieldButton: new shared component in Views/Shared/
+- Replaced 8 compact DatePickers across BudgetEditor, ScheduledPaymentEditor, AccountForm

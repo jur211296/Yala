@@ -1126,13 +1126,16 @@ struct NewTransactionView: View {
             destinationCurrencyCode: destAccount?.currencyCode
         )
 
-        // Check notification primer eligibility
-        Task { await viewModel.checkNotificationPrimer() }
-
         // Delay animation to let keyboard dismiss
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
             dsWithAnimation(reduceMotion) {
                 showSuccessScreen = true
+            }
+
+            // Check notification primer AFTER animation completes (~800ms)
+            Task {
+                try await Task.sleep(for: .milliseconds(800))
+                await viewModel.checkNotificationPrimer()
             }
         }
     }
