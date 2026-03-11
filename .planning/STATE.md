@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
 Status: **Fase 12 en progreso** — What's New sheet + coach mark tours + onboarding improvements
-Last activity: 2026-03-10 — Rename Nature → Need across codebase (83 files, types, L10n keys, theme colors)
+Last activity: 2026-03-11 — BUG-55: FAB always shows 3 registration options with consent flow
 
 ### Apple Review History (V1.0)
 
@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-11] 701d743 fix: FAB always shows 3 registration options with consent flow (BUG-55)
 - [2026-03-11] f890824 feat: integrate TelemetryDeck analytics with 12 privacy-first events (BUG-54)
 - [2026-03-11] 56968cb fix: add data labels to CashFlow chart bars when ≤10 data points (BUG-52)
 - [2026-03-11] bab15ee fix: adaptive sheet detents for iPad/Mac + enable native iPad support (BUG-45, BUG-46)
@@ -523,7 +524,7 @@ Todos deben resolverse para V1.1 (próxima release). Prioridad: crashes > lógic
 - [ ] **BUG-54: Implementar Telemetry Deck** — Analytics para entender uso real de la app.
 
 **FAB / Registro:**
-- [ ] **BUG-55: FAB no muestra las 3 opciones de registro intermitentemente** — A veces el FAB (en PanelView, DetailContainerView, RecordsStandaloneView) no despliega el menú con las 3 opciones (manual, voz, imagen). Causa probable: el menú expandido requiere `hasAlternativeInputs && canUseVoiceInput` — si `voiceInputEnabled`/`imageInputEnabled` (AppStorage) están en false, el FAB se convierte en botón directo a manual sin menú. Debería siempre mostrar las 3 opciones, con ProBadge en voz e imagen para usuarios Free.
+- [x] **BUG-55: FAB no muestra las 3 opciones de registro intermitentemente** — Resuelto (701d743): FAB siempre muestra 3 opciones, consent alert inline para Pro, ProBadge para Free. AIConsentAlertModifier extraído a ViewModifiers.swift.
 
 **Suscripción:**
 - [ ] **BUG-56: Expiración de suscripción Pro no se refleja en tiempo real** — Al expirar la suscripción Pro, el usuario sigue con acceso Pro hasta cerrar la app por completo en multitarea. `updateSubscriptionStatus()` solo se llama en cold launch, `Transaction.updates` (pasivo), SubscriptionView `.task`, y post-compra. `handleBecameActive()` NO re-verifica estado de suscripción — falta llamar `updateSubscriptionStatus()` al volver a foreground.
