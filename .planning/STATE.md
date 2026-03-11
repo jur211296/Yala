@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-10] a905cb1 feat: BudgetChartsView — data labels, local period navigator, drag-scrub interaction
 - [2026-03-10] 720ffe3 refactor: rename Nature → Need across codebase
 - [2026-03-10] 0f85f55 fix: export allTime date range, transaction recurring save flow, validation toast
 - [2026-03-10] dd86e0c fix: scheduled payments — duplicate draft prevention, unified occurrence actions, editor UX
@@ -720,9 +721,9 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: All pending work committed in 3 atomic commits (328badc, dd86e0c, 0f85f55)
+Stopped at: BudgetChartsView enhancements — data labels, local period nav, drag-scrub (a905cb1)
 Next step: Continue with next Fase 12 item from /next
 Resume context:
-- BudgetDetailView + BudgetChartsView: fully implemented with interactive breakdown
-- Scheduled payments: duplicate draft prevention, unified occurrence actions
-- Export: allTime date range fix, transaction recurring save flow fixed
+- BudgetChartsView: 3 enhancements shipped — bar data labels, independent period selector, line chart scrub
+- BudgetChartsPeriodSelector: new binding-based component (no viewModel coupling)
+- BudgetsViewModel: overloaded getDailyCumulativeSpending/getCombinedBreakdown with explicit DateInterval
