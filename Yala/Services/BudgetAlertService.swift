@@ -133,7 +133,7 @@ final class BudgetAlertService {
 
     // MARK: - Period Interval (uses current date, not ViewModel state)
 
-    private func getCurrentPeriodInterval(for budget: Budget) -> DateInterval {
+    func getCurrentPeriodInterval(for budget: Budget) -> DateInterval {
         let calendar = Calendar.current
         let now = Date()
 

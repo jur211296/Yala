@@ -576,7 +576,7 @@ struct InsightsCalculator {
 
     // MARK: - Rule-Based Insights
 
-    private static func generateRuleBasedInsights(
+    static func generateRuleBasedInsights(
         periodSummary: PeriodSummary,
         quickStats: QuickStats,
         commitments: Commitments,

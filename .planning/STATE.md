@@ -618,6 +618,83 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 - `buildAccountChips`, `buildTagChips`, `buildNatureChips` movidos a `FilterChipHelper.swift`
 - Eliminados computed properties duplicados de los 4 tabs
 
+### Refactor Pendiente: CurrencyConverting Protocol (identificado 2026-03-11)
+
+**Problema:** 12 componentes financieros críticos no tienen tests unitarios porque requieren `ModelContext` en su firma, exclusivamente para `CurrencyConverter.shared.convert(..., context:)`. Crear `ModelContainer` en tests crashea por CloudKit race condition (EXC_BREAKPOINT en iOS 26 simulator).
+
+**Componentes bloqueados (sin tests):**
+
+| Componente | Tipo | Lógica sin testear |
+|------------|------|-------------------|
+| CashFlowCalculator | Calculator | Income vs expense por periodo |
+| BalanceTrendCalculator | Calculator | Tendencia de balance temporal |
+| WeekdaySpendingCalculator | Calculator | Gasto por día de semana |
+| TopSpendingCategoriesCalculator | Calculator | Top categorías por gasto |
+| TopSubcategoriesCalculator | Calculator | Top subcategorías por gasto |
+| BalanceHelper | Helper | Balance total de cuentas |
+| NeedTrendHelper | Helper | Tendencia por necesidad (esencial/prioridad/opcional) |
+| TransactionService | Service | CRUD transacciones + widgets |
+| EntityDeletionService | Service | Eliminación segura de entidades |
+| MerchantMemoryService | Service | Auto-categorización por merchant |
+| CurrencyChangeService | Service | Cambio de divisa principal |
+| ExchangeRateService | Service | Persistencia tipos de cambio |
+
+**Observación clave:** Todos los calculators tienen un short-circuit path:
+```swift
+if tx.preferredCurrencyCode == currencyCode {
+    val = tx.amountInPreferredCurrency  // ← NO usa context
+} else {
+    val = CurrencyConverter.shared.convert(..., context: context)  // ← USA context
+}
+```
+Si todas las transacciones de test usan la misma moneda, `context` nunca se usa. Pero `ModelContext` es non-optional en la firma, así que ni siquiera compila sin uno.
+
+**Solución propuesta — Protocolo `CurrencyConverting`:**
+```swift
+// En Services/CurrencyConverter.swift
+protocol CurrencyConverting {
+    func convert(_ amount: Decimal, from: String, to: String, on date: Date) -> Decimal
+}
+
+extension CurrencyConverter: CurrencyConverting {
+    func convert(_ amount: Decimal, from: String, to: String, on date: Date) -> Decimal {
+        // Implementación actual que usa ModelContext internamente
+        // (el context se inyecta al CurrencyConverter, no a cada calculator)
+    }
+}
+
+// Mock para tests
+struct MockCurrencyConverter: CurrencyConverting {
+    var fixedRate: Decimal = 1.0
+    func convert(_ amount: Decimal, from: String, to: String, on date: Date) -> Decimal {
+        return amount * fixedRate
+    }
+}
+```
+
+**Cambio en calculators:**
+```swift
+// Antes:
+static func calculateCashFlow(..., context: ModelContext) -> CashFlowSummary
+
+// Después:
+static func calculateCashFlow(..., converter: CurrencyConverting = CurrencyConverter.shared) -> CashFlowSummary
+```
+
+**Impacto del refactor:**
+- ~7 calculators/helpers: cambiar firma (context → converter)
+- ~15 call sites en ViewModels: pasar converter explícito o usar default
+- CurrencyConverter: adoptar protocolo + mover context a propiedad interna
+- **Desbloquea:** ~50+ tests nuevos para toda la capa de cálculo financiero
+- **Esfuerzo:** Medio — mecánico pero amplio (grep + replace + verificar)
+- **Riesgo:** Bajo — es un cambio de firma, no de lógica
+
+**Alternativa más simple (si el refactor es demasiado grande):**
+Resolver el crash de `ModelContainer` en tests directamente. El crash es por la configuración CloudKit del schema. Posibles vías:
+1. Crear un schema mínimo sin CloudKit para tests
+2. Usar `ModelConfiguration(cloudKitDatabase: .none)` si está disponible en iOS 26
+3. Desacoplar el schema de CloudKit en `SwiftDataConfiguration` para entorno de test
+
 ### Fase 7: Beta Preparation (V1.0 Release) ✅ COMPLETADA
 
 **Subfase 7.1: Code Quality & Cleanup** ✅

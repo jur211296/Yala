@@ -13,6 +13,7 @@ import SwiftData
 // MARK: - Type Aliases (to avoid ambiguity with Foundation types)
 
 typealias YalaCategory = Yala.Category
+typealias YalaTag = Yala.Tag
 
 // MARK: - In-Memory SwiftData Context
 
@@ -184,6 +185,23 @@ func dateOffset(days: Int) -> Date {
 /// Get date N months from now
 func dateOffset(months: Int) -> Date {
     Calendar.current.date(byAdding: .month, value: months, to: Date()) ?? Date()
+}
+
+// MARK: - Context-Free Factories (no ModelContext needed)
+
+func makeBudget(
+    periodType: String = "monthly",
+    startDate: Date? = nil,
+    endDate: Date? = nil,
+    limitAmount: Double = 1000
+) -> Budget {
+    Budget(
+        currencyCode: "USD",
+        limitAmount: limitAmount,
+        periodType: periodType,
+        startDate: startDate,
+        endDate: endDate
+    )
 }
 
 // MARK: - InboxDraft Factory
