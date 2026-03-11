@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-11] bab15ee fix: adaptive sheet detents for iPad/Mac + enable native iPad support (BUG-45, BUG-46)
 - [2026-03-11] e1f1a70 fix: defer notification primer check to prevent success animation flicker (BUG-47)
 - [2026-03-11] b28c7c2 fix: replace compact DatePickers with DateFieldButton + confirm/cancel sheet (BUG-50)
 - [2026-03-10] ecc7758 fix: defer panel actions when UI is blocked by Face ID or inbox modal (BUG-42, BUG-43)
@@ -505,8 +506,8 @@ Todos deben resolverse para V1.1 (próxima release). Prioridad: crashes > lógic
 - [x] **BUG-44: Widget de presupuestos no se actualiza automáticamente** — Desestimado
 
 **iPad / Layout:**
-- [ ] **BUG-45: Calendario de fecha recortado en iPad (registro)** — DatePicker en NewTransactionView se corta en iPad.
-- [ ] **BUG-46: Sheet de success recortada en iPad** — La pantalla de éxito post-registro se ve cortada en iPad.
+- [x] **BUG-45: Calendario de fecha recortado en iPad (registro)** — Resuelto (bab15ee)
+- [x] **BUG-46: Sheet de success recortada en iPad** — Resuelto (bab15ee)
 
 **UX / Visual:**
 - [x] **BUG-47: Animación de success pestañea** — Resuelto (e1f1a70)
@@ -714,8 +715,9 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: BUG-47 fix — success animation flicker (e1f1a70)
+Stopped at: BUG-45/BUG-46 fix — adaptive sheet detents + native iPad (bab15ee)
 Next step: Continue with next bug or Fase 12 item from /next
 Resume context:
-- Moved checkNotificationPrimer() to run 800ms after animation starts (was race condition)
-- Only NewTransactionView affected; other success views (Inbox, Subscription) had no risk
+- Added DS.Adaptive.sheetDetents() helper — forces .large on iPad/Mac for all medium/fixed sheets
+- Changed TARGETED_DEVICE_FAMILY to "1,2" for native iPad support (was iPhone-only)
+- 21 Swift files updated, all .presentationDetents with .medium or .height(N) wrapped
