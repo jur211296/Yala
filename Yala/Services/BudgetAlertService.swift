@@ -58,8 +58,8 @@ final class BudgetAlertService {
         // 2. Fetch transactions within budget periods (not all history)
         let earliestDate = budgets.compactMap { budget -> Date? in
             if let start = budget.startDate { return start }
-            return Calendar.current.date(byAdding: .year, value: -1, to: Date())
-        }.min() ?? Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
+            return Calendar.current.date(byAdding: .year, value: -1, to: Date.now)
+        }.min() ?? Calendar.current.date(byAdding: .year, value: -1, to: Date.now) ?? Date.now
         let capturedDate = earliestDate
         let txDescriptor = FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.date >= capturedDate }
@@ -135,7 +135,7 @@ final class BudgetAlertService {
 
     func getCurrentPeriodInterval(for budget: Budget) -> DateInterval {
         let calendar = Calendar.current
-        let now = Date()
+        let now = Date.now
 
         guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
             let monthStart = calendar.startOfMonth(for: now)

@@ -44,7 +44,7 @@ final class FavoritePayment {
     var currencyCode: String?
 
     /// Creation date for sorting - CloudKit: default required
-    var createdAt: Date = Date()
+    var createdAt: Date = Date.now
 
     /// Display order for manual reordering - CloudKit: default required
     var displayOrder: Int = 0
@@ -70,7 +70,7 @@ final class FavoritePayment {
         self.tags = tags
         self.needOverride = needOverride
         self.currencyCode = currencyCode
-        self.createdAt = Date()
+        self.createdAt = Date.now
         self.displayOrder = displayOrder
     }
 

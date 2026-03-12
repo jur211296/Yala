@@ -475,7 +475,7 @@ struct TransactionsExportService {
 
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
-        let timestamp = dateFormatter.string(from: Date())
+        let timestamp = dateFormatter.string(from: Date.now)
 
         let fileName = "Yala_Transacciones_\(timestamp).\(ext)"
         let fileURL = tempDirectory.appendingPathComponent(fileName)
@@ -552,7 +552,7 @@ struct TransactionsExportService {
 
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
-        let timestamp = dateFormatter.string(from: Date())
+        let timestamp = dateFormatter.string(from: Date.now)
 
         let fileName = "Yala_Transacciones_\(timestamp).xlsx"
         let fileURL = tempDirectory.appendingPathComponent(fileName)

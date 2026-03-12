@@ -14,14 +14,14 @@ struct DatePickerSheet: View {
     @Environment(\.yalaTheme) private var theme
     @Binding var selectedDate: Date
     var minDate: Date = .distantPast
-    var maxDate: Date? = nil         // nil = Date() at runtime (avoids stale capture)
+    var maxDate: Date? = nil         // nil = Date.now at runtime (avoids stale capture)
     var title: String = L10n.Common.date
 
     @State private var workingDate: Date = .now
 
     /// Computed range: nil maxDate means "up to today" at render time
     private var dateRange: ClosedRange<Date> {
-        let upper = maxDate ?? Date()
+        let upper = maxDate ?? Date.now
         return minDate...upper
     }
 

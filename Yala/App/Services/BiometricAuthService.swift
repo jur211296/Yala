@@ -116,7 +116,7 @@ final class BiometricAuthService {
     func appDidEnterBackground() {
         guard isEnabled else { return }
         didEnterBackground = true
-        backgroundTimestamp = Date()
+        backgroundTimestamp = Date.now
     }
 
     /// Call when app enters foreground. Only locks if we actually went to background.
@@ -126,7 +126,7 @@ final class BiometricAuthService {
         isAuthenticating = false
 
         if let timestamp = backgroundTimestamp {
-            let elapsed = Date().timeIntervalSince(timestamp)
+            let elapsed = Date.now.timeIntervalSince(timestamp)
             if elapsed >= Double(lockTimeout.rawValue) {
                 isLocked = true
             }

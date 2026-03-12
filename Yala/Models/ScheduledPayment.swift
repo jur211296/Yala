@@ -66,7 +66,7 @@ final class ScheduledPayment {
     var recurrenceInterval: Int = 1
 
     /// Payment date (for one-time) or next due date (for recurring)
-    var nextDueDate: Date = Date()
+    var nextDueDate: Date = Date.now
 
     /// Day of month for monthly recurrence (1-31)
     var dayOfMonth: Int?
@@ -100,7 +100,7 @@ final class ScheduledPayment {
     var isActive: Bool = true
 
     /// Creation timestamp
-    var createdAt: Date = Date()
+    var createdAt: Date = Date.now
 
     /// Last date a notification was sent (to avoid duplicates)
     var lastNotifiedDate: Date?
@@ -141,7 +141,7 @@ final class ScheduledPayment {
     func cleanupOldSkippedDates() {
         guard !skippedDatesRaw.isEmpty else { return }
         let calendar = Calendar.current
-        guard let cutoff = calendar.date(byAdding: .year, value: -1, to: Date()) else { return }
+        guard let cutoff = calendar.date(byAdding: .year, value: -1, to: Date.now) else { return }
         let cutoffKey = Self.dateKey(for: cutoff)
         let dates = skippedDates.filter { $0 >= cutoffKey }
         skippedDatesRaw = dates.sorted().joined(separator: ",")
@@ -205,7 +205,7 @@ final class ScheduledPayment {
         self.notifyOnDueDate = notifyOnDueDate
         self.notifyDaysBefore = notifyDaysBefore
         self.isActive = isActive
-        self.createdAt = Date()
+        self.createdAt = Date.now
         self.lastNotifiedDate = nil
     }
 

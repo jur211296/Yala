@@ -21,9 +21,9 @@ struct BudgetChartsView: View {
     @State private var selectedCategory: String?
 
     // Local period state (independent from viewModel's global period)
-    @State private var localSelectedWeek: Date = Date()
-    @State private var localSelectedMonth: Date = Date()
-    @State private var localSelectedYear: Int = Calendar.current.component(.year, from: Date())
+    @State private var localSelectedWeek: Date = Date.now
+    @State private var localSelectedMonth: Date = Date.now
+    @State private var localSelectedYear: Int = Calendar.current.component(.year, from: Date.now)
     @State private var showLocalPeriodSelector: Bool = false
 
     // Scrub interaction
@@ -56,7 +56,7 @@ struct BudgetChartsView: View {
             return DateInterval(start: monthStart, end: monthEnd)
 
         case .yearly:
-            let yearStart = calendar.date(from: DateComponents(year: localSelectedYear, month: 1, day: 1)) ?? Date()
+            let yearStart = calendar.date(from: DateComponents(year: localSelectedYear, month: 1, day: 1)) ?? Date.now
             let yearEnd = calendar.date(from: DateComponents(year: localSelectedYear + 1, month: 1, day: 1)) ?? yearStart
             return DateInterval(start: yearStart, end: yearEnd)
 
@@ -77,7 +77,7 @@ struct BudgetChartsView: View {
 
         switch pType {
         case .weekly:
-            let currentWeek = calendar.startOfWeek(for: Date())
+            let currentWeek = calendar.startOfWeek(for: Date.now)
             if calendar.isDate(localSelectedWeek, equalTo: currentWeek, toGranularity: .weekOfYear) {
                 return L10n.Period.thisWeek
             } else if let prev = calendar.date(byAdding: .weekOfYear, value: -1, to: currentWeek),
@@ -93,7 +93,7 @@ struct BudgetChartsView: View {
             }
 
         case .monthly:
-            let currentMonth = calendar.startOfMonth(for: Date())
+            let currentMonth = calendar.startOfMonth(for: Date.now)
             if calendar.isDate(localSelectedMonth, equalTo: currentMonth, toGranularity: .month) {
                 return L10n.Period.thisMonth
             } else if let prev = calendar.date(byAdding: .month, value: -1, to: currentMonth),
@@ -107,7 +107,7 @@ struct BudgetChartsView: View {
             }
 
         case .yearly:
-            let currentYear = calendar.component(.year, from: Date())
+            let currentYear = calendar.component(.year, from: Date.now)
             if localSelectedYear == currentYear {
                 return L10n.Period.thisYear
             } else if localSelectedYear == currentYear - 1 {

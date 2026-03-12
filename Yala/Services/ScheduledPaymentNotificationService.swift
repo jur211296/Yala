@@ -39,7 +39,7 @@ final class ScheduledPaymentNotificationService {
         let payments = fetchActivePayments(context: context)
         guard !payments.isEmpty else { return }
 
-        let today = Date()
+        let today = Date.now
         let paidStatus = ScheduledPaymentPaidStatusHelper.loadPaidStatus(for: payments, month: today, context: context)
 
         await notifyOverduePayments(payments: payments, paidStatus: paidStatus, today: today)
@@ -153,7 +153,7 @@ final class ScheduledPaymentNotificationService {
     /// Check if current time is past the user's configured notification hour for scheduled payments
     private func isWithinNotificationWindow(context: ModelContext) -> Bool {
         let calendar = Calendar.current
-        let now = Date()
+        let now = Date.now
 
         let typeRaw = "scheduledPayments"
         let descriptor = FetchDescriptor<NotificationItem>(
@@ -228,7 +228,7 @@ final class ScheduledPaymentNotificationService {
         guard await NotificationService.shared.isAuthorized() else { return }
 
         let accounts = fetchCreditCardAccounts(context: context)
-        let today = Date()
+        let today = Date.now
         let dayOfMonth = Calendar.current.component(.day, from: today)
 
         for account in accounts {

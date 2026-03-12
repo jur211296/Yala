@@ -355,7 +355,7 @@ struct NoteFormRow: View {
 
         SubsectionDivider()
 
-        DateFormRow(date: .constant(Date()), action: {})
+        DateFormRow(date: .constant(Date.now), action: {})
 
         SubsectionDivider()
 

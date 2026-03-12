@@ -39,7 +39,7 @@ final class Budget {
     var tags: [Tag]?
     var natures: String?    // Comma-separated nature values (e.g., "essential,priority")
     var isActive: Bool = true
-    var createdAt: Date = Date()
+    var createdAt: Date = Date.now
     var isFavorite: Bool = false
     var favoriteOrder: Int = 0
 
@@ -62,7 +62,7 @@ final class Budget {
         tags: [Tag] = [],
         natures: String? = nil,
         isActive: Bool = true,
-        createdAt: Date = Date(),
+        createdAt: Date = Date.now,
         isFavorite: Bool = false,
         favoriteOrder: Int = 0,
         alertEnabled: Bool = false,

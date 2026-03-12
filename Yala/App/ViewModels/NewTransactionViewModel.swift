@@ -61,7 +61,7 @@ final class NewTransactionViewModel {
     var selectedNeed: SubcategoryNeed?
 
     /// Fecha de la transacción
-    var transactionDate: Date = Date()
+    var transactionDate: Date = Date.now
 
     /// Etiquetas seleccionadas
     var selectedTags: [Tag] = []
@@ -465,7 +465,7 @@ final class NewTransactionViewModel {
         showValidationErrors = true
 
         // Validate: block future dates (compare at day granularity to avoid false positives from time-of-day)
-        if Calendar.current.compare(transactionDate, to: Date(), toGranularity: .day) == .orderedDescending {
+        if Calendar.current.compare(transactionDate, to: Date.now, toGranularity: .day) == .orderedDescending {
             showFutureDateAlert = true
             return nil
         }
@@ -852,7 +852,7 @@ final class NewTransactionViewModel {
         sourceAccount = nil
         destinationAccount = nil
         selectedSubcategory = nil
-        transactionDate = Date()
+        transactionDate = Date.now
         selectedTags = []
         note = ""
         exchangeRate = 1.0

@@ -86,7 +86,7 @@ final class MerchantMemoryService {
             } else {
                 existing.countApproved += 1
             }
-            existing.lastApprovedAt = Date()
+            existing.lastApprovedAt = Date.now
 
             // Agregar alias si es nuevo
             let rawTrimmed = merchantRaw.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -99,7 +99,7 @@ final class MerchantMemoryService {
                 subcategory: subcategory,
                 countApproved: wasCorrection ? 0 : 1,
                 countCorrected: wasCorrection ? 1 : 0,
-                lastApprovedAt: Date(),
+                lastApprovedAt: Date.now,
                 aliases: [merchantRaw.trimmingCharacters(in: .whitespacesAndNewlines)]
             )
             modelContext.insert(memory)
@@ -111,7 +111,7 @@ final class MerchantMemoryService {
     /// Aplica decay a memorias no usadas en 6+ meses.
     /// Reduce countApproved y elimina memorias vacías.
     func applyDecay() {
-        guard let sixMonthsAgo = Calendar.current.date(byAdding: .month, value: -6, to: Date()) else {
+        guard let sixMonthsAgo = Calendar.current.date(byAdding: .month, value: -6, to: Date.now) else {
             return
         }
 

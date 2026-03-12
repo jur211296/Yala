@@ -299,7 +299,7 @@ final class PanelViewModel {
     var processedYDomain: ClosedRange<Double> = 0...100
 
     // Stored interval - updated in batch with chart data to stay in sync
-    var currentInterval: DateInterval = DateInterval(start: Date(), end: Date())
+    var currentInterval: DateInterval = DateInterval(start: Date.now, end: Date.now)
 
     // Stored period - updated in batch with chart data to stay in sync
     var currentPeriod: DetailPeriod = .thisYear
@@ -822,11 +822,11 @@ final class PanelViewModel {
                     calendar.date(
                         from: calendar.dateComponents([.year, .month], from: firstTxDate))
                     ?? firstTxDate
-                effectiveInterval = DateInterval(start: start, end: Date())
+                effectiveInterval = DateInterval(start: start, end: Date.now)
             } else {
                 let startOfYear = calendar.date(
-                    from: calendar.dateComponents([.year], from: Date())) ?? Date()
-                effectiveInterval = DateInterval(start: startOfYear, end: Date())
+                    from: calendar.dateComponents([.year], from: Date.now)) ?? Date.now
+                effectiveInterval = DateInterval(start: startOfYear, end: Date.now)
             }
         } else {
             effectiveInterval = self.panelDateInterval
@@ -1419,7 +1419,7 @@ final class PanelViewModel {
         let currentRatesDate: Date =
             latestRate.timestamp
             ?? {
-                Self.dateKeyFormatter.date(from: latestRate.dateKey) ?? Date()
+                Self.dateKeyFormatter.date(from: latestRate.dateKey) ?? Date.now
             }()
 
         // Build chart points for selected comparison currencies only
@@ -1577,31 +1577,31 @@ final class PanelViewModel {
         let calendar = Calendar.current
 
         guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
-            let start = calendar.startOfMonth(for: Date())
+            let start = calendar.startOfMonth(for: Date.now)
             let end = calendar.date(byAdding: .month, value: 1, to: start) ?? start
             return DateInterval(start: start, end: end)
         }
 
         switch periodType {
         case .weekly:
-            let weekStart = calendar.startOfWeek(for: Date())
+            let weekStart = calendar.startOfWeek(for: Date.now)
             let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
             return DateInterval(start: weekStart, end: weekEnd)
 
         case .monthly:
-            let monthStart = calendar.startOfMonth(for: Date())
+            let monthStart = calendar.startOfMonth(for: Date.now)
             let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
             return DateInterval(start: monthStart, end: monthEnd)
 
         case .yearly:
-            let year = calendar.component(.year, from: Date())
-            let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? Date()
+            let year = calendar.component(.year, from: Date.now)
+            let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? Date.now
             let yearEnd = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) ?? yearStart
             return DateInterval(start: yearStart, end: yearEnd)
 
         case .unique:
             guard let start = budget.startDate, let end = budget.endDate else {
-                let monthStart = calendar.startOfMonth(for: Date())
+                let monthStart = calendar.startOfMonth(for: Date.now)
                 let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
                 return DateInterval(start: monthStart, end: monthEnd)
             }
@@ -1612,7 +1612,7 @@ final class PanelViewModel {
     /// Calculate days remaining in budget period
     private func getBudgetDaysRemaining(budget: Budget, interval: DateInterval) -> Int {
         let calendar = Calendar.current
-        let today = Date()
+        let today = Date.now
 
         if today > interval.end {
             return -1  // Period has ended

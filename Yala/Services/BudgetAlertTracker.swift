@@ -39,7 +39,7 @@ final class BudgetAlertTracker {
     /// Generate period key based on budget type and current date
     func periodKey(for budget: Budget) -> String {
         let calendar = Calendar.current
-        let now = Date()
+        let now = Date.now
 
         guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
             return "unknown"
@@ -104,7 +104,7 @@ final class BudgetAlertTracker {
         let budgetKeys = allKeys.filter { $0.hasPrefix(keyPrefix) }
 
         let calendar = Calendar.current
-        let threeMonthsAgo = calendar.date(byAdding: .month, value: -3, to: Date()) ?? Date()
+        let threeMonthsAgo = calendar.date(byAdding: .month, value: -3, to: Date.now) ?? Date.now
         let cutoffYear = calendar.component(.year, from: threeMonthsAgo)
         let cutoffMonth = calendar.component(.month, from: threeMonthsAgo)
         let cutoffWeek = calendar.component(.weekOfYear, from: threeMonthsAgo)

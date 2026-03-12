@@ -61,7 +61,7 @@ final class ScheduledPaymentNotificationTracker {
         let trackerKeys = allKeys.filter { $0.hasPrefix(keyPrefix) }
 
         let calendar = Calendar.current
-        let cutoffDate = calendar.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+        let cutoffDate = calendar.date(byAdding: .day, value: -30, to: Date.now) ?? Date.now
 
         for key in trackerKeys {
             // Key format: scheduledPaymentNotif_UUID_YYYYMMDD_type

@@ -118,7 +118,7 @@ struct iCloudSyncSettingsView: View {
     private func formatLastSync(_ date: Date) -> String {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
+        return formatter.localizedString(for: date, relativeTo: Date.now)
     }
 }
 

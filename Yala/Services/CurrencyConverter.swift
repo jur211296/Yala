@@ -123,7 +123,7 @@ final class CurrencyConverter: CurrencyConverting {
         to: String,
         context: ModelContext
     ) -> Decimal {
-        return convert(amount, from: from, to: to, on: Date(), context: context)
+        return convert(amount, from: from, to: to, on: Date.now, context: context)
     }
 
     /// Synchronous conversion using fallback rates (no database access).
@@ -149,7 +149,7 @@ final class CurrencyConverter: CurrencyConverting {
     func getDisplayRate(
         from: String,
         to: String,
-        date: Date = Date(),
+        date: Date = Date.now,
         context: ModelContext
     ) -> Double? {
         let fromCode = normalizeCurrencyCode(from)

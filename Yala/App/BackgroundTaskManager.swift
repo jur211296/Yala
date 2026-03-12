@@ -214,7 +214,7 @@ final class BackgroundTaskManager {
         // Fallback to tomorrow 6 AM if no active reports or no context
         if targetDate == nil {
             targetDate = Calendar.current.nextDate(
-                after: Date(),
+                after: Date.now,
                 matching: DateComponents(hour: 6),
                 matchingPolicy: .nextTime
             )
@@ -289,7 +289,7 @@ final class BackgroundTaskManager {
         }
 
         let calendar = Calendar.current
-        let now = Date()
+        let now = Date.now
         var nextTime: Date?
 
         for report in reports {

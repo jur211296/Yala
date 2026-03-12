@@ -201,7 +201,7 @@ final class PreferenceSyncService {
 
     /// Called by DataWipeService BEFORE deleting data — signals other devices that a wipe occurred.
     func signalWipeInitiated() {
-        let timestamp = Date().timeIntervalSince1970
+        let timestamp = Date.now.timeIntervalSince1970
         iKV.set(timestamp, forKey: WipeKey.remoteWipe)
         iKV.synchronize()
 
@@ -215,7 +215,7 @@ final class PreferenceSyncService {
 
     /// Called after onboarding completes — signals other devices that onboarding is done.
     func signalOnboardingCompleted() {
-        let timestamp = Date().timeIntervalSince1970
+        let timestamp = Date.now.timeIntervalSince1970
         iKV.set(timestamp, forKey: WipeKey.remoteOnboarding)
         iKV.synchronize()
 

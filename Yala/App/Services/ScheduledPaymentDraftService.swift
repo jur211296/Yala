@@ -20,7 +20,7 @@ struct ScheduledPaymentDraftService {
     @discardableResult
     static func processDuePayments(context: ModelContext) -> Int {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = calendar.startOfDay(for: Date.now)
         let endOfToday = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: today) ?? today
 
         // Fetch active payments with nextDueDate <= today
@@ -177,7 +177,7 @@ struct ScheduledPaymentDraftService {
     /// Only creates if no pending/approved draft already exists for this payment in that month.
     static func recreateDraftIfNeeded(for payment: ScheduledPayment, date: Date, context: ModelContext) {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = calendar.startOfDay(for: Date.now)
         let targetDate = calendar.startOfDay(for: date)
 
         // Only recreate for dates that are today or past
@@ -304,7 +304,7 @@ struct ScheduledPaymentDraftService {
         }) else { return }
 
         // Update paid date
-        payment.lastPaidDate = Date()
+        payment.lastPaidDate = Date.now
 
         // Link approved transaction to this scheduled payment
         draft.approvedTransaction?.scheduledPaymentID = payment.id.uuidString

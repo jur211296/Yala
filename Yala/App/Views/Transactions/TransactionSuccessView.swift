@@ -567,7 +567,7 @@ struct TransactionSuccessView: View {
     TransactionSuccessView(
         data: TransactionSuccessData(
             transactionType: .expense,
-            date: Date(),
+            date: Date.now,
             accountName: "Soles",
             accountColorHex: "FF6B6B",
             note: "Compra en supermercado",

@@ -28,7 +28,7 @@ struct InboxDraftEditSheet: View {
 
     @State private var note: String = ""
     @State private var amountString: String = ""
-    @State private var transactionDate: Date = Date()
+    @State private var transactionDate: Date = Date.now
     @State private var selectedAccount: Account?
     @State private var selectedSubcategory: Subcategory?
     @State private var selectedTags: [Tag] = []
@@ -71,7 +71,7 @@ struct InboxDraftEditSheet: View {
     // Track initial values to detect unsaved changes
     @State private var initialNote: String = ""
     @State private var initialAmountString: String = ""
-    @State private var initialDate: Date = Date()
+    @State private var initialDate: Date = Date.now
     @State private var initialAccount: Account?
     @State private var initialSubcategory: Subcategory?
     @State private var initialTags: [Tag] = []
@@ -956,7 +956,7 @@ struct InboxDraftEditSheet: View {
         draft.tags = selectedTags
         draft.status = .approved
         draft.approvedTransaction = transaction
-        draft.updatedAt = Date()
+        draft.updatedAt = Date.now
 
         // Cache display values for when related objects might be deleted later
         draft.cachedAccountName = account.name

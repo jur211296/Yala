@@ -173,7 +173,7 @@ final class StatisticsViewModel: Filterable {
     var trendGrouping: TrendGrouping = .month
 
     /// Date interval for the current period
-    var currentInterval: DateInterval = DateInterval(start: Date(), end: Date())
+    var currentInterval: DateInterval = DateInterval(start: Date.now, end: Date.now)
 
     /// Per-account trend series (when not aggregated)
     var accountSeries: [AccountTrendSeries] = []

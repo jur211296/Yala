@@ -544,7 +544,7 @@ enum TransactionCSVImportService {
         }
 
         // Filter out future dates
-        let today = Date()
+        let today = Date.now
         let totalDrafts = drafts.count
         let validDrafts = drafts.filter { $0.date <= today }
         let ignoredFutureDatesCount = totalDrafts - validDrafts.count
@@ -1379,7 +1379,7 @@ enum TransactionCSVImportService {
         }
 
         // Filter out future dates
-        let today = Date()
+        let today = Date.now
         let totalDrafts = drafts.count
         let validDrafts = drafts.filter { $0.0.date <= today }
         let ignoredFutureDatesCount = totalDrafts - validDrafts.count
@@ -1446,7 +1446,7 @@ enum TransactionCSVImportService {
         }
 
         // Filter out future dates
-        let today = Date()
+        let today = Date.now
         let totalDrafts = drafts.count
         let validDrafts = drafts.filter { $0.date <= today }
         let ignoredFutureDatesCount = totalDrafts - validDrafts.count
@@ -1597,7 +1597,7 @@ enum TransactionCSVImportService {
         }
 
         // Filter out future dates
-        let today = Date()
+        let today = Date.now
         let totalDrafts = drafts.count
         let validDrafts = drafts.filter { $0.0.date <= today }
         let ignoredFutureDatesCount = totalDrafts - validDrafts.count

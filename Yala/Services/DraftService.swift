@@ -143,7 +143,7 @@ final class DraftService: DraftServiceProtocol {
         let context = try requireContext()
 
         // Validate: block future dates
-        guard draft.effectiveDate <= Date() else {
+        guard draft.effectiveDate <= Date.now else {
             throw DraftServiceError.futureDateNotAllowed
         }
 
@@ -197,7 +197,7 @@ final class DraftService: DraftServiceProtocol {
         // Update draft status and link to transaction
         draft.status = .approved
         draft.approvedTransaction = transaction
-        draft.updatedAt = Date()
+        draft.updatedAt = Date.now
 
         // Update merchant memory (learn from approved drafts)
         if !draft.note.trimmingCharacters(in: .whitespaces).isEmpty {
@@ -238,7 +238,7 @@ final class DraftService: DraftServiceProtocol {
 
         for draft in drafts where draft.isReadyToApprove {
             // Skip drafts with future dates
-            guard draft.effectiveDate <= Date() else { continue }
+            guard draft.effectiveDate <= Date.now else { continue }
 
             guard let account = draft.account,
                   !account.isArchived,
@@ -283,7 +283,7 @@ final class DraftService: DraftServiceProtocol {
             // Update draft
             draft.status = .approved
             draft.approvedTransaction = transaction
-            draft.updatedAt = Date()
+            draft.updatedAt = Date.now
 
             // Update scheduled payment
             ScheduledPaymentDraftService.handleDraftApproved(draft: draft, context: context)
@@ -324,7 +324,7 @@ final class DraftService: DraftServiceProtocol {
         cacheDisplayValues(draft)
 
         draft.status = .rejected
-        draft.updatedAt = Date()
+        draft.updatedAt = Date.now
 
         try context.save()
 
@@ -337,7 +337,7 @@ final class DraftService: DraftServiceProtocol {
         for draft in drafts {
             cacheDisplayValues(draft)
             draft.status = .rejected
-            draft.updatedAt = Date()
+            draft.updatedAt = Date.now
         }
 
         try context.save()
@@ -365,7 +365,7 @@ final class DraftService: DraftServiceProtocol {
         let context = try requireContext()
 
         draft.status = .pending
-        draft.updatedAt = Date()
+        draft.updatedAt = Date.now
         updateNeedsUserInput(draft)
 
         try context.save()
@@ -376,7 +376,7 @@ final class DraftService: DraftServiceProtocol {
 
         for draft in drafts {
             draft.status = .pending
-            draft.updatedAt = Date()
+            draft.updatedAt = Date.now
             updateNeedsUserInput(draft)
         }
 
@@ -388,7 +388,7 @@ final class DraftService: DraftServiceProtocol {
     func saveDraft(_ draft: InboxDraft) throws {
         let context = try requireContext()
 
-        draft.updatedAt = Date()
+        draft.updatedAt = Date.now
         updateNeedsUserInput(draft)
 
         try context.save()
@@ -401,7 +401,7 @@ final class DraftService: DraftServiceProtocol {
 
         for draft in drafts {
             draft.account = account
-            draft.updatedAt = Date()
+            draft.updatedAt = Date.now
             updateNeedsUserInput(draft)
         }
 
@@ -413,7 +413,7 @@ final class DraftService: DraftServiceProtocol {
 
         for draft in drafts {
             draft.subcategory = subcategory
-            draft.updatedAt = Date()
+            draft.updatedAt = Date.now
             updateNeedsUserInput(draft)
         }
 

@@ -18,7 +18,7 @@ struct NotificationEditorSheet: View {
     // Form state
     @State private var name: String = ""
     @State private var text: String = ""
-    @State private var scheduledTime: Date = Date()
+    @State private var scheduledTime: Date = Date.now
 
     // Report config (for report types)
     @State private var selectedDataType: ReportDataType = .expenses
@@ -593,7 +593,7 @@ struct NotificationEditorSheet: View {
             var components = DateComponents()
             components.hour = 12
             components.minute = 0
-            scheduledTime = Calendar.current.date(from: components) ?? Date()
+            scheduledTime = Calendar.current.date(from: components) ?? Date.now
             return
         }
 

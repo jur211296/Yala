@@ -58,7 +58,7 @@ enum SharedContainerService {
             includingPropertiesForKeys: [.creationDateKey],
             options: .skipsHiddenFiles
         )
-        let cutoff = Date().addingTimeInterval(-maxAge)
+        let cutoff = Date.now.addingTimeInterval(-maxAge)
         for fileURL in contents ?? [] {
             guard let values = try? fileURL.resourceValues(forKeys: [.creationDateKey]),
                   let created = values.creationDate,

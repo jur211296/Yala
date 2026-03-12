@@ -51,7 +51,7 @@ final class ReportNotificationService {
             )
 
             // Mark as notified to prevent duplicate sends
-            report.lastNotifiedDate = Date()
+            report.lastNotifiedDate = Date.now
             sentCount += 1
         }
 
@@ -76,7 +76,7 @@ final class ReportNotificationService {
     /// Checks: 1) Not already notified today, 2) Within 30min window of scheduled time, 3) Correct day/weekday
     static func shouldSendNow(_ report: NotificationItem) -> Bool {
         let calendar = Calendar.current
-        let now = Date()
+        let now = Date.now
         let config = report.reportConfig
 
         // 1. Already notified today? Skip to avoid spam
@@ -195,7 +195,7 @@ final class ReportNotificationService {
 
     static func getIntervalForReportType(_ config: ReportConfig, type: NotificationType) -> DateInterval {
         let calendar = Calendar.current
-        let now = Date()
+        let now = Date.now
 
         // Daily: today only
         if type == .dailyReport {

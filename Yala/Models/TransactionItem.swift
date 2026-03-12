@@ -13,7 +13,7 @@ import SwiftData
 @Model
 final class TransactionItem {
     // CloudKit: defaults required
-    var date: Date = Date()
+    var date: Date = Date.now
     var amount: Double = 0
     var currencyCode: String = "USD"
     var note: String?
@@ -63,7 +63,7 @@ final class TransactionItem {
 
     // MARK: - Metadata
     /// Timestamp de creación del registro (usado para ordenar registros del mismo día)
-    var createdAt: Date = Date()
+    var createdAt: Date = Date.now
 
     /// Naturaleza efectiva del registro (usa override si existe, sino la de subcategoría)
     var effectiveNeed: SubcategoryNeed {

@@ -241,7 +241,7 @@ final class NotificationItem {
     var isActive: Bool = true
     var iconName: String = "bell.fill"
     var colorHex: String = "#6366F1"
-    var createdAt: Date = Date()
+    var createdAt: Date = Date.now
     var sortOrder: Int = 0
 
     /// JSON-encoded configuration for report notifications
@@ -267,7 +267,7 @@ final class NotificationItem {
             var components = DateComponents()
             components.hour = hour
             components.minute = minute
-            return Calendar.current.date(from: components) ?? Date()
+            return Calendar.current.date(from: components) ?? Date.now
         }
         set {
             let components = Calendar.current.dateComponents([.hour, .minute], from: newValue)
@@ -360,7 +360,7 @@ final class NotificationItem {
         self.isActive = isActive
         self.iconName = iconName ?? type.defaultIcon
         self.colorHex = colorHex ?? type.defaultColor
-        self.createdAt = Date()
+        self.createdAt = Date.now
         self.sortOrder = sortOrder
 
         // Set default config for report types

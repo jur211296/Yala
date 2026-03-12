@@ -154,8 +154,8 @@ final class ExportFiltersStepViewModel {
             return DetailPeriod.allTime.dateInterval()
         }
         let calendar = Calendar.current
-        let startOfToday = calendar.startOfDay(for: Date())
-        let endOfToday = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? Date()
+        let startOfToday = calendar.startOfDay(for: Date.now)
+        let endOfToday = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? Date.now
         return DateInterval(start: calendar.startOfDay(for: earliest), end: endOfToday)
     }
 

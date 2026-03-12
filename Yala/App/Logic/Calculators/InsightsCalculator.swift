@@ -411,7 +411,7 @@ struct InsightsCalculator {
         converter: CurrencyConverting
     ) -> Double {
         var total: Double = 0
-        let now = Date()
+        let now = Date.now
 
         for payment in payments {
             guard payment.isActive else { continue }
@@ -432,7 +432,7 @@ struct InsightsCalculator {
         currencyCode: String,
         converter: CurrencyConverting
     ) -> Commitments {
-        let now = Date()
+        let now = Date.now
 
         // Pending scheduled payments (due within period, not yet executed)
         var pendingCount = 0

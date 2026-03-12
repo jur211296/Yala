@@ -675,7 +675,7 @@ private struct ExportCustomPeriodPickerSheet: View {
             _startDate = State(initialValue: range.start)
             _endDate = State(initialValue: range.end)
         } else {
-            let now = Date()
+            let now = Date.now
             let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: now) ?? now
             _startDate = State(initialValue: thirtyDaysAgo)
             _endDate = State(initialValue: now)

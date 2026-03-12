@@ -73,11 +73,11 @@ import SwiftData
         if let earliestDate = accountTransactions.map({ $0.date }).min() {
             // First day of the month of the earliest transaction
             let components = calendar.dateComponents([.year, .month], from: earliestDate)
-            return calendar.date(from: components) ?? Date()
+            return calendar.date(from: components) ?? Date.now
         } else {
             // No transactions - first day of current month
-            let components = calendar.dateComponents([.year, .month], from: Date())
-            return calendar.date(from: components) ?? Date()
+            let components = calendar.dateComponents([.year, .month], from: Date.now)
+            return calendar.date(from: components) ?? Date.now
         }
     }
 

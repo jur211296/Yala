@@ -33,7 +33,7 @@ final class AccountFormViewModel {
     // Balance - new transaction-based system
     var isPositive: Bool = true  // Sign selector for balance
     var balanceText: String = ""  // Amount without sign
-    var adjustmentDate: Date = Date()
+    var adjustmentDate: Date = Date.now
 
     // Currency
     var selectedCurrency: CurrencyCode = .pen

@@ -147,7 +147,7 @@ final class AppBootstrapper {
             Task { @MainActor in
                 let bootstrapper = AppBootstrapper.shared
                 // Debounce: CloudKit puede disparar múltiples notificaciones en ráfaga
-                let now = Date()
+                let now = Date.now
                 guard now.timeIntervalSince(bootstrapper.lastRemoteChangeDate) > 1.0 else { return }
                 bootstrapper.lastRemoteChangeDate = now
                 bootstrapper.sessionState.incrementDataVersion()
@@ -187,7 +187,7 @@ final class AppBootstrapper {
         }
 
         // Skip notification checks if bootstrap just ran (< 5 seconds ago)
-        let shouldCheckNotifications = Date().timeIntervalSince(lastNotificationCheckDate) > 5.0
+        let shouldCheckNotifications = Date.now.timeIntervalSince(lastNotificationCheckDate) > 5.0
 
         if shouldCheckNotifications {
             Task {
@@ -490,7 +490,7 @@ final class AppBootstrapper {
             }
         }
 
-        UserDefaults.standard.set(Date(), forKey: "lastInboxDraftCheckDate")
+        UserDefaults.standard.set(Date.now, forKey: "lastInboxDraftCheckDate")
     }
 
     private func seedDefaultNotifications(context: ModelContext) {
@@ -575,7 +575,7 @@ final class AppBootstrapper {
         await BudgetAlertService.shared.checkBudgetsAndNotify()
         BudgetAlertTracker.shared.cleanupOldEntries()
 
-        lastNotificationCheckDate = Date()
+        lastNotificationCheckDate = Date.now
     }
 
     /// Fetches active NotificationItems from database

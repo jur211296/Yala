@@ -50,13 +50,13 @@ final class BudgetsViewModel {
     var selectedPeriodType: BudgetPeriodType = .monthly
 
     /// Selected week start date (for weekly budgets)
-    var selectedWeek: Date = Date()
+    var selectedWeek: Date = Date.now
 
     /// Selected month start date (for monthly budgets)
-    var selectedMonth: Date = Date()
+    var selectedMonth: Date = Date.now
 
     /// Selected year (for yearly budgets)
-    var selectedYear: Int = Calendar.current.component(.year, from: Date())
+    var selectedYear: Int = Calendar.current.component(.year, from: Date.now)
 
     // MARK: - UI State
 
@@ -84,9 +84,9 @@ final class BudgetsViewModel {
     init() {
         // Initialize with current period
         let calendar = Calendar.current
-        self.selectedWeek = calendar.startOfWeek(for: Date())
-        self.selectedMonth = calendar.startOfMonth(for: Date())
-        self.selectedYear = calendar.component(.year, from: Date())
+        self.selectedWeek = calendar.startOfWeek(for: Date.now)
+        self.selectedMonth = calendar.startOfMonth(for: Date.now)
+        self.selectedYear = calendar.component(.year, from: Date.now)
     }
 
     // MARK: - Period Navigation
@@ -97,7 +97,7 @@ final class BudgetsViewModel {
 
         switch selectedPeriodType {
         case .weekly:
-            let currentWeek = calendar.startOfWeek(for: Date())
+            let currentWeek = calendar.startOfWeek(for: Date.now)
 
             if calendar.isDate(selectedWeek, equalTo: currentWeek, toGranularity: .weekOfYear) {
                 return L10n.Period.thisWeek
@@ -115,7 +115,7 @@ final class BudgetsViewModel {
             }
 
         case .monthly:
-            let currentMonth = calendar.startOfMonth(for: Date())
+            let currentMonth = calendar.startOfMonth(for: Date.now)
 
             if calendar.isDate(selectedMonth, equalTo: currentMonth, toGranularity: .month) {
                 return L10n.Period.thisMonth
@@ -130,7 +130,7 @@ final class BudgetsViewModel {
             }
 
         case .yearly:
-            let currentYear = calendar.component(.year, from: Date())
+            let currentYear = calendar.component(.year, from: Date.now)
 
             if selectedYear == currentYear {
                 return L10n.Period.thisYear
@@ -211,8 +211,8 @@ final class BudgetsViewModel {
         // Load transactions (filtered by earliest budget date to avoid loading all history)
         let earliestDate = allBudgets.compactMap { budget -> Date? in
             if let start = budget.startDate { return start }
-            return Calendar.current.date(byAdding: .year, value: -1, to: Date())
-        }.min() ?? Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
+            return Calendar.current.date(byAdding: .year, value: -1, to: Date.now)
+        }.min() ?? Calendar.current.date(byAdding: .year, value: -1, to: Date.now) ?? Date.now
         let capturedDate = earliestDate
         let transactionDescriptor = FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.date >= capturedDate },
@@ -397,7 +397,7 @@ final class BudgetsViewModel {
     /// Returns daily cumulative spending for an explicit date interval.
     func getDailyCumulativeSpending(budget: Budget, in interval: DateInterval) -> [(date: Date, cumulative: Double)] {
         let calendar = Calendar.current
-        let today = Date()
+        let today = Date.now
         let endDate = min(today, interval.end)
 
         guard interval.start <= endDate else { return [] }
@@ -586,7 +586,7 @@ final class BudgetsViewModel {
     func getDaysRemaining(budget: Budget) -> Int {
         let interval = getBudgetDateInterval(budget: budget)
         let calendar = Calendar.current
-        let today = Date()
+        let today = Date.now
 
         // If the period has ended (today is after the period), return -1 to indicate "Past"
         if today > interval.end {
@@ -630,7 +630,7 @@ final class BudgetsViewModel {
         case .yearly:
             // Use selected year for this budget's period
             let year = selectedYear
-            let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? Date()
+            let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? Date.now
             let yearEnd = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) ?? yearStart
             return DateInterval(start: yearStart, end: yearEnd)
 

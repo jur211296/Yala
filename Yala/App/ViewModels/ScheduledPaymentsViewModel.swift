@@ -69,7 +69,7 @@ final class ScheduledPaymentsViewModel {
     var paymentsViewMode: PaymentsViewMode = .list
 
     /// Selected month for both list and calendar views (shared)
-    var selectedMonth: Date = Date()
+    var selectedMonth: Date = Date.now
 
     /// Whether to show the period selector sheet
     var showPeriodSelector: Bool = false
@@ -88,7 +88,7 @@ final class ScheduledPaymentsViewModel {
     /// Smart label for the selected month
     var monthYearLabel: String {
         let calendar = Calendar.current
-        let now = Date()
+        let now = Date.now
         if calendar.isDate(selectedMonth, equalTo: now, toGranularity: .month) {
             return L10n.Period.thisMonth
         } else if let lastMonth = calendar.date(byAdding: .month, value: -1, to: now),
@@ -314,7 +314,7 @@ final class ScheduledPaymentsViewModel {
     /// Calculate and group payments for display, filtered by selectedMonth
     func calculatePaymentData(payments: [ScheduledPayment]) {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = calendar.startOfDay(for: Date.now)
         let isCurrentMonth = calendar.isDate(selectedMonth, equalTo: today, toGranularity: .month)
         let isPastMonth = calendar.startOfMonth(for: selectedMonth) < calendar.startOfMonth(for: today)
 

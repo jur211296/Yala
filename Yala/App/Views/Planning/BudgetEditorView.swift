@@ -30,8 +30,8 @@ struct BudgetEditorView: View {
 
     // Period
     @State private var selectedPeriodType: BudgetPeriodType = .monthly
-    @State private var startDate: Date = Date()
-    @State private var endDate: Date = Date()
+    @State private var startDate: Date = Date.now
+    @State private var endDate: Date = Date.now
 
     // Active status
     @State private var isActive: Bool = true

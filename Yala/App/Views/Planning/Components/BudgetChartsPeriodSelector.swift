@@ -23,7 +23,7 @@ struct BudgetChartsPeriodSelector: View {
     @State private var periods: [PeriodOption] = []
     @State private var selectedIndex: Int = 0
     @State private var isScrolling: Bool = false
-    @State private var lastScrollTime: Date = Date()
+    @State private var lastScrollTime: Date = Date.now
     @State private var scrollProxy: ScrollViewProxy?
     @State private var currentPeriodIndex: Int?
 
@@ -93,7 +93,7 @@ struct BudgetChartsPeriodSelector: View {
                                         if !isScrolling && abs(newValue - 95) < 25 {
                                             selectedIndex = index
                                         }
-                                        lastScrollTime = Date()
+                                        lastScrollTime = Date.now
                                         Task {
                                             try? await Task.sleep(for: .milliseconds(150))
                                             checkAndSnap(proxy: proxy)
@@ -213,7 +213,7 @@ struct BudgetChartsPeriodSelector: View {
     }
 
     private func checkAndSnap(proxy: ScrollViewProxy) {
-        let timeSinceLastScroll = Date().timeIntervalSince(lastScrollTime)
+        let timeSinceLastScroll = Date.now.timeIntervalSince(lastScrollTime)
         if timeSinceLastScroll >= 0.15 && !isScrolling {
             DS.Haptic.light()
             dsWithAnimation(reduceMotion) {
@@ -275,7 +275,7 @@ struct BudgetChartsPeriodSelector: View {
         let calendar = Calendar.current
         var generatedPeriods: [PeriodOption] = []
 
-        let today = Date()
+        let today = Date.now
         let oldestTransactionDate = transactions.map { $0.date }.min() ?? today
         let oneYearFromNow = calendar.date(byAdding: .year, value: 1, to: today) ?? today
 
@@ -378,7 +378,7 @@ struct BudgetChartsPeriodSelector: View {
                 }
 
                 generatedPeriods.append(PeriodOption(
-                    date: calendar.date(from: DateComponents(year: year)) ?? Date(),
+                    date: calendar.date(from: DateComponents(year: year)) ?? Date.now,
                     title: "\(year)",
                     subtitle: specialText,
                     isCurrent: isCurrent,

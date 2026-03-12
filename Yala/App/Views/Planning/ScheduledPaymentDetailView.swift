@@ -26,7 +26,7 @@ struct ScheduledPaymentDetailView: View {
     // Calculate occurrences using getPaymentDatesInMonth (SSOT for date generation)
     private var pastOccurrences: [Date] {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = calendar.startOfDay(for: Date.now)
 
         // Selected month past dates
         let selectedMonthDates = viewModel.getPaymentDatesInMonth(payment: payment, month: viewModel.selectedMonth)
@@ -47,7 +47,7 @@ struct ScheduledPaymentDetailView: View {
     private var upcomingOccurrences: [Date] {
         guard payment.isRecurring else { return [] }
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = calendar.startOfDay(for: Date.now)
 
         // Selected month future dates
         var futureDates = viewModel.getPaymentDatesInMonth(payment: payment, month: viewModel.selectedMonth)

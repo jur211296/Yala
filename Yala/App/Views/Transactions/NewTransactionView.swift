@@ -1338,8 +1338,8 @@ struct NewTransactionView: View {
             let descriptor = FetchDescriptor<ScheduledPayment>()
             if let payment = try modelContext.fetch(descriptor).first(where: { $0.id.uuidString == paymentIDString }) {
                 let calendar = Calendar.current
-                if calendar.startOfDay(for: payment.nextDueDate) <= calendar.startOfDay(for: Date()) {
-                    payment.lastPaidDate = Date()
+                if calendar.startOfDay(for: payment.nextDueDate) <= calendar.startOfDay(for: Date.now) {
+                    payment.lastPaidDate = Date.now
                     ScheduledPaymentDraftService.advanceToNextDueDate(payment: payment)
                 }
             }
