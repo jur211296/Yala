@@ -65,6 +65,12 @@ struct ProfileView: View {
     @State private var settingsTourIndex = 0
     @State private var settingsScrollProxy: ScrollViewProxy?
 
+    #if DEBUG
+    @State private var seedService = DevSeedService()
+    @State private var showSeedConfirmation = false
+    @State private var showSeedProgress = false
+    #endif
+
     private var isProUser: Bool {
         FeatureGateService.shared.isProUser
     }
@@ -933,6 +939,8 @@ struct ProfileView: View {
                 if Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true {
                     SubsectionDivider()
                     devProToggleRow
+                    SubsectionDivider()
+                    devSeedDataRow
                 }
                 #endif
                 SubsectionDivider()
@@ -975,6 +983,86 @@ struct ProfileView: View {
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.FormRow.paddingV)
+    }
+
+    private var devSeedDataRow: some View {
+        Button {
+            if seedService.hasSeeded {
+                showSeedConfirmation = true
+            } else {
+                Task { await seedService.seed(in: modelContext) }
+            }
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: seedService.hasSeeded ? "arrow.clockwise" : "square.and.arrow.down.fill")
+                    .font(DS.Typography.subheadline).fontWeight(.medium)
+                    .foregroundStyle(.white)
+                    .frame(width: 28, height: 28)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(seedService.hasSeeded ? Color.orange : Color.teal)
+                    )
+
+                Text(seedService.hasSeeded ? "Recargar datos de prueba" : "Cargar datos de prueba")
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.primary)
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
+        }
+        .buttonStyle(.plain)
+        .alert("¿Recargar datos de prueba?", isPresented: $showSeedConfirmation) {
+            Button("Cancelar", role: .cancel) {}
+            Button("Recargar", role: .destructive) {
+                Task { await seedService.reset(in: modelContext) }
+            }
+        } message: {
+            Text("Se eliminarán todos los datos existentes y se cargarán datos de prueba nuevos.")
+        }
+        .sheet(isPresented: $showSeedProgress) {
+            devSeedProgressSheet
+        }
+        .onChange(of: seedService.isSeeding) { _, newValue in
+            showSeedProgress = newValue
+        }
+    }
+
+    private var devSeedProgressSheet: some View {
+        VStack(spacing: DS.Spacing.xl) {
+            Spacer()
+
+            Image(systemName: "cylinder.split.1x2.fill")
+                .font(.system(size: 48))
+                .foregroundStyle(.teal)
+
+            Text("Generando datos de prueba")
+                .font(DS.Typography.headline)
+
+            VStack(spacing: DS.Spacing.sm) {
+                ProgressView(value: seedService.progress)
+                    .tint(.teal)
+
+                Text(seedService.stepLabel)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, DS.Spacing.xxxl)
+
+            Text("\(Int(seedService.progress * 100))%")
+                .font(DS.Typography.headline)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+
+            Spacer()
+        }
+        .interactiveDismissDisabled()
+        .presentationDetents([.medium])
     }
     #endif
 
