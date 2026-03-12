@@ -1,64 +1,87 @@
 ---
 description: Ejecuta solo tests relevantes para los cambios actuales
-allowed-tools: Bash(git:*), Bash(xcodebuild:*), Bash(grep:*), Bash(find:*), Read, Glob
+allowed-tools: Bash(git:*), Bash(xcodebuild:*), Bash(grep:*), Bash(find:*), Bash(touch:*), Bash(rm:*), Read, Glob, Grep
 ---
 
 Ejecuta solo los tests relevantes para los archivos modificados.
 
 PASOS:
 
-1. DETECTAR ARCHIVOS MODIFICADOS:
+1. DETECTAR ARCHIVOS MODIFICADOS (staged + unstaged + untracked):
+```bash
+MODIFIED=$(comm -23 \
+  <(sort -u <(git diff --name-only HEAD 2>/dev/null; git diff --name-only 2>/dev/null; git diff --name-only --cached 2>/dev/null; git ls-files --others --exclude-standard 2>/dev/null)) \
+  <(echo ""))
+MODIFIED_SWIFT=$(echo "$MODIFIED" | grep '\.swift$' | grep -v 'Tests/' | grep -v 'Views/' || true)
+```
+
+   Si no hay archivos .swift modificados (excluyendo Views/ y Tests/): informar "No hay cambios testeables" y terminar.
+
+2. MAPEO DINÁMICO A TESTS:
+
+   Para CADA archivo .swift modificado:
+
+   a) Extraer nombre de clase/struct principal del archivo (sin extensión, sin path)
+   b) Buscar test suites que referencien esa clase:
    ```bash
-   git diff --name-only HEAD
+   grep -rl "NombreClase" YalaTests/ --include="*.swift" 2>/dev/null
    ```
-   Si no hay cambios staged, usa: `git diff --name-only`
+   c) También buscar por convención: `YalaTests/NombreClaseTests.swift`
+   d) Buscar dependencias transitivas (clases que USAN la clase modificada):
+   ```bash
+   grep -rl "NombreClase" Yala/ --include="*.swift" 2>/dev/null | grep -v Views/
+   ```
+      Para cada dependiente encontrado, buscar SUS tests también.
+      LÍMITE: máximo 1 nivel de transitividad (no recursivo).
 
-2. MAPEAR ARCHIVOS A TESTS:
-   Para cada archivo .swift modificado, busca tests relacionados:
+   Consolidar lista única de test suites a ejecutar.
 
-   | Archivo modificado | Test relevante |
-   |-------------------|----------------|
-   | *Filter*.swift | FilterServiceTests |
-   | *Calculator*.swift | CalculatorTests |
-   | *Trend*.swift | TrendProcessingTests, TrendGroupingTests |
-   | *Tag*.swift | TagTests |
-   | *Category*.swift | (buscar en tests) |
-   | *Transaction*.swift | (buscar en tests) |
-   | *Account*.swift | (buscar en tests) |
+3. EJECUTAR TESTS:
 
-3. SI NO HAY MAPEO CLARO:
-   - Busca en YalaTests/ archivos que importen o mencionen las clases modificadas
-   - Usa: `grep -l "NombreClase" YalaTests/*.swift`
-
-4. EJECUTAR TESTS SELECTIVOS:
+   Si hay test suites identificadas:
    ```bash
    xcodebuild -scheme Yala \
      -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
      -quiet \
-     test -only-testing:YalaTests/[TestClass] \
+     test -only-testing:YalaTests/[TestClass1] \
+     -only-testing:YalaTests/[TestClass2] \
      2>&1 | grep -E "(Test Suite|Test Case|Executed|passed|failed|error:)"
    ```
 
+   Si NO hay test suites para algún archivo modificado, registrarlo como gap.
+
+4. MARCAR RESULTADO:
+
+   Si TODOS los tests pasan:
+   ```bash
+   touch .claude/sessions/tests-passed
+   ```
+
+   Si algún test FALLA:
+   ```bash
+   rm -f .claude/sessions/tests-passed
+   ```
+
 5. REPORTAR:
-   - "Archivos modificados: [lista]"
-   - "Tests ejecutados: [lista de test classes]"
-   - "Resultado: N tests, todos pasaron" o detalles de fallos
 
-CASOS ESPECIALES:
-- Si modificaste archivos de UI (Views/): Informar que no hay tests de UI automatizados
-- Si modificaste DesignTokens.swift: No requiere tests
-- Si no hay tests relacionados: Informar y sugerir /test-ios para correr todo
-
-EJEMPLO:
 ```
-Cambios detectados:
-- Yala/Models/Tag.swift
-- Yala/Services/FilterService.swift
+## Test Smart
 
-Tests relevantes identificados:
-- TagTests (6 tests)
-- FilterServiceTests (8 tests)
+Archivos modificados: [lista de .swift sin Views/]
+Tests ejecutados: [N] tests en [M] suites
+Resultado: ✓ todos pasan | ✗ N fallos
 
-Ejecutando tests selectivos...
-✓ 14 tests ejecutados, todos pasaron
+[Si hay fallos: detalle de cada test fallido]
+
+Gaps de cobertura:
+- [archivo.swift] → sin tests encontrados
+- [archivo2.swift] → sin tests encontrados
+[O: "Sin gaps — todos los archivos tienen tests"]
 ```
+
+REGLAS:
+- Archivos en Views/ se excluyen del mapeo (no hay tests de UI)
+- Archivos en Tests/ modificados se ejecutan directamente
+- DesignTokens.swift, L10n.swift, Assets no requieren tests
+- Si el mapeo dinámico no encuentra nada, buscar con nombre parcial (ej: "Budget" en archivo → BudgetEditorViewModelTests)
+- Si no hay NINGÚN test relevante, informar claramente y sugerir /generate-tests

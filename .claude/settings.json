@@ -51,6 +51,10 @@
           {
             "type": "command",
             "command": "if git diff --cached --name-only | grep -qE '\\.(env|pem|key)$'; then echo 'BLOCKED: Archivo sensible detectado' && exit 1; fi"
+          },
+          {
+            "type": "command",
+            "command": "if git diff --cached --name-only | grep -qE '\\.swift$' && [ ! -f .claude/sessions/tests-passed ]; then echo 'BLOCKED: Ejecuta /test-smart antes de commitear archivos Swift' && exit 1; fi"
           }
         ]
       }
@@ -61,7 +65,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo \"[$(date -Iseconds)] Sesión terminada\" >> .claude/sessions/activity.log"
+            "command": "echo \"[$(date -Iseconds)] Sesion terminada\" >> .claude/sessions/activity.log"
           }
         ]
       }

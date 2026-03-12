@@ -1,16 +1,40 @@
 ---
-description: Ejecuta una verificación rápida del proyecto sin compilación completa.
+description: Verificación rápida de sintaxis Swift en archivos modificados (sin build completo)
+allowed-tools: Bash(git:*), Bash(swiftc:*), Bash(xcrun:*), Read
 ---
 
-Ejecuta una verificación rápida del proyecto sin compilación completa.
+Verificación rápida de sintaxis en archivos .swift modificados. NO compila el proyecto completo.
 
-PASOS OBLIGATORIOS:
-1. Navega al directorio raíz del proyecto
-2. Ejecuta: swift build --dry-run 2>&1 | grep -E "(error|warning)"
-3. Si hay errores de sintaxis, identifícalos y propón fix mínimo
-4. Si no hay errores, confirma "Quick check passed"
+PASOS:
 
-REGLAS:
-- Este comando NO reemplaza /verify-ios, solo detecta errores obvios antes de compilar
-- Úsalo para cambios pequeños donde solo quieres validar sintaxis
-- Si pasa este check, aún debes ejecutar /verify-ios antes de commitear
+1. IDENTIFICAR ARCHIVOS MODIFICADOS:
+```bash
+MODIFIED_SWIFT=$(comm -23 \
+  <(sort -u <(git diff --name-only HEAD 2>/dev/null; git diff --name-only 2>/dev/null; git diff --name-only --cached 2>/dev/null)) \
+  <(echo "") | grep '\.swift$')
+```
+
+2. PARA CADA ARCHIVO, verificar sintaxis básica:
+   - Leer el archivo con Read
+   - Buscar errores obvios:
+     * Llaves/paréntesis desbalanceados
+     * `func` sin body
+     * `if`/`guard` sin body
+     * Imports duplicados
+     * Trailing commas en último parámetro
+   - NO intentar compilar con swiftc (no resuelve dependencias del proyecto)
+
+3. REPORTAR:
+```
+## Quick Check — [N] archivos
+
+[✓ Sintaxis OK | ✗ Errores encontrados]
+[Lista de errores si hay]
+
+Nota: esto NO reemplaza /verify-ios. Solo detecta errores de sintaxis evidentes.
+```
+
+CUÁNDO USAR:
+- Cambios muy pequeños donde no quieres esperar un build completo
+- Verificación rápida antes de hacer más cambios
+- SIEMPRE ejecutar /verify-ios antes de commitear

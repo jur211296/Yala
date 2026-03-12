@@ -98,8 +98,8 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 ### Flujo complejo (modelo core, multi-archivo)
 ```
 /clear → /next → /analyze-impact → Plan Mode → /review-plan → Accept
-→ implementar → /verify-ios → /test-smart → /review-session → aplicar
-→ /swift-audit → /commit-one → /context-snapshot → /clear
+→ implementar → /verify-ios → /test-smart → /simplify → aplicar
+→ /commit-one → /context-snapshot → /clear
 ```
 
 ### Skills por categoría
@@ -107,13 +107,16 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 |------|--------|
 | Orientación | `/next` |
 | Planificación | Plan Mode (Shift+Tab), `/review-plan` |
-| Análisis | `/analyze-impact`, `/parallel-search` |
+| Análisis | `/analyze-impact` |
 | Verificación | `/verify-ios`, `/verify-quick`, `/test-smart`, `/test-ios` |
-| Calidad Swift | `/swift-audit`, `/swiftdata-check`, `/swift-modernize` |
-| Review | `/review-code`, `/review-session`, `/pre-deploy-check` |
-| Auditoría periódica | `/deep-scan`, `/a11y-audit`, `/ds-compliance`, `/test-coverage`, `/pre-launch` |
+| Calidad Swift | `/swift-audit`, `/swiftdata-check`, `/swift-modernize`, `/simplify` |
+| Review | `/review-code`, `/diff-review` |
+| Auditoría periódica | `/deep-scan`, `/a11y-audit`, `/ds-compliance`, `/test-coverage`, `/pre-launch`, `/l10n-check`, `/perf-check` |
+| Revisión completa | `/full-review` (ejecuta todas las auditorías + reporte consolidado) |
+| Limpieza | `/dead-code`, `/todo-scan` |
 | Commits | `/commit-one`, `/checkpoint` |
 | Generación tests | `/generate-tests` |
+| Release | `/release-notes` |
 | Contexto | `/context-snapshot`, `/compact`, `/clear` |
 | Captura | `/idea` |
 | Autónomo | `/yolo` |
@@ -173,6 +176,23 @@ Después de crear o modificar modelos, servicios o ViewModels:
 - SIEMPRE `@Relationship(inverse:)` en relaciones bidireccionales
 - Verificar `deleteRule` en cada relación
 - `@MainActor` en servicios que manipulan `ModelContext`
+- **CloudKit compatibility:** NUNCA `@Attribute(.unique)`, propiedades con default o optional, relaciones SIEMPRE optional
+
+### State Management (SwiftUI)
+- `@Observable` clases SIEMPRE con `@MainActor`
+- `@State` SIEMPRE `private` — solo la vista propietaria lo crea
+- NUNCA `Binding(get:set:)` en body — usar `@Binding` + `.onChange()`
+- NUNCA `@AppStorage` dentro de `@Observable` (no triggerea updates)
+- Preferir `@Observable` + `@State`/`@Bindable` sobre `ObservableObject`/`@Published`/`@StateObject`
+
+### Modern Swift Idioms
+- `Date.now` en vez de `Date()`
+- `count(where:)` en vez de `filter().count`
+- `replacing("a", with: "b")` en vez de `replacingOccurrences(of:with:)`
+- `if let value {` shorthand — no repetir nombre de variable
+- `Task.sleep(for: .seconds(1))` en vez de nanoseconds
+- Siempre `async/await` sobre completion handlers
+- NUNCA Grand Central Dispatch — usar Swift Concurrency
 
 ### ViewModel Pattern
 ```swift
