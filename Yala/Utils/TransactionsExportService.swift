@@ -240,7 +240,7 @@ struct TransactionsExportService {
     /// - Monto
     /// - Nota
     /// - Etiquetas
-    private static func applyInMemoryFilters(
+    static func applyInMemoryFilters(
         _ transactions: [TransactionItem],
         filters: ExportFilters
     ) -> [TransactionItem] {
@@ -357,7 +357,7 @@ struct TransactionsExportService {
     // MARK: - Generación del CSV
 
     /// Construye el contenido CSV (Data) a partir de las transacciones y columnas activas.
-    private static func makeCSVData(
+    static func makeCSVData(
         transactions: [TransactionItem],
         columns: ExportColumns
     ) -> Data {
@@ -441,7 +441,7 @@ struct TransactionsExportService {
     /// Escapa un valor para uso en CSV:
     /// - Si contiene coma, comillas o saltos de línea, se encierra entre comillas dobles
     ///   y se duplican las comillas internas.
-    private static func csvEscaped(_ value: String) -> String {
+    static func csvEscaped(_ value: String) -> String {
         guard !value.isEmpty else { return "" }
 
         var needsQuotes = false
@@ -486,7 +486,7 @@ struct TransactionsExportService {
     }
 
     /// Genera headers y filas de datos para exportación (usado por XLSX).
-    private static func makeExportData(
+    static func makeExportData(
         transactions: [TransactionItem],
         columns: ExportColumns
     ) -> (headers: [String], rows: [[String]]) {

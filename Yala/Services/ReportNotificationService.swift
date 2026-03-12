@@ -40,13 +40,13 @@ final class ReportNotificationService {
         var sentCount = 0
 
         for report in reports {
-            guard shouldSendNow(report) else { continue }
+            guard Self.shouldSendNow(report) else { continue }
 
             let data = calculateReportData(config: report.reportConfig, type: report.notificationType, context: context)
 
             await NotificationService.shared.sendNotification(
                 title: report.localizedName,
-                body: formatReportBody(report.reportConfig, reportType: report.notificationType, data: data),
+                body: Self.formatReportBody(report.reportConfig, reportType: report.notificationType, data: data),
                 deepLink: "statistics"
             )
 
@@ -74,7 +74,7 @@ final class ReportNotificationService {
 
     /// Determines if the report should be sent now based on configuration
     /// Checks: 1) Not already notified today, 2) Within 30min window of scheduled time, 3) Correct day/weekday
-    private func shouldSendNow(_ report: NotificationItem) -> Bool {
+    static func shouldSendNow(_ report: NotificationItem) -> Bool {
         let calendar = Calendar.current
         let now = Date()
         let config = report.reportConfig
@@ -131,7 +131,7 @@ final class ReportNotificationService {
     // MARK: - Data Calculation
 
     private func calculateReportData(config: ReportConfig, type: NotificationType, context: ModelContext) -> ReportData {
-        let interval = getIntervalForReportType(config, type: type)
+        let interval = Self.getIntervalForReportType(config, type: type)
         let transactions = fetchTransactions(in: interval, context: context)
         let accounts = fetchAccounts(context: context)
         let currencyCode = CurrencyDefaults.currentPreferred
@@ -193,7 +193,7 @@ final class ReportNotificationService {
         )
     }
 
-    private func getIntervalForReportType(_ config: ReportConfig, type: NotificationType) -> DateInterval {
+    static func getIntervalForReportType(_ config: ReportConfig, type: NotificationType) -> DateInterval {
         let calendar = Calendar.current
         let now = Date()
 
@@ -230,7 +230,7 @@ final class ReportNotificationService {
         }
     }
 
-    private func formatReportBody(_ config: ReportConfig, reportType: NotificationType, data: ReportData) -> String {
+    static func formatReportBody(_ config: ReportConfig, reportType: NotificationType, data: ReportData) -> String {
         let currencyCode = CurrencyDefaults.currentPreferred
 
         switch config.dataType {

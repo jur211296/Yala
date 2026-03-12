@@ -29,7 +29,7 @@ struct ScreenshotSingleExtractor {
         let dateResult = DateParser.parse(text)
 
         // 3. Extract merchant name
-        let merchantResult = extractMerchant(from: text)
+        let merchantResult = Self.extractMerchant(from: text)
         let merchant = merchantResult?.merchant
         let merchantConfidence = merchantResult?.confidence
 
@@ -68,7 +68,7 @@ struct ScreenshotSingleExtractor {
     /// Extract merchant name from text using common patterns
     /// - Parameter text: Text to search for merchant name
     /// - Returns: Tuple with merchant name and confidence, or nil if not found
-    private func extractMerchant(from text: String) -> (merchant: String, confidence: Double)? {
+    static func extractMerchant(from text: String) -> (merchant: String, confidence: Double)? {
         // Patterns to detect merchant names in Spanish and English
         let patterns: [(pattern: String, confidence: Double)] = [
             // Spanish patterns
