@@ -43,6 +43,8 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-11] cd0895b fix: update FilterServiceTests to match activeFilterCount including searchText
+- [2026-03-11] d186dfa refactor: decouple currency conversion from ModelContext + add 68 tests
 - [2026-03-11] acd61b4 test: add 75 unit tests across 7 new test suites
 - [2026-03-11] 8474ddf fix: re-verify Pro subscription on foreground resume (BUG-56)
 - [2026-03-11] 701d743 fix: FAB always shows 3 registration options with consent flow (BUG-55)
