@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-12] c935830 fix: prevent SEGV crash in test host by using in-memory config under XCTest
 - [2026-03-12] 7d02809 chore: address medium/low review issues — dead code, deprecated APIs, DS tokens
 - [2026-03-12] fba23e2 refactor: Date() → Date.now across codebase (H7)
 - [2026-03-12] 7f518f8 fix: address critical and high review issues (C1-C3, H1-H11)
@@ -532,6 +533,27 @@ Todos deben resolverse para V1.1 (próxima release). Prioridad: crashes > lógic
 **Suscripción:**
 - [x] **BUG-56: Expiración de suscripción Pro no se refleja en tiempo real** — Resuelto (8474ddf): refreshSubscriptionStatus() en handleBecameActive con cancel-before-create Task.
 
+### Bugs QA V1.2 (reportados 2026-03-12)
+
+**Filtros / Lógica:**
+- [ ] **BUG-57: Metric buttons de TrendWidget no bloquean correctamente con filtros de ingreso** — Al filtrar subcategorías de ingreso en Statistics y volver a PanelView, el botón "Gastos" sigue habilitado (debería bloquearse). Al presionarlo se bloquea "Ingresos" y "Balance", quedando en estado incongruente. Con subcategorías de gasto funciona bien (bloquea balance e ingresos). Root cause: `hasExpenseOnlyFilters` en TrendWidget.swift bloquea `type != .expense`, pero debería ser dinámico según el tipo de subcategorías filtradas (expense vs income). Archivo: `App/Views/Panel/TrendWidget.swift` líneas 19-26 y 120-155.
+
+**Performance:**
+- [ ] **BUG-58: CloudKit remote change triggers excesivos — "AppBootstrapper: Remote CloudKit change detected — refreshing UI" aparece triplicado** — Causa lentitud general y hace que la animación de success al crear transacción pestañee/se sienta lenta. Cada cambio remoto de CloudKit dispara múltiples refreshes de UI innecesarios. Investigar: debounce de refreshes, batch CloudKit notifications, o throttle de UI updates.
+
+**Visual / Layout:**
+- [ ] **BUG-59: ProBadge en FAB no alineado a la derecha** — En los menús FAB (PanelView, DetailContainerView, RecordsStandaloneView), el ProBadge debería estar alineado a la derecha del botón para verse ordenado. Actualmente está posicionado justo después del texto. Archivos: `App/Views/Panel/PanelView.swift`, `App/Views/Statistics/DetailContainerView.swift`, `App/Views/Records/RecordsStandaloneView.swift` — función `fabMenuButton`.
+
+- [ ] **BUG-60: Data labels en CashFlow no deberían mostrarse en modo Balance** — Las etiquetas de datos sobre barras (cuando hay ≤10 barras) deberían mostrarse solo en modo Ingreso o Gasto, no en Balance (bidireccional). En modo balance los labels son confusos porque hay barras en ambas direcciones. Archivo: `App/Views/Panel/CashFlowWidget.swift` — condición `showLabels` en línea 456.
+
+- [ ] **BUG-61: Cards de resumen rápido en Insights no fuerzan mismo tamaño cuando falta 3ra línea** — Cuando "Promedio diario" es 0 (por filtrar solo ingresos), la card pierde la 3ra línea (variation chip) y queda más corta que las demás. La técnica de `opacity(0)` para reservar espacio no está funcionando correctamente en ese caso. Archivos: `App/Views/Statistics/InsightsTabView.swift` líneas 376-403, `App/Views/Statistics/Components/QuickStatCell.swift`.
+
+**Lógica de negocio:**
+- [ ] **BUG-62: Presupuestos en vista Compromisos se desbordan al cambiar periodo a "Este año"** — Los presupuestos son mensuales pero la suma de transacciones al cambiar a "Este año" acumula todo el año, mostrando montos que exceden enormemente el límite mensual. **Decisión:** Los presupuestos deben mantener su propio periodo y mostrar siempre el último visible (mensual → este mes, anual → este año, etc.), ignorando el periodo global de Compromisos. Además, añadir título o nota aclaratoria en la sección de presupuestos dentro de Compromisos indicando el periodo real que se muestra.
+
+**Notificaciones:**
+- [ ] **BUG-63: Notification primer post-3ra transacción no activa alertas de presupuestos** — Al aceptar notificaciones desde el banner (después de la 3ra transacción), se activan todas las notificaciones seeded excepto las alertas de presupuestos. Las demás (endOfDay, lunchTime, dailyReport, weeklyReport, monthlyReport, scheduledPayments) sí se activan. Archivo: `App/Views/Notifications/NotificationPrimerSheet.swift` línea 89-112 — el loop activa todos los NotificationItem seeded pero las alertas de presupuesto usan un mecanismo diferente (BudgetAlertService con toggle por presupuesto, no NotificationItem).
+
 ### Fase 11: Sistema de Temas Independientes (V1.2) — ✅ COMPLETADA (2026-02-19)
 
 Refactorización completa del sistema de colores. 6 temas (3 free + 3 PRO). YalaTheme struct + ThemeColor ShapeStyle + @Observable ThemeManager. Cambio de tema sin reinicio (eliminado `.id(userThemeRaw)`). 0 usos de colores legacy. 12 escenarios QA (Sección 38).
@@ -742,12 +764,10 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 ## Session Continuity
 
 Last session: 2026-03-12
-Stopped at: Full review medium/low issues addressed (7d02809) — dead code, deprecated APIs, DS shadow tokens
+Stopped at: Fixed SEGV crash in test host (c935830) — SwiftDataConfiguration returns in-memory config under XCTest
 Next step: Continue with next Fase 12 item from /next
 Resume context:
-- Full review (FULL-REVIEW-2026-03-12.md) completed: 3 critical + 17 high + 27 medium/low issues fixed
-- Dead code: BackgroundJobs, createMultiple, saveAll, clearPendingImages, FilterType, L10n Camera/FaceID
-- Deprecated APIs: .cornerRadius→.clipShape, Task.sleep(nanoseconds:)→Task.sleep(for:), .replacingOccurrences→.replacing
-- DS tokens: DS.Shadow.subtle + dsSubtleShadow() replacing 18 hardcoded shadows
-- Stale L10n: 12 orphan keys removed from de/fr/it/pt
+- Unit tests were crashing with SEGV before any test executed due to CloudKit init in test host
+- Fix: SwiftDataConfiguration.isRunningTests detects XCTest env, returns in-memory ModelConfiguration
+- All 1005 tests in 90 suites pass after fix
 - Preexisting test compile error in TranscriptionParserServiceTests (@MainActor) — needs separate fix
