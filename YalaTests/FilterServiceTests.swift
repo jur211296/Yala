@@ -30,13 +30,13 @@ struct FilterServiceTests {
     @Test func criteriaActiveFilterCountIsCorrect() throws {
         var criteria = FilterCriteria.empty
         criteria.searchText = "test"
-        #expect(criteria.activeFilterCount == 0)  // searchText doesn't count in activeFilterCount
+        #expect(criteria.activeFilterCount == 1)  // searchText counts as active filter
 
         criteria.selectedNeeds.insert(.essential)
-        #expect(criteria.activeFilterCount == 1)
+        #expect(criteria.activeFilterCount == 2)
 
         criteria.transactionTypeFilter = .expense
-        #expect(criteria.activeFilterCount == 2)
+        #expect(criteria.activeFilterCount == 3)
     }
 
     @Test func clearAllResetsCriteria() throws {
