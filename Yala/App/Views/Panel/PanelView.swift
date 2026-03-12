@@ -490,11 +490,11 @@ struct PanelView: View {
                 Text(text)
                     .font(DS.Typography.headline)
 
+                Spacer(minLength: 0)
+
                 if isLocked {
                     ProBadge(size: .small)
                 }
-
-                Spacer(minLength: 0)
             }
             .foregroundStyle(.white)
             .frame(width: DS.Button.fabMenuWidth)
