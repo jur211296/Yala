@@ -764,6 +764,7 @@
 "insights.weekdayAverage" = "Gasto promedio por día";
 "insights.needDistribution" = "Por necesidad";
 "insights.commitments" = "Compromisos";
+"insights.commitmentsNote" = "Periodo actual de cada presupuesto";
 "insights.pendingPayments" = "Pagos pendientes";
 "insights.activeSubscriptions" = "Suscripciones activas";
 "insights.budgetsAtRisk" = "Presupuestos en riesgo";

@@ -254,6 +254,7 @@ enum L10n {
         static var weekdayAverage: String { ls("insights.weekdayAverage", comment: "") }
         static var needDistribution: String { ls("insights.needDistribution", comment: "") }
         static var commitments: String { ls("insights.commitments", comment: "") }
+        static var commitmentsNote: String { ls("insights.commitmentsNote", comment: "") }
         static var pendingPayments: String { ls("insights.pendingPayments", comment: "") }
         static var activeSubscriptions: String { ls("insights.activeSubscriptions", comment: "") }
         static var budgetsAtRisk: String { ls("insights.budgetsAtRisk", comment: "") }

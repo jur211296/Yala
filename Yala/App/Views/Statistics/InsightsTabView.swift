@@ -391,12 +391,17 @@ struct InsightsTabView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
 
-            VariationChip(
-                variation: showVariations ? summary.dailyAverageVariation : nil,
-                size: .small,
-                isExpenseContext: true
-            )
-            .opacity(showVariations ? 1 : 0)
+            Group {
+                if showVariations, let variation = summary.dailyAverageVariation {
+                    VariationChip(variation: variation, size: .small, isExpenseContext: true)
+                } else {
+                    Text(" ")
+                        .font(.caption2.weight(.medium))
+                        .padding(.horizontal, DS.Spacing.xs)
+                        .padding(.vertical, DS.Spacing.xxs)
+                        .opacity(0)
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Spacing.md)
@@ -414,7 +419,13 @@ struct InsightsTabView: View {
     @ViewBuilder
     private func commitmentsSection(_ c: Commitments) -> some View {
         VStack(spacing: DS.Spacing.sm) {
-            YalaSectionHeader(L10n.Insights.commitments)
+            VStack(spacing: DS.Spacing.xxs) {
+                YalaSectionHeader(L10n.Insights.commitments)
+                Text(L10n.Insights.commitmentsNote)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
 
             VStack(spacing: DS.Spacing.md) {
                 if showPendingPayments, c.pendingPaymentsCount > 0 {
@@ -624,15 +635,6 @@ struct InsightsTabView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-            }
-
-            HStack(spacing: DS.Spacing.xs) {
-                Image(systemName: "lock.shield")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.tertiary)
-                Text(L10n.Insights.activateAIDisclaimer)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.tertiary)
             }
 
             HStack(spacing: DS.Spacing.md) {

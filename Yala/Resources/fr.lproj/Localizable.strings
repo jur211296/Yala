@@ -762,6 +762,7 @@
 "insights.weekdayAverage" = "Dépense moyenne par jour";
 "insights.needDistribution" = "Par besoin";
 "insights.commitments" = "Engagements";
+"insights.commitmentsNote" = "Période actuelle de chaque budget";
 "insights.pendingPayments" = "Paiements en attente";
 "insights.activeSubscriptions" = "Abonnements actifs";
 "insights.budgetsAtRisk" = "Budgets à risque";

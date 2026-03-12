@@ -298,6 +298,7 @@ struct InsightsCalculator {
             budgets: budgets,
             scheduledPayments: scheduledPayments,
             periodTxns: periodTxns,
+            allTransactions: transactions,
             interval: interval,
             currencyCode: currencyCode,
             converter: converter
@@ -424,10 +425,46 @@ struct InsightsCalculator {
         return total
     }
 
+    /// Returns the current budget period interval based on the budget's periodType and Date.now.
+    static func currentBudgetInterval(for budget: Budget) -> DateInterval {
+        let calendar = Calendar.current
+        let now = Date.now
+
+        guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
+            let monthStart = calendar.startOfMonth(for: now)
+            let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
+            return DateInterval(start: monthStart, end: monthEnd)
+        }
+
+        switch periodType {
+        case .weekly:
+            let weekStart = calendar.startOfWeek(for: now)
+            let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
+            return DateInterval(start: weekStart, end: weekEnd)
+        case .monthly:
+            let monthStart = calendar.startOfMonth(for: now)
+            let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
+            return DateInterval(start: monthStart, end: monthEnd)
+        case .yearly:
+            let year = calendar.component(.year, from: now)
+            let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? now
+            let yearEnd = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) ?? yearStart
+            return DateInterval(start: yearStart, end: yearEnd)
+        case .unique:
+            guard let start = budget.startDate, let end = budget.endDate else {
+                let monthStart = calendar.startOfMonth(for: now)
+                let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
+                return DateInterval(start: monthStart, end: monthEnd)
+            }
+            return DateInterval(start: start, end: end)
+        }
+    }
+
     private static func calculateCommitments(
         budgets: [Budget],
         scheduledPayments: [ScheduledPayment],
         periodTxns: [TransactionItem],
+        allTransactions: [TransactionItem],
         interval: DateInterval,
         currencyCode: String,
         converter: CurrencyConverting
@@ -457,20 +494,21 @@ struct InsightsCalculator {
             }
         }
 
-        // Budgets at risk (>75% spent) — simplified calculation using period transactions
+        // Budgets at risk (>75% spent) — pregroup expense transactions by category for efficiency
+        let expenseTxns = allTransactions.filter { $0.category?.isIncome == false && $0.balanceAdjustmentType == nil }
+        let txnsByCategory = Dictionary(grouping: expenseTxns, by: { $0.category?.persistentModelID })
+
         var budgetsAtRisk: [BudgetAtRisk] = []
         for budget in budgets {
             guard budget.isActive else { continue }
             guard budget.limitAmount > 0 else { continue }
 
-            // Filter period transactions matching budget's category
+            // Filter transactions within the budget's OWN current period (not the global Insights period)
             let budgetTxns: [TransactionItem]
             if let category = budget.category {
-                budgetTxns = periodTxns.filter { tx in
-                    tx.category?.persistentModelID == category.persistentModelID
-                    && tx.category?.isIncome == false
-                    && tx.balanceAdjustmentType == nil
-                }
+                let budgetInterval = currentBudgetInterval(for: budget)
+                let categoryTxns = txnsByCategory[category.persistentModelID] ?? []
+                budgetTxns = categoryTxns.filter { budgetInterval.contains($0.date) }
             } else {
                 continue
             }

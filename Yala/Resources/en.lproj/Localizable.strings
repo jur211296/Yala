@@ -764,6 +764,7 @@
 "insights.weekdayAverage" = "Average spending by day";
 "insights.needDistribution" = "By Need";
 "insights.commitments" = "Commitments";
+"insights.commitmentsNote" = "Current period for each budget";
 "insights.pendingPayments" = "Pending payments";
 "insights.activeSubscriptions" = "Active subscriptions";
 "insights.budgetsAtRisk" = "Budgets at risk";

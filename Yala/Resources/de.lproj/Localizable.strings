@@ -762,6 +762,7 @@
 "insights.weekdayAverage" = "Durchschnittliche Ausgaben pro Tag";
 "insights.needDistribution" = "Nach Bedarf";
 "insights.commitments" = "Verpflichtungen";
+"insights.commitmentsNote" = "Aktueller Zeitraum jedes Budgets";
 "insights.pendingPayments" = "Ausstehende Zahlungen";
 "insights.activeSubscriptions" = "Aktive Abonnements";
 "insights.budgetsAtRisk" = "Budgets in Gefahr";
