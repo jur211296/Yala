@@ -10,6 +10,7 @@ import Testing
 
 @testable import Yala
 
+@MainActor
 struct TranscriptionParserServiceTests {
 
     // MARK: - ParserError descriptions
