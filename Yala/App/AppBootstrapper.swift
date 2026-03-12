@@ -49,7 +49,7 @@ final class AppBootstrapper {
     var deferredPanelAction: DeferredPanelAction?
     private var controlActionTask: Task<Void, Never>?
     private var subscriptionCheckTask: Task<Void, Never>?
-    private var lastRemoteChangeDate = Date.distantPast
+    private var remoteChangeTask: Task<Void, Never>?
     private var lastNotificationCheckDate = Date.distantPast
 
     /// Whether a fullScreenCover (Face ID or InboxAlertModal) is blocking sheet presentation
@@ -144,17 +144,19 @@ final class AppBootstrapper {
             object: nil,
             queue: .main
         ) { _ in
-            Task { @MainActor in
+            MainActor.assumeIsolated {
                 let bootstrapper = AppBootstrapper.shared
-                // Debounce: CloudKit puede disparar múltiples notificaciones en ráfaga
-                let now = Date.now
-                guard now.timeIntervalSince(bootstrapper.lastRemoteChangeDate) > 1.0 else { return }
-                bootstrapper.lastRemoteChangeDate = now
-                bootstrapper.sessionState.incrementDataVersion()
+                // Trailing-edge debounce: coalesce rapid CloudKit notifications into a single refresh
+                bootstrapper.remoteChangeTask?.cancel()
+                bootstrapper.remoteChangeTask = Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(2))
+                    guard !Task.isCancelled else { return }
+                    bootstrapper.sessionState.incrementDataVersion()
 
-                #if DEBUG
-                print("AppBootstrapper: Remote CloudKit change detected — refreshing UI")
-                #endif
+                    #if DEBUG
+                    print("AppBootstrapper: Remote CloudKit change — refreshing UI")
+                    #endif
+                }
             }
         }
     }
