@@ -41,8 +41,8 @@ struct InsightsRuleBasedTests {
     private func makeQuickStats() -> QuickStats {
         QuickStats(
             dailyAverage: 33,
-            topCategory: nil,
-            topSubcategory: nil,
+            topCategories: [],
+            topSubcategories: [],
             highestExpense: nil,
             highestAvgWeekday: nil,
             subscriptionsTotal: 0

@@ -636,28 +636,52 @@ struct PanelView: View {
         var aggregated: [String: Any] = [
             "currency": preferredCurrency.rawValue,
             "locale": Locale.current.language.languageCode?.identifier ?? "es",
+            "total_expense": Int(data.periodSummary.totalExpense),
+            "total_income": Int(data.periodSummary.totalIncome),
             "spending_total_variation": data.periodSummary.expenseVariation.map { "\(Int($0))%" } ?? "N/A",
             "income_variation": data.periodSummary.incomeVariation.map { "\(Int($0))%" } ?? "N/A",
+            "daily_avg_variation": data.periodSummary.dailyAverageVariation.map { "\(Int($0))%" } ?? "N/A",
             "count": data.periodSummary.transactionCount,
             "daily_avg": Int(data.quickStats.dailyAverage)
         ]
 
-        if let top = data.quickStats.topCategory {
-            aggregated["top_category"] = ["name": top.category.name, "pct": Int(top.percentage)]
+        // Top 3 categories with amounts (reduced vs full insights top 5)
+        if !data.quickStats.topCategories.isEmpty {
+            aggregated["top_categories"] = data.quickStats.topCategories.prefix(3).map {
+                ["name": $0.category.name, "amount": Int($0.amount), "pct": Int($0.percentage)] as [String: Any]
+            }
+        }
+
+        // Top subcategory
+        if let topSub = data.quickStats.topSubcategory {
+            let subName = topSub.subcategory?.name ?? topSub.subcategoryName
+            let totalExpense = data.periodSummary.totalExpense
+            let pctOfTotal = totalExpense > 0 ? Int((topSub.amount / totalExpense) * 100) : 0
+            aggregated["top_subcategory"] = ["name": subName, "amount": Int(topSub.amount), "pct_of_total": pctOfTotal] as [String: Any]
+        }
+
+        // Highest expense
+        if let highest = data.quickStats.highestExpense {
+            aggregated["highest_expense"] = ["amount": Int(highest.amount), "description": highest.note] as [String: Any]
+        }
+
+        // Subscriptions
+        if data.commitments.activeSubscriptionsCount > 0 {
+            aggregated["subscriptions"] = ["count": data.commitments.activeSubscriptionsCount, "monthly_total": Int(data.commitments.activeSubscriptionsMonthly)] as [String: Any]
         }
 
         let needDist = data.needDistribution
         if needDist.total > 0 {
             aggregated["need_split"] = [
-                "essential": Int(needDist.essentialPercent),
-                "priority": Int(needDist.priorityPercent),
-                "optional": Int(needDist.optionalPercent)
+                "essential": ["pct": Int(needDist.essentialPercent), "amount": Int(needDist.essential)] as [String: Any],
+                "priority": ["pct": Int(needDist.priorityPercent), "amount": Int(needDist.priority)] as [String: Any],
+                "optional": ["pct": Int(needDist.optionalPercent), "amount": Int(needDist.optional)] as [String: Any]
             ]
         }
 
         if !data.commitments.budgetsAtRisk.isEmpty {
             aggregated["budgets_at_risk"] = data.commitments.budgetsAtRisk.map {
-                ["name": $0.name, "usage_pct": Int($0.usagePercent)]
+                ["name": $0.name, "spent": Int($0.spent), "limit": Int($0.limit), "usage_pct": Int($0.usagePercent)] as [String: Any]
             }
         }
 

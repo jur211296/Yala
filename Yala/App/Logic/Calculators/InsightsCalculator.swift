@@ -38,11 +38,14 @@ struct PeriodSummary {
 
 struct QuickStats {
     let dailyAverage: Double
-    let topCategory: CategorySpendingSummary?
-    let topSubcategory: SubcategorySpendingSummary?
+    let topCategories: [CategorySpendingSummary]
+    let topSubcategories: [SubcategorySpendingSummary]
     let highestExpense: HighestExpenseInfo?
     let highestAvgWeekday: HighestAvgWeekdayInfo?
     let subscriptionsTotal: Double
+
+    var topCategory: CategorySpendingSummary? { topCategories.first }
+    var topSubcategory: SubcategorySpendingSummary? { topSubcategories.first }
 }
 
 struct HighestExpenseInfo {
@@ -286,8 +289,8 @@ struct InsightsCalculator {
 
         let quickStats = QuickStats(
             dailyAverage: dailyAverageExpense,
-            topCategory: topCategories.first,
-            topSubcategory: topSubcategories.first,
+            topCategories: Array(topCategories.prefix(5)),
+            topSubcategories: Array(topSubcategories.prefix(5)),
             highestExpense: highestExpense,
             highestAvgWeekday: highestAvgWeekday,
             subscriptionsTotal: subscriptionsTotal

@@ -154,37 +154,79 @@ final class InsightsViewModel {
             "locale": Locale.current.language.languageCode?.identifier ?? "es",
             "comparison_ref": comparisonLabel,
             "comparison_label": data.periodSummary.previousPeriodLabel,
+            "total_expense": Int(data.periodSummary.totalExpense),
+            "total_income": Int(data.periodSummary.totalIncome),
+            "net_balance": Int(data.periodSummary.netBalance),
             "spending_total_variation": data.periodSummary.expenseVariation.map { "\(Int($0))%" } ?? "N/A",
             "income_variation": data.periodSummary.incomeVariation.map { "\(Int($0))%" } ?? "N/A",
+            "daily_avg_variation": data.periodSummary.dailyAverageVariation.map { "\(Int($0))%" } ?? "N/A",
+            "balance_variation": data.periodSummary.balanceVariation.map { "\(Int($0))%" } ?? "N/A",
             "count": data.periodSummary.transactionCount,
             "daily_avg": Int(data.quickStats.dailyAverage)
         ]
 
-        // Top categories (name + percentage only, never amounts)
-        if let top = data.quickStats.topCategory {
-            result["top_category"] = ["name": top.category.name, "pct": Int(top.percentage)]
-        }
-
-        // Need split
-        let needDist = data.needDistribution
-        if needDist.total > 0 {
-            result["need_split"] = [
-                "essential": Int(needDist.essentialPercent),
-                "priority": Int(needDist.priorityPercent),
-                "optional": Int(needDist.optionalPercent)
-            ]
-        }
-
-        // Budgets at risk
-        if !data.commitments.budgetsAtRisk.isEmpty {
-            result["budgets_at_risk"] = data.commitments.budgetsAtRisk.map {
-                ["name": $0.name, "usage_pct": Int($0.usagePercent)]
+        // Top 5 categories with amounts
+        if !data.quickStats.topCategories.isEmpty {
+            result["top_categories"] = data.quickStats.topCategories.map {
+                ["name": $0.category.name, "amount": Int($0.amount), "pct": Int($0.percentage)] as [String: Any]
             }
         }
 
-        // Year-over-year
-        if let yoy = data.yearOverYear, let variation = yoy.variation {
-            result["year_ago_variation"] = "\(Int(variation))%"
+        // Top subcategory
+        if let topSub = data.quickStats.topSubcategory {
+            let subName = topSub.subcategory?.name ?? topSub.subcategoryName
+            let totalExpense = data.periodSummary.totalExpense
+            let pctOfTotal = totalExpense > 0 ? Int((topSub.amount / totalExpense) * 100) : 0
+            result["top_subcategory"] = ["name": subName, "amount": Int(topSub.amount), "pct_of_total": pctOfTotal] as [String: Any]
+        }
+
+        // Highest expense
+        if let highest = data.quickStats.highestExpense {
+            result["highest_expense"] = ["amount": Int(highest.amount), "description": highest.note] as [String: Any]
+        }
+
+        // Highest average weekday
+        if let weekday = data.quickStats.highestAvgWeekday {
+            result["highest_avg_weekday"] = ["day": weekday.weekdayName, "avg": Int(weekday.average)] as [String: Any]
+        }
+
+        // Subscriptions
+        if data.commitments.activeSubscriptionsCount > 0 {
+            result["subscriptions"] = ["count": data.commitments.activeSubscriptionsCount, "monthly_total": Int(data.commitments.activeSubscriptionsMonthly)] as [String: Any]
+        }
+
+        // Pending payments
+        if data.commitments.pendingPaymentsCount > 0 {
+            result["pending_payments"] = ["count": data.commitments.pendingPaymentsCount, "amount": Int(data.commitments.pendingPaymentsAmount)] as [String: Any]
+        }
+
+        // Need split with amounts
+        let needDist = data.needDistribution
+        if needDist.total > 0 {
+            result["need_split"] = [
+                "essential": ["pct": Int(needDist.essentialPercent), "amount": Int(needDist.essential)] as [String: Any],
+                "priority": ["pct": Int(needDist.priorityPercent), "amount": Int(needDist.priority)] as [String: Any],
+                "optional": ["pct": Int(needDist.optionalPercent), "amount": Int(needDist.optional)] as [String: Any]
+            ]
+        }
+
+        // Budgets at risk with spent + limit
+        if !data.commitments.budgetsAtRisk.isEmpty {
+            result["budgets_at_risk"] = data.commitments.budgetsAtRisk.map {
+                ["name": $0.name, "spent": Int($0.spent), "limit": Int($0.limit), "usage_pct": Int($0.usagePercent)] as [String: Any]
+            }
+        }
+
+        // Year-over-year with absolute amounts
+        if let yoy = data.yearOverYear {
+            var yoyDict: [String: Any] = [
+                "current": Int(yoy.currentAmount),
+                "previous": Int(yoy.previousYearAmount)
+            ]
+            if let variation = yoy.variation {
+                yoyDict["variation"] = "\(Int(variation))%"
+            }
+            result["year_ago"] = yoyDict
         }
 
         // Active filters context — tells the AI what subset of data it's seeing

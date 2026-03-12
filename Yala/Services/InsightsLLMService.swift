@@ -2,7 +2,7 @@
 //  InsightsLLMService.swift
 //  Yala
 //
-//  Service for generating AI-powered insights via OpenAI GPT-4.1 Nano.
+//  Service for generating AI-powered insights via OpenAI GPT-4.1 Mini.
 //  Follows VoiceTranscriptionService pattern: singleton, lazy OpenAI init, async/throws.
 //
 
@@ -174,36 +174,57 @@ final class InsightsLLMService {
         let toneInstruction = Self.toneInstruction(for: tone)
         let focusInstruction = Self.focusInstruction(for: focus)
 
+        let currencyCode = aggregatedData["currency"] as? String ?? "USD"
+
         let systemPrompt = """
-        Eres un asistente financiero personal amigable. Analiza los datos agregados del usuario y genera insights.
+        Eres un analista financiero personal. Analizas EXCLUSIVAMENTE los datos agregados proporcionados.
 
-        IDIOMA: Responde SIEMPRE en el idioma indicado por "locale" en los datos (\(locale)). Nunca mezcles idiomas.
+        REGLAS CRÍTICAS:
+        1. NUNCA menciones datos, categorías, montos o relaciones que NO estén en el JSON
+        2. NUNCA cruces información de campos no relacionados (ej: NO mezcles el nombre de una categoría con un presupuesto de otra categoría)
+        3. Cada afirmación DEBE corresponder a un campo específico de los datos
+        4. Si un campo dice "N/A" o no existe, NO menciones ese tema
+        5. Los montos están en la moneda indicada por el campo "currency" (\(currencyCode)). Usa el símbolo apropiado: PEN→S/, USD→$, EUR→€, MXN→MX$, etc.
 
-        COMPARACIONES: Las variaciones en los datos se comparan contra "\(comparisonRef)" (\(comparisonLabel)). Usa esa referencia al mencionar cambios o tendencias.
+        IDIOMA: Responde SIEMPRE en \(locale). Nunca mezcles idiomas.
+
+        COMPARACIONES: Las variaciones se comparan contra "\(comparisonRef)" (\(comparisonLabel)).
         \(filterContext)
+        FRAMEWORK DE ANÁLISIS (sigue este orden de prioridad):
+        1. PANORAMA: total_expense, total_income, net_balance y sus variaciones. ¿Mes positivo o negativo? ¿Tendencia?
+        2. CONCENTRACIÓN: top_categories — ¿alguna categoría domina excesivamente? ¿Distribución saludable?
+        3. COMPROMISOS: budgets_at_risk (compara spent vs limit), subscriptions, pending_payments
+        4. PATRONES: highest_avg_weekday, daily_avg y su variación, highest_expense (gasto atípico?)
+        5. NECESIDADES: distribución essential/priority/optional — ¿equilibrio razonable?
+
+        Genera insights que conecten estos datos de forma lógica. Por ejemplo:
+        - Si el gasto subió 20% Y la categoría top creció, esa categoría puede ser la causa
+        - Si un presupuesto está al 90% Y quedan días del mes, hay riesgo real
+        - Si el opcional supera al esencial, es una señal de alerta
+
         REGLAS DE VOZ:
         - Tutea al usuario
-        - Lidera con el dato, opinion despues
+        - Lidera con el dato, opinión después
         - Nunca culpar ni juzgar
         - Celebrar con mesura
-        - Solo afirmaciones, datos, observaciones y guias. NUNCA preguntas al usuario.
-        - No menciones rachas ni streaks.
+        - Solo afirmaciones, datos, observaciones y guías. NUNCA preguntas
+        - No menciones rachas ni streaks
         \(toneInstruction)\(focusInstruction)
         FORMATO:
-        - Usa **negritas** (doble asterisco markdown) para resaltar cifras, porcentajes y datos clave en cada texto.
+        - Usa **negritas** para cifras, porcentajes y datos clave
 
-        FORMATO DE RESPUESTA (JSON estricto):
+        RESPUESTA (JSON estricto):
         {
-          "hero": "Texto principal del insight mas relevante (1-2 oraciones)",
+          "hero": "Insight más impactante (1-2 oraciones, DEBE citar cifras reales del JSON)",
           "cards": [
-            {"icon": "SF Symbol name", "text": "Texto del insight", "sentiment": "positive|neutral|attention", "tip": "optional actionable tip"}
+            {"icon": "SF Symbol", "text": "Insight anclado en datos", "sentiment": "positive|neutral|attention", "tip": "consejo específico y accionable (opcional)"}
           ],
-          "funFact": "Dato curioso opcional combinando datos de formas inesperadas"
+          "funFact": "Observación curiosa combinando datos de formas inesperadas (opcional)"
         }
 
-        Para cada card, si hay un tip practico y concreto, incluyelo en "tip". Solo tips utiles y especificos, nunca obvios. Si no hay tip relevante, omite el campo.
-        Genera entre 3 y 6 cards. El hero debe ser el insight mas impactante.
-        Usa iconos SF Symbols validos: chart.line.uptrend.xyaxis, arrow.down.right, flame.fill, cart, fork.knife, etc.
+        Genera 3-6 cards. El hero DEBE referenciar números específicos de los datos.
+        Los tips deben ser específicos y accionables — nunca genéricos como "intenta gastar menos".
+        SF Symbols válidos: chart.line.uptrend.xyaxis, arrow.down.right, flame.fill, cart.fill, creditcard, calendar, banknote, etc.
         """
 
         let userMessage = "Datos financieros del periodo:\n\(jsonString)"
@@ -213,8 +234,9 @@ final class InsightsLLMService {
                 .init(role: .system, content: systemPrompt)!,
                 .init(role: .user, content: userMessage)!
             ],
-            model: .gpt4_1_nano,
-            responseFormat: .jsonObject
+            model: .gpt4_1_mini,
+            responseFormat: .jsonObject,
+            temperature: 0.4
         )
 
         do {
@@ -357,12 +379,24 @@ final class InsightsLLMService {
         let toneInstruction = Self.toneInstruction(for: tone)
         let focusInstruction = Self.focusInstruction(for: focus)
 
+        let currencyCode = aggregatedData["currency"] as? String ?? "USD"
+
         let systemPrompt = """
-        Eres un asistente financiero personal. Genera UNA SOLA oración corta sobre las finanzas del usuario.
-        IDIOMA: Responde SIEMPRE en el idioma indicado por locale (\(locale)). Tutea, lidera con el dato, nunca juzgar, nunca preguntas.
-        ENFOQUE HOY: prioriza observaciones sobre "\(focusHint)". Si no hay dato relevante para ese enfoque, elige otro.
-        \(toneInstruction)\(focusInstruction)JSON estricto: {"comment": "una oración"} o {"comment": null} si no hay nada interesante.
-        Usa **negritas** (doble asterisco markdown) para cifras clave.
+        Eres un analista financiero personal. Genera UNA SOLA oración sobre las finanzas del usuario.
+
+        REGLAS CRÍTICAS:
+        - SOLO menciona datos presentes en el JSON. NUNCA inventes categorías, montos o relaciones
+        - Cada afirmación debe corresponder a un campo específico de los datos
+
+        IDIOMA: \(locale). Tutea, lidera con el dato, nunca juzgues, nunca hagas preguntas.
+
+        ÁNGULO HOY: Prioriza observaciones sobre "\(focusHint)". Si no hay dato relevante, elige el dato más notable.
+        \(toneInstruction)\(focusInstruction)
+        REGLA DE ANCLAJE: Tu oración DEBE citar al menos un número específico de los datos (monto, porcentaje o conteo).
+
+        Usa **negritas** para la cifra clave. Los montos están en \(currencyCode).
+
+        JSON: {"comment": "una oración"} o {"comment": null} si no hay nada interesante.
         """
 
         let userMessage = "Datos financieros del periodo:\n\(jsonString)"
@@ -372,8 +406,9 @@ final class InsightsLLMService {
                 .init(role: .system, content: systemPrompt)!,
                 .init(role: .user, content: userMessage)!
             ],
-            model: .gpt4_1_nano,
-            responseFormat: .jsonObject
+            model: .gpt4_1_mini,
+            responseFormat: .jsonObject,
+            temperature: 0.4
         )
 
         do {
