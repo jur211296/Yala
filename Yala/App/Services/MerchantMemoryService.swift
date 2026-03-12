@@ -20,6 +20,13 @@ enum MerchantSuggestion {
     case autoAssign(Subcategory)
 }
 
+/// Level of suggestion confidence for merchant memory decisions
+enum SuggestionLevel: Equatable {
+    case none
+    case suggest
+    case autoAssign
+}
+
 @MainActor
 final class MerchantMemoryService {
 
@@ -27,6 +34,15 @@ final class MerchantMemoryService {
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
+    }
+
+    // MARK: - Pure Decision Logic
+
+    /// Pure function to decide suggestion level based on approval count and correction rate.
+    static func decideSuggestion(countApproved: Int, correctionRate: Double) -> SuggestionLevel {
+        if countApproved >= 5 && correctionRate <= 0.1 { return .autoAssign }
+        if countApproved >= 3 && correctionRate <= 0.3 { return .suggest }
+        return .none
     }
 
     // MARK: - Suggest
@@ -42,17 +58,14 @@ final class MerchantMemoryService {
             return .none
         }
 
-        // Policy: countApproved >= 5, correctionRate <= 0.1 → autoAssign
-        if memory.countApproved >= 5 && memory.correctionRate <= 0.1 {
+        switch Self.decideSuggestion(countApproved: memory.countApproved, correctionRate: memory.correctionRate) {
+        case .autoAssign:
             return .autoAssign(subcategory)
-        }
-
-        // Policy: countApproved >= 3, correctionRate <= 0.3 → suggest
-        if memory.countApproved >= 3 && memory.correctionRate <= 0.3 {
+        case .suggest:
             return .suggest(subcategory)
+        case .none:
+            return .none
         }
-
-        return .none
     }
 
     // MARK: - Update Memory

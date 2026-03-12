@@ -283,7 +283,7 @@ final class TranscriptionParserService {
 
     // MARK: - Private Methods
 
-    private func parseMultipleResponse(_ content: String) throws -> [ParsedTransaction] {
+    func parseMultipleResponse(_ content: String) throws -> [ParsedTransaction] {
         // Clean the response (remove any markdown formatting if present)
         var jsonString = content.trimmingCharacters(in: .whitespacesAndNewlines)
         if jsonString.hasPrefix("```json") {

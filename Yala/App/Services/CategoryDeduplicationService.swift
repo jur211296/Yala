@@ -12,6 +12,11 @@ import SwiftData
 @MainActor
 enum CategoryDeduplicationService {
 
+    /// Returns the stable identity key for a category (iconName + colorHex + isIncome).
+    static func identityKey(for category: Category) -> String {
+        "\(category.iconName ?? "nil")|\(category.colorHex)|\(category.isIncome)"
+    }
+
     /// Deduplicates seed categories by stable identity (iconName + colorHex + isIncome).
     /// Keeps the category with the most transactions and re-parents orphaned data.
     /// - Returns: number of duplicate categories removed.
@@ -32,9 +37,7 @@ enum CategoryDeduplicationService {
         }
 
         // Group by stable identity: iconName + colorHex + isIncome
-        let grouped = Dictionary(grouping: seedCategories) { cat in
-            "\(cat.iconName ?? "nil")|\(cat.colorHex)|\(cat.isIncome)"
-        }
+        let grouped = Dictionary(grouping: seedCategories) { identityKey(for: $0) }
 
         var removedCount = 0
 
