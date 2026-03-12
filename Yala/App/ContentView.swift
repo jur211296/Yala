@@ -718,6 +718,12 @@ struct MorePlaceholderView: View {
             ProfileView()
                 .transaction { $0.animation = nil }
         }
+        .onChange(of: SessionState.shared.shouldOpenProfile) { _, shouldOpen in
+            if shouldOpen {
+                showProfile = true
+                SessionState.shared.shouldOpenProfile = false
+            }
+        }
     }
 
     // MARK: - Hidden Tabs Section

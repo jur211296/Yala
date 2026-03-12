@@ -276,6 +276,7 @@ enum L10n {
         static var activateAIBody: String { ls("insights.activateAIBody", comment: "") }
         static var activateAIDisclaimer: String { ls("insights.activateAIDisclaimer", comment: "") }
         static var activate: String { ls("insights.activate", comment: "") }
+        static var goToSettings: String { ls("insights.goToSettings", comment: "") }
         static var notInterested: String { ls("insights.notInterested", comment: "") }
         static var offlineCached: String { ls("insights.offlineCached", comment: "") }
         static var offlineNoCache: String { ls("insights.offlineNoCache", comment: "") }
@@ -1701,6 +1702,12 @@ enum L10n {
         static var tabBarConfigMinWarning: String {
             ls("settings.tabBarConfigMinWarning", comment: "")
         }
+        static var customizeAISummary: String {
+            ls("settings.customizeAISummary", comment: "")
+        }
+        static var customizeAISummaryHint: String {
+            ls("settings.customizeAISummaryHint", comment: "")
+        }
         static var tabBarConfigMaxWarning: String {
             ls("settings.tabBarConfigMaxWarning", comment: "")
         }
@@ -1766,6 +1773,7 @@ enum L10n {
         // Sections
         static var organization: String { ls("settings.organization", comment: "") }
         static var preferences: String { ls("settings.preferences", comment: "") }
+        static var aiFeatures: String { ls("settings.aiFeatures", comment: "") }
         static var data: String { ls("settings.data", comment: "") }
         static var security: String { ls("settings.security", comment: "") }
         static var help: String { ls("settings.help", comment: "") }

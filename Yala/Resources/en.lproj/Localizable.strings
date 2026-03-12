@@ -772,7 +772,7 @@
 "insights.intelligentInsights" = "Observations";
 "insights.funFact" = "Fun fact";
 "insights.firstTimeTitle" = "Your smart summary";
-"insights.firstTimeBody" = "Here you'll see a smart summary of your finances. Customize sections in Profile > Personalization.";
+"insights.firstTimeBody" = "Here you'll see a smart summary of your finances. Enable it in Profile > AI Features and customize sections in Personalization.";
 "insights.emptyTitle" = "No data yet";
 "insights.emptyBody" = "Record expenses to see your insights";
 "insights.fewTransactions" = "Record more to unlock all insights";
@@ -780,16 +780,20 @@
 "insights.perDay" = "per day";
 "insights.ofTotal" = "of total";
 "insights.analyzingData" = "Analyzing your data...";
-"insights.activateAITitle" = "Activate Smart Overview";
-"insights.activateAIBody" = "Get personalized analysis of your finances powered by OpenAI.";
+"insights.activateAITitle" = "Smart Overview available";
+"insights.activateAIBody" = "Enable and customize it in Profile > AI Features.";
 "insights.activateAIDisclaimer" = "Only summarized data is sent to OpenAI (totals, percentages, trends). Your individual transactions and personal data are never shared.";
 "insights.activate" = "Activate";
+"insights.goToSettings" = "Go to settings";
 "insights.notInterested" = "Not interested";
 "insights.offlineCached" = "Offline. Showing last analysis.";
 "insights.offlineNoCache" = "Offline. Personalized insights will be available when connected.";
 
 "settings.organization" = "Organization";
 "settings.preferences" = "Preferences";
+"settings.aiFeatures" = "AI Features";
+"settings.customizeAISummary" = "Customize AI Summary";
+"settings.customizeAISummaryHint" = "Choose which metrics and charts appear in your smart overview.";
 "settings.data" = "Data";
 "settings.security" = "Security & Account";
 "settings.help" = "Need Help?";
@@ -1524,9 +1528,9 @@
 "onboarding.usageMode.dayToDay" = "Day to day";
 "onboarding.usageMode.dayToDay.quote" = "\"I want to know how much I have available to spend\"";
 "onboarding.usageMode.dayToDay.desc" = "Expenses, income and your account balances. Quick and practical.";
-"onboarding.usageMode.fullControl" = "Full control";
-"onboarding.usageMode.fullControl.quote" = "\"I want the full picture of my finances\"";
-"onboarding.usageMode.fullControl.desc" = "Same features, but Yala will guide you to include everything: credit card spending, pending details and precise balances.";
+"onboarding.usageMode.fullControl" = "Real balance";
+"onboarding.usageMode.fullControl.quote" = "\"I want a single number that counts everything: what I have, what I owe and what I'm owed\"";
+"onboarding.usageMode.fullControl.desc" = "You include everything in your balance — accounts, cards and what comes and goes with other people. The number you see is what's truly yours.";
 "onboarding.privacyTitle" = "All Set";
 "onboarding.privacySubtitle" = "You're ready to start using Yala";
 "onboarding.privacyLocal" = "Your financial data stays on your device";
@@ -2506,11 +2510,11 @@
 "aiConsent.message" = "Some features optionally use OpenAI to process your data:\n\n• Voice: your audio recording is transcribed\n• Images: the photo is analyzed to extract data\n• Overview: only totals, percentages, and trends are sent\n\nYour individual transactions, transaction history, and personal information are never shared. OpenAI does not use this data for training.";
 "aiConsent.accept" = "Accept and Enable";
 "aiConsent.privacyPolicy" = "Privacy Policy";
-"aiConsent.inlineHint" = "Your recordings and images are processed with OpenAI. They are not stored permanently.";
+"aiConsent.inlineHint" = "Your voice, image and summary data is processed with OpenAI. It is not stored permanently.";
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Artificial Intelligence";
-"insights.aiToggle" = "Enable smart overview";
+"insights.aiToggle" = "Smart overview";
 "insights.aiCaption" = "OpenAI analyzes your aggregated data to generate personalized analysis. No individual transactions are sent.";
 "insights.metricsSection" = "Metrics";
 "insights.chartsSection" = "Charts";

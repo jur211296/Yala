@@ -636,8 +636,11 @@ struct InsightsTabView: View {
             }
 
             HStack(spacing: DS.Spacing.md) {
-                Button(L10n.Insights.activate) {
-                    aiDataConsentAccepted = true
+                Button(L10n.Insights.goToSettings) {
+                    sessionState.selectedMainTab = .more
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        sessionState.shouldOpenProfile = true
+                    }
                 }
                 .font(DS.Typography.label)
                 .foregroundStyle(.white)

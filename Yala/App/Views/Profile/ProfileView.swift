@@ -35,8 +35,11 @@ struct ProfileView: View {
     @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
     @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
+    @AppStorage(InsightTone.storageKey) private var insightsToneRaw: String = InsightTone.normal.rawValue
+    @AppStorage(InsightFocus.storageKey) private var insightsFocusRaw: String = InsightFocus.balanced.rawValue
     @State private var showAIConsentAlert: Bool = false
     @State private var pendingConsentForVoice: Bool = true
+    @State private var pendingConsentForInsights: Bool = false
 
     // Navigation & Sheets
     @State private var navigationPath = NavigationPath()
@@ -53,6 +56,7 @@ struct ProfileView: View {
     // Subscription state
     @State private var showUpgradeForVoice = false
     @State private var showUpgradeForImage = false
+    @State private var showUpgradeForInsights = false
     @State private var showSupportSheet = false
 
     // Coach mark: Settings tour
@@ -71,6 +75,18 @@ struct ProfileView: View {
 
     private var isImageLocked: Bool {
         !FeatureGateService.shared.canAccess(.imageInput)
+    }
+
+    private var isSmartInsightsLocked: Bool {
+        !FeatureGateService.shared.canAccess(.smartInsightsAI)
+    }
+
+    private var selectedTone: InsightTone {
+        InsightTone(rawValue: insightsToneRaw) ?? .normal
+    }
+
+    private var selectedFocus: InsightFocus {
+        InsightFocus(rawValue: insightsFocusRaw) ?? .balanced
     }
 
     enum ProfileSheet: Identifiable {
@@ -119,6 +135,7 @@ struct ProfileView: View {
                             // Sections
                             organizacionSection
                             preferenciasSection
+                            aiFeaturesSection
                             datosSection
                             seguridadSection
                             ayudaSection
@@ -200,6 +217,8 @@ struct ProfileView: View {
                     aiDataConsentAccepted = true
                     if pendingConsentForVoice {
                         voiceInputEnabled = true
+                    } else if pendingConsentForInsights {
+                        pendingConsentForInsights = false
                     } else {
                         imageInputEnabled = true
                     }
@@ -207,7 +226,10 @@ struct ProfileView: View {
                 Button(L10n.AIConsent.privacyPolicy) {
                     openURL(AppConstants.privacyURL)
                 }
-                Button(L10n.Action.cancel, role: .cancel) {}
+                Button(L10n.Action.cancel, role: .cancel) {
+                    pendingConsentForVoice = false
+                    pendingConsentForInsights = false
+                }
             } message: {
                 Text(L10n.AIConsent.message)
             }
@@ -372,6 +394,9 @@ struct ProfileView: View {
         .sheet(isPresented: $showUpgradeForImage) {
             UpgradePromptSheet(feature: .imageInput, context: .proFeature)
         }
+        .sheet(isPresented: $showUpgradeForInsights) {
+            UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature)
+        }
     }
 
     // MARK: - Pro Badge with Cyan Spark
@@ -465,12 +490,21 @@ struct ProfileView: View {
                 profileRow(
                     icon: "paintpalette.fill", title: L10n.Settings.theme, iconColor: .pink,
                     destination: .themes)
-                SubsectionDivider()
+            }
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    private var aiFeaturesSection: some View {
+        SectionBox(title: L10n.Settings.aiFeatures) {
+            VStack(spacing: DS.Spacing.none) {
                 voiceInputRow
                 SubsectionDivider()
                 imageInputRow
+                SubsectionDivider()
+                smartInsightsToggleRow
 
-                if voiceInputEnabled || imageInputEnabled {
+                if voiceInputEnabled || imageInputEnabled || aiDataConsentAccepted {
                     Text(L10n.AIConsent.inlineHint)
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
@@ -480,6 +514,153 @@ struct ProfileView: View {
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    private var smartInsightsToggleRow: some View {
+        VStack(spacing: DS.Spacing.none) {
+            // Toggle row
+            Button {
+                if isSmartInsightsLocked {
+                    showUpgradeForInsights = true
+                }
+            } label: {
+                HStack(spacing: DS.Spacing.md) {
+                    if colorfulIcons {
+                        Image(systemName: "sparkles")
+                            .font(DS.Typography.subheadline).fontWeight(.medium)
+                            .foregroundStyle(.white)
+                            .frame(width: 28, height: 28)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(Color.purple)
+                            )
+                            .opacity(isSmartInsightsLocked ? 0.5 : 1)
+                    } else {
+                        Image(systemName: "sparkles")
+                            .font(DS.Typography.body)
+                            .foregroundStyle(.primary)
+                            .frame(width: 28)
+                            .opacity(isSmartInsightsLocked ? 0.5 : 1)
+                    }
+
+                    Text(L10n.Insights.aiToggle)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(isSmartInsightsLocked ? .secondary : .primary)
+
+                    if isSmartInsightsLocked {
+                        ProBadge(size: .small)
+                    }
+
+                    Spacer()
+
+                    if isSmartInsightsLocked {
+                        Image(systemName: "lock.fill")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Toggle(L10n.Insights.aiToggle, isOn: Binding(
+                            get: { aiDataConsentAccepted },
+                            set: { newValue in
+                                if newValue && !aiDataConsentAccepted {
+                                    pendingConsentForVoice = false
+                                    pendingConsentForInsights = true
+                                    showAIConsentAlert = true
+                                } else {
+                                    aiDataConsentAccepted = newValue
+                                }
+                            }
+                        ))
+                            .labelsHidden()
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.FormRow.paddingV)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // Tone selector (only visible when enabled and not locked)
+            if aiDataConsentAccepted && !isSmartInsightsLocked {
+                HStack(spacing: DS.Spacing.md) {
+                    Color.clear
+                        .frame(width: 28, height: 28)
+
+                    Text(L10n.Insights.toneLabel)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    Menu {
+                        ForEach(InsightTone.allCases) { tone in
+                            Button {
+                                insightsToneRaw = tone.rawValue
+                                PreferenceSyncService.shared.set(string: tone.rawValue, forKey: InsightTone.storageKey)
+                                InsightsLLMService.shared.invalidateCache()
+                            } label: {
+                                HStack {
+                                    Text(tone.displayName)
+                                    if insightsToneRaw == tone.rawValue {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: DS.Spacing.xs) {
+                            Text(selectedTone.displayName)
+                                .font(DS.Typography.body)
+                                .foregroundStyle(.primary)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(DS.Typography.captionSmall.weight(.medium))
+                                .foregroundStyle(.primary)
+                        }
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.FormRow.paddingV)
+
+                // Focus selector
+                HStack(spacing: DS.Spacing.md) {
+                    Color.clear
+                        .frame(width: 28, height: 28)
+
+                    Text(L10n.Insights.focusLabel)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    Menu {
+                        ForEach(InsightFocus.allCases) { focus in
+                            Button {
+                                insightsFocusRaw = focus.rawValue
+                                PreferenceSyncService.shared.set(string: focus.rawValue, forKey: InsightFocus.storageKey)
+                                InsightsLLMService.shared.invalidateCache()
+                            } label: {
+                                HStack {
+                                    Text(focus.displayName)
+                                    if insightsFocusRaw == focus.rawValue {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: DS.Spacing.xs) {
+                            Text(selectedFocus.displayName)
+                                .font(DS.Typography.body)
+                                .foregroundStyle(.primary)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(DS.Typography.captionSmall.weight(.medium))
+                                .foregroundStyle(.primary)
+                        }
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.FormRow.paddingV)
+            }
+        }
     }
 
     private var voiceInputRow: some View {

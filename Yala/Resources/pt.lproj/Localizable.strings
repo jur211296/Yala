@@ -770,7 +770,7 @@
 "insights.intelligentInsights" = "Observações";
 "insights.funFact" = "Curiosidade";
 "insights.firstTimeTitle" = "Seu resumo inteligente";
-"insights.firstTimeBody" = "Aqui você verá um resumo inteligente das suas finanças. Personalize as seções em Perfil > Personalização.";
+"insights.firstTimeBody" = "Aqui você verá um resumo inteligente das suas finanças. Ative em Perfil > Funcionalidades com IA e personalize as seções em Personalização.";
 "insights.emptyTitle" = "Sem dados ainda";
 "insights.emptyBody" = "Registre despesas para ver seus insights";
 "insights.fewTransactions" = "Registre mais para desbloquear todos os insights";
@@ -778,10 +778,11 @@
 "insights.perDay" = "por dia";
 "insights.ofTotal" = "do total";
 "insights.analyzingData" = "Analisando seus dados...";
-"insights.activateAITitle" = "Ativar resumo inteligente";
-"insights.activateAIBody" = "Obtenha análises personalizadas das suas finanças com OpenAI.";
+"insights.activateAITitle" = "Resumo inteligente disponível";
+"insights.activateAIBody" = "Ative e personalize em Perfil > Funcionalidades com IA.";
 "insights.activateAIDisclaimer" = "Apenas dados resumidos são enviados à OpenAI (totais, percentuais, tendências). As tuas despesas individuais e dados pessoais nunca são compartilhados.";
 "insights.activate" = "Ativar";
+"insights.goToSettings" = "Ir para ajustes";
 "insights.notInterested" = "Não me interessa";
 "insights.offlineCached" = "Sem conexão. Mostrando última análise.";
 "insights.offlineNoCache" = "Sem conexão. Insights personalizados estarão disponíveis ao conectar.";
@@ -793,6 +794,9 @@
 
 "settings.organization" = "Organizacao";
 "settings.preferences" = "Preferencias";
+"settings.aiFeatures" = "Funcionalidades com IA";
+"settings.customizeAISummary" = "Personalizar resumo de IA";
+"settings.customizeAISummaryHint" = "Escolhe quais métricas e gráficos aparecem no teu resumo inteligente.";
 "settings.data" = "Dados";
 "settings.security" = "Seguranca e conta";
 "settings.help" = "Precisa de ajuda?";
@@ -1524,9 +1528,9 @@
 "onboarding.usageMode.dayToDay" = "Dia a dia";
 "onboarding.usageMode.dayToDay.quote" = "\"Quero saber quanto tenho disponível para gastar\"";
 "onboarding.usageMode.dayToDay.desc" = "Despesas, receitas e o saldo das tuas contas. Rápido e prático.";
-"onboarding.usageMode.fullControl" = "Controle total";
-"onboarding.usageMode.fullControl.quote" = "\"Quero a foto completa das minhas finanças\"";
-"onboarding.usageMode.fullControl.desc" = "Mesmas funcionalidades, mas o Yala vai guiar-te a incluir tudo: gastos com cartão, detalhes pendentes e saldos precisos.";
+"onboarding.usageMode.fullControl" = "Saldo real";
+"onboarding.usageMode.fullControl.quote" = "\"Quero um único número que conte tudo: o que tenho, o que devo e o que me devem\"";
+"onboarding.usageMode.fullControl.desc" = "Incluis tudo no teu saldo — contas, cartões e o que vai e vem com outras pessoas. O número que vês é o que realmente é teu.";
 "onboarding.privacyTitle" = "Tudo pronto";
 "onboarding.privacySubtitle" = "Já podes começar a usar o Yala";
 "onboarding.privacyLocal" = "Os teus dados financeiros ficam no teu dispositivo";
@@ -2515,11 +2519,11 @@
 "aiConsent.message" = "Algumas funções usam OpenAI de forma opcional para processar os teus dados:\n\n• Voz: a tua gravação de áudio é transcrita\n• Imagens: a foto é analisada para extrair dados\n• Resumo: apenas totais, percentuais e tendências são enviados\n\nAs tuas despesas individuais, histórico de transações e informações pessoais nunca são compartilhados. A OpenAI não usa estes dados para treinar os seus modelos.";
 "aiConsent.accept" = "Aceitar e ativar";
 "aiConsent.privacyPolicy" = "Política de privacidade";
-"aiConsent.inlineHint" = "As tuas gravações e imagens são processadas com OpenAI. Não são armazenadas permanentemente.";
+"aiConsent.inlineHint" = "Os seus dados de voz, imagens e resumo são processados com OpenAI. Não são armazenados permanentemente.";
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Inteligência Artificial";
-"insights.aiToggle" = "Ativar resumo inteligente";
+"insights.aiToggle" = "Resumo inteligente";
 "insights.aiCaption" = "A OpenAI analisa seus dados agregados para gerar análises personalizadas. Nenhuma transação individual é enviada.";
 "insights.metricsSection" = "Métricas";
 "insights.chartsSection" = "Gráficos";

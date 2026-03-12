@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
 Status: **Fase 12 en progreso** — What's New sheet + coach mark tours + onboarding improvements
-Last activity: 2026-03-12 — 89 new tests covering all critical gaps (437→526 tests, 43→54 suites)
+Last activity: 2026-03-12 — Extract 12 private methods + 85 tests (920→1005 tests, 85→90 suites)
 
 ### Apple Review History (V1.0)
 
@@ -43,6 +43,8 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-12] d48946f test: extract 12 private methods to internal + add 85 tests across 5 suites
+- [2026-03-12] 7631a6a test: add 48 tests across 5 new suites covering critical gaps
 - [2026-03-12] e1ed94b test: add 89 tests across 11 new suites covering all critical gaps
 - [2026-03-11] cd0895b fix: update FilterServiceTests to match activeFilterCount including searchText
 - [2026-03-11] d186dfa refactor: decouple currency conversion from ModelContext + add 68 tests
@@ -744,10 +746,9 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 ## Session Continuity
 
 Last session: 2026-03-12
-Stopped at: Added 89 tests across 11 new suites covering all critical gaps (e1ed94b) — 437→526 tests, 43→54 suites
+Stopped at: Extracted 12 private methods to internal + added 85 tests across 5 suites (d48946f) — 1005 tests, 90 suites
 Next step: Continue with next bug or Fase 12 item from /next
 Resume context:
-- 11 new test suites: StatisticsVM(16), InitialBalanceService(9), InsightsVM(6), BulkEditVM(6), ScheduledPaymentEditorVM(15), SubcategoryTransferVM(8), TransactionService(6), EntityDeletionService(4), ExchangeRateService(7), CurrencyChangeService(6), TransactionUpdateService(5)
-- All critical coverage gaps from test-coverage analysis now have tests
+- Extracted pure logic from: TransactionsExportService(4), VisionDraftFactory(3), ScreenshotListExtractor(1), ScreenshotSingleExtractor(1), ReportNotificationService(3)
+- Total: 1005 tests, 90 suites, 0 failures
 - Remaining untested: medium/low risk VMs (selectors, settings lists), system-integration services (iCloud, StoreKit, OCR)
-- ViewModel private(set) properties limit testability — pure logic tests used for filtering/grouping algorithms

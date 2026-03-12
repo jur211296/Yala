@@ -11,10 +11,6 @@ struct SmartInsightsSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
 
-    // MARK: - AI
-
-    @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted = false
-
     // MARK: - Section Visibility
 
     @AppStorage("insightsShowQuickStats") private var showQuickStats = true
@@ -26,12 +22,6 @@ struct SmartInsightsSettingsView: View {
     @AppStorage("insightsShowNature") private var showNeed = true
     @AppStorage("insightsShowTexts") private var showTexts = true
 
-    private var isProUser: Bool {
-        FeatureGateService.shared.canAccess(.smartInsightsAI)
-    }
-
-    @State private var showUpgrade = false
-
     var body: some View {
         NavigationStack {
             ZStack {
@@ -39,43 +29,6 @@ struct SmartInsightsSettingsView: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
-                        // AI Section
-                        SectionBox(title: L10n.Insights.aiSectionTitle) {
-                            VStack(spacing: DS.Spacing.none) {
-                                HStack {
-                                    Text(L10n.Insights.aiToggle)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(.primary)
-
-                                    Spacer()
-
-                                    if isProUser {
-                                        Toggle("", isOn: $aiDataConsentAccepted)
-                                            .labelsHidden()
-                                    } else {
-                                        Button {
-                                            showUpgrade = true
-                                        } label: {
-                                            HStack(spacing: DS.Spacing.xs) {
-                                                Image(systemName: "lock.fill")
-                                                    .font(DS.Typography.captionSmall)
-                                                ProBadge(size: .small)
-                                            }
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-                                }
-                                .padding(.horizontal, DS.Spacing.lg)
-                                .padding(.vertical, DS.FormRow.paddingV)
-                            }
-                        }
-
-                        Text(L10n.Insights.aiCaption)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, DS.Spacing.lg)
-                            .padding(.top, -DS.Spacing.lg)
-
                         // Metrics Section
                         SectionBox(title: L10n.Insights.metricsSection) {
                             VStack(spacing: DS.Spacing.none) {
@@ -124,15 +77,12 @@ struct SmartInsightsSettingsView: View {
                     .padding(.vertical, DS.Spacing.xxl)
                 }
             }
-            .navigationTitle(L10n.Insights.title)
+            .navigationTitle(L10n.Settings.customizeAISummary)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.Action.done) { dismiss() }
                 }
-            }
-            .sheet(isPresented: $showUpgrade) {
-                UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature)
             }
         }
     }

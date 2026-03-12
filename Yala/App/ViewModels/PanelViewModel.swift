@@ -1540,7 +1540,7 @@ final class PanelViewModel {
             } else if transaction.preferredCurrencyCode == budget.currencyCode {
                 // Preferred currency matches budget — use pre-converted amount
                 amount = transaction.amountInPreferredCurrency
-            } else if let context = modelContext,
+            } else if let _ = modelContext,
                       let fromCode = CurrencyCode(rawValue: transaction.currencyCode),
                       let toCode = CurrencyCode(rawValue: budget.currencyCode) {
                 // Different currency — convert using latest rates
