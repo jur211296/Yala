@@ -629,8 +629,7 @@ struct DetailContainerView: View {
             trendsViewModel.calculateTrendData(
                 accounts: dataViewModel.accounts,
                 transactions: dataViewModel.allTransactions,
-                defaultCurrencyCode: defaultCurrencyCode,
-                context: modelContext
+                defaultCurrencyCode: defaultCurrencyCode
             )
         }
     }
@@ -647,8 +646,7 @@ struct DetailContainerView: View {
             criteria: trendsViewModel.filterCriteria,
             currencyCode: defaultCurrencyCode,
             customRange: sessionState.customDateRange,
-            comparisonMode: sessionState.comparisonMode,
-            context: modelContext
+            comparisonMode: sessionState.comparisonMode
         )
 
         // Generate AI insights if Pro + consent + online

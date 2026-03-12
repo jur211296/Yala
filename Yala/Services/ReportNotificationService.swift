@@ -140,8 +140,7 @@ final class ReportNotificationService {
         let balance = BalanceHelper.totalBalance(
             accounts: accounts,
             transactions: transactions,
-            preferredCurrencyCode: currencyCode,
-            context: context
+            preferredCurrencyCode: currencyCode
         )
 
         // Calculate income/expense with proper currency conversion (R2, R4, R5)
@@ -167,8 +166,7 @@ final class ReportNotificationService {
                     Decimal(tx.amount),
                     from: sourceCurrency.rawValue,
                     to: currencyCode,
-                    on: tx.date,
-                    context: context
+                    on: tx.date
                 )
             }
 
@@ -184,8 +182,7 @@ final class ReportNotificationService {
         let topCategories = TopSpendingCategoriesCalculator.calculateTopSpending(
             transactions: transactions,
             interval: interval,
-            currencyCode: currencyCode,
-            context: context
+            currencyCode: currencyCode
         )
 
         return ReportData(

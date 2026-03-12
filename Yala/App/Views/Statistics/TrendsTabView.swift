@@ -1077,7 +1077,7 @@ struct TrendsTabView: View {
             interval: interval,
             grouping: cashFlowGrouping,
             currencyCode: defaultCurrencyCode,
-            context: modelContext
+
         )
 
         // 2. Calculate cash flow BY ACCOUNT (single-pass grouping: O(n) instead of O(a×n))
@@ -1090,7 +1090,7 @@ struct TrendsTabView: View {
                 interval: interval,
                 grouping: cashFlowGrouping,
                 currencyCode: account.currencyCode,
-                context: modelContext
+    
             )
             byAccount[account.persistentModelID] = summary
         }
@@ -1105,7 +1105,7 @@ struct TrendsTabView: View {
                 interval: interval,
                 grouping: cashFlowGrouping,
                 currencyCode: currencyCode,
-                context: modelContext
+    
             )
             byCurrency[currencyCode] = summary
         }
@@ -1159,7 +1159,7 @@ struct TrendsTabView: View {
             interval: previousInterval,
             grouping: cashFlowGrouping,
             currencyCode: defaultCurrencyCode,
-            context: modelContext
+
         )
 
         // 2. Calculate previous period cash flow BY ACCOUNT (single-pass grouping)
@@ -1172,7 +1172,7 @@ struct TrendsTabView: View {
                 interval: previousInterval,
                 grouping: cashFlowGrouping,
                 currencyCode: account.currencyCode,
-                context: modelContext
+    
             )
             byAccount[account.persistentModelID] = summary
         }
@@ -1187,7 +1187,7 @@ struct TrendsTabView: View {
                 interval: previousInterval,
                 grouping: cashFlowGrouping,
                 currencyCode: currencyCode,
-                context: modelContext
+    
             )
             byCurrency[currencyCode] = summary
         }
@@ -1257,7 +1257,7 @@ struct TrendsTabView: View {
             grouping: .day,
             interval: currentInterval,
             currencyCode: defaultCurrencyCode,
-            context: modelContext
+
         )
 
         // For previous period with income/expense, we need separate filtering
@@ -1296,7 +1296,7 @@ struct TrendsTabView: View {
             grouping: .day,
             interval: previousInterval,
             currencyCode: defaultCurrencyCode,
-            context: modelContext
+
         )
 
         // Update state

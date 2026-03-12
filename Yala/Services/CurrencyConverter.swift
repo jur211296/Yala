@@ -10,15 +10,13 @@ import Foundation
 import Observation
 import SwiftData
 
-// MARK: - Currency Converter Protocol
+// MARK: - Currency Converting Protocol
 
-/// Protocol for currency conversion, enabling dependency injection and testing.
-protocol CurrencyConverterProtocol {
-    func convert(_ amount: Decimal, from: String, to: String, on date: Date, context: ModelContext) -> Decimal
-    func convertWithLatestRate(_ amount: Decimal, from: String, to: String, context: ModelContext) -> Decimal
-    func convertWithFallback(_ amount: Decimal, from: String, to: String) -> Decimal
-    func getDisplayRate(from: String, to: String, date: Date, context: ModelContext) -> Double?
-    func hasExactRate(for date: Date, context: ModelContext) -> Bool
+/// Protocol for currency conversion without ModelContext dependency.
+/// Enables dependency injection and testing of calculators/helpers.
+protocol CurrencyConverting {
+    func convert(_ amount: Decimal, from: String, to: String, on date: Date) -> Decimal
+    func convertWithLatestRate(_ amount: Decimal, from: String, to: String) -> Decimal
 }
 
 // MARK: - Currency Converter
@@ -27,7 +25,7 @@ protocol CurrencyConverterProtocol {
 /// All conversions in the app should go through this class.
 /// Supports @Environment injection in SwiftUI views.
 @Observable
-final class CurrencyConverter: CurrencyConverterProtocol {
+final class CurrencyConverter: CurrencyConverting {
 
     // MARK: - Singleton (for backward compatibility)
 
@@ -36,6 +34,7 @@ final class CurrencyConverter: CurrencyConverterProtocol {
 
     // MARK: - Properties
 
+    @ObservationIgnored private var modelContext: ModelContext?
     private let baseCurrency = "USD"
 
     private let dateFormatter: DateFormatter = {
@@ -54,7 +53,33 @@ final class CurrencyConverter: CurrencyConverterProtocol {
     /// Derived from CurrencyCode enum (single source of truth).
     private var fallbackRates: [String: Double] { CurrencyCode.fallbackRates }
 
-    // MARK: - Public API
+    // MARK: - Context Setup
+
+    /// Sets the ModelContext for database-backed conversions.
+    /// Called from AppBootstrapper during app initialization.
+    func setContext(_ context: ModelContext) {
+        self.modelContext = context
+    }
+
+    // MARK: - CurrencyConverting (context-free)
+
+    /// Converts using the stored ModelContext, falling back to static rates if unavailable.
+    func convert(_ amount: Decimal, from: String, to: String, on date: Date) -> Decimal {
+        guard let context = modelContext else {
+            return convertWithFallback(amount, from: from, to: to)
+        }
+        return convert(amount, from: from, to: to, on: date, context: context)
+    }
+
+    /// Converts using the most recent available rate (context-free).
+    func convertWithLatestRate(_ amount: Decimal, from: String, to: String) -> Decimal {
+        guard let context = modelContext else {
+            return convertWithFallback(amount, from: from, to: to)
+        }
+        return convertWithLatestRate(amount, from: from, to: to, context: context)
+    }
+
+    // MARK: - Public API (with context)
 
     /// Converts an amount from one currency to another using the rate for a specific date.
     /// - Parameters:

@@ -629,8 +629,7 @@ struct PanelView: View {
             period: viewModel.selectedPeriod,
             criteria: criteria,
             currencyCode: preferredCurrency.rawValue,
-            customRange: viewModel.customDateRange,
-            context: modelContext
+            customRange: viewModel.customDateRange
         )
 
         // Build lightweight aggregated dict (subset — no filter context, no year-over-year)
@@ -1086,8 +1085,7 @@ struct PanelView: View {
         let balance = viewModel.displayedBalanceInDefaultCurrency(
             accounts: accounts,
             transactions: transactions,
-            defaultCurrencyCode: defaultCurrencyCodeRaw,
-            context: modelContext
+            defaultCurrencyCode: defaultCurrencyCodeRaw
         )
 
         // All widgets below have 'onShowMore' or 'onViewDetail' removed (or passed as nil) to remove chevrons

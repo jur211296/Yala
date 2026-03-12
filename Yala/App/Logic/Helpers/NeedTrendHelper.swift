@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import SwiftData
 
 /// Pure calculation helper for need trend widget data.
 /// Contains no state - all methods are static.
@@ -28,7 +27,7 @@ struct NeedTrendHelper {
         grouping: TrendGrouping,
         interval: DateInterval,
         preferredCurrency: CurrencyCode,
-        context: ModelContext
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [NeedTrendPoint] {
         // Group transactions by Date bucket
         var grouped: [Date: [TransactionItem]] = [:]
@@ -68,12 +67,11 @@ struct NeedTrendHelper {
                         CurrencyCode(rawValue: normalizeCurrencyCode(tx.currencyCode))
                         ?? preferredCurrency
 
-                    let convertedDecimal = CurrencyConverter.shared.convert(
+                    let convertedDecimal = converter.convert(
                         Decimal(abs(tx.amount)),
                         from: sourceCurrency.rawValue,
                         to: currencyCode,
-                        on: tx.date,
-                        context: context
+                        on: tx.date
                     )
                     // Restore sign
                     let magnitude = (convertedDecimal as NSDecimalNumber).doubleValue

@@ -282,8 +282,7 @@ final class StatisticsViewModel: Filterable {
     func calculateTrendData(
         accounts: [Account],
         transactions: [TransactionItem],
-        defaultCurrencyCode: String,
-        context: ModelContext
+        defaultCurrencyCode: String
     ) {
 
         // Enforce metric lock based on filters
@@ -366,8 +365,7 @@ final class StatisticsViewModel: Filterable {
                 period: detailPeriod,
                 grouping: trendGrouping,
                 interval: interval,
-                currencyCode: defaultCurrencyCode,
-                context: context
+                currencyCode: defaultCurrencyCode
             )
             trendPoints = result.points
             rawTrendPoints = result.rawPoints
@@ -380,8 +378,7 @@ final class StatisticsViewModel: Filterable {
                 transactions: filtered,
                 accounts: eligibleAccounts,
                 interval: interval,
-                defaultCurrencyCode: defaultCurrencyCode,
-                context: context
+                defaultCurrencyCode: defaultCurrencyCode
             )
         }
 
@@ -421,8 +418,7 @@ final class StatisticsViewModel: Filterable {
         transactions: [TransactionItem],
         accounts: [Account],
         interval: DateInterval,
-        defaultCurrencyCode: String,
-        context: ModelContext
+        defaultCurrencyCode: String
     ) {
         let calendar = Calendar.current
         var allSeries: [AccountTrendSeries] = []

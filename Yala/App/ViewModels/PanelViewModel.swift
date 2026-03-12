@@ -459,14 +459,12 @@ final class PanelViewModel {
     func totalBalanceInDefaultCurrency(
         accounts: [Account],
         transactions: [TransactionItem],
-        defaultCurrencyCode: String,
-        context: ModelContext
+        defaultCurrencyCode: String
     ) -> Double {
         return BalanceHelper.totalBalance(
             accounts: accounts,
             transactions: transactions,
-            preferredCurrencyCode: defaultCurrencyCode,
-            context: context
+            preferredCurrencyCode: defaultCurrencyCode
         )
     }
 
@@ -475,15 +473,13 @@ final class PanelViewModel {
     func displayedBalanceInDefaultCurrency(
         accounts: [Account],
         transactions: [TransactionItem],
-        defaultCurrencyCode: String,
-        context: ModelContext
+        defaultCurrencyCode: String
     ) -> Double {
         return BalanceHelper.displayedBalance(
             accounts: accounts,
             transactions: transactions,
             selectedAccountID: self.selectedAccountID,
-            preferredCurrencyCode: defaultCurrencyCode,
-            context: context
+            preferredCurrencyCode: defaultCurrencyCode
         )
     }
 
@@ -562,8 +558,7 @@ final class PanelViewModel {
     private func convertToPreferredCurrency(
         amount: Decimal,
         from source: CurrencyCode,
-        to target: CurrencyCode,
-        context: ModelContext
+        to target: CurrencyCode
     ) -> Decimal {
         if source == target {
             return amount
@@ -573,8 +568,7 @@ final class PanelViewModel {
         return currencyConverter.convertWithLatestRate(
             amount,
             from: source.rawValue,
-            to: target.rawValue,
-            context: context
+            to: target.rawValue
         )
     }
 
@@ -626,8 +620,7 @@ final class PanelViewModel {
         let calcContext = buildCalculationContext(
             accounts: accounts,
             transactions: transactions,
-            defaultCurrencyCode: defaultCurrencyCode,
-            modelContext: context
+            defaultCurrencyCode: defaultCurrencyCode
         )
 
         // 2. Calculate ALL widget data (unconditionally to ensure data is ready when widgets are added)
@@ -649,8 +642,7 @@ final class PanelViewModel {
             period: calcContext.period,
             grouping: calcContext.trendGrouping,
             interval: calcContext.effectiveInterval,
-            currencyCode: calcContext.defaultCurrencyCode,
-            context: calcContext.modelContext
+            currencyCode: calcContext.defaultCurrencyCode
         )
         newProcessedData = (result.points, result.rawPoints, result.yDomain)
         newTrendTotalIncome = result.totalIncome
@@ -755,8 +747,7 @@ final class PanelViewModel {
     private func buildCalculationContext(
         accounts: [Account],
         transactions: [TransactionItem],
-        defaultCurrencyCode: String,
-        modelContext: ModelContext
+        defaultCurrencyCode: String
     ) -> PanelCalculationContext {
         let calendar = Calendar.current
 
@@ -963,7 +954,7 @@ final class PanelViewModel {
             accounts: accounts,
             transactions: transactions,
             defaultCurrencyCode: defaultCurrencyCode,
-            modelContext: modelContext,
+            converter: currencyConverter,
             eligibleAccounts: eligibleAccounts,
             eligibleAccountIDs: eligibleAccountIDs,
             filteredTransactions: filtered,
@@ -997,7 +988,7 @@ final class PanelViewModel {
             grouping: context.trendGrouping,
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
-            context: context.modelContext
+            converter: context.converter
         )
     }
 
@@ -1069,7 +1060,7 @@ final class PanelViewModel {
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
             transactionNatures: naturesFilter,
-            context: context.modelContext
+            converter: context.converter
         )
 
         // Skip previous period calculation for "All Time" (no meaningful comparison)
@@ -1094,7 +1085,7 @@ final class PanelViewModel {
             interval: previousInterval,
             currencyCode: context.defaultCurrencyCode,
             transactionNatures: naturesFilter,
-            context: context.modelContext
+            converter: context.converter
         )
 
         // Calculate the ACTUAL previous period total (sum of ALL categories from previous period)
@@ -1138,7 +1129,7 @@ final class PanelViewModel {
             currencyCode: context.defaultCurrencyCode,
             categoryFilter: effectiveCategoryFilter,
             transactionNatures: naturesFilter,
-            context: context.modelContext
+            converter: context.converter
         )
 
         // Skip previous period calculation for "All Time" (no meaningful comparison)
@@ -1164,7 +1155,7 @@ final class PanelViewModel {
             currencyCode: context.defaultCurrencyCode,
             categoryFilter: effectiveCategoryFilter,
             transactionNatures: naturesFilter,
-            context: context.modelContext
+            converter: context.converter
         )
 
         // Calculate the ACTUAL previous period total (sum of ALL subcategories from previous period)
@@ -1195,7 +1186,7 @@ final class PanelViewModel {
             interval: context.effectiveInterval,
             grouping: context.cashFlowGrouping,
             currencyCode: context.defaultCurrencyCode,
-            context: context.modelContext
+            converter: context.converter
         )
     }
 
@@ -1234,7 +1225,7 @@ final class PanelViewModel {
             grouping: context.needGrouping,
             interval: context.effectiveInterval,
             preferredCurrency: preferredCurrency,
-            context: context.modelContext
+            converter: context.converter
         )
 
         // Skip previous period calculation for "All Time" (no meaningful comparison)
@@ -1259,7 +1250,7 @@ final class PanelViewModel {
             grouping: context.needGrouping,
             interval: previousInterval,
             preferredCurrency: preferredCurrency,
-            context: context.modelContext
+            converter: context.converter
         )
 
         // Calculate totals by need for previous period
@@ -1556,8 +1547,7 @@ final class PanelViewModel {
                 let converted = convertToPreferredCurrency(
                     amount: Decimal(transaction.amount),
                     from: fromCode,
-                    to: toCode,
-                    context: context
+                    to: toCode
                 )
                 amount = NSDecimalNumber(decimal: converted).doubleValue
             } else {

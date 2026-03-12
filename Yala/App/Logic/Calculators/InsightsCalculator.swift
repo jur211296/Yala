@@ -171,7 +171,7 @@ struct InsightsCalculator {
         comparisonMode: ComparisonMode = .month,
         tone: InsightTone = .normal,
         focus: InsightFocus = .balanced,
-        context: ModelContext
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> InsightData {
         // Filter transactions using FilterService
         let filtered = FilterService.filterForTrends(
@@ -195,14 +195,14 @@ struct InsightsCalculator {
             interval: interval,
             grouping: .day,
             currencyCode: currencyCode,
-            context: context
+            converter: converter
         )
         let prevCashFlow = CashFlowCalculator.calculateCashFlow(
             transactions: prevTxns,
             interval: prevInterval,
             grouping: .day,
             currencyCode: currencyCode,
-            context: context
+            converter: converter
         )
 
         let expenseVariation = PreviousPeriodHelper.calculateVariation(
@@ -256,7 +256,7 @@ struct InsightsCalculator {
         let weekdaySpending = WeekdaySpendingCalculator.calculate(
             transactions: periodTxns,
             currencyCode: currencyCode,
-            context: context
+            converter: converter
         )
 
         // Highest average weekday
@@ -272,17 +272,17 @@ struct InsightsCalculator {
             transactions: periodTxns,
             interval: interval,
             currencyCode: currencyCode,
-            context: context
+            converter: converter
         )
         let topSubcategories = TopSubcategoriesCalculator.calculateTopSubcategories(
             transactions: periodTxns,
             interval: interval,
             currencyCode: currencyCode,
-            context: context
+            converter: converter
         )
 
-        let highestExpense = findHighestExpense(periodTxns, currencyCode: currencyCode, context: context)
-        let subscriptionsTotal = calculateSubscriptionsTotal(scheduledPayments, currencyCode: currencyCode, context: context)
+        let highestExpense = findHighestExpense(periodTxns, currencyCode: currencyCode, converter: converter)
+        let subscriptionsTotal = calculateSubscriptionsTotal(scheduledPayments, currencyCode: currencyCode, converter: converter)
 
         let quickStats = QuickStats(
             dailyAverage: dailyAverageExpense,
@@ -300,11 +300,11 @@ struct InsightsCalculator {
             periodTxns: periodTxns,
             interval: interval,
             currencyCode: currencyCode,
-            context: context
+            converter: converter
         )
 
         // Need Distribution
-        let needDistribution = calculateNeedDistribution(periodTxns, currencyCode: currencyCode, context: context)
+        let needDistribution = calculateNeedDistribution(periodTxns, currencyCode: currencyCode, converter: converter)
 
         // Year-over-Year
         let yearOverYear = calculateYearOverYear(
@@ -313,7 +313,7 @@ struct InsightsCalculator {
             period: period,
             currencyCode: currencyCode,
             customRange: customRange,
-            context: context
+            converter: converter
         )
 
         // Rule-based insights
@@ -350,7 +350,7 @@ struct InsightsCalculator {
         preferredCode: String? = nil,
         preferredAmount: Double? = nil,
         on date: Date,
-        context: ModelContext
+        converter: CurrencyConverting
     ) -> Double {
         if fromCode == toCode {
             return abs(amount)
@@ -358,18 +358,17 @@ struct InsightsCalculator {
         if let prefCode = preferredCode, prefCode == toCode, let prefAmt = preferredAmount {
             return abs(prefAmt)
         }
-        let converted = CurrencyConverter.shared.convert(
+        let converted = converter.convert(
             Decimal(abs(amount)),
             from: fromCode,
             to: toCode,
-            on: date,
-            context: context
+            on: date
         )
         return NSDecimalNumber(decimal: converted).doubleValue
     }
 
     /// Convenience for TransactionItem → target currency
-    private static func txAmount(_ tx: TransactionItem, currencyCode: String, context: ModelContext) -> Double {
+    private static func txAmount(_ tx: TransactionItem, currencyCode: String, converter: CurrencyConverting) -> Double {
         convertedAmount(
             tx.amount,
             from: tx.currencyCode,
@@ -377,7 +376,7 @@ struct InsightsCalculator {
             preferredCode: tx.preferredCurrencyCode,
             preferredAmount: tx.amountInPreferredCurrency,
             on: tx.date,
-            context: context
+            converter: converter
         )
     }
 
@@ -386,7 +385,7 @@ struct InsightsCalculator {
     private static func findHighestExpense(
         _ transactions: [TransactionItem],
         currencyCode: String,
-        context: ModelContext
+        converter: CurrencyConverting
     ) -> HighestExpenseInfo? {
         var highest: (amount: Double, note: String)? = nil
 
@@ -394,7 +393,7 @@ struct InsightsCalculator {
             guard let category = tx.category, !category.isIncome else { continue }
             guard tx.balanceAdjustmentType == nil else { continue }
 
-            let amount = txAmount(tx, currencyCode: currencyCode, context: context)
+            let amount = txAmount(tx, currencyCode: currencyCode, converter: converter)
 
             if highest.map({ amount > $0.amount }) ?? true {
                 let note = tx.note ?? tx.subcategory?.name ?? category.name
@@ -409,7 +408,7 @@ struct InsightsCalculator {
     private static func calculateSubscriptionsTotal(
         _ payments: [ScheduledPayment],
         currencyCode: String,
-        context: ModelContext
+        converter: CurrencyConverting
     ) -> Double {
         var total: Double = 0
         let now = Date()
@@ -418,7 +417,7 @@ struct InsightsCalculator {
             guard payment.isActive else { continue }
             guard payment.isRecurring else { continue }
 
-            let amount = convertedAmount(payment.amount, from: payment.currencyCode, to: currencyCode, on: now, context: context)
+            let amount = convertedAmount(payment.amount, from: payment.currencyCode, to: currencyCode, on: now, converter: converter)
             total += amount
         }
 
@@ -431,7 +430,7 @@ struct InsightsCalculator {
         periodTxns: [TransactionItem],
         interval: DateInterval,
         currencyCode: String,
-        context: ModelContext
+        converter: CurrencyConverting
     ) -> Commitments {
         let now = Date()
 
@@ -444,7 +443,7 @@ struct InsightsCalculator {
         for payment in scheduledPayments {
             guard payment.isActive else { continue }
 
-            let amount = convertedAmount(payment.amount, from: payment.currencyCode, to: currencyCode, on: now, context: context)
+            let amount = convertedAmount(payment.amount, from: payment.currencyCode, to: currencyCode, on: now, converter: converter)
 
             if payment.isRecurring {
                 subscriptionCount += 1
@@ -478,7 +477,7 @@ struct InsightsCalculator {
 
             // Sum expenses in budget currency
             let spent = budgetTxns.reduce(0.0) { sum, tx in
-                sum + txAmount(tx, currencyCode: budget.currencyCode, context: context)
+                sum + txAmount(tx, currencyCode: budget.currencyCode, converter: converter)
             }
 
             let usage = (spent / budget.limitAmount) * 100
@@ -507,7 +506,7 @@ struct InsightsCalculator {
     private static func calculateNeedDistribution(
         _ transactions: [TransactionItem],
         currencyCode: String,
-        context: ModelContext
+        converter: CurrencyConverting
     ) -> NeedDistribution {
         var essential: Double = 0
         var priority: Double = 0
@@ -517,7 +516,7 @@ struct InsightsCalculator {
             guard let category = tx.category, !category.isIncome else { continue }
             guard tx.balanceAdjustmentType == nil else { continue }
 
-            let amount = txAmount(tx, currencyCode: currencyCode, context: context)
+            let amount = txAmount(tx, currencyCode: currencyCode, converter: converter)
 
             let need = tx.subcategory?.need
             switch need {
@@ -547,7 +546,7 @@ struct InsightsCalculator {
         period: DetailPeriod,
         currencyCode: String,
         customRange: DateInterval?,
-        context: ModelContext
+        converter: CurrencyConverting
     ) -> YearComparison? {
         let prevYearInterval = PreviousPeriodHelper.previousInterval(for: period, mode: .year, customRange: customRange)
         let prevYearTxns = filtered.filter { prevYearInterval.contains($0.date) }
@@ -559,7 +558,7 @@ struct InsightsCalculator {
             interval: prevYearInterval,
             grouping: .day,
             currencyCode: currencyCode,
-            context: context
+            converter: converter
         )
 
         let variation = PreviousPeriodHelper.calculateVariation(

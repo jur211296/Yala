@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import SwiftData
 
 struct WeekdaySpending: Identifiable {
     let weekday: Int        // 1=Sunday ... 7=Saturday (Calendar weekday)
@@ -36,7 +35,7 @@ struct WeekdaySpendingCalculator {
     static func calculate(
         transactions: [TransactionItem],
         currencyCode: String,
-        context: ModelContext
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [WeekdaySpending] {
         let calendar = Calendar.current
         var totals: [Int: Double] = [:]
@@ -52,12 +51,11 @@ struct WeekdaySpendingCalculator {
             if tx.preferredCurrencyCode == currencyCode {
                 amount = abs(tx.amountInPreferredCurrency)
             } else {
-                let converted = CurrencyConverter.shared.convert(
+                let converted = converter.convert(
                     Decimal(abs(tx.amount)),
                     from: tx.currencyCode,
                     to: currencyCode,
-                    on: tx.date,
-                    context: context
+                    on: tx.date
                 )
                 amount = NSDecimalNumber(decimal: converted).doubleValue
             }

@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
 Status: **Fase 12 en progreso** — What's New sheet + coach mark tours + onboarding improvements
-Last activity: 2026-03-11 — 75 unit tests added across 7 new test suites (294→369 tests)
+Last activity: 2026-03-11 — CurrencyConverting protocol refactor complete, 68 new tests (369→437 tests, 43 suites)
 
 ### Apple Review History (V1.0)
 
@@ -619,82 +619,23 @@ Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funci
 - `buildAccountChips`, `buildTagChips`, `buildNatureChips` movidos a `FilterChipHelper.swift`
 - Eliminados computed properties duplicados de los 4 tabs
 
-### Refactor Pendiente: CurrencyConverting Protocol (identificado 2026-03-11)
+### Refactor Completado: CurrencyConverting Protocol (2026-03-11) ✅
 
-**Problema:** 12 componentes financieros críticos no tienen tests unitarios porque requieren `ModelContext` en su firma, exclusivamente para `CurrencyConverter.shared.convert(..., context:)`. Crear `ModelContainer` en tests crashea por CloudKit race condition (EXC_BREAKPOINT en iOS 26 simulator).
+**Problema resuelto:** 7 calculators/helpers no tenían tests porque requerían `ModelContext` en firma (CloudKit crash en tests).
 
-**Componentes bloqueados (sin tests):**
+**Solución implementada:**
+- Protocolo `CurrencyConverting` (context-free) con `convert()` y `convertWithLatestRate()`
+- `CurrencyConverter.shared.setContext()` en bootstrap (patrón existente de BudgetAlertService)
+- `MockCurrencyConverter` para tests con `fixedRate` configurable
+- 7 calculators/helpers: `context: ModelContext` → `converter: CurrencyConverting = CurrencyConverter.shared`
+- ~15 call sites actualizados en ViewModels/Views
+- `TrendDataProcessor.processTrendData`: eliminado parámetro `context:` muerto
 
-| Componente | Tipo | Lógica sin testear |
-|------------|------|-------------------|
-| CashFlowCalculator | Calculator | Income vs expense por periodo |
-| BalanceTrendCalculator | Calculator | Tendencia de balance temporal |
-| WeekdaySpendingCalculator | Calculator | Gasto por día de semana |
-| TopSpendingCategoriesCalculator | Calculator | Top categorías por gasto |
-| TopSubcategoriesCalculator | Calculator | Top subcategorías por gasto |
-| BalanceHelper | Helper | Balance total de cuentas |
-| NeedTrendHelper | Helper | Tendencia por necesidad (esencial/prioridad/opcional) |
-| TransactionService | Service | CRUD transacciones + widgets |
-| EntityDeletionService | Service | Eliminación segura de entidades |
-| MerchantMemoryService | Service | Auto-categorización por merchant |
-| CurrencyChangeService | Service | Cambio de divisa principal |
-| ExchangeRateService | Service | Persistencia tipos de cambio |
+**Tests desbloqueados (68 tests, 7 suites nuevas):**
+CashFlowCalculatorTests (18), BalanceTrendCalculatorTests (8), WeekdaySpendingCalculatorTests (8), TopSpendingCategoriesCalculatorTests (10), TopSubcategoriesCalculatorTests (8), BalanceHelperTests (8), NeedTrendHelperTests (8)
 
-**Observación clave:** Todos los calculators tienen un short-circuit path:
-```swift
-if tx.preferredCurrencyCode == currencyCode {
-    val = tx.amountInPreferredCurrency  // ← NO usa context
-} else {
-    val = CurrencyConverter.shared.convert(..., context: context)  // ← USA context
-}
-```
-Si todas las transacciones de test usan la misma moneda, `context` nunca se usa. Pero `ModelContext` es non-optional en la firma, así que ni siquiera compila sin uno.
-
-**Solución propuesta — Protocolo `CurrencyConverting`:**
-```swift
-// En Services/CurrencyConverter.swift
-protocol CurrencyConverting {
-    func convert(_ amount: Decimal, from: String, to: String, on date: Date) -> Decimal
-}
-
-extension CurrencyConverter: CurrencyConverting {
-    func convert(_ amount: Decimal, from: String, to: String, on date: Date) -> Decimal {
-        // Implementación actual que usa ModelContext internamente
-        // (el context se inyecta al CurrencyConverter, no a cada calculator)
-    }
-}
-
-// Mock para tests
-struct MockCurrencyConverter: CurrencyConverting {
-    var fixedRate: Decimal = 1.0
-    func convert(_ amount: Decimal, from: String, to: String, on date: Date) -> Decimal {
-        return amount * fixedRate
-    }
-}
-```
-
-**Cambio en calculators:**
-```swift
-// Antes:
-static func calculateCashFlow(..., context: ModelContext) -> CashFlowSummary
-
-// Después:
-static func calculateCashFlow(..., converter: CurrencyConverting = CurrencyConverter.shared) -> CashFlowSummary
-```
-
-**Impacto del refactor:**
-- ~7 calculators/helpers: cambiar firma (context → converter)
-- ~15 call sites en ViewModels: pasar converter explícito o usar default
-- CurrencyConverter: adoptar protocolo + mover context a propiedad interna
-- **Desbloquea:** ~50+ tests nuevos para toda la capa de cálculo financiero
-- **Esfuerzo:** Medio — mecánico pero amplio (grep + replace + verificar)
-- **Riesgo:** Bajo — es un cambio de firma, no de lógica
-
-**Alternativa más simple (si el refactor es demasiado grande):**
-Resolver el crash de `ModelContainer` en tests directamente. El crash es por la configuración CloudKit del schema. Posibles vías:
-1. Crear un schema mínimo sin CloudKit para tests
-2. Usar `ModelConfiguration(cloudKitDatabase: .none)` si está disponible en iOS 26
-3. Desacoplar el schema de CloudKit en `SwiftDataConfiguration` para entorno de test
+**Componentes aún sin tests (requieren ModelContext propio):**
+TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChangeService, ExchangeRateService
 
 ### Fase 7: Beta Preparation (V1.0 Release) ✅ COMPLETADA
 

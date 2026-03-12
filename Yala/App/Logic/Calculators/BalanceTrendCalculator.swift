@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import SwiftData
 
 struct BalanceTrendCalculator {
     static func calculateTrend(
@@ -14,7 +13,7 @@ struct BalanceTrendCalculator {
         grouping: TrendGrouping,
         interval: DateInterval,
         currencyCode: String,
-        context: ModelContext
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [ChartTransaction] {
         let calendar = Calendar.current
         var groupedData: [Date: (income: Double, expense: Double)] = [:]
@@ -30,12 +29,11 @@ struct BalanceTrendCalculator {
                 val = tx.amountInPreferredCurrency
             } else {
                 let amountDecimal = Decimal(abs(tx.amount))
-                let converted = CurrencyConverter.shared.convert(
+                let converted = converter.convert(
                     amountDecimal,
                     from: tx.currencyCode,
                     to: currencyCode,
-                    on: tx.date,
-                    context: context
+                    on: tx.date
                 )
                 let magnitude = NSDecimalNumber(decimal: converted).doubleValue
                 val = (tx.amount < 0) ? -magnitude : magnitude

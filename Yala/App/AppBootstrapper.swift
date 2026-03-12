@@ -113,7 +113,8 @@ final class AppBootstrapper {
         // 7.5. Clean up stale pending images (>24h)
         SharedContainerService.clearOldPendingImages(olderThan: 86400)
 
-        // 8. Initialize budget alert service
+        // 8. Initialize services with context
+        currencyConverter.setContext(context)
         budgetAlertService.setContext(context)
 
         // 9. Update widget cache

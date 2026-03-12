@@ -42,8 +42,7 @@ final class InsightsViewModel {
         criteria: FilterCriteria,
         currencyCode: String,
         customRange: DateInterval?,
-        comparisonMode: ComparisonMode = .month,
-        context: ModelContext
+        comparisonMode: ComparisonMode = .month
     ) {
         insightData = InsightsCalculator.calculate(
             transactions: transactions,
@@ -57,8 +56,7 @@ final class InsightsViewModel {
             customRange: customRange,
             comparisonMode: comparisonMode,
             tone: currentTone,
-            focus: currentFocus,
-            context: context
+            focus: currentFocus
         )
     }
 

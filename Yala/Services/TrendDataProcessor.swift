@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import SwiftData
 
 /// Unified trend data processor ensuring identical chart behavior
 /// across TrendCardView (Panel) and DetailContainerView (Statistics).
@@ -50,8 +49,7 @@ struct TrendDataProcessor {
         period: DetailPeriod,
         grouping: TrendGrouping,
         interval: DateInterval,
-        currencyCode: String,
-        context: ModelContext
+        currencyCode: String
     ) -> TrendProcessingResult {
         let calendar = Calendar.current
 

@@ -902,7 +902,7 @@ struct CategoriesTabView: View {
             interval: interval,
             currencyCode: defaultCurrencyCode,
             transactionNatures: naturesFilter,
-            context: modelContext
+
         )
 
         // Calculate subcategory spending - filter by category if one is selected
@@ -923,7 +923,7 @@ struct CategoriesTabView: View {
             currencyCode: defaultCurrencyCode,
             categoryFilter: nil,
             transactionNatures: naturesFilter,
-            context: modelContext
+
         )
 
         // Calculate tag spending — respects category/subcategory filters but shows ALL tags
@@ -958,7 +958,7 @@ struct CategoriesTabView: View {
             grouping: needGrouping,
             interval: interval,
             preferredCurrency: preferredCurrency,
-            context: modelContext
+
         )
 
         // Apply list view lock logic after data calculation
@@ -1024,7 +1024,7 @@ struct CategoriesTabView: View {
             interval: previousInterval,
             currencyCode: defaultCurrencyCode,
             transactionNatures: naturesFilter,
-            context: modelContext
+
         )
         previousCategoryTotal = previousCategorySpending.reduce(0) { $0 + $1.amount }
 
@@ -1053,7 +1053,7 @@ struct CategoriesTabView: View {
             currencyCode: defaultCurrencyCode,
             categoryFilter: nil,
             transactionNatures: naturesFilter,
-            context: modelContext
+
         )
         previousSubcategoryTotal = previousSubcategorySpending.reduce(0) { $0 + $1.amount }
 
@@ -1131,7 +1131,7 @@ struct CategoriesTabView: View {
             grouping: needGrouping,
             interval: previousInterval,
             preferredCurrency: preferredCurrency,
-            context: modelContext
+
         )
 
         // Calculate totals by nature for previous period

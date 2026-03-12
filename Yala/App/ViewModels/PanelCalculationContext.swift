@@ -23,8 +23,8 @@ struct PanelCalculationContext {
     /// User's preferred currency code
     let defaultCurrencyCode: String
 
-    /// SwiftData model context for any additional fetches
-    let modelContext: ModelContext
+    /// Currency converter for cross-currency calculations
+    let converter: CurrencyConverting
 
     // MARK: - Computed Filter Data
 
