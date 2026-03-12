@@ -183,6 +183,11 @@ class SessionState {
     /// Selected transaction natures for filtering income/expense (empty = all)
     var selectedTransactionNatures: Set<TransactionNature> = []
 
+    /// Returns the single active filter nature, or nil if none or multiple are selected
+    var activeFilterNature: TransactionNature? {
+        selectedTransactionNatures.count == 1 ? selectedTransactionNatures.first : nil
+    }
+
     /// Amount filter condition
     var amountCondition: AmountFilterCondition = .any { didSet { resetExcludeModeIfNeeded() } }
 

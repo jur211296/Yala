@@ -40,8 +40,8 @@ final class StatisticsViewModel: Filterable {
         case lockedExpense  // Locked to expense (category/need filters or only expense filter)
     }
 
-    // Check if category/subcategory/need filters require expense mode
-    var hasExpenseOnlyFilters: Bool {
+    // Check if any category/subcategory/need filters are active
+    var hasCategoryFilters: Bool {
         !selectedCategories.isEmpty || !selectedSubcategories.isEmpty || !selectedNeeds.isEmpty
     }
 
@@ -61,11 +61,11 @@ final class StatisticsViewModel: Filterable {
             } else if selectedTransactionNatures.contains(.expense) {
                 selectedMetric = .expense
             }
-        } else if selectedTransactionNatures.isEmpty && !hasExpenseOnlyFilters {
-            // No chip and no expense-only filters = balance
+        } else if selectedTransactionNatures.isEmpty && !hasCategoryFilters {
+            // No chip and no category filters = balance
             selectedMetric = .balance
         }
-        // Note: if hasExpenseOnlyFilters, the chip should have been set by the view's onChange
+        // Note: if hasCategoryFilters, the chip should have been set by the view's onChange
     }
 
     /// Called when user manually selects a metric (legacy - selector now sets chips directly)

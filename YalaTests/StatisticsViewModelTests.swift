@@ -120,21 +120,21 @@ struct StatisticsViewModelTests {
         #expect(ctx.transactionType == nil)
     }
 
-    // MARK: - hasExpenseOnlyFilters
+    // MARK: - hasCategoryFilters
 
-    @MainActor @Test func hasExpenseOnlyFilters_falseWhenEmpty() {
+    @MainActor @Test func hasCategoryFilters_falseWhenEmpty() {
         let vm = makeVM()
         // Reset all filters from SessionState
         vm.selectedCategories.removeAll()
         vm.selectedSubcategories.removeAll()
         vm.selectedNeeds.removeAll()
-        #expect(vm.hasExpenseOnlyFilters == false)
+        #expect(vm.hasCategoryFilters == false)
     }
 
-    @MainActor @Test func hasExpenseOnlyFilters_trueWithNeeds() {
+    @MainActor @Test func hasCategoryFilters_trueWithNeeds() {
         let vm = makeVM()
         vm.selectedNeeds = [.essential]
-        #expect(vm.hasExpenseOnlyFilters == true)
+        #expect(vm.hasCategoryFilters == true)
     }
 
     // MARK: - clearFilters

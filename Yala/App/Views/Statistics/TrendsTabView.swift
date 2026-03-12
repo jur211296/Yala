@@ -550,10 +550,10 @@ struct TrendsTabView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// Check if expense-only filters are active (category/subcategory/nature)
+    /// Check if any category/subcategory/need filters are active
     /// In exclude mode, these filters remove items rather than restricting to them,
-    /// so they don't imply expense-only context
-    private var hasExpenseOnlyFilters: Bool {
+    /// so they don't imply a specific nature context
+    private var hasCategoryFilters: Bool {
         guard !sessionState.isExcludeMode else { return false }
         return !sessionState.selectedCategoryIDs.isEmpty
             || !sessionState.selectedSubcategoryIDs.isEmpty
@@ -575,7 +575,14 @@ struct TrendsTabView: View {
 
     private func metricButton(for metric: TrendMetric) -> some View {
         let isSelected = trendsViewModel.selectedMetric == metric
-        let isBlocked = hasExpenseOnlyFilters && metric != .expense
+        let isBlocked: Bool = {
+            guard hasCategoryFilters else { return false }
+            guard let nature = sessionState.activeFilterNature else { return false }
+            switch nature {
+            case .expense: return metric != .expense
+            case .income: return metric != .income
+            }
+        }()
 
         return Button {
             if isBlocked {
