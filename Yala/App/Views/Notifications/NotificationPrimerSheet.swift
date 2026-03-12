@@ -100,6 +100,8 @@ struct NotificationPrimerSheet: View {
                     }
                     try modelContext.save()
                     await NotificationService.shared.rescheduleAllNotifications(items: items)
+                    // Enable budget alerts global toggle so BudgetAlertService activates
+                    UserDefaults.standard.set(true, forKey: "budgetAlertsEnabled")
                 } catch {
                     #if DEBUG
                     print("NotificationPrimerSheet: Error activating notifications: \(error)")
