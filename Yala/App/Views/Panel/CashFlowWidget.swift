@@ -436,7 +436,7 @@ struct CashFlowWidget: View {
                             .foregroundStyle(
                                 bar.net >= 0 ? Color.incomeGraph.gradient : Color.expenseGraph.gradient
                             )
-                            .cornerRadius(DS.Radius.xs)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
 
                             // Data label
                             if showLabels {
@@ -462,7 +462,7 @@ struct CashFlowWidget: View {
                                     y: .value("Expense", data.expense)
                                 )
                                 .foregroundStyle(Color.expenseGraph.gradient)
-                                .cornerRadius(DS.Radius.xs)
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
 
                                 // Data label
                                 if showLabels {
@@ -484,7 +484,7 @@ struct CashFlowWidget: View {
                                     y: .value("Income", data.income)
                                 )
                                 .foregroundStyle(Color.incomeGraph.gradient)
-                                .cornerRadius(DS.Radius.xs)
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
 
                                 // Data label
                                 if showLabels {
@@ -506,7 +506,7 @@ struct CashFlowWidget: View {
                                     y: .value("Income", data.income)
                                 )
                                 .foregroundStyle(Color.incomeGraph.gradient)
-                                .cornerRadius(DS.Radius.xs)
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
 
                                 // Income data label
                                 if showLabels, data.income > 0 {
@@ -527,7 +527,7 @@ struct CashFlowWidget: View {
                                     y: .value("Expense", -data.expense)
                                 )
                                 .foregroundStyle(Color.expenseGraph.gradient)
-                                .cornerRadius(DS.Radius.xs)
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
 
                                 // Expense data label
                                 if showLabels, data.expense > 0 {

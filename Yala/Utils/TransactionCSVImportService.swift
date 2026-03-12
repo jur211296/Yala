@@ -867,7 +867,7 @@ enum TransactionCSVImportService {
         if s.isEmpty { return s }
 
         // Eliminamos espacios internos para simplificar.
-        s = s.replacingOccurrences(of: " ", with: "")
+        s = s.replacing(" ", with: "")
 
         // Detectamos el último separador decimal potencial.
         let lastComma = s.lastIndex(of: ",")

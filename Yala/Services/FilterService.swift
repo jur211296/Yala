@@ -121,21 +121,6 @@ struct FilterCriteria: Hashable {
     }
 }
 
-// MARK: - Filter Type Enum
-
-/// Types of filters for UI callbacks (e.g., when removing a filter chip)
-enum FilterType {
-    case accounts
-    case categories
-    case subcategories
-    case tags
-    case needs
-    case currencies
-    case transactionType
-    case amount
-    case search
-}
-
 // MARK: - Filter Service
 
 /// Centralized service for filtering transactions.

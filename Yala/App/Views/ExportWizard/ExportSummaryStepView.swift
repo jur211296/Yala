@@ -292,7 +292,7 @@ struct ExportSummaryStepView: View {
         // Ejecutamos en una Task para no bloquear la UI
         Task {
             // Pequeño delay artificial para que se vea el spinner si es muy rápido
-            try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5s
+            try? await Task.sleep(for: .seconds(0.5))
 
             do {
                 let result = try TransactionsExportService.export(

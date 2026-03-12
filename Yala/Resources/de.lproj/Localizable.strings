@@ -2022,29 +2022,18 @@
 "notifications.time" = "Uhrzeit";
 "notifications.active" = "Aktiv";
 
-// Weekly report config
-"notifications.weeklyReportConfig" = "Was soll im Bericht enthalten sein?";
-"notifications.includeBalance" = "Aktueller Saldo";
-"notifications.includeExpenses" = "Gesamtausgaben";
-"notifications.includeIncome" = "Gesamteinnahmen";
-"notifications.includeTopCategory" = "Top Ausgabenkategorie";
-
 // Default notifications
 "notifications.endOfDay.name" = "Tagesende";
 "notifications.endOfDay.text" = "Wie war dein Tag? 👋 Erzähl uns von deinen Ausgaben";
 "notifications.lunchTime.name" = "Mittagszeit";
 "notifications.lunchTime.text" = "Was hast du gegessen? 🍽️ Notier es, solange du es im Kopf hast";
 "notifications.weeklyReport.name" = "Wochenbericht";
-"notifications.weeklyReport.text" = "Dein Wochenrückblick 📊";
 "notifications.scheduledPayments.name" = "Geplante Zahlungen";
-"notifications.scheduledPayments.text" = "Du hast anstehende Zahlungen";
 
 // Empty state
 "notifications.empty.title" = "Keine Benachrichtigungen";
 "notifications.empty.message" = "Erstelle Benachrichtigungen für Erinnerungen";
 
-// Character count
-"notifications.charactersRemaining" = "%d Zeichen übrig";
 "notifications.testNotification" = "Erinnerung testen";
 
 // Report data types
@@ -2102,11 +2091,6 @@
 "notifications.report.empty.income" = "Keine Einnahmen in diesem Zeitraum — alles ruhig";
 "notifications.report.empty.topCategory" = "Keine Ausgaben! Dein Geldbeutel hat sich ausgeruht 😊";
 
-// Test report samples
-"notifications.testReport.balance" = "Dein aktueller Saldo: 1.250,00 €";
-"notifications.testReport.expenses" = "Du hast 350,00 € ausgegeben";
-"notifications.testReport.income" = "Du hast 2.500,00 € erhalten";
-"notifications.testReport.topCategory" = "Dein größter Ausgabeposten: Essen (180,00 €)";
 "notifications.testReport.balance.daily" = "Dein Saldo heute: $1.250,00";
 "notifications.testReport.balance.weekly" = "Dein Saldo diese Woche: $1.250,00";
 "notifications.testReport.balance.monthly" = "Dein Saldo diesen Monat: $1.250,00";

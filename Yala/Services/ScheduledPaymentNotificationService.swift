@@ -8,7 +8,6 @@
 
 import Foundation
 import SwiftData
-import UserNotifications
 
 /// Service for checking scheduled payments and sending personalized notifications
 @MainActor

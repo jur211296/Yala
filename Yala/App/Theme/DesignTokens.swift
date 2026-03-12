@@ -210,6 +210,11 @@ enum DS {
 
     /// Pre-configured shadow styles.
     enum Shadow {
+        /// Subtle shadow for settings cards and containers
+        static let subtle: (color: Color, radius: CGFloat, x: CGFloat, y: CGFloat) = (
+            .black.opacity(0.04), 12, 0, 6
+        )
+
         /// Small shadow for subtle elevation (cards)
         static let small: (color: Color, radius: CGFloat, x: CGFloat, y: CGFloat) = (
             .black.opacity(0.05), 10, 0, 5
@@ -472,6 +477,12 @@ enum DS {
 // MARK: - View Extensions
 
 extension View {
+    /// Apply subtle shadow for settings cards and containers
+    func dsSubtleShadow() -> some View {
+        let s = DS.Shadow.subtle
+        return self.shadow(color: s.color, radius: s.radius, x: s.x, y: s.y)
+    }
+
     /// Apply standard card shadow (small elevation)
     func dsCardShadow() -> some View {
         let s = DS.Shadow.small

@@ -3648,11 +3648,6 @@ enum L10n {
             static var detail: String { ls("tips.voice.detail", comment: "") }
         }
 
-        enum Camera {
-            static var title: String { ls("tips.camera.title", comment: "") }
-            static var detail: String { ls("tips.camera.detail", comment: "") }
-        }
-
         enum Favorites {
             static var title: String { ls("tips.favorites.title", comment: "") }
             static var detail: String { ls("tips.favorites.detail", comment: "") }
@@ -3676,11 +3671,6 @@ enum L10n {
         enum Export {
             static var title: String { ls("tips.export.title", comment: "") }
             static var detail: String { ls("tips.export.detail", comment: "") }
-        }
-
-        enum FaceID {
-            static var title: String { ls("tips.faceID.title", comment: "") }
-            static var detail: String { ls("tips.faceID.detail", comment: "") }
         }
 
         enum Siri {

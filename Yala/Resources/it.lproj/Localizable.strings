@@ -2024,29 +2024,18 @@
 "notifications.time" = "Ora";
 "notifications.active" = "Attiva";
 
-// Weekly report config
-"notifications.weeklyReportConfig" = "Cosa includere nel report?";
-"notifications.includeBalance" = "Saldo attuale";
-"notifications.includeExpenses" = "Totale spese";
-"notifications.includeIncome" = "Totale entrate";
-"notifications.includeTopCategory" = "Categoria più spesa";
-
 // Default notifications
 "notifications.endOfDay.name" = "Fine giornata";
 "notifications.endOfDay.text" = "Com'è andata oggi? 👋 Condividi le tue spese con noi";
 "notifications.lunchTime.name" = "Ora di pranzo";
 "notifications.lunchTime.text" = "Cosa hai mangiato? 🍽️ Annotalo finché lo ricordi";
 "notifications.weeklyReport.name" = "Report settimanale";
-"notifications.weeklyReport.text" = "Ecco il tuo riepilogo settimanale 📊";
 "notifications.scheduledPayments.name" = "Pagamenti pianificati";
-"notifications.scheduledPayments.text" = "Hai pagamenti in scadenza";
 
 // Empty state
 "notifications.empty.title" = "Nessuna notifica";
 "notifications.empty.message" = "Crea notifiche per ricevere promemoria";
 
-// Character count
-"notifications.charactersRemaining" = "%d caratteri rimanenti";
 "notifications.testNotification" = "Prova promemoria";
 
 // Report data types
@@ -2104,11 +2093,6 @@
 "notifications.report.empty.income" = "Nessuna entrata questo periodo — tutto tranquillo";
 "notifications.report.empty.topCategory" = "Nessuna spesa! Il tuo portafoglio si è riposato 😊";
 
-// Test report samples
-"notifications.testReport.balance" = "Il tuo saldo attuale: € 1.250,00";
-"notifications.testReport.expenses" = "Hai speso € 350,00 in questo periodo";
-"notifications.testReport.income" = "Hai ricevuto € 2.500,00 in questo periodo";
-"notifications.testReport.topCategory" = "La tua spesa maggiore: Cibo (€ 180,00)";
 "notifications.testReport.balance.daily" = "Il tuo saldo oggi: $1.250,00";
 "notifications.testReport.balance.weekly" = "Il tuo saldo questa settimana: $1.250,00";
 "notifications.testReport.balance.monthly" = "Il tuo saldo questo mese: $1.250,00";

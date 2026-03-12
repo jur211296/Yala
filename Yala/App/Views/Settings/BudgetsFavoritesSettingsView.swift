@@ -106,7 +106,7 @@ struct BudgetsFavoritesSettingsView: View {
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .stroke(theme.accent.opacity(0.2), lineWidth: 1)
             )
-            .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
+            .dsSubtleShadow()
         }
     }
 
@@ -219,7 +219,7 @@ struct BudgetsFavoritesSettingsView: View {
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .stroke(DS.Colors.borderDark, lineWidth: 0.8)
             )
-            .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
+            .dsSubtleShadow()
         }
     }
 
@@ -300,7 +300,7 @@ struct BudgetsFavoritesSettingsView: View {
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .stroke(DS.Colors.borderDark, lineWidth: 0.8)
             )
-            .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
+            .dsSubtleShadow()
             .environment(\.editMode, .constant(.active))
         }
     }

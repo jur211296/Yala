@@ -2024,29 +2024,18 @@
 "notifications.time" = "Heure";
 "notifications.active" = "Active";
 
-// Weekly report config
-"notifications.weeklyReportConfig" = "Que inclure dans le rapport ?";
-"notifications.includeBalance" = "Solde actuel";
-"notifications.includeExpenses" = "Total des dépenses";
-"notifications.includeIncome" = "Total des revenus";
-"notifications.includeTopCategory" = "Catégorie la plus dépensière";
-
 // Default notifications
 "notifications.endOfDay.name" = "Fin de journée";
 "notifications.endOfDay.text" = "Comment s'est passée ta journée ? 👋 Partage tes dépenses avec nous";
 "notifications.lunchTime.name" = "Heure du déjeuner";
 "notifications.lunchTime.text" = "Qu'as-tu mangé ? 🍽️ Note-le tant que c'est frais";
 "notifications.weeklyReport.name" = "Rapport hebdomadaire";
-"notifications.weeklyReport.text" = "Voici ton bilan de la semaine 📊";
 "notifications.scheduledPayments.name" = "Paiements planifiés";
-"notifications.scheduledPayments.text" = "Tu as des paiements à venir";
 
 // Empty state
 "notifications.empty.title" = "Aucune notification";
 "notifications.empty.message" = "Crée des notifications pour recevoir des rappels";
 
-// Character count
-"notifications.charactersRemaining" = "%d caractères restants";
 "notifications.testNotification" = "Tester le rappel";
 
 // Report data types
@@ -2104,11 +2093,6 @@
 "notifications.report.empty.income" = "Pas de revenus cette période — tout est calme";
 "notifications.report.empty.topCategory" = "Pas de dépenses ! Ton portefeuille s'est reposé 😊";
 
-// Test report samples
-"notifications.testReport.balance" = "Ton solde actuel : 1 250,00 €";
-"notifications.testReport.expenses" = "Tu as dépensé 350,00 € cette période";
-"notifications.testReport.income" = "Tu as reçu 2 500,00 € cette période";
-"notifications.testReport.topCategory" = "Ta plus grosse dépense : Alimentation (180,00 €)";
 "notifications.testReport.balance.daily" = "Ton solde aujourd'hui : 1 250,00 $";
 "notifications.testReport.balance.weekly" = "Ton solde cette semaine : 1 250,00 $";
 "notifications.testReport.balance.monthly" = "Ton solde ce mois-ci : 1 250,00 $";

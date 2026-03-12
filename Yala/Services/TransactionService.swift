@@ -64,37 +64,10 @@ final class TransactionService {
         }
     }
 
-    /// Inserts multiple transactions and saves
-    /// - Parameter transactions: The transactions to insert
-    func createMultiple(_ transactions: [TransactionItem]) throws {
-        let context = try requireContext()
-        for transaction in transactions {
-            context.insert(transaction)
-        }
-        try context.save()
-
-        // Update widgets
-        WidgetDataCache.updateCache(context: context)
-        SessionState.shared.incrementDataVersion()
-
-        // Check budget alerts
-        Task {
-            await BudgetAlertService.shared.checkBudgetsAndNotify()
-        }
-    }
-
     // MARK: - Update Operations
 
     /// Saves changes to a transaction (just save, transaction is already in context)
     func save(_ transaction: TransactionItem) throws {
-        let context = try requireContext()
-        try context.save()
-        WidgetDataCache.updateCache(context: context)
-        SessionState.shared.incrementDataVersion()
-    }
-
-    /// Saves changes to multiple transactions (just save, transactions already in context)
-    func saveAll() throws {
         let context = try requireContext()
         try context.save()
         WidgetDataCache.updateCache(context: context)

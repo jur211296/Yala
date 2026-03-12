@@ -40,7 +40,7 @@ struct TransactionTypeSegmentedView: View {
             Capsule()
                 .stroke(Color.primary.opacity(0.06), lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 4)
+        .shadow(color: DS.Shadow.subtle.color, radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
     }
 }
 

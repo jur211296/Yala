@@ -547,7 +547,7 @@ struct CategoriesPieWidget: View {
                     innerRadius: .ratio(innerRadiusRatio),
                     angularInset: 1.5
                 )
-                .cornerRadius(DS.Radius.xs)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
                 .foregroundStyle(Color(hex: item.colorHex))
                 .opacity(isDimmed(item) ? 0.3 : 1.0)
             }

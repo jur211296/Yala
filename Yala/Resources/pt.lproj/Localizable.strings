@@ -2022,29 +2022,18 @@
 "notifications.time" = "Horário";
 "notifications.active" = "Ativa";
 
-// Weekly report config
-"notifications.weeklyReportConfig" = "O que incluir no relatório?";
-"notifications.includeBalance" = "Saldo atual";
-"notifications.includeExpenses" = "Total de gastos";
-"notifications.includeIncome" = "Total de receitas";
-"notifications.includeTopCategory" = "Categoria com mais gastos";
-
 // Default notifications
 "notifications.endOfDay.name" = "Fim do dia";
 "notifications.endOfDay.text" = "Como foi seu dia? 👋 Conta pra gente seus gastos";
 "notifications.lunchTime.name" = "Hora do almoço";
 "notifications.lunchTime.text" = "O que você comeu? 🍽️ Anota enquanto está fresco";
 "notifications.weeklyReport.name" = "Relatório semanal";
-"notifications.weeklyReport.text" = "Veja como foi sua semana 📊";
 "notifications.scheduledPayments.name" = "Pagamentos agendados";
-"notifications.scheduledPayments.text" = "Você tem pagamentos próximos";
 
 // Empty state
 "notifications.empty.title" = "Sem notificações";
 "notifications.empty.message" = "Crie notificações para receber lembretes";
 
-// Character count
-"notifications.charactersRemaining" = "%d caracteres restantes";
 "notifications.testNotification" = "Testar lembrete";
 
 // Report data types
@@ -2102,11 +2091,6 @@
 "notifications.report.empty.income" = "Sem receitas neste período — tudo calmo";
 "notifications.report.empty.topCategory" = "Sem gastos! Sua carteira descansou 😊";
 
-// Test report samples
-"notifications.testReport.balance" = "Seu saldo atual: R$ 1.250,00";
-"notifications.testReport.expenses" = "Você gastou R$ 350,00 neste período";
-"notifications.testReport.income" = "Você recebeu R$ 2.500,00 neste período";
-"notifications.testReport.topCategory" = "Seu maior gasto: Alimentação (R$ 180,00)";
 "notifications.testReport.balance.daily" = "Seu saldo hoje: $1.250,00";
 "notifications.testReport.balance.weekly" = "Seu saldo esta semana: $1.250,00";
 "notifications.testReport.balance.monthly" = "Seu saldo este mês: $1.250,00";

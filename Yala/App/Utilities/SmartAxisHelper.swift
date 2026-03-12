@@ -146,10 +146,10 @@ enum SmartAxisHelper {
                 } else {
                     formatter.dateFormat = "MMM"  // "ene"
                 }
-                return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
+                return formatter.string(from: date).lowercased().replacing(".", with: "")
             case .weekOfYear:
                 formatter.dateFormat = "d MMM"  // "15 dic"
-                return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
+                return formatter.string(from: date).lowercased().replacing(".", with: "")
             default:
                 break  // Fall through to span-based logic for day
             }
@@ -178,7 +178,7 @@ enum SmartAxisHelper {
         }
 
         // Remove trailing periods from abbreviations (e.g., "ene." -> "ene")
-        return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
+        return formatter.string(from: date).lowercased().replacing(".", with: "")
     }
 
     // MARK: - Calendar Unit Centering

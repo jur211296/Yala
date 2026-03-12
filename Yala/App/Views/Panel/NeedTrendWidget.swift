@@ -445,7 +445,7 @@ struct NeedTrendChartView: View {
                             y: .value("Monto", item.amount)
                         )
                         .foregroundStyle(item.need.color.gradient)
-                        .cornerRadius(DS.Radius.xs)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
                                             }
                 } else {
                     BarMark(
@@ -453,7 +453,7 @@ struct NeedTrendChartView: View {
                         y: .value("Monto", item.amount)
                     )
                     .foregroundStyle(item.need.color.gradient)
-                    .cornerRadius(DS.Radius.xs)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
                                     }
             }
 

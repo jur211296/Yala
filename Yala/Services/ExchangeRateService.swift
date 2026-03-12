@@ -108,7 +108,7 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
                 try await fetchAndPersistRates(
                     from: chunkStart, to: chunkEnd, symbols: requiredCurrencies, context: context)
                 // Small delay between requests to avoid rate limiting
-                try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
+                try? await Task.sleep(for: .seconds(0.5))
             } catch {
                 #if DEBUG
                 print(
@@ -207,7 +207,7 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
             do {
                 try await fetchAndPersistRates(from: range.start, to: range.end, context: context)
                 // Small delay between requests
-                try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3 seconds
+                try? await Task.sleep(for: .seconds(0.3))
             } catch {
                 #if DEBUG
                 print("ExchangeRateService: Error refreshing range \(range): \(error.localizedDescription)")
@@ -235,7 +235,7 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
             do {
                 try await fetchAndPersistRates(from: range.start, to: range.end, context: context)
                 // Small delay between requests
-                try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3 seconds
+                try? await Task.sleep(for: .seconds(0.3))
             } catch {
                 #if DEBUG
                 print(

@@ -754,7 +754,7 @@ struct MorePlaceholderView: View {
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
             )
-            .shadow(color: Color.black.opacity(0.04), radius: DS.Radius.md, x: 0, y: 6)
+            .dsSubtleShadow()
         }
     }
 
@@ -836,7 +836,7 @@ struct MorePlaceholderView: View {
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                 .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
         )
-        .shadow(color: Color.black.opacity(0.04), radius: DS.Radius.md, x: 0, y: 6)
+        .dsSubtleShadow()
     }
 }
 

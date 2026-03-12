@@ -281,7 +281,7 @@ struct BudgetChartsView: View {
                         y: .value("Spent", item.spent)
                     )
                     .foregroundStyle(item.spent >= item.limit ? Color.hotPink.gradient : Color.expenseGraph.gradient)
-                    .cornerRadius(DS.Radius.xs)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
 
                     // Data label on top of each bar
                     PointMark(

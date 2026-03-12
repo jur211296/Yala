@@ -33,7 +33,7 @@ struct WeekdayBarChart: View {
                 y: .value("Amount", item.average)
             )
             .foregroundStyle(item.weekday == maxWeekday ? Color.expenseGraph.gradient : Color.expenseGraph.opacity(0.3).gradient)
-            .cornerRadius(DS.Radius.xs)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
             .annotation(position: .top, spacing: 2) {
                 if item.average > 0 {
                     Text(YalaFormatter.compactCurrency(value: item.average))
