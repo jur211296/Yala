@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-12] b63b56d feat: add consent flow for Smart Insights + settings reorganization
 - [2026-03-12] d48946f test: extract 12 private methods to internal + add 85 tests across 5 suites
 - [2026-03-12] 7631a6a test: add 48 tests across 5 new suites covering critical gaps
 - [2026-03-12] e1ed94b test: add 89 tests across 11 new suites covering all critical gaps
@@ -746,9 +747,11 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 ## Session Continuity
 
 Last session: 2026-03-12
-Stopped at: Extracted 12 private methods to internal + added 85 tests across 5 suites (d48946f) — 1005 tests, 90 suites
-Next step: Continue with next bug or Fase 12 item from /next
+Stopped at: Consent flow for Smart Insights + settings reorganization (b63b56d)
+Next step: Continue with next Fase 12 item from /next
 Resume context:
-- Extracted pure logic from: TransactionsExportService(4), VisionDraftFactory(3), ScreenshotListExtractor(1), ScreenshotSingleExtractor(1), ReportNotificationService(3)
-- Total: 1005 tests, 90 suites, 0 failures
-- Remaining untested: medium/low risk VMs (selectors, settings lists), system-integration services (iCloud, StoreKit, OCR)
+- Smart Insights toggle now shows consent alert (Apple 5.1.1(i))
+- AI features section moved to dedicated "Funcionalidades con IA" in ProfileView
+- Insights banner redirects to Profile instead of setting consent directly
+- Onboarding option 3 renamed "Saldo real" (was "Control total")
+- Tone/focus selectors moved from Personalization into ProfileView's AI Features section
