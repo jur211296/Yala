@@ -454,6 +454,7 @@ struct CashFlowWidget: View {
                         }
                     } else {
                         let showLabels = activeChartData.count <= Self.maxBarsForLabels
+                            && (hasOnlyExpenses || hasOnlyIncome)
                         ForEach(activeChartData) { data in
                             if hasOnlyExpenses {
                                 // Only expenses mode: show expenses as positive bars upward
