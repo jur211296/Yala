@@ -57,8 +57,18 @@ enum SwiftDataConfiguration {
         ])
     }
 
+    /// Detect if running inside a test host (XCTest sets this automatically)
+    static var isRunningTests: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    }
+
     /// ModelConfiguration - CloudKit enabled automatically if iCloud account available
     static var configuration: ModelConfiguration {
+        // In tests: in-memory, no CloudKit — avoids SEGV on simulators without iCloud
+        if isRunningTests {
+            return ModelConfiguration(isStoredInMemoryOnly: true)
+        }
+
         if isICloudAvailable() {
             return ModelConfiguration(
                 databaseName,
