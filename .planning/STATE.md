@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
 Status: **Fase 12 en progreso** — What's New sheet + coach mark tours + onboarding improvements
-Last activity: 2026-03-12 — Extract 12 private methods + 85 tests (920→1005 tests, 85→90 suites)
+Last activity: 2026-03-12 — Full review fixes: @MainActor, reduceMotion, L10n, a11y, DS, Date.now
 
 ### Apple Review History (V1.0)
 
@@ -43,21 +43,16 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-12] 7d02809 chore: address medium/low review issues — dead code, deprecated APIs, DS tokens
+- [2026-03-12] fba23e2 refactor: Date() → Date.now across codebase (H7)
+- [2026-03-12] 7f518f8 fix: address critical and high review issues (C1-C3, H1-H11)
+- [2026-03-12] baf130f chore: update Claude commands, settings, and agent configs
 - [2026-03-12] b63b56d feat: add consent flow for Smart Insights + settings reorganization
 - [2026-03-12] d48946f test: extract 12 private methods to internal + add 85 tests across 5 suites
 - [2026-03-12] 7631a6a test: add 48 tests across 5 new suites covering critical gaps
 - [2026-03-12] e1ed94b test: add 89 tests across 11 new suites covering all critical gaps
 - [2026-03-11] cd0895b fix: update FilterServiceTests to match activeFilterCount including searchText
 - [2026-03-11] d186dfa refactor: decouple currency conversion from ModelContext + add 68 tests
-- [2026-03-11] acd61b4 test: add 75 unit tests across 7 new test suites
-- [2026-03-11] 8474ddf fix: re-verify Pro subscription on foreground resume (BUG-56)
-- [2026-03-11] 701d743 fix: FAB always shows 3 registration options with consent flow (BUG-55)
-- [2026-03-11] f890824 feat: integrate TelemetryDeck analytics with 12 privacy-first events (BUG-54)
-- [2026-03-11] 56968cb fix: add data labels to CashFlow chart bars when ≤10 data points (BUG-52)
-- [2026-03-11] bab15ee fix: adaptive sheet detents for iPad/Mac + enable native iPad support (BUG-45, BUG-46)
-- [2026-03-11] e1f1a70 fix: defer notification primer check to prevent success animation flicker (BUG-47)
-- [2026-03-11] b28c7c2 fix: replace compact DatePickers with DateFieldButton + confirm/cancel sheet (BUG-50)
-- [2026-03-10] ecc7758 fix: defer panel actions when UI is blocked by Face ID or inbox modal (BUG-42, BUG-43)
 - [2026-03-10] a905cb1 feat: BudgetChartsView — data labels, local period navigator, drag-scrub interaction
 - [2026-03-10] 720ffe3 refactor: rename Nature → Need across codebase
 - [2026-03-10] 0f85f55 fix: export allTime date range, transaction recurring save flow, validation toast
@@ -747,11 +742,12 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 ## Session Continuity
 
 Last session: 2026-03-12
-Stopped at: Consent flow for Smart Insights + settings reorganization (b63b56d)
+Stopped at: Full review medium/low issues addressed (7d02809) — dead code, deprecated APIs, DS shadow tokens
 Next step: Continue with next Fase 12 item from /next
 Resume context:
-- Smart Insights toggle now shows consent alert (Apple 5.1.1(i))
-- AI features section moved to dedicated "Funcionalidades con IA" in ProfileView
-- Insights banner redirects to Profile instead of setting consent directly
-- Onboarding option 3 renamed "Saldo real" (was "Control total")
-- Tone/focus selectors moved from Personalization into ProfileView's AI Features section
+- Full review (FULL-REVIEW-2026-03-12.md) completed: 3 critical + 17 high + 27 medium/low issues fixed
+- Dead code: BackgroundJobs, createMultiple, saveAll, clearPendingImages, FilterType, L10n Camera/FaceID
+- Deprecated APIs: .cornerRadius→.clipShape, Task.sleep(nanoseconds:)→Task.sleep(for:), .replacingOccurrences→.replacing
+- DS tokens: DS.Shadow.subtle + dsSubtleShadow() replacing 18 hardcoded shadows
+- Stale L10n: 12 orphan keys removed from de/fr/it/pt
+- Preexisting test compile error in TranscriptionParserServiceTests (@MainActor) — needs separate fix
