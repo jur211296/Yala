@@ -17,6 +17,8 @@ struct TrendChartView: View {
     let period: DetailPeriod
     var chartHeight: CGFloat = 220
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     @AppStorage("averageLineMode") private var averageLineMode: Int = 1
     @State private var draggingDate: Date?  // For transient drag state
 
@@ -24,7 +26,7 @@ struct TrendChartView: View {
         // Disable animations completely to prevent interpolation between data states
         // This fixes the visual glitch when switching between Balance/Income/Expense
         liquidTrendChart
-            .animation(nil, value: trendPoints.count)
+            .dsAnimation(nil, value: trendPoints.count, reduceMotion: reduceMotion)
     }
 
     // MARK: - Gráfico Trend (Financial Grid Style)
@@ -45,7 +47,7 @@ struct TrendChartView: View {
                 endPoint: .bottom
             )
 
-            let today = Calendar.current.startOfDay(for: Date())
+            let today = Calendar.current.startOfDay(for: Date.now)
             let calendar = Calendar.current
 
             // --- USE PROCESSED DATA ---

@@ -16,6 +16,7 @@ import SwiftUI
 struct RecordsTabView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Bindable var viewModel: RecordsViewModel
     let accounts: [Account]
@@ -117,7 +118,7 @@ struct RecordsTabView: View {
                 // Income button (hidden in expenses-only mode)
                 if !sessionState.isExpensesOnlyMode {
                     Button {
-                        withAnimation {
+                        dsWithAnimation(reduceMotion) {
                             // SSOT: viewModel.selectedTransactionNatures writes to SessionState.shared
                             if isIncomeFiltered {
                                 viewModel.selectedTransactionNatures.removeAll()
@@ -145,7 +146,7 @@ struct RecordsTabView: View {
 
                 // Expense button
                 Button {
-                    withAnimation {
+                    dsWithAnimation(reduceMotion) {
                         // SSOT: viewModel.selectedTransactionNatures writes to SessionState.shared
                         if isExpenseFiltered {
                             // In expenses-only mode, don't allow clearing the expense filter

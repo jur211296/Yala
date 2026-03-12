@@ -18,6 +18,8 @@ enum FilterChipIndicator {
 
 /// Reusable filter chip showing applied filter with clear action
 struct FilterChipView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     let text: String
     var indicator: FilterChipIndicator = .none
     var isExcludeMode: Bool = false
@@ -41,7 +43,7 @@ struct FilterChipView: View {
                 .lineLimit(1)
 
             Button {
-                withAnimation {
+                dsWithAnimation(reduceMotion) {
                     onClear()
                 }
             } label: {

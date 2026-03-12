@@ -497,6 +497,7 @@ struct AccountFormView: View {
                                 )
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.Accessibility.selectColor)
                     }
 
                     Text(L10n.Tag.colorSelected(viewModel.selectedColorHex))
@@ -645,7 +646,7 @@ struct AccountFormView: View {
         Task {
             // Load historical exchange rates for the new currency
             let calendar = Calendar.current
-            let today = Date()
+            let today = Date.now
             guard let oneYearAgo = calendar.date(byAdding: .year, value: -1, to: today) else { return }
             let dateInterval = DateInterval(start: oneYearAgo, end: today)
             await ExchangeRateService.shared.forceUpdateToday(context: modelContext)

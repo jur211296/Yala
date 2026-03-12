@@ -611,7 +611,7 @@ struct DetailContainerView: View {
     // MARK: - Actions
 
     private func refreshRecordsData() {
-        DispatchQueue.main.async {
+        Task { @MainActor in
             // Reload fresh data from SwiftData before applying filters
             // This ensures deleted/modified transactions are reflected immediately
             dataViewModel.loadData()
@@ -625,7 +625,7 @@ struct DetailContainerView: View {
     }
 
     private func calculateTrendsData() {
-        DispatchQueue.main.async {
+        Task { @MainActor in
             trendsViewModel.calculateTrendData(
                 accounts: dataViewModel.accounts,
                 transactions: dataViewModel.allTransactions,

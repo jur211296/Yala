@@ -11,6 +11,7 @@ struct WidgetPreferencesView: View {
     @Bindable var viewModel: PanelViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("panelShowAIInsight") private var showAIInsight: Bool = true
 
     private var isProUser: Bool {
@@ -74,17 +75,17 @@ struct WidgetPreferencesView: View {
                         WidgetRow(
                             config: config,
                             onToggle: {
-                                withAnimation {
+                                dsWithAnimation(reduceMotion) {
                                     viewModel.toggleWidgetVisibility(id: config.id)
                                 }
                             },
                             onSizeChange: { newSize in
-                                withAnimation {
+                                dsWithAnimation(reduceMotion) {
                                     viewModel.updateWidgetSize(id: config.id, newSize: newSize)
                                 }
                             },
                             onScheduledPaymentsModeChange: { mode in
-                                withAnimation {
+                                dsWithAnimation(reduceMotion) {
                                     viewModel.updateScheduledPaymentsMode(id: config.id, mode: mode)
                                 }
                             }
@@ -102,7 +103,7 @@ struct WidgetPreferencesView: View {
 
                 Section {
                     Button(role: .destructive) {
-                        withAnimation {
+                        dsWithAnimation(reduceMotion) {
                             viewModel.resetWidgetConfigs()
                         }
                     } label: {

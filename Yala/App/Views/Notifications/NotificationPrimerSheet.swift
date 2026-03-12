@@ -13,6 +13,7 @@ struct NotificationPrimerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
+    @ScaledMetric(relativeTo: .largeTitle) private var iconSize: CGFloat = 48 // A11Y-DT: primer icon
     @State private var isRequesting = false
 
     var body: some View {
@@ -21,7 +22,7 @@ struct NotificationPrimerSheet: View {
 
             // Icon
             Image(systemName: "bell.badge.fill")
-                .font(.system(size: 48))
+                .font(.system(size: iconSize))
                 .foregroundStyle(.tint)
                 .accessibilityHidden(true)
 

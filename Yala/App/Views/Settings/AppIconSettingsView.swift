@@ -60,6 +60,7 @@ enum AppIconOption: String, CaseIterable, Identifiable {
 
 struct AppIconSettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
@@ -252,7 +253,7 @@ struct AppIconSettingsView: View {
                 errorMessage = L10n.Settings.iconChangeFailed(error.localizedDescription)
                 showingError = true
             } else {
-                withAnimation {
+                dsWithAnimation(reduceMotion) {
                     selectedIcon = icon
                 }
             }

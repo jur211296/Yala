@@ -11,6 +11,8 @@ import SwiftUI
 // MARK: - Global Search View
 
 struct GlobalSearchView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     @State private var searchText: String = ""
     @State private var isSearchActive: Bool = false
     @State private var isDataReady: Bool = false
@@ -55,7 +57,7 @@ struct GlobalSearchView: View {
                 // Task cancelled - continue with animation anyway
             }
             await MainActor.run {
-                withAnimation(.easeIn(duration: 0.2)) {
+                dsWithAnimation(reduceMotion, .easeIn(duration: 0.2)) {
                     isDataReady = true
                 }
                 isSearchActive = true
@@ -69,6 +71,7 @@ struct GlobalSearchView: View {
 struct SearchContentView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var searchText: String
     let transactions: [TransactionItem]  // Passed from parent
 
@@ -174,7 +177,7 @@ struct SearchContentView: View {
         let isSelected = selectedFilter == filter
 
         return Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
+            dsWithAnimation(reduceMotion, .easeInOut(duration: 0.2)) {
                 selectedFilter = filter
             }
         } label: {

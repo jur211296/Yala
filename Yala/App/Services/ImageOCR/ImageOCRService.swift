@@ -9,7 +9,7 @@ import UIKit
 import Vision
 
 /// Service for performing OCR on images using Apple's Vision framework
-@Observable
+@MainActor @Observable
 final class ImageOCRService {
 
     /// Errors that can occur during OCR processing

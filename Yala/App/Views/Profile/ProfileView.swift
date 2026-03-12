@@ -406,7 +406,7 @@ struct ProfileView: View {
         HStack(spacing: DS.Spacing.xs) {
             // Cyan spark (instead of gold)
             YalaSparkShape()
-                .fill(Color.cyan)
+                .fill(Color.cyan) // DS-OK: decorative section accent
                 .frame(width: 12, height: 12)
 
             Text("PRO")
@@ -532,7 +532,7 @@ struct ProfileView: View {
                             .frame(width: 28, height: 28)
                             .background(
                                 RoundedRectangle(cornerRadius: 6)
-                                    .fill(Color.purple)
+                                    .fill(Color.purple) // DS-OK: decorative section accent
                             )
                             .opacity(isSmartInsightsLocked ? 0.5 : 1)
                     } else {
@@ -679,7 +679,7 @@ struct ProfileView: View {
                             .frame(width: 28, height: 28)
                             .background(
                                 RoundedRectangle(cornerRadius: 6)
-                                    .fill(Color.hotPink)
+                                    .fill(Color.hotPink) // DS-OK: decorative section accent
                             )
                             .opacity(isVoiceLocked ? 0.5 : 1)
                     } else {
@@ -719,7 +719,7 @@ struct ProfileView: View {
                                 let status = AVAudioApplication.shared.recordPermission
                                 if status == .undetermined {
                                     AVAudioApplication.requestRecordPermission { granted in
-                                        DispatchQueue.main.async {
+                                        Task { @MainActor in
                                             if !granted {
                                                 voiceInputEnabled = false
                                                 permissionDeniedType = L10n.Settings.voiceInputEnabled
@@ -799,7 +799,7 @@ struct ProfileView: View {
                         .frame(width: 28, height: 28)
                         .background(
                             RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.teal)
+                                .fill(Color.teal) // DS-OK: decorative section accent
                         )
                         .opacity(isImageLocked ? 0.5 : 1)
                 } else {
@@ -958,7 +958,7 @@ struct ProfileView: View {
                 .frame(width: 28, height: 28)
                 .background(
                     RoundedRectangle(cornerRadius: 6)
-                        .fill(Color.orange)
+                        .fill(Color.orange) // DS-OK: decorative section accent
                 )
 
             Text("Simular Pro")

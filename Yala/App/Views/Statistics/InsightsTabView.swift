@@ -216,8 +216,8 @@ struct InsightsTabView: View {
 
     private var transactionDateRange: (start: Date, end: Date) {
         let sortedDates = allTransactions.map(\.date).sorted()
-        let start = sortedDates.first ?? Date()
-        let end = sortedDates.last ?? Date()
+        let start = sortedDates.first ?? Date.now
+        let end = sortedDates.last ?? Date.now
         return (start, end)
     }
 
@@ -688,6 +688,7 @@ struct InsightsTabView: View {
                     .foregroundStyle(.tertiary)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Accessibility.close)
         }
         .padding(DS.Spacing.lg)
         .background(DS.Semantic.infoBackground, in: RoundedRectangle(cornerRadius: DS.Radius.xl))

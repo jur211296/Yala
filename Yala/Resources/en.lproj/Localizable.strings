@@ -1427,6 +1427,20 @@
 "accessibility.metricIncome" = "Income";
 "accessibility.metricExpense" = "Expense";
 "accessibility.colorOption %@" = "Color %@";
+"accessibility.close" = "Close";
+"accessibility.dismiss" = "Dismiss";
+"accessibility.remove" = "Remove";
+"accessibility.clearSelection" = "Clear selection";
+"accessibility.selectColor" = "Select color";
+"accessibility.newBudget" = "New budget";
+"accessibility.newPayment" = "New scheduled payment";
+"accessibility.importingHint" = "Importing in progress";
+"accessibility.fillRequiredFields" = "Fill in all required fields";
+"accessibility.noTransactions" = "No transactions available";
+"accessibility.selectDraftsFirst" = "Select at least one draft first";
+"accessibility.proFeature" = "Pro subscription required";
+"accessibility.noActiveAccounts" = "No active accounts available";
+"accessibility.noInactiveBudgets" = "No inactive budgets to restore";
 
 // MARK: - Widget Hints
 

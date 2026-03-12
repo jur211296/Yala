@@ -84,7 +84,7 @@ private struct LLMMultipleResponse: Codable {
 
 /// Service for parsing transcriptions into transaction data.
 /// Supports @Environment injection in SwiftUI views.
-@Observable
+@MainActor @Observable
 final class TranscriptionParserService {
 
     // MARK: - Singleton (for backward compatibility)

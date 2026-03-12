@@ -88,104 +88,156 @@ struct QuickExpenseIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        // Step 1: Get transaction type (expense or income)
-        let finalType = try await getTransactionType()
-        let isIncome = (finalType == .income)
+        // Gather all user input
+        let input = try await resolveInput()
 
-        // Step 2: Get amount (always positive)
-        let finalAmount = try await getAmount()
-
-        // Step 3: Get note (optional, can be empty)
-        let finalNote = try await getNote()
-
-        // Step 4: Get account
-        let accountEntity = try await getAccount()
-
-        // Step 5: Get subcategory (filtered by type)
-        let subcategoryName: String
-        let subcategoryCategoryName: String
-
-        if isIncome {
-            let incomeEntity = try await getIncomeSubcategory()
-            subcategoryName = incomeEntity.name
-            subcategoryCategoryName = incomeEntity.categoryName
-        } else {
-            let expenseEntity = try await getExpenseSubcategory()
-            subcategoryName = expenseEntity.name
-            subcategoryCategoryName = expenseEntity.categoryName
+        // Setup database
+        guard let context = setupModelContext() else {
+            return .result(dialog: "shortcut.error.database")
         }
 
-        // Step 6: Get tag name (optional text field)
+        // Resolve entities from database
+        guard let resolvedAccount = fetchAccount(name: input.accountName, context: context) else {
+            return .result(dialog: "shortcut.error.noAccount")
+        }
+        guard let resolvedSubcategory = fetchSubcategory(name: input.subcategoryName, categoryName: input.subcategoryCategoryName, context: context) else {
+            return .result(dialog: "shortcut.error.noSubcategory")
+        }
+        var resolvedTag: Tag?
+        if let name = input.tagName, !name.isEmpty {
+            resolvedTag = fetchTag(name: name, context: context)
+        }
+
+        // Create and save transaction
+        let result = createTransaction(
+            amount: input.amount,
+            note: input.note,
+            account: resolvedAccount,
+            subcategory: resolvedSubcategory,
+            tag: resolvedTag,
+            context: context
+        )
+
+        guard let transaction = result.transaction else {
+            return .result(dialog: "shortcut.error.save")
+        }
+
+        // Format success message
+        let formattedAmount = formatIntentCurrency(amount: input.amount, currencyCode: transaction.currencyCode)
+        let noteText = (input.note?.isEmpty == false) ? (input.note ?? "-") : "-"
+        let tagText = resolvedTag?.name ?? String(localized: "shortcut.result.noTag")
+        let successMessage = String(localized: "shortcut.success.expenseDetail \(resolvedAccount.name) \(formattedAmount) \(noteText) \(resolvedSubcategory.name) \(tagText)")
+
+        return .result(dialog: IntentDialog(stringLiteral: successMessage))
+    }
+
+    // MARK: - Input Resolution
+
+    private struct ResolvedInput {
+        let amount: Double
+        let note: String?
+        let accountName: String
+        let subcategoryName: String
+        let subcategoryCategoryName: String
+        let tagName: String?
+    }
+
+    private func resolveInput() async throws -> ResolvedInput {
+        let finalType = try await getTransactionType()
+        let isIncome = (finalType == .income)
+        let finalAmount = try await getAmount()
+        let finalNote = try await getNote()
+        let accountEntity = try await getAccount()
+
+        let subcategoryName: String
+        let subcategoryCategoryName: String
+        if isIncome {
+            let entity = try await getIncomeSubcategory()
+            subcategoryName = entity.name
+            subcategoryCategoryName = entity.categoryName
+        } else {
+            let entity = try await getExpenseSubcategory()
+            subcategoryName = entity.name
+            subcategoryCategoryName = entity.categoryName
+        }
+
         let finalTagName = try await getTagName()
 
-        // Create ModelContainer
-        let container: ModelContainer
+        return ResolvedInput(
+            amount: finalAmount,
+            note: finalNote,
+            accountName: accountEntity.name,
+            subcategoryName: subcategoryName,
+            subcategoryCategoryName: subcategoryCategoryName,
+            tagName: finalTagName
+        )
+    }
+
+    // MARK: - Model Container
+
+    @MainActor
+    private func setupModelContext() -> ModelContext? {
         do {
-            container = try ModelContainer(
+            let container = try ModelContainer(
                 for: SwiftDataConfiguration.schema,
                 configurations: SwiftDataConfiguration.configuration
             )
+            return container.mainContext
         } catch {
             #if DEBUG
             print("QuickExpenseIntent: Error creating ModelContainer: \(error)")
             #endif
-            return .result(dialog: "shortcut.error.database")
+            return nil
         }
+    }
 
-        let context = container.mainContext
+    // MARK: - Transaction Creation
 
-        // Resolve account
-        guard let resolvedAccount = fetchAccount(name: accountEntity.name, context: context) else {
-            return .result(dialog: "shortcut.error.noAccount")
-        }
+    private struct TransactionResult {
+        let transaction: TransactionItem?
+    }
 
-        // Resolve subcategory
-        guard let resolvedSubcategory = fetchSubcategory(name: subcategoryName, categoryName: subcategoryCategoryName, context: context) else {
-            return .result(dialog: "shortcut.error.noSubcategory")
-        }
-
-        // Resolve tag (optional - search by name if provided)
-        var resolvedTag: Tag?
-        if let name = finalTagName, !name.isEmpty {
-            resolvedTag = fetchTag(name: name, context: context)
-        }
-
-        // Get exchange rate info
+    @MainActor
+    private func createTransaction(
+        amount: Double,
+        note: String?,
+        account: Account,
+        subcategory: Subcategory,
+        tag: Tag?,
+        context: ModelContext
+    ) -> TransactionResult {
         let preferredCurrency = CurrencyDefaults.currentPreferred
-        let transactionCurrency = resolvedAccount.currencyCode
+        let transactionCurrency = account.currencyCode
 
         var exchangeRate = 1.0
-        var amountInPreferred = finalAmount
+        var amountInPreferred = amount
         var isProvisional = false
 
         if transactionCurrency != preferredCurrency {
             let converter = CurrencyConverter.shared
             let convertedDecimal = converter.convert(
-                Decimal(finalAmount),
+                Decimal(amount),
                 from: transactionCurrency,
                 to: preferredCurrency,
-                on: Date(),
+                on: Date.now,
                 context: context
             )
             amountInPreferred = NSDecimalNumber(decimal: convertedDecimal).doubleValue
-
-            if finalAmount > 0 {
-                exchangeRate = amountInPreferred / finalAmount
+            if amount > 0 {
+                exchangeRate = amountInPreferred / amount
             }
-
-            isProvisional = !converter.hasExactRate(for: Date(), context: context)
+            isProvisional = !converter.hasExactRate(for: Date.now, context: context)
         }
 
-        // Create transaction
         let transaction = TransactionItem(
-            date: Date(),
-            amount: finalAmount,
+            date: Date.now,
+            amount: amount,
             currencyCode: transactionCurrency,
-            note: finalNote,
-            category: resolvedSubcategory.safeCategory,
-            subcategory: resolvedSubcategory,
-            account: resolvedAccount,
-            tags: resolvedTag.map { [$0] } ?? [],
+            note: note,
+            category: subcategory.safeCategory,
+            subcategory: subcategory,
+            account: account,
+            tags: tag.map { [$0] } ?? [],
             exchangeRate: exchangeRate,
             amountInPreferredCurrency: amountInPreferred,
             preferredCurrencyCode: preferredCurrency,
@@ -198,19 +250,10 @@ struct QuickExpenseIntent: AppIntent {
             try context.save()
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
+            return TransactionResult(transaction: transaction)
         } catch {
-            return .result(dialog: "shortcut.error.save")
+            return TransactionResult(transaction: nil)
         }
-
-        // Format success message with all details
-        let formattedAmount = formatIntentCurrency(amount: finalAmount, currencyCode: transactionCurrency)
-        let noteText = (finalNote?.isEmpty == false) ? (finalNote ?? "-") : "-"
-        let subcategoryText = resolvedSubcategory.name
-        let tagText = resolvedTag?.name ?? String(localized: "shortcut.result.noTag")
-
-        let successMessage = String(localized: "shortcut.success.expenseDetail \(resolvedAccount.name) \(formattedAmount) \(noteText) \(subcategoryText) \(tagText)")
-
-        return .result(dialog: IntentDialog(stringLiteral: successMessage))
     }
 
     // MARK: - Parameter Resolution
@@ -709,7 +752,7 @@ struct ApplePayTransactionIntent: AppIntent {
         }
 
         // Use current date (when automation runs)
-        let effectiveDate = Date()
+        let effectiveDate = Date.now
 
         // Create ModelContainer
         let container: ModelContainer
@@ -972,7 +1015,7 @@ struct AutomationEntryIntent: AppIntent {
         }
 
         // Parse date if provided (ISO format: YYYY-MM-DD)
-        var effectiveDate = Date()
+        var effectiveDate = Date.now
         if let dateString = transaction.date, !dateString.isEmpty {
             if let parsed = Self.isoDateFormatter.date(from: dateString) {
                 effectiveDate = parsed

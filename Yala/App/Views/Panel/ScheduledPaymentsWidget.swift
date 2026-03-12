@@ -11,6 +11,7 @@ import SwiftUI
 struct ScheduledPaymentsWidget: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let payments: [ScheduledPayment]
     let currencyCode: String
@@ -32,7 +33,7 @@ struct ScheduledPaymentsWidget: View {
     /// Computed month based on period selection (intelligent mapping)
     private var displayMonth: Date {
         let calendar = Calendar.current
-        let now = Date()
+        let now = Date.now
 
         switch period {
         case .thisWeek, .last7Days, .last30Days, .thisMonth:
@@ -174,7 +175,7 @@ struct ScheduledPaymentsWidget: View {
         let isSelected = filter == filterOption
 
         return Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.7)) {
                 filter = filterOption
             }
         } label: {
@@ -352,7 +353,7 @@ struct ScheduledPaymentsWidget: View {
 
     private func getUpcomingPayments(limit: Int) -> [UpcomingPaymentItem] {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = calendar.startOfDay(for: Date.now)
         var items: [UpcomingPaymentItem] = []
 
         for payment in filteredPayments {
@@ -551,7 +552,7 @@ struct ScheduledPaymentsWidget: View {
 
     private func isCurrentDay(_ day: Int) -> Bool {
         let calendar = Calendar.current
-        let today = Date()
+        let today = Date.now
 
         return calendar.component(.day, from: today) == day &&
                calendar.component(.month, from: today) == calendar.component(.month, from: displayMonth) &&

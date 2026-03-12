@@ -57,7 +57,7 @@ private struct CacheEntry {
 
 // MARK: - Service
 
-@Observable
+@MainActor @Observable
 final class InsightsLLMService {
 
     // MARK: - Singleton
@@ -99,7 +99,7 @@ final class InsightsLLMService {
     /// Get cached response if valid (< 5 minutes old)
     func getCached(key: String) -> LLMInsightResponse? {
         guard let entry = cache[key],
-              Date().timeIntervalSince(entry.timestamp) < 300 else {
+              Date.now.timeIntervalSince(entry.timestamp) < 300 else {
             return nil
         }
         return entry.response
@@ -124,12 +124,12 @@ final class InsightsLLMService {
 
         // Rate limit: 5s between calls
         if let lastCall = lastCallTime,
-           Date().timeIntervalSince(lastCall) < 5 {
+           Date.now.timeIntervalSince(lastCall) < 5 {
             throw InsightsLLMError.rateLimited
         }
 
         // Evict expired entries
-        let now = Date()
+        let now = Date.now
         cache = cache.filter { now.timeIntervalSince($0.value.timestamp) < 300 }
 
         // Check cache
@@ -137,7 +137,7 @@ final class InsightsLLMService {
             return cached
         }
 
-        lastCallTime = Date()
+        lastCallTime = Date.now
 
         // Build JSON payload
         let jsonData = try JSONSerialization.data(withJSONObject: aggregatedData)
@@ -227,7 +227,7 @@ final class InsightsLLMService {
             let response = try parseResponse(content)
 
             // Cache the result
-            cache[key] = CacheEntry(response: response, timestamp: Date())
+            cache[key] = CacheEntry(response: response, timestamp: Date.now)
 
             return response
         } catch let error as InsightsLLMError {
@@ -329,12 +329,12 @@ final class InsightsLLMService {
 
         // Rate limit: 5s between contextual calls (independent from main insights)
         if let lastCall = lastContextualCallTime,
-           Date().timeIntervalSince(lastCall) < 5 {
+           Date.now.timeIntervalSince(lastCall) < 5 {
             throw InsightsLLMError.rateLimited
         }
 
         // Evict expired contextual entries (30 min TTL)
-        let now = Date()
+        let now = Date.now
         contextualCache = contextualCache.filter { now.timeIntervalSince($0.value.timestamp) < 1800 }
 
         // Check cache (eviction above guarantees all entries are < 30 min)
@@ -342,7 +342,7 @@ final class InsightsLLMService {
             return entry.text
         }
 
-        lastContextualCallTime = Date()
+        lastContextualCallTime = Date.now
 
         // Build JSON payload
         let jsonData = try JSONSerialization.data(withJSONObject: aggregatedData)
@@ -351,7 +351,7 @@ final class InsightsLLMService {
         let locale = aggregatedData["locale"] as? String ?? "es"
 
         // Rotate focus angle daily so insights don't repeat the same pattern
-        let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 1
+        let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: Date.now) ?? 1
         let focusHint = Self.contextualFocusAngles[dayOfYear % Self.contextualFocusAngles.count]
 
         let toneInstruction = Self.toneInstruction(for: tone)
@@ -389,7 +389,7 @@ final class InsightsLLMService {
             let comment = dict["comment"] as? String
 
             if let comment {
-                contextualCache[key] = ContextualCacheEntry(text: comment, timestamp: Date())
+                contextualCache[key] = ContextualCacheEntry(text: comment, timestamp: Date.now)
             }
 
             return comment

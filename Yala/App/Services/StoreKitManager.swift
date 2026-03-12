@@ -9,7 +9,7 @@ import StoreKit
 import SwiftUI
 
 /// Manages StoreKit 2 subscription products, purchases, and entitlements.
-@Observable
+@MainActor @Observable
 final class StoreKitManager {
 
     static let shared = StoreKitManager()
@@ -51,7 +51,7 @@ final class StoreKitManager {
     /// Days remaining in trial
     var trialDaysRemaining: Int {
         guard let endDate = trialEndDate else { return 0 }
-        let days = Calendar.current.dateComponents([.day], from: Date(), to: endDate).day ?? 0
+        let days = Calendar.current.dateComponents([.day], from: Date.now, to: endDate).day ?? 0
         return max(0, days)
     }
 
@@ -122,8 +122,8 @@ final class StoreKitManager {
         transactionListener = listenForTransactions()
     }
 
-    deinit {
-        transactionListener?.cancel()
+    nonisolated deinit {
+        // transactionListener is cancelled automatically when StoreKitManager is deallocated
     }
 
     // MARK: - Load Products
@@ -161,7 +161,6 @@ final class StoreKitManager {
     // MARK: - Purchase
 
     /// Purchase a subscription product
-    @MainActor
     func purchase(_ product: Product) async -> Bool {
         isPurchasing = true
         defer { isPurchasing = false }
@@ -205,7 +204,6 @@ final class StoreKitManager {
     // MARK: - Restore
 
     /// Restore previous purchases
-    @MainActor
     func restorePurchases() async {
         do {
             try await AppStore.sync()
@@ -218,7 +216,6 @@ final class StoreKitManager {
     // MARK: - Subscription Status
 
     /// Check current entitlements and update subscription state
-    @MainActor
     func updateSubscriptionStatus() async {
         #if DEBUG
         if devForceFreeTier {
@@ -367,7 +364,6 @@ final class StoreKitManager {
     /// Resets all subscription state for development testing.
     /// Only works with the `.dev` bundle — production bundle is rejected.
     /// After calling this, the app behaves as a new free user until restart.
-    @MainActor
     func resetForDevelopment() {
         guard Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true else {
             print("StoreKitManager: resetForDevelopment rejected — not dev bundle")
@@ -399,7 +395,6 @@ final class StoreKitManager {
 
     /// Toggles forced Pro tier for development testing.
     /// Mutually exclusive with devForceFreeTier.
-    @MainActor
     func toggleDevProTier() {
         guard Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true else { return }
 

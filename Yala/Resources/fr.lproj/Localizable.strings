@@ -1429,6 +1429,20 @@
 "accessibility.metricIncome" = "Revenu";
 "accessibility.metricExpense" = "Dépense";
 "accessibility.colorOption %@" = "Couleur %@";
+"accessibility.close" = "Fermer";
+"accessibility.dismiss" = "Rejeter";
+"accessibility.remove" = "Supprimer";
+"accessibility.clearSelection" = "Effacer la sélection";
+"accessibility.selectColor" = "Choisir une couleur";
+"accessibility.newBudget" = "Nouveau budget";
+"accessibility.newPayment" = "Nouveau paiement planifié";
+"accessibility.importingHint" = "Importation en cours";
+"accessibility.fillRequiredFields" = "Remplir tous les champs obligatoires";
+"accessibility.noTransactions" = "Aucune transaction disponible";
+"accessibility.selectDraftsFirst" = "Sélectionne d'abord au moins un brouillon";
+"accessibility.proFeature" = "Abonnement Pro requis";
+"accessibility.noActiveAccounts" = "Aucun compte actif disponible";
+"accessibility.noInactiveBudgets" = "Aucun budget inactif à restaurer";
 
 // MARK: - Widget Hints
 
@@ -1602,6 +1616,10 @@
 "onboarding.budgetAmountPlaceholder" = "Ex : 500";
 "onboarding.budgetMoreTip" = "Tu peux créer d'autres budgets ou modifier les existants dans Planification > Budgets.";
 "onboarding.budgetPreviewLabel" = "Voici à quoi ressemblera ton budget";
+"onboarding.tutorialsTitle" = "Apprends à utiliser Yala";
+"onboarding.tutorialsSubtitle" = "Des guides courts pour tirer le meilleur de tes finances";
+"onboarding.tutorialsExplore" = "Explorer les tutoriels";
+"onboarding.tutorialsSettingsHint" = "Tu peux toujours les retrouver dans les Réglages";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Le changement de compte mettra à jour la devise des transactions sélectionnées.";
@@ -2049,7 +2067,7 @@
 
 // Reports
 "notifications.dailyReport.name" = "Résumé du jour";
-"notifications.dailyReport.hint" = "Chaque soir tu verras ton %@ du jour";
+"notifications.dailyReport.hint" = "À %@ tu verras ton %@ du jour";
 "notifications.weeklyReport.hint" = "Chaque %2$@ tu recevras ton %1$@ de la semaine";
 "notifications.monthlyReport.name" = "Résumé mensuel";
 "notifications.monthlyReport.hint" = "Le %2$@ tu verras ton %1$@ du mois";

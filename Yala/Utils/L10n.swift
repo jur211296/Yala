@@ -628,6 +628,20 @@ enum L10n {
         static var metricIncome: String { ls("accessibility.metricIncome", comment: "") }
         static var metricExpense: String { ls("accessibility.metricExpense", comment: "") }
         static func colorOption(_ name: String) -> String { String(format: ls("accessibility.colorOption %@", comment: ""), name) }
+        static var close: String { ls("accessibility.close", comment: "") }
+        static var dismiss: String { ls("accessibility.dismiss", comment: "") }
+        static var remove: String { ls("accessibility.remove", comment: "") }
+        static var clearSelection: String { ls("accessibility.clearSelection", comment: "") }
+        static var selectColor: String { ls("accessibility.selectColor", comment: "") }
+        static var newBudget: String { ls("accessibility.newBudget", comment: "") }
+        static var newPayment: String { ls("accessibility.newPayment", comment: "") }
+        static var importingHint: String { ls("accessibility.importingHint", comment: "") }
+        static var fillRequiredFields: String { ls("accessibility.fillRequiredFields", comment: "") }
+        static var noTransactions: String { ls("accessibility.noTransactions", comment: "") }
+        static var selectDraftsFirst: String { ls("accessibility.selectDraftsFirst", comment: "") }
+        static var proFeature: String { ls("accessibility.proFeature", comment: "") }
+        static var noActiveAccounts: String { ls("accessibility.noActiveAccounts", comment: "") }
+        static var noInactiveBudgets: String { ls("accessibility.noInactiveBudgets", comment: "") }
     }
 
     // MARK: - Search

@@ -13,6 +13,7 @@ struct RecordsFiltersView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var filtersViewModel = RecordsFiltersViewModel()
 
@@ -100,7 +101,7 @@ struct RecordsFiltersView: View {
 
                         // Reset filters button
                         Button {
-                            withAnimation {
+                            dsWithAnimation(reduceMotion) {
                                 clearLocalFilters()
                             }
                         } label: {

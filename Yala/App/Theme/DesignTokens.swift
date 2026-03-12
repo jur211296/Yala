@@ -203,6 +203,7 @@ enum DS {
         static let disabledForeground = Color.gray
         static let infoForeground = Color.blue
         static let undoForeground = Color.teal
+        static let imageAccent = Color.teal
     }
 
     // MARK: - Shadow

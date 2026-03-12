@@ -66,7 +66,11 @@ struct VariationChip: View {
     }
 
     private var variationColor: Color {
-        guard let variation = variation else { return .gray }
+        guard let variation = variation else { return DS.Semantic.disabledForeground }
+
+        if abs(variation) < 0.05 {
+            return DS.Semantic.disabledForeground
+        }
 
         if isExpenseContext {
             // Expense context: +% = pink (bad, spent more), -% = purple (good, spent less)
@@ -86,9 +90,15 @@ struct VariationChip: View {
             EmptyView()
         } else if let variation = variation {
             // Show formatted variation percentage
-            Text(PreviousPeriodHelper.formatVariationValue(variation))
-                .font(size.font)
-                .foregroundStyle(variationColor)
+            HStack(spacing: 2) {
+                if abs(variation) < 0.05 {
+                    Image(systemName: "equal")
+                        .font(size.font)
+                }
+                Text(PreviousPeriodHelper.formatVariationValue(variation))
+                    .font(size.font)
+            }
+            .foregroundStyle(variationColor)
                 .padding(.horizontal, size.horizontalPadding)
                 .padding(.vertical, size.verticalPadding)
                 .background(
@@ -100,7 +110,7 @@ struct VariationChip: View {
             // Show "N/A" for items without previous data (when comparison is active)
             Text("N/A")
                 .font(size.font)
-                .foregroundStyle(Color.gray)
+                .foregroundStyle(DS.Semantic.disabledForeground)
                 .padding(.horizontal, size.horizontalPadding)
                 .padding(.vertical, size.verticalPadding)
                 .background(

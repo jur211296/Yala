@@ -1429,6 +1429,20 @@
 "accessibility.metricIncome" = "Einnahmen";
 "accessibility.metricExpense" = "Ausgaben";
 "accessibility.colorOption %@" = "Farbe %@";
+"accessibility.close" = "Schließen";
+"accessibility.dismiss" = "Verwerfen";
+"accessibility.remove" = "Entfernen";
+"accessibility.clearSelection" = "Auswahl löschen";
+"accessibility.selectColor" = "Farbe auswählen";
+"accessibility.newBudget" = "Neues Budget";
+"accessibility.newPayment" = "Neue geplante Zahlung";
+"accessibility.importingHint" = "Import läuft";
+"accessibility.fillRequiredFields" = "Alle Pflichtfelder ausfüllen";
+"accessibility.noTransactions" = "Keine Transaktionen verfügbar";
+"accessibility.selectDraftsFirst" = "Wähle zuerst mindestens einen Entwurf";
+"accessibility.proFeature" = "Pro-Abo erforderlich";
+"accessibility.noActiveAccounts" = "Keine aktiven Konten verfügbar";
+"accessibility.noInactiveBudgets" = "Keine inaktiven Budgets zum Wiederherstellen";
 
 // MARK: - Widget Hints
 
@@ -1600,6 +1614,10 @@
 "onboarding.budgetAmountPlaceholder" = "Z.B.: 500";
 "onboarding.budgetMoreTip" = "Du kannst weitere Budgets erstellen oder bestehende bearbeiten in Planung > Budgets.";
 "onboarding.budgetPreviewLabel" = "So wird dein Budget aussehen";
+"onboarding.tutorialsTitle" = "Lerne Yala kennen";
+"onboarding.tutorialsSubtitle" = "Kurze Anleitungen, um das Beste aus deinen Finanzen herauszuholen";
+"onboarding.tutorialsExplore" = "Tutorials entdecken";
+"onboarding.tutorialsSettingsHint" = "Du findest sie jederzeit in den Einstellungen";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Beim Kontowechsel wird die Währung der ausgewählten Transaktionen aktualisiert.";
@@ -2047,7 +2065,7 @@
 
 // Reports
 "notifications.dailyReport.name" = "Tageszusammenfassung";
-"notifications.dailyReport.hint" = "Jeden Abend siehst du dein %@ des Tages";
+"notifications.dailyReport.hint" = "Um %@ siehst du dein %@ des Tages";
 "notifications.weeklyReport.hint" = "Jeden %2$@ erhältst du dein %1$@ der Woche";
 "notifications.monthlyReport.name" = "Monatszusammenfassung";
 "notifications.monthlyReport.hint" = "Am %2$@ siehst du dein %1$@ des Monats";

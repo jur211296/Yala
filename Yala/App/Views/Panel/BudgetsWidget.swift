@@ -9,6 +9,8 @@ import SwiftData
 import SwiftUI
 
 struct BudgetsWidget: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     let budgets: [BudgetSummary]
     let currencyCode: String
 
@@ -110,7 +112,7 @@ struct BudgetsWidget: View {
                 let shouldDim = isAnySelected && (isExcludeMode ? isSelected : !isSelected)
 
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    dsWithAnimation(reduceMotion, .easeInOut(duration: 0.2)) {
                         onSelectBudget?(summary.budget)
                     }
                 } label: {

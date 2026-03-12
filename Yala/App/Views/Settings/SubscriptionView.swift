@@ -168,7 +168,7 @@ struct SubscriptionView: View {
 
                     YalaSpark(size: .large, animated: true)
                         .scaleEffect(3.0)
-                        .shadow(color: Color.orange.opacity(0.5), radius: 8, y: 4)
+                        .shadow(color: Color.orange.opacity(0.5), radius: 8, y: 4) // DS-OK: brand decorative
                 }
                 .scaleEffect(animateHero ? 1.0 : 0.8)
                 .onAppear {
@@ -207,7 +207,7 @@ struct SubscriptionView: View {
                 VStack(spacing: DS.Spacing.md) {
                     ZStack {
                         Circle()
-                            .fill(Color.orange.opacity(0.1))
+                            .fill(Color.orange.opacity(0.1)) // DS-OK: brand decorative
                             .frame(width: 100, height: 100)
 
                         YalaSpark(size: .large, animated: true)
