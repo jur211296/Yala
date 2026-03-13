@@ -24,7 +24,7 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 | iCloudSyncService | Services/iCloudSyncService.swift | Monitor estado sync iCloud |
 | PreferenceSyncService | App/Services/PreferenceSyncService.swift | Sync preferencias via iCloud KV |
 | CategoryDeduplicationService | App/Services/CategoryDeduplicationService.swift | Merge categorías duplicadas post-sync |
-| InsightsLLMService | Services/InsightsLLMService.swift | AI insights via GPT-4o Mini |
+| InsightsLLMService | Services/InsightsLLMService.swift | AI insights via GPT-4.1 Mini |
 | TelemetryService | Services/TelemetryService.swift | Analytics privacy-first via TelemetryDeck |
 
 ### Key Calculators
