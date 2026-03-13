@@ -43,6 +43,8 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-12] 031bc7c feat: split AI consent into processing (voice/image) and insights (smart overview)
+- [2026-03-12] 08883ee fix: AI insights — tip alignment, reactivity, currency format, budget threshold
 - [2026-03-12] 52b451f feat: rewrite AI insight tone/focus prompts + country regionalization + brand voice enforcement
 - [2026-03-12] 134200b feat: enrich AI insights data + anti-hallucination prompts + upgrade to GPT-4.1 Mini
 - [2026-03-12] c935830 fix: prevent SEGV crash in test host by using in-memory config under XCTest
@@ -52,7 +54,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-12] baf130f chore: update Claude commands, settings, and agent configs
 - [2026-03-12] b63b56d feat: add consent flow for Smart Insights + settings reorganization
 - [2026-03-12] d48946f test: extract 12 private methods to internal + add 85 tests across 5 suites
-- [2026-03-12] 7631a6a test: add 48 tests across 5 new suites covering critical gaps
 - [2026-03-10] 720ffe3 refactor: rename Nature → Need across codebase
 - [2026-03-10] 0f85f55 fix: export allTime date range, transaction recurring save flow, validation toast
 - [2026-03-10] dd86e0c fix: scheduled payments — duplicate draft prevention, unified occurrence actions, editor UX
@@ -762,11 +763,11 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 ## Session Continuity
 
 Last session: 2026-03-12
-Stopped at: AI insight tone/focus prompt rewrite (52b451f) — detailed personalities, regionalization, brand voice
-Next step: Continue with next Fase 12 item from /next
+Stopped at: Dual AI consent (031bc7c) — separated processing + insights consent flags
+Next step: /verify-ios + QA manual del dual consent
 Resume context:
-- Tone prompts rewritten: "Directo" (amigo cercano) + "Cuidadoso" (analista meticuloso) with detailed personalities
-- Focus prompts robustified: Equilibrado/Ahorro/Precavido with 5 priorities each + brand voice rules
-- Country-based regionalization via Locale.current.region for all languages
-- Cache key now includes country to prevent stale results after region change
-- Brand voice enforced in all prompts: prohibited phrases, terminology, constructive tone
+- aiDataConsentAccepted → solo voz/imagen (processing)
+- aiInsightsConsentAccepted → nuevo flag para smart insights/resumen
+- Sin migración: nuevo flag default false, usuarios existentes deben aceptar insights explícitamente
+- PanelView: loading placeholder mejorado (sparkles + texto), card sin lineLimit
+- 6 idiomas actualizados con strings granulares

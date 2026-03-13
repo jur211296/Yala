@@ -461,18 +461,18 @@ final class NewTransactionViewModel {
 
     /// Guarda la transacción en el contexto
     /// - Returns: The created or updated transactions (useful for tracking IDs)
-    func save(context: ModelContext) -> [TransactionItem]? {
+    /// Fast validation (no I/O) — safe to call before optimistic UI
+    func preValidate() -> Bool {
         showValidationErrors = true
-
-        // Validate: block future dates (compare at day granularity to avoid false positives from time-of-day)
         if Calendar.current.compare(transactionDate, to: Date.now, toGranularity: .day) == .orderedDescending {
             showFutureDateAlert = true
-            return nil
+            return false
         }
+        return canSave
+    }
 
-        guard canSave else {
-            return nil
-        }
+    func save(context: ModelContext) -> [TransactionItem]? {
+        guard preValidate() else { return nil }
 
         // Capture before save — editingTransaction gets set during saveNormalTransaction
         let isNewTransaction = editingTransaction == nil && editingTransferPair == nil
@@ -491,8 +491,12 @@ final class NewTransactionViewModel {
                 result = [tx]
             }
             try context.save()
-            WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
+
+            // Update widget cache deferred — don't block save UI
+            Task {
+                WidgetDataCache.updateCache(context: context)
+            }
 
             // Track new transaction count for notification primer
             if isNewTransaction {
