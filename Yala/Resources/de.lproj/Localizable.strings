@@ -2518,11 +2518,15 @@
 "siriShortcuts.faq.offlineA" = "Ja, Kurzbefehle funktionieren im Basismodus ohne Internetverbindung.";
 
 // MARK: - AI Consent
-"aiConsent.title" = "KI-Datenverarbeitung";
-"aiConsent.message" = "Einige Funktionen nutzen optional OpenAI, um deine Daten zu verarbeiten:\n\n• Sprache: deine Audioaufnahme wird transkribiert\n• Bilder: das Foto wird analysiert, um Daten zu extrahieren\n• Überblick: nur Summen, Prozentsätze und Trends werden gesendet\n\nDeine einzelnen Ausgaben, Transaktionsverläufe und persönlichen Daten werden nie geteilt. OpenAI verwendet diese Daten nicht zum Training.";
+"aiConsent.processingTitle" = "Sprach- und Bildverarbeitung";
+"aiConsent.processingMessage" = "Diese Funktionen nutzen OpenAI, um deine Daten zu verarbeiten:\n\n• Sprache: deine Audioaufnahme wird transkribiert\n• Bilder: das Foto wird analysiert, um Daten zu extrahieren\n\nDeine einzelnen Ausgaben und persönlichen Daten werden nie geteilt. OpenAI verwendet diese Daten nicht zum Training.";
+"aiConsent.insightsTitle" = "Intelligenter Überblick";
+"aiConsent.insightsMessage" = "Diese Funktion sendet Summen, Prozentsätze und Trends an OpenAI, um eine Zusammenfassung deiner Finanzen zu erstellen.\n\nDeine einzelnen Ausgaben, Transaktionsverläufe und persönlichen Daten werden nie geteilt. OpenAI verwendet diese Daten nicht zum Training.";
 "aiConsent.accept" = "Akzeptieren und aktivieren";
 "aiConsent.privacyPolicy" = "Datenschutzrichtlinie";
-"aiConsent.inlineHint" = "Deine Sprach-, Bild- und Zusammenfassungsdaten werden mit OpenAI verarbeitet. Sie werden nicht dauerhaft gespeichert.";
+"aiConsent.inlineHintProcessing" = "Deine Sprach- und Bilddaten werden mit OpenAI verarbeitet. Sie werden nicht dauerhaft gespeichert.";
+"aiConsent.inlineHintInsights" = "Nur Summen und Trends werden für den Überblick an OpenAI gesendet. Sie werden nicht dauerhaft gespeichert.";
+"aiConsent.inlineHintBoth" = "Deine Sprach-, Bild- und Zusammenfassungsdaten werden mit OpenAI verarbeitet. Sie werden nicht dauerhaft gespeichert.";
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Künstliche Intelligenz";

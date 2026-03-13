@@ -35,11 +35,12 @@ struct ProfileView: View {
     @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
     @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
+    @AppStorage("aiInsightsConsentAccepted") private var aiInsightsConsentAccepted: Bool = false
     @AppStorage(InsightTone.storageKey) private var insightsToneRaw: String = InsightTone.normal.rawValue
     @AppStorage(InsightFocus.storageKey) private var insightsFocusRaw: String = InsightFocus.balanced.rawValue
     @State private var showAIConsentAlert: Bool = false
+    @State private var showInsightsConsentAlert: Bool = false
     @State private var pendingConsentForVoice: Bool = true
-    @State private var pendingConsentForInsights: Bool = false
 
     // Navigation & Sheets
     @State private var navigationPath = NavigationPath()
@@ -218,13 +219,11 @@ struct ProfileView: View {
                     Text(L10n.Image.errorPhotoPermission)
                 }
             }
-            .alert(L10n.AIConsent.title, isPresented: $showAIConsentAlert) {
+            .alert(L10n.AIConsent.processingTitle, isPresented: $showAIConsentAlert) {
                 Button(L10n.AIConsent.accept) {
                     aiDataConsentAccepted = true
                     if pendingConsentForVoice {
                         voiceInputEnabled = true
-                    } else if pendingConsentForInsights {
-                        pendingConsentForInsights = false
                     } else {
                         imageInputEnabled = true
                     }
@@ -232,12 +231,20 @@ struct ProfileView: View {
                 Button(L10n.AIConsent.privacyPolicy) {
                     openURL(AppConstants.privacyURL)
                 }
-                Button(L10n.Action.cancel, role: .cancel) {
-                    pendingConsentForVoice = false
-                    pendingConsentForInsights = false
-                }
+                Button(L10n.Action.cancel, role: .cancel) {}
             } message: {
-                Text(L10n.AIConsent.message)
+                Text(L10n.AIConsent.processingMessage)
+            }
+            .alert(L10n.AIConsent.insightsTitle, isPresented: $showInsightsConsentAlert) {
+                Button(L10n.AIConsent.accept) {
+                    aiInsightsConsentAccepted = true
+                }
+                Button(L10n.AIConsent.privacyPolicy) {
+                    openURL(AppConstants.privacyURL)
+                }
+                Button(L10n.Action.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.AIConsent.insightsMessage)
             }
             .navigationDestination(for: ProfileDestination.self) { destination in
                 switch destination {
@@ -510,8 +517,12 @@ struct ProfileView: View {
                 SubsectionDivider()
                 smartInsightsToggleRow
 
-                if voiceInputEnabled || imageInputEnabled || aiDataConsentAccepted {
-                    Text(L10n.AIConsent.inlineHint)
+                let hasProcessing = aiDataConsentAccepted && (voiceInputEnabled || imageInputEnabled)
+                let hasInsights = aiInsightsConsentAccepted
+                if hasProcessing || hasInsights {
+                    Text(hasProcessing && hasInsights ? L10n.AIConsent.inlineHintBoth
+                         : hasProcessing ? L10n.AIConsent.inlineHintProcessing
+                         : L10n.AIConsent.inlineHintInsights)
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, DS.Spacing.lg)
@@ -565,14 +576,12 @@ struct ProfileView: View {
                             .foregroundStyle(.secondary)
                     } else {
                         Toggle(L10n.Insights.aiToggle, isOn: Binding(
-                            get: { aiDataConsentAccepted },
+                            get: { aiInsightsConsentAccepted },
                             set: { newValue in
-                                if newValue && !aiDataConsentAccepted {
-                                    pendingConsentForVoice = false
-                                    pendingConsentForInsights = true
-                                    showAIConsentAlert = true
+                                if newValue && !aiInsightsConsentAccepted {
+                                    showInsightsConsentAlert = true
                                 } else {
-                                    aiDataConsentAccepted = newValue
+                                    aiInsightsConsentAccepted = newValue
                                 }
                             }
                         ))
@@ -586,7 +595,7 @@ struct ProfileView: View {
             .buttonStyle(.plain)
 
             // Tone selector (only visible when enabled and not locked)
-            if aiDataConsentAccepted && !isSmartInsightsLocked {
+            if aiInsightsConsentAccepted && !isSmartInsightsLocked {
                 HStack(spacing: DS.Spacing.md) {
                     Color.clear
                         .frame(width: 28, height: 28)

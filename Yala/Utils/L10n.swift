@@ -549,11 +549,15 @@ enum L10n {
     // MARK: - AI Consent
 
     enum AIConsent {
-        static var title: String { ls("aiConsent.title", comment: "") }
-        static var message: String { ls("aiConsent.message", comment: "") }
+        static var processingTitle: String { ls("aiConsent.processingTitle", comment: "") }
+        static var processingMessage: String { ls("aiConsent.processingMessage", comment: "") }
+        static var insightsTitle: String { ls("aiConsent.insightsTitle", comment: "") }
+        static var insightsMessage: String { ls("aiConsent.insightsMessage", comment: "") }
         static var accept: String { ls("aiConsent.accept", comment: "") }
         static var privacyPolicy: String { ls("aiConsent.privacyPolicy", comment: "") }
-        static var inlineHint: String { ls("aiConsent.inlineHint", comment: "") }
+        static var inlineHintProcessing: String { ls("aiConsent.inlineHintProcessing", comment: "") }
+        static var inlineHintInsights: String { ls("aiConsent.inlineHintInsights", comment: "") }
+        static var inlineHintBoth: String { ls("aiConsent.inlineHintBoth", comment: "") }
     }
 
     // MARK: - Accessibility

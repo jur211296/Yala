@@ -2518,11 +2518,15 @@
 "siriShortcuts.faq.offlineA" = "Sí, los atajos funcionan en modo básico sin conexión a internet.";
 
 // MARK: - AI Consent
-"aiConsent.title" = "Uso de inteligencia artificial";
-"aiConsent.message" = "Algunas funciones usan OpenAI de forma opcional para procesar tus datos:\n\n• Voz: tu grabación de audio se transcribe\n• Imágenes: la foto se analiza para extraer datos\n• Resumen: se envían solo totales, porcentajes y tendencias\n\nNunca se comparten tus gastos individuales, historial de transacciones ni información personal. OpenAI no usa estos datos para entrenar sus modelos.";
+"aiConsent.processingTitle" = "Procesamiento de voz e imágenes";
+"aiConsent.processingMessage" = "Estas funciones usan OpenAI para procesar tus datos:\n\n• Voz: tu grabación de audio se transcribe\n• Imágenes: la foto se analiza para extraer datos\n\nNunca se comparten tus gastos individuales ni información personal. OpenAI no usa estos datos para entrenar sus modelos.";
+"aiConsent.insightsTitle" = "Resumen inteligente";
+"aiConsent.insightsMessage" = "Esta función envía totales, porcentajes y tendencias a OpenAI para generar un resumen de tus finanzas.\n\nNunca se comparten tus gastos individuales, historial de transacciones ni información personal. OpenAI no usa estos datos para entrenar sus modelos.";
 "aiConsent.accept" = "Aceptar y activar";
 "aiConsent.privacyPolicy" = "Política de privacidad";
-"aiConsent.inlineHint" = "Tus datos de voz, imágenes y resumen se procesan con OpenAI. No se almacenan permanentemente.";
+"aiConsent.inlineHintProcessing" = "Tus datos de voz e imágenes se procesan con OpenAI. No se almacenan permanentemente.";
+"aiConsent.inlineHintInsights" = "Solo totales y tendencias se envían a OpenAI para el resumen. No se almacenan permanentemente.";
+"aiConsent.inlineHintBoth" = "Tus datos de voz, imágenes y resumen se procesan con OpenAI. No se almacenan permanentemente.";
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Inteligencia Artificial";

@@ -38,7 +38,7 @@ struct InsightsTabView: View {
     @AppStorage("showVariations") private var showVariations: Bool = true
 
     @AppStorage("hasSeenInsightsIntro") private var hasSeenInsightsIntro = false
-    @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted = false
+    @AppStorage("aiInsightsConsentAccepted") private var aiInsightsConsentAccepted = false
     @AppStorage("dismissedAIInsightsBanner") private var dismissedAIInsightsBanner = false
 
     // MARK: - Section Visibility (from Settings)
@@ -90,7 +90,7 @@ struct InsightsTabView: View {
                         }
 
                         // Pro AI consent banner
-                        if isProUser && !aiDataConsentAccepted && !dismissedAIInsightsBanner {
+                        if isProUser && !aiInsightsConsentAccepted && !dismissedAIInsightsBanner {
                             proAIConsentBanner
                         }
 

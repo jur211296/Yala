@@ -2520,11 +2520,15 @@
 "siriShortcuts.faq.offlineA" = "Sì, le scorciatoie funzionano in modalità base senza connessione internet.";
 
 // MARK: - AI Consent
-"aiConsent.title" = "Trattamento dati IA";
-"aiConsent.message" = "Alcune funzioni utilizzano OpenAI in modo opzionale per elaborare i tuoi dati:\n\n• Voce: la tua registrazione audio viene trascritta\n• Immagini: la foto viene analizzata per estrarre dati\n• Panoramica: vengono inviati solo totali, percentuali e tendenze\n\nLe tue spese individuali, la cronologia delle transazioni e le informazioni personali non vengono mai condivise. OpenAI non utilizza questi dati per l'addestramento.";
+"aiConsent.processingTitle" = "Elaborazione voce e immagini";
+"aiConsent.processingMessage" = "Queste funzioni utilizzano OpenAI per elaborare i tuoi dati:\n\n• Voce: la tua registrazione audio viene trascritta\n• Immagini: la foto viene analizzata per estrarre dati\n\nLe tue spese individuali e informazioni personali non vengono mai condivise. OpenAI non utilizza questi dati per l'addestramento.";
+"aiConsent.insightsTitle" = "Riepilogo intelligente";
+"aiConsent.insightsMessage" = "Questa funzione invia totali, percentuali e tendenze a OpenAI per generare un riepilogo delle tue finanze.\n\nLe tue spese individuali, la cronologia delle transazioni e le informazioni personali non vengono mai condivise. OpenAI non utilizza questi dati per l'addestramento.";
 "aiConsent.accept" = "Accetta e attiva";
 "aiConsent.privacyPolicy" = "Informativa sulla privacy";
-"aiConsent.inlineHint" = "I tuoi dati vocali, immagini e riepiloghi vengono elaborati con OpenAI. Non vengono archiviati permanentemente.";
+"aiConsent.inlineHintProcessing" = "I tuoi dati vocali e immagini vengono elaborati con OpenAI. Non vengono archiviati permanentemente.";
+"aiConsent.inlineHintInsights" = "Solo totali e tendenze vengono inviati a OpenAI per il riepilogo. Non vengono archiviati permanentemente.";
+"aiConsent.inlineHintBoth" = "I tuoi dati vocali, immagini e riepiloghi vengono elaborati con OpenAI. Non vengono archiviati permanentemente.";
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Intelligenza Artificiale";

@@ -2519,11 +2519,15 @@
 "siriShortcuts.faq.offlineA" = "Oui, les raccourcis fonctionnent en mode basique sans connexion internet.";
 
 // MARK: - AI Consent
-"aiConsent.title" = "Traitement des données par IA";
-"aiConsent.message" = "Certaines fonctions utilisent OpenAI de manière optionnelle pour traiter tes données :\n\n• Voix : ton enregistrement audio est transcrit\n• Images : la photo est analysée pour extraire des données\n• Aperçu : seuls les totaux, pourcentages et tendances sont envoyés\n\nTes dépenses individuelles, ton historique de transactions et tes informations personnelles ne sont jamais partagés. OpenAI n'utilise pas ces données pour l'entraînement.";
+"aiConsent.processingTitle" = "Traitement vocal et images";
+"aiConsent.processingMessage" = "Ces fonctions utilisent OpenAI pour traiter tes données :\n\n• Voix : ton enregistrement audio est transcrit\n• Images : la photo est analysée pour extraire des données\n\nTes dépenses individuelles et informations personnelles ne sont jamais partagées. OpenAI n'utilise pas ces données pour l'entraînement.";
+"aiConsent.insightsTitle" = "Résumé intelligent";
+"aiConsent.insightsMessage" = "Cette fonction envoie des totaux, pourcentages et tendances à OpenAI pour générer un résumé de tes finances.\n\nTes dépenses individuelles, ton historique de transactions et tes informations personnelles ne sont jamais partagés. OpenAI n'utilise pas ces données pour l'entraînement.";
 "aiConsent.accept" = "Accepter et activer";
 "aiConsent.privacyPolicy" = "Politique de confidentialité";
-"aiConsent.inlineHint" = "Tes données vocales, images et résumés sont traités avec OpenAI. Ils ne sont pas stockés de manière permanente.";
+"aiConsent.inlineHintProcessing" = "Tes données vocales et images sont traitées avec OpenAI. Elles ne sont pas stockées de manière permanente.";
+"aiConsent.inlineHintInsights" = "Seuls les totaux et tendances sont envoyés à OpenAI pour le résumé. Ils ne sont pas stockés de manière permanente.";
+"aiConsent.inlineHintBoth" = "Tes données vocales, images et résumés sont traités avec OpenAI. Ils ne sont pas stockés de manière permanente.";
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Intelligence Artificielle";

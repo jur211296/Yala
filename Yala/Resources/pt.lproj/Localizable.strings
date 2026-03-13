@@ -2518,11 +2518,15 @@
 "siriShortcuts.faq.offlineA" = "Sim, os atalhos funcionam em modo básico sem ligação à internet.";
 
 // MARK: - AI Consent
-"aiConsent.title" = "Processamento de dados com IA";
-"aiConsent.message" = "Algumas funções usam OpenAI de forma opcional para processar os teus dados:\n\n• Voz: a tua gravação de áudio é transcrita\n• Imagens: a foto é analisada para extrair dados\n• Resumo: apenas totais, percentuais e tendências são enviados\n\nAs tuas despesas individuais, histórico de transações e informações pessoais nunca são compartilhados. A OpenAI não usa estes dados para treinar os seus modelos.";
+"aiConsent.processingTitle" = "Processamento de voz e imagens";
+"aiConsent.processingMessage" = "Estas funções usam OpenAI para processar os teus dados:\n\n• Voz: a tua gravação de áudio é transcrita\n• Imagens: a foto é analisada para extrair dados\n\nAs tuas despesas individuais e informações pessoais nunca são compartilhadas. A OpenAI não usa estes dados para treinar os seus modelos.";
+"aiConsent.insightsTitle" = "Resumo inteligente";
+"aiConsent.insightsMessage" = "Esta função envia totais, percentuais e tendências à OpenAI para gerar um resumo das tuas finanças.\n\nAs tuas despesas individuais, histórico de transações e informações pessoais nunca são compartilhados. A OpenAI não usa estes dados para treinar os seus modelos.";
 "aiConsent.accept" = "Aceitar e ativar";
 "aiConsent.privacyPolicy" = "Política de privacidade";
-"aiConsent.inlineHint" = "Os seus dados de voz, imagens e resumo são processados com OpenAI. Não são armazenados permanentemente.";
+"aiConsent.inlineHintProcessing" = "Os teus dados de voz e imagens são processados com OpenAI. Não são armazenados permanentemente.";
+"aiConsent.inlineHintInsights" = "Apenas totais e tendências são enviados à OpenAI para o resumo. Não são armazenados permanentemente.";
+"aiConsent.inlineHintBoth" = "Os teus dados de voz, imagens e resumo são processados com OpenAI. Não são armazenados permanentemente.";
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Inteligência Artificial";

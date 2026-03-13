@@ -229,7 +229,7 @@ enum PendingAIInput {
     case image
 }
 
-/// Shared consent alert for AI-powered features (voice input, image input).
+/// Shared consent alert for voice/image processing.
 /// Reused across PanelView, DetailContainerView, RecordsStandaloneView, ProfileView.
 struct AIConsentAlertModifier: ViewModifier {
     @Binding var isPresented: Bool
@@ -244,7 +244,7 @@ struct AIConsentAlertModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .alert(L10n.AIConsent.title, isPresented: $isPresented) {
+            .alert(L10n.AIConsent.processingTitle, isPresented: $isPresented) {
                 Button(L10n.AIConsent.accept) {
                     aiDataConsentAccepted = true
                     let input = pendingInput
@@ -264,7 +264,7 @@ struct AIConsentAlertModifier: ViewModifier {
                 }
                 Button(L10n.Action.cancel, role: .cancel) {}
             } message: {
-                Text(L10n.AIConsent.message)
+                Text(L10n.AIConsent.processingMessage)
             }
     }
 }

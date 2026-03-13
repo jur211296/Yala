@@ -234,6 +234,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "voiceLanguage")          // Default: VoiceLanguage.system.rawValue
         defaults.removeObject(forKey: "imageInputEnabled")      // Default: false
         defaults.removeObject(forKey: "aiDataConsentAccepted") // Default: false
+        defaults.removeObject(forKey: "aiInsightsConsentAccepted") // Default: false
 
         // --- Orden de listas ---
         defaults.removeObject(forKey: "accountsSortOrderNames") // Default: ""

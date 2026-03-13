@@ -19,7 +19,7 @@ struct WidgetPreferencesView: View {
     }
 
     private var hasAIConsent: Bool {
-        UserDefaults.standard.bool(forKey: "aiDataConsentAccepted")
+        UserDefaults.standard.bool(forKey: "aiInsightsConsentAccepted")
     }
 
     var body: some View {

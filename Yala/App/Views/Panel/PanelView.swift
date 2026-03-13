@@ -568,18 +568,20 @@ struct PanelView: View {
     @ViewBuilder
     private var contextualInsightSection: some View {
         let isPro = FeatureGateService.shared.canAccess(.smartInsightsAI)
-        let hasConsent = UserDefaults.standard.bool(forKey: "aiDataConsentAccepted")
+        let hasConsent = UserDefaults.standard.bool(forKey: "aiInsightsConsentAccepted")
         let shouldShow = isPro && hasConsent && showAIInsight && !contextualInsightDismissed && transactions.count >= 5
 
         if shouldShow && isLoadingInsight {
-            HStack(spacing: DS.Spacing.md) {
-                ProgressView()
-                Text("...")
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "sparkles")
+                    .foregroundStyle(theme.accent)
+                    .symbolEffect(.pulse)
+                Text(L10n.Insights.analyzingData)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
             .padding(DS.Spacing.lg)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
             .transition(.asymmetric(
                 insertion: .scale(scale: 0.95).combined(with: .opacity),
@@ -607,7 +609,7 @@ struct PanelView: View {
         contextualInsight = nil
 
         let isPro = FeatureGateService.shared.canAccess(.smartInsightsAI)
-        let hasConsent = UserDefaults.standard.bool(forKey: "aiDataConsentAccepted")
+        let hasConsent = UserDefaults.standard.bool(forKey: "aiInsightsConsentAccepted")
         let isOnline = NetworkMonitor.shared.isConnected
 
         guard isPro, hasConsent, isOnline, transactions.count >= 5 else {
@@ -1740,7 +1742,7 @@ private struct ContextualInsightCard: View {
             Text(markdownAttributed(text))
                 .font(DS.Typography.caption)
                 .foregroundStyle(.primary)
-                .lineLimit(5)
+                .fixedSize(horizontal: false, vertical: true)
 
             Spacer(minLength: 0)
 

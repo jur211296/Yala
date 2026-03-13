@@ -2521,11 +2521,15 @@
 "siriShortcuts.faq.offlineA" = "Yes, shortcuts work in basic mode without an internet connection.";
 
 // MARK: - AI Consent
-"aiConsent.title" = "AI Data Processing";
-"aiConsent.message" = "Some features optionally use OpenAI to process your data:\n\n• Voice: your audio recording is transcribed\n• Images: the photo is analyzed to extract data\n• Overview: only totals, percentages, and trends are sent\n\nYour individual transactions, transaction history, and personal information are never shared. OpenAI does not use this data for training.";
+"aiConsent.processingTitle" = "Voice & Image Processing";
+"aiConsent.processingMessage" = "These features use OpenAI to process your data:\n\n• Voice: your audio recording is transcribed\n• Images: the photo is analyzed to extract data\n\nYour individual transactions and personal information are never shared. OpenAI does not use this data for training.";
+"aiConsent.insightsTitle" = "Smart Overview";
+"aiConsent.insightsMessage" = "This feature sends totals, percentages, and trends to OpenAI to generate a summary of your finances.\n\nYour individual transactions, transaction history, and personal information are never shared. OpenAI does not use this data for training.";
 "aiConsent.accept" = "Accept and Enable";
 "aiConsent.privacyPolicy" = "Privacy Policy";
-"aiConsent.inlineHint" = "Your voice, image and summary data is processed with OpenAI. It is not stored permanently.";
+"aiConsent.inlineHintProcessing" = "Your voice and image data is processed with OpenAI. It is not stored permanently.";
+"aiConsent.inlineHintInsights" = "Only totals and trends are sent to OpenAI for the overview. They are not stored permanently.";
+"aiConsent.inlineHintBoth" = "Your voice, image, and summary data is processed with OpenAI. It is not stored permanently.";
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Artificial Intelligence";
