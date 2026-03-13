@@ -18,24 +18,12 @@ struct FilterBlockedPopover: ViewModifier {
     func body(content: Content) -> some View {
         content
             .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                    HStack {
-                        Image(systemName: "lock.fill")
-                            .font(DS.Typography.labelSmall)
-                            .foregroundStyle(.orange)
-                        Text(title)
-                            .font(DS.Typography.labelSmall)
-                            .foregroundStyle(.primary)
-                    }
-
-                    Text(message)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.xl)
-                .frame(maxWidth: 280)
+                HintPopoverContent(
+                    iconName: "lock.fill",
+                    iconColor: DS.Semantic.warningForeground,
+                    title: title,
+                    message: message
+                )
                 .presentationCompactAdaptation(.popover)
             }
     }
