@@ -33,11 +33,29 @@ final class AppBootstrapper {
     let transactionService = TransactionService.shared
     let budgetAlertService = BudgetAlertService.shared
 
+    // MARK: - Deferred Panel Action
+
+    enum DeferredPanelAction {
+        case newTransaction
+        case voiceEntry
+        case imageEntry
+    }
+
     // MARK: - State
 
     private(set) var isInitialized = false
     var deferredInboxNotification: PendingInboxNotification?
-    private var lastRemoteChangeDate = Date.distantPast
+    var deferredSharedImageURL: URL?
+    var deferredPanelAction: DeferredPanelAction?
+    private var controlActionTask: Task<Void, Never>?
+    private var subscriptionCheckTask: Task<Void, Never>?
+    private var remoteChangeTask: Task<Void, Never>?
+    private var lastNotificationCheckDate = Date.distantPast
+
+    /// Whether a fullScreenCover (Face ID or InboxAlertModal) is blocking sheet presentation
+    private var isUIBlocked: Bool {
+        BiometricAuthService.shared.isLocked || !sessionState.pendingInboxNotification.isEmpty
+    }
 
     // MARK: - Initialization
 
@@ -56,6 +74,10 @@ final class AppBootstrapper {
 
         // 0. Sync preferences from iCloud (must be FIRST — other services read these)
         PreferenceSyncService.shared.bootstrap()
+
+        // 0.5. Configure analytics (no-op if API key missing)
+        TelemetryService.configure()
+        TelemetryService.track(.appLaunched)
 
         // 1. Initialize notification delegate (must be early for foreground display)
         _ = NotificationService.shared
@@ -91,7 +113,8 @@ final class AppBootstrapper {
         // 7.5. Clean up stale pending images (>24h)
         SharedContainerService.clearOldPendingImages(olderThan: 86400)
 
-        // 8. Initialize budget alert service
+        // 8. Initialize services with context
+        currencyConverter.setContext(context)
         budgetAlertService.setContext(context)
 
         // 9. Update widget cache
@@ -121,17 +144,19 @@ final class AppBootstrapper {
             object: nil,
             queue: .main
         ) { _ in
-            Task { @MainActor in
+            MainActor.assumeIsolated {
                 let bootstrapper = AppBootstrapper.shared
-                // Debounce: CloudKit puede disparar múltiples notificaciones en ráfaga
-                let now = Date()
-                guard now.timeIntervalSince(bootstrapper.lastRemoteChangeDate) > 1.0 else { return }
-                bootstrapper.lastRemoteChangeDate = now
-                bootstrapper.sessionState.incrementDataVersion()
+                // Trailing-edge debounce: coalesce rapid CloudKit notifications into a single refresh
+                bootstrapper.remoteChangeTask?.cancel()
+                bootstrapper.remoteChangeTask = Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(2))
+                    guard !Task.isCancelled else { return }
+                    bootstrapper.sessionState.incrementDataVersion()
 
-                #if DEBUG
-                print("AppBootstrapper: Remote CloudKit change detected — refreshing UI")
-                #endif
+                    #if DEBUG
+                    print("AppBootstrapper: Remote CloudKit change — refreshing UI")
+                    #endif
+                }
             }
         }
     }
@@ -140,22 +165,37 @@ final class AppBootstrapper {
 
     /// Llamar cuando la app se activa (scenePhase == .active)
     func handleBecameActive(context: ModelContext) {
-        // Check for pending Control Center action first
-        checkForPendingControlAction()
-
-        // Note: shared image check removed here — deep link is the sole trigger
-        // for warm launch. Cold launch is covered by bootstrap() step 7.
-        checkForPendingInboxDrafts(context: context)
-
-        // Verify and reschedule notifications if needed
-        Task {
-            await ensureNotificationsScheduled(context: context)
+        // Re-verify subscription status on foreground resume
+        subscriptionCheckTask?.cancel()
+        subscriptionCheckTask = Task {
+            await refreshSubscriptionStatus()
         }
 
-        // Check if any report notifications should be sent now
-        // This handles the case where user opens app during the notification window
-        Task {
-            await ReportNotificationService.shared.sendDueReports(context: context)
+        // Process due scheduled payments (creates inbox drafts for warm resume)
+        processDueScheduledPayments(context: context)
+        checkForPendingInboxDrafts(context: context)
+
+        // Delay control action check — inbox notification fires at 0.3s,
+        // so we wait 0.5s to know if UI will be blocked.
+        // Cancel previous task to avoid accumulation on rapid app switches.
+        controlActionTask?.cancel()
+        controlActionTask = Task {
+            do {
+                try await Task.sleep(for: .milliseconds(500))
+            } catch {
+                return
+            }
+            checkForPendingControlAction()
+        }
+
+        // Skip notification checks if bootstrap just ran (< 5 seconds ago)
+        let shouldCheckNotifications = Date.now.timeIntervalSince(lastNotificationCheckDate) > 5.0
+
+        if shouldCheckNotifications {
+            Task {
+                await ensureNotificationsScheduled(context: context)
+                await ReportNotificationService.shared.sendDueReports(context: context)
+            }
         }
     }
 
@@ -194,36 +234,53 @@ final class AppBootstrapper {
         print("AppBootstrapper: Processing Control Center action: \(action)")
         #endif
 
-        // Process the action as if it were a deep link
         switch action {
         case "panel":
             sessionState.deepLinkDestination = .panel
-
         case "new-transaction":
-            sessionState.shouldShowNewTransaction = true
-
+            dispatchOrDefer(.newTransaction)
         case "voice-entry":
-            if UserDefaults.standard.bool(forKey: "voiceInputEnabled") {
-                if FeatureGateService.shared.canAccess(.voiceInput) {
-                    sessionState.shouldShowVoiceEntry = true
-                } else {
-                    sessionState.shouldShowUpgradeForVoice = true
-                }
-            }
-
+            dispatchOrDefer(.voiceEntry)
         case "image-entry":
-            if UserDefaults.standard.bool(forKey: "imageInputEnabled") {
-                if FeatureGateService.shared.canAccess(.imageInput) {
-                    sessionState.shouldShowImageEntry = true
-                } else {
-                    sessionState.shouldShowUpgradeForImage = true
-                }
-            }
-
+            dispatchOrDefer(.imageEntry)
         default:
             #if DEBUG
             print("AppBootstrapper: Unknown Control Center action: \(action)")
             #endif
+        }
+    }
+
+    /// Defers action if UI is blocked, otherwise executes immediately.
+    private func dispatchOrDefer(_ action: DeferredPanelAction) {
+        if isUIBlocked {
+            deferredPanelAction = action
+            #if DEBUG
+            print("AppBootstrapper: Deferring \(action) — UI blocked")
+            #endif
+        } else {
+            executeAction(action)
+        }
+    }
+
+    /// Executes a panel action, respecting feature toggles and Pro gates.
+    private func executeAction(_ action: DeferredPanelAction) {
+        switch action {
+        case .newTransaction:
+            sessionState.shouldShowNewTransaction = true
+        case .voiceEntry:
+            guard UserDefaults.standard.bool(forKey: "voiceInputEnabled") else { return }
+            if FeatureGateService.shared.canAccess(.voiceInput) {
+                sessionState.shouldShowVoiceEntry = true
+            } else {
+                sessionState.shouldShowUpgradeForVoice = true
+            }
+        case .imageEntry:
+            guard UserDefaults.standard.bool(forKey: "imageInputEnabled") else { return }
+            if FeatureGateService.shared.canAccess(.imageInput) {
+                sessionState.shouldShowImageEntry = true
+            } else {
+                sessionState.shouldShowUpgradeForImage = true
+            }
         }
     }
 
@@ -257,46 +314,26 @@ final class AppBootstrapper {
                 try? await Task.sleep(for: .milliseconds(500))
                 let imageURLs = SharedContainerService.pendingImageURLs()
                 guard let firstImageURL = imageURLs.first else { return }
-                sessionState.pendingSharedImageURL = firstImageURL
-                sessionState.shouldShowSharedImage = true
+
+                if self.isUIBlocked {
+                    self.deferredSharedImageURL = firstImageURL
+                    #if DEBUG
+                    print("AppBootstrapper: Deferring shared image — UI blocked")
+                    #endif
+                } else {
+                    self.sessionState.pendingSharedImageURL = firstImageURL
+                    self.sessionState.shouldShowSharedImage = true
+                }
             }
 
         case "voice-entry":
-            if UserDefaults.standard.bool(forKey: "voiceInputEnabled") {
-                // Check Pro gate
-                if FeatureGateService.shared.canAccess(.voiceInput) {
-                    sessionState.shouldShowVoiceEntry = true
-                } else {
-                    sessionState.shouldShowUpgradeForVoice = true
-                    #if DEBUG
-                    print("AppBootstrapper: voice-entry blocked - Pro feature")
-                    #endif
-                }
-            } else {
-                #if DEBUG
-                print("AppBootstrapper: voice-entry blocked - feature disabled")
-                #endif
-            }
+            dispatchOrDefer(.voiceEntry)
 
         case "image-entry":
-            if UserDefaults.standard.bool(forKey: "imageInputEnabled") {
-                // Check Pro gate
-                if FeatureGateService.shared.canAccess(.imageInput) {
-                    sessionState.shouldShowImageEntry = true
-                } else {
-                    sessionState.shouldShowUpgradeForImage = true
-                    #if DEBUG
-                    print("AppBootstrapper: image-entry blocked - Pro feature")
-                    #endif
-                }
-            } else {
-                #if DEBUG
-                print("AppBootstrapper: image-entry blocked - feature disabled")
-                #endif
-            }
+            dispatchOrDefer(.imageEntry)
 
         case "new-transaction":
-            sessionState.shouldShowNewTransaction = true
+            dispatchOrDefer(.newTransaction)
 
         case "panel":
             sessionState.deepLinkDestination = .panel
@@ -340,13 +377,19 @@ final class AppBootstrapper {
     private func loadSubscriptionStatus() async {
         let store = StoreKitManager.shared
         await store.loadProducts()
+        await refreshSubscriptionStatus()
+    }
+
+    /// Re-checks entitlements (local StoreKit cache, no network) and syncs state.
+    /// Used by both cold launch and foreground resume.
+    private func refreshSubscriptionStatus() async {
+        let store = StoreKitManager.shared
         await store.updateSubscriptionStatus()
-        sessionState.isProUser = store.isProUser
 
-        // Sync to App Group for widgets
-        store.syncToAppGroup()
+        if sessionState.isProUser != store.isProUser {
+            sessionState.isProUser = store.isProUser
+        }
 
-        // Check for downgrade (user was Pro but no longer is)
         checkForDowngrade()
     }
 
@@ -449,7 +492,7 @@ final class AppBootstrapper {
             }
         }
 
-        UserDefaults.standard.set(Date(), forKey: "lastInboxDraftCheckDate")
+        UserDefaults.standard.set(Date.now, forKey: "lastInboxDraftCheckDate")
     }
 
     private func seedDefaultNotifications(context: ModelContext) {
@@ -462,8 +505,42 @@ final class AppBootstrapper {
     private func checkForPendingSharedImage() {
         let imageURLs = SharedContainerService.pendingImageURLs()
         guard let firstImageURL = imageURLs.first else { return }
-        sessionState.pendingSharedImageURL = firstImageURL
-        sessionState.shouldShowSharedImage = true
+
+        // On cold launch with biometric lock, defer the image
+        if BiometricAuthService.shared.isLocked {
+            deferredSharedImageURL = firstImageURL
+            #if DEBUG
+            print("AppBootstrapper: Deferring shared image (cold launch) — biometric locked")
+            #endif
+        } else {
+            sessionState.pendingSharedImageURL = firstImageURL
+            sessionState.shouldShowSharedImage = true
+        }
+    }
+
+    // MARK: - Deferred Action Resolution
+
+    /// Resolves deferred actions after UI blockers (Face ID / InboxAlertModal) dismiss.
+    /// Called from ContentView on unlock and inbox dismiss, and from PanelView on image dismiss.
+    func showDeferredActionsIfNeeded() {
+        // Shared image takes priority (explicit user action from Share Extension)
+        if let url = deferredSharedImageURL {
+            deferredSharedImageURL = nil
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.3))
+                sessionState.pendingSharedImageURL = url
+                sessionState.shouldShowSharedImage = true
+            }
+            // deferredPanelAction will resolve on ImageSelectionView dismiss
+            return
+        }
+
+        guard let action = deferredPanelAction else { return }
+        deferredPanelAction = nil
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.3))
+            self.executeAction(action)
+        }
     }
 
     // MARK: - Notification Management
@@ -485,11 +562,9 @@ final class AppBootstrapper {
             await NotificationService.shared.rescheduleAllNotifications(items: activeItems)
         }
 
-        // Check scheduled payment notifications
+        // Check scheduled payment notifications (single call fetches data once)
         ScheduledPaymentNotificationService.shared.setContext(context)
-        await ScheduledPaymentNotificationService.shared.checkAndNotifyOverduePayments()
-        await ScheduledPaymentNotificationService.shared.checkAndNotifyDuePayments()
-        await ScheduledPaymentNotificationService.shared.checkAndNotifyUpcomingPayments()
+        await ScheduledPaymentNotificationService.shared.checkAllPaymentNotifications()
 
         // Check credit card payment reminders
         await ScheduledPaymentNotificationService.shared.checkAndNotifyCreditCardPayments()
@@ -501,6 +576,8 @@ final class AppBootstrapper {
         BudgetAlertService.shared.setContext(context)
         await BudgetAlertService.shared.checkBudgetsAndNotify()
         BudgetAlertTracker.shared.cleanupOldEntries()
+
+        lastNotificationCheckDate = Date.now
     }
 
     /// Fetches active NotificationItems from database

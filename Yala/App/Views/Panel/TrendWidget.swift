@@ -18,11 +18,11 @@ struct TrendWidget: View {
     @Namespace private var animationNamespace
     @State private var showFilterBlockedMessage: Bool = false
 
-    /// Check if expense-only filters are active (category/subcategory/nature)
-    private var hasExpenseOnlyFilters: Bool {
+    /// Check if any category/subcategory/need filters are active
+    private var hasCategoryFilters: Bool {
         !sessionState.selectedCategoryIDs.isEmpty
             || !sessionState.selectedSubcategoryIDs.isEmpty
-            || !sessionState.selectedNatures.isEmpty
+            || !sessionState.selectedNeeds.isEmpty
     }
 
     /// Check if we have no data to display
@@ -119,7 +119,14 @@ struct TrendWidget: View {
 
     private func metricButton(for type: TrendType) -> some View {
         let isSelected = viewModel.trendType == type
-        let isBlocked = hasExpenseOnlyFilters && type != .expense
+        let isBlocked: Bool = {
+            guard hasCategoryFilters else { return false }
+            guard let nature = sessionState.activeFilterNature else { return false }
+            switch nature {
+            case .expense: return type != .expense
+            case .income: return type != .income
+            }
+        }()
 
         return Button {
             if isBlocked {

@@ -171,7 +171,7 @@ final class SubcategoryTransferViewModel {
             let maxSortOrder = allCategories.map { $0.sortOrder }.max() ?? -1
             let newCategory = Category(
                 name: othersName,
-                colorHex: "#8E8E93",  // Gray color
+                colorHex: AppConstants.othersColorHex,  // Gray color
                 isIncome: isIncome,
                 isDefaultSeed: false,
                 isVisible: true,
@@ -198,7 +198,7 @@ final class SubcategoryTransferViewModel {
                 isDefaultSeed: false,
                 isVisible: true,
                 sortOrder: maxSortOrder + 1,
-                natureRawValue: SubcategoryNature.unclassified.rawValue,
+                natureRawValue: SubcategoryNeed.unclassified.rawValue,
                 iconName: "questionmark",
                 category: category
             )

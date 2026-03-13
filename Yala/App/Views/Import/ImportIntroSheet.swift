@@ -379,7 +379,7 @@ struct ImportIntroSheet: View {
     }
 
     private func generateTemplate(format: TemplateFormat) {
-        let now = Date()
+        let now = Date.now
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         let dateString = formatter.string(from: now)

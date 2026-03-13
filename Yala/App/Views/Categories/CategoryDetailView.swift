@@ -380,7 +380,7 @@ struct CategoryDetailView: View {
                     RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                         .stroke(DS.Colors.borderDark, lineWidth: 0.8)
                 )
-                .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
+                .dsSubtleShadow()
             }
 
             // Hidden subcategories section
@@ -439,7 +439,7 @@ struct CategoryDetailView: View {
                         RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                             .stroke(DS.Colors.borderDark, lineWidth: 0.8)
                     )
-                    .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 6)
+                    .dsSubtleShadow()
                 }
             }
         }

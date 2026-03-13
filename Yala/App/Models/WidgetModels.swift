@@ -15,7 +15,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
     case categoriesPie = "categorias_torta"
     case subcategoriesPie = "subcategorias_torta"
     case latestRecords = "ultimos_registros"
-    case expensesByNature = "gastos_por_naturaleza"
+    case expensesByNeed = "gastos_por_naturaleza"
     case exchangeRate = "tipo_cambio"
     case budgets = "presupuestos"
     case scheduledPayments = "pagos_planificados"
@@ -31,7 +31,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .categoriesPie: return L10n.WidgetType.categoriesPie
         case .subcategoriesPie: return L10n.WidgetType.subcategoriesPie
         case .latestRecords: return L10n.WidgetType.latestRecords
-        case .expensesByNature: return L10n.WidgetType.expensesByNature
+        case .expensesByNeed: return L10n.WidgetType.expensesByNeed
         case .exchangeRate: return L10n.WidgetType.exchangeRate
         case .budgets: return L10n.WidgetType.budgets
         case .scheduledPayments: return L10n.WidgetType.scheduledPayments
@@ -47,7 +47,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .categoriesPie: return "chart.pie"
         case .subcategoriesPie: return "chart.pie"
         case .latestRecords: return "list.bullet.rectangle"
-        case .expensesByNature: return "chart.bar.xaxis"
+        case .expensesByNeed: return "chart.bar.xaxis"
         case .exchangeRate: return "arrow.left.arrow.right"
         case .budgets: return "chart.pie.fill"
         case .scheduledPayments: return "calendar.badge.clock"
@@ -63,7 +63,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .categoriesPie: return [.large]  // Tamaño único
         case .subcategoriesPie: return [.large]  // Tamaño único
         case .latestRecords: return [.medium]  // Tamaño único
-        case .expensesByNature: return [.medium, .large]
+        case .expensesByNeed: return [.medium, .large]
         case .exchangeRate: return [.medium]  // Tamaño único
         case .budgets: return [.medium, .large]  // Top 3 / Top 5
         case .scheduledPayments: return [.medium]  // Single size, mode selected in preferences
@@ -73,7 +73,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
     /// Returns custom size name for the widget, or nil if single size
     func displaySizeName(for size: WidgetSize) -> String? {
         switch self {
-        case .cashFlow, .expensesByNature:
+        case .cashFlow, .expensesByNeed:
             return size == .medium ? L10n.Widget.compact : L10n.Widget.expanded
         case .topSpending, .topSubcategories, .budgets:
             return size == .medium ? L10n.Widget.top3 : L10n.Widget.top5
@@ -112,7 +112,7 @@ struct WidgetConfig: Identifiable, Codable, Equatable {
             WidgetConfig(id: UUID(), type: .subcategoriesPie, isVisible: false, size: .large),
             WidgetConfig(id: UUID(), type: .topSpending, isVisible: false, size: .medium),
             WidgetConfig(id: UUID(), type: .topSubcategories, isVisible: true, size: .medium),
-            WidgetConfig(id: UUID(), type: .expensesByNature, isVisible: false, size: .medium),
+            WidgetConfig(id: UUID(), type: .expensesByNeed, isVisible: false, size: .medium),
             WidgetConfig(id: UUID(), type: .latestRecords, isVisible: true, size: .medium),
             WidgetConfig(id: UUID(), type: .budgets, isVisible: false, size: .medium),
             WidgetConfig(id: UUID(), type: .scheduledPayments, isVisible: false, size: .medium),

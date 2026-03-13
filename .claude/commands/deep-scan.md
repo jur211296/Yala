@@ -1,6 +1,6 @@
 ---
 description: Escaneo profundo archivo por archivo buscando bugs, errores y mejoras
-allowed-tools: Grep, Glob, Read, Task
+allowed-tools: Grep, Glob, Read, Agent
 argument-hint: "[directorio — default: Yala/App/]"
 ---
 

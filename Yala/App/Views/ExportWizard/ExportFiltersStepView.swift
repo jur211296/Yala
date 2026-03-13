@@ -28,7 +28,7 @@ struct ExportFiltersStepView: View {
     @State private var selectedTags: Set<PersistentIdentifier> = []
 
     // Naturaleza
-    @State private var selectedNatures: Set<SubcategoryNature> = Set(SubcategoryNature.allCases)
+    @State private var selectedNeeds: Set<SubcategoryNeed> = Set(SubcategoryNeed.allCases)
 
     // Moneda
     @State private var selectedCurrencies: Set<CurrencyCode> = Set(CurrencyCode.allCases)
@@ -42,6 +42,9 @@ struct ExportFiltersStepView: View {
 
     // Nota
     @State private var noteContains: String = ""
+
+    // Modo incluir/excluir
+    @State private var isExcludeMode: Bool = false
 
     // MARK: - Sheet Presentation State
     @State private var showCategoriesSheet = false
@@ -75,7 +78,8 @@ struct ExportFiltersStepView: View {
             amountCondition: amountCondition,
             selectedPeriod: selectedPeriod,
             customDateRange: customDateRange,
-            noteContains: noteContains
+            noteContains: noteContains,
+            isExcludeMode: isExcludeMode
         )
     }
 
@@ -109,6 +113,12 @@ struct ExportFiltersStepView: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
+                        Picker("", selection: $isExcludeMode) {
+                            Text(L10n.Filters.includeMode).tag(false)
+                            Text(L10n.Filters.excludeMode).tag(true)
+                        }
+                        .pickerStyle(.segmented)
+
                         SectionBox(title: L10n.Filters.filterOptions) {
                             VStack(spacing: DS.Spacing.none) {
                                 periodRow
@@ -119,7 +129,7 @@ struct ExportFiltersStepView: View {
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 tagsContent
                                 Divider().padding(.leading, DS.Spacing.lg)
-                                naturesContent
+                                needsContent
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 currencyContent
                                 Divider().padding(.leading, DS.Spacing.lg)
@@ -385,21 +395,21 @@ struct ExportFiltersStepView: View {
 
     // MARK: - Natures Content
 
-    private var naturesContent: some View {
+    private var needsContent: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             // Header
             FilterSectionHeader(
-                icon: "leaf.fill",
-                title: L10n.Nature.label,
-                status: selectedNaturesText
+                icon: "chart.bar.fill",
+                title: L10n.Need.label,
+                status: selectedNeedsText
             )
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.md)
 
             // Chips
             FlowLayout(spacing: DS.Spacing.sm) {
-                ForEach(SubcategoryNature.allCases, id: \.self) { nature in
-                    natureChip(nature)
+                ForEach(SubcategoryNeed.allCases, id: \.self) { need in
+                    needChip(need)
                 }
             }
             .padding(.leading, DS.Spacing.formIndent)
@@ -408,18 +418,18 @@ struct ExportFiltersStepView: View {
         }
     }
 
-    private func natureChip(_ nature: SubcategoryNature) -> some View {
-        let isSelected = selectedNatures.contains(nature)
+    private func needChip(_ need: SubcategoryNeed) -> some View {
+        let isSelected = selectedNeeds.contains(need)
 
         return Button {
             if isSelected {
-                selectedNatures.remove(nature)
+                selectedNeeds.remove(need)
             } else {
-                selectedNatures.insert(nature)
+                selectedNeeds.insert(need)
             }
         } label: {
             HStack(spacing: DS.Spacing.xs) {
-                Text(nature.displayName)
+                Text(need.displayName)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
@@ -434,9 +444,9 @@ struct ExportFiltersStepView: View {
         .buttonStyle(.plain)
     }
 
-    private var selectedNaturesText: String {
-        if selectedNatures.isEmpty { return L10n.Filters.allNatures }
-        return "\(selectedNatures.count)"
+    private var selectedNeedsText: String {
+        if selectedNeeds.isEmpty { return L10n.Filters.allNeeds }
+        return "\(selectedNeeds.count)"
     }
 
     private var amountContent: some View {
@@ -448,28 +458,12 @@ struct ExportFiltersStepView: View {
 
     // MARK: - Static Formatters
 
-    private static let periodLongFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale.current
-        f.dateFormat = "d MMM yyyy"
-        return f
-    }()
-
     private static let periodShortFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "d MMM yy"
         f.locale = AppLocale.current
         return f
     }()
-
-    private var periodSubtitle: String {
-        let interval = selectedPeriod.dateInterval()
-
-        let calendar = Calendar.current
-        let displayEnd = calendar.date(byAdding: .day, value: -1, to: interval.end) ?? interval.end
-
-        return "\(Self.periodLongFormatter.string(from: interval.start)) - \(Self.periodLongFormatter.string(from: displayEnd))"
-    }
 
     // MARK: - Period Row (inside SectionBox)
 
@@ -681,7 +675,7 @@ private struct ExportCustomPeriodPickerSheet: View {
             _startDate = State(initialValue: range.start)
             _endDate = State(initialValue: range.end)
         } else {
-            let now = Date()
+            let now = Date.now
             let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: now) ?? now
             _startDate = State(initialValue: thirtyDaysAgo)
             _endDate = State(initialValue: now)
@@ -727,7 +721,7 @@ private struct ExportCustomPeriodPickerSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
         .presentationDragIndicator(.visible)
     }
 

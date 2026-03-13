@@ -9,6 +9,49 @@
 import SwiftData
 import SwiftUI
 
+// MARK: - Account Chips
+
+/// Generates a single aggregated account chip from selected accounts.
+/// Returns empty array if no accounts are selected.
+func buildAccountChips(
+    selectedAccounts: Set<PersistentIdentifier>,
+    allAccounts: [Account]
+) -> [AccountChip] {
+    guard !selectedAccounts.isEmpty else { return [] }
+    let selectedList = allAccounts.filter { selectedAccounts.contains($0.persistentModelID) }
+    guard let firstName = selectedList.first?.name else { return [] }
+    return [AccountChip(name: firstName, count: selectedList.count)]
+}
+
+// MARK: - Tag Chips
+
+/// Generates individual tag chips from selected tags.
+func buildTagChips(
+    selectedTags: Set<PersistentIdentifier>,
+    allTags: [Tag]
+) -> [TagChip] {
+    allTags.filter { selectedTags.contains($0.persistentModelID) }
+        .map {
+            TagChip(
+                id: $0.persistentModelID,
+                tagID: $0.persistentModelID,
+                name: $0.name,
+                iconName: $0.iconName,
+                colorHex: $0.colorHex
+            )
+        }
+}
+
+// MARK: - Need Chips
+
+/// Generates need chip data from selected needs.
+func buildNeedChips(
+    selectedNeeds: Set<SubcategoryNeed>
+) -> [NeedChipData] {
+    selectedNeeds.sorted(by: { $0.rawValue < $1.rawValue })
+        .map { NeedChipData(need: $0) }
+}
+
 /// Data for an aggregated filter chip
 struct AggregatedChipData {
     let name: String

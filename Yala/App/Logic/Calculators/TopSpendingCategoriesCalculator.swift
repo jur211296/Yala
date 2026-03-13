@@ -22,7 +22,7 @@ struct TopSpendingCategoriesCalculator {
         interval: DateInterval,
         currencyCode: String,
         transactionNatures: Set<TransactionNature>? = nil,
-        context: ModelContext
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [CategorySpendingSummary] {
 
         // Determine which natures to include
@@ -63,12 +63,11 @@ struct TopSpendingCategoriesCalculator {
             if transaction.preferredCurrencyCode == currencyCode {
                 doubleAmount = transaction.amountInPreferredCurrency
             } else {
-                let convertedAmount = CurrencyConverter.shared.convert(
+                let convertedAmount = converter.convert(
                     decimalAmount,
                     from: transaction.currencyCode,
                     to: currencyCode,
-                    on: transaction.date,
-                    context: context
+                    on: transaction.date
                 )
                 // Fallback conversion usually returns positive because input decimalAmount is abs()
                 // We should flip it if transaction.amount is negative (expense)

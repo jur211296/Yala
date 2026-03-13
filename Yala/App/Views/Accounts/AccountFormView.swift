@@ -18,6 +18,8 @@ struct AccountFormView: View {
     @Environment(SessionState.self) private var sessionState
 
     @State private var viewModel: AccountFormViewModel
+    @State private var showBalanceCalculator: Bool = false
+    @State private var calcFieldState = BalanceCalculatorFieldState()
     @FocusState private var focusedField: Field?
 
     private enum Field {
@@ -51,6 +53,24 @@ struct AccountFormView: View {
                             adjustmentSection
                         }
                         balanceSection
+
+                        // Balance calculator link (only for new accounts, not editing)
+                        if !viewModel.isEditing && !sessionState.isExpensesOnlyMode {
+                            Button {
+                                showBalanceCalculator = true
+                            } label: {
+                                HStack(spacing: DS.Spacing.xs) {
+                                    Image(systemName: "questionmark.circle")
+                                        .font(DS.Typography.subheadline)
+                                    Text(L10n.Onboarding.accountBalanceLearnMore)
+                                        .font(DS.Typography.subheadline)
+                                        .fontWeight(.semibold)
+                                }
+                                .foregroundStyle(Color.electricIndigo)
+                            }
+                            .buttonStyle(.plain)
+                        }
+
                         actionsSection
                     }
                     .padding(.horizontal, DS.Spacing.lg)
@@ -92,8 +112,29 @@ struct AccountFormView: View {
                     .navigationBarTitleDisplayMode(.inline)
                 }
             }
+            .sheet(isPresented: $showBalanceCalculator) {
+                BalanceCalculatorSheet(
+                    accountType: viewModel.selectedType,
+                    mindset: SessionState.shared.financialMindset,
+                    currencySymbol: viewModel.selectedCurrency.symbol,
+                    fieldState: calcFieldState,
+                    onUseBalance: { amount in
+                        if amount >= 0 {
+                            viewModel.isPositive = true
+                            viewModel.balanceText = String(format: "%.2f", amount)
+                        } else {
+                            viewModel.isPositive = false
+                            viewModel.balanceText = String(format: "%.2f", abs(amount))
+                        }
+                    },
+                    onDismiss: { showBalanceCalculator = false }
+                )
+            }
             .onChange(of: viewModel.isPresentingColorPicker) { _, isPresenting in
                 if isPresenting { focusedField = nil }
+            }
+            .onChange(of: viewModel.selectedType) {
+                calcFieldState.reset()
             }
             .onAppear {
                 viewModel.setContext(modelContext)
@@ -125,6 +166,32 @@ struct AccountFormView: View {
             },
             message: {
                 Text(L10n.Common.saveError)
+            }
+        )
+        .alert(
+            L10n.Account.secondaryCurrencyTitle,
+            isPresented: Binding(
+                get: { viewModel.currencyToSuggestAsSecondary != nil },
+                set: { if !$0 { viewModel.currencyToSuggestAsSecondary = nil } }
+            ),
+            actions: {
+                Button(L10n.Account.secondaryCurrencyAccept) {
+                    acceptSecondaryCurrency()
+                    dismiss()
+                }
+                Button(L10n.Account.secondaryCurrencyReject, role: .cancel) {
+                    viewModel.currencyToSuggestAsSecondary = nil
+                    dismiss()
+                }
+            },
+            message: {
+                if let code = viewModel.currencyToSuggestAsSecondary {
+                    Text(L10n.Account.secondaryCurrencyMessage(
+                        code.rawValue,
+                        CurrencyDefaults.currentPreferred,
+                        code.rawValue
+                    ))
+                }
             }
         )
     }
@@ -242,11 +309,15 @@ struct AccountFormView: View {
                 if viewModel.selectedAdjustmentMode == .byEntry && viewModel.isEditing {
                     SubsectionDivider()
 
-                    DatePicker(
-                        L10n.Account.adjustmentDate,
-                        selection: $viewModel.adjustmentDate,
-                        displayedComponents: .date
-                    )
+                    HStack {
+                        Text(L10n.Account.adjustmentDate)
+                            .font(DS.Typography.body)
+                        Spacer()
+                        DateFieldButton(
+                            date: $viewModel.adjustmentDate,
+                            title: L10n.Account.adjustmentDate
+                        )
+                    }
                     .padding()
                 }
             }
@@ -281,14 +352,19 @@ struct AccountFormView: View {
                     SubsectionDivider()
                 }
 
-                // Sign selector
+                // Sign selector (contextual labels for credit cards)
                 HStack(spacing: DS.Spacing.md) {
                     Text(L10n.Account.sign)
                         .font(DS.Typography.subheadline)
                     Spacer()
                     Picker(L10n.Account.sign, selection: $viewModel.isPositive) {
-                        Text(L10n.Account.positive).tag(true)
-                        Text(L10n.Account.negative).tag(false)
+                        if viewModel.selectedType == .creditCard {
+                            Text(L10n.Account.Sign.inFavor).tag(true)
+                            Text(L10n.Account.Sign.consumed).tag(false)
+                        } else {
+                            Text(L10n.Account.positive).tag(true)
+                            Text(L10n.Account.negative).tag(false)
+                        }
                     }
                     .pickerStyle(.segmented)
                 }
@@ -421,6 +497,7 @@ struct AccountFormView: View {
                                 )
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.Accessibility.selectColor)
                     }
 
                     Text(L10n.Tag.colorSelected(viewModel.selectedColorHex))
@@ -550,7 +627,31 @@ struct AccountFormView: View {
 
     private func saveAccount() {
         if viewModel.saveAccount(context: modelContext) {
-            dismiss()
+            if viewModel.currencyToSuggestAsSecondary == nil {
+                dismiss()
+            }
+            // else: alert will show and dismiss after user responds
+        }
+    }
+
+    private func acceptSecondaryCurrency() {
+        guard let code = viewModel.currencyToSuggestAsSecondary else { return }
+        let raw = UserDefaults.standard.string(forKey: "secondaryCurrencies") ?? ""
+        var existing = raw.split(separator: ",").map(String.init).filter { !$0.isEmpty }
+        existing.append(code.rawValue)
+        let newValue = existing.joined(separator: ",")
+        PreferenceSyncService.shared.set(string: newValue, forKey: "secondaryCurrencies")
+        SessionState.shared.needsExchangeRateWidgetRefresh = true
+
+        Task {
+            // Load historical exchange rates for the new currency
+            let calendar = Calendar.current
+            let today = Date.now
+            guard let oneYearAgo = calendar.date(byAdding: .year, value: -1, to: today) else { return }
+            let dateInterval = DateInterval(start: oneYearAgo, end: today)
+            await ExchangeRateService.shared.forceUpdateToday(context: modelContext)
+            await ExchangeRateService.shared.forceRefreshRates(for: dateInterval, context: modelContext)
+            SessionState.shared.needsExchangeRateWidgetRefresh = true
         }
     }
 

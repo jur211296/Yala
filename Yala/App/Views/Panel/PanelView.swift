@@ -60,7 +60,18 @@ struct PanelView: View {
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
+    @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
+    @State private var showAIConsentAlert = false
+    @State private var pendingAIInput: PendingAIInput = .voice
     @AppStorage("showSiriTip") private var showSiriTip: Bool = true
+    @AppStorage("panelShowAIInsight") private var showAIInsight: Bool = true
+    @AppStorage(InsightTone.storageKey) private var toneSetting: String = InsightTone.normal.rawValue
+    @AppStorage(InsightFocus.storageKey) private var focusSetting: String = InsightFocus.balanced.rawValue
+
+    /// Contextual AI insight state
+    @State private var contextualInsight: String?
+    @State private var isLoadingInsight = false
+    @State private var contextualInsightDismissed = false
 
     /// Voice recording sheet
     @State private var showVoiceRecording = false
@@ -73,6 +84,17 @@ struct PanelView: View {
 
     /// FAB menu expanded state
     @State private var showFABMenu = false
+
+    /// Coach mark: Panel tour (A1-A4)
+    @AppStorage("hasSeenPanelTour") private var hasSeenPanelTour = false
+    @State private var showPanelTour = false
+    @State private var panelTourIndex = 0
+
+    /// Coach mark: Interactivity tour (C1-C2)
+    @AppStorage("hasSeenInteractivityTour") private var hasSeenInteractivityTour = false
+    @State private var showInteractivityTour = false
+    @State private var interactivityTourIndex = 0
+    @State private var panelScrollProxy: ScrollViewProxy?
 
     /// Upgrade prompt sheets for gated features
     @State private var showUpgradeForVoice = false
@@ -167,6 +189,24 @@ struct PanelView: View {
                     }
                 }
         }
+        .coachMarkOverlay(
+            steps: PanelTourSteps.steps(isProUser: FeatureGateService.shared.isProUser),
+            isPresented: $showPanelTour,
+            currentIndex: $panelTourIndex,
+            scrollProxy: panelScrollProxy,
+            onComplete: {
+                hasSeenPanelTour = true
+            }
+        )
+        .coachMarkOverlay(
+            steps: InteractivityTourSteps.steps,
+            isPresented: $showInteractivityTour,
+            currentIndex: $interactivityTourIndex,
+            scrollProxy: panelScrollProxy,
+            onComplete: {
+                hasSeenInteractivityTour = true
+            }
+        )
         .modifier(
             PanelSheetsModifier(
                 accountFormSheet: $accountFormSheet,
@@ -184,6 +224,8 @@ struct PanelView: View {
                 navigateToInboxAfterVoice: $navigateToInboxAfterVoice,
                 switchToImageAfterVoice: $switchToImageAfterVoice,
                 navigateToInboxAfterImage: $navigateToInboxAfterImage,
+                showAIConsentAlert: $showAIConsentAlert,
+                pendingAIInput: $pendingAIInput,
                 existingAccountNames: existingAccountNames,
                 prefillAccountID: viewModel.selectedAccountID,
                 prefillCategoryID: viewModel.selectedCategoryID,
@@ -215,6 +257,26 @@ struct PanelView: View {
         }
         .onChange(of: sizeClass) { _, newValue in
             viewModel.widgetConfig.columns = DS.Adaptive.columns(newValue)
+        }
+        .task {
+            // Wait for post-onboarding flow (trial sheet) to complete
+            while !sessionState.isReadyForTours {
+                try? await Task.sleep(for: .milliseconds(200))
+            }
+            if !hasSeenPanelTour {
+                try? await Task.sleep(for: .seconds(0.6))
+                if !hasSeenPanelTour {
+                    showPanelTour = true
+                }
+            }
+        }
+        .onChange(of: showPanelTour) { _, isShowing in
+            if !isShowing && hasSeenPanelTour {
+                triggerInteractivityTourIfEligible()
+            }
+        }
+        .onChange(of: transactions.count) { _, _ in
+            triggerInteractivityTourIfEligible()
         }
         .modifier(
             PanelDataObservers(
@@ -255,23 +317,30 @@ struct PanelView: View {
         ZStack {
             PanelBackgroundView()
 
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                    if showSiriTip {
-                        SiriTipCard(isVisible: $showSiriTip)
-                    }
+            ScrollViewReader { scrollProxy in
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                        if showSiriTip {
+                            SiriTipCard(isVisible: $showSiriTip)
+                        }
 
-                    accountsSection
-                    totalBalanceSection
+                        accountsSection
+                        contextualInsightSection
+                        totalBalanceSection
+                    }
+                    .padding(.horizontal, DS.Adaptive.horizontalPadding(sizeClass))
+                    .padding(.top, DS.Spacing.lg)
+                    .padding(.bottom, DS.Spacing.xxxl)
+                    // Force complete re-render when formatting settings change
+                    .id(sessionState.formattingVersion)
+                    .task(id: insightTaskKey) {
+                        await loadContextualInsight()
+                    }
                 }
-                .padding(.horizontal, DS.Adaptive.horizontalPadding(sizeClass))
-                .padding(.top, DS.Spacing.lg)
-                .padding(.bottom, DS.Spacing.xxxl)
-                // Force complete re-render when formatting settings change
-                .id(sessionState.formattingVersion)
-            }
-            .refreshable {
-                await refreshData()
+                .refreshable {
+                    await refreshData()
+                }
+                .onAppear { panelScrollProxy = scrollProxy }
             }
 
             // Botón flotante de nuevo registro
@@ -289,50 +358,53 @@ struct PanelView: View {
 
     @ViewBuilder
     private var newRecordFAB: some View {
-        let fabBackground = canUseVoiceInput ? theme.accent : Color.gray.opacity(0.5)
-        let hasAlternativeInputs = voiceInputEnabled || imageInputEnabled
+        let fabBackground = canUseVoiceInput ? theme.accent : DS.Semantic.disabledForeground.opacity(0.5)
 
-        if hasAlternativeInputs && canUseVoiceInput {
-            // Custom FAB with popup menu above
+        if canUseVoiceInput {
+            // Custom FAB with popup menu above (always 3 options)
             VStack(alignment: .trailing, spacing: DS.Spacing.md) {
                 // Menu options (shown when expanded)
                 if showFABMenu {
                     VStack(spacing: DS.Spacing.sm) {
-                        // Voice option (if enabled)
-                        if voiceInputEnabled {
-                            fabMenuButton(
-                                icon: "waveform",
-                                text: L10n.Panel.fabVoice,
-                                color: .hotPink,
-                                isLocked: isVoiceLocked
-                            ) {
-                                dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                    showFABMenu = false
-                                }
-                                if isVoiceLocked {
-                                    showUpgradeForVoice = true
-                                } else {
-                                    showVoiceRecording = true
-                                }
+                        // Voice option
+                        fabMenuButton(
+                            icon: "waveform",
+                            text: L10n.Panel.fabVoice,
+                            color: .hotPink,
+                            isLocked: isVoiceLocked
+                        ) {
+                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
+                                showFABMenu = false
+                            }
+                            if isVoiceLocked {
+                                showUpgradeForVoice = true
+                            } else if !aiDataConsentAccepted {
+                                pendingAIInput = .voice
+                                showAIConsentAlert = true
+                            } else {
+                                if !voiceInputEnabled { voiceInputEnabled = true }
+                                showVoiceRecording = true
                             }
                         }
 
-                        // Image option (if enabled)
-                        if imageInputEnabled {
-                            fabMenuButton(
-                                icon: "photo",
-                                text: L10n.Panel.fabImage,
-                                color: .teal,
-                                isLocked: isImageLocked
-                            ) {
-                                dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                    showFABMenu = false
-                                }
-                                if isImageLocked {
-                                    showUpgradeForImage = true
-                                } else {
-                                    showImageSelection = true
-                                }
+                        // Image option
+                        fabMenuButton(
+                            icon: "photo",
+                            text: L10n.Panel.fabImage,
+                            color: .teal,
+                            isLocked: isImageLocked
+                        ) {
+                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
+                                showFABMenu = false
+                            }
+                            if isImageLocked {
+                                showUpgradeForImage = true
+                            } else if !aiDataConsentAccepted {
+                                pendingAIInput = .image
+                                showAIConsentAlert = true
+                            } else {
+                                if !imageInputEnabled { imageInputEnabled = true }
+                                showImageSelection = true
                             }
                         }
 
@@ -340,7 +412,7 @@ struct PanelView: View {
                         fabMenuButton(
                             icon: "square.and.pencil",
                             text: L10n.Panel.fabManual,
-                            color: theme.accent
+                            color: .electricIndigo
                         ) {
                             dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
                                 showFABMenu = false
@@ -373,15 +445,14 @@ struct PanelView: View {
                 .glassEffect(.regular.interactive())
                 .dsFloatingShadow()
                 .accessibilityLabel(showFABMenu ? L10n.Accessibility.closeMenu : L10n.Accessibility.newRecord)
+                .coachMarkAnchor("fab")
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
         } else {
-            // Simple FAB (no special inputs enabled)
+            // Simple FAB (no accounts/subcategories — disabled)
             Button {
-                if canUseVoiceInput {
-                    showNewTransaction = true
-                }
+                // No-op: disabled state
             } label: {
                 Image(systemName: "plus")
                     .font(DS.Typography.title)
@@ -393,11 +464,12 @@ struct PanelView: View {
             .buttonStyle(.plain)
             .glassEffect(.regular.interactive())
             .dsFloatingShadow()
+            .coachMarkAnchor("fab")
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
-            .disabled(!canUseVoiceInput)
+            .disabled(true)
             .accessibilityLabel(L10n.Accessibility.newRecord)
-            .accessibilityHint(!canUseVoiceInput ? L10n.Accessibility.createAccountFirst : "")
+            .accessibilityHint(L10n.Accessibility.createAccountFirst)
         }
     }
 
@@ -415,16 +487,16 @@ struct PanelView: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: icon)
                     .font(DS.Typography.headline)
-                    .frame(width: DS.Icon.badgeSmall)
+                    .frame(width: DS.Button.fabMenuIconSize)
 
                 Text(text)
                     .font(DS.Typography.headline)
 
+                Spacer(minLength: 0)
+
                 if isLocked {
                     ProBadge(size: .small)
                 }
-
-                Spacer(minLength: 0)
             }
             .foregroundStyle(.white)
             .frame(width: DS.Button.fabMenuWidth)
@@ -476,7 +548,169 @@ struct PanelView: View {
                         accountFormSheet = AccountFormSheet(account: account)
                     }
                 )
+                .coachMarkAnchor("accounts")
+                .coachMarkAnchor("filterAccount")
             }
+        }
+    }
+
+    // MARK: - Contextual AI Insight
+
+    /// Stable task key that triggers re-computation when period or filters change.
+    /// Must be deterministic (no Hasher — its seed changes per launch).
+    private var insightTaskKey: String {
+        let account = viewModel.selectedAccountID.map { "\($0)" } ?? "all"
+        let cats = SessionState.shared.selectedCategoryIDs.map { "\($0)" }.sorted().joined(separator: ",")
+        let subs = viewModel.selectedSubcategoryIDs.map { "\($0)" }.sorted().joined(separator: ",")
+        return "\(viewModel.selectedPeriod.rawValue)_\(account)_\(cats)_\(subs)_\(toneSetting)_\(focusSetting)"
+    }
+
+    @ViewBuilder
+    private var contextualInsightSection: some View {
+        let isPro = FeatureGateService.shared.canAccess(.smartInsightsAI)
+        let hasConsent = UserDefaults.standard.bool(forKey: "aiInsightsConsentAccepted")
+        let shouldShow = isPro && hasConsent && showAIInsight && !contextualInsightDismissed && transactions.count >= 5
+
+        if shouldShow && isLoadingInsight {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "sparkles")
+                    .foregroundStyle(theme.accent)
+                    .symbolEffect(.pulse)
+                Text(L10n.Insights.analyzingData)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(DS.Spacing.lg)
+            .frame(maxWidth: .infinity)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+            .transition(.asymmetric(
+                insertion: .scale(scale: 0.95).combined(with: .opacity),
+                removal: .scale(scale: 0.95).combined(with: .opacity)
+            ))
+        } else if shouldShow, let insight = contextualInsight {
+            ContextualInsightCard(
+                text: insight,
+                onDismiss: {
+                    dsWithAnimation(reduceMotion) {
+                        contextualInsightDismissed = true
+                    }
+                }
+            )
+            .transition(.asymmetric(
+                insertion: .scale(scale: 0.95).combined(with: .opacity),
+                removal: .scale(scale: 0.95).combined(with: .opacity)
+            ))
+        }
+    }
+
+    private func loadContextualInsight() async {
+        // Reset dismiss state when task key changes (period/filter change)
+        contextualInsightDismissed = false
+        contextualInsight = nil
+
+        let isPro = FeatureGateService.shared.canAccess(.smartInsightsAI)
+        let hasConsent = UserDefaults.standard.bool(forKey: "aiInsightsConsentAccepted")
+        let isOnline = NetworkMonitor.shared.isConnected
+
+        guard isPro, hasConsent, isOnline, transactions.count >= 5 else {
+            return
+        }
+
+        let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCodeRaw) ?? .pen
+        let txnCount = transactions.count
+        let tone = InsightTone.current
+        let focus = InsightFocus.current
+        let country = Locale.current.region?.identifier ?? ""
+        let currencyFormat = UserDefaults.standard.string(forKey: "currencyDisplayFormat") ?? "code"
+        let cacheKey = "panel_\(insightTaskKey)_\(txnCount)_\(country)_\(currencyFormat)"
+
+        // Calculate InsightData
+        let criteria = viewModel.buildFilterCriteria(dateInterval: viewModel.panelDateInterval)
+        let data = InsightsCalculator.calculate(
+            transactions: transactions,
+            accounts: accounts,
+            categories: categories,
+            budgets: budgets,
+            scheduledPayments: scheduledPayments,
+            period: viewModel.selectedPeriod,
+            criteria: criteria,
+            currencyCode: preferredCurrency.rawValue,
+            customRange: viewModel.customDateRange
+        )
+
+        // Build lightweight aggregated dict (subset — no filter context, no year-over-year)
+        var aggregated: [String: Any] = [
+            "currency": preferredCurrency.rawValue,
+            "currency_display": YalaFormatter.currencyIdentifier(for: preferredCurrency.rawValue),
+            "locale": Locale.current.language.languageCode?.identifier ?? "es",
+            "country": Locale.current.region?.identifier ?? "",
+            "total_expense": Int(data.periodSummary.totalExpense),
+            "total_income": Int(data.periodSummary.totalIncome),
+            "spending_total_variation": data.periodSummary.expenseVariation.map { "\(Int($0))%" } ?? "N/A",
+            "income_variation": data.periodSummary.incomeVariation.map { "\(Int($0))%" } ?? "N/A",
+            "daily_avg_variation": data.periodSummary.dailyAverageVariation.map { "\(Int($0))%" } ?? "N/A",
+            "count": data.periodSummary.transactionCount,
+            "daily_avg": Int(data.quickStats.dailyAverage)
+        ]
+
+        // Top 3 categories with amounts (reduced vs full insights top 5)
+        if !data.quickStats.topCategories.isEmpty {
+            aggregated["top_categories"] = data.quickStats.topCategories.prefix(3).map {
+                ["name": $0.category.name, "amount": Int($0.amount), "pct": Int($0.percentage)] as [String: Any]
+            }
+        }
+
+        // Top subcategory
+        if let topSub = data.quickStats.topSubcategory {
+            let subName = topSub.subcategory?.name ?? topSub.subcategoryName
+            let totalExpense = data.periodSummary.totalExpense
+            let pctOfTotal = totalExpense > 0 ? Int((topSub.amount / totalExpense) * 100) : 0
+            aggregated["top_subcategory"] = ["name": subName, "amount": Int(topSub.amount), "pct_of_total": pctOfTotal] as [String: Any]
+        }
+
+        // Highest expense
+        if let highest = data.quickStats.highestExpense {
+            aggregated["highest_expense"] = ["amount": Int(highest.amount), "description": highest.note] as [String: Any]
+        }
+
+        // Subscriptions
+        if data.commitments.activeSubscriptionsCount > 0 {
+            aggregated["subscriptions"] = ["count": data.commitments.activeSubscriptionsCount, "monthly_total": Int(data.commitments.activeSubscriptionsMonthly)] as [String: Any]
+        }
+
+        let needDist = data.needDistribution
+        if needDist.total > 0 {
+            aggregated["need_split"] = [
+                "essential": ["pct": Int(needDist.essentialPercent), "amount": Int(needDist.essential)] as [String: Any],
+                "priority": ["pct": Int(needDist.priorityPercent), "amount": Int(needDist.priority)] as [String: Any],
+                "optional": ["pct": Int(needDist.optionalPercent), "amount": Int(needDist.optional)] as [String: Any]
+            ]
+        }
+
+        if !data.commitments.budgetsAtRisk.isEmpty {
+            aggregated["budgets_at_risk"] = data.commitments.budgetsAtRisk.map {
+                ["name": $0.name, "spent": Int($0.spent), "limit": Int($0.limit), "usage_pct": Int($0.usagePercent)] as [String: Any]
+            }
+        }
+
+        // Loading state only covers the async LLM call
+        isLoadingInsight = true
+        defer { isLoadingInsight = false }
+
+        do {
+            let result = try await InsightsLLMService.shared.generateContextualInsight(
+                aggregatedData: aggregated,
+                cacheKey: cacheKey,
+                tone: tone,
+                focus: focus
+            )
+
+            guard !Task.isCancelled else { return }
+            contextualInsight = result
+        } catch {
+            #if DEBUG
+            print("PanelView: Contextual insight error: \(error)")
+            #endif
         }
     }
 
@@ -500,7 +734,7 @@ struct PanelView: View {
                 let hasAccountFilter = viewModel.selectedAccountID != nil
                 let hasDateFilter = viewModel.focusedDate != nil
                 let hasCategoryFilter = viewModel.selectedCategoryID != nil
-                let hasNatureFilter = viewModel.selectedNature != nil
+                let hasNeedFilter = viewModel.selectedNeed != nil
                 let hasSubcategoryFilter = !viewModel.selectedSubcategoryIDs.isEmpty
                 let hasTagFilter = !viewModel.selectedTags.isEmpty
                 let hasCurrencyFilter = !viewModel.selectedCurrencies.isEmpty
@@ -510,7 +744,7 @@ struct PanelView: View {
 
                 let activeFilterCount = [
                     hasAccountFilter, hasDateFilter, hasCategoryFilter,
-                    hasNatureFilter, hasSubcategoryFilter, hasTagFilter,
+                    hasNeedFilter, hasSubcategoryFilter, hasTagFilter,
                     hasCurrencyFilter, hasAmountFilter, hasNoteFilter,
                     hasTransactionNatureFilter,
                 ].filter { $0 }.count
@@ -518,6 +752,21 @@ struct PanelView: View {
                 if activeFilterCount > 0 {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: DS.Spacing.sm) {
+                            // Exclude mode badge
+                            if viewModel.isExcludeMode {
+                                HStack(spacing: DS.Spacing.xs) {
+                                    Image(systemName: "minus.circle.fill")
+                                        .font(DS.Typography.chipIconOnly)
+                                        .foregroundStyle(DS.Semantic.errorForeground)
+                                    Text(L10n.Filters.excludeMode)
+                                        .font(DS.Typography.caption)
+                                        .foregroundStyle(DS.Semantic.errorForeground)
+                                }
+                                .padding(.horizontal, DS.Spacing.sm)
+                                .padding(.vertical, DS.Spacing.xs)
+                                .background(DS.Semantic.errorBackgroundSubtle, in: Capsule())
+                            }
+
                             // Account Chip
                             if let selectedID = viewModel.selectedAccountID,
                                 let account = accounts.first(where: {
@@ -527,7 +776,7 @@ struct PanelView: View {
                                 FilterChipView(
                                     accountName: account.name,
                                     onClear: { viewModel.selectedAccountID = nil }
-                                )
+                                ).excludeMode(viewModel.isExcludeMode)
                             }
 
                             // Date Chip
@@ -567,7 +816,7 @@ struct PanelView: View {
                                         sessionState.selectedCategoryIDs.removeAll()
                                         sessionState.selectedSubcategoryIDs.removeAll()
                                     }
-                                )
+                                ).excludeMode(viewModel.isExcludeMode)
                             } else if !isAllSubsSelected && !selectedSubsByID.isEmpty {
                                 // Subcategory selection - show parent category
                                 let parentCategories = Set(
@@ -584,7 +833,7 @@ struct PanelView: View {
                                             sessionState.selectedCategoryIDs.removeAll()
                                             sessionState.selectedSubcategoryIDs.removeAll()
                                         }
-                                    )
+                                    ).excludeMode(viewModel.isExcludeMode)
                                 }
                             }
 
@@ -604,18 +853,18 @@ struct PanelView: View {
                                             viewModel.selectedSubcategoryIDs.removeAll()
                                             sessionState.selectedSubcategoryIDs.removeAll()
                                         }
-                                    )
+                                    ).excludeMode(viewModel.isExcludeMode)
                                 }
                             }
 
                             // Nature Chip (Subcategory Nature: essential/priority/optional)
-                            if let nature = viewModel.selectedNature {
+                            if let need = viewModel.selectedNeed {
                                 FilterChipView(
-                                    nature: nature,
+                                    need: need,
                                     onClear: {
-                                        dsWithAnimation(reduceMotion) { viewModel.selectedNature = nil }
+                                        dsWithAnimation(reduceMotion) { viewModel.selectedNeed = nil }
                                     }
-                                )
+                                ).excludeMode(viewModel.isExcludeMode)
                             }
 
                             // Transaction Nature Chip (Income/Expense)
@@ -644,7 +893,7 @@ struct PanelView: View {
                                                 viewModel.syncToSessionState(sessionState)
                                             }
                                         }
-                                    )
+                                    ).excludeMode(viewModel.isExcludeMode)
                                 }
                             }
 
@@ -658,7 +907,7 @@ struct PanelView: View {
                                             viewModel.syncToSessionState(sessionState)
                                         }
                                     }
-                                )
+                                ).excludeMode(viewModel.isExcludeMode)
                             }
 
                             // Amount Chip
@@ -708,46 +957,38 @@ struct PanelView: View {
             }
             .padding(.bottom, DS.Spacing.sm)
 
-            HStack {
-                Text(L10n.Panel.widgets)
-                    .font(DS.Typography.title)
+            // Widgets section header + first widget — spotlight anchor for tour
+            VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                HStack {
+                    Text(L10n.Panel.widgets)
+                        .font(DS.Typography.title)
 
-                Spacer()
+                    Spacer()
 
-                Button {
-                    showWidgetPreferences = true
-                } label: {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(DS.Typography.body).fontWeight(.medium)
-                        .foregroundStyle(Color.primary)
-                }
-                .accessibilityLabel(L10n.Accessibility.widgetPreferences)
-            }
-            .padding(.trailing, DS.Spacing.xxs)
-
-            // Custom Grid Layout (VStack of Rows)
-            VStack(spacing: DS.Spacing.lg) {
-                ForEach(viewModel.layoutRows) { row in
-                    switch row.type {
-                    case .fullWidth(let config):
-                        widgetView(for: config)
-                            .clipped()  // Prevent content overflow
-                    case .halfWidthPair(let left, let right):
-                        HStack(alignment: .top, spacing: DS.Spacing.lg) {
-                            widgetView(for: left)
-                                .frame(maxWidth: .infinity)
-                                .clipped()
-
-                            if let right = right {
-                                widgetView(for: right)
-                                    .frame(maxWidth: .infinity)
-                                    .clipped()
-                            } else {
-                                Color.clear
-                                    .frame(maxWidth: .infinity)
-                            }
-                        }
+                    Button {
+                        showWidgetPreferences = true
+                    } label: {
+                        Image(systemName: "slider.horizontal.3")
+                            .font(DS.Typography.body).fontWeight(.medium)
+                            .foregroundStyle(Color.primary)
                     }
+                    .accessibilityLabel(L10n.Accessibility.widgetPreferences)
+                    .coachMarkAnchor("widgetPreferences")
+                }
+                .padding(.trailing, DS.Spacing.xxs)
+
+                // First widget row (included in "widgets" spotlight)
+                if let firstRow = viewModel.layoutRows.first {
+                    widgetRow(for: firstRow)
+                }
+            }
+            .coachMarkAnchor("widgets")
+            .coachMarkAnchor("interactiveWidgets")
+
+            // Remaining widget rows
+            VStack(spacing: DS.Spacing.lg) {
+                ForEach(viewModel.layoutRows.dropFirst()) { row in
+                    widgetRow(for: row)
                 }
             }
 
@@ -758,7 +999,7 @@ struct PanelView: View {
                 .onChange(of: viewModel.focusedDate) {
                     recalculateData()
                 }
-                .onChange(of: viewModel.selectedNature) {
+                .onChange(of: viewModel.selectedNeed) {
                     recalculateData()
                 }
         }
@@ -782,6 +1023,44 @@ struct PanelView: View {
         recalculateData()
         try? await Task.sleep(for: .milliseconds(300))
         DS.Haptic.light()
+    }
+
+    /// Renders a single widget layout row (full-width or half-width pair)
+    @ViewBuilder
+    private func widgetRow(for row: WidgetConfigManager.WidgetRow) -> some View {
+        switch row.type {
+        case .fullWidth(let config):
+            widgetView(for: config)
+                .clipped()
+        case .halfWidthPair(let left, let right):
+            HStack(alignment: .top, spacing: DS.Spacing.lg) {
+                widgetView(for: left)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
+
+                if let right = right {
+                    widgetView(for: right)
+                        .frame(maxWidth: .infinity)
+                        .clipped()
+                } else {
+                    Color.clear
+                        .frame(maxWidth: .infinity)
+                }
+            }
+        }
+    }
+
+    /// Check and trigger interactivity tour if conditions are met
+    private func triggerInteractivityTourIfEligible() {
+        guard hasSeenPanelTour, !hasSeenInteractivityTour, !showPanelTour, !showInteractivityTour else { return }
+        let uniqueDays = Set(transactions.map { Calendar.current.startOfDay(for: $0.date) }).count
+        guard uniqueDays >= 2 else { return }
+        Task {
+            try? await Task.sleep(for: .seconds(1.0))
+            if !showInteractivityTour {
+                showInteractivityTour = true
+            }
+        }
     }
 
     /// Recalculate trend data with smooth animation
@@ -838,8 +1117,7 @@ struct PanelView: View {
         let balance = viewModel.displayedBalanceInDefaultCurrency(
             accounts: accounts,
             transactions: transactions,
-            defaultCurrencyCode: defaultCurrencyCodeRaw,
-            context: modelContext
+            defaultCurrencyCode: defaultCurrencyCodeRaw
         )
 
         // All widgets below have 'onShowMore' or 'onViewDetail' removed (or passed as nil) to remove chevrons
@@ -865,6 +1143,7 @@ struct PanelView: View {
                 categories: viewModel.topSpendingCategories,
                 currencyCode: preferredCurrency.rawValue,
                 selectedCategoryID: viewModel.selectedCategoryID,
+                isExcludeMode: viewModel.isExcludeMode,
                 onSelectCategory: { id in
                     dsWithAnimation(reduceMotion) {
                         viewModel.toggleCategoryFilter(id)
@@ -895,6 +1174,7 @@ struct PanelView: View {
                     }
                 },
                 selectedSubcategoryIDs: viewModel.selectedSubcategoryIDs,
+                isExcludeMode: viewModel.isExcludeMode,
                 onShowMore: { navigateToStatistics(.categories) },
                 size: mapWidgetSize(config.size),
                 period: viewModel.selectedPeriod,
@@ -912,6 +1192,7 @@ struct PanelView: View {
                     }
                 },
                 onShowDetail: { navigateToStatistics(.categories) },
+                isExcludeMode: viewModel.isExcludeMode,
                 size: config.size,
                 period: viewModel.selectedPeriod,
                 previousTotalAmount: viewModel.previousCategoriesTotalAmount,
@@ -936,6 +1217,7 @@ struct PanelView: View {
                     }
                 },
                 onShowDetail: { navigateToStatistics(.categories) },
+                isExcludeMode: viewModel.isExcludeMode,
                 size: config.size,
                 period: viewModel.selectedPeriod,
                 previousTotalAmount: viewModel.previousSubcategoriesTotalAmount,
@@ -968,23 +1250,23 @@ struct PanelView: View {
                 currencyCode: preferredCurrency.rawValue,
                 onShowMore: { navigateToStatistics(.records) }
             )
-        } else if config.type == .expensesByNature {
-            NatureTrendWidget(
-                trendPoints: viewModel.natureTrendPoints,
-                selectedNature: viewModel.selectedNature,
+        } else if config.type == .expensesByNeed {
+            NeedTrendWidget(
+                trendPoints: viewModel.needTrendPoints,
+                selectedNeed: viewModel.selectedNeed,
                 currencyCode: preferredCurrency.rawValue,
                 size: mapWidgetSize(config.size),
-                grouping: viewModel.natureGrouping,
+                grouping: viewModel.needGrouping,
                 interval: viewModel.currentInterval,
-                onSelectNature: { nature in
+                onSelectNeed: { need in
                     dsWithAnimation(reduceMotion) {
-                        viewModel.toggleNatureFilter(nature)
+                        viewModel.toggleNeedFilter(need)
                     }
                 },
                 onShowDetail: { navigateToStatistics(.categories) },
                 period: viewModel.selectedPeriod,
-                previousTotalAmount: viewModel.previousNatureTotalAmount,
-                previousAmountByNature: viewModel.previousNatureAmounts,
+                previousTotalAmount: viewModel.previousNeedTotalAmount,
+                previousAmountByNeed: viewModel.previousNeedAmounts,
                 showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime,
                 isIncomeMode: viewModel.selectedTransactionNatures == [.income]
             )
@@ -1007,6 +1289,7 @@ struct PanelView: View {
                 currencyCode: displayCurrency,
                 hasBudgetsButNoFavorites: viewModel.hasBudgetsButNoFavorites,
                 selectedBudgetID: sessionState.selectedBudgetID,
+                isExcludeMode: viewModel.isExcludeMode,
                 onSelectBudget: { budget in
                     sessionState.applyBudgetFilters(budget)
                 },
@@ -1056,8 +1339,8 @@ struct PanelView: View {
     /// Date range of all transactions (for custom period picker limits)
     private var transactionDateRange: (start: Date, end: Date) {
         let dates = transactions.map(\.date)
-        let start = dates.min() ?? Date()
-        let end = dates.max() ?? Date()
+        let start = dates.min() ?? Date.now
+        let end = dates.max() ?? Date.now
         return (start, end)
     }
 
@@ -1068,7 +1351,7 @@ struct PanelView: View {
         viewModel.selectedCategoryID = nil
         viewModel.selectedSubcategoryIDs.removeAll()
         viewModel.subcategoriesWidgetFilter = nil
-        viewModel.selectedNature = nil
+        viewModel.selectedNeed = nil
         viewModel.selectedTags.removeAll()
         viewModel.selectedCurrencies.removeAll()
         viewModel.amountCondition = .any
@@ -1226,6 +1509,8 @@ private struct PanelSheetsModifier: ViewModifier {
     @Binding var navigateToInboxAfterVoice: Bool
     @Binding var switchToImageAfterVoice: Bool
     @Binding var navigateToInboxAfterImage: Bool
+    @Binding var showAIConsentAlert: Bool
+    @Binding var pendingAIInput: PendingAIInput
 
     let existingAccountNames: (Account?) -> [String]
     let prefillAccountID: PersistentIdentifier?
@@ -1265,6 +1550,7 @@ private struct PanelSheetsModifier: ViewModifier {
                     prefillCategoryID: prefillCategoryID,
                     prefillSubcategoryName: prefillSubcategoryName
                 )
+                .presentationDetents([.large])
             }
             .sheet(isPresented: $showVoiceRecording, onDismiss: {
                 handleVoiceRecordingDismiss()
@@ -1315,6 +1601,12 @@ private struct PanelSheetsModifier: ViewModifier {
             .sheet(isPresented: $showUpgradeForAccounts) {
                 UpgradePromptSheet(feature: .accounts, context: .limitReached)
             }
+            .aiConsentAlert(isPresented: $showAIConsentAlert, pendingInput: $pendingAIInput) { input in
+                switch input {
+                case .voice: showVoiceRecording = true
+                case .image: showImageSelection = true
+                }
+            }
     }
 
     private func handleVoiceRecordingDismiss() {
@@ -1337,6 +1629,10 @@ private struct PanelSheetsModifier: ViewModifier {
             showInbox = true
         }
         recalculateData()
+
+        // If there's a deferred panel action (e.g., Control Center "new-transaction"
+        // that arrived while shared image was showing), resolve it now
+        AppBootstrapper.shared.showDeferredActionsIfNeeded()
     }
 }
 
@@ -1361,33 +1657,44 @@ private struct PanelSessionObservers: ViewModifier {
             }
             .onChange(of: sessionState.selectedCategoryIDs) {
                 // Auto-create expense chip only if ALL selected categories are expense (not income)
-                if !sessionState.selectedCategoryIDs.isEmpty {
+                // Skip in exclude mode — selecting a category to exclude doesn't imply expense-only
+                if !sessionState.isExcludeMode && !sessionState.selectedCategoryIDs.isEmpty {
                     let selectedCats = categories.filter {
                         sessionState.selectedCategoryIDs.contains($0.persistentModelID)
                     }
-                    // Only set expense if we found matching categories AND all are expense categories
-                    if !selectedCats.isEmpty && selectedCats.allSatisfy({ !$0.isIncome }) {
-                        sessionState.selectedTransactionNatures = [.expense]
+                    // Only set expense/income if we found matching categories AND all share the same type
+                    if !selectedCats.isEmpty {
+                        if selectedCats.allSatisfy({ !$0.isIncome }) {
+                            sessionState.selectedTransactionNatures = [.expense]
+                        } else if selectedCats.allSatisfy({ $0.isIncome }) {
+                            sessionState.selectedTransactionNatures = [.income]
+                        }
                     }
                 }
                 recalculateData()
             }
-            .onChange(of: sessionState.selectedNatures) {
+            .onChange(of: sessionState.selectedNeeds) {
                 // Auto-create expense chip when nature filter applied (natures are expense-only)
-                if !sessionState.selectedNatures.isEmpty {
+                // Skip in exclude mode
+                if !sessionState.isExcludeMode && !sessionState.selectedNeeds.isEmpty {
                     sessionState.selectedTransactionNatures = [.expense]
                 }
                 recalculateData()
             }
             .onChange(of: sessionState.selectedSubcategoryIDs) {
                 // Auto-create expense chip only if ALL selected subcategories are from expense categories
-                if !sessionState.selectedSubcategoryIDs.isEmpty {
+                // Skip in exclude mode
+                if !sessionState.isExcludeMode && !sessionState.selectedSubcategoryIDs.isEmpty {
                     let selectedSubs = subcategories.filter {
                         sessionState.selectedSubcategoryIDs.contains($0.persistentModelID)
                     }
-                    // Only set expense if we found matching subcategories AND all are from expense categories
-                    if !selectedSubs.isEmpty && selectedSubs.allSatisfy({ !$0.safeCategory.isIncome }) {
-                        sessionState.selectedTransactionNatures = [.expense]
+                    // Only set expense/income if we found matching subcategories AND all share the same type
+                    if !selectedSubs.isEmpty {
+                        if selectedSubs.allSatisfy({ !$0.safeCategory.isIncome }) {
+                            sessionState.selectedTransactionNatures = [.expense]
+                        } else if selectedSubs.allSatisfy({ $0.safeCategory.isIncome }) {
+                            sessionState.selectedTransactionNatures = [.income]
+                        }
                     }
                 }
                 recalculateData()
@@ -1407,12 +1714,54 @@ private struct PanelSessionObservers: ViewModifier {
             .onChange(of: sessionState.searchText) {
                 recalculateData()
             }
+            .onChange(of: sessionState.isExcludeMode) {
+                recalculateData()
+            }
             .onChange(of: sessionState.selectedTrendMetric) {
                 recalculateData()
             }
             .onChange(of: sessionState.customDateRange) {
                 recalculateData()
             }
+    }
+}
+
+// MARK: - Contextual Insight Card
+
+private struct ContextualInsightCard: View {
+    let text: String
+    let onDismiss: () -> Void
+
+    var body: some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "sparkles")
+                .font(.title2)
+                .foregroundStyle(.tint)
+                .frame(width: 36, height: 36)
+
+            Text(markdownAttributed(text))
+                .font(DS.Typography.caption)
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+
+            Button {
+                onDismiss()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Panel.dismissInsight)
+        }
+        .padding(DS.Spacing.lg)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+    }
+
+    private func markdownAttributed(_ text: String) -> AttributedString {
+        (try? AttributedString(markdown: text)) ?? AttributedString(text)
     }
 }
 

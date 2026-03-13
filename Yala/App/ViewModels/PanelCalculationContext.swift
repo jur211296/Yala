@@ -23,8 +23,8 @@ struct PanelCalculationContext {
     /// User's preferred currency code
     let defaultCurrencyCode: String
 
-    /// SwiftData model context for any additional fetches
-    let modelContext: ModelContext
+    /// Currency converter for cross-currency calculations
+    let converter: CurrencyConverting
 
     // MARK: - Computed Filter Data
 
@@ -45,18 +45,18 @@ struct PanelCalculationContext {
 
     // MARK: - Pre-Filtered Data (Efficiency Optimization)
 
-    /// Context transactions with nature filter pre-applied (avoids duplicate filtering)
-    let natureFilteredTransactions: [TransactionItem]
+    /// Context transactions with need filter pre-applied (avoids duplicate filtering)
+    let needFilteredTransactions: [TransactionItem]
 
-    /// Nature-filtered transactions with subcategory filter pre-applied
+    /// Need-filtered transactions with subcategory filter pre-applied
     let fullyFilteredTransactions: [TransactionItem]
 
-    /// Transactions for nature widget - has cat/subcat filters but NO nature filter
-    /// Allows nature widget to show ALL natures with dimming behavior
-    let natureWidgetTransactions: [TransactionItem]
+    /// Transactions for need widget - has cat/subcat filters but NO need filter
+    /// Allows need widget to show ALL needs with dimming behavior
+    let needWidgetTransactions: [TransactionItem]
 
     /// Transactions with all filters EXCEPT date (for previous period comparison)
-    /// Has: account, category, subcategory, nature, tags, currency, amount filters
+    /// Has: account, category, subcategory, need, tags, currency, amount filters
     /// Does NOT have: date filter
     let transactionsWithoutDateFilter: [TransactionItem]
 
@@ -81,8 +81,8 @@ struct PanelCalculationContext {
     /// Grouping for cash flow widget
     let cashFlowGrouping: TrendGrouping
 
-    /// Grouping for nature trend widget
-    let natureGrouping: TrendGrouping
+    /// Grouping for need trend widget
+    let needGrouping: TrendGrouping
 
     // MARK: - Active Filters
 
@@ -95,8 +95,8 @@ struct PanelCalculationContext {
     /// Currently selected subcategory filters (by PersistentIdentifier, supports multiple)
     let selectedSubcategoryIDs: Set<PersistentIdentifier>
 
-    /// Currently selected nature filter
-    let selectedNature: SubcategoryNature?
+    /// Currently selected need filter
+    let selectedNeed: SubcategoryNeed?
 
     /// Subcategories widget category filter
     let subcategoriesWidgetFilter: PersistentIdentifier?

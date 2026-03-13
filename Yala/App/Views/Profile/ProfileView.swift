@@ -35,7 +35,11 @@ struct ProfileView: View {
     @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
     @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
+    @AppStorage("aiInsightsConsentAccepted") private var aiInsightsConsentAccepted: Bool = false
+    @AppStorage(InsightTone.storageKey) private var insightsToneRaw: String = InsightTone.normal.rawValue
+    @AppStorage(InsightFocus.storageKey) private var insightsFocusRaw: String = InsightFocus.balanced.rawValue
     @State private var showAIConsentAlert: Bool = false
+    @State private var showInsightsConsentAlert: Bool = false
     @State private var pendingConsentForVoice: Bool = true
 
     // Navigation & Sheets
@@ -53,7 +57,20 @@ struct ProfileView: View {
     // Subscription state
     @State private var showUpgradeForVoice = false
     @State private var showUpgradeForImage = false
+    @State private var showUpgradeForInsights = false
     @State private var showSupportSheet = false
+
+    // Coach mark: Settings tour
+    @AppStorage("hasSeenSettingsTour") private var hasSeenSettingsTour = false
+    @State private var showSettingsTour = false
+    @State private var settingsTourIndex = 0
+    @State private var settingsScrollProxy: ScrollViewProxy?
+
+    #if DEBUG
+    @State private var seedService = DevSeedService()
+    @State private var showSeedConfirmation = false
+    @State private var showSeedProgress = false
+    #endif
 
     private var isProUser: Bool {
         FeatureGateService.shared.isProUser
@@ -65,6 +82,18 @@ struct ProfileView: View {
 
     private var isImageLocked: Bool {
         !FeatureGateService.shared.canAccess(.imageInput)
+    }
+
+    private var isSmartInsightsLocked: Bool {
+        !FeatureGateService.shared.canAccess(.smartInsightsAI)
+    }
+
+    private var selectedTone: InsightTone {
+        InsightTone(rawValue: insightsToneRaw) ?? .normal
+    }
+
+    private var selectedFocus: InsightFocus {
+        InsightFocus(rawValue: insightsFocusRaw) ?? .balanced
     }
 
     enum ProfileSheet: Identifiable {
@@ -104,26 +133,31 @@ struct ProfileView: View {
             ZStack {
                 PanelBackgroundView()
 
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
-                        // Header
-                        profileHeader
+                ScrollViewReader { scrollProxy in
+                    ScrollView {
+                        VStack(spacing: DS.Spacing.xxl) {
+                            // Header
+                            profileHeader
 
-                        // Sections
-                        organizacionSection
-                        preferenciasSection
-                        datosSection
-                        seguridadSection
-                        ayudaSection
-                        legalSection
+                            // Sections
+                            organizacionSection
+                            preferenciasSection
+                            aiFeaturesSection
+                            datosSection
+                            seguridadSection
+                            ayudaSection
+                            legalSection
 
-                        // Version info
-                        Text(L10n.Settings.versionInfo)
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.tertiary)
-                            .padding(.top, DS.Spacing.sm)
+                            // Version info
+                            Text(L10n.Settings.versionInfo)
+                                .font(DS.Typography.captionSmall)
+                                .foregroundStyle(.tertiary)
+                                .padding(.top, DS.Spacing.sm)
+                        }
+                        .padding(.vertical, DS.Spacing.xxl)
                     }
-                    .padding(.vertical, DS.Spacing.xxl)
+                    .scrollDisabled(showSettingsTour)
+                    .onAppear { settingsScrollProxy = scrollProxy }
                 }
             }
             .navigationTitle(L10n.Profile.title)
@@ -185,7 +219,7 @@ struct ProfileView: View {
                     Text(L10n.Image.errorPhotoPermission)
                 }
             }
-            .alert(L10n.AIConsent.title, isPresented: $showAIConsentAlert) {
+            .alert(L10n.AIConsent.processingTitle, isPresented: $showAIConsentAlert) {
                 Button(L10n.AIConsent.accept) {
                     aiDataConsentAccepted = true
                     if pendingConsentForVoice {
@@ -199,7 +233,18 @@ struct ProfileView: View {
                 }
                 Button(L10n.Action.cancel, role: .cancel) {}
             } message: {
-                Text(L10n.AIConsent.message)
+                Text(L10n.AIConsent.processingMessage)
+            }
+            .alert(L10n.AIConsent.insightsTitle, isPresented: $showInsightsConsentAlert) {
+                Button(L10n.AIConsent.accept) {
+                    aiInsightsConsentAccepted = true
+                }
+                Button(L10n.AIConsent.privacyPolicy) {
+                    openURL(AppConstants.privacyURL)
+                }
+                Button(L10n.Action.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.AIConsent.insightsMessage)
             }
             .navigationDestination(for: ProfileDestination.self) { destination in
                 switch destination {
@@ -248,6 +293,21 @@ struct ProfileView: View {
             .onAppear {
                 viewModel.setContext(modelContext)
                 profileStorage.migrateFromUserDefaultsIfNeeded()
+            }
+        }
+        .coachMarkOverlay(
+            steps: SettingsTourSteps.steps,
+            isPresented: $showSettingsTour,
+            currentIndex: $settingsTourIndex,
+            scrollProxy: settingsScrollProxy,
+            onComplete: { hasSeenSettingsTour = true }
+        )
+        .task {
+            if !hasSeenSettingsTour {
+                try? await Task.sleep(for: .seconds(0.8))
+                if !hasSeenSettingsTour {
+                    showSettingsTour = true
+                }
             }
         }
     }
@@ -347,6 +407,9 @@ struct ProfileView: View {
         .sheet(isPresented: $showUpgradeForImage) {
             UpgradePromptSheet(feature: .imageInput, context: .proFeature)
         }
+        .sheet(isPresented: $showUpgradeForInsights) {
+            UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature)
+        }
     }
 
     // MARK: - Pro Badge with Cyan Spark
@@ -356,7 +419,7 @@ struct ProfileView: View {
         HStack(spacing: DS.Spacing.xs) {
             // Cyan spark (instead of gold)
             YalaSparkShape()
-                .fill(Color.cyan)
+                .fill(Color.cyan) // DS-OK: decorative section accent
                 .frame(width: 12, height: 12)
 
             Text("PRO")
@@ -383,25 +446,30 @@ struct ProfileView: View {
                 profileRow(
                     icon: "creditcard.fill", title: L10n.Settings.accounts, iconColor: DS.Semantic.successForeground,
                     destination: .accounts)
+                    .coachMarkAnchor("settingsAccounts")
                 SubsectionDivider()
                 profileRow(
                     icon: "tag.fill", title: L10n.Settings.categories, iconColor: .orange,
                     destination: .categories)
+                    .coachMarkAnchor("settingsCategories")
                 SubsectionDivider()
                 profileRow(
                     icon: "number", title: L10n.Settings.tags, iconColor: .purple,
                     destination: .tags)
+                    .coachMarkAnchor("settingsTags")
                 SubsectionDivider()
                 profileRow(
                     icon: "chart.pie.fill", title: L10n.Settings.budgetsFavorites,
                     iconColor: .mint,
                     destination: .budgetsFavorites)
+                    .coachMarkAnchor("settingsBudgets")
                 SubsectionDivider()
                 profileRow(
                     icon: "calendar.badge.clock", title: L10n.Settings.plannedPayments,
                     iconColor: .cyan,
                     destination: .planned
                 )
+                .coachMarkAnchor("settingsPlanned")
                 SubsectionDivider()
                 profileRow(
                     icon: "star.fill", title: L10n.Settings.favorites, iconColor: .yellow,
@@ -417,6 +485,7 @@ struct ProfileView: View {
                 profileRow(
                     icon: "slider.horizontal.3", title: L10n.Settings.personalization,
                     iconColor: .indigo, destination: .personalization)
+                .coachMarkAnchor("settingsPersonalization")
                 SubsectionDivider()
                 profileRow(
                     icon: "bell.fill", title: L10n.Settings.notifications, iconColor: .red,
@@ -434,13 +503,26 @@ struct ProfileView: View {
                 profileRow(
                     icon: "paintpalette.fill", title: L10n.Settings.theme, iconColor: .pink,
                     destination: .themes)
-                SubsectionDivider()
+            }
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    private var aiFeaturesSection: some View {
+        SectionBox(title: L10n.Settings.aiFeatures) {
+            VStack(spacing: DS.Spacing.none) {
                 voiceInputRow
                 SubsectionDivider()
                 imageInputRow
+                SubsectionDivider()
+                smartInsightsToggleRow
 
-                if voiceInputEnabled || imageInputEnabled {
-                    Text(L10n.AIConsent.inlineHint)
+                let hasProcessing = aiDataConsentAccepted && (voiceInputEnabled || imageInputEnabled)
+                let hasInsights = aiInsightsConsentAccepted
+                if hasProcessing || hasInsights {
+                    Text(hasProcessing && hasInsights ? L10n.AIConsent.inlineHintBoth
+                         : hasProcessing ? L10n.AIConsent.inlineHintProcessing
+                         : L10n.AIConsent.inlineHintInsights)
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, DS.Spacing.lg)
@@ -449,6 +531,151 @@ struct ProfileView: View {
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    private var smartInsightsToggleRow: some View {
+        VStack(spacing: DS.Spacing.none) {
+            // Toggle row
+            Button {
+                if isSmartInsightsLocked {
+                    showUpgradeForInsights = true
+                }
+            } label: {
+                HStack(spacing: DS.Spacing.md) {
+                    if colorfulIcons {
+                        Image(systemName: "sparkles")
+                            .font(DS.Typography.subheadline).fontWeight(.medium)
+                            .foregroundStyle(.white)
+                            .frame(width: 28, height: 28)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(Color.purple) // DS-OK: decorative section accent
+                            )
+                            .opacity(isSmartInsightsLocked ? 0.5 : 1)
+                    } else {
+                        Image(systemName: "sparkles")
+                            .font(DS.Typography.body)
+                            .foregroundStyle(.primary)
+                            .frame(width: 28)
+                            .opacity(isSmartInsightsLocked ? 0.5 : 1)
+                    }
+
+                    Text(L10n.Insights.aiToggle)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(isSmartInsightsLocked ? .secondary : .primary)
+
+                    if isSmartInsightsLocked {
+                        ProBadge(size: .small)
+                    }
+
+                    Spacer()
+
+                    if isSmartInsightsLocked {
+                        Image(systemName: "lock.fill")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Toggle(L10n.Insights.aiToggle, isOn: Binding(
+                            get: { aiInsightsConsentAccepted },
+                            set: { newValue in
+                                if newValue && !aiInsightsConsentAccepted {
+                                    showInsightsConsentAlert = true
+                                } else {
+                                    aiInsightsConsentAccepted = newValue
+                                }
+                            }
+                        ))
+                            .labelsHidden()
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.FormRow.paddingV)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // Tone selector (only visible when enabled and not locked)
+            if aiInsightsConsentAccepted && !isSmartInsightsLocked {
+                HStack(spacing: DS.Spacing.md) {
+                    Color.clear
+                        .frame(width: 28, height: 28)
+
+                    Text(L10n.Insights.toneLabel)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    Menu {
+                        ForEach(InsightTone.allCases) { tone in
+                            Button {
+                                insightsToneRaw = tone.rawValue
+                                PreferenceSyncService.shared.set(string: tone.rawValue, forKey: InsightTone.storageKey)
+                                InsightsLLMService.shared.invalidateCache()
+                            } label: {
+                                HStack {
+                                    Text(tone.displayName)
+                                    if insightsToneRaw == tone.rawValue {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: DS.Spacing.xs) {
+                            Text(selectedTone.displayName)
+                                .font(DS.Typography.body)
+                                .foregroundStyle(.primary)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(DS.Typography.captionSmall.weight(.medium))
+                                .foregroundStyle(.primary)
+                        }
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.FormRow.paddingV)
+
+                // Focus selector
+                HStack(spacing: DS.Spacing.md) {
+                    Color.clear
+                        .frame(width: 28, height: 28)
+
+                    Text(L10n.Insights.focusLabel)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    Menu {
+                        ForEach(InsightFocus.allCases) { focus in
+                            Button {
+                                insightsFocusRaw = focus.rawValue
+                                PreferenceSyncService.shared.set(string: focus.rawValue, forKey: InsightFocus.storageKey)
+                                InsightsLLMService.shared.invalidateCache()
+                            } label: {
+                                HStack {
+                                    Text(focus.displayName)
+                                    if insightsFocusRaw == focus.rawValue {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: DS.Spacing.xs) {
+                            Text(selectedFocus.displayName)
+                                .font(DS.Typography.body)
+                                .foregroundStyle(.primary)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(DS.Typography.captionSmall.weight(.medium))
+                                .foregroundStyle(.primary)
+                        }
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.FormRow.paddingV)
+            }
+        }
     }
 
     private var voiceInputRow: some View {
@@ -467,7 +694,7 @@ struct ProfileView: View {
                             .frame(width: 28, height: 28)
                             .background(
                                 RoundedRectangle(cornerRadius: 6)
-                                    .fill(Color.hotPink)
+                                    .fill(Color.hotPink) // DS-OK: decorative section accent
                             )
                             .opacity(isVoiceLocked ? 0.5 : 1)
                     } else {
@@ -507,7 +734,7 @@ struct ProfileView: View {
                                 let status = AVAudioApplication.shared.recordPermission
                                 if status == .undetermined {
                                     AVAudioApplication.requestRecordPermission { granted in
-                                        DispatchQueue.main.async {
+                                        Task { @MainActor in
                                             if !granted {
                                                 voiceInputEnabled = false
                                                 permissionDeniedType = L10n.Settings.voiceInputEnabled
@@ -587,7 +814,7 @@ struct ProfileView: View {
                         .frame(width: 28, height: 28)
                         .background(
                             RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.teal)
+                                .fill(Color.teal) // DS-OK: decorative section accent
                         )
                         .opacity(isImageLocked ? 0.5 : 1)
                 } else {
@@ -717,6 +944,14 @@ struct ProfileView: View {
                 profileRow(
                     icon: "creditcard.fill", title: L10n.Settings.subscriptions,
                     iconColor: .purple, destination: .subscription)
+                #if DEBUG
+                if Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true {
+                    SubsectionDivider()
+                    devProToggleRow
+                    SubsectionDivider()
+                    devSeedDataRow
+                }
+                #endif
                 SubsectionDivider()
                 Button {
                     requestReview()
@@ -731,12 +966,122 @@ struct ProfileView: View {
         .padding(.horizontal, DS.Spacing.lg)
     }
 
+    #if DEBUG
+    private var devProToggleRow: some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "sparkles")
+                .font(DS.Typography.subheadline).fontWeight(.medium)
+                .foregroundStyle(.white)
+                .frame(width: 28, height: 28)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.orange) // DS-OK: decorative section accent
+                )
+
+            Text("Simular Pro")
+                .font(DS.Typography.body)
+                .foregroundStyle(.primary)
+
+            Spacer()
+
+            Toggle("", isOn: Binding(
+                get: { StoreKitManager.shared.devForceProTier },
+                set: { _ in StoreKitManager.shared.toggleDevProTier() }
+            ))
+            .labelsHidden()
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
+    }
+
+    private var devSeedDataRow: some View {
+        Button {
+            if seedService.hasSeeded {
+                showSeedConfirmation = true
+            } else {
+                Task { await seedService.seed(in: modelContext) }
+            }
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: seedService.hasSeeded ? "arrow.clockwise" : "square.and.arrow.down.fill")
+                    .font(DS.Typography.subheadline).fontWeight(.medium)
+                    .foregroundStyle(.white)
+                    .frame(width: 28, height: 28)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(seedService.hasSeeded ? Color.orange : Color.teal)
+                    )
+
+                Text(seedService.hasSeeded ? "Recargar datos de prueba" : "Cargar datos de prueba")
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.primary)
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
+        }
+        .buttonStyle(.plain)
+        .alert("¿Recargar datos de prueba?", isPresented: $showSeedConfirmation) {
+            Button("Cancelar", role: .cancel) {}
+            Button("Recargar", role: .destructive) {
+                Task { await seedService.reset(in: modelContext) }
+            }
+        } message: {
+            Text("Se eliminarán todos los datos existentes y se cargarán datos de prueba nuevos.")
+        }
+        .sheet(isPresented: $showSeedProgress) {
+            devSeedProgressSheet
+        }
+        .onChange(of: seedService.isSeeding) { _, newValue in
+            showSeedProgress = newValue
+        }
+    }
+
+    private var devSeedProgressSheet: some View {
+        VStack(spacing: DS.Spacing.xl) {
+            Spacer()
+
+            Image(systemName: "cylinder.split.1x2.fill")
+                .font(.system(size: 48))
+                .foregroundStyle(.teal)
+
+            Text("Generando datos de prueba")
+                .font(DS.Typography.headline)
+
+            VStack(spacing: DS.Spacing.sm) {
+                ProgressView(value: seedService.progress)
+                    .tint(.teal)
+
+                Text(seedService.stepLabel)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, DS.Spacing.xxxl)
+
+            Text("\(Int(seedService.progress * 100))%")
+                .font(DS.Typography.headline)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+
+            Spacer()
+        }
+        .interactiveDismissDisabled()
+        .presentationDetents([.medium])
+    }
+    #endif
+
     private var ayudaSection: some View {
         SectionBox(title: L10n.Settings.help) {
             VStack(spacing: DS.Spacing.none) {
                 profileRow(
                     icon: "book.fill", title: L10n.Settings.tutorials,
                     iconColor: .electricIndigo, destination: .tips)
+                .coachMarkAnchor("settingsTutorials")
                 SubsectionDivider()
                 profileRow(
                     icon: "questionmark.circle.fill", title: L10n.Settings.faq,

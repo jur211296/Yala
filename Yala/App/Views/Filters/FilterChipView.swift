@@ -18,12 +18,22 @@ enum FilterChipIndicator {
 
 /// Reusable filter chip showing applied filter with clear action
 struct FilterChipView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     let text: String
     var indicator: FilterChipIndicator = .none
+    var isExcludeMode: Bool = false
     let onClear: () -> Void
 
     var body: some View {
         HStack(spacing: DS.Chip.spacing) {
+            // Exclude mode indicator
+            if isExcludeMode {
+                Image(systemName: "minus.circle.fill")
+                    .font(DS.Typography.chipIconOnly)
+                    .foregroundStyle(DS.Semantic.errorForeground)
+            }
+
             // Indicator (icon or color dot)
             indicatorView
 
@@ -33,7 +43,7 @@ struct FilterChipView: View {
                 .lineLimit(1)
 
             Button {
-                withAnimation {
+                dsWithAnimation(reduceMotion) {
                     onClear()
                 }
             } label: {
@@ -47,6 +57,13 @@ struct FilterChipView: View {
         .padding(.horizontal, DS.Chip.paddingH)
         .padding(.vertical, DS.Chip.paddingV)
         .glassEffect(.regular.interactive(), in: .capsule)
+    }
+
+    /// Fluent API to set exclude mode on any chip
+    func excludeMode(_ isExclude: Bool) -> FilterChipView {
+        var copy = self
+        copy.isExcludeMode = isExclude
+        return copy
     }
 
     @ViewBuilder
@@ -134,13 +151,13 @@ extension FilterChipView {
     // MARK: - Nature chip (color dot, always individual)
 
     /// Nature filter chip with color dot
-    /// - Each nature is shown as a separate chip
+    /// - Each need is shown as a separate chip
     init(
-        nature: SubcategoryNature,
+        need: SubcategoryNeed,
         onClear: @escaping () -> Void
     ) {
-        self.text = nature.displayName
-        self.indicator = .colorDot(nature.color)
+        self.text = need.displayName
+        self.indicator = .colorDot(need.color)
         self.onClear = onClear
     }
 
@@ -233,6 +250,22 @@ extension FilterChipView {
         self.indicator = .none
         self.onClear = onClear
     }
+
+    /// Simple text chip with exclude mode support
+    init(text: String, isExcludeMode: Bool, onClear: @escaping () -> Void) {
+        self.text = text
+        self.indicator = .none
+        self.isExcludeMode = isExcludeMode
+        self.onClear = onClear
+    }
+
+    /// Transaction nature chip with exclude mode support
+    init(transactionNature: TransactionNature, isExcludeMode: Bool, onClear: @escaping () -> Void) {
+        self.text = transactionNature.displayName
+        self.indicator = .colorDot(transactionNature.color)
+        self.isExcludeMode = isExcludeMode
+        self.onClear = onClear
+    }
 }
 
 // MARK: - Preview
@@ -261,7 +294,7 @@ extension FilterChipView {
             onClear: {}
         )
         FilterChipView(
-            nature: .essential,
+            need: .essential,
             onClear: {}
         )
         FilterChipView(

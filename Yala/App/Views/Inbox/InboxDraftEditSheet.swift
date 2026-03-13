@@ -28,21 +28,21 @@ struct InboxDraftEditSheet: View {
 
     @State private var note: String = ""
     @State private var amountString: String = ""
-    @State private var transactionDate: Date = Date()
+    @State private var transactionDate: Date = Date.now
     @State private var selectedAccount: Account?
     @State private var selectedSubcategory: Subcategory?
     @State private var selectedTags: [Tag] = []
     @State private var isExpense: Bool = true
 
     // Nature
-    @State private var selectedNature: SubcategoryNature?
+    @State private var selectedNeed: SubcategoryNeed?
 
     // Sheet states
     @State private var showAccountSelector = false
     @State private var showSubcategorySelector = false
     @State private var showTagSelector = false
     @State private var showDatePicker = false
-    @State private var showNatureSelector = false
+    @State private var showNeedSelector = false
 
     @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
 
@@ -71,7 +71,7 @@ struct InboxDraftEditSheet: View {
     // Track initial values to detect unsaved changes
     @State private var initialNote: String = ""
     @State private var initialAmountString: String = ""
-    @State private var initialDate: Date = Date()
+    @State private var initialDate: Date = Date.now
     @State private var initialAccount: Account?
     @State private var initialSubcategory: Subcategory?
     @State private var initialTags: [Tag] = []
@@ -186,7 +186,7 @@ struct InboxDraftEditSheet: View {
                 .sheet(isPresented: $showSubcategorySelector) { subcategorySheet }
                 .sheet(isPresented: $showTagSelector) { tagSheet }
                 .sheet(isPresented: $showDatePicker) { dateSheet }
-                .sheet(isPresented: $showNatureSelector) { natureSheet }
+                .sheet(isPresented: $showNeedSelector) { needSheet }
                 .onChange(of: showAccountSelector) { _, isPresenting in
                     if isPresenting { dismissKeyboard() }
                 }
@@ -199,14 +199,14 @@ struct InboxDraftEditSheet: View {
                 .onChange(of: showDatePicker) { _, isPresenting in
                     if isPresenting { dismissKeyboard() }
                 }
-                .onChange(of: showNatureSelector) { _, isPresenting in
+                .onChange(of: showNeedSelector) { _, isPresenting in
                     if isPresenting { dismissKeyboard() }
                 }
                 .onChange(of: selectedSubcategory) { _, newSubcategory in
                     if let subcategory = newSubcategory {
-                        selectedNature = subcategory.nature
+                        selectedNeed = subcategory.need
                     } else {
-                        selectedNature = nil
+                        selectedNeed = nil
                     }
                 }
                 .alert(L10n.Inbox.cannotApprove, isPresented: $showApproveError) {
@@ -366,19 +366,19 @@ struct InboxDraftEditSheet: View {
 
     private var dateSheet: some View {
         DatePickerSheet(selectedDate: $transactionDate)
-            .presentationDetents([.medium, .large])
+            .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
     }
 
-    private var natureSheet: some View {
-        NatureSelectorSheet(
-            selectedNature: Binding(
+    private var needSheet: some View {
+        NeedSelectorSheet(
+            selectedNeed: Binding(
                 get: {
-                    selectedNature ?? selectedSubcategory?.nature ?? .unclassified
+                    selectedNeed ?? selectedSubcategory?.need ?? .unclassified
                 },
-                set: { selectedNature = $0 }
+                set: { selectedNeed = $0 }
             )
         )
-        .presentationDetents([.medium])
+        .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
     }
 
     // MARK: - Central Content
@@ -438,10 +438,12 @@ struct InboxDraftEditSheet: View {
                         Capsule().fill(categoryColor.opacity(0.12))
                     )
 
-                    NatureEditChip(
-                        nature: selectedNature ?? subcategory.nature
-                    ) {
-                        showNatureSelector = true
+                    if isExpense {
+                        NeedEditChip(
+                            need: selectedNeed ?? subcategory.need
+                        ) {
+                            showNeedSelector = true
+                        }
                     }
                 }
                 .padding(.top, DS.Spacing.sm)
@@ -939,8 +941,8 @@ struct InboxDraftEditSheet: View {
         transaction.preferredCurrencyCode = preferredCode
 
         // Set nature override if user changed it
-        if let nature = selectedNature, nature != subcategory.nature {
-            transaction.natureOverride = nature.rawValue
+        if let need = selectedNeed, need != subcategory.need {
+            transaction.needOverride = need.rawValue
         }
 
         modelContext.insert(transaction)
@@ -954,7 +956,7 @@ struct InboxDraftEditSheet: View {
         draft.tags = selectedTags
         draft.status = .approved
         draft.approvedTransaction = transaction
-        draft.updatedAt = Date()
+        draft.updatedAt = Date.now
 
         // Cache display values for when related objects might be deleted later
         draft.cachedAccountName = account.name

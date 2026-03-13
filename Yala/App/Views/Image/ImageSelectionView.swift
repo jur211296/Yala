@@ -224,13 +224,13 @@ struct ImageSelectionView: View {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [Color.teal, Color.teal.opacity(0.85)],
+                            colors: [DS.Semantic.imageAccent, DS.Semantic.imageAccent.opacity(0.85)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     .frame(width: 120, height: 120)
-                    .shadow(color: Color.teal.opacity(0.4), radius: 20, x: 0, y: 8)
+                    .shadow(color: DS.Semantic.imageAccent.opacity(0.4), radius: 20, x: 0, y: 8)
 
                 // Glass overlay
                 Circle()
@@ -267,13 +267,13 @@ struct ImageSelectionView: View {
                     .frame(width: 80, height: 80)
                     .background(
                         LinearGradient(
-                            colors: [Color.teal, Color.teal.opacity(0.85)],
+                            colors: [DS.Semantic.imageAccent, DS.Semantic.imageAccent.opacity(0.85)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     .clipShape(Circle())
-                    .shadow(color: Color.teal.opacity(0.4), radius: 16, x: 0, y: 8)
+                    .shadow(color: DS.Semantic.imageAccent.opacity(0.4), radius: 16, x: 0, y: 8)
             }
             .padding(.bottom, DS.Spacing.xxl)
         }
@@ -326,7 +326,7 @@ struct ImageSelectionView: View {
         HStack(spacing: DS.Spacing.xs) {
             Image(systemName: icon)
                 .font(DS.Typography.captionSmall)
-                .foregroundStyle(Color.teal)
+                .foregroundStyle(DS.Semantic.imageAccent)
 
             Text(text)
                 .font(DS.Typography.caption)
@@ -336,7 +336,7 @@ struct ImageSelectionView: View {
         .padding(.horizontal, DS.Spacing.sm)
         .padding(.vertical, DS.Spacing.xs)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.teal.opacity(0.08))
+        .background(DS.Semantic.imageAccent.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
     }
 
@@ -362,7 +362,7 @@ struct ImageSelectionView: View {
         HStack(spacing: DS.Spacing.sm) {
             Image(systemName: "photo")
                 .font(DS.Typography.caption)
-                .foregroundStyle(Color.teal)
+                .foregroundStyle(DS.Semantic.imageAccent)
 
             Text(text)
                 .font(DS.Typography.subheadline)
@@ -375,7 +375,7 @@ struct ImageSelectionView: View {
         .padding(.horizontal, DS.Spacing.md)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.sm)
-                .stroke(Color.teal.opacity(0.2), lineWidth: 1)
+                .stroke(DS.Semantic.imageAccent.opacity(0.2), lineWidth: 1)
         )
     }
 
@@ -417,11 +417,11 @@ struct ImageSelectionView: View {
                         if selectedImages.count > 6 {
                             ZStack {
                                 RoundedRectangle(cornerRadius: DS.Radius.md)
-                                    .fill(Color.teal.opacity(0.2))
+                                    .fill(DS.Semantic.imageAccent.opacity(0.2))
                                     .frame(width: 80, height: 80)
                                 Text("+\(selectedImages.count - 6)")
                                     .font(DS.Typography.headline)
-                                    .foregroundStyle(Color.teal)
+                                    .foregroundStyle(DS.Semantic.imageAccent)
                             }
                         }
                     }
@@ -436,20 +436,20 @@ struct ImageSelectionView: View {
                 ZStack {
                     // Background ring
                     Circle()
-                        .stroke(Color.teal.opacity(0.2), lineWidth: 4)
+                        .stroke(DS.Semantic.imageAccent.opacity(0.2), lineWidth: 4)
                         .frame(width: 80, height: 80)
 
                     // Depleting ring
                     Circle()
                         .trim(from: 0, to: CGFloat(countdownValue) / 3.0)
-                        .stroke(Color.teal, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .stroke(DS.Semantic.imageAccent, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                         .frame(width: 80, height: 80)
                         .rotationEffect(.degrees(-90))
                         .animation(.easeInOut(duration: 1.0), value: countdownValue)
 
                     Text("\(countdownValue)")
                         .font(DS.Typography.amountLarge)
-                        .foregroundStyle(Color.teal)
+                        .foregroundStyle(DS.Semantic.imageAccent)
                         .contentTransition(.numericText())
                 }
 
@@ -493,7 +493,7 @@ struct ImageSelectionView: View {
                 current: processingProgress.current,
                 total: processingProgress.total
             ),
-            accentColor: .teal,
+            accentColor: DS.Semantic.imageAccent,
             statusText: L10n.Image.processing
         )
     }
@@ -516,7 +516,7 @@ struct ImageSelectionView: View {
                         )
                     )
                     .frame(width: 100, height: 100)
-                    .shadow(color: Color.green.opacity(0.4), radius: 16, x: 0, y: 8)
+                    .shadow(color: DS.Semantic.successForeground.opacity(0.4), radius: 16, x: 0, y: 8)
 
                 // Glass overlay
                 Circle()

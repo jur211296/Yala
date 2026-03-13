@@ -117,33 +117,33 @@ final class RecordsFiltersViewModel {
 
     // MARK: - Helper Methods
 
-    func selectedAccountsText(selectedAccounts: Set<PersistentIdentifier>) -> String {
+    func selectedAccountsText(selectedAccounts: Set<PersistentIdentifier>, isExcludeMode: Bool = false) -> String {
         if selectedAccounts.isEmpty {
-            return L10n.Common.all
+            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.all
         }
-        if selectedAccounts.count == activeAccounts.count {
-            return L10n.Common.all
+        if !isExcludeMode && selectedAccounts.count == activeAccounts.count {
+            return L10n.Filters.all
         }
         return "\(selectedAccounts.count)/\(activeAccounts.count)"
     }
 
-    func selectedCategoriesText(selectedSubcategories: Set<PersistentIdentifier>) -> String {
+    func selectedCategoriesText(selectedSubcategories: Set<PersistentIdentifier>, isExcludeMode: Bool = false) -> String {
         let subCount = selectedSubcategories.count
 
         if subCount == 0 {
-            return L10n.Common.all
+            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.all
         }
 
         let allIDs = Set(allSubcategories.map { $0.persistentModelID })
-        if selectedSubcategories == allIDs {
-            return L10n.Common.all
+        if !isExcludeMode && selectedSubcategories == allIDs {
+            return L10n.Filters.all
         }
 
         let selectedSubs = allSubcategories.filter {
             selectedSubcategories.contains($0.persistentModelID)
         }
         if selectedSubs.isEmpty {
-            return L10n.Common.all
+            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.all
         }
 
         if let firstSub = selectedSubs.first {
@@ -155,15 +155,15 @@ final class RecordsFiltersViewModel {
             }
         }
 
-        return L10n.Common.all
+        return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.all
     }
 
-    func selectedTagsText(selectedTags: Set<PersistentIdentifier>) -> String {
+    func selectedTagsText(selectedTags: Set<PersistentIdentifier>, isExcludeMode: Bool = false) -> String {
         if selectedTags.isEmpty {
-            return L10n.Common.all
+            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.all
         }
-        if selectedTags.count == activeTags.count {
-            return L10n.Common.all
+        if !isExcludeMode && selectedTags.count == activeTags.count {
+            return L10n.Filters.all
         }
         return "\(selectedTags.count)/\(activeTags.count)"
     }

@@ -110,21 +110,13 @@ extension L10n.Subscription {
 
 #Preview {
     VStack(spacing: DS.Spacing.xl) {
-        TrialBanner(daysRemaining: 5) {
-            print("Upgrade tapped")
-        }
+        TrialBanner(daysRemaining: 5) {}
 
-        TrialBanner(daysRemaining: 2) {
-            print("Upgrade tapped")
-        }
+        TrialBanner(daysRemaining: 2) {}
 
-        TrialBanner(daysRemaining: 1) {
-            print("Upgrade tapped")
-        }
+        TrialBanner(daysRemaining: 1) {}
 
-        TrialBanner(daysRemaining: 0) {
-            print("Upgrade tapped")
-        }
+        TrialBanner(daysRemaining: 0) {}
     }
     .padding()
 }

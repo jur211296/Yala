@@ -33,7 +33,7 @@ final class AccountFormViewModel {
     // Balance - new transaction-based system
     var isPositive: Bool = true  // Sign selector for balance
     var balanceText: String = ""  // Amount without sign
-    var adjustmentDate: Date = Date()
+    var adjustmentDate: Date = Date.now
 
     // Currency
     var selectedCurrency: CurrencyCode = .pen
@@ -59,6 +59,9 @@ final class AccountFormViewModel {
     var deleteErrorMessage: String = ""
     var isShowingSaveError: Bool = false
     var hasInitializedBalance: Bool = false  // Track if balance was initialized from transactions
+
+    // MARK: - Secondary Currency Suggestion
+    var currencyToSuggestAsSecondary: CurrencyCode? = nil
 
     // MARK: - Computed Balance Properties
 
@@ -361,6 +364,9 @@ final class AccountFormViewModel {
             }
         }
 
+        // Track new account creation (before save, after insert)
+        let isNewAccount = accountToEdit == nil
+
         // Force save to ensure @Query observers are notified of changes
         do {
             try context.save()
@@ -369,6 +375,21 @@ final class AccountFormViewModel {
         } catch {
             isShowingSaveError = true
             return false
+        }
+
+        if isNewAccount {
+            TelemetryService.track(.accountCreated)
+        }
+
+        // Suggest adding currency as secondary if applicable
+        let savedCurrency = normalizeCurrencyCode(selectedCurrency.rawValue)
+        let preferred = CurrencyDefaults.currentPreferred
+        if savedCurrency != preferred, let code = CurrencyCode(rawValue: savedCurrency) {
+            let raw = UserDefaults.standard.string(forKey: "secondaryCurrencies") ?? ""
+            let existing = raw.split(separator: ",").map(String.init)
+            if existing.count < 2, !existing.contains(savedCurrency) {
+                currencyToSuggestAsSecondary = code
+            }
         }
 
         return true

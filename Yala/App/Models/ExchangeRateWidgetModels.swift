@@ -67,7 +67,7 @@ struct ExchangeRateWidgetData {
     init(preferredCurrency: String, errorMessage: String) {
         self.preferredCurrency = preferredCurrency
         self.currentRates = [:]
-        self.currentRatesDate = Date()
+        self.currentRatesDate = Date.now
         self.chartPoints = []
         self.hasError = true
         self.errorMessage = errorMessage
@@ -78,7 +78,7 @@ struct ExchangeRateWidgetData {
         ExchangeRateWidgetData(
             preferredCurrency: preferredCurrency,
             currentRates: [:],
-            currentRatesDate: Date(),
+            currentRatesDate: Date.now,
             chartPoints: []
         )
     }

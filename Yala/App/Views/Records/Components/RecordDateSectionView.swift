@@ -42,9 +42,9 @@ struct RecordDateSectionView: View {
 
 #Preview {
     VStack(spacing: DS.Spacing.none) {
-        RecordDateSectionView(date: Date())
-        RecordDateSectionView(date: Calendar.current.date(byAdding: .day, value: -1, to: Date())!)
-        RecordDateSectionView(date: Calendar.current.date(byAdding: .day, value: -7, to: Date())!)
+        RecordDateSectionView(date: Date.now)
+        RecordDateSectionView(date: Calendar.current.date(byAdding: .day, value: -1, to: Date.now)!)
+        RecordDateSectionView(date: Calendar.current.date(byAdding: .day, value: -7, to: Date.now)!)
     }
     .background(.thBackground)
 }

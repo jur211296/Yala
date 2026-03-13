@@ -9,11 +9,28 @@
 import Foundation
 
 /// Tracks which budget alert thresholds have been notified per period
+@MainActor
 final class BudgetAlertTracker {
     static let shared = BudgetAlertTracker()
 
     private let defaults = UserDefaults.standard
     private let keyPrefix = "budgetAlert_"
+
+    private static let periodDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyyMMdd"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
+        return f
+    }()
+
+    private static let monthlyDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
+        return f
+    }()
 
     private init() {}
 
@@ -22,7 +39,7 @@ final class BudgetAlertTracker {
     /// Generate period key based on budget type and current date
     func periodKey(for budget: Budget) -> String {
         let calendar = Calendar.current
-        let now = Date()
+        let now = Date.now
 
         guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
             return "unknown"
@@ -34,16 +51,12 @@ final class BudgetAlertTracker {
             let year = calendar.component(.yearForWeekOfYear, from: now)
             return "\(year)-W\(String(format: "%02d", weekOfYear))"
         case .monthly:
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM"
-            return formatter.string(from: now)
+            return Self.monthlyDateFormatter.string(from: now)
         case .yearly:
             return "\(calendar.component(.year, from: now))"
         case .unique:
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyyMMdd"
-            let start = budget.startDate.map { formatter.string(from: $0) } ?? "none"
-            let end = budget.endDate.map { formatter.string(from: $0) } ?? "none"
+            let start = budget.startDate.map { Self.periodDateFormatter.string(from: $0) } ?? "none"
+            let end = budget.endDate.map { Self.periodDateFormatter.string(from: $0) } ?? "none"
             return "unique_\(start)_\(end)"
         }
     }
@@ -91,7 +104,7 @@ final class BudgetAlertTracker {
         let budgetKeys = allKeys.filter { $0.hasPrefix(keyPrefix) }
 
         let calendar = Calendar.current
-        let threeMonthsAgo = calendar.date(byAdding: .month, value: -3, to: Date()) ?? Date()
+        let threeMonthsAgo = calendar.date(byAdding: .month, value: -3, to: Date.now) ?? Date.now
         let cutoffYear = calendar.component(.year, from: threeMonthsAgo)
         let cutoffMonth = calendar.component(.month, from: threeMonthsAgo)
         let cutoffWeek = calendar.component(.weekOfYear, from: threeMonthsAgo)
@@ -130,6 +143,26 @@ final class BudgetAlertTracker {
             else if period.count == 4, let year = Int(period) {
                 if year < cutoffYear {
                     defaults.removeObject(forKey: key)
+                }
+            }
+            // Unique: period key is "unique_YYYYMMDD_YYYYMMDD"
+            // Extract full period by dropping prefix + UUID (36 chars) + "_"
+            else {
+                let afterPrefix = String(key.dropFirst(keyPrefix.count))
+                // UUID is always 36 chars (8-4-4-4-12), followed by "_periodKey"
+                if afterPrefix.count > 37 {
+                    let periodPart = String(afterPrefix.dropFirst(37))
+                    if periodPart.hasPrefix("unique_") {
+                        let uniqueParts = periodPart.split(separator: "_")
+                        // Format: unique_YYYYMMDD_YYYYMMDD
+                        if uniqueParts.count == 3,
+                           let endStr = uniqueParts.last,
+                           let endDate = Self.periodDateFormatter.date(from: String(endStr)) {
+                            if endDate < threeMonthsAgo {
+                                defaults.removeObject(forKey: key)
+                            }
+                        }
+                    }
                 }
             }
         }

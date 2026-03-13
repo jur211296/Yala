@@ -18,10 +18,10 @@ struct DateParser {
 
         // 1. Relative dates (highest confidence)
         if lowercased.contains("hoy") || lowercased.contains("today") {
-            return (Date(), 0.99)
+            return (Date.now, 0.99)
         }
         if lowercased.contains("ayer") || lowercased.contains("yesterday") {
-            if let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) {
+            if let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date.now) {
                 return (yesterday, 0.99)
             }
         }

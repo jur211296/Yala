@@ -72,7 +72,7 @@ struct RecordsFilterContext {
     var accountID: PersistentIdentifier?
     var categoryID: PersistentIdentifier?
     var subcategoryName: String?
-    var nature: SubcategoryNature?
+    var need: SubcategoryNeed?
     var transactionType: TransactionTypeFilter?
     var period: DetailPeriod?
     var searchText: String?

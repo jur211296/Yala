@@ -118,6 +118,16 @@ class SessionState {
     /// Used to determine if we should auto-reset to Balance when filters are cleared
     var isExpenseAutomatic: Bool = false
 
+    // MARK: - Financial Mindset
+
+    /// User's financial mindset chosen during onboarding: "cashFlow" (Día a día) or "patrimonial" (Control total).
+    /// Affects educational UI (balance calculator variants, tips) but NOT features or calculations.
+    var financialMindset: String = UserDefaults.standard.string(forKey: "financialMindset") ?? "cashFlow" {
+        didSet {
+            UserDefaults.standard.set(financialMindset, forKey: "financialMindset")
+        }
+    }
+
     // MARK: - Expenses Only Mode
 
     /// When true, hides income/transfer UI throughout the app. Data is NOT deleted, only hidden.
@@ -149,35 +159,64 @@ class SessionState {
     // MARK: - Global Filter State (shared between Panel and Statistics)
 
     /// Selected account IDs (empty = all accounts)
-    var selectedAccountIDs: Set<PersistentIdentifier> = []
+    var selectedAccountIDs: Set<PersistentIdentifier> = [] { didSet { resetExcludeModeIfNeeded() } }
 
     /// Selected category IDs (empty = all categories)
-    var selectedCategoryIDs: Set<PersistentIdentifier> = []
+    var selectedCategoryIDs: Set<PersistentIdentifier> = [] { didSet { resetExcludeModeIfNeeded() } }
 
     /// Selected subcategory IDs (empty = all subcategories)
     /// Changed from names to IDs to handle duplicate subcategory names across categories
-    var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
+    var selectedSubcategoryIDs: Set<PersistentIdentifier> = [] { didSet { resetExcludeModeIfNeeded() } }
 
     /// Selected natures (empty = all natures)
-    var selectedNatures: Set<SubcategoryNature> = []
+    var selectedNeeds: Set<SubcategoryNeed> = [] { didSet { resetExcludeModeIfNeeded() } }
 
     /// Selected tags (empty = all tags)
-    var selectedTags: Set<PersistentIdentifier> = []
+    var selectedTags: Set<PersistentIdentifier> = [] { didSet { resetExcludeModeIfNeeded() } }
 
     /// Selected budget ID for widget highlighting (nil = none selected)
     var selectedBudgetID: PersistentIdentifier?
 
     /// Selected currencies (empty = all currencies)
-    var selectedCurrencies: Set<CurrencyCode> = []
+    var selectedCurrencies: Set<CurrencyCode> = [] { didSet { resetExcludeModeIfNeeded() } }
 
     /// Selected transaction natures for filtering income/expense (empty = all)
     var selectedTransactionNatures: Set<TransactionNature> = []
 
+    /// Returns the single active filter nature, or nil if none or multiple are selected
+    var activeFilterNature: TransactionNature? {
+        selectedTransactionNatures.count == 1 ? selectedTransactionNatures.first : nil
+    }
+
     /// Amount filter condition
-    var amountCondition: AmountFilterCondition = .any
+    var amountCondition: AmountFilterCondition = .any { didSet { resetExcludeModeIfNeeded() } }
 
     /// Search text for note filtering
-    var searchText: String = ""
+    var searchText: String = "" { didSet { resetExcludeModeIfNeeded() } }
+
+    /// Guard against re-entrant didSet calls during exclude mode transitions
+    private var isSwitchingExcludeMode = false
+
+    /// Exclude mode: when true, selected entity filters hide matching items instead of showing only them
+    var isExcludeMode: Bool = false {
+        didSet {
+            guard oldValue != isExcludeMode else { return }
+            // Clear entity selections when switching mode to avoid confusion
+            // Don't call clearFilters() — it resets isExcludeMode itself, causing a loop
+            isSwitchingExcludeMode = true
+            selectedAccountIDs.removeAll()
+            selectedCategoryIDs.removeAll()
+            selectedSubcategoryIDs.removeAll()
+            selectedNeeds.removeAll()
+            selectedTags.removeAll()
+            selectedCurrencies.removeAll()
+            selectedTransactionNatures.removeAll()
+            amountCondition = .any
+            searchText = ""
+            globalFilters.clearAll()
+            isSwitchingExcludeMode = false
+        }
+    }
 
     // MARK: - Filter Criteria State
 
@@ -195,10 +234,37 @@ class SessionState {
     /// Check if any global filter is active
     var hasActiveFilters: Bool {
         !selectedAccountIDs.isEmpty || !selectedCategoryIDs.isEmpty
-            || !selectedSubcategoryIDs.isEmpty || !selectedNatures.isEmpty
+            || !selectedSubcategoryIDs.isEmpty || !selectedNeeds.isEmpty
             || !selectedTags.isEmpty || !selectedCurrencies.isEmpty
             || !selectedTransactionNatures.isEmpty
             || amountCondition.isActive || !searchText.isEmpty
+    }
+
+    /// Check if any exclude-eligible filter is active (transaction type is NOT excludable)
+    private var hasActiveExcludeFilters: Bool {
+        !selectedAccountIDs.isEmpty || !selectedCategoryIDs.isEmpty
+            || !selectedSubcategoryIDs.isEmpty || !selectedNeeds.isEmpty
+            || !selectedTags.isEmpty || !selectedCurrencies.isEmpty
+            || amountCondition.isActive || !searchText.isEmpty
+    }
+
+    /// Auto-reset exclude mode when no exclude-eligible filters remain
+    func resetExcludeModeIfNeeded() {
+        guard !isSwitchingExcludeMode, !isBatchingFilterUpdate, isExcludeMode, !hasActiveExcludeFilters else { return }
+        isSwitchingExcludeMode = true
+        isExcludeMode = false
+        isSwitchingExcludeMode = false
+    }
+
+    /// Guard against resetExcludeModeIfNeeded during batch filter commits
+    private var isBatchingFilterUpdate = false
+
+    /// Batch-set multiple filter properties without triggering intermediate resetExcludeModeIfNeeded calls.
+    /// Use when committing filter values from a sheet where isExcludeMode was already set.
+    func performBatchFilterUpdate(_ block: () -> Void) {
+        isBatchingFilterUpdate = true
+        block()
+        isBatchingFilterUpdate = false
     }
 
     // MARK: - Actions
@@ -208,11 +274,12 @@ class SessionState {
         selectedAccountIDs.removeAll()
         selectedCategoryIDs.removeAll()
         selectedSubcategoryIDs.removeAll()
-        selectedNatures.removeAll()
+        selectedNeeds.removeAll()
         selectedTags.removeAll()
         selectedCurrencies.removeAll()
         selectedTransactionNatures.removeAll()
         selectedBudgetID = nil
+        isExcludeMode = false
         amountCondition = .any
         searchText = ""
         globalFilters.clearAll()
@@ -250,13 +317,13 @@ class SessionState {
         }
     }
 
-    /// Toggle nature filter
-    func toggleNatureFilter(_ nature: SubcategoryNature) {
-        if selectedNatures.contains(nature) {
-            selectedNatures.remove(nature)
+    /// Toggle need filter
+    func toggleNeedFilter(_ need: SubcategoryNeed) {
+        if selectedNeeds.contains(need) {
+            selectedNeeds.remove(need)
         } else {
-            selectedNatures.removeAll()  // Single-select for Panel
-            selectedNatures.insert(nature)
+            selectedNeeds.removeAll()  // Single-select for Panel
+            selectedNeeds.insert(need)
         }
     }
 
@@ -372,6 +439,13 @@ class SessionState {
     /// Flag to show downgrade resolution sheet
     var shouldShowDowngradeResolution: Bool = false
 
+    /// Flag to auto-open Profile from Insights banner redirect
+    var shouldOpenProfile: Bool = false
+
+    /// Signals that post-onboarding flow is complete (trial sheet dismissed or skipped).
+    /// Coach mark tours wait for this before starting.
+    var isReadyForTours: Bool = false
+
     /// Deep link destination from widgets
     /// When set, app navigates to specified destination and clears this
     var deepLinkDestination: DeepLinkDestination?
@@ -392,7 +466,7 @@ class SessionState {
     var temporaryTab: ConfigurableTab?
 
     /// Currently selected detail tab within Statistics (Trends, Categories, Records)
-    var selectedDetailTab: DetailViewTab = .trends
+    var selectedDetailTab: DetailViewTab = .insights
 
     /// Currently selected tab within Planning (Budgets, Scheduled Payments)
     var selectedPlanningTab: PlanningTab = .budgets
@@ -445,10 +519,10 @@ class SessionState {
             selectedTags = Set(tags.map { $0.persistentModelID })
         }
 
-        // Apply nature filters (parse comma-separated string)
+        // Apply need filters (parse comma-separated string)
         if let naturesString = budget.natures, !naturesString.isEmpty {
-            let natureValues = naturesString.split(separator: ",").map { String($0).trimmingCharacters(in: .whitespaces) }
-            selectedNatures = Set(natureValues.compactMap { SubcategoryNature(rawValue: $0) })
+            let needValues = naturesString.split(separator: ",").map { String($0).trimmingCharacters(in: .whitespaces) }
+            selectedNeeds = Set(needValues.compactMap { SubcategoryNeed(rawValue: $0) })
         }
     }
 

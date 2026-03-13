@@ -17,7 +17,7 @@ final class Tag {
     var colorHex: String = "#FF9F0A"
     var iconName: String = "tag.fill"
     var isActive: Bool = true
-    var createdAt: Date = Date()
+    var createdAt: Date = Date.now
 
     /// CloudKit: all relationships must be optional
     @Relationship(deleteRule: .nullify, inverse: \TransactionItem.tags)
@@ -75,7 +75,7 @@ final class Tag {
         colorHex: String = defaultColors[0],
         iconName: String = "tag.fill",
         isActive: Bool = true,
-        createdAt: Date = Date(),
+        createdAt: Date = Date.now,
         transactions: [TransactionItem] = []
     ) {
         self.name = name

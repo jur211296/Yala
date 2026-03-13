@@ -8,6 +8,7 @@
 import StoreKit
 import SwiftData
 import SwiftUI
+import TipKit
 import UIKit
 
 @main
@@ -55,6 +56,9 @@ struct YalaApp: App {
                 .environment(bootstrapper.entityDeletionService)
                 .environment(bootstrapper.transactionService)
                 .task {
+                    try? Tips.configure([
+                        .displayFrequency(.immediate)
+                    ])
                     await bootstrapper.bootstrap(container: sharedModelContainer)
                 }
                 .onChange(of: bootstrapper.sessionState.needsExchangeRateReload) { _, needsReload in

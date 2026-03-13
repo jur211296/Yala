@@ -33,7 +33,7 @@ struct InboxBulkApproveSuccessView: View {
                         )
                     )
                     .frame(width: 100, height: 100)
-                    .shadow(color: Color.green.opacity(0.4), radius: 16, x: 0, y: 8)
+                    .shadow(color: DS.Semantic.successForeground.opacity(0.4), radius: 16, x: 0, y: 8)
 
                 // Glass overlay
                 Circle()

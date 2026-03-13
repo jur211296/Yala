@@ -389,7 +389,7 @@ struct CurrencySettingsView: View {
 
             // 2. Calculate 1 year date range for historical data
             let calendar = Calendar.current
-            let today = Date()
+            let today = Date.now
             guard let oneYearAgo = calendar.date(byAdding: .year, value: -1, to: today) else {
                 isUpdating = false
                 return
@@ -439,7 +439,7 @@ struct CurrencySettingsView: View {
 
                 // Force refresh historical rates (1 year)
                 let calendar = Calendar.current
-                let today = Date()
+                let today = Date.now
                 if let oneYearAgo = calendar.date(byAdding: .year, value: -1, to: today) {
                     let dateInterval = DateInterval(start: oneYearAgo, end: today)
                     await exchangeRateService.forceRefreshRates(for: dateInterval, context: modelContext)

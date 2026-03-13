@@ -2,7 +2,7 @@
 //  SmartAxisHelper.swift
 //  YalaWidgets
 //
-//  Shared smart axis logic for bar charts (CashFlowWidget, NatureTrendWidget)
+//  Shared smart axis logic for bar charts (CashFlowWidget, NeedTrendWidget)
 //  Replicates the dynamic axis spacing from TrendChartView
 //
 //  Note: This is a copy adapted for YalaWidgets target (can't import from Yala)
@@ -148,10 +148,10 @@ enum SmartAxisHelper {
                 } else {
                     formatter.dateFormat = "MMM"  // "ene"
                 }
-                return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
+                return formatter.string(from: date).lowercased().replacing(".", with: "")
             case .weekOfYear:
                 formatter.dateFormat = "d MMM"  // "15 dic"
-                return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
+                return formatter.string(from: date).lowercased().replacing(".", with: "")
             default:
                 break  // Fall through to span-based logic for day
             }
@@ -180,7 +180,7 @@ enum SmartAxisHelper {
         }
 
         // Remove trailing periods from abbreviations (e.g., "ene." -> "ene")
-        return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
+        return formatter.string(from: date).lowercased().replacing(".", with: "")
     }
 
     // MARK: - Calendar Unit Centering

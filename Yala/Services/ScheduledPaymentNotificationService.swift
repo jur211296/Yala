@@ -8,7 +8,6 @@
 
 import Foundation
 import SwiftData
-import UserNotifications
 
 /// Service for checking scheduled payments and sending personalized notifications
 @MainActor
@@ -29,18 +28,39 @@ final class ScheduledPaymentNotificationService {
 
     // MARK: - Public Methods
 
-    /// Check and notify payments that are due TODAY (using DateCalculator for all occurrences)
-    func checkAndNotifyDuePayments() async {
+    /// Single entry point: checks all scheduled payment notifications (overdue, due today, upcoming).
+    /// Fetches payments, paid status, and notification config once to avoid redundant queries.
+    func checkAllPaymentNotifications() async {
         guard let context = modelContext else { return }
         guard await NotificationService.shared.isAuthorized() else { return }
+        guard isWithinNotificationWindow(context: context) else { return }
 
         let payments = fetchActivePayments(context: context)
-        let today = Date()
+        guard !payments.isEmpty else { return }
 
+        let today = Date.now
+        let paidStatus = ScheduledPaymentPaidStatusHelper.loadPaidStatus(for: payments, month: today, context: context)
+
+        await notifyOverduePayments(payments: payments, paidStatus: paidStatus, today: today)
+        await notifyDuePayments(payments: payments, paidStatus: paidStatus, today: today)
+        await notifyUpcomingPayments(payments: payments, paidStatus: paidStatus, today: today)
+
+        do {
+            try context.save()
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentNotificationService: Error saving context: \(error)")
+            #endif
+        }
+    }
+
+    // MARK: - Notification Checks
+
+    /// Notify payments that are due TODAY (using DateCalculator for all occurrences)
+    private func notifyDuePayments(payments: [ScheduledPayment], paidStatus: [String: Int], today: Date) async {
         for payment in payments {
             guard payment.notifyOnDueDate else { continue }
 
-            // Use DateCalculator to get all occurrences this month (not just nextDueDate)
             let dates = ScheduledPaymentDateCalculator.paymentDatesInMonth(
                 params: payment.dateCalculatorParams, month: today
             )
@@ -48,8 +68,8 @@ final class ScheduledPaymentNotificationService {
             for date in dates {
                 guard Calendar.current.isDateInToday(date) else { continue }
                 guard !payment.isDateSkipped(date) else { continue }
+                guard !isPaid(payment, paidStatus: paidStatus) else { continue }
 
-                // Avoid duplicate notification
                 guard !tracker.hasNotifiedForDate(
                     paymentID: payment.id,
                     date: today,
@@ -61,42 +81,28 @@ final class ScheduledPaymentNotificationService {
                 payment.lastNotifiedDate = today
             }
         }
-
-        do {
-            try context.save()
-        } catch {
-            #if DEBUG
-            print("ScheduledPaymentNotificationService: Error saving context: \(error)")
-            #endif
-        }
     }
 
-    /// Check and notify payments that are due in X days (based on notifyDaysBefore)
-    /// Uses DateCalculator for all occurrences within a 7-day window
-    func checkAndNotifyUpcomingPayments() async {
-        guard let context = modelContext else { return }
-        guard await NotificationService.shared.isAuthorized() else { return }
-
-        let payments = fetchActivePayments(context: context)
-        let today = Date()
+    /// Notify payments that are due in X days (based on notifyDaysBefore)
+    private func notifyUpcomingPayments(payments: [ScheduledPayment], paidStatus: [String: Int], today: Date) async {
         let calendar = Calendar.current
+        let startOfToday = calendar.startOfDay(for: today)
+        let sevenDaysFromNow = calendar.date(byAdding: .day, value: 7, to: today) ?? today
 
         for payment in payments {
             guard payment.notifyDaysBefore > 0 else { continue }
 
-            // Use DateCalculator for all occurrences this month
             let dates = ScheduledPaymentDateCalculator.paymentDatesInMonth(
                 params: payment.dateCalculatorParams, month: today
             )
 
-            // Only consider dates within 7-day window to avoid spam
-            let sevenDaysFromNow = calendar.date(byAdding: .day, value: 7, to: today) ?? today
             for date in dates where date <= sevenDaysFromNow {
-                let daysUntilDue = calendar.dateComponents([.day], from: today, to: date).day ?? 0
+                let startOfDueDate = calendar.startOfDay(for: date)
+                let daysUntilDue = calendar.dateComponents([.day], from: startOfToday, to: startOfDueDate).day ?? 0
                 guard daysUntilDue == payment.notifyDaysBefore else { continue }
                 guard !payment.isDateSkipped(date) else { continue }
+                guard !isPaid(payment, paidStatus: paidStatus) else { continue }
 
-                // Avoid duplicate notification
                 guard !tracker.hasNotifiedForDate(
                     paymentID: payment.id,
                     date: today,
@@ -109,13 +115,8 @@ final class ScheduledPaymentNotificationService {
         }
     }
 
-    /// Check and notify OVERDUE payments (user didn't open app for days)
-    func checkAndNotifyOverduePayments() async {
-        guard let context = modelContext else { return }
-        guard await NotificationService.shared.isAuthorized() else { return }
-
-        let payments = fetchActivePayments(context: context)
-        let today = Date()
+    /// Notify OVERDUE payments (user didn't open app for days)
+    private func notifyOverduePayments(payments: [ScheduledPayment], paidStatus: [String: Int], today: Date) async {
         let calendar = Calendar.current
         var notificationCount = 0
 
@@ -123,15 +124,13 @@ final class ScheduledPaymentNotificationService {
             guard notificationCount < maxOverdueNotifications else { break }
             guard payment.notifyOnDueDate else { continue }
 
-            // Overdue = nextDueDate < today
             guard calendar.compare(payment.nextDueDate, to: today, toGranularity: .day) == .orderedAscending else {
                 continue
             }
 
-            // Skip if this date has been skipped by user
             guard !payment.isDateSkipped(payment.nextDueDate) else { continue }
+            guard !isPaid(payment, paidStatus: paidStatus) else { continue }
 
-            // Avoid duplicate overdue notification
             guard !tracker.hasNotifiedForDate(
                 paymentID: payment.id,
                 date: payment.nextDueDate,
@@ -142,6 +141,46 @@ final class ScheduledPaymentNotificationService {
             tracker.markNotified(paymentID: payment.id, date: payment.nextDueDate, type: .overdue)
             notificationCount += 1
         }
+    }
+
+    private func isPaid(_ payment: ScheduledPayment, paidStatus: [String: Int]) -> Bool {
+        (paidStatus[payment.id.uuidString] ?? 0) > 0
+    }
+
+    // MARK: - Notification Window
+
+    /// Check if current time is past the user's configured notification hour for scheduled payments
+    private func isWithinNotificationWindow(context: ModelContext) -> Bool {
+        let calendar = Calendar.current
+        let now = Date.now
+
+        let typeRaw = "scheduledPayments"
+        let descriptor = FetchDescriptor<NotificationItem>(
+            predicate: #Predicate { $0.typeRaw == typeRaw && $0.isActive }
+        )
+
+        let item: NotificationItem?
+        do {
+            item = try context.fetch(descriptor).first
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentNotificationService: Error fetching notification config: \(error)")
+            #endif
+            return true
+        }
+
+        guard let config = item else {
+            return true
+        }
+
+        guard let scheduledToday = calendar.date(
+            bySettingHour: config.hour,
+            minute: config.minute,
+            second: 0,
+            of: now
+        ) else { return true }
+
+        return now >= scheduledToday
     }
 
     // MARK: - Private
@@ -188,7 +227,7 @@ final class ScheduledPaymentNotificationService {
         guard await NotificationService.shared.isAuthorized() else { return }
 
         let accounts = fetchCreditCardAccounts(context: context)
-        let today = Date()
+        let today = Date.now
         let dayOfMonth = Calendar.current.component(.day, from: today)
 
         for account in accounts {

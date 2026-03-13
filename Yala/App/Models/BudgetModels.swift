@@ -77,6 +77,14 @@ struct BudgetSummary: Identifiable {
     }
 }
 
+// MARK: - Budget Navigation ID
+
+/// Wrapper for budget PersistentIdentifier to avoid conflict with ScheduledPayment's
+/// `.navigationDestination(for: PersistentIdentifier.self)` in the shared PlanningView NavigationStack.
+struct BudgetNavigationID: Hashable {
+    let id: PersistentIdentifier
+}
+
 // MARK: - Period Option
 
 struct PeriodOption: Identifiable {
@@ -84,6 +92,7 @@ struct PeriodOption: Identifiable {
     let title: String
     let subtitle: String
     let isCurrent: Bool
+    var isSelected: Bool = false
 
     var id: Date { date }
 }

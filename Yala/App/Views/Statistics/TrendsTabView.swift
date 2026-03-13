@@ -168,7 +168,7 @@ struct TrendsTabView: View {
             calculateCashFlowData()
             calculatePeriodComparisonData()
         }
-        .onChange(of: trendsViewModel.selectedNatures) {
+        .onChange(of: trendsViewModel.selectedNeeds) {
             calculateCashFlowData()
             calculatePeriodComparisonData()
         }
@@ -204,165 +204,23 @@ struct TrendsTabView: View {
     /// Date range of all transactions (for custom period picker limits)
     private var transactionDateRange: (start: Date, end: Date) {
         let sortedDates = allTransactions.map(\.date).sorted()
-        let start = sortedDates.first ?? Date()
-        let end = sortedDates.last ?? Date()
+        let start = sortedDates.first ?? Date.now
+        let end = sortedDates.last ?? Date.now
         return (start, end)
     }
 
     // MARK: - Control Bar
 
     private var controlBar: some View {
-        HStack(spacing: DS.Spacing.md) {
-            periodSelector
-
-            if trendsViewModel.hasActiveFilters {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: DS.Spacing.sm) {
-                        // Account chips (with icon)
-                        ForEach(selectedAccountChips, id: \.id) { chip in
-                            FilterChipView(
-                                accountName: chip.name,
-                                count: chip.count,
-                                onClear: {
-                                    trendsViewModel.selectedAccounts.removeAll()
-                                }
-                            )
-                        }
-
-                        // Category chip (aggregated - one chip max)
-                        if let catChip = aggregatedCategoryChip(
-                            selectedSubcategories: trendsViewModel.selectedSubcategories,
-                            allSubcategories: allSubcategories
-                        ) {
-                            FilterChipView(
-                                categoryName: catChip.name,
-                                iconName: catChip.iconName,
-                                colorHex: catChip.colorHex,
-                                count: catChip.count,
-                                onClear: {
-                                    // Clear both categories and subcategories
-                                    trendsViewModel.selectedCategories.removeAll()
-                                    trendsViewModel.selectedSubcategories.removeAll()
-                                }
-                            )
-                        } else if !trendsViewModel.selectedCategories.isEmpty {
-                            // Direct category filter (not from subcategory)
-                            let selectedCats = categories.filter { trendsViewModel.selectedCategories.contains($0.persistentModelID) }
-                            if let firstCat = selectedCats.first {
-                                FilterChipView(
-                                    categoryName: firstCat.name,
-                                    iconName: firstCat.iconName,
-                                    colorHex: firstCat.colorHex,
-                                    count: selectedCats.count,
-                                    onClear: {
-                                        trendsViewModel.selectedCategories.removeAll()
-                                    }
-                                )
-                            }
-                        }
-
-                        // Subcategory chip (aggregated - one chip max)
-                        if let subChip = aggregatedSubcategoryChip(
-                            selectedSubcategories: trendsViewModel.selectedSubcategories,
-                            allSubcategories: allSubcategories
-                        ) {
-                            FilterChipView(
-                                subcategoryName: subChip.name,
-                                iconName: subChip.iconName,
-                                colorHex: subChip.colorHex,
-                                count: subChip.count,
-                                onClear: {
-                                    trendsViewModel.selectedSubcategories.removeAll()
-                                }
-                            )
-                        }
-
-                        // Tag chips (with icons and color)
-                        ForEach(selectedTagChips, id: \.id) { chip in
-                            FilterChipView(
-                                tagName: chip.name,
-                                iconName: chip.iconName,
-                                colorHex: chip.colorHex,
-                                onClear: {
-                                    trendsViewModel.selectedTags.remove(chip.tagID)
-                                }
-                            )
-                        }
-
-                        // Nature chips (with color dots)
-                        ForEach(selectedNatureChips, id: \.nature.rawValue) { chipData in
-                            FilterChipView(
-                                nature: chipData.nature,
-                                onClear: {
-                                    trendsViewModel.selectedNatures.remove(chipData.nature)
-                                }
-                            )
-                        }
-
-                        // Transaction nature chip (income/expense with color dot)
-                        // Only show when exactly 1 selected (hidden in expenses-only mode - always expense, non-clearable)
-                        if !sessionState.isExpensesOnlyMode,
-                            trendsViewModel.selectedTransactionNatures.count == 1,
-                            let nature = trendsViewModel.selectedTransactionNatures.first
-                        {
-                            FilterChipView(
-                                transactionNature: nature,
-                                onClear: {
-                                    // SSOT: trendsViewModel.selectedTransactionNatures writes to SessionState.shared
-                                    trendsViewModel.selectedTransactionNatures.removeAll()
-                                }
-                            )
-                        }
-
-                        // Currency chips
-                        ForEach(Array(trendsViewModel.selectedCurrencies), id: \.self) { currency in
-                            FilterChipView(
-                                currencyCode: currency.rawValue,
-                                onClear: {
-                                    // SSOT: trendsViewModel.selectedCurrencies writes to SessionState.shared
-                                    trendsViewModel.selectedCurrencies.remove(currency)
-                                }
-                            )
-                        }
-
-                        // Amount chip
-                        if trendsViewModel.amountCondition.isActive {
-                            FilterChipView(
-                                amountText: trendsViewModel.amountCondition.displayText,
-                                onClear: {
-                                    // SSOT: trendsViewModel.amountCondition writes to SessionState.shared
-                                    trendsViewModel.amountCondition = .any
-                                }
-                            )
-                        }
-
-                        // Search/Note chip
-                        if !trendsViewModel.searchText.isEmpty {
-                            FilterChipView(
-                                noteText: trendsViewModel.searchText,
-                                onClear: {
-                                    // SSOT: trendsViewModel.searchText writes to SessionState.shared
-                                    trendsViewModel.searchText = ""
-                                }
-                            )
-                        }
-
-                        if trendsViewModel.activeFilterCount > 1 {
-                            Button {
-                                dsWithAnimation(reduceMotion) { trendsViewModel.clearFilters() }
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundStyle(.secondary)
-                            }
-                            .accessibilityLabel(L10n.Action.clearAll)
-                        }
-                    }
-                }
-            }
-
-            Spacer()
-        }
-        .animation(nil, value: trendsViewModel.detailPeriod)
+        FilterControlBar(
+            periodSelector: periodSelector,
+            viewModel: trendsViewModel,
+            accounts: accounts,
+            categories: categories,
+            allSubcategories: allSubcategories,
+            tags: tags,
+            animationValue: trendsViewModel.detailPeriod
+        )
     }
 
     private var periodSelector: some View {
@@ -403,50 +261,9 @@ struct TrendsTabView: View {
 
             // Comparison mode selector (hidden when showVariations is OFF or for periods where only one mode makes sense)
             if showVariations && PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod) {
-                comparisonModeSelector
+                ComparisonModeSelector()
             }
         }
-    }
-
-    // MARK: - Comparison Mode Selector
-
-    private var comparisonModeSelector: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            ForEach(ComparisonMode.allCases) { mode in
-                comparisonSelectorButton(for: mode)
-            }
-        }
-    }
-
-    @Namespace private var comparisonNamespace
-
-    private func comparisonSelectorButton(for mode: ComparisonMode) -> some View {
-        let isSelected = sessionState.comparisonMode == mode
-
-        return Button {
-            dsWithAnimation(reduceMotion) {
-                sessionState.comparisonMode = mode
-            }
-        } label: {
-            Text(mode.shortName)
-                .font(DS.Typography.labelSmall)
-                .fontWeight(.semibold)
-                .foregroundStyle(isSelected ? Color.white : theme.secondaryText)
-                .frame(width: 32, height: 32)
-                .background {
-                    if isSelected {
-                        Circle()
-                            .fill(theme.accent)
-                            .matchedGeometryEffect(id: "comparisonSelector", in: comparisonNamespace)
-                    } else {
-                        Circle()
-                            .fill(.thSecondaryText.opacity(0.08))
-                    }
-                }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(mode.displayName)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     // MARK: - Trend Charts Carousel
@@ -733,11 +550,14 @@ struct TrendsTabView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// Check if expense-only filters are active (category/subcategory/nature)
-    private var hasExpenseOnlyFilters: Bool {
-        !sessionState.selectedCategoryIDs.isEmpty
+    /// Check if any category/subcategory/need filters are active
+    /// In exclude mode, these filters remove items rather than restricting to them,
+    /// so they don't imply a specific nature context
+    private var hasCategoryFilters: Bool {
+        guard !sessionState.isExcludeMode else { return false }
+        return !sessionState.selectedCategoryIDs.isEmpty
             || !sessionState.selectedSubcategoryIDs.isEmpty
-            || !sessionState.selectedNatures.isEmpty
+            || !sessionState.selectedNeeds.isEmpty
     }
 
     private var metricSelector: some View {
@@ -755,7 +575,14 @@ struct TrendsTabView: View {
 
     private func metricButton(for metric: TrendMetric) -> some View {
         let isSelected = trendsViewModel.selectedMetric == metric
-        let isBlocked = hasExpenseOnlyFilters && metric != .expense
+        let isBlocked: Bool = {
+            guard hasCategoryFilters else { return false }
+            guard let nature = sessionState.activeFilterNature else { return false }
+            switch nature {
+            case .expense: return metric != .expense
+            case .income: return metric != .income
+            }
+        }()
 
         return Button {
             if isBlocked {
@@ -1198,75 +1025,6 @@ struct TrendsTabView: View {
 
     // MARK: - Chip Text Helpers
 
-    // MARK: - Chip Data Structures
-
-    // Chip models defined in FilterChipModels.swift
-
-    private var selectedAccountChips: [AccountChip] {
-        guard !trendsViewModel.selectedAccounts.isEmpty else { return [] }
-        let selectedAccountsList =
-            accounts
-            .filter { trendsViewModel.selectedAccounts.contains($0.persistentModelID) }
-        guard !selectedAccountsList.isEmpty else { return [] }
-
-        // Return a single chip with the first account name and total count
-        if let firstName = selectedAccountsList.first?.name {
-            return [AccountChip(name: firstName, count: selectedAccountsList.count)]
-        }
-        return []
-    }
-
-    private var selectedCategoryChips: [CategoryChip] {
-        trendsViewModel.selectedCategories.map { CategoryChip(categoryID: $0) }
-    }
-
-    private var selectedSubcategoryChips: [SubcategoryChip] {
-        var chips: [SubcategoryChip] = []
-        for subcategoryID in trendsViewModel.selectedSubcategories {
-            // Use allSubcategories Query directly to avoid SwiftData lazy loading issues
-            if let subcategory = allSubcategories.first(where: {
-                $0.persistentModelID == subcategoryID
-            }) {
-                // Get parent category color as fallback
-                let categoryColor = subcategory.safeCategory.colorHex
-                chips.append(
-                    SubcategoryChip(
-                        name: subcategory.name,
-                        iconName: subcategory.iconName,
-                        colorHex: (subcategory.colorHex?.isEmpty == false
-                            ? subcategory.colorHex : nil) ?? categoryColor,
-                        subcategoryID: subcategoryID
-                    ))
-            }
-        }
-        return chips
-    }
-
-    private var selectedNatureChips: [NatureChipData] {
-        trendsViewModel.selectedNatures.map { NatureChipData(nature: $0) }
-    }
-
-    private var selectedTagChips: [TagChip] {
-        tags.filter { trendsViewModel.selectedTags.contains($0.persistentModelID) }
-            .map {
-                TagChip(
-                    id: $0.persistentModelID,
-                    tagID: $0.persistentModelID,
-                    name: $0.name,
-                    iconName: $0.iconName,
-                    colorHex: $0.colorHex
-                )
-            }
-    }
-
-    private var tagsChipText: String? {
-        guard !trendsViewModel.selectedTags.isEmpty else { return nil }
-        let names = tags.filter { trendsViewModel.selectedTags.contains($0.persistentModelID) }.map
-        { $0.name }
-        guard !names.isEmpty else { return nil }
-        return names.count == 1 ? names.first : "\(names.first ?? "") +\(names.count - 1)"
-    }
-
     // MARK: - Cash Flow Data Calculation
 
     private func calculateCashFlowData() {
@@ -1304,8 +1062,9 @@ struct TrendsTabView: View {
             selectedCategories: trendsViewModel.selectedCategories,
             selectedSubcategories: trendsViewModel.selectedSubcategories,
             selectedTags: trendsViewModel.selectedTags,
-            selectedNatures: trendsViewModel.selectedNatures,
+            selectedNeeds: trendsViewModel.selectedNeeds,
             selectedCurrencies: trendsViewModel.selectedCurrencies,
+            isExcludeMode: trendsViewModel.isExcludeMode,
             transactionTypeFilter: .all,
             amountCondition: trendsViewModel.amountCondition,
             searchText: trendsViewModel.searchText,
@@ -1325,7 +1084,7 @@ struct TrendsTabView: View {
             interval: interval,
             grouping: cashFlowGrouping,
             currencyCode: defaultCurrencyCode,
-            context: modelContext
+
         )
 
         // 2. Calculate cash flow BY ACCOUNT (single-pass grouping: O(n) instead of O(a×n))
@@ -1338,7 +1097,7 @@ struct TrendsTabView: View {
                 interval: interval,
                 grouping: cashFlowGrouping,
                 currencyCode: account.currencyCode,
-                context: modelContext
+    
             )
             byAccount[account.persistentModelID] = summary
         }
@@ -1353,7 +1112,7 @@ struct TrendsTabView: View {
                 interval: interval,
                 grouping: cashFlowGrouping,
                 currencyCode: currencyCode,
-                context: modelContext
+    
             )
             byCurrency[currencyCode] = summary
         }
@@ -1385,8 +1144,9 @@ struct TrendsTabView: View {
             selectedCategories: trendsViewModel.selectedCategories,
             selectedSubcategories: trendsViewModel.selectedSubcategories,
             selectedTags: trendsViewModel.selectedTags,
-            selectedNatures: trendsViewModel.selectedNatures,
+            selectedNeeds: trendsViewModel.selectedNeeds,
             selectedCurrencies: trendsViewModel.selectedCurrencies,
+            isExcludeMode: trendsViewModel.isExcludeMode,
             transactionTypeFilter: .all,
             amountCondition: trendsViewModel.amountCondition,
             searchText: trendsViewModel.searchText,
@@ -1406,7 +1166,7 @@ struct TrendsTabView: View {
             interval: previousInterval,
             grouping: cashFlowGrouping,
             currencyCode: defaultCurrencyCode,
-            context: modelContext
+
         )
 
         // 2. Calculate previous period cash flow BY ACCOUNT (single-pass grouping)
@@ -1419,7 +1179,7 @@ struct TrendsTabView: View {
                 interval: previousInterval,
                 grouping: cashFlowGrouping,
                 currencyCode: account.currencyCode,
-                context: modelContext
+    
             )
             byAccount[account.persistentModelID] = summary
         }
@@ -1434,7 +1194,7 @@ struct TrendsTabView: View {
                 interval: previousInterval,
                 grouping: cashFlowGrouping,
                 currencyCode: currencyCode,
-                context: modelContext
+    
             )
             byCurrency[currencyCode] = summary
         }
@@ -1478,8 +1238,9 @@ struct TrendsTabView: View {
             selectedCategories: trendsViewModel.selectedCategories,
             selectedSubcategories: trendsViewModel.selectedSubcategories,
             selectedTags: trendsViewModel.selectedTags,
-            selectedNatures: trendsViewModel.selectedNatures,
+            selectedNeeds: trendsViewModel.selectedNeeds,
             selectedCurrencies: trendsViewModel.selectedCurrencies,
+            isExcludeMode: trendsViewModel.isExcludeMode,
             transactionTypeFilter: .all,
             amountCondition: trendsViewModel.amountCondition,
             searchText: trendsViewModel.searchText,
@@ -1503,7 +1264,7 @@ struct TrendsTabView: View {
             grouping: .day,
             interval: currentInterval,
             currencyCode: defaultCurrencyCode,
-            context: modelContext
+
         )
 
         // For previous period with income/expense, we need separate filtering
@@ -1518,8 +1279,9 @@ struct TrendsTabView: View {
                 selectedCategories: trendsViewModel.selectedCategories,
                 selectedSubcategories: trendsViewModel.selectedSubcategories,
                 selectedTags: trendsViewModel.selectedTags,
-                selectedNatures: trendsViewModel.selectedNatures,
+                selectedNeeds: trendsViewModel.selectedNeeds,
                 selectedCurrencies: trendsViewModel.selectedCurrencies,
+                isExcludeMode: trendsViewModel.isExcludeMode,
                 transactionTypeFilter: .all,
                 amountCondition: trendsViewModel.amountCondition,
                 searchText: trendsViewModel.searchText,
@@ -1541,7 +1303,7 @@ struct TrendsTabView: View {
             grouping: .day,
             interval: previousInterval,
             currencyCode: defaultCurrencyCode,
-            context: modelContext
+
         )
 
         // Update state
@@ -1630,7 +1392,7 @@ struct CompactRecordRow: View {
 
                 // Nature indicator (if available)
                 if let subcategory = record.subcategory {
-                    natureIndicator(for: subcategory.nature)
+                    needIndicator(for: subcategory.need)
                 }
             }
         }
@@ -1638,13 +1400,13 @@ struct CompactRecordRow: View {
 
     // MARK: - Nature Indicator
 
-    private func natureIndicator(for nature: SubcategoryNature) -> some View {
+    private func needIndicator(for need: SubcategoryNeed) -> some View {
         HStack(spacing: DS.Spacing.xs) {
             Circle()
-                .fill(nature.color)
+                .fill(need.color)
                 .frame(width: 6, height: 6)
 
-            Text(nature.displayName)
+            Text(need.displayName)
                 .font(DS.Typography.labelTiny)
                 .foregroundStyle(.secondary)
         }
@@ -1652,7 +1414,7 @@ struct CompactRecordRow: View {
         .padding(.vertical, DS.Spacing.xxs)
         .background(
             Capsule()
-                .fill(nature.color.opacity(0.1))
+                .fill(need.color.opacity(0.1))
         )
     }
 

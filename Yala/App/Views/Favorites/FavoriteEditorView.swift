@@ -31,7 +31,7 @@ struct FavoriteEditorView: View {
     @State private var selectedAccount: Account?
     @State private var selectedSubcategory: Subcategory?
     @State private var selectedTags: [Tag] = []
-    @State private var selectedNature: SubcategoryNature?
+    @State private var selectedNeed: SubcategoryNeed?
 
     // Initial values for change detection (edit mode)
     @State private var initialName: String = ""
@@ -41,13 +41,13 @@ struct FavoriteEditorView: View {
     @State private var initialAccountID: PersistentIdentifier?
     @State private var initialSubcategoryID: PersistentIdentifier?
     @State private var initialTagIDs: Set<PersistentIdentifier> = []
-    @State private var initialNature: SubcategoryNature?
+    @State private var initialNeed: SubcategoryNeed?
 
     // Sheet states
     @State private var showAccountSelector = false
     @State private var showSubcategorySelector = false
     @State private var showTagSelector = false
-    @State private var showNatureSelector = false
+    @State private var showNeedSelector = false
 
     @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .largeTitle) private var heroAmountSize: CGFloat = 64
@@ -115,14 +115,14 @@ struct FavoriteEditorView: View {
             .sheet(isPresented: $showTagSelector) {
                 TagSelectorSheet(selectedTags: $selectedTags)
             }
-            .sheet(isPresented: $showNatureSelector) {
-                NatureSelectorSheet(
-                    selectedNature: Binding(
-                        get: { selectedNature ?? selectedSubcategory?.nature ?? .unclassified },
-                        set: { selectedNature = $0 }
+            .sheet(isPresented: $showNeedSelector) {
+                NeedSelectorSheet(
+                    selectedNeed: Binding(
+                        get: { selectedNeed ?? selectedSubcategory?.need ?? .unclassified },
+                        set: { selectedNeed = $0 }
                     )
                 )
-                .presentationDetents([.medium])
+                .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
             }
             .onChange(of: showAccountSelector) { _, isPresenting in
                 if isPresenting {
@@ -142,7 +142,7 @@ struct FavoriteEditorView: View {
                     isAmountFieldFocused = false
                 }
             }
-            .onChange(of: showNatureSelector) { _, isPresenting in
+            .onChange(of: showNeedSelector) { _, isPresenting in
                 if isPresenting {
                     isNameFieldFocused = false
                     isAmountFieldFocused = false
@@ -175,9 +175,9 @@ struct FavoriteEditorView: View {
         }
         .onChange(of: selectedSubcategory) { _, newSubcategory in
             if let subcategory = newSubcategory {
-                selectedNature = subcategory.nature
+                selectedNeed = subcategory.need
             } else {
-                selectedNature = nil
+                selectedNeed = nil
             }
         }
     }
@@ -245,11 +245,11 @@ struct FavoriteEditorView: View {
             amountDisplay
 
             // Nature chip (visible when subcategory is selected)
-            if selectedSubcategory != nil {
-                NatureEditChip(
-                    nature: selectedNature ?? selectedSubcategory?.nature ?? .unclassified
+            if selectedSubcategory != nil, transactionType != .income {
+                NeedEditChip(
+                    need: selectedNeed ?? selectedSubcategory?.need ?? .unclassified
                 ) {
-                    showNatureSelector = true
+                    showNeedSelector = true
                 }
                 .padding(.top, DS.Spacing.sm)
             }
@@ -375,7 +375,7 @@ struct FavoriteEditorView: View {
             || selectedAccount?.persistentModelID != initialAccountID
             || selectedSubcategory?.persistentModelID != initialSubcategoryID
             || Set(selectedTags.map { $0.persistentModelID }) != initialTagIDs
-            || selectedNature != initialNature
+            || selectedNeed != initialNeed
     }
 
     // MARK: - Actions
@@ -392,8 +392,8 @@ struct FavoriteEditorView: View {
         selectedAccount = favorite.account
         selectedSubcategory = favorite.subcategory
         selectedTags = favorite.tags ?? []
-        if let natureRaw = favorite.natureOverride {
-            selectedNature = SubcategoryNature(rawValue: natureRaw)
+        if let needRaw = favorite.needOverride {
+            selectedNeed = SubcategoryNeed(rawValue: needRaw)
         }
 
         // Store initial values for change detection
@@ -404,7 +404,7 @@ struct FavoriteEditorView: View {
         initialAccountID = selectedAccount?.persistentModelID
         initialSubcategoryID = selectedSubcategory?.persistentModelID
         initialTagIDs = Set(selectedTags.map { $0.persistentModelID })
-        initialNature = selectedNature
+        initialNeed = selectedNeed
     }
 
     private func saveFavorite() {
@@ -417,7 +417,7 @@ struct FavoriteEditorView: View {
             account: selectedAccount,
             subcategory: selectedSubcategory,
             tags: selectedTags,
-            natureOverride: selectedNature
+            needOverride: selectedNeed
         )
         if saved {
             dismiss()

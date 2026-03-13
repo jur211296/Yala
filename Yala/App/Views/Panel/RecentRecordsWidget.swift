@@ -147,7 +147,7 @@ struct RecentRecordsWidget: View {
 
                 // Nature indicator (if available)
                 if let subcategory = record.subcategory {
-                    natureIndicator(for: subcategory.nature)
+                    needIndicator(for: subcategory.need)
                 }
             }
         }
@@ -155,13 +155,13 @@ struct RecentRecordsWidget: View {
 
     // MARK: - Nature Indicator
 
-    private func natureIndicator(for nature: SubcategoryNature) -> some View {
+    private func needIndicator(for need: SubcategoryNeed) -> some View {
         HStack(spacing: DS.Spacing.xs) {
             Circle()
-                .fill(nature.color)
+                .fill(need.color)
                 .frame(width: 6, height: 6)
 
-            Text(nature.displayName)
+            Text(need.displayName)
                 .font(DS.Typography.labelTiny)
                 .foregroundStyle(.secondary)
         }
@@ -169,7 +169,7 @@ struct RecentRecordsWidget: View {
         .padding(.vertical, DS.Spacing.xxs)
         .background(
             Capsule()
-                .fill(nature.color.opacity(0.1))
+                .fill(need.color.opacity(0.1))
         )
     }
 

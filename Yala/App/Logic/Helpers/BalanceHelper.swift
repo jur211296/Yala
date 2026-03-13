@@ -20,7 +20,7 @@ struct BalanceHelper {
         accounts: [Account],
         transactions: [TransactionItem],
         preferredCurrencyCode: String,
-        context: ModelContext
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> Double {
         let preferredCurrency = CurrencyCode(rawValue: preferredCurrencyCode) ?? .pen
 
@@ -47,12 +47,11 @@ struct BalanceHelper {
                     CurrencyCode(rawValue: normalizeCurrencyCode(tx.currencyCode))
                     ?? preferredCurrency
 
-                let converted = CurrencyConverter.shared.convert(
+                let converted = converter.convert(
                     Decimal(tx.amount),
                     from: sourceCurrency.rawValue,
                     to: preferredCurrency.rawValue,
-                    on: tx.date,
-                    context: context
+                    on: tx.date
                 )
                 totalDecimal += converted
             }
@@ -69,7 +68,7 @@ struct BalanceHelper {
         transactions: [TransactionItem],
         selectedAccountID: PersistentIdentifier?,
         preferredCurrencyCode: String,
-        context: ModelContext
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> Double {
         let preferredCurrency = CurrencyCode(rawValue: preferredCurrencyCode) ?? .pen
 
@@ -93,12 +92,11 @@ struct BalanceHelper {
                         CurrencyCode(rawValue: normalizeCurrencyCode(tx.currencyCode))
                         ?? preferredCurrency
 
-                    let converted = CurrencyConverter.shared.convert(
+                    let converted = converter.convert(
                         Decimal(tx.amount),
                         from: txSourceCurrency.rawValue,
                         to: preferredCurrency.rawValue,
-                        on: tx.date,
-                        context: context
+                        on: tx.date
                     )
                     totalDecimal += converted
                 }
@@ -111,7 +109,7 @@ struct BalanceHelper {
             accounts: accounts,
             transactions: transactions,
             preferredCurrencyCode: preferredCurrencyCode,
-            context: context
+            converter: converter
         )
     }
 
@@ -124,7 +122,7 @@ struct BalanceHelper {
         before date: Date,
         preferredCurrency: CurrencyCode,
         categoryFilter: PersistentIdentifier? = nil,
-        context: ModelContext
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> Double {
         var total: Decimal = 0
 
@@ -145,12 +143,11 @@ struct BalanceHelper {
                 let sourceCurrency =
                     CurrencyCode(rawValue: normalizeCurrencyCode(tx.currencyCode))
                     ?? preferredCurrency
-                amount = CurrencyConverter.shared.convert(
+                amount = converter.convert(
                     Decimal(tx.amount),
                     from: sourceCurrency.rawValue,
                     to: preferredCurrency.rawValue,
-                    on: tx.date,
-                    context: context
+                    on: tx.date
                 )
             }
 
@@ -178,17 +175,16 @@ struct BalanceHelper {
         amount: Decimal,
         from source: CurrencyCode,
         to target: CurrencyCode,
-        context: ModelContext
+        converter: CurrencyConverting
     ) -> Decimal {
         if source == target {
             return amount
         }
 
-        return CurrencyConverter.shared.convertWithLatestRate(
+        return converter.convertWithLatestRate(
             amount,
             from: source.rawValue,
-            to: target.rawValue,
-            context: context
+            to: target.rawValue
         )
     }
 }

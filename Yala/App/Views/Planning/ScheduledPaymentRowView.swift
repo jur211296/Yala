@@ -170,7 +170,7 @@ struct ScheduledPaymentRowView: View {
 
     private var amountColor: Color {
         if summary.payment.transactionType == "income" {
-            return Color.priorityNature
+            return Color.priorityNeed
         }
         return summary.dueStatus == .past ? Color.hotPink.opacity(0.8) : Color.hotPink
     }

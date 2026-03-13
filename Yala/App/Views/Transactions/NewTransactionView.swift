@@ -43,6 +43,14 @@ struct NewTransactionView: View {
     @State private var savedToastMessage = ""
     @State private var duplicateAnimationVisible = true
 
+    // Notification primer
+    @State private var showingNotificationPrimer = false
+
+    /// Coach mark: Registro tour (B1-B3)
+    @AppStorage("hasSeenRegistroTour") private var hasSeenRegistroTour = false
+    @State private var showRegistroTour = false
+    @State private var registroTourIndex = 0
+
     // Prefill parameters
     let prefillAccountID: PersistentIdentifier?
     let prefillCategoryID: PersistentIdentifier?
@@ -68,7 +76,11 @@ struct NewTransactionView: View {
             TransactionSuccessView(
                 data: data,
                 onAccept: {
-                    dismiss()
+                    if viewModel.showNotificationPrimer {
+                        showingNotificationPrimer = true
+                    } else {
+                        dismiss()
+                    }
                 },
                 onCreateAnother: {
                     // Reset form for new transaction
@@ -102,6 +114,9 @@ struct NewTransactionView: View {
                 }
             )
             .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            .sheet(isPresented: $showingNotificationPrimer, onDismiss: { dismiss() }) {
+                NotificationPrimerSheet()
+            }
         } else {
             transactionFormView
                 .transition(.opacity)
@@ -161,6 +176,8 @@ struct NewTransactionView: View {
                             .font(DS.Typography.body)
                             .foregroundStyle(Color.primary)
                     }
+                    .buttonStyle(.plain)
+                    .coachMarkAnchor("favoritePayments")
                     .accessibilityLabel(L10n.Accessibility.favoriteTemplates)
                     .tint(Color.primary)
                 }
@@ -179,13 +196,15 @@ struct NewTransactionView: View {
             .sheet(isPresented: $viewModel.showSourceAccountSelector) {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.sourceAccount,
-                    title: L10n.Transaction.sourceAccount
+                    title: L10n.Transaction.sourceAccount,
+                    excludeAccount: viewModel.destinationAccount
                 )
             }
             .sheet(isPresented: $viewModel.showDestinationAccountSelector) {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.destinationAccount,
-                    title: L10n.Transaction.destinationAccount
+                    title: L10n.Transaction.destinationAccount,
+                    excludeAccount: viewModel.sourceAccount
                 )
             }
             .sheet(isPresented: $viewModel.showSubcategorySelector) {
@@ -204,24 +223,24 @@ struct NewTransactionView: View {
             }
             .sheet(isPresented: $viewModel.showDatePicker) {
                 DatePickerSheet(selectedDate: $viewModel.transactionDate)
-                    .presentationDetents([.medium, .large])
+                    .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
                     .onChange(of: viewModel.transactionDate) { _, _ in
                         Task {
                             await viewModel.loadExchangeRate(context: modelContext)
                         }
                     }
             }
-            .sheet(isPresented: $viewModel.showNatureSelector) {
-                NatureSelectorSheet(
-                    selectedNature: Binding(
+            .sheet(isPresented: $viewModel.showNeedSelector) {
+                NeedSelectorSheet(
+                    selectedNeed: Binding(
                         get: {
-                            viewModel.selectedNature ?? viewModel.selectedSubcategory?.nature
+                            viewModel.selectedNeed ?? viewModel.selectedSubcategory?.need
                                 ?? .unclassified
                         },
-                        set: { viewModel.selectedNature = $0 }
+                        set: { viewModel.selectedNeed = $0 }
                     )
                 )
-                .presentationDetents([.medium])
+                .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
             }
             .onChange(of: viewModel.showAccountSelector) { _, isPresenting in
                 if isPresenting {
@@ -265,7 +284,7 @@ struct NewTransactionView: View {
                     isAmountFieldFocused = false
                 }
             }
-            .onChange(of: viewModel.showNatureSelector) { _, isPresenting in
+            .onChange(of: viewModel.showNeedSelector) { _, isPresenting in
                 if isPresenting {
                     isNoteFieldFocused = false
                     isAmountFieldFocused = false
@@ -349,6 +368,20 @@ struct NewTransactionView: View {
                 await viewModel.loadExchangeRate(context: modelContext)
             }
         }
+        .coachMarkOverlay(
+            steps: RegistroTourSteps.steps,
+            isPresented: $showRegistroTour,
+            currentIndex: $registroTourIndex,
+            onComplete: { hasSeenRegistroTour = true }
+        )
+        .task {
+            if !hasSeenRegistroTour && transactionToEdit == nil {
+                try? await Task.sleep(for: .seconds(0.8))
+                if !hasSeenRegistroTour {
+                    showRegistroTour = true
+                }
+            }
+        }
     }
 
     // MARK: - Transaction Type Selector
@@ -367,6 +400,7 @@ struct NewTransactionView: View {
                 }
             }
         )
+        .coachMarkAnchor("transactionTypes")
     }
 
     // MARK: - Central Content
@@ -446,7 +480,7 @@ struct NewTransactionView: View {
             // Category chip + Nature chip (visible when subcategory is selected, not for transfers)
             if !viewModel.isTransfer, let subcategory = viewModel.selectedSubcategory {
                 HStack(spacing: DS.Spacing.sm) {
-                    // Category chip (read-only, styled like NatureEditChip)
+                    // Category chip (read-only, styled like NeedEditChip)
                     let category = subcategory.safeCategory
                     let categoryColor = Color(hex: category.colorHex)
                     HStack(spacing: DS.Spacing.xs) {
@@ -462,10 +496,12 @@ struct NewTransactionView: View {
                         Capsule().fill(categoryColor.opacity(0.12))
                     )
 
-                    NatureEditChip(
-                        nature: viewModel.selectedNature ?? subcategory.nature
-                    ) {
-                        viewModel.showNatureSelector = true
+                    if viewModel.transactionType != .income {
+                        NeedEditChip(
+                            need: viewModel.selectedNeed ?? subcategory.need
+                        ) {
+                            viewModel.showNeedSelector = true
+                        }
                     }
 
                     if transactionToEdit?.scheduledPaymentID != nil {
@@ -484,13 +520,14 @@ struct NewTransactionView: View {
             // Quick actions bar
             quickActionsBar
                 .padding(.top, DS.Spacing.lg)
+                .coachMarkAnchor("quickActions")
         }
         .onChange(of: viewModel.selectedSubcategory) { _, newSubcategory in
             // Sync nature when subcategory changes
             if let subcategory = newSubcategory {
-                viewModel.selectedNature = subcategory.nature
+                viewModel.selectedNeed = subcategory.need
             } else {
-                viewModel.selectedNature = nil
+                viewModel.selectedNeed = nil
             }
         }
     }
@@ -642,7 +679,12 @@ struct NewTransactionView: View {
                 icon: "repeat",
                 label: L10n.Action.recurring
             ) {
-                viewModel.showSaveAsRecurringSheet = true
+                if viewModel.canSave {
+                    viewModel.showSaveAsRecurringSheet = true
+                } else {
+                    viewModel.showValidationErrors = true
+                    showToast(L10n.Validation.completeFieldsFirst)
+                }
             }
         }
     }
@@ -681,7 +723,7 @@ struct NewTransactionView: View {
             account: viewModel.selectedAccount,
             subcategory: viewModel.selectedSubcategory,
             tags: viewModel.selectedTags,
-            natureOverride: viewModel.selectedNature,
+            needOverride: viewModel.selectedNeed,
             currencyCode: viewModel.effectiveCurrencyCode,
             onSaved: { message in
                 showToast(message)
@@ -690,18 +732,21 @@ struct NewTransactionView: View {
     }
 
     private var recurringSheetContent: some View {
-        SaveAsRecurringSheet(
-            transactionType: viewModel.transactionType,
-            amount: viewModel.amount,
-            note: viewModel.note,
-            account: viewModel.selectedAccount,
-            subcategory: viewModel.selectedSubcategory,
-            tags: viewModel.selectedTags,
-            natureOverride: viewModel.selectedNature,
-            currencyCode: viewModel.effectiveCurrencyCode,
-            transactionDate: viewModel.transactionDate,
-            onSaved: { message in
-                showToast(message)
+        ScheduledPaymentEditorView(
+            payment: nil,
+            prefill: ScheduledPaymentPrefill(
+                transactionType: viewModel.transactionType.rawValue,
+                amount: String(format: "%.2f", viewModel.amount),
+                note: viewModel.note,
+                account: viewModel.selectedAccount,
+                subcategory: viewModel.selectedSubcategory,
+                tagIDs: Set(viewModel.selectedTags.map { $0.persistentModelID }),
+                needOverride: viewModel.selectedNeed,
+                currencyCode: viewModel.effectiveCurrencyCode,
+                transactionDate: viewModel.transactionDate
+            ),
+            onSaved: { paymentID in
+                handleRecurringSaved(paymentID: paymentID)
             }
         )
     }
@@ -922,7 +967,7 @@ struct NewTransactionView: View {
     private var autocompletePopoverContent: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             if autocompleteSuggestions.isEmpty {
-                Text(L10n.Search.noResults)
+                Label(L10n.Search.noResults, systemImage: "tag")
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, DS.Spacing.lg)
@@ -1049,40 +1094,48 @@ struct NewTransactionView: View {
 
     private func saveTransaction() {
         if viewModel.save(context: modelContext) != nil {
-            DS.Haptic.success()
-            // Dismiss keyboard first
-            dismissKeyboard()
+            showTransactionSuccess()
+        }
+    }
 
-            // Build success data from saved transaction
-            let account = viewModel.isTransfer ? viewModel.sourceAccount : viewModel.selectedAccount
-            let destAccount = viewModel.destinationAccount
+    private func showTransactionSuccess() {
+        DS.Haptic.success()
+        dismissKeyboard()
 
-            successData = TransactionSuccessData(
-                transactionType: viewModel.transactionType,
-                date: viewModel.transactionDate,
-                accountName: account?.name ?? L10n.Transaction.account,
-                accountColorHex: account?.colorHex ?? AppConstants.defaultColorHex,
-                note: viewModel.note,
-                amount: Decimal(string: viewModel.amountString.replacingOccurrences(of: Locale.current.decimalSeparator ?? ".", with: ".")) ?? 0,
-                currencyCode: viewModel.effectiveCurrencyCode,
-                subcategoryName: viewModel.selectedSubcategory?.name,
-                subcategoryColorHex: viewModel.selectedSubcategory?.colorHex,
-                categoryName: viewModel.selectedSubcategory?.safeCategory.name,
-                categoryColorHex: viewModel.selectedSubcategory?.safeCategory.colorHex,
-                tags: viewModel.selectedTags.map { ($0.name, $0.colorHex) },
-                nature: viewModel.selectedNature ?? viewModel.selectedSubcategory?.nature,
-                isTransfer: viewModel.isTransfer,
-                destinationAccountName: destAccount?.name,
-                destinationAccountColorHex: destAccount?.colorHex,
-                destinationAmount: Decimal(viewModel.destinationAmount),
-                destinationCurrencyCode: destAccount?.currencyCode
-            )
+        let account = viewModel.isTransfer ? viewModel.sourceAccount : viewModel.selectedAccount
+        let destAccount = viewModel.destinationAccount
 
-            // Delay animation to let keyboard dismiss
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                dsWithAnimation(reduceMotion) {
-                    showSuccessScreen = true
-                }
+        successData = TransactionSuccessData(
+            transactionType: viewModel.transactionType,
+            date: viewModel.transactionDate,
+            accountName: account?.name ?? L10n.Transaction.account,
+            accountColorHex: account?.colorHex ?? AppConstants.defaultColorHex,
+            note: viewModel.note,
+            amount: Decimal(string: viewModel.amountString.replacingOccurrences(of: Locale.current.decimalSeparator ?? ".", with: ".")) ?? 0,
+            currencyCode: viewModel.effectiveCurrencyCode,
+            subcategoryName: viewModel.selectedSubcategory?.name,
+            subcategoryColorHex: viewModel.selectedSubcategory?.colorHex,
+            categoryName: viewModel.selectedSubcategory?.safeCategory.name,
+            categoryColorHex: viewModel.selectedSubcategory?.safeCategory.colorHex,
+            tags: viewModel.selectedTags.map { ($0.name, $0.colorHex) },
+            need: viewModel.selectedNeed ?? viewModel.selectedSubcategory?.need,
+            isTransfer: viewModel.isTransfer,
+            destinationAccountName: destAccount?.name,
+            destinationAccountColorHex: destAccount?.colorHex,
+            destinationAmount: Decimal(viewModel.destinationAmount),
+            destinationCurrencyCode: destAccount?.currencyCode
+        )
+
+        // Delay animation to let keyboard dismiss
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            dsWithAnimation(reduceMotion) {
+                showSuccessScreen = true
+            }
+
+            // Check notification primer AFTER animation completes (~800ms)
+            Task {
+                try await Task.sleep(for: .milliseconds(800))
+                await viewModel.checkNotificationPrimer()
             }
         }
     }
@@ -1274,6 +1327,41 @@ struct NewTransactionView: View {
         }
     }
 
+    private func handleRecurringSaved(paymentID: UUID) {
+        // Always save the transaction (new or edited) before linking
+        let txToLink = viewModel.save(context: modelContext)?.first
+        txToLink?.scheduledPaymentID = paymentID.uuidString
+
+        // Advance nextDueDate so the system doesn't create a duplicate draft
+        let paymentIDString = paymentID.uuidString
+        do {
+            let descriptor = FetchDescriptor<ScheduledPayment>()
+            if let payment = try modelContext.fetch(descriptor).first(where: { $0.id.uuidString == paymentIDString }) {
+                let calendar = Calendar.current
+                if calendar.startOfDay(for: payment.nextDueDate) <= calendar.startOfDay(for: Date.now) {
+                    payment.lastPaidDate = Date.now
+                    ScheduledPaymentDraftService.advanceToNextDueDate(payment: payment)
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("NewTransactionView: Error fetching scheduled payment: \(error)")
+            #endif
+        }
+
+        do {
+            try modelContext.save()
+            WidgetDataCache.updateCache(context: modelContext)
+            SessionState.shared.incrementDataVersion()
+        } catch {
+            #if DEBUG
+            print("NewTransactionView: Error linking to scheduled payment: \(error)")
+            #endif
+        }
+
+        showTransactionSuccess()
+    }
+
     private func showToast(_ message: String) {
         savedToastMessage = message
         dsWithAnimation(reduceMotion) {
@@ -1307,10 +1395,10 @@ struct NewTransactionView: View {
         viewModel.selectedSubcategory = favorite.subcategory
 
         // Set nature override if available
-        if let natureRaw = favorite.natureOverride {
-            viewModel.selectedNature = SubcategoryNature(rawValue: natureRaw)
+        if let needRaw = favorite.needOverride {
+            viewModel.selectedNeed = SubcategoryNeed(rawValue: needRaw)
         } else {
-            viewModel.selectedNature = favorite.subcategory?.nature
+            viewModel.selectedNeed = favorite.subcategory?.need
         }
 
         // Set tags

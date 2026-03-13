@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import SwiftData
 
 struct CashFlowData: Identifiable {
     let id = UUID()
@@ -31,7 +30,7 @@ struct CashFlowCalculator {
         interval: DateInterval,
         grouping: TrendGrouping,
         currencyCode: String,
-        context: ModelContext
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> CashFlowSummary {
 
         let calendar = Calendar.current
@@ -56,12 +55,11 @@ struct CashFlowCalculator {
                 // Use signed amount
                 val = tx.amountInPreferredCurrency
             } else {
-                let converted = CurrencyConverter.shared.convert(
+                let converted = converter.convert(
                     decimalAmt,
                     from: tx.currencyCode,
                     to: currencyCode,
-                    on: tx.date,
-                    context: context
+                    on: tx.date
                 )
                 // Restore sign from original amount
                 let magnitude = NSDecimalNumber(decimal: converted).doubleValue

@@ -203,12 +203,18 @@ enum DS {
         static let disabledForeground = Color.gray
         static let infoForeground = Color.blue
         static let undoForeground = Color.teal
+        static let imageAccent = Color.teal
     }
 
     // MARK: - Shadow
 
     /// Pre-configured shadow styles.
     enum Shadow {
+        /// Subtle shadow for settings cards and containers
+        static let subtle: (color: Color, radius: CGFloat, x: CGFloat, y: CGFloat) = (
+            .black.opacity(0.04), 12, 0, 6
+        )
+
         /// Small shadow for subtle elevation (cards)
         static let small: (color: Color, radius: CGFloat, x: CGFloat, y: CGFloat) = (
             .black.opacity(0.05), 10, 0, 5
@@ -344,6 +350,14 @@ enum DS {
         static func horizontalPadding(_ sizeClass: UserInterfaceSizeClass?) -> CGFloat {
             isWideScreen(sizeClass) ? DS.Spacing.xxxl : DS.Spacing.lg
         }
+
+        /// Forces .large detents on iPad and Mac Catalyst where
+        /// medium/fixed-height sheets are too small for pickers and complex content.
+        static func sheetDetents(_ detents: Set<PresentationDetent>) -> Set<PresentationDetent> {
+            let needsLargeSheet = UIDevice.current.userInterfaceIdiom == .pad
+                || ProcessInfo.processInfo.isiOSAppOnMac
+            return needsLargeSheet ? [.large] : detents
+        }
     }
 
     // MARK: - Form Row Dimensions
@@ -463,6 +477,12 @@ enum DS {
 // MARK: - View Extensions
 
 extension View {
+    /// Apply subtle shadow for settings cards and containers
+    func dsSubtleShadow() -> some View {
+        let s = DS.Shadow.subtle
+        return self.shadow(color: s.color, radius: s.radius, x: s.x, y: s.y)
+    }
+
     /// Apply standard card shadow (small elevation)
     func dsCardShadow() -> some View {
         let s = DS.Shadow.small

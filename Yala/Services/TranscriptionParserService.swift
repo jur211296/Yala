@@ -84,7 +84,7 @@ private struct LLMMultipleResponse: Codable {
 
 /// Service for parsing transcriptions into transaction data.
 /// Supports @Environment injection in SwiftUI views.
-@Observable
+@MainActor @Observable
 final class TranscriptionParserService {
 
     // MARK: - Singleton (for backward compatibility)
@@ -262,7 +262,7 @@ final class TranscriptionParserService {
                 .system(.init(content: .textContent(prompt))),
                 .user(.init(content: .string(trimmedText)))
             ],
-            model: .gpt4_o_mini,
+            model: .gpt4_1_nano,
             temperature: 0.1  // Low temperature for consistent parsing
         )
 
@@ -283,7 +283,7 @@ final class TranscriptionParserService {
 
     // MARK: - Private Methods
 
-    private func parseMultipleResponse(_ content: String) throws -> [ParsedTransaction] {
+    func parseMultipleResponse(_ content: String) throws -> [ParsedTransaction] {
         // Clean the response (remove any markdown formatting if present)
         var jsonString = content.trimmingCharacters(in: .whitespacesAndNewlines)
         if jsonString.hasPrefix("```json") {

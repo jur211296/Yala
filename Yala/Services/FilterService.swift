@@ -14,7 +14,7 @@ import SwiftUI
 
 /// Unified filter criteria used across all views that filter transactions.
 /// This eliminates the need for each ViewModel to define its own filter state separately.
-struct FilterCriteria: Equatable {
+struct FilterCriteria: Hashable {
 
     // MARK: - Entity Filters
 
@@ -31,13 +31,19 @@ struct FilterCriteria: Equatable {
     var selectedTags: Set<PersistentIdentifier> = []
 
     /// Selected natures for filtering (empty = all natures)
-    var selectedNatures: Set<SubcategoryNature> = []
+    var selectedNeeds: Set<SubcategoryNeed> = []
 
     /// Selected transaction natures for filtering (empty = all, income/expense)
     var selectedTransactionNatures: Set<TransactionNature> = []
 
     /// Selected currencies for filtering (empty = all currencies)
     var selectedCurrencies: Set<CurrencyCode> = []
+
+    // MARK: - Mode
+
+    /// When true, selected entity filters act as exclusion (hide matching items)
+    /// When false (default), selected entity filters act as inclusion (show only matching items)
+    var isExcludeMode: Bool = false
 
     // MARK: - Value Filters
 
@@ -67,7 +73,7 @@ struct FilterCriteria: Equatable {
         !selectedAccounts.isEmpty
             || !selectedCategories.isEmpty
             || !selectedSubcategories.isEmpty
-            || !selectedNatures.isEmpty
+            || !selectedNeeds.isEmpty
             || !selectedTags.isEmpty
             || transactionTypeFilter != .all
             || amountCondition.isActive
@@ -81,19 +87,20 @@ struct FilterCriteria: Equatable {
         var count = 0
         if !selectedAccounts.isEmpty { count += 1 }
         if !selectedCategories.isEmpty || !selectedSubcategories.isEmpty { count += 1 }
-        if !selectedNatures.isEmpty { count += 1 }
+        if !selectedNeeds.isEmpty { count += 1 }
         if !selectedTags.isEmpty { count += 1 }
         if transactionTypeFilter != .all { count += 1 }
         if amountCondition.isActive { count += 1 }
         if !selectedCurrencies.isEmpty { count += 1 }
         if hasTransactionNatureFilter { count += 1 }
+        if !searchText.isEmpty { count += 1 }
         return count
     }
 
     // MARK: - Factory
 
     /// Empty filter criteria (no filters applied)
-    static let empty = FilterCriteria()
+    nonisolated(unsafe) static let empty = FilterCriteria()
 
     // MARK: - Mutation
 
@@ -102,30 +109,16 @@ struct FilterCriteria: Equatable {
         selectedAccounts.removeAll()
         selectedCategories.removeAll()
         selectedSubcategories.removeAll()
-        selectedNatures.removeAll()
+        selectedNeeds.removeAll()
         selectedTransactionNatures.removeAll()
         selectedTags.removeAll()
         selectedCurrencies.removeAll()
         transactionTypeFilter = .all
+        isExcludeMode = false
         amountCondition = .any
         searchText = ""
         // Note: dateInterval is NOT cleared as it's typically controlled by period selector
     }
-}
-
-// MARK: - Filter Type Enum
-
-/// Types of filters for UI callbacks (e.g., when removing a filter chip)
-enum FilterType {
-    case accounts
-    case categories
-    case subcategories
-    case tags
-    case natures
-    case currencies
-    case transactionType
-    case amount
-    case search
 }
 
 // MARK: - Filter Service
@@ -203,41 +196,27 @@ struct FilterService {
             guard interval.contains(transaction.date) else { return false }
         }
 
-        // Account filter
-        if !criteria.selectedAccounts.isEmpty {
-            guard let accountID = transaction.account?.persistentModelID,
-                criteria.selectedAccounts.contains(accountID)
-            else { return false }
-        }
+        let isExclude = criteria.isExcludeMode
 
-        // Category filter
-        if !criteria.selectedCategories.isEmpty {
-            guard let categoryID = transaction.category?.persistentModelID,
-                criteria.selectedCategories.contains(categoryID)
-            else { return false }
-        }
+        // Entity filters (account, category, subcategory, nature, currency)
+        if !matchesEntityFilter(transaction.account?.persistentModelID, selected: criteria.selectedAccounts, isExclude: isExclude) { return false }
+        if !matchesEntityFilter(transaction.category?.persistentModelID, selected: criteria.selectedCategories, isExclude: isExclude) { return false }
+        if !matchesEntityFilter(transaction.subcategory?.persistentModelID, selected: criteria.selectedSubcategories, isExclude: isExclude) { return false }
+        // Transactions without subcategory are treated as .unclassified (consistent with PanelVM behavior)
+        if !matchesEntityFilter(transaction.subcategory?.need ?? .unclassified, selected: criteria.selectedNeeds, isExclude: isExclude) { return false }
 
-        // Subcategory filter
-        if !criteria.selectedSubcategories.isEmpty {
-            guard let subcategoryID = transaction.subcategory?.persistentModelID,
-                criteria.selectedSubcategories.contains(subcategoryID)
-            else { return false }
-        }
-
-        // Nature filter
-        if !criteria.selectedNatures.isEmpty {
-            guard let subcategory = transaction.subcategory,
-                criteria.selectedNatures.contains(subcategory.nature)
-            else { return false }
-        }
-
-        // Tags filter (match if ANY selected tag is present)
+        // Tags filter (ANY match semantics)
         if !criteria.selectedTags.isEmpty {
             let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
-            guard !transactionTagIDs.isDisjoint(with: criteria.selectedTags) else { return false }
+            let hasOverlap = !transactionTagIDs.isDisjoint(with: criteria.selectedTags)
+            if isExclude {
+                if hasOverlap { return false }
+            } else {
+                guard hasOverlap else { return false }
+            }
         }
 
-        // Transaction type filter
+        // Transaction type filter (NOT affected by exclude mode)
         switch criteria.transactionTypeFilter {
         case .all:
             break
@@ -251,39 +230,26 @@ struct FilterService {
         }
 
         // Transaction nature filter (income/expense chips)
+        // Always "include" semantics — exclude mode does NOT apply to transaction type
         // Empty = all, both selected = all, exactly 1 = filter
         if criteria.selectedTransactionNatures.count == 1 {
             if criteria.selectedTransactionNatures.contains(.income) {
-                // Only income: positive amounts (category.isIncome == true)
                 guard transaction.category?.isIncome == true else { return false }
             } else if criteria.selectedTransactionNatures.contains(.expense) {
-                // Only expense: negative amounts (category.isIncome == false)
                 guard transaction.category?.isIncome == false else { return false }
             }
         }
 
-        // Amount filter (absolute value)
+        // Amount filter (absolute value) — NOT affected by exclude mode
         let amount = Decimal(transaction.amount)
         guard criteria.amountCondition.matches(abs(amount)) else { return false }
 
         // Currency filter
-        if !criteria.selectedCurrencies.isEmpty {
-            guard let currencyCode = CurrencyCode(rawValue: transaction.currencyCode),
-                criteria.selectedCurrencies.contains(currencyCode)
-            else { return false }
-        }
+        if !matchesEntityFilter(CurrencyCode(rawValue: transaction.currencyCode), selected: criteria.selectedCurrencies, isExclude: isExclude) { return false }
 
-        // Search text filter (searches in note, category, subcategory, account, tags)
+        // Search text filter (note only — GlobalSearchView handles broad multi-field search)
         if !criteria.searchText.isEmpty {
-            let search = criteria.searchText.lowercased()
-            let noteMatch = (transaction.note ?? "").lowercased().contains(search)
-            let categoryMatch = (transaction.category?.name ?? "").lowercased().contains(search)
-            let subcategoryMatch = (transaction.subcategory?.name ?? "").lowercased().contains(
-                search)
-            let accountMatch = (transaction.account?.name ?? "").lowercased().contains(search)
-            let tagMatch = (transaction.tags ?? []).contains { $0.name.lowercased().contains(search) }
-
-            guard noteMatch || categoryMatch || subcategoryMatch || accountMatch || tagMatch else {
+            guard (transaction.note ?? "").localizedCaseInsensitiveContains(criteria.searchText) else {
                 return false
             }
         }
@@ -292,6 +258,23 @@ struct FilterService {
     }
 
     // MARK: - Filter for Trends (Accounts Pre-filtering)
+
+    // MARK: - Entity Filter Helper
+
+    /// Checks if a transaction value matches an entity filter set, respecting exclude mode.
+    /// Returns true if the transaction should be included, false if it should be filtered out.
+    private static func matchesEntityFilter<T: Hashable>(
+        _ value: T?, selected: Set<T>, isExclude: Bool
+    ) -> Bool {
+        guard !selected.isEmpty else { return true }
+        if isExclude {
+            if let value, selected.contains(value) { return false }
+            return true
+        } else {
+            guard let value, selected.contains(value) else { return false }
+            return true
+        }
+    }
 
     /// Filters transactions for trend calculations, considering account eligibility.
     ///
@@ -307,9 +290,13 @@ struct FilterService {
     ) -> [TransactionItem] {
         // Determine eligible accounts (not excluded from statistics; archived accounts still count)
         let eligibleAccounts = accounts.filter { account in
-            !account.excludeFromStatistics
-                && (criteria.selectedAccounts.isEmpty
-                    || criteria.selectedAccounts.contains(account.persistentModelID))
+            guard !account.excludeFromStatistics else { return false }
+            if criteria.selectedAccounts.isEmpty { return true }
+            if criteria.isExcludeMode {
+                return !criteria.selectedAccounts.contains(account.persistentModelID)
+            } else {
+                return criteria.selectedAccounts.contains(account.persistentModelID)
+            }
         }
         let eligibleAccountIDs = Set(eligibleAccounts.map { $0.persistentModelID })
 

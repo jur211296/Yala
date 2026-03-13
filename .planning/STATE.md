@@ -11,10 +11,10 @@ See: .planning/PROJECT.md (updated 2026-01-15)
 
 Version: 1.2 (en desarrollo)
 Phase: 12 — Plataforma Extendida
-Spec: None
-Plan: None
-Status: **Fase 11 COMPLETADA** — Sistema de Temas Independientes cerrado (2026-02-19)
-Last activity: 2026-03-04 — Inbox hotfix: swipe crash, image duplicates, approve-next direction
+Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
+Plan: Refactor filtros deferred -> Smart Insights tab
+Status: **Fase 12 en progreso** — What's New sheet + coach mark tours + onboarding improvements
+Last activity: 2026-03-12 — Full review fixes: @MainActor, reduceMotion, L10n, a11y, DS, Date.now
 
 ### Apple Review History (V1.0)
 
@@ -22,17 +22,18 @@ Last activity: 2026-03-04 — Inbox hotfix: swipe crash, image duplicates, appro
 |---|-------|-----------|----------|----------|--------|
 | 1 | 2026-02-26 | 3.1.2 | Links de Terms/Privacy no separados ni localizados | Separar links y localizar URLs legales | ✅ Resuelto (9cc6831) |
 | 2 | 2026-02-27 | 5.1.1(i) + 5.1.2(i) | App comparte datos con OpenAI (voz/imagen) sin revelar qué datos, identificar a OpenAI, ni obtener permiso explícito | Consent alert in-app al activar funciones AI + actualizar privacy policy web para nombrar OpenAI y detallar datos | ✅ Resuelto (44efe2f + 8 fixes preventivos) |
+| 3 | 2026-03-05 | — | V1.0.1 aprobada | Tag 1.0.1, merged to 1.0, hotfix branches deleted | ✅ Aprobada |
 
 **Detalle rechazo #2:**
-- **Datos enviados a OpenAI:** Audio (Whisper), imágenes JPEG (GPT-4o Vision), texto transcrito + nombres de categorías (GPT-4o Mini)
+- **Datos enviados a OpenAI:** Audio (Whisper), imágenes JPEG (GPT-4.1 Nano), texto transcrito + nombres de categorías (GPT-4.1 Nano)
 - **Datos NO enviados:** Montos, historial de transacciones, información personal, EXIF/metadata
 - **Lo que faltaba:** (1) Disclosure in-app de datos compartidos, (2) Identificación de OpenAI como tercero, (3) Consentimiento explícito antes de enviar datos
 - **Privacy policy (.planning/appstore/):** Ya documentaba OpenAI correctamente
 - **Privacy policy (Web):** Solo decía "servicio externo de IA" — no nombraba a OpenAI ni detallaba datos
 
 ### Branch Strategy
-- **1.0** = Release (V1.0 + V1.1 mergeada)
-- **1.1** = Desarrollo activo (V1.2: Fase 11+)
+- **1.0** = Release (V1.0.1 — Apple approved 2026-03-05, tag `1.0.1`)
+- **1.1** = Desarrollo activo (V1.2: Fase 12, includes all hotfix work)
 
 Progress: V1.0 ████████████████ 100% ✅
 Progress: V1.1 ████████████████ 100% ✅ (Cerrada 2026-02-13)
@@ -42,23 +43,30 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
-- [2026-03-04] b18626b fix: inbox swipe crash, image duplicates, and approve-next direction
-- [2026-03-04] 3298f58 fix: sync account sort order across devices via iCloud KV
-- [2026-03-04] b1fad3c feat: configurable auto-focus field in Personalization settings
-- [2026-03-04] a830609 fix: Face ID grace period + stuck unlock screen
-- [2026-03-04] 8b2a954 fix: add tutorials onboarding step + wrap privacy screen in ScrollView
-- [2026-03-04] f262162 fix: remove default account creation after onboarding
-- [2026-03-04] 33db4f8 feat: cross-device wipe coordination via iCloud KV signaling
-- [2026-03-04] 85b2920 feat: auto-refresh UI on CloudKit remote changes
-- [2026-03-04] 845e402 feat: sync 8 additional preferences via iCloud KV + pull-to-refresh
-- [2026-02-27] a459aa3 fix: remove announcements notification type (no server infrastructure)
-- [2026-02-27] 930e725 fix: guard force unwraps in AppConstants URL construction
-- [2026-02-27] 16d38b3 chore: remove SettingsPlaceholderView and CaptureMode dead code
-- [2026-02-27] a792f17 fix: declare OpenAI data usage in Privacy Manifest and Info.plist
-- [2026-02-27] b8b575d fix: precise privacy claims and consent text in all localizations
-- [2026-02-27] 44efe2f fix: AI data consent for OpenAI features — Apple 5.1.1(i)/5.1.2(i) rejection
-- [2026-02-26] 9cc6831 fix: separate Terms/Privacy links and localize legal URLs — Apple 3.1.2 rejection
-- [2026-02-25] 8d2ba84 docs: add Groups (expense splitting) design document
+- [2026-03-12] 031bc7c feat: split AI consent into processing (voice/image) and insights (smart overview)
+- [2026-03-12] 08883ee fix: AI insights — tip alignment, reactivity, currency format, budget threshold
+- [2026-03-12] 52b451f feat: rewrite AI insight tone/focus prompts + country regionalization + brand voice enforcement
+- [2026-03-12] 134200b feat: enrich AI insights data + anti-hallucination prompts + upgrade to GPT-4.1 Mini
+- [2026-03-12] c935830 fix: prevent SEGV crash in test host by using in-memory config under XCTest
+- [2026-03-12] 7d02809 chore: address medium/low review issues — dead code, deprecated APIs, DS tokens
+- [2026-03-12] fba23e2 refactor: Date() → Date.now across codebase (H7)
+- [2026-03-12] 7f518f8 fix: address critical and high review issues (C1-C3, H1-H11)
+- [2026-03-12] baf130f chore: update Claude commands, settings, and agent configs
+- [2026-03-12] b63b56d feat: add consent flow for Smart Insights + settings reorganization
+- [2026-03-12] d48946f test: extract 12 private methods to internal + add 85 tests across 5 suites
+- [2026-03-10] 720ffe3 refactor: rename Nature → Need across codebase
+- [2026-03-10] 0f85f55 fix: export allTime date range, transaction recurring save flow, validation toast
+- [2026-03-10] dd86e0c fix: scheduled payments — duplicate draft prevention, unified occurrence actions, editor UX
+- [2026-03-08] b0be795 fix: onboarding QA — comma-locale budget bug, animation timing, updated scenarios
+- [2026-03-08] 82f4e5c feat: polish onboarding budget step — reframe texts, horizontal pills, live preview card, currency fix
+- [2026-03-08] 9488d0a feat: polish onboarding account step — SectionBox layout, balance guide, validation
+- [2026-03-07] 275392d feat: add Smart Insights personalization — tone, focus, and actionable tips
+- [2026-03-07] 7fcdc22 feat: add contextual AI insight card to PanelView
+- [2026-03-06] 7f01298 refactor: extract shared FilterControlBar — eliminate ~790 duplicate lines
+- [2026-03-06] f1ea108 fix: restore exclude mode filters — batch commit + AI filter context + Insights layout
+- [2026-03-06] 38c2f0d docs: update STATE.md with OpenAI compliance fix
+- [2026-03-05] cc2f4a5 Merge hotfix/1.0.2 into 1.1
+- [2026-03-05] 2700d6d Merge hotfix/1.0.1 into 1.1
 - [2026-02-24] 328ba03 fix: scheduled payments visual consistency — hot pink expenses, sign prefix, currency conversion
 - [2026-02-24] dea0d82 feat: support form sheet with type picker before sending email
 - [2026-02-24] 0962a43 fix: show initial balance mode when editing account without balance set
@@ -475,6 +483,76 @@ Agregado `SortDescriptor(\.createdAt, order: .reverse)` como tiebreaker en 4 Fet
 - ✅ **BUG-29 (prev): Selector de mes falta en Presupuestos** — Resuelto (71d6e92): periodNavigationHeader con chevrones idéntico a ScheduledPaymentsListView
 - ✅ **BUG-30: Notificación de resumen del día se envía duplicada** — Resuelto (71d6e92): isSendingReports guard en ReportNotificationService
 
+### Bugs Producción V1.0.1 (reportados 2026-03-09)
+
+Todos deben resolverse para V1.1 (próxima release). Prioridad: crashes > lógica incorrecta > UX > visual.
+
+**Crashes:**
+- [x] **BUG-34: Crash en Mac (Designed for Mac) al abrir registro de bandeja** — Resuelto (0d9f04d): conditional `.large` detents on Mac, remove assertionFailure, guard approve-next flows
+- [x] **BUG-35: Crash intermitente al eliminar draft en bandeja (swipe + botón)** — Resuelto (0d9f04d): delay SwiftData deletion 400ms post-animation, extract removeDraftWithAnimation helper
+
+**Notificaciones (lógica incorrecta):**
+- [x] **BUG-36: Notificaciones llegan a cualquier hora** — Llegan mucho antes de la hora configurada. ✅ c675e9c
+- [x] **BUG-37: Notificación de pago planificado ya pagado (vinculado)** — Llega notificación de vencimiento hoy aunque el pago ya fue vinculado a un gasto. ✅ c675e9c
+- [x] **BUG-38: Pago no vinculado no crea registro en bandeja** — Tenía 2 pagos venciendo hoy (1 vinculado, 1 no). Llegaron ambas notificaciones pero no se creó draft en bandeja para el no vinculado. ✅ c675e9c
+- [x] **BUG-39: Notificación "vence en 3 días" pero realmente son 4** — Cálculo de días restantes off-by-one. ✅ c675e9c
+
+**Filtros / Lógica:**
+- [x] **BUG-40: Filtro subcategoría ingreso bloquea mal en PanelView** — Resuelto (1b9d9fc)
+- [x] **BUG-41: Orden de búsqueda diferente a registros** — Resuelto (1b9d9fc)
+
+**Race Conditions:**
+- [x] **BUG-42: Race condition Share Sheet imagen + notificación in-app de bandeja** — Resuelto (ecc7758), QA pendiente
+- [x] **BUG-43: Race condition Share Sheet imagen + Face ID** — Resuelto (ecc7758), QA pendiente
+
+**Widget:**
+- [x] **BUG-44: Widget de presupuestos no se actualiza automáticamente** — Desestimado
+
+**iPad / Layout:**
+- [x] **BUG-45: Calendario de fecha recortado en iPad (registro)** — Resuelto (bab15ee)
+- [x] **BUG-46: Sheet de success recortada en iPad** — Resuelto (bab15ee)
+
+**UX / Visual:**
+- [x] **BUG-47: Animación de success pestañea** — Resuelto (e1f1a70)
+- [x] **BUG-48: Pago recurrente muestra PEN aunque cuenta sea otra moneda** — Desestimado
+- [x] **BUG-49: Exportación dice CSV pero permite Excel, periodo va 10 años atrás** — Resuelto (0f85f55)
+- [x] **BUG-50: Selectores de fecha sin botón de guardar** — Resuelto (b28c7c2)
+- [x] **BUG-51: Ocultar naturaleza para ingresos en registro/edición/aprobación** — Resuelto (1b9d9fc)
+- [x] **BUG-52: Etiquetas de datos en CashFlow filtrado** — Resuelto (56968cb)
+
+**Rediseños pendientes (UX crítico):**
+- [x] **BUG-53: Rediseño flujo pagos planificados/recurrentes** — Resuelto (dd86e0c + 847b4eb)
+
+**Infraestructura:**
+- [x] **BUG-54: Implementar Telemetry Deck** — Resuelto (f890824): 12 eventos privacy-first via TelemetryDeck SDK.
+
+**FAB / Registro:**
+- [x] **BUG-55: FAB no muestra las 3 opciones de registro intermitentemente** — Resuelto (701d743): FAB siempre muestra 3 opciones, consent alert inline para Pro, ProBadge para Free. AIConsentAlertModifier extraído a ViewModifiers.swift.
+
+**Suscripción:**
+- [x] **BUG-56: Expiración de suscripción Pro no se refleja en tiempo real** — Resuelto (8474ddf): refreshSubscriptionStatus() en handleBecameActive con cancel-before-create Task.
+
+### Bugs QA V1.2 (reportados 2026-03-12)
+
+**Filtros / Lógica:**
+- [ ] **BUG-57: Metric buttons de TrendWidget no bloquean correctamente con filtros de ingreso** — Al filtrar subcategorías de ingreso en Statistics y volver a PanelView, el botón "Gastos" sigue habilitado (debería bloquearse). Al presionarlo se bloquea "Ingresos" y "Balance", quedando en estado incongruente. Con subcategorías de gasto funciona bien (bloquea balance e ingresos). Root cause: `hasExpenseOnlyFilters` en TrendWidget.swift bloquea `type != .expense`, pero debería ser dinámico según el tipo de subcategorías filtradas (expense vs income). Archivo: `App/Views/Panel/TrendWidget.swift` líneas 19-26 y 120-155.
+
+**Performance:**
+- [ ] **BUG-58: CloudKit remote change triggers excesivos — "AppBootstrapper: Remote CloudKit change detected — refreshing UI" aparece triplicado** — Causa lentitud general y hace que la animación de success al crear transacción pestañee/se sienta lenta. Cada cambio remoto de CloudKit dispara múltiples refreshes de UI innecesarios. Investigar: debounce de refreshes, batch CloudKit notifications, o throttle de UI updates.
+
+**Visual / Layout:**
+- [ ] **BUG-59: ProBadge en FAB no alineado a la derecha** — En los menús FAB (PanelView, DetailContainerView, RecordsStandaloneView), el ProBadge debería estar alineado a la derecha del botón para verse ordenado. Actualmente está posicionado justo después del texto. Archivos: `App/Views/Panel/PanelView.swift`, `App/Views/Statistics/DetailContainerView.swift`, `App/Views/Records/RecordsStandaloneView.swift` — función `fabMenuButton`.
+
+- [ ] **BUG-60: Data labels en CashFlow no deberían mostrarse en modo Balance** — Las etiquetas de datos sobre barras (cuando hay ≤10 barras) deberían mostrarse solo en modo Ingreso o Gasto, no en Balance (bidireccional). En modo balance los labels son confusos porque hay barras en ambas direcciones. Archivo: `App/Views/Panel/CashFlowWidget.swift` — condición `showLabels` en línea 456.
+
+- [ ] **BUG-61: Cards de resumen rápido en Insights no fuerzan mismo tamaño cuando falta 3ra línea** — Cuando "Promedio diario" es 0 (por filtrar solo ingresos), la card pierde la 3ra línea (variation chip) y queda más corta que las demás. La técnica de `opacity(0)` para reservar espacio no está funcionando correctamente en ese caso. Archivos: `App/Views/Statistics/InsightsTabView.swift` líneas 376-403, `App/Views/Statistics/Components/QuickStatCell.swift`.
+
+**Lógica de negocio:**
+- [ ] **BUG-62: Presupuestos en vista Compromisos se desbordan al cambiar periodo a "Este año"** — Los presupuestos son mensuales pero la suma de transacciones al cambiar a "Este año" acumula todo el año, mostrando montos que exceden enormemente el límite mensual. **Decisión:** Los presupuestos deben mantener su propio periodo y mostrar siempre el último visible (mensual → este mes, anual → este año, etc.), ignorando el periodo global de Compromisos. Además, añadir título o nota aclaratoria en la sección de presupuestos dentro de Compromisos indicando el periodo real que se muestra.
+
+**Notificaciones:**
+- [ ] **BUG-63: Notification primer post-3ra transacción no activa alertas de presupuestos** — Al aceptar notificaciones desde el banner (después de la 3ra transacción), se activan todas las notificaciones seeded excepto las alertas de presupuestos. Las demás (endOfDay, lunchTime, dailyReport, weeklyReport, monthlyReport, scheduledPayments) sí se activan. Archivo: `App/Views/Notifications/NotificationPrimerSheet.swift` línea 89-112 — el loop activa todos los NotificationItem seeded pero las alertas de presupuesto usan un mecanismo diferente (BudgetAlertService con toggle por presupuesto, no NotificationItem).
+
 ### Fase 11: Sistema de Temas Independientes (V1.2) — ✅ COMPLETADA (2026-02-19)
 
 Refactorización completa del sistema de colores. 6 temas (3 free + 3 PRO). YalaTheme struct + ThemeColor ShapeStyle + @Observable ThemeManager. Cambio de tema sin reinicio (eliminado `.id(userThemeRaw)`). 0 usos de colores legacy. 12 escenarios QA (Sección 38).
@@ -498,15 +576,88 @@ Accessibility:
 - [x] A11Y-DT: Migrar `.font(.system(size:))` a Dynamic Type — 2 fixes (@ScaledMetric + DT cap), 47 archivos auditados con comentarios A11Y-DT
 
 Code Quality:
-- [ ] CODE-20: Tags relationship sin `inverse` explícito (TransactionItem.swift)
-- [ ] CODE-21: Triple save en creación de transfer (NewTransactionViewModel)
-- [ ] CODE-28: Bulk delete bypasea EntityDeletionService (RecordsViewModel)
-- [ ] CODE-30: Legacy fields `month/year/category` en Budget model (dead code)
-- [ ] CODE-32: BudgetPeriodSelectorSheet scroll picker frágil
-- [ ] CODE-41: Direct modelContext.save() bypasea DraftService (InboxView)
-- [ ] CODE-46: 470 líneas de search embebidas en ContentView (extraer)
+- [x] CODE-20: Tags relationship — already resolved, Tag.swift declares inverse:\TransactionItem.tags (SwiftData only needs one side)
+- [x] CODE-21: Triple save en creación de transfer — reducido a 1 save atómico (8665498)
+- [x] CODE-28: Bulk delete — added processPendingChanges() for @Query consistency (8665498)
+- [x] CODE-30: Removed dead `month`/`year` from Budget model (552c664). `category`/`currencyCode`/`limitAmount` kept — still used.
+- [x] CODE-32: Migrated 3 DispatchQueue.main.asyncAfter → Task.sleep in BudgetPeriodSelectorSheet (552c664)
+- [x] CODE-41: Direct modelContext.save() bypasea DraftService — FALSE ALARM, InboxView already uses DraftService correctly
+- [x] CODE-46: Search views extracted to App/Views/Search/GlobalSearchView.swift (40391ba). ContentView 1212→796 LOC.
+
+Fase 12 completados:
+- [x] iPad/Mac layouts adaptados ✅ (e2a69fd)
+- [x] Línea promedio en gráficas de barras ✅ (44d3b89)
+- [x] Siri registro rápido ✅
+- [x] Lock Screen widgets ✅
+- [x] Filtros avanzados: excluir/incluir en DetailContainerView ✅ (1716c2d..fe9eebd)
+
+Fase 12 siguiente (en orden):
+- [x] **Refactor filtros deferred** — RecordsFiltersView usa estado local, "Aplicar" escribe a SessionState, "X" descarta. Prerequisito para Smart Insights. (81559d6)
+- [x] **Smart Insights** — Nueva tab en Statistics con KPIs, gráficas, textos inteligentes (Free: rule-based, Pro: LLM). Funcionalidad (3439fe3) + UI refinement (daa9b03)
 
 Ver ROADMAP.md para más detalles de Fase 12.
+
+### Pendiente: Reubicación de pasos eliminados del onboarding (post-redesign 82f4e5c)
+
+Estos pasos se eliminaron del onboarding para reducirlo de 9→7 pasos. Cada uno necesita un nuevo momento y mecanismo en la app:
+
+| Funcionalidad eliminada | Nuevo momento | Mecanismo |
+|-------------------------|---------------|-----------|
+| Divisas secundarias | Settings > Divisas, o al crear cuenta en otra divisa | Ya existe en CurrencySettingsView. Falta: prompt contextual al crear cuenta con divisa diferente |
+| Periodo predeterminado | Default "Este mes", cambiable en filtros | Ya implementado (hardcode .thisMonth en onboarding). Sin trabajo adicional |
+| Notificaciones (7 toggles) | Después de 3-5 transacciones | Pendiente: pre-permission primer full-screen que invite a activar notifs |
+| Tutoriales | Primeras interacciones en Panel | Pendiente: tooltips in-context / coach marks para funciones clave |
+
+**Estado:**
+- [x] Prompt contextual divisas secundarias — alert en AccountFormView al crear cuenta con divisa ≠ preferred (max 2 slots)
+- [x] Periodo default .thisMonth (ya funciona)
+- [x] Pre-permission primer para notificaciones — NotificationPrimerSheet después de 3ra transacción nueva
+- [x] Tooltips / coach marks post-onboarding — custom CoachMarkOverlay system with 4 tours (Panel 5 steps, Registro 3 steps, Settings 7 steps, Interactivity 2 steps) + ComparisonTip (TipKit)
+
+### Refactors Pendientes: Filtros Excluir/Incluir (identificados 2026-03-05)
+
+Descubiertos durante simplify + audit de la feature de filtros excluir/incluir. No bloquean funcionalidad pero acumulan deuda técnica.
+
+**RF-1: PanelViewModel — 3 copias inline de FilterService (~200 LOC)** ✅ Completado (eab0c8d)
+3 pases de filtrado reemplazados por `buildFilterCriteria()` + `FilterService.matchesCriteria()`. También: fix nature nil → `.unclassified`, search narrowed to note-only. `pieWidgetContext` (líneas 1021-1089) sigue inline — evaluar en RF futuro.
+- **Solución propuesta:** Construir `FilterCriteria` y llamar `FilterService.filter()`. Para variantes (sin fecha, balance), usar criterias modificados o añadir flags opcionales a `FilterCriteria`.
+- **Esfuerzo:** Medio — requiere entender las 3 variantes y mapearlas correctamente.
+
+**RF-2: hasActiveFilters / activeFilterCount duplicados en 4 lugares** ✅ Completado (fe9eebd)
+Fix: searchText faltaba en `FilterCriteria.activeFilterCount`. RecordsVM y StatisticsVM delegan a `FilterCriteria` via `Filterable.filterCriteria`. Protocolo extendido con `activeFilterCount`, `isExcludeMode`, `selectedTransactionNatures`.
+
+**RF-3: processChartData() llamado 5+ veces por render en pie widgets** ✅ Completado (932dd00)
+Computed `chartData` eliminado de 3 widgets. `body` computa una vez via `let`, threading por parámetro a todas las funciones hijas.
+
+### Refactors Pendientes: Statistics Control Bar (identificados 2026-03-06)
+
+Descubiertos durante simplify de Smart Insights UI refinement. No bloquean funcionalidad.
+
+**RF-4: controlBar duplicado en 4 tabs (~160 LOC × 4)** ✅ Completado (7f01298)
+- Extraído `FilterControlBar<VM: Filterable & Observable, PeriodView, TrailingContent>` compartido
+- 4 tabs migrados: Trends, Categories, Insights, Records (~790 líneas eliminadas)
+
+**RF-5: Chip helpers duplicados en 4 tabs** ✅ Completado (7f01298)
+- `buildAccountChips`, `buildTagChips`, `buildNatureChips` movidos a `FilterChipHelper.swift`
+- Eliminados computed properties duplicados de los 4 tabs
+
+### Refactor Completado: CurrencyConverting Protocol (2026-03-11) ✅
+
+**Problema resuelto:** 7 calculators/helpers no tenían tests porque requerían `ModelContext` en firma (CloudKit crash en tests).
+
+**Solución implementada:**
+- Protocolo `CurrencyConverting` (context-free) con `convert()` y `convertWithLatestRate()`
+- `CurrencyConverter.shared.setContext()` en bootstrap (patrón existente de BudgetAlertService)
+- `MockCurrencyConverter` para tests con `fixedRate` configurable
+- 7 calculators/helpers: `context: ModelContext` → `converter: CurrencyConverting = CurrencyConverter.shared`
+- ~15 call sites actualizados en ViewModels/Views
+- `TrendDataProcessor.processTrendData`: eliminado parámetro `context:` muerto
+
+**Tests desbloqueados (68 tests, 7 suites nuevas):**
+CashFlowCalculatorTests (18), BalanceTrendCalculatorTests (8), WeekdaySpendingCalculatorTests (8), TopSpendingCategoriesCalculatorTests (10), TopSubcategoriesCalculatorTests (8), BalanceHelperTests (8), NeedTrendHelperTests (8)
+
+**Componentes aún sin tests (requieren ModelContext propio):**
+TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChangeService, ExchangeRateService
 
 ### Fase 7: Beta Preparation (V1.0 Release) ✅ COMPLETADA
 
@@ -594,13 +745,29 @@ Ver ROADMAP.md para más detalles de Fase 12.
 - Design System (DS) en `DesignTokens.swift` con: Spacing, Radius, FormRow, ListRow, Typography
 - SwiftData N:N requiere `@Relationship(inverse:)` explícito en un lado; arrays sin inverse se tratan como 1:N
 
+## Deferred Features
+
+### Panel Balance Breakdown (saldo desglosado)
+
+**Status:** Diferido — documentado para implementación futura.
+
+**Concepto:** Mostrar desglose "Disponible / Pendiente" en Panel cuando el usuario tiene tarjetas de crédito con saldo ≠ 0, dando contexto sobre cuánto del saldo total es realmente disponible vs consumo pendiente.
+
+**Complejidades identificadas:**
+- **Panel:** Fila "Disponible / Pendiente" debajo del carousel — requiere patrón visual nuevo (no hay precedente de 2 KPIs lado a lado ahí). Solo mostrar cuando no hay cuenta seleccionada AND existen TCs con saldo ≠ 0.
+- **TrendsTabView:** La gráfica de tendencia de saldo muestra una línea. Si queremos desglose visual, necesitaríamos dos líneas o área apilada — cambio significativo en `TrendChartView`, `TrendWidget`, y procesamiento de datos en `PanelViewModel`.
+- **Conversión multi-divisa:** El desglose necesita convertir saldos de cuentas en distintas divisas a la preferida, usando `BalanceHelper` pattern.
+- **Redundancia parcial:** El carousel ya muestra saldos individuales por cuenta. Evaluar si el desglose agrega valor suficiente vs ruido visual.
+- **Archivos impactados:** `PanelViewModel.swift` (nuevo método `balanceBreakdown()`), `PanelView.swift` (fila condicional), `TrendWidget.swift`, `TrendsTabView.swift`, `TrendChartView.swift`, localization (×6).
+
 ## Session Continuity
 
-Last session: 2026-03-04
-Stopped at: Hotfix 1.0.1 — inbox 3 bugs fixed (swipe crash, image duplicates, approve-next)
-Next step: Merge hotfix/1.0.1 to 1.0 or continue with remaining hotfix items
+Last session: 2026-03-12
+Stopped at: Dual AI consent (031bc7c) — separated processing + insights consent flags
+Next step: /verify-ios + QA manual del dual consent
 Resume context:
-- Branch hotfix/1.0.1 pushed to origin with all inbox fixes
-- Swipe-delete/reject: separated UI animation from SwiftData persistence
-- Image dedup: no longer re-inserts all drafts when uniqueDrafts is empty
-- Approve-next: navigates to oldest pending draft (.last) instead of newest (.first)
+- aiDataConsentAccepted → solo voz/imagen (processing)
+- aiInsightsConsentAccepted → nuevo flag para smart insights/resumen
+- Sin migración: nuevo flag default false, usuarios existentes deben aceptar insights explícitamente
+- PanelView: loading placeholder mejorado (sparkles + texto), card sin lineLimit
+- 6 idiomas actualizados con strings granulares

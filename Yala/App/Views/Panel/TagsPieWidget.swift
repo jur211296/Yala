@@ -18,6 +18,7 @@ struct TagsPieWidget: View {
     var selectedTagIDs: Set<PersistentIdentifier> = []
     var onSelectTag: ((PersistentIdentifier) -> Void)?
     var onShowDetail: (() -> Void)? = nil
+    var isExcludeMode: Bool = false
 
     var size: WidgetSize = .medium
 
@@ -40,13 +41,14 @@ struct TagsPieWidget: View {
 
     private var filteredTotalExpense: Double {
         guard !selectedTagIDs.isEmpty else { return totalExpense }
+        if isExcludeMode {
+            return tags
+                .filter { !selectedTagIDs.contains($0.tag.persistentModelID) }
+                .reduce(0) { $0 + $1.amount }
+        }
         return tags
             .filter { selectedTagIDs.contains($0.tag.persistentModelID) }
             .reduce(0) { $0 + $1.amount }
-    }
-
-    private var chartData: [PieChartData] {
-        processChartData()
     }
 
     @State private var selectedAngle: Double?
@@ -60,7 +62,7 @@ struct TagsPieWidget: View {
             if chartData.isEmpty {
                 emptyState
             } else {
-                contentForSize
+                contentForSize(chartData)
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.bottom, DS.Spacing.xxl)
             }
@@ -78,24 +80,42 @@ struct TagsPieWidget: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        YalaEmptyState(icon: "tag.fill", title: L10n.Empty.noData, style: .widget)
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
+            HStack {
+                Text(L10n.Widget.distributionByTag)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                InfoHintButton(
+                    title: L10n.WidgetType.expensesByTag,
+                    message: L10n.Widget.Hint.tagsPie
+                )
+
+                Spacer()
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.lg)
+
+            YalaEmptyState(icon: "tag.fill", title: L10n.Empty.noData, style: .widget)
+        }
     }
 
     // MARK: - Content Switcher
 
     @ViewBuilder
-    private var contentForSize: some View {
+    private func contentForSize(_ chartData: [PieChartData]) -> some View {
         switch size {
         case .medium:
-            mediumLayout
+            mediumLayout(chartData)
         case .large:
-            largeLayout
+            largeLayout(chartData)
         }
     }
 
     // MARK: - Layouts
 
-    private var largeLayout: some View {
+    private func largeLayout(_ chartData: [PieChartData]) -> some View {
         VStack(spacing: DS.Spacing.sm) {
             headerView
 
@@ -109,13 +129,13 @@ struct TagsPieWidget: View {
                     let chartRadius = radius * 0.65
 
                     ZStack {
-                        connectorLines(center: center, chartRadius: chartRadius)
+                        connectorLines(chartData, center: center, chartRadius: chartRadius)
 
-                        chartView(innerRadiusRatio: innerRadiusRatio)
+                        chartView(chartData, innerRadiusRatio: innerRadiusRatio)
                             .frame(width: chartRadius * 2, height: chartRadius * 2)
                             .position(center)
 
-                        bubblesLayer(center: center, chartRadius: chartRadius)
+                        bubblesLayer(chartData, center: center, chartRadius: chartRadius)
 
                         if let hovered = hoveredItem {
                             hoverTooltip(for: hovered)
@@ -125,14 +145,14 @@ struct TagsPieWidget: View {
                 }
                 .frame(maxWidth: .infinity)
 
-                simpleLegendList
+                simpleLegendList(chartData)
                     .frame(width: 140)
             }
         }
         .padding(.top, DS.Spacing.lg)
     }
 
-    private var simpleLegendList: some View {
+    private func simpleLegendList(_ chartData: [PieChartData]) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             ForEach(chartData) { item in
                 simpleLegendRow(for: item)
@@ -169,7 +189,7 @@ struct TagsPieWidget: View {
 
     // MARK: - Connector Lines
 
-    private func connectorLines(center: CGPoint, chartRadius: CGFloat) -> some View {
+    private func connectorLines(_ chartData: [PieChartData], center: CGPoint, chartRadius: CGFloat) -> some View {
         Path { path in
             for item in chartData {
                 if shouldShowLabel(for: item) {
@@ -191,7 +211,7 @@ struct TagsPieWidget: View {
 
     // MARK: - Bubbles Layer
 
-    private func bubblesLayer(center: CGPoint, chartRadius: CGFloat) -> some View {
+    private func bubblesLayer(_ chartData: [PieChartData], center: CGPoint, chartRadius: CGFloat) -> some View {
         ZStack {
             ForEach(Array(chartData.enumerated()), id: \.element.identity) { _, item in
                 bubbleView(for: item, center: center, chartRadius: chartRadius)
@@ -254,6 +274,10 @@ struct TagsPieWidget: View {
     }
 
     private func shouldShowLabel(for item: PieChartData) -> Bool {
+        if isExcludeMode {
+            // Excluded items already removed; show labels by percentage threshold
+            return item.percentage > 4.0
+        }
         if !selectedTagIDs.isEmpty {
             guard let id = item.id else { return false }
             return selectedTagIDs.contains(id)
@@ -264,7 +288,7 @@ struct TagsPieWidget: View {
 
     // MARK: - Medium Layout
 
-    private var mediumLayout: some View {
+    private func mediumLayout(_ chartData: [PieChartData]) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             headerView
 
@@ -420,7 +444,7 @@ struct TagsPieWidget: View {
     // MARK: - Chart View
 
     @ViewBuilder
-    private func chartView(innerRadiusRatio: CGFloat) -> some View {
+    private func chartView(_ chartData: [PieChartData], innerRadiusRatio: CGFloat) -> some View {
         let safeData = chartData.filter { $0.amount.isFinite && $0.amount > 0 }
         let totalAmount = safeData.reduce(0) { $0 + $1.amount }
 
@@ -435,7 +459,7 @@ struct TagsPieWidget: View {
                     innerRadius: .ratio(innerRadiusRatio),
                     angularInset: 1.5
                 )
-                .cornerRadius(DS.Radius.xs)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
                 .foregroundStyle(Color(hex: item.colorHex))
                 .opacity(isDimmed(item) ? 0.3 : 1.0)
             }
@@ -445,7 +469,7 @@ struct TagsPieWidget: View {
             .animation(nil, value: dataHash)
             .onChange(of: selectedAngle) {
                 if let angle = selectedAngle {
-                    selectTag(at: angle)
+                    selectTag(in: chartData, at: angle)
                     selectedAngle = nil
                 }
             }
@@ -473,7 +497,7 @@ struct TagsPieWidget: View {
         Self.percentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
     }
 
-    private func selectTag(at angle: Double) {
+    private func selectTag(in chartData: [PieChartData], at angle: Double) {
         var currentSum: Double = 0
         for item in chartData {
             let nextSum = currentSum + item.amount
@@ -492,6 +516,8 @@ struct TagsPieWidget: View {
     }
 
     private func isDimmed(_ item: PieChartData) -> Bool {
+        // In exclude mode, excluded items are already removed — no dimming needed
+        if isExcludeMode { return false }
         guard !selectedTagIDs.isEmpty else { return false }
         guard let id = item.id else { return true }
         return !selectedTagIDs.contains(id)
@@ -520,38 +546,50 @@ struct TagsPieWidget: View {
 
     private func processChartData() -> [PieChartData] {
         let threshold = size == .large ? 12 : 20
-        let validTags = tags
+
+        // In exclude mode, remove excluded items entirely
+        let visibleTags: [TagSpendingSummary]
+        if isExcludeMode && !selectedTagIDs.isEmpty {
+            visibleTags = tags.filter { !selectedTagIDs.contains($0.tag.persistentModelID) }
+        } else {
+            visibleTags = tags
+        }
+
+        // Recalculate total from visible items
+        let visibleTotal = visibleTags.reduce(0) { $0 + $1.amount }
 
         var finalItems: [PieChartData] = []
 
-        if validTags.count <= threshold {
-            finalItems = validTags.map {
-                PieChartData(
+        if visibleTags.count <= threshold {
+            finalItems = visibleTags.map {
+                let pct = visibleTotal > 0 ? ($0.amount / visibleTotal) * 100 : 0
+                return PieChartData(
                     id: $0.tag.persistentModelID,
                     name: $0.tag.name,
                     iconName: $0.tag.iconName,
                     amount: $0.amount,
-                    percentage: $0.percentage,
+                    percentage: pct,
                     colorHex: $0.tag.colorHex
                 )
             }
         } else {
-            let top = validTags.prefix(threshold)
-            let others = validTags.dropFirst(threshold)
+            let top = visibleTags.prefix(threshold)
+            let others = visibleTags.dropFirst(threshold)
 
             finalItems = top.map {
-                PieChartData(
+                let pct = visibleTotal > 0 ? ($0.amount / visibleTotal) * 100 : 0
+                return PieChartData(
                     id: $0.tag.persistentModelID,
                     name: $0.tag.name,
                     iconName: $0.tag.iconName,
                     amount: $0.amount,
-                    percentage: $0.percentage,
+                    percentage: pct,
                     colorHex: $0.tag.colorHex
                 )
             }
 
             let othersAmount = others.reduce(0) { $0 + $1.amount }
-            let othersPercentage = totalExpense > 0 ? (othersAmount / totalExpense) * 100 : 0
+            let othersPercentage = visibleTotal > 0 ? (othersAmount / visibleTotal) * 100 : 0
 
             if othersAmount > 0 {
                 finalItems.append(
@@ -561,7 +599,7 @@ struct TagsPieWidget: View {
                         iconName: "ellipsis.circle.fill",
                         amount: othersAmount,
                         percentage: othersPercentage,
-                        colorHex: "#8E8E93"
+                        colorHex: AppConstants.othersColorHex
                     ))
             }
         }

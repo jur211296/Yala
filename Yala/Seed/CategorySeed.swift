@@ -27,7 +27,7 @@ import SwiftData
 /// Estructura interna para describir cada subcategoría de la semilla
 private struct SubcategorySeedDefinition {
     let name: String
-    /// Raw value para SubcategoryNature (esencial, prioritaria, opcional, sin_clasificacion)
+    /// Raw value para SubcategoryNeed (esencial, prioritaria, opcional, sin_clasificacion)
     /// Si es nil, se asumirá sin_clasificacion (o lógica por defecto).
     let natureRawValue: String?
     /// Nombre del icono SF Symbol

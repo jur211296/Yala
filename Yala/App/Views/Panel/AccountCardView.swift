@@ -19,6 +19,9 @@ struct AccountCardView: View {
     /// Indica si esta tarjeta está seleccionada dentro del carrusel de cuentas.
     var isSelected: Bool
 
+    /// En modo excluir, la cuenta seleccionada se oculta (visual dimmed + ícono minus).
+    var isExcludeMode: Bool = false
+
     /// Acción opcional para editar / configurar la cuenta asociada a esta tarjeta.
     /// Si es `nil`, no se muestra el botón de edición en la esquina superior derecha.
     var onEditTapped: (() -> Void)?
@@ -27,26 +30,31 @@ struct AccountCardView: View {
         account: Account,
         currentBalance: Double,
         isSelected: Bool = false,
+        isExcludeMode: Bool = false,
         onEditTapped: (() -> Void)? = nil
     ) {
         self.account = account
         self.currentBalance = currentBalance
         self.isSelected = isSelected
+        self.isExcludeMode = isExcludeMode
         self.onEditTapped = onEditTapped
     }
 
     var body: some View {
+        let isExcluded = isSelected && isExcludeMode
+        let isHighlighted = isSelected && !isExcludeMode
+
         let backgroundColor: Color =
-            isSelected
+            isHighlighted
             ? Color(hex: account.colorHex)
             : theme.card.opacity(0.95)
 
         let foregroundColor: Color =
-            isSelected ? Color.contrastingText(for: backgroundColor) : theme.primaryText
+            isHighlighted ? Color.contrastingText(for: backgroundColor) : theme.primaryText
         let secondaryForeground: Color =
-            isSelected ? foregroundColor.opacity(0.85) : theme.secondaryText
+            isHighlighted ? foregroundColor.opacity(0.85) : theme.secondaryText
         let iconBackground =
-            isSelected
+            isHighlighted
             ? Color.white.opacity(DS.Opacity.subtle + 0.08)
             : Color.black.opacity(DS.Opacity.subtle / 2)
 
@@ -96,7 +104,7 @@ struct AccountCardView: View {
                 } label: {
                     Image(systemName: "slider.horizontal.3")
                         .font(DS.Typography.labelTiny)
-                        .foregroundStyle(isSelected ? Color.white : theme.primaryText)
+                        .foregroundStyle(isHighlighted ? Color.white : theme.primaryText)
                         .padding(DS.Spacing.xs)
                         .background(.ultraThinMaterial, in: Circle())
                 }
@@ -104,7 +112,16 @@ struct AccountCardView: View {
                 .accessibilityLabel(L10n.Accessibility.editAccount)
                 .padding(DS.Spacing.sm)
             }
+
+            // Exclude mode indicator
+            if isExcluded {
+                Image(systemName: "minus.circle.fill")
+                    .font(DS.Typography.body)
+                    .foregroundStyle(DS.Semantic.errorForeground)
+                    .padding(DS.Spacing.sm)
+            }
         }
+        .opacity(isExcluded ? 0.5 : 1.0)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(L10n.Accessibility.accountCard(account.name, formattedAmount(currentBalance)))
     }

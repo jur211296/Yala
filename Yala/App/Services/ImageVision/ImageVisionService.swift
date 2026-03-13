@@ -63,7 +63,7 @@ enum VisionError: Error, LocalizedError {
 
 /// Service for extracting transactions from images using GPT-4o Vision API.
 /// Supports @Environment injection in SwiftUI views.
-@Observable
+@MainActor @Observable
 final class ImageVisionService {
 
     // MARK: - Singleton (for backward compatibility)
@@ -178,7 +178,7 @@ final class ImageVisionService {
                 .system(.init(content: .textContent(systemPrompt))),
                 .user(.init(content: .contentParts([.text(textPart), .image(imagePart)])))
             ],
-            model: .gpt4_o_mini,
+            model: .gpt4_1_nano,
             responseFormat: .jsonObject
         )
 
@@ -214,7 +214,7 @@ final class ImageVisionService {
         dayFmt.dateFormat = "EEEE"
         let dateFmt = DateFormatter()
         dateFmt.dateFormat = "yyyy-MM-dd"
-        let now = Date()
+        let now = Date.now
         return "\(dayFmt.string(from: now)), \(dateFmt.string(from: now))"
     }
 }

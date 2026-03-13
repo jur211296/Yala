@@ -103,6 +103,18 @@ enum L10n {
         static var spent: String {
             ls("panel.spent", comment: "Spent label for expenses-only mode account cards")
         }
+        static var aiInsightsTitle: String {
+            ls("panel.aiInsightsTitle", comment: "AI insights toggle title")
+        }
+        static var aiInsightsDescription: String {
+            ls("panel.aiInsightsDescription", comment: "AI insights toggle description")
+        }
+        static var dismissInsight: String {
+            ls("panel.dismissInsight", comment: "Dismiss contextual insight accessibility label")
+        }
+        static var aiConsentRequired: String {
+            ls("panel.aiConsentRequired", comment: "Hint when AI consent not accepted")
+        }
     }
 
     // MARK: - Balance Status
@@ -226,6 +238,107 @@ enum L10n {
         }
     }
 
+    // MARK: - Insights
+    enum Insights {
+        static var title: String { ls("insights.title", comment: "") }
+        static var records: String { ls("insights.records", comment: "") }
+        static var inThisPeriod: String { ls("insights.inThisPeriod", comment: "") }
+        static var dailyAverage: String { ls("insights.dailyAverage", comment: "") }
+        static var topCategory: String { ls("insights.topCategory", comment: "") }
+        static var topSubcategory: String { ls("insights.topSubcategory", comment: "") }
+        static var highestExpense: String { ls("insights.highestExpense", comment: "") }
+        static var highestAvgWeekday: String { ls("insights.highestAvgWeekday", comment: "") }
+        static var subscriptions: String { ls("insights.subscriptions", comment: "") }
+        static var quickStats: String { ls("insights.quickStats", comment: "") }
+        static var comparison: String { ls("insights.comparison", comment: "") }
+        static var weekdayAverage: String { ls("insights.weekdayAverage", comment: "") }
+        static var needDistribution: String { ls("insights.needDistribution", comment: "") }
+        static var commitments: String { ls("insights.commitments", comment: "") }
+        static var commitmentsNote: String { ls("insights.commitmentsNote", comment: "") }
+        static var pendingPayments: String { ls("insights.pendingPayments", comment: "") }
+        static var activeSubscriptions: String { ls("insights.activeSubscriptions", comment: "") }
+        static var budgetsAtRisk: String { ls("insights.budgetsAtRisk", comment: "") }
+        static var yearOverYear: String { ls("insights.yearOverYear", comment: "") }
+        static func yearComparison(previous: String, current: String) -> String {
+            String(format: ls("insights.yearComparison", comment: ""), previous, current)
+        }
+        static var intelligentInsights: String { ls("insights.intelligentInsights", comment: "") }
+        static var funFact: String { ls("insights.funFact", comment: "") }
+        static var firstTimeTitle: String { ls("insights.firstTimeTitle", comment: "") }
+        static var firstTimeBody: String { ls("insights.firstTimeBody", comment: "") }
+        static var emptyTitle: String { ls("insights.emptyTitle", comment: "") }
+        static var emptyBody: String { ls("insights.emptyBody", comment: "") }
+        static var fewTransactions: String { ls("insights.fewTransactions", comment: "") }
+        static var monthly: String { ls("insights.monthly", comment: "") }
+        static var perDay: String { ls("insights.perDay", comment: "") }
+        static var ofTotal: String { ls("insights.ofTotal", comment: "") }
+        static var analyzingData: String { ls("insights.analyzingData", comment: "") }
+        static var activateAITitle: String { ls("insights.activateAITitle", comment: "") }
+        static var activateAIBody: String { ls("insights.activateAIBody", comment: "") }
+        static var activateAIDisclaimer: String { ls("insights.activateAIDisclaimer", comment: "") }
+        static var activate: String { ls("insights.activate", comment: "") }
+        static var goToSettings: String { ls("insights.goToSettings", comment: "") }
+        static var notInterested: String { ls("insights.notInterested", comment: "") }
+        static var offlineCached: String { ls("insights.offlineCached", comment: "") }
+        static var offlineNoCache: String { ls("insights.offlineNoCache", comment: "") }
+        static var aiSectionTitle: String { ls("insights.aiSectionTitle", comment: "") }
+        static var aiToggle: String { ls("insights.aiToggle", comment: "") }
+        static var aiCaption: String { ls("insights.aiCaption", comment: "") }
+        static var metricsSection: String { ls("insights.metricsSection", comment: "") }
+        static var chartsSection: String { ls("insights.chartsSection", comment: "") }
+        static var analysisSection: String { ls("insights.analysisSection", comment: "") }
+        static var restoreDefaults: String { ls("insights.restoreDefaults", comment: "") }
+        // Rule-based insight templates (with tone variants)
+        static func ruleTopCategory(_ name: String, _ pct: Int, tone: InsightTone = .normal) -> String {
+            let key = "insights.ruleTopCategory.\(tone.rawValue)"
+            return String(format: ls(key, comment: ""), name, pct)
+        }
+        static func ruleExpenseUp(_ formatted: String, tone: InsightTone = .normal) -> String {
+            let key = "insights.ruleExpenseUp.\(tone.rawValue)"
+            return String(format: ls(key, comment: ""), formatted)
+        }
+        static func ruleExpenseDown(_ formatted: String, tone: InsightTone = .normal) -> String {
+            let key = "insights.ruleExpenseDown.\(tone.rawValue)"
+            return String(format: ls(key, comment: ""), formatted)
+        }
+        static func ruleBudgetRisk(_ name: String, _ pct: Int, tone: InsightTone = .normal) -> String {
+            let key = "insights.ruleBudgetRisk.\(tone.rawValue)"
+            return String(format: ls(key, comment: ""), name, pct)
+        }
+        static func ruleOptionalHigh(_ pct: Int, tone: InsightTone = .normal) -> String {
+            let key = "insights.ruleOptionalHigh.\(tone.rawValue)"
+            return String(format: ls(key, comment: ""), pct)
+        }
+
+        // Tips (no tone variant)
+        static func tipTopCategory(_ name: String) -> String {
+            String(format: ls("insights.tipTopCategory", comment: ""), name)
+        }
+        static var tipExpenseUp: String { ls("insights.tipExpenseUp", comment: "") }
+        static func tipBudgetRisk(_ name: String) -> String {
+            String(format: ls("insights.tipBudgetRisk", comment: ""), name)
+        }
+        static var tipOptionalHigh: String { ls("insights.tipOptionalHigh", comment: "") }
+
+        // Tone/Focus display names
+        static func toneName(_ tone: InsightTone) -> String {
+            ls("insights.tone.\(tone.rawValue)", comment: "")
+        }
+        static func tonePreview(_ tone: InsightTone) -> String {
+            ls("insights.tone.\(tone.rawValue).preview", comment: "")
+        }
+        static func focusName(_ focus: InsightFocus) -> String {
+            ls("insights.focus.\(focus.rawValue)", comment: "")
+        }
+        static func focusDescription(_ focus: InsightFocus) -> String {
+            ls("insights.focus.\(focus.rawValue).desc", comment: "")
+        }
+
+        // Settings labels
+        static var toneLabel: String { ls("insights.toneLabel", comment: "") }
+        static var focusLabel: String { ls("insights.focusLabel", comment: "") }
+    }
+
     // MARK: - Statistics
     enum Statistics {
         static var title: String { ls("statistics.title", comment: "") }
@@ -289,35 +402,35 @@ enum L10n {
     }
 
     // MARK: - Nature
-    enum Nature {
+    enum Need {
         static var title: String {
-            ls("nature.expensesByNature", comment: "Expenses by nature")
+            ls("need.expensesByNeed", comment: "Expenses by need")
         }
         static var label: String {
-            ls("nature.title", comment: "Nature label")
+            ls("need.title", comment: "Need label")
         }
-        static var essential: String { ls("nature.essential", comment: "") }
+        static var essential: String { ls("need.essential", comment: "") }
         static var essentialDesc: String {
-            ls("nature.essential.desc", comment: "")
+            ls("need.essential.desc", comment: "")
         }
-        static var priority: String { ls("nature.priority", comment: "") }
+        static var priority: String { ls("need.priority", comment: "") }
         static var priorityDesc: String {
-            ls("nature.priority.desc", comment: "")
+            ls("need.priority.desc", comment: "")
         }
-        static var optional: String { ls("nature.optional", comment: "") }
+        static var optional: String { ls("need.optional", comment: "") }
         static var optionalDesc: String {
-            ls("nature.optional.desc", comment: "")
+            ls("need.optional.desc", comment: "")
         }
         static var unclassified: String {
-            ls("nature.unclassified", comment: "")
+            ls("need.unclassified", comment: "")
         }
         static var unclassifiedDesc: String {
-            ls("nature.unclassified.desc", comment: "")
+            ls("need.unclassified.desc", comment: "")
         }
         static var incomeNotApplicable: String {
             ls(
-                "nature.incomeNotApplicable",
-                comment: "Message shown when income filter is active - nature classification doesn't apply"
+                "need.incomeNotApplicable",
+                comment: "Message shown when income filter is active - need classification doesn't apply"
             )
         }
     }
@@ -383,8 +496,8 @@ enum L10n {
         static var allCurrencies: String {
             ls("filters.allCurrencies", comment: "")
         }
-        static var allNatures: String {
-            ls("filters.allNatures", comment: "")
+        static var allNeeds: String {
+            ls("filters.allNeeds", comment: "")
         }
         static func selectedCount(_ count: Int) -> String {
             String(format: ls("filters.selectedCount", comment: ""), count)
@@ -394,8 +507,11 @@ enum L10n {
         }
         static var categories: String { ls("filters.categories", comment: "") }
         static var type: String { ls("filters.type", comment: "") }
-        static var nature: String { ls("filters.nature", comment: "") }
+        static var need: String { ls("filters.need", comment: "") }
         static var currency: String { ls("filters.currency", comment: "") }
+        static var includeMode: String { ls("filters.includeMode", comment: "") }
+        static var excludeMode: String { ls("filters.excludeMode", comment: "") }
+        static var nothingExcluded: String { ls("filters.nothingExcluded", comment: "") }
         static func datePrefix(_ date: String) -> String { String(format: ls("filters.datePrefix %@", comment: ""), date) }
     }
 
@@ -433,11 +549,15 @@ enum L10n {
     // MARK: - AI Consent
 
     enum AIConsent {
-        static var title: String { ls("aiConsent.title", comment: "") }
-        static var message: String { ls("aiConsent.message", comment: "") }
+        static var processingTitle: String { ls("aiConsent.processingTitle", comment: "") }
+        static var processingMessage: String { ls("aiConsent.processingMessage", comment: "") }
+        static var insightsTitle: String { ls("aiConsent.insightsTitle", comment: "") }
+        static var insightsMessage: String { ls("aiConsent.insightsMessage", comment: "") }
         static var accept: String { ls("aiConsent.accept", comment: "") }
         static var privacyPolicy: String { ls("aiConsent.privacyPolicy", comment: "") }
-        static var inlineHint: String { ls("aiConsent.inlineHint", comment: "") }
+        static var inlineHintProcessing: String { ls("aiConsent.inlineHintProcessing", comment: "") }
+        static var inlineHintInsights: String { ls("aiConsent.inlineHintInsights", comment: "") }
+        static var inlineHintBoth: String { ls("aiConsent.inlineHintBoth", comment: "") }
     }
 
     // MARK: - Accessibility
@@ -472,7 +592,7 @@ enum L10n {
         static var processAudio: String { ls("accessibility.processAudio", comment: "") }
         static var exchangeRateChart: String { ls("accessibility.exchangeRateChart", comment: "") }
         static var periodComparison: String { ls("accessibility.periodComparison", comment: "") }
-        static var natureTrend: String { ls("accessibility.natureTrend", comment: "") }
+        static var needTrend: String { ls("accessibility.needTrend", comment: "") }
         static var noData: String { ls("accessibility.noData", comment: "") }
         static var completeFormHint: String { ls("accessibility.completeFormHint", comment: "") }
         static var completeSelectionHint: String { ls("accessibility.completeSelectionHint", comment: "") }
@@ -513,6 +633,20 @@ enum L10n {
         static var metricIncome: String { ls("accessibility.metricIncome", comment: "") }
         static var metricExpense: String { ls("accessibility.metricExpense", comment: "") }
         static func colorOption(_ name: String) -> String { String(format: ls("accessibility.colorOption %@", comment: ""), name) }
+        static var close: String { ls("accessibility.close", comment: "") }
+        static var dismiss: String { ls("accessibility.dismiss", comment: "") }
+        static var remove: String { ls("accessibility.remove", comment: "") }
+        static var clearSelection: String { ls("accessibility.clearSelection", comment: "") }
+        static var selectColor: String { ls("accessibility.selectColor", comment: "") }
+        static var newBudget: String { ls("accessibility.newBudget", comment: "") }
+        static var newPayment: String { ls("accessibility.newPayment", comment: "") }
+        static var importingHint: String { ls("accessibility.importingHint", comment: "") }
+        static var fillRequiredFields: String { ls("accessibility.fillRequiredFields", comment: "") }
+        static var noTransactions: String { ls("accessibility.noTransactions", comment: "") }
+        static var selectDraftsFirst: String { ls("accessibility.selectDraftsFirst", comment: "") }
+        static var proFeature: String { ls("accessibility.proFeature", comment: "") }
+        static var noActiveAccounts: String { ls("accessibility.noActiveAccounts", comment: "") }
+        static var noInactiveBudgets: String { ls("accessibility.noInactiveBudgets", comment: "") }
     }
 
     // MARK: - Search
@@ -528,7 +662,7 @@ enum L10n {
             static var category: String { ls("search.filter.category", comment: "") }
             static var subcategory: String { ls("search.filter.subcategory", comment: "") }
             static var account: String { ls("search.filter.account", comment: "") }
-            static var nature: String { ls("search.filter.nature", comment: "") }
+            static var need: String { ls("search.filter.need", comment: "") }
             static var tag: String { ls("search.filter.tag", comment: "") }
         }
     }
@@ -809,6 +943,11 @@ enum L10n {
         static var positive: String { ls("account.positive", comment: "") }
         static var negative: String { ls("account.negative", comment: "") }
         static var adjustment: String { ls("account.adjustment", comment: "") }
+
+        enum Sign {
+            static var inFavor: String { ls("account.sign.inFavor", comment: "") }
+            static var consumed: String { ls("account.sign.consumed", comment: "") }
+        }
         static var selected: String { ls("account.selected", comment: "") }
         static var selectAccount: String { ls("account.selectAccount", comment: "") }
         static var archived: String { ls("account.archived", comment: "") }
@@ -878,6 +1017,20 @@ enum L10n {
             ls("account.changeInitialBalanceDesc", comment: "")
         }
 
+        // MARK: - Secondary Currency Suggestion
+        static var secondaryCurrencyTitle: String {
+            ls("account.secondaryCurrency.title", comment: "")
+        }
+        static func secondaryCurrencyMessage(_ currency: String, _ preferred: String, _ target: String) -> String {
+            String(format: ls("account.secondaryCurrency.message", comment: ""), currency, preferred, target)
+        }
+        static var secondaryCurrencyAccept: String {
+            ls("account.secondaryCurrency.accept", comment: "")
+        }
+        static var secondaryCurrencyReject: String {
+            ls("account.secondaryCurrency.reject", comment: "")
+        }
+
         // MARK: - Credit Card
         enum CreditCard {
             static var sectionTitle: String { ls("account.creditCard.sectionTitle", comment: "") }
@@ -897,7 +1050,7 @@ enum L10n {
         static var edit: String { ls("category.edit", comment: "") }
         static var editTitle: String { ls("category.editTitle", comment: "") }
         static var name: String { ls("category.name", comment: "") }
-        static var nature: String { ls("category.nature", comment: "") }
+        static var need: String { ls("category.need", comment: "") }
         static var show: String { ls("category.show", comment: "") }
         static var hiddenTitle: String { ls("category.hiddenTitle", comment: "") }
         static var hiddenDescription: String {
@@ -1459,6 +1612,16 @@ enum L10n {
             static var inDays: String { ls("scheduled.widget.inDays", comment: "") }
         }
 
+        enum Help {
+            static var title: String { ls("scheduled.help.title", comment: "") }
+            static var message: String { ls("scheduled.help.message", comment: "") }
+        }
+
+        enum Associate {
+            static var paymentHeader: String { ls("scheduled.associate.paymentHeader", comment: "") }
+            static var candidatesHeader: String { ls("scheduled.associate.candidatesHeader", comment: "") }
+        }
+
         enum Editor {
             static var recurrence: String { ls("scheduled.editor.recurrence", comment: "") }
             static var dayOfMonth: String { ls("scheduled.editor.day.of.month", comment: "") }
@@ -1474,6 +1637,7 @@ enum L10n {
             static var yearlyDate: String { ls("scheduled.yearly.date", comment: "") }
             static var account: String { ls("scheduled.editor.account", comment: "") }
             static var subcategory: String { ls("scheduled.editor.subcategory", comment: "") }
+            static var preview: String { ls("scheduled.editor.preview", comment: "") }
         }
 
         enum Detail {
@@ -1493,6 +1657,7 @@ enum L10n {
             static var nextSecond: String { ls("scheduled.next.second", comment: "") }
             static var nextThird: String { ls("scheduled.next.third", comment: "") }
             static var associateTitle: String { ls("scheduled.associate.title", comment: "") }
+            static var unlink: String { ls("scheduled.unlink", comment: "") }
         }
     }
 
@@ -1555,6 +1720,12 @@ enum L10n {
         }
         static var tabBarConfigMinWarning: String {
             ls("settings.tabBarConfigMinWarning", comment: "")
+        }
+        static var customizeAISummary: String {
+            ls("settings.customizeAISummary", comment: "")
+        }
+        static var customizeAISummaryHint: String {
+            ls("settings.customizeAISummaryHint", comment: "")
         }
         static var tabBarConfigMaxWarning: String {
             ls("settings.tabBarConfigMaxWarning", comment: "")
@@ -1621,6 +1792,7 @@ enum L10n {
         // Sections
         static var organization: String { ls("settings.organization", comment: "") }
         static var preferences: String { ls("settings.preferences", comment: "") }
+        static var aiFeatures: String { ls("settings.aiFeatures", comment: "") }
         static var data: String { ls("settings.data", comment: "") }
         static var security: String { ls("settings.security", comment: "") }
         static var help: String { ls("settings.help", comment: "") }
@@ -1951,8 +2123,8 @@ enum L10n {
         static var noExpensesSubcategoriesPeriod: String {
             ls("widget.noExpensesSubcategoriesPeriod", comment: "")
         }
-        static var noExpensesNaturePeriod: String {
-            ls("widget.noExpensesNaturePeriod", comment: "")
+        static var noExpensesNeedPeriod: String {
+            ls("widget.noExpensesNeedPeriod", comment: "")
         }
         static var noExpensesDescriptionCategories: String {
             ls("widget.noExpensesDescriptionCategories", comment: "")
@@ -1970,8 +2142,8 @@ enum L10n {
         static var distributionBySubcategory: String {
             ls("widget.distributionBySubcategory", comment: "")
         }
-        static var distributionByNature: String {
-            ls("widget.distributionByNature", comment: "")
+        static var distributionByNeed: String {
+            ls("widget.distributionByNeed", comment: "")
         }
         static var distributionByTag: String {
             ls("widget.distributionByTag", comment: "")
@@ -2014,8 +2186,8 @@ enum L10n {
             static var tagsPie: String {
                 ls("widget.hint.tagsPie", comment: "")
             }
-            static var natureTrend: String {
-                ls("widget.hint.natureTrend", comment: "")
+            static var needTrend: String {
+                ls("widget.hint.needTrend", comment: "")
             }
             static var cashFlow: String {
                 ls("widget.hint.cashFlow", comment: "")
@@ -2059,8 +2231,8 @@ enum L10n {
         static var latestRecords: String {
             ls("widgetType.latestRecords", comment: "")
         }
-        static var expensesByNature: String {
-            ls("widgetType.expensesByNature", comment: "")
+        static var expensesByNeed: String {
+            ls("widgetType.expensesByNeed", comment: "")
         }
         static var expensesByTag: String {
             ls("widgetType.expensesByTag", comment: "")
@@ -2128,6 +2300,29 @@ enum L10n {
         static var alertsGlobalDisabledHint: String { ls("budgets.alerts.globalDisabledHint", comment: "") }
     }
 
+    // MARK: - Budget Detail
+
+    enum BudgetDetail {
+        static var infoTitle: String { ls("budgets.detail.info", comment: "") }
+        static var period: String { ls("budgets.detail.period", comment: "") }
+        static var accounts: String { ls("budgets.detail.accounts", comment: "") }
+        static var categories: String { ls("budgets.detail.categories", comment: "") }
+        static var tags: String { ls("budgets.detail.tags", comment: "") }
+        static var needs: String { ls("budgets.detail.needs", comment: "") }
+        static var alerts: String { ls("budgets.detail.alerts", comment: "") }
+        static var allAccounts: String { ls("budgets.detail.allAccounts", comment: "") }
+        static var allCategories: String { ls("budgets.detail.allCategories", comment: "") }
+        static var subcategories: String { ls("budgets.detail.subcategories", comment: "") }
+        static var allSubcategories: String { ls("budgets.detail.allSubcategories", comment: "") }
+        static var notFound: String { ls("budgets.detail.notFound", comment: "") }
+        static var statusTitle: String { ls("budgets.detail.status", comment: "") }
+        static var chartsTitle: String { ls("budgets.charts.title", comment: "") }
+        static var chartsCompliance: String { ls("budgets.charts.compliance", comment: "") }
+        static var chartsDailySpending: String { ls("budgets.charts.dailySpending", comment: "") }
+        static var chartsCategoryBreakdown: String { ls("budgets.charts.categoryBreakdown", comment: "") }
+        static var chartsNoData: String { ls("budgets.charts.noData", comment: "") }
+    }
+
     // MARK: - Planning
 
     enum Planning {
@@ -2167,7 +2362,7 @@ enum L10n {
         }
         static var work: String { ls("iconPicker.work", comment: "") }
         static var pets: String { ls("iconPicker.pets", comment: "") }
-        static var nature: String { ls("iconPicker.nature", comment: "") }
+        static var need: String { ls("iconPicker.need", comment: "") }
         static var tech: String { ls("iconPicker.tech", comment: "") }
         static var travel: String { ls("iconPicker.travel", comment: "") }
         static var communication: String {
@@ -2232,6 +2427,9 @@ enum L10n {
         }
         static var selectSubcategory: String {
             ls("validation.selectSubcategory", comment: "")
+        }
+        static var completeFieldsFirst: String {
+            ls("validation.completeFieldsFirst", comment: "")
         }
         static var futureDateTitle: String {
             ls("validation.futureDateTitle", comment: "")
@@ -2361,6 +2559,16 @@ enum L10n {
         static var expensesOnlyDescExpenses: String {
             ls("onboarding.expensesOnlyDescExpenses", comment: "")
         }
+        // Usage mode: 3 options (Solo gastos, Día a día, Control total)
+        static var usageModeExpensesOnly: String { ls("onboarding.usageMode.expensesOnly", comment: "") }
+        static var usageModeExpensesOnlyQuote: String { ls("onboarding.usageMode.expensesOnly.quote", comment: "") }
+        static var usageModeExpensesOnlyDesc: String { ls("onboarding.usageMode.expensesOnly.desc", comment: "") }
+        static var usageModeDayToDay: String { ls("onboarding.usageMode.dayToDay", comment: "") }
+        static var usageModeDayToDayQuote: String { ls("onboarding.usageMode.dayToDay.quote", comment: "") }
+        static var usageModeDayToDayDesc: String { ls("onboarding.usageMode.dayToDay.desc", comment: "") }
+        static var usageModeFullControl: String { ls("onboarding.usageMode.fullControl", comment: "") }
+        static var usageModeFullControlQuote: String { ls("onboarding.usageMode.fullControl.quote", comment: "") }
+        static var usageModeFullControlDesc: String { ls("onboarding.usageMode.fullControl.desc", comment: "") }
         static var privacyTitle: String { ls("onboarding.privacyTitle", comment: "") }
         static var privacySubtitle: String { ls("onboarding.privacySubtitle", comment: "") }
         static var privacyLocal: String { ls("onboarding.privacyLocal", comment: "") }
@@ -2372,6 +2580,72 @@ enum L10n {
         static var tutorialsSubtitle: String { ls("onboarding.tutorialsSubtitle", comment: "") }
         static var tutorialsExplore: String { ls("onboarding.tutorialsExplore", comment: "") }
         static var tutorialsSettingsHint: String { ls("onboarding.tutorialsSettingsHint", comment: "") }
+
+        // Account Setup step
+        static var accountTitle: String { ls("onboarding.accountTitle", comment: "") }
+        static var accountSubtitle: String { ls("onboarding.accountSubtitle", comment: "") }
+        static var accountTypeLabel: String { ls("onboarding.accountTypeLabel", comment: "") }
+        static var accountNameLabel: String { ls("onboarding.accountNameLabel", comment: "") }
+        static var accountNamePlaceholder: String { ls("onboarding.accountNamePlaceholder", comment: "") }
+        static var accountCurrencyLabel: String { ls("onboarding.accountCurrencyLabel", comment: "") }
+        static var accountBalanceLabel: String { ls("onboarding.accountBalanceLabel", comment: "") }
+        static var accountBalanceHint: String { ls("onboarding.accountBalanceHint", comment: "") }
+        static var accountBalanceSkipHint: String { ls("onboarding.accountBalanceSkipHint", comment: "") }
+        static var accountBalanceHintGeneral: String { ls("onboarding.accountBalanceHintGeneral", comment: "") }
+        static var accountBalanceHintCash: String { ls("onboarding.accountBalanceHintCash", comment: "") }
+        static var accountBalanceHintChecking: String { ls("onboarding.accountBalanceHintChecking", comment: "") }
+        static var accountBalanceHintSavings: String { ls("onboarding.accountBalanceHintSavings", comment: "") }
+        static var accountBalanceLearnMore: String { ls("onboarding.accountBalanceLearnMore", comment: "") }
+        static var accountBalanceGuideTitle: String { ls("onboarding.accountBalanceGuideTitle", comment: "") }
+        static var accountBalanceGuideIntro: String { ls("onboarding.accountBalanceGuideIntro", comment: "") }
+        static var accountBalanceGuideGeneral: String { ls("onboarding.accountBalanceGuideGeneral", comment: "") }
+        static var accountBalanceGuideCash: String { ls("onboarding.accountBalanceGuideCash", comment: "") }
+        static var accountBalanceGuideChecking: String { ls("onboarding.accountBalanceGuideChecking", comment: "") }
+        static var accountBalanceGuideSavings: String { ls("onboarding.accountBalanceGuideSavings", comment: "") }
+        static var accountBalanceGuideClosing: String { ls("onboarding.accountBalanceGuideClosing", comment: "") }
+        static var accountBalanceHintCreditCard: String { ls("onboarding.accountBalanceHintCreditCard", comment: "") }
+        // Balance Calculator Sheet
+        static var calcTitle: String { ls("onboarding.calc.title", comment: "") }
+        static var calcIntro: String { ls("onboarding.calc.intro", comment: "") }
+        static var calcBankAccounts: String { ls("onboarding.calc.bankAccounts", comment: "") }
+        static var calcSavings: String { ls("onboarding.calc.savings", comment: "") }
+        static var calcCash: String { ls("onboarding.calc.cash", comment: "") }
+        static var calcCreditCardSpending: String { ls("onboarding.calc.creditCardSpending", comment: "") }
+        static var calcOptional: String { ls("onboarding.calc.optional", comment: "") }
+        static var calcAvailable: String { ls("onboarding.calc.available", comment: "") }
+        static var calcBalance: String { ls("onboarding.calc.balance", comment: "") }
+        static var calcTipCashFlow: String { ls("onboarding.calc.tipCashFlow", comment: "") }
+        static var calcTipPatrimonial: String { ls("onboarding.calc.tipPatrimonial", comment: "") }
+        static var calcUseBalance: String { ls("onboarding.calc.useBalance", comment: "") }
+        static var calcAdjustLater: String { ls("onboarding.calc.adjustLater", comment: "") }
+        // Credit card calculator
+        static var calcCreditCardTitle: String { ls("onboarding.calc.creditCard.title", comment: "") }
+        static var calcCreditLine: String { ls("onboarding.calc.creditLine", comment: "") }
+        static var calcAvailableCredit: String { ls("onboarding.calc.availableCredit", comment: "") }
+        static var calcCurrentSpending: String { ls("onboarding.calc.currentSpending", comment: "") }
+        static var calcYourBalance: String { ls("onboarding.calc.yourBalance", comment: "") }
+        static var calcCreditCardTip: String { ls("onboarding.calc.creditCard.tip", comment: "") }
+        // Simple account explanations (cash/checking/savings)
+        // Shared expenses (patrimonial only)
+        static var calcSharedExpenses: String { ls("onboarding.calc.sharedExpenses", comment: "") }
+        static var calcOthersOweMe: String { ls("onboarding.calc.othersOweMe", comment: "") }
+        static var calcIOwe: String { ls("onboarding.calc.iOwe", comment: "") }
+        static var calcCashExplanation: String { ls("onboarding.calc.cashExplanation", comment: "") }
+        static var calcCheckingExplanation: String { ls("onboarding.calc.checkingExplanation", comment: "") }
+        static var calcSavingsExplanation: String { ls("onboarding.calc.savingsExplanation", comment: "") }
+        static var accountImportTip: String { ls("onboarding.accountImportTip", comment: "") }
+        static var accountMoreTip: String { ls("onboarding.accountMoreTip", comment: "") }
+
+        // Quick Budget step
+        static var budgetTitle: String { ls("onboarding.budgetTitle", comment: "") }
+        static var budgetSubtitle: String { ls("onboarding.budgetSubtitle", comment: "") }
+        static var budgetYes: String { ls("onboarding.budgetYes", comment: "") }
+        static var budgetNo: String { ls("onboarding.budgetNo", comment: "") }
+        static var budgetCategoryLabel: String { ls("onboarding.budgetCategoryLabel", comment: "") }
+        static var budgetAmountLabel: String { ls("onboarding.budgetAmountLabel", comment: "") }
+        static var budgetAmountPlaceholder: String { ls("onboarding.budgetAmountPlaceholder", comment: "") }
+        static var budgetMoreTip: String { ls("onboarding.budgetMoreTip", comment: "") }
+        static var budgetPreviewLabel: String { ls("onboarding.budgetPreviewLabel", comment: "") }
     }
 
     // MARK: - Bulk Edit
@@ -3279,6 +3553,38 @@ enum L10n {
         static var emptyTopCategory: String { ls("notifications.report.empty.topCategory", comment: "") }
     }
 
+    // MARK: - Notification Primer
+
+    enum NotificationPrimer {
+        static var title: String { ls("notificationPrimer.title", comment: "") }
+        static var benefit1: String { ls("notificationPrimer.benefit1", comment: "") }
+        static var benefit2: String { ls("notificationPrimer.benefit2", comment: "") }
+        static var benefit3: String { ls("notificationPrimer.benefit3", comment: "") }
+        static var accept: String { ls("notificationPrimer.accept", comment: "") }
+        static var reject: String { ls("notificationPrimer.reject", comment: "") }
+        static var hint: String { ls("notificationPrimer.hint", comment: "") }
+    }
+
+    // MARK: - What's New
+
+    enum WhatsNew {
+        static var title: String { ls("whatsNew.title", comment: "") }
+        static func subtitle(_ version: String) -> String {
+            String(format: ls("whatsNew.subtitle", comment: ""), version)
+        }
+        static var continueButton: String { ls("whatsNew.continue", comment: "") }
+
+        // v1.2 features
+        static var v12CoachMarksTitle: String { ls("whatsNew.v12.coachMarks.title", comment: "") }
+        static var v12CoachMarksDescription: String { ls("whatsNew.v12.coachMarks.description", comment: "") }
+        static var v12NotificationsTitle: String { ls("whatsNew.v12.notifications.title", comment: "") }
+        static var v12NotificationsDescription: String { ls("whatsNew.v12.notifications.description", comment: "") }
+        static var v12InsightsTitle: String { ls("whatsNew.v12.insights.title", comment: "") }
+        static var v12InsightsDescription: String { ls("whatsNew.v12.insights.description", comment: "") }
+        static var v12SharedBalancesTitle: String { ls("whatsNew.v12.sharedBalances.title", comment: "") }
+        static var v12SharedBalancesDescription: String { ls("whatsNew.v12.sharedBalances.description", comment: "") }
+    }
+
     // MARK: - Weekday
 
     enum Weekday {
@@ -3347,11 +3653,6 @@ enum L10n {
             static var detail: String { ls("tips.voice.detail", comment: "") }
         }
 
-        enum Camera {
-            static var title: String { ls("tips.camera.title", comment: "") }
-            static var detail: String { ls("tips.camera.detail", comment: "") }
-        }
-
         enum Favorites {
             static var title: String { ls("tips.favorites.title", comment: "") }
             static var detail: String { ls("tips.favorites.detail", comment: "") }
@@ -3377,16 +3678,61 @@ enum L10n {
             static var detail: String { ls("tips.export.detail", comment: "") }
         }
 
-        enum FaceID {
-            static var title: String { ls("tips.faceID.title", comment: "") }
-            static var detail: String { ls("tips.faceID.detail", comment: "") }
-        }
-
         enum Siri {
             static var title: String { ls("tips.siri.title", comment: "") }
             static var detail: String { ls("tips.siri.detail", comment: "") }
             static var close: String { ls("tips.siri.close", comment: "") }
         }
+    }
+
+    // MARK: - TipKit
+
+    enum TipKit {
+        static var skip: String { ls("tipkit.skip", comment: "") }
+        static var next: String { ls("tipkit.next", comment: "") }
+        static var done: String { ls("tipkit.done", comment: "") }
+        // Grupo A
+        static var accounts: String { ls("tipkit.accounts.title", comment: "") }
+        static var accountsMessage: String { ls("tipkit.accounts.message", comment: "") }
+        static var widgets: String { ls("tipkit.widgets.title", comment: "") }
+        static var widgetsMessage: String { ls("tipkit.widgets.message", comment: "") }
+        static var fab: String { ls("tipkit.fab.title", comment: "") }
+        static var fabFreeMessage: String { ls("tipkit.fab.free.message", comment: "") }
+        static var fabProMessage: String { ls("tipkit.fab.pro.message", comment: "") }
+        static var profile: String { ls("tipkit.profile.title", comment: "") }
+        static var profileMessage: String { ls("tipkit.profile.message", comment: "") }
+        // Grupo B
+        static var transactionTypes: String { ls("tipkit.transactionTypes.title", comment: "") }
+        static var transactionTypesMessage: String { ls("tipkit.transactionTypes.message", comment: "") }
+        static var favoritePayments: String { ls("tipkit.favoritePayments.title", comment: "") }
+        static var favoritePaymentsMessage: String { ls("tipkit.favoritePayments.message", comment: "") }
+        static var quickActions: String { ls("tipkit.quickActions.title", comment: "") }
+        static var quickActionsMessage: String { ls("tipkit.quickActions.message", comment: "") }
+        // Grupo A extra
+        static var widgetPreferences: String { ls("tipkit.widgetPreferences.title", comment: "") }
+        static var widgetPreferencesMessage: String { ls("tipkit.widgetPreferences.message", comment: "") }
+        // Grupo C
+        static var filterAccount: String { ls("tipkit.filterAccount.title", comment: "") }
+        static var filterAccountMessage: String { ls("tipkit.filterAccount.message", comment: "") }
+        static var interactiveWidgets: String { ls("tipkit.interactiveWidgets.title", comment: "") }
+        static var interactiveWidgetsMessage: String { ls("tipkit.interactiveWidgets.message", comment: "") }
+        static var comparison: String { ls("tipkit.comparison.title", comment: "") }
+        static var comparisonMessage: String { ls("tipkit.comparison.message", comment: "") }
+        // Grupo D: Settings
+        static var settingsAccounts: String { ls("tipkit.settings.accounts.title", comment: "") }
+        static var settingsAccountsMessage: String { ls("tipkit.settings.accounts.message", comment: "") }
+        static var settingsCategories: String { ls("tipkit.settings.categories.title", comment: "") }
+        static var settingsCategoriesMessage: String { ls("tipkit.settings.categories.message", comment: "") }
+        static var settingsTags: String { ls("tipkit.settings.tags.title", comment: "") }
+        static var settingsTagsMessage: String { ls("tipkit.settings.tags.message", comment: "") }
+        static var settingsBudgets: String { ls("tipkit.settings.budgets.title", comment: "") }
+        static var settingsBudgetsMessage: String { ls("tipkit.settings.budgets.message", comment: "") }
+        static var settingsPlanned: String { ls("tipkit.settings.planned.title", comment: "") }
+        static var settingsPlannedMessage: String { ls("tipkit.settings.planned.message", comment: "") }
+        static var settingsPersonalization: String { ls("tipkit.settings.personalization.title", comment: "") }
+        static var settingsPersonalizationMessage: String { ls("tipkit.settings.personalization.message", comment: "") }
+        static var settingsTutorials: String { ls("tipkit.settings.tutorials.title", comment: "") }
+        static var settingsTutorialsMessage: String { ls("tipkit.settings.tutorials.message", comment: "") }
     }
 
 }

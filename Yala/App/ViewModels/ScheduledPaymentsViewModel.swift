@@ -69,7 +69,7 @@ final class ScheduledPaymentsViewModel {
     var paymentsViewMode: PaymentsViewMode = .list
 
     /// Selected month for both list and calendar views (shared)
-    var selectedMonth: Date = Date()
+    var selectedMonth: Date = Date.now
 
     /// Whether to show the period selector sheet
     var showPeriodSelector: Bool = false
@@ -88,7 +88,7 @@ final class ScheduledPaymentsViewModel {
     /// Smart label for the selected month
     var monthYearLabel: String {
         let calendar = Calendar.current
-        let now = Date()
+        let now = Date.now
         if calendar.isDate(selectedMonth, equalTo: now, toGranularity: .month) {
             return L10n.Period.thisMonth
         } else if let lastMonth = calendar.date(byAdding: .month, value: -1, to: now),
@@ -314,7 +314,7 @@ final class ScheduledPaymentsViewModel {
     /// Calculate and group payments for display, filtered by selectedMonth
     func calculatePaymentData(payments: [ScheduledPayment]) {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = calendar.startOfDay(for: Date.now)
         let isCurrentMonth = calendar.isDate(selectedMonth, equalTo: today, toGranularity: .month)
         let isPastMonth = calendar.startOfMonth(for: selectedMonth) < calendar.startOfMonth(for: today)
 
@@ -475,12 +475,26 @@ final class ScheduledPaymentsViewModel {
                 return isTxIncome == isPaymentIncome
             }
 
-            // Sort: same currency first, then same account, then amount proximity
+            // Sort: note match > subcategory > currency > account > amount proximity > recency
             transactions.sort { tx1, tx2 in
+                // 1. Note contains payment name (case-insensitive)
+                let tx1NoteMatch = tx1.note?.localizedCaseInsensitiveContains(payment.name) == true
+                let tx2NoteMatch = tx2.note?.localizedCaseInsensitiveContains(payment.name) == true
+                if tx1NoteMatch != tx2NoteMatch { return tx1NoteMatch }
+
+                // 2. Same subcategory
+                if let paymentSubID = payment.subcategory?.persistentModelID {
+                    let tx1SubMatch = tx1.subcategory?.persistentModelID == paymentSubID
+                    let tx2SubMatch = tx2.subcategory?.persistentModelID == paymentSubID
+                    if tx1SubMatch != tx2SubMatch { return tx1SubMatch }
+                }
+
+                // 3. Currency match
                 let tx1CurrencyMatch = tx1.currencyCode == payment.currencyCode
                 let tx2CurrencyMatch = tx2.currencyCode == payment.currencyCode
                 if tx1CurrencyMatch != tx2CurrencyMatch { return tx1CurrencyMatch }
 
+                // 4. Account match
                 if let paymentAccount = payment.account {
                     let paymentAccountID = paymentAccount.persistentModelID
                     let tx1AccountMatch = tx1.account?.persistentModelID == paymentAccountID
@@ -488,9 +502,13 @@ final class ScheduledPaymentsViewModel {
                     if tx1AccountMatch != tx2AccountMatch { return tx1AccountMatch }
                 }
 
+                // 5. Amount proximity
                 let diff1 = abs(tx1.amount - payment.amount)
                 let diff2 = abs(tx2.amount - payment.amount)
-                return diff1 < diff2
+                if diff1 != diff2 { return diff1 < diff2 }
+
+                // 6. Most recent first
+                return tx1.date > tx2.date
             }
 
             return transactions
@@ -514,6 +532,55 @@ final class ScheduledPaymentsViewModel {
         } catch {
             #if DEBUG
             print("ScheduledPaymentsViewModel: Error associating transaction: \(error)")
+            #endif
+        }
+    }
+
+    /// Unlink a transaction from its scheduled payment
+    func unlinkTransaction(_ transaction: TransactionItem) {
+        transaction.scheduledPaymentID = nil
+
+        guard let context = modelContext else { return }
+        do {
+            try context.save()
+            WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error unlinking transaction: \(error)")
+            #endif
+        }
+    }
+
+    /// Unlink all transactions for a scheduled payment on a specific date (batch save)
+    func unlinkTransactionsForDate(paymentID: UUID, date: Date) {
+        guard let context = modelContext else { return }
+        let calendar = Calendar.current
+        let paymentIDString = paymentID.uuidString
+
+        do {
+            let predicate = #Predicate<TransactionItem> { tx in
+                tx.scheduledPaymentID == paymentIDString
+            }
+            let descriptor = FetchDescriptor<TransactionItem>(predicate: predicate)
+            let linkedTransactions = try context.fetch(descriptor)
+
+            var didUnlink = false
+            for tx in linkedTransactions {
+                if calendar.isDate(tx.date, inSameDayAs: date) {
+                    tx.scheduledPaymentID = nil
+                    didUnlink = true
+                }
+            }
+
+            if didUnlink {
+                try context.save()
+                WidgetDataCache.updateCache(context: context)
+                SessionState.shared.incrementDataVersion()
+            }
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error unlinking transactions for date: \(error)")
             #endif
         }
     }

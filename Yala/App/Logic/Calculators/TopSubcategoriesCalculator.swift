@@ -24,7 +24,7 @@ struct TopSubcategoriesCalculator {
         currencyCode: String,
         categoryFilter: PersistentIdentifier? = nil,
         transactionNatures: Set<TransactionNature>? = nil,
-        context: ModelContext
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [SubcategorySpendingSummary] {
 
         // Determine which natures to include
@@ -43,7 +43,7 @@ struct TopSubcategoriesCalculator {
             // Exclude balance adjustments and transfers (they shouldn't appear in category stats)
             guard transaction.balanceAdjustmentType == nil else { return false }
 
-            // Nature check
+            // Need check
             let nature: TransactionNature = category.isIncome ? .income : .expense
             guard naturesToInclude.contains(nature) else { return false }
 
@@ -91,12 +91,11 @@ struct TopSubcategoriesCalculator {
                 // Use signed amount (expenses are negative)
                 doubleVal = transaction.amountInPreferredCurrency
             } else {
-                let convertedAmount = CurrencyConverter.shared.convert(
+                let convertedAmount = converter.convert(
                     decimalAmount,
                     from: transaction.currencyCode,
                     to: currencyCode,
-                    on: transaction.date,
-                    context: context
+                    on: transaction.date
                 )
                 // Restore sign from original amount for correct refund handling
                 let magnitude = NSDecimalNumber(decimal: convertedAmount).doubleValue

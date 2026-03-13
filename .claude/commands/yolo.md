@@ -25,14 +25,7 @@ Ejecuta todos los incrementos de forma autónoma sin esperar validaciones interm
    2. [Incremento 2]
    ...
 
-   Ejecutaré TODO sin pausas. Al terminar tendrás:
-   - Todos los cambios implementados
-   - Build verificado
-   - Tests ejecutados
-   - Análisis de impacto
-   - Lista de puntos para validación manual
-
-   ¿Confirmas ejecución autónoma? (sí/no)
+   Ejecutaré TODO sin pausas. ¿Confirmas? (sí/no)
    ```
 
 2. **EJECUTAR CICLO COMPLETO POR INCREMENTO**
@@ -43,87 +36,52 @@ Ejecuta todos los incrementos de forma autónoma sin esperar validaciones interm
    → Implementar código
    → /verify-ios (si falla, intentar fix automático hasta 2 veces)
    → /test-smart (si falla, intentar fix automático hasta 2 veces)
-   → Commit automático con mensaje descriptivo
+   → /commit-one (incluye: swift-audit + test gate + state update)
    → Siguiente incremento
    ```
 
-3. **AL TERMINAR TODOS LOS INCREMENTOS**
+   Nota: /commit-one ya incluye el test gate con generación de tests para fix:/feat:.
+   El flag tests-passed se crea con /test-smart y se limpia después de cada commit.
 
-   Ejecutar automáticamente:
-   - `/pre-deploy-check` completo
-   - Análisis de impacto de todos los cambios
-   - Generar reporte de validación
-
-4. **PRESENTAR REPORTE FINAL**
+3. **REPORTE FINAL**
    ```
-   ╔═══════════════════════════════════════════════════════════════╗
-   ║                    EJECUCIÓN YOLO COMPLETADA                  ║
-   ╠═══════════════════════════════════════════════════════════════╣
-   ║                                                               ║
-   ║  INCREMENTOS: [N] completados                                 ║
-   ║                                                               ║
-   ║  COMMITS REALIZADOS:                                          ║
-   ║  - [hash1] [mensaje1]                                         ║
-   ║  - [hash2] [mensaje2]                                         ║
-   ║  ...                                                          ║
-   ║                                                               ║
-   ║  BUILD: ✓ Pasó                                                ║
-   ║  TESTS: ✓ [N] tests, todos pasaron                            ║
-   ║                                                               ║
-   ║  PRE-DEPLOY CHECK:                                            ║
-   ║  - [✓/✗] Manejo de errores                                    ║
-   ║  - [✓/✗] Force unwraps                                        ║
-   ║  - [✓/✗] Prints producción                                    ║
-   ║                                                               ║
-   ╠═══════════════════════════════════════════════════════════════╣
-   ║  VALIDACIÓN MANUAL PENDIENTE                                  ║
-   ╠═══════════════════════════════════════════════════════════════╣
-   ║                                                               ║
-   ║  Por favor valida en el simulador:                            ║
-   ║                                                               ║
-   ║  1. [ ] [Escenario de prueba 1]                               ║
-   ║  2. [ ] [Escenario de prueba 2]                               ║
-   ║  3. [ ] [Escenario de prueba 3]                               ║
-   ║                                                               ║
-   ║  Archivos clave modificados:                                  ║
-   ║  - path/to/file1.swift (líneas X-Y)                           ║
-   ║  - path/to/file2.swift (líneas A-B)                           ║
-   ║                                                               ║
-   ╚═══════════════════════════════════════════════════════════════╝
+   ## YOLO completado
 
-   ¿Todo OK?
-   - Sí → Listo, puedes hacer push
-   - No → Dime qué ajustar
+   Incrementos: [N] completados
+   Commits: [lista con hashes]
+   Build: ✓/✗
+   Tests: [N] tests, ✓/✗
+
+   ### Validación manual pendiente
+   1. [ ] [Escenario de prueba 1]
+   2. [ ] [Escenario de prueba 2]
+
+   ### Archivos clave modificados
+   - path/to/file1.swift
+   - path/to/file2.swift
+
+   ¿Todo OK? Sí → listo para push | No → dime qué ajustar
    ```
 
-### SI NO HAY PLAN (ejecución directa):
+### SI NO HAY PLAN:
 
 Preguntar:
 ```
 No detecto un plan previo.
 
-Opciones:
-1. Describe qué quieres implementar y creo el plan + ejecuto todo
+1. Describe qué quieres y creo el plan + ejecuto todo
 2. Usa /next primero para elegir tarea y planificar
 ```
-
-Si el usuario describe la tarea:
-- Generar plan internamente
-- Mostrar plan resumido
-- Pedir confirmación
-- Ejecutar todo
 
 ## MANEJO DE ERRORES
 
 **Si el build falla:**
 - Intentar fix automático (máximo 2 intentos)
 - Si persiste: PAUSAR y reportar el error
-- No continuar con incrementos rotos
 
 **Si los tests fallan:**
 - Intentar fix automático (máximo 2 intentos)
 - Si persiste: PAUSAR y reportar
-- Documentar qué tests fallaron
 
 **Si hay error crítico:**
 - DETENER inmediatamente
@@ -131,10 +89,9 @@ Si el usuario describe la tarea:
 - Reportar estado y qué se completó
 
 ## REGLAS
-
 - NUNCA hacer push automático (solo commits locales)
 - SIEMPRE verificar build antes de cada commit
-- SIEMPRE ejecutar tests relevantes
+- SIEMPRE ejecutar tests relevantes (via /test-smart o test gate en commit-one)
 - SIEMPRE generar lista de validación manual al final
 - Si algo falla 2 veces, PARAR y preguntar
 - Los commits deben ser atómicos y descriptivos

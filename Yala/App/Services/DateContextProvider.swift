@@ -12,7 +12,7 @@ struct DateContextProvider {
 
     /// Builds a complete date context block for injection into AI system prompts.
     /// Includes today, yesterday, day-of-week → date mapping, and relative date rules.
-    static func buildDateContext(now: Date = Date()) -> String {
+    static func buildDateContext(now: Date = Date.now) -> String {
         let cal = Calendar.current
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd"

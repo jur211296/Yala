@@ -141,7 +141,9 @@ struct InboxView: View {
                     onEditTransaction: { transaction in
                         // Open transaction editor after sheet dismiss
                         Task {
-                            try? await Task.sleep(for: .milliseconds(300))
+                            do {
+                                try await Task.sleep(for: .milliseconds(300))
+                            } catch { return }
                             selectedTransaction = transaction
                         }
                     }
@@ -153,15 +155,13 @@ struct InboxView: View {
                     pendingNextDraftID = nil
                     // Find the draft by ID and open it
                     if let nextDraft = viewModel.findPendingDraft(by: nextID) {
-                        Task {
-                            try? await Task.sleep(for: .milliseconds(300))
-                            selectedDraft = nextDraft
-                        }
+                        openDraftAfterDelay(nextDraft)
                     }
                 }
             }
             .sheet(item: $selectedTransaction, onDismiss: { viewModel.loadData() }) { transaction in
                 NewTransactionView(transactionToEdit: transaction)
+                    .presentationDetents([.large])
             }
             .sheet(isPresented: $showBulkActions, onDismiss: { viewModel.loadData() }) {
                 InboxBulkActionsSheet(
@@ -186,7 +186,9 @@ struct InboxView: View {
                             showSwipeSuccessView = false
                             if let transaction = swipeApprovedTransaction {
                                 Task {
-                                    try? await Task.sleep(for: .milliseconds(300))
+                                    do {
+                                        try await Task.sleep(for: .milliseconds(300))
+                                    } catch { return }
                                     selectedTransaction = transaction
                                 }
                             }
@@ -197,9 +199,7 @@ struct InboxView: View {
                         onApproveNext: {
                             showSwipeSuccessView = false
                             if let next = viewModel.firstPendingDraft() {
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                    selectedDraft = next
-                                }
+                                openDraftAfterDelay(next)
                             }
                         }
                     )
@@ -464,42 +464,54 @@ struct InboxView: View {
     // MARK: - Actions
 
     private func rejectDraft(_ draft: InboxDraft) {
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-
-        // 1. Animate removal from UI first
-        dsWithAnimation(reduceMotion) {
-            viewModel.removeDraft(draft)
-        }
-
-        // 2. Persist rejection outside animation
-        draftService.setContext(modelContext)
-        do {
-            try draftService.rejectDraft(draft)
-        } catch {
-            #if DEBUG
-            print("InboxView: Error rejecting draft: \(error)")
-            #endif
-            viewModel.loadData()
+        removeDraftWithAnimation(draft, hapticStyle: .light) { service, d in
+            try service.rejectDraft(d)
         }
     }
 
     private func deleteDraftPermanently(_ draft: InboxDraft) {
-        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+        removeDraftWithAnimation(draft, hapticStyle: .rigid) { service, d in
+            try service.deleteDraft(d)
+        }
+    }
 
-        // 1. Animate removal from UI first
+    /// Animate draft removal from UI, then persist after animation completes.
+    /// Delay avoids accessing invalidated SwiftData relationships during animation.
+    private func removeDraftWithAnimation(
+        _ draft: InboxDraft,
+        hapticStyle: UIImpactFeedbackGenerator.FeedbackStyle,
+        persist: @escaping (DraftService, InboxDraft) throws -> Void
+    ) {
+        UIImpactFeedbackGenerator(style: hapticStyle).impactOccurred()
+
         dsWithAnimation(reduceMotion) {
             viewModel.removeDraft(draft)
         }
 
-        // 2. Persist deletion outside animation
-        draftService.setContext(modelContext)
-        do {
-            try draftService.deleteDraft(draft)
-        } catch {
-            #if DEBUG
-            print("InboxView: Error deleting draft: \(error)")
-            #endif
-            viewModel.loadData()
+        Task {
+            do {
+                try await Task.sleep(for: .milliseconds(400))
+            } catch { return }
+            draftService.setContext(modelContext)
+            do {
+                try persist(draftService, draft)
+            } catch {
+                #if DEBUG
+                print("InboxView: Error persisting draft removal: \(error)")
+                #endif
+                viewModel.loadData()
+            }
+        }
+    }
+
+    /// Open a draft sheet after a delay, guarding against concurrent sheet presentations.
+    private func openDraftAfterDelay(_ draft: InboxDraft) {
+        Task {
+            do {
+                try await Task.sleep(for: .milliseconds(500))
+            } catch { return }
+            guard selectedDraft == nil else { return }
+            selectedDraft = draft
         }
     }
 

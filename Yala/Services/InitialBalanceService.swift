@@ -73,11 +73,11 @@ import SwiftData
         if let earliestDate = accountTransactions.map({ $0.date }).min() {
             // First day of the month of the earliest transaction
             let components = calendar.dateComponents([.year, .month], from: earliestDate)
-            return calendar.date(from: components) ?? Date()
+            return calendar.date(from: components) ?? Date.now
         } else {
             // No transactions - first day of current month
-            let components = calendar.dateComponents([.year, .month], from: Date())
-            return calendar.date(from: components) ?? Date()
+            let components = calendar.dateComponents([.year, .month], from: Date.now)
+            return calendar.date(from: components) ?? Date.now
         }
     }
 
@@ -154,11 +154,12 @@ import SwiftData
 
     // MARK: - Helper
 
-    /// Finds the "Ajustes de saldo" subcategory from the seed data
+    /// Finds the balance adjustment subcategory from the seed data (localized)
     static func findBalanceAdjustmentSubcategory(context: ModelContext) -> Subcategory? {
+        let localizedName = L10n.Subcategory.balanceAdjustment
         let descriptor = FetchDescriptor<Subcategory>(
             predicate: #Predicate<Subcategory> { subcategory in
-                subcategory.name == "Ajustes de saldo"
+                subcategory.name == localizedName
             }
         )
 
@@ -168,6 +169,54 @@ import SwiftData
         } catch {
             #if DEBUG
             print("Error fetching balance adjustment subcategory: \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    /// Ensures a balance adjustment subcategory exists, creating minimal "Otros" category if needed.
+    /// Used when user skips seed categories but needs initial balance support.
+    @discardableResult
+    static func ensureBalanceAdjustmentSubcategoryExists(context: ModelContext) -> Subcategory? {
+        if let existing = findBalanceAdjustmentSubcategory(context: context) {
+            return existing
+        }
+
+        let otherName = L10n.Category.other
+        let categoryDescriptor = FetchDescriptor<Category>(
+            predicate: #Predicate<Category> { cat in
+                cat.name == otherName
+            }
+        )
+
+        do {
+            let existingCategories = try context.fetch(categoryDescriptor)
+            let category: Category
+
+            if let existing = existingCategories.first {
+                category = existing
+            } else {
+                category = Category(
+                    name: otherName,
+                    colorHex: "#64748B",
+                    isIncome: false,
+                    iconName: "ellipsis.circle.fill"
+                )
+                context.insert(category)
+            }
+
+            let subcategory = Subcategory(
+                name: L10n.Subcategory.balanceAdjustment,
+                colorHex: "#64748B",
+                natureRawValue: "sin_clasificacion",
+                iconName: "plusminus",
+                category: category
+            )
+            context.insert(subcategory)
+            return subcategory
+        } catch {
+            #if DEBUG
+            print("InitialBalanceService: Error creating balance adjustment subcategory: \(error)")
             #endif
             return nil
         }

@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 import SwiftUI
+import UserNotifications
 import WidgetKit
 
 // MARK: - New Transaction ViewModel
@@ -57,10 +58,10 @@ final class NewTransactionViewModel {
     var selectedSubcategory: Subcategory?
 
     /// Naturaleza seleccionada (nil = usar la de subcategoría)
-    var selectedNature: SubcategoryNature?
+    var selectedNeed: SubcategoryNeed?
 
     /// Fecha de la transacción
-    var transactionDate: Date = Date()
+    var transactionDate: Date = Date.now
 
     /// Etiquetas seleccionadas
     var selectedTags: [Tag] = []
@@ -91,12 +92,15 @@ final class NewTransactionViewModel {
     var showTagSelector: Bool = false
     var showFavoritesSheet: Bool = false
     var showDatePicker: Bool = false
-    var showNatureSelector: Bool = false
+    var showNeedSelector: Bool = false
 
     // Quick actions sheets
     var showDeleteConfirmation: Bool = false
     var showSaveAsFavoriteSheet: Bool = false
     var showSaveAsRecurringSheet: Bool = false
+
+    // Notification primer
+    var showNotificationPrimer: Bool = false
 
     // MARK: - Validation State
 
@@ -296,19 +300,21 @@ final class NewTransactionViewModel {
     }
 
     var accountValidation: FieldValidationState {
-        if !showValidationErrors { return .empty }
         if isTransfer {
+            // Same-account error shows immediately (no showValidationErrors gate)
+            if sourceAccount != nil, destinationAccount != nil, !isTransferAccountsValid {
+                return .invalid(message: L10n.Validation.accountsMustBeDifferent)
+            }
+            if !showValidationErrors { return .empty }
             if sourceAccount == nil {
                 return .invalid(message: L10n.Validation.selectSourceAccount)
             }
             if destinationAccount == nil {
                 return .invalid(message: L10n.Validation.selectDestinationAccount)
             }
-            if !isTransferAccountsValid {
-                return .invalid(message: L10n.Validation.accountsMustBeDifferent)
-            }
             return .valid
         }
+        if !showValidationErrors { return .empty }
         return selectedAccount != nil ? .valid : .invalid(message: L10n.Validation.selectAccount)
     }
 
@@ -455,18 +461,21 @@ final class NewTransactionViewModel {
 
     /// Guarda la transacción en el contexto
     /// - Returns: The created or updated transactions (useful for tracking IDs)
-    func save(context: ModelContext) -> [TransactionItem]? {
+    /// Fast validation (no I/O) — safe to call before optimistic UI
+    func preValidate() -> Bool {
         showValidationErrors = true
-
-        // Validate: block future dates (compare at day granularity to avoid false positives from time-of-day)
-        if Calendar.current.compare(transactionDate, to: Date(), toGranularity: .day) == .orderedDescending {
+        if Calendar.current.compare(transactionDate, to: Date.now, toGranularity: .day) == .orderedDescending {
             showFutureDateAlert = true
-            return nil
+            return false
         }
+        return canSave
+    }
 
-        guard canSave else {
-            return nil
-        }
+    func save(context: ModelContext) -> [TransactionItem]? {
+        guard preValidate() else { return nil }
+
+        // Capture before save — editingTransaction gets set during saveNormalTransaction
+        let isNewTransaction = editingTransaction == nil && editingTransferPair == nil
 
         isSaving = true
 
@@ -482,8 +491,25 @@ final class NewTransactionViewModel {
                 result = [tx]
             }
             try context.save()
-            WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
+
+            // Update widget cache deferred — don't block save UI
+            Task {
+                WidgetDataCache.updateCache(context: context)
+            }
+
+            // Track new transaction count for notification primer
+            if isNewTransaction {
+                let count = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + 1
+                UserDefaults.standard.set(count, forKey: "transactionsSavedCount")
+            }
+
+            // Analytics
+            TelemetryService.track(.transactionSaved, parameters: [
+                "type": transactionType.rawValue,
+                "isNew": String(isNewTransaction),
+            ])
+
             isSaving = false
             return result
         } catch {
@@ -536,8 +562,8 @@ final class NewTransactionViewModel {
             transaction.amountInPreferredCurrency =
                 (amountInPreferred as NSDecimalNumber).doubleValue
             transaction.preferredCurrencyCode = preferredCode
-            // Save nature override if different from subcategory's nature
-            transaction.natureOverride = selectedNature?.rawValue
+            // Save need override if different from subcategory's need
+            transaction.needOverride = selectedNeed?.rawValue
         } else {
             transaction = TransactionItem(
                 date: transactionDate,
@@ -552,8 +578,8 @@ final class NewTransactionViewModel {
                 amountInPreferredCurrency: (amountInPreferred as NSDecimalNumber).doubleValue,
                 preferredCurrencyCode: preferredCode
             )
-            // Save nature override for new transactions
-            transaction.natureOverride = selectedNature?.rawValue
+            // Save need override for new transactions
+            transaction.needOverride = selectedNeed?.rawValue
             context.insert(transaction)
         }
 
@@ -735,21 +761,11 @@ final class NewTransactionViewModel {
         let subcategory = Subcategory(
             name: subcategoryName,
             colorHex: nil,
-            natureRawValue: SubcategoryNature.unclassified.rawValue,
+            natureRawValue: SubcategoryNeed.unclassified.rawValue,
             iconName: "arrow.left.arrow.right",
             category: category
         )
         context.insert(subcategory)
-
-        // Save to ensure ID stability if needed immediately
-        do {
-            try context.save()
-        } catch {
-            // Non-critical: SwiftData will auto-save later
-            #if DEBUG
-            print("[NewTransactionViewModel] Warning: Could not save subcategory immediately: \(error)")
-            #endif
-        }
 
         return subcategory
     }
@@ -809,21 +825,25 @@ final class NewTransactionViewModel {
         let subcategory = Subcategory(
             name: subcategoryName,
             colorHex: nil,
-            natureRawValue: SubcategoryNature.unclassified.rawValue,
+            natureRawValue: SubcategoryNeed.unclassified.rawValue,
             iconName: "arrow.left.arrow.right",
             category: category
         )
         context.insert(subcategory)
 
-        do {
-            try context.save()
-        } catch {
-            #if DEBUG
-            print("[NewTransactionViewModel] Warning: Could not save income transfer subcategory: \(error)")
-            #endif
-        }
-
         return subcategory
+    }
+
+    // MARK: - Notification Primer
+
+    func checkNotificationPrimer() async {
+        let count = UserDefaults.standard.integer(forKey: "transactionsSavedCount")
+        guard count >= 3, !UserDefaults.standard.bool(forKey: "hasSeenNotificationPrimer") else { return }
+        let status = await NotificationService.shared.checkPermissionStatus()
+        UserDefaults.standard.set(true, forKey: "hasSeenNotificationPrimer")
+        if status == .notDetermined {
+            showNotificationPrimer = true
+        }
     }
 
     // MARK: - Reset
@@ -836,7 +856,7 @@ final class NewTransactionViewModel {
         sourceAccount = nil
         destinationAccount = nil
         selectedSubcategory = nil
-        transactionDate = Date()
+        transactionDate = Date.now
         selectedTags = []
         note = ""
         exchangeRate = 1.0

@@ -51,8 +51,8 @@ final class ScheduledPayment {
     @Relationship(deleteRule: .nullify, inverse: \Tag.scheduledPayments)
     var tags: [Tag]?
 
-    /// Optional nature override (nil = use subcategory's nature)
-    var natureOverride: String?
+    /// Optional need override (nil = use subcategory's need)
+    var needOverride: String?
 
     // MARK: - Recurrence (CloudKit: defaults required)
 
@@ -66,7 +66,7 @@ final class ScheduledPayment {
     var recurrenceInterval: Int = 1
 
     /// Payment date (for one-time) or next due date (for recurring)
-    var nextDueDate: Date = Date()
+    var nextDueDate: Date = Date.now
 
     /// Day of month for monthly recurrence (1-31)
     var dayOfMonth: Int?
@@ -100,7 +100,7 @@ final class ScheduledPayment {
     var isActive: Bool = true
 
     /// Creation timestamp
-    var createdAt: Date = Date()
+    var createdAt: Date = Date.now
 
     /// Last date a notification was sent (to avoid duplicates)
     var lastNotifiedDate: Date?
@@ -141,7 +141,7 @@ final class ScheduledPayment {
     func cleanupOldSkippedDates() {
         guard !skippedDatesRaw.isEmpty else { return }
         let calendar = Calendar.current
-        guard let cutoff = calendar.date(byAdding: .year, value: -1, to: Date()) else { return }
+        guard let cutoff = calendar.date(byAdding: .year, value: -1, to: Date.now) else { return }
         let cutoffKey = Self.dateKey(for: cutoff)
         let dates = skippedDates.filter { $0 >= cutoffKey }
         skippedDatesRaw = dates.sorted().joined(separator: ",")
@@ -168,7 +168,7 @@ final class ScheduledPayment {
         account: Account? = nil,
         subcategory: Subcategory? = nil,
         tags: [Tag] = [],
-        natureOverride: String? = nil,
+        needOverride: String? = nil,
         isRecurring: Bool = true,
         recurrenceType: String = "monthly",
         recurrenceInterval: Int = 1,
@@ -191,7 +191,7 @@ final class ScheduledPayment {
         self.account = account
         self.subcategory = subcategory
         self.tags = tags
-        self.natureOverride = natureOverride
+        self.needOverride = needOverride
         self.isRecurring = isRecurring
         self.recurrenceType = recurrenceType
         self.recurrenceInterval = recurrenceInterval
@@ -205,7 +205,7 @@ final class ScheduledPayment {
         self.notifyOnDueDate = notifyOnDueDate
         self.notifyDaysBefore = notifyDaysBefore
         self.isActive = isActive
-        self.createdAt = Date()
+        self.createdAt = Date.now
         self.lastNotifiedDate = nil
     }
 
@@ -216,12 +216,12 @@ final class ScheduledPayment {
         TransactionType(rawValue: transactionType) ?? .expense
     }
 
-    /// Effective nature (override or subcategory's nature)
-    var effectiveNature: SubcategoryNature? {
-        if let override = natureOverride {
-            return SubcategoryNature(rawValue: override)
+    /// Effective need (override or subcategory's need)
+    var effectiveNeed: SubcategoryNeed? {
+        if let override = needOverride {
+            return SubcategoryNeed(rawValue: override)
         }
-        return subcategory?.nature
+        return subcategory?.need
     }
 
 }

@@ -80,11 +80,18 @@ final class Subcategory {
 // MARK: - System Subcategories
 
 extension Subcategory {
-    /// System subcategory names that cannot be deleted (all localizations)
-    static let systemSubcategoryNames: Set<String> = [
-        // Balance adjustments (Spanish seed name)
+    /// Balance adjustment subcategory names (all localizations)
+    static let balanceAdjustmentNames: Set<String> = [
         "Ajustes de saldo",
-        // Transfers (Spanish seed name + all localizations)
+        "Balance adjustments", "Balance adjustment",
+        "Saldoanpassungen", "Saldoanpassung",
+        "Ajustements de solde", "Ajustement de solde",
+        "Rettifiche del saldo", "Aggiustamento saldo",
+        "Ajuste de saldo",
+    ]
+
+    /// Transfer subcategory names (all localizations)
+    static let transferNames: Set<String> = [
         "Transferencia entre cuentas",
         "Transfer between accounts",
         "Überweisung zwischen Konten",
@@ -92,6 +99,9 @@ extension Subcategory {
         "Trasferimento tra conti",
         "Transferencia entre contas",
     ]
+
+    /// System subcategory names that cannot be deleted (all localizations)
+    static let systemSubcategoryNames: Set<String> = balanceAdjustmentNames.union(transferNames)
 
     /// Whether this subcategory is a system subcategory that cannot be deleted
     var isSystemSubcategory: Bool {
@@ -105,12 +115,15 @@ extension Subcategory {
     /// Safe access to category. CloudKit requires optional relationships,
     /// but semantically a Subcategory always has a Category.
     /// Use this for UI/logic where category is guaranteed to exist.
+    /// Cached placeholder to avoid creating new Category objects on each access.
+    private static let placeholderCategory = Category(name: "Unknown", colorHex: "#6366F1", isIncome: false)
+
     var safeCategory: Category {
         guard let cat = category else {
-            // This should never happen in normal operation
-            assertionFailure("Subcategory '\(name)' has no category")
-            // Return a placeholder to avoid crash in production
-            return Category(name: "Unknown", colorHex: "#6366F1", isIncome: false)
+            #if DEBUG
+            print("Subcategory: Warning: '\(name)' has no category — returning placeholder")
+            #endif
+            return Self.placeholderCategory
         }
         return cat
     }

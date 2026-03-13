@@ -24,6 +24,8 @@ final class DetailContainerViewModel {
     private(set) var categories: [Category] = []
     private(set) var allSubcategories: [Subcategory] = []
     private(set) var tags: [Tag] = []
+    private(set) var budgets: [Budget] = []
+    private(set) var scheduledPayments: [ScheduledPayment] = []
 
     // MARK: - Setup
 
@@ -97,6 +99,30 @@ final class DetailContainerViewModel {
             print("DetailContainerViewModel: Error loading tags: \(error)")
             #endif
         }
+
+        // Load budgets (for Insights commitments section)
+        let budgetsDescriptor = FetchDescriptor<Budget>(
+            sortBy: [SortDescriptor(\.name)]
+        )
+        do {
+            budgets = try context.fetch(budgetsDescriptor)
+        } catch {
+            #if DEBUG
+            print("DetailContainerViewModel: Error loading budgets: \(error)")
+            #endif
+        }
+
+        // Load scheduled payments (for Insights commitments section)
+        let paymentsDescriptor = FetchDescriptor<ScheduledPayment>(
+            sortBy: [SortDescriptor(\.nextDueDate)]
+        )
+        do {
+            scheduledPayments = try context.fetch(paymentsDescriptor)
+        } catch {
+            #if DEBUG
+            print("DetailContainerViewModel: Error loading scheduled payments: \(error)")
+            #endif
+        }
     }
 
     // MARK: - Computed Properties
@@ -111,8 +137,8 @@ final class DetailContainerViewModel {
     /// Compute date range of all transactions (for custom period picker limits)
     func computeTransactionDateRange() -> (start: Date, end: Date) {
         let sortedDates = allTransactions.map(\.date).sorted()
-        let start = sortedDates.first ?? Date()
-        let end = sortedDates.last ?? Date()
+        let start = sortedDates.first ?? Date.now
+        let end = sortedDates.last ?? Date.now
         return (start, end)
     }
 }

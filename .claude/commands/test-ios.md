@@ -1,9 +1,9 @@
 ---
 description: Ejecuta Unit Tests (YalaTests) y resume fallos
-allowed-tools: Bash(cd:*), Bash(xcodebuild:*), Bash(grep:*), Bash(head:*), Bash(timeout:*)
+allowed-tools: Bash(xcodebuild:*), Bash(grep:*), Bash(head:*), Bash(timeout:*), Bash(touch:*), Bash(rm:*)
 ---
 
-Corre Unit Tests del target YalaTests.
+Corre TODOS los Unit Tests del target YalaTests.
 
 DISPOSITIVO ESTÁNDAR: iPhone 17 Pro (NO usar otros para evitar demoras)
 
@@ -14,12 +14,14 @@ TIMEOUT:
 - Si después de 3 minutos no hay output, informar al usuario que los tests están tardando
 - Sugerir: "¿Quieres cancelar y verificar si el simulador está funcionando?"
 
-Si falla:
-1) Resume la causa raíz.
-2) Lista el test que falló con nombre completo (TestClass/testMethod).
-3) Propón el cambio mínimo para que pase.
-
-Si pasa:
+Si PASA:
 - Muestra resumen: "N tests ejecutados, todos pasaron"
+- Crear flag: `touch .claude/sessions/tests-passed`
+
+Si FALLA:
+- Limpiar flag: `rm -f .claude/sessions/tests-passed`
+- Resume la causa raíz
+- Lista el test que falló con nombre completo (TestClass/testMethod)
+- Propón el cambio mínimo para que pase
 
 NOTA: Para tests selectivos basados en archivos modificados, usa /test-smart

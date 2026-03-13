@@ -34,7 +34,7 @@ struct TagChip: Identifiable {
     let colorHex: String?
 }
 
-struct NatureChipData: Identifiable {
-    var id: String { nature.rawValue }
-    let nature: SubcategoryNature
+struct NeedChipData: Identifiable {
+    var id: String { need.rawValue }
+    let need: SubcategoryNeed
 }

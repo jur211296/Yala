@@ -154,7 +154,7 @@ import SwiftData
         return nil
     }
 
-    private static func mapImageTypeToSource(_ imageType: String) -> DraftSourceType {
+    static func mapImageTypeToSource(_ imageType: String) -> DraftSourceType {
         switch imageType.lowercased() {
         case "single":
             return .screenshotSingle
@@ -167,7 +167,7 @@ import SwiftData
         }
     }
 
-    private static func parseDate(_ dateString: String?) -> Date? {
+    static func parseDate(_ dateString: String?) -> Date? {
         guard let dateString = dateString else { return nil }
 
         let formatter = DateFormatter()
@@ -182,7 +182,7 @@ import SwiftData
         return calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date)
     }
 
-    private static func buildNote(merchant: String?, note: String?) -> String {
+    static func buildNote(merchant: String?, note: String?) -> String {
         let parts = [merchant, note].compactMap { $0 }.filter { !$0.isEmpty }
         return parts.joined(separator: " - ")
     }

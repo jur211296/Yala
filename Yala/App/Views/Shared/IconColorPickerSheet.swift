@@ -155,7 +155,7 @@ struct IconColorPickerSheet: View {
                 "bird.fill", "fish.fill", "ant.fill", "ladybug.fill",
             ]),
         IconCategory(
-            name: L10n.IconPicker.nature,
+            name: L10n.IconPicker.need,
             icons: [
                 "leaf.fill", "leaf", "tree.fill", "globe.americas.fill",
                 "sun.max.fill", "moon.fill", "cloud.fill", "snowflake",

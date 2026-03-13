@@ -9,7 +9,7 @@ import StoreKit
 import SwiftUI
 
 /// Manages StoreKit 2 subscription products, purchases, and entitlements.
-@Observable
+@MainActor @Observable
 final class StoreKitManager {
 
     static let shared = StoreKitManager()
@@ -51,7 +51,7 @@ final class StoreKitManager {
     /// Days remaining in trial
     var trialDaysRemaining: Int {
         guard let endDate = trialEndDate else { return 0 }
-        let days = Calendar.current.dateComponents([.day], from: Date(), to: endDate).day ?? 0
+        let days = Calendar.current.dateComponents([.day], from: Date.now, to: endDate).day ?? 0
         return max(0, days)
     }
 
@@ -91,10 +91,15 @@ final class StoreKitManager {
 
     #if DEBUG
     private static let devForceFreeTierKey = "dev.forceFreeTier"
+    private static let devForceProTierKey = "dev.forceProTier"
 
     /// Dev-only flag: when true, forces free tier regardless of StoreKit entitlements.
     /// Persisted to UserDefaults so it survives app restart. Only works with dev bundle.
     private(set) var devForceFreeTier: Bool = false
+
+    /// Dev-only flag: when true, forces Pro tier regardless of StoreKit entitlements.
+    /// Persisted to UserDefaults so it survives app restart. Only works with dev bundle.
+    private(set) var devForceProTier: Bool = false
     #endif
 
     // MARK: - Init
@@ -103,13 +108,22 @@ final class StoreKitManager {
         #if DEBUG
         if Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true {
             devForceFreeTier = UserDefaults.standard.bool(forKey: Self.devForceFreeTierKey)
+            devForceProTier = UserDefaults.standard.bool(forKey: Self.devForceProTierKey)
+            // Enforce mutual exclusion — Pro wins if both set
+            if devForceFreeTier && devForceProTier {
+                devForceFreeTier = false
+                UserDefaults.standard.removeObject(forKey: Self.devForceFreeTierKey)
+            }
+            if devForceProTier {
+                isProUser = true
+            }
         }
         #endif
         transactionListener = listenForTransactions()
     }
 
-    deinit {
-        transactionListener?.cancel()
+    nonisolated deinit {
+        // transactionListener is cancelled automatically when StoreKitManager is deallocated
     }
 
     // MARK: - Load Products
@@ -147,7 +161,6 @@ final class StoreKitManager {
     // MARK: - Purchase
 
     /// Purchase a subscription product
-    @MainActor
     func purchase(_ product: Product) async -> Bool {
         isPurchasing = true
         defer { isPurchasing = false }
@@ -161,22 +174,28 @@ final class StoreKitManager {
                 await transaction.finish()
                 #if DEBUG
                 devForceFreeTier = false
+                devForceProTier = false
                 UserDefaults.standard.removeObject(forKey: Self.devForceFreeTierKey)
+                UserDefaults.standard.removeObject(forKey: Self.devForceProTierKey)
                 #endif
                 await updateSubscriptionStatus()
                 didJustSubscribe = true
+                TelemetryService.track(.purchaseAttempted, parameters: ["productId": product.id, "result": "success"])
                 return true
 
             case .userCancelled:
+                TelemetryService.track(.purchaseAttempted, parameters: ["productId": product.id, "result": "cancelled"])
                 return false
 
             case .pending:
+                TelemetryService.track(.purchaseAttempted, parameters: ["productId": product.id, "result": "pending"])
                 return false
 
             @unknown default:
                 return false
             }
         } catch {
+            TelemetryService.track(.purchaseAttempted, parameters: ["productId": product.id, "result": "error"])
             errorMessage = error.localizedDescription
             return false
         }
@@ -185,7 +204,6 @@ final class StoreKitManager {
     // MARK: - Restore
 
     /// Restore previous purchases
-    @MainActor
     func restorePurchases() async {
         do {
             try await AppStore.sync()
@@ -198,10 +216,14 @@ final class StoreKitManager {
     // MARK: - Subscription Status
 
     /// Check current entitlements and update subscription state
-    @MainActor
     func updateSubscriptionStatus() async {
         #if DEBUG
         if devForceFreeTier {
+            isProUser = false
+            return
+        }
+        if devForceProTier {
+            isProUser = true
             return
         }
         #endif
@@ -266,6 +288,9 @@ final class StoreKitManager {
         #if DEBUG
         if devForceFreeTier {
             return true
+        }
+        if devForceProTier {
+            return false
         }
         #endif
         // Ensure products are loaded
@@ -339,7 +364,6 @@ final class StoreKitManager {
     /// Resets all subscription state for development testing.
     /// Only works with the `.dev` bundle — production bundle is rejected.
     /// After calling this, the app behaves as a new free user until restart.
-    @MainActor
     func resetForDevelopment() {
         guard Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true else {
             print("StoreKitManager: resetForDevelopment rejected — not dev bundle")
@@ -359,12 +383,34 @@ final class StoreKitManager {
         wasProUser = false
         didJustSubscribe = false
         devForceFreeTier = true
+        devForceProTier = false
         UserDefaults.standard.set(true, forKey: Self.devForceFreeTierKey)
+        UserDefaults.standard.removeObject(forKey: Self.devForceProTierKey)
 
         // Sync cleared state to app group
         syncToAppGroup()
 
         print("StoreKitManager: Dev reset complete — forced free tier (persisted)")
+    }
+
+    /// Toggles forced Pro tier for development testing.
+    /// Mutually exclusive with devForceFreeTier.
+    func toggleDevProTier() {
+        guard Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true else { return }
+
+        devForceProTier.toggle()
+        if devForceProTier {
+            devForceFreeTier = false
+            UserDefaults.standard.removeObject(forKey: Self.devForceFreeTierKey)
+            isProUser = true
+            wasProUser = true
+        } else {
+            // Re-evaluate real entitlements instead of assuming free
+            Task { await updateSubscriptionStatus() }
+        }
+        UserDefaults.standard.set(devForceProTier, forKey: Self.devForceProTierKey)
+        syncToAppGroup()
+        print("StoreKitManager: Dev Pro tier \(devForceProTier ? "ON" : "OFF") (persisted)")
     }
     #endif
 }

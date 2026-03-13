@@ -195,7 +195,7 @@ enum TransactionCSVImportService {
             // Mark transfers and adjustments so they're excluded from income/expense stats
             if draft.subcategory.isSystemSubcategory {
                 let subcategoryName = draft.subcategory.name
-                if subcategoryName == "Ajustes de saldo" {
+                if subcategoryName == L10n.Subcategory.balanceAdjustment {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
                 } else {
                     // All other system subcategories are transfers
@@ -544,7 +544,7 @@ enum TransactionCSVImportService {
         }
 
         // Filter out future dates
-        let today = Date()
+        let today = Date.now
         let totalDrafts = drafts.count
         let validDrafts = drafts.filter { $0.date <= today }
         let ignoredFutureDatesCount = totalDrafts - validDrafts.count
@@ -867,7 +867,7 @@ enum TransactionCSVImportService {
         if s.isEmpty { return s }
 
         // Eliminamos espacios internos para simplificar.
-        s = s.replacingOccurrences(of: " ", with: "")
+        s = s.replacing(" ", with: "")
 
         // Detectamos el último separador decimal potencial.
         let lastComma = s.lastIndex(of: ",")
@@ -1106,7 +1106,7 @@ enum TransactionCSVImportService {
             // Mark transfers and adjustments so they're excluded from income/expense stats
             if draft.subcategory.isSystemSubcategory {
                 let subcategoryName = draft.subcategory.name
-                if subcategoryName == "Ajustes de saldo" {
+                if subcategoryName == L10n.Subcategory.balanceAdjustment {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
                 } else {
                     // All other system subcategories are transfers
@@ -1379,7 +1379,7 @@ enum TransactionCSVImportService {
         }
 
         // Filter out future dates
-        let today = Date()
+        let today = Date.now
         let totalDrafts = drafts.count
         let validDrafts = drafts.filter { $0.0.date <= today }
         let ignoredFutureDatesCount = totalDrafts - validDrafts.count
@@ -1446,7 +1446,7 @@ enum TransactionCSVImportService {
         }
 
         // Filter out future dates
-        let today = Date()
+        let today = Date.now
         let totalDrafts = drafts.count
         let validDrafts = drafts.filter { $0.date <= today }
         let ignoredFutureDatesCount = totalDrafts - validDrafts.count
@@ -1490,7 +1490,7 @@ enum TransactionCSVImportService {
 
             if draft.subcategory.isSystemSubcategory {
                 let subcategoryName = draft.subcategory.name
-                if subcategoryName == "Ajustes de saldo" {
+                if subcategoryName == L10n.Subcategory.balanceAdjustment {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
                 } else {
                     transaction.balanceAdjustmentType = "transfer"
@@ -1597,7 +1597,7 @@ enum TransactionCSVImportService {
         }
 
         // Filter out future dates
-        let today = Date()
+        let today = Date.now
         let totalDrafts = drafts.count
         let validDrafts = drafts.filter { $0.0.date <= today }
         let ignoredFutureDatesCount = totalDrafts - validDrafts.count
@@ -1641,7 +1641,7 @@ enum TransactionCSVImportService {
 
             if draft.subcategory.isSystemSubcategory {
                 let subcategoryName = draft.subcategory.name
-                if subcategoryName == "Ajustes de saldo" {
+                if subcategoryName == L10n.Subcategory.balanceAdjustment {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
                 } else {
                     transaction.balanceAdjustmentType = "transfer"

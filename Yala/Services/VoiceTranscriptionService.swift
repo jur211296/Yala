@@ -78,7 +78,7 @@ enum VoiceLanguage: String, CaseIterable, Identifiable {
 
 /// Service for transcribing voice recordings.
 /// Supports @Environment injection in SwiftUI views.
-@Observable
+@MainActor @Observable
 final class VoiceTranscriptionService {
 
     // MARK: - Singleton (for backward compatibility)

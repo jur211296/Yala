@@ -18,6 +18,7 @@ struct CategoriesPieWidget: View {
     var selectedCategoryIDs: Set<PersistentIdentifier> = []
     var onSelectCategory: ((PersistentIdentifier) -> Void)?
     var onShowDetail: (() -> Void)? = nil
+    var isExcludeMode: Bool = false
 
     var size: WidgetSize = .medium
 
@@ -41,13 +42,15 @@ struct CategoriesPieWidget: View {
     // Filtered total based on selected categories
     private var filteredTotalExpense: Double {
         guard !selectedCategoryIDs.isEmpty else { return totalExpense }
+        if isExcludeMode {
+            // Excluded items removed — total is sum of remaining visible items
+            return categories
+                .filter { !selectedCategoryIDs.contains($0.category.persistentModelID) }
+                .reduce(0) { $0 + $1.amount }
+        }
         return categories
             .filter { selectedCategoryIDs.contains($0.category.persistentModelID) }
             .reduce(0) { $0 + $1.amount }
-    }
-
-    private var chartData: [PieChartData] {
-        processChartData()
     }
 
     // Chart Selection State - Internal tracking for chart interaction
@@ -68,7 +71,7 @@ struct CategoriesPieWidget: View {
             if chartData.isEmpty {
                 emptyState
             } else {
-                contentForSize
+                contentForSize(chartData)
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.bottom, DS.Spacing.xxl)
             }
@@ -112,18 +115,18 @@ struct CategoriesPieWidget: View {
     // MARK: - Content Switcher
 
     @ViewBuilder
-    private var contentForSize: some View {
+    private func contentForSize(_ chartData: [PieChartData]) -> some View {
         switch size {
         case .medium:
-            mediumLayout
+            mediumLayout(chartData)
         case .large:
-            largeLayout
+            largeLayout(chartData)
         }
     }
 
     // MARK: - Layouts
 
-    private var largeLayout: some View {
+    private func largeLayout(_ chartData: [PieChartData]) -> some View {
         VStack(spacing: DS.Spacing.sm) {
             // Header
             headerView
@@ -141,15 +144,15 @@ struct CategoriesPieWidget: View {
 
                     ZStack {
                         // 1. Connector Lines Layer (Behind Chart)
-                        connectorLines(center: center, chartRadius: chartRadius)
+                        connectorLines(chartData, center: center, chartRadius: chartRadius)
 
                         // 2. The Chart Itself
-                        chartView(innerRadiusRatio: innerRadiusRatio)
+                        chartView(chartData, innerRadiusRatio: innerRadiusRatio)
                             .frame(width: chartRadius * 2, height: chartRadius * 2)
                             .position(center)
 
                         // 3. Floating Bubbles & Labels Layer
-                        bubblesLayer(center: center, chartRadius: chartRadius)
+                        bubblesLayer(chartData, center: center, chartRadius: chartRadius)
 
                         // 4. Hover Tooltip (on top)
                         if let hovered = hoveredItem {
@@ -161,7 +164,7 @@ struct CategoriesPieWidget: View {
                 .frame(maxWidth: .infinity)
 
                 // Right: Simple Legend List (1/3 width)
-                simpleLegendList
+                simpleLegendList(chartData)
                     .frame(width: 140)
             }
         }
@@ -170,7 +173,7 @@ struct CategoriesPieWidget: View {
 
     // MARK: - Simple Legend List for Large Layout
 
-    private var simpleLegendList: some View {
+    private func simpleLegendList(_ chartData: [PieChartData]) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             ForEach(chartData) { item in
                 simpleLegendRow(for: item)
@@ -211,7 +214,7 @@ struct CategoriesPieWidget: View {
 
     // MARK: - Connector Lines
 
-    private func connectorLines(center: CGPoint, chartRadius: CGFloat) -> some View {
+    private func connectorLines(_ chartData: [PieChartData], center: CGPoint, chartRadius: CGFloat) -> some View {
         Path { path in
             for item in chartData {
                 // Logic: Only show line if visible (threshold) AND (no selection OR selected)
@@ -241,7 +244,7 @@ struct CategoriesPieWidget: View {
 
     // MARK: - Bubbles & Labels Layer
 
-    private func bubblesLayer(center: CGPoint, chartRadius: CGFloat) -> some View {
+    private func bubblesLayer(_ chartData: [PieChartData], center: CGPoint, chartRadius: CGFloat) -> some View {
         ZStack {
             ForEach(Array(chartData.enumerated()), id: \.element.identity) { _, item in
                 bubbleView(for: item, center: center, chartRadius: chartRadius)
@@ -303,8 +306,13 @@ struct CategoriesPieWidget: View {
             .transition(.opacity.combined(with: .scale(scale: 0.9)))
     }
 
-    // Logic: If selection exists, ONLY show selected. Else, show all > threshold.
+    // Logic: In exclude mode, excluded items are removed — show labels normally by percentage.
+    // In include mode, show only selected items' labels.
     private func shouldShowLabel(for item: PieChartData) -> Bool {
+        if isExcludeMode {
+            // Excluded items already removed from data; show labels by percentage threshold
+            return item.percentage > 4.0
+        }
         if !selectedCategoryIDs.isEmpty {
             guard let id = item.id else { return false }
             return selectedCategoryIDs.contains(id)
@@ -315,7 +323,7 @@ struct CategoriesPieWidget: View {
 
     // MARK: - Medium Layout (Focus Bar Chart)
 
-    private var mediumLayout: some View {
+    private func mediumLayout(_ chartData: [PieChartData]) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             headerView
 
@@ -475,11 +483,11 @@ struct CategoriesPieWidget: View {
 
     // MARK: - Small Layout (Existing)
 
-    private var smallLayout: some View {
-        chartView(innerRadiusRatio: 0.65)
+    private func smallLayout(_ chartData: [PieChartData]) -> some View {
+        chartView(chartData, innerRadiusRatio: 0.65)
             .chartBackground { proxy in
                 GeometryReader { innerGeo in
-                    if let centerItem = currentCenterItem() {
+                    if let centerItem = currentCenterItem(chartData) {
                         // Calculate safe width for center content (inside donut hole)
                         let chartSize = min(innerGeo.size.width, innerGeo.size.height)
                         let innerRadius = chartSize * 0.65 * 0.5  // innerRadiusRatio * radius
@@ -521,7 +529,7 @@ struct CategoriesPieWidget: View {
     // MARK: - Shared Chart View
 
     @ViewBuilder
-    private func chartView(innerRadiusRatio: CGFloat) -> some View {
+    private func chartView(_ chartData: [PieChartData], innerRadiusRatio: CGFloat) -> some View {
         // Defensive: capture and validate data before passing to Chart
         let safeData = chartData.filter { $0.amount.isFinite && $0.amount > 0 }
         let totalAmount = safeData.reduce(0) { $0 + $1.amount }
@@ -539,7 +547,7 @@ struct CategoriesPieWidget: View {
                     innerRadius: .ratio(innerRadiusRatio),
                     angularInset: 1.5
                 )
-                .cornerRadius(DS.Radius.xs)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
                 .foregroundStyle(Color(hex: item.colorHex))
                 .opacity(isDimmed(item) ? 0.3 : 1.0)
             }
@@ -550,7 +558,7 @@ struct CategoriesPieWidget: View {
             .animation(nil, value: dataHash)  // Disable animation to prevent interpolation crashes
             .onChange(of: selectedAngle) {
                 if let angle = selectedAngle {
-                    selectCategory(at: angle)
+                    selectCategory(in: chartData, at: angle)
                     selectedAngle = nil
                 }
             }
@@ -578,7 +586,7 @@ struct CategoriesPieWidget: View {
         Self.percentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
     }
 
-    private func selectCategory(at angle: Double) {
+    private func selectCategory(in chartData: [PieChartData], at angle: Double) {
         var currentSum: Double = 0
         for item in chartData {
             let nextSum = currentSum + item.amount
@@ -598,14 +606,20 @@ struct CategoriesPieWidget: View {
     }
 
     private func isDimmed(_ item: PieChartData) -> Bool {
+        // In exclude mode, excluded items are already removed from chart data — no dimming needed
+        if isExcludeMode { return false }
         guard !selectedCategoryIDs.isEmpty else { return false }
         guard let id = item.id else { return true }
         return !selectedCategoryIDs.contains(id)
     }
 
-    private func currentCenterItem() -> PieChartData? {
-        if let firstID = selectedCategoryIDs.first {
-            return chartData.first { $0.id == firstID }
+    private func currentCenterItem(_ chartData: [PieChartData]) -> PieChartData? {
+        if isExcludeMode {
+            // Excluded items already removed; show first visible item
+            return chartData.first
+        }
+        if !selectedCategoryIDs.isEmpty {
+            return chartData.first { $0.id == selectedCategoryIDs.first }
         }
         return chartData.first
     }
@@ -635,37 +649,49 @@ struct CategoriesPieWidget: View {
         // For Medium, show all categories (no grouping). For Large, allow more slices.
         let threshold = size == .large ? 12 : 20
 
-        let validCategories = categories
+        // In exclude mode, remove excluded items entirely (they disappear from the chart)
+        let visibleCategories: [CategorySpendingSummary]
+        if isExcludeMode && !selectedCategoryIDs.isEmpty {
+            visibleCategories = categories.filter { !selectedCategoryIDs.contains($0.category.persistentModelID) }
+        } else {
+            visibleCategories = categories
+        }
+
+        // Recalculate total from visible items only
+        let visibleTotal = visibleCategories.reduce(0) { $0 + $1.amount }
+
         var finalItems: [PieChartData] = []
 
-        if validCategories.count <= threshold {
-            finalItems = validCategories.map {
-                PieChartData(
+        if visibleCategories.count <= threshold {
+            finalItems = visibleCategories.map {
+                let pct = visibleTotal > 0 ? ($0.amount / visibleTotal) * 100 : 0
+                return PieChartData(
                     id: $0.category.persistentModelID,
                     name: $0.category.name,
                     iconName: $0.category.iconName ?? "tag.fill",
                     amount: $0.amount,
-                    percentage: $0.percentage,
+                    percentage: pct,
                     colorHex: $0.category.colorHex
                 )
             }
         } else {
-            let top = validCategories.prefix(threshold)
-            let others = validCategories.dropFirst(threshold)
+            let top = visibleCategories.prefix(threshold)
+            let others = visibleCategories.dropFirst(threshold)
 
             finalItems = top.map {
-                PieChartData(
+                let pct = visibleTotal > 0 ? ($0.amount / visibleTotal) * 100 : 0
+                return PieChartData(
                     id: $0.category.persistentModelID,
                     name: $0.category.name,
                     iconName: $0.category.iconName ?? "tag.fill",
                     amount: $0.amount,
-                    percentage: $0.percentage,
+                    percentage: pct,
                     colorHex: $0.category.colorHex
                 )
             }
 
             let othersAmount = others.reduce(0) { $0 + $1.amount }
-            let othersPercentage = totalExpense > 0 ? (othersAmount / totalExpense) * 100 : 0
+            let othersPercentage = visibleTotal > 0 ? (othersAmount / visibleTotal) * 100 : 0
 
             if othersAmount > 0 {
                 finalItems.append(

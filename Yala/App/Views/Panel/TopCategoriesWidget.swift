@@ -14,6 +14,7 @@ struct TopCategoriesWidget: View {
 
     // Filter State
     var selectedCategoryID: PersistentIdentifier?
+    var isExcludeMode: Bool = false
     var onSelectCategory: ((PersistentIdentifier) -> Void)?
 
     // Placeholder for future navigation
@@ -179,13 +180,22 @@ struct TopCategoriesWidget: View {
 
     private func categoriesList(limit: Int) -> some View {
         VStack(spacing: DS.Spacing.lg) {
-            if let maxAmount = categories.first?.amount {
+            // In exclude mode, hide excluded items entirely
+            let visibleCategories: [CategorySpendingSummary] = {
+                if isExcludeMode, let excludedID = selectedCategoryID {
+                    return categories.filter { $0.category.persistentModelID != excludedID }
+                }
+                return categories
+            }()
+
+            if let maxAmount = visibleCategories.first?.amount {
                 let displayedCategories =
-                    limit >= categories.count ? categories : Array(categories.prefix(limit))
+                    limit >= visibleCategories.count ? visibleCategories : Array(visibleCategories.prefix(limit))
                 ForEach(displayedCategories) { summary in
                     let isSelected = selectedCategoryID == summary.category.persistentModelID
                     let isAnySelected = selectedCategoryID != nil
-                    let shouldDim = isAnySelected && !isSelected
+                    // In exclude mode, excluded items are hidden — no dimming needed
+                    let shouldDim = !isExcludeMode && isAnySelected && !isSelected
 
                     CategoryRow(
                         summary: summary,

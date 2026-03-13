@@ -48,6 +48,9 @@ final class PreferenceSyncService {
         case voiceLanguage
         case autoFocusField
         case accountsSortOrderNames
+        case insightsTone
+        case insightsFocus
+        case financialMindset
     }
 
     /// Keys for cross-device wipe coordination (iKV = remote, local = UserDefaults)
@@ -141,7 +144,7 @@ final class PreferenceSyncService {
             switch key {
             case .defaultCurrencyCode, .userName, .defaultPeriod, .secondaryCurrencies,
                  .userProfileIcon, .currencyDisplayFormat, .voiceLanguage, .autoFocusField,
-                 .accountsSortOrderNames:
+                 .accountsSortOrderNames, .insightsTone, .insightsFocus, .financialMindset:
                 if let remote = iKV.string(forKey: k), !remote.isEmpty {
                     if local.string(forKey: k) != remote {
                         local.set(remote, forKey: k)
@@ -175,6 +178,11 @@ final class PreferenceSyncService {
         // expensesOnlyMode didSet propagates to app group + WidgetCenter
         SessionState.shared.isExpensesOnlyMode = local.bool(forKey: SyncKey.expensesOnlyMode.rawValue)
 
+        // financialMindset (educational UI only)
+        if let mindset = local.string(forKey: SyncKey.financialMindset.rawValue), !mindset.isEmpty {
+            SessionState.shared.financialMindset = mindset
+        }
+
         // Trigger UI refresh when formatting preferences change remotely
         if formattingChanged {
             SessionState.shared.formattingVersion += 1
@@ -193,7 +201,7 @@ final class PreferenceSyncService {
 
     /// Called by DataWipeService BEFORE deleting data — signals other devices that a wipe occurred.
     func signalWipeInitiated() {
-        let timestamp = Date().timeIntervalSince1970
+        let timestamp = Date.now.timeIntervalSince1970
         iKV.set(timestamp, forKey: WipeKey.remoteWipe)
         iKV.synchronize()
 
@@ -207,7 +215,7 @@ final class PreferenceSyncService {
 
     /// Called after onboarding completes — signals other devices that onboarding is done.
     func signalOnboardingCompleted() {
-        let timestamp = Date().timeIntervalSince1970
+        let timestamp = Date.now.timeIntervalSince1970
         iKV.set(timestamp, forKey: WipeKey.remoteOnboarding)
         iKV.synchronize()
 

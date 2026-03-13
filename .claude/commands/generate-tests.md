@@ -28,14 +28,14 @@ Si no hay argumento:
 
 ### PASO 2: Invocar agente generador
 
-Usar el agente `test-generator` con el Task tool:
+Usar el agente `test-generator`:
 
 ```
-Usa el agente test-generator para:
-1. Analizar [archivo/clase]
-2. Identificar funciones públicas a testear
-3. Generar tests siguiendo patrones de YalaTests
-4. Cubrir casos edge (nil, vacío, límites)
+Genera tests para [archivo/clase].
+1. Analizar funciones públicas e internal
+2. Generar tests siguiendo patrones de YalaTests (XCTest)
+3. Cubrir: happy path + edge cases (nil, vacío, límites)
+4. Si ya existe suite de tests, AGREGAR al archivo existente
 ```
 
 ### PASO 3: Presentar tests generados
@@ -56,53 +56,14 @@ Tests generados para [Clase].
 3. Mostrar aquí sin guardar
 ```
 
-## EJEMPLO DE OUTPUT
-
-```swift
-// Tests generados para: FilterService
-// Cobertura estimada: 85%
-
-import XCTest
-@testable import Yala
-
-final class FilterServiceTests: XCTestCase {
-
-    private var sut: FilterService!
-
-    override func setUp() {
-        super.setUp()
-        sut = FilterService()
-    }
-
-    func test_filter_withEmptyArray_returnsEmptyArray() {
-        // Given
-        let items: [TransactionItem] = []
-
-        // When
-        let result = sut.filter(items, by: .all)
-
-        // Then
-        XCTAssertTrue(result.isEmpty)
-    }
-
-    // ... más tests ...
-}
-
-/*
-Casos cubiertos:
-1. Array vacío
-2. Filtro por categoría
-3. Filtro por fecha
-4. Filtro combinado
-
-Casos NO cubiertos:
-- Concurrencia (requiere contexto adicional)
-*/
-```
+## RESTRICCIONES CRÍTICAS (CloudKit)
+- NUNCA usar makeTestContext() ni ModelContainer in-memory (crash)
+- Crear objetos @Model SIN insertar en contexto
+- Usar MockCurrencyConverter para tests con conversión de divisas
+- Framework: XCTest (Given/When/Then, naming: test_método_escenario_resultado)
 
 ## INTEGRACIÓN CON FLUJO
 
-Usar cuando implementas nueva funcionalidad:
 ```
 [Implementar] → /generate-tests → /test-smart → /commit-one
 ```

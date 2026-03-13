@@ -37,10 +37,10 @@ final class RecordsViewModel: Filterable {
         set { SessionState.shared.selectedSubcategoryIDs = newValue }
     }
 
-    /// Selected natures for filtering
-    var selectedNatures: Set<SubcategoryNature> {
-        get { SessionState.shared.selectedNatures }
-        set { SessionState.shared.selectedNatures = newValue }
+    /// Selected needs for filtering
+    var selectedNeeds: Set<SubcategoryNeed> {
+        get { SessionState.shared.selectedNeeds }
+        set { SessionState.shared.selectedNeeds = newValue }
     }
 
     /// Selected transaction natures for filtering (empty = all)
@@ -89,6 +89,12 @@ final class RecordsViewModel: Filterable {
         set { SessionState.shared.searchText = newValue }
     }
 
+    /// Exclude mode for entity filters
+    var isExcludeMode: Bool {
+        get { SessionState.shared.isExcludeMode }
+        set { SessionState.shared.isExcludeMode = newValue }
+    }
+
     // MARK: - UI State
 
     /// Whether search bar is expanded
@@ -121,14 +127,15 @@ final class RecordsViewModel: Filterable {
 
     // MARK: - Computed Properties
 
-    /// Whether any filter is active (for UI indicator)
-    var hasActiveFilters: Bool {
-        !selectedAccounts.isEmpty || !selectedCategories.isEmpty || !selectedSubcategories.isEmpty
-            || !selectedNatures.isEmpty || !selectedTags.isEmpty || transactionTypeFilter != .all
-            || amountCondition.isActive
-            || !selectedCurrencies.isEmpty || !searchText.isEmpty
-            || hasTransactionNatureFilter
+    /// Build FilterCriteria including transactionTypeFilter (Records-specific, not in Filterable)
+    private var currentCriteria: FilterCriteria {
+        var c = filterCriteria
+        c.transactionTypeFilter = transactionTypeFilter
+        return c
     }
+
+    /// Whether any filter is active (for UI indicator)
+    var hasActiveFilters: Bool { currentCriteria.hasActiveFilters }
 
     /// Whether transaction nature filter shows a chip (exactly 1 selected)
     var hasTransactionNatureFilter: Bool {
@@ -136,19 +143,7 @@ final class RecordsViewModel: Filterable {
     }
 
     /// Number of active filter types (for badge)
-    var activeFilterCount: Int {
-        var count = 0
-        if !selectedAccounts.isEmpty { count += 1 }
-        if !selectedCategories.isEmpty || !selectedSubcategories.isEmpty { count += 1 }
-        if !selectedNatures.isEmpty { count += 1 }
-        if !selectedTags.isEmpty { count += 1 }
-        if transactionTypeFilter != .all { count += 1 }
-        if amountCondition.isActive { count += 1 }
-        // Exclude period from filters count as it's a primary control
-        if !selectedCurrencies.isEmpty { count += 1 }
-        if hasTransactionNatureFilter { count += 1 }
-        return count
-    }
+    var activeFilterCount: Int { currentCriteria.activeFilterCount }
 
     // MARK: - Initialization
 
@@ -162,8 +157,8 @@ final class RecordsViewModel: Filterable {
         if let categoryID = context.categoryID {
             selectedCategories = [categoryID]
         }
-        if let nature = context.nature {
-            selectedNatures = [nature]
+        if let need = context.need {
+            selectedNeeds = [need]
         }
         // Note: period is NOT set here because it's a computed property that writes to SessionState.
         // Setting it would overwrite the user's period selection. The period comes from SessionState directly.
@@ -194,9 +189,10 @@ final class RecordsViewModel: Filterable {
             selectedCategories: selectedCategories,
             selectedSubcategories: selectedSubcategories,
             selectedTags: selectedTags,
-            selectedNatures: selectedNatures,
+            selectedNeeds: selectedNeeds,
             selectedTransactionNatures: effectiveTransactionNatures,
             selectedCurrencies: selectedCurrencies,
+            isExcludeMode: isExcludeMode,
             transactionTypeFilter: transactionTypeFilter,
             amountCondition: amountCondition,
             searchText: searchText,
@@ -331,6 +327,7 @@ final class RecordsViewModel: Filterable {
 
         do {
             try context.save()
+            context.processPendingChanges()
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
         } catch {
@@ -349,7 +346,7 @@ final class RecordsViewModel: Filterable {
         selectedAccounts.removeAll()
         selectedCategories.removeAll()
         selectedSubcategories.removeAll()
-        selectedNatures.removeAll()
+        selectedNeeds.removeAll()
         // In expenses-only mode, keep expense filter forced
         if SessionState.shared.isExpensesOnlyMode {
             selectedTransactionNatures = [.expense]
@@ -358,6 +355,7 @@ final class RecordsViewModel: Filterable {
         }
         selectedTags.removeAll()
         transactionTypeFilter = .all
+        isExcludeMode = false
         amountCondition = .any
         // period = .thisMonth // Do not reset period
         selectedCurrencies = []

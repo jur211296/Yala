@@ -25,6 +25,7 @@ struct DetailContainerView: View {
     @State private var dataViewModel = DetailContainerViewModel()
     @State private var recordsViewModel: RecordsViewModel
     @State private var trendsViewModel: StatisticsViewModel
+    @State private var insightsViewModel = InsightsViewModel()
 
     // MARK: - Navigation State
 
@@ -42,6 +43,11 @@ struct DetailContainerView: View {
         .rawValue
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
+    @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
+    @AppStorage(InsightTone.storageKey) private var toneSetting: String = InsightTone.normal.rawValue
+    @AppStorage(InsightFocus.storageKey) private var focusSetting: String = InsightFocus.balanced.rawValue
+    @State private var showAIConsentAlert = false
+    @State private var pendingAIInput: PendingAIInput = .voice
 
     /// Voice recording sheet
     @State private var showVoiceRecording = false
@@ -73,7 +79,7 @@ struct DetailContainerView: View {
 
     // MARK: - Initialization
 
-    init(context: RecordsFilterContext = .empty, initialTab: DetailViewTab = .records) {
+    init(context: RecordsFilterContext = .empty, initialTab: DetailViewTab = .insights) {
         self.isFromSearch = context.isFromSearch
         var cleanContext = context
         // Only reset period and filters when NOT coming from search
@@ -82,7 +88,7 @@ struct DetailContainerView: View {
             cleanContext.period = .thisMonth
             cleanContext.accountID = nil
             cleanContext.categoryID = nil
-            cleanContext.nature = nil
+            cleanContext.need = nil
         }
         _recordsViewModel = State(initialValue: RecordsViewModel(context: cleanContext))
 
@@ -93,7 +99,7 @@ struct DetailContainerView: View {
             accountID: nil,
             categoryID: nil,
             subcategoryName: nil,
-            nature: nil,
+            need: nil,
             dateInterval: nil
         )
         _trendsViewModel = State(initialValue: StatisticsViewModel(context: trendsContext))
@@ -126,7 +132,8 @@ struct DetailContainerView: View {
                     showUpgradeForImage: $showUpgradeForImage,
                     modelContext: modelContext,
                     refreshRecordsData: refreshRecordsData,
-                    calculateTrendsData: calculateTrendsData
+                    calculateTrendsData: calculateTrendsData,
+                    calculateInsightsData: calculateInsightsData
                 )
             )
             .onRecordsFilterChange(viewModel: recordsViewModel) {
@@ -134,11 +141,16 @@ struct DetailContainerView: View {
             }
             .onTrendsFilterChange(viewModel: trendsViewModel) {
                 calculateTrendsData()
+                calculateInsightsData()
             }
             .onAppear {
                 dataViewModel.setContext(modelContext)
                 refreshRecordsData()
                 calculateTrendsData()
+                calculateInsightsData()
+            }
+            .onChange(of: selectedTab) { _, _ in
+                calculateInsightsData()
             }
             .onChange(of: sessionState.selectedMainTab) { _, newTab in
                 // Close FAB menu when navigating away from Statistics
@@ -149,17 +161,25 @@ struct DetailContainerView: View {
                 if newTab == .statistics && !isFromSearch {
                     calculateTrendsData()
                     refreshRecordsData()
+                    calculateInsightsData()
                 }
             }
             .onChange(of: dataViewModel.allTransactions) {
                 // Recalculate when transactions change (e.g., initial balance modified)
                 calculateTrendsData()
                 refreshRecordsData()
+                if selectedTab == .insights { calculateInsightsData() }
             }
             .onChange(of: sessionState.dataVersion) { _, _ in
                 refreshRecordsData()
                 calculateTrendsData()
+                if selectedTab == .insights { calculateInsightsData() }
             }
+            .onChange(of: sessionState.comparisonMode) {
+                if selectedTab == .insights { calculateInsightsData() }
+            }
+            .onChange(of: toneSetting) { calculateInsightsData() }
+            .onChange(of: focusSetting) { calculateInsightsData() }
             .modifier(
                 DetailContainerObservers(
                     sessionState: sessionState,
@@ -171,6 +191,12 @@ struct DetailContainerView: View {
                     calculateTrendsData: calculateTrendsData,
                     refreshRecordsData: refreshRecordsData
                 ))
+            .aiConsentAlert(isPresented: $showAIConsentAlert, pendingInput: $pendingAIInput) { input in
+                switch input {
+                case .voice: showVoiceRecording = true
+                case .image: showImageSelection = true
+                }
+            }
     }
 
     // MARK: - Main Content
@@ -198,6 +224,19 @@ struct DetailContainerView: View {
     @ViewBuilder
     private var tabContent: some View {
         switch selectedTab {
+        case .insights:
+            InsightsTabView(
+                accounts: dataViewModel.accounts,
+                categories: dataViewModel.categories,
+                allSubcategories: dataViewModel.allSubcategories,
+                tags: dataViewModel.tags,
+                allTransactions: dataViewModel.allTransactions,
+                budgets: dataViewModel.budgets,
+                scheduledPayments: dataViewModel.scheduledPayments,
+                defaultCurrencyCode: defaultCurrencyCode,
+                viewModel: insightsViewModel,
+                trendsViewModel: trendsViewModel
+            )
         case .trends:
             TrendsTabView(
                 accounts: dataViewModel.accounts,
@@ -311,7 +350,8 @@ struct DetailContainerView: View {
                 .overlay(alignment: .topTrailing) {
                     let showIndicator = (selectedTab == .records && recordsViewModel.activeFilterCount > 0) ||
                                        (selectedTab == .trends && trendsViewModel.activeFilterCount > 0) ||
-                                       (selectedTab == .categories && trendsViewModel.activeFilterCount > 0)
+                                       (selectedTab == .categories && trendsViewModel.activeFilterCount > 0) ||
+                                       (selectedTab == .insights && trendsViewModel.activeFilterCount > 0)
 
                     if showIndicator {
                         Circle()
@@ -359,55 +399,56 @@ struct DetailContainerView: View {
     @ViewBuilder
     private var newRecordFAB: some View {
         let fabBackground = canUseVoiceInput ? theme.accent : DS.Semantic.disabledForeground.opacity(0.5)
-        let hasMultipleInputs = (voiceInputEnabled && imageInputEnabled) ||
-                                (voiceInputEnabled && !imageInputEnabled) ||
-                                (!voiceInputEnabled && imageInputEnabled)
 
-        if hasMultipleInputs && canUseVoiceInput {
+        if canUseVoiceInput {
             VStack {
                 Spacer()
                 HStack {
                     Spacer()
-            // Custom FAB with popup menu above
+            // Custom FAB with popup menu above (always 3 options)
             VStack(alignment: .trailing, spacing: DS.Spacing.md) {
                 // Menu options (shown when expanded)
                 if showFABMenu {
                     VStack(spacing: DS.Spacing.sm) {
-                        // Voice option (if enabled)
-                        if voiceInputEnabled {
-                            fabMenuButton(
-                                icon: "waveform",
-                                text: L10n.Panel.fabVoice,
-                                color: .hotPink,
-                                isLocked: isVoiceLocked
-                            ) {
-                                dsWithAnimation(reduceMotion) {
-                                    showFABMenu = false
-                                }
-                                if isVoiceLocked {
-                                    showUpgradeForVoice = true
-                                } else {
-                                    showVoiceRecording = true
-                                }
+                        // Voice option
+                        fabMenuButton(
+                            icon: "waveform",
+                            text: L10n.Panel.fabVoice,
+                            color: .hotPink,
+                            isLocked: isVoiceLocked
+                        ) {
+                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
+                                showFABMenu = false
+                            }
+                            if isVoiceLocked {
+                                showUpgradeForVoice = true
+                            } else if !aiDataConsentAccepted {
+                                pendingAIInput = .voice
+                                showAIConsentAlert = true
+                            } else {
+                                if !voiceInputEnabled { voiceInputEnabled = true }
+                                showVoiceRecording = true
                             }
                         }
 
-                        // Image option (if enabled)
-                        if imageInputEnabled {
-                            fabMenuButton(
-                                icon: "photo",
-                                text: L10n.Panel.fabImage,
-                                color: .teal,
-                                isLocked: isImageLocked
-                            ) {
-                                dsWithAnimation(reduceMotion) {
-                                    showFABMenu = false
-                                }
-                                if isImageLocked {
-                                    showUpgradeForImage = true
-                                } else {
-                                    showImageSelection = true
-                                }
+                        // Image option
+                        fabMenuButton(
+                            icon: "photo",
+                            text: L10n.Panel.fabImage,
+                            color: .teal,
+                            isLocked: isImageLocked
+                        ) {
+                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
+                                showFABMenu = false
+                            }
+                            if isImageLocked {
+                                showUpgradeForImage = true
+                            } else if !aiDataConsentAccepted {
+                                pendingAIInput = .image
+                                showAIConsentAlert = true
+                            } else {
+                                if !imageInputEnabled { imageInputEnabled = true }
+                                showImageSelection = true
                             }
                         }
 
@@ -417,7 +458,7 @@ struct DetailContainerView: View {
                             text: L10n.Panel.fabManual,
                             color: .electricIndigo
                         ) {
-                            dsWithAnimation(reduceMotion) {
+                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
                                 showFABMenu = false
                             }
                             recordsViewModel.showNewTransaction = true
@@ -432,7 +473,7 @@ struct DetailContainerView: View {
                 // FAB button
                 Button {
                     DS.Haptic.medium()
-                    dsWithAnimation(reduceMotion) {
+                    dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
                         showFABMenu.toggle()
                     }
                 } label: {
@@ -447,7 +488,7 @@ struct DetailContainerView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(showFABMenu ? L10n.Accessibility.closeMenu : L10n.Accessibility.newRecord)
                 .glassEffect(.regular.interactive())
-                .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+                .dsFloatingShadow()
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
@@ -458,11 +499,9 @@ struct DetailContainerView: View {
                 Spacer()
                 HStack {
                     Spacer()
-            // Simple FAB (no special inputs enabled)
+            // Simple FAB (no accounts/subcategories — disabled)
             Button {
-                if canUseVoiceInput {
-                    recordsViewModel.showNewTransaction = true
-                }
+                // No-op: disabled state
             } label: {
                 Image(systemName: "plus")
                     .font(DS.Typography.title)
@@ -474,11 +513,11 @@ struct DetailContainerView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.Accessibility.newRecord)
             .glassEffect(.regular.interactive())
-            .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+            .dsFloatingShadow()
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
-            .disabled(!canUseVoiceInput)
-            .accessibilityHint(!canUseVoiceInput ? L10n.Accessibility.createAccountFirst : "")
+            .disabled(true)
+            .accessibilityHint(L10n.Accessibility.createAccountFirst)
                 }
             }
         }
@@ -503,11 +542,11 @@ struct DetailContainerView: View {
                 Text(text)
                     .font(DS.Typography.headline)
 
+                Spacer(minLength: 0)
+
                 if isLocked {
                     ProBadge(size: .small)
                 }
-
-                Spacer(minLength: 0)
             }
             .foregroundStyle(.white)
             .frame(width: DS.Button.fabMenuWidth)
@@ -515,7 +554,7 @@ struct DetailContainerView: View {
             .padding(.vertical, DS.Spacing.md)
             .background(isLocked ? DS.Semantic.disabledForeground : color)
             .clipShape(Capsule())
-            .shadow(color: (isLocked ? DS.Semantic.disabledForeground : color).opacity(0.3), radius: 8, x: 0, y: 4)
+            .shadow(color: (isLocked ? DS.Semantic.disabledForeground : color).opacity(0.3), radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
         }
         .buttonStyle(.plain)
         .phaseAnimator(reduceMotion ? [false] : [false, true]) { content, phase in
@@ -576,7 +615,7 @@ struct DetailContainerView: View {
     // MARK: - Actions
 
     private func refreshRecordsData() {
-        DispatchQueue.main.async {
+        Task { @MainActor in
             // Reload fresh data from SwiftData before applying filters
             // This ensures deleted/modified transactions are reflected immediately
             dataViewModel.loadData()
@@ -590,12 +629,51 @@ struct DetailContainerView: View {
     }
 
     private func calculateTrendsData() {
-        DispatchQueue.main.async {
+        Task { @MainActor in
             trendsViewModel.calculateTrendData(
                 accounts: dataViewModel.accounts,
                 transactions: dataViewModel.allTransactions,
-                defaultCurrencyCode: defaultCurrencyCode,
-                context: modelContext
+                defaultCurrencyCode: defaultCurrencyCode
+            )
+        }
+    }
+
+    private func calculateInsightsData() {
+        guard selectedTab == .insights else { return }
+        insightsViewModel.calculateInsightsData(
+            transactions: dataViewModel.allTransactions,
+            accounts: dataViewModel.accounts,
+            categories: dataViewModel.categories,
+            budgets: dataViewModel.budgets,
+            scheduledPayments: dataViewModel.scheduledPayments,
+            period: sessionState.selectedPeriod,
+            criteria: trendsViewModel.filterCriteria,
+            currencyCode: defaultCurrencyCode,
+            customRange: sessionState.customDateRange,
+            comparisonMode: sessionState.comparisonMode
+        )
+
+        // Generate AI insights if Pro + consent + online
+        let period = sessionState.selectedPeriod
+        let criteria = trendsViewModel.filterCriteria
+        let filterHash = criteria.hashValue
+        let txnCount = dataViewModel.allTransactions.count
+        let currency = defaultCurrencyCode
+        let comparison = sessionState.comparisonMode
+        let accounts = dataViewModel.accounts
+        let categories = dataViewModel.categories
+        let tags = dataViewModel.tags
+        Task {
+            await insightsViewModel.generateAIInsights(
+                period: period,
+                filterHash: filterHash,
+                txnCount: txnCount,
+                currencyCode: currency,
+                comparisonMode: comparison,
+                criteria: criteria,
+                accounts: accounts,
+                categories: categories,
+                tags: tags
             )
         }
     }
@@ -624,6 +702,7 @@ struct DetailContainerView: View {
 
         calculateTrendsData()
         refreshRecordsData()
+        calculateInsightsData()
     }
 }
 
@@ -647,7 +726,7 @@ extension View {
             .onChange(of: viewModel.selectedCategories) { _, _ in action() }
             .onChange(of: viewModel.selectedSubcategories) { _, _ in action() }
             .onChange(of: viewModel.selectedTags) { _, _ in action() }
-            .onChange(of: viewModel.selectedNatures) { _, _ in action() }
+            .onChange(of: viewModel.selectedNeeds) { _, _ in action() }
             .onChange(of: viewModel.selectedTransactionNatures) { _, _ in action() }
             .onChange(of: viewModel.selectedCurrencies) { _, _ in action() }
             .onChange(of: viewModel.amountCondition) { _, _ in action() }
@@ -665,7 +744,7 @@ extension View {
             .onChange(of: viewModel.selectedCategories) { _, _ in action() }
             .onChange(of: viewModel.selectedSubcategories) { _, _ in action() }
             .onChange(of: viewModel.selectedTags) { _, _ in action() }
-            .onChange(of: viewModel.selectedNatures) { _, _ in action() }
+            .onChange(of: viewModel.selectedNeeds) { _, _ in action() }
             .onChange(of: viewModel.selectedTransactionNatures) { _, _ in action() }
             .onChange(of: viewModel.selectedCurrencies) { _, _ in action() }
             .onChange(of: viewModel.amountCondition) { _, _ in action() }
@@ -689,6 +768,7 @@ private struct DetailContainerSheets: ViewModifier {
     let modelContext: ModelContext
     let refreshRecordsData: () -> Void
     let calculateTrendsData: () -> Void
+    let calculateInsightsData: () -> Void
 
     func body(content: Content) -> some View {
         content
@@ -698,6 +778,7 @@ private struct DetailContainerSheets: ViewModifier {
             }
             .sheet(isPresented: $recordsViewModel.showNewTransaction) {
                 NewTransactionView()
+                    .presentationDetents([.large])
                     .onDisappear { refreshRecordsData() }
             }
             .sheet(isPresented: $showVoiceRecording) {
@@ -715,6 +796,7 @@ private struct DetailContainerSheets: ViewModifier {
             .sheet(isPresented: $recordsViewModel.showEditTransaction) {
                 if let transaction = recordsViewModel.editingTransaction {
                     NewTransactionView(transactionToEdit: transaction)
+                        .presentationDetents([.large])
                         .onDisappear {
                             recordsViewModel.editingTransaction = nil
                             refreshRecordsData()
@@ -725,6 +807,7 @@ private struct DetailContainerSheets: ViewModifier {
                 RecordsFiltersView(recordsViewModel: recordsViewModel)
                     .onDisappear {
                         calculateTrendsData()
+                        calculateInsightsData()
                     }
             }
             .confirmationDialog(
@@ -766,35 +849,58 @@ private struct DetailContainerObservers: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            .modifier(SessionStateObservers(
+                sessionState: sessionState,
+                categories: categories,
+                subcategories: subcategories,
+                handleSessionStateFilterChange: handleSessionStateFilterChange,
+                calculateTrendsData: calculateTrendsData,
+                refreshRecordsData: refreshRecordsData
+            ))
+            .modifier(ViewModelObservers(
+                trendsViewModel: trendsViewModel,
+                recordsViewModel: recordsViewModel,
+                calculateTrendsData: calculateTrendsData,
+                refreshRecordsData: refreshRecordsData
+            ))
+    }
+}
+
+/// SessionState onChange observers — split to reduce type-checker complexity.
+private struct SessionStateObservers: ViewModifier {
+    let sessionState: SessionState
+    let categories: [Category]
+    let subcategories: [Subcategory]
+    let handleSessionStateFilterChange: () -> Void
+    let calculateTrendsData: () -> Void
+    let refreshRecordsData: () -> Void
+
+    func body(content: Content) -> some View {
+        content
             .onChange(of: sessionState.selectedPeriod) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.selectedAccountIDs) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.selectedCategoryIDs) {
-                // Auto-select expense filter only if ALL selected categories are expense (not income)
-                if !sessionState.selectedCategoryIDs.isEmpty {
+                if !sessionState.isExcludeMode && !sessionState.selectedCategoryIDs.isEmpty {
                     let selectedCats = categories.filter {
                         sessionState.selectedCategoryIDs.contains($0.persistentModelID)
                     }
-                    // Only set expense if we found matching categories AND all are expense categories
                     if !selectedCats.isEmpty && selectedCats.allSatisfy({ !$0.isIncome }) {
                         sessionState.selectedTransactionNatures = [.expense]
                     }
                 }
                 handleSessionStateFilterChange()
             }
-            .onChange(of: sessionState.selectedNatures) {
-                // Natures (esencial, prioritaria, etc.) are only for expenses
-                if !sessionState.selectedNatures.isEmpty {
+            .onChange(of: sessionState.selectedNeeds) {
+                if !sessionState.isExcludeMode && !sessionState.selectedNeeds.isEmpty {
                     sessionState.selectedTransactionNatures = [.expense]
                 }
                 handleSessionStateFilterChange()
             }
             .onChange(of: sessionState.selectedSubcategoryIDs) {
-                // Auto-select expense filter only if ALL selected subcategories belong to expense categories
-                if !sessionState.selectedSubcategoryIDs.isEmpty {
+                if !sessionState.isExcludeMode && !sessionState.selectedSubcategoryIDs.isEmpty {
                     let selectedSubs = subcategories.filter {
                         sessionState.selectedSubcategoryIDs.contains($0.persistentModelID)
                     }
-                    // Only set expense if we found matching subcategories AND all are from expense categories
                     if !selectedSubs.isEmpty && selectedSubs.allSatisfy({ !$0.safeCategory.isIncome }) {
                         sessionState.selectedTransactionNatures = [.expense]
                     }
@@ -806,6 +912,7 @@ private struct DetailContainerObservers: ViewModifier {
             .onChange(of: sessionState.selectedTransactionNatures) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.amountCondition) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.searchText) { handleSessionStateFilterChange() }
+            .onChange(of: sessionState.isExcludeMode) { handleSessionStateFilterChange() }
             .onChange(of: sessionState.selectedTrendMetric) {
                 calculateTrendsData()
             }
@@ -813,6 +920,18 @@ private struct DetailContainerObservers: ViewModifier {
                 calculateTrendsData()
                 refreshRecordsData()
             }
+    }
+}
+
+/// ViewModel onChange observers — split to reduce type-checker complexity.
+private struct ViewModelObservers: ViewModifier {
+    @Bindable var trendsViewModel: StatisticsViewModel
+    @Bindable var recordsViewModel: RecordsViewModel
+    let calculateTrendsData: () -> Void
+    let refreshRecordsData: () -> Void
+
+    func body(content: Content) -> some View {
+        content
             .onChange(of: trendsViewModel.selectedMetric) { _, _ in
                 calculateTrendsData()
             }

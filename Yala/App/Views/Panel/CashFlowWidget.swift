@@ -33,6 +33,9 @@ struct CashFlowWidget: View {
     // When true, hides income bars and KPIs in compact layout
     let isExpensesOnlyMode: Bool
 
+    /// Max data points before hiding bar labels to avoid overlap
+    private static let maxBarsForLabels = 10
+
     init(
         summary: CashFlowSummary,
         size: WidgetSize,
@@ -422,7 +425,9 @@ struct CashFlowWidget: View {
 
                     if isWaterfallMode {
                         // WATERFALL: cumulative bars — each starts where previous ended
-                        ForEach(Array(waterfallBars.enumerated()), id: \.offset) { _, bar in
+                        let bars = waterfallBars
+                        let showLabels = bars.count <= Self.maxBarsForLabels
+                        ForEach(Array(bars.enumerated()), id: \.offset) { _, bar in
                             BarMark(
                                 x: .value("Date", bar.date, unit: calendarUnit(for: grouping)),
                                 yStart: .value("Start", bar.yStart),
@@ -431,9 +436,25 @@ struct CashFlowWidget: View {
                             .foregroundStyle(
                                 bar.net >= 0 ? Color.incomeGraph.gradient : Color.expenseGraph.gradient
                             )
-                            .cornerRadius(DS.Radius.xs)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+
+                            // Data label
+                            if showLabels {
+                                PointMark(
+                                    x: .value("Date", bar.date, unit: calendarUnit(for: grouping)),
+                                    y: .value("End", bar.yEnd)
+                                )
+                                .symbolSize(0)
+                                .annotation(position: bar.net >= 0 ? .top : .bottom, spacing: DS.Spacing.xs) {
+                                    Text(formatK(bar.net))
+                                        .font(DS.Typography.labelTiny)
+                                        .foregroundStyle(.thSecondaryText)
+                                }
+                            }
                         }
                     } else {
+                        let showLabels = activeChartData.count <= Self.maxBarsForLabels
+                            && (hasOnlyExpenses || hasOnlyIncome)
                         ForEach(activeChartData) { data in
                             if hasOnlyExpenses {
                                 // Only expenses mode: show expenses as positive bars upward
@@ -442,30 +463,86 @@ struct CashFlowWidget: View {
                                     y: .value("Expense", data.expense)
                                 )
                                 .foregroundStyle(Color.expenseGraph.gradient)
-                                .cornerRadius(DS.Radius.xs)
-                                                            } else if hasOnlyIncome {
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+
+                                // Data label
+                                if showLabels {
+                                    PointMark(
+                                        x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                        y: .value("Expense", data.expense)
+                                    )
+                                    .symbolSize(0)
+                                    .annotation(position: .top, spacing: DS.Spacing.xs) {
+                                        Text(formatK(data.expense))
+                                            .font(DS.Typography.labelTiny)
+                                            .foregroundStyle(.thSecondaryText)
+                                    }
+                                }
+                            } else if hasOnlyIncome {
                                 // Only income mode: show income bars upward (teal)
                                 BarMark(
                                     x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
                                     y: .value("Income", data.income)
                                 )
                                 .foregroundStyle(Color.incomeGraph.gradient)
-                                .cornerRadius(DS.Radius.xs)
-                                                            } else {
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+
+                                // Data label
+                                if showLabels {
+                                    PointMark(
+                                        x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                        y: .value("Income", data.income)
+                                    )
+                                    .symbolSize(0)
+                                    .annotation(position: .top, spacing: DS.Spacing.xs) {
+                                        Text(formatK(data.income))
+                                            .font(DS.Typography.labelTiny)
+                                            .foregroundStyle(.thSecondaryText)
+                                    }
+                                }
+                            } else {
                                 // Default bidirectional mode (monthly)
                                 BarMark(
                                     x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
                                     y: .value("Income", data.income)
                                 )
                                 .foregroundStyle(Color.incomeGraph.gradient)
-                                .cornerRadius(DS.Radius.xs)
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+
+                                // Income data label
+                                if showLabels, data.income > 0 {
+                                    PointMark(
+                                        x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                        y: .value("Income", data.income)
+                                    )
+                                    .symbolSize(0)
+                                    .annotation(position: .top, spacing: DS.Spacing.xs) {
+                                        Text(formatK(data.income))
+                                            .font(DS.Typography.labelTiny)
+                                            .foregroundStyle(.thSecondaryText)
+                                    }
+                                }
 
                                 BarMark(
                                     x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
                                     y: .value("Expense", -data.expense)
                                 )
                                 .foregroundStyle(Color.expenseGraph.gradient)
-                                .cornerRadius(DS.Radius.xs)
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+
+                                // Expense data label
+                                if showLabels, data.expense > 0 {
+                                    PointMark(
+                                        x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                        y: .value("Expense", -data.expense)
+                                    )
+                                    .symbolSize(0)
+                                    .annotation(position: .bottom, spacing: DS.Spacing.xs) {
+                                        Text(formatK(data.expense))
+                                            .font(DS.Typography.labelTiny)
+                                            .foregroundStyle(.thSecondaryText)
+                                    }
+                                }
 
                                 // Net Flow Line - Purple line
                                 if grouping == .month {

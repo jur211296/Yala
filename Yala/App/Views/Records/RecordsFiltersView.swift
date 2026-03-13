@@ -13,6 +13,7 @@ struct RecordsFiltersView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var filtersViewModel = RecordsFiltersViewModel()
 
@@ -27,12 +28,19 @@ struct RecordsFiltersView: View {
     @State private var showTagsSheet = false
     @State private var showCurrencySheet = false
 
-    // MARK: - Initialization Flags
+    // MARK: - Local Filter State (deferred — commit on Apply)
 
-    @State private var hasInitializedAccounts = false
-    @State private var hasInitializedTags = false
-    @State private var hasInitializedCurrencies = false
-    @State private var hasInitializedCategories = false
+    @State private var localSelectedAccounts: Set<PersistentIdentifier> = []
+    @State private var localSelectedCategories: Set<PersistentIdentifier> = []
+    @State private var localSelectedSubcategories: Set<PersistentIdentifier> = []
+    @State private var localSelectedTags: Set<PersistentIdentifier> = []
+    @State private var localSelectedNeeds: Set<SubcategoryNeed> = []
+    @State private var localSelectedTransactionNatures: Set<TransactionNature> = []
+    @State private var localSelectedCurrencies: Set<CurrencyCode> = []
+    @State private var localAmountCondition: AmountFilterCondition = .any
+    @State private var localSearchText: String = ""
+    @State private var localIsExcludeMode: Bool = false
+    @State private var hasSnapshotted = false
 
     // MARK: - Body
 
@@ -61,11 +69,18 @@ struct RecordsFiltersView: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
+                        // Include/Exclude mode selector
+                        Picker("", selection: $localIsExcludeMode) {
+                            Text(L10n.Filters.includeMode).tag(false)
+                            Text(L10n.Filters.excludeMode).tag(true)
+                        }
+                        .pickerStyle(.segmented)
+
                         SectionBox(title: L10n.Filters.filterOptions) {
                             VStack(spacing: DS.Spacing.none) {
                                 accountsContent
-                                // Transaction natures (Income/Expense) - hidden in expenses-only mode
-                                if !sessionState.isExpensesOnlyMode {
+                                // Transaction natures (Income/Expense) - hidden in expenses-only mode and exclude mode
+                                if !sessionState.isExpensesOnlyMode && !localIsExcludeMode {
                                     Divider().padding(.leading, DS.Spacing.lg)
                                     transactionNaturesContent
                                 }
@@ -74,7 +89,7 @@ struct RecordsFiltersView: View {
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 tagsContent
                                 Divider().padding(.leading, DS.Spacing.lg)
-                                naturesContent
+                                needsContent
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 currencyContent
                                 Divider().padding(.leading, DS.Spacing.lg)
@@ -86,8 +101,8 @@ struct RecordsFiltersView: View {
 
                         // Reset filters button
                         Button {
-                            withAnimation {
-                                recordsViewModel.clearFilters()
+                            dsWithAnimation(reduceMotion) {
+                                clearLocalFilters()
                             }
                         } label: {
                             Text(L10n.Filters.clearFilters)
@@ -108,7 +123,27 @@ struct RecordsFiltersView: View {
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 filtersViewModel.setContext(modelContext)
-                expandCategoryFiltersToSubcategories()
+                if !hasSnapshotted {
+                    snapshotFromViewModel()
+                    expandCategoryFiltersToSubcategories()
+                    hasSnapshotted = true
+                }
+            }
+            .onChange(of: localIsExcludeMode) { oldValue, newValue in
+                guard oldValue != newValue else { return }
+                localSelectedAccounts.removeAll()
+                localSelectedCategories.removeAll()
+                localSelectedSubcategories.removeAll()
+                localSelectedNeeds.removeAll()
+                localSelectedTags.removeAll()
+                localSelectedCurrencies.removeAll()
+                if sessionState.isExpensesOnlyMode {
+                    localSelectedTransactionNatures = [.expense]
+                } else {
+                    localSelectedTransactionNatures.removeAll()
+                }
+                localAmountCondition = .any
+                localSearchText = ""
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -119,10 +154,10 @@ struct RecordsFiltersView: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.Action.apply) {
+                        commitToViewModel()
                         dismiss()
                     }
                     .buttonStyle(.borderedProminent)
-
                 }
             }
         }
@@ -141,19 +176,16 @@ struct RecordsFiltersView: View {
         ) { account in
             accountChip(account)
         }
-        .onAppear {
-            syncAccountsSelection()
-        }
     }
 
     private func accountChip(_ account: Account) -> some View {
-        let isSelected = recordsViewModel.selectedAccounts.contains(account.persistentModelID)
+        let isSelected = localSelectedAccounts.contains(account.persistentModelID)
 
         return Button {
             if isSelected {
-                recordsViewModel.selectedAccounts.remove(account.persistentModelID)
+                localSelectedAccounts.remove(account.persistentModelID)
             } else {
-                recordsViewModel.selectedAccounts.insert(account.persistentModelID)
+                localSelectedAccounts.insert(account.persistentModelID)
             }
         } label: {
             Text(account.name)
@@ -171,14 +203,8 @@ struct RecordsFiltersView: View {
         .buttonStyle(.plain)
     }
 
-    private func syncAccountsSelection() {
-        // Empty selection = no filter (show all)
-        // Only set the flag to avoid re-initialization
-        hasInitializedAccounts = true
-    }
-
     private var selectedAccountsText: String {
-        filtersViewModel.selectedAccountsText(selectedAccounts: recordsViewModel.selectedAccounts)
+        filtersViewModel.selectedAccountsText(selectedAccounts: localSelectedAccounts, isExcludeMode: localIsExcludeMode)
     }
 
     private var categoriesContent: some View {
@@ -203,24 +229,16 @@ struct RecordsFiltersView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .onAppear {
-            syncCategoriesSelection()
-        }
-    }
-
-    private func syncCategoriesSelection() {
-        // Empty selection = no filter (show all)
-        hasInitializedCategories = true
     }
 
     /// Expands category-level filters (from pie chart taps) into their visible subcategories
     /// so the filters sheet correctly reflects the active filter state.
     /// If specific subcategories are already selected for a category, keeps those instead of expanding.
     private func expandCategoryFiltersToSubcategories() {
-        let selectedCats = recordsViewModel.selectedCategories
+        let selectedCats = localSelectedCategories
         guard !selectedCats.isEmpty else { return }
 
-        let existingSubcategoryIDs = recordsViewModel.selectedSubcategories
+        let existingSubcategoryIDs = localSelectedSubcategories
 
         for categoryID in selectedCats {
             let subcategoriesOfCategory = filtersViewModel.allSubcategories
@@ -230,20 +248,18 @@ struct RecordsFiltersView: View {
                 }
                 .map { $0.persistentModelID }
 
-            // If user already selected specific subcategories of this category, keep those
             let alreadyHasSpecificSelection = subcategoriesOfCategory.contains { existingSubcategoryIDs.contains($0) }
 
             if !alreadyHasSpecificSelection {
-                // No specific subcategory selected — expand all subcategories of this category
-                recordsViewModel.selectedSubcategories.formUnion(subcategoriesOfCategory)
+                localSelectedSubcategories.formUnion(subcategoriesOfCategory)
             }
         }
 
-        recordsViewModel.selectedCategories.removeAll()
+        localSelectedCategories.removeAll()
     }
 
     private var selectedCategoriesText: String {
-        filtersViewModel.selectedCategoriesText(selectedSubcategories: recordsViewModel.selectedSubcategories)
+        filtersViewModel.selectedCategoriesText(selectedSubcategories: localSelectedSubcategories, isExcludeMode: localIsExcludeMode)
     }
 
     private var tagsContent: some View {
@@ -256,19 +272,16 @@ struct RecordsFiltersView: View {
         ) { tag in
             tagChip(tag)
         }
-        .onAppear {
-            syncTagsSelection()
-        }
     }
 
     private func tagChip(_ tag: Tag) -> some View {
-        let isSelected = recordsViewModel.selectedTags.contains(tag.persistentModelID)
+        let isSelected = localSelectedTags.contains(tag.persistentModelID)
 
         return Button {
             if isSelected {
-                recordsViewModel.selectedTags.remove(tag.persistentModelID)
+                localSelectedTags.remove(tag.persistentModelID)
             } else {
-                recordsViewModel.selectedTags.insert(tag.persistentModelID)
+                localSelectedTags.insert(tag.persistentModelID)
             }
         } label: {
             HStack(spacing: DS.Spacing.sm) {
@@ -291,13 +304,8 @@ struct RecordsFiltersView: View {
         .buttonStyle(.plain)
     }
 
-    private func syncTagsSelection() {
-        // Empty selection = no filter (show all)
-        hasInitializedTags = true
-    }
-
     private var selectedTagsText: String {
-        filtersViewModel.selectedTagsText(selectedTags: recordsViewModel.selectedTags)
+        filtersViewModel.selectedTagsText(selectedTags: localSelectedTags, isExcludeMode: localIsExcludeMode)
     }
 
     // MARK: - Transaction Natures Content (Income/Expense)
@@ -326,13 +334,13 @@ struct RecordsFiltersView: View {
     }
 
     private func transactionNatureChip(_ nature: TransactionNature) -> some View {
-        let isSelected = recordsViewModel.selectedTransactionNatures.contains(nature)
+        let isSelected = localSelectedTransactionNatures.contains(nature)
 
         return Button {
             if isSelected {
-                recordsViewModel.selectedTransactionNatures.remove(nature)
+                localSelectedTransactionNatures.remove(nature)
             } else {
-                recordsViewModel.selectedTransactionNatures.insert(nature)
+                localSelectedTransactionNatures.insert(nature)
             }
         } label: {
             Text(nature.displayName)
@@ -350,30 +358,32 @@ struct RecordsFiltersView: View {
     }
 
     private var selectedTransactionNaturesText: String {
-        if recordsViewModel.selectedTransactionNatures.isEmpty { return L10n.Filters.all }
-        if recordsViewModel.selectedTransactionNatures.count == TransactionNature.allCases.count {
+        if localSelectedTransactionNatures.isEmpty {
             return L10n.Filters.all
         }
-        return recordsViewModel.selectedTransactionNatures.first?.displayName ?? L10n.Filters.all
+        if localSelectedTransactionNatures.count == TransactionNature.allCases.count {
+            return L10n.Filters.all
+        }
+        return localSelectedTransactionNatures.first?.displayName ?? L10n.Filters.all
     }
 
-    // MARK: - Natures Content
+    // MARK: - Needs Content
 
-    private var naturesContent: some View {
+    private var needsContent: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             // Header
             FilterSectionHeader(
-                icon: "leaf.fill",
-                title: L10n.Filters.nature,
-                status: selectedNaturesText
+                icon: "chart.bar.fill",
+                title: L10n.Filters.need,
+                status: selectedNeedsText
             )
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.md)
 
             // Chips
             FlowLayout(spacing: DS.Spacing.sm) {
-                ForEach(SubcategoryNature.allCases, id: \.self) { nature in
-                    natureChip(nature)
+                ForEach(SubcategoryNeed.allCases, id: \.self) { need in
+                    needChip(need)
                 }
             }
             .padding(.leading, DS.Spacing.lg + DS.FormRow.iconWidth + DS.Spacing.md)
@@ -382,18 +392,18 @@ struct RecordsFiltersView: View {
         }
     }
 
-    private func natureChip(_ nature: SubcategoryNature) -> some View {
-        let isSelected = recordsViewModel.selectedNatures.contains(nature)
+    private func needChip(_ need: SubcategoryNeed) -> some View {
+        let isSelected = localSelectedNeeds.contains(need)
 
         return Button {
             if isSelected {
-                recordsViewModel.selectedNatures.remove(nature)
+                localSelectedNeeds.remove(need)
             } else {
-                recordsViewModel.selectedNatures.insert(nature)
+                localSelectedNeeds.insert(need)
             }
         } label: {
             HStack(spacing: DS.Spacing.sm) {
-                Text(nature.displayName)
+                Text(need.displayName)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
@@ -408,9 +418,11 @@ struct RecordsFiltersView: View {
         .buttonStyle(.plain)
     }
 
-    private var selectedNaturesText: String {
-        if recordsViewModel.selectedNatures.isEmpty { return L10n.Filters.allNatures }
-        return "\(recordsViewModel.selectedNatures.count)"
+    private var selectedNeedsText: String {
+        if localSelectedNeeds.isEmpty {
+            return localIsExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.allNeeds
+        }
+        return "\(localSelectedNeeds.count)"
     }
 
     @ViewBuilder
@@ -437,20 +449,17 @@ struct RecordsFiltersView: View {
                 .padding(.trailing, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.md)
             }
-            .onAppear {
-                syncCurrenciesSelection()
-            }
         }
     }
 
     private func currencyChip(_ currency: CurrencyCode) -> some View {
-        let isSelected = recordsViewModel.selectedCurrencies.contains(currency)
+        let isSelected = localSelectedCurrencies.contains(currency)
 
         return Button {
             if isSelected {
-                recordsViewModel.selectedCurrencies.remove(currency)
+                localSelectedCurrencies.remove(currency)
             } else {
-                recordsViewModel.selectedCurrencies.insert(currency)
+                localSelectedCurrencies.insert(currency)
             }
         } label: {
             Text(currency.rawValue)
@@ -467,27 +476,24 @@ struct RecordsFiltersView: View {
         .buttonStyle(.plain)
     }
 
-    private func syncCurrenciesSelection() {
-        // Empty selection = no filter (show all)
-        hasInitializedCurrencies = true
-    }
-
     private var selectedCurrenciesText: String {
-        // If no currencies with transactions, don't show anything
         guard !filtersViewModel.currenciesWithTransactions.isEmpty else { return "" }
 
-        if recordsViewModel.selectedCurrencies.isEmpty ||
-           recordsViewModel.selectedCurrencies.count == filtersViewModel.currenciesWithTransactions.count {
+        if localSelectedCurrencies.isEmpty {
+            return localIsExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.all
+        }
+        if !localIsExcludeMode &&
+           localSelectedCurrencies.count == filtersViewModel.currenciesWithTransactions.count {
             return L10n.Filters.all
         }
-        return "\(recordsViewModel.selectedCurrencies.count)/\(filtersViewModel.currenciesWithTransactions.count)"
+        return "\(localSelectedCurrencies.count)/\(filtersViewModel.currenciesWithTransactions.count)"
     }
 
     private var amountContent: some View {
         AmountFilterView(
-            condition: $recordsViewModel.amountCondition,
-            currencyCode: recordsViewModel.selectedCurrencies.count == 1
-                ? recordsViewModel.selectedCurrencies.first : nil
+            condition: $localAmountCondition,
+            currencyCode: localSelectedCurrencies.count == 1
+                ? localSelectedCurrencies.first : nil
         )
     }
 
@@ -498,7 +504,7 @@ struct RecordsFiltersView: View {
                 .foregroundStyle(.primary)
                 .frame(width: DS.FormRow.iconWidth)
 
-            TextField(L10n.Filters.noteContains, text: $recordsViewModel.searchText)
+            TextField(L10n.Filters.noteContains, text: $localSearchText)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
@@ -521,10 +527,10 @@ struct RecordsFiltersView: View {
                                     }
 
                                     Button {
-                                        if recordsViewModel.selectedAccounts.contains(account.persistentModelID) {
-                                            recordsViewModel.selectedAccounts.remove(account.persistentModelID)
+                                        if localSelectedAccounts.contains(account.persistentModelID) {
+                                            localSelectedAccounts.remove(account.persistentModelID)
                                         } else {
-                                            recordsViewModel.selectedAccounts.insert(account.persistentModelID)
+                                            localSelectedAccounts.insert(account.persistentModelID)
                                         }
                                     } label: {
                                         HStack {
@@ -532,7 +538,7 @@ struct RecordsFiltersView: View {
                                                 .font(DS.Typography.body)
                                                 .foregroundStyle(.primary)
                                             Spacer()
-                                            if recordsViewModel.selectedAccounts.contains(account.persistentModelID) {
+                                            if localSelectedAccounts.contains(account.persistentModelID) {
                                                 Image(systemName: "checkmark")
                                                     .foregroundStyle(theme.accent)
                                                     .font(DS.Typography.headline)
@@ -569,7 +575,7 @@ struct RecordsFiltersView: View {
         CategorySelectorSheet(
             categories: filtersViewModel.allCategories,
             subcategories: filtersViewModel.allSubcategories,
-            selectedSubcategories: $recordsViewModel.selectedSubcategories
+            selectedSubcategories: $localSelectedSubcategories
         )
     }
 
@@ -578,7 +584,7 @@ struct RecordsFiltersView: View {
     }
 
     private func subcategorySelectionSummary(for category: Category) -> String {
-        filtersViewModel.subcategorySelectionSummary(for: category, selectedSubcategories: recordsViewModel.selectedSubcategories)
+        filtersViewModel.subcategorySelectionSummary(for: category, selectedSubcategories: localSelectedSubcategories)
     }
 
     // MARK: - Tags Sheet
@@ -598,10 +604,10 @@ struct RecordsFiltersView: View {
                                     }
 
                                     Button {
-                                        if recordsViewModel.selectedTags.contains(tag.persistentModelID) {
-                                            recordsViewModel.selectedTags.remove(tag.persistentModelID)
+                                        if localSelectedTags.contains(tag.persistentModelID) {
+                                            localSelectedTags.remove(tag.persistentModelID)
                                         } else {
-                                            recordsViewModel.selectedTags.insert(tag.persistentModelID)
+                                            localSelectedTags.insert(tag.persistentModelID)
                                         }
                                     } label: {
                                         HStack(spacing: DS.Spacing.md) {
@@ -615,7 +621,7 @@ struct RecordsFiltersView: View {
 
                                             Spacer()
 
-                                            if recordsViewModel.selectedTags.contains(tag.persistentModelID) {
+                                            if localSelectedTags.contains(tag.persistentModelID) {
                                                 Image(systemName: "checkmark")
                                                     .foregroundStyle(theme.accent)
                                                     .font(DS.Typography.headline)
@@ -646,6 +652,56 @@ struct RecordsFiltersView: View {
         }
     }
 
+    // MARK: - Snapshot / Commit
+
+    private func snapshotFromViewModel() {
+        localSelectedAccounts = recordsViewModel.selectedAccounts
+        localSelectedCategories = recordsViewModel.selectedCategories
+        localSelectedSubcategories = recordsViewModel.selectedSubcategories
+        localSelectedTags = recordsViewModel.selectedTags
+        localSelectedNeeds = recordsViewModel.selectedNeeds
+        localSelectedTransactionNatures = recordsViewModel.selectedTransactionNatures
+        localSelectedCurrencies = recordsViewModel.selectedCurrencies
+        localAmountCondition = recordsViewModel.amountCondition
+        localSearchText = recordsViewModel.searchText
+        localIsExcludeMode = recordsViewModel.isExcludeMode
+    }
+
+    private func commitToViewModel() {
+        // Set isExcludeMode FIRST — its didSet in SessionState clears selections,
+        // then set filter values inside a batch to prevent resetExcludeModeIfNeeded
+        // from resetting exclude mode during intermediate empty states.
+        recordsViewModel.isExcludeMode = localIsExcludeMode
+        SessionState.shared.performBatchFilterUpdate {
+            recordsViewModel.selectedAccounts = localSelectedAccounts
+            recordsViewModel.selectedCategories = localSelectedCategories
+            recordsViewModel.selectedSubcategories = localSelectedSubcategories
+            recordsViewModel.selectedTags = localSelectedTags
+            recordsViewModel.selectedNeeds = localSelectedNeeds
+            recordsViewModel.selectedTransactionNatures = localSelectedTransactionNatures
+            recordsViewModel.selectedCurrencies = localSelectedCurrencies
+            recordsViewModel.amountCondition = localAmountCondition
+            recordsViewModel.searchText = localSearchText
+        }
+    }
+
+    private func clearLocalFilters() {
+        localSelectedAccounts.removeAll()
+        localSelectedCategories.removeAll()
+        localSelectedSubcategories.removeAll()
+        localSelectedNeeds.removeAll()
+        if sessionState.isExpensesOnlyMode {
+            localSelectedTransactionNatures = [.expense]
+        } else {
+            localSelectedTransactionNatures.removeAll()
+        }
+        localSelectedTags.removeAll()
+        localIsExcludeMode = false
+        localAmountCondition = .any
+        localSelectedCurrencies = []
+        localSearchText = ""
+    }
+
     // MARK: - Currency Sheet
 
     private var currencySheetView: some View {
@@ -653,7 +709,7 @@ struct RecordsFiltersView: View {
             MultiSelectionList(
                 title: L10n.Filters.selectCurrencies,
                 items: filtersViewModel.currenciesWithTransactions,
-                selection: $recordsViewModel.selectedCurrencies,
+                selection: $localSelectedCurrencies,
                 label: { $0.rawValue }
             )
             .toolbar {

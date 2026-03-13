@@ -11,12 +11,11 @@ import SwiftUI
 struct BudgetRowView: View {
     let summary: BudgetSummary
     let currencyCode: String
-    let onTap: () -> Void
 
     @Environment(\.yalaTheme) private var theme
 
     var body: some View {
-        Button(action: onTap) {
+        NavigationLink(value: BudgetNavigationID(id: summary.budget.persistentModelID)) {
             VStack(alignment: .leading, spacing: DS.Spacing.md) {
                 // Top row: Icon + Name + Amount
                 HStack(spacing: DS.Spacing.md) {
@@ -25,10 +24,19 @@ struct BudgetRowView: View {
 
                     // Budget name
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                        Text(summary.budget.name)
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
+                        HStack(spacing: DS.Spacing.xs) {
+                            Text(summary.budget.name)
+                                .font(DS.Typography.headline)
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+
+                            if summary.budget.isFavorite {
+                                Image(systemName: "star.fill")
+                                    .font(DS.Typography.captionSmall)
+                                    .foregroundStyle(DS.Semantic.favoriteIcon)
+                                    .accessibilityHidden(true)
+                            }
+                        }
 
                         // Status info (% spent + days remaining)
                         statusInfo
@@ -62,6 +70,13 @@ struct BudgetRowView: View {
                     color: summary.color,
                     isExceeded: summary.status == .exceeded
                 )
+
+                // Exceeded encouragement (brand voice: constructive, never scolding)
+                if summary.status == .exceeded {
+                    Text(NSLocalizedString("budgets.exceeded.encouragement", comment: ""))
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                }
             }
             .padding(DS.Spacing.lg)
             .contentShape(Rectangle())
@@ -102,7 +117,7 @@ struct BudgetRowView: View {
     }
 
     private var statusInfo: some View {
-        let percentText = String(format: "%.1f%%", summary.percentage)
+        let percentText = String(format: "%.0f%%", summary.percentage)
         let spentKey = NSLocalizedString("budgets.spent.percent", comment: "")
         let spentText = String(format: spentKey, percentText)
 

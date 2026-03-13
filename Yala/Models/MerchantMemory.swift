@@ -26,7 +26,7 @@ final class MerchantMemory {
     var countCorrected: Int = 0
 
     /// Última vez que se aprobó una transacción de este comercio - CloudKit: default required
-    var lastApprovedAt: Date = Date()
+    var lastApprovedAt: Date = Date.now
 
     /// Variantes del nombre del comercio (nombres crudos originales) - CloudKit: default required
     var aliases: [String] = []
@@ -53,7 +53,7 @@ final class MerchantMemory {
         subcategory: Subcategory? = nil,
         countApproved: Int = 1,
         countCorrected: Int = 0,
-        lastApprovedAt: Date = Date(),
+        lastApprovedAt: Date = Date.now,
         aliases: [String] = []
     ) {
         self.merchantCanonical = merchantCanonical

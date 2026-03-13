@@ -58,8 +58,8 @@ final class BudgetAlertService {
         // 2. Fetch transactions within budget periods (not all history)
         let earliestDate = budgets.compactMap { budget -> Date? in
             if let start = budget.startDate { return start }
-            return Calendar.current.date(byAdding: .year, value: -1, to: Date())
-        }.min() ?? Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
+            return Calendar.current.date(byAdding: .year, value: -1, to: Date.now)
+        }.min() ?? Calendar.current.date(byAdding: .year, value: -1, to: Date.now) ?? Date.now
         let capturedDate = earliestDate
         let txDescriptor = FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.date >= capturedDate }
@@ -86,7 +86,16 @@ final class BudgetAlertService {
         // Parse configured thresholds
         guard let thresholdsString = budget.alertThresholds else { return }
         let configuredThresholds = Set(
-            thresholdsString.split(separator: ",").compactMap { Int($0) }
+            thresholdsString.split(separator: ",").compactMap { component -> Int? in
+                let trimmed = component.trimmingCharacters(in: .whitespaces)
+                guard let value = Int(trimmed) else {
+                    #if DEBUG
+                    print("BudgetAlertService: Warning — unparseable threshold component: '\(component)'")
+                    #endif
+                    return nil
+                }
+                return value
+            }
         )
         guard !configuredThresholds.isEmpty else { return }
 
@@ -124,9 +133,9 @@ final class BudgetAlertService {
 
     // MARK: - Period Interval (uses current date, not ViewModel state)
 
-    private func getCurrentPeriodInterval(for budget: Budget) -> DateInterval {
+    func getCurrentPeriodInterval(for budget: Budget) -> DateInterval {
         let calendar = Calendar.current
-        let now = Date()
+        let now = Date.now
 
         guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
             let monthStart = calendar.startOfMonth(for: now)

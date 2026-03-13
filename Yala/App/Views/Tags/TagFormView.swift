@@ -224,6 +224,7 @@ struct TagFormView: View {
                                 )
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.Accessibility.selectColor)
                     }
 
                     Text(L10n.Tag.colorSelected(viewModel.selectedColorHex))

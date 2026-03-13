@@ -9,6 +9,7 @@
 import Foundation
 
 /// Tracks which scheduled payment notifications have been sent per date
+@MainActor
 final class ScheduledPaymentNotificationTracker {
     static let shared = ScheduledPaymentNotificationTracker()
 
@@ -18,6 +19,8 @@ final class ScheduledPaymentNotificationTracker {
     private static let dateKeyFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "yyyyMMdd"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
         return f
     }()
 
@@ -58,7 +61,7 @@ final class ScheduledPaymentNotificationTracker {
         let trackerKeys = allKeys.filter { $0.hasPrefix(keyPrefix) }
 
         let calendar = Calendar.current
-        let cutoffDate = calendar.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+        let cutoffDate = calendar.date(byAdding: .day, value: -30, to: Date.now) ?? Date.now
 
         for key in trackerKeys {
             // Key format: scheduledPaymentNotif_UUID_YYYYMMDD_type

@@ -155,7 +155,7 @@ struct SubcategoryFormRow: View {
                 if let subcategory = subcategory {
                     HStack(spacing: DS.Spacing.sm) {
                         // Chip de naturaleza
-                        NatureChip(nature: subcategory.nature)
+                        NeedChip(need: subcategory.need)
 
                         Text(subcategory.name)
                             .font(DS.Typography.subheadline)
@@ -187,18 +187,18 @@ struct SubcategoryFormRow: View {
 // MARK: - Nature Chip
 
 /// Pequeño chip para mostrar la naturaleza de una subcategoría
-struct NatureChip: View {
-    let nature: SubcategoryNature
+struct NeedChip: View {
+    let need: SubcategoryNeed
 
     var body: some View {
-        Text(nature.displayName)
+        Text(need.displayName)
             .font(DS.Typography.labelTiny)
-            .foregroundStyle(nature.color)
+            .foregroundStyle(need.color)
             .padding(.horizontal, DS.Spacing.sm)
             .padding(.vertical, DS.Spacing.xxs)
             .background(
                 Capsule()
-                    .fill(nature.color.opacity(0.15))
+                    .fill(need.color.opacity(0.15))
             )
     }
 }
@@ -355,7 +355,7 @@ struct NoteFormRow: View {
 
         SubsectionDivider()
 
-        DateFormRow(date: .constant(Date()), action: {})
+        DateFormRow(date: .constant(Date.now), action: {})
 
         SubsectionDivider()
 

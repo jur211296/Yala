@@ -37,16 +37,16 @@ final class StatisticsViewModel: Filterable {
     enum MetricLockState {
         case none           // No lock, user can select any metric
         case lockedIncome   // Locked to income (only income filter selected)
-        case lockedExpense  // Locked to expense (category/nature filters or only expense filter)
+        case lockedExpense  // Locked to expense (category/need filters or only expense filter)
     }
 
-    // Check if category/subcategory/nature filters require expense mode
-    var hasExpenseOnlyFilters: Bool {
-        !selectedCategories.isEmpty || !selectedSubcategories.isEmpty || !selectedNatures.isEmpty
+    // Check if any category/subcategory/need filters are active
+    var hasCategoryFilters: Bool {
+        !selectedCategories.isEmpty || !selectedSubcategories.isEmpty || !selectedNeeds.isEmpty
     }
 
     /// Enforce metric logic based on filters
-    /// Simple rule: chip is source of truth, category/nature filters auto-create expense chip
+    /// Simple rule: chip is source of truth, category/need filters auto-create expense chip
     private func enforceMetricLock() {
         // In expenses-only mode, always force expense metric
         if SessionState.shared.isExpensesOnlyMode {
@@ -61,11 +61,11 @@ final class StatisticsViewModel: Filterable {
             } else if selectedTransactionNatures.contains(.expense) {
                 selectedMetric = .expense
             }
-        } else if selectedTransactionNatures.isEmpty && !hasExpenseOnlyFilters {
-            // No chip and no expense-only filters = balance
+        } else if selectedTransactionNatures.isEmpty && !hasCategoryFilters {
+            // No chip and no category filters = balance
             selectedMetric = .balance
         }
-        // Note: if hasExpenseOnlyFilters, the chip should have been set by the view's onChange
+        // Note: if hasCategoryFilters, the chip should have been set by the view's onChange
     }
 
     /// Called when user manually selects a metric (legacy - selector now sets chips directly)
@@ -99,10 +99,10 @@ final class StatisticsViewModel: Filterable {
         set { SessionState.shared.selectedTags = newValue }
     }
 
-    /// Selected natures for filtering
-    var selectedNatures: Set<SubcategoryNature> {
-        get { SessionState.shared.selectedNatures }
-        set { SessionState.shared.selectedNatures = newValue }
+    /// Selected needs for filtering
+    var selectedNeeds: Set<SubcategoryNeed> {
+        get { SessionState.shared.selectedNeeds }
+        set { SessionState.shared.selectedNeeds = newValue }
     }
 
     /// Selected transaction natures for filtering (empty = all)
@@ -128,6 +128,11 @@ final class StatisticsViewModel: Filterable {
     var searchText: String {
         get { SessionState.shared.searchText }
         set { SessionState.shared.searchText = newValue }
+    }
+
+    var isExcludeMode: Bool {
+        get { SessionState.shared.isExcludeMode }
+        set { SessionState.shared.isExcludeMode = newValue }
     }
 
     /// Selected period (using DetailPeriod for expanded options)
@@ -168,7 +173,7 @@ final class StatisticsViewModel: Filterable {
     var trendGrouping: TrendGrouping = .month
 
     /// Date interval for the current period
-    var currentInterval: DateInterval = DateInterval(start: Date(), end: Date())
+    var currentInterval: DateInterval = DateInterval(start: Date.now, end: Date.now)
 
     /// Per-account trend series (when not aggregated)
     var accountSeries: [AccountTrendSeries] = []
@@ -228,8 +233,8 @@ final class StatisticsViewModel: Filterable {
             self.selectedCategories = [categoryID]
         }
 
-        if let nature = context.nature {
-            self.selectedNatures = [nature]
+        if let need = context.need {
+            self.selectedNeeds = [need]
         }
 
         if let interval = context.dateInterval {
@@ -239,37 +244,16 @@ final class StatisticsViewModel: Filterable {
 
     // MARK: - Computed Properties
 
-    /// Whether any filters are active
-    var hasActiveFilters: Bool {
-        !selectedAccounts.isEmpty
-            || !selectedCategories.isEmpty
-            || !selectedSubcategories.isEmpty
-            || !selectedTags.isEmpty
-            || !selectedNatures.isEmpty
-            || !selectedCurrencies.isEmpty
-            || !searchText.isEmpty
-            || amountCondition.isActive
-            || hasTransactionNatureFilter
-    }
+    /// Whether any filters are active (delegates to Filterable.filterCriteria)
+    var hasActiveFilters: Bool { filterCriteria.hasActiveFilters }
 
     /// Whether transaction nature filter shows a chip (exactly 1 selected)
     var hasTransactionNatureFilter: Bool {
         selectedTransactionNatures.count == 1
     }
 
-    /// Number of active filter types
-    var activeFilterCount: Int {
-        var count = 0
-        if !selectedAccounts.isEmpty { count += 1 }
-        if !selectedCategories.isEmpty || !selectedSubcategories.isEmpty { count += 1 }
-        if !selectedNatures.isEmpty { count += 1 }
-        if !selectedTags.isEmpty { count += 1 }
-        if !selectedCurrencies.isEmpty { count += 1 }
-        if !searchText.isEmpty { count += 1 }
-        if amountCondition.isActive { count += 1 }
-        if hasTransactionNatureFilter { count += 1 }
-        return count
-    }
+    /// Number of active filter types (delegates to Filterable.filterCriteria)
+    var activeFilterCount: Int { filterCriteria.activeFilterCount }
 
     /// Clear all active filters
     func clearFilters() {
@@ -277,11 +261,12 @@ final class StatisticsViewModel: Filterable {
         selectedCategories.removeAll()
         selectedSubcategories.removeAll()
         selectedTags.removeAll()
-        selectedNatures.removeAll()
+        selectedNeeds.removeAll()
         selectedTransactionNatures.removeAll()
         selectedCurrencies.removeAll()
         searchText = ""
         amountCondition = .any
+        isExcludeMode = false
     }
 
     // MARK: - Period Interval
@@ -297,8 +282,7 @@ final class StatisticsViewModel: Filterable {
     func calculateTrendData(
         accounts: [Account],
         transactions: [TransactionItem],
-        defaultCurrencyCode: String,
-        context: ModelContext
+        defaultCurrencyCode: String
     ) {
 
         // Enforce metric lock based on filters
@@ -322,8 +306,9 @@ final class StatisticsViewModel: Filterable {
             selectedCategories: selectedCategories,
             selectedSubcategories: selectedSubcategories,
             selectedTags: selectedTags,
-            selectedNatures: selectedNatures,
+            selectedNeeds: selectedNeeds,
             selectedCurrencies: selectedCurrencies,
+            isExcludeMode: isExcludeMode,
             transactionTypeFilter: .all,  // TrendsView handles metric filtering separately
             amountCondition: amountCondition,
             searchText: searchText,
@@ -339,9 +324,13 @@ final class StatisticsViewModel: Filterable {
 
         // Get eligible accounts for trend calculations (archived accounts still count)
         let eligibleAccounts = accounts.filter { account in
-            !account.excludeFromStatistics
-                && (selectedAccounts.isEmpty
-                    || selectedAccounts.contains(account.persistentModelID))
+            guard !account.excludeFromStatistics else { return false }
+            if selectedAccounts.isEmpty { return true }
+            if isExcludeMode {
+                return !selectedAccounts.contains(account.persistentModelID)
+            } else {
+                return selectedAccounts.contains(account.persistentModelID)
+            }
         }
 
         // Calculate total income and expense from filtered transactions
@@ -376,8 +365,7 @@ final class StatisticsViewModel: Filterable {
                 period: detailPeriod,
                 grouping: trendGrouping,
                 interval: interval,
-                currencyCode: defaultCurrencyCode,
-                context: context
+                currencyCode: defaultCurrencyCode
             )
             trendPoints = result.points
             rawTrendPoints = result.rawPoints
@@ -390,8 +378,7 @@ final class StatisticsViewModel: Filterable {
                 transactions: filtered,
                 accounts: eligibleAccounts,
                 interval: interval,
-                defaultCurrencyCode: defaultCurrencyCode,
-                context: context
+                defaultCurrencyCode: defaultCurrencyCode
             )
         }
 
@@ -431,8 +418,7 @@ final class StatisticsViewModel: Filterable {
         transactions: [TransactionItem],
         accounts: [Account],
         interval: DateInterval,
-        defaultCurrencyCode: String,
-        context: ModelContext
+        defaultCurrencyCode: String
     ) {
         let calendar = Calendar.current
         var allSeries: [AccountTrendSeries] = []
@@ -561,7 +547,7 @@ final class StatisticsViewModel: Filterable {
             accountID: selectedAccounts.first,
             categoryID: selectedCategories.first,
             subcategoryName: nil,
-            nature: selectedNatures.first,
+            need: selectedNeeds.first,
             transactionType: transactionType,
             period: detailPeriod
         )

@@ -19,10 +19,12 @@ struct AccountSelectorSheet: View {
 
     @Binding var selectedAccount: Account?
     let title: String
+    var excludeAccount: Account?
 
-    init(selectedAccount: Binding<Account?>, title: String? = nil) {
+    init(selectedAccount: Binding<Account?>, title: String? = nil, excludeAccount: Account? = nil) {
         _selectedAccount = selectedAccount
         self.title = title ?? L10n.Account.selectAccount
+        self.excludeAccount = excludeAccount
     }
 
     var body: some View {
@@ -32,13 +34,18 @@ struct AccountSelectorSheet: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
-                        if viewModel.activeAccounts.isEmpty {
+                        let filteredAccounts = viewModel.activeAccounts.filter { account in
+                            guard let exclude = excludeAccount else { return true }
+                            return account.persistentModelID != exclude.persistentModelID
+                        }
+
+                        if filteredAccounts.isEmpty {
                             YalaEmptyState.noAccounts()
                         } else {
                             SectionBox(title: "") {
                                 VStack(spacing: DS.Spacing.none) {
                                     ForEach(
-                                        Array(viewModel.activeAccounts.enumerated()),
+                                        Array(filteredAccounts.enumerated()),
                                         id: \.element.persistentModelID
                                     ) { index, account in
                                         if index > 0 {

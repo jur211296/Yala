@@ -35,7 +35,7 @@ extension ShapeStyle where Self == ThemeColor {
     static var thTransfer: ThemeColor { ThemeColor(keyPath: \.transfer) }
     static var thToolbarIcon: ThemeColor { ThemeColor(keyPath: \.toolbarIcon) }
     static var thDestructive: ThemeColor { ThemeColor(keyPath: \.destructive) }
-    static var thPriorityNature: ThemeColor { ThemeColor(keyPath: \.priorityNature) }
-    static var thEssentialNature: ThemeColor { ThemeColor(keyPath: \.essentialNature) }
-    static var thOptionalNature: ThemeColor { ThemeColor(keyPath: \.optionalNature) }
+    static var thPriorityNeed: ThemeColor { ThemeColor(keyPath: \.priorityNeed) }
+    static var thEssentialNeed: ThemeColor { ThemeColor(keyPath: \.essentialNeed) }
+    static var thOptionalNeed: ThemeColor { ThemeColor(keyPath: \.optionalNeed) }
 }

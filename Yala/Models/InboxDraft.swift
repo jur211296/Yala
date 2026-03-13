@@ -117,8 +117,8 @@ final class InboxDraft: Identifiable {
 
     // MARK: - Timestamps (CloudKit: defaults required)
 
-    var createdAt: Date = Date()
-    var updatedAt: Date = Date()
+    var createdAt: Date = Date.now
+    var updatedAt: Date = Date.now
 
     // MARK: - Computed Properties
 
@@ -266,7 +266,7 @@ final class InboxDraft: Identifiable {
         self.needsUserInput = needsUserInput
         self.newlyCreatedTagNames = newlyCreatedTagNames
         self.statusRaw = status.rawValue
-        self.createdAt = Date()
-        self.updatedAt = Date()
+        self.createdAt = Date.now
+        self.updatedAt = Date.now
     }
 }

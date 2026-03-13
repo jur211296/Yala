@@ -126,6 +126,7 @@ struct UserDataResetView: View {
 
         // 1. Activate wipe overlay BEFORE starting deletion
         //    This prevents @Query observers from crashing by showing a blocking overlay
+        sessionState.isReadyForTours = false
         sessionState.isWipingData = true
 
         // 2. Dismiss all sheets first to reduce active observers

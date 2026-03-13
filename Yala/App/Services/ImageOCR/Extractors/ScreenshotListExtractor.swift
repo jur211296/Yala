@@ -43,7 +43,7 @@ struct ScreenshotListExtractor {
             let dateResult = DateParser.parse(rowText)
 
             // 5. Extract description: remove amount and date patterns, use what's left
-            let description = extractDescription(from: rowText, amount: amount, date: dateResult?.date)
+            let description = Self.extractDescription(from: rowText, amount: amount, date: dateResult?.date)
 
             // 6. Create evidence: first 100 chars of row
             let evidence = String(rowText.prefix(100))
@@ -76,7 +76,7 @@ struct ScreenshotListExtractor {
     ///   - amount: Parsed amount
     ///   - date: Parsed date (optional)
     /// - Returns: Cleaned description text
-    private func extractDescription(from text: String, amount: Decimal, date: Date?) -> String {
+    static func extractDescription(from text: String, amount: Decimal, date: Date?) -> String {
         var cleaned = text
 
         // Remove currency symbols and amount

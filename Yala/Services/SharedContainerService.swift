@@ -43,13 +43,6 @@ enum SharedContainerService {
         try? FileManager.default.removeItem(at: url)
     }
 
-    /// Removes all pending images
-    static func clearPendingImages() {
-        for url in pendingImageURLs() {
-            removePendingImage(at: url)
-        }
-    }
-
     /// Removes pending images older than the given age in seconds
     static func clearOldPendingImages(olderThan maxAge: TimeInterval) {
         guard let url = pendingImagesURL else { return }
@@ -58,7 +51,7 @@ enum SharedContainerService {
             includingPropertiesForKeys: [.creationDateKey],
             options: .skipsHiddenFiles
         )
-        let cutoff = Date().addingTimeInterval(-maxAge)
+        let cutoff = Date.now.addingTimeInterval(-maxAge)
         for fileURL in contents ?? [] {
             guard let values = try? fileURL.resourceValues(forKeys: [.creationDateKey]),
                   let created = values.creationDate,

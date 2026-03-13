@@ -32,6 +32,7 @@ struct ExchangeRateWidget: View {
 
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selectedDate: Date?
     @State private var filteredCurrency: CurrencyCode?
 
@@ -313,7 +314,7 @@ struct ExchangeRateWidget: View {
                         let isSelected = filteredCurrency == nil || filteredCurrency == currency
 
                         Button {
-                            withAnimation(.easeInOut(duration: 0.2)) {
+                            dsWithAnimation(reduceMotion, .easeInOut(duration: 0.2)) {
                                 if filteredCurrency == currency {
                                     // Deselect: show all
                                     filteredCurrency = nil
@@ -567,7 +568,7 @@ struct ExchangeRateWidget: View {
     private func calculateXDomain(for chartPoints: [ExchangeRateChartPoint]) -> ClosedRange<Date> {
         guard let firstDate = chartPoints.first?.date,
               let lastDate = chartPoints.last?.date else {
-            let now = Date()
+            let now = Date.now
             return now...now
         }
         // Add small padding to avoid clipping edge points

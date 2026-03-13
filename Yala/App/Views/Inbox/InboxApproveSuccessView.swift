@@ -354,7 +354,7 @@ struct InboxApproveSuccessView: View {
 #Preview {
     InboxApproveSuccessView(
         data: InboxApproveSuccessData(
-            date: Date(),
+            date: Date.now,
             accountName: "Efectivo",
             accountColorHex: "4CAF50",
             note: "Almuerzo con amigos",

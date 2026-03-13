@@ -9,6 +9,8 @@ import SwiftData
 import SwiftUI
 
 struct BudgetsWidget: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     let budgets: [BudgetSummary]
     let currencyCode: String
 
@@ -17,6 +19,7 @@ struct BudgetsWidget: View {
 
     /// Currently selected budget ID for highlighting
     var selectedBudgetID: PersistentIdentifier?
+    var isExcludeMode: Bool = false
 
     // Interaction callbacks
     var onSelectBudget: ((Budget) -> Void)?
@@ -72,6 +75,17 @@ struct BudgetsWidget: View {
 
             Spacer()
 
+            if !budgets.isEmpty, let onEditFavorites {
+                Button {
+                    onEditFavorites()
+                } label: {
+                    Image(systemName: "star")
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+
             if onShowMore != nil {
                 Button {
                     onShowMore?()
@@ -95,10 +109,10 @@ struct BudgetsWidget: View {
             ForEach(displayedBudgets) { summary in
                 let isSelected = selectedBudgetID == summary.budget.persistentModelID
                 let isAnySelected = selectedBudgetID != nil
-                let shouldDim = isAnySelected && !isSelected
+                let shouldDim = isAnySelected && (isExcludeMode ? isSelected : !isSelected)
 
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    dsWithAnimation(reduceMotion, .easeInOut(duration: 0.2)) {
                         onSelectBudget?(summary.budget)
                     }
                 } label: {

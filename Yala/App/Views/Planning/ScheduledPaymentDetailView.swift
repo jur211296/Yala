@@ -26,7 +26,7 @@ struct ScheduledPaymentDetailView: View {
     // Calculate occurrences using getPaymentDatesInMonth (SSOT for date generation)
     private var pastOccurrences: [Date] {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = calendar.startOfDay(for: Date.now)
 
         // Selected month past dates
         let selectedMonthDates = viewModel.getPaymentDatesInMonth(payment: payment, month: viewModel.selectedMonth)
@@ -47,7 +47,7 @@ struct ScheduledPaymentDetailView: View {
     private var upcomingOccurrences: [Date] {
         guard payment.isRecurring else { return [] }
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = calendar.startOfDay(for: Date.now)
 
         // Selected month future dates
         var futureDates = viewModel.getPaymentDatesInMonth(payment: payment, month: viewModel.selectedMonth)
@@ -76,11 +76,6 @@ struct ScheduledPaymentDetailView: View {
                 VStack(spacing: DS.Spacing.xxl) {
                     // Summary Card
                     summaryCard
-
-                    // Associate transaction button (if not paid for this month)
-                    if !isPaidForSelectedMonth {
-                        associateTransactionButton
-                    }
 
                     // Upcoming Section
                     if payment.isRecurring && !upcomingOccurrences.isEmpty {
@@ -125,7 +120,7 @@ struct ScheduledPaymentDetailView: View {
                 selectedMonth: viewModel.selectedMonth,
                 viewModel: viewModel
             )
-            .presentationDetents([.medium, .large])
+            .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
         }
     }
 
@@ -306,8 +301,6 @@ struct ScheduledPaymentDetailView: View {
     private func occurrenceRow(date: Date, isPast: Bool, index: Int?) -> some View {
         let isSkipped = payment.isDateSkipped(date)
         let isPaidForDate = occurrenceIsPaid(date: date, isPast: isPast)
-        // Tappable if skipped (to undo) or not paid (to skip)
-        let hasTapAction = isSkipped || !isPaidForDate
 
         // Binding: true only when THIS row's date is the selected one
         let isDialogPresented = Binding<Bool>(
@@ -321,7 +314,6 @@ struct ScheduledPaymentDetailView: View {
         )
 
         return Button {
-            guard hasTapAction else { return }
             selectedOccurrenceDate = date
             showOccurrenceActions = true
         } label: {
@@ -382,11 +374,9 @@ struct ScheduledPaymentDetailView: View {
                         .font(DS.Typography.label)
                         .foregroundStyle(isSkipped ? .secondary : (isPast ? .secondary : (payment.transactionType == "income" ? Color.electricIndigo : .primary)))
 
-                    if hasTapAction {
-                        Image(systemName: "chevron.right")
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.tertiary)
-                    }
+                    Image(systemName: "chevron.right")
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.tertiary)
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -400,11 +390,22 @@ struct ScheduledPaymentDetailView: View {
             isPresented: isDialogPresented,
             titleVisibility: .visible
         ) {
-            if isSkipped {
+            if isPaidForDate {
+                Button(role: .destructive) {
+                    unlinkTransactionsForDate(date)
+                } label: {
+                    Label(L10n.Scheduled.Detail.unlink, systemImage: "minus.circle")
+                }
+            } else if isSkipped {
                 Button(L10n.Scheduled.Detail.skipUndo) {
                     viewModel.unskipOccurrence(payment: payment, date: date)
                 }
             } else {
+                Button {
+                    showAssociationSheet = true
+                } label: {
+                    Label(L10n.Scheduled.Detail.associateTitle, systemImage: "link.badge.plus")
+                }
                 Button(L10n.Scheduled.Detail.skip, role: .destructive) {
                     viewModel.skipOccurrence(payment: payment, date: date)
                 }
@@ -422,6 +423,11 @@ struct ScheduledPaymentDetailView: View {
             .sorted()
         guard let index = dates.firstIndex(where: { Calendar.current.isDate($0, inSameDayAs: date) }) else { return false }
         return index < paidCount
+    }
+
+    /// Unlink transactions associated with this payment for a specific date
+    private func unlinkTransactionsForDate(_ date: Date) {
+        viewModel.unlinkTransactionsForDate(paymentID: payment.id, date: date)
     }
 
     // MARK: - Info Note
@@ -442,45 +448,6 @@ struct ScheduledPaymentDetailView: View {
             RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
                 .fill(theme.accent.opacity(0.1))
         )
-    }
-
-    // MARK: - Transaction Association
-
-    private var isPaidForSelectedMonth: Bool {
-        let dates = viewModel.getPaymentDatesInMonth(payment: payment, month: viewModel.selectedMonth)
-        let skippedCount = dates.filter { payment.isDateSkipped($0) }.count
-        let requiredOccurrences = dates.count - skippedCount
-        let paidCount = viewModel.paidStatusForMonth[payment.id.uuidString] ?? 0
-        return requiredOccurrences > 0 ? paidCount >= requiredOccurrences : true
-    }
-
-    private var associateTransactionButton: some View {
-        Button {
-            showAssociationSheet = true
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                Image(systemName: "link.badge.plus")
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.thAccent)
-
-                Text(L10n.Scheduled.Detail.associateTitle)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.thAccent)
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.tertiary)
-            }
-            .padding(DS.Spacing.lg)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                    .fill(theme.accent.opacity(0.1))
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Helpers

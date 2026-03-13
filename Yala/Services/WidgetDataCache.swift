@@ -201,7 +201,7 @@ enum WidgetDataCache {
         }
 
         // Filter to last 90 days for widget display (max 500)
-        let ninetyDaysAgo = Calendar.current.date(byAdding: .day, value: -90, to: Date()) ?? Date()
+        let ninetyDaysAgo = Calendar.current.date(byAdding: .day, value: -90, to: Date.now) ?? Date.now
         let recentTransactions = Array(allTransactions.filter { $0.date >= ninetyDaysAgo }.prefix(500))
 
         // Fetch active budgets
@@ -280,11 +280,19 @@ enum WidgetDataCache {
             )
         }
 
-        // Build widget budgets with spent calculation (using recent transactions)
+        // Build widget budgets with spent calculation
+        // For yearly/unique budgets, use allTransactions (90-day window is insufficient)
         let widgetBudgets = budgets.map { budget in
-            let spent = calculateBudgetSpent(budget: budget, transactions: recentTransactions)
+            let transactionsForBudget: [TransactionItem]
+            let periodType = BudgetPeriodType(rawValue: budget.periodType)
+            if periodType == .yearly || periodType == .unique {
+                transactionsForBudget = allTransactions
+            } else {
+                transactionsForBudget = recentTransactions
+            }
+            let spent = calculateBudgetSpent(budget: budget, transactions: transactionsForBudget)
             let percentUsed = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100 : 0
-            let (icon, color) = getBudgetDisplayProperties(budget: budget)
+            let (icon, color) = budget.displayProperties
 
             return WidgetBudget(
                 id: budget.id.uuidString,
@@ -300,7 +308,7 @@ enum WidgetDataCache {
         }
 
         // Build widget scheduled payments
-        let today = Calendar.current.startOfDay(for: Date())
+        let today = Calendar.current.startOfDay(for: Date.now)
         let widgetPayments = scheduledPayments.map { payment in
             let (icon, color) = getPaymentDisplayProperties(payment: payment)
 
@@ -370,20 +378,20 @@ enum WidgetDataCache {
         }
         let thisMonthSummary = periodSummaries[DetailPeriod.thisMonth.rawValue] ?? buildPeriodSummary(
             transactions: eligibleRecentTransactions,
-            periodStart: Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date())) ?? Date(),
-            periodEnd: Date(),
+            periodStart: Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date.now)) ?? Date.now,
+            periodEnd: Date.now,
             currencyCode: preferredCurrency
         )
 
         let allTimeSummary = periodSummaries[DetailPeriod.allTime.rawValue] ?? buildPeriodSummary(
             transactions: eligibleTransactions,
             periodStart: Date.distantPast,
-            periodEnd: Date(),
+            periodEnd: Date.now,
             currencyCode: preferredCurrency
         )
 
         return WidgetDataSnapshot(
-            lastUpdated: Date(),
+            lastUpdated: Date.now,
             preferredCurrencyCode: preferredCurrency,
             currencyDisplayFormat: currencyDisplayFormat,
             accountBalances: widgetAccountBalances,
@@ -422,7 +430,7 @@ enum WidgetDataCache {
     private static func calculateBudgetSpent(budget: Budget, transactions: [TransactionItem]) -> Double {
         // Get period date range
         let calendar = Calendar.current
-        let now = Date()
+        let now = Date.now
 
         var startDate: Date
         var endDate: Date = now
@@ -446,11 +454,21 @@ enum WidgetDataCache {
             tx.date >= startDate && tx.date <= endDate
         }
 
+        // Determine currency logic: single account → use tx.amount, else → preferred currency
+        let budgetAccounts = budget.accounts ?? []
+        let useSingleAccountCurrency = budgetAccounts.count == 1
+
         // Sum expenses that match budget criteria
         var spent: Double = 0
         for tx in periodTransactions {
+            // Use same currency logic as UI: single account uses tx.amount
+            let txAmount: Double
+            if useSingleAccountCurrency {
+                txAmount = tx.amount
+            } else {
+                txAmount = tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
+            }
             // Skip income (positive amounts are income)
-            let txAmount = tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
             if txAmount > 0 { continue }
 
             // Subcategory filter (by ID, not name)
@@ -462,13 +480,13 @@ enum WidgetDataCache {
                 (budget.accounts ?? []).contains(where: { $0.persistentModelID == tx.account?.persistentModelID })
 
             // Nature filter
-            let matchesNature: Bool
+            let matchesNeed: Bool
             if let naturesString = budget.natures, !naturesString.isEmpty {
                 let natures = naturesString.split(separator: ",")
-                    .compactMap { SubcategoryNature(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
-                matchesNature = natures.contains(tx.effectiveNature)
+                    .compactMap { SubcategoryNeed(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
+                matchesNeed = natures.contains(tx.effectiveNeed)
             } else {
-                matchesNature = true
+                matchesNeed = true
             }
 
             // Tag filter
@@ -481,7 +499,7 @@ enum WidgetDataCache {
                 matchesTags = true
             }
 
-            if matchesSubcategory && matchesAccount && matchesNature && matchesTags {
+            if matchesSubcategory && matchesAccount && matchesNeed && matchesTags {
                 spent += abs(txAmount)
             }
         }
@@ -490,32 +508,6 @@ enum WidgetDataCache {
     }
 
     /// Extracts display properties (icon, color) from a budget based on its subcategories
-    private static func getBudgetDisplayProperties(budget: Budget) -> (icon: String, color: String) {
-        let subcategories = budget.subcategories ?? []
-        guard !subcategories.isEmpty else {
-            return ("chart.pie.fill", "#6366F1")
-        }
-
-        if subcategories.count == 1, let subcategory = subcategories.first {
-            // Single subcategory: use its icon/color, or fallback to category
-            let icon = subcategory.iconName ?? subcategory.safeCategory.iconName ?? "tag.fill"
-            let color = subcategory.colorHex ?? subcategory.safeCategory.colorHex
-            return (icon, color)
-        }
-
-        // Multiple subcategories: check if all from same category
-        let uniqueCategories = Set(subcategories.map { $0.safeCategory.persistentModelID })
-        if uniqueCategories.count == 1, let firstSubcategory = subcategories.first {
-            let category = firstSubcategory.safeCategory
-            let icon = category.iconName ?? "tag.fill"
-            let color = category.colorHex
-            return (icon, color)
-        }
-
-        // Multiple categories: use generic icon
-        return ("chart.pie.fill", "#6366F1")
-    }
-
     /// Extracts display properties (icon, color) from a scheduled payment
     private static func getPaymentDisplayProperties(payment: ScheduledPayment) -> (icon: String, color: String) {
         if let subcategory = payment.subcategory {
@@ -547,7 +539,7 @@ enum WidgetDataCache {
         let earliestTransactionDate = transactions.map(\.date).min()
         let daysOfData: Int
         if let earliest = earliestTransactionDate {
-            daysOfData = calendar.dateComponents([.day], from: earliest, to: Date()).day ?? 90
+            daysOfData = calendar.dateComponents([.day], from: earliest, to: Date.now).day ?? 90
         } else {
             daysOfData = 0
         }
@@ -601,7 +593,7 @@ enum WidgetDataCache {
         var runningBalance = totalBalance
 
         for daysAgo in 0..<days {
-            guard let date = calendar.date(byAdding: .day, value: -daysAgo, to: Date()) else { continue }
+            guard let date = calendar.date(byAdding: .day, value: -daysAgo, to: Date.now) else { continue }
             let day = calendar.startOfDay(for: date)
 
             trendPoints.append(WidgetTrendPoint(date: day, balance: runningBalance))
@@ -624,7 +616,7 @@ enum WidgetDataCache {
     ) -> [WidgetTrendPoint] {
         var trendPoints: [WidgetTrendPoint] = []
         var runningBalance = totalBalance
-        let today = Date()
+        let today = Date.now
 
         // Get the start of current period
         var currentPeriodStart: Date

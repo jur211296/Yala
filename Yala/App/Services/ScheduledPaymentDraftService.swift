@@ -20,7 +20,7 @@ struct ScheduledPaymentDraftService {
     @discardableResult
     static func processDuePayments(context: ModelContext) -> Int {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = calendar.startOfDay(for: Date.now)
         let endOfToday = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: today) ?? today
 
         // Fetch active payments with nextDueDate <= today
@@ -51,6 +51,12 @@ struct ScheduledPaymentDraftService {
 
             // Check if draft already exists for this payment
             if hasPendingDraft(for: payment, context: context) {
+                continue
+            }
+
+            // Check if a transaction already exists linked to this payment for this date
+            if hasLinkedTransaction(for: payment, on: payment.nextDueDate, context: context) {
+                advanceToNextDueDate(payment: payment)
                 continue
             }
 
@@ -100,6 +106,32 @@ struct ScheduledPaymentDraftService {
         return !existingDrafts.isEmpty
     }
 
+    /// Check if a transaction already exists linked to this payment on the given date
+    private static func hasLinkedTransaction(for payment: ScheduledPayment, on date: Date, context: ModelContext) -> Bool {
+        let paymentIDString = payment.id.uuidString
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else { return false }
+
+        let predicate = #Predicate<TransactionItem> { tx in
+            tx.scheduledPaymentID == paymentIDString &&
+            tx.date >= startOfDay &&
+            tx.date < endOfDay
+        }
+
+        var descriptor = FetchDescriptor<TransactionItem>(predicate: predicate)
+        descriptor.fetchLimit = 1
+        do {
+            let transactions = try context.fetch(descriptor)
+            return !transactions.isEmpty
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error checking for linked transaction: \(error)")
+            #endif
+            return false
+        }
+    }
+
     /// Create an InboxDraft from a ScheduledPayment
     private static func createDraft(from payment: ScheduledPayment) -> InboxDraft {
         // Determine source type based on payment category
@@ -145,7 +177,7 @@ struct ScheduledPaymentDraftService {
     /// Only creates if no pending/approved draft already exists for this payment in that month.
     static func recreateDraftIfNeeded(for payment: ScheduledPayment, date: Date, context: ModelContext) {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = calendar.startOfDay(for: Date.now)
         let targetDate = calendar.startOfDay(for: date)
 
         // Only recreate for dates that are today or past
@@ -272,7 +304,10 @@ struct ScheduledPaymentDraftService {
         }) else { return }
 
         // Update paid date
-        payment.lastPaidDate = Date()
+        payment.lastPaidDate = Date.now
+
+        // Link approved transaction to this scheduled payment
+        draft.approvedTransaction?.scheduledPaymentID = payment.id.uuidString
 
         // Advance to next due date
         advanceToNextDueDate(payment: payment)

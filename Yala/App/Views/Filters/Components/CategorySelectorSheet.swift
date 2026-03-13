@@ -25,7 +25,7 @@ struct CategorySelectorSheet: View {
 
     // MARK: - Local State
 
-    @State private var expandedCategories: Set<Category> = []
+    @State private var expandedCategories: Set<PersistentIdentifier> = []
 
     // MARK: - Body
 
@@ -47,7 +47,7 @@ struct CategorySelectorSheet: View {
                                     VStack(spacing: DS.Spacing.none) {
                                         categoryRow(category)
 
-                                        if expandedCategories.contains(category) {
+                                        if expandedCategories.contains(category.persistentModelID) {
                                             ForEach(visibleSubcategories(for: category)) {
                                                 subcategory in
                                                 SubsectionDivider()
@@ -161,7 +161,7 @@ struct CategorySelectorSheet: View {
                     toggleExpanded(category)
                 } label: {
                     Image(systemName: "chevron.down")
-                        .rotationEffect(.degrees(expandedCategories.contains(category) ? 0 : -90))
+                        .rotationEffect(.degrees(expandedCategories.contains(category.persistentModelID) ? 0 : -90))
                         .foregroundStyle(.tertiary)
                 }
                 .buttonStyle(.plain)
@@ -231,10 +231,11 @@ struct CategorySelectorSheet: View {
     }
 
     private func toggleExpanded(_ category: Category) {
-        if expandedCategories.contains(category) {
-            expandedCategories.remove(category)
+        let id = category.persistentModelID
+        if expandedCategories.contains(id) {
+            expandedCategories.remove(id)
         } else {
-            expandedCategories.insert(category)
+            expandedCategories.insert(id)
         }
     }
 

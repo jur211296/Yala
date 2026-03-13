@@ -1,6 +1,6 @@
 ---
 description: Auditoría de accesibilidad — VoiceOver, Dynamic Type, contraste, touch targets
-allowed-tools: Grep, Glob, Read, Task
+allowed-tools: Grep, Glob, Read, Agent
 argument-hint: "[archivo o directorio — default: toda la app]"
 ---
 

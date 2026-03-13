@@ -24,7 +24,6 @@ struct PersonalizationSettingsView: View {
     @AppStorage("decimalPlaces") private var decimalPlaces: Int = 0
     @AppStorage("currencyDisplayFormat") private var currencyDisplayFormat: String = "code"  // "code" or "symbol"
     @AppStorage("autoFocusField") private var autoFocusField: String = "none"
-
     @State private var showingPeriodPicker = false
     @State private var showingAutoFocusPicker = false
     @State private var showingDecimalsPicker = false
@@ -34,6 +33,7 @@ struct PersonalizationSettingsView: View {
     @State private var showingWeekdayPicker = false
     @State private var showingLanguagePicker = false
     @State private var showingExpensesOnlyConfirmation = false
+    @State private var showingSmartInsightsSettings = false
 
     private var selectedPeriod: DetailPeriod {
         DetailPeriod(rawValue: defaultPeriodRaw) ?? .thisMonth
@@ -207,6 +207,39 @@ struct PersonalizationSettingsView: View {
                             .buttonStyle(.plain)
 
                             Text(L10n.Settings.tabBarConfigInfo)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, DS.Spacing.xxs)
+                        }
+
+                        // Customize AI Summary
+                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                            Button {
+                                showingSmartInsightsSettings = true
+                            } label: {
+                                HStack {
+                                    Text(L10n.Settings.customizeAISummary)
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.thPrimaryText)
+
+                                    Spacer()
+
+                                    Image(systemName: "chevron.right")
+                                        .font(DS.Typography.labelSmall.weight(.medium))
+                                        .foregroundStyle(.tertiary)
+                                }
+                                .padding(.horizontal, DS.FormRow.paddingH)
+                                .padding(.vertical, DS.FormRow.paddingV)
+                                .background(.thCard)
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                                )
+                            }
+                            .buttonStyle(.plain)
+
+                            Text(L10n.Settings.customizeAISummaryHint)
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, DS.Spacing.xxs)
@@ -588,7 +621,7 @@ struct PersonalizationSettingsView: View {
                     showingWeekdayPicker = false
                 }
             )
-            .presentationDetents([.height(280)])
+            .presentationDetents(DS.Adaptive.sheetDetents([.height(280)]))
         }
         .sheet(isPresented: $showingDecimalsPicker) {
             DecimalsPickerSheet(
@@ -601,7 +634,7 @@ struct PersonalizationSettingsView: View {
                     showingDecimalsPicker = false
                 }
             )
-            .presentationDetents([.height(320)])
+            .presentationDetents(DS.Adaptive.sheetDetents([.height(320)]))
         }
         .sheet(isPresented: $showingCurrencyFormatPicker) {
             CurrencyFormatPickerSheet(
@@ -614,7 +647,7 @@ struct PersonalizationSettingsView: View {
                     showingCurrencyFormatPicker = false
                 }
             )
-            .presentationDetents([.height(280)])
+            .presentationDetents(DS.Adaptive.sheetDetents([.height(280)]))
         }
         .sheet(isPresented: $showingAutoFocusPicker) {
             AutoFocusPickerSheet(
@@ -625,7 +658,7 @@ struct PersonalizationSettingsView: View {
                     showingAutoFocusPicker = false
                 }
             )
-            .presentationDetents([.height(320)])
+            .presentationDetents(DS.Adaptive.sheetDetents([.height(320)]))
         }
         .sheet(isPresented: $showingAverageLinePicker) {
             AverageLinePickerSheet(
@@ -636,7 +669,7 @@ struct PersonalizationSettingsView: View {
                     showingAverageLinePicker = false
                 }
             )
-            .presentationDetents([.height(320)])
+            .presentationDetents(DS.Adaptive.sheetDetents([.height(320)]))
         }
         .sheet(isPresented: $showingLanguagePicker) {
             LanguagePickerSheet(
@@ -646,7 +679,10 @@ struct PersonalizationSettingsView: View {
                     showingLanguagePicker = false
                 }
             )
-            .presentationDetents([.medium])
+            .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
+        }
+        .sheet(isPresented: $showingSmartInsightsSettings) {
+            SmartInsightsSettingsView()
         }
         .confirmationDialog(
             sessionState.isExpensesOnlyMode
@@ -672,6 +708,7 @@ struct PersonalizationSettingsView: View {
             )
         }
     }
+
 }
 
 // MARK: - Period Picker Sheet

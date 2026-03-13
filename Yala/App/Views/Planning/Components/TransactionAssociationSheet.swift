@@ -74,8 +74,12 @@ struct TransactionAssociationSheet: View {
     private var candidatesList: some View {
         ScrollView {
             LazyVStack(spacing: DS.Spacing.sm) {
-                // Header with payment info
+                sectionLabel(L10n.Scheduled.Associate.paymentHeader)
+
                 paymentInfoHeader
+
+                sectionLabel(L10n.Scheduled.Associate.candidatesHeader)
+                    .padding(.top, DS.Spacing.sm)
 
                 ForEach(candidates, id: \.persistentModelID) { transaction in
                     candidateRow(transaction)
@@ -83,6 +87,14 @@ struct TransactionAssociationSheet: View {
             }
             .padding(DS.Spacing.lg)
         }
+    }
+
+    private func sectionLabel(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(DS.Typography.caption)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.leading, DS.Spacing.sm)
     }
 
     private var paymentInfoHeader: some View {

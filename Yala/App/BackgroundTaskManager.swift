@@ -59,6 +59,7 @@ final class BackgroundTaskManager {
                     #if DEBUG
                     print("BackgroundTaskManager: Task is not BGAppRefreshTask")
                     #endif
+                    task.setTaskCompleted(success: false)
                     return
                 }
                 self.handleWidgetRefreshTask(refreshTask)
@@ -76,6 +77,7 @@ final class BackgroundTaskManager {
                     #if DEBUG
                     print("BackgroundTaskManager: Report task is not BGAppRefreshTask")
                     #endif
+                    task.setTaskCompleted(success: false)
                     return
                 }
                 self.handleReportNotificationTask(appRefreshTask)
@@ -93,6 +95,7 @@ final class BackgroundTaskManager {
                     #if DEBUG
                     print("BackgroundTaskManager: Backup task is not BGAppRefreshTask")
                     #endif
+                    task.setTaskCompleted(success: false)
                     return
                 }
                 self.handleReportNotificationTask(appRefreshTask)
@@ -163,14 +166,6 @@ final class BackgroundTaskManager {
         // Schedule next report check
         scheduleNextReportTask()
 
-        // Set expiration handler
-        task.expirationHandler = {
-            #if DEBUG
-            print("BackgroundTaskManager: Report notification task expired")
-            #endif
-            task.setTaskCompleted(success: false)
-        }
-
         // Perform the report check
         guard let container = modelContainer else {
             #if DEBUG
@@ -180,14 +175,23 @@ final class BackgroundTaskManager {
             return
         }
 
-        Task {
+        let workTask = Task {
             await ReportNotificationService.shared.sendDueReports(context: container.mainContext)
+
+            // Check cancellation — expiration handler may have already completed the task
+            guard !Task.isCancelled else { return }
 
             #if DEBUG
             print("BackgroundTaskManager: Report notifications processed in background")
             #endif
 
             task.setTaskCompleted(success: true)
+        }
+
+        // Cancel work if system expires the task (prevents double setTaskCompleted)
+        task.expirationHandler = {
+            workTask.cancel()
+            task.setTaskCompleted(success: false)
         }
     }
 
@@ -210,7 +214,7 @@ final class BackgroundTaskManager {
         // Fallback to tomorrow 6 AM if no active reports or no context
         if targetDate == nil {
             targetDate = Calendar.current.nextDate(
-                after: Date(),
+                after: Date.now,
                 matching: DateComponents(hour: 6),
                 matchingPolicy: .nextTime
             )
@@ -285,7 +289,7 @@ final class BackgroundTaskManager {
         }
 
         let calendar = Calendar.current
-        let now = Date()
+        let now = Date.now
         var nextTime: Date?
 
         for report in reports {

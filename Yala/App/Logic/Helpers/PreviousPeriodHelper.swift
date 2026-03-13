@@ -164,11 +164,11 @@ enum PreviousPeriodHelper {
             if mode == .year {
                 // "vs Ene 25"
                 formatter.dateFormat = "MMM yy"
-                return "vs \(formatter.string(from: previousInterval.start).capitalized.replacingOccurrences(of: ".", with: ""))"
+                return "vs \(formatter.string(from: previousInterval.start).capitalized.replacing(".", with: ""))"
             } else {
                 // "vs Dic 25"
                 formatter.dateFormat = "MMM yy"
-                return "vs \(formatter.string(from: previousInterval.start).capitalized.replacingOccurrences(of: ".", with: ""))"
+                return "vs \(formatter.string(from: previousInterval.start).capitalized.replacing(".", with: ""))"
             }
 
         case .thisWeek, .last7Days:
@@ -177,13 +177,13 @@ enum PreviousPeriodHelper {
                 formatter.dateFormat = "d"
                 let startDay = formatter.string(from: previousInterval.start)
                 formatter.dateFormat = "dMMMyy"
-                let endDate = formatter.string(from: previousInterval.end).lowercased().replacingOccurrences(of: ".", with: "")
+                let endDate = formatter.string(from: previousInterval.end).lowercased().replacing(".", with: "")
                 return "vs \(startDay)-\(endDate)"
             } else {
                 // Compact: "vs 29dic-4ene"
                 formatter.dateFormat = "dMMM"
-                let startDate = formatter.string(from: previousInterval.start).lowercased().replacingOccurrences(of: ".", with: "")
-                let endDate = formatter.string(from: previousInterval.end).lowercased().replacingOccurrences(of: ".", with: "")
+                let startDate = formatter.string(from: previousInterval.start).lowercased().replacing(".", with: "")
+                let endDate = formatter.string(from: previousInterval.end).lowercased().replacing(".", with: "")
                 return "vs \(startDate)-\(endDate)"
             }
 
@@ -191,22 +191,22 @@ enum PreviousPeriodHelper {
             if mode == .year {
                 // Compact: "vs 17dic24-15ene25"
                 formatter.dateFormat = "dMMMyy"
-                let startDate = formatter.string(from: previousInterval.start).lowercased().replacingOccurrences(of: ".", with: "")
-                let endDate = formatter.string(from: previousInterval.end).lowercased().replacingOccurrences(of: ".", with: "")
+                let startDate = formatter.string(from: previousInterval.start).lowercased().replacing(".", with: "")
+                let endDate = formatter.string(from: previousInterval.end).lowercased().replacing(".", with: "")
                 return "vs \(startDate)-\(endDate)"
             } else {
                 // Compact: "vs 17dic-15ene"
                 formatter.dateFormat = "dMMM"
-                let startDate = formatter.string(from: previousInterval.start).lowercased().replacingOccurrences(of: ".", with: "")
-                let endDate = formatter.string(from: previousInterval.end).lowercased().replacingOccurrences(of: ".", with: "")
+                let startDate = formatter.string(from: previousInterval.start).lowercased().replacing(".", with: "")
+                let endDate = formatter.string(from: previousInterval.end).lowercased().replacing(".", with: "")
                 return "vs \(startDate)-\(endDate)"
             }
 
         case .custom:
             // Compact: "vs 11dic25-31dic25"
             formatter.dateFormat = "dMMMyy"
-            let startDate = formatter.string(from: previousInterval.start).lowercased().replacingOccurrences(of: ".", with: "")
-            let endDate = formatter.string(from: previousInterval.end).lowercased().replacingOccurrences(of: ".", with: "")
+            let startDate = formatter.string(from: previousInterval.start).lowercased().replacing(".", with: "")
+            let endDate = formatter.string(from: previousInterval.end).lowercased().replacing(".", with: "")
             return "vs \(startDate)-\(endDate)"
 
         case .allTime:

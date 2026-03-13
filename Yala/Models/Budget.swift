@@ -16,8 +16,6 @@ final class Budget {
     var id: UUID = UUID()
 
     // Legacy properties (kept for backwards compatibility) - CloudKit: defaults required
-    var month: Int = 0
-    var year: Int = 0
     var currencyCode: String = "USD"
     var limitAmount: Double = 0
     @Relationship(deleteRule: .nullify, inverse: \Category.budgets)
@@ -28,7 +26,7 @@ final class Budget {
     var periodType: String = "monthly"  // "weekly", "monthly", "yearly", "unique"
     var startDate: Date?    // For unique budgets
     var endDate: Date?      // For unique budgets
-    var currentPeriodStart: Date?  // For tracking which week/month/year
+    var currentPeriodStart: Date?  // LEGACY: unused, kept for CloudKit compat with older versions
 
     // Many-to-many relationships - CloudKit: must be optional
     @Relationship(deleteRule: .nullify, inverse: \Account.budgets)
@@ -41,7 +39,7 @@ final class Budget {
     var tags: [Tag]?
     var natures: String?    // Comma-separated nature values (e.g., "essential,priority")
     var isActive: Bool = true
-    var createdAt: Date = Date()
+    var createdAt: Date = Date.now
     var isFavorite: Bool = false
     var favoriteOrder: Int = 0
 
@@ -51,8 +49,6 @@ final class Budget {
 
     init(
         id: UUID = UUID(),
-        month: Int = 0,
-        year: Int = 0,
         currencyCode: String,
         limitAmount: Double,
         category: Category? = nil,
@@ -66,15 +62,13 @@ final class Budget {
         tags: [Tag] = [],
         natures: String? = nil,
         isActive: Bool = true,
-        createdAt: Date = Date(),
+        createdAt: Date = Date.now,
         isFavorite: Bool = false,
         favoriteOrder: Int = 0,
         alertEnabled: Bool = false,
         alertThresholds: String? = nil
     ) {
         self.id = id
-        self.month = month
-        self.year = year
         self.currencyCode = currencyCode
         self.limitAmount = limitAmount
         self.category = category
@@ -93,5 +87,31 @@ final class Budget {
         self.favoriteOrder = favoriteOrder
         self.alertEnabled = alertEnabled
         self.alertThresholds = alertThresholds
+    }
+
+    // MARK: - Display Properties
+
+    /// Returns the icon and color for this budget based on its subcategories.
+    /// Single source of truth — used by widgets, views, and previews.
+    var displayProperties: (icon: String, color: String) {
+        let subs = subcategories ?? []
+        guard !subs.isEmpty else {
+            return ("chart.pie.fill", AppConstants.defaultColorHex)
+        }
+
+        if subs.count == 1, let sub = subs.first {
+            let icon = sub.iconName ?? sub.safeCategory.iconName ?? "tag.fill"
+            let color = sub.colorHex ?? sub.safeCategory.colorHex
+            return (icon, color)
+        }
+
+        let uniqueCategories = Set(subs.map { $0.safeCategory.persistentModelID })
+        if uniqueCategories.count == 1, let first = subs.first {
+            let icon = first.safeCategory.iconName ?? "tag.fill"
+            let color = first.colorHex ?? first.safeCategory.colorHex
+            return (icon, color)
+        }
+
+        return ("chart.pie.fill", AppConstants.defaultColorHex)
     }
 }

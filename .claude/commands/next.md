@@ -9,14 +9,13 @@ Analiza el estado del proyecto y propone el siguiente trabajo de forma concisa.
 Lee estos archivos en paralelo:
 - STATE.md (secciones: Recent Progress, Session Continuity, Next Steps)
 - Los últimos 5 commits con `git log --oneline -5`
-- Si existe, el último archivo en .claude/sessions/ (ordenado por fecha)
 
 Presenta un resumen compacto:
 
 ```
 ## Resumen
 
-**Última sesión:** [fecha] - [qué se hizo, de Session Continuity o último log]
+**Última sesión:** [fecha] - [qué se hizo, de Session Continuity]
 **Últimos commits:**
 - [hash] [mensaje]
 - [hash] [mensaje]
@@ -53,9 +52,9 @@ Cuando el usuario elija una opción:
 
 2. Pregunta:
    ```
-   ¿Necesitas que planifiquemos este trabajo?
-   - Sí: Divido en incrementos pequeños antes de empezar
-   - No: Empezamos directo con /session-start
+   ¿Planificamos antes de empezar?
+   - Sí → Divido en incrementos pequeños
+   - No → Empezamos directo
    ```
 
 3. Si el usuario dice "sí" a planificar:
@@ -69,18 +68,11 @@ Cuando el usuario elija una opción:
      2. [Incremento 2] - [qué se logra]
      3. [Incremento 3] - [qué se logra]
 
-     ¿Listo para empezar? Ejecuto /session-start
+     ¿Listo para empezar?
      ```
 
 4. Si el usuario dice "no" o cuando el plan esté listo:
-   - Pregunta: "¿Ejecuto /session-start para comenzar?"
-
-## PASO 4: INICIO DE SESIÓN
-
-Si el usuario confirma, ejecuta automáticamente el flujo de /session-start con:
-- El objetivo ya definido (el item elegido)
-- El plan de incrementos (si se definió)
-- Sin volver a preguntar qué va a trabajar (ya lo sabemos)
+   - Empezar a trabajar directamente en el item elegido
 
 ---
 

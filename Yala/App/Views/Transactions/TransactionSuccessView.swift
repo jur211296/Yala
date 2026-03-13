@@ -23,7 +23,7 @@ struct TransactionSuccessData {
     let categoryName: String?
     let categoryColorHex: String?
     let tags: [(name: String, colorHex: String)]
-    let nature: SubcategoryNature?
+    let need: SubcategoryNeed?
 
     // For transfers
     let isTransfer: Bool
@@ -284,8 +284,8 @@ struct TransactionSuccessView: View {
                 }
 
                 // Nature (only for non-transfers)
-                if let nature = data.nature {
-                    natureRow(nature: nature)
+                if let need = data.need {
+                    needRow(need: need)
                 }
             }
 
@@ -493,14 +493,14 @@ struct TransactionSuccessView: View {
         .padding(.vertical, DS.FormRow.paddingV)
     }
 
-    private func natureRow(nature: SubcategoryNature) -> some View {
+    private func needRow(need: SubcategoryNeed) -> some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "leaf")
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
 
-            Text(L10n.Category.nature)
+            Text(L10n.Category.need)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
@@ -508,17 +508,17 @@ struct TransactionSuccessView: View {
 
             HStack(spacing: DS.Spacing.xs) {
                 Circle()
-                    .fill(nature.color)
+                    .fill(need.color)
                     .frame(width: 6, height: 6)
 
-                Text(nature.displayName)
+                Text(need.displayName)
                     .font(DS.Typography.label)
                     .foregroundStyle(.primary)
             }
             .padding(.horizontal, DS.Spacing.sm)
             .padding(.vertical, DS.Spacing.xs)
             .background(
-                Capsule().fill(nature.color.opacity(0.1))
+                Capsule().fill(need.color.opacity(0.1))
             )
         }
         .padding(.horizontal, DS.Spacing.lg)
@@ -567,7 +567,7 @@ struct TransactionSuccessView: View {
     TransactionSuccessView(
         data: TransactionSuccessData(
             transactionType: .expense,
-            date: Date(),
+            date: Date.now,
             accountName: "Soles",
             accountColorHex: "FF6B6B",
             note: "Compra en supermercado",
@@ -581,7 +581,7 @@ struct TransactionSuccessView: View {
                 (name: "Necesario", colorHex: "2196F3"),
                 (name: "Mensual", colorHex: "9C27B0"),
             ],
-            nature: .essential,
+            need: .essential,
             isTransfer: false,
             destinationAccountName: nil,
             destinationAccountColorHex: nil,

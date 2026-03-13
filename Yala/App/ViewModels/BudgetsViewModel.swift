@@ -28,6 +28,12 @@ final class BudgetsViewModel {
         return f
     }()
 
+    private static let monthLabelFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMM"
+        return f
+    }()
+
     // MARK: - Dependencies
 
     private var modelContext: ModelContext?
@@ -44,13 +50,13 @@ final class BudgetsViewModel {
     var selectedPeriodType: BudgetPeriodType = .monthly
 
     /// Selected week start date (for weekly budgets)
-    var selectedWeek: Date = Date()
+    var selectedWeek: Date = Date.now
 
     /// Selected month start date (for monthly budgets)
-    var selectedMonth: Date = Date()
+    var selectedMonth: Date = Date.now
 
     /// Selected year (for yearly budgets)
-    var selectedYear: Int = Calendar.current.component(.year, from: Date())
+    var selectedYear: Int = Calendar.current.component(.year, from: Date.now)
 
     // MARK: - UI State
 
@@ -78,9 +84,9 @@ final class BudgetsViewModel {
     init() {
         // Initialize with current period
         let calendar = Calendar.current
-        self.selectedWeek = calendar.startOfWeek(for: Date())
-        self.selectedMonth = calendar.startOfMonth(for: Date())
-        self.selectedYear = calendar.component(.year, from: Date())
+        self.selectedWeek = calendar.startOfWeek(for: Date.now)
+        self.selectedMonth = calendar.startOfMonth(for: Date.now)
+        self.selectedYear = calendar.component(.year, from: Date.now)
     }
 
     // MARK: - Period Navigation
@@ -91,7 +97,7 @@ final class BudgetsViewModel {
 
         switch selectedPeriodType {
         case .weekly:
-            let currentWeek = calendar.startOfWeek(for: Date())
+            let currentWeek = calendar.startOfWeek(for: Date.now)
 
             if calendar.isDate(selectedWeek, equalTo: currentWeek, toGranularity: .weekOfYear) {
                 return L10n.Period.thisWeek
@@ -109,7 +115,7 @@ final class BudgetsViewModel {
             }
 
         case .monthly:
-            let currentMonth = calendar.startOfMonth(for: Date())
+            let currentMonth = calendar.startOfMonth(for: Date.now)
 
             if calendar.isDate(selectedMonth, equalTo: currentMonth, toGranularity: .month) {
                 return L10n.Period.thisMonth
@@ -124,7 +130,7 @@ final class BudgetsViewModel {
             }
 
         case .yearly:
-            let currentYear = calendar.component(.year, from: Date())
+            let currentYear = calendar.component(.year, from: Date.now)
 
             if selectedYear == currentYear {
                 return L10n.Period.thisYear
@@ -205,8 +211,8 @@ final class BudgetsViewModel {
         // Load transactions (filtered by earliest budget date to avoid loading all history)
         let earliestDate = allBudgets.compactMap { budget -> Date? in
             if let start = budget.startDate { return start }
-            return Calendar.current.date(byAdding: .year, value: -1, to: Date())
-        }.min() ?? Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
+            return Calendar.current.date(byAdding: .year, value: -1, to: Date.now)
+        }.min() ?? Calendar.current.date(byAdding: .year, value: -1, to: Date.now) ?? Date.now
         let capturedDate = earliestDate
         let transactionDescriptor = FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.date >= capturedDate },
@@ -283,7 +289,7 @@ final class BudgetsViewModel {
             let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
             let daysRemaining = getDaysRemaining(budget: budget)
             let status = getBudgetStatus(budget: budget, spending: spent)
-            let (icon, color) = getBudgetDisplayProperties(budget: budget)
+            let (icon, color) = budget.displayProperties
 
             return BudgetSummary(
                 budget: budget,
@@ -310,6 +316,175 @@ final class BudgetsViewModel {
             .sorted { $0.status.sortOrder < $1.status.sortOrder }
     }
 
+    // MARK: - Summary Builder
+
+    /// Build a fresh BudgetSummary for a single budget (used by BudgetDetailView).
+    func buildSummary(for budget: Budget, defaultCurrencyCode: String) -> BudgetSummary {
+        let spent = getBudgetSpending(
+            budget: budget,
+            transactions: allTransactions,
+            defaultCurrencyCode: defaultCurrencyCode
+        )
+        let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
+        let daysRemaining = getDaysRemaining(budget: budget)
+        let status = getBudgetStatus(budget: budget, spending: spent)
+        let (icon, color) = budget.displayProperties
+
+        return BudgetSummary(
+            budget: budget,
+            spent: spent,
+            percentage: percentage,
+            daysRemaining: daysRemaining,
+            status: status,
+            icon: icon,
+            color: color
+        )
+    }
+
+    // MARK: - Historical Spending
+
+    /// Returns spending vs limit for N previous periods (for charts).
+    /// Returns empty array for `.unique` budgets (no recurring periods).
+    func getHistoricalSpending(budget: Budget, periods: Int, defaultCurrencyCode: String) -> [(label: String, spent: Double, limit: Double)] {
+        guard let periodType = BudgetPeriodType(rawValue: budget.periodType),
+              periodType != .unique else {
+            return []
+        }
+
+        let calendar = Calendar.current
+        var results: [(label: String, spent: Double, limit: Double)] = []
+
+        for offset in (1 - periods)...0 {
+            let interval: DateInterval
+            let label: String
+
+            switch periodType {
+            case .weekly:
+                guard let weekStart = calendar.date(byAdding: .weekOfYear, value: offset, to: selectedWeek) else { continue }
+                let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
+                interval = DateInterval(start: weekStart, end: weekEnd)
+                label = Self.weekDateFormatter.string(from: weekStart)
+
+            case .monthly:
+                guard let monthStart = calendar.date(byAdding: .month, value: offset, to: selectedMonth) else { continue }
+                let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
+                interval = DateInterval(start: monthStart, end: monthEnd)
+                label = Self.monthLabelFormatter.string(from: monthStart)
+
+            case .yearly:
+                let year = selectedYear + offset
+                guard let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)),
+                      let yearEnd = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) else { continue }
+                interval = DateInterval(start: yearStart, end: yearEnd)
+                label = "\(year)"
+
+            case .unique:
+                continue
+            }
+
+            let spent = Self.calculateSpending(budget: budget, transactions: allTransactions, interval: interval)
+            results.append((label: label, spent: spent, limit: budget.limitAmount))
+        }
+
+        return results
+    }
+
+    /// Returns daily cumulative spending for the current budget period (for area chart).
+    func getDailyCumulativeSpending(budget: Budget) -> [(date: Date, cumulative: Double)] {
+        getDailyCumulativeSpending(budget: budget, in: getBudgetDateInterval(budget: budget))
+    }
+
+    /// Returns daily cumulative spending for an explicit date interval.
+    func getDailyCumulativeSpending(budget: Budget, in interval: DateInterval) -> [(date: Date, cumulative: Double)] {
+        let calendar = Calendar.current
+        let today = Date.now
+        let endDate = min(today, interval.end)
+
+        guard interval.start <= endDate else { return [] }
+
+        let filtered = Self.filterTransactions(allTransactions, forBudget: budget, in: interval)
+        guard !filtered.isEmpty else { return [] }
+
+        let useBudgetCurrency = (budget.accounts?.count ?? 0) == 1
+
+        // Group by day
+        var dailyAmounts: [Date: Double] = [:]
+        for tx in filtered {
+            let day = calendar.startOfDay(for: tx.date)
+            let amount = useBudgetCurrency ? tx.amount : tx.amountInPreferredCurrency
+            dailyAmounts[day, default: 0] += abs(amount)
+        }
+
+        // Build cumulative series
+        var cumulative = 0.0
+        var results: [(date: Date, cumulative: Double)] = []
+        var current = calendar.startOfDay(for: interval.start)
+        let end = calendar.startOfDay(for: endDate)
+
+        while current <= end {
+            cumulative += dailyAmounts[current] ?? 0
+            results.append((date: current, cumulative: cumulative))
+            guard let next = calendar.date(byAdding: .day, value: 1, to: current) else { break }
+            current = next
+        }
+
+        return results
+    }
+
+    /// Returns spending breakdown by both subcategory and parent category in a single filtering pass.
+    func getCombinedBreakdown(budget: Budget) -> (
+        subcategories: [(name: String, icon: String, color: String, amount: Double, parentCategoryName: String)],
+        parentCategories: [(name: String, icon: String, color: String, amount: Double)]
+    ) {
+        getCombinedBreakdown(budget: budget, in: getBudgetDateInterval(budget: budget))
+    }
+
+    /// Returns spending breakdown for an explicit date interval.
+    func getCombinedBreakdown(budget: Budget, in interval: DateInterval) -> (
+        subcategories: [(name: String, icon: String, color: String, amount: Double, parentCategoryName: String)],
+        parentCategories: [(name: String, icon: String, color: String, amount: Double)]
+    ) {
+        let filtered = Self.filterTransactions(allTransactions, forBudget: budget, in: interval)
+        guard !filtered.isEmpty else { return ([], []) }
+
+        let useBudgetCurrency = (budget.accounts?.count ?? 0) == 1
+
+        var subBreakdown: [PersistentIdentifier: (name: String, icon: String, color: String, amount: Double, parentCategoryName: String)] = [:]
+        var parentBreakdown: [PersistentIdentifier: (name: String, icon: String, color: String, amount: Double)] = [:]
+
+        for tx in filtered {
+            guard let sub = tx.subcategory else { continue }
+            let absAmount = abs(useBudgetCurrency ? tx.amount : tx.amountInPreferredCurrency)
+            let cat = sub.safeCategory
+
+            // Subcategory grouping
+            let subKey = sub.persistentModelID
+            if var existing = subBreakdown[subKey] {
+                existing.amount += absAmount
+                subBreakdown[subKey] = existing
+            } else {
+                let color = sub.colorHex ?? cat.colorHex
+                let icon = sub.iconName ?? cat.iconName ?? "tag.fill"
+                subBreakdown[subKey] = (name: sub.name, icon: icon, color: color, amount: absAmount, parentCategoryName: cat.name)
+            }
+
+            // Parent category grouping
+            let catKey = cat.persistentModelID
+            if var existing = parentBreakdown[catKey] {
+                existing.amount += absAmount
+                parentBreakdown[catKey] = existing
+            } else {
+                let icon = cat.iconName ?? "tag.fill"
+                parentBreakdown[catKey] = (name: cat.name, icon: icon, color: cat.colorHex, amount: absAmount)
+            }
+        }
+
+        return (
+            subcategories: subBreakdown.values.sorted { $0.amount > $1.amount },
+            parentCategories: parentBreakdown.values.sorted { $0.amount > $1.amount }
+        )
+    }
+
     // MARK: - Budget Spending Calculation
 
     /// Calculate total spending for a budget
@@ -322,16 +497,15 @@ final class BudgetsViewModel {
         return Self.calculateSpending(budget: budget, transactions: transactions, interval: interval)
     }
 
-    /// Shared spending calculation used by both BudgetsViewModel and BudgetAlertService.
-    /// Filters transactions by budget criteria and sums expense amounts.
-    static func calculateSpending(
-        budget: Budget,
-        transactions: [TransactionItem],
-        interval: DateInterval
-    ) -> Double {
+    /// Filters transactions by budget criteria (accounts, subcategories, tags, natures, expenses only).
+    /// Shared by calculateSpending, getDailyCumulativeSpending, and getCategoryBreakdown.
+    static func filterTransactions(
+        _ transactions: [TransactionItem],
+        forBudget budget: Budget,
+        in interval: DateInterval
+    ) -> [TransactionItem] {
         var filtered = transactions.filter { interval.contains($0.date) }
 
-        // Account filter
         if let accounts = budget.accounts, !accounts.isEmpty {
             let accountIDs = Set(accounts.map { $0.persistentModelID })
             filtered = filtered.filter { tx in
@@ -339,7 +513,6 @@ final class BudgetsViewModel {
             }
         }
 
-        // Subcategory filter
         if let subcategories = budget.subcategories, !subcategories.isEmpty {
             let subIDs = Set(subcategories.map { $0.persistentModelID })
             filtered = filtered.filter { tx in
@@ -347,7 +520,6 @@ final class BudgetsViewModel {
             }
         }
 
-        // Tag filter
         if let budgetTags = budget.tags, !budgetTags.isEmpty {
             let tagIDs = Set(budgetTags.map { $0.persistentModelID })
             filtered = filtered.filter { tx in
@@ -355,15 +527,23 @@ final class BudgetsViewModel {
             }
         }
 
-        // Nature filter
         if let naturesString = budget.natures, !naturesString.isEmpty {
             let natures = naturesString.split(separator: ",")
-                .compactMap { SubcategoryNature(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
-            filtered = filtered.filter { natures.contains($0.effectiveNature) }
+                .compactMap { SubcategoryNeed(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
+            filtered = filtered.filter { natures.contains($0.effectiveNeed) }
         }
 
-        // Only count expenses (not income)
-        filtered = filtered.filter { $0.category?.isIncome == false }
+        return filtered.filter { $0.category?.isIncome == false }
+    }
+
+    /// Shared spending calculation used by both BudgetsViewModel and BudgetAlertService.
+    /// Filters transactions by budget criteria and sums expense amounts.
+    static func calculateSpending(
+        budget: Budget,
+        transactions: [TransactionItem],
+        interval: DateInterval
+    ) -> Double {
+        let filtered = filterTransactions(transactions, forBudget: budget, in: interval)
 
         // Sum amounts based on budget account configuration:
         // - If exactly 1 account: use transaction.amount (same currency as budget)
@@ -406,7 +586,7 @@ final class BudgetsViewModel {
     func getDaysRemaining(budget: Budget) -> Int {
         let interval = getBudgetDateInterval(budget: budget)
         let calendar = Calendar.current
-        let today = Date()
+        let today = Date.now
 
         // If the period has ended (today is after the period), return -1 to indicate "Past"
         if today > interval.end {
@@ -450,7 +630,7 @@ final class BudgetsViewModel {
         case .yearly:
             // Use selected year for this budget's period
             let year = selectedYear
-            let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? Date()
+            let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? Date.now
             let yearEnd = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) ?? yearStart
             return DateInterval(start: yearStart, end: yearEnd)
 
@@ -466,26 +646,6 @@ final class BudgetsViewModel {
     }
 
     // MARK: - Icon and Color Logic
-
-    /// Determine display icon and color for a budget
-    func getBudgetDisplayProperties(budget: Budget) -> (icon: String, color: String) {
-        // Extract data for pure logic function
-        let subcategories = budget.subcategories ?? []
-        let subcategoryCount = subcategories.count
-        let firstSubcategory = subcategories.first
-        let firstSubcategoryIcon = firstSubcategory?.iconName ?? firstSubcategory?.safeCategory.iconName
-        let firstCategoryColor = firstSubcategory?.colorHex ?? firstSubcategory?.safeCategory.colorHex
-        let firstCategoryIcon = firstSubcategory?.safeCategory.iconName
-        let uniqueCategoryCount = Set(subcategories.map { $0.safeCategory.persistentModelID }).count
-
-        return calculateDisplayProperties(
-            subcategoryCount: subcategoryCount,
-            firstSubcategoryIcon: firstSubcategoryIcon,
-            firstCategoryColor: firstCategoryColor,
-            uniqueCategoryCount: uniqueCategoryCount,
-            firstCategoryIcon: firstCategoryIcon
-        )
-    }
 
     /// Pure logic for display properties calculation (testable without SwiftData)
     func calculateDisplayProperties(

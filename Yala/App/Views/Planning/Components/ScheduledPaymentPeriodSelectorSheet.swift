@@ -19,7 +19,7 @@ struct ScheduledPaymentPeriodSelectorSheet: View {
     @State private var periods: [PeriodOption] = []
     @State private var selectedIndex: Int = 0
     @State private var isScrolling: Bool = false
-    @State private var lastScrollTime: Date = Date()
+    @State private var lastScrollTime: Date = Date.now
 
     var body: some View {
         VStack(spacing: DS.Spacing.none) {
@@ -88,7 +88,7 @@ struct ScheduledPaymentPeriodSelectorSheet: View {
                                         if !isScrolling && abs(newValue - 95) < 25 {
                                             selectedIndex = index
                                         }
-                                        lastScrollTime = Date()
+                                        lastScrollTime = Date.now
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                                             checkAndSnap(proxy: proxy)
                                         }
@@ -159,7 +159,7 @@ struct ScheduledPaymentPeriodSelectorSheet: View {
     }
 
     private func checkAndSnap(proxy: ScrollViewProxy) {
-        let timeSinceLastScroll = Date().timeIntervalSince(lastScrollTime)
+        let timeSinceLastScroll = Date.now.timeIntervalSince(lastScrollTime)
         if timeSinceLastScroll >= 0.15 && !isScrolling {
             dsWithAnimation(reduceMotion) {
                 proxy.scrollTo(periods[selectedIndex].id, anchor: .center)
@@ -185,7 +185,7 @@ struct ScheduledPaymentPeriodSelectorSheet: View {
 
     private func generatePeriods() {
         let calendar = Calendar.current
-        let today = Date()
+        let today = Date.now
 
         // Range: from oldest payment createdAt to 1 year ahead
         let oldestDate = payments.map(\.createdAt).min() ?? today

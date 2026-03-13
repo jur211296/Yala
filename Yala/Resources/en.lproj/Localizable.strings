@@ -74,13 +74,9 @@
 "subcategories.title" = "Subcategories";
 "subcategories.noSubcategory" = "No subcategory";
 
-// MARK: - Nature
+// MARK: - Need
 
-"nature.expensesByNature" = "Expenses by Nature";
-"nature.title" = "Nature";
-"nature.essential" = "Essential";
-"nature.discretionary" = "Discretionary";
-"nature.unclassified" = "Unclassified";
+"need.expensesByNeed" = "Expenses by Need";
 
 // MARK: - Records
 
@@ -110,13 +106,16 @@
 "filters.allTags" = "All tags";
 "filters.noTags" = "No tags";
 "filters.allCurrencies" = "All available";
-"filters.allNatures" = "All";
+"filters.allNeeds" = "All needs";
 "filters.selectedCount" = "%d selected";
 "filters.subcategoriesSelectedCount" = "%d subcategories selected";
 "filters.categories" = "Categories";
 "filters.type" = "Type";
-"filters.nature" = "Nature";
+"filters.need" = "Need";
 "filters.currency" = "Currency";
+"filters.includeMode" = "Include";
+"filters.excludeMode" = "Exclude";
+"filters.nothingExcluded" = "None";
 "filters.datePrefix %@" = "Date: %@";
 
 // MARK: - Actions
@@ -157,7 +156,7 @@
 "search.filter.category" = "Category";
 "search.filter.subcategory" = "Subcategory";
 "search.filter.account" = "Account";
-"search.filter.nature" = "Nature";
+"search.filter.need" = "Need";
 "search.filter.tag" = "Tag";
 
 // MARK: - Exchange Rate
@@ -219,6 +218,8 @@
 "account.sign" = "Sign";
 "account.positive" = "Positive";
 "account.negative" = "Negative";
+"account.sign.inFavor" = "In your favor";
+"account.sign.consumed" = "Spent";
 "account.adjustment" = "Adjustment";
 "account.selected" = "Selected";
 "account.selectAccount" = "Select account";
@@ -233,7 +234,7 @@
 "category.new" = "New Category";
 "category.edit" = "Edit Category";
 "category.name" = "Name";
-"category.nature" = "Nature";
+"category.need" = "Need";
 "category.show" = "Show";
 "category.addSubcategory" = "Add subcategory";
 "category.subcategories" = "Subcategories";
@@ -317,6 +318,7 @@
 "scheduled.skip.overdue.title" = "Skip overdue occurrence";
 "scheduled.status.skipped" = "Skipped";
 "scheduled.status.paid" = "Paid";
+"scheduled.unlink" = "Unlink Transaction";
 "scheduled.status.overdue" = "Overdue";
 "scheduled.draftCreatedTitle" = "You have pending payments!";
 "scheduled.draftCreatedMessage" = "%d scheduled payments were added to your inbox. Check them when you're ready.";
@@ -352,6 +354,8 @@
 "settings.budgetsFavoritesInfo" = "Favorite budgets appear in the Budgets widget (3 in medium, 5 in large).";
 "settings.budgetsFavoritesEmptyHint" = "Create budgets in the Planning tab.";
 "settings.budgetsFavoritesReorder" = "Reorder favorites";
+"budgets.favorites.previewTitle" = "This is how your widget will look";
+"budgets.favorites.previewEmpty" = "Select favorites to see the preview";
 "settings.tabBarConfig" = "Customize Navigation";
 "settings.tabBarConfigInfo" = "Choose which sections to show in the bottom bar. Minimum 1, maximum 3.";
 "settings.tabBarConfigActive" = "Active tabs";
@@ -359,7 +363,7 @@
 "settings.tabBarConfigReorderHint" = "Long press to reorder";
 "settings.tabBarConfigMinWarning" = "You must have at least one section";
 "settings.tabBarConfigMaxWarning" = "Maximum 3 sections";
-"settings.plannedPayments" = "Planned Payments";
+"settings.plannedPayments" = "Scheduled Payments";
 "settings.voiceInputEnabled" = "Voice Input";
 "settings.voiceLanguage" = "Voice Language";
 "settings.appLanguage" = "App Language";
@@ -424,11 +428,13 @@
 "budgets.alerts.title" = "Alerts";
 "budgets.alerts.enable" = "Notify when reaching limit";
 "budgets.alerts.thresholds" = "Notify at:";
-"budgets.alerts.message.50" = "Budget \"%@\" at 50%% — %@ of %@ spent";
-"budgets.alerts.message.75" = "Budget \"%@\" at 75%% — %@ of %@ spent";
-"budgets.alerts.message.90" = "Warning: \"%@\" almost depleted — %@ of %@";
-"budgets.alerts.message.100" = "Budget \"%@\" depleted — You spent %@ of %@";
+"budgets.alerts.message.50" = "Halfway through \"%1$@\" — %2$@ of %3$@ used";
+"budgets.alerts.message.75" = "75%% of \"%1$@\" used — %2$@ of %3$@";
+"budgets.alerts.message.90" = "\"%1$@\" is running low — %2$@ of %3$@ used";
+"budgets.alerts.message.100" = "You've hit the limit on \"%1$@\" — %2$@ of %3$@";
 "budgets.alerts.globalDisabledHint" = "Enable budget alerts in Profile > Notifications to receive them";
+"budgets.alerts.custom" = "Custom";
+"budgets.alerts.addThreshold" = "Add";
 "budgets.new" = "New Budget";
 "budgets.edit" = "Edit Budget";
 "budgets.delete" = "Delete Budget";
@@ -453,6 +459,7 @@
 "budgets.days.remaining" = "%@ days left";
 "budgets.period.past" = "Past";
 "budgets.amount.of" = "of %@";
+"budgets.exceeded.encouragement" = "You went over budget — next period will be better!";
 
 // Budget Editor
 "budgets.editor.name.placeholder" = "Budget name";
@@ -473,6 +480,29 @@
 "budgets.period.current.month" = "This month";
 "budgets.period.current.year" = "This year";
 "budgets.period.confirm" = "Done";
+"budgets.period.goToToday" = "Go to today";
+
+// Budget Detail
+"budgets.detail.info" = "Details";
+"budgets.detail.period" = "Period";
+"budgets.detail.accounts" = "Accounts";
+"budgets.detail.categories" = "Categories";
+"budgets.detail.tags" = "Tags";
+"budgets.detail.needs" = "Needs";
+"budgets.detail.alerts" = "Alerts";
+"budgets.detail.allAccounts" = "All accounts";
+"budgets.detail.allCategories" = "All categories";
+"budgets.detail.subcategories" = "Subcategories";
+"budgets.detail.allSubcategories" = "All subcategories";
+"budgets.detail.notFound" = "Budget not found";
+"budgets.detail.status" = "Status";
+
+// Budget Charts
+"budgets.charts.title" = "Charts";
+"budgets.charts.compliance" = "Spending vs Limit";
+"budgets.charts.dailySpending" = "Cumulative Spending";
+"budgets.charts.categoryBreakdown" = "By Category";
+"budgets.charts.noData" = "No data for this period";
 
 // MARK: - Profile
 
@@ -495,9 +525,9 @@
 "export.confirmExport" = "Confirm your export";
 "export.selectColumns" = "Select columns";
 "export.availableColumns" = "Available columns";
-"export.columnsDescription" = "Choose which columns to include in the exported CSV file. You must select at least one.";
+"export.columnsDescription" = "Choose which columns to include in the exported file. You must select at least one.";
 "export.summaryAndExport" = "Summary and Export";
-"export.summaryDescription" = "Review the selected filters and columns before generating the CSV file.";
+"export.summaryDescription" = "Review the selected filters and columns before generating the file.";
 "export.filtersSummary" = "Filters summary";
 "export.columnsToExport" = "Columns to export";
 "export.exportToCSV" = "Export to CSV";
@@ -553,6 +583,10 @@
 "panel.fabImage" = "Image";
 "panel.fabManual" = "Manual";
 "panel.spent" = "Spent";
+"panel.aiInsightsTitle" = "AI Observations";
+"panel.aiInsightsDescription" = "Smart comments about your finances";
+"panel.dismissInsight" = "Dismiss observation";
+"panel.aiConsentRequired" = "Enable AI in Settings → AI Observations";
 
 "widget.today" = "Today";
 
@@ -580,7 +614,7 @@
 "widgetType.categoriesPie" = "Category Distribution";
 "widgetType.subcategoriesPie" = "Subcategory Distribution";
 "widgetType.latestRecords" = "Latest Records";
-"widgetType.expensesByNature" = "Expenses by Nature";
+"widgetType.expensesByNeed" = "Expenses by Need";
 "widgetType.expensesByTag" = "Expenses by Tag";
 "widgetType.exchangeRate" = "Exchange Rate";
 "widgetType.budgets" = "Budgets";
@@ -620,7 +654,7 @@
 "widget.noExpensesSubcategoriesPeriod" = "No subcategory expenses yet for this period.";
 "widget.distributionByCategory" = "Categories";
 "widget.distributionBySubcategory" = "Subcategories";
-"widget.distributionByNature" = "Natures";
+"widget.distributionByNeed" = "Needs";
 "widget.distributionByTag" = "Distribution by tag";
 "widget.noDataForPeriod" = "No data yet for this period";
 "widget.selectCurrencies" = "Select up to 2 currencies to compare with %@";
@@ -638,7 +672,7 @@
 "common.unknownError" = "Something went wrong";
 "common.saveError" = "Changes weren't saved. Try again.";
 "common.deleteError" = "Couldn't delete. Try once more.";
-"widget.noExpensesNaturePeriod" = "No nature expenses recorded for this period.";
+"widget.noExpensesNeedPeriod" = "No expenses recorded by need for this period.";
 
 
 "account.addAccount" = "Add Account";
@@ -669,14 +703,14 @@
 "period.lastYear" = "Last Year";
 "period.allTime" = "All Time";
 
-"nature.essential" = "Essential";
-"nature.priority" = "Priority";
-"nature.optional" = "Optional";
-"nature.unclassified" = "Unclassified";
-"nature.essential.desc" = "Essential expenses, hard to cut.";
-"nature.priority.desc" = "Important but with some flexibility.";
-"nature.optional.desc" = "Discretionary or leisure expenses.";
-"nature.unclassified.desc" = "No specific nature tag.";
+"need.essential" = "Essential";
+"need.priority" = "Priority";
+"need.optional" = "Optional";
+"need.unclassified" = "Unclassified";
+"need.essential.desc" = "Essential expenses, hard to cut.";
+"need.priority.desc" = "Important but with some flexibility.";
+"need.optional.desc" = "Discretionary or leisure expenses.";
+"need.unclassified.desc" = "No specific nature tag.";
 
 "trendType.balance" = "Balance";
 "trendType.income" = "Income";
@@ -715,9 +749,52 @@
 "statistics.spendingAnalysis" = "Spending Analysis";
 "statistics.incomeAnalysis" = "Income Analysis";
 
+// MARK: - Insights
+"insights.title" = "Overview";
+"insights.records" = "Records";
+"insights.inThisPeriod" = "in this period";
+"insights.dailyAverage" = "Daily average";
+"insights.topCategory" = "Top category";
+"insights.topSubcategory" = "Top subcategory";
+"insights.highestExpense" = "Highest expense";
+"insights.highestAvgWeekday" = "Highest spending day";
+"insights.subscriptions" = "Subscriptions";
+"insights.quickStats" = "Quick Stats";
+"insights.comparison" = "Period Comparison";
+"insights.weekdayAverage" = "Average spending by day";
+"insights.needDistribution" = "By Need";
+"insights.commitments" = "Commitments";
+"insights.commitmentsNote" = "Current period for each budget";
+"insights.pendingPayments" = "Pending payments";
+"insights.activeSubscriptions" = "Active subscriptions";
+"insights.budgetsAtRisk" = "Budgets at risk";
+"insights.yearOverYear" = "Year over year";
+"insights.yearComparison" = "Last year: %@. This year: %@.";
+"insights.intelligentInsights" = "Observations";
+"insights.funFact" = "Fun fact";
+"insights.firstTimeTitle" = "Your smart summary";
+"insights.firstTimeBody" = "Here you'll see a smart summary of your finances. Enable it in Profile > AI Features and customize sections in Personalization.";
+"insights.emptyTitle" = "No data yet";
+"insights.emptyBody" = "Record expenses to see your insights";
+"insights.fewTransactions" = "Record more to unlock all insights";
+"insights.monthly" = "monthly";
+"insights.perDay" = "per day";
+"insights.ofTotal" = "of total";
+"insights.analyzingData" = "Analyzing your data...";
+"insights.activateAITitle" = "Smart Overview available";
+"insights.activateAIBody" = "Enable and customize it in Profile > AI Features.";
+"insights.activateAIDisclaimer" = "Only summarized data is sent to OpenAI (totals, percentages, trends). Your individual transactions and personal data are never shared.";
+"insights.activate" = "Activate";
+"insights.goToSettings" = "Go to settings";
+"insights.notInterested" = "Not interested";
+"insights.offlineCached" = "Offline. Showing last analysis.";
+"insights.offlineNoCache" = "Offline. Personalized insights will be available when connected.";
 
 "settings.organization" = "Organization";
 "settings.preferences" = "Preferences";
+"settings.aiFeatures" = "AI Features";
+"settings.customizeAISummary" = "Customize AI Summary";
+"settings.customizeAISummaryHint" = "Choose which metrics and charts appear in your smart overview.";
 "settings.data" = "Data";
 "settings.security" = "Security & Account";
 "settings.help" = "Need Help?";
@@ -784,7 +861,7 @@
 "profile.aliasAvailable" = "Alias available";
 "profile.aliasHelper" = "3-20 characters. Only letters, numbers, and underscores.";
 "profile.privacyTitle" = "Your data never leaves your device";
-"profile.privacyDesc" = "Yala stores your personal data solely on your device. We do not have access to it nor do we share it with third parties. If you delete the app, all your data will be erased.";
+"profile.privacyDesc" = "Yala stores your personal data solely on your device. AI features (voice, image, and insights) are optional and only process summarized data — never your individual transactions or personal information.";
 "profile.aliasFutureNote" = "Note: Alias uniqueness validation will be available when shared expenses functionality is implemented.";
 "profile.proMember" = "PRO Member";
 "profile.choosePhoto" = "Choose photo";
@@ -1069,14 +1146,6 @@
 "account.type.other" = "Other";
 
 
-"nature.essential" = "Essential";
-"nature.essentialDesc" = "Vital expenses you cannot avoid (rent, basic food, health).";
-"nature.priority" = "Priority";
-"nature.priorityDesc" = "Important for your well-being or future, but adjustable if necessary.";
-"nature.optional" = "Optional";
-"nature.optionalDesc" = "Expenses for pleasure or desire, the first to cut if there are problems.";
-"nature.unclassified" = "Unclassified";
-"nature.unclassifiedDesc" = "No specific nature defined.";
 
 "iconPicker.title" = "Customize";
 "iconPicker.preview" = "Preview";
@@ -1093,7 +1162,7 @@
 "iconPicker.education" = "Education";
 "iconPicker.work" = "Work";
 "iconPicker.pets" = "Pets";
-"iconPicker.nature" = "Nature";
+"iconPicker.need" = "Nature";
 "iconPicker.tech" = "Technology";
 "iconPicker.travel" = "Travel";
 "iconPicker.communication" = "Communication";
@@ -1104,8 +1173,8 @@
 "iconPicker.other" = "Other";
 
 
-"nature.title" = "Nature";
-"nature.incomeNotApplicable" = "Nature classification only applies to expenses";
+"need.title" = "Spending need";
+"need.incomeNotApplicable" = "Need classification only applies to expenses";
 
 // MARK: - Balance Adjustments
 
@@ -1137,6 +1206,7 @@
 "validation.accountsMustBeDifferent" = "Accounts must be different";
 "validation.selectAccount" = "Select an account";
 "validation.selectSubcategory" = "Select a subcategory";
+"validation.completeFieldsFirst" = "Fill in amount, account, and category first";
 "validation.futureDateTitle" = "Future date not allowed";
 "validation.futureDateMessage" = "You can't record transactions with a future date. Use Scheduled Payments for recurring expenses.";
 
@@ -1199,10 +1269,13 @@
 "scheduled.editor.account" = "Account";
 "scheduled.editor.subcategory" = "Subcategory";
 "scheduled.editor.recurrence" = "Recurrence";
+"scheduled.help.title" = "What is a scheduled payment?";
+"scheduled.help.message" = "Track payments that repeat — like subscriptions, rent, or bills. Yala reminds you when they're due and keeps a history of what you've paid.";
 "scheduled.editor.next.due" = "Next due date";
 "scheduled.editor.day.of.month" = "Day of month";
 "scheduled.editor.day.of.week" = "Day of week";
 "scheduled.editor.notifications" = "Notifications";
+"scheduled.editor.preview" = "Upcoming Dates";
 "scheduled.notify.on.due" = "Notify on due date";
 "scheduled.notify.days.before" = "Notify days before";
 "scheduled.select.subcategory" = "Select subcategory";
@@ -1314,7 +1387,7 @@
 "accessibility.processAudio" = "Process audio";
 "accessibility.exchangeRateChart" = "Exchange rate chart";
 "accessibility.periodComparison" = "Period comparison chart";
-"accessibility.natureTrend" = "Spending by nature chart";
+"accessibility.needTrend" = "Spending by need chart";
 "accessibility.noData" = "No data";
 "accessibility.completeFormHint" = "To save, complete amount, account, and category";
 "accessibility.completeSelectionHint" = "Complete the required selection";
@@ -1355,6 +1428,20 @@
 "accessibility.metricIncome" = "Income";
 "accessibility.metricExpense" = "Expense";
 "accessibility.colorOption %@" = "Color %@";
+"accessibility.close" = "Close";
+"accessibility.dismiss" = "Dismiss";
+"accessibility.remove" = "Remove";
+"accessibility.clearSelection" = "Clear selection";
+"accessibility.selectColor" = "Select color";
+"accessibility.newBudget" = "New budget";
+"accessibility.newPayment" = "New scheduled payment";
+"accessibility.importingHint" = "Importing in progress";
+"accessibility.fillRequiredFields" = "Fill in all required fields";
+"accessibility.noTransactions" = "No transactions available";
+"accessibility.selectDraftsFirst" = "Select at least one draft first";
+"accessibility.proFeature" = "Pro subscription required";
+"accessibility.noActiveAccounts" = "No active accounts available";
+"accessibility.noInactiveBudgets" = "No inactive budgets to restore";
 
 // MARK: - Widget Hints
 
@@ -1404,7 +1491,7 @@
 "widget.hint.categoriesPie" = "Percentage distribution of spending by category.";
 "widget.hint.subcategoriesPie" = "Percentage distribution of spending by subcategory.";
 "widget.hint.tagsPie" = "Distribution of spending by assigned tags.";
-"widget.hint.natureTrend" = "Classifies your expenses as essential, priority, or optional.";
+"widget.hint.needTrend" = "Classifies your expenses as essential, priority, or optional.";
 "widget.hint.cashFlow" = "Compare your income and expenses to see the net flow.";
 "widget.hint.recentRecords" = "Your most recent transactions.";
 "widget.hint.budgets" = "Status of your active budgets.";
@@ -1449,6 +1536,16 @@
 "onboarding.expensesOnlyOptionExpenses" = "Expenses only";
 "onboarding.expensesOnlyDescAll" = "Expenses, income, transfers and account balances";
 "onboarding.expensesOnlyDescExpenses" = "Track only what you spend, no complications";
+// Usage Mode: 3 options
+"onboarding.usageMode.expensesOnly" = "Expenses only";
+"onboarding.usageMode.expensesOnly.quote" = "\"I just want to know where my money goes\"";
+"onboarding.usageMode.expensesOnly.desc" = "Track your expenses and that's it. No balances, no fuss.";
+"onboarding.usageMode.dayToDay" = "Day to day";
+"onboarding.usageMode.dayToDay.quote" = "\"I want to know how much I have available to spend\"";
+"onboarding.usageMode.dayToDay.desc" = "Expenses, income and your account balances. Quick and practical.";
+"onboarding.usageMode.fullControl" = "Real balance";
+"onboarding.usageMode.fullControl.quote" = "\"I want a single number that counts everything: what I have, what I owe and what I'm owed\"";
+"onboarding.usageMode.fullControl.desc" = "You include everything in your balance — accounts, cards and what comes and goes with other people. The number you see is what's truly yours.";
 "onboarding.privacyTitle" = "All Set";
 "onboarding.privacySubtitle" = "You're ready to start using Yala";
 "onboarding.privacyLocal" = "Your financial data stays on your device";
@@ -1460,6 +1557,68 @@
 "onboarding.tutorialsSubtitle" = "Short guides to get the most out of your finances";
 "onboarding.tutorialsExplore" = "Explore tutorials";
 "onboarding.tutorialsSettingsHint" = "You can always find these in Settings";
+"onboarding.accountTitle" = "Your first account";
+"onboarding.accountSubtitle" = "An account represents where you keep your money. Each account has a single currency.";
+"onboarding.accountTypeLabel" = "Account type";
+"onboarding.accountNameLabel" = "Account name";
+"onboarding.accountNamePlaceholder" = "E.g.: My main account";
+"onboarding.accountCurrencyLabel" = "Account currency";
+"onboarding.accountBalanceLabel" = "Initial balance";
+"onboarding.accountBalanceHint" = "Your approximate current balance. Checking: available funds. Savings: what you have saved.";
+"onboarding.accountBalanceSkipHint" = "If you don't know, leave it at 0 and adjust later in the account.";
+"onboarding.accountBalanceHintGeneral" = "Think about how much money you have available today across all your payment methods. A rough estimate is fine.";
+"onboarding.accountBalanceHintCash" = "The cash you have on hand right now. It doesn't need to be exact — you can adjust it later.";
+"onboarding.accountBalanceHintChecking" = "Your available bank balance today. It doesn't need to be exact — you can adjust it later.";
+"onboarding.accountBalanceHintSavings" = "The total you have saved in this account. It doesn't need to be exact — you can adjust it later.";
+"onboarding.accountBalanceLearnMore" = "Let's figure out your balance together";
+"onboarding.accountBalanceGuideTitle" = "How do I calculate my balance?";
+"onboarding.accountBalanceGuideIntro" = "Your initial balance tells Yala how much money you're starting with. It doesn't need to be exact to the penny — a rough estimate works great. Here's how to think about it depending on the type of account you chose.";
+"onboarding.accountBalanceGuideGeneral" = "If you're using a general account to group all your payment methods in one currency, your balance reflects how much money you have available.\n\nTo calculate it, add up everything: checking accounts, savings, cash. If you have pending credit card charges, you can subtract them for a more precise picture — or track each card as a separate account later.\n\nThat final number is your initial balance.";
+"onboarding.accountBalanceGuideCash" = "This one's the most straightforward: how much cash do you have right now? Check your wallet, that drawer, or wherever you keep your physical money.\n\nDon't worry about being exact — if you think you have \"around 50\", go with 50. You can always adjust it later.";
+"onboarding.accountBalanceGuideChecking" = "Your checking (or debit) account has an available balance you can look up in your banking app or at an ATM.\n\nEnter the available balance you see today. If you have several checking accounts, you can create one account in Yala for each, or group them together — whatever works for you.";
+"onboarding.accountBalanceGuideSavings" = "How much do you have saved up in your savings accounts? If you have several, you can create one account in Yala for each or combine them into one.\n\nEnter the total you have saved. If your bank shows accrued interest, include it in the total.";
+"onboarding.accountBalanceGuideClosing" = "Don't worry if it's not perfect — the important thing is to get started.";
+"onboarding.accountBalanceHintCreditCard" = "What you've spent with this card so far. It doesn't need to be exact — you can adjust it later.";
+// Balance Calculator Sheet
+"onboarding.calc.title" = "How much money do you have?";
+"onboarding.calc.intro" = "You don't need to be exact — a rough estimate is fine.";
+"onboarding.calc.bankAccounts" = "Bank accounts";
+"onboarding.calc.savings" = "Savings";
+"onboarding.calc.cash" = "Cash";
+"onboarding.calc.creditCardSpending" = "Credit card spending";
+"onboarding.calc.optional" = "(optional)";
+"onboarding.calc.available" = "Your available →";
+"onboarding.calc.balance" = "Your balance →";
+"onboarding.calc.tipCashFlow" = "If you use credit cards, you can add them as separate accounts whenever you want.";
+"onboarding.calc.tipPatrimonial" = "If you share expenses with others, include what they owe you and what you owe for a more precise balance.";
+"onboarding.calc.useBalance" = "Use this balance";
+"onboarding.calc.adjustLater" = "You can always adjust it later.";
+// Shared expenses (patrimonial only)
+"onboarding.calc.sharedExpenses" = "Shared expenses";
+"onboarding.calc.othersOweMe" = "Others owe you";
+"onboarding.calc.iOwe" = "You owe";
+// Credit card calculator
+"onboarding.calc.creditCard.title" = "Your credit card";
+"onboarding.calc.creditLine" = "Credit line";
+"onboarding.calc.availableCredit" = "Available";
+"onboarding.calc.currentSpending" = "Current spending →";
+"onboarding.calc.yourBalance" = "Your balance →";
+"onboarding.calc.creditCard.tip" = "Your balance reflects what you've spent and haven't paid yet.";
+// Simple account explanations
+"onboarding.calc.cashExplanation" = "Check your wallet and anywhere you keep cash. Add it all up — a rough estimate is fine.";
+"onboarding.calc.checkingExplanation" = "Check the available balance in your banking app or ATM. Enter the number you see today.";
+"onboarding.calc.savingsExplanation" = "How much do you have saved? If you have several savings accounts, you can add them all up or create one account for each.";
+"onboarding.accountImportTip" = "In Profile > Import you can import records to any of your accounts.";
+"onboarding.accountMoreTip" = "You can add more accounts anytime. Create at least one per currency if you use multiple.";
+"onboarding.budgetTitle" = "How much do you expect to spend?";
+"onboarding.budgetSubtitle" = "A budget lets you know when you're getting close to the amount you set. Pick a category and a monthly reference amount.";
+"onboarding.budgetYes" = "I want to track my spending";
+"onboarding.budgetNo" = "Not now, thanks";
+"onboarding.budgetCategoryLabel" = "Which category?";
+"onboarding.budgetAmountLabel" = "Monthly amount";
+"onboarding.budgetAmountPlaceholder" = "E.g.: 500";
+"onboarding.budgetMoreTip" = "You can create more budgets or edit existing ones in Planning > Budgets.";
+"onboarding.budgetPreviewLabel" = "This is how your budget will look";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Changing the account will update the currency of selected transactions.";
@@ -1651,6 +1810,54 @@
 "tips.siri.title" = "New: record with Siri";
 "tips.siri.detail" = "Say: \"Create a record in Yala\"";
 "tips.siri.close" = "Close Siri suggestion";
+
+// MARK: - TipKit (contextual guides)
+"tipkit.skip" = "Skip guide";
+"tipkit.next" = "Next";
+"tipkit.done" = "Done";
+// Group A: Panel Tour
+"tipkit.accounts.title" = "Your accounts";
+"tipkit.accounts.message" = "See your active accounts and their balances at a glance.";
+"tipkit.widgets.title" = "Your charts";
+"tipkit.widgets.message" = "Widgets with summaries and charts of your expenses and income. Customize which ones to show from the settings button.";
+"tipkit.fab.title" = "Record quickly";
+"tipkit.fab.free.message" = "Tap here to record your expenses and income.";
+"tipkit.fab.pro.message" = "Record manually, by voice, or with a photo.";
+"tipkit.profile.title" = "Your profile";
+"tipkit.profile.message" = "Set everything up so Yala works just the way you need it.";
+// Group B: Transaction Tour
+"tipkit.transactionTypes.title" = "Three record types";
+"tipkit.transactionTypes.message" = "Record expenses, income, and transfers between your accounts.";
+"tipkit.favoritePayments.title" = "Favorite payments";
+"tipkit.favoritePayments.message" = "Save frequent expenses so you don't have to fill everything in each time.";
+"tipkit.quickActions.title" = "Quick actions";
+"tipkit.quickActions.message" = "Create favorites and scheduled payments from here.";
+// Group C: Contextual tips
+"tipkit.filterAccount.title" = "Filter with a tap";
+"tipkit.filterAccount.message" = "Tap an account to filter all charts just for it.";
+"tipkit.interactiveWidgets.title" = "Tap and explore";
+"tipkit.interactiveWidgets.message" = "Widgets are interactive: tap them to filter and discover patterns.";
+"tipkit.widgetPreferences.title" = "Widget preferences";
+"tipkit.widgetPreferences.message" = "Choose which charts to see and in what order from here.";
+
+// Group D: Settings Tour
+"tipkit.settings.accounts.title" = "Your accounts";
+"tipkit.settings.accounts.message" = "Add and organize your bank accounts, cash, and more.";
+"tipkit.settings.categories.title" = "Categories";
+"tipkit.settings.categories.message" = "Customize categories to classify your expenses and income.";
+"tipkit.settings.tags.title" = "Tags";
+"tipkit.settings.tags.message" = "Create tags to group expenses by project, trip, or whatever you need.";
+"tipkit.settings.budgets.title" = "Budgets";
+"tipkit.settings.budgets.message" = "Set spending limits and get alerts when you're close.";
+"tipkit.settings.planned.title" = "Scheduled payments";
+"tipkit.settings.planned.message" = "Schedule recurring payments so Yala reminds you on time.";
+"tipkit.settings.personalization.title" = "Personalization";
+"tipkit.settings.personalization.message" = "Adjust language, currency, and appearance to make Yala feel yours.";
+"tipkit.settings.tutorials.title" = "Tutorials";
+"tipkit.settings.tutorials.message" = "Step-by-step guides to get the most out of Yala.";
+
+"tipkit.comparison.title" = "Compare and learn";
+"tipkit.comparison.message" = "Compare against the previous period or last year to see how you're doing.";
 
 // MARK: - FAQ
 "faq.subtitle" = "Answers to the most common questions";
@@ -1882,24 +2089,24 @@
 "notifications.budgetAlerts.hint" = "Get notified when approaching your budget limits";
 
 // Scheduled Payment Notifications (personalized)
-"notifications.scheduledPayment.dueToday" = "Due today: %@ for %@";
-"notifications.scheduledPayment.dueSoon" = "Due in %d day(s): %@ for %@";
-"notifications.scheduledPayment.overdue" = "Overdue payment: %@ for %@";
-"notifications.scheduledPayment.dueToday.income" = "Expected today: %@ from %@";
-"notifications.scheduledPayment.dueSoon.income" = "Expected in %d day(s): %@ from %@";
-"notifications.scheduledPayment.overdue.income" = "Pending income: %@ from %@";
+"notifications.scheduledPayment.dueToday" = "%1$@ is due today — %2$@ ready 💰";
+"notifications.scheduledPayment.dueSoon" = "%2$@ is due in %1$d days for %3$@";
+"notifications.scheduledPayment.overdue" = "%1$@ (%2$@) was due — did you cover it?";
+"notifications.scheduledPayment.dueToday.income" = "Incoming! %1$@ from %2$@ today";
+"notifications.scheduledPayment.dueSoon.income" = "%2$@ from %3$@ arrives in %1$d days";
+"notifications.scheduledPayment.overdue.income" = "%1$@ from %2$@ was expected — has it arrived?";
 
 // Report Notifications (with real data)
-"notifications.report.balance" = "Your current balance: %@";
-"notifications.report.expenses" = "You spent: %@";
-"notifications.report.income" = "You received: %@";
+"notifications.report.balance" = "Your balance today: %@";
+"notifications.report.expenses" = "You spent %@ today";
+"notifications.report.income" = "You received %@ 🎉";
 "notifications.report.topCategory" = "Your top expense: %@";
 
 // Report Notifications (empty state)
 "notifications.report.empty.expenses.daily" = "Quiet day! No expenses ✨";
 "notifications.report.empty.expenses.weekly" = "Quiet week! No expenses recorded ✨";
 "notifications.report.empty.expenses.monthly" = "Quiet month! No expenses recorded ✨";
-"notifications.report.empty.income" = "No income recorded this period";
+"notifications.report.empty.income" = "No income this period — all quiet";
 "notifications.report.empty.topCategory" = "No expenses! Your wallet rested 😊";
 
 // MARK: - iCloud Sync
@@ -1934,6 +2141,7 @@
 "featureGate.imageInput" = "Image input";
 "featureGate.premiumIcons" = "Premium icons";
 "featureGate.proThemes" = "Pro Themes";
+"featureGate.smartInsightsAI" = "Smart Insights AI";
 
 // Titles
 "featureGate.limitReachedTitle" = "Limit reached";
@@ -2274,6 +2482,8 @@
 "scheduled.associate.confirm" = "Link this expense to the scheduled payment?";
 "scheduled.associate.success" = "Expense linked";
 "scheduled.associate.empty" = "No similar expenses found this month";
+"scheduled.associate.paymentHeader" = "Scheduled payment";
+"scheduled.associate.candidatesHeader" = "Expenses this month";
 "scheduled.associate.already" = "This expense is already linked";
 
 // MARK: - Siri Shortcuts
@@ -2311,8 +2521,87 @@
 "siriShortcuts.faq.offlineA" = "Yes, shortcuts work in basic mode without an internet connection.";
 
 // MARK: - AI Consent
-"aiConsent.title" = "AI Data Processing";
-"aiConsent.message" = "Voice and image features use OpenAI to process your data:\n\n• Voice: your audio recording\n• Images: the photo you select\n• Text: the transcription and your subcategory names\n\nNo amounts, transaction history, or personal info is sent. OpenAI does not use this data for training.";
+"aiConsent.processingTitle" = "Voice & Image Processing";
+"aiConsent.processingMessage" = "These features use OpenAI to process your data:\n\n• Voice: your audio recording is transcribed\n• Images: the photo is analyzed to extract data\n\nYour individual transactions and personal information are never shared. OpenAI does not use this data for training.";
+"aiConsent.insightsTitle" = "Smart Overview";
+"aiConsent.insightsMessage" = "This feature sends totals, percentages, and trends to OpenAI to generate a summary of your finances.\n\nYour individual transactions, transaction history, and personal information are never shared. OpenAI does not use this data for training.";
 "aiConsent.accept" = "Accept and Enable";
 "aiConsent.privacyPolicy" = "Privacy Policy";
-"aiConsent.inlineHint" = "Your recordings and images are processed with OpenAI. They are not stored permanently.";
+"aiConsent.inlineHintProcessing" = "Your voice and image data is processed with OpenAI. It is not stored permanently.";
+"aiConsent.inlineHintInsights" = "Only totals and trends are sent to OpenAI for the overview. They are not stored permanently.";
+"aiConsent.inlineHintBoth" = "Your voice, image, and summary data is processed with OpenAI. It is not stored permanently.";
+
+// MARK: - Insights Settings
+"insights.aiSectionTitle" = "Artificial Intelligence";
+"insights.aiToggle" = "Smart overview";
+"insights.aiCaption" = "OpenAI analyzes your aggregated data to generate personalized analysis. No individual transactions are sent.";
+"insights.metricsSection" = "Metrics";
+"insights.chartsSection" = "Charts";
+"insights.analysisSection" = "Analysis";
+"insights.restoreDefaults" = "Restore defaults";
+
+// MARK: - Insights Rule-Based Templates
+// Rule-based insights — tone variants
+"insights.ruleTopCategory.normal" = "%@ accounts for %d%% of your spending this period.";
+"insights.ruleTopCategory.considerate" = "%@ accounts for %d%% of your spending, though technically that could be expected based on your priorities.";
+"insights.ruleTopCategory.sarcastic" = "%@ is taking %d%% of your spending. Keep an eye on that.";
+"insights.ruleExpenseUp.normal" = "Your spending went up %@ compared to the previous period.";
+"insights.ruleExpenseUp.considerate" = "Your spending went up %@ — worth considering if there was an unusual expense this period.";
+"insights.ruleExpenseUp.sarcastic" = "Spending up %@ vs last period. Worth checking what changed.";
+"insights.ruleExpenseDown.normal" = "Nice pace: your spending dropped %@ compared to the previous period.";
+"insights.ruleExpenseDown.considerate" = "The data shows a %@ reduction in spending — a positive result.";
+"insights.ruleExpenseDown.sarcastic" = "Nice, spending down %@. Not bad at all.";
+"insights.ruleBudgetRisk.normal" = "%@ is at %d%% of its limit.";
+"insights.ruleBudgetRisk.considerate" = "%@ is at %d%% of its limit, though there's still room if you adjust the pace.";
+"insights.ruleBudgetRisk.sarcastic" = "%@ is at %d%% of the limit. Chill, but heads up.";
+"insights.ruleOptionalHigh.normal" = "Optional spending accounts for %d%% of your total.";
+"insights.ruleOptionalHigh.considerate" = "Optional spending is at %d%% of the total — not necessarily an issue, but worth noting.";
+"insights.ruleOptionalHigh.sarcastic" = "Optional stuff is at %d%% of the total. No biggie, but there's the number.";
+// Tips
+"insights.tipTopCategory" = "Check if any %@ expenses were one-time or part of a pattern";
+"insights.tipExpenseUp" = "Compare with your lowest-spending month to see what changed";
+"insights.tipBudgetRisk" = "There are still days left — try to hold back on %@ for the rest";
+"insights.tipOptionalHigh" = "Review your optional expenses and see which ones you could postpone";
+// Tone & Focus settings
+"insights.tone.normal" = "Normal";
+"insights.tone.considerate" = "Careful";
+"insights.tone.sarcastic" = "Direct";
+"insights.tone.normal.preview" = "Restaurants went up 32% vs last month";
+"insights.tone.considerate.preview" = "Restaurants went up 32%, though that could be expected if there were events this month";
+"insights.tone.sarcastic.preview" = "Restaurants up 32%, that went a bit over this month";
+"insights.focus.balanced" = "Balanced";
+"insights.focus.saver" = "Saver";
+"insights.focus.cautious" = "Cautious";
+"insights.focus.balanced.desc" = "Overall view of your finances";
+"insights.focus.saver.desc" = "Prioritize saving opportunities";
+"insights.focus.cautious.desc" = "Early warnings and budgets at risk";
+"insights.toneLabel" = "Tone";
+"insights.focusLabel" = "Focus";
+
+// Secondary Currency Suggestion
+"account.secondaryCurrency.title" = "Secondary Currency";
+"account.secondaryCurrency.message" = "You added an account in %@. Want to see the %@ → %@ exchange rate? You can change it in Profile > Currency.";
+"account.secondaryCurrency.accept" = "Add";
+"account.secondaryCurrency.reject" = "No, thanks";
+
+// Notification Primer
+"notificationPrimer.title" = "Enable notifications?";
+"notificationPrimer.benefit1" = "Daily financial reports";
+"notificationPrimer.benefit2" = "Scheduled payment reminders";
+"notificationPrimer.benefit3" = "Alerts when approaching budget limits";
+"notificationPrimer.accept" = "Enable notifications";
+"notificationPrimer.reject" = "Not now";
+"notificationPrimer.hint" = "You can enable them in Profile > Notifications";
+
+// MARK: - What's New
+"whatsNew.title" = "What's new in Yala";
+"whatsNew.subtitle" = "Version %@";
+"whatsNew.continue" = "Continue";
+"whatsNew.v12.coachMarks.title" = "Step-by-step guides";
+"whatsNew.v12.coachMarks.description" = "We now show you how to use each section with interactive guides.";
+"whatsNew.v12.notifications.title" = "Smarter notifications";
+"whatsNew.v12.notifications.description" = "Enable reminders and reports so you never lose track of your finances.";
+"whatsNew.v12.insights.title" = "AI-powered insights";
+"whatsNew.v12.insights.description" = "Discover spending patterns with personalized analysis.";
+"whatsNew.v12.sharedBalances.title" = "Shared balances";
+"whatsNew.v12.sharedBalances.description" = "Calculate balances between friends and partners right from onboarding.";

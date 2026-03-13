@@ -25,8 +25,8 @@ struct StatisticsContext {
     /// Selected subcategory filter
     var subcategoryName: String?
 
-    /// Selected nature filter
-    var nature: SubcategoryNature?
+    /// Selected need filter
+    var need: SubcategoryNeed?
 
     /// The date interval for the selected period
     var dateInterval: DateInterval?
@@ -39,7 +39,7 @@ struct StatisticsContext {
             accountID: nil,
             categoryID: nil,
             subcategoryName: nil,
-            nature: nil,
+            need: nil,
             dateInterval: nil
         )
     }

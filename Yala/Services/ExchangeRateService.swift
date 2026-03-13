@@ -76,7 +76,7 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
         // Only reload if never loaded or more than 30 days ago
         if let lastLoad = lastLoad {
             let daysSinceLoad =
-                Calendar.current.dateComponents([.day], from: lastLoad, to: Date()).day ?? 0
+                Calendar.current.dateComponents([.day], from: lastLoad, to: Date.now).day ?? 0
             if daysSinceLoad < 30 {
                 return
             }
@@ -85,7 +85,7 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
         // Check if we already have enough data
         let existingCount = countExistingRates(context: context)
         if existingCount > 300 {  // ~1 year of data
-            UserDefaults.standard.set(Date(), forKey: lastHistoricalLoadKey)
+            UserDefaults.standard.set(Date.now, forKey: lastHistoricalLoadKey)
             return
         }
 
@@ -94,7 +94,7 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
 
         // Load last 12 months in chunks to avoid API limits
         let calendar = Calendar.current
-        let today = Date()
+        let today = Date.now
 
         // Fetch in monthly chunks (exchangerate.host allows max 365 days per request)
         for monthOffset in 0..<12 {
@@ -108,7 +108,7 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
                 try await fetchAndPersistRates(
                     from: chunkStart, to: chunkEnd, symbols: requiredCurrencies, context: context)
                 // Small delay between requests to avoid rate limiting
-                try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
+                try? await Task.sleep(for: .seconds(0.5))
             } catch {
                 #if DEBUG
                 print(
@@ -119,13 +119,13 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
             }
         }
 
-        UserDefaults.standard.set(Date(), forKey: lastHistoricalLoadKey)
+        UserDefaults.standard.set(Date.now, forKey: lastHistoricalLoadKey)
     }
 
     /// Updates today's exchange rate if not already fetched.
     /// Should be called on app launch and when opening Panel.
     func updateTodayIfNeeded(context: ModelContext) async {
-        let todayKey = dateFormatter.string(from: Date())
+        let todayKey = dateFormatter.string(from: Date.now)
 
         // Check if we already have today's rate
         if rateExists(for: todayKey, context: context) {
@@ -138,7 +138,7 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
             try persistRate(
                 dateKey: todayKey, rates: result.rates, timestamp: result.timestamp,
                 context: context)
-            UserDefaults.standard.set(Date(), forKey: lastTodayUpdateKey)
+            UserDefaults.standard.set(Date.now, forKey: lastTodayUpdateKey)
         } catch {
             #if DEBUG
             print("ExchangeRateService: Error updating today's rate: \(error.localizedDescription)")
@@ -151,7 +151,7 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
     /// Used after onboarding to ensure we have ALL 7 currencies, not just the ones
     /// that might have been fetched earlier with a partial set.
     func forceUpdateToday(context: ModelContext) async {
-        let todayKey = dateFormatter.string(from: Date())
+        let todayKey = dateFormatter.string(from: Date.now)
 
         do {
             let result = try await provider.fetchLatest(
@@ -159,7 +159,7 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
             try persistRate(
                 dateKey: todayKey, rates: result.rates, timestamp: result.timestamp,
                 context: context)
-            UserDefaults.standard.set(Date(), forKey: lastTodayUpdateKey)
+            UserDefaults.standard.set(Date.now, forKey: lastTodayUpdateKey)
             #if DEBUG
             print("ExchangeRateService: Force updated today's rate with all \(supportedSymbols.count) currencies")
             #endif
@@ -207,7 +207,7 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
             do {
                 try await fetchAndPersistRates(from: range.start, to: range.end, context: context)
                 // Small delay between requests
-                try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3 seconds
+                try? await Task.sleep(for: .seconds(0.3))
             } catch {
                 #if DEBUG
                 print("ExchangeRateService: Error refreshing range \(range): \(error.localizedDescription)")
@@ -235,7 +235,7 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
             do {
                 try await fetchAndPersistRates(from: range.start, to: range.end, context: context)
                 // Small delay between requests
-                try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3 seconds
+                try? await Task.sleep(for: .seconds(0.3))
             } catch {
                 #if DEBUG
                 print(
@@ -354,8 +354,8 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
         }
 
         // Parse dateKey to Date
-        let oldestDate = dateFormatter.date(from: oldest.dateKey) ?? Date()
-        let latestDate = dateFormatter.date(from: latest.dateKey) ?? Date()
+        let oldestDate = dateFormatter.date(from: oldest.dateKey) ?? Date.now
+        let latestDate = dateFormatter.date(from: latest.dateKey) ?? Date.now
 
         return DateInterval(start: oldestDate, end: latestDate)
     }

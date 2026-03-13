@@ -55,7 +55,7 @@ struct ScheduledPaymentsListView: View {
                 payments: payments,
                 onPeriodChange: { onRefresh() }
             )
-            .presentationDetents([.medium])
+            .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
         }
     }
 
@@ -418,7 +418,7 @@ struct ScheduledPaymentsListView: View {
         if isPaid { return theme.accent }
         // Check if overdue (this specific day is past today in the current month)
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = calendar.startOfDay(for: Date.now)
         let isCurrentMonth = calendar.isDate(viewModel.selectedMonth, equalTo: today, toGranularity: .month)
         if isCurrentMonth {
             let todayDay = calendar.component(.day, from: today)
@@ -442,7 +442,7 @@ struct ScheduledPaymentsListView: View {
 
     private func isCurrentDay(_ day: Int) -> Bool {
         let calendar = Calendar.current
-        let today = Date()
+        let today = Date.now
         let displayedMonth = viewModel.selectedMonth
 
         return calendar.component(.day, from: today) == day &&
@@ -452,7 +452,7 @@ struct ScheduledPaymentsListView: View {
 
     private var monthPaymentsList: some View {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = calendar.startOfDay(for: Date.now)
         let month = viewModel.selectedMonth
         let isCurrentMonth = calendar.isDate(month, equalTo: today, toGranularity: .month)
         let isPastMonth = calendar.startOfMonth(for: month) < calendar.startOfMonth(for: today)

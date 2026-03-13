@@ -158,9 +158,9 @@ struct KeypadButtonView: View {
     VStack {
         Spacer()
         NumericKeypadView(
-            onDigit: { print($0) },
-            onDelete: { print("delete") },
-            onClear: { print("clear") }
+            onDigit: { _ in },
+            onDelete: {},
+            onClear: {}
         )
     }
     .background(.thBackground)

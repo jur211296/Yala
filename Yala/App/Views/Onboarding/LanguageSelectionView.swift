@@ -102,7 +102,5 @@ struct LanguageSelectionView: View {
 }
 
 #Preview {
-    LanguageSelectionView {
-        print("Language selected!")
-    }
+    LanguageSelectionView {}
 }

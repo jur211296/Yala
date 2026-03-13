@@ -19,7 +19,7 @@ struct RecordsFiltersViewModelTests {
     @MainActor @Test func selectedAccountsText_none_returnsTodas() {
         let vm = RecordsFiltersViewModel()
         let result = vm.selectedAccountsText(selectedAccounts: [])
-        #expect(result == "Todas")
+        #expect(result == L10n.Filters.all)
     }
 
     // MARK: - selectedTagsText
@@ -27,7 +27,7 @@ struct RecordsFiltersViewModelTests {
     @MainActor @Test func selectedTagsText_none_returnsTodas() {
         let vm = RecordsFiltersViewModel()
         let result = vm.selectedTagsText(selectedTags: [])
-        #expect(result == "Todas")
+        #expect(result == L10n.Filters.all)
     }
 
     // MARK: - selectedCategoriesText
@@ -35,7 +35,27 @@ struct RecordsFiltersViewModelTests {
     @MainActor @Test func selectedCategoriesText_empty_returnsTodas() {
         let vm = RecordsFiltersViewModel()
         let result = vm.selectedCategoriesText(selectedSubcategories: [])
-        #expect(result == "Todas")
+        #expect(result == L10n.Filters.all)
+    }
+
+    // MARK: - Exclude Mode: Empty Selection
+
+    @MainActor @Test func selectedAccountsText_empty_excludeMode_returnsNothingExcluded() {
+        let vm = RecordsFiltersViewModel()
+        let result = vm.selectedAccountsText(selectedAccounts: [], isExcludeMode: true)
+        #expect(result == L10n.Filters.nothingExcluded)
+    }
+
+    @MainActor @Test func selectedCategoriesText_empty_excludeMode_returnsNothingExcluded() {
+        let vm = RecordsFiltersViewModel()
+        let result = vm.selectedCategoriesText(selectedSubcategories: [], isExcludeMode: true)
+        #expect(result == L10n.Filters.nothingExcluded)
+    }
+
+    @MainActor @Test func selectedTagsText_empty_excludeMode_returnsNothingExcluded() {
+        let vm = RecordsFiltersViewModel()
+        let result = vm.selectedTagsText(selectedTags: [], isExcludeMode: true)
+        #expect(result == L10n.Filters.nothingExcluded)
     }
 
     // NOTE: Tests for allSelected and partial selection removed.

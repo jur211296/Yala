@@ -24,27 +24,41 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 | iCloudSyncService | Services/iCloudSyncService.swift | Monitor estado sync iCloud |
 | PreferenceSyncService | App/Services/PreferenceSyncService.swift | Sync preferencias via iCloud KV |
 | CategoryDeduplicationService | App/Services/CategoryDeduplicationService.swift | Merge categorías duplicadas post-sync |
+| InsightsLLMService | Services/InsightsLLMService.swift | AI insights via GPT-4.1 Mini |
+| TelemetryService | Services/TelemetryService.swift | Analytics privacy-first via TelemetryDeck |
 
-### Key ViewModels (34)
+### Key Calculators
+| Calculator | Path | Purpose |
+|------------|------|---------|
+| InsightsCalculator | App/Logic/Calculators/InsightsCalculator.swift | KPIs, stats, rule-based insights |
+| WeekdaySpendingCalculator | App/Logic/Calculators/WeekdaySpendingCalculator.swift | Gasto por día de semana |
+
+### Key ViewModels (35)
 | ViewModel | Tests |
 |-----------|-------|
 | NewTransactionViewModel | 35 |
 | BudgetsViewModel | 11 |
 | InboxViewModel | 10 |
-| PanelViewModel, RecordsViewModel, StatisticsViewModel | — |
-| ScheduledPaymentsViewModel | 6 |
+| PanelViewModel | 10 |
+| RecordsViewModel | 12 |
+| StatisticsViewModel | 16 |
+| ScheduledPaymentsViewModel | 10 |
 | ProfileViewModel | — |
 | RecordsFiltersViewModel | 3 |
-| BudgetEditorViewModel | 1 |
+| BudgetEditorViewModel | 10 |
 | CategoryDetailViewModel | 9 |
-| AccountFormViewModel | 20 |
+| AccountFormViewModel | 22 |
 | TagFormViewModel | 8 |
 | AccountSelectorViewModel | — |
 | SubcategorySelectorViewModel, TagSelectorViewModel | — |
-| + 18 ViewModels más en App/ViewModels/ | — |
+| InsightsViewModel | 6 |
+| BulkEditViewModel | 6 |
+| ScheduledPaymentEditorViewModel | 15 |
+| SubcategoryTransferViewModel | 8 |
+| + 15 ViewModels más en App/ViewModels/ | — |
 
-### Test Suites (29 suites, 279 tests)
-FilterServiceTests (10), CalculatorTests (3), TagTests (10), TrendProcessingTests (5), TrendGroupingTests (13), CurrencyCodeTests (4), CurrencyDefaultsTests (3), NewTransactionViewModelTests (35), BudgetsViewModelTests (11), InboxViewModelTests (10), MerchantCanonicalizerTests (12), AmountParserTests (15), DateParserTests (10), MoneyParsingTests (10), PreviousPeriodHelperTests (24), DateContextProviderTests (5), DraftDeduplicationServiceTests (15), AccountFormViewModelTests (22), TagFormViewModelTests (8), CategoryDetailViewModelTests (9), BudgetEditorViewModelTests (1), ViewModelFilterTests (6), CurrencyConverterTests (8), AccountBalanceCalculatorTests (6), FeatureGateTests (6), ExchangeRateWidgetHelperTests (4), RecordsFiltersViewModelTests (3), ScheduledPaymentDateCalculatorTests (17), YalaTests (1)
+### Test Suites (90 suites, 1005 tests)
+FilterServiceTests (22), CalculatorTests (3), TagTests (10), TrendProcessingTests (5), TrendGroupingTests (13), CurrencyCodeTests (4), CurrencyDefaultsTests (3), NewTransactionViewModelTests (35), BudgetsViewModelTests (11), InboxViewModelTests (10), MerchantCanonicalizerTests (12), AmountParserTests (15), DateParserTests (10), MoneyParsingTests (10), PreviousPeriodHelperTests (24), DateContextProviderTests (5), DraftDeduplicationServiceTests (15), AccountFormViewModelTests (22), TagFormViewModelTests (8), CategoryDetailViewModelTests (9), BudgetEditorViewModelTests (10), ViewModelFilterTests (6), CurrencyConverterTests (8), AccountBalanceCalculatorTests (6), FeatureGateTests (6), ExchangeRateWidgetHelperTests (4), RecordsFiltersViewModelTests (6), ScheduledPaymentDateCalculatorTests (17), YalaTests (1), TagSpendingCalculatorTests (15), BudgetAlertTrackerTests (12), BudgetAlertServiceTests (6), ScheduledPaymentsViewModelTests (10), InsightsRuleBasedTests (10), RecordsViewModelTests (12), PanelViewModelTests (10), CashFlowCalculatorTests (18), BalanceTrendCalculatorTests (8), WeekdaySpendingCalculatorTests (8), TopSpendingCategoriesCalculatorTests (10), TopSubcategoriesCalculatorTests (8), BalanceHelperTests (8), NeedTrendHelperTests (8), StatisticsViewModelTests (16), InitialBalanceServiceTests (9), InsightsViewModelTests (6), BulkEditViewModelTests (6), ScheduledPaymentEditorViewModelTests (15), SubcategoryTransferViewModelTests (8), TransactionServiceTests (6), EntityDeletionServiceTests (4), ExchangeRateServiceTests (7), CurrencyChangeServiceTests (6), TransactionUpdateServiceTests (5), MerchantMemoryServiceTests (14), TranscriptionParserServiceTests (12), DraftServiceTests (6), CategoryDeduplicationServiceTests (6), TransactionsExportServiceTests (26), VisionDraftFactoryTests (19), ScreenshotListExtractorTests (10), ScreenshotSingleExtractorTests (13), ReportNotificationServiceTests (17), + 27 more suites from previous batches
 
 ## Product & Stack
 Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, presupuestos y reportes con claridad.
@@ -84,8 +98,8 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 ### Flujo complejo (modelo core, multi-archivo)
 ```
 /clear → /next → /analyze-impact → Plan Mode → /review-plan → Accept
-→ implementar → /verify-ios → /test-smart → /review-session → aplicar
-→ /swift-audit → /commit-one → /context-snapshot → /clear
+→ implementar → /verify-ios → /test-smart → /simplify → aplicar
+→ /commit-one → /context-snapshot → /clear
 ```
 
 ### Skills por categoría
@@ -93,13 +107,16 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 |------|--------|
 | Orientación | `/next` |
 | Planificación | Plan Mode (Shift+Tab), `/review-plan` |
-| Análisis | `/analyze-impact`, `/parallel-search` |
+| Análisis | `/analyze-impact` |
 | Verificación | `/verify-ios`, `/verify-quick`, `/test-smart`, `/test-ios` |
-| Calidad Swift | `/swift-audit`, `/swiftdata-check`, `/swift-modernize` |
-| Review | `/review-code`, `/review-session`, `/pre-deploy-check` |
-| Auditoría periódica | `/deep-scan`, `/a11y-audit`, `/ds-compliance`, `/test-coverage`, `/pre-launch` |
+| Calidad Swift | `/swift-audit`, `/swiftdata-check`, `/swift-modernize`, `/simplify` |
+| Review | `/review-code`, `/diff-review` |
+| Auditoría periódica | `/deep-scan`, `/a11y-audit`, `/ds-compliance`, `/test-coverage`, `/pre-launch`, `/l10n-check`, `/perf-check` |
+| Revisión completa | `/full-review` (ejecuta todas las auditorías + reporte consolidado) |
+| Limpieza | `/dead-code`, `/todo-scan` |
 | Commits | `/commit-one`, `/checkpoint` |
 | Generación tests | `/generate-tests` |
+| Release | `/release-notes` |
 | Contexto | `/context-snapshot`, `/compact`, `/clear` |
 | Captura | `/idea` |
 | Autónomo | `/yolo` |
@@ -159,6 +176,23 @@ Después de crear o modificar modelos, servicios o ViewModels:
 - SIEMPRE `@Relationship(inverse:)` en relaciones bidireccionales
 - Verificar `deleteRule` en cada relación
 - `@MainActor` en servicios que manipulan `ModelContext`
+- **CloudKit compatibility:** NUNCA `@Attribute(.unique)`, propiedades con default o optional, relaciones SIEMPRE optional
+
+### State Management (SwiftUI)
+- `@Observable` clases SIEMPRE con `@MainActor`
+- `@State` SIEMPRE `private` — solo la vista propietaria lo crea
+- NUNCA `Binding(get:set:)` en body — usar `@Binding` + `.onChange()`
+- NUNCA `@AppStorage` dentro de `@Observable` (no triggerea updates)
+- Preferir `@Observable` + `@State`/`@Bindable` sobre `ObservableObject`/`@Published`/`@StateObject`
+
+### Modern Swift Idioms
+- `Date.now` en vez de `Date()`
+- `count(where:)` en vez de `filter().count`
+- `replacing("a", with: "b")` en vez de `replacingOccurrences(of:with:)`
+- `if let value {` shorthand — no repetir nombre de variable
+- `Task.sleep(for: .seconds(1))` en vez de nanoseconds
+- Siempre `async/await` sobre completion handlers
+- NUNCA Grand Central Dispatch — usar Swift Concurrency
 
 ### ViewModel Pattern
 ```swift

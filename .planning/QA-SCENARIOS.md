@@ -82,122 +82,219 @@ Ordenado por dependencias de datos para ejecución secuencial.
 
 ### Vista: OnboardingView
 
-**Flujo completo de 5 pasos:**
-1. Bienvenida + Nombre de usuario
-2. Moneda principal
-3. Monedas secundarias
-4. Periodo por defecto
-5. Categorías iniciales (semilla)
+**Flujo completo de 7 pasos:**
+0. Bienvenida + Nombre de usuario
+1. Moneda principal (por continente, con recomendada)
+2. Modo de uso (Control total / Solo gastos)
+3. Categorías iniciales (semilla)
+4. Cuenta inicial (tipo, nombre, divisa, balance)
+5. Presupuesto rápido (opcional, solo si hay categorías)
+6. Privacidad + Finalizar
+
+**Nota:** El paso 5 (presupuesto) se salta automáticamente si el usuario elige "Empezar desde cero" en categorías.
 
 ### Campos por Paso
 
-**Paso 1 - Bienvenida:**
+**Paso 0 - Bienvenida:**
 | Campo | Tipo | Obligatorio | Validación |
 |-------|------|-------------|------------|
-| Nombre de usuario | TextField | No | Si vacío → "Usuario" |
+| Nombre de usuario | TextField | Sí | No vacío (botón Siguiente deshabilitado si vacío) |
 
-**Paso 2 - Moneda principal:**
+**Paso 1 - Moneda principal:**
 | Campo | Tipo | Obligatorio | Opciones |
 |-------|------|-------------|----------|
-| Moneda preferida | Single select | Sí | PEN, USD, EUR, MXN, COP, BRL, GBP |
+| Moneda preferida | Single select | Sí | 48 divisas agrupadas por continente, sección "Recomendada" al inicio |
 
-**Paso 3 - Monedas secundarias:**
+**Paso 2 - Modo de uso:**
+| Campo | Tipo | Obligatorio | Opciones |
+|-------|------|-------------|----------|
+| Modo | Single select (radio cards) | Sí | "Control total" (recomendado: gastos+ingresos+transferencias+cuentas), "Solo gastos" |
+
+**Paso 3 - Categorías iniciales:**
+| Campo | Tipo | Obligatorio | Opciones |
+|-------|------|-------------|----------|
+| Cargar categorías | Single select (radio cards) | Sí | "Empezar con estas categorías" (recomendado), "Empezar desde cero" |
+
+**Paso 4 - Cuenta inicial:**
 | Campo | Tipo | Obligatorio | Validación |
 |-------|------|-------------|------------|
-| Monedas adicionales | Multi select | No | Máximo 2, excluye la principal |
+| Tipo de cuenta | Horizontal pills | Sí | General, Efectivo, Corriente, Ahorros (sin tarjeta de crédito) |
+| Nombre | TextField | Sí | No vacío (botón Siguiente deshabilitado si vacío) |
+| Divisa | Tappable row → sheet picker | Sí | Default = moneda del paso 1 |
+| Signo del balance | Segmented (Positivo/Negativo) | Sí (solo en Control total) | Default: Positivo |
+| Balance inicial | TextField decimal | No (solo en Control total) | Default: 0 |
 
-**Paso 4 - Periodo por defecto:**
-| Campo | Tipo | Obligatorio | Opciones |
-|-------|------|-------------|----------|
-| Periodo | Single select | Sí | thisWeek, last7Days, last30Days, thisMonth, lastMonth, thisYear, lastYear, allTime |
+**Paso 5 - Presupuesto rápido (solo si hay categorías):**
+| Campo | Tipo | Obligatorio | Validación |
+|-------|------|-------------|------------|
+| ¿Quieres presupuesto? | Yes/No radio cards | Sí | Default: No |
+| Categoría | Horizontal scrollable pills | Sí (si quiere) | Categorías expense del seed |
+| Monto | TextField decimal | Sí (si quiere) | > 0, usa divisa de la cuenta (paso 4) |
 
-**Paso 5 - Categorías iniciales:**
-| Campo | Tipo | Obligatorio | Opciones |
-|-------|------|-------------|----------|
-| Cargar categorías | Single select | Sí | "Empezar con estas categorías" (recomendado), "Empezar desde cero" |
+**Paso 6 - Privacidad:**
+| Campo | Tipo | Obligatorio |
+|-------|------|-------------|
+| (informativo) | Solo lectura | N/A — 4 puntos de privacidad + botón "Empezar" |
 
 ### Escenarios de Onboarding
 
-#### Escenario 1.1: Completar onboarding mínimo con categorías
+#### Escenario 1.1: Flujo completo — control total con categorías, cuenta y presupuesto
 **Precondiciones:** App recién instalada o datos vaciados
 **Pasos:**
 1. Abrir app por primera vez
-2. Verificar pantalla de bienvenida con icono 👋
-3. Dejar nombre vacío
+2. Verificar pantalla de bienvenida con icono de app y campo de nombre
+3. Ingresar nombre "María"
 4. Tap "Siguiente"
-5. Seleccionar moneda (default: PEN)
-6. Tap "Siguiente"
-7. No seleccionar monedas secundarias
-8. Tap "Siguiente"
-9. Seleccionar periodo (default: Este mes)
+5. Verificar divisa recomendada resaltada al inicio
+6. Seleccionar moneda (default según región)
+7. Tap "Siguiente"
+8. Verificar opción "Control total" seleccionada por defecto con badge "Recomendado"
+9. Dejar "Control total" seleccionado
 10. Tap "Siguiente"
-11. Verificar grid visual de categorías con animación
-12. Dejar seleccionado "Empezar con estas categorías" (default)
-13. Tap "Empezar"
+11. Verificar grid visual de categorías con animación staggered
+12. Dejar "Empezar con estas categorías" seleccionado
+13. Tap "Siguiente"
+14. Verificar paso de cuenta: pills de tipo, nombre, divisa, balance
+15. Seleccionar tipo "Corriente"
+16. Ingresar nombre "Banco BBVA"
+17. Ingresar balance: 1500
+18. Tap "Siguiente"
+19. Verificar paso de presupuesto: toggle Yes/No
+20. Seleccionar "Sí"
+21. Seleccionar categoría "Alimentación" en pills horizontales
+22. Ingresar monto: 500
+23. Verificar preview card con icono, nombre y barra de progreso
+24. Tap "Siguiente"
+25. Verificar pantalla de privacidad con 4 puntos
+26. Tap "Empezar"
 **Resultado esperado:**
-- [ ] Nombre guardado como "Usuario"
-- [ ] Moneda PEN configurada
-- [ ] Sin monedas secundarias
-- [ ] Periodo "Este mes" activo
-- [ ] 11 categorías semilla creadas (Alimentación, Compras, Transporte, etc.)
-- [ ] Subcategorías correspondientes creadas
+- [ ] Nombre "María" guardado
+- [ ] Moneda configurada correctamente
+- [ ] Modo "Control total" activo (expensesOnlyMode = false)
+- [ ] Periodo default = "Este mes"
+- [ ] 11 categorías semilla creadas (10 expense + 1 income en control total)
+- [ ] Cuenta "Banco BBVA" tipo Corriente creada con balance 1500
+- [ ] Presupuesto mensual de Alimentación creado con límite 500
+- [ ] Notificaciones creadas como inactivas
 - [ ] Navega a Panel principal
 
-#### Escenario 1.2: Completar onboarding sin categorías
+#### Escenario 1.2: Flujo mínimo — solo gastos, sin categorías
 **Precondiciones:** App recién instalada
 **Pasos:**
 1. Ingresar nombre "Juan"
-2. Tap "Siguiente"
-3. Seleccionar USD como moneda principal
-4. Tap "Siguiente"
-5. Seleccionar EUR y GBP como secundarias
-6. Tap "Siguiente"
-7. Seleccionar "Últimos 30 días"
-8. Tap "Siguiente"
-9. Seleccionar "Empezar desde cero"
-10. Tap "Empezar"
+2. Siguiente → Seleccionar USD
+3. Siguiente → Seleccionar "Solo gastos"
+4. Siguiente → Seleccionar "Empezar desde cero"
+5. Siguiente → Dejar cuenta con nombre por defecto, sin balance
+6. Siguiente → Verificar que **salta** el paso de presupuesto
+7. Verificar pantalla de privacidad directamente
+8. Tap "Empezar"
 **Resultado esperado:**
-- [ ] Nombre "Juan" visible en Panel
+- [ ] Nombre "Juan" guardado
 - [ ] Moneda USD configurada
-- [ ] EUR y GBP disponibles como secundarias
-- [ ] Periodo "Últimos 30 días" activo
-- [ ] 0 categorías creadas
-- [ ] Panel muestra empty state para categorías
+- [ ] Modo "Solo gastos" activo
+- [ ] 0 categorías creadas (excepto subcategoría de ajuste de balance si aplica)
+- [ ] Cuenta creada con nombre = tipo seleccionado (ej: "General")
+- [ ] Sin presupuesto
+- [ ] Paso de presupuesto se saltó (no se muestra)
+- [ ] Progress dots muestran 6 en vez de 7
 
 #### Escenario 1.3: Navegación entre pasos
 **Precondiciones:** En onboarding
 **Pasos:**
-1. Avanzar al paso 4
+1. Avanzar al paso 4 (cuenta)
 2. Tap "Atrás"
-3. Verificar que vuelve al paso 3 con datos intactos
-4. Avanzar hasta paso 5
-5. Tap "Atrás"
-6. Verificar que vuelve al paso 4
+3. Verificar que vuelve al paso 3 (categorías) con selección intacta
+4. Avanzar hasta paso 6 (privacidad)
+5. Tap "Atrás" → vuelve a presupuesto (si hay categorías) o cuenta (si no)
+6. Tap "Atrás" repetidamente hasta paso 0
+7. Verificar que todos los datos persisten
 **Resultado esperado:**
-- [ ] Navegación bidireccional funciona en 5 pasos
-- [ ] Datos persisten entre navegaciones
+- [ ] Navegación bidireccional funciona en 7 pasos (o 6 si se salta presupuesto)
+- [ ] Datos persisten entre navegaciones (nombre, moneda, modo, cuenta, etc.)
+- [ ] Animación de transición correcta (izquierda/derecha según dirección)
 
-#### Escenario 1.4: Límite de monedas secundarias
-**Precondiciones:** En paso 3 de onboarding
+#### Escenario 1.4: Validación de nombre obligatorio
+**Precondiciones:** App recién instalada
 **Pasos:**
-1. Seleccionar EUR
-2. Seleccionar GBP
-3. Intentar seleccionar MXN
+1. Dejar campo de nombre vacío
+2. Verificar botón "Siguiente"
 **Resultado esperado:**
-- [ ] MXN no se puede seleccionar (máximo 2)
-- [ ] Contador muestra "2/2"
+- [ ] Botón "Siguiente" deshabilitado (opacidad reducida)
+- [ ] Al ingresar al menos 1 carácter, botón se habilita
 
-#### Escenario 1.5: Animación de categorías
-**Precondiciones:** En paso 4 de onboarding
+#### Escenario 1.5: Animación de categorías + filtro por modo
+**Precondiciones:** En paso 2, seleccionar "Solo gastos"
 **Pasos:**
-1. Tap "Siguiente" para ir al paso 5
-2. Observar la pantalla de categorías
+1. Tap "Siguiente" para ir al paso 3 (categorías)
+2. Observar grid de categorías
 **Resultado esperado:**
-- [ ] Grid de 11 iconos de categorías aparece
+- [ ] Grid muestra 10 iconos (sin categoría "Ingresos")
 - [ ] Animación staggered (iconos aparecen uno por uno)
-- [ ] Cada icono muestra color correcto de la categoría
-- [ ] Nombre corto debajo de cada icono
+- [ ] Cada icono con color correcto y nombre debajo
 - [ ] Badge "Recomendado" en opción de cargar categorías
+
+#### Escenario 1.6: Cuenta con divisa diferente a la principal
+**Precondiciones:** En paso 1, seleccionar PEN como moneda principal
+**Pasos:**
+1. Avanzar al paso 4 (cuenta)
+2. Verificar que divisa de cuenta = PEN (hereda del paso 1)
+3. Tap en fila de divisa → se abre sheet de selección
+4. Seleccionar USD
+5. Verificar que símbolo cambia a $
+6. Avanzar al paso 5 (presupuesto)
+7. Verificar que el presupuesto usa USD (divisa de la cuenta)
+**Resultado esperado:**
+- [ ] Sheet de divisa muestra sección recomendada + continentes
+- [ ] Al seleccionar USD, divisa de cuenta cambia
+- [ ] Símbolo en campo de balance cambia a $
+- [ ] Presupuesto usa divisa de la cuenta (USD), no la principal (PEN)
+
+#### Escenario 1.7: Presupuesto rápido — validación
+**Precondiciones:** En paso 5 (presupuesto), seleccionar "Sí"
+**Pasos:**
+1. Sin seleccionar categoría ni monto, verificar botón Siguiente
+2. Seleccionar categoría pero sin monto
+3. Ingresar monto 0
+4. Ingresar monto válido (ej: 300)
+**Resultado esperado:**
+- [ ] Botón Siguiente deshabilitado sin categoría o sin monto válido
+- [ ] Monto 0 no habilita el botón
+- [ ] Con categoría + monto > 0, botón se habilita
+- [ ] Preview card actualiza en tiempo real (icono, nombre, barra)
+
+#### Escenario 1.8: Balance guide (ayuda de saldo)
+**Precondiciones:** En paso 4 (cuenta), modo "Control total"
+**Pasos:**
+1. Verificar que sección de balance aparece
+2. Tap "¿Cómo calcular mi saldo?" (link debajo del balance)
+3. Verificar contenido del sheet
+**Resultado esperado:**
+- [ ] Sheet con explicación por tipo de cuenta (General, Efectivo, Corriente, Ahorros)
+- [ ] Cada tipo con icono, título y descripción
+- [ ] Tip final con consejo general
+- [ ] Botón para cerrar el sheet
+
+#### Escenario 1.9: Solo gastos oculta sección de balance
+**Precondiciones:** En paso 2, seleccionar "Solo gastos"
+**Pasos:**
+1. Avanzar al paso 4 (cuenta)
+2. Observar formulario de cuenta
+**Resultado esperado:**
+- [ ] Sección de balance NO aparece (sin signo, sin monto, sin link de ayuda)
+- [ ] Solo muestra: tipo de cuenta, nombre, divisa y tip
+- [ ] Cuenta se crea con balance 0
+
+#### Escenario 1.10: Teclado se cierra al tocar fuera
+**Precondiciones:** En cualquier paso con campo de texto activo
+**Pasos:**
+1. En paso 0, tap en campo de nombre → teclado aparece
+2. Tap fuera del campo
+3. En paso 4, tap en balance → teclado aparece
+4. Tap fuera del campo
+**Resultado esperado:**
+- [ ] Teclado se cierra al tocar fuera en todos los pasos
+- [ ] ScrollView dismiss keyboard interactively en pasos 4 y 5
 
 ---
 
@@ -1123,6 +1220,24 @@ Ordenado por dependencias de datos para ejecución secuencial.
 ---
 
 ## Sección 6: Presupuestos
+
+### Vista: BudgetDetailView (Detalle de presupuesto)
+
+| # | Escenario | Pasos | Resultado esperado |
+|---|-----------|-------|--------------------|
+| 6.D.1 | Tap presupuesto abre detalle | Tap en card de presupuesto | Abre BudgetDetailView (NO editor directamente) |
+| 6.D.2 | Datos correctos en detalle | Verificar gasto/límite/porcentaje/días | Valores coinciden con la card de la lista |
+| 6.D.3 | Editar desde detalle | Tap pencil en toolbar → editar → cerrar | Detalle se actualiza con datos nuevos |
+| 6.D.4 | Gráficas desde detalle | Tap chart.bar.fill en toolbar | Push a BudgetChartsView con 3 gráficas |
+| 6.D.5 | FAB crea nuevo presupuesto | Tap FAB (+) | Sheet editor con presupuesto nuevo (no detalle) |
+| 6.D.6 | Back/swipe regresa a lista | Tap chevron.left o swipe back | Regresa a BudgetsListView |
+| 6.D.7 | Presupuesto inactivo | Abrir detalle de presupuesto inactivo | Muestra indicador "Inactivo" en sección Status |
+| 6.D.8 | Presupuesto excedido | Abrir detalle de presupuesto excedido | Muestra texto motivacional + colores hotPink |
+| 6.D.9 | Sin subcategorías/cuentas | Abrir presupuesto sin filtros | Muestra "Todas las cuentas" / "Todas las categorías" |
+| 6.D.10 | Tab switch conserva navegación | Budgets → Scheduled → Budgets | Navegación sigue funcionando |
+| 6.D.11 | Gráfica cumplimiento (único) | Abrir gráficas de presupuesto único | Gráfica "Gasto vs Límite" oculta (sin períodos) |
+| 6.D.12 | Gráfica gasto acumulado | Abrir gráficas de cualquier presupuesto | AreaMark acumulativo + línea de límite visible |
+| 6.D.13 | Desglose por categoría | Abrir gráficas con subcategorías | BarMark horizontal con colores de subcategoría |
 
 ### Vista: BudgetEditorView
 
@@ -4783,9 +4898,95 @@ Para cada tema verificar:
 - [ ] Verificar strings de trial en los 6 idiomas (es, en, de, fr, it, pt)
 - [ ] Verificar que el formato "%@ días, luego %@" se muestra correctamente
 
-## Sección 40: Polish Pre-Fase 12 (Fase 11.5)
+---
 
-### 40.1 Budget Progress Bar — colores por contexto
+## Sección 40: Filtros Avanzados — Modo Excluir/Incluir
+
+### 40.1 Segmented control en RecordsFiltersView
+- [ ] Abrir filtros de Records → segmented control visible con "Incluir" / "Excluir"
+- [ ] Por defecto seleccionado "Incluir"
+- [ ] Al cambiar a "Excluir", todas las selecciones de filtro se limpian
+- [ ] Al cambiar de vuelta a "Incluir", las selecciones se limpian de nuevo
+- [ ] El label de status cambia: vacío muestra "Nada" en modo excluir (vs "Todas" en incluir)
+
+### 40.2 Modo Excluir — Cuentas
+- [ ] Cambiar a "Excluir" → seleccionar 1 cuenta
+- [ ] En Records: transacciones de esa cuenta desaparecen
+- [ ] Transacciones de otras cuentas siguen visibles
+- [ ] Selección vacía en modo excluir = todo visible (sin efecto)
+
+### 40.3 Modo Excluir — Categorías/Subcategorías
+- [ ] Cambiar a "Excluir" → seleccionar 1 categoría
+- [ ] Transacciones de esa categoría se ocultan
+- [ ] Subcategorías de esa categoría también se ocultan
+
+### 40.4 Modo Excluir — Tags
+- [ ] Cambiar a "Excluir" → seleccionar 1 tag
+- [ ] Transacciones que tengan ese tag se ocultan
+- [ ] Si una transacción tiene CUALQUIER tag excluido → se excluye completa
+
+### 40.5 Modo Excluir — Monedas
+- [ ] Cambiar a "Excluir" → seleccionar moneda USD
+- [ ] Transacciones en USD desaparecen
+- [ ] Transacciones en otras monedas siguen visibles
+
+### 40.6 Modo Excluir — Nature y TransactionNature
+- [ ] Cambiar a "Excluir" → seleccionar nature "Necesidad" → subcategorías de tipo necesidad se ocultan
+- [ ] En modo excluir, sección Income/Expense NO aparece (oculta por diseño)
+- [ ] El filtro transactionNature solo funciona en modo incluir
+
+### 40.7 Chips visuales en modo excluir
+- [ ] En modo excluir con filtros activos, chips muestran ícono minus.circle.fill rojo
+- [ ] En modo incluir, chips NO muestran ícono minus (comportamiento normal)
+- [ ] Chips en PanelView muestran ícono minus en modo excluir
+- [ ] Chips en TrendsTabView muestran ícono minus en modo excluir
+- [ ] Chips en CategoriesTabView muestran ícono minus en modo excluir
+- [ ] Chips en RecordsTabView muestran ícono minus en modo excluir
+
+### 40.8 Persistencia entre pestañas
+- [ ] Activar modo excluir + seleccionar filtros en Records
+- [ ] Ir a pestaña Trends → mismos filtros de exclusión aplicados
+- [ ] Ir a pestaña Categories → mismos filtros de exclusión aplicados
+- [ ] Ir a Panel → mismos filtros de exclusión aplicados
+- [ ] Modo excluir persiste en SessionState (SSOT)
+
+### 40.9 Limpiar filtros
+- [ ] Activar modo excluir con filtros → tap "Limpiar filtros"
+- [ ] Todos los filtros se limpian
+- [ ] Modo vuelve a "Incluir"
+- [ ] Botón "Clear all" (xmark.circle.fill) también resetea a incluir
+
+### 40.10 Exportación con modo excluir
+- [ ] Abrir wizard de exportación → segmented control "Incluir/Excluir" visible
+- [ ] Seleccionar "Excluir" + elegir cuenta → exportar CSV
+- [ ] CSV NO contiene transacciones de la cuenta excluida
+- [ ] CSV SÍ contiene transacciones de otras cuentas
+
+### 40.11 Filtros no-entidad no afectados por modo
+- [ ] En modo excluir, filtro de monto (>100) funciona igual que en incluir
+- [ ] En modo excluir, filtro de nota/búsqueda funciona igual que en incluir
+- [ ] En modo excluir, filtro de periodo funciona igual que en incluir
+- [ ] En modo excluir, filtro de tipo transacción funciona igual que en incluir
+
+### 40.12 Localización del modo excluir
+- [ ] Verificar "Incluir"/"Excluir"/"Nada" en los 6 idiomas (es, en, de, fr, it, pt)
+- [ ] Labels correctos en cada idioma al cambiar modo
+
+### 40.13 Auto-reset del modo excluir
+- [ ] Activar modo excluir → seleccionar 1 cuenta → deseleccionar esa cuenta
+- [ ] Modo auto-resetea a "Incluir" (resetExcludeModeIfNeeded)
+- [ ] Segmented control refleja el cambio automático
+
+### 40.14 Combinación de filtros en modo excluir
+- [ ] Excluir cuenta A + categoría B → tx que cumple CUALQUIERA de las dos condiciones se oculta
+- [ ] Excluir tag X + moneda USD → ambas condiciones se aplican independientemente
+- [ ] Excluir cuenta A + monto >100 → solo tx de cuenta A se excluyen; el filtro monto es inclusivo normal
+
+---
+
+## Sección 41: Polish Pre-Fase 12 (Fase 11.5)
+
+### 41.1 Budget Progress Bar — colores por contexto
 - [ ] Crear presupuesto con 1 categoría, gastar <75% → barra muestra color de la categoría
 - [ ] Crear presupuesto con múltiples categorías, gastar <75% → barra muestra color indigo
 - [ ] Gastar 75-99% en cualquier presupuesto → barra muestra color warning (ámbar)
@@ -4793,14 +4994,14 @@ Para cada tema verificar:
 - [ ] Verificar widget de presupuesto: excedido muestra hotPink (no rojo)
 - [ ] Verificar widget de presupuesto: ≥75% muestra warning (ámbar)
 
-### 40.2 Badge "Recurrente" en edición de transacción
+### 41.2 Badge "Recurrente" en edición de transacción
 - [ ] Crear un pago planificado, ejecutarlo para crear transacción
 - [ ] Editar esa transacción → chip "Recurrente" con icono visible en barra de acciones
 - [ ] Chip es púrpura con fondo translúcido
 - [ ] Crear transacción nueva (sin pago planificado) → chip NO aparece
 - [ ] Duplicar transacción recurrente → chip NO aparece en la duplicada (es nueva)
 
-### 40.3 Tipo de cuenta: Tarjeta de crédito
+### 41.3 Tipo de cuenta: Tarjeta de crédito
 - [ ] Crear nueva cuenta → tipo "Tarjeta de crédito" disponible en selector
 - [ ] Seleccionar tipo → icono es `creditcard.fill` (distinto del `creditcard` outline de General)
 - [ ] Al seleccionar tipo tarjeta de crédito → sección "Tarjeta de crédito" aparece en formulario
@@ -4810,7 +5011,7 @@ Para cada tema verificar:
 - [ ] Cambiar tipo a otro (ej. General) → sección tarjeta de crédito desaparece
 - [ ] Editar cuenta existente tipo tarjeta de crédito → campos se cargan correctamente
 
-### 40.4 Notificación de pago de tarjeta de crédito
+### 41.4 Notificación de pago de tarjeta de crédito
 - [ ] Crear cuenta tarjeta de crédito con reminder activado, día = hoy
 - [ ] Cerrar y reabrir app → recibir notificación "Recuerda que hoy toca pagar tu tarjeta {nombre}"
 - [ ] Cerrar y reabrir app de nuevo → NO recibir notificación duplicada
@@ -4847,3 +5048,523 @@ Para cada tema verificar:
 - [ ] Sección 4 detalla: audio, imágenes, texto transcrito, categorías
 - [ ] Sección 4 aclara qué NO se envía: montos, historial, info personal
 - [ ] Verificar en los 6 idiomas (es, en, de, fr, it, pt)
+
+---
+
+## Sección 42: Filtros Deferred — Apply/Discard (Fase 12)
+
+### 42.1 Aplicar filtros
+- [ ] Abrir filtros, seleccionar 2 cuentas y 1 tag, tap "Aplicar" → filtros activos en Records
+- [ ] Abrir filtros desde Trends tab, seleccionar categoría, tap "Aplicar" → filtros activos
+
+### 42.2 Descartar filtros (X)
+- [ ] Abrir filtros, seleccionar varios, tap "X" → verificar que NO se aplicaron
+- [ ] Abrir filtros con filtros ya activos, no tocar nada, tap "X" → filtros pre-existentes intactos
+
+### 42.3 Limpiar filtros
+- [ ] Abrir filtros, seleccionar varios, tap "Limpiar filtros", tap "Aplicar" → todo limpio
+- [ ] Abrir filtros, seleccionar varios, tap "Limpiar filtros", tap "X" → filtros previos intactos (clear no se commiteó)
+
+### 42.4 Toggle exclude mode
+- [ ] Abrir filtros, seleccionar cuentas, toggle exclude ON → selecciones locales se limpian
+- [ ] Toggle exclude OFF → selecciones locales se limpian de nuevo
+- [ ] En modo solo gastos: toggle exclude ON → transactionNatures mantiene [.expense]
+
+### 42.5 Navegación desde Panel
+- [ ] Tap en categoría de pie chart → abrir filtros → subcategorías expandidas correctamente
+- [ ] En ese estado, tap "X" → filtro de categoría original no afectado
+
+### 42.6 Exclude mode sin entities
+- [ ] Abrir filtros, activar exclude mode sin seleccionar nada, tap "Aplicar" → exclude mode se auto-desactiva (comportamiento existente preservado)
+
+---
+
+## Sección 43: Smart Insights
+
+### 43.1 Tab y navegación
+- [ ] Insights aparece como primer tab en Statistics (antes de Tendencias)
+- [ ] Tap en Insights tab muestra contenido correcto
+- [ ] Cambiar periodo/filtros actualiza datos de Insights
+
+### 43.2 Period Summary (siempre visible)
+- [ ] 4 cards: gasto total, ingreso total, balance, cantidad de registros
+- [ ] VariationChip muestra variación vs periodo anterior (si showVariations ON)
+- [ ] Valores coinciden con datos reales del periodo
+
+### 43.3 Quick Stats Grid
+- [ ] Grid 2 columnas con: promedio diario, categoría top, subcategoría top, mayor gasto, día más activo, suscripciones
+- [ ] Celdas se adaptan al contenido disponible (no muestra celdas vacías)
+- [ ] Sección colapsable con chevron animado
+
+### 43.4 Compromisos
+- [ ] Pagos pendientes: muestra cantidad y monto
+- [ ] Suscripciones activas: muestra cantidad y monto mensual
+- [ ] Presupuestos en riesgo (>75%): muestra BudgetProgressBar
+- [ ] Sección no aparece si no hay datos de compromisos
+- [ ] Sección colapsable
+
+### 43.5 Streak Badge
+- [ ] Aparece solo si streak > 3 días
+- [ ] Muestra icono de llama y texto con días
+
+### 43.6 Gráfico de gasto por día de semana
+- [ ] 7 barras (Lun-Dom) con el máximo resaltado en color accent
+- [ ] Eje Y con formato de moneda compacto
+- [ ] Sección colapsable
+- [ ] No aparece si no hay datos de gasto
+
+### 43.7 Distribución por naturaleza
+- [ ] Barra horizontal apilada (esencial=teal, prioridad=naranja, opcional=púrpura)
+- [ ] Leyenda con porcentajes
+- [ ] Sección colapsable
+- [ ] No aparece si total es 0
+
+### 43.8 Comparación año a año
+- [ ] Aparece solo si hay datos del mismo mes del año anterior
+- [ ] Muestra montos anterior vs actual con VariationChip
+
+### 43.9 Insights textuales (rule-based)
+- [ ] Hero insight: primera regla más relevante (top categoría dominante, tendencia de gasto, etc.)
+- [ ] 3-4 InsightCards con icono, texto y color según sentimiento
+- [ ] Sección colapsable
+
+### 43.10 Edge cases
+- [ ] 0 transacciones → YalaEmptyState con sparkles
+- [ ] <5 transacciones → muestra KPIs, oculta gráficos y textos, muestra hint
+- [ ] Sin periodo anterior → variaciones muestran "---"
+
+### 43.11 First-time tip
+- [ ] Aparece en primera visita (hasSeenInsightsIntro = false)
+- [ ] Botón X lo descarta permanentemente
+- [ ] No reaparece tras cerrar
+
+### 43.12 Pro + AI Insights
+- [ ] Free: ve insights rule-based + fun fact bloqueado con lock + ProBadge
+- [ ] Pro sin AI consent: ve banner de activación AI
+- [ ] Pro con AI consent: genera insights AI (hero + cards + fun fact)
+- [ ] Tap "Activar" en banner → acepta consent, carga AI insights
+- [ ] Tap "No me interesa" → descarta banner permanentemente
+- [ ] Offline con cache: muestra cache + banner "datos en caché"
+- [ ] Offline sin cache: muestra fallback rule-based + banner "sin conexión"
+- [ ] Loading: shimmer con sparkles pulse
+
+### 43.13 Settings (Smart Insights)
+- [ ] Accesible desde Personalización → Smart Insights
+- [ ] AI toggle: Pro → funcional, Free → lock + ProBadge → upgrade sheet
+- [ ] Toggles de secciones: Quick Stats, Pagos pendientes, Suscripciones, Presupuestos, Comparación, Día de semana, Naturaleza, Insights inteligentes
+- [ ] Toggle OFF oculta sección correspondiente en InsightsTabView
+- [ ] "Restaurar valores por defecto" → todos ON
+- [ ] Cambios persisten entre sesiones (@AppStorage)
+
+### 43.14 Locked fun fact (Free)
+- [ ] Tap en fun fact bloqueado → abre UpgradePromptSheet
+- [ ] Texto redactado con placeholder
+- [ ] Lock icon + ProBadge visibles
+
+## Sección 44: Contextual AI Insight en PanelView
+
+### 44.1 Visibilidad — Pro + Consent + ≥5 txns
+- [ ] Pro + consent aceptado + ≥5 transacciones en periodo → card aparece entre cuentas y balance
+- [ ] Card muestra icono sparkles + texto (1 oración con **negritas**) + ProBadge + botón X
+- [ ] Free user → no se muestra nada (zero overhead)
+- [ ] Pro sin consent → no se muestra nada
+- [ ] < 5 transacciones en periodo → no se muestra nada
+- [ ] Sin conexión → no se muestra nada
+
+### 44.2 Dismiss y reset
+- [ ] Tap X → card desaparece con animación scale+opacity
+- [ ] Cambiar periodo → card reaparece (dismiss se resetea)
+- [ ] Cambiar filtros (cuenta, categoría) → card reaparece con nuevo insight
+
+### 44.3 Loading state
+- [ ] Primera carga muestra shimmer/spinner breve
+- [ ] Cache warm (< 30 min) → aparece instantáneo sin spinner
+
+### 44.4 Cache contextual (30 min TTL)
+- [ ] Mismo periodo + filtros + txnCount → usa cache (no llama API)
+- [ ] Cache expira después de 30 min → nueva llamada API
+- [ ] Cache separado del cache de 5 min de InsightsTabView
+
+### 44.5 Edge cases
+- [ ] LLM responde {"comment": null} → no se muestra card
+- [ ] Rate limited → no se muestra card (sin error visible)
+- [ ] Error de red → no se muestra card (sin error visible)
+- [ ] Agregar transacciones hasta ≥5 → card aparece al volver al panel
+
+### 44.6 Widget Preferences — Toggle "Observaciones con IA"
+- [ ] Toggle visible en WidgetPreferencesView antes de la sección de widgets
+- [ ] Pro + consent → toggle funcional, ON por defecto
+- [ ] Pro sin consent → toggle deshabilitado + hint "Activa IA en Ajustes"
+- [ ] Free → ProBadge en lugar de toggle (incentivo upgrade)
+- [ ] Toggle OFF → card no aparece en PanelView
+- [ ] Toggle ON → card aparece si se cumplen demás condiciones
+- [ ] Cambio persiste entre sesiones (@AppStorage "panelShowAIInsight")
+
+### 44.5 Personalización: Tono
+- [ ] Personalización → Smart Insights → Tono muestra 3 opciones (Normal, Considerado, Sarcástico)
+- [ ] Cada opción muestra preview del estilo
+- [ ] Cambiar tono invalida cache AI → próxima carga genera nuevos insights
+- [ ] Tono "Considerado": textos rule-based usan variante empática
+- [ ] Tono "Sarcástico": textos rule-based usan variante con humor ligero
+- [ ] Tono se aplica también al contextual insight de PanelView
+- [ ] Preferencia se sincroniza via iCloud (PreferenceSyncService)
+
+### 44.6 Personalización: Enfoque
+- [ ] Personalización → Smart Insights → Enfoque muestra 3 opciones (Equilibrado, Ahorrador, Precavido)
+- [ ] Enfoque "Ahorrador": umbral top category baja a 30% (vs 40%), expense up a 10% (vs 15%)
+- [ ] Enfoque "Precavido": umbral budget risk baja a 75% (vs 90%), máximo 2 alertas de presupuesto
+- [ ] Cambiar enfoque invalida cache AI
+- [ ] Enfoque se aplica al prompt AI (Pro) y a umbrales rule-based (Free)
+- [ ] Preferencia se sincroniza via iCloud
+
+### 44.7 Tips en InsightCards
+- [ ] Cards rule-based muestran tip debajo del texto principal (icono lightbulb + texto gris)
+- [ ] Cards AI muestran tip cuando el LLM incluye uno
+- [ ] Tips no aparecen si el campo es nil (comportamiento por defecto)
+- [ ] Hero card de AI no muestra tip (solo cards individuales)
+
+## Sección 45: Rediseño del Onboarding (7 pasos)
+
+### 45.1 Happy Path — Control Total
+- [ ] Fresh launch → nombre "Test" → MXN → Control total → categorías sí
+- [ ] Cuenta: tipo General (default), escribir nombre, saldo 5000
+- [ ] Presupuesto: "Quiero darle seguimiento", seleccionar categoría en pills horizontales, monto 3000
+- [ ] Preview card muestra icono, color y nombre de categoría seleccionada + "de $3,000" + barra vacía
+- [ ] Privacidad → Empezar
+- [ ] Panel muestra 1 cuenta MXN $5,000
+- [ ] Budget visible en Planificación > Presupuestos con divisa de la cuenta (no la preferida)
+- [ ] Notificaciones en Perfil > Notificaciones todas con isActive=false
+
+### 45.2 Happy Path — Solo Gastos
+- [ ] Fresh launch → nombre → divisa → Solo gastos → categorías sí
+- [ ] Cuenta: tipo Efectivo, campo de saldo NO visible
+- [ ] Presupuesto: skip (seleccionar "Ahora no, gracias")
+- [ ] Privacidad → Empezar
+- [ ] Panel muestra 1 cuenta sin saldo inicial
+- [ ] Sin presupuestos creados
+
+### 45.3 Sin Categorías Semilla
+- [ ] Fresh launch → nombre → divisa → Control total → categorías NO
+- [ ] Cuenta: tipo General, saldo 1000
+- [ ] Paso presupuesto se salta automáticamente (dots muestran 6, no 7)
+- [ ] Privacidad → Empezar
+- [ ] Panel muestra cuenta con saldo
+- [ ] Subcategoría "Ajustes de saldo" existe en datos
+- [ ] Sin presupuestos creados
+
+### 45.4 Validación de pasos
+- [ ] Paso 0 (nombre): botón Next deshabilitado si nombre vacío
+- [ ] Paso 4 (cuenta): botón Next deshabilitado si nombre de cuenta vacío
+- [ ] Paso 5 (presupuesto) con "Quiero darle seguimiento": Next deshabilitado si no hay categoría o monto
+- [ ] Paso 5 con "Ahora no": Next habilitado siempre
+
+### 45.5 Saldo Cero
+- [ ] Control total → cuenta → dejar saldo vacío o "0"
+- [ ] Cuenta creada sin transacción initial_balance
+
+### 45.6 Back Navigation
+- [ ] Ir a paso 4 (cuenta) → Back → cambiar de Control total a Solo gastos → Next
+- [ ] Campo de saldo desaparece en paso cuenta
+- [ ] Sin categorías semilla: Back desde paso 6 (privacidad) → va a paso 4 (cuenta), no paso 5
+
+### 45.7 Progress Indicator
+- [ ] Con categorías semilla: 7 dots visibles
+- [ ] Sin categorías semilla: 6 dots visibles (paso presupuesto oculto)
+- [ ] Dot activo se expande y colorea correctamente
+
+### 45.8 Categorías filtradas por modo
+- [ ] Solo gastos: grid de categorías NO muestra "Ingresos"
+- [ ] Control total: grid de categorías muestra todas las 11 categorías
+- [ ] Presupuesto: pills de categorías NO muestran "Ingresos" en ningún modo
+
+### 45.9 Pasos eliminados no existen
+- [ ] No hay paso de divisas secundarias
+- [ ] No hay paso de período predeterminado
+- [ ] No hay paso de notificaciones con toggles
+- [ ] No hay paso de tutoriales
+
+### 45.10 Divisa del presupuesto
+- [ ] Cambiar divisa de la cuenta en paso 4 (ej: USD en vez de MXN)
+- [ ] En paso 5: símbolo de divisa en campo de monto es el de la cuenta (USD)
+- [ ] Preview card muestra montos en divisa de la cuenta
+- [ ] Presupuesto creado usa divisa de la cuenta, no la preferida del paso 1
+
+### 45.11 Keyboard dismiss
+- [ ] En paso 0: tocar fuera del campo nombre cierra teclado
+- [ ] En paso 4: tocar fuera de campos cierra teclado; scrollear cierra teclado
+- [ ] En paso 5: tocar fuera del campo monto cierra teclado; scrollear cierra teclado
+
+### 45.12 Guía de saldo
+- [ ] En paso 4 (Control total): link "¿Cómo calculo mi saldo?" abre sheet
+- [ ] Sheet muestra 4 cards (General, Efectivo, Cuenta corriente, Ahorros) con explicaciones
+- [ ] Botón checkmark (YalaSaveButton) cierra la sheet
+
+### 45.13 Preview card dinámica
+- [ ] Sin selección: card muestra icono "?" gris, nombre placeholder, monto $0
+- [ ] Seleccionar categoría: icono, color y nombre se actualizan con animación
+- [ ] Escribir monto: "de $X" se actualiza en la card
+- [ ] Label "Así se verá tu presupuesto" visible encima de la card
+- [ ] Card muestra "Mensual" como periodo (no días restantes ficticios)
+
+## 46. Post-Onboarding: Divisas Secundarias + Notification Primer
+
+### 46.1 Prompt Divisas Secundarias (AccountForm)
+- [ ] Crear cuenta en USD (preferred PEN) → alert "Divisa secundaria" aparece
+- [ ] Alert muestra mensaje con USD y PEN → aceptar "Agregar"
+- [ ] Verificar secondaryCurrencies contiene "USD" en UserDefaults
+- [ ] SessionState.needsExchangeRateWidgetRefresh se activa
+- [ ] Crear segunda cuenta en EUR → alert aparece → aceptar
+- [ ] Verificar secondaryCurrencies contiene "USD,EUR"
+- [ ] Crear tercera cuenta en GBP → NO aparece alert (slots llenos, max 2)
+- [ ] Crear cuenta en PEN (= preferred) → NO aparece alert
+- [ ] Crear cuenta en USD cuando USD ya es secundaria → NO aparece alert
+- [ ] Editar cuenta existente (cambiar nombre) → NO aparece alert de divisa
+- [ ] Botón "No, gracias" → dismiss sin cambiar secondaryCurrencies
+- [ ] En ambos botones (aceptar/rechazar) → la vista se cierra correctamente
+
+### 46.2 Notification Permission Primer
+- [ ] Crear 1ra transacción nueva → sin primer
+- [ ] Crear 2da transacción nueva → sin primer
+- [ ] Crear 3ra transacción nueva → success screen → "Aceptar" → NotificationPrimerSheet aparece
+- [ ] Sheet muestra icono bell, título, 3 beneficios, CTA y botón secundario
+- [ ] "Activar notificaciones" → solicita permiso del sistema → dismiss → notificaciones activas
+- [ ] Si se acepta, se ejecuta seedDefaultNotificationsIfNeeded
+- [ ] "Ahora no" → dismiss → nunca más aparece (hasSeenNotificationPrimer = true)
+- [ ] Editar transacciones existentes NO incrementa el contador
+- [ ] Si permisos ya otorgados (no .notDetermined) → primer NO aparece
+- [ ] Transferencias nuevas SÍ incrementan el contador
+- [ ] presentationDetents([.medium]) aplicado correctamente
+- [ ] Sheet se ve correctamente con Dynamic Type
+
+## 47. Onboarding: Modos de Uso + Calculadora de Saldo + TC Sign Picker
+
+### 47.1 Paso 2: Tres modos de uso
+- [ ] Paso 2 muestra 3 opciones: "Solo gastos", "Día a día", "Control total"
+- [ ] Cada opción tiene título, frase en primera persona (italic) y descripción
+- [ ] Por defecto "Día a día" está seleccionada (checkmark azul)
+- [ ] Tocar "Solo gastos" → selecciona, deselecciona la anterior
+- [ ] Tocar "Control total" → selecciona, deselecciona la anterior
+- [ ] "Día a día" muestra badge "Recomendado" cuando está seleccionada
+- [ ] Solo gastos → paso 4 no muestra sección de balance (como antes)
+- [ ] Día a día → paso 4 muestra balance + "¿Cómo calculo mi saldo?" (calculadora sin tarjetas)
+- [ ] Control total → paso 4 muestra balance + calculadora con campo "Consumo en tarjetas"
+- [ ] `expensesOnlyMode` se guarda correctamente: true solo para "Solo gastos"
+- [ ] `financialMindset` se guarda correctamente: "cashFlow" para Solo gastos y Día a día, "patrimonial" para Control total
+- [ ] Ambas preferencias sincronizan via iCloud KV (PreferenceSyncService)
+- [ ] Re-onboarding (data wipe + onboarding) recupera valores guardados
+
+### 47.2 Calculadora de saldo: General + Día a día (cashFlow)
+- [ ] Tocar "¿Cómo calculo mi saldo?" → BalanceCalculatorSheet aparece
+- [ ] Título: "¿Cuánto dinero tienes?" + intro warm
+- [ ] 3 campos: Cuentas de banco, Ahorros, Efectivo (NO campo tarjetas)
+- [ ] Tip: "Si usas tarjetas de crédito, puedes agregarlas como cuentas aparte..."
+- [ ] Resultado: "Tu disponible →" con suma de los 3 campos
+- [ ] Escribir 3000 + 500 + 200 → resultado muestra 3,700.00
+- [ ] "Usar este saldo" → sheet se cierra → monto 3700.00 aparece en input de balance, signo Positivo
+- [ ] Símbolo de moneda correcto (según accountCurrency)
+
+### 47.3 Calculadora de saldo: General + Control total (patrimonial)
+- [ ] Seleccionar "Control total" en paso 2 → llegar a paso 4 → abrir calculadora
+- [ ] 4 campos principales: Cuentas de banco, Ahorros, Efectivo, Consumo en tarjetas (con "(opcional)")
+- [ ] Sección "Gastos compartidos" visible debajo de campos principales (card separada)
+- [ ] 2 campos compartidos: "Te deben" y "Debes" (con "(opcional)")
+- [ ] Tip: menciona gastos compartidos, no apps específicas
+- [ ] Resultado: "Tu saldo →" con fórmula: bank + savings + cash - creditCards + othersOweMe - iOwe
+- [ ] Escribir 3000 + 500 + 200 - 1200 + 300 - 150 → resultado muestra 2,650.00
+- [ ] Solo campos principales llenos (sin compartidos): 3000 + 500 + 200 - 1200 → muestra 2,500.00
+- [ ] "Usar este saldo" → balance pre-llenado correctamente
+
+### 47.3b Gastos compartidos (solo patrimonial)
+- [ ] Sección "Gastos compartidos" NO aparece en modo "Día a día" (cashFlow)
+- [ ] Sección SÍ aparece en modo "Control total" (patrimonial)
+- [ ] Campo "Te deben" vacío → se trata como 0 en la fórmula
+- [ ] Campo "Debes" vacío → se trata como 0 en la fórmula
+- [ ] "Te deben" suma al saldo (es dinero que te deben)
+- [ ] "Debes" resta al saldo (es dinero que debes)
+- [ ] Ambos campos vacíos → resultado igual que sin sección compartidos
+- [ ] No se menciona ninguna app específica (Splitwise, etc.) en textos
+
+### 47.4 Calculadora: Cuentas simples (Cash/Checking/Savings)
+- [ ] Seleccionar tipo Cash en paso 4 → "¿Cómo calculo mi saldo?" → explicación + 1 campo
+- [ ] Texto Cash: "Revisa tu billetera y donde guardes efectivo..."
+- [ ] Seleccionar tipo Checking → texto: "Consulta el saldo disponible en tu app bancaria..."
+- [ ] Seleccionar tipo Savings → texto: "¿Cuánto tienes ahorrado?..."
+- [ ] Cada uno tiene solo 1 campo de monto + "Usar este saldo"
+- [ ] "Usar este saldo" pre-llena correctamente con signo positivo
+
+### 47.5 AccountFormView: Calculadora de saldo
+- [ ] Crear nueva cuenta General → link "¿Cómo calculo mi saldo?" visible debajo de balance
+- [ ] Tocar → BalanceCalculatorSheet con variante según tipo de cuenta
+- [ ] Cambiar tipo a Cash → calculadora muestra variante simple
+- [ ] Cambiar tipo a Credit Card → calculadora muestra variante TC (línea/disponible)
+- [ ] "Usar este saldo" pre-llena balanceText e isPositive correctamente
+- [ ] Editar cuenta existente → link NO visible (solo para cuentas nuevas)
+- [ ] Modo expenses-only → link NO visible (sin sección de balance)
+
+### 47.6 Calculadora: Tarjeta de crédito (solo AccountFormView)
+- [ ] Crear cuenta TC → abrir calculadora → 2 campos: Línea de crédito, Disponible
+- [ ] Línea 10000, Disponible 7500 → "Consumo actual → 2,500.00" y "Tu saldo → -2,500.00"
+- [ ] "Usar este saldo" → balance = 2500.00, signo = Negativo (Consumido)
+- [ ] Tip: "Tu saldo refleja lo que has consumido y aún no pagas."
+
+### 47.7 Sign picker contextual para TC
+- [ ] AccountFormView: crear cuenta tipo Checking → sign picker dice "Positivo / Negativo"
+- [ ] Cambiar tipo a Credit Card → sign picker dice "A favor / Consumido"
+- [ ] Cambiar de vuelta a General → sign picker dice "Positivo / Negativo"
+- [ ] Editar cuenta TC existente → sign picker dice "A favor / Consumido"
+
+### 47.8 Balance hint contextual para TC
+- [ ] AccountFormView: crear cuenta TC → hint debajo del balance dice texto sobre consumo con tarjeta
+- [ ] Hint NO reutiliza el de checking (texto distinto y específico)
+
+### 47.9 Strings suavizados
+- [ ] Guide General (paso 4 legacy text) NO contiene "es dinero que ya gastaste"
+- [ ] Guide General NO contiene "resta lo que debas"
+- [ ] Guide Closing: "No te preocupes si no es perfecto — lo importante es empezar."
+- [ ] Hint General: "Piensa en cuánto dinero tienes disponible hoy..."
+- [ ] Ningún string contiene la palabra "deuda"
+- [ ] Verificar en 6 idiomas (ES, EN, DE, FR, IT, PT) que las keys calc.* existen
+
+### 47.10 Localización completa
+- [ ] Cambiar idioma a EN → paso 2 muestra "Expenses only", "Day to day", "Full control"
+- [ ] Cambiar idioma a DE → paso 2 muestra "Nur Ausgaben", "Alltag", "Volle Kontrolle"
+- [ ] Calculadora en EN: "How much money do you have?", "Use this balance"
+- [ ] Sign picker TC en EN: "In your favor / Spent"
+- [ ] Sign picker TC en FR: "En ta faveur / Consommé"
+
+## 48. Coach Mark Tours (Guías contextuales post-onboarding)
+
+### 48.1 Tour del Panel (Grupo A — 5 pasos)
+- [ ] Completar onboarding → cerrar trial sheet → tour Panel aparece automáticamente
+- [ ] Paso 1 (Cuentas): spotlight en carrusel de cuentas, tooltip visible
+- [ ] Paso 2 (Widgets): spotlight en header + primer widget
+- [ ] Paso 3 (Preferencias widgets): spotlight en botón ajustes de widgets
+- [ ] Paso 4 (FAB): spotlight en botón flotante — texto varía Free/Pro
+- [ ] Paso 5 (Perfil): spotlight en botón perfil toolbar
+- [ ] Transiciones animadas con spring entre pasos (no parpadea)
+- [ ] "Omitir" en cualquier paso cierra todo el tour
+- [ ] "Siguiente" avanza; último paso dice "Listo"
+- [ ] Indicador "N/5" correcto en cada paso
+- [ ] Cerrar app → reabrir → tour no reaparece (hasSeenPanelTour persistido)
+
+### 48.2 Tour de Registro (Grupo B — 3 pasos)
+- [ ] Abrir NewTransactionView por primera vez → tour Registro aparece
+- [ ] Paso 1 (Tipos): spotlight en selector de tipo (gasto/ingreso/transferencia)
+- [ ] Paso 2 (Favoritos): spotlight en estrella toolbar
+- [ ] Paso 3 (Acciones rápidas): spotlight en barra de acciones rápidas
+- [ ] Solo aparece en transacción nueva (no al editar)
+- [ ] "Omitir" cierra todo el tour
+- [ ] Cerrar app → reabrir → tour no reaparece
+
+### 48.3 Tour de Settings (Grupo D — 7 pasos)
+- [ ] Abrir ProfileView por primera vez → tour Settings aparece
+- [ ] Scroll deshabilitado durante el tour (no se puede scrollear manualmente)
+- [ ] Pasos: Cuentas → Categorías → Tags → Presupuestos → Planificados → Personalización → Tutoriales
+- [ ] Auto-scroll a pasos fuera de pantalla (ej: Personalización, Tutoriales)
+- [ ] Spotlight se mueve con animación spring suave
+- [ ] "Omitir" cierra todo el tour
+- [ ] Cerrar app → reabrir → tour no reaparece
+
+### 48.4 Tour de Interactividad (Grupo C — 2 pasos)
+- [ ] Requiere: tour Panel completado + ≥2 días distintos con transacciones
+- [ ] Paso 1 (Filtrar cuenta): spotlight en carrusel completo
+- [ ] Paso 2 (Widgets interactivos): spotlight en zona widgets
+- [ ] Aparece automáticamente al cargar PanelView cuando se cumplen condiciones
+- [ ] No aparece si tour Panel aún no se ha completado
+
+### 48.5 ComparisonTip (TipKit — independiente)
+- [ ] Abrir Statistics con periodo ≠ allTime → popover tip aparece en ComparisonModeSelector
+- [ ] Dismiss → no reaparece
+
+### 48.6 Coordinación con Trial
+- [ ] Si usuario NO se suscribe: tour Panel inicia tras cerrar trial sheet
+- [ ] Si usuario SÍ se suscribe: tour Panel inicia tras cerrar trial sheet (FAB muestra texto Pro)
+- [ ] Si usuario no es elegible para trial: tour Panel inicia tras cerrar onboarding
+- [ ] Tour NO aparece mientras trial sheet está abierta
+
+### 48.7 Reset con Data Wipe
+- [ ] Hacer wipe completo → completar onboarding de nuevo → TODOS los tours reaparecen
+- [ ] hasSeenPanelTour, hasSeenRegistroTour, hasSeenInteractivityTour, hasSeenSettingsTour reseteados
+- [ ] ComparisonTip (TipKit) también se resetea
+
+### 48.8 Localización de tours
+- [ ] Cambiar idioma a EN → textos de tours en inglés
+- [ ] Cambiar idioma a DE → textos de tours en alemán
+- [ ] Verificar que las 6 localizations tienen todas las keys tipkit.*
+
+## 49. What's New Sheet
+
+### 49.1 Returning user — versión actualizada
+- [ ] Instalar v1.1, actualizar a v1.2 → WhatsNew aparece ANTES de tours/inbox
+- [ ] Sheet muestra 4 features con iconos, títulos y descripciones correctos
+- [ ] Botón "Continuar" cierra la sheet
+- [ ] Después de cerrar, tours se activan (isReadyForTours)
+
+### 49.2 Fresh install
+- [ ] Completar onboarding → WhatsNew NO aparece (misma versión)
+
+### 49.3 Race conditions
+- [ ] Con inbox drafts pendientes → WhatsNew aparece primero, inbox después
+- [ ] Tours esperan a que WhatsNew se cierre (isReadyForTours bloqueado)
+- [ ] Biometric lock: WhatsNew no se muestra detrás del lock
+
+### 49.4 Persistencia
+- [ ] Cerrar app → reabrir → WhatsNew no reaparece (lastSeenAppVersion guardado)
+
+### 49.5 Data wipe
+- [ ] Wipe → re-onboard → actualizar → WhatsNew reaparece
+
+### 49.6 Sin features configuradas
+- [ ] Si WhatsNewConfig retorna nil para la versión, no se muestra nada (hotfixes)
+
+### 49.7 Localización
+- [ ] Verificar textos en los 6 idiomas (es/en/de/fr/it/pt)
+
+### 49.8 Animación
+- [ ] Rows aparecen con stagger animado (fade + slide)
+- [ ] Con Reduce Motion activado: todo aparece instantáneamente sin delays
+
+---
+
+### 50. Notificaciones de Pagos Planificados
+
+#### 50.1 Hora configurada (BUG-36)
+- [ ] Configurar hora de notificación de pagos a 23:00 → abrir app a las 10:00 → NO llega notificación
+- [ ] Misma config → abrir app a las 23:30 → SÍ llega notificación
+- [ ] Desactivar notificación de pagos → abrir app → NUNCA llega notificación
+- [ ] Sin NotificationItem configurado (fresh install sin completar setup) → notificaciones se envían (backward compat)
+
+#### 50.2 Pago ya pagado (BUG-37)
+- [ ] Aprobar draft de pago planificado → cerrar y reabrir app → NO llega notificación para ese pago
+- [ ] Vincular transacción directamente a pago planificado → NO llega notificación
+- [ ] Tener 2 pagos hoy: 1 pagado, 1 pendiente → solo llega notificación del pendiente
+
+#### 50.3 Draft en warm resume (BUG-38)
+- [ ] Tener pago venciendo hoy → abrir app (cold) → draft creado en bandeja
+- [ ] Cerrar app (no kill) → esperar → reabrir (warm) → draft creado si faltaba
+- [ ] Draft ya existente → reabrir → NO duplica draft
+
+#### 50.4 Días restantes (BUG-39)
+- [ ] Pago vence en 3 días, notifyDaysBefore=3 → notificación dice "3 días"
+- [ ] Verificar a distintas horas del día (mañana vs noche) → mismo resultado
+
+### 51. Notification System Robustness
+
+#### 51.1 Background task lifecycle
+- [ ] Background report task completes normally → success logged
+- [ ] Background task expires before completion → no crash, task marked failed
+- [ ] Task type mismatch → task completed with failure, no hang
+
+#### 51.2 Cold launch debounce
+- [ ] Cold launch → notification checks run once (not twice)
+- [ ] Warm resume after >5s → notification checks run normally
+- [ ] Rapid active/inactive toggling → no duplicate notifications
+
+#### 51.3 Non-Gregorian calendar
+- [ ] Set device to Arabic (Saudi) locale → notification dedup still works
+- [ ] Budget alert tracker keys use Gregorian dates regardless of locale
+
+#### 51.4 Brand voice spot check
+- [ ] ES: Scheduled payment due today → text is warm, not telegraphic
+- [ ] EN: Budget at 90% → text says "running low", not "Warning"
+- [ ] All 6 languages: No "(s)" pluralization hack remaining

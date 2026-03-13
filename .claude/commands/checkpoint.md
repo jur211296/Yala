@@ -1,56 +1,45 @@
 ---
-description: Ejecuta un checkpoint completo del proyecto: verifica, commitea, actualiza documentación y prepar...
+description: Ejecuta un checkpoint completo del proyecto: verifica, commitea, actualiza documentación y prepara para continuar con tokens frescos.
+allowed-tools: Bash(git:*), Bash(xcodebuild:*), Bash(grep:*), Read, Write, Edit, Glob, Grep, Agent
 ---
 
-Ejecuta un checkpoint completo del proyecto: verifica, commitea, actualiza documentación y prepara para continuar con tokens frescos.
-
-PROPÓSITO:
-Este comando es tu protocolo de "guardar y cerrar sesión limpiamente" o "estoy cerca del límite de tokens y necesito resetear contexto".
+Protocolo de "guardar y cerrar sesión limpiamente". Usar cuando te acercas al límite de tokens, terminas el día, o cambias de contexto.
 
 PASOS OBLIGATORIOS (EN ORDEN):
+
 1. VERIFICACIÓN:
-   - Ejecuta /verify-ios completo
-   - Si falla, detén TODO y reporta. NO continúes hasta que el build pase.
+   - Ejecutar /verify-ios
+   - Si falla: DETENER TODO y reportar. NO continuar.
 
-2. TESTS (si aplica):
-   - Si el trabajo actual tocó lógica o datos, ejecuta /test-ios
-   - Si falla, detén y reporta. NO continúes.
+2. COMMIT (si hay cambios):
+   - Ejecutar /commit-one (ya incluye: swift-audit + test gate + state update)
+   - Si hay múltiples temas, forzar división en commits separados
+   - Si no hay cambios: skip al paso 3
 
-3. COMMIT:
-   - Si hay cambios sin commitear, ejecuta /commit-one
-   - Si hay múltiples temas, fuerza división en commits separados
-   - Si hay commits wip: pendientes, pregunta si se deben combinar
+3. LIMPIEZA DE CLAUDE.md:
+   - Leer CLAUDE.md actual
+   - Identificar contenido obsoleto:
+     * Decisiones recientes con TTL vencido
+     * Referencias a bugs ya resueltos en secciones temporales
+     * Conteos de tests desactualizados
+   - Proponer qué eliminar y pedir confirmación antes de editar
+   - Si hay info valiosa para archivar, moverla a DECISIONS.md
 
-4. ACTUALIZACIÓN DE STATE:
-   - Lee STATE.md actual
-   - Analiza Recent Progress (últimos commits)
-   - Actualiza sección "Completed in Current Phase" con resumen de lo logrado desde el último checkpoint
-   - Actualiza "Next Steps" basándote en ROADMAP y lo que falta del incremento/fase actual
-   - Actualiza "Risks" si detectaste problemas o decisiones importantes
-   - Limpia items obsoletos de Parking Lot
+4. RESUMEN FINAL:
+   ```
+   ## Checkpoint
 
-5. LIMPIEZA DE CLAUDE.MD:
-   - Lee CLAUDE.md actual
-   - Identifica secciones temporales o contexto ya obsoleto
-   - Ejemplos de contenido obsoleto:
-     * Referencias a bugs ya corregidos
-     * Notas sobre decisiones ya tomadas y documentadas en STATE
-     * Contexto de incrementos ya completados hace más de una semana
-   - Propón qué eliminar y pide confirmación antes de editar
-   - Si hay información valiosa para archivar, muévela a un archivo DECISIONS.md
+   Build: ✓/✗
+   Tests: ✓/✗ (N tests, M suites)
+   Commits: [lista con hashes]
+   Próximo trabajo: [siguiente item según STATE]
+   CLAUDE.md: [cambios hechos o "sin cambios"]
 
-6. RESUMEN FINAL:
-   - Presenta al usuario un resumen ejecutivo:
-     * Estado del build: ✓ o ✗
-     * Tests: ✓ o ✗ o N/A
-     * Commits realizados: lista con hashes
-     * Próximo trabajo sugerido según STATE y ROADMAP
-     * Memoria liberada: cambios hechos en CLAUDE.md
-   - Declara: "Checkpoint completo. Contexto listo para continuar o cerrar sesión."
+   Listo para /clear o continuar.
+   ```
 
-CUÁNDO EJECUTAR ESTE COMANDO:
-- Te acercas al límite de tokens (75% o más)
-- Terminas tu sesión de trabajo del día
-- Completaste una fase completa del ROADMAP
+CUÁNDO EJECUTAR:
+- Te acercas al límite de tokens (75%+)
+- Terminas la sesión del día
+- Completaste una fase del ROADMAP
 - Vas a cambiar de feature o contexto
-- Detectaste que la conversación perdió foco o coherencia

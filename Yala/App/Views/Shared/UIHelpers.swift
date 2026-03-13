@@ -38,6 +38,17 @@ enum AccountType: String, CaseIterable, Identifiable {
         case .creditCard: return L10n.Account.AccountType.creditCard
         }
     }
+
+    /// Contextual balance hint for onboarding (varies by account type)
+    var balanceHint: String {
+        switch self {
+        case .general: return L10n.Onboarding.accountBalanceHintGeneral
+        case .cash: return L10n.Onboarding.accountBalanceHintCash
+        case .checking: return L10n.Onboarding.accountBalanceHintChecking
+        case .savings: return L10n.Onboarding.accountBalanceHintSavings
+        case .creditCard: return L10n.Onboarding.accountBalanceHintCreditCard
+        }
+    }
 }
 
 enum AdjustmentMode: String, CaseIterable, Identifiable {
@@ -176,18 +187,18 @@ extension Color {
     static let deepSlate = Color(hex: "000000")
 
     /// Priority Nature: Softer Cyan for „Priority" expenses.
-    static let priorityNature = Color(hex: "00C2CB")
+    static let priorityNeed = Color(hex: "00C2CB")
 
-    // MARK: - Nature Colors (Distinct from brand colors)
+    // MARK: - Need Colors (Distinct from brand colors)
 
-    /// Essential Nature: Warm amber for basic necessities
-    static let essentialNature = Color(hex: "F59E0B")
+    /// Essential Need: Warm amber for basic necessities
+    static let essentialNeed = Color(hex: "F59E0B")
 
-    /// Priority Nature (Violet): Attention-grabbing but not urgent
-    static let priorityNatureNew = Color(hex: "8B5CF6")
+    /// Priority Need (Violet): Attention-grabbing but not urgent
+    static let priorityNeedNew = Color(hex: "8B5CF6")
 
-    /// Optional Nature: Soft rose for discretionary spending
-    static let optionalNature = Color(hex: "FB7185")
+    /// Optional Need: Soft rose for discretionary spending
+    static let optionalNeed = Color(hex: "FB7185")
 
     // Legacy adaptive colors removed — use ThemeColor (.thBackground, .thCard, etc.)
     // or @Environment(\.yalaTheme) for raw Color access.
@@ -204,8 +215,8 @@ extension Color {
     // MARK: - Semantic Aliases
     static let brandPrimary = electricIndigo
     static let brandSecondary = hotPink
-    static let brandTertiary = priorityNature  // Teal - third main color
-    static let incomeGraph = priorityNature  // Changed from neonCyan to teal
+    static let brandTertiary = priorityNeed  // Teal - third main color
+    static let incomeGraph = priorityNeed  // Changed from neonCyan to teal
     static let expenseGraph = hotPink
     static let darkBackground = deepSlate
 
@@ -266,7 +277,7 @@ struct YalaFormatter {
     ]
 
     /// Returns the currency identifier (code or symbol) based on user preference
-    private static func currencyIdentifier(for code: String) -> String {
+    static func currencyIdentifier(for code: String) -> String {
         if currencyDisplayFormat == "symbol", let symbol = currencySymbols[code] {
             return symbol
         }
@@ -309,6 +320,17 @@ struct YalaFormatter {
 
     static func compactCurrency(value: Double) -> String {
         value.formatted(.number.notation(.compactName).precision(.fractionLength(0...1)))
+    }
+
+    /// Compact axis label: 1500 → "2K", -40000 → "-40K", 500 → "500"
+    static func axisK(_ value: Double) -> String {
+        let absValue = abs(value)
+        let sign = value < 0 ? "-" : ""
+        if absValue >= 1000 {
+            return String(format: "%@%.0fK", sign, absValue / 1000.0)
+        } else {
+            return String(format: "%@%.0f", sign, absValue)
+        }
     }
 
     /// Formats a number with standard format: `20,000.00` or `-20,000.00` (no currency)
