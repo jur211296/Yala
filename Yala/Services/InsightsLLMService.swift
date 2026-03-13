@@ -94,7 +94,8 @@ final class InsightsLLMService {
     /// Build a cache key from period + filter hash + transaction count + comparison mode + locale context
     func cacheKey(period: String, filterHash: Int, txnCount: Int, comparisonMode: String = "month", tone: InsightTone = .normal, focus: InsightFocus = .balanced) -> String {
         let country = Locale.current.region?.identifier ?? ""
-        return "\(period)_\(filterHash)_\(txnCount)_\(comparisonMode)_\(tone.rawValue)_\(focus.rawValue)_\(country)"
+        let currencyFormat = UserDefaults.standard.string(forKey: "currencyDisplayFormat") ?? "code"
+        return "\(period)_\(filterHash)_\(txnCount)_\(comparisonMode)_\(tone.rawValue)_\(focus.rawValue)_\(country)_\(currencyFormat)"
     }
 
     /// Get cached response if valid (< 5 minutes old)
@@ -177,6 +178,7 @@ final class InsightsLLMService {
         let focusInstruction = Self.focusInstruction(for: focus)
 
         let currencyCode = aggregatedData["currency"] as? String ?? "USD"
+        let currencyDisplay = aggregatedData["currency_display"] as? String ?? currencyCode
 
         let systemPrompt = """
         Eres un analista financiero personal. Analizas EXCLUSIVAMENTE los datos agregados proporcionados.
@@ -186,7 +188,7 @@ final class InsightsLLMService {
         2. NUNCA cruces información de campos no relacionados (ej: NO mezcles el nombre de una categoría con un presupuesto de otra categoría)
         3. Cada afirmación DEBE corresponder a un campo específico de los datos
         4. Si un campo dice "N/A" o no existe, NO menciones ese tema
-        5. Los montos están en la moneda indicada por el campo "currency" (\(currencyCode)). Usa el símbolo apropiado: PEN→S/, USD→$, EUR→€, MXN→MX$, etc.
+        5. Los montos están en \(currencyCode). SIEMPRE formatea: \(currencyDisplay) NÚMERO (ej: \(currencyDisplay) 4,500). La divisa SIEMPRE va ANTES del número, NUNCA después.
 
         IDIOMA: Responde SIEMPRE en \(locale). Nunca mezcles idiomas.
 
@@ -475,6 +477,7 @@ final class InsightsLLMService {
         let focusInstruction = Self.focusInstruction(for: focus)
 
         let currencyCode = aggregatedData["currency"] as? String ?? "USD"
+        let currencyDisplay = aggregatedData["currency_display"] as? String ?? currencyCode
 
         let systemPrompt = """
         Eres un analista financiero personal. Genera UNA SOLA oración sobre las finanzas del usuario.
@@ -489,7 +492,7 @@ final class InsightsLLMService {
         \(toneInstruction)\(focusInstruction)
         REGLA DE ANCLAJE: Tu oración DEBE citar al menos un número específico de los datos (monto, porcentaje o conteo).
 
-        Usa **negritas** para la cifra clave. Los montos están en \(currencyCode).
+        Usa **negritas** para la cifra clave. Los montos están en \(currencyCode). SIEMPRE formatea: \(currencyDisplay) NÚMERO (ej: \(currencyDisplay) 4,500). La divisa SIEMPRE va ANTES del número, NUNCA después.
 
         JSON: {"comment": "una oración"} o {"comment": null} si no hay nada interesante.
         """

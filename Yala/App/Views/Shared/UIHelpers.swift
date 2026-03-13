@@ -277,7 +277,7 @@ struct YalaFormatter {
     ]
 
     /// Returns the currency identifier (code or symbol) based on user preference
-    private static func currencyIdentifier(for code: String) -> String {
+    static func currencyIdentifier(for code: String) -> String {
         if currencyDisplayFormat == "symbol", let symbol = currencySymbols[code] {
             return symbol
         }

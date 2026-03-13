@@ -522,7 +522,7 @@ struct InsightsCalculator {
             }
 
             let usage = (spent / budget.limitAmount) * 100
-            if usage >= 75 {
+            if usage >= 50 {
                 budgetsAtRisk.append(BudgetAtRisk(
                     id: budget.persistentModelID,
                     name: budget.name,

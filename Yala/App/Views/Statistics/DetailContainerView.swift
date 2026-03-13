@@ -44,6 +44,8 @@ struct DetailContainerView: View {
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
     @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
+    @AppStorage(InsightTone.storageKey) private var toneSetting: String = InsightTone.normal.rawValue
+    @AppStorage(InsightFocus.storageKey) private var focusSetting: String = InsightFocus.balanced.rawValue
     @State private var showAIConsentAlert = false
     @State private var pendingAIInput: PendingAIInput = .voice
 
@@ -176,6 +178,8 @@ struct DetailContainerView: View {
             .onChange(of: sessionState.comparisonMode) {
                 if selectedTab == .insights { calculateInsightsData() }
             }
+            .onChange(of: toneSetting) { calculateInsightsData() }
+            .onChange(of: focusSetting) { calculateInsightsData() }
             .modifier(
                 DetailContainerObservers(
                     sessionState: sessionState,

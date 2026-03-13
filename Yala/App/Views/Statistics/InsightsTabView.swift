@@ -450,9 +450,9 @@ struct InsightsTabView: View {
                     ForEach(c.budgetsAtRisk) { budget in
                         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                             HStack {
-                                Image(systemName: "exclamationmark.triangle")
+                                Image(systemName: budget.usagePercent >= 75 ? "exclamationmark.triangle" : "chart.bar")
                                     .font(DS.Typography.captionSmall)
-                                    .foregroundStyle(DS.Semantic.warningForeground)
+                                    .foregroundStyle(budgetColor(budget.usagePercent))
 
                                 Text(budget.name)
                                     .font(DS.Typography.subheadline)
@@ -463,12 +463,12 @@ struct InsightsTabView: View {
                                 Text("\(Int(budget.usagePercent))%")
                                     .font(DS.Typography.caption)
                                     .fontWeight(.medium)
-                                    .foregroundStyle(budget.usagePercent >= 100 ? DS.Semantic.errorForeground : DS.Semantic.warningForeground)
+                                    .foregroundStyle(budgetColor(budget.usagePercent))
                             }
 
                             BudgetProgressBar(
                                 percentage: budget.usagePercent,
-                                color: budget.colorHex ?? "FF6B6B",
+                                color: budget.colorHex ?? "4A90D9",
                                 isExceeded: budget.usagePercent >= 100
                             )
                             .frame(height: 6)
@@ -479,6 +479,12 @@ struct InsightsTabView: View {
                 }
             }
         }
+    }
+
+    private func budgetColor(_ usage: Double) -> Color {
+        if usage >= 100 { return DS.Semantic.errorForeground }
+        if usage >= 75 { return DS.Semantic.warningForeground }
+        return .primary
     }
 
     private func commitmentRow(icon: String, label: String, value: String, secondary: String) -> some View {

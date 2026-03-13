@@ -151,6 +151,7 @@ final class InsightsViewModel {
         let comparisonLabel = comparisonMode == .year ? "año anterior" : "periodo anterior"
         var result: [String: Any] = [
             "currency": currencyCode,
+            "currency_display": YalaFormatter.currencyIdentifier(for: currencyCode),
             "locale": Locale.current.language.languageCode?.identifier ?? "es",
             "country": Locale.current.region?.identifier ?? "",
             "comparison_ref": comparisonLabel,

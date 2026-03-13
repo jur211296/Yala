@@ -65,6 +65,8 @@ struct PanelView: View {
     @State private var pendingAIInput: PendingAIInput = .voice
     @AppStorage("showSiriTip") private var showSiriTip: Bool = true
     @AppStorage("panelShowAIInsight") private var showAIInsight: Bool = true
+    @AppStorage(InsightTone.storageKey) private var toneSetting: String = InsightTone.normal.rawValue
+    @AppStorage(InsightFocus.storageKey) private var focusSetting: String = InsightFocus.balanced.rawValue
 
     /// Contextual AI insight state
     @State private var contextualInsight: String?
@@ -560,7 +562,7 @@ struct PanelView: View {
         let account = viewModel.selectedAccountID.map { "\($0)" } ?? "all"
         let cats = SessionState.shared.selectedCategoryIDs.map { "\($0)" }.sorted().joined(separator: ",")
         let subs = viewModel.selectedSubcategoryIDs.map { "\($0)" }.sorted().joined(separator: ",")
-        return "\(viewModel.selectedPeriod.rawValue)_\(account)_\(cats)_\(subs)"
+        return "\(viewModel.selectedPeriod.rawValue)_\(account)_\(cats)_\(subs)_\(toneSetting)_\(focusSetting)"
     }
 
     @ViewBuilder
@@ -617,7 +619,8 @@ struct PanelView: View {
         let tone = InsightTone.current
         let focus = InsightFocus.current
         let country = Locale.current.region?.identifier ?? ""
-        let cacheKey = "panel_\(insightTaskKey)_\(txnCount)_\(tone.rawValue)_\(focus.rawValue)_\(country)"
+        let currencyFormat = UserDefaults.standard.string(forKey: "currencyDisplayFormat") ?? "code"
+        let cacheKey = "panel_\(insightTaskKey)_\(txnCount)_\(country)_\(currencyFormat)"
 
         // Calculate InsightData
         let criteria = viewModel.buildFilterCriteria(dateInterval: viewModel.panelDateInterval)
@@ -636,6 +639,7 @@ struct PanelView: View {
         // Build lightweight aggregated dict (subset — no filter context, no year-over-year)
         var aggregated: [String: Any] = [
             "currency": preferredCurrency.rawValue,
+            "currency_display": YalaFormatter.currencyIdentifier(for: preferredCurrency.rawValue),
             "locale": Locale.current.language.languageCode?.identifier ?? "es",
             "country": Locale.current.region?.identifier ?? "",
             "total_expense": Int(data.periodSummary.totalExpense),
@@ -1736,7 +1740,7 @@ private struct ContextualInsightCard: View {
             Text(markdownAttributed(text))
                 .font(DS.Typography.caption)
                 .foregroundStyle(.primary)
-                .lineLimit(3)
+                .lineLimit(5)
 
             Spacer(minLength: 0)
 

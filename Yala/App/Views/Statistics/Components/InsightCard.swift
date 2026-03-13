@@ -21,31 +21,36 @@ struct InsightCard: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: DS.Spacing.md) {
-            Image(systemName: insight.icon)
-                .font(DS.Typography.body)
-                .foregroundStyle(accentColor)
-                .frame(width: 28)
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            // Main row: icon + text
+            HStack(alignment: .top, spacing: DS.Spacing.md) {
+                Image(systemName: insight.icon)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(accentColor)
+                    .frame(width: 28)
 
-            VStack(alignment: .leading, spacing: 0) {
                 Text(insight.text)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.primary)
 
-                if let tip = insight.tip {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: "lightbulb")
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                        Text(tip)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.top, DS.Spacing.xs)
-                }
+                Spacer(minLength: 0)
             }
 
-            Spacer(minLength: 0)
+            // Tip row: lightbulb aligned with main icon
+            if let tip = insight.tip {
+                HStack(alignment: .top, spacing: DS.Spacing.md) {
+                    Image(systemName: "lightbulb")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 28)
+
+                    Text(tip)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+
+                    Spacer(minLength: 0)
+                }
+            }
         }
         .padding(DS.Spacing.lg)
         .yalaCard(padding: 0, radius: DS.Radius.lg, shadow: false)
