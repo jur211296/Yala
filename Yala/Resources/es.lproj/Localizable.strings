@@ -2536,20 +2536,20 @@
 // MARK: - Insights Rule-Based Templates
 // Rule-based insights — tone variants
 "insights.ruleTopCategory.normal" = "%@ representa el %d%% de tus gastos este periodo.";
-"insights.ruleTopCategory.considerate" = "%@ representa el %d%% de tus gastos — es normal si es una categoría que priorizas.";
-"insights.ruleTopCategory.sarcastic" = "Parece que %@ es tu favorita: lleva el %d%% de tus gastos.";
+"insights.ruleTopCategory.considerate" = "%@ representa el %d%% de tus gastos, aunque técnicamente podría ser esperable según tus prioridades.";
+"insights.ruleTopCategory.sarcastic" = "%@ se lleva el %d%% de tus gastos. Ojo con eso.";
 "insights.ruleExpenseUp.normal" = "Tus gastos subieron %@ respecto al periodo anterior.";
-"insights.ruleExpenseUp.considerate" = "Tus gastos subieron %@ — a veces hay meses así, lo importante es notarlo.";
-"insights.ruleExpenseUp.sarcastic" = "El bolsillo hizo más cardio este periodo: gastos arriba %@.";
+"insights.ruleExpenseUp.considerate" = "Tus gastos subieron %@ — vale considerar si hubo algún gasto atípico este periodo.";
+"insights.ruleExpenseUp.sarcastic" = "Gastos arriba %@ vs el periodo pasado. Vale la pena revisar qué cambió.";
 "insights.ruleExpenseDown.normal" = "Buen ritmo: tus gastos bajaron %@ respecto al periodo anterior.";
-"insights.ruleExpenseDown.considerate" = "Muy bien: lograste reducir tus gastos %@ — el esfuerzo se nota.";
-"insights.ruleExpenseDown.sarcastic" = "Tu cuenta bancaria respira aliviada: gastos abajo %@.";
+"insights.ruleExpenseDown.considerate" = "Los datos muestran una reducción de %@ en gastos — un resultado positivo.";
+"insights.ruleExpenseDown.sarcastic" = "Bien ahí, gastos abajo %@. Nada mal.";
 "insights.ruleBudgetRisk.normal" = "%@ lleva el %d%% de su límite.";
-"insights.ruleBudgetRisk.considerate" = "%@ lleva el %d%% de su límite — aún hay margen para ajustar.";
-"insights.ruleBudgetRisk.sarcastic" = "%@ va al %d%% del límite, corre pero todavía no explota.";
+"insights.ruleBudgetRisk.considerate" = "%@ lleva el %d%% de su límite, aunque aún hay margen si se ajusta el ritmo.";
+"insights.ruleBudgetRisk.sarcastic" = "%@ va al %d%% del límite. Tranqui, pero ojo.";
 "insights.ruleOptionalHigh.normal" = "Los gastos opcionales representan el %d%% de tu gasto total.";
-"insights.ruleOptionalHigh.considerate" = "Los gastos opcionales llevan el %d%% — vale la pena revisarlos con calma.";
-"insights.ruleOptionalHigh.sarcastic" = "Los gustitos representan un %d%% del total. Sin culpas, pero ahí están.";
+"insights.ruleOptionalHigh.considerate" = "Los gastos opcionales llevan el %d%% del total — en principio no es un problema, pero vale la pena notarlo.";
+"insights.ruleOptionalHigh.sarcastic" = "Lo opcional va en %d%% del total. Sin drama, pero ahí está el dato.";
 // Tips
 "insights.tipTopCategory" = "Revisa si algún gasto de %@ fue puntual o si es un patrón";
 "insights.tipExpenseUp" = "Compara con el mes que menos gastaste para ver qué cambió";
@@ -2557,11 +2557,11 @@
 "insights.tipOptionalHigh" = "Revisa tus gastos opcionales y ve cuáles podrías posponer";
 // Tone & Focus settings
 "insights.tone.normal" = "Normal";
-"insights.tone.considerate" = "Considerado";
-"insights.tone.sarcastic" = "Sarcástico";
+"insights.tone.considerate" = "Cuidadoso";
+"insights.tone.sarcastic" = "Directo";
 "insights.tone.normal.preview" = "Restaurantes subió 32% vs el mes pasado";
-"insights.tone.considerate.preview" = "Entiendo que a veces toca comer fuera — restaurantes subió 32%";
-"insights.tone.sarcastic.preview" = "Parece que la cocina está de vacaciones — restaurantes subió 32%";
+"insights.tone.considerate.preview" = "Restaurantes subió 32%, aunque podría ser esperable si hubo eventos este mes";
+"insights.tone.sarcastic.preview" = "Restaurantes subió 32%, ojo que se fue un poco de más este mes";
 "insights.focus.balanced" = "Equilibrado";
 "insights.focus.saver" = "Ahorrador";
 "insights.focus.cautious" = "Precavido";

@@ -2537,20 +2537,20 @@
 // MARK: - Insights Rule-Based Templates
 // Rule-based insights — tone variants
 "insights.ruleTopCategory.normal" = "%@ représente %d%% de tes dépenses cette période.";
-"insights.ruleTopCategory.considerate" = "%@ représente %d%% de tes dépenses — c'est normal si c'est une priorité pour toi.";
-"insights.ruleTopCategory.sarcastic" = "On dirait que %@ est ta catégorie préférée : %d%% de tes dépenses.";
+"insights.ruleTopCategory.considerate" = "%@ représente %d%% de tes dépenses, bien que techniquement ça puisse être attendu selon tes priorités.";
+"insights.ruleTopCategory.sarcastic" = "%@ prend %d%% de tes dépenses. Garde un œil là-dessus.";
 "insights.ruleExpenseUp.normal" = "Tes dépenses ont augmenté de %@ par rapport à la période précédente.";
-"insights.ruleExpenseUp.considerate" = "Tes dépenses ont augmenté de %@ — certains mois sont comme ça, l'essentiel c'est de le remarquer.";
-"insights.ruleExpenseUp.sarcastic" = "Ton portefeuille a fait du sport : dépenses en hausse de %@.";
+"insights.ruleExpenseUp.considerate" = "Tes dépenses ont augmenté de %@ — ça vaut le coup de vérifier s'il y a eu une dépense atypique.";
+"insights.ruleExpenseUp.sarcastic" = "Dépenses en hausse de %@ vs la période passée. Ça vaut le coup de voir ce qui a changé.";
 "insights.ruleExpenseDown.normal" = "Bon rythme : tes dépenses ont baissé de %@ par rapport à la période précédente.";
-"insights.ruleExpenseDown.considerate" = "Bravo : tu as réussi à réduire tes dépenses de %@ — l'effort se voit.";
-"insights.ruleExpenseDown.sarcastic" = "Ton compte en banque respire : dépenses en baisse de %@.";
+"insights.ruleExpenseDown.considerate" = "Les données montrent une réduction de %@ des dépenses — un résultat positif.";
+"insights.ruleExpenseDown.sarcastic" = "Bien joué, dépenses en baisse de %@. Pas mal du tout.";
 "insights.ruleBudgetRisk.normal" = "%@ est à %d%% de sa limite.";
-"insights.ruleBudgetRisk.considerate" = "%@ est à %d%% de sa limite — il reste de la marge pour ajuster.";
-"insights.ruleBudgetRisk.sarcastic" = "%@ est à %d%% de la limite, ça chauffe mais ça n'a pas explosé.";
+"insights.ruleBudgetRisk.considerate" = "%@ est à %d%% de sa limite, bien qu'il reste de la marge en ajustant le rythme.";
+"insights.ruleBudgetRisk.sarcastic" = "%@ est à %d%% de la limite. Tranquille, mais attention.";
 "insights.ruleOptionalHigh.normal" = "Les dépenses optionnelles représentent %d%% de ton total.";
-"insights.ruleOptionalHigh.considerate" = "Les dépenses optionnelles sont à %d%% — ça vaut le coup d'y jeter un œil.";
-"insights.ruleOptionalHigh.sarcastic" = "Les petits plaisirs font %d%% du total. Sans jugement, juste un constat.";
+"insights.ruleOptionalHigh.considerate" = "Les dépenses optionnelles sont à %d%% du total — pas forcément un problème, mais bon à noter.";
+"insights.ruleOptionalHigh.sarcastic" = "L'optionnel est à %d%% du total. Pas de souci, mais voilà le chiffre.";
 // Tips
 "insights.tipTopCategory" = "Vérifie si des dépenses de %@ étaient ponctuelles ou font partie d'un schéma";
 "insights.tipExpenseUp" = "Compare avec ton mois le plus économe pour voir ce qui a changé";
@@ -2558,11 +2558,11 @@
 "insights.tipOptionalHigh" = "Revois tes dépenses optionnelles et vois lesquelles tu pourrais reporter";
 // Tone & Focus settings
 "insights.tone.normal" = "Normal";
-"insights.tone.considerate" = "Bienveillant";
-"insights.tone.sarcastic" = "Sarcastique";
+"insights.tone.considerate" = "Prudent";
+"insights.tone.sarcastic" = "Direct";
 "insights.tone.normal.preview" = "Restaurants en hausse de 32% vs le mois dernier";
-"insights.tone.considerate.preview" = "Je comprends qu'on mange dehors parfois — restaurants en hausse de 32%";
-"insights.tone.sarcastic.preview" = "On dirait que la cuisine est en vacances — restaurants +32%";
+"insights.tone.considerate.preview" = "Restaurants en hausse de 32%, bien que ça puisse s'expliquer s'il y a eu des événements ce mois";
+"insights.tone.sarcastic.preview" = "Restaurants en hausse de 32%, c'était un peu trop ce mois";
 "insights.focus.balanced" = "Équilibré";
 "insights.focus.saver" = "Économe";
 "insights.focus.cautious" = "Prudent";

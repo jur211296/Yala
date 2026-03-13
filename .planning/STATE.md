@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-12] 134200b feat: enrich AI insights data + anti-hallucination prompts + upgrade to GPT-4.1 Mini
 - [2026-03-12] c935830 fix: prevent SEGV crash in test host by using in-memory config under XCTest
 - [2026-03-12] 7d02809 chore: address medium/low review issues — dead code, deprecated APIs, DS tokens
 - [2026-03-12] fba23e2 refactor: Date() → Date.now across codebase (H7)
@@ -52,7 +53,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-12] d48946f test: extract 12 private methods to internal + add 85 tests across 5 suites
 - [2026-03-12] 7631a6a test: add 48 tests across 5 new suites covering critical gaps
 - [2026-03-12] e1ed94b test: add 89 tests across 11 new suites covering all critical gaps
-- [2026-03-11] cd0895b fix: update FilterServiceTests to match activeFilterCount including searchText
 - [2026-03-11] d186dfa refactor: decouple currency conversion from ModelContext + add 68 tests
 - [2026-03-10] a905cb1 feat: BudgetChartsView — data labels, local period navigator, drag-scrub interaction
 - [2026-03-10] 720ffe3 refactor: rename Nature → Need across codebase
@@ -764,10 +764,10 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 ## Session Continuity
 
 Last session: 2026-03-12
-Stopped at: Fixed SEGV crash in test host (c935830) — SwiftDataConfiguration returns in-memory config under XCTest
+Stopped at: AI insights quality improvement (134200b) — enriched data, anti-hallucination prompts, GPT-4.1 Mini
 Next step: Continue with next Fase 12 item from /next
 Resume context:
-- Unit tests were crashing with SEGV before any test executed due to CloudKit init in test host
-- Fix: SwiftDataConfiguration.isRunningTests detects XCTest env, returns in-memory ModelConfiguration
-- All 1005 tests in 90 suites pass after fix
-- Preexisting test compile error in TranscriptionParserServiceTests (@MainActor) — needs separate fix
+- AI insights were hallucinating due to insufficient data (11 fields), weak prompts, and GPT-4.1 Nano
+- Fix: ~20 data fields sent to LLM, anti-hallucination prompt rules, GPT-4.1 Mini + temperature 0.4
+- QuickStats refactored: topCategory/topSubcategory are now computed from topCategories/topSubcategories arrays
+- InsightsRuleBasedTests (10 tests) all pass

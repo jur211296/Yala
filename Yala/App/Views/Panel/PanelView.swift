@@ -616,7 +616,8 @@ struct PanelView: View {
         let txnCount = transactions.count
         let tone = InsightTone.current
         let focus = InsightFocus.current
-        let cacheKey = "panel_\(insightTaskKey)_\(txnCount)_\(tone.rawValue)_\(focus.rawValue)"
+        let country = Locale.current.region?.identifier ?? ""
+        let cacheKey = "panel_\(insightTaskKey)_\(txnCount)_\(tone.rawValue)_\(focus.rawValue)_\(country)"
 
         // Calculate InsightData
         let criteria = viewModel.buildFilterCriteria(dateInterval: viewModel.panelDateInterval)
@@ -636,6 +637,7 @@ struct PanelView: View {
         var aggregated: [String: Any] = [
             "currency": preferredCurrency.rawValue,
             "locale": Locale.current.language.languageCode?.identifier ?? "es",
+            "country": Locale.current.region?.identifier ?? "",
             "total_expense": Int(data.periodSummary.totalExpense),
             "total_income": Int(data.periodSummary.totalIncome),
             "spending_total_variation": data.periodSummary.expenseVariation.map { "\(Int($0))%" } ?? "N/A",

@@ -152,6 +152,7 @@ final class InsightsViewModel {
         var result: [String: Any] = [
             "currency": currencyCode,
             "locale": Locale.current.language.languageCode?.identifier ?? "es",
+            "country": Locale.current.region?.identifier ?? "",
             "comparison_ref": comparisonLabel,
             "comparison_label": data.periodSummary.previousPeriodLabel,
             "total_expense": Int(data.periodSummary.totalExpense),
