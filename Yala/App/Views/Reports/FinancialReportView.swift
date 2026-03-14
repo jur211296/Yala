@@ -16,6 +16,7 @@ struct FinancialReportView: View {
     @State private var selectedTab: ReportTab = .comparativa
     @State private var showCustomDatePicker = false
     @State private var isPresentingSettings = false
+    @State private var recalculateTask: Task<Void, Never>?
 
     // MARK: - Environment
 
@@ -56,25 +57,25 @@ struct FinancialReportView: View {
         }
         .sheet(isPresented: $viewModel.showFiltersSheet) {
             RecordsFiltersView(recordsViewModel: viewModel)
-                .onDisappear { recalculate() }
         }
         .sheet(isPresented: $isPresentingSettings) {
             ProfileView()
         }
         .onAppear { recalculate() }
-        .onChange(of: sessionState.selectedPeriod) { _, _ in recalculate() }
-        .onChange(of: sessionState.customDateRange?.start) { _, _ in recalculate() }
-        .onChange(of: sessionState.comparisonMode) { _, _ in recalculate() }
-        .onChange(of: sessionState.selectedAccountIDs) { _, _ in recalculate() }
-        .onChange(of: sessionState.selectedCategoryIDs) { _, _ in recalculate() }
-        .onChange(of: sessionState.selectedSubcategoryIDs) { _, _ in recalculate() }
-        .onChange(of: sessionState.selectedTags) { _, _ in recalculate() }
-        .onChange(of: sessionState.selectedNeeds) { _, _ in recalculate() }
-        .onChange(of: sessionState.selectedTransactionNatures) { _, _ in recalculate() }
-        .onChange(of: sessionState.selectedCurrencies) { _, _ in recalculate() }
-        .onChange(of: sessionState.dataVersion) { _, _ in recalculate() }
-        .onChange(of: viewModel.groupingState.activeDimensions) { _, _ in recalculate() }
-        .onChange(of: transactions.count) { _, _ in recalculate() }
+        .onDisappear { recalculateTask?.cancel() }
+        .onChange(of: sessionState.selectedPeriod) { _, _ in scheduleRecalculate() }
+        .onChange(of: sessionState.customDateRange) { _, _ in scheduleRecalculate() }
+        .onChange(of: sessionState.comparisonMode) { _, _ in scheduleRecalculate() }
+        .onChange(of: sessionState.selectedAccountIDs) { _, _ in scheduleRecalculate() }
+        .onChange(of: sessionState.selectedCategoryIDs) { _, _ in scheduleRecalculate() }
+        .onChange(of: sessionState.selectedSubcategoryIDs) { _, _ in scheduleRecalculate() }
+        .onChange(of: sessionState.selectedTags) { _, _ in scheduleRecalculate() }
+        .onChange(of: sessionState.selectedNeeds) { _, _ in scheduleRecalculate() }
+        .onChange(of: sessionState.selectedTransactionNatures) { _, _ in scheduleRecalculate() }
+        .onChange(of: sessionState.selectedCurrencies) { _, _ in scheduleRecalculate() }
+        .onChange(of: sessionState.dataVersion) { _, _ in scheduleRecalculate() }
+        .onChange(of: viewModel.groupingState.activeDimensions) { _, _ in scheduleRecalculate() }
+        .onChange(of: transactions.count) { _, _ in scheduleRecalculate() }
     }
 
     // MARK: - Main Content
@@ -254,7 +255,7 @@ struct FinancialReportView: View {
             allSubcategories: allSubcategories,
             tags: tags,
             animationValue: viewModel.detailPeriod,
-            onFilterChange: { recalculate() }
+            onFilterChange: { scheduleRecalculate() }
         ) {
             if showVariations && PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod) {
                 ComparisonModeSelector()
@@ -278,6 +279,16 @@ struct FinancialReportView: View {
         let start = transactions.last?.date ?? Date.now
         let end = transactions.first?.date ?? Date.now
         return (start, end)
+    }
+
+    private func scheduleRecalculate() {
+        recalculateTask?.cancel()
+        recalculateTask = Task {
+            do {
+                try await Task.sleep(for: .milliseconds(150))
+            } catch { return }
+            recalculate()
+        }
     }
 
     private func recalculate() {

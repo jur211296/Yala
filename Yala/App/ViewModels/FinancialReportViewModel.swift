@@ -136,6 +136,7 @@ final class FinancialReportViewModel: Filterable {
                 selectedSubcategories: selectedSubcategories,
                 selectedTags: selectedTags,
                 selectedNeeds: selectedNeeds,
+                selectedTransactionNatures: selectedTransactionNatures,
                 selectedCurrencies: selectedCurrencies,
                 isExcludeMode: isExcludeMode,
                 transactionTypeFilter: .all,
@@ -173,12 +174,11 @@ final class FinancialReportViewModel: Filterable {
         // Flatten for rendering
         flattenedRows = PivotTableCalculator.flatten(nodes: rootNodes)
 
-        // Calculate net flow from root nodes
-        let flow = PivotTableCalculator.calculateNetFlow(currentNodes: rootNodes)
-        netFlowCurrent = flow.current
+        // Calculate net flow from filtered transactions (always in preferred currency)
+        netFlowCurrent = currentTxns.reduce(0) { $0 + $1.amountInPreferredCurrency }
         netFlowPrevious = previousTxns.isEmpty ? nil : previousTxns.reduce(0) { $0 + $1.amountInPreferredCurrency }
         netFlowVariation = netFlowPrevious.flatMap {
-            PreviousPeriodHelper.calculateVariation(currentAmount: flow.current, previousAmount: $0)
+            PreviousPeriodHelper.calculateVariation(currentAmount: netFlowCurrent, previousAmount: $0)
         }
     }
 }
