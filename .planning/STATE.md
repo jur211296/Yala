@@ -43,20 +43,16 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-13] 8bc8666 docs: update STATE.md + ROADMAP.md for financial report progress
+- [2026-03-13] 6b207f3 feat: integrate financial report tab + generic RecordsFiltersView
+- [2026-03-13] aa589d1 feat: add financial report views, ViewModel + l10n (6 langs)
+- [2026-03-13] 2a7a356 feat: add financial report models, pivot table calculator + tests
+- [2026-03-13] 9692528 refactor: extract HintPopoverContent — shared popover for InfoHintButton + FilterBlockedPopover
 - [2026-03-12] 031bc7c feat: split AI consent into processing (voice/image) and insights (smart overview)
 - [2026-03-12] 08883ee fix: AI insights — tip alignment, reactivity, currency format, budget threshold
 - [2026-03-12] 52b451f feat: rewrite AI insight tone/focus prompts + country regionalization + brand voice enforcement
 - [2026-03-12] 134200b feat: enrich AI insights data + anti-hallucination prompts + upgrade to GPT-4.1 Mini
 - [2026-03-12] c935830 fix: prevent SEGV crash in test host by using in-memory config under XCTest
-- [2026-03-12] 7d02809 chore: address medium/low review issues — dead code, deprecated APIs, DS tokens
-- [2026-03-12] fba23e2 refactor: Date() → Date.now across codebase (H7)
-- [2026-03-12] 7f518f8 fix: address critical and high review issues (C1-C3, H1-H11)
-- [2026-03-12] baf130f chore: update Claude commands, settings, and agent configs
-- [2026-03-12] b63b56d feat: add consent flow for Smart Insights + settings reorganization
-- [2026-03-12] d48946f test: extract 12 private methods to internal + add 85 tests across 5 suites
-- [2026-03-10] 720ffe3 refactor: rename Nature → Need across codebase
-- [2026-03-10] 0f85f55 fix: export allTime date range, transaction recurring save flow, validation toast
-- [2026-03-10] dd86e0c fix: scheduled payments — duplicate draft prevention, unified occurrence actions, editor UX
 - [2026-03-08] b0be795 fix: onboarding QA — comma-locale budget bug, animation timing, updated scenarios
 - [2026-03-08] 82f4e5c feat: polish onboarding budget step — reframe texts, horizontal pills, live preview card, currency fix
 - [2026-03-08] 9488d0a feat: polish onboarding account step — SectionBox layout, balance guide, validation
@@ -762,12 +758,28 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 
 ## Session Continuity
 
-Last session: 2026-03-12
-Stopped at: Dual AI consent (031bc7c) — separated processing + insights consent flags
-Next step: /verify-ios + QA manual del dual consent
+Last session: 2026-03-13
+Stopped at: Financial Report — MVP funcional, pendiente ajustes y testing
+Next step: Ajustes y testing del Financial Report antes de avanzar
 Resume context:
-- aiDataConsentAccepted → solo voz/imagen (processing)
-- aiInsightsConsentAccepted → nuevo flag para smart insights/resumen
-- Sin migración: nuevo flag default false, usuarios existentes deben aceptar insights explícitamente
-- PanelView: loading placeholder mejorado (sparkles + texto), card sin lineLimit
-- 6 idiomas actualizados con strings granulares
+- MVP funcional: pivot table, grouping reorder, net flow summary, tab integration
+- **Pendiente ajustes UI:**
+  - Drag handles en GroupingReorderSheet — solo Tipo los muestra, los demás no (bug con editMode)
+  - Verificar visualmente tamaños de fuente en GroupingChipsBar (reducidos a .caption)
+  - Verificar NetFlowSummaryView se ve alineado con filas de Ingresos/Gastos
+- **Pendiente testing filtros:**
+  - Filtros de cuenta, categoría, subcategoría, tags, naturaleza, divisas en el reporte
+  - RecordsFiltersView genérico (ahora Filterable & Observable) — verificar que funciona igual en Records y Reports
+  - Modo exclusión de filtros
+  - Filtro por monto (amountCondition)
+  - searchText en contexto de reportes
+- **Pendiente testing general:**
+  - Cambio de periodo (mes/semana/año/custom) actualiza pivot table
+  - Comparación con periodo anterior (variaciones correctas)
+  - Moneda preferida se refleja correctamente (fix: defaultCurrencyCode)
+  - Reorder de dimensiones se persiste y actualiza la tabla
+  - Toggle dimensiones (activar/desactivar) funciona correctamente
+  - Empty state cuando no hay datos
+- **Pendiente funcionalidad:**
+  - Cash flow tab (placeholder actual)
+  - onChange handlers: 12 separados podrían causar recálculos redundantes

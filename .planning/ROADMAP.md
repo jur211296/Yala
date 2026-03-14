@@ -522,7 +522,8 @@ Incluye:
 - [x] Integración Siri para registro rápido de gastos ✅
 - [x] Widgets para Lock Screen (WidgetFamily.accessory) ✅
 - [ ] Vista de reporte financiero (exportable PDF/Excel)
-- [ ] Vista de análisis de presupuesto (detalle, tendencias, proyección)
+- [x] Vista de análisis de presupuesto (detalle, tendencias) ✅
+- [ ] Proyección de presupuesto (ritmo de gasto, línea proyectada, alertas)
 - [ ] Split de transacciones (dividir en múltiples partes/personas)
 - [ ] Predicción de saldo en gráfica de tendencias
 - [x] Personalización Smart Insights — tono (normal/considerado/sarcástico), enfoque (equilibrado/ahorrador/precavido), tips ✅
