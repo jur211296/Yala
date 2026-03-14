@@ -650,6 +650,8 @@ struct MainTabView: View {
             PlanningView()
         case .records:
             RecordsStandaloneView()
+        case .reports:
+            FinancialReportView()
         }
     }
 
@@ -679,6 +681,7 @@ enum AppTab: Hashable {
     case more
     case search
     case records
+    case reports
 }
 
 // MARK: - More View
