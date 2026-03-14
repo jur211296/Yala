@@ -200,6 +200,7 @@ enum L10n {
         static var more: String { ls("tab.more", comment: "") }
         static var search: String { ls("tab.search", comment: "") }
         static var records: String { ls("tab.records", comment: "") }
+        static var reports: String { ls("tab.reports", comment: "") }
     }
 
     // MARK: - Period
@@ -398,6 +399,41 @@ enum L10n {
         }
         static var incomeAnalysis: String {
             ls("statistics.incomeAnalysis", comment: "")
+        }
+    }
+
+    // MARK: - Report
+
+    enum Report {
+        static var title: String { ls("report.title", comment: "") }
+
+        enum Tab {
+            static var comparative: String { ls("report.tab.comparative", comment: "") }
+            static var cashFlow: String { ls("report.tab.cashFlow", comment: "") }
+        }
+
+        static var income: String { ls("report.income", comment: "") }
+        static var expense: String { ls("report.expense", comment: "") }
+        static var netFlow: String { ls("report.netFlow", comment: "") }
+        static var noData: String { ls("report.noData", comment: "") }
+        static var noDataDescription: String { ls("report.noDataDescription", comment: "") }
+        static var uncategorized: String { ls("report.uncategorized", comment: "") }
+        static var noSubcategory: String { ls("report.noSubcategory", comment: "") }
+        static var noTag: String { ls("report.noTag", comment: "") }
+        static var noAccount: String { ls("report.noAccount", comment: "") }
+
+        enum Grouping {
+            static var type: String { ls("report.grouping.type", comment: "") }
+            static var category: String { ls("report.grouping.category", comment: "") }
+            static var subcategory: String { ls("report.grouping.subcategory", comment: "") }
+            static var tag: String { ls("report.grouping.tag", comment: "") }
+            static var account: String { ls("report.grouping.account", comment: "") }
+            static var currency: String { ls("report.grouping.currency", comment: "") }
+            static var nature: String { ls("report.grouping.nature", comment: "") }
+            static var drillDown: String { ls("report.grouping.drillDown", comment: "") }
+            static var hint: String { ls("report.grouping.hint", comment: "") }
+            static var active: String { ls("report.grouping.active", comment: "") }
+            static var available: String { ls("report.grouping.available", comment: "") }
         }
     }
 
