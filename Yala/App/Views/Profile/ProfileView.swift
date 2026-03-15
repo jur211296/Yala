@@ -1047,7 +1047,7 @@ struct ProfileView: View {
             Spacer()
 
             Image(systemName: "cylinder.split.1x2.fill")
-                .font(.system(size: 48))
+                .font(.system(size: 48)) // A11Y-DT: debug-only seed progress view
                 .foregroundStyle(.teal)
 
             Text("Generando datos de prueba")

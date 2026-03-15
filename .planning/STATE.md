@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-15] 3c6e794 fix: AI insights off by default + 10s debounce before LLM call
 - [2026-03-15] 710d678 fix: hotfix 1.1.1 — free trial, deep link race condition, What's New, insights split
 - [2026-03-12] 031bc7c feat: split AI consent into processing (voice/image) and insights (smart overview)
 - [2026-03-12] 08883ee fix: AI insights — tip alignment, reactivity, currency format, budget threshold
@@ -764,11 +765,13 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 ## Session Continuity
 
 Last session: 2026-03-15
-Stopped at: Hotfix 1.1.1 commit (710d678) — 4 tickets implementados (H1, H2, H3, H5)
-Next step: QA manual de los 4 tickets, luego merge 1.1.1 → 1.0 y tag
+Stopped at: H6+H7 completados (3c6e794) — insights off por defecto + debounce 10s
+Next step: QA manual de todos los tickets (H1-H3, H5-H7), luego merge 1.1.1 → 1.0 y tag
 Resume context:
 - H1: Trial siempre se muestra post-onboarding (espera bootstrap en vez de retry)
 - H2: Deep links deferred hasta que splash termine (SessionState.isSplashDismissed)
 - H3: What's New 1.1 con 3 features en 6 idiomas
 - H5: subscriptions vs recurring_payments separados para el LLM
-- H4 descartado, H6-H9 pendientes para otro hotfix
+- H6: panelShowAIInsight default false (nuevas instalaciones)
+- H7: Task.sleep(10s) en loadContextualInsight() antes del LLM
+- H4 descartado, H8-H9 resueltos como efecto de H6+H7

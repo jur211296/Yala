@@ -24,18 +24,31 @@ enum SharedContainerService {
     /// Creates the pending images directory if it doesn't exist
     static func ensurePendingImagesDirectory() {
         guard let url = pendingImagesURL else { return }
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        do {
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        } catch {
+            #if DEBUG
+            print("SharedContainerService: Error creating pending images directory: \(error)")
+            #endif
+        }
     }
 
     /// Returns all pending image URLs
     static func pendingImageURLs() -> [URL] {
         guard let url = pendingImagesURL else { return [] }
-        let contents = try? FileManager.default.contentsOfDirectory(
-            at: url,
-            includingPropertiesForKeys: [.creationDateKey],
-            options: .skipsHiddenFiles
-        )
-        return (contents ?? []).filter { $0.pathExtension.lowercased() == "jpg" || $0.pathExtension.lowercased() == "png" }
+        do {
+            let contents = try FileManager.default.contentsOfDirectory(
+                at: url,
+                includingPropertiesForKeys: [.creationDateKey],
+                options: .skipsHiddenFiles
+            )
+            return contents.filter { $0.pathExtension.lowercased() == "jpg" || $0.pathExtension.lowercased() == "png" }
+        } catch {
+            #if DEBUG
+            print("SharedContainerService: Error listing pending images: \(error)")
+            #endif
+            return []
+        }
     }
 
     /// Removes a processed image

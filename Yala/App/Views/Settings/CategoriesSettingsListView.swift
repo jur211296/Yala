@@ -15,6 +15,7 @@ struct CategoriesSettingsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(SessionState.self) private var sessionState
+    @Environment(EntityDeletionService.self) private var deletionService
     @State private var viewModel = CategoriesSettingsListViewModel()
 
     var body: some View {
@@ -70,7 +71,7 @@ struct CategoriesSettingsListView: View {
             Text(L10n.Category.cannotDeleteMessage(viewModel.transactionCountForAlert))
         }
         .onAppear {
-            viewModel.setContext(modelContext)
+            viewModel.setContext(modelContext, deletionService: deletionService)
         }
     }
 

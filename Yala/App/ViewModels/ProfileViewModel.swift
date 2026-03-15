@@ -20,15 +20,9 @@ final class ProfileViewModel {
 
     // MARK: - Data
 
-    private(set) var allTransactions: [TransactionItem] = []
+    private(set) var hasTransactions: Bool = false
     private(set) var accounts: [Account] = []
     private(set) var categories: [Category] = []
-
-    // MARK: - Computed Properties
-
-    var hasTransactions: Bool {
-        !allTransactions.isEmpty
-    }
 
     // MARK: - Context Injection
 
@@ -47,14 +41,13 @@ final class ProfileViewModel {
 
     private func loadTransactions() {
         guard let context = modelContext else { return }
-        let descriptor = FetchDescriptor<TransactionItem>()
         do {
-            allTransactions = try context.fetch(descriptor)
+            hasTransactions = try context.fetchCount(FetchDescriptor<TransactionItem>()) > 0
         } catch {
             #if DEBUG
-            print("ProfileViewModel: Error loading transactions: \(error)")
+            print("ProfileViewModel: Error checking transactions: \(error)")
             #endif
-            allTransactions = []
+            hasTransactions = false
         }
     }
 
