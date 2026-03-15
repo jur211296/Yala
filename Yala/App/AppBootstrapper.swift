@@ -236,7 +236,7 @@ final class AppBootstrapper {
 
         switch action {
         case "panel":
-            sessionState.deepLinkDestination = .panel
+            setOrDeferDeepLink(.panel)
         case "new-transaction":
             dispatchOrDefer(.newTransaction)
         case "voice-entry":
@@ -336,28 +336,38 @@ final class AppBootstrapper {
             dispatchOrDefer(.newTransaction)
 
         case "panel":
-            sessionState.deepLinkDestination = .panel
+            setOrDeferDeepLink(.panel)
 
         case "statistics":
-            // Check for path like statistics/records or statistics/categories
             if url.pathComponents.contains("records") {
-                sessionState.deepLinkDestination = .records
+                setOrDeferDeepLink(.records)
             } else if url.pathComponents.contains("categories") {
-                sessionState.deepLinkDestination = .categories
+                setOrDeferDeepLink(.categories)
             } else {
-                sessionState.deepLinkDestination = .statistics
+                setOrDeferDeepLink(.statistics)
             }
 
         case "planning":
-            sessionState.deepLinkDestination = .planning
+            setOrDeferDeepLink(.planning)
 
         case "budgets":
-            sessionState.deepLinkDestination = .budgets
+            setOrDeferDeepLink(.budgets)
 
         default:
             #if DEBUG
             print("AppBootstrapper: Unknown deep link host: \(url.host ?? "nil")")
             #endif
+        }
+    }
+
+    // MARK: - Deep Link Deferral
+
+    /// Sets deep link immediately if splash is dismissed, otherwise defers until splash ends.
+    private func setOrDeferDeepLink(_ destination: DeepLinkDestination) {
+        if sessionState.isSplashDismissed {
+            sessionState.deepLinkDestination = destination
+        } else {
+            sessionState.deferredDeepLink = destination
         }
     }
 

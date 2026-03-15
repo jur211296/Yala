@@ -673,9 +673,14 @@ struct PanelView: View {
             aggregated["highest_expense"] = ["amount": Int(highest.amount), "description": highest.note] as [String: Any]
         }
 
-        // Subscriptions
+        // Subscriptions (Netflix, Spotify, etc.)
         if data.commitments.activeSubscriptionsCount > 0 {
             aggregated["subscriptions"] = ["count": data.commitments.activeSubscriptionsCount, "monthly_total": Int(data.commitments.activeSubscriptionsMonthly)] as [String: Any]
+        }
+
+        // Recurring payments (rent, utilities, payroll, etc.)
+        if data.commitments.activeRecurringCount > 0 {
+            aggregated["recurring_payments"] = ["count": data.commitments.activeRecurringCount, "monthly_total": Int(data.commitments.activeRecurringMonthly)] as [String: Any]
         }
 
         let needDist = data.needDistribution

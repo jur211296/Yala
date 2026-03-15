@@ -3574,6 +3574,14 @@ enum L10n {
         }
         static var continueButton: String { ls("whatsNew.continue", comment: "") }
 
+        // v1.1 features
+        static var v11ResumenTitle: String { ls("whatsNew.v11.resumen.title", comment: "") }
+        static var v11ResumenDescription: String { ls("whatsNew.v11.resumen.description", comment: "") }
+        static var v11BudgetDetailTitle: String { ls("whatsNew.v11.budgetDetail.title", comment: "") }
+        static var v11BudgetDetailDescription: String { ls("whatsNew.v11.budgetDetail.description", comment: "") }
+        static var v11ExcludeTitle: String { ls("whatsNew.v11.exclude.title", comment: "") }
+        static var v11ExcludeDescription: String { ls("whatsNew.v11.exclude.description", comment: "") }
+
         // v1.2 features
         static var v12CoachMarksTitle: String { ls("whatsNew.v12.coachMarks.title", comment: "") }
         static var v12CoachMarksDescription: String { ls("whatsNew.v12.coachMarks.description", comment: "") }

@@ -2596,6 +2596,12 @@
 "whatsNew.title" = "Novità in Yala";
 "whatsNew.subtitle" = "Versione %@";
 "whatsNew.continue" = "Continua";
+"whatsNew.v11.resumen.title" = "Panoramica";
+"whatsNew.v11.resumen.description" = "Uno sguardo rapido alle tue finanze: medie, tendenze e distribuzione delle spese.";
+"whatsNew.v11.budgetDetail.title" = "Dettaglio budget";
+"whatsNew.v11.budgetDetail.description" = "Esplora come si distribuisce ogni budget per sottocategorie.";
+"whatsNew.v11.exclude.title" = "Modalità esclusione nei filtri";
+"whatsNew.v11.exclude.description" = "Filtra escludendo ciò che non vuoi vedere invece di selezionare tutto.";
 "whatsNew.v12.coachMarks.title" = "Guide passo passo";
 "whatsNew.v12.coachMarks.description" = "Ora ti mostriamo come usare ogni sezione con guide interattive.";
 "whatsNew.v12.notifications.title" = "Notifiche più intelligenti";

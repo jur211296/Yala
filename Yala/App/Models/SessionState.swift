@@ -446,6 +446,14 @@ class SessionState {
     /// Coach mark tours wait for this before starting.
     var isReadyForTours: Bool = false
 
+    // MARK: - Splash State
+
+    /// Whether the splash screen has been dismissed (safe to navigate deep links)
+    var isSplashDismissed: Bool = false
+
+    /// Deep link deferred until splash dismisses (avoids sheet-under-splash race condition)
+    var deferredDeepLink: DeepLinkDestination?
+
     /// Deep link destination from widgets
     /// When set, app navigates to specified destination and clears this
     var deepLinkDestination: DeepLinkDestination?

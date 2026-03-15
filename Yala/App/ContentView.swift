@@ -167,23 +167,24 @@ struct ContentView: View {
             .environment(SessionState.shared)
         }
         .fullScreenCover(isPresented: $showOnboarding, onDismiss: {
-            // Show trial offer after onboarding completes (only for eligible non-Pro users)
             if hasCompletedOnboarding && !FeatureGateService.shared.isProUser {
                 Task {
-                    var eligible = false
-                    for _ in 0..<3 {
-                        eligible = await StoreKitManager.shared.isEligibleForIntroOffer()
-                        if eligible || !StoreKitManager.shared.products.isEmpty { break }
-                        try? await Task.sleep(for: .seconds(1))
+                    // Wait for bootstrap to finish (products loaded in step 3)
+                    for _ in 0..<20 {
+                        if AppBootstrapper.shared.isInitialized { break }
+                        do {
+                            try await Task.sleep(for: .milliseconds(500))
+                        } catch {
+                            break
+                        }
                     }
-                    if eligible {
-                        showProTrialOffer = true
-                    } else {
-                        SessionState.shared.isReadyForTours = true
-                    }
+                    #if DEBUG
+                    print("ContentView: Post-onboarding trial — products=\(StoreKitManager.shared.products.count), bootstrapped=\(AppBootstrapper.shared.isInitialized)")
+                    #endif
+                    // Always show — ProTrialOfferSheet handles loading/non-eligible gracefully
+                    showProTrialOffer = true
                 }
             } else {
-                // Pro user or onboarding not completed — ready immediately
                 SessionState.shared.isReadyForTours = true
             }
         }) {
@@ -292,6 +293,13 @@ struct ContentView: View {
         Task {
             try? await Task.sleep(for: .milliseconds(400))
             showSplash = false
+            SessionState.shared.isSplashDismissed = true
+            // Resolve deferred notification deep link
+            if let deferred = SessionState.shared.deferredDeepLink {
+                SessionState.shared.deferredDeepLink = nil
+                try? await Task.sleep(for: .milliseconds(300))
+                SessionState.shared.deepLinkDestination = deferred
+            }
         }
     }
 

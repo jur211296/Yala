@@ -61,8 +61,10 @@ struct HighestAvgWeekdayInfo {
 struct Commitments {
     let pendingPaymentsCount: Int
     let pendingPaymentsAmount: Double
-    let activeSubscriptionsCount: Int
+    let activeSubscriptionsCount: Int       // PaymentCategory.subscription only
     let activeSubscriptionsMonthly: Double
+    let activeRecurringCount: Int            // PaymentCategory.recurring only
+    let activeRecurringMonthly: Double
     let budgetsAtRisk: [BudgetAtRisk]
 }
 
@@ -479,6 +481,8 @@ struct InsightsCalculator {
         var pendingAmount: Double = 0
         var subscriptionCount = 0
         var subscriptionMonthly: Double = 0
+        var recurringCount = 0
+        var recurringMonthly: Double = 0
 
         for payment in scheduledPayments {
             guard payment.isActive else { continue }
@@ -486,8 +490,13 @@ struct InsightsCalculator {
             let amount = convertedAmount(payment.amount, from: payment.currencyCode, to: currencyCode, on: now, converter: converter)
 
             if payment.isRecurring {
-                subscriptionCount += 1
-                subscriptionMonthly += amount
+                if payment.paymentCategory == PaymentCategory.subscription.rawValue {
+                    subscriptionCount += 1
+                    subscriptionMonthly += amount
+                } else {
+                    recurringCount += 1
+                    recurringMonthly += amount
+                }
             }
 
             // Check if next due date is within period
@@ -540,6 +549,8 @@ struct InsightsCalculator {
             pendingPaymentsAmount: pendingAmount,
             activeSubscriptionsCount: subscriptionCount,
             activeSubscriptionsMonthly: subscriptionMonthly,
+            activeRecurringCount: recurringCount,
+            activeRecurringMonthly: recurringMonthly,
             budgetsAtRisk: budgetsAtRisk
         )
     }

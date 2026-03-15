@@ -197,7 +197,7 @@ final class InsightsLLMService {
         FRAMEWORK DE ANÁLISIS (sigue este orden de prioridad):
         1. PANORAMA: total_expense, total_income, net_balance y sus variaciones. ¿Mes positivo o negativo? ¿Tendencia?
         2. CONCENTRACIÓN: top_categories — ¿alguna categoría domina excesivamente? ¿Distribución saludable?
-        3. COMPROMISOS: budgets_at_risk (compara spent vs limit), subscriptions, pending_payments
+        3. COMPROMISOS: budgets_at_risk (compara spent vs limit), subscriptions (suscripciones: Netflix, Spotify, gym), recurring_payments (pagos fijos: renta, servicios, nómina), pending_payments
         4. PATRONES: highest_avg_weekday, daily_avg y su variación, highest_expense (gasto atípico?)
         5. NECESIDADES: distribución essential/priority/optional — ¿equilibrio razonable?
 
