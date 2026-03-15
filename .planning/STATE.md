@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-15] 2bb0813 perf: replace fetch-all with fetchCount/predicate in 5 ViewModels
 - [2026-03-15] 3c6e794 fix: AI insights off by default + 10s debounce before LLM call
 - [2026-03-15] 710d678 fix: hotfix 1.1.1 — free trial, deep link race condition, What's New, insights split
 - [2026-03-12] 031bc7c feat: split AI consent into processing (voice/image) and insights (smart overview)
@@ -765,8 +766,8 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 ## Session Continuity
 
 Last session: 2026-03-15
-Stopped at: H6+H7 completados (3c6e794) — insights off por defecto + debounce 10s
-Next step: QA manual de todos los tickets (H1-H3, H5-H7), luego merge 1.1.1 → 1.0 y tag
+Stopped at: Full review críticos resueltos (2bb0813) — fetchCount/predicate en 5 ViewModels
+Next step: QA manual de todos los tickets (H1-H3, H5-H7) + perf fixes, luego merge 1.1.1 → 1.0 y tag
 Resume context:
 - H1: Trial siempre se muestra post-onboarding (espera bootstrap en vez de retry)
 - H2: Deep links deferred hasta que splash termine (SessionState.isSplashDismissed)
@@ -775,3 +776,4 @@ Resume context:
 - H6: panelShowAIInsight default false (nuevas instalaciones)
 - H7: Task.sleep(10s) en loadContextualInsight() antes del LLM
 - H4 descartado, H8-H9 resueltos como efecto de H6+H7
+- Full review C1-C3, C5, C6 resueltos. 0 críticos pendientes. Bajo pendiente: try? en SharedContainerService cleanup
