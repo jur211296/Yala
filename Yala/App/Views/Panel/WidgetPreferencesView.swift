@@ -12,7 +12,7 @@ struct WidgetPreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage("panelShowAIInsight") private var showAIInsight: Bool = true
+    @AppStorage("panelShowAIInsight") private var showAIInsight: Bool = false
 
     private var isProUser: Bool {
         FeatureGateService.shared.canAccess(.smartInsightsAI)

@@ -64,7 +64,7 @@ struct PanelView: View {
     @State private var showAIConsentAlert = false
     @State private var pendingAIInput: PendingAIInput = .voice
     @AppStorage("showSiriTip") private var showSiriTip: Bool = true
-    @AppStorage("panelShowAIInsight") private var showAIInsight: Bool = true
+    @AppStorage("panelShowAIInsight") private var showAIInsight: Bool = false
     @AppStorage(InsightTone.storageKey) private var toneSetting: String = InsightTone.normal.rawValue
     @AppStorage(InsightFocus.storageKey) private var focusSetting: String = InsightFocus.balanced.rawValue
 
@@ -614,6 +614,13 @@ struct PanelView: View {
 
         guard isPro, hasConsent, isOnline, transactions.count >= 5 else {
             return
+        }
+
+        // Debounce: wait 10s after last filter change before calling LLM
+        do {
+            try await Task.sleep(for: .seconds(10))
+        } catch {
+            return // Task cancelled — filters changed again, skip LLM call
         }
 
         let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCodeRaw) ?? .pen
