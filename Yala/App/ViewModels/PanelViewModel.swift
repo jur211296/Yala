@@ -697,23 +697,155 @@ final class PanelViewModel {
         // Track the metric for which data was calculated (prevents stale data rendering)
         self.dataTrendType = self.trendType
 
-        // 4. Calculate Exchange Rate Widget Data (only if period changed, has error, or needs refresh)
+        // 4. Exchange Rate Widget Data (conditional refresh)
+        updateExchangeRateDataIfNeeded(defaultCurrencyCode: defaultCurrencyCode, context: context)
+    }
+
+    // MARK: - Calculation Context Helpers
+
+    /// Determine trend/cashFlow/need groupings based on selected period
+    private func determineGroupings() -> (trend: TrendGrouping, cashFlow: TrendGrouping, need: TrendGrouping) {
+        let trend = selectedPeriod.chartGrouping
+        let (cashFlow, need): (TrendGrouping, TrendGrouping) = {
+            switch selectedPeriod {
+            case .thisWeek, .last7Days:
+                return (.day, .day)
+            case .thisMonth, .lastMonth, .last30Days:
+                return (.day, .day)
+            case .thisYear, .lastYear, .allTime, .custom:
+                return (.month, .month)
+            }
+        }()
+        return (trend, cashFlow, need)
+    }
+
+    /// Compute eligible accounts and their IDs (archived accounts still count)
+    private func computeEligibleAccounts(from accounts: [Account]) -> (accounts: [Account], ids: Set<PersistentIdentifier>) {
+        let eligible = accounts.filter { account in
+            guard !account.excludeFromStatistics else { return false }
+            guard let selectedID = selectedAccountID else { return true }
+            if isExcludeMode {
+                return account.persistentModelID != selectedID
+            } else {
+                return account.persistentModelID == selectedID
+            }
+        }
+        return (eligible, Set(eligible.map { $0.persistentModelID }))
+    }
+
+    /// Build pie chart transactions: filtered WITHOUT category/subcategory for dimming behavior
+    private func buildPieContextTransactions(
+        from transactions: [TransactionItem],
+        eligibleAccountIDs: Set<PersistentIdentifier>,
+        effectiveInterval: DateInterval
+    ) -> [TransactionItem] {
+        let calendar = Calendar.current
+        return transactions.filter { transaction in
+            guard let account = transaction.account else { return false }
+            if !eligibleAccountIDs.contains(account.persistentModelID) { return false }
+            if !effectiveInterval.contains(transaction.date) { return false }
+            guard transaction.balanceAdjustmentType == nil else { return false }
+
+            // Focused Date Filter
+            if let focus = focusedDate {
+                if !calendar.isDate(transaction.date, inSameDayAs: focus) { return false }
+            }
+
+            // Category/Subcategory filters excluded for pie dimming behavior,
+            // EXCEPT when filtering comes from a budget selection or exclude mode
+            if selectedBudgetID != nil && !selectedSubcategoryIDs.isEmpty {
+                guard let subID = transaction.subcategory?.persistentModelID,
+                    selectedSubcategoryIDs.contains(subID)
+                else { return false }
+            } else if isExcludeMode {
+                if let selectedCatID = selectedCategoryID,
+                   transaction.category?.persistentModelID == selectedCatID {
+                    return false
+                }
+                if !selectedSubcategoryIDs.isEmpty,
+                   let subID = transaction.subcategory?.persistentModelID,
+                   selectedSubcategoryIDs.contains(subID) {
+                    return false
+                }
+            }
+
+            // Need Filter (still applies to pie charts)
+            if let need = selectedNeed {
+                if let sub = transaction.subcategory {
+                    if sub.need != need { return false }
+                } else {
+                    if need != .unclassified { return false }
+                }
+            }
+
+            // Tag Filter
+            if !selectedTags.isEmpty {
+                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
+                if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
+            }
+
+            // Currency Filter
+            if !selectedCurrencies.isEmpty {
+                guard let txCurrency = CurrencyCode(rawValue: transaction.currencyCode) else {
+                    return false
+                }
+                if !selectedCurrencies.contains(txCurrency) { return false }
+            }
+
+            // Amount Filter
+            if amountCondition.isActive {
+                let amountDecimal = Decimal(transaction.amount)
+                if !amountCondition.matches(amountDecimal) { return false }
+            }
+
+            // Search/Note Filter
+            if !searchText.isEmpty {
+                let noteMatches = transaction.note?.localizedCaseInsensitiveContains(searchText) ?? false
+                if !noteMatches { return false }
+            }
+
+            return true
+        }
+    }
+
+    /// Pre-compute need-filtered transactions for pie widgets
+    private func buildNeedFilteredTransactions(from pieContextTransactions: [TransactionItem]) -> [TransactionItem] {
+        guard let need = selectedNeed else { return pieContextTransactions }
+        return pieContextTransactions.filter { txn in
+            if let sub = txn.subcategory {
+                return sub.need == need
+            } else {
+                return need == .unclassified
+            }
+        }
+    }
+
+    /// Pre-compute fully-filtered transactions (need + subcategory)
+    private func buildFullyFilteredTransactions(from needFiltered: [TransactionItem]) -> [TransactionItem] {
+        guard !selectedSubcategoryIDs.isEmpty else { return needFiltered }
+        return needFiltered.filter { tx in
+            guard let subID = tx.subcategory?.persistentModelID else { return false }
+            return selectedSubcategoryIDs.contains(subID)
+        }
+    }
+
+    /// Refresh exchange rate widget data only when needed (period change, error, or settings change)
+    private func updateExchangeRateDataIfNeeded(defaultCurrencyCode: String, context: ModelContext) {
         let periodChanged = lastExchangeRatePeriod != selectedPeriod
         let hasError = exchangeRateWidgetData?.hasError == true
         let needsRefresh = SessionState.shared.needsExchangeRateWidgetRefresh
         let needsExchangeRateData = exchangeRateWidgetData == nil || periodChanged || hasError || needsRefresh
-        if needsExchangeRateData {
-            lastExchangeRatePeriod = selectedPeriod
-            if needsRefresh {
-                SessionState.shared.needsExchangeRateWidgetRefresh = false
-                // Reload currencies from secondaryCurrencies when settings change
-                reloadCurrenciesFromSettings()
-            }
-            calculateExchangeRateData(
-                preferredCurrencyCode: defaultCurrencyCode,
-                context: context
-            )
+        guard needsExchangeRateData else { return }
+
+        lastExchangeRatePeriod = selectedPeriod
+        if needsRefresh {
+            SessionState.shared.needsExchangeRateWidgetRefresh = false
+            reloadCurrenciesFromSettings()
         }
+        calculateExchangeRateData(
+            preferredCurrencyCode: defaultCurrencyCode,
+            context: context
+        )
     }
 
     // MARK: - Filter Criteria Builder
@@ -751,32 +883,8 @@ final class PanelViewModel {
     ) -> PanelCalculationContext {
         let calendar = Calendar.current
 
-        // Determine groupings based on period
-        // NOTE: TrendWidget (line chart) always uses day for smooth interpolation
-        // But CashFlow and Need (bar charts) need coarser grouping for long periods
-        let newTrendGrouping = selectedPeriod.chartGrouping
-        let (newCashFlowGrouping, newNeedGrouping): (TrendGrouping, TrendGrouping) = {
-            switch selectedPeriod {
-            case .thisWeek, .last7Days:
-                return (.day, .day)  // Daily bars for week
-            case .thisMonth, .lastMonth, .last30Days:
-                return (.day, .day)  // Daily bars for month (smart axis handles labels)
-            case .thisYear, .lastYear, .allTime, .custom:
-                return (.month, .month)  // Monthly bars for year/all-time/custom
-            }
-        }()
-
-        // Determine eligible accounts (archived accounts still count for calculations)
-        let eligibleAccounts = accounts.filter { account in
-            guard !account.excludeFromStatistics else { return false }
-            guard let selectedID = selectedAccountID else { return true }
-            if isExcludeMode {
-                return account.persistentModelID != selectedID
-            } else {
-                return account.persistentModelID == selectedID
-            }
-        }
-        let eligibleAccountIDs = Set(eligibleAccounts.map { $0.persistentModelID })
+        let (newTrendGrouping, newCashFlowGrouping, newNeedGrouping) = determineGroupings()
+        let (eligibleAccounts, eligibleAccountIDs) = computeEligibleAccounts(from: accounts)
 
         // Filter transactions by account + date + global filters
         let fullCriteria = buildFilterCriteria(dateInterval: panelDateInterval)
@@ -846,103 +954,13 @@ final class PanelViewModel {
             finalContextTransactions = contextTransactions
         }
 
-        // Pie chart transactions: filtered WITHOUT category/subcategory (for dimming behavior)
-        // These transactions are used by pie widgets to show ALL categories with visual dimming
-        let pieContextTransactions = transactions.filter { transaction in
-            guard let account = transaction.account else { return false }
-            if !eligibleAccountIDs.contains(account.persistentModelID) { return false }
-            if !effectiveInterval.contains(transaction.date) { return false }
-            guard transaction.balanceAdjustmentType == nil else { return false }
-
-            // Focused Date Filter
-            if let focus = focusedDate {
-                if !calendar.isDate(transaction.date, inSameDayAs: focus) { return false }
-            }
-
-            // Category/Subcategory filters excluded for pie dimming behavior,
-            // EXCEPT when filtering comes from a budget selection (must show only budget categories)
-            // or when in exclude mode (must remove excluded items from pie data)
-            if selectedBudgetID != nil && !selectedSubcategoryIDs.isEmpty {
-                guard let subID = transaction.subcategory?.persistentModelID,
-                    selectedSubcategoryIDs.contains(subID)
-                else { return false }
-            } else if isExcludeMode {
-                // Exclude selected categories from pie data
-                if let selectedCatID = selectedCategoryID,
-                   transaction.category?.persistentModelID == selectedCatID {
-                    return false
-                }
-                // Exclude selected subcategories from pie data
-                if !selectedSubcategoryIDs.isEmpty,
-                   let subID = transaction.subcategory?.persistentModelID,
-                   selectedSubcategoryIDs.contains(subID) {
-                    return false
-                }
-            }
-
-            // Need Filter (still applies to pie charts)
-            if let need = selectedNeed {
-                if let sub = transaction.subcategory {
-                    if sub.need != need { return false }
-                } else {
-                    if need != .unclassified { return false }
-                }
-            }
-
-            // Tag Filter
-            if !selectedTags.isEmpty {
-                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
-                if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
-            }
-
-            // Currency Filter
-            if !selectedCurrencies.isEmpty {
-                guard let txCurrency = CurrencyCode(rawValue: transaction.currencyCode) else {
-                    return false
-                }
-                if !selectedCurrencies.contains(txCurrency) { return false }
-            }
-
-            // Amount Filter
-            if amountCondition.isActive {
-                let amountDecimal = Decimal(transaction.amount)
-                if !amountCondition.matches(amountDecimal) { return false }
-            }
-
-            // Search/Note Filter
-            if !searchText.isEmpty {
-                let noteMatches = transaction.note?.localizedCaseInsensitiveContains(searchText) ?? false
-                if !noteMatches { return false }
-            }
-
-            return true
-        }
-
-        // Pre-compute need-filtered transactions for pie widgets
-        // Uses pieContextTransactions (excludes category/subcategory filters) for dimming behavior
-        let needFiltered: [TransactionItem]
-        if let need = selectedNeed {
-            needFiltered = pieContextTransactions.filter { txn in
-                if let sub = txn.subcategory {
-                    return sub.need == need
-                } else {
-                    return need == .unclassified
-                }
-            }
-        } else {
-            needFiltered = pieContextTransactions
-        }
-
-        // Pre-compute fully-filtered transactions (need + subcategory)
-        let fullyFiltered: [TransactionItem]
-        if !selectedSubcategoryIDs.isEmpty {
-            fullyFiltered = needFiltered.filter { tx in
-                guard let subID = tx.subcategory?.persistentModelID else { return false }
-                return selectedSubcategoryIDs.contains(subID)
-            }
-        } else {
-            fullyFiltered = needFiltered
-        }
+        let pieContextTransactions = buildPieContextTransactions(
+            from: transactions,
+            eligibleAccountIDs: eligibleAccountIDs,
+            effectiveInterval: effectiveInterval
+        )
+        let needFiltered = buildNeedFilteredTransactions(from: pieContextTransactions)
+        let fullyFiltered = buildFullyFilteredTransactions(from: needFiltered)
 
         // Transactions for need widget - has cat/subcat filters but NO need filter
         // This allows the need widget to show ALL needs with visual dimming
