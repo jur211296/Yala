@@ -52,9 +52,9 @@ final class AppBootstrapper {
     private var remoteChangeTask: Task<Void, Never>?
     private var lastNotificationCheckDate = Date.distantPast
 
-    /// Whether a fullScreenCover (Face ID or InboxAlertModal) is blocking sheet presentation
+    /// Whether a fullScreenCover (splash, Face ID, or InboxAlertModal) is blocking sheet presentation
     private var isUIBlocked: Bool {
-        BiometricAuthService.shared.isLocked || !sessionState.pendingInboxNotification.isEmpty
+        !sessionState.isSplashDismissed || BiometricAuthService.shared.isLocked || !sessionState.pendingInboxNotification.isEmpty
     }
 
     // MARK: - Initialization
@@ -494,7 +494,7 @@ final class AppBootstrapper {
             Task { [weak self] in
                 try? await Task.sleep(for: .seconds(delay))
                 guard let self else { return }
-                if BiometricAuthService.shared.isLocked {
+                if self.isUIBlocked {
                     self.deferredInboxNotification = notification
                 } else {
                     self.sessionState.pendingInboxNotification = notification
@@ -516,11 +516,11 @@ final class AppBootstrapper {
         let imageURLs = SharedContainerService.pendingImageURLs()
         guard let firstImageURL = imageURLs.first else { return }
 
-        // On cold launch with biometric lock, defer the image
-        if BiometricAuthService.shared.isLocked {
+        // On cold launch, always defer — splash is still showing
+        if isUIBlocked {
             deferredSharedImageURL = firstImageURL
             #if DEBUG
-            print("AppBootstrapper: Deferring shared image (cold launch) — biometric locked")
+            print("AppBootstrapper: Deferring shared image (cold launch) — UI blocked")
             #endif
         } else {
             sessionState.pendingSharedImageURL = firstImageURL

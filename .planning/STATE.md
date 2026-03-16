@@ -43,6 +43,8 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-16] 29611e2 fix: prevent phantom scheduled payment drafts reappearing after approval
+- [2026-03-16] a326ef6 docs: close all a11y low items — 133 images marked across 4 batches
 - [2026-03-16] 8800a30 a11y: add accessibility markers to Onboarding and Settings views (12 images)
 - [2026-03-16] 1612f6a a11y: add accessibility markers to Inbox, Categories, Shared, Voice, Accounts, Subscription (26 images)
 - [2026-03-16] 0fe1918 a11y: add accessibility markers to Panel and Records views (42 images)
@@ -51,13 +53,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-16] a8a458e chore: resolve medium-priority issues from full review
 - [2026-03-16] 94b9e0f refactor: extract 12 private helpers from 4 long functions in 3 ViewModels
 - [2026-03-16] e8c5db5 chore: remove 13 dead code items (~300 lines)
-- [2026-03-15] 8ebd878 fix: white-on-material contrast + refactor 4 CTA to YalaPrimaryButton
-- [2026-03-15] 3b719b1 chore: resolve 8 high-priority issues from full review
-- [2026-03-15] 2bb0813 perf: replace fetch-all with fetchCount/predicate in 5 ViewModels
-- [2026-03-15] 3c6e794 fix: AI insights off by default + 10s debounce before LLM call
-- [2026-03-15] 710d678 fix: hotfix 1.1.1 — free trial, deep link race condition, What's New, insights split
-- [2026-03-12] 031bc7c feat: split AI consent into processing (voice/image) and insights (smart overview)
-- [2026-03-08] b0be795 fix: onboarding QA — comma-locale budget bug, animation timing, updated scenarios
 - [2026-03-08] 82f4e5c feat: polish onboarding budget step — reframe texts, horizontal pills, live preview card, currency fix
 - [2026-03-08] 9488d0a feat: polish onboarding account step — SectionBox layout, balance guide, validation
 - [2026-03-07] 275392d feat: add Smart Insights personalization — tone, focus, and actionable tips
@@ -763,9 +758,9 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 ## Session Continuity
 
 Last session: 2026-03-16
-Stopped at: Low-priority full review items (e58b4ab) — filterAmountInput dedup, "transfer" constant, YalaPrimaryButton DS, OnboardingView CTA
-Next step: QA manual de todos los tickets, luego merge 1.1.1 → 1.0 y tag
+Stopped at: Fix drafts fantasma en pagos planificados (29611e2) — 5 fixes en ScheduledPaymentDraftService
+Next step: QA manual de todos los tickets del hotfix, luego merge 1.1.1 → 1.0 y tag
 Resume context:
-- Full review: todos los críticos, altos, medios y 5 bajos accionables resueltos
-- 2 altos diferidos: #17 (.white 133 instancias), #19 (asyncAfter 37 instancias)
-- Bajos restantes: 86 a11y labels incrementales, 160 Color(hex:) esperados, 8 try? aceptables, 1 FilterChipView glass pendiente
+- Hotfix 1.1.1: H1-H9 completados, H10 (drafts fantasma) completado (29611e2)
+- Follow-ups documentados en HOTFIX-1.1.1.md: F1-F4 (no bloquean release)
+- Full review: todos los críticos, altos, medios y bajos resueltos

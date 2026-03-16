@@ -294,11 +294,22 @@ struct ContentView: View {
             try? await Task.sleep(for: .milliseconds(400))
             showSplash = false
             SessionState.shared.isSplashDismissed = true
-            // Resolve deferred notification deep link
+
+            // Resolve deferred deep link (navigation-only targets like panel, statistics, etc.)
             if let deferred = SessionState.shared.deferredDeepLink {
                 SessionState.shared.deferredDeepLink = nil
                 try? await Task.sleep(for: .milliseconds(300))
                 SessionState.shared.deepLinkDestination = deferred
+            }
+
+            // Resolve deferred inbox notification (scheduled payments, subscriptions)
+            if let notification = AppBootstrapper.shared.deferredInboxNotification {
+                AppBootstrapper.shared.deferredInboxNotification = nil
+                try? await Task.sleep(for: .milliseconds(300))
+                SessionState.shared.pendingInboxNotification = notification
+            } else {
+                // No inbox to show — resolve sheet actions (shared image, voice, new transaction)
+                AppBootstrapper.shared.showDeferredActionsIfNeeded()
             }
         }
     }
