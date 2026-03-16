@@ -295,6 +295,7 @@ struct ScheduledPaymentsWidget: View {
                 Image(systemName: item.icon)
                     .font(DS.Typography.labelSmall)
                     .foregroundStyle(.white)
+                    .accessibilityHidden(true)
             }
 
             // Info
@@ -325,10 +326,12 @@ struct ScheduledPaymentsWidget: View {
                     Image(systemName: "arrow.uturn.forward.circle")
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
                 } else if item.isPaid {
                     Image(systemName: "checkmark.circle.fill")
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(theme.accent)
+                        .accessibilityHidden(true)
                 }
             }
         }
@@ -509,10 +512,12 @@ struct ScheduledPaymentsWidget: View {
                                 Image(systemName: "arrow.uturn.forward")
                                     .font(.system(size: 6, weight: .bold)) // A11Y-DT: fixed size — calendar micro-badge
                                     .foregroundStyle(.secondary)
+                                    .accessibilityHidden(true)
                             } else if entry.isPaid {
                                 Image(systemName: "checkmark")
                                     .font(.system(size: 6, weight: .bold)) // A11Y-DT: fixed size — calendar micro-badge
                                     .foregroundStyle(theme.accent)
+                                    .accessibilityHidden(true)
                             }
                             Text(entry.payment.name)
                                 .font(DS.Typography.captionSmall).fontWeight(.medium)

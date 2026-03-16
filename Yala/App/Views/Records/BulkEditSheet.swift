@@ -200,6 +200,7 @@ struct BulkEditSheet: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(DS.Semantic.warningForeground)
+                .accessibilityHidden(true)
 
             Text(L10n.BulkEdit.currencyWarning)
                 .font(DS.Typography.caption)
@@ -217,6 +218,7 @@ struct BulkEditSheet: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "checkmark.circle.fill")
                 .foregroundStyle(DS.Semantic.successForeground)
+                .accessibilityHidden(true)
 
             Text(L10n.BulkEdit.successMessage)
                 .font(DS.Typography.caption)
@@ -325,6 +327,7 @@ private struct BulkEditOptionRow: View {
                     Image(systemName: "checkmark.circle.fill")
                         .font(DS.Typography.body)
                         .foregroundStyle(DS.Semantic.successForeground)
+                        .accessibilityHidden(true)
                 } else {
                     Image(systemName: "chevron.right")
                         .font(DS.Typography.labelSmall.weight(.semibold))
@@ -571,16 +574,19 @@ private struct BulkTagRow: View {
             Image(systemName: "checkmark.square.fill")
                 .font(DS.Typography.title)
                 .foregroundStyle(theme.accent)
+                .accessibilityHidden(true)
         case .toRemove, .available:
             // Unchecked - tag will NOT be present after save
             Image(systemName: "square")
                 .font(DS.Typography.title)
                 .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
         case .partial:
             // Mixed state - some have it, some don't
             Image(systemName: "minus.square.fill")
                 .font(DS.Typography.title)
                 .foregroundStyle(DS.Semantic.warningForeground)
+                .accessibilityHidden(true)
         }
     }
 }

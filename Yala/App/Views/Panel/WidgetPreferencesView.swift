@@ -41,6 +41,7 @@ struct WidgetPreferencesView: View {
                             .foregroundStyle(.thAccent)
                             .frame(width: 32, height: 32)
                             .background(Circle().fill(theme.accent.opacity(0.1)))
+                            .accessibilityHidden(true)
 
                         VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                             Text(L10n.Panel.aiInsightsTitle)
@@ -148,6 +149,7 @@ private struct WidgetRow: View {
                     .background(
                         Circle().fill(theme.accent.opacity(0.1))
                     )
+                    .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(config.type.displayName)

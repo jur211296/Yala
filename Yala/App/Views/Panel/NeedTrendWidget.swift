@@ -188,6 +188,7 @@ struct NeedTrendWidget: View {
                     Image(systemName: "info.circle")
                         .font(DS.Typography.title)
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
                     Text(L10n.Need.incomeNotApplicable)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)

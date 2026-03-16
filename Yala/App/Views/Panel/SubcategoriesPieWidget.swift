@@ -272,6 +272,7 @@ struct SubcategoriesPieWidget: View {
                 Image(systemName: item.iconName)
                     .font(.system(size: fontSize, weight: .bold)) // A11Y-DT: fixed-layout pie chart icon bubble
                     .foregroundStyle(.white)
+                    .accessibilityHidden(true)
             }
             .position(x: bubbleX, y: bubbleY)
             .onTapGesture {
@@ -344,6 +345,7 @@ struct SubcategoriesPieWidget: View {
                             Image(systemName: selectedItem.iconName)
                                 .font(DS.Typography.labelTiny).fontWeight(.bold)
                                 .foregroundStyle(Color(hex: selectedItem.colorHex))
+                                .accessibilityHidden(true)
                         }
                         .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
 
@@ -379,6 +381,7 @@ struct SubcategoriesPieWidget: View {
                                 Image(systemName: item.iconName)
                                     .font(DS.Typography.captionSmall).fontWeight(.bold)
                                     .foregroundStyle(Color(hex: item.colorHex))
+                                    .accessibilityHidden(true)
                             }
                             .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
 

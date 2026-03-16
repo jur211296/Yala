@@ -238,6 +238,7 @@ struct TopCategoriesWidget: View {
                         Image(systemName: topCategory.category.iconName ?? "tag.fill")
                             .font(DS.Typography.headline)
                             .foregroundStyle(.white)
+                            .accessibilityHidden(true)
                     }
 
                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {
@@ -317,6 +318,7 @@ private struct CategoryRow: View {
                 Image(systemName: summary.category.iconName ?? "tag.fill")  // Use actual category icon
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.white)
+                    .accessibilityHidden(true)
             }
 
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
