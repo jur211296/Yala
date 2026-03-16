@@ -69,6 +69,7 @@ struct InboxAlertModal: View {
                     Image(systemName: icon)
                         .font(DS.Typography.amountLarge)
                         .foregroundStyle(theme.accent)
+                        .accessibilityHidden(true)
                 }
                 .padding(.top, DS.Spacing.sm)
 

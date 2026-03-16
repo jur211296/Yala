@@ -94,6 +94,7 @@ struct VariationChip: View {
                 if abs(variation) < 0.05 {
                     Image(systemName: "equal")
                         .font(size.font)
+                        .accessibilityHidden(true)
                 }
                 Text(PreviousPeriodHelper.formatVariationValue(variation))
                     .font(size.font)

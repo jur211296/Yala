@@ -232,6 +232,7 @@ struct CategoryDetailView: View {
                     HStack(spacing: DS.Spacing.md) {
                         Image(systemName: "textformat")
                             .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
                         TextField(L10n.Category.namePlaceholder, text: $viewModel.name)
                             .textContentType(.name)
                             .focused($isNameFieldFocused)

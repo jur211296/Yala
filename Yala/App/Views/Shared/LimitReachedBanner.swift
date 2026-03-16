@@ -26,6 +26,7 @@ struct LimitReachedBanner: View {
             Image(systemName: "exclamationmark.circle.fill")
                 .font(DS.Typography.title)
                 .foregroundStyle(DS.Semantic.warningForeground)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.FeatureGate.limitReachedTitle)

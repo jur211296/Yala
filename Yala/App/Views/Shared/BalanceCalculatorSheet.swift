@@ -369,6 +369,7 @@ struct BalanceCalculatorSheet: View {
             Image(systemName: "lightbulb.fill")
                 .font(DS.Typography.body)
                 .foregroundStyle(Color.electricIndigo)
+                .accessibilityHidden(true)
             Text(text)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)

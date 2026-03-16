@@ -23,6 +23,7 @@ struct FilterBlockedPopover: ViewModifier {
                         Image(systemName: "lock.fill")
                             .font(DS.Typography.labelSmall)
                             .foregroundStyle(DS.Semantic.warningForeground)
+                            .accessibilityHidden(true)
                         Text(title)
                             .font(DS.Typography.labelSmall)
                             .foregroundStyle(.primary)

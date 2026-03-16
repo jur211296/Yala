@@ -50,6 +50,7 @@ struct TrialBanner: View {
             Image(systemName: iconName)
                 .font(DS.Typography.title)
                 .foregroundStyle(iconColor)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.Subscription.Trial.title)
