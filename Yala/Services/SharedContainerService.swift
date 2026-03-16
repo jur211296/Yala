@@ -53,23 +53,43 @@ enum SharedContainerService {
 
     /// Removes a processed image
     static func removePendingImage(at url: URL) {
-        try? FileManager.default.removeItem(at: url)
+        do {
+            try FileManager.default.removeItem(at: url)
+        } catch {
+            #if DEBUG
+            print("SharedContainerService: Error removing pending image: \(error)")
+            #endif
+        }
     }
 
     /// Removes pending images older than the given age in seconds
     static func clearOldPendingImages(olderThan maxAge: TimeInterval) {
         guard let url = pendingImagesURL else { return }
-        let contents = try? FileManager.default.contentsOfDirectory(
-            at: url,
-            includingPropertiesForKeys: [.creationDateKey],
-            options: .skipsHiddenFiles
-        )
+        let contents: [URL]
+        do {
+            contents = try FileManager.default.contentsOfDirectory(
+                at: url,
+                includingPropertiesForKeys: [.creationDateKey],
+                options: .skipsHiddenFiles
+            )
+        } catch {
+            #if DEBUG
+            print("SharedContainerService: Error listing pending images for cleanup: \(error)")
+            #endif
+            return
+        }
         let cutoff = Date.now.addingTimeInterval(-maxAge)
-        for fileURL in contents ?? [] {
+        for fileURL in contents {
             guard let values = try? fileURL.resourceValues(forKeys: [.creationDateKey]),
                   let created = values.creationDate,
                   created < cutoff else { continue }
-            try? FileManager.default.removeItem(at: fileURL)
+            do {
+                try FileManager.default.removeItem(at: fileURL)
+            } catch {
+                #if DEBUG
+                print("SharedContainerService: Error removing old image \(fileURL.lastPathComponent): \(error)")
+                #endif
+            }
         }
     }
 }

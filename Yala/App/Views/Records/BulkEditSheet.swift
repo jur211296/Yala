@@ -361,7 +361,7 @@ struct BulkTagEditorSheet: View {
                         // Common tags section (tags that ALL selected transactions have)
                         if !commonTags.isEmpty {
                             SectionBox(title: L10n.BulkEdit.commonTags) {
-                                VStack(spacing: DS.Spacing.none) {
+                                LazyVStack(spacing: DS.Spacing.none) {
                                     ForEach(Array(commonTags.enumerated()), id: \.element.persistentModelID) { index, tag in
                                         if index > 0 {
                                             SubsectionDivider()
@@ -379,7 +379,7 @@ struct BulkTagEditorSheet: View {
                         // Partial tags section (tags that SOME selected transactions have)
                         if !partialTags.isEmpty {
                             SectionBox(title: L10n.BulkEdit.partialTags) {
-                                VStack(spacing: DS.Spacing.none) {
+                                LazyVStack(spacing: DS.Spacing.none) {
                                     ForEach(Array(partialTags.enumerated()), id: \.element.persistentModelID) { index, tag in
                                         if index > 0 {
                                             SubsectionDivider()
@@ -397,7 +397,7 @@ struct BulkTagEditorSheet: View {
                         // Available tags section (tags that NO selected transactions have)
                         if !availableTags.isEmpty {
                             SectionBox(title: L10n.BulkEdit.availableTags) {
-                                VStack(spacing: DS.Spacing.none) {
+                                LazyVStack(spacing: DS.Spacing.none) {
                                     ForEach(Array(availableTags.enumerated()), id: \.element.persistentModelID) { index, tag in
                                         if index > 0 {
                                             SubsectionDivider()

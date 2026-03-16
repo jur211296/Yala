@@ -108,6 +108,7 @@ struct CategorySelectorSheet: View {
                         isEverythingSelected
                             ? theme.accent : theme.secondaryText.opacity(0.4)
                     )
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.FormRow.paddingV)
@@ -129,6 +130,7 @@ struct CategorySelectorSheet: View {
                         Image(systemName: category.iconName ?? "tag")
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.white)
+                            .accessibilityHidden(true)
                     )
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
@@ -153,6 +155,7 @@ struct CategorySelectorSheet: View {
                                 ? theme.secondaryText.opacity(0.4)
                                 : theme.accent
                         )
+                        .accessibilityHidden(true)
                 }
                 .buttonStyle(.plain)
 
@@ -163,6 +166,7 @@ struct CategorySelectorSheet: View {
                     Image(systemName: "chevron.down")
                         .rotationEffect(.degrees(expandedCategories.contains(category.persistentModelID) ? 0 : -90))
                         .foregroundStyle(.tertiary)
+                        .accessibilityHidden(true)
                 }
                 .buttonStyle(.plain)
             }
@@ -191,6 +195,7 @@ struct CategorySelectorSheet: View {
                         Image(systemName: subcategory.iconName ?? "tag")
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.white)
+                            .accessibilityHidden(true)
                     )
 
                 Text(subcategory.name)
@@ -204,6 +209,7 @@ struct CategorySelectorSheet: View {
                     .foregroundStyle(
                         isSelected ? theme.accent : theme.secondaryText.opacity(0.4)
                     )
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Chip.paddingH)
