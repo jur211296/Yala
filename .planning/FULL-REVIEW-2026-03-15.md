@@ -202,7 +202,7 @@ Nota: El aumento en criticos/altos se debe a mayor profundidad del escaneo (3 ag
 | Batch | Directorios | Gaps estimados |
 |-------|-------------|----------------|
 | 2 | Panel/ + Records/ | ✅ 42 marcadas |
-| 3 | Inbox/ + Categories/ + Shared/ + Voice/ + Accounts/ + Subscription/ | ~68 |
+| 3 | Inbox/ + Categories/ + Shared/ + Voice/ + Accounts/ + Subscription/ | ✅ 26 marcadas |
 | 4 | Settings/ + Onboarding/ + Profile/ + restantes | ~139 |
 
 ---
