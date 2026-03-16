@@ -57,6 +57,9 @@ final class TransactionItem {
     /// Type of balance adjustment transaction: "initial_balance" | "adjustment" | "transfer" | nil (normal)
     var balanceAdjustmentType: String?
 
+    // MARK: - Balance Adjustment Type Constants
+    static let adjustmentTypeTransfer = "transfer"
+
     // MARK: - Transfer Pair
     /// Shared UUID between both sides of a transfer (outflow + inflow)
     var transferPairID: String?

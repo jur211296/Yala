@@ -186,10 +186,11 @@ Nota: El aumento en criticos/altos se debe a mayor profundidad del escaneo (3 ag
 - 160 usos de `Color(hex:)` — esperado para colores de categoria/tag configurables por usuario
 - 8 try? aceptables (Tips.configure, AttributedString(markdown:), NSRegularExpression, Task.sleep)
 - ~~3 try? sin logging en `SharedContainerService` cleanup~~ ✅ RESUELTO (a8a458e) — do/catch con `#if DEBUG` logging
-- 2 oportunidades Liquid Glass (FilterChipView, SectionBox)
-- 4 `filterAmountInput` duplicados — usar `AmountInputHelper.filterAmountInput()` (InboxDraftEditSheet, NewTransactionView, FavoriteEditorView, TransferAmountInputView)
-- 3 botones CTA manuales restantes — migrar a `YalaPrimaryButton` cuando se toquen (OnboardingView:1261, ImportIntroSheet:65, InboxDraftEditSheet "Save Later":674)
-- `YalaPrimaryButton` sin `.buttonStyle(.plain)` — agregar defensivamente para contextos List/Form
+- 2 oportunidades Liquid Glass (FilterChipView, ~~SectionBox~~) — SectionBox CERRADO: es contenedor de contenido, no chrome interactivo; `.glassEffect()` es para toolbars/chips/FABs
+- ~~4 `filterAmountInput` duplicados~~ ✅ RESUELTO — 2 duplicados (InboxDraftEditSheet, FavoriteEditorView) delegados a `AmountInputHelper.filterAmountInput()`; los otros 2 (NewTransactionView, TransferAmountInputView) ya delegaban correctamente
+- ~~3 botones CTA manuales restantes~~ 1 RESUELTO, 2 SKIP — OnboardingView migrado a `YalaPrimaryButton`; ImportResultOverlay usa color condicional (no compatible), InboxDraftEditSheet es botón secundario (outline)
+- ~~`YalaPrimaryButton` sin `.buttonStyle(.plain)`~~ ✅ RESUELTO — `.buttonStyle(.plain)` agregado
+- ~~`"transfer"` stringly-typed en 14 instancias~~ ✅ RESUELTO — `TransactionItem.adjustmentTypeTransfer` definido y aplicado en 17 instancias (10 archivos prod + 3 tests). `#Predicate` en TransferMigrationService usa variable local.
 
 ---
 

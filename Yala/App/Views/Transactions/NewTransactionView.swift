@@ -1194,7 +1194,7 @@ struct NewTransactionView: View {
             viewModel.note = tx.note ?? ""
 
             // If this is a transfer, load the paired transaction
-            if tx.balanceAdjustmentType == "transfer", let pairID = tx.transferPairID {
+            if tx.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer, let pairID = tx.transferPairID {
                 let fetchPairID = pairID
                 let descriptor = FetchDescriptor<TransactionItem>(
                     predicate: #Predicate { $0.transferPairID == fetchPairID }
@@ -1298,7 +1298,7 @@ struct NewTransactionView: View {
 
         do {
             // If this is a transfer, also delete the paired transaction
-            if transaction.balanceAdjustmentType == "transfer", let pairID = transaction.transferPairID {
+            if transaction.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer, let pairID = transaction.transferPairID {
                 let fetchPairID = pairID
                 let descriptor = FetchDescriptor<TransactionItem>(
                     predicate: #Predicate { $0.transferPairID == fetchPairID }

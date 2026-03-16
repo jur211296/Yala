@@ -199,7 +199,7 @@ enum TransactionCSVImportService {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
                 } else {
                     // All other system subcategories are transfers
-                    transaction.balanceAdjustmentType = "transfer"
+                    transaction.balanceAdjustmentType = TransactionItem.adjustmentTypeTransfer
                 }
             }
 
@@ -1110,7 +1110,7 @@ enum TransactionCSVImportService {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
                 } else {
                     // All other system subcategories are transfers
-                    transaction.balanceAdjustmentType = "transfer"
+                    transaction.balanceAdjustmentType = TransactionItem.adjustmentTypeTransfer
                 }
             }
 
@@ -1493,7 +1493,7 @@ enum TransactionCSVImportService {
                 if subcategoryName == L10n.Subcategory.balanceAdjustment {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
                 } else {
-                    transaction.balanceAdjustmentType = "transfer"
+                    transaction.balanceAdjustmentType = TransactionItem.adjustmentTypeTransfer
                 }
             }
 
@@ -1644,7 +1644,7 @@ enum TransactionCSVImportService {
                 if subcategoryName == L10n.Subcategory.balanceAdjustment {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
                 } else {
-                    transaction.balanceAdjustmentType = "transfer"
+                    transaction.balanceAdjustmentType = TransactionItem.adjustmentTypeTransfer
                 }
             }
 

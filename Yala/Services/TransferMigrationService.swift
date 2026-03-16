@@ -47,7 +47,8 @@ import SwiftData
         let otrosCategoryName = "Otros"
         do {
             var descriptor = FetchDescriptor<TransactionItem>()
-            descriptor.predicate = #Predicate<TransactionItem> { $0.balanceAdjustmentType == "transfer" && $0.amount > 0 }
+            let transferType = TransactionItem.adjustmentTypeTransfer
+            descriptor.predicate = #Predicate<TransactionItem> { $0.balanceAdjustmentType == transferType && $0.amount > 0 }
             let transferTransactions = try context.fetch(descriptor)
 
             var migratedCount = 0

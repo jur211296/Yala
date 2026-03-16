@@ -427,38 +427,7 @@ struct FavoriteEditorView: View {
     // MARK: - Helpers
 
     private func filterAmountInput(_ input: String) -> String {
-        let decimalSeparator = Locale.current.decimalSeparator ?? "."
-        var result = ""
-        var hasDecimal = false
-        var decimalCount = 0
-
-        for char in input {
-            if char.isNumber {
-                if hasDecimal {
-                    if decimalCount < 2 {
-                        result.append(char)
-                        decimalCount += 1
-                    }
-                } else {
-                    result.append(char)
-                }
-            } else if String(char) == decimalSeparator || char == "." || char == "," {
-                if !hasDecimal {
-                    result.append(decimalSeparator.first ?? ".")
-                    hasDecimal = true
-                }
-            }
-        }
-
-        while result.hasPrefix("0") && result.count > 1 {
-            let secondChar = result[result.index(after: result.startIndex)]
-            if String(secondChar) == decimalSeparator {
-                break
-            }
-            result = String(result.dropFirst())
-        }
-
-        return result
+        AmountInputHelper.filterAmountInput(input)
     }
 }
 

@@ -1240,36 +1240,25 @@ struct OnboardingView: View {
             }
 
             // Next/Finish button
-            Button {
-                // Dismiss keyboard (especially important on step 0)
+            YalaPrimaryButton(
+                currentStep >= totalSteps - 1 ? L10n.Onboarding.finish : L10n.Action.next,
+                isDisabled: isNextDisabled
+            ) {
                 dismissKeyboard()
 
                 if currentStep < totalSteps - 1 {
                     navigatingForward = true
-                    // Compute destination before animation to avoid reading stale state
                     let nextStep = (currentStep == 4 && !loadSeedCategories) ? 6 : currentStep + 1
                     dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
                         currentStep = nextStep
                     }
-                    // Trigger category icons animation when entering categories step
                     if nextStep == 3 {
                         triggerCategoryAnimation()
                     }
                 } else {
                     completeOnboarding()
                 }
-            } label: {
-                let isLastStep = currentStep >= totalSteps - 1
-
-                Text(isLastStep ? L10n.Onboarding.finish : L10n.Action.next)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, DS.Spacing.md)
-                    .background(isNextDisabled ? Color.electricIndigo.opacity(0.4) : Color.electricIndigo)
-                    .clipShape(Capsule())
             }
-            .disabled(isNextDisabled)
         }
     }
 

@@ -95,6 +95,7 @@ struct YalaPrimaryButton: View {
             .clipShape(Capsule())
         }
         .disabled(isDisabled || isLoading)
+        .buttonStyle(.plain)
     }
 }
 

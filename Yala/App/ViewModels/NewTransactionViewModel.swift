@@ -644,7 +644,7 @@ final class NewTransactionViewModel {
             outTransaction.amountInPreferredCurrency =
                 (outAmountInPreferred as NSDecimalNumber).doubleValue
             outTransaction.preferredCurrencyCode = preferredCode
-            outTransaction.balanceAdjustmentType = "transfer"
+            outTransaction.balanceAdjustmentType = TransactionItem.adjustmentTypeTransfer
 
             // Update In (Ingresos/Transferencia entre cuentas)
             inTransaction.date = transactionDate
@@ -659,7 +659,7 @@ final class NewTransactionViewModel {
             inTransaction.amountInPreferredCurrency =
                 (inAmountInPreferred as NSDecimalNumber).doubleValue
             inTransaction.preferredCurrencyCode = preferredCode
-            inTransaction.balanceAdjustmentType = "transfer"
+            inTransaction.balanceAdjustmentType = TransactionItem.adjustmentTypeTransfer
 
         } else {
             // Create Out (Otros/Transferencia entre cuentas)
@@ -676,7 +676,7 @@ final class NewTransactionViewModel {
                 amountInPreferredCurrency: (outAmountInPreferred as NSDecimalNumber).doubleValue,
                 preferredCurrencyCode: preferredCode
             )
-            outTransaction.balanceAdjustmentType = "transfer"
+            outTransaction.balanceAdjustmentType = TransactionItem.adjustmentTypeTransfer
 
             // Create In (Ingresos/Transferencia entre cuentas)
             inTransaction = TransactionItem(
@@ -692,7 +692,7 @@ final class NewTransactionViewModel {
                 amountInPreferredCurrency: (inAmountInPreferred as NSDecimalNumber).doubleValue,
                 preferredCurrencyCode: preferredCode
             )
-            inTransaction.balanceAdjustmentType = "transfer"
+            inTransaction.balanceAdjustmentType = TransactionItem.adjustmentTypeTransfer
 
             context.insert(outTransaction)
             context.insert(inTransaction)

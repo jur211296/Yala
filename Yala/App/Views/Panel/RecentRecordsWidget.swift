@@ -220,7 +220,7 @@ struct RecentRecordsWidget: View {
     }
 
     private func amountColor(for record: TransactionItem) -> Color {
-        if record.balanceAdjustmentType == "transfer" { return Color(.label) }
+        if record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer { return Color(.label) }
         let isIncome = record.category?.isIncome ?? (record.amount >= 0)
         return isIncome ? Color.electricIndigo : Color.hotPink
     }
