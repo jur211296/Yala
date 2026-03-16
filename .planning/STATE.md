@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
 Status: **Fase 12 en progreso** — What's New sheet + coach mark tours + onboarding improvements
-Last activity: 2026-03-12 — Full review fixes: @MainActor, reduceMotion, L10n, a11y, DS, Date.now
+Last activity: 2026-03-16 — Medium-priority full review issues: LazyVStack, DS.Typography, error logging, a11y
 
 ### Apple Review History (V1.0)
 
@@ -43,24 +43,16 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-16] a8a458e chore: resolve medium-priority issues from full review
+- [2026-03-16] 94b9e0f refactor: extract 12 private helpers from 4 long functions in 3 ViewModels
+- [2026-03-16] e8c5db5 chore: remove 13 dead code items (~300 lines)
+- [2026-03-15] 8ebd878 fix: white-on-material contrast + refactor 4 CTA to YalaPrimaryButton
 - [2026-03-15] 3b719b1 chore: resolve 8 high-priority issues from full review
 - [2026-03-15] 2bb0813 perf: replace fetch-all with fetchCount/predicate in 5 ViewModels
 - [2026-03-15] 3c6e794 fix: AI insights off by default + 10s debounce before LLM call
 - [2026-03-15] 710d678 fix: hotfix 1.1.1 — free trial, deep link race condition, What's New, insights split
 - [2026-03-12] 031bc7c feat: split AI consent into processing (voice/image) and insights (smart overview)
 - [2026-03-12] 08883ee fix: AI insights — tip alignment, reactivity, currency format, budget threshold
-- [2026-03-12] 52b451f feat: rewrite AI insight tone/focus prompts + country regionalization + brand voice enforcement
-- [2026-03-12] 134200b feat: enrich AI insights data + anti-hallucination prompts + upgrade to GPT-4.1 Mini
-- [2026-03-12] c935830 fix: prevent SEGV crash in test host by using in-memory config under XCTest
-- [2026-03-12] 7d02809 chore: address medium/low review issues — dead code, deprecated APIs, DS tokens
-- [2026-03-12] fba23e2 refactor: Date() → Date.now across codebase (H7)
-- [2026-03-12] 7f518f8 fix: address critical and high review issues (C1-C3, H1-H11)
-- [2026-03-12] baf130f chore: update Claude commands, settings, and agent configs
-- [2026-03-12] b63b56d feat: add consent flow for Smart Insights + settings reorganization
-- [2026-03-12] d48946f test: extract 12 private methods to internal + add 85 tests across 5 suites
-- [2026-03-10] 720ffe3 refactor: rename Nature → Need across codebase
-- [2026-03-10] 0f85f55 fix: export allTime date range, transaction recurring save flow, validation toast
-- [2026-03-10] dd86e0c fix: scheduled payments — duplicate draft prevention, unified occurrence actions, editor UX
 - [2026-03-08] b0be795 fix: onboarding QA — comma-locale budget bug, animation timing, updated scenarios
 - [2026-03-08] 82f4e5c feat: polish onboarding budget step — reframe texts, horizontal pills, live preview card, currency fix
 - [2026-03-08] 9488d0a feat: polish onboarding account step — SectionBox layout, balance guide, validation
@@ -766,12 +758,10 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 
 ## Session Continuity
 
-Last session: 2026-03-15
-Stopped at: Full review altos resueltos (3b719b1) — 8 issues cerrados, 21→7 altos restantes
+Last session: 2026-03-16
+Stopped at: Medium-priority full review issues (a8a458e) — LazyVStack, DS.Typography, error logging, 22 a11y decorative images
 Next step: QA manual de todos los tickets, luego merge 1.1.1 → 1.0 y tag
 Resume context:
-- Full review 2026-03-15: 0 críticos, 7 altos restantes (#6-#9 calidad código, #10 a11y, #17 .white, #19 DispatchQueue)
-- 8 altos resueltos: LazyVStack, fetch predicates, a11y labels, DS.Typography, DS.Semantic, .replacing()
-- 6 altos descartados como FP: #3, #5, #11, #12, #13, #18, #21
+- Full review medios resueltos: BulkEditSheet LazyVStack, monospaced DS fonts, SharedContainerService logging, 22 decorative images a11y
 - 2 altos diferidos: #17 (.white 133 instancias), #19 (asyncAfter 37 instancias)
-- Full review C1-C3, C5, C6 resueltos. 0 críticos pendientes. Bajo pendiente: try? en SharedContainerService cleanup
+- ~46 medios restantes del full review (mayormente cosméticos o Views body length)
