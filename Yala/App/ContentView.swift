@@ -5,6 +5,7 @@
 //  Created by Yala Refactoring.
 //
 
+import StoreKit
 import SwiftData
 import SwiftUI
 
@@ -539,6 +540,7 @@ struct ContentView: View {
 
 struct MainTabView: View {
     @Bindable private var sessionState: SessionState
+    @Environment(\.requestReview) private var requestReview
     @Environment(\.yalaTheme) private var theme
     @State private var searchText: String = ""
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
@@ -633,6 +635,18 @@ struct MainTabView: View {
 
                 // Clear after handling
                 sessionState.deepLinkDestination = nil
+            }
+            .onChange(of: sessionState.shouldRequestReview) { _, shouldShow in
+                if shouldShow {
+                    sessionState.shouldRequestReview = false
+                    let action = requestReview
+                    Task {
+                        try? await Task.sleep(for: .seconds(1))
+                        action()
+                        ReviewPromptService.recordPromptShown()
+                        TelemetryService.track(.reviewPromptShown)
+                    }
+                }
             }
             .onChange(of: sessionState.shouldShowDowngradeResolution) { _, shouldShow in
                 // Show downgrade resolution sheet when triggered by AppBootstrapper

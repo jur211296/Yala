@@ -502,6 +502,11 @@ final class NewTransactionViewModel {
             if isNewTransaction {
                 let count = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + 1
                 UserDefaults.standard.set(count, forKey: "transactionsSavedCount")
+
+                // Check if we should prompt for App Store review
+                if ReviewPromptService.shouldPrompt(transactionCount: count) {
+                    SessionState.shared.shouldRequestReview = true
+                }
             }
 
             // Analytics

@@ -442,6 +442,9 @@ class SessionState {
     /// Flag to auto-open Profile from Insights banner redirect
     var shouldOpenProfile: Bool = false
 
+    /// Flag to trigger App Store review prompt
+    var shouldRequestReview: Bool = false
+
     /// Signals that post-onboarding flow is complete (trial sheet dismissed or skipped).
     /// Coach mark tours wait for this before starting.
     var isReadyForTours: Bool = false

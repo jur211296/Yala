@@ -79,6 +79,9 @@ final class AppBootstrapper {
         TelemetryService.configure()
         TelemetryService.track(.appLaunched)
 
+        // 0.6. Record first launch date for review prompt timing
+        ReviewPromptService.recordFirstLaunchIfNeeded()
+
         // 1. Initialize notification delegate (must be early for foreground display)
         _ = NotificationService.shared
 
