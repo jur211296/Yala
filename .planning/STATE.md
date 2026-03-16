@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-16] 83fa487 a11y: add accessibility markers to Planning and Transactions views (53 images)
 - [2026-03-16] e58b4ab chore: resolve 5 low-priority review items — dedup, constants, DS compliance
 - [2026-03-16] a8a458e chore: resolve medium-priority issues from full review
 - [2026-03-16] 94b9e0f refactor: extract 12 private helpers from 4 long functions in 3 ViewModels
