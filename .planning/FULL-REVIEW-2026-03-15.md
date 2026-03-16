@@ -15,7 +15,7 @@
 | Calidad codigo | OK | 0 | 0 | 0 | 0 |
 | Performance | OK | 0 | 0 | 0 | — |
 | SwiftData | OK | 0 | 0 | — | — |
-| Accesibilidad | OK | 0 | 0 | 0 | 34 |
+| Accesibilidad | OK | 0 | 0 | 0 | 0 |
 | Design System | OK | 0 | 0 | 0 | 0 |
 | APIs modernas | OK | 0 | 0 | 0 | 0 |
 | Localizacion | OK | 0 | 0 | 0 | 0 |
@@ -23,7 +23,7 @@
 | Deuda tecnica | 0 TODOs | 0 | 0 | 0 | 0 |
 | Apple compliance | OK | 0 | 0 | — | — |
 
-**Totales (post-fix):** 0 criticos, 0 altos bloqueantes, **0 medios pendientes**, 34 bajos
+**Totales (post-fix):** 0 criticos, 0 altos bloqueantes, **0 medios pendientes**, **0 bajos**
 *7 criticos: 3 resueltos (C1-C3), 2 resueltos+reclasificados (C5→ALTO, C7→ALTO), 2 reclasificados (C4→MEDIO, C6→BAJO). 22 altos (21+C7): 10 resueltos, 9 descartados/FP, 3 refactors opcionales no-bloqueantes (#6-#8). Medios: todos resueltos o descartados tras análisis.*
 
 ---
@@ -180,9 +180,9 @@ Nota: El aumento en criticos/altos se debe a mayor profundidad del escaneo (3 ag
 
 ---
 
-## BAJOS (257 original → 34 restantes)
+## BAJOS (257 original → 0 restantes) ✅ CERRADO
 
-- ~~86 oportunidades de accessibilityLabel adicionales~~ 53 RESUELTOS (Batch 1: Planning/ + Transactions/) — 33 restantes para Batches 2-4 (Panel/, Records/, Inbox/, Settings/, Onboarding/, Profile/)
+- ~~86 oportunidades de accessibilityLabel adicionales~~ ✅ RESUELTO — 133 imágenes decorativas marcadas con `.accessibilityHidden(true)` en 4 batches (53+42+26+12) across 52 archivos
 - ~~160 usos de `Color(hex:)`~~ ✅ CERRADO — 104 colores de datos de usuario (SwiftData), 25 definiciones cacheadas (UIHelpers/WidgetColors), 15 theme defs en YalaTheme, ~16 misc — todos correctos y esperados
 - ~~8 try? aceptables~~ ✅ CERRADO — En realidad son 61: 48 Task.sleep (animation timing), 3 NSRegularExpression (compile-time patterns), 2 AttributedString(markdown:), 1 Tips.configure, 3 FileManager/URL (defer cleanup), 4 otros — todos justificados
 - ~~3 try? sin logging en `SharedContainerService` cleanup~~ ✅ RESUELTO (a8a458e) — do/catch con `#if DEBUG` logging
@@ -203,7 +203,7 @@ Nota: El aumento en criticos/altos se debe a mayor profundidad del escaneo (3 ag
 |-------|-------------|----------------|
 | 2 | Panel/ + Records/ | ✅ 42 marcadas |
 | 3 | Inbox/ + Categories/ + Shared/ + Voice/ + Accounts/ + Subscription/ | ✅ 26 marcadas |
-| 4 | Settings/ + Onboarding/ + Profile/ + restantes | ~139 |
+| 4 | Settings/ + Onboarding/ + Profile/ + Statistics/ | ✅ 12 marcadas (Statistics ya cubierto) |
 
 ---
 
