@@ -19,7 +19,7 @@
 | Design System | OK | 0 | 1 | 3 | 160 |
 | APIs modernas | OK | 0 | 1 | 2 | 2 |
 | Localizacion | OK | 0 | 0 | 0 | 0 |
-| Codigo muerto | 14 candidatos | 0 | 0 | 14 | — |
+| Codigo muerto | 0 (13 eliminados, 1 falso positivo) | 0 | 0 | 0 | — |
 | Deuda tecnica | 0 TODOs | 0 | 0 | 0 | 0 |
 | Apple compliance | OK | 0 | 0 | — | — |
 
@@ -154,7 +154,7 @@ Nota: El aumento en criticos/altos se debe a mayor profundidad del escaneo (3 ag
 | Accesibilidad | 11 | accessibilityHidden(true) solo en 6 archivos, 219+ elementos decorativos sin marcar |
 | Design System | 3 | .font(.body.monospacedDigit()) sin DS tokens, minor |
 | APIs modernas | 2 | Date() y filter().count ya modernizados (0 encontrados) |
-| Codigo muerto | 14 | Ver seccion dedicada abajo |
+| Codigo muerto | 0 | 14 candidatos eliminados (2026-03-16) |
 
 ---
 
@@ -165,27 +165,15 @@ Nota: El aumento en criticos/altos se debe a mayor profundidad del escaneo (3 ag
 - 8 try? aceptables (Tips.configure, AttributedString(markdown:), NSRegularExpression, Task.sleep)
 - 3 try? sin logging en `SharedContainerService` cleanup (`removePendingImage`, `clearOldPendingImages`) — aceptable para cleanup de archivos temporales, agregar do/catch cuando se toque el archivo
 - 2 oportunidades Liquid Glass (FilterChipView, SectionBox)
+- 4 `filterAmountInput` duplicados — usar `AmountInputHelper.filterAmountInput()` (InboxDraftEditSheet, NewTransactionView, FavoriteEditorView, TransferAmountInputView)
+- 3 botones CTA manuales restantes — migrar a `YalaPrimaryButton` cuando se toquen (OnboardingView:1261, ImportIntroSheet:65, InboxDraftEditSheet "Save Later":674)
+- `YalaPrimaryButton` sin `.buttonStyle(.plain)` — agregar defensivamente para contextos List/Form
 
 ---
 
-## Codigo muerto — 14 candidatos
+## Codigo muerto — RESUELTO (2026-03-16)
 
-| # | Archivo | Linea | Descripcion |
-|---|---------|-------|-------------|
-| 1 | `App/ViewModels/PanelViewModel.swift` | :985 | `calculateTrendWidget()` nunca llamada |
-| 2 | `App/ViewModels/PanelViewModel.swift` | :996 | `processTrendPoints()` nunca llamada |
-| 3 | `App/Logic/Helpers/BalanceHelper.swift` | :174 | `convertToPreferredCurrency()` nunca llamada |
-| 4 | `App/Views/Statistics/TrendsTabView.swift` | :1330 | `getPreviousPeriodInterval()` nunca llamada |
-| 5 | `App/Views/Panel/SubcategoriesPieWidget.swift` | :483 | `smallLayout()` nunca llamada |
-| 6 | `App/Views/Panel/CategoriesPieWidget.swift` | :486 | `smallLayout()` nunca llamada |
-| 7 | `App/Views/Panel/NeedTrendWidget.swift` | :295 | `getTotal()` nunca llamada |
-| 8 | `App/Views/Panel/PanelView.swift` | :1111 | `skeletonView()` nunca llamada |
-| 9 | `App/Views/Panel/ExchangeRateWidget.swift` | :540 | `calendarUnit()` nunca llamada |
-| 10 | `App/ViewModels/StatisticsViewModel.swift` | :37 | `enum MetricLockState` sin referencias |
-| 11 | `App/Models/SharedModels.swift` | :364 | `struct NeedSpendingSummary` sin referencias |
-| 12 | `App/AppBootstrapper.swift` | :9 | `import CoreData` sin usar |
-| 13 | `App/Views/Statistics/FilterChipModels.swift` | — | `CategoryChip`, `SubcategoryChip` sin refs externas |
-| 14 | `App/Views/Shared/YalaLoadingOverlay.swift` | — | `YalaLoadingFullScreen` sin refs externas |
+13 de 14 candidatos eliminados (~240 lineas en 12 archivos). Falso positivo: `import CoreData` en AppBootstrapper.swift (requerido por `NSPersistentStoreRemoteChange`).
 
 ---
 

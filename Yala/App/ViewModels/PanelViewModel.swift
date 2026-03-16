@@ -979,68 +979,6 @@ final class PanelViewModel {
         )
     }
 
-    // MARK: - Widget Calculations
-
-    /// Calculate trend chart data
-    private func calculateTrendWidget(context: PanelCalculationContext) -> [ChartTransaction] {
-        return BalanceTrendCalculator.calculateTrend(
-            transactions: context.filteredTransactions,
-            grouping: context.trendGrouping,
-            interval: context.effectiveInterval,
-            currencyCode: context.defaultCurrencyCode,
-            converter: context.converter
-        )
-    }
-
-    /// Process trend points for chart rendering
-    private func processTrendPoints(
-        chartTransactions: [ChartTransaction],
-        context: PanelCalculationContext
-    ) -> (points: [BarPoint], yDomain: ClosedRange<Double>) {
-        let rawTrendPoints = chartTransactions.map { tx in
-            let val: Double
-            switch self.trendType {
-            case .balance: val = tx.balance
-            case .income: val = tx.income
-            case .expense: val = tx.expense
-            }
-            return BarPoint(date: tx.date, value: val)
-        }
-
-        // For income/expense, filter out days with zero values to create a connected line
-        // This matches StatisticsViewModel behavior where zero-days are excluded
-        let filteredPoints: [BarPoint]
-        if trendType == TrendType.balance {
-            // Keep all points for balance (running total)
-            filteredPoints = rawTrendPoints
-        } else {
-            // For income/expense, only keep dates with actual data
-            filteredPoints = rawTrendPoints.filter { $0.value != 0 }
-        }
-
-        let processedPoints: [BarPoint]
-        // Only smooth balance metric - income/expense are discrete data points
-        let shouldSmooth =
-            (context.period == .thisYear || context.period == .lastYear
-                || context.period == .allTime)
-            && filteredPoints.count > movingAverageSmoothingThreshold
-            && trendType == TrendType.balance
-
-        if shouldSmooth {
-            processedPoints = TrendProcessingHelper.movingAverage(
-                for: filteredPoints, window: movingAverageWindowSize)
-        } else {
-            processedPoints = filteredPoints
-        }
-
-        let yDomain = TrendProcessingHelper.calculateYDomain(
-            for: processedPoints,
-            isExpense: trendType == .expense
-        )
-
-        return (processedPoints, yDomain)
-    }
-
     /// Calculate top spending categories with period comparison
     /// Uses needFilteredTransactions (not fullyFiltered) so that subcategory selection
     /// only dims categories visually, rather than filtering out other categories' data

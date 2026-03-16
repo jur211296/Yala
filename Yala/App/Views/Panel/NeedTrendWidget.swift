@@ -292,17 +292,6 @@ struct NeedTrendWidget: View {
         }
     }
 
-    private func getTotal(for need: SubcategoryNeed) -> Double {
-        trendPoints.reduce(0) { partialResult, point in
-            switch need {
-            case .essential: return partialResult + point.essential
-            case .priority: return partialResult + point.priority
-            case .optional: return partialResult + point.optional
-            case .unclassified: return partialResult + point.unclassified
-            }
-        }
-    }
-
 }
 
 struct NeedTrendChartView: View {

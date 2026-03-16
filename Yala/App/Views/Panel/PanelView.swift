@@ -1108,22 +1108,6 @@ struct PanelView: View {
     }
 
     @ViewBuilder
-    private func skeletonView(for config: WidgetConfig) -> some View {
-        switch config.type {
-        case .trend:
-            TrendWidgetSkeleton()
-        case .cashFlow:
-            CashFlowSkeleton()
-        case .latestRecords:
-            LatestRecordsSkeleton()
-        case .categoriesPie:
-            CategoriesPieSkeleton()
-        default:
-            WidgetSkeleton(height: config.size == .large ? 300 : 200)
-        }
-    }
-
-    @ViewBuilder
     private func actualWidgetView(for config: WidgetConfig) -> some View {
         let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCodeRaw) ?? .pen
         let balance = viewModel.displayedBalanceInDefaultCurrency(

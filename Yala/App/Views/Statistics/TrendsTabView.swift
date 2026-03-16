@@ -1327,19 +1327,6 @@ struct TrendsTabView: View {
         }
     }
 
-    private func getPreviousPeriodInterval(for period: DetailPeriod) -> DateInterval {
-        let currentInterval = period.dateInterval()
-        let duration = currentInterval.duration
-        let previousStart = currentInterval.start.addingTimeInterval(-duration)
-
-        // Previous period should end at d-1 (one day before current period starts)
-        let calendar = Calendar.current
-        let previousEnd =
-            calendar.date(byAdding: .day, value: -1, to: currentInterval.start)
-            ?? currentInterval.start
-
-        return DateInterval(start: previousStart, end: previousEnd)
-    }
 }
 
 // MARK: - Compact Record Row

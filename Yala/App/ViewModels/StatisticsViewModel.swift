@@ -33,13 +33,6 @@ final class StatisticsViewModel: Filterable {
 
     // MARK: - Trend Locking Logic
 
-    /// Metric lock state based on active filters
-    enum MetricLockState {
-        case none           // No lock, user can select any metric
-        case lockedIncome   // Locked to income (only income filter selected)
-        case lockedExpense  // Locked to expense (category/need filters or only expense filter)
-    }
-
     // Check if any category/subcategory/need filters are active
     var hasCategoryFilters: Bool {
         !selectedCategories.isEmpty || !selectedSubcategories.isEmpty || !selectedNeeds.isEmpty

@@ -537,14 +537,6 @@ struct ExchangeRateWidget: View {
         return formatter.string(from: date)
     }
 
-    private func calendarUnit(for grouping: TrendGrouping) -> Calendar.Component {
-        switch grouping {
-        case .day: return .day
-        case .week: return .weekOfYear
-        case .month: return .month
-        }
-    }
-
     private func calendarComponent(for grouping: TrendGrouping) -> Calendar.Component {
         switch grouping {
         case .day: return .day
