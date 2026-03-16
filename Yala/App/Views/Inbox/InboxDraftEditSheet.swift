@@ -689,21 +689,12 @@ struct InboxDraftEditSheet: View {
                 }
 
                 // Approve button (primary)
-                Button {
+                YalaPrimaryButton(
+                    L10n.Inbox.approve,
+                    isDisabled: !isReadyToApprove
+                ) {
                     approveDraft()
-                } label: {
-                    Text(L10n.Inbox.approve)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DS.Spacing.lg)
-                        .background(
-                            Capsule()
-                                .fill(isReadyToApprove ? theme.accent : DS.Semantic.disabledForeground)
-                        )
                 }
-                .buttonStyle(.plain)
-                .disabled(!isReadyToApprove)
                 .accessibilityHint(!isReadyToApprove ? L10n.Accessibility.approveCompleteHint : "")
             }
         }

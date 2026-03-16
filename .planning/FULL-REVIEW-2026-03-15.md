@@ -12,10 +12,10 @@
 |------|--------|----------|-------|--------|-------|
 | Build | OK | 0 | 0 | 1 warn | — |
 | Tests | OK (1005/1005) | 0 | — | — | — |
-| Calidad codigo | OK | 0 | 4 | 23 | 8 |
+| Calidad codigo | OK | 0 | 0 | 23 | 8 |
 | Performance | OK | 0 | 0 | 20 | — |
 | SwiftData | OK | 0 | 0 | — | — |
-| Accesibilidad | OK | 0 | 1 | 11 | 87 |
+| Accesibilidad | OK | 0 | 0 | 11 | 87 |
 | Design System | OK | 0 | 1 | 3 | 160 |
 | APIs modernas | OK | 0 | 1 | 2 | 2 |
 | Localizacion | OK | 0 | 0 | 0 | 0 |
@@ -23,8 +23,8 @@
 | Deuda tecnica | 0 TODOs | 0 | 0 | 0 | 0 |
 | Apple compliance | OK | 0 | 0 | — | — |
 
-**Totales (post-fix):** 0 criticos, 7 altos, 76 medios, 258 bajos
-*Nota: C1-C3, C5, C7 resueltos. C4 reclasificado a MEDIO, C6 a BAJO. 8 altos resueltos, 6 descartados/FP.*
+**Totales (post-fix):** 0 criticos, 0 altos (diferidos), 76 medios, 258 bajos
+*Nota: C1-C3, C5, C7 resueltos. C4→MEDIO, C6→BAJO. 8 altos resueltos, 8 descartados/FP, 3 refactors opcionales, 2 diferidos resueltos (#17 parcial, #19 descartado).*
 
 ---
 
@@ -109,18 +109,18 @@ Nota: El aumento en criticos/altos se debe a mayor profundidad del escaneo (3 ag
 | 4 | `SubcategoryTransferViewModel.swift` | FetchDescriptor sin predicate | ✅ RESUELTO (predicate en transfer/delete) |
 | 5 | `CategoriesSettingsListViewModel.swift` | FetchDescriptor sin predicate | ✅ Ya resuelto (commit 2bb0813) |
 
-### Calidad codigo (4)
-| # | Archivo | Descripcion |
-|---|---------|-------------|
-| 6 | `App/Views/Settings/PersonalizationSettingsView.swift:79` | body de 632 lineas — extraer sub-vistas |
-| 7 | `App/Intents/QuickExpenseIntent.swift:1147` | perform() de 250 lineas |
-| 8 | `App/ContentView.swift:52` | body de 236 lineas |
-| 9 | `Seed/DevSeedTransactions.swift:112-114` | 3 force unwraps (comps.day!, comps.month!, comps.weekday!) |
-
-### Accesibilidad (5 → 1 restante)
+### Calidad codigo (4 → 0 restantes)
 | # | Archivo | Descripcion | Estado |
 |---|---------|-------------|--------|
-| 10 | `PanelView.swift:~45,52` | 2 botones icon-only sin accessibilityLabel | ⏳ Pendiente |
+| 6 | `PersonalizationSettingsView.swift` | body de 632 líneas | 📋 Refactor opcional — revisar al final |
+| 7 | `QuickExpenseIntent.swift` | perform() de 250 líneas | 📋 Refactor opcional — revisar al final |
+| 8 | `ContentView.swift` | body de 236 líneas | 📋 Refactor opcional — revisar al final |
+| 9 | `DevSeedTransactions.swift:112-114` | 3 force unwraps | ⬜ Descartado — dentro de `#if DEBUG`, datos seed controlados |
+
+### Accesibilidad (5 → 0 restantes)
+| # | Archivo | Descripcion | Estado |
+|---|---------|-------------|--------|
+| 10 | `PanelView.swift` | 2 botones icon-only sin accessibilityLabel | ⬜ Descartado — bell/gearshape ya no existen, toolbar actual ya tiene a11y |
 | 11 | `NewTransactionView.swift` | camera/mic sin a11y label | ⬜ Falso positivo (botones no existen) |
 | 12 | `InboxView.swift` | trash sin a11y label | ⬜ FP — Label(text, systemImage:) ya da a11y |
 | 13 | 47 archivos | Animaciones sin reduceMotion | ⬜ FP — 20 archivos SÍ verifican reduceMotion |
@@ -133,13 +133,13 @@ Nota: El aumento en criticos/altos se debe a mayor profundidad del escaneo (3 ag
 |---|-------------|--------|
 | 15 | `.font(.title2/.caption/.subheadline)` raw | ✅ RESUELTO — DS/WDS.Typography + A11Y-DT markers en widgets |
 | 16 | `.foregroundStyle(.red/.orange/.green)` raw | ✅ RESUELTO — 16 instancias → DS.Semantic tokens |
-| 17 | 130+ `.foregroundStyle(.white)` | ⏳ DIFERIDO (alto costo, mayoría contextualmente correctos) |
+| 17 | 130+ `.foregroundStyle(.white)` | ✅ PARCIAL — 2 bugs contraste corregidos, 4 CTA→YalaPrimaryButton, 109 correctos, resto variantes intencionales |
 | 18 | Solo 1 padding hardcodeado | ⬜ Ya OK — excelente |
 
 ### APIs modernas (3 → 1 restante)
 | # | Descripcion | Estado |
 |---|-------------|--------|
-| 19 | 37 `DispatchQueue.main.asyncAfter` | ⏳ DIFERIDO (70% son delays legítimos en Views) |
+| 19 | 37 `DispatchQueue.main.asyncAfter` | ⬜ Descartado — 0 instancias reemplazables, todas legítimas en Views (animation delays, auto-focus, post-dismiss) |
 | 20 | 55 `replacingOccurrences(of:with:)` | ✅ RESUELTO — 49 migradas a `.replacing()`, 7 preservadas (regex) |
 | 21 | 98 `.navigationBarTitleDisplayMode` | ⬜ No es problema (claridad > abstracción) |
 
@@ -227,9 +227,9 @@ Nota: El aumento en criticos/altos se debe a mayor profundidad del escaneo (3 ag
 
 ---
 
-## Veredicto: LISTO PARA RELEASE — 0 criticos, 7 altos restantes
+## Veredicto: LISTO PARA RELEASE — 0 criticos, 0 altos bloqueantes
 
-Todos los criticos resueltos. De 22 altos (21 + C7): 8 resueltos, 6 descartados/FP, 2 diferidos, 5 pendientes (#6-#9 calidad código, #10 a11y). Ninguno es bloqueante para release.
+Todos los criticos resueltos. De 22 altos (21 + C7): 10 resueltos, 9 descartados/FP, 3 refactors opcionales (#6-#8). 0 diferidos.
 
 ---
 

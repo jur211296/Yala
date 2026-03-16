@@ -43,22 +43,13 @@ struct BiometricLockOverlay: View {
                 Spacer()
 
                 // Unlock button
-                Button {
+                YalaPrimaryButton(
+                    L10n.Biometric.unlock,
+                    icon: authService.biometricType.icon,
+                    isDisabled: isAuthenticating
+                ) {
                     performAuth()
-                } label: {
-                    HStack(spacing: DS.Spacing.sm) {
-                        Image(systemName: authService.biometricType.icon)
-                            .font(DS.Typography.bodyBold)
-                        Text(L10n.Biometric.unlock)
-                            .font(DS.Typography.headline)
-                    }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, DS.Spacing.md)
-                    .background(theme.accent)
-                    .clipShape(Capsule())
                 }
-                .disabled(isAuthenticating)
                 .accessibilityHint(isAuthenticating ? L10n.Accessibility.authenticating : "")
                 .padding(.horizontal, DS.Spacing.xxxl)
                 .padding(.bottom, DS.Spacing.xxxl)

@@ -380,17 +380,9 @@ struct BalanceCalculatorSheet: View {
     }
 
     private func useBalanceButton(amount: Double, isPositive: Bool) -> some View {
-        Button {
+        YalaPrimaryButton(L10n.Onboarding.calcUseBalance) {
             onUseBalance(isPositive ? amount : -abs(amount))
             onDismiss()
-        } label: {
-            Text(L10n.Onboarding.calcUseBalance)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, DS.Spacing.md)
-                .background(Color.electricIndigo)
-                .clipShape(Capsule())
         }
     }
 

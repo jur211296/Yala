@@ -330,10 +330,10 @@ struct NewTransactionView: View {
                 if showSavedToast {
                     Text(savedToastMessage)
                         .font(DS.Typography.label)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.vertical, DS.Spacing.sm)
-                        .background(Capsule().fill(Color.secondary))
+                        .background(Capsule().fill(Color.secondary.opacity(0.2)))
                         .padding(.bottom, DS.Spacing.xxxl)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }

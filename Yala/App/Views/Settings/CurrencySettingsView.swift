@@ -103,11 +103,11 @@ struct CurrencySettingsView: View {
 
                     Text(L10n.Common.updatingRecords)
                         .font(DS.Typography.headline)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
                     Text(L10n.Common.recalculatingConversions)
                         .font(DS.Typography.caption)
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(.secondary)
                 }
                 .padding(DS.Spacing.xxl)
                 .background(.ultraThinMaterial)

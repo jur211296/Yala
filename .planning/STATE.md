@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-15] 3b719b1 chore: resolve 8 high-priority issues from full review
 - [2026-03-15] 2bb0813 perf: replace fetch-all with fetchCount/predicate in 5 ViewModels
 - [2026-03-15] 3c6e794 fix: AI insights off by default + 10s debounce before LLM call
 - [2026-03-15] 710d678 fix: hotfix 1.1.1 — free trial, deep link race condition, What's New, insights split
@@ -766,14 +767,11 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 ## Session Continuity
 
 Last session: 2026-03-15
-Stopped at: Full review críticos resueltos (2bb0813) — fetchCount/predicate en 5 ViewModels
-Next step: QA manual de todos los tickets (H1-H3, H5-H7) + perf fixes, luego merge 1.1.1 → 1.0 y tag
+Stopped at: Full review altos resueltos (3b719b1) — 8 issues cerrados, 21→7 altos restantes
+Next step: QA manual de todos los tickets, luego merge 1.1.1 → 1.0 y tag
 Resume context:
-- H1: Trial siempre se muestra post-onboarding (espera bootstrap en vez de retry)
-- H2: Deep links deferred hasta que splash termine (SessionState.isSplashDismissed)
-- H3: What's New 1.1 con 3 features en 6 idiomas
-- H5: subscriptions vs recurring_payments separados para el LLM
-- H6: panelShowAIInsight default false (nuevas instalaciones)
-- H7: Task.sleep(10s) en loadContextualInsight() antes del LLM
-- H4 descartado, H8-H9 resueltos como efecto de H6+H7
+- Full review 2026-03-15: 0 críticos, 7 altos restantes (#6-#9 calidad código, #10 a11y, #17 .white, #19 DispatchQueue)
+- 8 altos resueltos: LazyVStack, fetch predicates, a11y labels, DS.Typography, DS.Semantic, .replacing()
+- 6 altos descartados como FP: #3, #5, #11, #12, #13, #18, #21
+- 2 altos diferidos: #17 (.white 133 instancias), #19 (asyncAfter 37 instancias)
 - Full review C1-C3, C5, C6 resueltos. 0 críticos pendientes. Bajo pendiente: try? en SharedContainerService cleanup
