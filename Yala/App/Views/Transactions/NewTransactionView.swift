@@ -486,6 +486,7 @@ struct NewTransactionView: View {
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: category.iconName ?? "folder")
                             .font(DS.Typography.labelTiny)
+                            .accessibilityHidden(true)
                         Text(category.name)
                             .font(DS.Typography.labelTiny)
                     }
@@ -509,6 +510,7 @@ struct NewTransactionView: View {
                             .font(DS.Typography.labelTiny)
                             .foregroundStyle(.purple)
                             .padding(DS.Spacing.xs)
+                            .accessibilityHidden(true)
                             .background(
                                 Circle().fill(.purple.opacity(0.12))
                             )

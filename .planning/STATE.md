@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
 Status: **Fase 12 en progreso** — What's New sheet + coach mark tours + onboarding improvements
-Last activity: 2026-03-16 — Medium-priority full review issues: LazyVStack, DS.Typography, error logging, a11y
+Last activity: 2026-03-16 — A11y Batch 1: 53 decorative images marked in Planning/ + Transactions/ (14 files)
 
 ### Apple Review History (V1.0)
 
@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-16] e58b4ab chore: resolve 5 low-priority review items — dedup, constants, DS compliance
 - [2026-03-16] a8a458e chore: resolve medium-priority issues from full review
 - [2026-03-16] 94b9e0f refactor: extract 12 private helpers from 4 long functions in 3 ViewModels
 - [2026-03-16] e8c5db5 chore: remove 13 dead code items (~300 lines)
@@ -52,7 +53,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-15] 3c6e794 fix: AI insights off by default + 10s debounce before LLM call
 - [2026-03-15] 710d678 fix: hotfix 1.1.1 — free trial, deep link race condition, What's New, insights split
 - [2026-03-12] 031bc7c feat: split AI consent into processing (voice/image) and insights (smart overview)
-- [2026-03-12] 08883ee fix: AI insights — tip alignment, reactivity, currency format, budget threshold
 - [2026-03-08] b0be795 fix: onboarding QA — comma-locale budget bug, animation timing, updated scenarios
 - [2026-03-08] 82f4e5c feat: polish onboarding budget step — reframe texts, horizontal pills, live preview card, currency fix
 - [2026-03-08] 9488d0a feat: polish onboarding account step — SectionBox layout, balance guide, validation
@@ -759,9 +759,9 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 ## Session Continuity
 
 Last session: 2026-03-16
-Stopped at: Medium-priority full review issues (a8a458e) — LazyVStack, DS.Typography, error logging, 22 a11y decorative images
+Stopped at: Low-priority full review items (e58b4ab) — filterAmountInput dedup, "transfer" constant, YalaPrimaryButton DS, OnboardingView CTA
 Next step: QA manual de todos los tickets, luego merge 1.1.1 → 1.0 y tag
 Resume context:
-- Full review medios resueltos: BulkEditSheet LazyVStack, monospaced DS fonts, SharedContainerService logging, 22 decorative images a11y
+- Full review: todos los críticos, altos, medios y 5 bajos accionables resueltos
 - 2 altos diferidos: #17 (.white 133 instancias), #19 (asyncAfter 37 instancias)
-- ~46 medios restantes del full review (mayormente cosméticos o Views body length)
+- Bajos restantes: 86 a11y labels incrementales, 160 Color(hex:) esperados, 8 try? aceptables, 1 FilterChipView glass pendiente

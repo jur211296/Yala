@@ -12,18 +12,18 @@
 |------|--------|----------|-------|--------|-------|
 | Build | OK | 0 | 0 | 1 warn | — |
 | Tests | OK (1005/1005) | 0 | — | — | — |
-| Calidad codigo | OK | 0 | 0 | 0 | 8 |
+| Calidad codigo | OK | 0 | 0 | 0 | 0 |
 | Performance | OK | 0 | 0 | 0 | — |
 | SwiftData | OK | 0 | 0 | — | — |
-| Accesibilidad | OK | 0 | 0 | 0 | 87 |
-| Design System | OK | 0 | 0 | 0 | 160 |
-| APIs modernas | OK | 0 | 0 | 0 | 2 |
+| Accesibilidad | OK | 0 | 0 | 0 | 34 |
+| Design System | OK | 0 | 0 | 0 | 0 |
+| APIs modernas | OK | 0 | 0 | 0 | 0 |
 | Localizacion | OK | 0 | 0 | 0 | 0 |
 | Codigo muerto | 0 (13 eliminados, 1 falso positivo) | 0 | 0 | 0 | — |
 | Deuda tecnica | 0 TODOs | 0 | 0 | 0 | 0 |
 | Apple compliance | OK | 0 | 0 | — | — |
 
-**Totales (post-fix):** 0 criticos, 0 altos bloqueantes, **0 medios pendientes**, 256 bajos
+**Totales (post-fix):** 0 criticos, 0 altos bloqueantes, **0 medios pendientes**, 34 bajos
 *7 criticos: 3 resueltos (C1-C3), 2 resueltos+reclasificados (C5→ALTO, C7→ALTO), 2 reclasificados (C4→MEDIO, C6→BAJO). 22 altos (21+C7): 10 resueltos, 9 descartados/FP, 3 refactors opcionales no-bloqueantes (#6-#8). Medios: todos resueltos o descartados tras análisis.*
 
 ---
@@ -180,17 +180,30 @@ Nota: El aumento en criticos/altos se debe a mayor profundidad del escaneo (3 ag
 
 ---
 
-## BAJOS (257 total — 1 resuelto, 256 restantes aceptables)
+## BAJOS (257 original → 34 restantes)
 
-- 86 oportunidades de accessibilityLabel adicionales
-- 160 usos de `Color(hex:)` — esperado para colores de categoria/tag configurables por usuario
-- 8 try? aceptables (Tips.configure, AttributedString(markdown:), NSRegularExpression, Task.sleep)
+- ~~86 oportunidades de accessibilityLabel adicionales~~ 53 RESUELTOS (Batch 1: Planning/ + Transactions/) — 33 restantes para Batches 2-4 (Panel/, Records/, Inbox/, Settings/, Onboarding/, Profile/)
+- ~~160 usos de `Color(hex:)`~~ ✅ CERRADO — 104 colores de datos de usuario (SwiftData), 25 definiciones cacheadas (UIHelpers/WidgetColors), 15 theme defs en YalaTheme, ~16 misc — todos correctos y esperados
+- ~~8 try? aceptables~~ ✅ CERRADO — En realidad son 61: 48 Task.sleep (animation timing), 3 NSRegularExpression (compile-time patterns), 2 AttributedString(markdown:), 1 Tips.configure, 3 FileManager/URL (defer cleanup), 4 otros — todos justificados
 - ~~3 try? sin logging en `SharedContainerService` cleanup~~ ✅ RESUELTO (a8a458e) — do/catch con `#if DEBUG` logging
-- 2 oportunidades Liquid Glass (FilterChipView, ~~SectionBox~~) — SectionBox CERRADO: es contenedor de contenido, no chrome interactivo; `.glassEffect()` es para toolbars/chips/FABs
-- ~~4 `filterAmountInput` duplicados~~ ✅ RESUELTO — 2 duplicados (InboxDraftEditSheet, FavoriteEditorView) delegados a `AmountInputHelper.filterAmountInput()`; los otros 2 (NewTransactionView, TransferAmountInputView) ya delegaban correctamente
+- ~~2 oportunidades Liquid Glass~~ ✅ CERRADO — FilterChipView ya tiene `.glassEffect(.regular.interactive(), in: .capsule)` (falso positivo); SectionBox es contenedor de contenido, no chrome interactivo
+- ~~4 `filterAmountInput` duplicados~~ ✅ RESUELTO — 2 duplicados delegados a `AmountInputHelper.filterAmountInput()`; los otros 2 ya delegaban correctamente
 - ~~3 botones CTA manuales restantes~~ 1 RESUELTO, 2 SKIP — OnboardingView migrado a `YalaPrimaryButton`; ImportResultOverlay usa color condicional (no compatible), InboxDraftEditSheet es botón secundario (outline)
 - ~~`YalaPrimaryButton` sin `.buttonStyle(.plain)`~~ ✅ RESUELTO — `.buttonStyle(.plain)` agregado
-- ~~`"transfer"` stringly-typed en 14 instancias~~ ✅ RESUELTO — `TransactionItem.adjustmentTypeTransfer` definido y aplicado en 17 instancias (10 archivos prod + 3 tests). `#Predicate` en TransferMigrationService usa variable local.
+- ~~`"transfer"` stringly-typed en 14 instancias~~ ✅ RESUELTO — `TransactionItem.adjustmentTypeTransfer` definido y aplicado en 17 instancias
+
+### A11y Batch 1 detalle (53 imágenes marcadas en 14 archivos)
+| Directorio | Archivos | Imágenes marcadas | Tipo |
+|------------|----------|-------------------|------|
+| Planning/ | 9 | 35 | `.accessibilityHidden(true)` en iconos decorativos de formularios, Toggle labels, section headers |
+| Transactions/ | 5 | 18 | `.accessibilityHidden(true)` en iconos decorativos de formularios, detailRow, success view |
+
+### A11y Batches pendientes (follow-up post-merge)
+| Batch | Directorios | Gaps estimados |
+|-------|-------------|----------------|
+| 2 | Panel/ + Records/ | ~47 |
+| 3 | Inbox/ + Categories/ + Shared/ + Voice/ + Accounts/ + Subscription/ | ~68 |
+| 4 | Settings/ + Onboarding/ + Profile/ + restantes | ~139 |
 
 ---
 
@@ -267,6 +280,7 @@ Nota: El aumento en criticos/altos se debe a mayor profundidad del escaneo (3 ag
 | 94b9e0f | refactor: 12 helpers en 3 VMs | Funciones largas en PanelVM, StatisticsVM, AccountFormVM |
 | a8a458e | chore: medium-priority issues | BulkEditSheet LazyVStack, DS fonts, SharedContainerService logging, 22 a11y images |
 | (pending) | chore: close all remaining medium issues | FetchDescriptor predicate, 32 decorative images a11y, documentación 0 medios |
+| (pending) | a11y: add accessibility markers to Planning and Transactions views (53 images) | Batch 1 a11y, close 3 low items (Color(hex:), try?, FilterChipView glass) |
 
 ---
 

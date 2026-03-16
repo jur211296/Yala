@@ -326,6 +326,7 @@ struct NoteFormRow: View {
                 .font(DS.Typography.body)
                 .foregroundStyle(.secondary)
                 .frame(width: DS.FormRow.iconWidth)
+                .accessibilityHidden(true)
 
             TextField(L10n.Transaction.notePlaceholder, text: $note)
                 .font(DS.Typography.body)
