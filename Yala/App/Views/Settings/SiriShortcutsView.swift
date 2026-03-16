@@ -29,6 +29,7 @@ struct SiriShortcutsView: View {
                             .font(DS.Typography.amountLarge)
                             .foregroundStyle(.blue)
                             .padding(.bottom, DS.Spacing.sm)
+                            .accessibilityHidden(true)
 
                         Text(String(localized: "siriShortcuts.title"))
                             .font(.title2.bold())
@@ -75,6 +76,7 @@ struct SiriShortcutsView: View {
                 Image(systemName: "mic.fill")
                     .font(DS.Typography.subheadline).fontWeight(.semibold)
                     .foregroundStyle(.thSecondaryText)
+                    .accessibilityHidden(true)
                 Text(String(localized: "siriShortcuts.siri.title"))
                     .font(DS.Typography.headline)
                     .foregroundStyle(.thSecondaryText)
@@ -88,6 +90,7 @@ struct SiriShortcutsView: View {
                     Image(systemName: "mic.circle.fill")
                         .font(.system(size: siriIconSize))
                         .foregroundStyle(.blue)
+                        .accessibilityHidden(true)
 
                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                         HStack(spacing: DS.Spacing.sm) {
@@ -115,6 +118,7 @@ struct SiriShortcutsView: View {
                         Image(systemName: "lock.fill")
                             .font(DS.Typography.caption)
                             .foregroundStyle(DS.Semantic.warningForeground)
+                            .accessibilityHidden(true)
 
                         Text(String(localized: "siriShortcuts.siri.proNote"))
                             .font(DS.Typography.caption)
@@ -156,6 +160,7 @@ struct SiriShortcutsView: View {
                 Image(systemName: "rectangle.grid.2x2.fill")
                     .font(DS.Typography.subheadline).fontWeight(.semibold)
                     .foregroundStyle(.thSecondaryText)
+                    .accessibilityHidden(true)
                 Text(String(localized: "siriShortcuts.all.title"))
                     .font(DS.Typography.headline)
                     .foregroundStyle(.thSecondaryText)
@@ -228,6 +233,7 @@ struct SiriShortcutsView: View {
                 .font(DS.Typography.subheadline).fontWeight(.medium)
                 .foregroundStyle(.white)
                 .frame(width: 28, height: 28)
+                .accessibilityHidden(true)
                 .background(
                     RoundedRectangle(cornerRadius: 6)
                         .fill(iconColor)
@@ -262,6 +268,7 @@ struct SiriShortcutsView: View {
                 Image(systemName: "questionmark.circle.fill")
                     .font(DS.Typography.subheadline).fontWeight(.semibold)
                     .foregroundStyle(.thSecondaryText)
+                    .accessibilityHidden(true)
                 Text(String(localized: "siriShortcuts.faq.title"))
                     .font(DS.Typography.headline)
                     .foregroundStyle(.thSecondaryText)
@@ -307,6 +314,7 @@ struct SiriShortcutsView: View {
                     Image(systemName: expandedFAQ == item ? "chevron.up" : "chevron.down")
                         .font(DS.Typography.labelSmall)
                         .foregroundStyle(.thSecondaryText)
+                        .accessibilityHidden(true)
                 }
 
                 if expandedFAQ == item {

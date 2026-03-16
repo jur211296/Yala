@@ -170,6 +170,7 @@ struct SecondaryCurrencyPickerSheet: View {
                 Image(systemName: isSelected ? "star.fill" : "star")
                     .font(DS.Typography.title)
                     .foregroundStyle(isSelected ? theme.accent : .secondary)
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)

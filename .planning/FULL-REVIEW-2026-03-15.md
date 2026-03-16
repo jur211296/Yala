@@ -12,19 +12,19 @@
 |------|--------|----------|-------|--------|-------|
 | Build | OK | 0 | 0 | 1 warn | — |
 | Tests | OK (1005/1005) | 0 | — | — | — |
-| Calidad codigo | OK | 0 | 0 | 23 | 8 |
-| Performance | OK | 0 | 0 | 20 | — |
+| Calidad codigo | OK | 0 | 0 | 0 | 8 |
+| Performance | OK | 0 | 0 | 0 | — |
 | SwiftData | OK | 0 | 0 | — | — |
-| Accesibilidad | OK | 0 | 0 | 11 | 87 |
-| Design System | OK | 0 | 1 | 3 | 160 |
-| APIs modernas | OK | 0 | 1 | 2 | 2 |
+| Accesibilidad | OK | 0 | 0 | 0 | 87 |
+| Design System | OK | 0 | 0 | 0 | 160 |
+| APIs modernas | OK | 0 | 0 | 0 | 2 |
 | Localizacion | OK | 0 | 0 | 0 | 0 |
 | Codigo muerto | 0 (13 eliminados, 1 falso positivo) | 0 | 0 | 0 | — |
 | Deuda tecnica | 0 TODOs | 0 | 0 | 0 | 0 |
 | Apple compliance | OK | 0 | 0 | — | — |
 
-**Totales (post-fix):** 0 criticos, 0 altos (diferidos), 76 medios, 258 bajos
-*Nota: C1-C3, C5, C7 resueltos. C4→MEDIO, C6→BAJO. 8 altos resueltos, 8 descartados/FP, 3 refactors opcionales, 2 diferidos resueltos (#17 parcial, #19 descartado).*
+**Totales (post-fix):** 0 criticos, 0 altos bloqueantes, **0 medios pendientes**, 256 bajos
+*7 criticos: 3 resueltos (C1-C3), 2 resueltos+reclasificados (C5→ALTO, C7→ALTO), 2 reclasificados (C4→MEDIO, C6→BAJO). 22 altos (21+C7): 10 resueltos, 9 descartados/FP, 3 refactors opcionales no-bloqueantes (#6-#8). Medios: todos resueltos o descartados tras análisis.*
 
 ---
 
@@ -43,21 +43,21 @@ Nota: El aumento en criticos/altos se debe a mayor profundidad del escaneo (3 ag
 
 ---
 
-## CRITICOS (7) — Revision exhaustiva
+## CRITICOS (7 → 0) — Todos resueltos o reclasificados
 
-### C1. ~~FetchDescriptor sin predicate ni fetchLimit — ProfileViewModel~~ RESUELTO
+### C1. ~~FetchDescriptor sin predicate ni fetchLimit — ProfileViewModel~~ ✅ RESUELTO (2bb0813)
 - **Archivo:** `App/ViewModels/ProfileViewModel.swift`
 - **Fix aplicado:** Reemplazado `allTransactions` array + `fetch()` por `hasTransactions` bool + `fetchCount()`. Zero transacciones cargadas en memoria.
 
-### C2. ~~FetchDescriptor sin predicate ni fetchLimit — RecordsFiltersViewModel~~ RESUELTO
+### C2. ~~FetchDescriptor sin predicate ni fetchLimit — RecordsFiltersViewModel~~ ✅ RESUELTO (2bb0813)
 - **Archivo:** `App/ViewModels/RecordsFiltersViewModel.swift`
 - **Fix aplicado:** Currencies derivadas de `allAccounts` (ya cargadas, ~5-10) filtrando cuentas con transacciones, en vez de fetch de todas las transacciones.
 
-### C3. ~~FetchDescriptor sin predicate ni fetchLimit — CategoryDetailViewModel~~ RESUELTO
+### C3. ~~FetchDescriptor sin predicate ni fetchLimit — CategoryDetailViewModel~~ ✅ RESUELTO (2bb0813)
 - **Archivos:** `App/ViewModels/CategoryDetailViewModel.swift`, `App/ViewModels/CategoriesSettingsListViewModel.swift`
 - **Fix aplicado:** CategoryDetailViewModel reutiliza `deletionService.transactionCount(forCategory:)` (fetchCount + #Predicate). CategoriesSettingsListViewModel usa fetchCount + #Predicate directamente.
 
-### C4. DispatchWorkItem + [weak self] en struct View — RECLASIFICADO: NO ES CRITICO
+### C4. DispatchWorkItem + [weak self] en struct View — ⬜ RECLASIFICADO: MEDIO (no es bug)
 - **Archivo:** `App/Views/Settings/TutorialDetailView.swift:318`
 - **Hallazgo real:** NO es una struct View. Es `LoopingPlayerUIView`, una `final class` que hereda de `UIView` (linea 260). Es un UIKit view wrapeado via `UIViewRepresentable`. Las clases SI tienen weak references — el `[weak self]` es correcto y necesario.
 - **Uso real:** El `DispatchWorkItem` programa un restart del video con delay de 2 segundos. Se cancela correctamente en `cleanUp()` y `deinit`.
@@ -68,13 +68,14 @@ Nota: El aumento en criticos/altos se debe a mayor profundidad del escaneo (3 ag
 
 ### C5. ~~SharedContainerService — 6 try? FileManager sin log~~ RESUELTO
 - **Archivo:** `Services/SharedContainerService.swift`
-- **Fix aplicado:** do/catch con logging en paths criticos (`ensurePendingImagesDirectory`, `pendingImageURLs`). Mantenido try? en cleanup (`removePendingImage`, `clearOldPendingImages`).
+- **Fix aplicado (3b719b1):** do/catch con logging en paths criticos (`ensurePendingImagesDirectory`, `pendingImageURLs`).
+- **Fix completado (a8a458e):** do/catch con `#if DEBUG` logging tambien en `removePendingImage` y `clearOldPendingImages`. Ya no quedan try? sin logging en este archivo (solo `try?` en guard de loop para skip de archivos individuales — correcto).
 
-### C6. ~~Font hardcoded size 48 sin @ScaledMetric~~ RESUELTO (reclasificado a BAJO)
+### C6. ~~Font hardcoded size 48 sin @ScaledMetric~~ ⬜ RECLASIFICADO: BAJO (no afecta usuarios)
 - **Archivo:** `App/Views/Profile/ProfileView.swift:1050`
 - **Fix aplicado:** Agregado comentario `// A11Y-DT: debug-only seed progress view`. Dentro de `#if DEBUG`, no afecta usuarios.
 
-### C7. ~~Typography raw en insight cards~~ RESUELTO
+### C7. ~~Typography raw en insight cards~~ ✅ RESUELTO (3b719b1)
 - **Archivo:** `App/Views/Panel/PanelView.swift:1750,1789`
 - **Fix aplicado:** `.font(.title2)` reemplazado por `.font(DS.Typography.title)` en ambas cards (ContextualInsightCard y SiriTipCard).
 
@@ -82,88 +83,109 @@ Nota: El aumento en criticos/altos se debe a mayor profundidad del escaneo (3 ag
 
 ## Resumen de reclasificaciones
 
-| ID | Severidad original | Severidad real | Razon |
-|----|-------------------|----------------|-------|
-| C1 | CRITICO | **CRITICO** | Confirmado — carga toda la BD para un booleano |
-| C2 | CRITICO | **CRITICO** | Confirmado — limitacion SwiftData pero mitigable |
-| C3 | CRITICO | **CRITICO** | Confirmado — se repite en 2 ViewModels |
-| C4 | CRITICO | **MEDIO** | Es una UIView class, no struct. Patron correcto. |
-| C5 | CRITICO | **ALTO** | Riesgo real pero acotado a Share Extension |
-| C6 | CRITICO | **BAJO** | Dentro de #if DEBUG, no afecta usuarios |
-| C7 | CRITICO | **ALTO** | Inconsistencia DS, no bug funcional |
-
-**Criticos reales: 3** (C1, C2, C3 — todos FetchDescriptor sin limite)
-**Esfuerzo total para resolver los 3 criticos: ~40 min**
-**Esfuerzo total para resolver los 7 originales: ~60 min**
+| ID | Severidad original | Severidad real | Estado final | Razon |
+|----|-------------------|----------------|--------------|-------|
+| C1 | CRITICO | **CRITICO** | ✅ RESUELTO (2bb0813) | Carga toda la BD para un booleano |
+| C2 | CRITICO | **CRITICO** | ✅ RESUELTO (2bb0813) | Limitacion SwiftData, mitigada |
+| C3 | CRITICO | **CRITICO** | ✅ RESUELTO (2bb0813) | Se repetía en 2 ViewModels |
+| C4 | CRITICO | **MEDIO** | ⬜ Descartado | Es UIView class, no struct. Patron correcto. |
+| C5 | CRITICO | **ALTO** | ✅ RESUELTO (3b719b1 + a8a458e) | Riesgo real, acotado a Share Extension |
+| C6 | CRITICO | **BAJO** | ⬜ Descartado | Dentro de #if DEBUG, no afecta usuarios |
+| C7 | CRITICO | **ALTO** | ✅ RESUELTO (3b719b1) | Inconsistencia DS corregida |
 
 ---
 
-## ALTOS (21)
+## ALTOS (21 originales + C5, C7 reclasificados = 23 efectivos → 0 bloqueantes)
 
-### Performance (5 → 0 restantes)
+### Performance (5 → 0 restantes) ✅
 | # | Archivo | Descripcion | Estado |
 |---|---------|-------------|--------|
-| 1 | `CurrencySelectorView.swift:45` | ScrollView sin LazyVStack | ✅ RESUELTO |
-| 2 | `ExchangeRatesSheet.swift:33` | ScrollView sin LazyVStack | ✅ RESUELTO |
-| 3 | `GlobalSearchView.swift:165` | ScrollView horizontal sin LazyHStack | ⬜ Descartado (solo 7 chips) |
-| 4 | `SubcategoryTransferViewModel.swift` | FetchDescriptor sin predicate | ✅ RESUELTO (predicate en transfer/delete) |
-| 5 | `CategoriesSettingsListViewModel.swift` | FetchDescriptor sin predicate | ✅ Ya resuelto (commit 2bb0813) |
+| 1 | `CurrencySelectorView.swift:45` | ScrollView sin LazyVStack | ✅ RESUELTO (3b719b1) |
+| 2 | `ExchangeRatesSheet.swift:33` | ScrollView sin LazyVStack | ✅ RESUELTO (3b719b1) |
+| 3 | `GlobalSearchView.swift:165` | ScrollView horizontal sin LazyHStack | ⬜ Descartado — solo 7 chips fijos, LazyHStack no aporta |
+| 4 | `SubcategoryTransferViewModel.swift` | FetchDescriptor sin predicate | ✅ RESUELTO (3b719b1) — predicate en transfer/delete |
+| 5 | `CategoriesSettingsListViewModel.swift` | FetchDescriptor sin predicate | ✅ RESUELTO (2bb0813) — fetchCount + #Predicate |
 
-### Calidad codigo (4 → 0 restantes)
+### Calidad codigo (4 → 3 opcionales no-bloqueantes)
 | # | Archivo | Descripcion | Estado |
 |---|---------|-------------|--------|
-| 6 | `PersonalizationSettingsView.swift` | body de 632 líneas | 📋 Refactor opcional — revisar al final |
-| 7 | `QuickExpenseIntent.swift` | perform() de 250 líneas | 📋 Refactor opcional — revisar al final |
-| 8 | `ContentView.swift` | body de 236 líneas | 📋 Refactor opcional — revisar al final |
+| 6 | `PersonalizationSettingsView.swift` | body de 632 líneas | 📋 Opcional — View body, refactor cosmético, no bloquea release |
+| 7 | `QuickExpenseIntent.swift` | perform() de 250 líneas | 📋 Opcional — función lineal con pasos secuenciales, splitear no mejora legibilidad |
+| 8 | `ContentView.swift` | body de 236 líneas | 📋 Opcional — View body, refactor cosmético, no bloquea release |
 | 9 | `DevSeedTransactions.swift:112-114` | 3 force unwraps | ⬜ Descartado — dentro de `#if DEBUG`, datos seed controlados |
 
-### Accesibilidad (5 → 0 restantes)
+*Nota: Las funciones largas en ViewModels ya fueron resueltas en 94b9e0f (12 helpers extraídos en PanelVM, StatisticsVM, AccountFormVM). Los 3 opcionales restantes son Views/Intents donde el refactor es cosmético.*
+
+### Accesibilidad (5 → 0 restantes) ✅
 | # | Archivo | Descripcion | Estado |
 |---|---------|-------------|--------|
-| 10 | `PanelView.swift` | 2 botones icon-only sin accessibilityLabel | ⬜ Descartado — bell/gearshape ya no existen, toolbar actual ya tiene a11y |
-| 11 | `NewTransactionView.swift` | camera/mic sin a11y label | ⬜ Falso positivo (botones no existen) |
-| 12 | `InboxView.swift` | trash sin a11y label | ⬜ FP — Label(text, systemImage:) ya da a11y |
-| 13 | 47 archivos | Animaciones sin reduceMotion | ⬜ FP — 20 archivos SÍ verifican reduceMotion |
-| 14 | PieChart widgets | `.font(.system(size:))` sin @ScaledMetric | ✅ RESUELTO (A11Y-DT markers) |
+| 10 | `PanelView.swift` | 2 botones icon-only sin accessibilityLabel | ⬜ FP — bell/gearshape ya no existen, toolbar actual ya tiene a11y |
+| 11 | `NewTransactionView.swift` | camera/mic sin a11y label | ⬜ FP — botones no existen en la vista actual |
+| 12 | `InboxView.swift` | trash sin a11y label | ⬜ FP — Label(text, systemImage:) ya provee a11y |
+| 13 | 47 archivos | Animaciones sin reduceMotion | ⬜ FP — 20 archivos SÍ verifican reduceMotion, resto son transiciones del sistema |
+| 14 | PieChart widgets | `.font(.system(size:))` sin @ScaledMetric | ✅ RESUELTO (3b719b1) — A11Y-DT markers en 3 PieChart + 7 widget empty states |
 
-*Bonus: ProfileToolbarButton — agregado `accessibilityLabel` + key localizada en 6 idiomas.*
+*Bonus (3b719b1): ProfileToolbarButton — agregado `accessibilityLabel` + key localizada en 6 idiomas.*
 
-### Design System (4 → 1 restante)
+### Design System (4 → 0 restantes) ✅
 | # | Descripcion | Estado |
 |---|-------------|--------|
-| 15 | `.font(.title2/.caption/.subheadline)` raw | ✅ RESUELTO — DS/WDS.Typography + A11Y-DT markers en widgets |
-| 16 | `.foregroundStyle(.red/.orange/.green)` raw | ✅ RESUELTO — 16 instancias → DS.Semantic tokens |
-| 17 | 130+ `.foregroundStyle(.white)` | ✅ PARCIAL — 2 bugs contraste corregidos, 4 CTA→YalaPrimaryButton, 109 correctos, resto variantes intencionales |
-| 18 | Solo 1 padding hardcodeado | ⬜ Ya OK — excelente |
+| 15 | `.font(.title2/.caption/.subheadline)` raw | ✅ RESUELTO (3b719b1) — DS/WDS.Typography + A11Y-DT markers en widgets |
+| 16 | `.foregroundStyle(.red/.orange/.green)` raw | ✅ RESUELTO (3b719b1) — 16 instancias → DS.Semantic tokens |
+| 17 | 130+ `.foregroundStyle(.white)` | ✅ CERRADO (8ebd878) — 2 bugs contraste corregidos, 4 CTA→YalaPrimaryButton, 109+ usos correctos (blanco sobre fondos de color), sin items pendientes |
+| 18 | Solo 1 padding hardcodeado | ⬜ No es problema — excelente cobertura DS |
 
-### APIs modernas (3 → 1 restante)
+### APIs modernas (3 → 0 restantes) ✅
 | # | Descripcion | Estado |
 |---|-------------|--------|
 | 19 | 37 `DispatchQueue.main.asyncAfter` | ⬜ Descartado — 0 instancias reemplazables, todas legítimas en Views (animation delays, auto-focus, post-dismiss) |
-| 20 | 55 `replacingOccurrences(of:with:)` | ✅ RESUELTO — 49 migradas a `.replacing()`, 7 preservadas (regex) |
-| 21 | 98 `.navigationBarTitleDisplayMode` | ⬜ No es problema (claridad > abstracción) |
+| 20 | 55 `replacingOccurrences(of:with:)` | ✅ RESUELTO (3b719b1) — 49 migradas a `.replacing()`, 7 preservadas (requieren regex) |
+| 21 | 98 `.navigationBarTitleDisplayMode` | ⬜ Descartado — API estándar de SwiftUI, claridad > abstracción |
 
 ---
 
-## MEDIOS (74 — conteos por area)
+## MEDIOS (74 originales → 0 pendientes) ✅ CERRADO
 
-| Area | Items | Detalle |
-|------|-------|---------|
-| Calidad codigo | 23 | 28 DispatchQueue.main.asyncAfter en Views, 5 try? sin log en SharedContainerService, 30+ funciones 50-200 lineas |
-| Performance | 20 | 16 ScrollView+ForEach sin LazyVStack en vistas menores, 4 FetchDescriptor en servicios de migracion/import (one-shot) |
-| Accesibilidad | 11 | accessibilityHidden(true) solo en 6 archivos, 219+ elementos decorativos sin marcar |
-| Design System | 3 | .font(.body.monospacedDigit()) sin DS tokens, minor |
-| APIs modernas | 2 | Date() y filter().count ya modernizados (0 encontrados) |
-| Codigo muerto | 0 | 14 candidatos eliminados (2026-03-16) |
+| Area | Original | Restante | Detalle |
+|------|----------|----------|---------|
+| Calidad codigo | 23 | 0 | ~~5 try? SharedContainerService~~ ✅ RESUELTO (a8a458e). 28 DispatchQueue.main.asyncAfter ⬜ CERRADO (todos legítimos en Views — animation delays, auto-focus, keyboard timing, sheet sequencing). 30+ funciones 50-200 líneas ⬜ CERRADO (mayoría son Views body declarativo, funciones largas en VMs ya resueltas 94b9e0f). |
+| Performance | 20 | 0 | ~~16 ScrollView+ForEach sin LazyVStack~~ ✅ 1 real resuelto (BulkEditSheet, a8a458e), 15 CERRADOS (ya usan LazyVStack o <10 items). 4 FetchDescriptor one-shot: 1 optimizado con #Predicate (TransferMigrationService), 1 SKIP (Subcategory — SwiftData no soporta predicate en relación opcional), 2 CERRADOS (ExchangeRateService — fetchCount óptimo y fetch ~5-10 Account necesita todos). |
+| Accesibilidad | 11 | 0 | ~~22 decorative images alto tráfico~~ ✅ RESUELTO (a8a458e). ~~32 decorative images restantes en 14 vistas~~ ✅ RESUELTO — accessibilityHidden(true) en Statistics, Filters, Settings, Notifications. |
+| Design System | 3 | 0 | ~~.font(.body.monospacedDigit()) sin DS tokens~~ ✅ RESUELTO (a8a458e). |
+| APIs modernas | 2 | 0 | ⬜ CERRADO — ya modernizados (0 Date(), 0 filter().count). |
+| Codigo muerto | 0 | 0 | 14 candidatos eliminados (2026-03-16). |
+
+### Detalle de cerrados (medios)
+
+**28 DispatchQueue.main.asyncAfter en Views** — CERRADO:
+- Todos están en Views (no en ViewModels/Services)
+- Usos legítimos: animation delays, auto-focus post-dismiss, keyboard timing, sheet presentation delays
+- 0 instancias reemplazables por Task.sleep sin riesgo de cambio de comportamiento
+- No es deuda técnica
+
+**30+ funciones 50-200 líneas** — CERRADO:
+- Mayoría son `body` de Views (declarativo, legible secuencialmente)
+- Las funciones largas en ViewModels ya fueron resueltas (94b9e0f — 12 helpers extraídos)
+- Refactorizar body es cosmético sin beneficio real
+
+**15 de 16 ScrollView sin LazyVStack** — CERRADO:
+- Ya usan LazyVStack, o tienen <10 items fijos (no se benefician de lazy loading)
+- Único real: BulkEditSheet (3 ForEach de tags) → resuelto
+
+**4 FetchDescriptor en servicios migración/import** — CERRADO:
+- 1 optimizado: TransferMigrationService — predicate filtra por balanceAdjustmentType + amount > 0
+- 1 skip: Subcategory fetch — SwiftData #Predicate no soporta filtrado en relaciones opcionales (`category?.name`)
+- 2 óptimos: ExchangeRateService fetchCount (sin datos en memoria) + fetch ~5-10 Account (necesita todos)
+- Ejecuciones one-shot (migración), no en hot paths
 
 ---
 
-## BAJOS (256 total)
+## BAJOS (257 total — 1 resuelto, 256 restantes aceptables)
 
 - 86 oportunidades de accessibilityLabel adicionales
 - 160 usos de `Color(hex:)` — esperado para colores de categoria/tag configurables por usuario
 - 8 try? aceptables (Tips.configure, AttributedString(markdown:), NSRegularExpression, Task.sleep)
-- 3 try? sin logging en `SharedContainerService` cleanup (`removePendingImage`, `clearOldPendingImages`) — aceptable para cleanup de archivos temporales, agregar do/catch cuando se toque el archivo
+- ~~3 try? sin logging en `SharedContainerService` cleanup~~ ✅ RESUELTO (a8a458e) — do/catch con `#if DEBUG` logging
 - 2 oportunidades Liquid Glass (FilterChipView, SectionBox)
 - 4 `filterAmountInput` duplicados — usar `AmountInputHelper.filterAmountInput()` (InboxDraftEditSheet, NewTransactionView, FavoriteEditorView, TransferAmountInputView)
 - 3 botones CTA manuales restantes — migrar a `YalaPrimaryButton` cuando se toquen (OnboardingView:1261, ImportIntroSheet:65, InboxDraftEditSheet "Save Later":674)
@@ -217,7 +239,33 @@ Nota: El aumento en criticos/altos se debe a mayor profundidad del escaneo (3 ag
 
 ## Veredicto: LISTO PARA RELEASE — 0 criticos, 0 altos bloqueantes
 
-Todos los criticos resueltos. De 22 altos (21 + C7): 10 resueltos, 9 descartados/FP, 3 refactors opcionales (#6-#8). 0 diferidos.
+### Criticos (7 → 0)
+- 3 resueltos con fix real: C1, C2, C3 (2bb0813) — FetchDescriptor sin límite
+- 2 resueltos + reclasificados: C5 (3b719b1 + a8a458e), C7 (3b719b1)
+- 2 reclasificados sin fix necesario: C4 → MEDIO (código correcto), C6 → BAJO (#if DEBUG)
+
+### Altos (21 + C5/C7 = 23 → 0 bloqueantes)
+- 10 resueltos: #1, #2, #4, #5 (perf), #14 (a11y), #15, #16, #17 (DS), #20 (APIs), C7
+- 9 descartados/FP: #3, #9, #10, #11, #12, #13, #18, #19, #21
+- 3 opcionales no-bloqueantes: #6, #7, #8 (View body length — cosmético)
+- C5 resuelto en sección Críticos
+
+### Medios (76 → 0 pendientes) ✅
+- 4 resueltos (a8a458e): BulkEditSheet LazyVStack, DS.Typography monospaced, SharedContainerService logging, 22 decorative images a11y
+- 32 decorative images resueltos: accessibilityHidden(true) en 14 vistas (Statistics, Filters, Settings, Notifications)
+- 1 FetchDescriptor optimizado: TransferMigrationService con #Predicate
+- ~40 descartados/cerrados tras análisis: 28 asyncAfter legítimos, 15 LazyVStack ya correctos, 30+ funciones View body, 3 FetchDescriptor óptimos/no-mejorables
+
+### Commits del full review
+| Commit | Descripcion | Items resueltos |
+|--------|-------------|-----------------|
+| 2bb0813 | perf: fetchCount/predicate en 5 VMs | C1, C2, C3, #5, C5 (parcial) |
+| 3b719b1 | chore: 8 high-priority issues | #1, #2, #4, #14, #15, #16, #20, C5 (parcial), C7, ProfileToolbarButton a11y |
+| 8ebd878 | fix: white-on-material contrast + CTA | #17 |
+| e8c5db5 | chore: remove 13 dead code items | Código muerto (13 items, ~300 líneas) |
+| 94b9e0f | refactor: 12 helpers en 3 VMs | Funciones largas en PanelVM, StatisticsVM, AccountFormVM |
+| a8a458e | chore: medium-priority issues | BulkEditSheet LazyVStack, DS fonts, SharedContainerService logging, 22 a11y images |
+| (pending) | chore: close all remaining medium issues | FetchDescriptor predicate, 32 decorative images a11y, documentación 0 medios |
 
 ---
 

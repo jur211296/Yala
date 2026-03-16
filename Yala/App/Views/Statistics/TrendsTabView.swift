@@ -971,6 +971,7 @@ struct TrendsTabView: View {
             Image(systemName: "doc.text.magnifyingglass")
                 .font(DS.Typography.title)
                 .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
             Text(L10n.Records.noRecords)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
