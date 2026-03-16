@@ -685,7 +685,7 @@ struct BulkAmountEditorSheet: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaSaveButton {
-                        if let value = Double(amountText.replacingOccurrences(of: ",", with: ".")) {
+                        if let value = Double(amountText.replacing(",", with: ".")) {
                             amount = value
                             onSave()
                         }

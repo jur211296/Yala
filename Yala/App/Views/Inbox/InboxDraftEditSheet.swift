@@ -90,7 +90,7 @@ struct InboxDraftEditSheet: View {
     // MARK: - Computed
 
     private var amount: Double? {
-        Double(amountString.replacingOccurrences(of: ",", with: "."))
+        Double(amountString.replacing(",", with: "."))
     }
 
     private var isReadyToApprove: Bool {
@@ -476,7 +476,7 @@ struct InboxDraftEditSheet: View {
                     if !isFocused {
                         if amountString.isEmpty {
                             amountString = "0.00"
-                        } else if let amt = Double(amountString.replacingOccurrences(of: ",", with: ".")) {
+                        } else if let amt = Double(amountString.replacing(",", with: ".")) {
                             amountString = String(format: "%.2f", abs(amt))
                         }
                     }

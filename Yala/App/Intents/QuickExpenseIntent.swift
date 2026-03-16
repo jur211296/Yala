@@ -901,16 +901,16 @@ struct ApplePayTransactionIntent: AppIntent {
         if cleaned.contains(",") {
             if !cleaned.contains(".") {
                 // Only comma: 25,50 -> 25.50
-                cleaned = cleaned.replacingOccurrences(of: ",", with: ".")
+                cleaned = cleaned.replacing(",", with: ".")
             } else if let commaIndex = cleaned.lastIndex(of: ","),
                       let dotIndex = cleaned.lastIndex(of: "."),
                       commaIndex > dotIndex {
                 // Comma after dot: 1.234,56 -> 1234.56
-                cleaned = cleaned.replacingOccurrences(of: ".", with: "")
-                cleaned = cleaned.replacingOccurrences(of: ",", with: ".")
+                cleaned = cleaned.replacing(".", with: "")
+                cleaned = cleaned.replacing(",", with: ".")
             } else {
                 // Dot after comma: 1,234.56 -> 1234.56 (US format with thousands separator)
-                cleaned = cleaned.replacingOccurrences(of: ",", with: "")
+                cleaned = cleaned.replacing(",", with: "")
             }
         }
 

@@ -22,7 +22,7 @@ struct FilterBlockedPopover: ViewModifier {
                     HStack {
                         Image(systemName: "lock.fill")
                             .font(DS.Typography.labelSmall)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(DS.Semantic.warningForeground)
                         Text(title)
                             .font(DS.Typography.labelSmall)
                             .foregroundStyle(.primary)

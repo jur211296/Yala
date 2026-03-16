@@ -167,7 +167,7 @@ struct ScheduledPaymentsWidgetView: View {
                     Spacer()
                     VStack(spacing: WDS.Spacing.xs) {
                         Image(systemName: "checkmark.circle")
-                            .font(.title2)
+                            .font(.title2) // A11Y-DT: widget empty state icon
                             .foregroundStyle(WidgetColors.success)
                         Text("widget.ui.noPayments", bundle: .main)
                             .font(WDS.Typography.body)

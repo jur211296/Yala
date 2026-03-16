@@ -116,11 +116,10 @@ final class SubcategoryTransferViewModel {
         guard let context = modelContext else { return }
         let sourceID = source.persistentModelID
 
-        let descriptor = FetchDescriptor<TransactionItem>()
-        let allTransactions = try context.fetch(descriptor)
-        let transactionsToTransfer = allTransactions.filter {
-            $0.subcategory?.persistentModelID == sourceID
-        }
+        let descriptor = FetchDescriptor<TransactionItem>(
+            predicate: #Predicate<TransactionItem> { $0.subcategory?.persistentModelID == sourceID }
+        )
+        let transactionsToTransfer = try context.fetch(descriptor)
 
         for transaction in transactionsToTransfer {
             transaction.subcategory = destination
@@ -138,11 +137,10 @@ final class SubcategoryTransferViewModel {
         guard let context = modelContext else { return }
         let sourceID = subcategory.persistentModelID
 
-        let descriptor = FetchDescriptor<TransactionItem>()
-        let allTransactions = try context.fetch(descriptor)
-        let transactionsToDelete = allTransactions.filter {
-            $0.subcategory?.persistentModelID == sourceID
-        }
+        let descriptor = FetchDescriptor<TransactionItem>(
+            predicate: #Predicate<TransactionItem> { $0.subcategory?.persistentModelID == sourceID }
+        )
+        let transactionsToDelete = try context.fetch(descriptor)
 
         for transaction in transactionsToDelete {
             context.delete(transaction)

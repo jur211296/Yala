@@ -270,7 +270,7 @@ struct SubcategoriesPieWidget: View {
                     .frame(width: iconSize, height: iconSize)
 
                 Image(systemName: item.iconName)
-                    .font(.system(size: fontSize, weight: .bold))
+                    .font(.system(size: fontSize, weight: .bold)) // A11Y-DT: fixed-layout pie chart icon bubble
                     .foregroundStyle(.white)
             }
             .position(x: bubbleX, y: bubbleY)

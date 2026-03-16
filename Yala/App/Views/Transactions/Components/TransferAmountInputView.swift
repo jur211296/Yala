@@ -72,7 +72,7 @@ struct TransferAmountInputView: View {
                     if !isFocused {
                         if viewModel.amountString.isEmpty {
                             viewModel.amountString = "0.00"
-                        } else if let amount = Double(viewModel.amountString.replacingOccurrences(of: ",", with: ".")) {
+                        } else if let amount = Double(viewModel.amountString.replacing(",", with: ".")) {
                             viewModel.amountString = String(format: "%.2f", amount)
                         }
                     }
@@ -119,7 +119,7 @@ struct TransferAmountInputView: View {
                         if destinationAmountString.isEmpty {
                             destinationAmountString = "0.00"
                         } else if let amount = Double(
-                            destinationAmountString.replacingOccurrences(of: ",", with: "."))
+                            destinationAmountString.replacing(",", with: "."))
                         {
                             destinationAmountString = String(format: "%.2f", amount)
                         }
@@ -140,7 +140,7 @@ struct TransferAmountInputView: View {
                         }
 
                         if let amount = Double(
-                            filtered.replacingOccurrences(of: ",", with: ".")), amount > 0
+                            filtered.replacing(",", with: ".")), amount > 0
                         {
                             viewModel.destinationAmount = amount
                             viewModel.updateExchangeRateFromDestination()
@@ -185,7 +185,7 @@ struct TransferAmountInputView: View {
         .onChange(of: exchangeRateString) { _, newValue in
             // Only sync to model if USER IS editing it
             if isRateFieldFocused {
-                if let rateInput = Double(newValue.replacingOccurrences(of: ",", with: ".")),
+                if let rateInput = Double(newValue.replacing(",", with: ".")),
                     rateInput > 0
                 {
                     let internalRate = isRateInverted ? (1.0 / rateInput) : rateInput

@@ -394,7 +394,7 @@ struct RecordsStandaloneView: View {
                 } label: {
                     Image(systemName: "trash")
                         .font(DS.Typography.title)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(DS.Semantic.errorForeground)
                         .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                 }
                 .accessibilityLabel(L10n.Action.delete)

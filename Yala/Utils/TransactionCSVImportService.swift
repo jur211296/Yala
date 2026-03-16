@@ -348,8 +348,8 @@ enum TransactionCSVImportService {
             }
 
             // Si la línea solo contiene delimitadores y espacios, la ignoramos
-            let contentWithoutDelimiters = trimmedLine.replacingOccurrences(
-                of: String(delimiter), with: ""
+            let contentWithoutDelimiters = trimmedLine.replacing(
+                String(delimiter), with: ""
             )
             .trimmingCharacters(in: .whitespaces)
             if contentWithoutDelimiters.isEmpty {
@@ -898,8 +898,8 @@ enum TransactionCSVImportService {
         }
 
         // Eliminamos posibles separadores de miles de la parte entera.
-        integerPart = integerPart.replacingOccurrences(of: ",", with: "")
-        integerPart = integerPart.replacingOccurrences(of: ".", with: "")
+        integerPart = integerPart.replacing(",", with: "")
+        integerPart = integerPart.replacing(".", with: "")
 
         if fractionalPart.isEmpty {
             return sign + integerPart
@@ -1226,7 +1226,7 @@ enum TransactionCSVImportService {
             if !trimmedLine.contains(String(delimiter)) { continue }
 
             let contentWithoutDelimiters = trimmedLine
-                .replacingOccurrences(of: String(delimiter), with: "")
+                .replacing(String(delimiter), with: "")
                 .trimmingCharacters(in: .whitespaces)
             if contentWithoutDelimiters.isEmpty { continue }
 

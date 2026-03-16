@@ -576,7 +576,7 @@ struct NewTransactionView: View {
                         } else {
                             let sep = Locale.current.decimalSeparator ?? "."
                             viewModel.amountString = String(format: "%.2f", viewModel.amount)
-                                .replacingOccurrences(of: ".", with: sep)
+                                .replacing(".", with: sep)
                         }
                     }
                 }
@@ -1111,7 +1111,7 @@ struct NewTransactionView: View {
             accountName: account?.name ?? L10n.Transaction.account,
             accountColorHex: account?.colorHex ?? AppConstants.defaultColorHex,
             note: viewModel.note,
-            amount: Decimal(string: viewModel.amountString.replacingOccurrences(of: Locale.current.decimalSeparator ?? ".", with: ".")) ?? 0,
+            amount: Decimal(string: viewModel.amountString.replacing(Locale.current.decimalSeparator ?? ".", with: ".")) ?? 0,
             currencyCode: viewModel.effectiveCurrencyCode,
             subcategoryName: viewModel.selectedSubcategory?.name,
             subcategoryColorHex: viewModel.selectedSubcategory?.colorHex,

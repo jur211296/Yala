@@ -58,7 +58,7 @@ func parseDecimal(from raw: String) -> Decimal? {
     var numericPart = String(String.UnicodeScalarView(filteredScalars))
     
     // Quitamos espacios intermedios
-    numericPart = numericPart.replacingOccurrences(of: " ", with: "")
+    numericPart = numericPart.replacing(" ", with: "")
     
     // Si después de filtrar no queda nada, es inválido
     if numericPart.isEmpty {
@@ -100,8 +100,8 @@ func parseDecimal(from raw: String) -> Decimal? {
     } else {
         // No hay separador decimal, solo dígitos y quizá separadores de miles inconsistentes
         // Eliminamos puntos y comas por seguridad
-        normalized = numericPart.replacingOccurrences(of: ".", with: "")
-        normalized = normalized.replacingOccurrences(of: ",", with: "")
+        normalized = numericPart.replacing(".", with: "")
+        normalized = normalized.replacing(",", with: "")
     }
     
     // 7. Crear Decimal a partir de la cadena normalizada

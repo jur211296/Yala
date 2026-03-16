@@ -79,7 +79,7 @@ struct BalanceCalculatorSheet: View {
     // MARK: - Computed Balances
 
     private func parseAmount(_ text: String) -> Double {
-        Double(text.replacingOccurrences(of: ",", with: ".")) ?? 0
+        Double(text.replacing(",", with: ".")) ?? 0
     }
 
     private var generalTotal: Double {

@@ -714,7 +714,7 @@ struct NeedTrendChartView: View {
         case .day, .week: formatter = Self.fullDayFormatter
         case .month: formatter = Self.fullMonthFormatter
         }
-        return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
+        return formatter.string(from: date).lowercased().replacing(".", with: "")
     }
 
     struct TooltipRow: View {

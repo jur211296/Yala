@@ -151,7 +151,7 @@ struct InboxDraftRowView: View {
                     Text("\(Int(confidence * 100))%")
                         .font(DS.Typography.captionSmall)
                 }
-                .foregroundStyle(.orange)
+                .foregroundStyle(DS.Semantic.warningForeground)
             }
         }
     }

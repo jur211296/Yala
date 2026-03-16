@@ -124,7 +124,7 @@ struct CategoriesSettingsListView: View {
                             } label: {
                                 Image(systemName: "minus.circle.fill")
                                     .font(DS.Typography.title)
-                                    .foregroundStyle(.red)
+                                    .foregroundStyle(DS.Semantic.errorForeground)
                             }
                             .accessibilityLabel(L10n.Accessibility.deleteCategory)
                             .padding(.leading, DS.Spacing.lg)
@@ -184,7 +184,7 @@ struct CategoriesSettingsListView: View {
                             } label: {
                                 Image(systemName: "minus.circle.fill")
                                     .font(DS.Typography.title)
-                                    .foregroundStyle(.red)
+                                    .foregroundStyle(DS.Semantic.errorForeground)
                             }
                             .accessibilityLabel(L10n.Accessibility.deleteCategory)
                             .padding(.leading, DS.Spacing.lg)

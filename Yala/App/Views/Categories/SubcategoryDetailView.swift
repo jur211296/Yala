@@ -306,7 +306,7 @@ struct SubcategoryDetailView: View {
                         HStack {
                             Spacer()
                             Text(L10n.Subcategory.delete)
-                                .foregroundStyle(.red)
+                                .foregroundStyle(DS.Semantic.errorForeground)
                             Spacer()
                         }
                         .padding()

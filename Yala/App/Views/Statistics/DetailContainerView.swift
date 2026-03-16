@@ -578,7 +578,7 @@ struct DetailContainerView: View {
                 } label: {
                     Image(systemName: "trash")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(DS.Semantic.errorForeground)
                         .frame(width: 44, height: 44)
                 }
                 .accessibilityLabel(L10n.Action.delete)

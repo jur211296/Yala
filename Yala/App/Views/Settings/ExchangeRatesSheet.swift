@@ -31,7 +31,7 @@ struct ExchangeRatesSheet: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: DS.Spacing.lg) {
+                    LazyVStack(spacing: DS.Spacing.lg) {
                         ForEach(availableCurrencies, id: \.continent) { group in
                             SectionBox(title: group.continent.localizedName) {
                                 VStack(spacing: DS.Spacing.none) {

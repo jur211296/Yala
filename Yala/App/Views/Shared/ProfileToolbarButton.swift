@@ -52,6 +52,7 @@ struct ProfileToolbarButton: View {
             }
         }
         .coachMarkAnchor("profile")
+        .accessibilityLabel(L10n.Accessibility.profile)
     }
 
     // MARK: - Avatar

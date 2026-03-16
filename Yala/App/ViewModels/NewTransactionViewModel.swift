@@ -113,8 +113,8 @@ final class NewTransactionViewModel {
 
     /// Monto como Double
     var amount: Double {
-        let normalized = amountString.replacingOccurrences(
-            of: Locale.current.decimalSeparator ?? ".", with: "."
+        let normalized = amountString.replacing(
+            Locale.current.decimalSeparator ?? ".", with: "."
         )
         return Double(normalized) ?? 0.0
     }

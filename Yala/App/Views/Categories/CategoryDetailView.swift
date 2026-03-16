@@ -267,7 +267,7 @@ struct CategoryDetailView: View {
                         HStack {
                             Spacer()
                             Text(L10n.Category.delete)
-                                .foregroundStyle(.red)
+                                .foregroundStyle(DS.Semantic.errorForeground)
                             Spacer()
                         }
                         .padding()
@@ -322,7 +322,7 @@ struct CategoryDetailView: View {
                                         } label: {
                                             Image(systemName: "minus.circle.fill")
                                                 .font(DS.Typography.title)
-                                                .foregroundStyle(.red)
+                                                .foregroundStyle(DS.Semantic.errorForeground)
                                         }
                                         .accessibilityLabel(L10n.Accessibility.deleteSubcategory)
                                         .padding(.leading, DS.Spacing.lg)
@@ -400,7 +400,7 @@ struct CategoryDetailView: View {
                                     } label: {
                                         Image(systemName: "minus.circle.fill")
                                             .font(DS.Typography.title)
-                                            .foregroundStyle(.red)
+                                            .foregroundStyle(DS.Semantic.errorForeground)
                                     }
                                     .accessibilityLabel(L10n.Accessibility.deleteSubcategory)
                                     .padding(.leading, DS.Spacing.lg)

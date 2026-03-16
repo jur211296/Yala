@@ -334,7 +334,7 @@ struct MediumBalanceView: View {
                 // Empty state
                 VStack(spacing: WDS.Spacing.xs) {
                     Image(systemName: "chart.line.uptrend.xyaxis")
-                        .font(.title2)
+                        .font(.title2) // A11Y-DT: widget empty state icon
                         .foregroundStyle(.tertiary)
                     Text("widget.ui.noData", bundle: .main)
                         .font(WDS.Typography.tiny)

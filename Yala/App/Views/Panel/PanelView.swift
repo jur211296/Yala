@@ -1747,7 +1747,7 @@ private struct ContextualInsightCard: View {
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "sparkles")
-                .font(.title2)
+                .font(DS.Typography.title)
                 .foregroundStyle(.tint)
                 .frame(width: 36, height: 36)
 
@@ -1786,7 +1786,7 @@ private struct SiriTipCard: View {
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "mic.badge.plus")
-                .font(.title2)
+                .font(DS.Typography.title)
                 .foregroundStyle(.tint)
                 .frame(width: 36, height: 36)
 

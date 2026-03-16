@@ -1444,6 +1444,7 @@
 "accessibility.proFeature" = "Requer assinatura Pro";
 "accessibility.noActiveAccounts" = "Sem contas ativas disponíveis";
 "accessibility.noInactiveBudgets" = "Sem orçamentos inativos para restaurar";
+"accessibility.profile" = "Perfil";
 
 // MARK: - Widget Hints
 

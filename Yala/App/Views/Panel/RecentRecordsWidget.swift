@@ -213,7 +213,7 @@ struct RecentRecordsWidget: View {
         }
 
         // Then date (instead of account)
-        let dateStr = Self.secondaryDateFormatter.string(from: record.date).replacingOccurrences(of: ".", with: "")
+        let dateStr = Self.secondaryDateFormatter.string(from: record.date).replacing(".", with: "")
         parts.append(dateStr)
 
         return parts.joined(separator: " • ")
@@ -226,7 +226,7 @@ struct RecentRecordsWidget: View {
     }
 
     private func shortDateFormat(_ date: Date) -> String {
-        Self.shortDateFormatter.string(from: date).replacingOccurrences(of: ".", with: "")
+        Self.shortDateFormatter.string(from: date).replacing(".", with: "")
     }
 
     private func formattedAmount(_ value: Double, currencyCode: String) -> String {

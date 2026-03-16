@@ -647,6 +647,7 @@ enum L10n {
         static var proFeature: String { ls("accessibility.proFeature", comment: "") }
         static var noActiveAccounts: String { ls("accessibility.noActiveAccounts", comment: "") }
         static var noInactiveBudgets: String { ls("accessibility.noInactiveBudgets", comment: "") }
+        static var profile: String { ls("accessibility.profile", comment: "") }
     }
 
     // MARK: - Search

@@ -423,7 +423,7 @@ struct VoiceRecordingView: View {
         VStack(spacing: DS.Spacing.md) {
             Text(message)
                 .font(DS.Typography.caption)
-                .foregroundStyle(.red)
+                .foregroundStyle(DS.Semantic.errorForeground)
                 .multilineTextAlignment(.center)
 
             // Action buttons based on error type

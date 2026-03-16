@@ -97,7 +97,7 @@ struct AccessoryBalanceWidgetView: View {
     var body: some View {
         VStack(spacing: 0) {
             Image(systemName: "creditcard.fill")
-                .font(.caption)
+                .font(WDS.Typography.subtitle)
             Text(formatCompact(entry.amount))
                 .font(.system(.title3, design: .rounded).bold())
                 .minimumScaleFactor(0.5)
@@ -172,7 +172,7 @@ struct AccessoryExpenseWidgetView: View {
     var body: some View {
         VStack(spacing: 0) {
             Image(systemName: "arrow.down.circle.fill")
-                .font(.caption)
+                .font(WDS.Typography.subtitle)
             Text(formatCompact(entry.expense))
                 .font(.system(.title3, design: .rounded).bold())
                 .minimumScaleFactor(0.5)
@@ -368,7 +368,7 @@ struct AccessoryNextPaymentWidgetView: View {
                         Text("·")
                             .foregroundStyle(.secondary)
                         Text(relativeDateLabel(for: entry.nextDueDate, isOverdue: entry.isOverdue))
-                            .font(.caption)
+                            .font(WDS.Typography.body)
                             .foregroundStyle(.secondary)
                     }
                     .lineLimit(1)

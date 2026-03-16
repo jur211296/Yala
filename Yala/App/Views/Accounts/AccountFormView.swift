@@ -408,7 +408,7 @@ struct AccountFormView: View {
                             // When field loses focus, format if has value
                             if !isFocused && !viewModel.balanceText.isEmpty {
                                 if let amount = Double(
-                                    viewModel.balanceText.replacingOccurrences(of: ",", with: "."))
+                                    viewModel.balanceText.replacing(",", with: "."))
                                 {
                                     viewModel.balanceText = String(format: "%.2f", amount)
                                 }

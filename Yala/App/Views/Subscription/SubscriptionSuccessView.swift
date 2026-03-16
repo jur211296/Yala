@@ -120,7 +120,7 @@ struct SubscriptionSuccessView: View {
 
             Image(systemName: "checkmark.circle.fill")
                 .font(DS.Typography.title)
-                .foregroundStyle(.green)
+                .foregroundStyle(DS.Semantic.successForeground)
         }
     }
 

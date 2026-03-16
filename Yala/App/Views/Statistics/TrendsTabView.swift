@@ -1475,7 +1475,7 @@ struct CompactRecordRow: View {
     }()
 
     private var shortDateFormat: String {
-        Self.shortDateFormatter.string(from: record.date).replacingOccurrences(of: ".", with: "")
+        Self.shortDateFormatter.string(from: record.date).replacing(".", with: "")
     }
 
     private var formattedAmount: String {
