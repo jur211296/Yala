@@ -167,6 +167,7 @@ struct OnboardingView: View {
                         .scaledToFit()
                         .frame(width: appIconSize, height: appIconSize)
                         .clipShape(RoundedRectangle(cornerRadius: 26))
+                        .accessibilityHidden(true)
 
                     VStack(spacing: DS.Spacing.md) {
                         Text(L10n.Onboarding.welcomeTitle)
@@ -231,6 +232,7 @@ struct OnboardingView: View {
                     .font(.system(size: heroIconSize))
                     .foregroundStyle(Color.electricIndigo)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                    .accessibilityHidden(true)
 
                 Text(L10n.Onboarding.currencyTitle)
                     .font(DS.Typography.title)
@@ -310,6 +312,7 @@ struct OnboardingView: View {
                             .font(.system(size: heroIconSize))
                             .foregroundStyle(Color.electricIndigo)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                            .accessibilityHidden(true)
 
                         Text(L10n.Onboarding.expensesOnlyTitle)
                             .font(DS.Typography.title)
@@ -423,6 +426,7 @@ struct OnboardingView: View {
                             .font(.system(size: heroIconSize))
                             .foregroundStyle(Color.electricIndigo)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                            .accessibilityHidden(true)
 
                         Text(L10n.Onboarding.categoriesTitle)
                             .font(DS.Typography.title)
@@ -446,6 +450,7 @@ struct OnboardingView: View {
                         Image(systemName: "info.circle")
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
                         Text(L10n.Onboarding.categoriesInfo)
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
@@ -528,6 +533,7 @@ struct OnboardingView: View {
                         .font(.system(size: heroIconSize))
                         .foregroundStyle(Color.electricIndigo)
                         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                        .accessibilityHidden(true)
 
                     Text(L10n.Onboarding.accountTitle)
                         .font(DS.Typography.title)
@@ -787,6 +793,7 @@ struct OnboardingView: View {
                         .font(.system(size: heroIconSize))
                         .foregroundStyle(Color.electricIndigo)
                         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                        .accessibilityHidden(true)
 
                     Text(L10n.Onboarding.budgetTitle)
                         .font(DS.Typography.title)
@@ -1016,6 +1023,7 @@ struct OnboardingView: View {
                             .font(.system(size: completionIconSize))
                             .foregroundStyle(Color.electricIndigo)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                            .accessibilityHidden(true)
                     }
 
                     VStack(spacing: DS.Spacing.md) {
@@ -1057,6 +1065,7 @@ struct OnboardingView: View {
                 Image(systemName: icon)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(color)
+                    .accessibilityHidden(true)
             }
 
             Text(text)
@@ -1092,6 +1101,7 @@ struct OnboardingView: View {
                         Image(systemName: category.iconName)
                             .font(DS.Typography.title)
                             .foregroundStyle(Color(hex: category.colorHex))
+                            .accessibilityHidden(true)
                     }
 
                     Text(category.name)

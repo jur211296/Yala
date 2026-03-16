@@ -82,6 +82,7 @@ struct CategoriesSettingsListView: View {
             Image(systemName: "folder.fill")
                 .font(DS.Typography.amountLarge)
                 .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
 
             Text(L10n.Empty.noCategories)
                 .font(DS.Typography.headline)

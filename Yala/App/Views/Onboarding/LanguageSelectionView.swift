@@ -25,6 +25,7 @@ struct LanguageSelectionView: View {
                     .font(.system(size: heroSize))
                     .foregroundStyle(Color.electricIndigo)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                    .accessibilityHidden(true)
 
                 Text(L10n.Onboarding.languageTitle)
                     .font(DS.Typography.title)
