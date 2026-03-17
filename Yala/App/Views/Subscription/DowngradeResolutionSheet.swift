@@ -102,7 +102,7 @@ struct DowngradeResolutionSheet: View {
         }
         .sheet(isPresented: $showSubscription) {
             NavigationStack {
-                SubscriptionView()
+                SubscriptionView(source: "downgrade")
             }
         }
         .onAppear {

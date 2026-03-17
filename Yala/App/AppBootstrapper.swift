@@ -79,6 +79,9 @@ final class AppBootstrapper {
         TelemetryService.configure()
         TelemetryService.track(.appLaunched)
 
+        // 0.55. Track session for upsell frequency capping
+        ProUpsellService.shared.incrementSessionCount()
+
         // 0.6. Record first launch date for review prompt timing
         ReviewPromptService.recordFirstLaunchIfNeeded()
 
@@ -404,6 +407,16 @@ final class AppBootstrapper {
         }
 
         checkForDowngrade()
+
+        // Track trial status for upsell service
+        if store.isInTrial {
+            ProUpsellService.shared.recordTrialStarted()
+        }
+
+        // Check for trial expired (shows sheet once)
+        if ProUpsellService.shared.shouldShowTrialExpiredSheet() {
+            sessionState.shouldShowTrialExpired = true
+        }
     }
 
     /// Check if user has downgraded from Pro and needs to resolve excess items

@@ -109,6 +109,11 @@ struct InsightsTabView: View {
                             InsightCard(insight: hero)
                         }
 
+                        // AI Insights teaser for Free users
+                        if !isProUser {
+                            aiInsightsTeaser
+                        }
+
                         // Section 3: Quick Stats Grid
                         if showQuickStats {
                             quickStatsSection(data.quickStats, summary: data.periodSummary)
@@ -590,6 +595,55 @@ struct InsightsTabView: View {
         .frame(maxWidth: .infinity)
         .padding(DS.Spacing.lg)
         .yalaCard(padding: 0, shadow: false)
+    }
+
+    // MARK: - AI Insights Teaser
+
+    private var aiInsightsTeaser: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            HStack {
+                Label(L10n.Insights.aiTeaser, systemImage: "sparkles")
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.thPrimaryText)
+                Spacer()
+                ProBadge(size: .small)
+            }
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                Text(L10n.Insights.aiTeaserPlaceholder1)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .redacted(reason: .placeholder)
+                    .blur(radius: 3)
+
+                Text(L10n.Insights.aiTeaserPlaceholder2)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .redacted(reason: .placeholder)
+                    .blur(radius: 3)
+            }
+
+            Button {
+                TelemetryService.track(.proUpsellTapped, parameters: TelemetryService.upsellParameters(source: "insightsTeaser"))
+                showUpgradeSheet = true
+            } label: {
+                HStack(spacing: DS.Spacing.xs) {
+                    YalaSpark(size: .small, animated: false)
+                    Text(L10n.FeatureGate.upgradeToPro)
+                        .font(DS.Typography.labelSmall)
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DS.Spacing.sm)
+                .background(theme.accent)
+                .clipShape(Capsule())
+            }
+        }
+        .padding(DS.Spacing.lg)
+        .yalaCard(padding: 0, shadow: false)
+        .onAppear {
+            TelemetryService.trackOnce(.proUpsellShown, key: "insightsTeaser", parameters: TelemetryService.upsellParameters(source: "insightsTeaser"))
+        }
     }
 
     // MARK: - Locked Fun Fact

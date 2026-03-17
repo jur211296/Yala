@@ -267,7 +267,7 @@ struct ProfileView: View {
                 case .biometricSecurity:
                     BiometricSecurityView()
                 case .subscription:
-                    SubscriptionView()
+                    SubscriptionView(source: "profile")
                 case .tips:
                     TutorialsListView()
                 case .faq:

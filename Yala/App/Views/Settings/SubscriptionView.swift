@@ -13,6 +13,8 @@ struct SubscriptionView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
 
+    var source: String = "direct"
+
     @State private var store = StoreKitManager.shared
 
     @State private var selectedPlan: String = StoreKitManager.proYearlyID
@@ -43,6 +45,7 @@ struct SubscriptionView: View {
         .task {
             await store.loadProducts()
             await store.updateSubscriptionStatus()
+            TelemetryService.trackOnce(.paywallViewed, key: "paywall", parameters: TelemetryService.upsellParameters(source: source))
         }
         .alert(L10n.Subscription.errorTitle, isPresented: $showError) {
             Button(L10n.Common.ok, role: .cancel) {}

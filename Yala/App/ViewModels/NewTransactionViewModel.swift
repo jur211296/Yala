@@ -508,6 +508,14 @@ final class NewTransactionViewModel {
                 if ReviewPromptService.shouldPrompt(transactionCount: count) {
                     SessionState.shared.shouldRequestReview = true
                 }
+
+                // Check milestone upgrade for Free users
+                if !FeatureGateService.shared.isProUser,
+                   ProUpsellService.shared.shouldShowMilestone(transactionCount: count),
+                   let milestone = ProUpsellService.shared.nextMilestone(for: count) {
+                    SessionState.shared.pendingMilestoneUpgrade = milestone
+                    ProUpsellService.shared.markMilestoneShown(milestone)
+                }
             }
 
             // Analytics

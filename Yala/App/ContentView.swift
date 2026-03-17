@@ -549,6 +549,8 @@ struct MainTabView: View {
     @Query private var allAccounts: [Account]
     @Query private var allBudgets: [Budget]
     @State private var showDowngradeResolution = false
+    @State private var showTrialExpired = false
+    @State private var showMilestoneUpgrade = false
 
     private var tabConfig: TabBarConfiguration {
         TabBarConfiguration.fromJSON(tabConfigJSON)
@@ -667,6 +669,28 @@ struct MainTabView: View {
                     budgets: allBudgets
                 ) {
                     showDowngradeResolution = false
+                }
+            }
+            .onChange(of: sessionState.shouldShowTrialExpired) { _, shouldShow in
+                if shouldShow {
+                    showTrialExpired = true
+                    sessionState.shouldShowTrialExpired = false
+                    ProUpsellService.shared.markTrialExpiredSheetShown()
+                }
+            }
+            .sheet(isPresented: $showTrialExpired) {
+                UpgradePromptSheet(feature: .voiceInput, context: .trialExpired, source: "trialExpired")
+            }
+            .onChange(of: sessionState.pendingMilestoneUpgrade) { _, milestone in
+                if milestone != nil {
+                    showMilestoneUpgrade = true
+                }
+            }
+            .sheet(isPresented: $showMilestoneUpgrade, onDismiss: {
+                sessionState.pendingMilestoneUpgrade = nil
+            }) {
+                if let milestone = sessionState.pendingMilestoneUpgrade {
+                    MilestoneUpgradeSheet(milestone: milestone)
                 }
             }
         }

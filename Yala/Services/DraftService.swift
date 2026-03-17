@@ -224,6 +224,14 @@ final class DraftService: DraftServiceProtocol {
             SessionState.shared.shouldRequestReview = true
         }
 
+        // Check milestone upgrade for Free users
+        if !FeatureGateService.shared.isProUser,
+           ProUpsellService.shared.shouldShowMilestone(transactionCount: txCount),
+           let milestone = ProUpsellService.shared.nextMilestone(for: txCount) {
+            SessionState.shared.pendingMilestoneUpgrade = milestone
+            ProUpsellService.shared.markMilestoneShown(milestone)
+        }
+
         // Update widgets
         WidgetDataCache.updateCache(context: context)
         SessionState.shared.incrementDataVersion()

@@ -439,6 +439,12 @@ class SessionState {
     /// Flag to show downgrade resolution sheet
     var shouldShowDowngradeResolution: Bool = false
 
+    /// Flag to show trial expired sheet
+    var shouldShowTrialExpired: Bool = false
+
+    /// Pending milestone upgrade (transaction count milestone)
+    var pendingMilestoneUpgrade: Int?
+
     /// Flag to auto-open Profile from Insights banner redirect
     var shouldOpenProfile: Bool = false
 

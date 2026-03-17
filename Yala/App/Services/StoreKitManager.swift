@@ -181,6 +181,12 @@ final class StoreKitManager {
                 await updateSubscriptionStatus()
                 didJustSubscribe = true
                 TelemetryService.track(.purchaseAttempted, parameters: ["productId": product.id, "result": "success"])
+                var completionParams = TelemetryService.upsellParameters(source: "purchase")
+                completionParams["productId"] = product.id
+                TelemetryService.track(.purchaseCompleted, parameters: completionParams)
+                if isInTrial {
+                    TelemetryService.track(.trialStarted, parameters: completionParams)
+                }
                 return true
 
             case .userCancelled:

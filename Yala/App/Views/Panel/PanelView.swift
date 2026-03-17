@@ -44,6 +44,13 @@ struct PanelView: View {
     /// New Transaction Sheet
     @State private var showNewTransaction = false
 
+    /// Subscription sheet from banners
+    @State private var showSubscriptionFromBanner = false
+    @State private var subscriptionBannerSource = "direct"
+
+    /// Periodic banner visibility
+    @State private var showPeriodicBanner = false
+
     /// Budget Favorites Settings Sheet
     @State private var showBudgetFavoritesSettings = false
 
@@ -237,6 +244,11 @@ struct PanelView: View {
                 recalculateData: recalculateData
             )
         )
+        .sheet(isPresented: $showSubscriptionFromBanner) {
+            NavigationStack {
+                SubscriptionView(source: subscriptionBannerSource)
+            }
+        }
         .onAppear {
             viewModel.widgetConfig.columns = DS.Adaptive.columns(sizeClass)
             viewModel.setContext(
@@ -324,6 +336,42 @@ struct PanelView: View {
                             SiriTipCard(isVisible: $showSiriTip)
                         }
 
+                        // Trial / periodic upgrade banner
+                        if StoreKitManager.shared.isInTrial {
+                            TrialBanner(
+                                daysRemaining: StoreKitManager.shared.trialDaysRemaining
+                            ) {
+                                TelemetryService.track(.proUpsellTapped, parameters: TelemetryService.upsellParameters(source: "trialBanner"))
+                                subscriptionBannerSource = "trialBanner"
+                                showSubscriptionFromBanner = true
+                            }
+                            .onAppear {
+                                var params = TelemetryService.upsellParameters(source: "trialBanner")
+                                params["daysRemaining"] = String(StoreKitManager.shared.trialDaysRemaining)
+                                TelemetryService.trackOnce(.proUpsellShown, key: "trialBanner", parameters: params)
+                                if StoreKitManager.shared.isTrialExpiringSoon {
+                                    TelemetryService.trackOnce(.trialExpiring, key: "trialExpiring", parameters: params)
+                                }
+                            }
+                        } else if !FeatureGateService.shared.isProUser && showPeriodicBanner {
+                            ProUpgradeBanner(
+                                onUpgrade: {
+                                    TelemetryService.track(.proUpsellTapped, parameters: TelemetryService.upsellParameters(source: "periodicBanner"))
+                                    subscriptionBannerSource = "periodicBanner"
+                                    showSubscriptionFromBanner = true
+                                },
+                                onDismiss: {
+                                    TelemetryService.track(.proUpsellDismissed, parameters: TelemetryService.upsellParameters(source: "periodicBanner"))
+                                    ProUpsellService.shared.recordDismissed()
+                                    showPeriodicBanner = false
+                                }
+                            )
+                            .onAppear {
+                                TelemetryService.trackOnce(.proUpsellShown, key: "periodicBanner", parameters: TelemetryService.upsellParameters(source: "periodicBanner"))
+                                ProUpsellService.shared.recordShown(source: "periodicBanner")
+                            }
+                        }
+
                         accountsSection
                         contextualInsightSection
                         totalBalanceSection
@@ -340,7 +388,10 @@ struct PanelView: View {
                 .refreshable {
                     await refreshData()
                 }
-                .onAppear { panelScrollProxy = scrollProxy }
+                .onAppear {
+                    panelScrollProxy = scrollProxy
+                    showPeriodicBanner = ProUpsellService.shared.shouldShowPeriodicBanner()
+                }
             }
 
             // Botón flotante de nuevo registro

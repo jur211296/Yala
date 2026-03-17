@@ -25,6 +25,13 @@ enum AnalyticsEvent: String {
     case purchaseAttempted
     case featureGateHit
     case reviewPromptShown
+    case proUpsellShown
+    case proUpsellTapped
+    case proUpsellDismissed
+    case paywallViewed
+    case trialStarted
+    case purchaseCompleted
+    case trialExpiring
 }
 
 // MARK: - Telemetry Service
@@ -58,6 +65,17 @@ enum TelemetryService {
         var params = parameters
         params["isProUser"] = String(FeatureGateService.shared.isProUser)
         TelemetryDeck.signal(event.rawValue, parameters: params)
+    }
+
+    /// Builds common parameters for upsell/conversion tracking.
+    static func upsellParameters(source: String) -> [String: String] {
+        var params: [String: String] = ["source": source]
+        if let firstLaunch = UserDefaults.standard.object(forKey: "reviewFirstLaunchDate") as? Date {
+            let days = Calendar.current.dateComponents([.day], from: firstLaunch, to: .now).day ?? 0
+            params["daysSinceInstall"] = String(days)
+        }
+        params["sessionNumber"] = String(UserDefaults.standard.integer(forKey: "pro.upsell.sessionCount"))
+        return params
     }
 
     /// Tracks an event only once per session (deduplicates by composite key).
