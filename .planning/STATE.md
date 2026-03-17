@@ -43,6 +43,9 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-16] 0e0f4b2 refactor: rewrite notification copy with period-specific texts and brand voice
+- [2026-03-16] 42c62cf feat: add automatic App Store review prompt after moments of value
+- [2026-03-16] b569f56 fix: ensure all external triggers wait for splash before presenting sheets
 - [2026-03-16] 29611e2 fix: prevent phantom scheduled payment drafts reappearing after approval
 - [2026-03-16] a326ef6 docs: close all a11y low items — 133 images marked across 4 batches
 - [2026-03-16] 8800a30 a11y: add accessibility markers to Onboarding and Settings views (12 images)
@@ -50,8 +53,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-16] 0fe1918 a11y: add accessibility markers to Panel and Records views (42 images)
 - [2026-03-16] 83fa487 a11y: add accessibility markers to Planning and Transactions views (53 images)
 - [2026-03-16] e58b4ab chore: resolve 5 low-priority review items — dedup, constants, DS compliance
-- [2026-03-16] a8a458e chore: resolve medium-priority issues from full review
-- [2026-03-16] 94b9e0f refactor: extract 12 private helpers from 4 long functions in 3 ViewModels
 - [2026-03-16] e8c5db5 chore: remove 13 dead code items (~300 lines)
 - [2026-03-08] 82f4e5c feat: polish onboarding budget step — reframe texts, horizontal pills, live preview card, currency fix
 - [2026-03-08] 9488d0a feat: polish onboarding account step — SectionBox layout, balance guide, validation
@@ -758,9 +759,11 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 ## Session Continuity
 
 Last session: 2026-03-16
-Stopped at: Fix drafts fantasma en pagos planificados (29611e2) — 5 fixes en ScheduledPaymentDraftService
+Stopped at: Notification copy rewrite + App Store review prompt (0e0f4b2, 42c62cf)
 Next step: QA manual de todos los tickets del hotfix, luego merge 1.1.1 → 1.0 y tag
 Resume context:
-- Hotfix 1.1.1: H1-H9 completados, H10 (drafts fantasma) completado (29611e2)
+- Hotfix 1.1.1: H1-H9 + H10 + splash deferral completados
+- App Store review prompt: ReviewPromptService (15 tx, 7 días, 120 días cooldown)
+- Notification copy: 12 period-specific report texts (6 idiomas), dynamic key composition
 - Follow-ups documentados en HOTFIX-1.1.1.md: F1-F4 (no bloquean release)
 - Full review: todos los críticos, altos, medios y bajos resueltos
