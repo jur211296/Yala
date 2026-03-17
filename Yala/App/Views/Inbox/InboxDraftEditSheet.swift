@@ -90,7 +90,7 @@ struct InboxDraftEditSheet: View {
     // MARK: - Computed
 
     private var amount: Double? {
-        Double(amountString.replacingOccurrences(of: ",", with: "."))
+        Double(amountString.replacing(",", with: "."))
     }
 
     private var isReadyToApprove: Bool {
@@ -476,7 +476,7 @@ struct InboxDraftEditSheet: View {
                     if !isFocused {
                         if amountString.isEmpty {
                             amountString = "0.00"
-                        } else if let amt = Double(amountString.replacingOccurrences(of: ",", with: ".")) {
+                        } else if let amt = Double(amountString.replacing(",", with: ".")) {
                             amountString = String(format: "%.2f", abs(amt))
                         }
                     }
@@ -689,21 +689,12 @@ struct InboxDraftEditSheet: View {
                 }
 
                 // Approve button (primary)
-                Button {
+                YalaPrimaryButton(
+                    L10n.Inbox.approve,
+                    isDisabled: !isReadyToApprove
+                ) {
                     approveDraft()
-                } label: {
-                    Text(L10n.Inbox.approve)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DS.Spacing.lg)
-                        .background(
-                            Capsule()
-                                .fill(isReadyToApprove ? theme.accent : DS.Semantic.disabledForeground)
-                        )
                 }
-                .buttonStyle(.plain)
-                .disabled(!isReadyToApprove)
                 .accessibilityHint(!isReadyToApprove ? L10n.Accessibility.approveCompleteHint : "")
             }
         }
@@ -743,36 +734,7 @@ struct InboxDraftEditSheet: View {
     }
 
     private func filterAmountInput(_ input: String) -> String {
-        let decimalSeparator = Locale.current.decimalSeparator ?? "."
-        var result = ""
-        var hasDecimal = false
-        var decimalCount = 0
-
-        for char in input {
-            if char.isNumber {
-                if hasDecimal {
-                    if decimalCount < 2 {
-                        result.append(char)
-                        decimalCount += 1
-                    }
-                } else {
-                    result.append(char)
-                }
-            } else if String(char) == decimalSeparator || char == "." || char == "," {
-                if !hasDecimal {
-                    result.append(decimalSeparator.first ?? ".")
-                    hasDecimal = true
-                }
-            }
-        }
-
-        while result.hasPrefix("0") && result.count > 1 {
-            let secondChar = result[result.index(after: result.startIndex)]
-            if String(secondChar) == decimalSeparator { break }
-            result = String(result.dropFirst())
-        }
-
-        return result
+        AmountInputHelper.filterAmountInput(input)
     }
 
     private func dismissKeyboard() {

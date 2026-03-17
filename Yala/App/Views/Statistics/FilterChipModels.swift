@@ -13,19 +13,6 @@ struct AccountChip: Identifiable {
     let count: Int
 }
 
-struct CategoryChip: Identifiable {
-    var id: PersistentIdentifier { categoryID }
-    let categoryID: PersistentIdentifier
-}
-
-struct SubcategoryChip: Identifiable {
-    var id: String { subcategoryID?.hashValue.description ?? name }
-    let name: String
-    let iconName: String?
-    let colorHex: String?
-    let subcategoryID: PersistentIdentifier?
-}
-
 struct TagChip: Identifiable {
     let id: PersistentIdentifier
     let tagID: PersistentIdentifier

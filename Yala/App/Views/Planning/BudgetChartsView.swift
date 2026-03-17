@@ -547,6 +547,7 @@ struct BudgetChartsView: View {
                 Image(systemName: icon)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.white)
+                    .accessibilityHidden(true)
             }
 
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {

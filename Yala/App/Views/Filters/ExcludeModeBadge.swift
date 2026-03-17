@@ -13,6 +13,7 @@ struct ExcludeModeBadge: View {
             Image(systemName: "minus.circle.fill")
                 .font(DS.Typography.chipIconOnly)
                 .foregroundStyle(DS.Semantic.errorForeground)
+                .accessibilityHidden(true)
             Text(L10n.Filters.excludeMode)
                 .font(DS.Typography.caption)
                 .foregroundStyle(DS.Semantic.errorForeground)

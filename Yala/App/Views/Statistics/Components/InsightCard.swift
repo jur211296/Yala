@@ -28,6 +28,7 @@ struct InsightCard: View {
                     .font(DS.Typography.body)
                     .foregroundStyle(accentColor)
                     .frame(width: 28)
+                    .accessibilityHidden(true)
 
                 Text(insight.text)
                     .font(DS.Typography.subheadline)
@@ -43,6 +44,7 @@ struct InsightCard: View {
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .frame(width: 28)
+                        .accessibilityHidden(true)
 
                     Text(tip)
                         .font(DS.Typography.caption)

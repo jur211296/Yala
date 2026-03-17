@@ -14,6 +14,7 @@ struct BalanceStatusIndicator: View {
         HStack(spacing: DS.Spacing.xs) {
             Image(systemName: iconName)
                 .font(DS.Typography.labelTiny).fontWeight(.bold)
+                .accessibilityHidden(true)
 
             Text(statusText)
                 .font(DS.Typography.labelSmall)

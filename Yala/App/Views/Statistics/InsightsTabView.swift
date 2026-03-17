@@ -379,6 +379,7 @@ struct InsightsTabView: View {
                 Image(systemName: "chart.bar.fill")
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(theme.accent)
+                    .accessibilityHidden(true)
 
                 Text(L10n.Insights.dailyAverage)
                     .font(DS.Typography.captionSmall)
@@ -453,6 +454,7 @@ struct InsightsTabView: View {
                                 Image(systemName: budget.usagePercent >= 75 ? "exclamationmark.triangle" : "chart.bar")
                                     .font(DS.Typography.captionSmall)
                                     .foregroundStyle(budgetColor(budget.usagePercent))
+                                    .accessibilityHidden(true)
 
                                 Text(budget.name)
                                     .font(DS.Typography.subheadline)
@@ -493,6 +495,7 @@ struct InsightsTabView: View {
                 .font(DS.Typography.body)
                 .foregroundStyle(theme.accent)
                 .frame(width: 32)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(label)
@@ -599,6 +602,7 @@ struct InsightsTabView: View {
                 Image(systemName: "lightbulb")
                     .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
 
                 Text(L10n.Insights.funFact)
                     .font(DS.Typography.subheadline)
@@ -610,6 +614,7 @@ struct InsightsTabView: View {
                 Image(systemName: "lock.fill")
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
 
                 ProBadge(size: .small)
             }
@@ -631,6 +636,7 @@ struct InsightsTabView: View {
                 Image(systemName: "sparkles")
                     .font(DS.Typography.headline)
                     .foregroundStyle(theme.accent)
+                    .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(L10n.Insights.activateAITitle)

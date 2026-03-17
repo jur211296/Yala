@@ -216,6 +216,14 @@ final class DraftService: DraftServiceProtocol {
 
         TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
 
+        // Count approved draft toward transaction total (for review prompt)
+        let txCount = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + 1
+        UserDefaults.standard.set(txCount, forKey: "transactionsSavedCount")
+
+        if ReviewPromptService.shouldPrompt(transactionCount: txCount) {
+            SessionState.shared.shouldRequestReview = true
+        }
+
         // Update widgets
         WidgetDataCache.updateCache(context: context)
         SessionState.shared.incrementDataVersion()
@@ -302,6 +310,16 @@ final class DraftService: DraftServiceProtocol {
         }
 
         try context.save()
+
+        // Count all approved drafts toward transaction total
+        if !transactions.isEmpty {
+            let txCount = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + transactions.count
+            UserDefaults.standard.set(txCount, forKey: "transactionsSavedCount")
+
+            if ReviewPromptService.shouldPrompt(transactionCount: txCount) {
+                SessionState.shared.shouldRequestReview = true
+            }
+        }
 
         // Update widgets
         WidgetDataCache.updateCache(context: context)

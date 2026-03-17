@@ -195,12 +195,14 @@ struct TopSubcategoriesWidget: View {
                     Image(systemName: category.iconName ?? "tag.fill")
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(Color(hex: category.colorHex))
+                        .accessibilityHidden(true)
 
                     Text(category.name)
                         .font(DS.Typography.labelSmall)
 
                     Image(systemName: "lock.fill")
                         .font(DS.Typography.captionSmall)
+                        .accessibilityHidden(true)
                 }
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, DS.Spacing.sm)
@@ -349,6 +351,7 @@ struct TopSubcategoriesWidget: View {
                         )
                         .font(DS.Typography.headline)
                         .foregroundStyle(.white)
+                        .accessibilityHidden(true)
                     }
 
                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {
@@ -439,6 +442,7 @@ private struct SubcategoryRow: View {
                         )
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.white)
+                        .accessibilityHidden(true)
                     }
 
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {

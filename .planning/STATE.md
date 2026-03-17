@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
 Status: **Fase 12 en progreso** — What's New sheet + coach mark tours + onboarding improvements
-Last activity: 2026-03-12 — Full review fixes: @MainActor, reduceMotion, L10n, a11y, DS, Date.now
+Last activity: 2026-03-16 — A11y Batch 4 complete: 133 total decorative images marked across all views
 
 ### Apple Review History (V1.0)
 
@@ -43,21 +43,17 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
-- [2026-03-12] 031bc7c feat: split AI consent into processing (voice/image) and insights (smart overview)
-- [2026-03-12] 08883ee fix: AI insights — tip alignment, reactivity, currency format, budget threshold
-- [2026-03-12] 52b451f feat: rewrite AI insight tone/focus prompts + country regionalization + brand voice enforcement
-- [2026-03-12] 134200b feat: enrich AI insights data + anti-hallucination prompts + upgrade to GPT-4.1 Mini
-- [2026-03-12] c935830 fix: prevent SEGV crash in test host by using in-memory config under XCTest
-- [2026-03-12] 7d02809 chore: address medium/low review issues — dead code, deprecated APIs, DS tokens
-- [2026-03-12] fba23e2 refactor: Date() → Date.now across codebase (H7)
-- [2026-03-12] 7f518f8 fix: address critical and high review issues (C1-C3, H1-H11)
-- [2026-03-12] baf130f chore: update Claude commands, settings, and agent configs
-- [2026-03-12] b63b56d feat: add consent flow for Smart Insights + settings reorganization
-- [2026-03-12] d48946f test: extract 12 private methods to internal + add 85 tests across 5 suites
-- [2026-03-10] 720ffe3 refactor: rename Nature → Need across codebase
-- [2026-03-10] 0f85f55 fix: export allTime date range, transaction recurring save flow, validation toast
-- [2026-03-10] dd86e0c fix: scheduled payments — duplicate draft prevention, unified occurrence actions, editor UX
-- [2026-03-08] b0be795 fix: onboarding QA — comma-locale budget bug, animation timing, updated scenarios
+- [2026-03-16] 0e0f4b2 refactor: rewrite notification copy with period-specific texts and brand voice
+- [2026-03-16] 42c62cf feat: add automatic App Store review prompt after moments of value
+- [2026-03-16] b569f56 fix: ensure all external triggers wait for splash before presenting sheets
+- [2026-03-16] 29611e2 fix: prevent phantom scheduled payment drafts reappearing after approval
+- [2026-03-16] a326ef6 docs: close all a11y low items — 133 images marked across 4 batches
+- [2026-03-16] 8800a30 a11y: add accessibility markers to Onboarding and Settings views (12 images)
+- [2026-03-16] 1612f6a a11y: add accessibility markers to Inbox, Categories, Shared, Voice, Accounts, Subscription (26 images)
+- [2026-03-16] 0fe1918 a11y: add accessibility markers to Panel and Records views (42 images)
+- [2026-03-16] 83fa487 a11y: add accessibility markers to Planning and Transactions views (53 images)
+- [2026-03-16] e58b4ab chore: resolve 5 low-priority review items — dedup, constants, DS compliance
+- [2026-03-16] e8c5db5 chore: remove 13 dead code items (~300 lines)
 - [2026-03-08] 82f4e5c feat: polish onboarding budget step — reframe texts, horizontal pills, live preview card, currency fix
 - [2026-03-08] 9488d0a feat: polish onboarding account step — SectionBox layout, balance guide, validation
 - [2026-03-07] 275392d feat: add Smart Insights personalization — tone, focus, and actionable tips
@@ -762,12 +758,12 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 
 ## Session Continuity
 
-Last session: 2026-03-12
-Stopped at: Dual AI consent (031bc7c) — separated processing + insights consent flags
-Next step: /verify-ios + QA manual del dual consent
+Last session: 2026-03-16
+Stopped at: Notification copy rewrite + App Store review prompt (0e0f4b2, 42c62cf)
+Next step: QA manual de todos los tickets del hotfix, luego merge 1.1.1 → 1.0 y tag
 Resume context:
-- aiDataConsentAccepted → solo voz/imagen (processing)
-- aiInsightsConsentAccepted → nuevo flag para smart insights/resumen
-- Sin migración: nuevo flag default false, usuarios existentes deben aceptar insights explícitamente
-- PanelView: loading placeholder mejorado (sparkles + texto), card sin lineLimit
-- 6 idiomas actualizados con strings granulares
+- Hotfix 1.1.1: H1-H9 + H10 + splash deferral completados
+- App Store review prompt: ReviewPromptService (15 tx, 7 días, 120 días cooldown)
+- Notification copy: 12 period-specific report texts (6 idiomas), dynamic key composition
+- Follow-ups documentados en HOTFIX-1.1.1.md: F1-F4 (no bloquean release)
+- Full review: todos los críticos, altos, medios y bajos resueltos

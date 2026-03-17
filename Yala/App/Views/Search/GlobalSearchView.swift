@@ -285,7 +285,7 @@ struct SearchDateSectionHeader: View {
         } else if calendar.isDateInYesterday(date) {
             return L10n.Date.yesterday
         } else {
-            return Self.sectionDateFormatter.string(from: date).replacingOccurrences(of: ".", with: "")
+            return Self.sectionDateFormatter.string(from: date).replacing(".", with: "")
         }
     }
 

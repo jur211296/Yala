@@ -143,6 +143,7 @@ struct UpgradePromptSheet: View {
                     RoundedRectangle(cornerRadius: DS.Radius.sm)
                         .fill(theme.accent)
                 )
+                .accessibilityHidden(true)
 
             Text(feature.localizedName)
                 .font(DS.Typography.bodyBold)

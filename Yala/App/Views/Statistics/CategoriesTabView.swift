@@ -1206,6 +1206,7 @@ struct CategoriesTabView: View {
                         .font(DS.Typography.headline)
                     Image(systemName: "chevron.right")
                         .font(DS.Typography.caption)
+                        .accessibilityHidden(true)
                     Spacer()
                 }
                 .padding(.vertical, DS.Spacing.md)
@@ -1230,6 +1231,7 @@ struct CategoriesTabView: View {
             Image(systemName: "doc.text.magnifyingglass")
                 .font(DS.Typography.title)
                 .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
             Text(L10n.Statistics.noRecords)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
@@ -1304,6 +1306,7 @@ private struct AllCategoriesListContent: View {
                                 .font(DS.Typography.headline)
                             Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                                 .font(DS.Typography.caption)
+                                .accessibilityHidden(true)
                             Spacer()
                         }
                         .padding(.vertical, DS.Spacing.md)
@@ -1397,6 +1400,7 @@ private struct AllSubcategoriesListContent: View {
                                 .font(DS.Typography.headline)
                             Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                                 .font(DS.Typography.caption)
+                                .accessibilityHidden(true)
                             Spacer()
                         }
                         .padding(.vertical, DS.Spacing.md)
@@ -1440,6 +1444,7 @@ private struct CategoryRowView: View {
                 Image(systemName: summary.category.iconName ?? "tag.fill")
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.white)
+                    .accessibilityHidden(true)
             }
 
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
@@ -1525,10 +1530,12 @@ private struct SubcategoryRowView: View {
                     Image(systemName: subcategory.iconName ?? "list.bullet.indent")
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.white)
+                        .accessibilityHidden(true)
                 } else {
                     Image(systemName: "list.bullet.indent")
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.white)
+                        .accessibilityHidden(true)
                 }
             }
 

@@ -32,6 +32,7 @@ struct FilterChipView: View {
                 Image(systemName: "minus.circle.fill")
                     .font(DS.Typography.chipIconOnly)
                     .foregroundStyle(DS.Semantic.errorForeground)
+                    .accessibilityHidden(true)
             }
 
             // Indicator (icon or color dot)
@@ -83,11 +84,13 @@ struct FilterChipView: View {
                 Image(systemName: iconName)
                     .font(DS.Typography.chipIcon)
                     .foregroundStyle(.white)
+                    .accessibilityHidden(true)
             }
         case .iconOnly(let iconName):
             Image(systemName: iconName)
                 .font(DS.Typography.chipIconOnly)
                 .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
         }
     }
 }

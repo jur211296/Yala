@@ -574,6 +574,7 @@ struct ProfileView: View {
                         Image(systemName: "lock.fill")
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
                     } else {
                         Toggle(L10n.Insights.aiToggle, isOn: Binding(
                             get: { aiInsightsConsentAccepted },
@@ -719,6 +720,7 @@ struct ProfileView: View {
                         Image(systemName: "lock.fill")
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
                     } else {
                         Toggle(L10n.Settings.voiceInputEnabled, isOn: $voiceInputEnabled)
                             .labelsHidden()
@@ -839,6 +841,7 @@ struct ProfileView: View {
                     Image(systemName: "lock.fill")
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
                 } else {
                     Toggle(L10n.Settings.imageInputEnabled, isOn: $imageInputEnabled)
                         .labelsHidden()
@@ -1019,7 +1022,7 @@ struct ProfileView: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.caption)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -1047,7 +1050,7 @@ struct ProfileView: View {
             Spacer()
 
             Image(systemName: "cylinder.split.1x2.fill")
-                .font(.system(size: 48))
+                .font(.system(size: 48)) // A11Y-DT: debug-only seed progress view
                 .foregroundStyle(.teal)
 
             Text("Generando datos de prueba")
@@ -1162,12 +1165,14 @@ struct ProfileView: View {
                         RoundedRectangle(cornerRadius: 6)
                             .fill(iconColor)
                     )
+                    .accessibilityHidden(true)
             } else {
                 // Plain icon without background
                 Image(systemName: icon)
                     .font(DS.Typography.body)
                     .foregroundStyle(.primary)
                     .frame(width: 28)
+                    .accessibilityHidden(true)
             }
 
             Text(title)
@@ -1179,6 +1184,7 @@ struct ProfileView: View {
             Image(systemName: "chevron.right")
                 .font(DS.Typography.labelSmall.weight(.medium))
                 .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.FormRow.paddingV)

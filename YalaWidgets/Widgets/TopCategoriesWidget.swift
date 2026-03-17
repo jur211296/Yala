@@ -119,7 +119,7 @@ struct TopCategoriesWidgetView: View {
                     Spacer()
                     VStack(spacing: WDS.Spacing.xs) {
                         Image(systemName: "tray")
-                            .font(.title2)
+                            .font(.title2) // A11Y-DT: widget empty state icon
                             .foregroundStyle(.tertiary)
                         Text("widget.ui.noExpenses", bundle: .main)
                             .font(WDS.Typography.body)

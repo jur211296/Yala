@@ -270,8 +270,9 @@ struct SubcategoriesPieWidget: View {
                     .frame(width: iconSize, height: iconSize)
 
                 Image(systemName: item.iconName)
-                    .font(.system(size: fontSize, weight: .bold))
+                    .font(.system(size: fontSize, weight: .bold)) // A11Y-DT: fixed-layout pie chart icon bubble
                     .foregroundStyle(.white)
+                    .accessibilityHidden(true)
             }
             .position(x: bubbleX, y: bubbleY)
             .onTapGesture {
@@ -344,6 +345,7 @@ struct SubcategoriesPieWidget: View {
                             Image(systemName: selectedItem.iconName)
                                 .font(DS.Typography.labelTiny).fontWeight(.bold)
                                 .foregroundStyle(Color(hex: selectedItem.colorHex))
+                                .accessibilityHidden(true)
                         }
                         .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
 
@@ -379,6 +381,7 @@ struct SubcategoriesPieWidget: View {
                                 Image(systemName: item.iconName)
                                     .font(DS.Typography.captionSmall).fontWeight(.bold)
                                     .foregroundStyle(Color(hex: item.colorHex))
+                                    .accessibilityHidden(true)
                             }
                             .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
 
@@ -476,51 +479,6 @@ struct SubcategoriesPieWidget: View {
                 }
             }
         }
-    }
-
-    // MARK: - Small Layout
-
-    private func smallLayout(_ chartData: [PieChartData]) -> some View {
-        chartView(chartData, innerRadiusRatio: 0.65)
-            .chartBackground { proxy in
-                GeometryReader { innerGeo in
-                    if let centerItem = currentCenterItem(chartData) {
-                        // Calculate safe width for center content (inside donut hole)
-                        let chartSize = min(innerGeo.size.width, innerGeo.size.height)
-                        let innerRadius = chartSize * 0.65 * 0.5  // innerRadiusRatio * radius
-                        let safeWidth = innerRadius * 1.4  // 70% of diameter for text
-
-                        VStack(spacing: DS.Spacing.xxs) {
-                            // Subcategory Name - truncated to fit
-                            Text(centerItem.name)
-                                .font(DS.Typography.labelTiny)
-                                .foregroundStyle(Color(hex: centerItem.colorHex))
-                                .lineLimit(1)
-                                .truncationMode(.tail)
-                                .frame(maxWidth: safeWidth)
-
-                            // Icon
-                            Image(systemName: centerItem.iconName)
-                                .font(DS.Typography.captionSmall)
-                                .foregroundStyle(Color(hex: centerItem.colorHex))
-
-                            // Percentage
-                            Text(formattedPercentage(centerItem.percentage))
-                                .font(DS.Typography.headline)
-                                .foregroundStyle(.primary)
-
-                            // Amount - truncated to fit
-                            Text(formattedCurrency(centerItem.amount))
-                                .font(DS.Typography.labelTiny)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .frame(maxWidth: safeWidth)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .accessibilityElement(children: .combine)
-                    }
-                }
-            }
     }
 
     // MARK: - Shared Chart View

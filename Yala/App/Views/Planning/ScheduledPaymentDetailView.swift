@@ -195,6 +195,7 @@ struct ScheduledPaymentDetailView: View {
                 HStack {
                     Image(systemName: "pause.circle.fill")
                         .foregroundStyle(DS.Semantic.warningForeground)
+                        .accessibilityHidden(true)
                     Text(L10n.Scheduled.Detail.statusInactive)
                         .font(DS.Typography.label)
                         .foregroundStyle(DS.Semantic.warningForeground)
@@ -219,6 +220,7 @@ struct ScheduledPaymentDetailView: View {
                 .font(DS.Typography.body)
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
+                .accessibilityHidden(true)
 
             Text(label)
                 .font(DS.Typography.subheadline)
@@ -239,6 +241,7 @@ struct ScheduledPaymentDetailView: View {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "arrow.forward.circle.fill")
                     .foregroundStyle(.thAccent)
+                    .accessibilityHidden(true)
                 Text(L10n.Scheduled.Detail.upcoming)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
@@ -272,6 +275,7 @@ struct ScheduledPaymentDetailView: View {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "clock.arrow.circlepath")
                     .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
                 Text(L10n.Scheduled.Detail.history)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
@@ -437,6 +441,7 @@ struct ScheduledPaymentDetailView: View {
             Image(systemName: "info.circle")
                 .font(DS.Typography.body)
                 .foregroundStyle(.thAccent)
+                .accessibilityHidden(true)
 
             Text(L10n.Scheduled.Detail.infoNote)
                 .font(DS.Typography.caption)

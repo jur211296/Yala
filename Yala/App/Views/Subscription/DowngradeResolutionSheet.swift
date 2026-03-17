@@ -130,6 +130,7 @@ struct DowngradeResolutionSheet: View {
                         endPoint: .bottom
                     )
                 )
+                .accessibilityHidden(true)
 
             Text(L10n.Subscription.Downgrade.title)
                 .font(.title2.bold())

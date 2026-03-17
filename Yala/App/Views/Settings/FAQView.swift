@@ -22,7 +22,7 @@ struct FAQView: View {
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "questionmark.circle.fill")
                             .font(DS.Typography.amountLarge)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(DS.Semantic.warningForeground)
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Settings.faq)

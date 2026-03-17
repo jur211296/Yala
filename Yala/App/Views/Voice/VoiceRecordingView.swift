@@ -219,6 +219,7 @@ struct VoiceRecordingView: View {
                 .font(DS.Typography.amountLarge)
                 .foregroundStyle(.white)
                 .symbolEffect(.variableColor.iterative, isActive: recorder.state == .recording)
+                .accessibilityHidden(true)
         }
     }
 
@@ -358,6 +359,7 @@ struct VoiceRecordingView: View {
             Image(systemName: icon)
                 .font(DS.Typography.captionSmall)
                 .foregroundStyle(Color.hotPink)
+                .accessibilityHidden(true)
 
             Text(text)
                 .font(DS.Typography.caption)
@@ -394,6 +396,7 @@ struct VoiceRecordingView: View {
             Image(systemName: "text.quote")
                 .font(DS.Typography.caption)
                 .foregroundStyle(Color.hotPink)
+                .accessibilityHidden(true)
 
             Text(text)
                 .font(DS.Typography.subheadline)
@@ -423,7 +426,7 @@ struct VoiceRecordingView: View {
         VStack(spacing: DS.Spacing.md) {
             Text(message)
                 .font(DS.Typography.caption)
-                .foregroundStyle(.red)
+                .foregroundStyle(DS.Semantic.errorForeground)
                 .multilineTextAlignment(.center)
 
             // Action buttons based on error type

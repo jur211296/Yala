@@ -242,6 +242,7 @@ struct ScheduledPaymentEditorView: View {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "textformat")
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
                     TextField(
                         NSLocalizedString("scheduled.editor.name.placeholder", comment: ""),
                         text: $name
@@ -279,6 +280,7 @@ struct ScheduledPaymentEditorView: View {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "note.text")
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
                     TextField(
                         NSLocalizedString("scheduled.editor.note.placeholder", comment: ""),
                         text: $note
@@ -301,6 +303,7 @@ struct ScheduledPaymentEditorView: View {
                         Image(systemName: "checkmark.circle")
                             .foregroundStyle(.secondary)
                             .frame(width: 24)
+                            .accessibilityHidden(true)
                         Text(NSLocalizedString("common.active", comment: ""))
                     }
                 }
@@ -315,6 +318,7 @@ struct ScheduledPaymentEditorView: View {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .foregroundStyle(.secondary)
                             .frame(width: 24)
+                            .accessibilityHidden(true)
                         Text(NSLocalizedString("scheduled.is.subscription", comment: ""))
                     }
                 }
@@ -570,6 +574,7 @@ struct ScheduledPaymentEditorView: View {
             Image(systemName: "calendar")
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
+                .accessibilityHidden(true)
 
             Text(NSLocalizedString("scheduled.payment.date", comment: ""))
                 .foregroundStyle(.primary)
@@ -590,6 +595,7 @@ struct ScheduledPaymentEditorView: View {
             Image(systemName: "repeat")
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
+                .accessibilityHidden(true)
 
             Text(NSLocalizedString("scheduled.every", comment: ""))
                 .foregroundStyle(.primary)
@@ -627,6 +633,7 @@ struct ScheduledPaymentEditorView: View {
                 Image(systemName: "calendar.day.timeline.left")
                     .foregroundStyle(.secondary)
                     .frame(width: 24)
+                    .accessibilityHidden(true)
 
                 Text(NSLocalizedString("scheduled.which.days", comment: ""))
                     .foregroundStyle(.primary)
@@ -684,6 +691,7 @@ struct ScheduledPaymentEditorView: View {
             Image(systemName: "number")
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
+                .accessibilityHidden(true)
 
             Text(NSLocalizedString("scheduled.editor.day.of.month", comment: ""))
                 .foregroundStyle(.primary)
@@ -705,6 +713,7 @@ struct ScheduledPaymentEditorView: View {
             Image(systemName: "calendar")
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
+                .accessibilityHidden(true)
 
             Text(NSLocalizedString("scheduled.yearly.date", comment: ""))
                 .foregroundStyle(.primary)
@@ -753,6 +762,7 @@ struct ScheduledPaymentEditorView: View {
             Image(systemName: "calendar.badge.plus")
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
+                .accessibilityHidden(true)
 
             Text(NSLocalizedString("scheduled.start.date", comment: ""))
                 .foregroundStyle(.primary)
@@ -776,6 +786,7 @@ struct ScheduledPaymentEditorView: View {
                     Image(systemName: "calendar.badge.minus")
                         .foregroundStyle(.secondary)
                         .frame(width: 24)
+                        .accessibilityHidden(true)
 
                     Text(NSLocalizedString("scheduled.has.end.date", comment: ""))
                 }
@@ -893,6 +904,7 @@ struct ScheduledPaymentEditorView: View {
                         Image(systemName: "bell")
                             .foregroundStyle(.secondary)
                             .frame(width: 24)
+                            .accessibilityHidden(true)
 
                         Text(NSLocalizedString("scheduled.notify.on.due", comment: ""))
                     }
@@ -907,6 +919,7 @@ struct ScheduledPaymentEditorView: View {
                     Image(systemName: "bell.badge")
                         .foregroundStyle(.secondary)
                         .frame(width: 24)
+                        .accessibilityHidden(true)
 
                     Text(NSLocalizedString("scheduled.notify.days.before", comment: ""))
                         .foregroundStyle(.primary)

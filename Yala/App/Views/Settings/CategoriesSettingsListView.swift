@@ -15,6 +15,7 @@ struct CategoriesSettingsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(SessionState.self) private var sessionState
+    @Environment(EntityDeletionService.self) private var deletionService
     @State private var viewModel = CategoriesSettingsListViewModel()
 
     var body: some View {
@@ -70,7 +71,7 @@ struct CategoriesSettingsListView: View {
             Text(L10n.Category.cannotDeleteMessage(viewModel.transactionCountForAlert))
         }
         .onAppear {
-            viewModel.setContext(modelContext)
+            viewModel.setContext(modelContext, deletionService: deletionService)
         }
     }
 
@@ -81,6 +82,7 @@ struct CategoriesSettingsListView: View {
             Image(systemName: "folder.fill")
                 .font(DS.Typography.amountLarge)
                 .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
 
             Text(L10n.Empty.noCategories)
                 .font(DS.Typography.headline)
@@ -123,7 +125,7 @@ struct CategoriesSettingsListView: View {
                             } label: {
                                 Image(systemName: "minus.circle.fill")
                                     .font(DS.Typography.title)
-                                    .foregroundStyle(.red)
+                                    .foregroundStyle(DS.Semantic.errorForeground)
                             }
                             .accessibilityLabel(L10n.Accessibility.deleteCategory)
                             .padding(.leading, DS.Spacing.lg)
@@ -183,7 +185,7 @@ struct CategoriesSettingsListView: View {
                             } label: {
                                 Image(systemName: "minus.circle.fill")
                                     .font(DS.Typography.title)
-                                    .foregroundStyle(.red)
+                                    .foregroundStyle(DS.Semantic.errorForeground)
                             }
                             .accessibilityLabel(L10n.Accessibility.deleteCategory)
                             .padding(.leading, DS.Spacing.lg)

@@ -64,7 +64,7 @@ struct PanelView: View {
     @State private var showAIConsentAlert = false
     @State private var pendingAIInput: PendingAIInput = .voice
     @AppStorage("showSiriTip") private var showSiriTip: Bool = true
-    @AppStorage("panelShowAIInsight") private var showAIInsight: Bool = true
+    @AppStorage("panelShowAIInsight") private var showAIInsight: Bool = false
     @AppStorage(InsightTone.storageKey) private var toneSetting: String = InsightTone.normal.rawValue
     @AppStorage(InsightFocus.storageKey) private var focusSetting: String = InsightFocus.balanced.rawValue
 
@@ -576,6 +576,7 @@ struct PanelView: View {
                 Image(systemName: "sparkles")
                     .foregroundStyle(theme.accent)
                     .symbolEffect(.pulse)
+                    .accessibilityHidden(true)
                 Text(L10n.Insights.analyzingData)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
@@ -614,6 +615,13 @@ struct PanelView: View {
 
         guard isPro, hasConsent, isOnline, transactions.count >= 5 else {
             return
+        }
+
+        // Debounce: wait 10s after last filter change before calling LLM
+        do {
+            try await Task.sleep(for: .seconds(10))
+        } catch {
+            return // Task cancelled — filters changed again, skip LLM call
         }
 
         let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCodeRaw) ?? .pen
@@ -673,9 +681,14 @@ struct PanelView: View {
             aggregated["highest_expense"] = ["amount": Int(highest.amount), "description": highest.note] as [String: Any]
         }
 
-        // Subscriptions
+        // Subscriptions (Netflix, Spotify, etc.)
         if data.commitments.activeSubscriptionsCount > 0 {
             aggregated["subscriptions"] = ["count": data.commitments.activeSubscriptionsCount, "monthly_total": Int(data.commitments.activeSubscriptionsMonthly)] as [String: Any]
+        }
+
+        // Recurring payments (rent, utilities, payroll, etc.)
+        if data.commitments.activeRecurringCount > 0 {
+            aggregated["recurring_payments"] = ["count": data.commitments.activeRecurringCount, "monthly_total": Int(data.commitments.activeRecurringMonthly)] as [String: Any]
         }
 
         let needDist = data.needDistribution
@@ -758,6 +771,7 @@ struct PanelView: View {
                                     Image(systemName: "minus.circle.fill")
                                         .font(DS.Typography.chipIconOnly)
                                         .foregroundStyle(DS.Semantic.errorForeground)
+                                        .accessibilityHidden(true)
                                     Text(L10n.Filters.excludeMode)
                                         .font(DS.Typography.caption)
                                         .foregroundStyle(DS.Semantic.errorForeground)
@@ -1093,22 +1107,6 @@ struct PanelView: View {
     private func widgetView(for config: WidgetConfig) -> some View {
         // Render actual widget directly - calculations are fast enough now
         actualWidgetView(for: config)
-    }
-
-    @ViewBuilder
-    private func skeletonView(for config: WidgetConfig) -> some View {
-        switch config.type {
-        case .trend:
-            TrendWidgetSkeleton()
-        case .cashFlow:
-            CashFlowSkeleton()
-        case .latestRecords:
-            LatestRecordsSkeleton()
-        case .categoriesPie:
-            CategoriesPieSkeleton()
-        default:
-            WidgetSkeleton(height: config.size == .large ? 300 : 200)
-        }
     }
 
     @ViewBuilder
@@ -1735,7 +1733,7 @@ private struct ContextualInsightCard: View {
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "sparkles")
-                .font(.title2)
+                .font(DS.Typography.title)
                 .foregroundStyle(.tint)
                 .frame(width: 36, height: 36)
 
@@ -1774,7 +1772,7 @@ private struct SiriTipCard: View {
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "mic.badge.plus")
-                .font(.title2)
+                .font(DS.Typography.title)
                 .foregroundStyle(.tint)
                 .frame(width: 36, height: 36)
 

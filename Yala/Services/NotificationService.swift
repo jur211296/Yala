@@ -42,34 +42,37 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     ) {
         let userInfo = response.notification.request.content.userInfo
 
-        if let destination = userInfo["deepLink"] as? String {
-            DispatchQueue.main.async {
-                switch destination {
-                case "statistics":
-                    SessionState.shared.deepLinkDestination = .statistics
-                case "planning":
-                    SessionState.shared.deepLinkDestination = .planning
-                case "budgets":
-                    SessionState.shared.deepLinkDestination = .budgets
-                case "records":
-                    SessionState.shared.deepLinkDestination = .records
-                case "categories":
-                    SessionState.shared.deepLinkDestination = .categories
-                case "inbox":
-                    SessionState.shared.deepLinkDestination = .inbox
-                case "scheduledPayments":
-                    SessionState.shared.deepLinkDestination = .scheduledPayments
-                case "recordsStandalone":
-                    SessionState.shared.deepLinkDestination = .recordsStandalone
-                default:
-                    #if DEBUG
-                    print("NotificationService: Unknown deep link destination: \(destination)")
-                    #endif
+        if let destination = userInfo["deepLink"] as? String,
+           let dest = Self.parseDestination(destination) {
+            Task { @MainActor in
+                if SessionState.shared.isSplashDismissed {
+                    SessionState.shared.deepLinkDestination = dest
+                } else {
+                    SessionState.shared.deferredDeepLink = dest
                 }
             }
         }
 
         completionHandler()
+    }
+
+    /// Parse deep link string to DeepLinkDestination
+    static func parseDestination(_ destination: String) -> DeepLinkDestination? {
+        switch destination {
+        case "statistics": return .statistics
+        case "planning": return .planning
+        case "budgets": return .budgets
+        case "records": return .records
+        case "categories": return .categories
+        case "inbox": return .inbox
+        case "scheduledPayments": return .scheduledPayments
+        case "recordsStandalone": return .recordsStandalone
+        default:
+            #if DEBUG
+            print("NotificationService: Unknown deep link: \(destination)")
+            #endif
+            return nil
+        }
     }
 
     // MARK: - Permission

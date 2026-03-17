@@ -233,11 +233,13 @@ final class ReportNotificationService {
     static func formatReportBody(_ config: ReportConfig, reportType: NotificationType, data: ReportData) -> String {
         let currencyCode = CurrencyDefaults.currentPreferred
 
+        let period = reportType.periodKeySuffix
+
         switch config.dataType {
         case .balance:
-            return L10n.Notifications.reportBalance(YalaFormatter.currency(value: data.balance, currencyCode: currencyCode, forceFullPrecision: true))
+            let formatted = YalaFormatter.currency(value: data.balance, currencyCode: currencyCode, forceFullPrecision: true)
+            return L10n.Notifications.reportData(.balance, period: period, value: formatted)
         case .expenses:
-            // Empty state check
             if data.totalExpense == 0 {
                 switch reportType {
                 case .dailyReport: return L10n.Notifications.emptyExpensesDaily
@@ -246,18 +248,19 @@ final class ReportNotificationService {
                 default: return L10n.Notifications.emptyExpensesDaily
                 }
             }
-            return L10n.Notifications.reportExpenses(YalaFormatter.currency(value: data.totalExpense, currencyCode: currencyCode, forceFullPrecision: true))
+            let formatted = YalaFormatter.currency(value: data.totalExpense, currencyCode: currencyCode, forceFullPrecision: true)
+            return L10n.Notifications.reportData(.expenses, period: period, value: formatted)
         case .income:
-            // Empty state check
             if data.totalIncome == 0 {
                 return L10n.Notifications.emptyIncome
             }
-            return L10n.Notifications.reportIncome(YalaFormatter.currency(value: data.totalIncome, currencyCode: currencyCode, forceFullPrecision: true))
+            let formatted = YalaFormatter.currency(value: data.totalIncome, currencyCode: currencyCode, forceFullPrecision: true)
+            return L10n.Notifications.reportData(.income, period: period, value: formatted)
         case .topCategory:
             guard let topCategory = data.topCategory else {
                 return L10n.Notifications.emptyTopCategory
             }
-            return L10n.Notifications.reportTopCategory(topCategory)
+            return L10n.Notifications.reportData(.topCategory, period: period, value: topCategory)
         }
     }
 

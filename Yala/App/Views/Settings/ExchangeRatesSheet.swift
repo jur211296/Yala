@@ -31,7 +31,7 @@ struct ExchangeRatesSheet: View {
                 PanelBackgroundView()
 
                 ScrollView {
-                    VStack(spacing: DS.Spacing.lg) {
+                    LazyVStack(spacing: DS.Spacing.lg) {
                         ForEach(availableCurrencies, id: \.continent) { group in
                             SectionBox(title: group.continent.localizedName) {
                                 VStack(spacing: DS.Spacing.none) {
@@ -102,7 +102,7 @@ struct ExchangeRatesSheet: View {
 
             if let rate = rate {
                 Text(String(format: "%.4f %@", rate, preferredInfo.code))
-                    .font(.body.monospacedDigit())
+                    .font(DS.Typography.body.monospacedDigit())
                     .foregroundStyle(.primary)
             } else {
                 Text("--")

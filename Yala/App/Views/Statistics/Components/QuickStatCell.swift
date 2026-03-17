@@ -21,6 +21,7 @@ struct QuickStatCell: View {
                 Image(systemName: icon)
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(theme.accent)
+                    .accessibilityHidden(true)
 
                 Text(label)
                     .font(DS.Typography.captionSmall)

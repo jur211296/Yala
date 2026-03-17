@@ -1196,7 +1196,7 @@
 "account.creditCard.sectionTitle" = "Carta di credito";
 "account.creditCard.paymentReminder" = "Avvisa alla data di pagamento";
 "account.creditCard.paymentDay" = "Giorno di pagamento";
-"account.creditCard.paymentNotification" = "Ricorda di pagare la tua carta %@ oggi";
+"account.creditCard.paymentNotification" = "Oggi tocca pagare la tua carta %@ 💳";
 "category.others" = "Altri";
 "subcategory.balanceAdjustment" = "Rettifiche del saldo";
 
@@ -1444,6 +1444,7 @@
 "accessibility.proFeature" = "Abbonamento Pro richiesto";
 "accessibility.noActiveAccounts" = "Nessun conto attivo disponibile";
 "accessibility.noInactiveBudgets" = "Nessun budget inattivo da ripristinare";
+"accessibility.profile" = "Profilo";
 
 // MARK: - Widget Hints
 
@@ -2027,7 +2028,7 @@
 
 // Default notifications
 "notifications.endOfDay.name" = "Fine giornata";
-"notifications.endOfDay.text" = "Com'è andata oggi? 👋 Condividi le tue spese con noi";
+"notifications.endOfDay.text" = "Com'è andata oggi? 👋 Segna le tue spese prima di dimenticare";
 "notifications.lunchTime.name" = "Ora di pranzo";
 "notifications.lunchTime.text" = "Cosa hai mangiato? 🍽️ Annotalo finché lo ricordi";
 "notifications.weeklyReport.name" = "Report settimanale";
@@ -2074,24 +2075,32 @@
 "notifications.budgetAlerts.hint" = "Ricevi avvisi quando ti avvicini ai limiti";
 
 // Scheduled Payment Notifications (personalized)
-"notifications.scheduledPayment.dueToday" = "%1$@ scade oggi — %2$@ pronti 💰";
-"notifications.scheduledPayment.dueSoon" = "%2$@ scade tra %1$d giorni — %3$@";
-"notifications.scheduledPayment.overdue" = "%1$@ (%2$@) era in scadenza — già coperto?";
-"notifications.scheduledPayment.dueToday.income" = "Oggi arriva %1$@ da %2$@!";
-"notifications.scheduledPayment.dueSoon.income" = "%2$@ da %3$@ arriva tra %1$d giorni";
-"notifications.scheduledPayment.overdue.income" = "%1$@ da %2$@ era atteso — è arrivato?";
+"notifications.scheduledPayment.dueToday" = "Oggi tocca pagare %1$@ — %2$@ 💰";
+"notifications.scheduledPayment.dueSoon" = "%2$@ scade tra %1$d giorni — %3$@ 📅";
+"notifications.scheduledPayment.overdue" = "%1$@ di %2$@ era in scadenza — già coperto? 👀";
+"notifications.scheduledPayment.dueToday.income" = "Oggi arriva %1$@ da %2$@! 🎉";
+"notifications.scheduledPayment.dueSoon.income" = "%2$@ da %3$@ arriva tra %1$d giorni 📅";
+"notifications.scheduledPayment.overdue.income" = "Aspettavi %1$@ da %2$@ — è arrivato? 👀";
 
 // Report Notifications (with real data)
-"notifications.report.balance" = "Il tuo saldo oggi: %@";
-"notifications.report.expenses" = "Oggi hai speso %@";
-"notifications.report.income" = "Hai ricevuto %@ 🎉";
-"notifications.report.topCategory" = "La tua spesa maggiore: %@";
+"notifications.report.balance.daily" = "Il tuo saldo a fine giornata: %@ 💰";
+"notifications.report.balance.weekly" = "Il tuo saldo dopo questa settimana: %@ 💰";
+"notifications.report.balance.monthly" = "Il tuo saldo dopo questo mese: %@ 💰";
+"notifications.report.expenses.daily" = "Oggi hai speso %@ 📊";
+"notifications.report.expenses.weekly" = "Questa settimana hai speso %@ 📊";
+"notifications.report.expenses.monthly" = "Questo mese hai speso %@ 📊";
+"notifications.report.income.daily" = "Oggi hai ricevuto %@ 🎉";
+"notifications.report.income.weekly" = "Questa settimana hai ricevuto %@ 🎉";
+"notifications.report.income.monthly" = "Questo mese hai ricevuto %@ 🎉";
+"notifications.report.topCategory.daily" = "La tua spesa più alta di oggi: %@ 👀";
+"notifications.report.topCategory.weekly" = "La tua spesa più alta della settimana: %@ 👀";
+"notifications.report.topCategory.monthly" = "La tua spesa più alta del mese: %@ 👀";
 
 // Report Notifications (empty state)
 "notifications.report.empty.expenses.daily" = "Giornata tranquilla! Nessuna spesa ✨";
 "notifications.report.empty.expenses.weekly" = "Settimana tranquilla! Nessuna spesa registrata ✨";
 "notifications.report.empty.expenses.monthly" = "Mese tranquillo! Nessuna spesa registrata ✨";
-"notifications.report.empty.income" = "Nessuna entrata questo periodo — tutto tranquillo";
+"notifications.report.empty.income" = "Nessuna entrata questa volta — tutto a posto ✨";
 "notifications.report.empty.topCategory" = "Nessuna spesa! Il tuo portafoglio si è riposato 😊";
 
 "notifications.testReport.balance.daily" = "Il tuo saldo oggi: $1.250,00";
@@ -2596,6 +2605,12 @@
 "whatsNew.title" = "Novità in Yala";
 "whatsNew.subtitle" = "Versione %@";
 "whatsNew.continue" = "Continua";
+"whatsNew.v11.resumen.title" = "Panoramica";
+"whatsNew.v11.resumen.description" = "Uno sguardo rapido alle tue finanze: medie, tendenze e distribuzione delle spese.";
+"whatsNew.v11.budgetDetail.title" = "Dettaglio budget";
+"whatsNew.v11.budgetDetail.description" = "Esplora come si distribuisce ogni budget per sottocategorie.";
+"whatsNew.v11.exclude.title" = "Modalità esclusione nei filtri";
+"whatsNew.v11.exclude.description" = "Filtra escludendo ciò che non vuoi vedere invece di selezionare tutto.";
 "whatsNew.v12.coachMarks.title" = "Guide passo passo";
 "whatsNew.v12.coachMarks.description" = "Ora ti mostriamo come usare ogni sezione con guide interattive.";
 "whatsNew.v12.notifications.title" = "Notifiche più intelligenti";

@@ -81,7 +81,7 @@ struct ScreenshotListExtractor {
 
         // Remove currency symbols and amount
         let amountString = String(describing: amount)
-        cleaned = cleaned.replacingOccurrences(of: amountString, with: "")
+        cleaned = cleaned.replacing(amountString, with: "")
         cleaned = cleaned.replacingOccurrences(of: "\\$|€|£|S/", with: "", options: .regularExpression)
 
         // Remove common date patterns

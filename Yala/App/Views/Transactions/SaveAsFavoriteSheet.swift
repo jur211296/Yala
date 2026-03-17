@@ -147,6 +147,7 @@ struct SaveAsFavoriteSheet: View {
                 Image(systemName: "star")
                     .foregroundStyle(.secondary)
                     .frame(width: 24)
+                    .accessibilityHidden(true)
 
                 TextField(L10n.Favorites.namePlaceholder, text: $name)
                     .focused($isNameFocused)
@@ -212,6 +213,7 @@ struct SaveAsFavoriteSheet: View {
             Image(systemName: icon)
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
+                .accessibilityHidden(true)
 
             Text(label)
                 .foregroundStyle(.primary)
@@ -254,6 +256,7 @@ struct SaveAsFavoriteSheet: View {
             Image(systemName: "number")
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
+                .accessibilityHidden(true)
 
             Text(L10n.Settings.tags)
                 .foregroundStyle(.primary)
@@ -289,6 +292,7 @@ struct SaveAsFavoriteSheet: View {
             Image(systemName: "dollarsign.circle")
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
+                .accessibilityHidden(true)
 
             Text(L10n.Transaction.amount)
                 .foregroundStyle(.primary)
@@ -318,6 +322,7 @@ struct SaveAsFavoriteSheet: View {
             Image(systemName: "note.text")
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
+                .accessibilityHidden(true)
 
             Text(L10n.Transaction.note)
                 .foregroundStyle(.primary)

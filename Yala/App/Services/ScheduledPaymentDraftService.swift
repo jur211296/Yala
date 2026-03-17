@@ -41,22 +41,33 @@ struct ScheduledPaymentDraftService {
         }
 
         var draftsCreated = 0
+        var hasChanges = false
 
         for payment in duePayments {
             // Skip if this date has been pre-skipped by user
             if payment.isDateSkipped(payment.nextDueDate) {
                 advanceToNextDueDate(payment: payment)
+                hasChanges = true
                 continue
             }
 
-            // Check if draft already exists for this payment
-            if hasPendingDraft(for: payment, context: context) {
+            // Safety: skip if already paid for this date (prevents duplicates from sync/reactivation)
+            if let lastPaid = payment.lastPaidDate,
+               calendar.isDate(lastPaid, inSameDayAs: payment.nextDueDate) {
+                advanceToNextDueDate(payment: payment)
+                hasChanges = true
+                continue
+            }
+
+            // Check if draft already exists for this payment (pending or approved)
+            if hasExistingDraft(for: payment, on: payment.nextDueDate, context: context) {
                 continue
             }
 
             // Check if a transaction already exists linked to this payment for this date
             if hasLinkedTransaction(for: payment, on: payment.nextDueDate, context: context) {
                 advanceToNextDueDate(payment: payment)
+                hasChanges = true
                 continue
             }
 
@@ -64,10 +75,11 @@ struct ScheduledPaymentDraftService {
             let draft = createDraft(from: payment)
             context.insert(draft)
             draftsCreated += 1
+            hasChanges = true
         }
 
-        // Save changes
-        if draftsCreated > 0 {
+        // Save changes (includes advances from skipped/paid dates, not just new drafts)
+        if hasChanges {
             do {
                 try context.save()
             } catch {
@@ -82,28 +94,30 @@ struct ScheduledPaymentDraftService {
 
     // MARK: - Draft Creation
 
-    /// Check if a pending draft already exists for this payment
-    private static func hasPendingDraft(for payment: ScheduledPayment, context: ModelContext) -> Bool {
+    /// Check if a pending or approved draft already exists for this payment on the given date
+    private static func hasExistingDraft(for payment: ScheduledPayment, on date: Date, context: ModelContext) -> Bool {
         let paymentID = payment.id.uuidString
+        let calendar = Calendar.current
 
         let predicate = #Predicate<InboxDraft> { draft in
             draft.sourceScheduledPaymentID == paymentID &&
-            draft.statusRaw == "pending"
+            (draft.statusRaw == "pending" || draft.statusRaw == "approved")
         }
 
         let descriptor = FetchDescriptor<InboxDraft>(predicate: predicate)
 
-        let existingDrafts: [InboxDraft]
         do {
-            existingDrafts = try context.fetch(descriptor)
+            let drafts = try context.fetch(descriptor)
+            return drafts.contains { draft in
+                guard let draftDate = draft.date else { return false }
+                return calendar.isDate(draftDate, inSameDayAs: date)
+            }
         } catch {
             #if DEBUG
             print("ScheduledPaymentDraftService: Error checking for existing draft: \(error)")
             #endif
             return false
         }
-
-        return !existingDrafts.isEmpty
     }
 
     /// Check if a transaction already exists linked to this payment on the given date
@@ -183,8 +197,8 @@ struct ScheduledPaymentDraftService {
         // Only recreate for dates that are today or past
         guard targetDate <= today else { return }
 
-        // Don't duplicate if pending draft exists
-        guard !hasPendingDraft(for: payment, context: context) else { return }
+        // Don't duplicate if pending/approved draft exists for this date
+        guard !hasExistingDraft(for: payment, on: date, context: context) else { return }
 
         // Check no approved draft exists for this payment in the same month
         let paymentID = payment.id.uuidString
@@ -283,41 +297,34 @@ struct ScheduledPaymentDraftService {
     /// Called after a draft from a scheduled payment is approved
     /// Updates lastPaidDate and advances nextDueDate
     static func handleDraftApproved(draft: InboxDraft, context: ModelContext) {
-        guard let paymentIDString = draft.sourceScheduledPaymentID else { return }
+        guard let paymentIDString = draft.sourceScheduledPaymentID,
+              let paymentUUID = UUID(uuidString: paymentIDString) else { return }
 
-        // Fetch all scheduled payments and find the one matching our ID
-        let descriptor = FetchDescriptor<ScheduledPayment>()
+        // Fetch the specific scheduled payment by ID
+        let predicate = #Predicate<ScheduledPayment> { payment in
+            payment.id == paymentUUID
+        }
+        var descriptor = FetchDescriptor<ScheduledPayment>(predicate: predicate)
+        descriptor.fetchLimit = 1
 
-        let payments: [ScheduledPayment]
+        let payment: ScheduledPayment
         do {
-            payments = try context.fetch(descriptor)
+            guard let found = try context.fetch(descriptor).first else { return }
+            payment = found
         } catch {
             #if DEBUG
-            print("ScheduledPaymentDraftService: Error fetching payments for approval: \(error)")
+            print("ScheduledPaymentDraftService: Error fetching payment for approval: \(error)")
             #endif
             return
         }
 
-        // Find payment by matching UUID
-        guard let payment = payments.first(where: {
-            $0.id.uuidString == paymentIDString
-        }) else { return }
-
-        // Update paid date
-        payment.lastPaidDate = Date.now
+        // Update paid date (use draft's date for retroactive approvals)
+        payment.lastPaidDate = draft.date ?? Date.now
 
         // Link approved transaction to this scheduled payment
         draft.approvedTransaction?.scheduledPaymentID = payment.id.uuidString
 
         // Advance to next due date
         advanceToNextDueDate(payment: payment)
-
-        do {
-            try context.save()
-        } catch {
-            #if DEBUG
-            print("ScheduledPaymentDraftService: Error saving after draft approved: \(error)")
-            #endif
-        }
     }
 }

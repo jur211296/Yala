@@ -221,7 +221,7 @@ struct CashFlowCalculatorTests {
         let cat = makeCategory(name: "Adjustment")
         let today = Calendar.current.startOfDay(for: Date())
 
-        let adjustmentTypes = ["initial_balance", "adjustment", "transfer"]
+        let adjustmentTypes = [InitialBalanceService.typeInitialBalance, InitialBalanceService.typeAdjustment, TransactionItem.adjustmentTypeTransfer]
         let transactions = adjustmentTypes.map { type in
             makeTransaction(amount: 100, date: today, category: cat, balanceAdjustmentType: type)
         }

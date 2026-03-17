@@ -255,11 +255,11 @@ enum XLSXWriter {
         var escaped = String(String.UnicodeScalarView(validChars))
 
         // Then escape XML special characters
-        escaped = escaped.replacingOccurrences(of: "&", with: "&amp;")
-        escaped = escaped.replacingOccurrences(of: "<", with: "&lt;")
-        escaped = escaped.replacingOccurrences(of: ">", with: "&gt;")
-        escaped = escaped.replacingOccurrences(of: "\"", with: "&quot;")
-        escaped = escaped.replacingOccurrences(of: "'", with: "&apos;")
+        escaped = escaped.replacing("&", with: "&amp;")
+        escaped = escaped.replacing("<", with: "&lt;")
+        escaped = escaped.replacing(">", with: "&gt;")
+        escaped = escaped.replacing("\"", with: "&quot;")
+        escaped = escaped.replacing("'", with: "&apos;")
         return escaped
     }
 
@@ -271,7 +271,7 @@ enum XLSXWriter {
             var isDirectory: ObjCBool = false
             fileManager.fileExists(atPath: item.path, isDirectory: &isDirectory)
 
-            let relativePath = item.path.replacingOccurrences(of: baseURL.path + "/", with: "")
+            let relativePath = item.path.replacing(baseURL.path + "/", with: "")
 
             if isDirectory.boolValue {
                 try addToArchive(archive, directory: item, relativeTo: baseURL)

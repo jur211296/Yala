@@ -79,7 +79,7 @@ struct BalanceCalculatorSheet: View {
     // MARK: - Computed Balances
 
     private func parseAmount(_ text: String) -> Double {
-        Double(text.replacingOccurrences(of: ",", with: ".")) ?? 0
+        Double(text.replacing(",", with: ".")) ?? 0
     }
 
     private var generalTotal: Double {
@@ -369,6 +369,7 @@ struct BalanceCalculatorSheet: View {
             Image(systemName: "lightbulb.fill")
                 .font(DS.Typography.body)
                 .foregroundStyle(Color.electricIndigo)
+                .accessibilityHidden(true)
             Text(text)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
@@ -380,17 +381,9 @@ struct BalanceCalculatorSheet: View {
     }
 
     private func useBalanceButton(amount: Double, isPositive: Bool) -> some View {
-        Button {
+        YalaPrimaryButton(L10n.Onboarding.calcUseBalance) {
             onUseBalance(isPositive ? amount : -abs(amount))
             onDismiss()
-        } label: {
-            Text(L10n.Onboarding.calcUseBalance)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, DS.Spacing.md)
-                .background(Color.electricIndigo)
-                .clipShape(Capsule())
         }
     }
 

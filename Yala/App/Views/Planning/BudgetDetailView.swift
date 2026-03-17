@@ -96,6 +96,7 @@ struct BudgetDetailView: View {
                 Image(systemName: summary.icon)
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(.white)
+                    .accessibilityHidden(true)
             }
 
             // Amount spent
@@ -160,6 +161,7 @@ struct BudgetDetailView: View {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "info.circle.fill")
                     .foregroundStyle(.thAccent)
+                    .accessibilityHidden(true)
                 Text(L10n.BudgetDetail.infoTitle)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
@@ -239,6 +241,7 @@ struct BudgetDetailView: View {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "gauge.medium")
                     .foregroundStyle(.thAccent)
+                    .accessibilityHidden(true)
                 Text(L10n.BudgetDetail.statusTitle)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
@@ -252,6 +255,7 @@ struct BudgetDetailView: View {
                         .font(DS.Typography.body)
                         .foregroundStyle(budget.isActive ? theme.accent : DS.Semantic.warningForeground)
                         .frame(width: 24)
+                        .accessibilityHidden(true)
 
                     Text(budget.isActive ? BudgetStatus.active.localizedName : BudgetStatus.inactive.localizedName)
                         .font(DS.Typography.label)
@@ -271,6 +275,7 @@ struct BudgetDetailView: View {
                             .font(DS.Typography.body)
                             .foregroundStyle(.secondary)
                             .frame(width: 24)
+                            .accessibilityHidden(true)
 
                         Text(L10n.BudgetDetail.alerts)
                             .font(DS.Typography.subheadline)
@@ -304,6 +309,7 @@ struct BudgetDetailView: View {
             Image(systemName: "heart.fill")
                 .font(DS.Typography.body)
                 .foregroundStyle(Color.hotPink)
+                .accessibilityHidden(true)
 
             Text(NSLocalizedString("budgets.exceeded.encouragement", comment: ""))
                 .font(DS.Typography.caption)
@@ -325,6 +331,7 @@ struct BudgetDetailView: View {
                 .font(DS.Typography.body)
                 .foregroundStyle(.secondary)
                 .frame(width: 24)
+                .accessibilityHidden(true)
 
             Text(label)
                 .font(DS.Typography.subheadline)

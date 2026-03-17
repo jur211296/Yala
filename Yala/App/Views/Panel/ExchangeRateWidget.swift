@@ -470,6 +470,7 @@ struct ExchangeRateWidget: View {
             Image(systemName: "arrow.left.arrow.right.circle")
                 .font(DS.Typography.title)
                 .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
             Text(L10n.ExchangeRate.noSecondaryCurrenciesHint)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
@@ -489,6 +490,7 @@ struct ExchangeRateWidget: View {
             Image(systemName: "exclamationmark.triangle")
                 .font(DS.Typography.title)
                 .foregroundStyle(DS.Semantic.warningForeground)
+                .accessibilityHidden(true)
             Text(message)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
@@ -535,14 +537,6 @@ struct ExchangeRateWidget: View {
         case .month: formatter = Self.tooltipMonthFormatter
         }
         return formatter.string(from: date)
-    }
-
-    private func calendarUnit(for grouping: TrendGrouping) -> Calendar.Component {
-        switch grouping {
-        case .day: return .day
-        case .week: return .weekOfYear
-        case .month: return .month
-        }
     }
 
     private func calendarComponent(for grouping: TrendGrouping) -> Calendar.Component {

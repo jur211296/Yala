@@ -452,7 +452,7 @@ struct TransactionsExportService {
             needsQuotes = true
         }
 
-        var escaped = value.replacingOccurrences(of: "\"", with: "\"\"")
+        var escaped = value.replacing("\"", with: "\"\"")
 
         if needsQuotes {
             escaped = "\"\(escaped)\""

@@ -49,6 +49,7 @@ struct SubcategorySelectorSheet: View {
                                         Image(systemName: "clock.arrow.circlepath")
                                             .font(DS.Typography.caption)
                                             .foregroundStyle(.secondary)
+                                            .accessibilityHidden(true)
                                         Text(L10n.Common.recent)
                                             .font(DS.Typography.headline)
                                             .foregroundStyle(.secondary)

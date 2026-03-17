@@ -167,6 +167,7 @@ struct OnboardingView: View {
                         .scaledToFit()
                         .frame(width: appIconSize, height: appIconSize)
                         .clipShape(RoundedRectangle(cornerRadius: 26))
+                        .accessibilityHidden(true)
 
                     VStack(spacing: DS.Spacing.md) {
                         Text(L10n.Onboarding.welcomeTitle)
@@ -231,6 +232,7 @@ struct OnboardingView: View {
                     .font(.system(size: heroIconSize))
                     .foregroundStyle(Color.electricIndigo)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                    .accessibilityHidden(true)
 
                 Text(L10n.Onboarding.currencyTitle)
                     .font(DS.Typography.title)
@@ -310,6 +312,7 @@ struct OnboardingView: View {
                             .font(.system(size: heroIconSize))
                             .foregroundStyle(Color.electricIndigo)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                            .accessibilityHidden(true)
 
                         Text(L10n.Onboarding.expensesOnlyTitle)
                             .font(DS.Typography.title)
@@ -423,6 +426,7 @@ struct OnboardingView: View {
                             .font(.system(size: heroIconSize))
                             .foregroundStyle(Color.electricIndigo)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                            .accessibilityHidden(true)
 
                         Text(L10n.Onboarding.categoriesTitle)
                             .font(DS.Typography.title)
@@ -446,6 +450,7 @@ struct OnboardingView: View {
                         Image(systemName: "info.circle")
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
                         Text(L10n.Onboarding.categoriesInfo)
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
@@ -528,6 +533,7 @@ struct OnboardingView: View {
                         .font(.system(size: heroIconSize))
                         .foregroundStyle(Color.electricIndigo)
                         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                        .accessibilityHidden(true)
 
                     Text(L10n.Onboarding.accountTitle)
                         .font(DS.Typography.title)
@@ -787,6 +793,7 @@ struct OnboardingView: View {
                         .font(.system(size: heroIconSize))
                         .foregroundStyle(Color.electricIndigo)
                         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                        .accessibilityHidden(true)
 
                     Text(L10n.Onboarding.budgetTitle)
                         .font(DS.Typography.title)
@@ -934,7 +941,7 @@ struct OnboardingView: View {
         let selectedCategory = selectedBudgetCategoryIndex
             .flatMap { $0 < cats.count ? cats[$0] : nil }
 
-        let budgetAmount = Double(budgetAmountText.replacingOccurrences(of: ",", with: ".")) ?? 0
+        let budgetAmount = Double(budgetAmountText.replacing(",", with: ".")) ?? 0
         let hasCategory = selectedCategory != nil
         let hasAmount = budgetAmount > 0
 
@@ -1016,6 +1023,7 @@ struct OnboardingView: View {
                             .font(.system(size: completionIconSize))
                             .foregroundStyle(Color.electricIndigo)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                            .accessibilityHidden(true)
                     }
 
                     VStack(spacing: DS.Spacing.md) {
@@ -1057,6 +1065,7 @@ struct OnboardingView: View {
                 Image(systemName: icon)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(color)
+                    .accessibilityHidden(true)
             }
 
             Text(text)
@@ -1092,6 +1101,7 @@ struct OnboardingView: View {
                         Image(systemName: category.iconName)
                             .font(DS.Typography.title)
                             .foregroundStyle(Color(hex: category.colorHex))
+                            .accessibilityHidden(true)
                     }
 
                     Text(category.name)
@@ -1177,7 +1187,7 @@ struct OnboardingView: View {
         case 5:
             // If user wants a budget, require category + valid amount
             if wantsBudget {
-                let cleanedAmount = budgetAmountText.replacingOccurrences(of: ",", with: ".")
+                let cleanedAmount = budgetAmountText.replacing(",", with: ".")
                 guard let index = selectedBudgetCategoryIndex,
                       index < budgetCategories.count,
                       let amount = Double(cleanedAmount),
@@ -1240,36 +1250,25 @@ struct OnboardingView: View {
             }
 
             // Next/Finish button
-            Button {
-                // Dismiss keyboard (especially important on step 0)
+            YalaPrimaryButton(
+                currentStep >= totalSteps - 1 ? L10n.Onboarding.finish : L10n.Action.next,
+                isDisabled: isNextDisabled
+            ) {
                 dismissKeyboard()
 
                 if currentStep < totalSteps - 1 {
                     navigatingForward = true
-                    // Compute destination before animation to avoid reading stale state
                     let nextStep = (currentStep == 4 && !loadSeedCategories) ? 6 : currentStep + 1
                     dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
                         currentStep = nextStep
                     }
-                    // Trigger category icons animation when entering categories step
                     if nextStep == 3 {
                         triggerCategoryAnimation()
                     }
                 } else {
                     completeOnboarding()
                 }
-            } label: {
-                let isLastStep = currentStep >= totalSteps - 1
-
-                Text(isLastStep ? L10n.Onboarding.finish : L10n.Action.next)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, DS.Spacing.md)
-                    .background(isNextDisabled ? Color.electricIndigo.opacity(0.4) : Color.electricIndigo)
-                    .clipShape(Capsule())
             }
-            .disabled(isNextDisabled)
         }
     }
 
@@ -1366,7 +1365,7 @@ struct OnboardingView: View {
 
         // Set initial balance if in full control mode and amount > 0
         if !expensesOnlyMode {
-            let cleanedText = initialBalanceText.replacingOccurrences(of: ",", with: ".")
+            let cleanedText = initialBalanceText.replacing(",", with: ".")
             if let amount = Double(cleanedText), amount != 0 {
                 let signedAmount = balanceIsPositive ? amount : -amount
                 if let sub = InitialBalanceService.findBalanceAdjustmentSubcategory(context: modelContext) {
@@ -1389,7 +1388,7 @@ struct OnboardingView: View {
     private func createOnboardingBudget() {
         guard let catIndex = selectedBudgetCategoryIndex else { return }
 
-        let cleanedText = budgetAmountText.replacingOccurrences(of: ",", with: ".")
+        let cleanedText = budgetAmountText.replacing(",", with: ".")
         guard let budgetAmount = Double(cleanedText), budgetAmount > 0 else { return }
 
         // Get the category info from preview

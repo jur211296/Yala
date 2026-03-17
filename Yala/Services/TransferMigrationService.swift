@@ -46,15 +46,15 @@ import SwiftData
         // Fetch all positive transfers currently in Otros
         let otrosCategoryName = "Otros"
         do {
-            let descriptor = FetchDescriptor<TransactionItem>()
-            let allTransactions = try context.fetch(descriptor)
+            var descriptor = FetchDescriptor<TransactionItem>()
+            let transferType = TransactionItem.adjustmentTypeTransfer
+            descriptor.predicate = #Predicate<TransactionItem> { $0.balanceAdjustmentType == transferType && $0.amount > 0 }
+            let transferTransactions = try context.fetch(descriptor)
 
             var migratedCount = 0
-            for transaction in allTransactions {
+            for transaction in transferTransactions {
                 // Check if this is a positive transfer in Otros
-                guard transaction.balanceAdjustmentType == "transfer",
-                      transaction.amount > 0,
-                      transaction.category?.name == otrosCategoryName,
+                guard transaction.category?.name == otrosCategoryName,
                       transferSubcategoryNames.contains(transaction.subcategory?.name ?? "")
                 else { continue }
 

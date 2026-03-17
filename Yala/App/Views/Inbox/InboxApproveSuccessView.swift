@@ -124,6 +124,7 @@ struct InboxApproveSuccessView: View {
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .scaleEffect(showCheckmark ? 1.0 : 0.0)
                             .opacity(showCheckmark ? 1.0 : 0.0)
+                            .accessibilityHidden(true)
                     }
 
                     // Promoted amount
@@ -248,6 +249,7 @@ struct InboxApproveSuccessView: View {
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: DS.Icon.sizeLarge)
+                .accessibilityHidden(true)
 
             Text(label)
                 .font(DS.Typography.subheadline)
@@ -270,6 +272,7 @@ struct InboxApproveSuccessView: View {
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: DS.Icon.sizeLarge)
+                .accessibilityHidden(true)
 
             Text(L10n.Transaction.account)
                 .font(DS.Typography.subheadline)
@@ -296,6 +299,7 @@ struct InboxApproveSuccessView: View {
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: DS.Icon.sizeLarge)
+                .accessibilityHidden(true)
 
             Text(L10n.Transaction.category)
                 .font(DS.Typography.subheadline)

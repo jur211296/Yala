@@ -117,20 +117,8 @@ final class CategoryDetailViewModel {
     // MARK: - Category Operations
 
     func countTransactionsInCategory() -> Int {
-        guard let context = modelContext else { return 0 }
-        do {
-            let descriptor = FetchDescriptor<TransactionItem>()
-            let allTransactions = try context.fetch(descriptor)
-            return allTransactions.filter { transaction in
-                guard let subcategory = transaction.subcategory else { return false }
-                return subcategory.safeCategory == category
-            }.count
-        } catch {
-            #if DEBUG
-            print("CategoryDetailViewModel: Error counting transactions: \(error)")
-            #endif
-            return 0
-        }
+        guard let service = deletionService else { return 0 }
+        return service.transactionCount(forCategory: category)
     }
 
     func saveCategory() -> Bool {

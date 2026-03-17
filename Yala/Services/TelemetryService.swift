@@ -24,6 +24,7 @@ enum AnalyticsEvent: String {
     case onboardingCompleted
     case purchaseAttempted
     case featureGateHit
+    case reviewPromptShown
 }
 
 // MARK: - Telemetry Service

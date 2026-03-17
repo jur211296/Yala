@@ -180,7 +180,7 @@ struct TagSpendingCalculatorTests {
     @Test func balanceAdjustment_excluded() {
         let tag = makeTag(name: "Food")
         let cat = makeCategory(name: "Groceries")
-        let tx = makeTransaction(amount: -100, category: cat, tags: [tag], balanceAdjustmentType: "transfer")
+        let tx = makeTransaction(amount: -100, category: cat, tags: [tag], balanceAdjustmentType: TransactionItem.adjustmentTypeTransfer)
 
         let result = TagSpendingCalculator.calculateTopSpending(
             transactions: [tx],

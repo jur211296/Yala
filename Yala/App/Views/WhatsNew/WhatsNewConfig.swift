@@ -15,6 +15,8 @@ enum WhatsNewConfig {
     static func features(for version: String) -> [WhatsNewFeature]? {
         let majorMinor = extractMajorMinor(version)
         switch majorMinor {
+        case "1.1":
+            return version1_1
         case "1.2":
             return version1_2
         // case "1.3": return version1_3
@@ -22,6 +24,29 @@ enum WhatsNewConfig {
             return nil
         }
     }
+
+    // MARK: - Version 1.1
+
+    private static let version1_1: [WhatsNewFeature] = [
+        WhatsNewFeature(
+            icon: "chart.bar.doc.horizontal.fill",
+            iconColor: .purple,
+            title: L10n.WhatsNew.v11ResumenTitle,
+            description: L10n.WhatsNew.v11ResumenDescription
+        ),
+        WhatsNewFeature(
+            icon: "chart.pie.fill",
+            iconColor: .blue,
+            title: L10n.WhatsNew.v11BudgetDetailTitle,
+            description: L10n.WhatsNew.v11BudgetDetailDescription
+        ),
+        WhatsNewFeature(
+            icon: "line.3.horizontal.decrease.circle.fill",
+            iconColor: .orange,
+            title: L10n.WhatsNew.v11ExcludeTitle,
+            description: L10n.WhatsNew.v11ExcludeDescription
+        ),
+    ]
 
     // MARK: - Version 1.2
 

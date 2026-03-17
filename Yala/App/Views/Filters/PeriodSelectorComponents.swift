@@ -39,6 +39,7 @@ struct TrendsPeriodMenu: View, Equatable {
                         Text(period.displayName)
                         if selectedPeriod == period {
                             Image(systemName: "checkmark")
+                                .accessibilityHidden(true)
                         }
                     }
                 }
@@ -56,6 +57,7 @@ struct TrendsPeriodMenu: View, Equatable {
                         Text(formattedRange(range))
                         if selectedPeriod == .custom {
                             Image(systemName: "checkmark")
+                                .accessibilityHidden(true)
                         }
                     }
                 }
@@ -75,6 +77,7 @@ struct TrendsPeriodMenu: View, Equatable {
                         Text(L10n.Period.custom)
                         if selectedPeriod == .custom {
                             Image(systemName: "checkmark")
+                                .accessibilityHidden(true)
                         }
                     }
                 }
