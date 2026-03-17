@@ -169,22 +169,4 @@ struct BalanceHelper {
 
         return (total as NSDecimalNumber).doubleValue
     }
-
-    /// Converts an amount from one currency to another using the latest available rate.
-    private static func convertToPreferredCurrency(
-        amount: Decimal,
-        from source: CurrencyCode,
-        to target: CurrencyCode,
-        converter: CurrencyConverting
-    ) -> Decimal {
-        if source == target {
-            return amount
-        }
-
-        return converter.convertWithLatestRate(
-            amount,
-            from: source.rawValue,
-            to: target.rawValue
-        )
-    }
 }

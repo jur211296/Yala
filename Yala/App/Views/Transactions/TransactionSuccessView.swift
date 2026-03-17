@@ -142,6 +142,7 @@ struct TransactionSuccessView: View {
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .scaleEffect(showCheckmark ? 1.0 : 0.0)
                             .opacity(showCheckmark ? 1.0 : 0.0)
+                            .accessibilityHidden(true)
                     }
 
                     // Promoted amount
@@ -318,6 +319,7 @@ struct TransactionSuccessView: View {
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(data.transactionType.color)
                 .frame(width: 20)
+                .accessibilityHidden(true)
 
             Text(L10n.Transaction.type)
                 .font(DS.Typography.subheadline)
@@ -343,6 +345,7 @@ struct TransactionSuccessView: View {
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
+                .accessibilityHidden(true)
 
             Text(label)
                 .font(DS.Typography.subheadline)
@@ -365,6 +368,7 @@ struct TransactionSuccessView: View {
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
+                .accessibilityHidden(true)
 
             Text(L10n.Account.selectAccount)
                 .font(DS.Typography.subheadline)
@@ -393,6 +397,7 @@ struct TransactionSuccessView: View {
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(Color.hotPink)
                     .frame(width: 20)
+                    .accessibilityHidden(true)
 
                 Text(L10n.Transaction.origin)
                     .font(DS.Typography.subheadline)
@@ -421,6 +426,7 @@ struct TransactionSuccessView: View {
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.thAccent)
                         .frame(width: 20)
+                        .accessibilityHidden(true)
 
                     Text(L10n.Transaction.destination)
                         .font(DS.Typography.subheadline)
@@ -460,6 +466,7 @@ struct TransactionSuccessView: View {
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
+                .accessibilityHidden(true)
 
             Text(L10n.Transaction.category)
                 .font(DS.Typography.subheadline)
@@ -499,6 +506,7 @@ struct TransactionSuccessView: View {
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
+                .accessibilityHidden(true)
 
             Text(L10n.Category.need)
                 .font(DS.Typography.subheadline)
@@ -531,6 +539,7 @@ struct TransactionSuccessView: View {
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(width: 20)
+                .accessibilityHidden(true)
 
             Text(L10n.Transaction.tags)
                 .font(DS.Typography.subheadline)

@@ -248,7 +248,7 @@ struct TabBarConfigView: View {
         HStack(spacing: DS.Spacing.sm) {
             Image(systemName: icon)
                 .font(DS.Typography.caption)
-                .foregroundStyle(.orange)
+                .foregroundStyle(DS.Semantic.warningForeground)
 
             Text(text)
                 .font(DS.Typography.caption)

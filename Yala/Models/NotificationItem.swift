@@ -20,6 +20,16 @@ enum NotificationType: String, Codable, CaseIterable, Sendable {
     case scheduledPayments = "scheduledPayments"
     case custom = "custom"
 
+    /// Localization key suffix for report period: "daily", "weekly", "monthly"
+    var periodKeySuffix: String {
+        switch self {
+        case .dailyReport: "daily"
+        case .weeklyReport: "weekly"
+        case .monthlyReport: "monthly"
+        default: "daily"
+        }
+    }
+
     var defaultIcon: String {
         switch self {
         case .endOfDay: return "moon.stars.fill"

@@ -98,11 +98,11 @@ struct AmountParser {
 
         if hasCommaAsDecimal {
             // European format: 1.234,56 -> remove dots, replace comma with dot
-            cleaned = cleaned.replacingOccurrences(of: ".", with: "")
-            cleaned = cleaned.replacingOccurrences(of: ",", with: ".")
+            cleaned = cleaned.replacing(".", with: "")
+            cleaned = cleaned.replacing(",", with: ".")
         } else {
             // American format: 1,234.56 -> remove commas
-            cleaned = cleaned.replacingOccurrences(of: ",", with: "")
+            cleaned = cleaned.replacing(",", with: "")
         }
 
         return cleaned

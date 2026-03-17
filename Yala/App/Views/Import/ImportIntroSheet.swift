@@ -445,7 +445,7 @@ struct ImportIntroSheet: View {
         let allRows = [headers] + rows
         return allRows.map { row in
             row.map { field in
-                let escaped = field.replacingOccurrences(of: "\"", with: "\"\"")
+                let escaped = field.replacing("\"", with: "\"\"")
                 return "\"\(escaped)\""
             }.joined(separator: ",")
         }.joined(separator: "\n")

@@ -25,6 +25,7 @@ struct LanguageSelectionView: View {
                     .font(.system(size: heroSize))
                     .foregroundStyle(Color.electricIndigo)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                    .accessibilityHidden(true)
 
                 Text(L10n.Onboarding.languageTitle)
                     .font(DS.Typography.title)
@@ -51,17 +52,9 @@ struct LanguageSelectionView: View {
             Spacer()
 
             // Continue button
-            Button {
+            YalaPrimaryButton(L10n.Action.next) {
                 LanguageManager.overrideLanguage = selectedLanguage
                 onComplete()
-            } label: {
-                Text(L10n.Action.next)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, DS.Spacing.md)
-                    .background(Color.electricIndigo)
-                    .clipShape(Capsule())
             }
             .padding(.horizontal, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxxl)

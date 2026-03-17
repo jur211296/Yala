@@ -542,6 +542,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                                                 Image(systemName: "checkmark")
                                                     .foregroundStyle(theme.accent)
                                                     .font(DS.Typography.headline)
+                                                    .accessibilityHidden(true)
                                             }
                                         }
                                         .padding(.horizontal, DS.FormRow.paddingH)
@@ -625,6 +626,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                                                 Image(systemName: "checkmark")
                                                     .foregroundStyle(theme.accent)
                                                     .font(DS.Typography.headline)
+                                                    .accessibilityHidden(true)
                                             }
                                         }
                                         .padding(.horizontal, DS.FormRow.paddingH)

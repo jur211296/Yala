@@ -155,7 +155,7 @@ struct TopSubcategoriesCalculatorTests {
             amount: -100,
             category: cat,
             subcategory: sub,
-            balanceAdjustmentType: "transfer"
+            balanceAdjustmentType: TransactionItem.adjustmentTypeTransfer
         )
 
         let result = TopSubcategoriesCalculator.calculateTopSubcategories(

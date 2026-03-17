@@ -936,7 +936,7 @@ struct CashFlowWidget: View {
         case .day, .week: formatter = Self.tooltipDayFormatter
         case .month: formatter = Self.tooltipMonthFormatter
         }
-        return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
+        return formatter.string(from: date).lowercased().replacing(".", with: "")
     }
 }
 

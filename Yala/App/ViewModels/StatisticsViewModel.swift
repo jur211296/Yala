@@ -33,13 +33,6 @@ final class StatisticsViewModel: Filterable {
 
     // MARK: - Trend Locking Logic
 
-    /// Metric lock state based on active filters
-    enum MetricLockState {
-        case none           // No lock, user can select any metric
-        case lockedIncome   // Locked to income (only income filter selected)
-        case lockedExpense  // Locked to expense (category/need filters or only expense filter)
-    }
-
     // Check if any category/subcategory/need filters are active
     var hasCategoryFilters: Bool {
         !selectedCategories.isEmpty || !selectedSubcategories.isEmpty || !selectedNeeds.isEmpty
@@ -284,80 +277,36 @@ final class StatisticsViewModel: Filterable {
         transactions: [TransactionItem],
         defaultCurrencyCode: String
     ) {
-
         // Enforce metric lock based on filters
         enforceMetricLock()
 
         // Always use day grouping so chart data reaches today
-        // The x-axis display will still show months for yearly view
         trendGrouping = .day
 
         // Get interval
         let interval = panelDateInterval
         currentInterval = interval
 
-        // Build FilterCriteria from current state
-        // For balance: NO date filter - processor needs all transactions to calculate running balance
-        // For income/expense: WITH date filter - we only want transactions in the period
-        let isBalanceMetric = selectedMetric == .balance
+        // Build filter criteria and apply
+        let criteria = buildTrendFilterCriteria(interval: interval)
 
-        let criteria = FilterCriteria(
-            selectedAccounts: selectedAccounts,
-            selectedCategories: selectedCategories,
-            selectedSubcategories: selectedSubcategories,
-            selectedTags: selectedTags,
-            selectedNeeds: selectedNeeds,
-            selectedCurrencies: selectedCurrencies,
-            isExcludeMode: isExcludeMode,
-            transactionTypeFilter: .all,  // TrendsView handles metric filtering separately
-            amountCondition: amountCondition,
-            searchText: searchText,
-            dateInterval: isBalanceMetric ? nil : interval
-        )
-
-        // Use FilterService for filtering with account eligibility
         let filtered = FilterService.filterForTrends(
             transactions: transactions,
             accounts: accounts,
             criteria: criteria
         )
 
-        // Get eligible accounts for trend calculations (archived accounts still count)
-        let eligibleAccounts = accounts.filter { account in
-            guard !account.excludeFromStatistics else { return false }
-            if selectedAccounts.isEmpty { return true }
-            if isExcludeMode {
-                return !selectedAccounts.contains(account.persistentModelID)
-            } else {
-                return selectedAccounts.contains(account.persistentModelID)
-            }
-        }
+        let eligibleAccounts = computeEligibleAccounts(from: accounts)
 
-        // Calculate total income and expense from filtered transactions
-        // Exclude balance adjustments - they only affect balance, not income/expense
-        totalIncome =
-            filtered
-            .filter { $0.amountInPreferredCurrency > 0 && $0.balanceAdjustmentType == nil }
-            .reduce(0) { $0 + $1.amountInPreferredCurrency }
-
-        totalExpense =
-            filtered
-            .filter { $0.amountInPreferredCurrency < 0 && $0.balanceAdjustmentType == nil }
-            .reduce(0) { $0 + abs($1.amountInPreferredCurrency) }
-
-        // Calculate current actual balance from eligible accounts
-        // This is the TRUE balance, calculated from transactions (initial balance is now a transaction)
-        currentBalance = eligibleAccounts.reduce(0.0) { total, account in
-            let transactionSum =
-                transactions
-                .filter { $0.account?.persistentModelID == account.persistentModelID }
-                .reduce(0.0) { $0 + $1.amountInPreferredCurrency }
-            return total + transactionSum
-        }
+        // Calculate totals from filtered data
+        calculateTotals(
+            filtered: filtered,
+            eligibleAccounts: eligibleAccounts,
+            allTransactions: transactions
+        )
 
         // Calculate trend points based on metric using unified TrendDataProcessor
         if isAggregatedView {
-            // Use unified TrendDataProcessor for identical results to TrendCardView
             let result = TrendDataProcessor.processTrendData(
                 transactions: filtered,
                 accounts: eligibleAccounts,
@@ -382,8 +331,70 @@ final class StatisticsViewModel: Filterable {
             )
         }
 
-        // Calculate recent records filtered by selected metric
-        // For income/expense, exclude balance adjustments
+        // Calculate recent records
+        buildRecentRecords(from: filtered)
+    }
+
+    // MARK: - Calculation Helpers
+
+    /// Build FilterCriteria for trend calculations
+    private func buildTrendFilterCriteria(interval: DateInterval) -> FilterCriteria {
+        let isBalanceMetric = selectedMetric == .balance
+        return FilterCriteria(
+            selectedAccounts: selectedAccounts,
+            selectedCategories: selectedCategories,
+            selectedSubcategories: selectedSubcategories,
+            selectedTags: selectedTags,
+            selectedNeeds: selectedNeeds,
+            selectedCurrencies: selectedCurrencies,
+            isExcludeMode: isExcludeMode,
+            transactionTypeFilter: .all,
+            amountCondition: amountCondition,
+            searchText: searchText,
+            dateInterval: isBalanceMetric ? nil : interval
+        )
+    }
+
+    /// Compute eligible accounts for trend calculations (archived accounts still count)
+    private func computeEligibleAccounts(from accounts: [Account]) -> [Account] {
+        accounts.filter { account in
+            guard !account.excludeFromStatistics else { return false }
+            if selectedAccounts.isEmpty { return true }
+            if isExcludeMode {
+                return !selectedAccounts.contains(account.persistentModelID)
+            } else {
+                return selectedAccounts.contains(account.persistentModelID)
+            }
+        }
+    }
+
+    /// Calculate total income, expense, and current balance
+    private func calculateTotals(
+        filtered: [TransactionItem],
+        eligibleAccounts: [Account],
+        allTransactions: [TransactionItem]
+    ) {
+        totalIncome =
+            filtered
+            .filter { $0.amountInPreferredCurrency > 0 && $0.balanceAdjustmentType == nil }
+            .reduce(0) { $0 + $1.amountInPreferredCurrency }
+
+        totalExpense =
+            filtered
+            .filter { $0.amountInPreferredCurrency < 0 && $0.balanceAdjustmentType == nil }
+            .reduce(0) { $0 + abs($1.amountInPreferredCurrency) }
+
+        currentBalance = eligibleAccounts.reduce(0.0) { total, account in
+            let transactionSum =
+                allTransactions
+                .filter { $0.account?.persistentModelID == account.persistentModelID }
+                .reduce(0.0) { $0 + $1.amountInPreferredCurrency }
+            return total + transactionSum
+        }
+    }
+
+    /// Build recent records filtered by selected metric
+    private func buildRecentRecords(from filtered: [TransactionItem]) {
         let metricFiltered: [TransactionItem]
         switch selectedMetric {
         case .balance:

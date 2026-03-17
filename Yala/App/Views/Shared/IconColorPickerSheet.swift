@@ -273,6 +273,7 @@ struct IconColorPickerSheet: View {
                     Image(systemName: tempIconName)
                         .font(DS.Typography.amountLarge)
                         .foregroundStyle(.white)
+                        .accessibilityHidden(true)
                 )
                 .shadow(color: Color(hex: tempColorHex).opacity(0.4), radius: 8, x: 0, y: 4)
 

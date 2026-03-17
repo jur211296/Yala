@@ -193,6 +193,7 @@ struct ProTrialOfferSheet: View {
                     RoundedRectangle(cornerRadius: 6)
                         .fill(color)
                 )
+                .accessibilityHidden(true)
 
             Text(text)
                 .font(DS.Typography.subheadline)
@@ -203,6 +204,7 @@ struct ProTrialOfferSheet: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.thAccent)
+                .accessibilityHidden(true)
         }
         .padding(.horizontal, DS.Spacing.md)
         .padding(.vertical, DS.Spacing.sm)

@@ -166,7 +166,7 @@ struct BudgetsWidgetView: View {
                     Spacer()
                     VStack(spacing: WDS.Spacing.xs) {
                         Image(systemName: "chart.pie")
-                            .font(.title2)
+                            .font(.title2) // A11Y-DT: widget empty state icon
                             .foregroundStyle(.tertiary)
                         Text("widget.ui.noBudgets", bundle: .main)
                             .font(WDS.Typography.body)

@@ -24,39 +24,72 @@ enum SharedContainerService {
     /// Creates the pending images directory if it doesn't exist
     static func ensurePendingImagesDirectory() {
         guard let url = pendingImagesURL else { return }
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        do {
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        } catch {
+            #if DEBUG
+            print("SharedContainerService: Error creating pending images directory: \(error)")
+            #endif
+        }
     }
 
     /// Returns all pending image URLs
     static func pendingImageURLs() -> [URL] {
         guard let url = pendingImagesURL else { return [] }
-        let contents = try? FileManager.default.contentsOfDirectory(
-            at: url,
-            includingPropertiesForKeys: [.creationDateKey],
-            options: .skipsHiddenFiles
-        )
-        return (contents ?? []).filter { $0.pathExtension.lowercased() == "jpg" || $0.pathExtension.lowercased() == "png" }
+        do {
+            let contents = try FileManager.default.contentsOfDirectory(
+                at: url,
+                includingPropertiesForKeys: [.creationDateKey],
+                options: .skipsHiddenFiles
+            )
+            return contents.filter { $0.pathExtension.lowercased() == "jpg" || $0.pathExtension.lowercased() == "png" }
+        } catch {
+            #if DEBUG
+            print("SharedContainerService: Error listing pending images: \(error)")
+            #endif
+            return []
+        }
     }
 
     /// Removes a processed image
     static func removePendingImage(at url: URL) {
-        try? FileManager.default.removeItem(at: url)
+        do {
+            try FileManager.default.removeItem(at: url)
+        } catch {
+            #if DEBUG
+            print("SharedContainerService: Error removing pending image: \(error)")
+            #endif
+        }
     }
 
     /// Removes pending images older than the given age in seconds
     static func clearOldPendingImages(olderThan maxAge: TimeInterval) {
         guard let url = pendingImagesURL else { return }
-        let contents = try? FileManager.default.contentsOfDirectory(
-            at: url,
-            includingPropertiesForKeys: [.creationDateKey],
-            options: .skipsHiddenFiles
-        )
+        let contents: [URL]
+        do {
+            contents = try FileManager.default.contentsOfDirectory(
+                at: url,
+                includingPropertiesForKeys: [.creationDateKey],
+                options: .skipsHiddenFiles
+            )
+        } catch {
+            #if DEBUG
+            print("SharedContainerService: Error listing pending images for cleanup: \(error)")
+            #endif
+            return
+        }
         let cutoff = Date.now.addingTimeInterval(-maxAge)
-        for fileURL in contents ?? [] {
+        for fileURL in contents {
             guard let values = try? fileURL.resourceValues(forKeys: [.creationDateKey]),
                   let created = values.creationDate,
                   created < cutoff else { continue }
-            try? FileManager.default.removeItem(at: fileURL)
+            do {
+                try FileManager.default.removeItem(at: fileURL)
+            } catch {
+                #if DEBUG
+                print("SharedContainerService: Error removing old image \(fileURL.lastPathComponent): \(error)")
+                #endif
+            }
         }
     }
 }

@@ -301,6 +301,7 @@ struct DetailContainerView: View {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: tab.icon)
                     .font(DS.Typography.subheadline)
+                    .accessibilityHidden(true)
                 Text(tab.title)
                     .font(DS.Typography.label)
             }
@@ -358,6 +359,7 @@ struct DetailContainerView: View {
                             .fill(Color.hotPink)
                             .frame(width: 8, height: 8)
                             .offset(x: 2, y: -2)
+                            .accessibilityHidden(true)
                     }
                 }
             }
@@ -538,6 +540,7 @@ struct DetailContainerView: View {
                 Image(systemName: icon)
                     .font(DS.Typography.headline)
                     .frame(width: DS.Button.fabMenuIconSize)
+                    .accessibilityHidden(true)
 
                 Text(text)
                     .font(DS.Typography.headline)
@@ -578,7 +581,7 @@ struct DetailContainerView: View {
                 } label: {
                     Image(systemName: "trash")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(DS.Semantic.errorForeground)
                         .frame(width: 44, height: 44)
                 }
                 .accessibilityLabel(L10n.Action.delete)

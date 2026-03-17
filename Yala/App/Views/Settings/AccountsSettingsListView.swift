@@ -280,7 +280,7 @@ struct AccountsSettingsListView: View {
         if let accountType = AccountType(rawValue: account.type) {
             return accountType.localizedName
         }
-        return account.type.replacingOccurrences(of: "_", with: " ").capitalized
+        return account.type.replacing("_", with: " ").capitalized
     }
 
     @ViewBuilder

@@ -111,6 +111,7 @@ struct SubscriptionSuccessView: View {
                     RoundedRectangle(cornerRadius: DS.Radius.sm)
                         .fill(color)
                 )
+                .accessibilityHidden(true)
 
             Text(text)
                 .font(DS.Typography.body)
@@ -120,7 +121,8 @@ struct SubscriptionSuccessView: View {
 
             Image(systemName: "checkmark.circle.fill")
                 .font(DS.Typography.title)
-                .foregroundStyle(.green)
+                .foregroundStyle(DS.Semantic.successForeground)
+                .accessibilityHidden(true)
         }
     }
 

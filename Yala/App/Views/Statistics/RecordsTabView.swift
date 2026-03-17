@@ -132,6 +132,7 @@ struct RecordsTabView: View {
                             Image(systemName: "arrow.up.right")
                                 .font(DS.Typography.labelSmall)
                                 .foregroundStyle(Color.incomeGraph)
+                                .accessibilityHidden(true)
                             Text(
                                 YalaFormatter.currency(
                                     value: recordsSummary.income, currencyCode: defaultCurrencyCode)
@@ -163,6 +164,7 @@ struct RecordsTabView: View {
                         Image(systemName: "arrow.down.right")
                             .font(DS.Typography.labelSmall)
                             .foregroundStyle(Color.expenseGraph)
+                            .accessibilityHidden(true)
                         Text(
                             YalaFormatter.currency(
                                 value: recordsSummary.expense, currencyCode: defaultCurrencyCode)
@@ -223,6 +225,7 @@ struct RecordsTabView: View {
             Image(systemName: "list.bullet.rectangle")
                 .font(DS.Typography.largeTitle)
                 .foregroundStyle(.secondary.opacity(0.5))
+                .accessibilityHidden(true)
 
             Text(L10n.Records.noRecords)
                 .font(.title3.weight(.semibold))

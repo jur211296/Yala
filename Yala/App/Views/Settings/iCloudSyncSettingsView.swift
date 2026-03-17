@@ -23,7 +23,7 @@ struct iCloudSyncSettingsView: View {
                     if !syncService.isAccountAvailable {
                         HStack(spacing: DS.Spacing.sm) {
                             Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(DS.Semantic.warningForeground)
                             Text(L10n.iCloud.noAccountWarning)
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)

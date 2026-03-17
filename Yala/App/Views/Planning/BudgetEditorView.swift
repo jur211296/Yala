@@ -164,6 +164,7 @@ struct BudgetEditorView: View {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "textformat")
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
                     TextField(
                         NSLocalizedString("budgets.editor.name.placeholder", comment: ""),
                         text: $name
@@ -220,6 +221,7 @@ struct BudgetEditorView: View {
                         .font(DS.Typography.body)
                         .foregroundStyle(.secondary)
                         .frame(width: 24)
+                        .accessibilityHidden(true)
 
                     Text(NSLocalizedString("budgets.editor.start.date", comment: ""))
                         .font(DS.Typography.body)
@@ -242,6 +244,7 @@ struct BudgetEditorView: View {
                         .font(DS.Typography.body)
                         .foregroundStyle(.secondary)
                         .frame(width: 24)
+                        .accessibilityHidden(true)
 
                     Text(NSLocalizedString("budgets.editor.end.date", comment: ""))
                         .font(DS.Typography.body)
@@ -280,6 +283,7 @@ struct BudgetEditorView: View {
                     HStack {
                         Image(systemName: "bell.fill")
                             .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
                         Text(L10n.Budgets.alertsEnable)
                     }
                 }
@@ -291,6 +295,7 @@ struct BudgetEditorView: View {
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: "info.circle")
                             .font(DS.Typography.caption)
+                            .accessibilityHidden(true)
                         Text(L10n.Budgets.alertsGlobalDisabledHint)
                             .font(DS.Typography.caption)
                     }

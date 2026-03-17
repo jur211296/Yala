@@ -78,33 +78,6 @@ struct YalaLoadingInline: View {
     }
 }
 
-// MARK: - Full Screen Loading
-
-/// Vista de carga a pantalla completa
-struct YalaLoadingFullScreen: View {
-    let message: String?
-
-    init(_ message: String? = nil) {
-        self.message = message
-    }
-
-    var body: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            ProgressView()
-                .scaleEffect(1.5)
-
-
-            if let message {
-                Text(message)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.thBackground)
-    }
-}
-
 #Preview {
     struct PreviewWrapper: View {
         @State private var isLoading = true

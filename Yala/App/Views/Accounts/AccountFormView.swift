@@ -204,6 +204,7 @@ struct AccountFormView: View {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "textformat")
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
                     TextField(L10n.Account.accountName, text: $viewModel.name)
                         .textContentType(.name)
                         .focused($focusedField, equals: .name)
@@ -235,6 +236,7 @@ struct AccountFormView: View {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "number")
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
                     TextField(L10n.Account.accountNumber, text: $viewModel.accountNumber)
                         .keyboardType(.numbersAndPunctuation)
                         .focused($focusedField, equals: .accountNumber)
@@ -408,7 +410,7 @@ struct AccountFormView: View {
                             // When field loses focus, format if has value
                             if !isFocused && !viewModel.balanceText.isEmpty {
                                 if let amount = Double(
-                                    viewModel.balanceText.replacingOccurrences(of: ",", with: "."))
+                                    viewModel.balanceText.replacing(",", with: "."))
                                 {
                                     viewModel.balanceText = String(format: "%.2f", amount)
                                 }

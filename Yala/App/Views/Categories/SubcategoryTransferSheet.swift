@@ -87,6 +87,7 @@ struct SubcategoryTransferSheet: View {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(DS.Typography.amountLarge)
                     .foregroundStyle(DS.Semantic.warningForeground)
+                    .accessibilityHidden(true)
             }
 
             // Mensaje

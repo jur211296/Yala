@@ -330,10 +330,10 @@ struct NewTransactionView: View {
                 if showSavedToast {
                     Text(savedToastMessage)
                         .font(DS.Typography.label)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.vertical, DS.Spacing.sm)
-                        .background(Capsule().fill(Color.secondary))
+                        .background(Capsule().fill(Color.secondary.opacity(0.2)))
                         .padding(.bottom, DS.Spacing.xxxl)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
@@ -486,6 +486,7 @@ struct NewTransactionView: View {
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: category.iconName ?? "folder")
                             .font(DS.Typography.labelTiny)
+                            .accessibilityHidden(true)
                         Text(category.name)
                             .font(DS.Typography.labelTiny)
                     }
@@ -509,6 +510,7 @@ struct NewTransactionView: View {
                             .font(DS.Typography.labelTiny)
                             .foregroundStyle(.purple)
                             .padding(DS.Spacing.xs)
+                            .accessibilityHidden(true)
                             .background(
                                 Circle().fill(.purple.opacity(0.12))
                             )
@@ -576,7 +578,7 @@ struct NewTransactionView: View {
                         } else {
                             let sep = Locale.current.decimalSeparator ?? "."
                             viewModel.amountString = String(format: "%.2f", viewModel.amount)
-                                .replacingOccurrences(of: ".", with: sep)
+                                .replacing(".", with: sep)
                         }
                     }
                 }
@@ -1111,7 +1113,7 @@ struct NewTransactionView: View {
             accountName: account?.name ?? L10n.Transaction.account,
             accountColorHex: account?.colorHex ?? AppConstants.defaultColorHex,
             note: viewModel.note,
-            amount: Decimal(string: viewModel.amountString.replacingOccurrences(of: Locale.current.decimalSeparator ?? ".", with: ".")) ?? 0,
+            amount: Decimal(string: viewModel.amountString.replacing(Locale.current.decimalSeparator ?? ".", with: ".")) ?? 0,
             currencyCode: viewModel.effectiveCurrencyCode,
             subcategoryName: viewModel.selectedSubcategory?.name,
             subcategoryColorHex: viewModel.selectedSubcategory?.colorHex,
@@ -1194,7 +1196,7 @@ struct NewTransactionView: View {
             viewModel.note = tx.note ?? ""
 
             // If this is a transfer, load the paired transaction
-            if tx.balanceAdjustmentType == "transfer", let pairID = tx.transferPairID {
+            if tx.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer, let pairID = tx.transferPairID {
                 let fetchPairID = pairID
                 let descriptor = FetchDescriptor<TransactionItem>(
                     predicate: #Predicate { $0.transferPairID == fetchPairID }
@@ -1298,7 +1300,7 @@ struct NewTransactionView: View {
 
         do {
             // If this is a transfer, also delete the paired transaction
-            if transaction.balanceAdjustmentType == "transfer", let pairID = transaction.transferPairID {
+            if transaction.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer, let pairID = transaction.transferPairID {
                 let fetchPairID = pairID
                 let descriptor = FetchDescriptor<TransactionItem>(
                     predicate: #Predicate { $0.transferPairID == fetchPairID }

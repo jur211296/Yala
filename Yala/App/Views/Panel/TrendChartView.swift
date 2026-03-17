@@ -397,7 +397,7 @@ struct TrendChartView: View {
         case .day, .week: formatter = Self.periodDayFormatter
         case .month: formatter = Self.periodMonthFormatter
         }
-        return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
+        return formatter.string(from: date).lowercased().replacing(".", with: "")
     }
 
     private func formattedAmount(_ value: Double) -> String {

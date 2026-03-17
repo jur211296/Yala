@@ -200,6 +200,7 @@ struct BulkEditSheet: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(DS.Semantic.warningForeground)
+                .accessibilityHidden(true)
 
             Text(L10n.BulkEdit.currencyWarning)
                 .font(DS.Typography.caption)
@@ -217,6 +218,7 @@ struct BulkEditSheet: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "checkmark.circle.fill")
                 .foregroundStyle(DS.Semantic.successForeground)
+                .accessibilityHidden(true)
 
             Text(L10n.BulkEdit.successMessage)
                 .font(DS.Typography.caption)
@@ -325,6 +327,7 @@ private struct BulkEditOptionRow: View {
                     Image(systemName: "checkmark.circle.fill")
                         .font(DS.Typography.body)
                         .foregroundStyle(DS.Semantic.successForeground)
+                        .accessibilityHidden(true)
                 } else {
                     Image(systemName: "chevron.right")
                         .font(DS.Typography.labelSmall.weight(.semibold))
@@ -361,7 +364,7 @@ struct BulkTagEditorSheet: View {
                         // Common tags section (tags that ALL selected transactions have)
                         if !commonTags.isEmpty {
                             SectionBox(title: L10n.BulkEdit.commonTags) {
-                                VStack(spacing: DS.Spacing.none) {
+                                LazyVStack(spacing: DS.Spacing.none) {
                                     ForEach(Array(commonTags.enumerated()), id: \.element.persistentModelID) { index, tag in
                                         if index > 0 {
                                             SubsectionDivider()
@@ -379,7 +382,7 @@ struct BulkTagEditorSheet: View {
                         // Partial tags section (tags that SOME selected transactions have)
                         if !partialTags.isEmpty {
                             SectionBox(title: L10n.BulkEdit.partialTags) {
-                                VStack(spacing: DS.Spacing.none) {
+                                LazyVStack(spacing: DS.Spacing.none) {
                                     ForEach(Array(partialTags.enumerated()), id: \.element.persistentModelID) { index, tag in
                                         if index > 0 {
                                             SubsectionDivider()
@@ -397,7 +400,7 @@ struct BulkTagEditorSheet: View {
                         // Available tags section (tags that NO selected transactions have)
                         if !availableTags.isEmpty {
                             SectionBox(title: L10n.BulkEdit.availableTags) {
-                                VStack(spacing: DS.Spacing.none) {
+                                LazyVStack(spacing: DS.Spacing.none) {
                                     ForEach(Array(availableTags.enumerated()), id: \.element.persistentModelID) { index, tag in
                                         if index > 0 {
                                             SubsectionDivider()
@@ -571,16 +574,19 @@ private struct BulkTagRow: View {
             Image(systemName: "checkmark.square.fill")
                 .font(DS.Typography.title)
                 .foregroundStyle(theme.accent)
+                .accessibilityHidden(true)
         case .toRemove, .available:
             // Unchecked - tag will NOT be present after save
             Image(systemName: "square")
                 .font(DS.Typography.title)
                 .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
         case .partial:
             // Mixed state - some have it, some don't
             Image(systemName: "minus.square.fill")
                 .font(DS.Typography.title)
                 .foregroundStyle(DS.Semantic.warningForeground)
+                .accessibilityHidden(true)
         }
     }
 }
@@ -685,7 +691,7 @@ struct BulkAmountEditorSheet: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaSaveButton {
-                        if let value = Double(amountText.replacingOccurrences(of: ",", with: ".")) {
+                        if let value = Double(amountText.replacing(",", with: ".")) {
                             amount = value
                             onSave()
                         }

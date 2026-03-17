@@ -70,6 +70,7 @@ struct InboxView: View {
                         HStack(spacing: DS.Spacing.xs) {
                             Image(systemName: "hand.tap")
                                 .font(DS.Typography.captionSmall)
+                                .accessibilityHidden(true)
                             Text(L10n.Inbox.bulkHint)
                                 .font(DS.Typography.caption)
                         }

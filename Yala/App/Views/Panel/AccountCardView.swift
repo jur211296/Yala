@@ -69,6 +69,7 @@ struct AccountCardView: View {
                                 .fill(iconBackground)
                         )
                         .foregroundStyle(foregroundColor)
+                        .accessibilityHidden(true)
 
                     Text(account.name)
                         .font(DS.Typography.labelSmall)
@@ -119,6 +120,7 @@ struct AccountCardView: View {
                     .font(DS.Typography.body)
                     .foregroundStyle(DS.Semantic.errorForeground)
                     .padding(DS.Spacing.sm)
+                    .accessibilityHidden(true)
             }
         }
         .opacity(isExcluded ? 0.5 : 1.0)

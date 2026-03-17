@@ -29,7 +29,7 @@ struct WidgetHeader: View {
             HStack(spacing: WDS.Spacing.xs) {
                 if let icon = icon {
                     Image(systemName: icon)
-                        .font(.caption)
+                        .font(WDS.Typography.subtitle)
                         .foregroundStyle(.secondary)
                 }
                 Text(title)
@@ -51,7 +51,7 @@ struct WidgetHeader: View {
                 HStack(spacing: WDS.Spacing.xs) {
                     if let icon = icon {
                         Image(systemName: icon)
-                            .font(.caption)
+                            .font(WDS.Typography.subtitle)
                             .foregroundStyle(.secondary)
                     }
                     Text(title)

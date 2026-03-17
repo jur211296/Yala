@@ -16,6 +16,7 @@ struct PeriodSelectorLabel: View {
         HStack(spacing: DS.Spacing.xs) {
             Image(systemName: "calendar")
                 .font(DS.Typography.labelSmall)
+                .accessibilityHidden(true)
             Text(title)
                 .font(DS.Typography.labelSmall)
         }

@@ -188,6 +188,7 @@ struct NeedTrendWidget: View {
                     Image(systemName: "info.circle")
                         .font(DS.Typography.title)
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
                     Text(L10n.Need.incomeNotApplicable)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
@@ -288,17 +289,6 @@ struct NeedTrendWidget: View {
                         )
                     }
                 }
-            }
-        }
-    }
-
-    private func getTotal(for need: SubcategoryNeed) -> Double {
-        trendPoints.reduce(0) { partialResult, point in
-            switch need {
-            case .essential: return partialResult + point.essential
-            case .priority: return partialResult + point.priority
-            case .optional: return partialResult + point.optional
-            case .unclassified: return partialResult + point.unclassified
             }
         }
     }
@@ -714,7 +704,7 @@ struct NeedTrendChartView: View {
         case .day, .week: formatter = Self.fullDayFormatter
         case .month: formatter = Self.fullMonthFormatter
         }
-        return formatter.string(from: date).lowercased().replacingOccurrences(of: ".", with: "")
+        return formatter.string(from: date).lowercased().replacing(".", with: "")
     }
 
     struct TooltipRow: View {

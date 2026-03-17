@@ -17,6 +17,7 @@ final class CategoriesSettingsListViewModel {
     // MARK: - Dependencies
 
     private var modelContext: ModelContext?
+    private var deletionService: EntityDeletionService?
 
     // MARK: - Data
 
@@ -51,8 +52,10 @@ final class CategoriesSettingsListViewModel {
 
     // MARK: - Context Injection
 
-    func setContext(_ context: ModelContext) {
+    func setContext(_ context: ModelContext, deletionService: EntityDeletionService) {
         self.modelContext = context
+        self.deletionService = deletionService
+        deletionService.setContext(context)
         loadCategories()
     }
 
@@ -126,20 +129,7 @@ final class CategoriesSettingsListViewModel {
     }
 
     private func countTransactionsInCategory(_ category: Category) -> Int {
-        guard let context = modelContext else { return 0 }
-
-        do {
-            let descriptor = FetchDescriptor<TransactionItem>()
-            let allTransactions = try context.fetch(descriptor)
-            return allTransactions.filter { transaction in
-                guard let subcategory = transaction.subcategory else { return false }
-                return subcategory.safeCategory.persistentModelID == category.persistentModelID
-            }.count
-        } catch {
-            #if DEBUG
-            print("CategoriesSettingsListViewModel: Error counting transactions: \(error)")
-            #endif
-            return 0
-        }
+        guard let service = deletionService else { return 0 }
+        return service.transactionCount(forCategory: category)
     }
 }

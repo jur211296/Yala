@@ -109,6 +109,7 @@ struct TransactionAssociationSheet: View {
                 Image(systemName: icon)
                     .font(DS.Typography.labelSmall)
                     .foregroundStyle(.white)
+                    .accessibilityHidden(true)
             }
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {

@@ -22,6 +22,7 @@ struct BudgetWidgetRow: View {
                 Image(systemName: summary.icon)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.white)
+                    .accessibilityHidden(true)
             }
 
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {

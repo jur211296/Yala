@@ -55,6 +55,8 @@ struct InsightsRuleBasedTests {
             pendingPaymentsAmount: 0,
             activeSubscriptionsCount: 0,
             activeSubscriptionsMonthly: 0,
+            activeRecurringCount: 0,
+            activeRecurringMonthly: 0,
             budgetsAtRisk: budgetsAtRisk
         )
     }

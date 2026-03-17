@@ -195,6 +195,7 @@ struct RecentRecordsWidget: View {
             Image(systemName: iconName)
                 .font(.system(size: iconSize * 0.4)) // A11Y-DT: fixed size — icon from caller parameter
                 .foregroundStyle(.white)
+                .accessibilityHidden(true)
         }
     }
 
@@ -213,20 +214,20 @@ struct RecentRecordsWidget: View {
         }
 
         // Then date (instead of account)
-        let dateStr = Self.secondaryDateFormatter.string(from: record.date).replacingOccurrences(of: ".", with: "")
+        let dateStr = Self.secondaryDateFormatter.string(from: record.date).replacing(".", with: "")
         parts.append(dateStr)
 
         return parts.joined(separator: " • ")
     }
 
     private func amountColor(for record: TransactionItem) -> Color {
-        if record.balanceAdjustmentType == "transfer" { return Color(.label) }
+        if record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer { return Color(.label) }
         let isIncome = record.category?.isIncome ?? (record.amount >= 0)
         return isIncome ? Color.electricIndigo : Color.hotPink
     }
 
     private func shortDateFormat(_ date: Date) -> String {
-        Self.shortDateFormatter.string(from: date).replacingOccurrences(of: ".", with: "")
+        Self.shortDateFormatter.string(from: date).replacing(".", with: "")
     }
 
     private func formattedAmount(_ value: Double, currencyCode: String) -> String {

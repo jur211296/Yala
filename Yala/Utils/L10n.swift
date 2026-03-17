@@ -683,6 +683,7 @@ enum L10n {
         static var proFeature: String { ls("accessibility.proFeature", comment: "") }
         static var noActiveAccounts: String { ls("accessibility.noActiveAccounts", comment: "") }
         static var noInactiveBudgets: String { ls("accessibility.noInactiveBudgets", comment: "") }
+        static var profile: String { ls("accessibility.profile", comment: "") }
     }
 
     // MARK: - Search
@@ -3561,24 +3562,9 @@ enum L10n {
 
         // MARK: - Report Notifications (with real data)
 
-        /// "Tu balance actual: %@" (amount)
-        static func reportBalance(_ amount: String) -> String {
-            String(format: ls("notifications.report.balance", comment: ""), amount)
-        }
-
-        /// "Gastaste: %@" (amount)
-        static func reportExpenses(_ amount: String) -> String {
-            String(format: ls("notifications.report.expenses", comment: ""), amount)
-        }
-
-        /// "Recibiste: %@" (amount)
-        static func reportIncome(_ amount: String) -> String {
-            String(format: ls("notifications.report.income", comment: ""), amount)
-        }
-
-        /// "Tu mayor gasto: %@" (category)
-        static func reportTopCategory(_ category: String) -> String {
-            String(format: ls("notifications.report.topCategory", comment: ""), category)
+        /// Dynamic report text: "notifications.report.{dataType}.{period}" with one format argument
+        static func reportData(_ dataType: ReportDataType, period: String, value: String) -> String {
+            String(format: ls("notifications.report.\(dataType.rawValue).\(period)", comment: ""), value)
         }
 
         // Empty state messages
@@ -3609,6 +3595,14 @@ enum L10n {
             String(format: ls("whatsNew.subtitle", comment: ""), version)
         }
         static var continueButton: String { ls("whatsNew.continue", comment: "") }
+
+        // v1.1 features
+        static var v11ResumenTitle: String { ls("whatsNew.v11.resumen.title", comment: "") }
+        static var v11ResumenDescription: String { ls("whatsNew.v11.resumen.description", comment: "") }
+        static var v11BudgetDetailTitle: String { ls("whatsNew.v11.budgetDetail.title", comment: "") }
+        static var v11BudgetDetailDescription: String { ls("whatsNew.v11.budgetDetail.description", comment: "") }
+        static var v11ExcludeTitle: String { ls("whatsNew.v11.exclude.title", comment: "") }
+        static var v11ExcludeDescription: String { ls("whatsNew.v11.exclude.description", comment: "") }
 
         // v1.2 features
         static var v12CoachMarksTitle: String { ls("whatsNew.v12.coachMarks.title", comment: "") }

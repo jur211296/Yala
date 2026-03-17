@@ -43,7 +43,7 @@ struct CurrencySelectorView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: DS.Spacing.lg) {
+                LazyVStack(spacing: DS.Spacing.lg) {
                     // Recommended section
                     recommendedSection
 

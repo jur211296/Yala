@@ -12,7 +12,7 @@ struct WidgetPreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage("panelShowAIInsight") private var showAIInsight: Bool = true
+    @AppStorage("panelShowAIInsight") private var showAIInsight: Bool = false
 
     private var isProUser: Bool {
         FeatureGateService.shared.canAccess(.smartInsightsAI)
@@ -41,6 +41,7 @@ struct WidgetPreferencesView: View {
                             .foregroundStyle(.thAccent)
                             .frame(width: 32, height: 32)
                             .background(Circle().fill(theme.accent.opacity(0.1)))
+                            .accessibilityHidden(true)
 
                         VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                             Text(L10n.Panel.aiInsightsTitle)
@@ -148,6 +149,7 @@ private struct WidgetRow: View {
                     .background(
                         Circle().fill(theme.accent.opacity(0.1))
                     )
+                    .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(config.type.displayName)

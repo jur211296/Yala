@@ -78,6 +78,7 @@ struct NotificationPrimerSheet: View {
                 .font(DS.Typography.body)
                 .foregroundStyle(.tint)
                 .frame(width: DS.Spacing.xxl)
+                .accessibilityHidden(true)
             Text(text)
                 .font(DS.Typography.body)
                 .foregroundStyle(.primary)

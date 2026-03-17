@@ -295,7 +295,7 @@ final class RecordsViewModel: Filterable {
         for id in selectedRecordIDs {
             guard let record = context.model(for: id) as? TransactionItem else { continue }
             recordsToDelete.append(record)
-            if record.balanceAdjustmentType == "transfer", let pairID = record.transferPairID {
+            if record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer, let pairID = record.transferPairID {
                 transferPairIDs.insert(pairID)
             }
         }

@@ -136,6 +136,7 @@ struct CurrencyPickerSheet: View {
                     Image(systemName: "checkmark")
                         .foregroundStyle(.thAccent)
                         .font(DS.Typography.headline)
+                        .accessibilityHidden(true)
                 }
             }
             .padding(.horizontal, DS.FormRow.paddingH)

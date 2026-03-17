@@ -52,9 +52,9 @@ final class AppBootstrapper {
     private var remoteChangeTask: Task<Void, Never>?
     private var lastNotificationCheckDate = Date.distantPast
 
-    /// Whether a fullScreenCover (Face ID or InboxAlertModal) is blocking sheet presentation
+    /// Whether a fullScreenCover (splash, Face ID, or InboxAlertModal) is blocking sheet presentation
     private var isUIBlocked: Bool {
-        BiometricAuthService.shared.isLocked || !sessionState.pendingInboxNotification.isEmpty
+        !sessionState.isSplashDismissed || BiometricAuthService.shared.isLocked || !sessionState.pendingInboxNotification.isEmpty
     }
 
     // MARK: - Initialization
@@ -78,6 +78,9 @@ final class AppBootstrapper {
         // 0.5. Configure analytics (no-op if API key missing)
         TelemetryService.configure()
         TelemetryService.track(.appLaunched)
+
+        // 0.6. Record first launch date for review prompt timing
+        ReviewPromptService.recordFirstLaunchIfNeeded()
 
         // 1. Initialize notification delegate (must be early for foreground display)
         _ = NotificationService.shared
@@ -236,7 +239,7 @@ final class AppBootstrapper {
 
         switch action {
         case "panel":
-            sessionState.deepLinkDestination = .panel
+            setOrDeferDeepLink(.panel)
         case "new-transaction":
             dispatchOrDefer(.newTransaction)
         case "voice-entry":
@@ -336,28 +339,38 @@ final class AppBootstrapper {
             dispatchOrDefer(.newTransaction)
 
         case "panel":
-            sessionState.deepLinkDestination = .panel
+            setOrDeferDeepLink(.panel)
 
         case "statistics":
-            // Check for path like statistics/records or statistics/categories
             if url.pathComponents.contains("records") {
-                sessionState.deepLinkDestination = .records
+                setOrDeferDeepLink(.records)
             } else if url.pathComponents.contains("categories") {
-                sessionState.deepLinkDestination = .categories
+                setOrDeferDeepLink(.categories)
             } else {
-                sessionState.deepLinkDestination = .statistics
+                setOrDeferDeepLink(.statistics)
             }
 
         case "planning":
-            sessionState.deepLinkDestination = .planning
+            setOrDeferDeepLink(.planning)
 
         case "budgets":
-            sessionState.deepLinkDestination = .budgets
+            setOrDeferDeepLink(.budgets)
 
         default:
             #if DEBUG
             print("AppBootstrapper: Unknown deep link host: \(url.host ?? "nil")")
             #endif
+        }
+    }
+
+    // MARK: - Deep Link Deferral
+
+    /// Sets deep link immediately if splash is dismissed, otherwise defers until splash ends.
+    private func setOrDeferDeepLink(_ destination: DeepLinkDestination) {
+        if sessionState.isSplashDismissed {
+            sessionState.deepLinkDestination = destination
+        } else {
+            sessionState.deferredDeepLink = destination
         }
     }
 
@@ -484,7 +497,7 @@ final class AppBootstrapper {
             Task { [weak self] in
                 try? await Task.sleep(for: .seconds(delay))
                 guard let self else { return }
-                if BiometricAuthService.shared.isLocked {
+                if self.isUIBlocked {
                     self.deferredInboxNotification = notification
                 } else {
                     self.sessionState.pendingInboxNotification = notification
@@ -506,11 +519,11 @@ final class AppBootstrapper {
         let imageURLs = SharedContainerService.pendingImageURLs()
         guard let firstImageURL = imageURLs.first else { return }
 
-        // On cold launch with biometric lock, defer the image
-        if BiometricAuthService.shared.isLocked {
+        // On cold launch, always defer — splash is still showing
+        if isUIBlocked {
             deferredSharedImageURL = firstImageURL
             #if DEBUG
-            print("AppBootstrapper: Deferring shared image (cold launch) — biometric locked")
+            print("AppBootstrapper: Deferring shared image (cold launch) — UI blocked")
             #endif
         } else {
             sessionState.pendingSharedImageURL = firstImageURL

@@ -1220,7 +1220,7 @@
 "account.creditCard.sectionTitle" = "Kreditkarte";
 "account.creditCard.paymentReminder" = "Am Zahlungstag erinnern";
 "account.creditCard.paymentDay" = "Zahlungstag";
-"account.creditCard.paymentNotification" = "Denke daran, heute deine Kreditkarte %@ zu bezahlen";
+"account.creditCard.paymentNotification" = "Heute ist Zahltag für deine Kreditkarte %@ 💳";
 "category.others" = "Sonstige";
 "subcategory.balanceAdjustment" = "Saldoanpassungen";
 
@@ -1468,6 +1468,7 @@
 "accessibility.proFeature" = "Pro-Abo erforderlich";
 "accessibility.noActiveAccounts" = "Keine aktiven Konten verfügbar";
 "accessibility.noInactiveBudgets" = "Keine inaktiven Budgets zum Wiederherstellen";
+"accessibility.profile" = "Profil";
 
 // MARK: - Widget Hints
 
@@ -2049,7 +2050,7 @@
 
 // Default notifications
 "notifications.endOfDay.name" = "Tagesende";
-"notifications.endOfDay.text" = "Wie war dein Tag? 👋 Erzähl uns von deinen Ausgaben";
+"notifications.endOfDay.text" = "Wie war dein Tag? 👋 Trag deine Ausgaben ein, bevor du sie vergisst";
 "notifications.lunchTime.name" = "Mittagszeit";
 "notifications.lunchTime.text" = "Was hast du gegessen? 🍽️ Notier es, solange du es im Kopf hast";
 "notifications.weeklyReport.name" = "Wochenbericht";
@@ -2096,24 +2097,32 @@
 "notifications.budgetAlerts.hint" = "Erhalte Benachrichtigungen bei Budgetgrenzen";
 
 // Scheduled Payment Notifications (personalized)
-"notifications.scheduledPayment.dueToday" = "%1$@ ist heute fällig — %2$@ bereit 💰";
-"notifications.scheduledPayment.dueSoon" = "%2$@ ist in %1$d Tagen fällig — %3$@";
-"notifications.scheduledPayment.overdue" = "%1$@ (%2$@) war fällig — schon erledigt?";
-"notifications.scheduledPayment.dueToday.income" = "Heute kommt %1$@ von %2$@!";
-"notifications.scheduledPayment.dueSoon.income" = "%2$@ von %3$@ kommt in %1$d Tagen";
-"notifications.scheduledPayment.overdue.income" = "%1$@ von %2$@ war erwartet — schon angekommen?";
+"notifications.scheduledPayment.dueToday" = "Heute ist %1$@ fällig — %2$@ 💰";
+"notifications.scheduledPayment.dueSoon" = "%2$@ ist in %1$d Tagen fällig — %3$@ 📅";
+"notifications.scheduledPayment.overdue" = "%1$@ über %2$@ war fällig — schon erledigt? 👀";
+"notifications.scheduledPayment.dueToday.income" = "Heute kommt %1$@ von %2$@! 🎉";
+"notifications.scheduledPayment.dueSoon.income" = "%2$@ von %3$@ kommt in %1$d Tagen 📅";
+"notifications.scheduledPayment.overdue.income" = "%1$@ von %2$@ war erwartet — schon angekommen? 👀";
 
 // Report Notifications (with real data)
-"notifications.report.balance" = "Dein Kontostand heute: %@";
-"notifications.report.expenses" = "Heute ausgegeben: %@";
-"notifications.report.income" = "Du hast %@ erhalten 🎉";
-"notifications.report.topCategory" = "Dein größter Ausgabeposten: %@";
+"notifications.report.balance.daily" = "Dein Saldo zum Tagesende: %@ 💰";
+"notifications.report.balance.weekly" = "Dein Saldo nach dieser Woche: %@ 💰";
+"notifications.report.balance.monthly" = "Dein Saldo nach diesem Monat: %@ 💰";
+"notifications.report.expenses.daily" = "Heute hast du %@ ausgegeben 📊";
+"notifications.report.expenses.weekly" = "Diese Woche hast du %@ ausgegeben 📊";
+"notifications.report.expenses.monthly" = "Diesen Monat hast du %@ ausgegeben 📊";
+"notifications.report.income.daily" = "Heute hast du %@ erhalten 🎉";
+"notifications.report.income.weekly" = "Diese Woche hast du %@ erhalten 🎉";
+"notifications.report.income.monthly" = "Diesen Monat hast du %@ erhalten 🎉";
+"notifications.report.topCategory.daily" = "Deine größte Ausgabe heute: %@ 👀";
+"notifications.report.topCategory.weekly" = "Deine größte Ausgabe der Woche: %@ 👀";
+"notifications.report.topCategory.monthly" = "Deine größte Ausgabe des Monats: %@ 👀";
 
 // Report Notifications (empty state)
 "notifications.report.empty.expenses.daily" = "Ruhiger Tag! Keine Ausgaben ✨";
 "notifications.report.empty.expenses.weekly" = "Ruhige Woche! Keine Ausgaben erfasst ✨";
 "notifications.report.empty.expenses.monthly" = "Ruhiger Monat! Keine Ausgaben erfasst ✨";
-"notifications.report.empty.income" = "Keine Einnahmen in diesem Zeitraum — alles ruhig";
+"notifications.report.empty.income" = "Keine Einnahmen diesmal — alles in Ordnung ✨";
 "notifications.report.empty.topCategory" = "Keine Ausgaben! Dein Geldbeutel hat sich ausgeruht 😊";
 
 "notifications.testReport.balance.daily" = "Dein Saldo heute: $1.250,00";
@@ -2618,6 +2627,12 @@
 "whatsNew.title" = "Neu in Yala";
 "whatsNew.subtitle" = "Version %@";
 "whatsNew.continue" = "Weiter";
+"whatsNew.v11.resumen.title" = "Übersicht";
+"whatsNew.v11.resumen.description" = "Ein schneller Blick auf deine Finanzen: Durchschnitte, Trends und Ausgabenverteilung.";
+"whatsNew.v11.budgetDetail.title" = "Budget-Details";
+"whatsNew.v11.budgetDetail.description" = "Sieh dir an, wie sich jedes Budget auf Unterkategorien verteilt.";
+"whatsNew.v11.exclude.title" = "Ausschlussmodus in Filtern";
+"whatsNew.v11.exclude.description" = "Filtere, indem du ausschließt, was du nicht sehen willst, statt alles auszuwählen.";
 "whatsNew.v12.coachMarks.title" = "Schritt-für-Schritt-Anleitungen";
 "whatsNew.v12.coachMarks.description" = "Wir zeigen dir jetzt, wie du jeden Bereich mit interaktiven Guides nutzt.";
 "whatsNew.v12.notifications.title" = "Intelligentere Benachrichtigungen";

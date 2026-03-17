@@ -14,7 +14,7 @@ Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
 Status: **Fase 12 en progreso** — What's New sheet + coach mark tours + onboarding improvements
-Last activity: 2026-03-12 — Full review fixes: @MainActor, reduceMotion, L10n, a11y, DS, Date.now
+Last activity: 2026-03-16 — A11y Batch 4 complete: 133 total decorative images marked across all views
 
 ### Apple Review History (V1.0)
 
@@ -43,17 +43,16 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-16] 0e0f4b2 refactor: rewrite notification copy with period-specific texts and brand voice
+- [2026-03-16] 42c62cf feat: add automatic App Store review prompt after moments of value
+- [2026-03-16] b569f56 fix: ensure all external triggers wait for splash before presenting sheets
 - [2026-03-13] 8bc8666 docs: update STATE.md + ROADMAP.md for financial report progress
 - [2026-03-13] 6b207f3 feat: integrate financial report tab + generic RecordsFiltersView
 - [2026-03-13] aa589d1 feat: add financial report views, ViewModel + l10n (6 langs)
 - [2026-03-13] 2a7a356 feat: add financial report models, pivot table calculator + tests
-- [2026-03-13] 9692528 refactor: extract HintPopoverContent — shared popover for InfoHintButton + FilterBlockedPopover
+- [2026-03-13] 9692528 refactor: extract HintPopoverContent — shared popover
 - [2026-03-12] 031bc7c feat: split AI consent into processing (voice/image) and insights (smart overview)
 - [2026-03-12] 08883ee fix: AI insights — tip alignment, reactivity, currency format, budget threshold
-- [2026-03-12] 52b451f feat: rewrite AI insight tone/focus prompts + country regionalization + brand voice enforcement
-- [2026-03-12] 134200b feat: enrich AI insights data + anti-hallucination prompts + upgrade to GPT-4.1 Mini
-- [2026-03-12] c935830 fix: prevent SEGV crash in test host by using in-memory config under XCTest
-- [2026-03-08] b0be795 fix: onboarding QA — comma-locale budget bug, animation timing, updated scenarios
 - [2026-03-08] 82f4e5c feat: polish onboarding budget step — reframe texts, horizontal pills, live preview card, currency fix
 - [2026-03-08] 9488d0a feat: polish onboarding account step — SectionBox layout, balance guide, validation
 - [2026-03-07] 275392d feat: add Smart Insights personalization — tone, focus, and actionable tips
@@ -758,28 +757,15 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 
 ## Session Continuity
 
-Last session: 2026-03-13
-Stopped at: Financial Report — MVP funcional, pendiente ajustes y testing
+Last session: 2026-03-17
+Stopped at: Merge 1.1.1 → 1.2 tras envío a App Store
 Next step: Ajustes y testing del Financial Report antes de avanzar
 Resume context:
-- MVP funcional: pivot table, grouping reorder, net flow summary, tab integration
+- 1.1.1 enviado a App Store (pendiente aprobación Apple)
+- Hotfix mergeado a 1.2 con todos los fixes + review prompt + notification copy
+- Financial Report MVP funcional, pendiente ajustes y testing
 - **Pendiente ajustes UI:**
   - Drag handles en GroupingReorderSheet — solo Tipo los muestra, los demás no (bug con editMode)
   - Verificar visualmente tamaños de fuente en GroupingChipsBar (reducidos a .caption)
   - Verificar NetFlowSummaryView se ve alineado con filas de Ingresos/Gastos
-- **Pendiente testing filtros:**
-  - Filtros de cuenta, categoría, subcategoría, tags, naturaleza, divisas en el reporte
-  - RecordsFiltersView genérico (ahora Filterable & Observable) — verificar que funciona igual en Records y Reports
-  - Modo exclusión de filtros
-  - Filtro por monto (amountCondition)
-  - searchText en contexto de reportes
-- **Pendiente testing general:**
-  - Cambio de periodo (mes/semana/año/custom) actualiza pivot table
-  - Comparación con periodo anterior (variaciones correctas)
-  - Moneda preferida se refleja correctamente (fix: defaultCurrencyCode)
-  - Reorder de dimensiones se persiste y actualiza la tabla
-  - Toggle dimensiones (activar/desactivar) funciona correctamente
-  - Empty state cuando no hay datos
-- **Pendiente funcionalidad:**
-  - Cash flow tab (placeholder actual)
-  - onChange handlers: 12 separados podrían causar recálculos redundantes
+- **Pendiente testing filtros y funcionalidad del Financial Report**

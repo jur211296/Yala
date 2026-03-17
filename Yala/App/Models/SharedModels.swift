@@ -361,24 +361,6 @@ struct SubcategorySpendingSummary: Identifiable {
     }
 }
 
-struct NeedSpendingSummary: Identifiable {
-    let need: SubcategoryNeed
-    let amount: Double
-    let percentage: Double
-
-    var id: String { need.rawValue }
-
-    // Color helper - uses distinct need colors (not brand colors)
-    var color: Color {
-        switch need {
-        case .essential: return .essentialNeed    // Amber
-        case .priority: return .priorityNeedNew   // Violet
-        case .optional: return .optionalNeed      // Rose
-        case .unclassified: return .gray.opacity(0.5)
-        }
-    }
-}
-
 struct NeedTrendPoint: Identifiable {
     let id: UUID = UUID()
     let date: Date  // X axis

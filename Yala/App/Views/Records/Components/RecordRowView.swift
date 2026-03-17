@@ -148,6 +148,7 @@ struct RecordRowView: View {
                     .font(DS.Typography.badgeLabel)
                     .foregroundStyle(.white)
                     .transition(.scale)
+                    .accessibilityHidden(true)
             }
         }
         .sensoryFeedback(.selection, trigger: isSelected)
@@ -173,6 +174,7 @@ struct RecordRowView: View {
             Image(systemName: iconName)
                 .font(DS.Typography.label)
                 .foregroundStyle(.white)
+                .accessibilityHidden(true)
         }
     }
 

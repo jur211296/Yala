@@ -298,22 +298,11 @@ final class AccountFormViewModel {
 
         if let account = accountToEdit {
             // Update account properties
-            account.name = trimmedName
-            account.currencyCode = normalizeCurrencyCode(selectedCurrency.rawValue)
-            account.colorHex = selectedColorHex
-            account.iconName = iconName(for: selectedType)
-            account.type = selectedType.rawValue
-            account.accountNumber = trimmedAccountNumber.isEmpty ? nil : trimmedAccountNumber
-            account.adjustmentMode = selectedAdjustmentMode.rawValue
-            account.excludeFromStatistics = excludeFromStatistics
-            account.isArchived = isArchived
-            account.creditCardPaymentReminder = selectedType == .creditCard ? creditCardPaymentReminder : false
-            account.creditCardPaymentDay = selectedType == .creditCard ? creditCardPaymentDay : 1
+            applyBaseAccountProperties(to: account, trimmedAccountNumber: trimmedAccountNumber)
 
             // Handle balance adjustment if specified
             if let balanceValue = parsedBalanceAmount, needsAdjustment, let sub = subcategory {
                 if selectedAdjustmentMode == .changeInitialBalance {
-                    // Update or create initial balance transaction with the new initial balance value
                     _ = InitialBalanceService.setInitialBalance(
                         amount: balanceValue,
                         for: account,
@@ -322,7 +311,6 @@ final class AccountFormViewModel {
                         context: context
                     )
                 } else {
-                    // Create adjustment transaction to reach target balance
                     _ = InitialBalanceService.createAdjustment(
                         targetBalance: balanceValue,
                         currentBalance: currentBalance,
@@ -382,17 +370,36 @@ final class AccountFormViewModel {
         }
 
         // Suggest adding currency as secondary if applicable
-        let savedCurrency = normalizeCurrencyCode(selectedCurrency.rawValue)
-        let preferred = CurrencyDefaults.currentPreferred
-        if savedCurrency != preferred, let code = CurrencyCode(rawValue: savedCurrency) {
-            let raw = UserDefaults.standard.string(forKey: "secondaryCurrencies") ?? ""
-            let existing = raw.split(separator: ",").map(String.init)
-            if existing.count < 2, !existing.contains(savedCurrency) {
-                currencyToSuggestAsSecondary = code
-            }
-        }
+        suggestSecondaryCurrencyIfNeeded()
 
         return true
+    }
+
+    /// Apply common account properties (shared between create and update paths)
+    private func applyBaseAccountProperties(to account: Account, trimmedAccountNumber: String) {
+        account.name = trimmedName
+        account.currencyCode = normalizeCurrencyCode(selectedCurrency.rawValue)
+        account.colorHex = selectedColorHex
+        account.iconName = iconName(for: selectedType)
+        account.type = selectedType.rawValue
+        account.accountNumber = trimmedAccountNumber.isEmpty ? nil : trimmedAccountNumber
+        account.adjustmentMode = selectedAdjustmentMode.rawValue
+        account.excludeFromStatistics = excludeFromStatistics
+        account.isArchived = isArchived
+        account.creditCardPaymentReminder = selectedType == .creditCard ? creditCardPaymentReminder : false
+        account.creditCardPaymentDay = selectedType == .creditCard ? creditCardPaymentDay : 1
+    }
+
+    /// Suggest adding the saved currency as secondary if it differs from preferred
+    private func suggestSecondaryCurrencyIfNeeded() {
+        let savedCurrency = normalizeCurrencyCode(selectedCurrency.rawValue)
+        let preferred = CurrencyDefaults.currentPreferred
+        guard savedCurrency != preferred, let code = CurrencyCode(rawValue: savedCurrency) else { return }
+        let raw = UserDefaults.standard.string(forKey: "secondaryCurrencies") ?? ""
+        let existing = raw.split(separator: ",").map(String.init)
+        if existing.count < 2, !existing.contains(savedCurrency) {
+            currencyToSuggestAsSecondary = code
+        }
     }
 
     func deleteAccount(context: ModelContext) -> Bool {
