@@ -322,6 +322,14 @@ struct YalaFormatter {
         value.formatted(.number.notation(.compactName).precision(.fractionLength(0...1)))
     }
 
+    /// Compact currency for table cells: uses abbreviation (1.2k) for large values
+    static func currencyCompact(value: Double, currencyCode: String) -> String {
+        if abs(value) >= 10000 {
+            return String(format: "%.1fk", value / 1000)
+        }
+        return currency(value: value, currencyCode: currencyCode)
+    }
+
     /// Compact axis label: 1500 → "2K", -40000 → "-40K", 500 → "500"
     static func axisK(_ value: Double) -> String {
         let absValue = abs(value)

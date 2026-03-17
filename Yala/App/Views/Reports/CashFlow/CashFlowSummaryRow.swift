@@ -47,7 +47,7 @@ struct CashFlowSummaryRow: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: DS.Spacing.none) {
                     ForEach(Array(values.enumerated()), id: \.offset) { _, value in
-                        Text(formattedCompact(value))
+                        Text(YalaFormatter.currencyCompact(value: value, currencyCode: currencyCode))
                             .font(DS.Typography.amountSmall)
                             .fontWeight(.semibold)
                             .foregroundStyle(value >= 0 ? DS.Semantic.successForeground : DS.Semantic.errorForeground)
@@ -59,10 +59,4 @@ struct CashFlowSummaryRow: View {
         .frame(height: 36)
     }
 
-    private func formattedCompact(_ value: Double) -> String {
-        if abs(value) >= 10000 {
-            return String(format: "%.1fk", value / 1000)
-        }
-        return YalaFormatter.currency(value: value, currencyCode: currencyCode)
-    }
 }

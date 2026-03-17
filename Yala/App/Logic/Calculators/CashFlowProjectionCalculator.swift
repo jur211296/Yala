@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftData
 
 // MARK: - Output Structs
 
@@ -40,7 +41,7 @@ struct CashFlowLineResult {
     let differencePercent: Double?
     let progress: Double?
     let isOverride: Bool
-    let estimationMethod: String
+    let estimationMethod: EstimationMethod
     let subcategoryBreakdown: [SubcategoryLineResult]?
 }
 
@@ -63,9 +64,65 @@ struct SubcategoryLineResult {
     let realAmount: Double?
 }
 
+// MARK: - Pre-grouped Transaction Index
+
+/// O(1) lookup of pre-converted transaction totals by (category, month).
+struct TransactionIndex {
+    /// Totals by category persistentModelID → monthKey → magnitude sum
+    let byCategoryMonth: [PersistentIdentifier: [String: Double]]
+    /// Totals by subcategory persistentModelID → monthKey → magnitude sum
+    let bySubcategoryMonth: [PersistentIdentifier: [String: Double]]
+
+    init(transactions: [TransactionItem], currencyCode: String, converter: CurrencyConverting, calendar: Calendar) {
+        var catMonth: [PersistentIdentifier: [String: Double]] = [:]
+        var subMonth: [PersistentIdentifier: [String: Double]] = [:]
+
+        for tx in transactions {
+            guard let catID = tx.category?.persistentModelID else { continue }
+            let key = CashFlowProjectionCalculator.monthKey(for: tx.date, calendar: calendar)
+
+            let magnitude: Double
+            if tx.preferredCurrencyCode == currencyCode {
+                magnitude = abs(tx.amountInPreferredCurrency)
+            } else {
+                let decimalAmt = Decimal(abs(tx.amount))
+                let converted = converter.convert(decimalAmt, from: tx.currencyCode, to: currencyCode, on: tx.date)
+                magnitude = NSDecimalNumber(decimal: converted).doubleValue
+            }
+
+            catMonth[catID, default: [:]][key, default: 0] += magnitude
+
+            if let subID = tx.subcategory?.persistentModelID {
+                subMonth[subID, default: [:]][key, default: 0] += magnitude
+            }
+        }
+
+        self.byCategoryMonth = catMonth
+        self.bySubcategoryMonth = subMonth
+    }
+
+    func total(for categoryID: PersistentIdentifier, monthKey: String) -> Double {
+        byCategoryMonth[categoryID]?[monthKey] ?? 0
+    }
+
+    func subcategoryTotal(for subcategoryID: PersistentIdentifier, monthKey: String) -> Double {
+        bySubcategoryMonth[subcategoryID]?[monthKey] ?? 0
+    }
+
+    func monthKeys(for categoryID: PersistentIdentifier) -> [String: Double] {
+        byCategoryMonth[categoryID] ?? [:]
+    }
+}
+
 // MARK: - Calculator
 
 struct CashFlowProjectionCalculator {
+
+    private static let customMonthFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM"
+        return f
+    }()
 
     static func calculate(
         plan: CashFlowPlan,
@@ -81,20 +138,24 @@ struct CashFlowProjectionCalculator {
         let calendar = Calendar.current
         let now = Date.now
         let currentComponents = calendar.dateComponents([.year, .month], from: now)
-        let currentMonthStart = calendar.date(from: currentComponents)!
+        guard let currentMonthStart = calendar.date(from: currentComponents) else {
+            return CashFlowProjection(months: [], startingBalance: plan.startingBalance,
+                                       totalProjectedIncome: 0, totalProjectedExpense: 0, totalProjectedNet: 0)
+        }
 
         // Generate month range
         let months = generateMonthRange(
-            from: currentMonthStart,
-            monthsBack: monthsBack,
-            monthsAhead: monthsAhead,
-            calendar: calendar
+            from: currentMonthStart, monthsBack: monthsBack, monthsAhead: monthsAhead, calendar: calendar
         )
 
-        // Filter valid transactions (exclude balance adjustments, transfers, uncategorized)
+        // Filter valid transactions and build index (single O(n) pass)
         let validTransactions = transactions.filter { tx in
             tx.category != nil && tx.balanceAdjustmentType == nil
         }
+        let index = TransactionIndex(
+            transactions: validTransactions, currencyCode: currencyCode,
+            converter: converter, calendar: calendar
+        )
 
         // Assigned category IDs for "other expenses" calculation
         let assignedCategoryIDs = Set(
@@ -113,53 +174,34 @@ struct CashFlowProjectionCalculator {
         var totalProjectedExpense: Double = 0
 
         for monthDate in months {
-            let monthKey = Self.monthKey(for: monthDate, calendar: calendar)
+            let mKey = Self.monthKey(for: monthDate, calendar: calendar)
             let isPast = monthDate < currentMonthStart
             let isCurrent = calendar.isDate(monthDate, equalTo: currentMonthStart, toGranularity: .month)
 
             let incomeResults = incomeLines.map { line in
                 calculateLineResult(
-                    line: line,
-                    monthDate: monthDate,
-                    monthKey: monthKey,
-                    isPast: isPast,
-                    isCurrent: isCurrent,
-                    transactions: validTransactions,
-                    scheduledPayments: scheduledPayments,
-                    currencyCode: currencyCode,
-                    converter: converter,
-                    calendar: calendar
+                    line: line, monthDate: monthDate, monthKey: mKey,
+                    isPast: isPast, isCurrent: isCurrent,
+                    index: index, calendar: calendar
                 )
             }
 
             let expenseResults = expenseLines.map { line in
                 calculateLineResult(
-                    line: line,
-                    monthDate: monthDate,
-                    monthKey: monthKey,
-                    isPast: isPast,
-                    isCurrent: isCurrent,
-                    transactions: validTransactions,
-                    scheduledPayments: scheduledPayments,
-                    currencyCode: currencyCode,
-                    converter: converter,
-                    calendar: calendar
+                    line: line, monthDate: monthDate, monthKey: mKey,
+                    isPast: isPast, isCurrent: isCurrent,
+                    index: index, calendar: calendar
                 )
             }
 
             let otherExpenses: CashFlowOtherResult?
             if plan.showOtherExpenses {
                 otherExpenses = calculateOtherExpenses(
-                    transactions: validTransactions,
                     allExpenseCategories: allExpenseCategories,
                     assignedCategoryIDs: assignedCategoryIDs,
-                    monthDate: monthDate,
-                    monthKey: monthKey,
-                    isPast: isPast,
-                    isCurrent: isCurrent,
-                    currencyCode: currencyCode,
-                    converter: converter,
-                    calendar: calendar
+                    monthDate: monthDate, monthKey: mKey,
+                    isPast: isPast, isCurrent: isCurrent,
+                    index: index, calendar: calendar
                 )
             } else {
                 otherExpenses = nil
@@ -175,23 +217,16 @@ struct CashFlowProjectionCalculator {
             totalProjectedExpense += totalExpense
 
             projectedMonths.append(CashFlowMonth(
-                monthKey: monthKey,
-                date: monthDate,
-                isPast: isPast,
-                isCurrent: isCurrent,
-                incomeLines: incomeResults,
-                expenseLines: expenseResults,
+                monthKey: mKey, date: monthDate, isPast: isPast, isCurrent: isCurrent,
+                incomeLines: incomeResults, expenseLines: expenseResults,
                 otherExpenses: otherExpenses,
-                totalIncome: totalIncome,
-                totalExpense: totalExpense,
-                netFlow: netFlow,
-                accumulatedBalance: accumulatedBalance
+                totalIncome: totalIncome, totalExpense: totalExpense,
+                netFlow: netFlow, accumulatedBalance: accumulatedBalance
             ))
         }
 
         return CashFlowProjection(
-            months: projectedMonths,
-            startingBalance: plan.startingBalance,
+            months: projectedMonths, startingBalance: plan.startingBalance,
             totalProjectedIncome: totalProjectedIncome,
             totalProjectedExpense: totalProjectedExpense,
             totalProjectedNet: totalProjectedIncome - totalProjectedExpense
@@ -201,41 +236,28 @@ struct CashFlowProjectionCalculator {
     // MARK: - Month Range
 
     static func generateMonthRange(
-        from currentMonth: Date,
-        monthsBack: Int,
-        monthsAhead: Int,
-        calendar: Calendar
+        from currentMonth: Date, monthsBack: Int, monthsAhead: Int, calendar: Calendar
     ) -> [Date] {
-        var months: [Date] = []
-        for offset in -monthsBack...monthsAhead {
-            if let date = calendar.date(byAdding: .month, value: offset, to: currentMonth) {
-                months.append(date)
-            }
+        (-monthsBack...monthsAhead).compactMap { offset in
+            calendar.date(byAdding: .month, value: offset, to: currentMonth)
         }
-        return months
     }
 
     static func monthKey(for date: Date, calendar: Calendar) -> String {
-        let components = calendar.dateComponents([.year, .month], from: date)
-        return String(format: "%04d-%02d", components.year ?? 0, components.month ?? 0)
+        let c = calendar.dateComponents([.year, .month], from: date)
+        return String(format: "%04d-%02d", c.year ?? 0, c.month ?? 0)
     }
 
     // MARK: - Line Result
 
     private static func calculateLineResult(
         line: CashFlowLine,
-        monthDate: Date,
-        monthKey: String,
-        isPast: Bool,
-        isCurrent: Bool,
-        transactions: [TransactionItem],
-        scheduledPayments: [ScheduledPayment],
-        currencyCode: String,
-        converter: CurrencyConverting,
+        monthDate: Date, monthKey: String,
+        isPast: Bool, isCurrent: Bool,
+        index: TransactionIndex,
         calendar: Calendar
     ) -> CashFlowLineResult {
 
-        // Check for override
         let override = line.overrides?.first { $0.monthKey == monthKey }
         let isOverride = override != nil
 
@@ -244,28 +266,13 @@ struct CashFlowProjectionCalculator {
             plannedAmount = override.amount
         } else {
             plannedAmount = estimatePlannedAmount(
-                line: line,
-                monthDate: monthDate,
-                transactions: transactions,
-                scheduledPayments: scheduledPayments,
-                currencyCode: currencyCode,
-                converter: converter,
-                calendar: calendar
+                line: line, monthDate: monthDate, index: index, calendar: calendar
             )
         }
 
-        // Real amount for past/current months
         let realAmount: Double?
-        if isPast || isCurrent {
-            realAmount = calculateRealAmount(
-                transactions: transactions,
-                category: line.category,
-                monthDate: monthDate,
-                isIncome: line.isIncome,
-                currencyCode: currencyCode,
-                converter: converter,
-                calendar: calendar
-            )
+        if isPast || isCurrent, let catID = line.category?.persistentModelID {
+            realAmount = index.total(for: catID, monthKey: monthKey)
         } else {
             realAmount = nil
         }
@@ -280,7 +287,6 @@ struct CashFlowProjectionCalculator {
             differencePercent = nil
         }
 
-        // Progress for current month only
         let progress: Double?
         if isCurrent, let realAmount, plannedAmount > 0 {
             progress = realAmount / plannedAmount
@@ -288,7 +294,6 @@ struct CashFlowProjectionCalculator {
             progress = nil
         }
 
-        // Subcategory breakdown
         let subcategoryBreakdown: [SubcategoryLineResult]?
         if line.isExpanded, let category = line.category,
            let subcategories = category.subcategories, !subcategories.isEmpty {
@@ -298,22 +303,12 @@ struct CashFlowProjectionCalculator {
                 .map { sub in
                     let subReal: Double?
                     if isPast || isCurrent {
-                        subReal = calculateRealAmountForSubcategory(
-                            transactions: transactions,
-                            subcategory: sub,
-                            monthDate: monthDate,
-                            isIncome: line.isIncome,
-                            currencyCode: currencyCode,
-                            converter: converter,
-                            calendar: calendar
-                        )
+                        subReal = index.subcategoryTotal(for: sub.persistentModelID, monthKey: monthKey)
                     } else {
                         subReal = nil
                     }
                     return SubcategoryLineResult(
-                        subcategoryName: sub.name,
-                        plannedAmount: 0, // Subcategory plan distribution not implemented yet
-                        realAmount: subReal
+                        subcategoryName: sub.name, plannedAmount: 0, realAmount: subReal
                     )
                 }
         } else {
@@ -321,15 +316,11 @@ struct CashFlowProjectionCalculator {
         }
 
         return CashFlowLineResult(
-            lineID: line.id,
-            name: line.name,
-            plannedAmount: plannedAmount,
-            realAmount: realAmount,
-            difference: difference,
-            differencePercent: differencePercent,
-            progress: progress,
-            isOverride: isOverride,
-            estimationMethod: line.estimationMethod,
+            lineID: line.id, name: line.name,
+            plannedAmount: plannedAmount, realAmount: realAmount,
+            difference: difference, differencePercent: differencePercent,
+            progress: progress, isOverride: isOverride,
+            estimationMethod: line.method,
             subcategoryBreakdown: subcategoryBreakdown
         )
     }
@@ -337,90 +328,47 @@ struct CashFlowProjectionCalculator {
     // MARK: - Estimation Methods
 
     private static func estimatePlannedAmount(
-        line: CashFlowLine,
-        monthDate: Date,
-        transactions: [TransactionItem],
-        scheduledPayments: [ScheduledPayment],
-        currencyCode: String,
-        converter: CurrencyConverting,
-        calendar: Calendar
+        line: CashFlowLine, monthDate: Date,
+        index: TransactionIndex, calendar: Calendar
     ) -> Double {
         switch line.method {
         case .average3m:
-            return estimateAverage(
-                transactions: transactions, months: 3,
-                category: line.category, isIncome: line.isIncome,
-                referenceDate: monthDate,
-                currencyCode: currencyCode, converter: converter, calendar: calendar
-            )
+            return estimateAverage(months: 3, category: line.category, referenceDate: monthDate, index: index, calendar: calendar)
         case .average6m:
-            return estimateAverage(
-                transactions: transactions, months: 6,
-                category: line.category, isIncome: line.isIncome,
-                referenceDate: monthDate,
-                currencyCode: currencyCode, converter: converter, calendar: calendar
-            )
+            return estimateAverage(months: 6, category: line.category, referenceDate: monthDate, index: index, calendar: calendar)
         case .average12m:
-            return estimateAverage(
-                transactions: transactions, months: 12,
-                category: line.category, isIncome: line.isIncome,
-                referenceDate: monthDate,
-                currencyCode: currencyCode, converter: converter, calendar: calendar
-            )
+            return estimateAverage(months: 12, category: line.category, referenceDate: monthDate, index: index, calendar: calendar)
         case .lastMonth:
-            return estimateLastMonth(
-                transactions: transactions, category: line.category,
-                isIncome: line.isIncome, referenceDate: monthDate,
-                currencyCode: currencyCode, converter: converter, calendar: calendar
-            )
+            return estimateLastMonth(category: line.category, referenceDate: monthDate, index: index, calendar: calendar)
         case .manual:
             return line.manualAmount ?? 0
         case .scheduled:
             if let payment = line.scheduledPayment {
-                return estimateScheduled(
-                    payment: payment, monthDate: monthDate, calendar: calendar
-                )
+                return estimateScheduled(payment: payment, monthDate: monthDate, calendar: calendar)
             }
             return line.manualAmount ?? 0
         case .trend:
-            return estimateTrend(
-                transactions: transactions, category: line.category,
-                isIncome: line.isIncome, referenceDate: monthDate,
-                currencyCode: currencyCode, converter: converter, calendar: calendar
-            )
+            return estimateTrend(category: line.category, referenceDate: monthDate, index: index, calendar: calendar)
         case .custom:
-            return estimateCustom(
-                transactions: transactions, customMonths: line.customMonths,
-                category: line.category, isIncome: line.isIncome,
-                currencyCode: currencyCode, converter: converter, calendar: calendar
-            )
+            return estimateCustom(customMonths: line.customMonths, category: line.category, index: index, calendar: calendar)
         }
     }
 
     // MARK: - Average Estimation
 
     static func estimateAverage(
-        transactions: [TransactionItem],
-        months: Int,
-        category: Category?,
-        isIncome: Bool,
-        referenceDate: Date,
-        currencyCode: String,
-        converter: CurrencyConverting,
-        calendar: Calendar
+        months: Int, category: Category?, referenceDate: Date,
+        index: TransactionIndex, calendar: Calendar
     ) -> Double {
-        guard let category else { return 0 }
+        guard let catID = category?.persistentModelID else { return 0 }
 
         var total: Double = 0
         var monthCount = 0
 
         for offset in 1...months {
             guard let monthStart = calendar.date(byAdding: .month, value: -offset, to: referenceDate) else { continue }
-            let amount = sumTransactions(
-                transactions: transactions, category: category,
-                isIncome: isIncome, monthDate: monthStart,
-                currencyCode: currencyCode, converter: converter, calendar: calendar
-            )
+            let key = Self.monthKey(for: monthStart, calendar: calendar)
+            let amount = index.total(for: catID, monthKey: key)
             if amount > 0 {
                 total += amount
                 monthCount += 1
@@ -433,30 +381,19 @@ struct CashFlowProjectionCalculator {
     // MARK: - Last Month Estimation
 
     static func estimateLastMonth(
-        transactions: [TransactionItem],
-        category: Category?,
-        isIncome: Bool,
-        referenceDate: Date,
-        currencyCode: String,
-        converter: CurrencyConverting,
-        calendar: Calendar
+        category: Category?, referenceDate: Date,
+        index: TransactionIndex, calendar: Calendar
     ) -> Double {
-        guard let category else { return 0 }
+        guard let catID = category?.persistentModelID else { return 0 }
         guard let lastMonthDate = calendar.date(byAdding: .month, value: -1, to: referenceDate) else { return 0 }
-
-        return sumTransactions(
-            transactions: transactions, category: category,
-            isIncome: isIncome, monthDate: lastMonthDate,
-            currencyCode: currencyCode, converter: converter, calendar: calendar
-        )
+        let key = Self.monthKey(for: lastMonthDate, calendar: calendar)
+        return index.total(for: catID, monthKey: key)
     }
 
     // MARK: - Scheduled Estimation
 
     static func estimateScheduled(
-        payment: ScheduledPayment,
-        monthDate: Date,
-        calendar: Calendar
+        payment: ScheduledPayment, monthDate: Date, calendar: Calendar
     ) -> Double {
         let params = payment.dateCalculatorParams
         let dates = ScheduledPaymentDateCalculator.paymentDatesInMonth(
@@ -468,31 +405,21 @@ struct CashFlowProjectionCalculator {
     // MARK: - Trend Estimation (Linear Regression)
 
     static func estimateTrend(
-        transactions: [TransactionItem],
-        category: Category?,
-        isIncome: Bool,
-        referenceDate: Date,
-        currencyCode: String,
-        converter: CurrencyConverting,
-        calendar: Calendar
+        category: Category?, referenceDate: Date,
+        index: TransactionIndex, calendar: Calendar
     ) -> Double {
-        guard let category else { return 0 }
+        guard let catID = category?.persistentModelID else { return 0 }
 
-        // Collect 6 months of data
         var dataPoints: [(x: Double, y: Double)] = []
         for offset in (1...6).reversed() {
             guard let monthStart = calendar.date(byAdding: .month, value: -offset, to: referenceDate) else { continue }
-            let amount = sumTransactions(
-                transactions: transactions, category: category,
-                isIncome: isIncome, monthDate: monthStart,
-                currencyCode: currencyCode, converter: converter, calendar: calendar
-            )
+            let key = Self.monthKey(for: monthStart, calendar: calendar)
+            let amount = index.total(for: catID, monthKey: key)
             dataPoints.append((x: Double(6 - offset), y: amount))
         }
 
         guard dataPoints.count >= 2 else { return 0 }
 
-        // Simple linear regression: y = mx + b
         let n = Double(dataPoints.count)
         let sumX = dataPoints.reduce(0.0) { $0 + $1.x }
         let sumY = dataPoints.reduce(0.0) { $0 + $1.y }
@@ -505,7 +432,6 @@ struct CashFlowProjectionCalculator {
         let m = (n * sumXY - sumX * sumY) / denominator
         let b = (sumY - m * sumX) / n
 
-        // Extrapolate to next month (x = n)
         let predicted = m * n + b
         return max(0, predicted)
     }
@@ -513,102 +439,36 @@ struct CashFlowProjectionCalculator {
     // MARK: - Custom Estimation
 
     static func estimateCustom(
-        transactions: [TransactionItem],
-        customMonths: [String],
-        category: Category?,
-        isIncome: Bool,
-        currencyCode: String,
-        converter: CurrencyConverting,
-        calendar: Calendar
+        customMonths: [String], category: Category?,
+        index: TransactionIndex, calendar: Calendar
     ) -> Double {
-        guard let category, !customMonths.isEmpty else { return 0 }
-
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM"
-        formatter.timeZone = calendar.timeZone
+        guard let catID = category?.persistentModelID, !customMonths.isEmpty else { return 0 }
 
         var total: Double = 0
         var count = 0
 
         for monthString in customMonths {
-            guard let monthDate = formatter.date(from: monthString) else { continue }
-            let amount = sumTransactions(
-                transactions: transactions, category: category,
-                isIncome: isIncome, monthDate: monthDate,
-                currencyCode: currencyCode, converter: converter, calendar: calendar
-            )
-            total += amount
+            guard let monthDate = customMonthFormatter.date(from: monthString) else { continue }
+            let key = Self.monthKey(for: monthDate, calendar: calendar)
+            total += index.total(for: catID, monthKey: key)
             count += 1
         }
 
         return count > 0 ? total / Double(count) : 0
     }
 
-    // MARK: - Real Amount
-
-    static func calculateRealAmount(
-        transactions: [TransactionItem],
-        category: Category?,
-        monthDate: Date,
-        isIncome: Bool,
-        currencyCode: String,
-        converter: CurrencyConverting,
-        calendar: Calendar
-    ) -> Double {
-        guard let category else { return 0 }
-        return sumTransactions(
-            transactions: transactions, category: category,
-            isIncome: isIncome, monthDate: monthDate,
-            currencyCode: currencyCode, converter: converter, calendar: calendar
-        )
-    }
-
-    // MARK: - Subcategory Real Amount
-
-    private static func calculateRealAmountForSubcategory(
-        transactions: [TransactionItem],
-        subcategory: Subcategory,
-        monthDate: Date,
-        isIncome: Bool,
-        currencyCode: String,
-        converter: CurrencyConverting,
-        calendar: Calendar
-    ) -> Double {
-        guard let monthInterval = calendar.dateInterval(of: .month, for: monthDate) else { return 0 }
-
-        var total: Double = 0
-        for tx in transactions {
-            guard tx.subcategory?.persistentModelID == subcategory.persistentModelID else { continue }
-            guard tx.date >= monthInterval.start && tx.date < monthInterval.end else { continue }
-
-            let magnitude = convertedMagnitude(
-                tx: tx, currencyCode: currencyCode, converter: converter
-            )
-            total += magnitude
-        }
-        return total
-    }
-
     // MARK: - Other Expenses
 
     static func calculateOtherExpenses(
-        transactions: [TransactionItem],
         allExpenseCategories: [Category],
         assignedCategoryIDs: Set<PersistentIdentifier>,
-        monthDate: Date,
-        monthKey: String,
-        isPast: Bool,
-        isCurrent: Bool,
-        currencyCode: String,
-        converter: CurrencyConverting,
+        monthDate: Date, monthKey: String,
+        isPast: Bool, isCurrent: Bool,
+        index: TransactionIndex,
         calendar: Calendar
     ) -> CashFlowOtherResult {
         let unassignedCategories = allExpenseCategories.filter { cat in
             !cat.isIncome && !assignedCategoryIDs.contains(cat.persistentModelID)
-        }
-
-        guard calendar.dateInterval(of: .month, for: monthDate) != nil else {
-            return CashFlowOtherResult(plannedAmount: 0, realAmount: nil, categoryBreakdown: [])
         }
 
         var breakdown: [OtherCategoryItem] = []
@@ -616,91 +476,34 @@ struct CashFlowProjectionCalculator {
         var totalReal: Double = 0
 
         for cat in unassignedCategories {
-            // For planned: use average of last 6 months
             let planned = estimateAverage(
-                transactions: transactions, months: 6,
-                category: cat, isIncome: false,
-                referenceDate: monthDate,
-                currencyCode: currencyCode, converter: converter, calendar: calendar
+                months: 6, category: cat, referenceDate: monthDate,
+                index: index, calendar: calendar
             )
             totalPlanned += planned
 
             if isPast || isCurrent {
-                let real = sumTransactions(
-                    transactions: transactions, category: cat,
-                    isIncome: false, monthDate: monthDate,
-                    currencyCode: currencyCode, converter: converter, calendar: calendar
-                )
+                let real = index.total(for: cat.persistentModelID, monthKey: monthKey)
                 totalReal += real
 
                 if real > 0 {
                     breakdown.append(OtherCategoryItem(
-                        categoryName: cat.name,
-                        iconName: cat.iconName ?? "folder",
-                        colorHex: cat.colorHex,
-                        amount: real
+                        categoryName: cat.name, iconName: cat.iconName ?? "folder",
+                        colorHex: cat.colorHex, amount: real
                     ))
                 }
             } else if planned > 0 {
                 breakdown.append(OtherCategoryItem(
-                    categoryName: cat.name,
-                    iconName: cat.iconName ?? "folder",
-                    colorHex: cat.colorHex,
-                    amount: planned
+                    categoryName: cat.name, iconName: cat.iconName ?? "folder",
+                    colorHex: cat.colorHex, amount: planned
                 ))
             }
         }
 
-        let realAmount: Double? = (isPast || isCurrent) ? totalReal : nil
-
         return CashFlowOtherResult(
             plannedAmount: totalPlanned,
-            realAmount: realAmount,
+            realAmount: (isPast || isCurrent) ? totalReal : nil,
             categoryBreakdown: breakdown.sorted { $0.amount > $1.amount }
         )
     }
-
-    // MARK: - Shared Helpers
-
-    private static func sumTransactions(
-        transactions: [TransactionItem],
-        category: Category,
-        isIncome: Bool,
-        monthDate: Date,
-        currencyCode: String,
-        converter: CurrencyConverting,
-        calendar: Calendar
-    ) -> Double {
-        guard let monthInterval = calendar.dateInterval(of: .month, for: monthDate) else { return 0 }
-
-        var total: Double = 0
-        for tx in transactions {
-            guard tx.category?.persistentModelID == category.persistentModelID else { continue }
-            guard tx.date >= monthInterval.start && tx.date < monthInterval.end else { continue }
-
-            let magnitude = convertedMagnitude(
-                tx: tx, currencyCode: currencyCode, converter: converter
-            )
-            total += magnitude
-        }
-        return total
-    }
-
-    private static func convertedMagnitude(
-        tx: TransactionItem,
-        currencyCode: String,
-        converter: CurrencyConverting
-    ) -> Double {
-        if tx.preferredCurrencyCode == currencyCode {
-            return abs(tx.amountInPreferredCurrency)
-        } else {
-            let decimalAmt = Decimal(abs(tx.amount))
-            let converted = converter.convert(decimalAmt, from: tx.currencyCode, to: currencyCode, on: tx.date)
-            return NSDecimalNumber(decimal: converted).doubleValue
-        }
-    }
 }
-
-// MARK: - PersistentIdentifier import
-
-import SwiftData

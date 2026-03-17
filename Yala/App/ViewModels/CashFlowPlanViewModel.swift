@@ -18,7 +18,7 @@ struct SuggestedLine: Identifiable {
     let name: String
     let isIncome: Bool
     let suggestedAmount: Double
-    let estimationMethod: String
+    let estimationMethod: EstimationMethod
     let monthsWithActivity: Int
     let isRecommended: Bool
     var isSelected: Bool
@@ -32,7 +32,7 @@ final class CashFlowPlanViewModel {
 
     // State
     private(set) var plan: CashFlowPlan?
-    private(set) var hasPlan: Bool = false
+    var hasPlan: Bool { plan != nil }
     private(set) var projection: CashFlowProjection?
     var suggestedLines: [SuggestedLine] = []
     private(set) var isLoading: Bool = false
@@ -56,7 +56,6 @@ final class CashFlowPlanViewModel {
             descriptor.fetchLimit = 1
             let plans = try ctx.fetch(descriptor)
             plan = plans.first
-            hasPlan = plan != nil
         } catch {
             #if DEBUG
             print("CashFlowPlanViewModel: Error loading plan: \(error)")
@@ -115,7 +114,7 @@ final class CashFlowPlanViewModel {
                 name: activity.name,
                 isIncome: activity.isIncome,
                 suggestedAmount: avgAmount,
-                estimationMethod: EstimationMethod.average6m.rawValue,
+                estimationMethod: .average6m,
                 monthsWithActivity: monthCount,
                 isRecommended: isRecommended,
                 isSelected: isRecommended
@@ -137,7 +136,7 @@ final class CashFlowPlanViewModel {
                 name: payment.name,
                 isIncome: payment.transactionType == "income",
                 suggestedAmount: abs(payment.amount),
-                estimationMethod: EstimationMethod.scheduled.rawValue,
+                estimationMethod: .scheduled,
                 monthsWithActivity: 6,
                 isRecommended: true,
                 isSelected: true
@@ -163,7 +162,7 @@ final class CashFlowPlanViewModel {
 
         let selectedSuggestions = suggestedLines.filter(\.isSelected)
         for (index, suggestion) in selectedSuggestions.enumerated() {
-            let method = EstimationMethod(rawValue: suggestion.estimationMethod) ?? .average6m
+            let method = suggestion.estimationMethod
             let line = CashFlowLine(
                 name: suggestion.name,
                 isIncome: suggestion.isIncome,
@@ -186,7 +185,6 @@ final class CashFlowPlanViewModel {
         }
 
         plan = newPlan
-        hasPlan = true
     }
 
     // MARK: - CRUD
@@ -352,7 +350,6 @@ final class CashFlowPlanViewModel {
         }
 
         self.plan = nil
-        hasPlan = false
         projection = nil
     }
 

@@ -100,22 +100,19 @@ struct CashFlowCellPopover: View {
     }
 
     private var monthLabel: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM"
-        return formatter.string(from: month.date)
+        month.date.formatted(.dateTime.month(.abbreviated))
     }
 
     private var methodLabel: String {
         switch lineResult.estimationMethod {
-        case "average3m": return L10n.CashFlowPlan.average3m
-        case "average6m": return L10n.CashFlowPlan.average6m
-        case "average12m": return L10n.CashFlowPlan.average12m
-        case "lastMonth": return L10n.CashFlowPlan.lastMonth
-        case "manual": return L10n.CashFlowPlan.manual
-        case "scheduled": return L10n.CashFlowPlan.scheduled
-        case "trend": return L10n.CashFlowPlan.trend
-        case "custom": return L10n.CashFlowPlan.custom
-        default: return lineResult.estimationMethod
+        case .average3m: return L10n.CashFlowPlan.average3m
+        case .average6m: return L10n.CashFlowPlan.average6m
+        case .average12m: return L10n.CashFlowPlan.average12m
+        case .lastMonth: return L10n.CashFlowPlan.lastMonth
+        case .manual: return L10n.CashFlowPlan.manual
+        case .scheduled: return L10n.CashFlowPlan.scheduled
+        case .trend: return L10n.CashFlowPlan.trend
+        case .custom: return L10n.CashFlowPlan.custom
         }
     }
 }

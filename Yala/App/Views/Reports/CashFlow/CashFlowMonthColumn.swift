@@ -88,7 +88,7 @@ struct CashFlowMonthColumn: View {
 
     private func subcategoryCell(_ sub: SubcategoryLineResult) -> some View {
         let displayAmount = sub.realAmount ?? sub.plannedAmount
-        return Text(formattedCompact(displayAmount))
+        return Text(YalaFormatter.currencyCompact(value: displayAmount, currencyCode: currencyCode))
             .font(DS.Typography.captionSmall)
             .foregroundStyle(.tertiary)
             .frame(width: columnWidth, height: rowHeight * 0.8)
@@ -98,7 +98,7 @@ struct CashFlowMonthColumn: View {
 
     private func otherExpensesCell(_ other: CashFlowOtherResult) -> some View {
         let displayAmount = other.realAmount ?? other.plannedAmount
-        return Text(formattedCompact(displayAmount))
+        return Text(YalaFormatter.currencyCompact(value: displayAmount, currencyCode: currencyCode))
             .font(DS.Typography.amountSmall)
             .foregroundStyle(.tertiary)
             .frame(width: columnWidth, height: rowHeight)
@@ -109,26 +109,14 @@ struct CashFlowMonthColumn: View {
     private let sectionHeaderHeight: CGFloat = 28
 
     private var monthAbbreviation: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM"
-        return formatter.string(from: month.date)
+        month.date.formatted(.dateTime.month(.abbreviated))
     }
 
     private var showYear: Bool {
-        let cal = Calendar.current
-        return cal.component(.month, from: month.date) == 1
+        Calendar.current.component(.month, from: month.date) == 1
     }
 
     private var yearString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yy"
-        return formatter.string(from: month.date)
-    }
-
-    private func formattedCompact(_ value: Double) -> String {
-        if abs(value) >= 10000 {
-            return String(format: "%.1fk", value / 1000)
-        }
-        return YalaFormatter.currency(value: value, currencyCode: currencyCode)
+        month.date.formatted(.dateTime.year(.twoDigits))
     }
 }

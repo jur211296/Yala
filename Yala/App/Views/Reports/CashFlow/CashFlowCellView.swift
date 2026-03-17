@@ -49,7 +49,7 @@ struct CashFlowCellView: View {
     }
 
     private var amountText: some View {
-        Text(formattedCompact(displayAmount))
+        Text(YalaFormatter.currencyCompact(value: displayAmount, currencyCode: currencyCode))
             .font(DS.Typography.amountSmall)
             .foregroundStyle(amountColor)
             .fontWeight(lineResult.isOverride ? .bold : .regular)
@@ -93,13 +93,4 @@ struct CashFlowCellView: View {
         return DS.Semantic.successForeground
     }
 
-    // MARK: - Formatting
-
-    private func formattedCompact(_ value: Double) -> String {
-        if abs(value) >= 10000 {
-            let k = value / 1000
-            return String(format: "%.1fk", k)
-        }
-        return YalaFormatter.currency(value: value, currencyCode: currencyCode)
-    }
 }

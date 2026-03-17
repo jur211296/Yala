@@ -181,14 +181,14 @@ struct CashFlowChartsSheet: View {
     private var trendByLineChart: some View {
         chartCard(title: L10n.CashFlowPlan.trendByLine) {
             Chart {
-                ForEach(allLineNames, id: \.self) { lineName in
+                ForEach(allExpenseLines, id: \.id) { line in
                     ForEach(projection.months, id: \.monthKey) { month in
-                        let amount = lineAmount(name: lineName, in: month)
+                        let amount = lineAmount(id: line.id, in: month)
                         LineMark(
                             x: .value("Month", month.date),
                             y: .value("Amount", amount)
                         )
-                        .foregroundStyle(by: .value("Line", lineName))
+                        .foregroundStyle(by: .value("Line", line.name))
                     }
                 }
             }
@@ -204,14 +204,13 @@ struct CashFlowChartsSheet: View {
 
     // MARK: - Helpers
 
-    private var allLineNames: [String] {
+    private var allExpenseLines: [(id: UUID, name: String)] {
         guard let first = projection.months.first else { return [] }
-        return first.expenseLines.map(\.name)
+        return first.expenseLines.map { (id: $0.lineID, name: $0.name) }
     }
 
-    private func lineAmount(name: String, in month: CashFlowMonth) -> Double {
-        let allLines = month.expenseLines + month.incomeLines
-        return allLines.first(where: { $0.name == name })?.plannedAmount ?? 0
+    private func lineAmount(id: UUID, in month: CashFlowMonth) -> Double {
+        month.expenseLines.first(where: { $0.lineID == id })?.plannedAmount ?? 0
     }
 
     // MARK: - Card Container
