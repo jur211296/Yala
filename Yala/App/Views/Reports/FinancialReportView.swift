@@ -13,6 +13,7 @@ struct FinancialReportView: View {
     // MARK: - State
 
     @State private var viewModel = FinancialReportViewModel()
+    @State private var cashFlowViewModel = CashFlowPlanViewModel()
     @State private var selectedTab: ReportTab = .comparativa
     @State private var showCustomDatePicker = false
     @State private var isPresentingSettings = false
@@ -31,6 +32,7 @@ struct FinancialReportView: View {
     @Query(sort: \Category.sortOrder) private var categories: [Category]
     @Query private var allSubcategories: [Subcategory]
     @Query private var tags: [Tag]
+    @Query private var scheduledPayments: [ScheduledPayment]
 
     // MARK: - Settings
 
@@ -61,7 +63,10 @@ struct FinancialReportView: View {
         .sheet(isPresented: $isPresentingSettings) {
             ProfileView()
         }
-        .onAppear { recalculate() }
+        .onAppear {
+            recalculate()
+            cashFlowViewModel.setContext(modelContext)
+        }
         .onDisappear { recalculateTask?.cancel() }
         .onChange(of: sessionState.selectedPeriod) { _, _ in scheduleRecalculate() }
         .onChange(of: sessionState.customDateRange) { _, _ in scheduleRecalculate() }
@@ -141,7 +146,7 @@ struct FinancialReportView: View {
         case .comparativa:
             comparativaContent
         case .flujoDeCaja:
-            cashFlowPlaceholder
+            cashFlowContent
         }
     }
 
@@ -192,16 +197,20 @@ struct FinancialReportView: View {
         .yalaCard(padding: 0)
     }
 
-    // MARK: - Cash Flow (Placeholder)
+    // MARK: - Cash Flow
 
-    private var cashFlowPlaceholder: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            YalaEmptyState(
-                icon: "arrow.left.arrow.right",
-                title: L10n.Report.Tab.cashFlow,
-                message: "" // TODO: Implement cash flow tab
+    @ViewBuilder
+    private var cashFlowContent: some View {
+        if cashFlowViewModel.hasPlan {
+            Text("Plan activo") // TODO: Replace with CashFlowTableView in Inc 4
+        } else {
+            CashFlowSetupView(
+                viewModel: cashFlowViewModel,
+                transactions: transactions,
+                scheduledPayments: scheduledPayments,
+                categories: categories,
+                currencyCode: preferredCurrencyCode
             )
-            .padding(.top, DS.Spacing.xxl)
         }
     }
 

@@ -183,6 +183,71 @@ enum L10n {
         }
     }
 
+    // MARK: - Cash Flow Plan
+
+    enum CashFlowPlan {
+        // Setup
+        static var title: String { ls("cashFlowPlan.title", comment: "") }
+        static var description: String { ls("cashFlowPlan.description", comment: "") }
+        static var createButton: String { ls("cashFlowPlan.createButton", comment: "") }
+        static var startingBalance: String { ls("cashFlowPlan.startingBalance", comment: "") }
+        static var startingBalanceHelper: String { ls("cashFlowPlan.startingBalanceHelper", comment: "") }
+        static var incomeSection: String { ls("cashFlowPlan.incomeSection", comment: "") }
+        static var expenseSection: String { ls("cashFlowPlan.expenseSection", comment: "") }
+        static var recommendedBadge: String { ls("cashFlowPlan.recommendedBadge", comment: "") }
+        static var otherExpensesLabel: String { ls("cashFlowPlan.otherExpenses", comment: "") }
+        static var otherExpensesDesc: String { ls("cashFlowPlan.otherExpensesDesc", comment: "") }
+        static var emptyState: String { ls("cashFlowPlan.emptyState", comment: "") }
+        static var emptyStateMessage: String { ls("cashFlowPlan.emptyStateMessage", comment: "") }
+        static var monthsActive: String { ls("cashFlowPlan.monthsActive", comment: "") }
+
+        // Table
+        static var available: String { ls("cashFlowPlan.available", comment: "") }
+        static var accumulated: String { ls("cashFlowPlan.accumulated", comment: "") }
+        static var addLine: String { ls("cashFlowPlan.addLine", comment: "") }
+
+        // Config
+        static var estimationMethod: String { ls("cashFlowPlan.estimationMethod", comment: "") }
+        static var average3m: String { ls("cashFlowPlan.average3m", comment: "") }
+        static var average6m: String { ls("cashFlowPlan.average6m", comment: "") }
+        static var average12m: String { ls("cashFlowPlan.average12m", comment: "") }
+        static var lastMonth: String { ls("cashFlowPlan.lastMonth", comment: "") }
+        static var manual: String { ls("cashFlowPlan.manual", comment: "") }
+        static var scheduled: String { ls("cashFlowPlan.scheduled", comment: "") }
+        static var trend: String { ls("cashFlowPlan.trend", comment: "") }
+        static var custom: String { ls("cashFlowPlan.custom", comment: "") }
+        static var contextLabel: String { ls("cashFlowPlan.context", comment: "") }
+        static var trendLabel: String { ls("cashFlowPlan.trendLabel", comment: "") }
+        static var rangeLabel: String { ls("cashFlowPlan.rangeLabel", comment: "") }
+
+        // Popover
+        static var plan: String { ls("cashFlowPlan.plan", comment: "") }
+        static var real: String { ls("cashFlowPlan.real", comment: "") }
+        static var difference: String { ls("cashFlowPlan.difference", comment: "") }
+        static var adjustAmount: String { ls("cashFlowPlan.adjustAmount", comment: "") }
+
+        // Others
+        static var othersTitle: String { ls("cashFlowPlan.othersTitle", comment: "") }
+        static var othersDesc: String { ls("cashFlowPlan.othersDesc", comment: "") }
+        static var othersHint: String { ls("cashFlowPlan.othersHint", comment: "") }
+        static var promoteCategory: String { ls("cashFlowPlan.promoteCategory", comment: "") }
+
+        // Actions
+        static var resetPlan: String { ls("cashFlowPlan.resetPlan", comment: "") }
+        static var resetConfirmation: String { ls("cashFlowPlan.resetConfirmation", comment: "") }
+        static func suggestPayment(_ name: String) -> String {
+            String(format: ls("cashFlowPlan.suggestPayment", comment: ""), name)
+        }
+
+        // Charts
+        static var chartsTitle: String { ls("cashFlowPlan.chartsTitle", comment: "") }
+        static var accumulatedBalance: String { ls("cashFlowPlan.accumulatedBalance", comment: "") }
+        static var incomeVsExpense: String { ls("cashFlowPlan.incomeVsExpense", comment: "") }
+        static var composition: String { ls("cashFlowPlan.composition", comment: "") }
+        static var realVsPlan: String { ls("cashFlowPlan.realVsPlan", comment: "") }
+        static var trendByLine: String { ls("cashFlowPlan.trendByLine", comment: "") }
+    }
+
     // MARK: - Groupings
 
     enum Groupings {
