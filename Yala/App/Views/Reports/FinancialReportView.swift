@@ -63,6 +63,14 @@ struct FinancialReportView: View {
         .sheet(isPresented: $isPresentingSettings) {
             ProfileView()
         }
+        .sheet(isPresented: $cashFlowViewModel.showChartsSheet) {
+            if let projection = cashFlowViewModel.projection {
+                CashFlowChartsSheet(
+                    projection: projection,
+                    currencyCode: preferredCurrencyCode
+                )
+            }
+        }
         .onAppear {
             recalculate()
             cashFlowViewModel.setContext(modelContext)
@@ -224,6 +232,18 @@ struct FinancialReportView: View {
 
     @ToolbarContentBuilder
     private var reportToolbar: some ToolbarContent {
+        if selectedTab == .flujoDeCaja && cashFlowViewModel.hasPlan {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    cashFlowViewModel.showChartsSheet = true
+                } label: {
+                    Image(systemName: "chart.bar.xaxis")
+                        .font(DS.Typography.body.weight(.medium))
+                        .foregroundStyle(.thToolbarIcon)
+                }
+            }
+        }
+
         ToolbarItem(placement: .topBarTrailing) {
             Button {
                 viewModel.showFiltersSheet = true
