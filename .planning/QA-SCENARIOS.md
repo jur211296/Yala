@@ -5622,3 +5622,133 @@ Para cada tema verificar:
 - [ ] Porcentaje > 100% → resultado nil → botón disabled
 - [ ] Monto exacto > total → resultado nil → botón disabled
 - [ ] Campo vacío → resultado nil
+
+---
+
+## Sección 53: Pro Conversion System (Upsells Proactivos)
+
+### 53.1 TrialBanner en PanelView
+- [ ] Free user en trial → TrialBanner visible con countdown correcto
+- [ ] Trial ≤2 días → TrialBanner con estilo urgente (naranja, icono exclamación)
+- [ ] Trial 0 días → Muestra "Termina hoy"
+- [ ] Tap en "Suscribirse" → Abre SubscriptionView con source "trialBanner"
+- [ ] Pro user → TrialBanner NO aparece
+- [ ] Free user sin trial → TrialBanner NO aparece
+
+### 53.2 ProUpgradeBanner (periódico)
+- [ ] Free user sin trial, ≥5 días desde última vez → Banner periódico aparece
+- [ ] Free user sin trial, <5 días → Banner NO aparece
+- [ ] Dismiss banner → No reaparece en misma sesión
+- [ ] Dismiss banner → Cooldown aumenta +2 días para siguiente aparición
+- [ ] Max 4 banners periódicos por mes
+- [ ] Pro user → Banner periódico NUNCA aparece
+- [ ] Ex-Pro voluntario → Banner periódico NO aparece
+- [ ] Tap en "Desbloquear Pro" → Abre SubscriptionView con source "periodicBanner"
+
+### 53.3 Trial Expired Sheet
+- [ ] Trial expirado → Sheet aparece en primera sesión post-trial
+- [ ] Trial expirado → Sheet aparece SOLO 1 vez (nunca más en sesiones posteriores)
+- [ ] Trial activo → Sheet NO aparece
+- [ ] Pro user → Sheet NO aparece
+- [ ] Nunca tuvo trial → Sheet NO aparece
+
+### 53.4 Milestone Upgrade Sheet
+- [ ] Transacción #10 → Milestone sheet aparece (Free user)
+- [ ] Transacción #50 → Milestone sheet aparece (Free user)
+- [ ] Transacción #100 → Milestone sheet aparece (Free user)
+- [ ] Cada milestone solo aparece 1 vez
+- [ ] Pro user → Milestone sheet NUNCA aparece
+- [ ] Tap "Desbloquear Pro" → Abre SubscriptionView con source "milestone"
+- [ ] Draft approve también cuenta para milestones
+
+### 53.5 Insights AI Teaser
+- [ ] Free user → Teaser visible después del hero insight con blur
+- [ ] Tap en botón → Abre UpgradePromptSheet
+- [ ] Pro user → Teaser NO aparece
+
+### 53.6 Telemetría
+- [ ] Consola DEBUG muestra eventos TelemetryDeck con parámetros correctos
+- [ ] paywallViewed incluye source correcto (profile/featureGate/downgrade/trialBanner/etc.)
+- [ ] proUpsellShown se dispara en onAppear de cada banner/sheet
+- [ ] proUpsellTapped se dispara al tocar CTA
+- [ ] proUpsellDismissed se dispara al cerrar sin CTA
+- [ ] purchaseCompleted se dispara en compra exitosa
+- [ ] trialStarted se dispara al iniciar trial
+- [ ] trialExpiring se dispara cuando trial ≤2 días
+- [ ] featureGateHit incluye daysSinceInstall y sessionNumber
+- [ ] trackOnce no duplica eventos en misma sesión
+
+## §54 Flujo de Caja (Cash Flow Plan)
+
+### 54.1 Setup
+
+- [ ] Pre-llenado detecta categorías correctas (4+ meses = checked, 2-3 = unchecked)
+- [ ] ScheduledPayments aparecen como líneas con método "scheduled"
+- [ ] Toggle de línea actualiza resumen en tiempo real
+- [ ] Saldo inicial se persiste correctamente
+- [ ] "Crear mi plan" persiste todas las líneas seleccionadas
+- [ ] Sin transacciones muestra empty state correcto
+- [ ] Con solo 1 mes de datos, el setup funciona (menos sugerencias)
+
+### 54.2 Tabla
+
+- [ ] Scroll horizontal muestra meses correctos (3 atrás + 6 adelante default)
+- [ ] Columna de nombres es sticky al scrollear
+- [ ] Fila resumen es sticky en bottom
+- [ ] Meses pasados muestran datos reales con fondo diferenciado
+- [ ] Mes actual muestra barra de progreso proporcional al día
+- [ ] Overrides se reflejan en la celda (texto bold)
+- [ ] Colapsar sección oculta sus líneas
+- [ ] "Otros gastos" calcula correcto las categorías no asignadas
+
+### 54.3 Interacciones
+
+- [ ] Tap en celda muestra popover con datos correctos
+- [ ] Crear override persiste y recalcula totales
+- [ ] Tap en nombre abre configuración con datos de la línea
+- [ ] Cambiar método recalcula montos
+- [ ] Promover categoría de "Otros" crea línea y reduce Otros
+- [ ] Agregar línea manual funciona (sin categoría)
+- [ ] Agregar línea desde categoría vincula correctamente
+- [ ] Eliminar línea recalcula Otros y totales
+- [ ] Desglosar subcategorías muestra sublíneas
+
+### 54.4 Cálculos
+
+- [ ] Promedios calculan correctamente (solo meses con actividad)
+- [ ] "Último mes" usa el mes calendario anterior
+- [ ] "Pago fijo" usa monto del ScheduledPayment
+- [ ] Acumulado suma correctamente desde saldo inicial
+- [ ] Conversión de divisas funciona para transacciones multi-moneda
+- [ ] Real vs plan: diferencia y porcentaje correctos
+- [ ] Progreso mes actual: barra proporcional al día
+
+### 54.5 Pro/Free
+
+- [ ] Free: máximo 3 meses hacia adelante
+- [ ] Free: solo métodos básicos (promedio 6m, manual, pago fijo)
+- [ ] Free: solo gráfica de saldo acumulado
+- [ ] Free: real vs plan solo mes actual
+- [ ] Pro: horizonte ilimitado
+- [ ] Pro: todos los métodos (tendencia, custom)
+- [ ] Pro: todas las gráficas
+- [ ] Pro: histórico completo
+
+### 54.6 Edge Cases
+
+- [ ] Plan sin líneas de ingreso (solo gastos)
+- [ ] Línea con categoría eliminada (se desvincula, mantiene nombre)
+- [ ] Mes sin transacciones (real = 0, plan mantiene estimación)
+- [ ] Override con monto 0 (válido)
+- [ ] Cambio de divisa preferida (recalcula todo)
+- [ ] Primer día del mes: progreso = mínimo
+- [ ] Último día del mes: progreso ≈ 100%
+
+### 54.7 Gráficas
+
+- [ ] Saldo acumulado muestra línea punteada para meses futuros
+- [ ] Ingreso vs Gasto muestra barras agrupadas
+- [ ] Composición apila gastos por línea
+- [ ] Real vs Plan solo muestra meses pasados
+- [ ] Tendencia por línea muestra líneas con colores distintos
+- [ ] Gráficas Pro bloqueadas con blur + lock para Free

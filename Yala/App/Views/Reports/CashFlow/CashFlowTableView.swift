@@ -172,6 +172,22 @@ struct CashFlowTableView: View {
                             viewModel.showLineConfig = true
                         }
                     }
+
+                    // Subcategory breakdown when expanded
+                    if let subs = lineResult.subcategoryBreakdown {
+                        ForEach(subs, id: \.subcategoryName) { sub in
+                            HStack(spacing: DS.Spacing.sm) {
+                                Color.clear.frame(width: 20)
+                                Text(sub.subcategoryName)
+                                    .font(DS.Typography.captionSmall)
+                                    .foregroundStyle(.tertiary)
+                                    .lineLimit(1)
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.horizontal, DS.Spacing.md)
+                            .frame(height: rowHeight * 0.8)
+                        }
+                    }
                 }
 
                 // Add line button

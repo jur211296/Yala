@@ -49,6 +49,12 @@ struct CashFlowMonthColumn: View {
                         width: columnWidth,
                         height: rowHeight
                     )
+                    // Subcategory breakdown when expanded
+                    if let subs = lineResult.subcategoryBreakdown {
+                        ForEach(subs, id: \.subcategoryName) { sub in
+                            subcategoryCell(sub)
+                        }
+                    }
                 }
 
                 // Other expenses
@@ -76,6 +82,16 @@ struct CashFlowMonthColumn: View {
             }
         }
         .frame(height: rowHeight)
+    }
+
+    // MARK: - Subcategory Cell
+
+    private func subcategoryCell(_ sub: SubcategoryLineResult) -> some View {
+        let displayAmount = sub.realAmount ?? sub.plannedAmount
+        return Text(formattedCompact(displayAmount))
+            .font(DS.Typography.captionSmall)
+            .foregroundStyle(.tertiary)
+            .frame(width: columnWidth, height: rowHeight * 0.8)
     }
 
     // MARK: - Other Expenses Cell
