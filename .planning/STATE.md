@@ -43,6 +43,8 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-17] 957c68b fix: resolve 7 compiler warnings in cash flow views
+- [2026-03-17] dcdfd1f refactor: simplify cash flow — fix N+1 scan, deduplicate, type-safety
 - [2026-03-17] d0c1dd7 feat: add pro conversion system with proactive upsells and telemetry
 - [2026-03-17] f2875e1 feat: add advanced estimation methods, subcategory breakdown, and Pro gates
 - [2026-03-17] 64d0940 feat: add cash flow charts sheet with 5 visualizations
@@ -51,8 +53,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-17] 37dbf20 feat: add cash flow ViewModel, setup view, and localizations
 - [2026-03-17] 5457b96 feat: add cash flow projection calculator with 28 tests
 - [2026-03-17] ce20eda feat: add cash flow models, schema registration, and feature gate
-- [2026-03-17] 944d367 feat: add split calculator for shared expenses (24 new tests)
-- [2026-03-16] 0e0f4b2 refactor: rewrite notification copy with period-specific texts and brand voice
 - [2026-03-16] 42c62cf feat: add automatic App Store review prompt after moments of value
 - [2026-03-12] 031bc7c feat: split AI consent into processing (voice/image) and insights (smart overview)
 - [2026-03-12] 08883ee fix: AI insights — tip alignment, reactivity, currency format, budget threshold
