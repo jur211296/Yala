@@ -608,6 +608,10 @@ enum L10n {
         static func descEqual(_ people: Int) -> String { String(format: ls("split.descEqual %d", comment: ""), people) }
         static func descShares(_ my: Int, _ total: Int) -> String { String(format: ls("split.descShares %d %d", comment: ""), my, total) }
         static func descExact(_ amount: String) -> String { String(format: ls("split.descExact %@", comment: ""), amount) }
+        // Shares inline labels
+        static var sharesYouPay: String { ls("split.sharesYouPay", comment: "") }
+        static var sharesOf: String { ls("split.sharesOf", comment: "") }
+        static var sharesParts: String { ls("split.sharesParts", comment: "") }
     }
 
     // MARK: - AI Consent

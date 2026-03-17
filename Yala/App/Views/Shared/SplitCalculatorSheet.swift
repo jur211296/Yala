@@ -63,7 +63,7 @@ final class SplitCalculatorFieldState {
 // MARK: - Split Calculator Sheet
 
 struct SplitCalculatorSheet: View {
-    let currencySymbol: String
+    let currencySymbol: String?
     @Bindable var fieldState: SplitCalculatorFieldState
     let onUseSplit: (Double, SplitType, Double, Double, Double?) -> Void
     let onDismiss: () -> Void
@@ -118,17 +118,15 @@ struct SplitCalculatorSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
-                    // Total amount
-                    VStack(spacing: DS.Spacing.none) {
-                        calcRow(
-                            label: L10n.Split.totalAmount,
-                            text: $fieldState.totalAmountText,
-                            field: .totalAmount,
-                            isAmount: true
-                        )
-                    }
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                    // Total amount — large card
+                    amountCard(
+                        label: L10n.Split.totalAmount,
+                        text: $fieldState.totalAmountText,
+                        field: .totalAmount,
+                        prefix: currencySymbol,
+                        suffix: nil,
+                        isAmount: true
+                    )
 
                     // Split type picker
                     Picker(L10n.Split.title, selection: $fieldState.splitType) {
@@ -139,11 +137,7 @@ struct SplitCalculatorSheet: View {
                     .pickerStyle(.segmented)
 
                     // Dynamic inputs
-                    VStack(spacing: DS.Spacing.none) {
-                        dynamicInputs
-                    }
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                    dynamicInputs
 
                     // Percentage presets (only for percentage type)
                     if fieldState.splitType == .percentage {
@@ -190,44 +184,102 @@ struct SplitCalculatorSheet: View {
     private var dynamicInputs: some View {
         switch fieldState.splitType {
         case .percentage:
-            calcRow(
+            amountCard(
                 label: L10n.Split.percentage,
                 text: $fieldState.percentageText,
                 field: .percentage,
+                prefix: nil,
+                suffix: "%",
                 isAmount: true
             )
 
         case .equal:
-            calcRow(
+            amountCard(
                 label: L10n.Split.people,
                 text: $fieldState.participantsText,
                 field: .participants,
+                prefix: nil,
+                suffix: nil,
                 isAmount: false
             )
 
         case .exact:
-            calcRow(
+            amountCard(
                 label: L10n.Split.yourPart,
                 text: $fieldState.exactAmountText,
                 field: .exactAmount,
+                prefix: currencySymbol,
+                suffix: nil,
                 isAmount: true
             )
 
         case .shares:
-            calcRow(
-                label: L10n.Split.yourShares,
-                text: $fieldState.mySharesText,
-                field: .myShares,
-                isAmount: false
-            )
-            SubsectionDivider()
-            calcRow(
-                label: L10n.Split.totalShares,
-                text: $fieldState.totalSharesText,
-                field: .totalShares,
-                isAmount: false
-            )
+            sharesInput
         }
+    }
+
+    // MARK: - Shares Input (inline: "Pagas [X] de [Y] partes")
+
+    private var sharesInput: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            HStack(spacing: DS.Spacing.sm) {
+                Text(L10n.Split.sharesYouPay)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+
+                TextField("0", text: $fieldState.mySharesText)
+                    .font(DS.Typography.title2)
+                    .keyboardType(.numberPad)
+                    .multilineTextAlignment(.center)
+                    .frame(width: 56)
+                    .padding(.vertical, DS.Spacing.sm)
+                    .background(
+                        RoundedRectangle(cornerRadius: DS.Radius.sm)
+                            .fill(Color.hotPink.opacity(0.08))
+                    )
+                    .focused($focusedField, equals: .myShares)
+                    .onChange(of: fieldState.mySharesText) { _, newValue in
+                        let filtered = AmountInputHelper.filterIntegerInput(newValue)
+                        if filtered != newValue {
+                            fieldState.mySharesText = filtered
+                        }
+                    }
+
+                Text(L10n.Split.sharesOf)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+
+                TextField("0", text: $fieldState.totalSharesText)
+                    .font(DS.Typography.title2)
+                    .keyboardType(.numberPad)
+                    .multilineTextAlignment(.center)
+                    .frame(width: 56)
+                    .padding(.vertical, DS.Spacing.sm)
+                    .background(
+                        RoundedRectangle(cornerRadius: DS.Radius.sm)
+                            .fill(Color.secondary.opacity(0.08))
+                    )
+                    .focused($focusedField, equals: .totalShares)
+                    .onChange(of: fieldState.totalSharesText) { _, newValue in
+                        let filtered = AmountInputHelper.filterIntegerInput(newValue)
+                        if filtered != newValue {
+                            fieldState.totalSharesText = filtered
+                        }
+                    }
+
+                Text(L10n.Split.sharesParts)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .padding(DS.Spacing.lg)
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.xl)
+                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+        )
     }
 
     // MARK: - Percentage Presets
@@ -260,52 +312,70 @@ struct SplitCalculatorSheet: View {
         }
     }
 
-    // MARK: - Reusable Components
+    // MARK: - Amount Card (large input like account balance)
 
-    private func calcRow(
+    private func amountCard(
         label: String,
         text: Binding<String>,
         field: CalcField,
+        prefix: String?,
+        suffix: String?,
         isAmount: Bool
     ) -> some View {
-        HStack {
+        VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+            // Label
             Text(label)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.primary)
-                .lineLimit(2)
-                .minimumScaleFactor(0.8)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .trailing)
 
-            Spacer()
-
+            // Input
             HStack(spacing: DS.Spacing.xs) {
-                if isAmount && field == .totalAmount {
-                    Text(currencySymbol)
-                        .font(DS.Typography.body)
+                Spacer()
+                if let prefix {
+                    Text(prefix)
+                        .font(DS.Typography.title2)
                         .foregroundStyle(.secondary)
                 }
-                TextField("0", text: text)
-                    .font(DS.Typography.headline)
-                    .keyboardType(isAmount ? .decimalPad : .numberPad)
-                    .multilineTextAlignment(.trailing)
-                    .frame(minWidth: 80)
-                    .focused($focusedField, equals: field)
-                    .onChange(of: text.wrappedValue) { _, newValue in
-                        let filtered = isAmount
-                            ? AmountInputHelper.filterAmountInput(newValue)
-                            : AmountInputHelper.filterIntegerInput(newValue)
-                        if filtered != newValue {
-                            text.wrappedValue = filtered
-                        }
+
+                ZStack(alignment: .trailing) {
+                    if text.wrappedValue.isEmpty {
+                        Text("0")
+                            .font(DS.Typography.largeTitle)
+                            .foregroundStyle(.gray.opacity(0.4))
                     }
-                if field == .percentage {
-                    Text("%")
-                        .font(DS.Typography.body)
+                    TextField("", text: text)
+                        .font(DS.Typography.largeTitle)
+                        .keyboardType(isAmount ? .decimalPad : .numberPad)
+                        .multilineTextAlignment(.trailing)
+                        .focused($focusedField, equals: field)
+                        .onChange(of: text.wrappedValue) { _, newValue in
+                            let filtered = isAmount
+                                ? AmountInputHelper.filterAmountInput(newValue)
+                                : AmountInputHelper.filterIntegerInput(newValue)
+                            if filtered != newValue {
+                                text.wrappedValue = filtered
+                            }
+                        }
+                }
+
+                if let suffix {
+                    Text(suffix)
+                        .font(DS.Typography.title2)
                         .foregroundStyle(.secondary)
                 }
             }
         }
-        .padding(DS.Spacing.md)
+        .padding(DS.Spacing.lg)
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.xl)
+                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+        )
     }
+
+    // MARK: - Result Row
 
     private func resultRow(label: String, amount: Double) -> some View {
         HStack {
@@ -313,7 +383,7 @@ struct SplitCalculatorSheet: View {
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
             Spacer()
-            Text("\(currencySymbol) \(YalaFormatter.number(value: amount, forceFullPrecision: true))")
+            Text("\(currencySymbol.map { "\($0) " } ?? "")\(YalaFormatter.number(value: amount, forceFullPrecision: true))")
                 .font(DS.Typography.title2)
                 .foregroundStyle(Color.hotPink)
         }
@@ -321,6 +391,8 @@ struct SplitCalculatorSheet: View {
         .background(Color.hotPink.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
+
+    // MARK: - Tip View
 
     private func tipView(text: String) -> some View {
         HStack(alignment: .top, spacing: DS.Spacing.sm) {

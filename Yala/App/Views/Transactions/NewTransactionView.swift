@@ -794,7 +794,9 @@ struct NewTransactionView: View {
 
     private var splitCalculatorSheetContent: some View {
         SplitCalculatorSheet(
-            currencySymbol: CurrencyCode(rawValue: viewModel.effectiveCurrencyCode)?.symbol ?? viewModel.effectiveCurrencyCode,
+            currencySymbol: viewModel.effectiveAccount != nil
+                ? CurrencyCode(rawValue: viewModel.effectiveCurrencyCode)?.symbol ?? viewModel.effectiveCurrencyCode
+                : nil,
             fieldState: splitFieldState,
             onUseSplit: { amount, splitType, totalAmount, myValue, divisor in
                 viewModel.applySplitResult(
