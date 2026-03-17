@@ -3526,24 +3526,9 @@ enum L10n {
 
         // MARK: - Report Notifications (with real data)
 
-        /// "Tu balance actual: %@" (amount)
-        static func reportBalance(_ amount: String) -> String {
-            String(format: ls("notifications.report.balance", comment: ""), amount)
-        }
-
-        /// "Gastaste: %@" (amount)
-        static func reportExpenses(_ amount: String) -> String {
-            String(format: ls("notifications.report.expenses", comment: ""), amount)
-        }
-
-        /// "Recibiste: %@" (amount)
-        static func reportIncome(_ amount: String) -> String {
-            String(format: ls("notifications.report.income", comment: ""), amount)
-        }
-
-        /// "Tu mayor gasto: %@" (category)
-        static func reportTopCategory(_ category: String) -> String {
-            String(format: ls("notifications.report.topCategory", comment: ""), category)
+        /// Dynamic report text: "notifications.report.{dataType}.{period}" with one format argument
+        static func reportData(_ dataType: ReportDataType, period: String, value: String) -> String {
+            String(format: ls("notifications.report.\(dataType.rawValue).\(period)", comment: ""), value)
         }
 
         // Empty state messages

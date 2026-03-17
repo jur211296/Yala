@@ -1194,7 +1194,7 @@
 "account.creditCard.sectionTitle" = "Tarjeta de crédito";
 "account.creditCard.paymentReminder" = "Avisar en fecha de pago";
 "account.creditCard.paymentDay" = "Día de pago";
-"account.creditCard.paymentNotification" = "Recuerda que hoy toca pagar tu tarjeta %@";
+"account.creditCard.paymentNotification" = "Hoy toca pagar tu tarjeta %@ 💳";
 "category.others" = "Otros";
 "subcategory.balanceAdjustment" = "Ajustes de saldo";
 
@@ -2228,7 +2228,7 @@
 
 // Reminders (Brand Voice)
 "notifications.endOfDay.name" = "Cierre del día";
-"notifications.endOfDay.text" = "¿Cómo te fue hoy? 👋 Cuéntanos tus gastos";
+"notifications.endOfDay.text" = "¿Cómo te fue hoy? 👋 Anota tus gastos antes de que se te olviden";
 "notifications.lunchTime.name" = "Hora de comer";
 "notifications.lunchTime.text" = "¿Qué comiste? 🍽️ Anótalo mientras lo recuerdas";
 
@@ -2250,18 +2250,18 @@
 
 // Test
 "notifications.testNotification" = "Probar recordatorio";
-"notifications.testReport.balance.daily" = "Tu saldo hoy: $1,250.00";
-"notifications.testReport.balance.weekly" = "Tu saldo de la última semana: $1,250.00";
-"notifications.testReport.balance.monthly" = "Tu saldo del último mes: $1,250.00";
-"notifications.testReport.expenses.daily" = "Gastaste $85.00 hoy";
-"notifications.testReport.expenses.weekly" = "Gastaste $350.00 la última semana";
-"notifications.testReport.expenses.monthly" = "Gastaste $1,200.00 el último mes";
-"notifications.testReport.income.daily" = "Recibiste $500.00 hoy";
-"notifications.testReport.income.weekly" = "Recibiste $2,500.00 la última semana";
-"notifications.testReport.income.monthly" = "Recibiste $8,500.00 el último mes";
-"notifications.testReport.topCategory.daily" = "Tu mayor gasto hoy: Comida ($45.00)";
-"notifications.testReport.topCategory.weekly" = "Tu mayor gasto de la semana: Comida ($180.00)";
-"notifications.testReport.topCategory.monthly" = "Tu mayor gasto del mes: Comida ($650.00)";
+"notifications.testReport.balance.daily" = "Así cierra tu saldo hoy: $1,250.00 💰";
+"notifications.testReport.balance.weekly" = "Así quedó tu saldo esta semana: $1,250.00 💰";
+"notifications.testReport.balance.monthly" = "Así quedó tu saldo este mes: $1,250.00 💰";
+"notifications.testReport.expenses.daily" = "Hoy gastaste $85.00 📊";
+"notifications.testReport.expenses.weekly" = "En la semana gastaste $350.00 📊";
+"notifications.testReport.expenses.monthly" = "En el mes gastaste $1,200.00 📊";
+"notifications.testReport.income.daily" = "Hoy recibiste $500.00 🎉";
+"notifications.testReport.income.weekly" = "En la semana recibiste $2,500.00 🎉";
+"notifications.testReport.income.monthly" = "En el mes recibiste $8,500.00 🎉";
+"notifications.testReport.topCategory.daily" = "Tu mayor gasto de hoy: Comida ($45.00) 👀";
+"notifications.testReport.topCategory.weekly" = "Tu mayor gasto de la semana: Comida ($180.00) 👀";
+"notifications.testReport.topCategory.monthly" = "Tu mayor gasto del mes: Comida ($650.00) 👀";
 "notifications.testReport.scheduledPayment" = "Tienes un pago en 3 días: \"Netflix\" por PEN 44.90";
 
 // Section headers
@@ -2273,24 +2273,32 @@
 "notifications.budgetAlerts.hint" = "Recibe avisos cuando te acerques a los límites de tus presupuestos";
 
 // Scheduled Payment Notifications (personalized)
-"notifications.scheduledPayment.dueToday" = "Hoy toca %1$@ — %2$@ listos 💰";
-"notifications.scheduledPayment.dueSoon" = "En %1$d días vence %2$@ por %3$@";
-"notifications.scheduledPayment.overdue" = "Se pasó la fecha de %1$@ (%2$@) — ¿ya lo cubriste?";
-"notifications.scheduledPayment.dueToday.income" = "¡Hoy llega! %1$@ de %2$@";
-"notifications.scheduledPayment.dueSoon.income" = "En %1$d días llega %2$@ de %3$@";
-"notifications.scheduledPayment.overdue.income" = "Pendiente: %1$@ de %2$@ — ¿ya llegó?";
+"notifications.scheduledPayment.dueToday" = "Hoy toca pagar %1$@ por %2$@ 💰";
+"notifications.scheduledPayment.dueSoon" = "En %1$d días toca pagar %2$@ por %3$@ 📅";
+"notifications.scheduledPayment.overdue" = "Ya pasó la fecha de %1$@ por %2$@ — ¿ya lo cubriste? 👀";
+"notifications.scheduledPayment.dueToday.income" = "¡Hoy llega %1$@ de %2$@! 🎉";
+"notifications.scheduledPayment.dueSoon.income" = "En %1$d días llega %2$@ de %3$@ 📅";
+"notifications.scheduledPayment.overdue.income" = "Esperabas %1$@ de %2$@ — ¿ya llegó? 👀";
 
 // Report Notifications (with real data)
-"notifications.report.balance" = "Tu balance hoy: %@";
-"notifications.report.expenses" = "Hoy gastaste %@";
-"notifications.report.income" = "Recibiste %@ 🎉";
-"notifications.report.topCategory" = "Tu mayor gasto: %@";
+"notifications.report.balance.daily" = "Así cierra tu saldo hoy: %@ 💰";
+"notifications.report.balance.weekly" = "Así quedó tu saldo esta semana: %@ 💰";
+"notifications.report.balance.monthly" = "Así quedó tu saldo este mes: %@ 💰";
+"notifications.report.expenses.daily" = "Hoy gastaste %@ 📊";
+"notifications.report.expenses.weekly" = "En la semana gastaste %@ 📊";
+"notifications.report.expenses.monthly" = "En el mes gastaste %@ 📊";
+"notifications.report.income.daily" = "Hoy recibiste %@ 🎉";
+"notifications.report.income.weekly" = "En la semana recibiste %@ 🎉";
+"notifications.report.income.monthly" = "En el mes recibiste %@ 🎉";
+"notifications.report.topCategory.daily" = "Tu mayor gasto de hoy: %@ 👀";
+"notifications.report.topCategory.weekly" = "Tu mayor gasto de la semana: %@ 👀";
+"notifications.report.topCategory.monthly" = "Tu mayor gasto del mes: %@ 👀";
 
 // Report Notifications (empty state)
 "notifications.report.empty.expenses.daily" = "¡Día tranquilo! No hubo gastos ✨";
 "notifications.report.empty.expenses.weekly" = "¡Semana tranquila! No registraste gastos ✨";
 "notifications.report.empty.expenses.monthly" = "¡Mes tranquilo! No registraste gastos ✨";
-"notifications.report.empty.income" = "Sin ingresos este período — todo en calma";
+"notifications.report.empty.income" = "No hubo ingresos esta vez — todo en orden ✨";
 "notifications.report.empty.topCategory" = "¡Sin gastos! Tu bolsillo descansó 😊";
 
 // MARK: - iCloud Sync

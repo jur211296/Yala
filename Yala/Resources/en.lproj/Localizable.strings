@@ -1194,7 +1194,7 @@
 "account.creditCard.sectionTitle" = "Credit card";
 "account.creditCard.paymentReminder" = "Remind on payment date";
 "account.creditCard.paymentDay" = "Payment day";
-"account.creditCard.paymentNotification" = "Remember to pay your credit card %@ today";
+"account.creditCard.paymentNotification" = "Time to pay your credit card %@ 💳";
 "category.others" = "Others";
 "subcategory.balanceAdjustment" = "Balance adjustments";
 
@@ -2045,7 +2045,7 @@
 
 // Reminders (Brand Voice)
 "notifications.endOfDay.name" = "End of day";
-"notifications.endOfDay.text" = "How was your day? 👋 Share your expenses with us";
+"notifications.endOfDay.text" = "How was your day? 👋 Log your expenses before you forget";
 "notifications.lunchTime.name" = "Meal time";
 "notifications.lunchTime.text" = "What did you have? 🍽️ Log it while it's fresh";
 
@@ -2067,18 +2067,18 @@
 
 // Test
 "notifications.testNotification" = "Test reminder";
-"notifications.testReport.balance.daily" = "Your balance today: $1,250.00";
-"notifications.testReport.balance.weekly" = "Your balance this week: $1,250.00";
-"notifications.testReport.balance.monthly" = "Your balance this month: $1,250.00";
-"notifications.testReport.expenses.daily" = "You spent $85.00 today";
-"notifications.testReport.expenses.weekly" = "You spent $350.00 this week";
-"notifications.testReport.expenses.monthly" = "You spent $1,200.00 this month";
-"notifications.testReport.income.daily" = "You received $500.00 today";
-"notifications.testReport.income.weekly" = "You received $2,500.00 this week";
-"notifications.testReport.income.monthly" = "You received $8,500.00 this month";
-"notifications.testReport.topCategory.daily" = "Your top expense today: Food ($45.00)";
-"notifications.testReport.topCategory.weekly" = "Your top expense this week: Food ($180.00)";
-"notifications.testReport.topCategory.monthly" = "Your top expense this month: Food ($650.00)";
+"notifications.testReport.balance.daily" = "Your balance to close the day: $1,250.00 💰";
+"notifications.testReport.balance.weekly" = "Your balance after this week: $1,250.00 💰";
+"notifications.testReport.balance.monthly" = "Your balance after this month: $1,250.00 💰";
+"notifications.testReport.expenses.daily" = "You spent $85.00 today 📊";
+"notifications.testReport.expenses.weekly" = "You spent $350.00 this week 📊";
+"notifications.testReport.expenses.monthly" = "You spent $1,200.00 this month 📊";
+"notifications.testReport.income.daily" = "You received $500.00 today 🎉";
+"notifications.testReport.income.weekly" = "You received $2,500.00 this week 🎉";
+"notifications.testReport.income.monthly" = "You received $8,500.00 this month 🎉";
+"notifications.testReport.topCategory.daily" = "Your top expense today: Food ($45.00) 👀";
+"notifications.testReport.topCategory.weekly" = "Your top expense this week: Food ($180.00) 👀";
+"notifications.testReport.topCategory.monthly" = "Your top expense this month: Food ($650.00) 👀";
 "notifications.testReport.scheduledPayment" = "You have a payment in 3 days: \"Netflix\" for USD 14.99";
 
 // Section headers
@@ -2090,24 +2090,32 @@
 "notifications.budgetAlerts.hint" = "Get notified when approaching your budget limits";
 
 // Scheduled Payment Notifications (personalized)
-"notifications.scheduledPayment.dueToday" = "%1$@ is due today — %2$@ ready 💰";
-"notifications.scheduledPayment.dueSoon" = "%2$@ is due in %1$d days for %3$@";
-"notifications.scheduledPayment.overdue" = "%1$@ (%2$@) was due — did you cover it?";
-"notifications.scheduledPayment.dueToday.income" = "Incoming! %1$@ from %2$@ today";
-"notifications.scheduledPayment.dueSoon.income" = "%2$@ from %3$@ arrives in %1$d days";
-"notifications.scheduledPayment.overdue.income" = "%1$@ from %2$@ was expected — has it arrived?";
+"notifications.scheduledPayment.dueToday" = "Time to pay %1$@ for %2$@ 💰";
+"notifications.scheduledPayment.dueSoon" = "%2$@ is due in %1$d days for %3$@ 📅";
+"notifications.scheduledPayment.overdue" = "%1$@ for %2$@ was due — did you cover it? 👀";
+"notifications.scheduledPayment.dueToday.income" = "%1$@ from %2$@ arrives today! 🎉";
+"notifications.scheduledPayment.dueSoon.income" = "%2$@ from %3$@ arrives in %1$d days 📅";
+"notifications.scheduledPayment.overdue.income" = "You expected %1$@ from %2$@ — has it arrived? 👀";
 
 // Report Notifications (with real data)
-"notifications.report.balance" = "Your balance today: %@";
-"notifications.report.expenses" = "You spent %@ today";
-"notifications.report.income" = "You received %@ 🎉";
-"notifications.report.topCategory" = "Your top expense: %@";
+"notifications.report.balance.daily" = "Your balance to close the day: %@ 💰";
+"notifications.report.balance.weekly" = "Your balance after this week: %@ 💰";
+"notifications.report.balance.monthly" = "Your balance after this month: %@ 💰";
+"notifications.report.expenses.daily" = "You spent %@ today 📊";
+"notifications.report.expenses.weekly" = "You spent %@ this week 📊";
+"notifications.report.expenses.monthly" = "You spent %@ this month 📊";
+"notifications.report.income.daily" = "You received %@ today 🎉";
+"notifications.report.income.weekly" = "You received %@ this week 🎉";
+"notifications.report.income.monthly" = "You received %@ this month 🎉";
+"notifications.report.topCategory.daily" = "Your top expense today: %@ 👀";
+"notifications.report.topCategory.weekly" = "Your top expense this week: %@ 👀";
+"notifications.report.topCategory.monthly" = "Your top expense this month: %@ 👀";
 
 // Report Notifications (empty state)
 "notifications.report.empty.expenses.daily" = "Quiet day! No expenses ✨";
 "notifications.report.empty.expenses.weekly" = "Quiet week! No expenses recorded ✨";
 "notifications.report.empty.expenses.monthly" = "Quiet month! No expenses recorded ✨";
-"notifications.report.empty.income" = "No income this period — all quiet";
+"notifications.report.empty.income" = "No income this time — all good ✨";
 "notifications.report.empty.topCategory" = "No expenses! Your wallet rested 😊";
 
 // MARK: - iCloud Sync
