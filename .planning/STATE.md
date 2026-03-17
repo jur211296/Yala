@@ -13,8 +13,8 @@ Version: 1.2 (en desarrollo)
 Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
-Status: **Fase 12 en progreso** — Cash Flow Plan complete (7 increments), What's New sheet + coach mark tours
-Last activity: 2026-03-17 — Cash Flow feature complete: 7 increments, 36 tests, 15 new files
+Status: **Fase 12 en progreso** — Cash Flow Plan complete, Pro conversion system complete
+Last activity: 2026-03-17 — Pro conversion system: proactive upsells, telemetry, frequency capping
 
 ### Apple Review History (V1.0)
 
@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-17] d0c1dd7 feat: add pro conversion system with proactive upsells and telemetry
 - [2026-03-17] f2875e1 feat: add advanced estimation methods, subcategory breakdown, and Pro gates
 - [2026-03-17] 64d0940 feat: add cash flow charts sheet with 5 visualizations
 - [2026-03-17] 2091123 feat: add cash flow interactions — popover, config, others, add line
@@ -223,6 +224,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - **Restauración background nativo widgets (10.5)** - Eliminado sistema de temas custom (WidgetThemeOption enum, @Parameter theme en 11 widgets); restaurado `.containerBackground(.fill.tertiary, for: .widget)` original de Apple en los 11 widgets; eliminado WidgetColors.yalaCard (código muerto); eliminadas 3 claves L10n de tema en es/en; eliminados 3 preview blocks "System Theme"; 15 archivos, +60/-319; commits a1aae5b + f4752c8
 - **Accesibilidad completa (A11Y)** - VoiceOver: label requerido en YalaToolbarButton + 83 call sites, labels en componentes shared e icon-only buttons, traits .isHeader, decorative icons hidden, disabled hints en 18 vistas, alternativas color-only (BudgetRow excedido icon, ScheduledPaymentRow "Vencido" text, VariationChip labels, BudgetProgressBar .accessibilityValue); Dynamic Type: @ScaledMetric para hero sizes (48pt+) con cap accessibility1, DS.Typography tokens en ~90 vistas; Reduce Motion: withAnimation→dsWithAnimation en 9 archivos, skeleton shimmer y confetti skip; L10n scheduled.overdue en 6 locales; 131 archivos, +782/-951; commit 0fdf436
 - **Fix archive/exclude account behavior (BUG-12)** - Corregida semántica invertida de isArchived/excludeFromStatistics en toda la app: cálculos/estadísticas ahora filtran solo por excludeFromStatistics (no isArchived), selección de cuentas para nuevas tx filtra solo por isArchived (no excludeFromStatistics); 11 archivos de lógica corregidos (FilterService, StatisticsVM, TrendsTabView, PanelVM, BalanceHelper, RecordsVM, ReportNotificationService, WidgetDataCache, NewTransactionVM, InboxView, InboxDraftEditSheet); validación de cuenta archivada en aprobación de inbox; pre-filtro de cuentas excluidas en Records; L10n errorArchivedAccount en 6 idiomas; commit 6808209
+- **Sistema de Conversión PRO (12.x)** - ProUpsellService con frequency capping (max 1/sesión, ≥5 días cooldown +2 por dismiss, max 4/mes, nunca a Pro/ex-Pro voluntarios); TrialBanner en PanelView con countdown y estilo urgente ≤2 días; ProUpgradeBanner periódico para Free users; MilestoneUpgradeSheet en transacciones #10/#50/#100; trial expired sheet (1 vez); AI Insights teaser con blur; 7 nuevos eventos telemetría (proUpsellShown/Tapped/Dismissed, paywallViewed, trialStarted, purchaseCompleted, trialExpiring); helper upsellParameters(source:) con daysSinceInstall+sessionNumber; source tracking en paywall (profile/featureGate/downgrade/trialBanner/periodicBanner/milestone); instrumentación de UpgradePromptSheet, LimitReachedBanner, FeatureGateService existentes; localizaciones 6 idiomas; 18 archivos, 3 nuevos; 50+ escenarios QA (Sección 53); commit d0c1dd7
 
 ### Fase 6 (archivado)
 - **Var% vs periodo anterior completo** - Pie charts, Top widgets, listas, CashFlow cards, Nature widget; selector M/A; chips inline alineados derecha; oculto para All Time
