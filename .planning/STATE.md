@@ -13,8 +13,8 @@ Version: 1.2 (en desarrollo)
 Phase: 12 — Plataforma Extendida
 Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
 Plan: Refactor filtros deferred -> Smart Insights tab
-Status: **Fase 12 en progreso** — What's New sheet + coach mark tours + onboarding improvements
-Last activity: 2026-03-16 — A11y Batch 4 complete: 133 total decorative images marked across all views
+Status: **Fase 12 en progreso** — Cash Flow Plan complete (7 increments), What's New sheet + coach mark tours
+Last activity: 2026-03-17 — Cash Flow feature complete: 7 increments, 36 tests, 15 new files
 
 ### Apple Review History (V1.0)
 
@@ -43,15 +43,16 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-17] f2875e1 feat: add advanced estimation methods, subcategory breakdown, and Pro gates
+- [2026-03-17] 64d0940 feat: add cash flow charts sheet with 5 visualizations
+- [2026-03-17] 2091123 feat: add cash flow interactions — popover, config, others, add line
+- [2026-03-17] 602c029 feat: add cash flow table view with sticky columns and progress bars
+- [2026-03-17] 37dbf20 feat: add cash flow ViewModel, setup view, and localizations
+- [2026-03-17] 5457b96 feat: add cash flow projection calculator with 28 tests
+- [2026-03-17] ce20eda feat: add cash flow models, schema registration, and feature gate
 - [2026-03-17] 944d367 feat: add split calculator for shared expenses (24 new tests)
 - [2026-03-16] 0e0f4b2 refactor: rewrite notification copy with period-specific texts and brand voice
 - [2026-03-16] 42c62cf feat: add automatic App Store review prompt after moments of value
-- [2026-03-16] b569f56 fix: ensure all external triggers wait for splash before presenting sheets
-- [2026-03-13] 8bc8666 docs: update STATE.md + ROADMAP.md for financial report progress
-- [2026-03-13] 6b207f3 feat: integrate financial report tab + generic RecordsFiltersView
-- [2026-03-13] aa589d1 feat: add financial report views, ViewModel + l10n (6 langs)
-- [2026-03-13] 2a7a356 feat: add financial report models, pivot table calculator + tests
-- [2026-03-13] 9692528 refactor: extract HintPopoverContent — shared popover
 - [2026-03-12] 031bc7c feat: split AI consent into processing (voice/image) and insights (smart overview)
 - [2026-03-12] 08883ee fix: AI insights — tip alignment, reactivity, currency format, budget threshold
 - [2026-03-08] 82f4e5c feat: polish onboarding budget step — reframe texts, horizontal pills, live preview card, currency fix
@@ -759,10 +760,10 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 ## Session Continuity
 
 Last session: 2026-03-17
-Stopped at: Split Calculator feature complete — build green, 59 tests passing
+Stopped at: Split Calculator polished — large cards, inline shares, currency symbol fix
 Next step: Test manual en simulador del flujo completo de split calculator
 Resume context:
-- Split Calculator implementado: modelo (4 campos), SplitType enum, SplitCalculator logic, SplitCalculatorSheet UI, ViewModel integration, RecordRowView badge, export columns, 6 idiomas, 24 tests
+- Split Calculator completo + polished: cards tipo saldo inicial, shares inline "Pagas X de Y partes", currency symbol nil sin cuenta
 - Pendiente: test manual en simulador (QA-SCENARIOS.md §52)
 - Financial Report MVP funcional, pendiente ajustes y testing
 - **Pendiente ajustes UI:**
