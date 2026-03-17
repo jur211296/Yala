@@ -54,6 +54,9 @@ enum SwiftDataConfiguration {
             InboxDraft.self,
             MerchantMemory.self,
             NotificationItem.self,
+            CashFlowPlan.self,
+            CashFlowLine.self,
+            CashFlowOverride.self,
         ])
     }
 

@@ -2172,6 +2172,7 @@
 "featureGate.premiumIcons" = "Ícones premium";
 "featureGate.proThemes" = "Temas Pro";
 "featureGate.smartInsightsAI" = "Insights inteligentes com IA";
+"featureGate.cashFlowAdvanced" = "Fluxo de caixa avançado";
 
 // Titles
 "featureGate.limitReachedTitle" = "Limite atingido";
@@ -2665,6 +2666,9 @@
 "split.descEqual %d" = "÷ %d pessoas";
 "split.descShares %d %d" = "%d de %d partes";
 "split.descExact %@" = "%@ exato";
+"split.sharesYouPay" = "Você paga";
+"split.sharesOf" = "de";
+"split.sharesParts" = "partes";
 "export.column.splitTotal" = "Total original";
 "export.column.splitPortion" = "Porção";
 "export.column.splitTotal.description" = "Valor total antes da divisão";

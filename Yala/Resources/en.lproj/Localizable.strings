@@ -2175,6 +2175,7 @@
 "featureGate.premiumIcons" = "Premium icons";
 "featureGate.proThemes" = "Pro Themes";
 "featureGate.smartInsightsAI" = "Smart Insights AI";
+"featureGate.cashFlowAdvanced" = "Advanced Cash Flow";
 
 // Titles
 "featureGate.limitReachedTitle" = "Limit reached";
@@ -2668,6 +2669,9 @@
 "split.descEqual %d" = "÷ %d people";
 "split.descShares %d %d" = "%d of %d shares";
 "split.descExact %@" = "%@ exact";
+"split.sharesYouPay" = "You pay";
+"split.sharesOf" = "of";
+"split.sharesParts" = "shares";
 "export.column.splitTotal" = "Original total";
 "export.column.splitPortion" = "Portion";
 "export.column.splitTotal.description" = "Total amount before splitting";

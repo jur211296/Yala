@@ -51,6 +51,10 @@ final class ScheduledPayment {
     @Relationship(deleteRule: .nullify, inverse: \Tag.scheduledPayments)
     var tags: [Tag]?
 
+    /// Inverse relationship: cash flow lines linked to this scheduled payment - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
+    var cashFlowLines: [CashFlowLine]?
+
     /// Optional need override (nil = use subcategory's need)
     var needOverride: String?
 

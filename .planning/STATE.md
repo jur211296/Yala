@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-17] 944d367 feat: add split calculator for shared expenses (24 new tests)
 - [2026-03-16] 0e0f4b2 refactor: rewrite notification copy with period-specific texts and brand voice
 - [2026-03-16] 42c62cf feat: add automatic App Store review prompt after moments of value
 - [2026-03-16] b569f56 fix: ensure all external triggers wait for splash before presenting sheets
@@ -758,11 +759,11 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 ## Session Continuity
 
 Last session: 2026-03-17
-Stopped at: Merge 1.1.1 → 1.2 tras envío a App Store
-Next step: Ajustes y testing del Financial Report antes de avanzar
+Stopped at: Split Calculator feature complete — build green, 59 tests passing
+Next step: Test manual en simulador del flujo completo de split calculator
 Resume context:
-- 1.1.1 enviado a App Store (pendiente aprobación Apple)
-- Hotfix mergeado a 1.2 con todos los fixes + review prompt + notification copy
+- Split Calculator implementado: modelo (4 campos), SplitType enum, SplitCalculator logic, SplitCalculatorSheet UI, ViewModel integration, RecordRowView badge, export columns, 6 idiomas, 24 tests
+- Pendiente: test manual en simulador (QA-SCENARIOS.md §52)
 - Financial Report MVP funcional, pendiente ajustes y testing
 - **Pendiente ajustes UI:**
   - Drag handles en GroupingReorderSheet — solo Tipo los muestra, los demás no (bug con editMode)

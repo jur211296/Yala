@@ -2,8 +2,8 @@
 
 ## Quick Reference
 
-### SwiftData Models (12)
-Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, FavoritePayment, ScheduledPayment, InboxDraft, MerchantMemory, NotificationItem
+### SwiftData Models (15)
+Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, FavoritePayment, ScheduledPayment, InboxDraft, MerchantMemory, NotificationItem, CashFlowPlan, CashFlowLine, CashFlowOverride
 
 ### Key Services
 | Service | Path | Purpose |
@@ -219,6 +219,8 @@ Vistas hijas simples reciben datos como `let` parameters del padre.
 4. NO ejecutar verificaciones o commits automáticamente
 
 **Git:** Ejecutar cada comando de lectura UNA SOLA VEZ, secuencialmente, nunca en paralelo. No matar shells con git en curso.
+
+**Tags:** SIEMPRE formato semver con prefijo `v` → `v1.0.0`, `v1.0.1`, `v1.1.0`, `v1.1.1`. NUNCA sin prefijo o sin los 3 componentes.
 
 ## Design System (OBLIGATORIO para cambios UI)
 **Leer antes de modificar vistas:** `.planning/UI-PATTERNS.md`
