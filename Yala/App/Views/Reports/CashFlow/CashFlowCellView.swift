@@ -14,6 +14,8 @@ struct CashFlowCellView: View {
     let width: CGFloat
     let height: CGFloat
 
+    @State private var showPopover = false
+
     var body: some View {
         VStack(spacing: 2) {
             amountText
@@ -22,6 +24,19 @@ struct CashFlowCellView: View {
             }
         }
         .frame(width: width, height: height)
+        .contentShape(Rectangle())
+        .onTapGesture { showPopover = true }
+        .popover(isPresented: $showPopover) {
+            CashFlowCellPopover(
+                lineResult: lineResult,
+                month: month,
+                currencyCode: currencyCode,
+                onAdjust: {
+                    showPopover = false
+                    // Override handled via config sheet
+                }
+            )
+        }
     }
 
     // MARK: - Amount

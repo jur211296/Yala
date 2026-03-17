@@ -55,6 +55,36 @@ struct CashFlowTableView: View {
         .onAppear {
             recalculate()
         }
+        .sheet(isPresented: $viewModel.showLineConfig) {
+            if let line = viewModel.selectedLine {
+                CashFlowLineConfigSheet(
+                    viewModel: viewModel,
+                    line: line,
+                    currencyCode: currencyCode
+                )
+            }
+        }
+        .sheet(isPresented: $viewModel.showOthersBreakdown) {
+            CashFlowOthersSheet(
+                viewModel: viewModel,
+                currencyCode: currencyCode
+            )
+        }
+        .sheet(isPresented: $viewModel.showAddLine) {
+            CashFlowAddLineSheet(
+                viewModel: viewModel,
+                currencyCode: currencyCode
+            )
+        }
+        .onChange(of: viewModel.showLineConfig) { _, showing in
+            if !showing { recalculate() }
+        }
+        .onChange(of: viewModel.showOthersBreakdown) { _, showing in
+            if !showing { recalculate() }
+        }
+        .onChange(of: viewModel.showAddLine) { _, showing in
+            if !showing { recalculate() }
+        }
     }
 
     // MARK: - Table Content
