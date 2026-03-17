@@ -38,6 +38,9 @@ struct NewTransactionView: View {
 
     @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
 
+    // Split calculator state
+    @State private var splitFieldState = SplitCalculatorFieldState()
+
     // Quick action states
     @State private var showSavedToast = false
     @State private var savedToastMessage = ""
@@ -326,6 +329,9 @@ struct NewTransactionView: View {
             .sheet(isPresented: $viewModel.showSaveAsRecurringSheet) {
                 recurringSheetContent
             }
+            .sheet(isPresented: $viewModel.showSplitCalculator) {
+                splitCalculatorSheetContent
+            }
             .overlay(alignment: .bottom) {
                 if showSavedToast {
                     Text(savedToastMessage)
@@ -477,6 +483,25 @@ struct NewTransactionView: View {
                 exchangeRateChip
             }
 
+            // Split indicator chip
+            if viewModel.hasSplitData, let desc = viewModel.splitDescription {
+                Button { viewModel.showSplitCalculator = true } label: {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "percent")
+                            .font(DS.Typography.labelTiny)
+                        Text(desc)
+                            .font(DS.Typography.labelSmall)
+                    }
+                    .foregroundStyle(.secondary)
+                    .opacity(viewModel.isSplitStale ? 0.5 : 1.0)
+                    .padding(.horizontal, DS.Spacing.md)
+                    .padding(.vertical, DS.Spacing.xs)
+                    .background(Capsule().fill(Color.secondary.opacity(0.1)))
+                }
+                .buttonStyle(.plain)
+                .padding(.top, DS.Spacing.sm)
+            }
+
             // Category chip + Nature chip (visible when subcategory is selected, not for transfers)
             if !viewModel.isTransfer, let subcategory = viewModel.selectedSubcategory {
                 HStack(spacing: DS.Spacing.sm) {
@@ -588,6 +613,10 @@ struct NewTransactionView: View {
                     if filtered != newValue {
                         viewModel.amountString = filtered
                     }
+                    // Mark split as stale only on manual edits
+                    if isAmountFieldFocused && viewModel.hasSplitData {
+                        viewModel.isSplitStale = true
+                    }
                 }
         }
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
@@ -665,6 +694,16 @@ struct NewTransactionView: View {
                     label: L10n.Action.delete
                 ) {
                     viewModel.showDeleteConfirmation = true
+                }
+            }
+
+            // Split calculator (only for expenses)
+            if viewModel.transactionType == .expense {
+                quickActionButton(
+                    icon: "percent",
+                    label: L10n.Action.calculate
+                ) {
+                    viewModel.showSplitCalculator = true
                 }
             }
 
@@ -751,6 +790,54 @@ struct NewTransactionView: View {
                 handleRecurringSaved(paymentID: paymentID)
             }
         )
+    }
+
+    private var splitCalculatorSheetContent: some View {
+        SplitCalculatorSheet(
+            currencySymbol: CurrencyCode(rawValue: viewModel.effectiveCurrencyCode)?.symbol ?? viewModel.effectiveCurrencyCode,
+            fieldState: splitFieldState,
+            onUseSplit: { amount, splitType, totalAmount, myValue, divisor in
+                viewModel.applySplitResult(
+                    amount: amount,
+                    splitType: splitType,
+                    totalAmount: totalAmount,
+                    myValue: myValue,
+                    divisor: divisor
+                )
+            },
+            onDismiss: {
+                viewModel.showSplitCalculator = false
+            }
+        )
+        .onAppear {
+            // Prefill from existing split data if editing
+            if let total = viewModel.splitTotalAmount,
+               let type = viewModel.splitType,
+               let myValue = viewModel.splitMyValue {
+                splitFieldState.prefill(
+                    totalAmount: total,
+                    splitType: type,
+                    myValue: myValue,
+                    divisor: viewModel.splitDivisor
+                )
+            } else if viewModel.amount > 0 && !viewModel.hasSplitData {
+                // Prefill total from current amount for new splits
+                splitFieldState.prefillTotal(viewModel.amount)
+                // Apply last used defaults
+                if let lastType = UserDefaults.standard.string(forKey: "lastSplitType"),
+                   let type = SplitType(rawValue: lastType) {
+                    splitFieldState.splitType = type
+                    if type == .percentage {
+                        let lastPct = UserDefaults.standard.double(forKey: "lastSplitPercentage")
+                        if lastPct > 0 {
+                            splitFieldState.percentageText = lastPct == lastPct.rounded()
+                                ? String(Int(lastPct))
+                                : String(format: "%.1f", lastPct)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Bottom Chips
@@ -1249,6 +1336,14 @@ struct NewTransactionView: View {
                         }
                     }
                 }
+            }
+
+            // Load split data
+            if let splitTypeRaw = tx.splitType, let splitType = SplitType(rawValue: splitTypeRaw) {
+                viewModel.splitTotalAmount = tx.splitTotalAmount
+                viewModel.splitType = splitType
+                viewModel.splitMyValue = tx.splitMyValue
+                viewModel.splitDivisor = tx.splitDivisor
             }
 
             return

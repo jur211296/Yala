@@ -83,6 +83,8 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
     case subcategory
     case tags
     case note
+    case splitTotal
+    case splitPortion
 
     var id: String { rawValue }
 
@@ -98,6 +100,8 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
         case .subcategory: return "subcategory"
         case .tags: return "tags"
         case .note: return "note"
+        case .splitTotal: return "split_total"
+        case .splitPortion: return "split_portion"
         }
     }
 
@@ -112,6 +116,8 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
         case .subcategory: return L10n.Export.columnSubcategory
         case .tags: return L10n.Export.columnTags
         case .note: return L10n.Export.columnNote
+        case .splitTotal: return L10n.Export.columnSplitTotal
+        case .splitPortion: return L10n.Export.columnSplitPortion
         }
     }
 
@@ -126,6 +132,8 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
         case .subcategory: return L10n.Export.columnSubcategoryDesc
         case .tags: return L10n.Export.columnTagsDesc
         case .note: return L10n.Export.columnNoteDesc
+        case .splitTotal: return L10n.Export.columnSplitTotalDesc
+        case .splitPortion: return L10n.Export.columnSplitPortionDesc
         }
     }
 }

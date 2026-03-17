@@ -2641,3 +2641,31 @@
 "whatsNew.v12.insights.description" = "Entdecke Ausgabenmuster mit personalisierten Analysen.";
 "whatsNew.v12.sharedBalances.title" = "Geteilte Salden";
 "whatsNew.v12.sharedBalances.description" = "Berechne Salden zwischen Freunden und Partner direkt beim Onboarding.";
+
+// MARK: - Split Calculator
+"action.calculate" = "Berechnen";
+"split.title" = "Meinen Anteil berechnen";
+"split.totalAmount" = "Gesamtbetrag";
+"split.yourPortion" = "Dein Anteil";
+"split.useAmount" = "Betrag verwenden";
+"split.typePercentage" = "Prozent";
+"split.typeEqual" = "Gleichmäßig";
+"split.typeExact" = "Genauer Betrag";
+"split.typeShares" = "Anteile";
+"split.percentage" = "Dein Prozentsatz";
+"split.people" = "Personen";
+"split.yourPart" = "Dein Anteil";
+"split.yourShares" = "Deine Anteile";
+"split.totalShares" = "Anteile gesamt";
+"split.tipPercentage" = "Gib deinen Prozentanteil am Gesamtbetrag ein. Ideal für geteilte Haushaltsausgaben.";
+"split.tipEqual" = "Teile den Gesamtbetrag gleichmäßig auf die Anzahl der Personen auf.";
+"split.tipExact" = "Gib direkt den genauen Betrag ein, der dir entspricht.";
+"split.tipShares" = "Teile nach Anteilen auf. Zum Beispiel, wenn du 2 von 5 Anteilen zahlst.";
+"split.descPercentage %@ %@" = "%@%% von %@";
+"split.descEqual %d" = "÷ %d Personen";
+"split.descShares %d %d" = "%d von %d Anteilen";
+"split.descExact %@" = "%@ genau";
+"export.column.splitTotal" = "Ursprünglicher Gesamtbetrag";
+"export.column.splitPortion" = "Anteil";
+"export.column.splitTotal.description" = "Gesamtbetrag vor der Aufteilung";
+"export.column.splitPortion.description" = "Beschreibung des Anteils";

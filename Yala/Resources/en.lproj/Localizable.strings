@@ -2644,3 +2644,31 @@
 "whatsNew.v12.insights.description" = "Discover spending patterns with personalized analysis.";
 "whatsNew.v12.sharedBalances.title" = "Shared balances";
 "whatsNew.v12.sharedBalances.description" = "Calculate balances between friends and partners right from onboarding.";
+
+// MARK: - Split Calculator
+"action.calculate" = "Calculate";
+"split.title" = "Calculate my share";
+"split.totalAmount" = "Total amount";
+"split.yourPortion" = "Your portion";
+"split.useAmount" = "Use amount";
+"split.typePercentage" = "Percentage";
+"split.typeEqual" = "Equal split";
+"split.typeExact" = "Exact amount";
+"split.typeShares" = "By shares";
+"split.percentage" = "Your percentage";
+"split.people" = "People";
+"split.yourPart" = "Your part";
+"split.yourShares" = "Your shares";
+"split.totalShares" = "Total shares";
+"split.tipPercentage" = "Enter your percentage of the total. Great for shared household expenses.";
+"split.tipEqual" = "Split the total equally among the number of people. Everyone pays the same.";
+"split.tipExact" = "Enter the exact amount that corresponds to you.";
+"split.tipShares" = "Split by proportions. For example, if you pay 2 out of 5 shares of the total.";
+"split.descPercentage %@ %@" = "%@%% of %@";
+"split.descEqual %d" = "÷ %d people";
+"split.descShares %d %d" = "%d of %d shares";
+"split.descExact %@" = "%@ exact";
+"export.column.splitTotal" = "Original total";
+"export.column.splitPortion" = "Portion";
+"export.column.splitTotal.description" = "Total amount before splitting";
+"export.column.splitPortion.description" = "Portion description";

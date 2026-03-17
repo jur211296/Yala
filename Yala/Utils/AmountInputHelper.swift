@@ -47,4 +47,27 @@ enum AmountInputHelper {
         // Allow empty string (will be restored to "0" when field loses focus)
         return result
     }
+
+    /// Parses a text field value to Double, normalizing comma to dot.
+    static func parseDecimal(_ text: String) -> Double {
+        Double(text.replacing(",", with: ".")) ?? 0
+    }
+
+    /// Filters input to only allow whole numbers (no decimal).
+    /// Used for fields like "people count" or "shares".
+    static func filterIntegerInput(_ input: String) -> String {
+        var result = ""
+        for char in input {
+            if char.isNumber {
+                result.append(char)
+            }
+        }
+
+        // Remove leading zeros
+        while result.hasPrefix("0") && result.count > 1 {
+            result = String(result.dropFirst())
+        }
+
+        return result
+    }
 }

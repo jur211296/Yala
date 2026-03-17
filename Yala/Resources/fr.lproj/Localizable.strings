@@ -2642,3 +2642,31 @@
 "whatsNew.v12.insights.description" = "Découvre les tendances de tes dépenses avec des analyses personnalisées.";
 "whatsNew.v12.sharedBalances.title" = "Soldes partagés";
 "whatsNew.v12.sharedBalances.description" = "Calcule les soldes entre amis et partenaire directement depuis l'onboarding.";
+
+// MARK: - Split Calculator
+"action.calculate" = "Calculer";
+"split.title" = "Calculer ma part";
+"split.totalAmount" = "Montant total";
+"split.yourPortion" = "Ta part";
+"split.useAmount" = "Utiliser le montant";
+"split.typePercentage" = "Pourcentage";
+"split.typeEqual" = "Parts égales";
+"split.typeExact" = "Montant exact";
+"split.typeShares" = "Proportions";
+"split.percentage" = "Ton pourcentage";
+"split.people" = "Personnes";
+"split.yourPart" = "Ta part";
+"split.yourShares" = "Tes parts";
+"split.totalShares" = "Total des parts";
+"split.tipPercentage" = "Entre ton pourcentage du total. Idéal pour les dépenses du foyer partagées.";
+"split.tipEqual" = "Divise le total à parts égales entre le nombre de personnes.";
+"split.tipExact" = "Entre directement le montant exact qui te correspond.";
+"split.tipShares" = "Divise par proportions. Par exemple, si tu paies 2 parts sur 5 du total.";
+"split.descPercentage %@ %@" = "%@%% de %@";
+"split.descEqual %d" = "÷ %d personnes";
+"split.descShares %d %d" = "%d de %d parts";
+"split.descExact %@" = "%@ exact";
+"export.column.splitTotal" = "Total original";
+"export.column.splitPortion" = "Part";
+"export.column.splitTotal.description" = "Montant total avant division";
+"export.column.splitPortion.description" = "Description de la part";

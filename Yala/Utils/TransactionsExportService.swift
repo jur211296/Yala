@@ -420,6 +420,17 @@ struct TransactionsExportService {
 
                 case .note:
                     value = transaction.note ?? ""
+
+                case .splitTotal:
+                    if let total = transaction.splitTotalAmount {
+                        let number = NSNumber(value: total)
+                        value = amountFormatter.string(from: number) ?? ""
+                    } else {
+                        value = ""
+                    }
+
+                case .splitPortion:
+                    value = Self.splitPortionDescription(for: transaction)
                 }
 
                 rowValues.append(csvEscaped(value))
@@ -534,6 +545,17 @@ struct TransactionsExportService {
                     value = names.joined(separator: ";")
                 case .note:
                     value = transaction.note ?? ""
+
+                case .splitTotal:
+                    if let total = transaction.splitTotalAmount {
+                        let number = NSNumber(value: total)
+                        value = amountFormatter.string(from: number) ?? ""
+                    } else {
+                        value = ""
+                    }
+
+                case .splitPortion:
+                    value = splitPortionDescription(for: transaction)
                 }
 
                 rowValues.append(value)
@@ -566,5 +588,29 @@ struct TransactionsExportService {
         )
 
         return fileURL
+    }
+
+    // MARK: - Split Portion Description
+
+    /// Human-readable description of split portion for export.
+    static func splitPortionDescription(for transaction: TransactionItem) -> String {
+        guard let typeRaw = transaction.splitType,
+              let type = SplitType(rawValue: typeRaw),
+              let myValue = transaction.splitMyValue else { return "" }
+
+        switch type {
+        case .percentage:
+            let pct = myValue == myValue.rounded() ? String(Int(myValue)) : String(format: "%.1f", myValue)
+            return "\(pct)%"
+        case .equal:
+            return "1/\(Int(myValue))"
+        case .shares:
+            if let total = transaction.splitDivisor {
+                return "\(Int(myValue))/\(Int(total))"
+            }
+            return ""
+        case .exact:
+            return String(format: "%.2f", myValue)
+        }
     }
 }

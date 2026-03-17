@@ -580,6 +580,34 @@ enum L10n {
         static var close: String { ls("action.close", comment: "") }
         static var reorder: String { ls("action.reorder", comment: "") }
         static var clearAll: String { ls("action.clearAll", comment: "") }
+        static var calculate: String { ls("action.calculate", comment: "") }
+    }
+
+    // MARK: - Split Calculator
+
+    enum Split {
+        static var title: String { ls("split.title", comment: "") }
+        static var totalAmount: String { ls("split.totalAmount", comment: "") }
+        static var yourPortion: String { ls("split.yourPortion", comment: "") }
+        static var useAmount: String { ls("split.useAmount", comment: "") }
+        static var typePercentage: String { ls("split.typePercentage", comment: "") }
+        static var typeEqual: String { ls("split.typeEqual", comment: "") }
+        static var typeExact: String { ls("split.typeExact", comment: "") }
+        static var typeShares: String { ls("split.typeShares", comment: "") }
+        static var percentage: String { ls("split.percentage", comment: "") }
+        static var people: String { ls("split.people", comment: "") }
+        static var yourPart: String { ls("split.yourPart", comment: "") }
+        static var yourShares: String { ls("split.yourShares", comment: "") }
+        static var totalShares: String { ls("split.totalShares", comment: "") }
+        static var tipPercentage: String { ls("split.tipPercentage", comment: "") }
+        static var tipEqual: String { ls("split.tipEqual", comment: "") }
+        static var tipExact: String { ls("split.tipExact", comment: "") }
+        static var tipShares: String { ls("split.tipShares", comment: "") }
+        // Description templates for chip display
+        static func descPercentage(_ pct: String, _ total: String) -> String { String(format: ls("split.descPercentage %@ %@", comment: ""), pct, total) }
+        static func descEqual(_ people: Int) -> String { String(format: ls("split.descEqual %d", comment: ""), people) }
+        static func descShares(_ my: Int, _ total: Int) -> String { String(format: ls("split.descShares %d %d", comment: ""), my, total) }
+        static func descExact(_ amount: String) -> String { String(format: ls("split.descExact %@", comment: ""), amount) }
     }
 
     // MARK: - AI Consent
@@ -1537,6 +1565,8 @@ enum L10n {
         static var columnSubcategory: String { ls("export.column.subcategory", comment: "") }
         static var columnTags: String { ls("export.column.tags", comment: "") }
         static var columnNote: String { ls("export.column.note", comment: "") }
+        static var columnSplitTotal: String { ls("export.column.splitTotal", comment: "") }
+        static var columnSplitPortion: String { ls("export.column.splitPortion", comment: "") }
 
         // Column descriptions
         static var columnDateDesc: String { ls("export.column.date.description", comment: "") }
@@ -1547,6 +1577,8 @@ enum L10n {
         static var columnSubcategoryDesc: String { ls("export.column.subcategory.description", comment: "") }
         static var columnTagsDesc: String { ls("export.column.tags.description", comment: "") }
         static var columnNoteDesc: String { ls("export.column.note.description", comment: "") }
+        static var columnSplitTotalDesc: String { ls("export.column.splitTotal.description", comment: "") }
+        static var columnSplitPortionDesc: String { ls("export.column.splitPortion.description", comment: "") }
     }
 
     // MARK: - Favorites

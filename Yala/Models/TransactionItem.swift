@@ -64,6 +64,16 @@ final class TransactionItem {
     /// Shared UUID between both sides of a transfer (outflow + inflow)
     var transferPairID: String?
 
+    // MARK: - Split Calculator
+    /// Monto total original antes de dividir (nil = no split)
+    var splitTotalAmount: Double?
+    /// Tipo de split: "equal" | "percentage" | "exact" | "shares"
+    var splitType: String?
+    /// Valor contextual: porcentaje, personas, partes propias, o monto exacto
+    var splitMyValue: Double?
+    /// Divisor total (nil para exact)
+    var splitDivisor: Double?
+
     // MARK: - Metadata
     /// Timestamp de creación del registro (usado para ordenar registros del mismo día)
     var createdAt: Date = Date.now

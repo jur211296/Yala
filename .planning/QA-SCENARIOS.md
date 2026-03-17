@@ -5568,3 +5568,57 @@ Para cada tema verificar:
 - [ ] ES: Scheduled payment due today → text is warm, not telegraphic
 - [ ] EN: Budget at 90% → text says "running low", not "Warning"
 - [ ] All 6 languages: No "(s)" pluralization hack remaining
+
+---
+
+## Sección 52: Split Calculator ("Calcular mi parte")
+
+### 52.1 Flujo básico — porcentaje
+- [ ] Crear gasto → tap "Calcular" → seleccionar porcentaje → 80% de 125 → resultado = 100
+- [ ] Tap "Usar monto" → monto del formulario = 100.00
+- [ ] Indicador chip visible debajo del monto: "80% de 125.00"
+- [ ] Guardar transacción → verificar monto guardado = -100.00
+
+### 52.2 Flujo edición
+- [ ] Editar transacción con split → reabrir calculator → datos pre-rellenados (total, tipo, valor)
+- [ ] Cambiar porcentaje de 80% a 60% → recalcular → guardar
+- [ ] Verificar monto actualizado correctamente
+
+### 52.3 Tipos de split
+- [ ] Partes iguales: 120 total ÷ 3 personas = 40
+- [ ] Monto exacto: 100 total, mi parte = 60 → resultado = 60
+- [ ] Proporciones: 500 total, 2 de 5 partes = 200
+- [ ] Presets rápidos: tap chip "80%" → campo se actualiza a 80
+
+### 52.4 Stale detection
+- [ ] Aplicar split → editar monto manualmente con teclado → chip se atenúa (opacity reducida)
+- [ ] Reabrir calculator después de override → params originales del split visibles
+- [ ] Guardar con monto override → split metadata se persiste sin cambios
+
+### 52.5 Visibilidad del botón
+- [ ] Tipo gasto → botón "Calcular" visible en quick actions
+- [ ] Tipo ingreso → botón "Calcular" NO visible
+- [ ] Tipo transferencia → botón "Calcular" NO visible
+
+### 52.6 Duplicar transacción
+- [ ] Crear gasto con split → duplicar → nueva transacción hereda split data
+- [ ] Chip de split visible en la transacción duplicada
+
+### 52.7 RecordRowView badge
+- [ ] Transacción con split → badge "%" visible en la fila de registros
+- [ ] Transacción sin split → sin badge
+
+### 52.8 Export CSV/XLSX
+- [ ] Activar columnas "Total original" y "Porción" en wizard de exportación
+- [ ] Exportar → verificar columnas split_total y split_portion en CSV
+- [ ] Transacción sin split → columnas vacías en export
+
+### 52.9 Defaults inteligentes
+- [ ] Crear split con 80% → cerrar → crear nuevo gasto → abrir calculator → tipo y % pre-rellenados
+- [ ] Cambiar a "Partes iguales" → cerrar → próxima vez muestra "Partes iguales"
+
+### 52.10 Edge cases
+- [ ] Monto 0 en total → botón "Usar monto" disabled
+- [ ] Porcentaje > 100% → resultado nil → botón disabled
+- [ ] Monto exacto > total → resultado nil → botón disabled
+- [ ] Campo vacío → resultado nil
