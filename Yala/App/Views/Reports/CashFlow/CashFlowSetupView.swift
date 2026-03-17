@@ -169,7 +169,7 @@ struct CashFlowSetupView: View {
 
                 if let cat = line.category, let iconName = cat.iconName {
                     Image(systemName: iconName)
-                        .foregroundStyle(Color(hex: cat.colorHex) ?? .secondary)
+                        .foregroundStyle(Color(hex: cat.colorHex))
                         .font(DS.Typography.body)
                         .frame(width: 24)
                 }

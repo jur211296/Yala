@@ -61,7 +61,7 @@ struct CashFlowOthersSheet: View {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: item.iconName)
                         .font(DS.Typography.body)
-                        .foregroundStyle(Color(hex: item.colorHex) ?? .secondary)
+                        .foregroundStyle(Color(hex: item.colorHex))
                         .frame(width: 24)
 
                     Text(item.categoryName)

@@ -95,7 +95,7 @@ struct CashFlowAddLineSheet: View {
                             .foregroundStyle(selectedCategory?.persistentModelID == cat.persistentModelID ? theme.accent : .secondary)
                         if let iconName = cat.iconName {
                             Image(systemName: iconName)
-                                .foregroundStyle(Color(hex: cat.colorHex) ?? .secondary)
+                                .foregroundStyle(Color(hex: cat.colorHex))
                                 .frame(width: 20)
                         }
                         Text(cat.name)

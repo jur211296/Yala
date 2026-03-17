@@ -25,7 +25,7 @@ struct CashFlowLineNameRow: View {
             } else if let cat = line?.category, let iconName = cat.iconName {
                 Image(systemName: iconName)
                     .font(DS.Typography.caption)
-                    .foregroundStyle(Color(hex: cat.colorHex) ?? .secondary)
+                    .foregroundStyle(Color(hex: cat.colorHex))
                     .frame(width: 20)
             }
 

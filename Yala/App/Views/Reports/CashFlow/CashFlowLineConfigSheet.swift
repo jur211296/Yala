@@ -82,7 +82,7 @@ struct CashFlowLineConfigSheet: View {
                 HStack(spacing: DS.Spacing.md) {
                     if let iconName = cat.iconName {
                         Image(systemName: iconName)
-                            .foregroundStyle(Color(hex: cat.colorHex) ?? .secondary)
+                            .foregroundStyle(Color(hex: cat.colorHex))
                     }
                     Text(cat.name)
                         .font(DS.Typography.body)

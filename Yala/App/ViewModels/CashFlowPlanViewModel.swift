@@ -287,7 +287,7 @@ final class CashFlowPlanViewModel {
         allExpenseCategories: [Category],
         scheduledPayments: [ScheduledPayment],
         currencyCode: String,
-        converter: CurrencyConverting = CurrencyConverter.shared
+        converter: CurrencyConverting
     ) {
         guard let plan else {
             projection = nil

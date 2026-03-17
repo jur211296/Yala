@@ -208,7 +208,7 @@ struct CashFlowTableView: View {
                 .buttonStyle(.plain)
 
                 // Other expenses
-                if let other = projection.months.first?.otherExpenses {
+                if projection.months.first?.otherExpenses != nil {
                     Divider()
                         .padding(.horizontal, DS.Spacing.md)
                         .dashPattern()
@@ -244,7 +244,8 @@ struct CashFlowTableView: View {
             transactions: transactions,
             allExpenseCategories: expenseCategories,
             scheduledPayments: scheduledPayments,
-            currencyCode: currencyCode
+            currencyCode: currencyCode,
+            converter: CurrencyConverter.shared
         )
     }
 }
