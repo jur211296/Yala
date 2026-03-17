@@ -2654,6 +2654,9 @@
 "insights.focus.cautious.desc" = "Alertas tempranas y presupuestos en riesgo";
 "insights.toneLabel" = "Tono";
 "insights.focusLabel" = "Enfoque";
+"insights.aiTeaser" = "Insights con IA";
+"insights.aiTeaserPlaceholder1" = "Analizando tus patrones de gasto...";
+"insights.aiTeaserPlaceholder2" = "Identificando oportunidades de ahorro...";
 
 // Secondary Currency Suggestion
 "account.secondaryCurrency.title" = "Divisa secundaria";
@@ -2719,3 +2722,23 @@
 "export.column.splitPortion" = "Porción";
 "export.column.splitTotal.description" = "Monto total antes de dividir";
 "export.column.splitPortion.description" = "Descripción de la porción";
+
+// MARK: - Pro Upgrade Banner
+
+"proBanner.title" = "Lleva tus finanzas al siguiente nivel";
+"proBanner.subtitle" = "Desbloquea voz, insights AI y cuentas ilimitadas.";
+
+// MARK: - Milestone Upgrade
+
+"milestone.title" = "¡%d gastos registrados!";
+"milestone.message10" = "Estás creando un gran hábito. Con Yala Pro puedes dictar tus gastos con la voz.";
+"milestone.message50" = "¡Impresionante! Con Insights AI puedes descubrir patrones ocultos en tus gastos.";
+"milestone.message100" = "Eres un experto en finanzas. Desbloquea la experiencia completa con Yala Pro.";
+"milestone.notNow" = "Ahora no";
+"milestone.unlimitedAccounts" = "Cuentas ilimitadas";
+
+// MARK: - Insights AI Teaser
+
+"insights.aiTeaser" = "Insights AI";
+"insights.aiTeaserPlaceholder1" = "Tu gasto promedio subió un 12% comparado con el mes pasado";
+"insights.aiTeaserPlaceholder2" = "La categoría con mayor crecimiento es Restaurantes";

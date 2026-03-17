@@ -403,6 +403,11 @@ enum L10n {
         // Settings labels
         static var toneLabel: String { ls("insights.toneLabel", comment: "") }
         static var focusLabel: String { ls("insights.focusLabel", comment: "") }
+
+        // AI teaser
+        static var aiTeaser: String { ls("insights.aiTeaser", comment: "") }
+        static var aiTeaserPlaceholder1: String { ls("insights.aiTeaserPlaceholder1", comment: "") }
+        static var aiTeaserPlaceholder2: String { ls("insights.aiTeaserPlaceholder2", comment: "") }
     }
 
     // MARK: - Statistics

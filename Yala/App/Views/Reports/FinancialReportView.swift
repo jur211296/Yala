@@ -202,7 +202,13 @@ struct FinancialReportView: View {
     @ViewBuilder
     private var cashFlowContent: some View {
         if cashFlowViewModel.hasPlan {
-            Text("Plan activo") // TODO: Replace with CashFlowTableView in Inc 4
+            CashFlowTableView(
+                viewModel: cashFlowViewModel,
+                transactions: transactions,
+                categories: categories,
+                scheduledPayments: scheduledPayments,
+                currencyCode: preferredCurrencyCode
+            )
         } else {
             CashFlowSetupView(
                 viewModel: cashFlowViewModel,
