@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-17] 1e77b5c perf: defer CloudKit remote change refreshes to view navigation
 - [2026-03-17] 957c68b fix: resolve 7 compiler warnings in cash flow views
 - [2026-03-17] dcdfd1f refactor: simplify cash flow — fix N+1 scan, deduplicate, type-safety
 - [2026-03-17] d0c1dd7 feat: add pro conversion system with proactive upsells and telemetry
@@ -762,11 +763,11 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 ## Session Continuity
 
 Last session: 2026-03-17
-Stopped at: Split Calculator polished — large cards, inline shares, currency symbol fix
-Next step: Test manual en simulador del flujo completo de split calculator
+Stopped at: Deferred CloudKit refreshes — remote changes queued until view navigation
+Next step: Continuar con siguiente item de Fase 12
 Resume context:
-- Split Calculator completo + polished: cards tipo saldo inicial, shares inline "Pagas X de Y partes", currency symbol nil sin cuenta
-- Pendiente: test manual en simulador (QA-SCENARIOS.md §52)
+- CloudKit remote changes no longer trigger immediate UI recalculation — deferred to onAppear via `.appliesPendingRemoteChanges()` modifier
+- User actions (save/delete) still trigger immediate refresh via `incrementDataVersion()`
 - Financial Report MVP funcional, pendiente ajustes y testing
 - **Pendiente ajustes UI:**
   - Drag handles en GroupingReorderSheet — solo Tipo los muestra, los demás no (bug con editMode)

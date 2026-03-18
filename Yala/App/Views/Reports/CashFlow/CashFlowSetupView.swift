@@ -19,6 +19,7 @@ struct CashFlowSetupView: View {
     let currencyCode: String
 
     @State private var startingBalance: String = ""
+    @State private var editingLine: SuggestedLine?
 
     @Environment(\.yalaTheme) private var theme
 
@@ -46,14 +47,6 @@ struct CashFlowSetupView: View {
         viewModel.suggestedLines.filter { !$0.isIncome }
     }
 
-    private var recommendedExpenses: [SuggestedLine] {
-        expenseLines.filter(\.isRecommended)
-    }
-
-    private var otherExpenses: [SuggestedLine] {
-        expenseLines.filter { !$0.isRecommended }
-    }
-
     // MARK: - Body
 
     var body: some View {
@@ -63,6 +56,7 @@ struct CashFlowSetupView: View {
                 if viewModel.suggestedLines.isEmpty {
                     emptyState
                 } else {
+                    bannerSection
                     if !incomeLines.isEmpty {
                         lineSection(
                             title: L10n.CashFlowPlan.incomeSection,
@@ -70,17 +64,10 @@ struct CashFlowSetupView: View {
                             isIncome: true
                         )
                     }
-                    if !recommendedExpenses.isEmpty {
+                    if !expenseLines.isEmpty {
                         lineSection(
                             title: L10n.CashFlowPlan.expenseSection,
-                            lines: recommendedExpenses,
-                            isIncome: false
-                        )
-                    }
-                    if !otherExpenses.isEmpty {
-                        lineSection(
-                            title: L10n.CashFlowPlan.otherExpensesLabel,
-                            lines: otherExpenses,
+                            lines: expenseLines,
                             isIncome: false
                         )
                     }
@@ -97,7 +84,15 @@ struct CashFlowSetupView: View {
             viewModel.generateSuggestions(
                 transactions: transactions,
                 scheduledPayments: scheduledPayments,
-                categories: categories
+                categories: categories,
+                currencyCode: currencyCode
+            )
+        }
+        .sheet(item: $editingLine) { line in
+            CashFlowMethodPickerSheet(
+                line: line,
+                currencyCode: currencyCode,
+                viewModel: viewModel
             )
         }
     }
@@ -105,16 +100,35 @@ struct CashFlowSetupView: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            Text(L10n.CashFlowPlan.title)
-                .font(DS.Typography.title2)
-                .fontWeight(.bold)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Text(L10n.CashFlowPlan.description)
-                .font(DS.Typography.body)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        Text(L10n.CashFlowPlan.title)
+            .font(DS.Typography.title2)
+            .fontWeight(.bold)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Banner
+
+    private var bannerSection: some View {
+        HStack(alignment: .top, spacing: DS.Spacing.md) {
+            Image(systemName: "lightbulb.fill")
+                .foregroundStyle(theme.accent)
+                .font(DS.Typography.headline)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                Text(L10n.CashFlowPlan.bannerTitle)
+                    .font(DS.Typography.subheadline)
+                    .fontWeight(.semibold)
+                Text(L10n.CashFlowPlan.bannerBody)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Spacing.lg)
+        .background(
+            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                .fill(DS.Semantic.infoBackground)
+        )
     }
 
     // MARK: - Empty State
@@ -156,57 +170,60 @@ struct CashFlowSetupView: View {
 
     private func suggestedLineRow(_ line: SuggestedLine) -> some View {
         let index = viewModel.suggestedLines.firstIndex(where: { $0.id == line.id })
+        let iconName = line.subcategory?.iconName ?? line.category?.iconName ?? "tag.fill"
+        let colorHex = line.subcategory?.colorHex ?? line.category?.colorHex ?? AppConstants.defaultColorHex
 
-        return Button {
-            if let index {
-                viewModel.suggestedLines[index].isSelected.toggle()
-            }
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
+        return HStack(spacing: DS.Spacing.md) {
+            Button {
+                if let index {
+                    viewModel.suggestedLines[index].isSelected.toggle()
+                }
+            } label: {
                 Image(systemName: line.isSelected ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(line.isSelected ? theme.accent : .secondary)
                     .font(DS.Typography.headline)
+            }
+            .buttonStyle(.plain)
 
-                if let cat = line.category, let iconName = cat.iconName {
-                    Image(systemName: iconName)
-                        .foregroundStyle(Color(hex: cat.colorHex))
-                        .font(DS.Typography.body)
-                        .frame(width: 24)
-                }
+            Image(systemName: iconName)
+                .foregroundStyle(Color(hex: colorHex))
+                .font(DS.Typography.body)
+                .frame(width: 24)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: DS.Spacing.sm) {
-                        Text(line.name)
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.primary)
-                        if line.isRecommended {
-                            Text(L10n.CashFlowPlan.recommendedBadge)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(theme.accent)
-                                .padding(.horizontal, DS.Spacing.sm)
-                                .padding(.vertical, 2)
-                                .background(
-                                    Capsule().fill(theme.accent.opacity(0.15))
-                                )
-                        }
-                    }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(line.name)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.primary)
+                if line.scheduledPayment != nil {
+                    Text(L10n.CashFlowPlan.scheduled)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.tertiary)
+                } else {
                     Text("\(line.monthsWithActivity) \(L10n.CashFlowPlan.monthsActive)")
                         .font(DS.Typography.caption)
                         .foregroundStyle(.tertiary)
                 }
-
-                Spacer()
-
-                Text(YalaFormatter.currency(value: line.suggestedAmount, currencyCode: currencyCode))
-                    .font(DS.Typography.body)
-                    .foregroundStyle(line.isIncome ? DS.Semantic.successForeground : .primary)
-                    .monospacedDigit()
             }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.md)
-            .contentShape(Rectangle())
+
+            Spacer()
+
+            Text(YalaFormatter.currency(value: line.suggestedAmount, currencyCode: currencyCode))
+                .font(DS.Typography.body)
+                .foregroundStyle(line.isIncome ? DS.Semantic.successForeground : .primary)
+                .monospacedDigit()
+
+            Button {
+                editingLine = line
+            } label: {
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(.tertiary)
+                    .font(DS.Typography.caption)
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.md)
+        .contentShape(Rectangle())
     }
 
     // MARK: - Summary
@@ -273,5 +290,156 @@ struct CashFlowSetupView: View {
             let balance = Double(startingBalance.replacing(",", with: ".")) ?? 0
             viewModel.createPlan(startingBalance: balance)
         }
+    }
+}
+
+// MARK: - Method Picker Sheet
+
+struct CashFlowMethodPickerSheet: View {
+    let line: SuggestedLine
+    let currencyCode: String
+    @Bindable var viewModel: CashFlowPlanViewModel
+
+    @State private var selectedMethod: EstimationMethod
+    @State private var manualAmountText: String = ""
+    @State private var previewAmount: Double
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.yalaTheme) private var theme
+
+    init(line: SuggestedLine, currencyCode: String, viewModel: CashFlowPlanViewModel) {
+        self.line = line
+        self.currencyCode = currencyCode
+        self.viewModel = viewModel
+        self._selectedMethod = State(initialValue: line.estimationMethod)
+        self._previewAmount = State(initialValue: line.suggestedAmount)
+        if line.estimationMethod == .manual {
+            self._manualAmountText = State(initialValue: String(format: "%.0f", line.suggestedAmount))
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                PanelBackgroundView().dismissKeyboardOnTap()
+
+                ScrollView {
+                    VStack(spacing: DS.Spacing.xl) {
+                        // Live amount preview
+                        VStack(spacing: DS.Spacing.xs) {
+                            Text(line.name)
+                                .font(DS.Typography.subheadline)
+                                .foregroundStyle(.secondary)
+                            Text(YalaFormatter.currency(value: previewAmount, currencyCode: currencyCode))
+                                .font(DS.Typography.title)
+                                .fontWeight(.bold)
+                                .monospacedDigit()
+                                .contentTransition(.numericText())
+                                .animation(.default, value: previewAmount)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, DS.Spacing.md)
+
+                        // Methods
+                        VStack(spacing: DS.Spacing.none) {
+                            ForEach(availableMethods, id: \.self) { method in
+                                methodRow(method: method)
+                                if method != availableMethods.last {
+                                    Divider().padding(.leading, DS.Spacing.xxl)
+                                }
+                            }
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+                        .yalaCard(padding: 0)
+
+                        // Manual amount field
+                        if selectedMethod == .manual {
+                            TextField("0", text: $manualAmountText)
+                                .keyboardType(.decimalPad)
+                                .font(DS.Typography.headline)
+                                .monospacedDigit()
+                                .padding(DS.Spacing.md)
+                                .background(
+                                    RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                                        .fill(.thCard)
+                                )
+                                .onChange(of: manualAmountText) {
+                                    let parsed = Double(manualAmountText.replacing(",", with: ".")) ?? 0
+                                    previewAmount = parsed
+                                }
+                        }
+                    }
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
+                    .yalaSafeBottomPadding()
+                }
+                .scrollDismissesKeyboard(.interactively)
+            }
+            .navigationTitle(L10n.CashFlowPlan.estimationMethod)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    YalaSaveButton(action: { applyAndDismiss() })
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
+    // MARK: - Helpers
+
+    private var availableMethods: [EstimationMethod] {
+        var methods: [EstimationMethod] = [.average6m, .average3m, .average12m, .lastMonth, .manual]
+        if line.scheduledPayment != nil {
+            methods.insert(.scheduled, at: 0)
+        }
+        return methods
+    }
+
+    private func methodRow(method: EstimationMethod) -> some View {
+        Button {
+            selectedMethod = method
+            recalculatePreview()
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: selectedMethod == method ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(selectedMethod == method ? theme.accent : .secondary)
+                    .font(DS.Typography.headline)
+
+                Text(methodDisplayName(method))
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.primary)
+
+                Spacer()
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func recalculatePreview() {
+        if selectedMethod == .manual {
+            let parsed = Double(manualAmountText.replacing(",", with: ".")) ?? 0
+            previewAmount = parsed
+        } else {
+            previewAmount = viewModel.previewAmount(for: line, method: selectedMethod)
+        }
+    }
+
+    private func methodDisplayName(_ method: EstimationMethod) -> String {
+        method.displayName
+    }
+
+    private func applyAndDismiss() {
+        let manualAmount = Double(manualAmountText.replacing(",", with: "."))
+        viewModel.updateEstimationMethod(for: line.id, to: selectedMethod, manualAmount: manualAmount)
+        dismiss()
     }
 }

@@ -33,27 +33,37 @@ struct CashFlowLineConfigSheet: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: DS.Spacing.xl) {
-                    categorySection
-                    methodSection
-                    if !overrides.isEmpty {
-                        overridesSection
+            ZStack {
+                PanelBackgroundView().dismissKeyboardOnTap()
+
+                ScrollView {
+                    VStack(spacing: DS.Spacing.xl) {
+                        categorySection
+                        methodSection
+                        if !overrides.isEmpty {
+                            overridesSection
+                        }
+                        deleteSection
                     }
-                    deleteSection
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
+                    .yalaSafeBottomPadding()
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.top, DS.Spacing.md)
-                .yalaSafeBottomPadding()
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle(line.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Action.done) {
-                        applyChanges()
+                ToolbarItem(placement: .topBarLeading) {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    YalaSaveButton(action: {
+                        applyChanges()
+                        dismiss()
+                    })
                 }
             }
         }
@@ -78,13 +88,17 @@ struct CashFlowLineConfigSheet: View {
                 .font(DS.Typography.label)
                 .foregroundStyle(.secondary)
 
-            if let cat = line.category {
+            if line.subcategory != nil || line.category != nil {
+                let displayName = line.subcategory?.name ?? line.category?.name ?? line.name
+                let iconName = line.subcategory?.iconName ?? line.category?.iconName
+                let colorHex = line.subcategory?.colorHex ?? line.category?.colorHex ?? AppConstants.defaultColorHex
+
                 HStack(spacing: DS.Spacing.md) {
-                    if let iconName = cat.iconName {
+                    if let iconName {
                         Image(systemName: iconName)
-                            .foregroundStyle(Color(hex: cat.colorHex))
+                            .foregroundStyle(Color(hex: colorHex))
                     }
-                    Text(cat.name)
+                    Text(displayName)
                         .font(DS.Typography.body)
                 }
                 .padding(DS.Spacing.md)
@@ -120,10 +134,6 @@ struct CashFlowLineConfigSheet: View {
                 }
                 Divider().padding(.leading, DS.Spacing.xxl)
                 methodRow(.scheduled, label: L10n.CashFlowPlan.scheduled, enabled: line.scheduledPayment != nil)
-                Divider().padding(.leading, DS.Spacing.xxl)
-                methodRow(.trend, label: L10n.CashFlowPlan.trend, proOnly: true)
-                Divider().padding(.leading, DS.Spacing.xxl)
-                methodRow(.custom, label: L10n.CashFlowPlan.custom, proOnly: true)
             }
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .yalaCard(padding: 0)

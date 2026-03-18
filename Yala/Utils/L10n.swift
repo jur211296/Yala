@@ -200,6 +200,8 @@ enum L10n {
         static var emptyState: String { ls("cashFlowPlan.emptyState", comment: "") }
         static var emptyStateMessage: String { ls("cashFlowPlan.emptyStateMessage", comment: "") }
         static var monthsActive: String { ls("cashFlowPlan.monthsActive", comment: "") }
+        static var bannerTitle: String { ls("cashFlowPlan.bannerTitle", comment: "") }
+        static var bannerBody: String { ls("cashFlowPlan.bannerBody", comment: "") }
 
         // Table
         static var available: String { ls("cashFlowPlan.available", comment: "") }
@@ -3869,6 +3871,100 @@ enum L10n {
         static var settingsPersonalizationMessage: String { ls("tipkit.settings.personalization.message", comment: "") }
         static var settingsTutorials: String { ls("tipkit.settings.tutorials.title", comment: "") }
         static var settingsTutorialsMessage: String { ls("tipkit.settings.tutorials.message", comment: "") }
+    }
+
+    // MARK: - Dev Seed (DEBUG only)
+
+    enum DevSeed {
+        // Accounts
+        static var accountMain: String { ls("devseed.accountMain", comment: "") }
+        static var accountSavings: String { ls("devseed.accountSavings", comment: "") }
+        // Tags
+        static var tagWork: String { ls("devseed.tagWork", comment: "") }
+        static var tagVacation: String { ls("devseed.tagVacation", comment: "") }
+        static var tagShared: String { ls("devseed.tagShared", comment: "") }
+        static var tagUrgent: String { ls("devseed.tagUrgent", comment: "") }
+        static var tagFixed: String { ls("devseed.tagFixed", comment: "") }
+        // Budgets
+        static var budgetEatingOut: String { ls("devseed.budgetEatingOut", comment: "") }
+        static var budgetMobility: String { ls("devseed.budgetMobility", comment: "") }
+        static var budgetFriendsOutings: String { ls("devseed.budgetFriendsOutings", comment: "") }
+        static var budgetPersonalCare: String { ls("devseed.budgetPersonalCare", comment: "") }
+        static var budgetHomeEssentials: String { ls("devseed.budgetHomeEssentials", comment: "") }
+        static var budgetPet: String { ls("devseed.budgetPet", comment: "") }
+        // Scheduled Payments
+        static var spGym: String { ls("devseed.spGym", comment: "") }
+        static var spRent: String { ls("devseed.spRent", comment: "") }
+        static var spPhone: String { ls("devseed.spPhone", comment: "") }
+        static var spInsurance: String { ls("devseed.spInsurance", comment: "") }
+        static var spInternet: String { ls("devseed.spInternet", comment: "") }
+        // Notes — Fixed monthly
+        static var noteSalary: String { ls("devseed.noteSalary", comment: "") }
+        static var noteGymMonthly: String { ls("devseed.noteGymMonthly", comment: "") }
+        static var noteRent: String { ls("devseed.noteRent", comment: "") }
+        static var notePhonePlan: String { ls("devseed.notePhonePlan", comment: "") }
+        static var noteElectricity: String { ls("devseed.noteElectricity", comment: "") }
+        static var noteWater: String { ls("devseed.noteWater", comment: "") }
+        static var noteElectricityWater: String { ls("devseed.noteElectricityWater", comment: "") }
+        static var noteInternetFiber: String { ls("devseed.noteInternetFiber", comment: "") }
+        static var noteInsuranceMonthly: String { ls("devseed.noteInsuranceMonthly", comment: "") }
+        // Notes — Supermarket
+        static var noteSupermarket1: String { ls("devseed.noteSupermarket1", comment: "") }
+        static var noteSupermarket2: String { ls("devseed.noteSupermarket2", comment: "") }
+        static var noteSupermarket3: String { ls("devseed.noteSupermarket3", comment: "") }
+        static var noteSupermarket4: String { ls("devseed.noteSupermarket4", comment: "") }
+        static var noteSupermarket5: String { ls("devseed.noteSupermarket5", comment: "") }
+        // Notes — Restaurant
+        static var noteLunch: String { ls("devseed.noteLunch", comment: "") }
+        static var noteDinner: String { ls("devseed.noteDinner", comment: "") }
+        static var noteBrunch: String { ls("devseed.noteBrunch", comment: "") }
+        static var noteMealWithFriends: String { ls("devseed.noteMealWithFriends", comment: "") }
+        // Notes — Delivery
+        static var noteDelivery1: String { ls("devseed.noteDelivery1", comment: "") }
+        static var noteDelivery2: String { ls("devseed.noteDelivery2", comment: "") }
+        static var noteDeliveryFood: String { ls("devseed.noteDeliveryFood", comment: "") }
+        // Notes — Transport
+        static var noteTaxi: String { ls("devseed.noteTaxi", comment: "") }
+        static var noteBus: String { ls("devseed.noteBus", comment: "") }
+        // Notes — Travel
+        static var noteHotel: String { ls("devseed.noteHotel", comment: "") }
+        static var noteFlight: String { ls("devseed.noteFlight", comment: "") }
+        static var noteTour: String { ls("devseed.noteTour", comment: "") }
+        static var noteExcursion: String { ls("devseed.noteExcursion", comment: "") }
+        // Notes — Fuel
+        static var noteGasStation: String { ls("devseed.noteGasStation", comment: "") }
+        static var noteGasoline: String { ls("devseed.noteGasoline", comment: "") }
+        static var noteFuel: String { ls("devseed.noteFuel", comment: "") }
+        // Notes — Maintenance
+        static var noteRepair: String { ls("devseed.noteRepair", comment: "") }
+        static var noteCleaning: String { ls("devseed.noteCleaning", comment: "") }
+        static var notePlumber: String { ls("devseed.notePlumber", comment: "") }
+        static var noteElectrician: String { ls("devseed.noteElectrician", comment: "") }
+        // Notes — Freelance
+        static var noteFreelance: String { ls("devseed.noteFreelance", comment: "") }
+        static var noteConsulting: String { ls("devseed.noteConsulting", comment: "") }
+        static var noteSideProject: String { ls("devseed.noteSideProject", comment: "") }
+        // Notes — Transfers
+        static func noteTransferTo(_ account: String) -> String {
+            String(format: ls("devseed.noteTransferTo", comment: ""), account)
+        }
+        static func noteTransferFrom(_ account: String) -> String {
+            String(format: ls("devseed.noteTransferFrom", comment: ""), account)
+        }
+        // Step labels
+        static var stepCategories: String { ls("devseed.stepCategories", comment: "") }
+        static var stepAccounts: String { ls("devseed.stepAccounts", comment: "") }
+        static var stepTags: String { ls("devseed.stepTags", comment: "") }
+        static var stepExchangeRates: String { ls("devseed.stepExchangeRates", comment: "") }
+        static var stepBudgets: String { ls("devseed.stepBudgets", comment: "") }
+        static var stepScheduledPayments: String { ls("devseed.stepScheduledPayments", comment: "") }
+        static var stepSavingBase: String { ls("devseed.stepSavingBase", comment: "") }
+        static var stepTransactions: String { ls("devseed.stepTransactions", comment: "") }
+        static var stepInitialBalances: String { ls("devseed.stepInitialBalances", comment: "") }
+        static var stepSaving: String { ls("devseed.stepSaving", comment: "") }
+        static var stepDone: String { ls("devseed.stepDone", comment: "") }
+        static var stepDeleting: String { ls("devseed.stepDeleting", comment: "") }
+        static var stepReloading: String { ls("devseed.stepReloading", comment: "") }
     }
 
 }

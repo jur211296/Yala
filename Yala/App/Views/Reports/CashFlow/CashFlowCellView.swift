@@ -30,11 +30,7 @@ struct CashFlowCellView: View {
             CashFlowCellPopover(
                 lineResult: lineResult,
                 month: month,
-                currencyCode: currencyCode,
-                onAdjust: {
-                    showPopover = false
-                    // Override handled via config sheet
-                }
+                currencyCode: currencyCode
             )
         }
     }
@@ -63,6 +59,9 @@ struct CashFlowCellView: View {
         }
         if month.isPast, let diff = lineResult.difference {
             if abs(diff) > lineResult.plannedAmount * 0.1 {
+                if lineResult.isIncome {
+                    return diff >= 0 ? DS.Semantic.successForeground : DS.Semantic.errorForeground
+                }
                 return diff > 0 ? DS.Semantic.errorForeground : DS.Semantic.successForeground
             }
         }

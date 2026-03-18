@@ -22,11 +22,15 @@ struct CashFlowLineNameRow: View {
                     .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
                     .frame(width: 20)
-            } else if let cat = line?.category, let iconName = cat.iconName {
-                Image(systemName: iconName)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(Color(hex: cat.colorHex))
-                    .frame(width: 20)
+            } else {
+                let iconName = line?.subcategory?.iconName ?? line?.category?.iconName
+                let colorHex = line?.subcategory?.colorHex ?? line?.category?.colorHex
+                if let iconName, let colorHex {
+                    Image(systemName: iconName)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(Color(hex: colorHex))
+                        .frame(width: 20)
+                }
             }
 
             Text(lineResult.name)

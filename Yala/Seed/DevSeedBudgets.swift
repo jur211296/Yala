@@ -18,12 +18,12 @@ struct DevSeedBudgets {
         in context: ModelContext
     ) {
         let budgetDefs: [(name: String, limit: Double, categoryName: String)] = [
-            ("Comidas fuera", 1800, L10n.Category.food),
-            ("Movilidad", 600, L10n.Category.transport),
-            ("Salidas con amigos", 1200, L10n.Category.entertainment),
-            ("Cuidado personal", 800, L10n.Category.personal),
-            ("Fijos casa", 3200, L10n.Category.housing),
-            ("Maia 🐶", 500, L10n.Category.pets),
+            (L10n.DevSeed.budgetEatingOut, 1800, L10n.Category.food),
+            (L10n.DevSeed.budgetMobility, 600, L10n.Category.transport),
+            (L10n.DevSeed.budgetFriendsOutings, 1200, L10n.Category.entertainment),
+            (L10n.DevSeed.budgetPersonalCare, 800, L10n.Category.personal),
+            (L10n.DevSeed.budgetHomeEssentials, 3200, L10n.Category.housing),
+            (L10n.DevSeed.budgetPet, 500, L10n.Category.pets),
         ]
 
         // Group subcategories by category name

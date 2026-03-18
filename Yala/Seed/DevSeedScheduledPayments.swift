@@ -48,13 +48,13 @@ struct DevSeedScheduledPayments {
             // Subscriptions
             ("Netflix", 45, L10n.Subcategory.streaming, 20, "subscription"),
             ("Spotify", 18, L10n.Subcategory.streaming, 18, "subscription"),
-            ("Gym", 150, L10n.Subcategory.fitness, 3, "subscription"),
+            (L10n.DevSeed.spGym, 150, L10n.Subcategory.fitness, 3, "subscription"),
             ("iCloud+", 10, L10n.Subcategory.utilitySubs, 22, "subscription"),
             // Recurring
-            ("Alquiler", 2200, L10n.Subcategory.rent, 5, "recurring"),
-            ("Teléfono", 60, L10n.Subcategory.phone, 15, "recurring"),
-            ("Internet", 90, L10n.Subcategory.utilities, 25, "recurring"),
-            ("Seguro", 180, L10n.Subcategory.insurance, 28, "recurring"),
+            (L10n.DevSeed.spRent, 2200, L10n.Subcategory.rent, 5, "recurring"),
+            (L10n.DevSeed.spPhone, 60, L10n.Subcategory.phone, 15, "recurring"),
+            (L10n.DevSeed.spInternet, 90, L10n.Subcategory.utilities, 25, "recurring"),
+            (L10n.DevSeed.spInsurance, 180, L10n.Subcategory.insurance, 28, "recurring"),
         ]
 
         var payments: [ScheduledPayment] = []

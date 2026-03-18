@@ -36,8 +36,10 @@ struct CashFlowOthersSheet: View {
             .navigationTitle(L10n.CashFlowPlan.othersTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Action.done) { dismiss() }
+                ToolbarItem(placement: .topBarLeading) {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
+                        dismiss()
+                    }
                 }
             }
         }

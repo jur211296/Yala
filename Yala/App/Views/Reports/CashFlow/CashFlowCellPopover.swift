@@ -11,7 +11,6 @@ struct CashFlowCellPopover: View {
     let lineResult: CashFlowLineResult
     let month: CashFlowMonth
     let currencyCode: String
-    let onAdjust: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
@@ -40,7 +39,7 @@ struct CashFlowCellPopover: View {
                             Text(YalaFormatter.currency(value: diff, currencyCode: currencyCode))
                                 .font(DS.Typography.amountSmall)
                                 .foregroundStyle(differenceColor(diff))
-                            if diff < 0 {
+                            if isOnTrack(diff) {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(DS.Typography.captionSmall)
                                     .foregroundStyle(DS.Semantic.successForeground)
@@ -60,22 +59,6 @@ struct CashFlowCellPopover: View {
                         .foregroundStyle(.tertiary)
                 }
             }
-
-            Divider()
-
-            // Adjust button
-            Button(action: onAdjust) {
-                Text(L10n.CashFlowPlan.adjustAmount)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, DS.Spacing.sm)
-                    .background(
-                        RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
-                            .fill(Color.accentColor)
-                    )
-            }
-            .buttonStyle(.plain)
         }
         .padding(DS.Spacing.lg)
         .frame(width: 240)
@@ -95,8 +78,17 @@ struct CashFlowCellPopover: View {
         }
     }
 
+    /// For income: diff > 0 means earned more → green. For expense: diff < 0 means spent less → green.
     private func differenceColor(_ diff: Double) -> Color {
-        diff > 0 ? DS.Semantic.errorForeground : DS.Semantic.successForeground
+        if lineResult.isIncome {
+            return diff >= 0 ? DS.Semantic.successForeground : DS.Semantic.errorForeground
+        }
+        return diff > 0 ? DS.Semantic.errorForeground : DS.Semantic.successForeground
+    }
+
+    /// On track: income earned >= plan (diff >= 0), expense spent <= plan (diff <= 0)
+    private func isOnTrack(_ diff: Double) -> Bool {
+        lineResult.isIncome ? diff >= 0 : diff < 0
     }
 
     private var monthLabel: String {
@@ -104,15 +96,6 @@ struct CashFlowCellPopover: View {
     }
 
     private var methodLabel: String {
-        switch lineResult.estimationMethod {
-        case .average3m: return L10n.CashFlowPlan.average3m
-        case .average6m: return L10n.CashFlowPlan.average6m
-        case .average12m: return L10n.CashFlowPlan.average12m
-        case .lastMonth: return L10n.CashFlowPlan.lastMonth
-        case .manual: return L10n.CashFlowPlan.manual
-        case .scheduled: return L10n.CashFlowPlan.scheduled
-        case .trend: return L10n.CashFlowPlan.trend
-        case .custom: return L10n.CashFlowPlan.custom
-        }
+        lineResult.estimationMethod.displayName
     }
 }

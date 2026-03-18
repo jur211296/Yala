@@ -706,6 +706,8 @@
 "cashFlowPlan.emptyState" = "No data yet";
 "cashFlowPlan.emptyStateMessage" = "Record your expenses and income for at least one month to create your cash flow plan.";
 "cashFlowPlan.monthsActive" = "months";
+"cashFlowPlan.bannerTitle" = "Your custom plan";
+"cashFlowPlan.bannerBody" = "We built this plan from your recent expenses and income. Pick what you want to track; you can always edit later.";
 "cashFlowPlan.available" = "Available";
 "cashFlowPlan.accumulated" = "Accumulated";
 "cashFlowPlan.addLine" = "Add line";
@@ -2745,3 +2747,91 @@
 "insights.aiTeaser" = "AI Insights";
 "insights.aiTeaserPlaceholder1" = "Your average spending rose 12% compared to last month";
 "insights.aiTeaserPlaceholder2" = "The fastest growing category is Restaurants";
+
+// MARK: - Dev Seed
+
+// Accounts
+"devseed.accountMain" = "Main Account";
+"devseed.accountSavings" = "Savings USD";
+// Tags
+"devseed.tagWork" = "Work";
+"devseed.tagVacation" = "Vacation";
+"devseed.tagShared" = "Shared";
+"devseed.tagUrgent" = "Urgent";
+"devseed.tagFixed" = "Fixed";
+// Budgets
+"devseed.budgetEatingOut" = "Eating Out";
+"devseed.budgetMobility" = "Mobility";
+"devseed.budgetFriendsOutings" = "Friends Outings";
+"devseed.budgetPersonalCare" = "Personal Care";
+"devseed.budgetHomeEssentials" = "Home Essentials";
+"devseed.budgetPet" = "Maia 🐶";
+// Scheduled Payments
+"devseed.spGym" = "Gym";
+"devseed.spRent" = "Rent";
+"devseed.spPhone" = "Phone";
+"devseed.spInsurance" = "Insurance";
+"devseed.spInternet" = "Internet";
+// Notes — Fixed monthly
+"devseed.noteSalary" = "Monthly salary";
+"devseed.noteGymMonthly" = "Monthly gym";
+"devseed.noteRent" = "Rent";
+"devseed.notePhonePlan" = "Phone plan";
+"devseed.noteElectricity" = "Electricity";
+"devseed.noteWater" = "Water";
+"devseed.noteElectricityWater" = "Electricity & water";
+"devseed.noteInternetFiber" = "Fiber internet";
+"devseed.noteInsuranceMonthly" = "Monthly insurance";
+// Notes — Supermarket
+"devseed.noteSupermarket1" = "Supermarket";
+"devseed.noteSupermarket2" = "Grocery store";
+"devseed.noteSupermarket3" = "Weekly groceries";
+"devseed.noteSupermarket4" = "Pantry supplies";
+"devseed.noteSupermarket5" = "Fruits & vegetables";
+// Notes — Restaurant
+"devseed.noteLunch" = "Lunch";
+"devseed.noteDinner" = "Dinner";
+"devseed.noteBrunch" = "Brunch";
+"devseed.noteMealWithFriends" = "Meal with friends";
+// Notes — Delivery
+"devseed.noteDelivery1" = "Delivery app";
+"devseed.noteDelivery2" = "Home delivery";
+"devseed.noteDeliveryFood" = "Food delivery";
+// Notes — Transport
+"devseed.noteTaxi" = "Taxi";
+"devseed.noteBus" = "Bus";
+// Notes — Travel
+"devseed.noteHotel" = "Hotel";
+"devseed.noteFlight" = "Flight";
+"devseed.noteTour" = "Tour";
+"devseed.noteExcursion" = "Day trip";
+// Notes — Fuel
+"devseed.noteGasStation" = "Gas station";
+"devseed.noteGasoline" = "Gasoline";
+"devseed.noteFuel" = "Fuel";
+// Notes — Maintenance
+"devseed.noteRepair" = "Repair";
+"devseed.noteCleaning" = "Cleaning";
+"devseed.notePlumber" = "Plumber";
+"devseed.noteElectrician" = "Electrician";
+// Notes — Freelance
+"devseed.noteFreelance" = "Freelance project";
+"devseed.noteConsulting" = "Consulting";
+"devseed.noteSideProject" = "Side project";
+// Notes — Transfers
+"devseed.noteTransferTo" = "Transfer to %@";
+"devseed.noteTransferFrom" = "Transfer from %@";
+// Step labels
+"devseed.stepCategories" = "Setting up categories...";
+"devseed.stepAccounts" = "Creating accounts...";
+"devseed.stepTags" = "Creating tags...";
+"devseed.stepExchangeRates" = "Generating exchange rates...";
+"devseed.stepBudgets" = "Creating budgets...";
+"devseed.stepScheduledPayments" = "Creating scheduled payments...";
+"devseed.stepSavingBase" = "Saving base entities...";
+"devseed.stepTransactions" = "Generating transactions...";
+"devseed.stepInitialBalances" = "Setting initial balances...";
+"devseed.stepSaving" = "Saving...";
+"devseed.stepDone" = "Done!";
+"devseed.stepDeleting" = "Deleting data...";
+"devseed.stepReloading" = "Reloading data...";

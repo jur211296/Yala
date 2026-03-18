@@ -704,6 +704,8 @@
 "cashFlowPlan.emptyState" = "Pas encore de données";
 "cashFlowPlan.emptyStateMessage" = "Enregistrez vos dépenses et revenus pendant au moins un mois pour créer votre plan de trésorerie.";
 "cashFlowPlan.monthsActive" = "mois";
+"cashFlowPlan.bannerTitle" = "Votre plan personnalisé";
+"cashFlowPlan.bannerBody" = "Nous avons créé ce plan à partir de vos dépenses et revenus récents. Choisissez ce que vous souhaitez suivre ; vous pourrez toujours modifier plus tard.";
 "cashFlowPlan.available" = "Disponible";
 "cashFlowPlan.accumulated" = "Cumulé";
 "cashFlowPlan.addLine" = "Ajouter une ligne";
@@ -2743,3 +2745,91 @@
 "insights.aiTeaser" = "Analyses IA";
 "insights.aiTeaserPlaceholder1" = "Vos dépenses moyennes ont augmenté de 12% par rapport au mois dernier";
 "insights.aiTeaserPlaceholder2" = "La catégorie qui progresse le plus est Restaurants";
+
+// MARK: - Dev Seed
+
+// Accounts
+"devseed.accountMain" = "Compte Principal";
+"devseed.accountSavings" = "Épargne USD";
+// Tags
+"devseed.tagWork" = "Travail";
+"devseed.tagVacation" = "Vacances";
+"devseed.tagShared" = "Partagé";
+"devseed.tagUrgent" = "Urgent";
+"devseed.tagFixed" = "Fixe";
+// Budgets
+"devseed.budgetEatingOut" = "Repas dehors";
+"devseed.budgetMobility" = "Mobilité";
+"devseed.budgetFriendsOutings" = "Sorties entre amis";
+"devseed.budgetPersonalCare" = "Soins personnels";
+"devseed.budgetHomeEssentials" = "Charges fixes";
+"devseed.budgetPet" = "Maia 🐶";
+// Scheduled Payments
+"devseed.spGym" = "Salle de sport";
+"devseed.spRent" = "Loyer";
+"devseed.spPhone" = "Téléphone";
+"devseed.spInsurance" = "Assurance";
+"devseed.spInternet" = "Internet";
+// Notes — Fixed monthly
+"devseed.noteSalary" = "Salaire mensuel";
+"devseed.noteGymMonthly" = "Salle de sport mensuel";
+"devseed.noteRent" = "Loyer";
+"devseed.notePhonePlan" = "Forfait mobile";
+"devseed.noteElectricity" = "Électricité";
+"devseed.noteWater" = "Eau";
+"devseed.noteElectricityWater" = "Électricité & eau";
+"devseed.noteInternetFiber" = "Internet fibre";
+"devseed.noteInsuranceMonthly" = "Assurance mensuelle";
+// Notes — Supermarket
+"devseed.noteSupermarket1" = "Supermarché";
+"devseed.noteSupermarket2" = "Épicerie";
+"devseed.noteSupermarket3" = "Courses semaine";
+"devseed.noteSupermarket4" = "Provisions";
+"devseed.noteSupermarket5" = "Fruits & légumes";
+// Notes — Restaurant
+"devseed.noteLunch" = "Déjeuner";
+"devseed.noteDinner" = "Dîner";
+"devseed.noteBrunch" = "Brunch";
+"devseed.noteMealWithFriends" = "Repas entre amis";
+// Notes — Delivery
+"devseed.noteDelivery1" = "Livraison";
+"devseed.noteDelivery2" = "Commande à domicile";
+"devseed.noteDeliveryFood" = "Livraison repas";
+// Notes — Transport
+"devseed.noteTaxi" = "Taxi";
+"devseed.noteBus" = "Bus";
+// Notes — Travel
+"devseed.noteHotel" = "Hôtel";
+"devseed.noteFlight" = "Vol";
+"devseed.noteTour" = "Excursion";
+"devseed.noteExcursion" = "Sortie";
+// Notes — Fuel
+"devseed.noteGasStation" = "Station-service";
+"devseed.noteGasoline" = "Essence";
+"devseed.noteFuel" = "Carburant";
+// Notes — Maintenance
+"devseed.noteRepair" = "Réparation";
+"devseed.noteCleaning" = "Nettoyage";
+"devseed.notePlumber" = "Plombier";
+"devseed.noteElectrician" = "Électricien";
+// Notes — Freelance
+"devseed.noteFreelance" = "Projet freelance";
+"devseed.noteConsulting" = "Conseil";
+"devseed.noteSideProject" = "Projet secondaire";
+// Notes — Transfers
+"devseed.noteTransferTo" = "Virement vers %@";
+"devseed.noteTransferFrom" = "Virement depuis %@";
+// Step labels
+"devseed.stepCategories" = "Préparation des catégories...";
+"devseed.stepAccounts" = "Création des comptes...";
+"devseed.stepTags" = "Création des tags...";
+"devseed.stepExchangeRates" = "Génération des taux...";
+"devseed.stepBudgets" = "Création des budgets...";
+"devseed.stepScheduledPayments" = "Création des paiements planifiés...";
+"devseed.stepSavingBase" = "Sauvegarde des entités de base...";
+"devseed.stepTransactions" = "Génération des transactions...";
+"devseed.stepInitialBalances" = "Configuration des soldes initiaux...";
+"devseed.stepSaving" = "Sauvegarde...";
+"devseed.stepDone" = "Terminé !";
+"devseed.stepDeleting" = "Suppression des données...";
+"devseed.stepReloading" = "Rechargement...";

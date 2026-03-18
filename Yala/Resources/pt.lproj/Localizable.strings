@@ -704,6 +704,8 @@
 "cashFlowPlan.emptyState" = "Sem dados ainda";
 "cashFlowPlan.emptyStateMessage" = "Registre suas despesas e receitas por pelo menos um mês para criar seu plano de fluxo de caixa.";
 "cashFlowPlan.monthsActive" = "meses";
+"cashFlowPlan.bannerTitle" = "Seu plano personalizado";
+"cashFlowPlan.bannerBody" = "Criamos este plano com suas despesas e receitas recentes. Escolha o que quer acompanhar; você pode editar depois.";
 "cashFlowPlan.available" = "Disponível";
 "cashFlowPlan.accumulated" = "Acumulado";
 "cashFlowPlan.addLine" = "Adicionar linha";
@@ -2742,3 +2744,91 @@
 "insights.aiTeaser" = "Insights IA";
 "insights.aiTeaserPlaceholder1" = "Seus gastos médios subiram 12% em relação ao mês passado";
 "insights.aiTeaserPlaceholder2" = "A categoria com maior crescimento é Restaurantes";
+
+// MARK: - Dev Seed
+
+// Accounts
+"devseed.accountMain" = "Conta Principal";
+"devseed.accountSavings" = "Poupança USD";
+// Tags
+"devseed.tagWork" = "Trabalho";
+"devseed.tagVacation" = "Férias";
+"devseed.tagShared" = "Compartilhado";
+"devseed.tagUrgent" = "Urgente";
+"devseed.tagFixed" = "Fixo";
+// Budgets
+"devseed.budgetEatingOut" = "Comer fora";
+"devseed.budgetMobility" = "Mobilidade";
+"devseed.budgetFriendsOutings" = "Saídas com amigos";
+"devseed.budgetPersonalCare" = "Cuidado pessoal";
+"devseed.budgetHomeEssentials" = "Despesas fixas";
+"devseed.budgetPet" = "Maia 🐶";
+// Scheduled Payments
+"devseed.spGym" = "Academia";
+"devseed.spRent" = "Aluguel";
+"devseed.spPhone" = "Telefone";
+"devseed.spInsurance" = "Seguro";
+"devseed.spInternet" = "Internet";
+// Notes — Fixed monthly
+"devseed.noteSalary" = "Salário mensal";
+"devseed.noteGymMonthly" = "Academia mensal";
+"devseed.noteRent" = "Aluguel";
+"devseed.notePhonePlan" = "Plano celular";
+"devseed.noteElectricity" = "Luz";
+"devseed.noteWater" = "Água";
+"devseed.noteElectricityWater" = "Luz e água";
+"devseed.noteInternetFiber" = "Internet fibra";
+"devseed.noteInsuranceMonthly" = "Seguro mensal";
+// Notes — Supermarket
+"devseed.noteSupermarket1" = "Supermercado";
+"devseed.noteSupermarket2" = "Mercearia";
+"devseed.noteSupermarket3" = "Compras da semana";
+"devseed.noteSupermarket4" = "Despensa";
+"devseed.noteSupermarket5" = "Frutas e verduras";
+// Notes — Restaurant
+"devseed.noteLunch" = "Almoço";
+"devseed.noteDinner" = "Jantar";
+"devseed.noteBrunch" = "Brunch";
+"devseed.noteMealWithFriends" = "Refeição com amigos";
+// Notes — Delivery
+"devseed.noteDelivery1" = "Delivery app";
+"devseed.noteDelivery2" = "Pedido delivery";
+"devseed.noteDeliveryFood" = "Delivery comida";
+// Notes — Transport
+"devseed.noteTaxi" = "Táxi";
+"devseed.noteBus" = "Ônibus";
+// Notes — Travel
+"devseed.noteHotel" = "Hotel";
+"devseed.noteFlight" = "Voo";
+"devseed.noteTour" = "Tour";
+"devseed.noteExcursion" = "Excursão";
+// Notes — Fuel
+"devseed.noteGasStation" = "Posto de combustível";
+"devseed.noteGasoline" = "Gasolina";
+"devseed.noteFuel" = "Combustível";
+// Notes — Maintenance
+"devseed.noteRepair" = "Reparo";
+"devseed.noteCleaning" = "Limpeza";
+"devseed.notePlumber" = "Encanador";
+"devseed.noteElectrician" = "Eletricista";
+// Notes — Freelance
+"devseed.noteFreelance" = "Projeto freelance";
+"devseed.noteConsulting" = "Consultoria";
+"devseed.noteSideProject" = "Projeto extra";
+// Notes — Transfers
+"devseed.noteTransferTo" = "Transferência para %@";
+"devseed.noteTransferFrom" = "Transferência de %@";
+// Step labels
+"devseed.stepCategories" = "Preparando categorias...";
+"devseed.stepAccounts" = "Criando contas...";
+"devseed.stepTags" = "Criando tags...";
+"devseed.stepExchangeRates" = "Gerando taxas de câmbio...";
+"devseed.stepBudgets" = "Criando orçamentos...";
+"devseed.stepScheduledPayments" = "Criando pagamentos agendados...";
+"devseed.stepSavingBase" = "Salvando entidades base...";
+"devseed.stepTransactions" = "Gerando transações...";
+"devseed.stepInitialBalances" = "Configurando saldos iniciais...";
+"devseed.stepSaving" = "Salvando...";
+"devseed.stepDone" = "Pronto!";
+"devseed.stepDeleting" = "Excluindo dados...";
+"devseed.stepReloading" = "Recarregando dados...";

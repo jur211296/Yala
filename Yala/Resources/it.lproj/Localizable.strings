@@ -704,6 +704,8 @@
 "cashFlowPlan.emptyState" = "Nessun dato ancora";
 "cashFlowPlan.emptyStateMessage" = "Registra le tue spese e entrate per almeno un mese per creare il tuo piano di flusso di cassa.";
 "cashFlowPlan.monthsActive" = "mesi";
+"cashFlowPlan.bannerTitle" = "Il tuo piano personalizzato";
+"cashFlowPlan.bannerBody" = "Abbiamo creato questo piano dalle tue spese e entrate recenti. Scegli cosa vuoi monitorare; potrai sempre modificarlo dopo.";
 "cashFlowPlan.available" = "Disponibile";
 "cashFlowPlan.accumulated" = "Cumulato";
 "cashFlowPlan.addLine" = "Aggiungi riga";
@@ -2744,3 +2746,91 @@
 "insights.aiTeaser" = "Analisi IA";
 "insights.aiTeaserPlaceholder1" = "La tua spesa media è aumentata del 12% rispetto al mese scorso";
 "insights.aiTeaserPlaceholder2" = "La categoria in maggiore crescita è Ristoranti";
+
+// MARK: - Dev Seed
+
+// Accounts
+"devseed.accountMain" = "Conto Principale";
+"devseed.accountSavings" = "Risparmi USD";
+// Tags
+"devseed.tagWork" = "Lavoro";
+"devseed.tagVacation" = "Vacanze";
+"devseed.tagShared" = "Condiviso";
+"devseed.tagUrgent" = "Urgente";
+"devseed.tagFixed" = "Fisso";
+// Budgets
+"devseed.budgetEatingOut" = "Mangiare fuori";
+"devseed.budgetMobility" = "Mobilità";
+"devseed.budgetFriendsOutings" = "Uscite con amici";
+"devseed.budgetPersonalCare" = "Cura personale";
+"devseed.budgetHomeEssentials" = "Spese fisse casa";
+"devseed.budgetPet" = "Maia 🐶";
+// Scheduled Payments
+"devseed.spGym" = "Palestra";
+"devseed.spRent" = "Affitto";
+"devseed.spPhone" = "Telefono";
+"devseed.spInsurance" = "Assicurazione";
+"devseed.spInternet" = "Internet";
+// Notes — Fixed monthly
+"devseed.noteSalary" = "Stipendio mensile";
+"devseed.noteGymMonthly" = "Palestra mensile";
+"devseed.noteRent" = "Affitto";
+"devseed.notePhonePlan" = "Piano cellulare";
+"devseed.noteElectricity" = "Elettricità";
+"devseed.noteWater" = "Acqua";
+"devseed.noteElectricityWater" = "Luce e acqua";
+"devseed.noteInternetFiber" = "Internet fibra";
+"devseed.noteInsuranceMonthly" = "Assicurazione mensile";
+// Notes — Supermarket
+"devseed.noteSupermarket1" = "Supermercato";
+"devseed.noteSupermarket2" = "Alimentari";
+"devseed.noteSupermarket3" = "Spesa settimanale";
+"devseed.noteSupermarket4" = "Dispensa";
+"devseed.noteSupermarket5" = "Frutta e verdura";
+// Notes — Restaurant
+"devseed.noteLunch" = "Pranzo";
+"devseed.noteDinner" = "Cena";
+"devseed.noteBrunch" = "Brunch";
+"devseed.noteMealWithFriends" = "Pranzo con amici";
+// Notes — Delivery
+"devseed.noteDelivery1" = "Consegna a domicilio";
+"devseed.noteDelivery2" = "Ordine a domicilio";
+"devseed.noteDeliveryFood" = "Delivery cibo";
+// Notes — Transport
+"devseed.noteTaxi" = "Taxi";
+"devseed.noteBus" = "Bus";
+// Notes — Travel
+"devseed.noteHotel" = "Hotel";
+"devseed.noteFlight" = "Volo";
+"devseed.noteTour" = "Tour";
+"devseed.noteExcursion" = "Escursione";
+// Notes — Fuel
+"devseed.noteGasStation" = "Benzinaio";
+"devseed.noteGasoline" = "Benzina";
+"devseed.noteFuel" = "Carburante";
+// Notes — Maintenance
+"devseed.noteRepair" = "Riparazione";
+"devseed.noteCleaning" = "Pulizia";
+"devseed.notePlumber" = "Idraulico";
+"devseed.noteElectrician" = "Elettricista";
+// Notes — Freelance
+"devseed.noteFreelance" = "Progetto freelance";
+"devseed.noteConsulting" = "Consulenza";
+"devseed.noteSideProject" = "Progetto extra";
+// Notes — Transfers
+"devseed.noteTransferTo" = "Trasferimento a %@";
+"devseed.noteTransferFrom" = "Trasferimento da %@";
+// Step labels
+"devseed.stepCategories" = "Preparazione categorie...";
+"devseed.stepAccounts" = "Creazione conti...";
+"devseed.stepTags" = "Creazione tag...";
+"devseed.stepExchangeRates" = "Generazione tassi di cambio...";
+"devseed.stepBudgets" = "Creazione budget...";
+"devseed.stepScheduledPayments" = "Creazione pagamenti pianificati...";
+"devseed.stepSavingBase" = "Salvataggio entità base...";
+"devseed.stepTransactions" = "Generazione transazioni...";
+"devseed.stepInitialBalances" = "Configurazione saldi iniziali...";
+"devseed.stepSaving" = "Salvataggio...";
+"devseed.stepDone" = "Fatto!";
+"devseed.stepDeleting" = "Eliminazione dati...";
+"devseed.stepReloading" = "Ricaricamento dati...";

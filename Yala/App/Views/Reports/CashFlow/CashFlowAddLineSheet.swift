@@ -18,6 +18,7 @@ struct CashFlowAddLineSheet: View {
     @State private var name: String = ""
     @State private var isIncome: Bool = false
     @State private var selectedCategory: Category?
+    @State private var selectedSubcategory: Subcategory?
     @State private var manualAmount: String = ""
     @State private var selectedMethod: EstimationMethod = .average6m
 
@@ -26,33 +27,41 @@ struct CashFlowAddLineSheet: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: DS.Spacing.xl) {
-                    typeToggle
-                    nameField
-                    categoryPicker
-                    amountField
+            ZStack {
+                PanelBackgroundView().dismissKeyboardOnTap()
+
+                ScrollView {
+                    VStack(spacing: DS.Spacing.xl) {
+                        typeToggle
+                        nameField
+                        categoryPicker
+                        if selectedCategory == nil {
+                            amountField
+                        }
+                    }
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
+                    .yalaSafeBottomPadding()
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.top, DS.Spacing.md)
-                .yalaSafeBottomPadding()
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle(L10n.CashFlowPlan.addLine)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(L10n.Action.cancel) { dismiss() }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Action.save) {
-                        createLine()
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
-                    .disabled(name.isEmpty)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    YalaSaveButton(action: {
+                        createLine()
+                        dismiss()
+                    }, isDisabled: name.isEmpty)
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
     }
 
     // MARK: - Type Toggle
@@ -63,6 +72,10 @@ struct CashFlowAddLineSheet: View {
             Text(L10n.CashFlowPlan.incomeSection).tag(true)
         }
         .pickerStyle(.segmented)
+        .onChange(of: isIncome) {
+            selectedCategory = nil
+            selectedSubcategory = nil
+        }
     }
 
     // MARK: - Name
@@ -87,8 +100,14 @@ struct CashFlowAddLineSheet: View {
         return VStack(spacing: DS.Spacing.none) {
             ForEach(filteredCategories, id: \.persistentModelID) { cat in
                 Button {
-                    selectedCategory = cat
-                    if name.isEmpty { name = cat.name }
+                    if selectedCategory?.persistentModelID == cat.persistentModelID {
+                        selectedCategory = nil
+                        selectedSubcategory = nil
+                    } else {
+                        selectedCategory = cat
+                        selectedSubcategory = nil
+                        if name.isEmpty { name = cat.name }
+                    }
                 } label: {
                     HStack(spacing: DS.Spacing.md) {
                         Image(systemName: selectedCategory?.persistentModelID == cat.persistentModelID ? "checkmark.circle.fill" : "circle")
@@ -108,6 +127,43 @@ struct CashFlowAddLineSheet: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+
+                // Subcategories (indented) when this category is selected
+                if selectedCategory?.persistentModelID == cat.persistentModelID,
+                   let subcategories = cat.subcategories?.filter({ $0.isVisible }),
+                   !subcategories.isEmpty {
+                    ForEach(subcategories.sorted(by: { $0.sortOrder < $1.sortOrder }), id: \.persistentModelID) { sub in
+                        Button {
+                            if selectedSubcategory?.persistentModelID == sub.persistentModelID {
+                                selectedSubcategory = nil
+                                name = cat.name
+                            } else {
+                                selectedSubcategory = sub
+                                name = sub.name
+                            }
+                        } label: {
+                            HStack(spacing: DS.Spacing.md) {
+                                Image(systemName: selectedSubcategory?.persistentModelID == sub.persistentModelID ? "checkmark.circle.fill" : "circle")
+                                    .foregroundStyle(selectedSubcategory?.persistentModelID == sub.persistentModelID ? theme.accent : .secondary)
+                                    .font(DS.Typography.caption)
+                                if let iconName = sub.iconName {
+                                    Image(systemName: iconName)
+                                        .foregroundStyle(Color(hex: sub.colorHex ?? sub.category?.colorHex ?? AppConstants.defaultColorHex))
+                                        .frame(width: 20)
+                                }
+                                Text(sub.name)
+                                    .font(DS.Typography.body)
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                            }
+                            .padding(.leading, DS.Spacing.xxl)
+                            .padding(.horizontal, DS.Spacing.lg)
+                            .padding(.vertical, DS.Spacing.sm)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
 
                 if cat.persistentModelID != filteredCategories.last?.persistentModelID {
                     Divider().padding(.leading, DS.Spacing.xxl)
@@ -150,7 +206,8 @@ struct CashFlowAddLineSheet: View {
             sortOrder: maxOrder + 1,
             estimationMethod: method,
             manualAmount: amount,
-            category: selectedCategory
+            category: selectedCategory,
+            subcategory: selectedSubcategory
         )
         viewModel.addLine(line)
     }

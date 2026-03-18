@@ -14,13 +14,13 @@ import SwiftUI
 struct SuggestedLine: Identifiable {
     let id = UUID()
     let category: Category?
+    let subcategory: Subcategory?
     let scheduledPayment: ScheduledPayment?
     let name: String
     let isIncome: Bool
-    let suggestedAmount: Double
-    let estimationMethod: EstimationMethod
+    var suggestedAmount: Double
+    var estimationMethod: EstimationMethod
     let monthsWithActivity: Int
-    let isRecommended: Bool
     var isSelected: Bool
 }
 
@@ -65,91 +65,186 @@ final class CashFlowPlanViewModel {
 
     // MARK: - Setup Suggestions
 
+    /// Cached index for recalculating estimation methods without re-fetching
+    private var cachedIndex: TransactionIndex?
+    private var cachedReferenceDate: Date?
+    private var cachedCurrencyCode: String?
+
     func generateSuggestions(
         transactions: [TransactionItem],
         scheduledPayments: [ScheduledPayment],
-        categories: [Category]
+        categories: [Category],
+        currencyCode: String = ""
     ) {
         let calendar = Calendar.current
         let now = Date.now
         let components = calendar.dateComponents([.year, .month], from: now)
-        let currentMonthStart = calendar.date(from: components)!
+        guard let currentMonthStart = calendar.date(from: components) else { return }
 
-        // Analyze last 6 months of transactions
-        var categoryActivity: [PersistentIdentifier: (months: Set<String>, totalAmount: Double, name: String, isIncome: Bool, category: Category)] = [:]
+        // Build and cache TransactionIndex for method recalculation
+        let validTransactions = transactions.filter { $0.category != nil && $0.balanceAdjustmentType == nil }
+        let resolvedCurrency = currencyCode.isEmpty ? "USD" : currencyCode
+        let index = TransactionIndex(
+            transactions: validTransactions, currencyCode: resolvedCurrency,
+            converter: CurrencyConverter.shared, calendar: calendar
+        )
+        cachedIndex = index
+        cachedReferenceDate = currentMonthStart
+        cachedCurrencyCode = resolvedCurrency
 
-        for tx in transactions {
-            guard let category = tx.category, tx.balanceAdjustmentType == nil else { continue }
-            let monthKey = CashFlowProjectionCalculator.monthKey(for: tx.date, calendar: calendar)
+        // Group key: subcategory ID if available, otherwise category ID
+        struct ActivityKey: Hashable {
+            let subcategoryID: PersistentIdentifier?
+            let categoryID: PersistentIdentifier?
+        }
+
+        var activity: [ActivityKey: (months: Set<String>, name: String, isIncome: Bool, category: Category, subcategory: Subcategory?)] = [:]
+
+        for tx in validTransactions {
+            guard let category = tx.category else { continue }
             let txMonthStart = calendar.dateComponents([.year, .month], from: tx.date)
             guard let txDate = calendar.date(from: txMonthStart) else { continue }
 
-            // Only consider last 6 months
             let monthDiff = calendar.dateComponents([.month], from: txDate, to: currentMonthStart).month ?? 0
             guard monthDiff >= 0 && monthDiff < 6 else { continue }
 
-            let id = category.persistentModelID
-            var entry = categoryActivity[id] ?? (
-                months: Set<String>(), totalAmount: 0,
-                name: category.name, isIncome: category.isIncome, category: category
+            let monthKey = CashFlowProjectionCalculator.monthKey(for: tx.date, calendar: calendar)
+
+            let key: ActivityKey
+            let displayName: String
+            let subcategory: Subcategory?
+
+            if let sub = tx.subcategory {
+                key = ActivityKey(subcategoryID: sub.persistentModelID, categoryID: category.persistentModelID)
+                displayName = sub.name
+                subcategory = sub
+            } else {
+                key = ActivityKey(subcategoryID: nil, categoryID: category.persistentModelID)
+                displayName = category.name
+                subcategory = nil
+            }
+
+            var entry = activity[key] ?? (
+                months: Set<String>(),
+                name: displayName, isIncome: category.isIncome,
+                category: category, subcategory: subcategory
             )
             entry.months.insert(monthKey)
-            entry.totalAmount += abs(tx.amount)
-            categoryActivity[id] = entry
+            activity[key] = entry
         }
 
         var suggestions: [SuggestedLine] = []
 
-        // Category-based suggestions
-        for (_, activity) in categoryActivity {
-            let monthCount = activity.months.count
-            guard monthCount >= 2 else { continue } // Skip 1-month categories
+        for (_, entry) in activity {
+            let monthCount = entry.months.count
+            guard monthCount >= 2 else { continue }
 
-            let avgAmount = activity.totalAmount / Double(monthCount)
-            let isRecommended = monthCount >= 4
+            // Calculate amount using the real calculator (converted currency, same logic as projection)
+            let tempLine = CashFlowLine(
+                name: entry.name,
+                isIncome: entry.isIncome,
+                estimationMethod: .average6m,
+                category: entry.category,
+                subcategory: entry.subcategory
+            )
+            let calculatedAmount = CashFlowProjectionCalculator.estimateAverage(
+                months: 6, line: tempLine, referenceDate: currentMonthStart,
+                index: index, calendar: calendar
+            )
 
             suggestions.append(SuggestedLine(
-                category: activity.category,
+                category: entry.category,
+                subcategory: entry.subcategory,
                 scheduledPayment: nil,
-                name: activity.name,
-                isIncome: activity.isIncome,
-                suggestedAmount: avgAmount,
+                name: entry.name,
+                isIncome: entry.isIncome,
+                suggestedAmount: calculatedAmount,
                 estimationMethod: .average6m,
                 monthsWithActivity: monthCount,
-                isRecommended: isRecommended,
-                isSelected: isRecommended
+                isSelected: monthCount >= 4
             ))
         }
 
-        // ScheduledPayment-based suggestions (always recommended)
-        let existingCategoryIDs = Set(suggestions.compactMap { $0.category?.persistentModelID })
+        // ScheduledPayment-based suggestions
+        let existingSubKeys = Set(suggestions.compactMap { $0.subcategory?.persistentModelID })
+        let existingCatKeys = Set(suggestions.compactMap { $0.category?.persistentModelID })
+
         for payment in scheduledPayments where payment.isActive {
-            // Skip if already covered by a category suggestion linked to same subcategory parent
-            if let sub = payment.subcategory, let parentCat = sub.category,
-               existingCategoryIDs.contains(parentCat.persistentModelID) {
-                continue
-            }
+            let paymentSubKey = payment.subcategory?.persistentModelID
+            let paymentCatKey = payment.subcategory?.category?.persistentModelID
+
+            // Skip if subcategory or category already covered by transaction-based suggestions
+            if let subKey = paymentSubKey, existingSubKeys.contains(subKey) { continue }
+            if let catKey = paymentCatKey, existingCatKeys.contains(catKey) { continue }
 
             suggestions.append(SuggestedLine(
                 category: payment.subcategory?.category,
+                subcategory: payment.subcategory,
                 scheduledPayment: payment,
                 name: payment.name,
                 isIncome: payment.transactionType == "income",
                 suggestedAmount: abs(payment.amount),
                 estimationMethod: .scheduled,
                 monthsWithActivity: 6,
-                isRecommended: true,
                 isSelected: true
             ))
         }
 
-        // Sort: income first, then by amount descending
         suggestions.sort { a, b in
             if a.isIncome != b.isIncome { return a.isIncome }
             return a.suggestedAmount > b.suggestedAmount
         }
 
         suggestedLines = suggestions
+    }
+
+    // MARK: - Update Estimation Method
+
+    func updateEstimationMethod(for lineID: UUID, to method: EstimationMethod, manualAmount: Double? = nil) {
+        guard let idx = suggestedLines.firstIndex(where: { $0.id == lineID }) else { return }
+        suggestedLines[idx].estimationMethod = method
+        suggestedLines[idx].suggestedAmount = calculateAmount(
+            for: suggestedLines[idx], method: method, manualAmount: manualAmount
+        )
+    }
+
+    /// Preview amount for a method without mutating state
+    func previewAmount(for line: SuggestedLine, method: EstimationMethod, manualAmount: Double? = nil) -> Double {
+        calculateAmount(for: line, method: method, manualAmount: manualAmount)
+    }
+
+    private func calculateAmount(for line: SuggestedLine, method: EstimationMethod, manualAmount: Double? = nil) -> Double {
+        if method == .manual {
+            return manualAmount ?? line.suggestedAmount
+        }
+        if method == .scheduled, let payment = line.scheduledPayment {
+            return abs(payment.amount)
+        }
+        guard let index = cachedIndex, let refDate = cachedReferenceDate else {
+            return line.suggestedAmount
+        }
+        let calendar = Calendar.current
+        let tempLine = CashFlowLine(
+            name: line.name,
+            isIncome: line.isIncome,
+            estimationMethod: method,
+            category: line.category,
+            subcategory: line.subcategory
+        )
+        switch method {
+        case .average3m:
+            return CashFlowProjectionCalculator.estimateAverage(months: 3, line: tempLine, referenceDate: refDate, index: index, calendar: calendar)
+        case .average6m:
+            return CashFlowProjectionCalculator.estimateAverage(months: 6, line: tempLine, referenceDate: refDate, index: index, calendar: calendar)
+        case .average12m:
+            return CashFlowProjectionCalculator.estimateAverage(months: 12, line: tempLine, referenceDate: refDate, index: index, calendar: calendar)
+        case .lastMonth:
+            return CashFlowProjectionCalculator.estimateLastMonth(line: tempLine, referenceDate: refDate, index: index, calendar: calendar)
+        case .trend:
+            return CashFlowProjectionCalculator.estimateTrend(line: tempLine, referenceDate: refDate, index: index, calendar: calendar)
+        default:
+            return line.suggestedAmount
+        }
     }
 
     // MARK: - Create Plan
@@ -170,6 +265,7 @@ final class CashFlowPlanViewModel {
                 estimationMethod: method,
                 manualAmount: method == .manual ? suggestion.suggestedAmount : nil,
                 category: suggestion.category,
+                subcategory: suggestion.subcategory,
                 scheduledPayment: suggestion.scheduledPayment
             )
             ctx.insert(line)

@@ -105,6 +105,20 @@ struct DevSeedTransactions {
             return result.isEmpty ? nil : result
         }
 
+        // Pre-compute localized note arrays (avoid repeated L10n lookups inside 730-day loop)
+        let supermarketNotes = [L10n.DevSeed.noteSupermarket1, L10n.DevSeed.noteSupermarket2, L10n.DevSeed.noteSupermarket3, L10n.DevSeed.noteSupermarket4, L10n.DevSeed.noteSupermarket5]
+        let restaurantNotes = [L10n.DevSeed.noteLunch, L10n.DevSeed.noteDinner, L10n.DevSeed.noteBrunch, L10n.DevSeed.noteMealWithFriends]
+        let deliveryNotes = [L10n.DevSeed.noteDelivery1, L10n.DevSeed.noteDelivery2, L10n.DevSeed.noteDeliveryFood]
+        let rideshareNotes = ["Uber", "Bolt", L10n.DevSeed.noteTaxi]
+        let busNote = L10n.DevSeed.noteBus
+        let travelNotes = [L10n.DevSeed.noteHotel, L10n.DevSeed.noteFlight, L10n.DevSeed.noteTour, L10n.DevSeed.noteExcursion]
+        let fuelNotes = [L10n.DevSeed.noteGasStation, L10n.DevSeed.noteGasoline, L10n.DevSeed.noteFuel]
+        let maintenanceNotes = [L10n.DevSeed.noteRepair, L10n.DevSeed.noteCleaning, L10n.DevSeed.notePlumber, L10n.DevSeed.noteElectrician]
+        let freelanceNotes = [L10n.DevSeed.noteFreelance, L10n.DevSeed.noteConsulting, L10n.DevSeed.noteSideProject]
+        let utilityNotes = [L10n.DevSeed.noteElectricity, L10n.DevSeed.noteWater, L10n.DevSeed.noteElectricityWater]
+        let transferToSavings = L10n.DevSeed.noteTransferTo(L10n.DevSeed.accountSavings)
+        let transferFromMain = L10n.DevSeed.noteTransferFrom(L10n.DevSeed.accountMain)
+
         // Iterate day by day
         var currentDate = startDate
         while currentDate <= endDate {
@@ -128,7 +142,7 @@ struct DevSeedTransactions {
                 // Salary
                 insert(
                     date: currentDate, amount: 8500, currency: "PEN",
-                    note: "Sueldo mensual",
+                    note: L10n.DevSeed.noteSalary,
                     sub: subcategoryLookup[L10n.Subcategory.salary],
                     account: principal,
                     tagList: [tags[0]], // Trabajo
@@ -141,10 +155,10 @@ struct DevSeedTransactions {
                 // Gym (day 3)
                 insert(
                     date: currentDate, amount: -150, currency: "PEN",
-                    note: "Gym mensual",
+                    note: L10n.DevSeed.noteGymMonthly,
                     sub: subcategoryLookup[L10n.Subcategory.fitness],
                     account: principal,
-                    scheduledPaymentID: spByName["Gym"]?.id.uuidString,
+                    scheduledPaymentID: spByName[L10n.DevSeed.spGym]?.id.uuidString,
                     createdAtOffset: orderInDay
                 )
                 orderInDay += 1
@@ -154,11 +168,11 @@ struct DevSeedTransactions {
                 // Rent (day 5)
                 insert(
                     date: currentDate, amount: -2200, currency: "PEN",
-                    note: "Alquiler",
+                    note: L10n.DevSeed.noteRent,
                     sub: subcategoryLookup[L10n.Subcategory.rent],
                     account: principal,
                     tagList: [tags[4]], // Fijo
-                    scheduledPaymentID: spByName["Alquiler"]?.id.uuidString,
+                    scheduledPaymentID: spByName[L10n.DevSeed.spRent]?.id.uuidString,
                     createdAtOffset: orderInDay
                 )
                 orderInDay += 1
@@ -168,11 +182,11 @@ struct DevSeedTransactions {
                 // Phone (day 15)
                 insert(
                     date: currentDate, amount: -60, currency: "PEN",
-                    note: "Plan celular",
+                    note: L10n.DevSeed.notePhonePlan,
                     sub: subcategoryLookup[L10n.Subcategory.phone],
                     account: principal,
                     tagList: [tags[4]], // Fijo
-                    scheduledPaymentID: spByName["Teléfono"]?.id.uuidString,
+                    scheduledPaymentID: spByName[L10n.DevSeed.spPhone]?.id.uuidString,
                     createdAtOffset: orderInDay
                 )
                 orderInDay += 1
@@ -207,7 +221,7 @@ struct DevSeedTransactions {
                 let utilAmount = rng.nextDouble(in: 80...200)
                 insert(
                     date: currentDate, amount: -utilAmount.rounded(), currency: "PEN",
-                    note: rng.pick(from: ["Luz", "Agua", "Luz y agua"]),
+                    note: rng.pick(from: utilityNotes),
                     sub: subcategoryLookup[L10n.Subcategory.utilities],
                     account: principal,
                     tagList: [tags[4]], // Fijo
@@ -233,11 +247,11 @@ struct DevSeedTransactions {
                 // Internet (day 25)
                 insert(
                     date: currentDate, amount: -90, currency: "PEN",
-                    note: "Internet fibra",
+                    note: L10n.DevSeed.noteInternetFiber,
                     sub: subcategoryLookup[L10n.Subcategory.utilities],
                     account: principal,
                     tagList: [tags[4]], // Fijo
-                    scheduledPaymentID: spByName["Internet"]?.id.uuidString,
+                    scheduledPaymentID: spByName[L10n.DevSeed.spInternet]?.id.uuidString,
                     createdAtOffset: orderInDay
                 )
                 orderInDay += 1
@@ -247,11 +261,11 @@ struct DevSeedTransactions {
                 // Insurance (day 28)
                 insert(
                     date: currentDate, amount: -180, currency: "PEN",
-                    note: "Seguro mensual",
+                    note: L10n.DevSeed.noteInsuranceMonthly,
                     sub: subcategoryLookup[L10n.Subcategory.insurance],
                     account: principal,
                     tagList: [tags[4]], // Fijo
-                    scheduledPaymentID: spByName["Seguro"]?.id.uuidString,
+                    scheduledPaymentID: spByName[L10n.DevSeed.spInsurance]?.id.uuidString,
                     createdAtOffset: orderInDay
                 )
                 orderInDay += 1
@@ -263,10 +277,9 @@ struct DevSeedTransactions {
             let supermarketDays = [1, 3, 6] // Mon-ish, Wed-ish, Sat-ish
             if supermarketDays.contains(weekday) || (weekday == 4 && rng.chance(0.4)) {
                 let amount = rng.nextDouble(in: 50...200).rounded()
-                let notes = ["Wong", "Plaza Vea", "Metro", "Tottus", "Vivanda"]
                 insert(
                     date: currentDate, amount: -amount, currency: "PEN",
-                    note: rng.pick(from: notes),
+                    note: rng.pick(from: supermarketNotes),
                     sub: subcategoryLookup[L10n.Subcategory.supermarkets],
                     account: principal,
                     tagList: assignTags(&rng),
@@ -278,10 +291,9 @@ struct DevSeedTransactions {
             // Restaurants: 1-2x/week (weekend bias)
             if (isWeekend && rng.chance(0.65)) || (!isWeekend && rng.chance(0.15)) {
                 let amount = rng.nextDouble(in: 30...120).rounded()
-                let notes = ["Almuerzo", "Cena", "Brunch", "Comida con amigos"]
                 insert(
                     date: currentDate, amount: -amount, currency: "PEN",
-                    note: rng.pick(from: notes),
+                    note: rng.pick(from: restaurantNotes),
                     sub: subcategoryLookup[L10n.Subcategory.restaurants],
                     account: principal,
                     tagList: assignTags(&rng),
@@ -293,10 +305,9 @@ struct DevSeedTransactions {
             // Delivery: 1-2x/week
             if rng.chance(0.22) {
                 let amount = rng.nextDouble(in: 20...60).rounded()
-                let notes = ["Rappi", "PedidosYa", "Delivery comida"]
                 insert(
                     date: currentDate, amount: -amount, currency: "PEN",
-                    note: rng.pick(from: notes),
+                    note: rng.pick(from: deliveryNotes),
                     sub: subcategoryLookup[L10n.Subcategory.delivery],
                     account: principal,
                     tagList: assignTags(&rng),
@@ -311,7 +322,7 @@ struct DevSeedTransactions {
                 let isRideshare = rng.chance(0.4)
                 insert(
                     date: currentDate, amount: -amount, currency: "PEN",
-                    note: isRideshare ? rng.pick(from: ["Uber", "InDrive", "Taxi"]) : "Bus",
+                    note: isRideshare ? rng.pick(from: rideshareNotes) : busNote,
                     sub: subcategoryLookup[isRideshare ? L10n.Subcategory.rideshare : L10n.Subcategory.publicTransport],
                     account: principal,
                     tagList: assignTags(&rng),
@@ -344,7 +355,7 @@ struct DevSeedTransactions {
                 let amount = rng.nextDouble(in: 100...500).rounded()
                 insert(
                     date: currentDate, amount: -amount, currency: "PEN",
-                    note: rng.pick(from: ["Hotel", "Vuelo", "Tour", "Excursión"]),
+                    note: rng.pick(from: travelNotes),
                     sub: subcategoryLookup[L10n.Subcategory.travel],
                     account: principal,
                     tagList: [tags[1]], // Vacaciones
@@ -415,7 +426,7 @@ struct DevSeedTransactions {
                 let amount = rng.nextDouble(in: 50...120).rounded()
                 insert(
                     date: currentDate, amount: -amount, currency: "PEN",
-                    note: rng.pick(from: ["Grifo", "Gasolina", "Combustible"]),
+                    note: rng.pick(from: fuelNotes),
                     sub: subcategoryLookup[L10n.Subcategory.fuel],
                     account: principal,
                     tagList: assignTags(&rng),
@@ -429,7 +440,7 @@ struct DevSeedTransactions {
                 let amount = rng.nextDouble(in: 50...300).rounded()
                 insert(
                     date: currentDate, amount: -amount, currency: "PEN",
-                    note: rng.pick(from: ["Reparación", "Limpieza", "Plomero", "Electricista"]),
+                    note: rng.pick(from: maintenanceNotes),
                     sub: subcategoryLookup[L10n.Subcategory.maintenance],
                     account: principal,
                     createdAtOffset: orderInDay
@@ -442,7 +453,7 @@ struct DevSeedTransactions {
                 let amount = rng.nextDouble(in: 200...800).rounded()
                 insert(
                     date: currentDate, amount: amount, currency: "USD",
-                    note: rng.pick(from: ["Freelance project", "Consulting", "Side project"]),
+                    note: rng.pick(from: freelanceNotes),
                     sub: subcategoryLookup[L10n.Subcategory.freelance],
                     account: ahorros,
                     tagList: [tags[0]], // Trabajo
@@ -460,7 +471,7 @@ struct DevSeedTransactions {
                 // Outflow (PEN)
                 insert(
                     date: currentDate, amount: -penAmount, currency: "PEN",
-                    note: "Transferencia a Ahorros USD",
+                    note: transferToSavings,
                     sub: subcategoryLookup[L10n.Subcategory.accountTransferOther],
                     account: principal,
                     balanceAdjustmentType: TransactionType.transfer.rawValue,
@@ -472,7 +483,7 @@ struct DevSeedTransactions {
                 // Inflow (USD)
                 insert(
                     date: currentDate, amount: usdAmount, currency: "USD",
-                    note: "Transferencia desde Cuenta Principal",
+                    note: transferFromMain,
                     sub: subcategoryLookup[L10n.Subcategory.accountTransfer],
                     account: ahorros,
                     balanceAdjustmentType: TransactionType.transfer.rawValue,
@@ -544,7 +555,7 @@ struct DevSeedTransactions {
             amountInPreferredCurrency: 2000 * basePenRate,
             preferredCurrencyCode: "PEN"
         )
-        usdTx.balanceAdjustmentType = "initial_balance"
+        usdTx.balanceAdjustmentType = InitialBalanceService.typeInitialBalance
         usdTx.createdAt = startDate
         context.insert(usdTx)
     }

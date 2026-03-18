@@ -14,6 +14,19 @@ import SwiftData
 enum EstimationMethod: String, CaseIterable {
     case average3m, average6m, average12m
     case lastMonth, manual, trend, custom, scheduled
+
+    var displayName: String {
+        switch self {
+        case .average3m: L10n.CashFlowPlan.average3m
+        case .average6m: L10n.CashFlowPlan.average6m
+        case .average12m: L10n.CashFlowPlan.average12m
+        case .lastMonth: L10n.CashFlowPlan.lastMonth
+        case .manual: L10n.CashFlowPlan.manual
+        case .scheduled: L10n.CashFlowPlan.scheduled
+        case .trend: L10n.CashFlowPlan.trend
+        case .custom: L10n.CashFlowPlan.custom
+        }
+    }
 }
 
 // MARK: - CashFlowLine
@@ -34,6 +47,9 @@ final class CashFlowLine {
 
     @Relationship(deleteRule: .nullify, inverse: \Category.cashFlowLines)
     var category: Category?
+
+    @Relationship(deleteRule: .nullify, inverse: \Subcategory.cashFlowLines)
+    var subcategory: Subcategory?
 
     @Relationship(deleteRule: .nullify, inverse: \ScheduledPayment.cashFlowLines)
     var scheduledPayment: ScheduledPayment?
@@ -63,6 +79,7 @@ final class CashFlowLine {
         estimationMethod: EstimationMethod = .average6m,
         manualAmount: Double? = nil,
         category: Category? = nil,
+        subcategory: Subcategory? = nil,
         scheduledPayment: ScheduledPayment? = nil
     ) {
         self.name = name
@@ -71,6 +88,7 @@ final class CashFlowLine {
         self.estimationMethod = estimationMethod.rawValue
         self.manualAmount = manualAmount
         self.category = category
+        self.subcategory = subcategory
         self.scheduledPayment = scheduledPayment
     }
 }

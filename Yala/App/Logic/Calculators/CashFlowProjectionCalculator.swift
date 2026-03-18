@@ -35,6 +35,7 @@ struct CashFlowMonth {
 struct CashFlowLineResult {
     let lineID: UUID
     let name: String
+    let isIncome: Bool
     let plannedAmount: Double
     let realAmount: Double?
     let difference: Double?
@@ -271,8 +272,8 @@ struct CashFlowProjectionCalculator {
         }
 
         let realAmount: Double?
-        if isPast || isCurrent, let catID = line.category?.persistentModelID {
-            realAmount = index.total(for: catID, monthKey: monthKey)
+        if isPast || isCurrent, (line.subcategory != nil || line.category != nil) {
+            realAmount = lookupTotal(line: line, index: index, monthKey: monthKey)
         } else {
             realAmount = nil
         }
@@ -316,13 +317,24 @@ struct CashFlowProjectionCalculator {
         }
 
         return CashFlowLineResult(
-            lineID: line.id, name: line.name,
+            lineID: line.id, name: line.name, isIncome: line.isIncome,
             plannedAmount: plannedAmount, realAmount: realAmount,
             difference: difference, differencePercent: differencePercent,
             progress: progress, isOverride: isOverride,
             estimationMethod: line.method,
             subcategoryBreakdown: subcategoryBreakdown
         )
+    }
+
+    // MARK: - Lookup (subcategory → category fallback)
+
+    static func lookupTotal(line: CashFlowLine, index: TransactionIndex, monthKey: String) -> Double {
+        if let subID = line.subcategory?.persistentModelID {
+            return index.subcategoryTotal(for: subID, monthKey: monthKey)
+        } else if let catID = line.category?.persistentModelID {
+            return index.total(for: catID, monthKey: monthKey)
+        }
+        return 0
     }
 
     // MARK: - Estimation Methods
@@ -333,13 +345,13 @@ struct CashFlowProjectionCalculator {
     ) -> Double {
         switch line.method {
         case .average3m:
-            return estimateAverage(months: 3, category: line.category, referenceDate: monthDate, index: index, calendar: calendar)
+            return estimateAverage(months: 3, line: line, referenceDate: monthDate, index: index, calendar: calendar)
         case .average6m:
-            return estimateAverage(months: 6, category: line.category, referenceDate: monthDate, index: index, calendar: calendar)
+            return estimateAverage(months: 6, line: line, referenceDate: monthDate, index: index, calendar: calendar)
         case .average12m:
-            return estimateAverage(months: 12, category: line.category, referenceDate: monthDate, index: index, calendar: calendar)
+            return estimateAverage(months: 12, line: line, referenceDate: monthDate, index: index, calendar: calendar)
         case .lastMonth:
-            return estimateLastMonth(category: line.category, referenceDate: monthDate, index: index, calendar: calendar)
+            return estimateLastMonth(line: line, referenceDate: monthDate, index: index, calendar: calendar)
         case .manual:
             return line.manualAmount ?? 0
         case .scheduled:
@@ -348,14 +360,37 @@ struct CashFlowProjectionCalculator {
             }
             return line.manualAmount ?? 0
         case .trend:
-            return estimateTrend(category: line.category, referenceDate: monthDate, index: index, calendar: calendar)
+            return estimateTrend(line: line, referenceDate: monthDate, index: index, calendar: calendar)
         case .custom:
-            return estimateCustom(customMonths: line.customMonths, category: line.category, index: index, calendar: calendar)
+            return estimateCustom(customMonths: line.customMonths, line: line, index: index, calendar: calendar)
         }
     }
 
     // MARK: - Average Estimation
 
+    static func estimateAverage(
+        months: Int, line: CashFlowLine, referenceDate: Date,
+        index: TransactionIndex, calendar: Calendar
+    ) -> Double {
+        guard line.subcategory != nil || line.category != nil else { return 0 }
+
+        var total: Double = 0
+        var monthCount = 0
+
+        for offset in 1...months {
+            guard let monthStart = calendar.date(byAdding: .month, value: -offset, to: referenceDate) else { continue }
+            let key = Self.monthKey(for: monthStart, calendar: calendar)
+            let amount = lookupTotal(line: line, index: index, monthKey: key)
+            if amount > 0 {
+                total += amount
+                monthCount += 1
+            }
+        }
+
+        return monthCount > 0 ? total / Double(monthCount) : 0
+    }
+
+    /// Category-based average (used by calculateOtherExpenses)
     static func estimateAverage(
         months: Int, category: Category?, referenceDate: Date,
         index: TransactionIndex, calendar: Calendar
@@ -381,13 +416,13 @@ struct CashFlowProjectionCalculator {
     // MARK: - Last Month Estimation
 
     static func estimateLastMonth(
-        category: Category?, referenceDate: Date,
+        line: CashFlowLine, referenceDate: Date,
         index: TransactionIndex, calendar: Calendar
     ) -> Double {
-        guard let catID = category?.persistentModelID else { return 0 }
+        guard line.subcategory != nil || line.category != nil else { return 0 }
         guard let lastMonthDate = calendar.date(byAdding: .month, value: -1, to: referenceDate) else { return 0 }
         let key = Self.monthKey(for: lastMonthDate, calendar: calendar)
-        return index.total(for: catID, monthKey: key)
+        return lookupTotal(line: line, index: index, monthKey: key)
     }
 
     // MARK: - Scheduled Estimation
@@ -405,16 +440,16 @@ struct CashFlowProjectionCalculator {
     // MARK: - Trend Estimation (Linear Regression)
 
     static func estimateTrend(
-        category: Category?, referenceDate: Date,
+        line: CashFlowLine, referenceDate: Date,
         index: TransactionIndex, calendar: Calendar
     ) -> Double {
-        guard let catID = category?.persistentModelID else { return 0 }
+        guard line.subcategory != nil || line.category != nil else { return 0 }
 
         var dataPoints: [(x: Double, y: Double)] = []
         for offset in (1...6).reversed() {
             guard let monthStart = calendar.date(byAdding: .month, value: -offset, to: referenceDate) else { continue }
             let key = Self.monthKey(for: monthStart, calendar: calendar)
-            let amount = index.total(for: catID, monthKey: key)
+            let amount = lookupTotal(line: line, index: index, monthKey: key)
             dataPoints.append((x: Double(6 - offset), y: amount))
         }
 
@@ -439,10 +474,10 @@ struct CashFlowProjectionCalculator {
     // MARK: - Custom Estimation
 
     static func estimateCustom(
-        customMonths: [String], category: Category?,
+        customMonths: [String], line: CashFlowLine,
         index: TransactionIndex, calendar: Calendar
     ) -> Double {
-        guard let catID = category?.persistentModelID, !customMonths.isEmpty else { return 0 }
+        guard (line.subcategory != nil || line.category != nil), !customMonths.isEmpty else { return 0 }
 
         var total: Double = 0
         var count = 0
@@ -450,7 +485,7 @@ struct CashFlowProjectionCalculator {
         for monthString in customMonths {
             guard let monthDate = customMonthFormatter.date(from: monthString) else { continue }
             let key = Self.monthKey(for: monthDate, calendar: calendar)
-            total += index.total(for: catID, monthKey: key)
+            total += lookupTotal(line: line, index: index, monthKey: key)
             count += 1
         }
 
