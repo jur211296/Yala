@@ -43,6 +43,7 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-17] cbed5d9 fix: polish cash flow — 17 issue fixes, subcategory support, sheet consistency
 - [2026-03-17] 1e77b5c perf: defer CloudKit remote change refreshes to view navigation
 - [2026-03-17] 957c68b fix: resolve 7 compiler warnings in cash flow views
 - [2026-03-17] dcdfd1f refactor: simplify cash flow — fix N+1 scan, deduplicate, type-safety
@@ -52,12 +53,6 @@ Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅
 - [2026-03-17] 2091123 feat: add cash flow interactions — popover, config, others, add line
 - [2026-03-17] 602c029 feat: add cash flow table view with sticky columns and progress bars
 - [2026-03-17] 37dbf20 feat: add cash flow ViewModel, setup view, and localizations
-- [2026-03-17] 5457b96 feat: add cash flow projection calculator with 28 tests
-- [2026-03-17] ce20eda feat: add cash flow models, schema registration, and feature gate
-- [2026-03-16] 42c62cf feat: add automatic App Store review prompt after moments of value
-- [2026-03-12] 031bc7c feat: split AI consent into processing (voice/image) and insights (smart overview)
-- [2026-03-12] 08883ee fix: AI insights — tip alignment, reactivity, currency format, budget threshold
-- [2026-03-08] 82f4e5c feat: polish onboarding budget step — reframe texts, horizontal pills, live preview card, currency fix
 - [2026-03-08] 9488d0a feat: polish onboarding account step — SectionBox layout, balance guide, validation
 - [2026-03-07] 275392d feat: add Smart Insights personalization — tone, focus, and actionable tips
 - [2026-03-07] 7fcdc22 feat: add contextual AI insight card to PanelView
@@ -763,11 +758,12 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 ## Session Continuity
 
 Last session: 2026-03-17
-Stopped at: Deferred CloudKit refreshes — remote changes queued until view navigation
-Next step: Continuar con siguiente item de Fase 12
+Stopped at: Cash Flow polish — 17 issues fixed, subcategory support, sheet consistency
+Next step: Test manual en simulador del flujo completo de Cash Flow
 Resume context:
-- CloudKit remote changes no longer trigger immediate UI recalculation — deferred to onAppear via `.appliesPendingRemoteChanges()` modifier
-- User actions (save/delete) still trigger immediate refresh via `incrementDataVersion()`
+- 17 issues corregidos: colores income, botón muerto, sheets Yala pattern, subcategoría en config/add, dedup scheduled, header redundante
+- EstimationMethod.displayName extension, calculateAmount helper, AppConstants.defaultColorHex
+- Scroll sync (issue #10) diferido a incremento separado
 - Financial Report MVP funcional, pendiente ajustes y testing
 - **Pendiente ajustes UI:**
   - Drag handles en GroupingReorderSheet — solo Tipo los muestra, los demás no (bug con editMode)
