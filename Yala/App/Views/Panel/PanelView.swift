@@ -249,6 +249,7 @@ struct PanelView: View {
                 SubscriptionView(source: subscriptionBannerSource)
             }
         }
+        .appliesPendingRemoteChanges(sessionState)
         .onAppear {
             viewModel.widgetConfig.columns = DS.Adaptive.columns(sizeClass)
             viewModel.setContext(

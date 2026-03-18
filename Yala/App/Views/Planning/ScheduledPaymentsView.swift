@@ -61,6 +61,7 @@ struct ScheduledPaymentsView: View {
                     }
             }
         }
+        .appliesPendingRemoteChanges(sessionState)
         .onAppear {
             viewModel.setContext(modelContext)
             refreshData()

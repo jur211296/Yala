@@ -216,6 +216,7 @@ struct InboxView: View {
                     selectionBar
                 }
             }
+            .appliesPendingRemoteChanges(sessionState)
             .onAppear {
                 viewModel.setContext(modelContext)
             }

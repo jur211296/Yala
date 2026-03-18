@@ -143,6 +143,7 @@ struct DetailContainerView: View {
                 calculateTrendsData()
                 calculateInsightsData()
             }
+            .appliesPendingRemoteChanges(sessionState)
             .onAppear {
                 dataViewModel.setContext(modelContext)
                 refreshRecordsData()

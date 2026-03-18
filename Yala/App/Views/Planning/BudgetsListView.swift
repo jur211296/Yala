@@ -80,6 +80,7 @@ struct BudgetsListView: View {
         .sheet(isPresented: $showUpgradeSheet) {
             UpgradePromptSheet(feature: .budgets, context: .limitReached)
         }
+        .appliesPendingRemoteChanges(sessionState)
         .onAppear {
             viewModel.setContext(modelContext)
             refreshData()

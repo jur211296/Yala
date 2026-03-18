@@ -157,10 +157,10 @@ final class AppBootstrapper {
                 bootstrapper.remoteChangeTask = Task { @MainActor in
                     try? await Task.sleep(for: .seconds(2))
                     guard !Task.isCancelled else { return }
-                    bootstrapper.sessionState.incrementDataVersion()
+                    bootstrapper.sessionState.markRemoteChangePending()
 
                     #if DEBUG
-                    print("AppBootstrapper: Remote CloudKit change — refreshing UI")
+                    print("AppBootstrapper: Remote CloudKit change — queued for next view navigation")
                     #endif
                 }
             }
@@ -171,6 +171,9 @@ final class AppBootstrapper {
 
     /// Llamar cuando la app se activa (scenePhase == .active)
     func handleBecameActive(context: ModelContext) {
+        // Apply any pending remote CloudKit changes on foreground resume
+        sessionState.applyPendingChangesIfNeeded()
+
         // Re-verify subscription status on foreground resume
         subscriptionCheckTask?.cancel()
         subscriptionCheckTask = Task {

@@ -85,6 +85,7 @@ struct RecordsStandaloneView: View {
                 showFABMenu: $showFABMenu,
                 refreshRecordsData: refreshRecordsData
             ))
+            .appliesPendingRemoteChanges(sessionState)
             .onAppear {
                 dataViewModel.setContext(modelContext)
                 refreshRecordsData()

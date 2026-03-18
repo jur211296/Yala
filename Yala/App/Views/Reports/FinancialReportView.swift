@@ -71,6 +71,7 @@ struct FinancialReportView: View {
                 )
             }
         }
+        .appliesPendingRemoteChanges(sessionState)
         .onAppear {
             recalculate()
             cashFlowViewModel.setContext(modelContext)

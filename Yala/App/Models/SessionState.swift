@@ -393,8 +393,23 @@ class SessionState {
     /// Version counter for data mutations — increment to trigger cross-view refresh
     var dataVersion: Int = 0
 
+    /// Flag for deferred remote CloudKit changes — applied on view navigation, not mid-scroll
+    private var hasPendingRemoteChanges: Bool = false
+
     func incrementDataVersion() {
         dataVersion += 1
+    }
+
+    /// Mark that remote data arrived — views will pick this up on onAppear
+    func markRemoteChangePending() {
+        hasPendingRemoteChanges = true
+    }
+
+    /// Apply pending remote changes (call from onAppear or handleBecameActive)
+    func applyPendingChangesIfNeeded() {
+        guard hasPendingRemoteChanges else { return }
+        hasPendingRemoteChanges = false
+        incrementDataVersion()
     }
 
     // MARK: - Share Extension State
@@ -568,5 +583,17 @@ class SessionState {
 
         // Set initial dateInterval on globalFilters
         self.globalFilters.dateInterval = selectedPeriod.dateInterval(customRange: customDateRange)
+    }
+}
+
+// MARK: - View Extension for Deferred Remote Changes
+
+extension View {
+    /// Applies pending remote CloudKit changes when this view appears.
+    /// Use on main views that observe `sessionState.dataVersion`.
+    func appliesPendingRemoteChanges(_ sessionState: SessionState) -> some View {
+        self.onAppear {
+            sessionState.applyPendingChangesIfNeeded()
+        }
     }
 }
