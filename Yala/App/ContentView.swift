@@ -369,6 +369,7 @@ struct ContentView: View {
         remoteWipeTask = Task {
             let sessionState = SessionState.shared
             sessionState.isReadyForTours = false
+            sessionState.resetToDefaults()
             sessionState.isWipingData = true
 
             // Wait for MainTabView to dismount (prevents @Query crash)

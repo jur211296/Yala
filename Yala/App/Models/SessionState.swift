@@ -361,6 +361,11 @@ class SessionState {
         customDateRange = nil
         clearFilters()
         globalFilters.dateInterval = selectedPeriod.dateInterval()
+
+        // Reset navigation to initial state (important after data wipe)
+        selectedMainTab = .panel
+        selectedDetailTab = .insights
+        selectedPlanningTab = .budgets
     }
 
     // MARK: - Subscription State
