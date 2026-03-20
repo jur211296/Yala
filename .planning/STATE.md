@@ -5,16 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-01-15)
 
 **Core value:** Registrar y entender gastos, cuentas, presupuestos y reportes con claridad
-**Current focus:** Fase 12 — Plataforma Extendida (V1.2)
+**Current focus:** V1.2 — Reportes financieros y mejoras
 
 ## Current Position
 
 Version: 1.2 (en desarrollo)
-Phase: 12 — Plataforma Extendida
-Spec: `.planning/SMART-INSIGHTS-DESIGN.md`
-Plan: Refactor filtros deferred -> Smart Insights tab
-Status: **Fase 12 en progreso** — Cash Flow Plan complete, Pro conversion system complete
-Last activity: 2026-03-17 — Pro conversion system: proactive upsells, telemetry, frequency capping
+Phase: V1.2
+Status: **En desarrollo** — Reportes Financieros (Comparativa + Flujo de Caja), mejoras producción
+Last activity: 2026-03-20 — Cash Flow compact mode, grouped sort, tours, DataWipeService tests
 
 ### Apple Review History (V1.0)
 
@@ -32,27 +30,27 @@ Last activity: 2026-03-17 — Pro conversion system: proactive upsells, telemetr
 - **Privacy policy (Web):** Solo decía "servicio externo de IA" — no nombraba a OpenAI ni detallaba datos
 
 ### Branch Strategy
-- **1.0** = Release (V1.0.1 — Apple approved 2026-03-05, tag `1.0.1`)
-- **1.1** = Desarrollo activo (V1.2: Fase 12, includes all hotfix work)
+- **1.0** = Release (V1.1.1 — producción actual)
+- **1.2** = Desarrollo activo (V1.2: Reportes financieros y mejoras)
 
 Progress: V1.0 ████████████████ 100% ✅
-Progress: V1.1 ████████████████ 100% ✅ (Cerrada 2026-02-13)
-Progress: V1.2 ████████████░░░░ 75% (Fase 11 ✅, Fase 12 pendiente)
+Progress: V1.1.1 ████████████████ 100% ✅ (Producción actual)
+Progress: V1.2 ████████████░░░░ 75% (Reportes Financieros en refinamiento)
 
 ---
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-20] 6340614 test: add DataWipeService tests
+- [2026-03-20] abb2806 feat: redesign cash flow — compact mode, grouped sort, tours, improved layout
+- [2026-03-20] 1456627 fix: polish comparativa — use brand colors for income/expense
+- [2026-03-18] e72ba57 fix: reset navigation to PanelView after data wipe
 - [2026-03-17] cbed5d9 fix: polish cash flow — 17 issue fixes, subcategory support, sheet consistency
 - [2026-03-17] 1e77b5c perf: defer CloudKit remote change refreshes to view navigation
 - [2026-03-17] 957c68b fix: resolve 7 compiler warnings in cash flow views
 - [2026-03-17] dcdfd1f refactor: simplify cash flow — fix N+1 scan, deduplicate, type-safety
 - [2026-03-17] d0c1dd7 feat: add pro conversion system with proactive upsells and telemetry
 - [2026-03-17] f2875e1 feat: add advanced estimation methods, subcategory breakdown, and Pro gates
-- [2026-03-17] 64d0940 feat: add cash flow charts sheet with 5 visualizations
-- [2026-03-17] 2091123 feat: add cash flow interactions — popover, config, others, add line
-- [2026-03-17] 602c029 feat: add cash flow table view with sticky columns and progress bars
-- [2026-03-17] 37dbf20 feat: add cash flow ViewModel, setup view, and localizations
 - [2026-03-08] 9488d0a feat: polish onboarding account step — SectionBox layout, balance guide, validation
 - [2026-03-07] 275392d feat: add Smart Insights personalization — tone, focus, and actionable tips
 - [2026-03-07] 7fcdc22 feat: add contextual AI insight card to PanelView
@@ -527,70 +525,40 @@ Todos deben resolverse para V1.1 (próxima release). Prioridad: crashes > lógic
 **Suscripción:**
 - [x] **BUG-56: Expiración de suscripción Pro no se refleja en tiempo real** — Resuelto (8474ddf): refreshSubscriptionStatus() en handleBecameActive con cancel-before-create Task.
 
-### Bugs QA V1.2 (reportados 2026-03-12)
+### Bugs QA V1.2 (reportados 2026-03-12) — ✅ TODOS VALIDADOS
 
-**Filtros / Lógica:**
-- [ ] **BUG-57: Metric buttons de TrendWidget no bloquean correctamente con filtros de ingreso** — Al filtrar subcategorías de ingreso en Statistics y volver a PanelView, el botón "Gastos" sigue habilitado (debería bloquearse). Al presionarlo se bloquea "Ingresos" y "Balance", quedando en estado incongruente. Con subcategorías de gasto funciona bien (bloquea balance e ingresos). Root cause: `hasExpenseOnlyFilters` en TrendWidget.swift bloquea `type != .expense`, pero debería ser dinámico según el tipo de subcategorías filtradas (expense vs income). Archivo: `App/Views/Panel/TrendWidget.swift` líneas 19-26 y 120-155.
+- [x] **BUG-57: Metric buttons de TrendWidget no bloquean correctamente con filtros de ingreso** ✅
+- [x] **BUG-58: CloudKit remote change triggers excesivos** ✅
+- [x] **BUG-59: ProBadge en FAB no alineado a la derecha** ✅
+- [x] **BUG-60: Data labels en CashFlow no deberían mostrarse en modo Balance** ✅
+- [x] **BUG-61: Cards de resumen rápido en Insights no fuerzan mismo tamaño** ✅
+- [x] **BUG-62: Presupuestos en vista Compromisos se desbordan al cambiar periodo** ✅
+- [x] **BUG-63: Notification primer no activa alertas de presupuestos** ✅
 
-**Performance:**
-- [ ] **BUG-58: CloudKit remote change triggers excesivos — "AppBootstrapper: Remote CloudKit change detected — refreshing UI" aparece triplicado** — Causa lentitud general y hace que la animación de success al crear transacción pestañee/se sienta lenta. Cada cambio remoto de CloudKit dispara múltiples refreshes de UI innecesarios. Investigar: debounce de refreshes, batch CloudKit notifications, o throttle de UI updates.
+### V1.1 features completadas (resumen)
 
-**Visual / Layout:**
-- [ ] **BUG-59: ProBadge en FAB no alineado a la derecha** — En los menús FAB (PanelView, DetailContainerView, RecordsStandaloneView), el ProBadge debería estar alineado a la derecha del botón para verse ordenado. Actualmente está posicionado justo después del texto. Archivos: `App/Views/Panel/PanelView.swift`, `App/Views/Statistics/DetailContainerView.swift`, `App/Views/Records/RecordsStandaloneView.swift` — función `fabMenuButton`.
+- Sistema de temas independientes (6 temas: 3 free + 3 PRO)
+- Smart Insights (rule-based + LLM Pro)
+- iPad/Mac layouts, Siri, Lock Screen widgets, filtros avanzados
+- Cash Flow Plan, sistema conversión Pro, telemetría
+- 56+ bugs de producción resueltos
 
-- [ ] **BUG-60: Data labels en CashFlow no deberían mostrarse en modo Balance** — Las etiquetas de datos sobre barras (cuando hay ≤10 barras) deberían mostrarse solo en modo Ingreso o Gasto, no en Balance (bidireccional). En modo balance los labels son confusos porque hay barras en ambas direcciones. Archivo: `App/Views/Panel/CashFlowWidget.swift` — condición `showLabels` en línea 456.
+### Siguiente: V1.2 — Reportes financieros y mejoras
 
-- [ ] **BUG-61: Cards de resumen rápido en Insights no fuerzan mismo tamaño cuando falta 3ra línea** — Cuando "Promedio diario" es 0 (por filtrar solo ingresos), la card pierde la 3ra línea (variation chip) y queda más corta que las demás. La técnica de `opacity(0)` para reservar espacio no está funcionando correctamente en ese caso. Archivos: `App/Views/Statistics/InsightsTabView.swift` líneas 376-403, `App/Views/Statistics/Components/QuickStatCell.swift`.
+**Prioridad (en orden):**
 
-**Lógica de negocio:**
-- [ ] **BUG-62: Presupuestos en vista Compromisos se desbordan al cambiar periodo a "Este año"** — Los presupuestos son mensuales pero la suma de transacciones al cambiar a "Este año" acumula todo el año, mostrando montos que exceden enormemente el límite mensual. **Decisión:** Los presupuestos deben mantener su propio periodo y mostrar siempre el último visible (mensual → este mes, anual → este año, etc.), ignorando el periodo global de Compromisos. Además, añadir título o nota aclaratoria en la sección de presupuestos dentro de Compromisos indicando el periodo real que se muestra.
+1. **Reportes Financieros > Comparativa** — Refinar detalles pendientes
+2. **Reportes Financieros > Flujo de Caja** — Refinar muchos detalles pendientes
+3. **Cambios ya realizados en 1.2** — (listos, solo validar)
+4. **Mejoras de producción:**
+   - [ ] Limitar exportación de datos: solo algunos periodos Free, los demás PRO
+   - [ ] Onboarding cuenta: teclado tapa todo al escribir nombre + no permitir saldo inicial 0 como default
+   - [ ] Onboarding cuenta: paso/banner/popup adicional explicativo
+   - [ ] Bug widget TopSubcategories en PanelView: % de participación incorrecto
+   - [ ] Notificaciones presupuesto: si se superan varios límites, solo enviar el máximo
+   - [ ] Permitir adelantar un pago planificado
 
-**Notificaciones:**
-- [ ] **BUG-63: Notification primer post-3ra transacción no activa alertas de presupuestos** — Al aceptar notificaciones desde el banner (después de la 3ra transacción), se activan todas las notificaciones seeded excepto las alertas de presupuestos. Las demás (endOfDay, lunchTime, dailyReport, weeklyReport, monthlyReport, scheduledPayments) sí se activan. Archivo: `App/Views/Notifications/NotificationPrimerSheet.swift` línea 89-112 — el loop activa todos los NotificationItem seeded pero las alertas de presupuesto usan un mecanismo diferente (BudgetAlertService con toggle por presupuesto, no NotificationItem).
-
-### Fase 11: Sistema de Temas Independientes (V1.2) — ✅ COMPLETADA (2026-02-19)
-
-Refactorización completa del sistema de colores. 6 temas (3 free + 3 PRO). YalaTheme struct + ThemeColor ShapeStyle + @Observable ThemeManager. Cambio de tema sin reinicio (eliminado `.id(userThemeRaw)`). 0 usos de colores legacy. 12 escenarios QA (Sección 38).
-
-### Fase 11.5: Polish Pre-Fase 12 — ✅ COMPLETADA (2026-02-24)
-
-- [x] POLISH-1: Budget progress bar — hotPink en widget para excedido (consistencia con app)
-- [x] POLISH-2: Badge "Recurrente" en edición de transacción (chip pill en quickActionsBar)
-- [x] POLISH-3: Tipo cuenta tarjeta de crédito + notificación de pago (AccountType, form, reminder)
-
-### Siguiente: Fase 12 — Plataforma Extendida (V1.2)
-
-**Prioridad: Tech Debt del Release Review (10 items)**
-
-Empty States:
-- [x] EMPTY-1: Widgets migrados a `YalaEmptyState` con `Style.widget` (11 widgets, ~200 LOC eliminados)
-- [x] EMPTY-3: Empty state `YalaEmptyState.noAccounts` en Panel cuando 0 cuentas
-- [x] EMPTY-5: Autocomplete muestra "Sin resultados" cuando mención activa sin matches
-
-Accessibility:
-- [x] A11Y-DT: Migrar `.font(.system(size:))` a Dynamic Type — 2 fixes (@ScaledMetric + DT cap), 47 archivos auditados con comentarios A11Y-DT
-
-Code Quality:
-- [x] CODE-20: Tags relationship — already resolved, Tag.swift declares inverse:\TransactionItem.tags (SwiftData only needs one side)
-- [x] CODE-21: Triple save en creación de transfer — reducido a 1 save atómico (8665498)
-- [x] CODE-28: Bulk delete — added processPendingChanges() for @Query consistency (8665498)
-- [x] CODE-30: Removed dead `month`/`year` from Budget model (552c664). `category`/`currencyCode`/`limitAmount` kept — still used.
-- [x] CODE-32: Migrated 3 DispatchQueue.main.asyncAfter → Task.sleep in BudgetPeriodSelectorSheet (552c664)
-- [x] CODE-41: Direct modelContext.save() bypasea DraftService — FALSE ALARM, InboxView already uses DraftService correctly
-- [x] CODE-46: Search views extracted to App/Views/Search/GlobalSearchView.swift (40391ba). ContentView 1212→796 LOC.
-
-Fase 12 completados:
-- [x] iPad/Mac layouts adaptados ✅ (e2a69fd)
-- [x] Línea promedio en gráficas de barras ✅ (44d3b89)
-- [x] Siri registro rápido ✅
-- [x] Lock Screen widgets ✅
-- [x] Filtros avanzados: excluir/incluir en DetailContainerView ✅ (1716c2d..fe9eebd)
-
-Fase 12 siguiente (en orden):
-- [x] **Refactor filtros deferred** — RecordsFiltersView usa estado local, "Aplicar" escribe a SessionState, "X" descarta. Prerequisito para Smart Insights. (81559d6)
-- [x] **Smart Insights** — Nueva tab en Statistics con KPIs, gráficas, textos inteligentes (Free: rule-based, Pro: LLM). Funcionalidad (3439fe3) + UI refinement (daa9b03)
-
-Ver ROADMAP.md para más detalles de Fase 12.
+Ver ROADMAP.md para versiones futuras (V1.3, V2.0, V2.1, V2.2, V3.0+).
 
 ### Pendiente: Reubicación de pasos eliminados del onboarding (post-redesign 82f4e5c)
 
@@ -742,31 +710,16 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 
 ## Deferred Features
 
-### Panel Balance Breakdown (saldo desglosado)
-
-**Status:** Diferido — documentado para implementación futura.
-
-**Concepto:** Mostrar desglose "Disponible / Pendiente" en Panel cuando el usuario tiene tarjetas de crédito con saldo ≠ 0, dando contexto sobre cuánto del saldo total es realmente disponible vs consumo pendiente.
-
-**Complejidades identificadas:**
-- **Panel:** Fila "Disponible / Pendiente" debajo del carousel — requiere patrón visual nuevo (no hay precedente de 2 KPIs lado a lado ahí). Solo mostrar cuando no hay cuenta seleccionada AND existen TCs con saldo ≠ 0.
-- **TrendsTabView:** La gráfica de tendencia de saldo muestra una línea. Si queremos desglose visual, necesitaríamos dos líneas o área apilada — cambio significativo en `TrendChartView`, `TrendWidget`, y procesamiento de datos en `PanelViewModel`.
-- **Conversión multi-divisa:** El desglose necesita convertir saldos de cuentas en distintas divisas a la preferida, usando `BalanceHelper` pattern.
-- **Redundancia parcial:** El carousel ya muestra saldos individuales por cuenta. Evaluar si el desglose agrega valor suficiente vs ruido visual.
-- **Archivos impactados:** `PanelViewModel.swift` (nuevo método `balanceBreakdown()`), `PanelView.swift` (fila condicional), `TrendWidget.swift`, `TrendsTabView.swift`, `TrendChartView.swift`, localization (×6).
+(Ninguna activa)
 
 ## Session Continuity
 
-Last session: 2026-03-17
-Stopped at: Cash Flow polish — 17 issues fixed, subcategory support, sheet consistency
-Next step: Test manual en simulador del flujo completo de Cash Flow
+Last session: 2026-03-20
+Stopped at: Repriorización de roadmap — eliminación de fases, organización por versiones
+Next step: Continuar refinando Reportes Financieros > Comparativa (prioridad 1 de V1.2)
 Resume context:
-- 17 issues corregidos: colores income, botón muerto, sheets Yala pattern, subcategoría en config/add, dedup scheduled, header redundante
-- EstimationMethod.displayName extension, calculateAmount helper, AppConstants.defaultColorHex
-- Scroll sync (issue #10) diferido a incremento separado
-- Financial Report MVP funcional, pendiente ajustes y testing
-- **Pendiente ajustes UI:**
-  - Drag handles en GroupingReorderSheet — solo Tipo los muestra, los demás no (bug con editMode)
-  - Verificar visualmente tamaños de fuente en GroupingChipsBar (reducidos a .caption)
-  - Verificar NetFlowSummaryView se ve alineado con filas de Ingresos/Gastos
-- **Pendiente testing filtros y funcionalidad del Financial Report**
+- Financial Report MVP funcional (Comparativa + Flujo de Caja)
+- Comparativa: bien avanzada, falta refinar detalles
+- Flujo de Caja: bien avanzada, falta refinar MUCHOS detalles
+- Ajustes UI de Cash Flow completados ✅
+- Bugs QA V1.2 (BUG-57 a BUG-63) todos validados ✅
