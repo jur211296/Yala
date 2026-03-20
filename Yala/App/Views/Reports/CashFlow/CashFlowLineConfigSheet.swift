@@ -69,7 +69,7 @@ struct CashFlowLineConfigSheet: View {
         }
         .presentationDetents([.medium, .large])
         .confirmationDialog(
-            L10n.CashFlowPlan.resetConfirmation,
+            L10n.CashFlowPlan.deleteLineConfirmation,
             isPresented: $showDeleteConfirmation,
             titleVisibility: .visible
         ) {
@@ -132,8 +132,10 @@ struct CashFlowLineConfigSheet: View {
                 if selectedMethod == .manual {
                     manualAmountField
                 }
-                Divider().padding(.leading, DS.Spacing.xxl)
-                methodRow(.scheduled, label: L10n.CashFlowPlan.scheduled, enabled: line.scheduledPayment != nil)
+                if line.scheduledPayment != nil {
+                    Divider().padding(.leading, DS.Spacing.xxl)
+                    methodRow(.scheduled, label: L10n.CashFlowPlan.scheduled)
+                }
             }
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .yalaCard(padding: 0)
@@ -149,9 +151,14 @@ struct CashFlowLineConfigSheet: View {
             HStack {
                 Image(systemName: selectedMethod == method ? "circle.inset.filled" : "circle")
                     .foregroundStyle(selectedMethod == method ? theme.accent : .secondary)
-                Text(label)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(enabled ? .primary : .secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(label)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(enabled ? .primary : .secondary)
+                    Text(method.descriptionText)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.tertiary)
+                }
                 Spacer()
                 if proOnly && !isPro {
                     Image(systemName: "lock.fill")
@@ -193,7 +200,7 @@ struct CashFlowLineConfigSheet: View {
             VStack(spacing: DS.Spacing.none) {
                 ForEach(overrides, id: \.monthKey) { override in
                     HStack {
-                        Text(override.monthKey)
+                        Text(formatMonthKey(override.monthKey))
                             .font(DS.Typography.body)
                         Spacer()
                         Text(YalaFormatter.currency(value: override.amount, currencyCode: currencyCode))
@@ -234,6 +241,19 @@ struct CashFlowLineConfigSheet: View {
                 .padding(.vertical, DS.Spacing.md)
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Helpers
+
+    private static let monthKeyParser: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM"
+        return f
+    }()
+
+    private func formatMonthKey(_ key: String) -> String {
+        guard let date = Self.monthKeyParser.date(from: key) else { return key }
+        return date.formatted(.dateTime.month(.wide).year())
     }
 
     // MARK: - Apply

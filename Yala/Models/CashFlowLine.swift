@@ -27,6 +27,19 @@ enum EstimationMethod: String, CaseIterable {
         case .custom: L10n.CashFlowPlan.custom
         }
     }
+
+    var descriptionText: String {
+        switch self {
+        case .average3m: L10n.CashFlowPlan.average3mDesc
+        case .average6m: L10n.CashFlowPlan.average6mDesc
+        case .average12m: L10n.CashFlowPlan.average12mDesc
+        case .lastMonth: L10n.CashFlowPlan.lastMonthDesc
+        case .manual: L10n.CashFlowPlan.manualDesc
+        case .scheduled: L10n.CashFlowPlan.scheduledDesc
+        case .trend: L10n.CashFlowPlan.trendDesc
+        case .custom: L10n.CashFlowPlan.customDesc
+        }
+    }
 }
 
 // MARK: - CashFlowLine

@@ -200,16 +200,47 @@ enum L10n {
         static var emptyState: String { ls("cashFlowPlan.emptyState", comment: "") }
         static var emptyStateMessage: String { ls("cashFlowPlan.emptyStateMessage", comment: "") }
         static var monthsActive: String { ls("cashFlowPlan.monthsActive", comment: "") }
+        static func suggestedSource(_ months: Int) -> String {
+            String(format: ls("cashFlowPlan.suggestedSource", comment: ""), months)
+        }
         static var bannerTitle: String { ls("cashFlowPlan.bannerTitle", comment: "") }
         static var bannerBody: String { ls("cashFlowPlan.bannerBody", comment: "") }
+        static var selectAll: String { ls("cashFlowPlan.selectAll", comment: "") }
+        static var total: String { ls("cashFlowPlan.total", comment: "") }
+        static var lineNameLabel: String { ls("cashFlowPlan.lineNameLabel", comment: "") }
+        static var lineNameHint: String { ls("cashFlowPlan.lineNameHint", comment: "") }
+
+        // Hints
+        static var availableHintTitle: String { ls("cashFlowPlan.availableHintTitle", comment: "") }
+        static var availableHintMessage: String { ls("cashFlowPlan.availableHintMessage", comment: "") }
+        static var accumulatedHintTitle: String { ls("cashFlowPlan.accumulatedHintTitle", comment: "") }
+        static var accumulatedHintMessage: String { ls("cashFlowPlan.accumulatedHintMessage", comment: "") }
+
+        // Edit starting balance
+        static var editStartingBalance: String { ls("cashFlowPlan.editStartingBalance", comment: "") }
+        static var editStartingBalanceSave: String { ls("cashFlowPlan.editStartingBalanceSave", comment: "") }
+
+        // Month summary
+        static func monthSummaryOnTrack(_ percent: Int) -> String {
+            String(format: ls("cashFlowPlan.monthSummaryOnTrack", comment: ""), percent)
+        }
+        static func monthSummaryOver(_ percent: Int) -> String {
+            String(format: ls("cashFlowPlan.monthSummaryOver", comment: ""), percent)
+        }
+        static func monthSummaryUnder(_ percent: Int) -> String {
+            String(format: ls("cashFlowPlan.monthSummaryUnder", comment: ""), percent)
+        }
 
         // Table
         static var available: String { ls("cashFlowPlan.available", comment: "") }
         static var accumulated: String { ls("cashFlowPlan.accumulated", comment: "") }
         static var addLine: String { ls("cashFlowPlan.addLine", comment: "") }
+        static var densityFull: String { ls("cashFlowPlan.densityFull", comment: "") }
+        static var densityIcons: String { ls("cashFlowPlan.densityIcons", comment: "") }
 
         // Config
         static var estimationMethod: String { ls("cashFlowPlan.estimationMethod", comment: "") }
+        static var calculationMethodTitle: String { ls("cashFlowPlan.calculationMethodTitle", comment: "") }
         static var average3m: String { ls("cashFlowPlan.average3m", comment: "") }
         static var average6m: String { ls("cashFlowPlan.average6m", comment: "") }
         static var average12m: String { ls("cashFlowPlan.average12m", comment: "") }
@@ -219,12 +250,23 @@ enum L10n {
         static var trend: String { ls("cashFlowPlan.trend", comment: "") }
         static var custom: String { ls("cashFlowPlan.custom", comment: "") }
         static var contextLabel: String { ls("cashFlowPlan.context", comment: "") }
+
+        // Method descriptions
+        static var average3mDesc: String { ls("cashFlowPlan.average3mDesc", comment: "") }
+        static var average6mDesc: String { ls("cashFlowPlan.average6mDesc", comment: "") }
+        static var average12mDesc: String { ls("cashFlowPlan.average12mDesc", comment: "") }
+        static var lastMonthDesc: String { ls("cashFlowPlan.lastMonthDesc", comment: "") }
+        static var manualDesc: String { ls("cashFlowPlan.manualDesc", comment: "") }
+        static var scheduledDesc: String { ls("cashFlowPlan.scheduledDesc", comment: "") }
+        static var trendDesc: String { ls("cashFlowPlan.trendDesc", comment: "") }
+        static var customDesc: String { ls("cashFlowPlan.customDesc", comment: "") }
         static var trendLabel: String { ls("cashFlowPlan.trendLabel", comment: "") }
         static var rangeLabel: String { ls("cashFlowPlan.rangeLabel", comment: "") }
 
         // Popover
         static var plan: String { ls("cashFlowPlan.plan", comment: "") }
         static var real: String { ls("cashFlowPlan.real", comment: "") }
+        static var realIncome: String { ls("cashFlowPlan.realIncome", comment: "") }
         static var difference: String { ls("cashFlowPlan.difference", comment: "") }
         static var adjustAmount: String { ls("cashFlowPlan.adjustAmount", comment: "") }
 
@@ -237,6 +279,7 @@ enum L10n {
         // Actions
         static var resetPlan: String { ls("cashFlowPlan.resetPlan", comment: "") }
         static var resetConfirmation: String { ls("cashFlowPlan.resetConfirmation", comment: "") }
+        static var deleteLineConfirmation: String { ls("cashFlowPlan.deleteLineConfirmation", comment: "") }
         static func suggestPayment(_ name: String) -> String {
             String(format: ls("cashFlowPlan.suggestPayment", comment: ""), name)
         }
@@ -3871,6 +3914,22 @@ enum L10n {
         static var settingsPersonalizationMessage: String { ls("tipkit.settings.personalization.message", comment: "") }
         static var settingsTutorials: String { ls("tipkit.settings.tutorials.title", comment: "") }
         static var settingsTutorialsMessage: String { ls("tipkit.settings.tutorials.message", comment: "") }
+        // Cash Flow Setup Tour
+        static var cfSetupBanner: String { ls("tipkit.cfSetup.banner.title", comment: "") }
+        static var cfSetupBannerMessage: String { ls("tipkit.cfSetup.banner.message", comment: "") }
+        static var cfSetupLine: String { ls("tipkit.cfSetup.line.title", comment: "") }
+        static var cfSetupLineMessage: String { ls("tipkit.cfSetup.line.message", comment: "") }
+        static var cfSetupStarting: String { ls("tipkit.cfSetup.starting.title", comment: "") }
+        static var cfSetupStartingMessage: String { ls("tipkit.cfSetup.starting.message", comment: "") }
+        static var cfSetupCreate: String { ls("tipkit.cfSetup.create.title", comment: "") }
+        static var cfSetupCreateMessage: String { ls("tipkit.cfSetup.create.message", comment: "") }
+        // Cash Flow Table Tour
+        static var cfTableCell: String { ls("tipkit.cfTable.cell.title", comment: "") }
+        static var cfTableCellMessage: String { ls("tipkit.cfTable.cell.message", comment: "") }
+        static var cfTableAvailable: String { ls("tipkit.cfTable.available.title", comment: "") }
+        static var cfTableAvailableMessage: String { ls("tipkit.cfTable.available.message", comment: "") }
+        static var cfTableAdd: String { ls("tipkit.cfTable.add.title", comment: "") }
+        static var cfTableAddMessage: String { ls("tipkit.cfTable.add.message", comment: "") }
     }
 
     // MARK: - Dev Seed (DEBUG only)

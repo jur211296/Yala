@@ -15,6 +15,7 @@ struct FinancialReportView: View {
     @State private var viewModel = FinancialReportViewModel()
     @State private var cashFlowViewModel = CashFlowPlanViewModel()
     @State private var selectedTab: ReportTab = .comparativa
+    @State private var cashFlowCompactMode = false
     @State private var showCustomDatePicker = false
     @State private var isPresentingSettings = false
     @State private var recalculateTask: Task<Void, Never>?
@@ -108,13 +109,26 @@ struct FinancialReportView: View {
     // MARK: - Navigation Chips
 
     private var navigationChipsBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: DS.Spacing.sm) {
-                ForEach(ReportTab.allCases) { tab in
-                    navigationChipButton(for: tab)
+        VStack(spacing: DS.Spacing.sm) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DS.Spacing.sm) {
+                    ForEach(ReportTab.allCases) { tab in
+                        navigationChipButton(for: tab)
+                    }
                 }
+                .padding(.horizontal, DS.Spacing.lg)
             }
-            .padding(.horizontal, DS.Spacing.lg)
+
+            if selectedTab == .flujoDeCaja && cashFlowViewModel.hasPlan {
+                Picker("", selection: $cashFlowCompactMode.animation(.easeInOut(duration: DS.Animation.fast))) {
+                    Label(L10n.CashFlowPlan.densityFull, systemImage: "text.justify.left")
+                        .tag(false)
+                    Label(L10n.CashFlowPlan.densityIcons, systemImage: "square.grid.3x3")
+                        .tag(true)
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, DS.Spacing.lg)
+            }
         }
     }
 
@@ -210,13 +224,19 @@ struct FinancialReportView: View {
 
     @ViewBuilder
     private var cashFlowContent: some View {
-        if cashFlowViewModel.hasPlan {
+        if transactions.isEmpty {
+            ScrollView {
+                emptyState
+                    .padding(.top, DS.Spacing.xxl)
+            }
+        } else if cashFlowViewModel.hasPlan {
             CashFlowTableView(
                 viewModel: cashFlowViewModel,
                 transactions: transactions,
                 categories: categories,
                 scheduledPayments: scheduledPayments,
-                currencyCode: preferredCurrencyCode
+                currencyCode: preferredCurrencyCode,
+                compactMode: cashFlowCompactMode
             )
         } else {
             CashFlowSetupView(

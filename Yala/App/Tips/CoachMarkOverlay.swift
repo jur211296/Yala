@@ -126,6 +126,8 @@ struct CoachMarkOverlay: View {
     @State private var showTooltip = false
     /// Prevents interaction during transitions and initial appearance
     @State private var isTransitioning = false
+    /// Bumped after programmatic scroll to force re-evaluation of anchor frames
+    @State private var scrollSettleToken = 0
 
     private var currentStep: CoachMarkStep? {
         guard currentIndex < steps.count else { return nil }
@@ -154,6 +156,8 @@ struct CoachMarkOverlay: View {
     }
 
     var body: some View {
+        // scrollSettleToken dependency forces re-evaluation after programmatic scroll
+        let _ = scrollSettleToken
         ZStack {
             if let step = currentStep, let frame = resolveFrame(for: step) {
                 let rect = spotlightRect(for: step, frame: frame)
@@ -238,6 +242,7 @@ struct CoachMarkOverlay: View {
 
         // Wait for scroll to settle, then show
         DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.normal + 0.15) {
+            scrollSettleToken += 1
             isTransitioning = false
             if !isVisible {
                 dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.slow)) {

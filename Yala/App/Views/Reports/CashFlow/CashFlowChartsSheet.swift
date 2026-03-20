@@ -94,14 +94,14 @@ struct CashFlowChartsSheet: View {
                     x: .value("Month", month.date),
                     y: .value("Amount", month.totalIncome)
                 )
-                .foregroundStyle(DS.Semantic.successForeground.opacity(0.8))
+                .foregroundStyle(Color.electricIndigo.opacity(0.8))
                 .position(by: .value("Type", "Income"))
 
                 BarMark(
                     x: .value("Month", month.date),
                     y: .value("Amount", month.totalExpense)
                 )
-                .foregroundStyle(DS.Semantic.errorForeground.opacity(0.8))
+                .foregroundStyle(Color.hotPink.opacity(0.8))
                 .position(by: .value("Type", "Expense"))
             }
             .chartXAxis {
@@ -164,7 +164,7 @@ struct CashFlowChartsSheet: View {
                         x: .value("Month", month.date),
                         y: .value("Real", realExpense)
                     )
-                    .foregroundStyle(realExpense > month.totalExpense ? DS.Semantic.errorForeground.opacity(0.8) : DS.Semantic.successForeground.opacity(0.8))
+                    .foregroundStyle(realExpense > month.totalExpense ? Color.hotPink.opacity(0.8) : Color.electricIndigo.opacity(0.8))
                     .position(by: .value("Type", "Real"))
                 }
                 .chartXAxis {

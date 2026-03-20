@@ -43,6 +43,8 @@ final class CashFlowPlanViewModel {
     var showChartsSheet: Bool = false
     var showOthersBreakdown: Bool = false
     var showAddLine: Bool = false
+    var addLineIsIncome: Bool = false
+    var showEditStartingBalance: Bool = false
 
     func setContext(_ ctx: ModelContext) {
         modelContext = ctx
@@ -196,6 +198,14 @@ final class CashFlowPlanViewModel {
         }
 
         suggestedLines = suggestions
+    }
+
+    // MARK: - Select All
+
+    func selectAllSuggestedLines() {
+        for index in suggestedLines.indices {
+            suggestedLines[index].isSelected = true
+        }
     }
 
     // MARK: - Update Estimation Method
@@ -417,6 +427,20 @@ final class CashFlowPlanViewModel {
             currencyCode: currencyCode,
             converter: converter
         )
+    }
+
+    // MARK: - Update Starting Balance
+
+    func updateStartingBalance(_ newBalance: Double) {
+        guard let plan else { return }
+        plan.startingBalance = newBalance
+        do {
+            try plan.modelContext?.save()
+        } catch {
+            #if DEBUG
+            print("CashFlowPlanViewModel: Error updating starting balance: \(error)")
+            #endif
+        }
     }
 
     // MARK: - Reset

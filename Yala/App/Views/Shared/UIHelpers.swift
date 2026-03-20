@@ -330,6 +330,49 @@ struct YalaFormatter {
         return currency(value: value, currencyCode: currencyCode)
     }
 
+    /// Compact table cell: no currency prefix, "9,999" / "10.5k" / "101k"
+    static func amountCompactTable(value: Double) -> String {
+        let absValue = abs(value)
+        let sign = value < 0 ? "-" : ""
+        if absValue >= 100_000 {
+            return String(format: "%@%.0fk", sign, absValue / 1000)
+        }
+        if absValue >= 10_000 {
+            let k = absValue / 1000
+            let formatted = k.truncatingRemainder(dividingBy: 1) == 0
+                ? String(format: "%@%.0fk", sign, k)
+                : String(format: "%@%.1fk", sign, k)
+            return formatted
+        }
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        let formattedNumber = formatter.string(from: NSNumber(value: absValue)) ?? "0"
+        return "\(sign)\(formattedNumber)"
+    }
+
+    /// Cash flow table cell: forced currency symbol + compact. "S/ 9,999" / "S/ 10.5k"
+    static func amountCashFlowCell(value: Double, currencyCode: String) -> String {
+        let sym = currencySymbols[currencyCode] ?? currencyCode
+        let absValue = abs(value)
+        let sign = value < 0 ? "-" : ""
+        if absValue >= 100_000 {
+            return String(format: "%@%@ %.0fk", sign, sym, absValue / 1000)
+        }
+        if absValue >= 10_000 {
+            let k = absValue / 1000
+            if k.truncatingRemainder(dividingBy: 1) == 0 {
+                return String(format: "%@%@ %.0fk", sign, sym, k)
+            }
+            return String(format: "%@%@ %.1fk", sign, sym, k)
+        }
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        let formattedNumber = formatter.string(from: NSNumber(value: absValue)) ?? "0"
+        return "\(sign)\(sym) \(formattedNumber)"
+    }
+
     /// Compact axis label: 1500 → "2K", -40000 → "-40K", 500 → "500"
     static func axisK(_ value: Double) -> String {
         let absValue = abs(value)

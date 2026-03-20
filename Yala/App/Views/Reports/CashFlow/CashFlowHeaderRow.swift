@@ -9,7 +9,9 @@ import SwiftUI
 
 struct CashFlowHeaderRow: View {
     let title: String
+    let isIncome: Bool
     @Binding var isCollapsed: Bool
+    var compactMode: Bool = false
 
     var body: some View {
         Button {
@@ -17,17 +19,36 @@ struct CashFlowHeaderRow: View {
                 isCollapsed.toggle()
             }
         } label: {
-            HStack(spacing: DS.Spacing.sm) {
-                Text(title.uppercased())
-                    .font(DS.Typography.labelSmall)
-                    .foregroundStyle(.secondary)
-                Image(systemName: "chevron.down")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.tertiary)
-                    .rotationEffect(.degrees(isCollapsed ? -90 : 0))
+            HStack(spacing: compactMode ? DS.Spacing.none : DS.Spacing.sm) {
+                if compactMode {
+                    ZStack {
+                        Circle()
+                            .fill(isIncome ? Color.electricIndigo : Color.hotPink)
+                            .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
+                        Image(systemName: isIncome ? "arrow.up.right" : "arrow.down.right")
+                            .font(.system(size: DS.Icon.sizeSmall, weight: .semibold))
+                            .foregroundStyle(.white)
+                    }
+                } else {
+                    Image(systemName: isIncome ? "arrow.up.right" : "arrow.down.right")
+                        .font(.caption2)
+                        .foregroundStyle(isIncome ? Color.electricIndigo : Color.hotPink)
+                        .frame(width: DS.Chip.dotSize)
+
+                    Text(title)
+                        .font(DS.Typography.label)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.primary)
+
+                    Image(systemName: "chevron.down")
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.tertiary)
+                        .rotationEffect(.degrees(isCollapsed ? -90 : 0))
+                }
+
                 Spacer()
             }
-            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.horizontal, compactMode ? DS.Spacing.sm : DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.sm)
             .contentShape(Rectangle())
         }

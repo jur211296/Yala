@@ -21,6 +21,12 @@ struct CashFlowSetupView: View {
     @State private var startingBalance: String = ""
     @State private var editingLine: SuggestedLine?
 
+    // Tour
+    @AppStorage("hasSeenCashFlowSetupTour") private var hasSeenTour = false
+    @State private var showTour = false
+    @State private var tourIndex = 0
+    @State private var setupScrollProxy: ScrollViewProxy?
+
     @Environment(\.yalaTheme) private var theme
 
     // MARK: - Computed
@@ -39,6 +45,10 @@ struct CashFlowSetupView: View {
 
     private var netFlow: Double { selectedIncome - selectedExpense }
 
+    private var allSelected: Bool {
+        viewModel.suggestedLines.allSatisfy(\.isSelected)
+    }
+
     private var incomeLines: [SuggestedLine] {
         viewModel.suggestedLines.filter(\.isIncome)
     }
@@ -50,35 +60,46 @@ struct CashFlowSetupView: View {
     // MARK: - Body
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: DS.Spacing.xl) {
-                headerSection
-                if viewModel.suggestedLines.isEmpty {
-                    emptyState
-                } else {
-                    bannerSection
-                    if !incomeLines.isEmpty {
-                        lineSection(
-                            title: L10n.CashFlowPlan.incomeSection,
-                            lines: incomeLines,
-                            isIncome: true
-                        )
+        ScrollViewReader { scrollProxy in
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: DS.Spacing.xl) {
+                    headerSection
+                    if viewModel.suggestedLines.isEmpty {
+                        emptyState
+                    } else {
+                        bannerSection
+                            .coachMarkAnchor("cfSetupBanner")
+                        if !allSelected {
+                            selectAllButton
+                        }
+                        if !incomeLines.isEmpty {
+                            lineSection(
+                                title: L10n.CashFlowPlan.incomeSection,
+                                lines: incomeLines,
+                                isIncome: true
+                            )
+                            .coachMarkAnchor("cfSetupLine")
+                        }
+                        if !expenseLines.isEmpty {
+                            lineSection(
+                                title: L10n.CashFlowPlan.expenseSection,
+                                lines: expenseLines,
+                                isIncome: false
+                            )
+                        }
+                        startingBalanceSection
+                            .coachMarkAnchor("cfSetupStarting")
+                        summarySection
+                        createButton
+                            .coachMarkAnchor("cfSetupCreate")
                     }
-                    if !expenseLines.isEmpty {
-                        lineSection(
-                            title: L10n.CashFlowPlan.expenseSection,
-                            lines: expenseLines,
-                            isIncome: false
-                        )
-                    }
-                    summarySection
-                    startingBalanceSection
-                    createButton
                 }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.sm)
+                .yalaSafeBottomPadding()
             }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.top, DS.Spacing.sm)
-            .yalaSafeBottomPadding()
+            .scrollDisabled(showTour)
+            .onAppear { setupScrollProxy = scrollProxy }
         }
         .onAppear {
             viewModel.generateSuggestions(
@@ -94,6 +115,20 @@ struct CashFlowSetupView: View {
                 currencyCode: currencyCode,
                 viewModel: viewModel
             )
+        }
+        .coachMarkOverlay(
+            steps: CashFlowSetupTourSteps.steps,
+            isPresented: $showTour,
+            currentIndex: $tourIndex,
+            scrollProxy: setupScrollProxy
+        ) {
+            hasSeenTour = true
+        }
+        .task {
+            try? await Task.sleep(for: .seconds(1))
+            if !viewModel.suggestedLines.isEmpty && !hasSeenTour {
+                showTour = true
+            }
         }
     }
 
@@ -142,6 +177,25 @@ struct CashFlowSetupView: View {
         .padding(.top, DS.Spacing.xxl)
     }
 
+    // MARK: - Select All
+
+    private var selectAllButton: some View {
+        Button {
+            viewModel.selectAllSuggestedLines()
+        } label: {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(DS.Typography.body)
+                Text(L10n.CashFlowPlan.selectAll)
+                    .font(DS.Typography.body)
+                    .fontWeight(.medium)
+            }
+            .foregroundStyle(theme.accent)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+        .buttonStyle(.plain)
+    }
+
     // MARK: - Line Section
 
     private func lineSection(title: String, lines: [SuggestedLine], isIncome: Bool) -> some View {
@@ -185,10 +239,14 @@ struct CashFlowSetupView: View {
             }
             .buttonStyle(.plain)
 
-            Image(systemName: iconName)
-                .foregroundStyle(Color(hex: colorHex))
-                .font(DS.Typography.body)
-                .frame(width: 24)
+            ZStack {
+                Circle()
+                    .fill(Color(hex: colorHex))
+                    .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
+                Image(systemName: iconName)
+                    .font(.system(size: DS.Icon.sizeSmall, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(line.name)
@@ -199,7 +257,7 @@ struct CashFlowSetupView: View {
                         .font(DS.Typography.caption)
                         .foregroundStyle(.tertiary)
                 } else {
-                    Text("\(line.monthsWithActivity) \(L10n.CashFlowPlan.monthsActive)")
+                    Text(L10n.CashFlowPlan.suggestedSource(line.monthsWithActivity))
                         .font(DS.Typography.caption)
                         .foregroundStyle(.tertiary)
                 }
@@ -209,7 +267,7 @@ struct CashFlowSetupView: View {
 
             Text(YalaFormatter.currency(value: line.suggestedAmount, currencyCode: currencyCode))
                 .font(DS.Typography.body)
-                .foregroundStyle(line.isIncome ? DS.Semantic.successForeground : .primary)
+                .foregroundStyle(line.isIncome ? Color.electricIndigo : .primary)
                 .monospacedDigit()
 
             Button {
@@ -230,13 +288,13 @@ struct CashFlowSetupView: View {
 
     private var summarySection: some View {
         VStack(spacing: DS.Spacing.sm) {
-            summaryRow(label: L10n.CashFlow.income, amount: selectedIncome, color: DS.Semantic.successForeground)
-            summaryRow(label: L10n.CashFlow.expense, amount: -selectedExpense, color: DS.Semantic.errorForeground)
+            summaryRow(label: L10n.CashFlow.income, amount: selectedIncome, color: Color.electricIndigo)
+            summaryRow(label: L10n.CashFlow.expense, amount: -selectedExpense, color: Color.hotPink)
             Divider()
             summaryRow(
                 label: L10n.CashFlowPlan.available,
                 amount: netFlow,
-                color: netFlow >= 0 ? DS.Semantic.successForeground : DS.Semantic.errorForeground,
+                color: netFlow >= 0 ? Color.electricIndigo : Color.hotPink,
                 isBold: true
             )
         }
@@ -375,7 +433,7 @@ struct CashFlowMethodPickerSheet: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
-            .navigationTitle(L10n.CashFlowPlan.estimationMethod)
+            .navigationTitle(L10n.CashFlowPlan.calculationMethodTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -388,13 +446,13 @@ struct CashFlowMethodPickerSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
     }
 
     // MARK: - Helpers
 
     private var availableMethods: [EstimationMethod] {
-        var methods: [EstimationMethod] = [.average6m, .average3m, .average12m, .lastMonth, .manual]
+        var methods: [EstimationMethod] = [.average6m, .average3m, .lastMonth, .manual]
         if line.scheduledPayment != nil {
             methods.insert(.scheduled, at: 0)
         }
@@ -411,9 +469,14 @@ struct CashFlowMethodPickerSheet: View {
                     .foregroundStyle(selectedMethod == method ? theme.accent : .secondary)
                     .font(DS.Typography.headline)
 
-                Text(methodDisplayName(method))
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.primary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(methodDisplayName(method))
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.primary)
+                    Text(method.descriptionText)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.tertiary)
+                }
 
                 Spacer()
             }

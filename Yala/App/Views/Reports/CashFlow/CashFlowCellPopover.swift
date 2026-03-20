@@ -14,10 +14,15 @@ struct CashFlowCellPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            // Title
-            Text("\(lineResult.name) — \(monthLabel)")
-                .font(DS.Typography.label)
-                .foregroundStyle(.primary)
+            // Header
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(lineResult.name)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+                Text(monthLabel)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
 
             Divider()
 
@@ -26,7 +31,7 @@ struct CashFlowCellPopover: View {
 
             // Real (only for past/current)
             if let real = lineResult.realAmount {
-                detailRow(label: L10n.CashFlowPlan.real, value: real)
+                detailRow(label: lineResult.isIncome ? L10n.CashFlowPlan.realIncome : L10n.CashFlowPlan.real, value: real)
 
                 // Difference
                 if let diff = lineResult.difference {
@@ -38,11 +43,12 @@ struct CashFlowCellPopover: View {
                         HStack(spacing: DS.Spacing.xs) {
                             Text(YalaFormatter.currency(value: diff, currencyCode: currencyCode))
                                 .font(DS.Typography.amountSmall)
+                                .fontWeight(.semibold)
                                 .foregroundStyle(differenceColor(diff))
                             if isOnTrack(diff) {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(DS.Typography.captionSmall)
-                                    .foregroundStyle(DS.Semantic.successForeground)
+                                    .foregroundStyle(Color.electricIndigo)
                             }
                         }
                     }
@@ -61,7 +67,7 @@ struct CashFlowCellPopover: View {
             }
         }
         .padding(DS.Spacing.lg)
-        .frame(width: 240)
+        .frame(width: 280)
     }
 
     // MARK: - Helpers
@@ -78,12 +84,12 @@ struct CashFlowCellPopover: View {
         }
     }
 
-    /// For income: diff > 0 means earned more → green. For expense: diff < 0 means spent less → green.
+    /// For income: diff > 0 means earned more → indigo. For expense: diff < 0 means spent less → indigo.
     private func differenceColor(_ diff: Double) -> Color {
         if lineResult.isIncome {
-            return diff >= 0 ? DS.Semantic.successForeground : DS.Semantic.errorForeground
+            return diff >= 0 ? Color.electricIndigo : Color.hotPink
         }
-        return diff > 0 ? DS.Semantic.errorForeground : DS.Semantic.successForeground
+        return diff > 0 ? Color.hotPink : Color.electricIndigo
     }
 
     /// On track: income earned >= plan (diff >= 0), expense spent <= plan (diff <= 0)
@@ -92,7 +98,7 @@ struct CashFlowCellPopover: View {
     }
 
     private var monthLabel: String {
-        month.date.formatted(.dateTime.month(.abbreviated))
+        month.date.formatted(.dateTime.month(.abbreviated).year())
     }
 
     private var methodLabel: String {

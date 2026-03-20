@@ -14,6 +14,7 @@ struct CashFlowCellView: View {
     let width: CGFloat
     let height: CGFloat
 
+    @Environment(\.yalaTheme) private var theme
     @State private var showPopover = false
 
     var body: some View {
@@ -45,12 +46,12 @@ struct CashFlowCellView: View {
     }
 
     private var amountText: some View {
-        Text(YalaFormatter.currencyCompact(value: displayAmount, currencyCode: currencyCode))
-            .font(DS.Typography.amountSmall)
+        Text(YalaFormatter.amountCashFlowCell(value: displayAmount, currencyCode: currencyCode))
+            .font(DS.Typography.labelSmall)
             .foregroundStyle(amountColor)
             .fontWeight(lineResult.isOverride ? .bold : .regular)
             .lineLimit(1)
-            .minimumScaleFactor(0.7)
+            .minimumScaleFactor(0.6)
     }
 
     private var amountColor: Color {
@@ -60,9 +61,9 @@ struct CashFlowCellView: View {
         if month.isPast, let diff = lineResult.difference {
             if abs(diff) > lineResult.plannedAmount * 0.1 {
                 if lineResult.isIncome {
-                    return diff >= 0 ? DS.Semantic.successForeground : DS.Semantic.errorForeground
+                    return diff >= 0 ? Color.electricIndigo : Color.hotPink
                 }
-                return diff > 0 ? DS.Semantic.errorForeground : DS.Semantic.successForeground
+                return diff > 0 ? Color.hotPink : Color.electricIndigo
             }
         }
         return .secondary
@@ -72,7 +73,8 @@ struct CashFlowCellView: View {
 
     private func progressBar(progress: Double) -> some View {
         GeometryReader { geo in
-            let barWidth = min(geo.size.width - 8, geo.size.width * min(1.0, progress))
+            let clampedProgress = min(1.0, max(0, progress))
+            let barWidth = geo.size.width * clampedProgress
             ZStack(alignment: .leading) {
                 Capsule()
                     .fill(Color.gray.opacity(0.15))
@@ -87,9 +89,8 @@ struct CashFlowCellView: View {
     }
 
     private func progressColor(_ progress: Double) -> Color {
-        if progress > 1.0 { return DS.Semantic.errorForeground }
-        if progress > 0.8 { return DS.Semantic.warningForeground }
-        return DS.Semantic.successForeground
+        if progress > 1.0 { return Color.hotPink }
+        return theme.accent
     }
 
 }

@@ -164,10 +164,15 @@ struct CashFlowProjectionCalculator {
                 .compactMap { $0.category?.persistentModelID }
         )
 
-        let incomeLines = lines.filter { $0.isEnabled && $0.isIncome }
-            .sorted { $0.sortOrder < $1.sortOrder }
-        let expenseLines = lines.filter { $0.isEnabled && !$0.isIncome }
-            .sorted { $0.sortOrder < $1.sortOrder }
+        let currentMKey = Self.monthKey(for: currentMonthStart, calendar: calendar)
+        let incomeLines = sortLinesByAmountGrouped(
+            lines.filter { $0.isEnabled && $0.isIncome },
+            monthKey: currentMKey, monthDate: currentMonthStart, index: index, calendar: calendar
+        )
+        let expenseLines = sortLinesByAmountGrouped(
+            lines.filter { $0.isEnabled && !$0.isIncome },
+            monthKey: currentMKey, monthDate: currentMonthStart, index: index, calendar: calendar
+        )
 
         var accumulatedBalance = plan.startingBalance
         var projectedMonths: [CashFlowMonth] = []
@@ -540,5 +545,54 @@ struct CashFlowProjectionCalculator {
             realAmount: (isPast || isCurrent) ? totalReal : nil,
             categoryBreakdown: breakdown.sorted { $0.amount > $1.amount }
         )
+    }
+
+    // MARK: - Sort Lines by Amount (grouped by category)
+
+    /// Groups subcategory lines under their parent category, sorts categories by
+    /// their top line amount (descending), then sorts lines within each group by amount.
+    private static func sortLinesByAmountGrouped(
+        _ lines: [CashFlowLine],
+        monthKey: String, monthDate: Date,
+        index: TransactionIndex, calendar: Calendar
+    ) -> [CashFlowLine] {
+        // Pre-compute amounts once per line (O(n)) to avoid redundant calls during sort
+        let amounts: [UUID: Double] = Dictionary(uniqueKeysWithValues: lines.map { line in
+            let amt = line.overrides?.first(where: { $0.monthKey == monthKey })?.amount
+                ?? estimatePlannedAmount(line: line, monthDate: monthDate, index: index, calendar: calendar)
+            return (line.id, amt)
+        })
+
+        // Group by parent category persistentModelID
+        var groups: [PersistentIdentifier: [CashFlowLine]] = [:]
+        var ungrouped: [CashFlowLine] = []
+
+        for line in lines {
+            if let catID = line.category?.persistentModelID {
+                groups[catID, default: []].append(line)
+            } else {
+                ungrouped.append(line)
+            }
+        }
+
+        // Sort lines within each group by amount descending
+        for key in groups.keys {
+            groups[key]?.sort { (amounts[$0.id] ?? 0) > (amounts[$1.id] ?? 0) }
+        }
+
+        // Sort groups by their top line amount descending
+        let sortedGroups = groups.values.sorted { groupA, groupB in
+            let maxA = groupA.lazy.compactMap { amounts[$0.id] }.max() ?? 0
+            let maxB = groupB.lazy.compactMap { amounts[$0.id] }.max() ?? 0
+            return maxA > maxB
+        }
+
+        // Flatten: grouped lines first, then ungrouped sorted by amount
+        var result: [CashFlowLine] = []
+        for group in sortedGroups {
+            result.append(contentsOf: group)
+        }
+        result.append(contentsOf: ungrouped.sorted { (amounts[$0.id] ?? 0) > (amounts[$1.id] ?? 0) })
+        return result
     }
 }

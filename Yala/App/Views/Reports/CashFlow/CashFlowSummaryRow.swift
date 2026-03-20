@@ -31,6 +31,7 @@ struct CashFlowSummaryRow: View {
                 values: months.map(\.accumulatedBalance)
             )
         }
+        .padding(.horizontal, DS.Spacing.lg)
         .background(.thCard)
     }
 
@@ -47,10 +48,10 @@ struct CashFlowSummaryRow: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: DS.Spacing.none) {
                     ForEach(Array(values.enumerated()), id: \.offset) { _, value in
-                        Text(YalaFormatter.currencyCompact(value: value, currencyCode: currencyCode))
+                        Text(YalaFormatter.amountCompactTable(value: value))
                             .font(DS.Typography.amountSmall)
                             .fontWeight(.semibold)
-                            .foregroundStyle(value >= 0 ? DS.Semantic.successForeground : DS.Semantic.errorForeground)
+                            .foregroundStyle(value >= 0 ? Color.electricIndigo : Color.hotPink)
                             .frame(width: monthColumnWidth)
                     }
                 }

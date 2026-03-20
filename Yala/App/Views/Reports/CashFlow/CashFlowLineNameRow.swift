@@ -3,6 +3,7 @@
 //  Yala
 //
 //  Sticky left column row showing line name with category icon.
+//  Design matches PivotRowView: .subheadline font, DS.Spacing.lg leading padding.
 //
 
 import SwiftUI
@@ -12,41 +13,41 @@ struct CashFlowLineNameRow: View {
     let line: CashFlowLine?
     let isOtherExpenses: Bool
     let height: CGFloat
-
-    @Environment(\.yalaTheme) private var theme
+    var compactMode: Bool = false
 
     var body: some View {
-        HStack(spacing: DS.Spacing.sm) {
+        HStack(spacing: compactMode ? DS.Spacing.none : DS.Spacing.sm) {
             if isOtherExpenses {
                 Image(systemName: "ellipsis.circle")
-                    .font(DS.Typography.caption)
+                    .font(.caption2)
                     .foregroundStyle(.tertiary)
-                    .frame(width: 20)
+                    .frame(width: DS.Chip.dotSize)
             } else {
                 let iconName = line?.subcategory?.iconName ?? line?.category?.iconName
                 let colorHex = line?.subcategory?.colorHex ?? line?.category?.colorHex
                 if let iconName, let colorHex {
-                    Image(systemName: iconName)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(Color(hex: colorHex))
-                        .frame(width: 20)
+                    ZStack {
+                        Circle()
+                            .fill(Color(hex: colorHex))
+                            .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
+                        Image(systemName: iconName)
+                            .font(.system(size: DS.Icon.sizeSmall, weight: .semibold))
+                            .foregroundStyle(.white)
+                    }
                 }
             }
 
-            Text(lineResult.name)
-                .font(DS.Typography.caption)
-                .foregroundStyle(isOtherExpenses ? .secondary : .primary)
-                .lineLimit(1)
+            if !compactMode {
+                Text(lineResult.name)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(isOtherExpenses ? .secondary : .primary)
+                    .lineLimit(1)
 
-            Spacer(minLength: 0)
-
-            if !isOtherExpenses {
-                Image(systemName: "chevron.right")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.quaternary)
+                Spacer(minLength: 0)
             }
         }
-        .padding(.horizontal, DS.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, compactMode ? DS.Spacing.sm : DS.Spacing.lg)
         .frame(height: height)
         .contentShape(Rectangle())
     }

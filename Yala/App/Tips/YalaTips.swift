@@ -139,6 +139,55 @@ enum SettingsTourSteps {
     ]
 }
 
+// MARK: - Grupo E: Cash Flow Setup Tour
+
+enum CashFlowSetupTourSteps {
+    static let steps: [CoachMarkStep] = [
+        CoachMarkStep(
+            id: "cfSetupBanner",
+            title: L10n.TipKit.cfSetupBanner,
+            message: L10n.TipKit.cfSetupBannerMessage
+        ),
+        CoachMarkStep(
+            id: "cfSetupLine",
+            title: L10n.TipKit.cfSetupLine,
+            message: L10n.TipKit.cfSetupLineMessage
+        ),
+        CoachMarkStep(
+            id: "cfSetupStarting",
+            title: L10n.TipKit.cfSetupStarting,
+            message: L10n.TipKit.cfSetupStartingMessage
+        ),
+        CoachMarkStep(
+            id: "cfSetupCreate",
+            title: L10n.TipKit.cfSetupCreate,
+            message: L10n.TipKit.cfSetupCreateMessage
+        )
+    ]
+}
+
+// MARK: - Grupo F: Cash Flow Table Tour
+
+enum CashFlowTableTourSteps {
+    static let steps: [CoachMarkStep] = [
+        CoachMarkStep(
+            id: "cfTableCell",
+            title: L10n.TipKit.cfTableCell,
+            message: L10n.TipKit.cfTableCellMessage
+        ),
+        CoachMarkStep(
+            id: "cfTableAvailable",
+            title: L10n.TipKit.cfTableAvailable,
+            message: L10n.TipKit.cfTableAvailableMessage
+        ),
+        CoachMarkStep(
+            id: "cfTableAdd",
+            title: L10n.TipKit.cfTableAdd,
+            message: L10n.TipKit.cfTableAddMessage
+        )
+    ]
+}
+
 // MARK: - TipKit Tip (standalone)
 
 struct ComparisonTip: Tip {

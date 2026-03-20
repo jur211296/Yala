@@ -267,6 +267,8 @@ final class DataWipeService {
         defaults.removeObject(forKey: "hasSeenRegistroTour")      // Re-show registro tour
         defaults.removeObject(forKey: "hasSeenInteractivityTour") // Re-show interactivity tour
         defaults.removeObject(forKey: "hasSeenSettingsTour")      // Re-show settings tour
+        defaults.removeObject(forKey: "hasSeenCashFlowSetupTour")  // Re-show cash flow setup tour
+        defaults.removeObject(forKey: "hasSeenCashFlowTableTour")  // Re-show cash flow table tour
 
         // --- Seed guards ---
         defaults.removeObject(forKey: "seedCategoriesExecuted") // Allow re-seed after wipe
