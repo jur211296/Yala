@@ -27,7 +27,7 @@ struct PivotRowView: View {
 
             // Label
             Text(node.label)
-                .font(level == 0 ? DS.Typography.label : DS.Typography.subheadline)
+                .font(level == 0 ? DS.Typography.label : DS.Typography.caption)
                 .fontWeight(level == 0 ? .semibold : .regular)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
@@ -41,9 +41,9 @@ struct PivotRowView: View {
             // Amounts
             VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
                 Text(YalaFormatter.currency(value: node.amount, currencyCode: displayCurrency))
-                    .font(level == 0 ? DS.Typography.label : DS.Typography.subheadline)
-                    .fontWeight(level == 0 ? .semibold : .regular)
-                    .foregroundStyle(node.isIncome ? DS.Semantic.successForeground : .primary)
+                    .font(level == 0 ? DS.Typography.label : DS.Typography.labelSmall)
+                    .fontWeight(level == 0 ? .semibold : .medium)
+                    .foregroundStyle(node.isIncome ? Color.electricIndigo : .primary)
 
                 if let previousAmount = node.previousAmount {
                     Text(YalaFormatter.currency(value: previousAmount, currencyCode: displayCurrency))
@@ -98,7 +98,7 @@ struct PivotRowView: View {
             // Non-entity dimension icon (tipo, divisa, naturaleza)
             Image(systemName: iconName)
                 .font(.caption2)
-                .foregroundStyle(node.isIncome ? DS.Semantic.successForeground : DS.Semantic.errorForeground)
+                .foregroundStyle(node.isIncome ? Color.electricIndigo : Color.hotPink)
                 .frame(width: DS.Chip.dotSize)
         }
     }

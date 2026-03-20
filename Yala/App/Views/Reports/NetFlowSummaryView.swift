@@ -41,7 +41,7 @@ struct NetFlowSummaryView: View {
                 Text(YalaFormatter.currency(value: currentAmount, currencyCode: currencyCode))
                     .font(DS.Typography.label)
                     .fontWeight(.semibold)
-                    .foregroundStyle(currentAmount >= 0 ? DS.Semantic.successForeground : DS.Semantic.errorForeground)
+                    .foregroundStyle(currentAmount >= 0 ? Color.electricIndigo : Color.hotPink)
 
                 if let previousAmount {
                     Text(YalaFormatter.currency(value: previousAmount, currencyCode: currencyCode))
