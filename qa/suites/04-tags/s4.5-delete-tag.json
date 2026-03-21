@@ -1,5 +1,5 @@
 [
-  { "command": "find", "positionals": ["Perfil", "click"], "flags": {} },
+  { "command": "find", "positionals": ["profile_avatar", "click"], "flags": {} },
   { "command": "wait", "positionals": ["1000"], "flags": {} },
   { "command": "find", "positionals": ["Etiquetas", "click"], "flags": {} },
   { "command": "wait", "positionals": ["1000"], "flags": {} },

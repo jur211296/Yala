@@ -887,6 +887,7 @@ struct MorePlaceholderView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("profile_button")
         }
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)

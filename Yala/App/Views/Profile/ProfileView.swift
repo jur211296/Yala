@@ -446,16 +446,19 @@ struct ProfileView: View {
                 profileRow(
                     icon: "creditcard.fill", title: L10n.Settings.accounts, iconColor: DS.Semantic.successForeground,
                     destination: .accounts)
+                    .accessibilityIdentifier("profile_accounts")
                     .coachMarkAnchor("settingsAccounts")
                 SubsectionDivider()
                 profileRow(
                     icon: "tag.fill", title: L10n.Settings.categories, iconColor: .orange,
                     destination: .categories)
+                    .accessibilityIdentifier("profile_categories")
                     .coachMarkAnchor("settingsCategories")
                 SubsectionDivider()
                 profileRow(
                     icon: "number", title: L10n.Settings.tags, iconColor: .purple,
                     destination: .tags)
+                    .accessibilityIdentifier("profile_tags")
                     .coachMarkAnchor("settingsTags")
                 SubsectionDivider()
                 profileRow(

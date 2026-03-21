@@ -3,15 +3,15 @@
   { "command": "wait", "positionals": ["1000"], "flags": {} },
   { "command": "find", "positionals": ["Favoritos", "click"], "flags": {} },
   { "command": "wait", "positionals": ["1000"], "flags": {} },
-  { "command": "find", "positionals": ["label=\"Agregar\"", "click"], "flags": {} },
+  { "command": "find", "positionals": ["Añadir", "click"], "flags": {} },
   { "command": "wait", "positionals": ["1000"], "flags": {} },
-  { "command": "find", "positionals": ["label=\"Nombre\"", "fill", "Café diario"], "flags": {} },
+  { "command": "find", "positionals": ["account_name_field", "click"}, {"command": "type", "positionals": ["Café diario"], "flags": {} },
   { "command": "find", "positionals": ["label=\"Monto\"", "fill", "5"], "flags": {} },
   { "command": "find", "positionals": ["Subcategoría", "click"], "flags": {} },
   { "command": "wait", "positionals": ["1000"], "flags": {} },
   { "command": "find", "positionals": ["Restaurantes", "click"], "flags": {} },
   { "command": "wait", "positionals": ["500"], "flags": {} },
-  { "command": "find", "positionals": ["id=\"toolbar_save_button\"", "click"], "flags": {} },
+  { "command": "find", "positionals": ["Guardar", "click"], "flags": {} },
   { "command": "wait", "positionals": ["1500"], "flags": {} },
   { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s8.1-created.png"], "flags": {} }
 ]
