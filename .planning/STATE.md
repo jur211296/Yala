@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-15)
 Version: 1.2 (en desarrollo)
 Phase: V1.2
 Status: **En desarrollo** — Reportes Financieros (Comparativa + Flujo de Caja), mejoras producción
-Last activity: 2026-03-20 — Cash Flow compact mode, grouped sort, tours, DataWipeService tests
+Last activity: 2026-03-21 — Scheduled payments bug fixes, advance payment, real history
 
 ### Apple Review History (V1.0)
 
@@ -41,23 +41,16 @@ Progress: V1.2 ████████████░░░░ 75% (Reportes Fi
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-21] b906e54 fix: scheduled payments — duplicate drafts, advance payment, real history
+- [2026-03-20] 07ddd09 fix: budget alerts — send only highest threshold notification
+- [2026-03-20] f8677ae fix: TopSubcategories widget — correct percentageOfTotal with categoryFilter and L10n placeholder
 - [2026-03-20] 6340614 test: add DataWipeService tests
 - [2026-03-20] abb2806 feat: redesign cash flow — compact mode, grouped sort, tours, improved layout
-- [2026-03-20] 1456627 fix: polish comparativa — use brand colors for income/expense
 - [2026-03-18] e72ba57 fix: reset navigation to PanelView after data wipe
 - [2026-03-17] cbed5d9 fix: polish cash flow — 17 issue fixes, subcategory support, sheet consistency
 - [2026-03-17] 1e77b5c perf: defer CloudKit remote change refreshes to view navigation
 - [2026-03-17] 957c68b fix: resolve 7 compiler warnings in cash flow views
 - [2026-03-17] dcdfd1f refactor: simplify cash flow — fix N+1 scan, deduplicate, type-safety
-- [2026-03-17] d0c1dd7 feat: add pro conversion system with proactive upsells and telemetry
-- [2026-03-17] f2875e1 feat: add advanced estimation methods, subcategory breakdown, and Pro gates
-- [2026-03-08] 9488d0a feat: polish onboarding account step — SectionBox layout, balance guide, validation
-- [2026-03-07] 275392d feat: add Smart Insights personalization — tone, focus, and actionable tips
-- [2026-03-07] 7fcdc22 feat: add contextual AI insight card to PanelView
-- [2026-03-06] 7f01298 refactor: extract shared FilterControlBar — eliminate ~790 duplicate lines
-- [2026-03-06] f1ea108 fix: restore exclude mode filters — batch commit + AI filter context + Insights layout
-- [2026-03-06] 38c2f0d docs: update STATE.md with OpenAI compliance fix
-- [2026-03-05] cc2f4a5 Merge hotfix/1.0.2 into 1.1
 - [2026-03-05] 2700d6d Merge hotfix/1.0.1 into 1.1
 - [2026-02-24] 328ba03 fix: scheduled payments visual consistency — hot pink expenses, sign prefix, currency conversion
 - [2026-02-24] dea0d82 feat: support form sheet with type picker before sending email
@@ -714,12 +707,13 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 
 ## Session Continuity
 
-Last session: 2026-03-20
-Stopped at: Repriorización de roadmap — eliminación de fases, organización por versiones
-Next step: Continuar refinando Reportes Financieros > Comparativa (prioridad 1 de V1.2)
+Last session: 2026-03-21
+Stopped at: Scheduled payments — bug fixes (duplicate drafts), advance payment feature, real history
+Next step: QA manual pagos planificados, luego continuar con siguiente item de V1.2
 Resume context:
-- Financial Report MVP funcional (Comparativa + Flujo de Caja)
-- Comparativa: bien avanzada, falta refinar detalles
-- Flujo de Caja: bien avanzada, falta refinar MUCHOS detalles
-- Ajustes UI de Cash Flow completados ✅
-- Bugs QA V1.2 (BUG-57 a BUG-63) todos validados ✅
+- Fix crítico: associateTransaction ahora avanza nextDueDate (bug F1 de HOTFIX-1.1.1)
+- Throttle processDuePayments en foreground resume (30s cooldown)
+- Nueva feature "Adelantar gasto" en detalle de pago planificado
+- Historial muestra fecha/monto reales del registro vinculado
+- Acción "Ver registro" abre edición de transacción vinculada
+- 38 tests pasan (DraftService + ViewModel + ViewModelFilter + DraftService)
