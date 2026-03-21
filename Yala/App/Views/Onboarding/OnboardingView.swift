@@ -192,6 +192,7 @@ struct OnboardingView: View {
                             .padding(DS.Spacing.md)
                             .background(.thCard)
                             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                            .accessibilityIdentifier("onboarding_name_field")
                             .overlay(
                                 RoundedRectangle(cornerRadius: DS.Radius.md)
                                     .stroke(DS.Colors.borderSubtle, lineWidth: 1)
@@ -590,6 +591,7 @@ struct OnboardingView: View {
                                 .foregroundStyle(.secondary)
                             TextField(L10n.Onboarding.accountNamePlaceholder, text: $accountName)
                                 .focused($accountNameFocused)
+                                .accessibilityIdentifier("onboarding_account_name")
                         }
                         .padding()
 
@@ -651,6 +653,7 @@ struct OnboardingView: View {
                                         .font(DS.Typography.largeTitle)
                                         .keyboardType(.decimalPad)
                                         .multilineTextAlignment(.trailing)
+                                        .accessibilityIdentifier("onboarding_balance")
                                 }
                             }
                             .padding()
