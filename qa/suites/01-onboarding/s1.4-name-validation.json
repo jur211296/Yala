@@ -1,10 +1,11 @@
 [
   { "command": "wait", "positionals": ["2000"], "flags": {} },
-  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
-  { "command": "wait", "positionals": ["500"], "flags": {} },
   { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s1.4-empty-name-blocked.png"], "flags": {} },
-  { "command": "find", "positionals": ["label=\"Nombre\"", "fill", "A"], "flags": {} },
+  { "command": "find", "positionals": ["onboarding_name_field", "click"], "flags": {} },
+  { "command": "type", "positionals": ["A"], "flags": {} },
+  { "command": "press", "positionals": ["200", "150"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
   { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
-  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "wait", "positionals": ["2500"], "flags": {} },
   { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s1.4-single-char-ok.png"], "flags": {} }
 ]

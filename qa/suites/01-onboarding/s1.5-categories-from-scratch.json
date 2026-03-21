@@ -1,15 +1,18 @@
 [
   { "command": "wait", "positionals": ["2000"], "flags": {} },
-  { "command": "find", "positionals": ["label=\"Nombre\"", "fill", "Test"], "flags": {} },
+  { "command": "find", "positionals": ["onboarding_name_field", "click"], "flags": {} },
+  { "command": "type", "positionals": ["Test"], "flags": {} },
+  { "command": "press", "positionals": ["200", "150"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
   { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
-  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "wait", "positionals": ["2500"], "flags": {} },
   { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
-  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "wait", "positionals": ["2500"], "flags": {} },
   { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
-  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "wait", "positionals": ["2500"], "flags": {} },
   { "command": "find", "positionals": ["Empezar desde cero", "click"], "flags": {} },
   { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s1.5-from-scratch-selected.png"], "flags": {} },
   { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
-  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "wait", "positionals": ["2500"], "flags": {} },
   { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s1.5-account-step.png"], "flags": {} }
 ]
