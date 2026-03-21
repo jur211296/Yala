@@ -2605,6 +2605,8 @@
 "scheduled.associate.paymentHeader" = "Geplante Zahlung";
 "scheduled.associate.candidatesHeader" = "Ausgaben dieses Monats";
 "scheduled.associate.already" = "Diese Ausgabe ist bereits verknüpft";
+"scheduled.advance" = "Zahlung vorziehen";
+"scheduled.view.record" = "Eintrag anzeigen";
 
 // MARK: - Siri Shortcuts
 "settings.siriShortcuts" = "Siri & Kurzbefehle";

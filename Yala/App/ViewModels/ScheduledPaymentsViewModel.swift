@@ -524,6 +524,13 @@ final class ScheduledPaymentsViewModel {
     func associateTransaction(_ transaction: TransactionItem, to payment: ScheduledPayment) {
         transaction.scheduledPaymentID = payment.id.uuidString
 
+        // Update paid date and advance to next occurrence (fixes duplicate draft bug)
+        payment.lastPaidDate = transaction.date
+        ScheduledPaymentDraftService.advanceToNextDueDate(payment: payment)
+
+        // Reject any pending draft for this payment
+        rejectPendingDraft(for: payment)
+
         guard let context = modelContext else { return }
         do {
             try context.save()
@@ -582,6 +589,52 @@ final class ScheduledPaymentsViewModel {
             #if DEBUG
             print("ScheduledPaymentsViewModel: Error unlinking transactions for date: \(error)")
             #endif
+        }
+    }
+
+    // MARK: - Advance Occurrence
+
+    /// Advance (pay early) the next occurrence of a scheduled payment.
+    /// Creates a draft with today's date and advances nextDueDate.
+    func advanceOccurrence(payment: ScheduledPayment) {
+        guard let context = modelContext else { return }
+        guard ScheduledPaymentDraftService.createAdvancedDraft(from: payment, context: context) != nil else { return }
+        do {
+            try context.save()
+            WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error saving advance: \(error)")
+            #endif
+        }
+        loadPayments()
+    }
+
+    // MARK: - Fetch Linked Transactions
+
+    /// Fetch transactions linked to a scheduled payment (for real history data).
+    func fetchLinkedTransactions(for payment: ScheduledPayment, months: Int = 4) -> [TransactionItem] {
+        guard let context = modelContext else { return [] }
+        let calendar = Calendar.current
+        let paymentIDString = payment.id.uuidString
+        guard let startDate = calendar.date(byAdding: .month, value: -months, to: Date.now) else { return [] }
+
+        do {
+            let predicate = #Predicate<TransactionItem> { tx in
+                tx.scheduledPaymentID == paymentIDString &&
+                tx.date >= startDate
+            }
+            let descriptor = FetchDescriptor<TransactionItem>(
+                predicate: predicate,
+                sortBy: [SortDescriptor(\.date, order: .reverse)]
+            )
+            return try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error fetching linked transactions: \(error)")
+            #endif
+            return []
         }
     }
 

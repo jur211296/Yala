@@ -22,6 +22,8 @@ struct ScheduledPaymentDetailView: View {
     @State private var showAssociationSheet = false
     @State private var showOccurrenceActions = false
     @State private var selectedOccurrenceDate: Date?
+    @State private var linkedTransactions: [TransactionItem] = []
+    @State private var editingTransaction: TransactionItem?
 
     // Calculate occurrences using getPaymentDatesInMonth (SSOT for date generation)
     private var pastOccurrences: [Date] {
@@ -121,6 +123,17 @@ struct ScheduledPaymentDetailView: View {
                 viewModel: viewModel
             )
             .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
+        }
+        .sheet(item: $editingTransaction) { transaction in
+            NewTransactionView(transactionToEdit: transaction)
+                .presentationDetents([.large])
+                .onDisappear {
+                    editingTransaction = nil
+                    linkedTransactions = viewModel.fetchLinkedTransactions(for: payment)
+                }
+        }
+        .task {
+            linkedTransactions = viewModel.fetchLinkedTransactions(for: payment)
         }
     }
 
@@ -305,6 +318,8 @@ struct ScheduledPaymentDetailView: View {
     private func occurrenceRow(date: Date, isPast: Bool, index: Int?) -> some View {
         let isSkipped = payment.isDateSkipped(date)
         let isPaidForDate = occurrenceIsPaid(date: date, isPast: isPast)
+        // Pre-compute linked transaction once per row (avoids repeated O(n) lookups)
+        let rowLinkedTx = isPaidForDate ? findLinkedTransaction(for: date) : nil
 
         // Binding: true only when THIS row's date is the selected one
         let isDialogPresented = Binding<Bool>(
@@ -333,9 +348,10 @@ struct ScheduledPaymentDetailView: View {
                 }
                 .frame(width: 40)
 
-                // Full date + status
+                // Full date + status (show real date from linked transaction if paid)
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(formatFullDate(date))
+                    let displayDate = rowLinkedTx?.date ?? date
+                    Text(formatFullDate(displayDate))
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(isSkipped || isPast ? .secondary : .primary)
 
@@ -372,9 +388,10 @@ struct ScheduledPaymentDetailView: View {
 
                 Spacer()
 
-                // Amount + chevron
+                // Amount + chevron (show real amount from linked transaction if available)
                 HStack(spacing: DS.Spacing.sm) {
-                    Text(formatAmount(payment.amount))
+                    let displayAmount = rowLinkedTx.map { abs($0.amount) } ?? payment.amount
+                    Text(formatAmount(displayAmount))
                         .font(DS.Typography.label)
                         .foregroundStyle(isSkipped ? .secondary : (isPast ? .secondary : (payment.transactionType == "income" ? Color.electricIndigo : .primary)))
 
@@ -395,6 +412,13 @@ struct ScheduledPaymentDetailView: View {
             titleVisibility: .visible
         ) {
             if isPaidForDate {
+                if let linkedTx = rowLinkedTx {
+                    Button {
+                        editingTransaction = linkedTx
+                    } label: {
+                        Label(L10n.Scheduled.Detail.viewRecord, systemImage: "doc.text.magnifyingglass")
+                    }
+                }
                 Button(role: .destructive) {
                     unlinkTransactionsForDate(date)
                 } label: {
@@ -405,6 +429,18 @@ struct ScheduledPaymentDetailView: View {
                     viewModel.unskipOccurrence(payment: payment, date: date)
                 }
             } else {
+                // "Adelantar gasto" for upcoming (not past) occurrences
+                if !isPast {
+                    let isFirstUpcoming = upcomingOccurrences.first.map { Calendar.current.isDate($0, inSameDayAs: date) } == true
+                    if isFirstUpcoming || !payment.isRecurring {
+                        Button {
+                            viewModel.advanceOccurrence(payment: payment)
+                            linkedTransactions = viewModel.fetchLinkedTransactions(for: payment)
+                        } label: {
+                            Label(L10n.Scheduled.Detail.advance, systemImage: "arrow.uturn.backward.circle")
+                        }
+                    }
+                }
                 Button {
                     showAssociationSheet = true
                 } label: {
@@ -432,6 +468,25 @@ struct ScheduledPaymentDetailView: View {
     /// Unlink transactions associated with this payment for a specific date
     private func unlinkTransactionsForDate(_ date: Date) {
         viewModel.unlinkTransactionsForDate(paymentID: payment.id, date: date)
+        linkedTransactions = viewModel.fetchLinkedTransactions(for: payment)
+    }
+
+    /// Find the linked transaction closest to a given occurrence date (±7 days)
+    private func findLinkedTransaction(for occurrenceDate: Date) -> TransactionItem? {
+        let calendar = Calendar.current
+        let occurrenceDay = calendar.startOfDay(for: occurrenceDate)
+        var bestMatch: TransactionItem?
+        var bestDistance = Int.max
+
+        for tx in linkedTransactions {
+            let txDay = calendar.startOfDay(for: tx.date)
+            let distance = abs(calendar.dateComponents([.day], from: occurrenceDay, to: txDay).day ?? Int.max)
+            if distance <= 7 && distance < bestDistance {
+                bestDistance = distance
+                bestMatch = tx
+            }
+        }
+        return bestMatch
     }
 
     // MARK: - Info Note

@@ -2606,6 +2606,8 @@
 "scheduled.associate.paymentHeader" = "Paiement planifie";
 "scheduled.associate.candidatesHeader" = "Depenses du mois";
 "scheduled.associate.already" = "Cette dépense est déjà liée";
+"scheduled.advance" = "Avancer le paiement";
+"scheduled.view.record" = "Voir le registre";
 
 // MARK: - Siri Shortcuts
 "settings.siriShortcuts" = "Siri et Raccourcis";

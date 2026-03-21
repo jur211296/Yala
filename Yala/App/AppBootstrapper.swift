@@ -51,6 +51,7 @@ final class AppBootstrapper {
     private var subscriptionCheckTask: Task<Void, Never>?
     private var remoteChangeTask: Task<Void, Never>?
     private var lastNotificationCheckDate = Date.distantPast
+    private var lastProcessDuePaymentsDate = Date.distantPast
 
     /// Whether a fullScreenCover (splash, Face ID, or InboxAlertModal) is blocking sheet presentation
     private var isUIBlocked: Bool {
@@ -181,7 +182,11 @@ final class AppBootstrapper {
         }
 
         // Process due scheduled payments (creates inbox drafts for warm resume)
-        processDueScheduledPayments(context: context)
+        // Throttle: skip if bootstrap just ran (< 30 seconds ago) to prevent duplicate drafts
+        let shouldProcessPayments = Date.now.timeIntervalSince(lastProcessDuePaymentsDate) > 30.0
+        if shouldProcessPayments {
+            processDueScheduledPayments(context: context)
+        }
         checkForPendingInboxDrafts(context: context)
 
         // Delay control action check — inbox notification fires at 0.3s,
@@ -463,6 +468,7 @@ final class AppBootstrapper {
     private func processDueScheduledPayments(context: ModelContext) {
         // Only create drafts, notification is handled by checkForPendingInboxDrafts
         _ = ScheduledPaymentDraftService.processDuePayments(context: context)
+        lastProcessDuePaymentsDate = Date.now
     }
 
     private func checkForPendingInboxDrafts(context: ModelContext) {

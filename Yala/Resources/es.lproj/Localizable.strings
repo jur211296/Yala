@@ -2605,6 +2605,8 @@
 "scheduled.associate.paymentHeader" = "Pago planificado";
 "scheduled.associate.candidatesHeader" = "Gastos del mes";
 "scheduled.associate.already" = "Este gasto ya está vinculado";
+"scheduled.advance" = "Adelantar gasto";
+"scheduled.view.record" = "Ver registro";
 
 // MARK: - Siri Shortcuts
 "settings.siriShortcuts" = "Siri y Atajos";

@@ -2608,6 +2608,8 @@
 "scheduled.associate.paymentHeader" = "Scheduled payment";
 "scheduled.associate.candidatesHeader" = "Expenses this month";
 "scheduled.associate.already" = "This expense is already linked";
+"scheduled.advance" = "Advance payment";
+"scheduled.view.record" = "View record";
 
 // MARK: - Siri Shortcuts
 "settings.siriShortcuts" = "Siri & Shortcuts";
