@@ -118,16 +118,20 @@ final class BudgetAlertService {
         // Get currency for notification
         let currencyCode = budget.currencyCode
 
-        // Send notifications for new thresholds
+        // Mark ALL crossed thresholds as notified (prevents future spam)
         for threshold in newThresholds {
+            tracker.markNotified(budgetID: budget.id, periodKey: periodKey, threshold: threshold)
+        }
+
+        // Send notification only for the highest threshold
+        if let maxThreshold = newThresholds.max() {
             await sendNotification(
                 budgetName: budget.name,
-                threshold: threshold,
+                threshold: maxThreshold,
                 spent: spending,
                 limit: budget.limitAmount,
                 currencyCode: currencyCode
             )
-            tracker.markNotified(budgetID: budget.id, periodKey: periodKey, threshold: threshold)
         }
     }
 

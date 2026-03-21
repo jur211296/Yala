@@ -167,4 +167,35 @@ struct BudgetAlertTrackerTests {
 
         #expect(result == [50, 75, 90])
     }
+
+    @MainActor @Test func getNewThresholds_allCrossed_markAllThenNoneNew() {
+        let tracker = BudgetAlertTracker.shared
+        let budgetID = UUID()
+        let periodKey = "test_\(UUID().uuidString)"
+
+        // At 95%, all thresholds [50, 75, 90] are crossed
+        let result = tracker.getNewThresholds(
+            budgetID: budgetID,
+            periodKey: periodKey,
+            currentPercentage: 95,
+            configuredThresholds: [50, 75, 90]
+        )
+
+        #expect(result == [50, 75, 90])
+
+        // Mark all as notified (simulates what the service does)
+        for threshold in result {
+            tracker.markNotified(budgetID: budgetID, periodKey: periodKey, threshold: threshold)
+        }
+
+        // Subsequent check at same percentage returns nothing
+        let secondResult = tracker.getNewThresholds(
+            budgetID: budgetID,
+            periodKey: periodKey,
+            currentPercentage: 95,
+            configuredThresholds: [50, 75, 90]
+        )
+
+        #expect(secondResult.isEmpty)
+    }
 }
