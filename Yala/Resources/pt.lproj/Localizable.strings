@@ -664,7 +664,7 @@
 "widget.noExpensesPeriod" = "Voce ainda nao tem despesas neste periodo.";
 "widget.noExpensesDescriptionCategories" = "Quando voce registrar transacoes, suas categorias principais aparecerao aqui.";
 "widget.noExpensesDescriptionSubcategories" = "Quando voce registrar transacoes, suas subcategorias principais aparecerao aqui.";
-"widget.of" = "de";
+"widget.of" = "de %@";
 "widget.ofTotal" = "do total";
 "widget.ofExpense" = "da despesa";
 "widget.categoryAbbr" = "Categ.";

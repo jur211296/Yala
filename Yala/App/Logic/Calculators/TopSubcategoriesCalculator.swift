@@ -36,6 +36,8 @@ struct TopSubcategoriesCalculator {
         // - Has Category
         // - If categoryFilter is present, must match parent category
 
+        // Filter by interval, nature, and balance adjustment — WITHOUT categoryFilter
+        // so totalExpenseAll reflects the global total across all categories
         let validTransactions = transactions.filter { transaction in
             // Basic validity - must have category
             guard let category = transaction.category else { return false }
@@ -49,13 +51,6 @@ struct TopSubcategoriesCalculator {
 
             // Interval check
             if !interval.contains(transaction.date) { return false }
-
-            // Category Filter Check
-            if let filterID = categoryFilter {
-                if category.persistentModelID != filterID {
-                    return false
-                }
-            }
 
             return true
         }
@@ -80,17 +75,12 @@ struct TopSubcategoriesCalculator {
         for transaction in validTransactions {
             guard let category = transaction.category else { continue }
 
-            let absAmount = abs(transaction.amount)
-            let decimalAmount = Decimal(absAmount)
-
-            // Convert using the transaction's date for accurate historical rate
-            // Convert using the transaction's date for accurate historical rate
             // Convert using the transaction's date for accurate historical rate
             let doubleVal: Double
             if transaction.preferredCurrencyCode == currencyCode {
-                // Use signed amount (expenses are negative)
                 doubleVal = transaction.amountInPreferredCurrency
             } else {
+                let decimalAmount = Decimal(abs(transaction.amount))
                 let convertedAmount = converter.convert(
                     decimalAmount,
                     from: transaction.currencyCode,
@@ -102,8 +92,13 @@ struct TopSubcategoriesCalculator {
                 doubleVal = (transaction.amount < 0) ? -magnitude : magnitude
             }
 
-            // Global aggregates
+            // Always accumulate global total (across all categories)
             totalExpenseAll += doubleVal
+
+            // Apply categoryFilter only for grouping/per-category totals
+            if let filterID = categoryFilter,
+               category.persistentModelID != filterID { continue }
+
             totalExpensePerCategory[category.persistentModelID, default: 0] += doubleVal
 
             // Grouping

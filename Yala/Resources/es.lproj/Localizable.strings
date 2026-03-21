@@ -666,7 +666,7 @@
 "widget.noExpensesPeriod" = "Aún no tienes gastos en este periodo.";
 "widget.noExpensesDescriptionCategories" = "Cuando registres movimientos, verás aquí tus categorías principales.";
 "widget.noExpensesDescriptionSubcategories" = "Cuando registres movimientos, verás aquí tus subcategorías principales.";
-"widget.of" = "de";
+"widget.of" = "de %@";
 "widget.ofTotal" = "del total";
 "widget.ofExpense" = "del gasto";
 "widget.categoryAbbr" = "Categ.";

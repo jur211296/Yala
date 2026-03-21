@@ -666,7 +666,7 @@
 "widget.noExpensesPeriod" = "No expenses yet in this period.";
 "widget.noExpensesDescriptionCategories" = "Your top categories will appear here once you add transactions.";
 "widget.noExpensesDescriptionSubcategories" = "Your top subcategories will appear here once you add transactions.";
-"widget.of" = "of";
+"widget.of" = "of %@";
 "widget.ofTotal" = "of total";
 "widget.ofExpense" = "of expense";
 "widget.categoryAbbr" = "Cat.";

@@ -664,7 +664,7 @@
 "widget.noExpensesPeriod" = "Du hast noch keine Ausgaben in diesem Zeitraum.";
 "widget.noExpensesDescriptionCategories" = "Wenn du Transaktionen erfasst, siehst du hier deine Hauptkategorien.";
 "widget.noExpensesDescriptionSubcategories" = "Wenn du Transaktionen erfasst, siehst du hier deine Hauptunterkategorien.";
-"widget.of" = "von";
+"widget.of" = "von %@";
 "widget.ofTotal" = "vom Gesamt";
 "widget.ofExpense" = "der Ausgaben";
 "widget.categoryAbbr" = "Kat.";
