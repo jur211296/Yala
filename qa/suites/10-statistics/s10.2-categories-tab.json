@@ -1,0 +1,8 @@
+[
+  { "command": "find", "positionals": ["Estadísticas", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Categorías", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "snapshot", "positionals": [], "flags": { "i": true } },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s10.2-categories.png"], "flags": {} }
+]

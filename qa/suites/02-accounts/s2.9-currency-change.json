@@ -1,0 +1,16 @@
+[
+  { "command": "find", "positionals": ["Perfil", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Cuentas", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["label=\"Agregar\"", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["id=\"account_name_field\"", "fill", "Euro Account"], "flags": {} },
+  { "command": "find", "positionals": ["Divisa", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["EUR", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "find", "positionals": ["id=\"toolbar_save_button\"", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s2.9-eur-account.png"], "flags": {} }
+]

@@ -1,0 +1,15 @@
+[
+  { "command": "find", "positionals": ["Perfil", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Categorías", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Alimentación", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Editar", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["label=\"Nombre\"", "fill", "Comida"], "flags": {} },
+  { "command": "find", "positionals": ["id=\"toolbar_save_button\"", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "is", "positionals": ["visible", "label=\"Comida\""], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s3.3-edited.png"], "flags": {} }
+]

@@ -1,0 +1,11 @@
+[
+  { "command": "find", "positionals": ["Planificación", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Presupuestos", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["label=\"Agregar\"", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["label=\"Nombre\"", "fill", "Alimentación"], "flags": {} },
+  { "command": "find", "positionals": ["label=\"Monto\"", "fill", "100"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s6.8-duplicate.png"], "flags": {} }
+]

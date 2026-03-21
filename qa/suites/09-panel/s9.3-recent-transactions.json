@@ -1,0 +1,7 @@
+[
+  { "command": "find", "positionals": ["Panel", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "scroll", "positionals": ["down"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s9.3-recent-transactions.png"], "flags": {} }
+]

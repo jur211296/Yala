@@ -19,3 +19,6 @@ fastlane/screenshots
 Secrets.xcconfig
 .claude/sessions/*.log
 .vercel
+
+# QA automation results (generated at runtime)
+qa/results/

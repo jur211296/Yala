@@ -1,0 +1,9 @@
+[
+  { "command": "find", "positionals": ["Perfil", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "scroll", "positionals": ["down"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "find", "positionals": ["Acerca de", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s13.10-about.png"], "flags": {} }
+]

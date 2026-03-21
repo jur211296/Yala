@@ -1,0 +1,14 @@
+[
+  { "command": "find", "positionals": ["Perfil", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Tema", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Oscuro", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s13.4-dark-mode.png"], "flags": {} },
+  { "command": "find", "positionals": ["Claro", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s13.4-light-mode.png"], "flags": {} },
+  { "command": "find", "positionals": ["Sistema", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} }
+]

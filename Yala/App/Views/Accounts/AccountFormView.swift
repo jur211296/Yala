@@ -208,6 +208,7 @@ struct AccountFormView: View {
                     TextField(L10n.Account.accountName, text: $viewModel.name)
                         .textContentType(.name)
                         .focused($focusedField, equals: .name)
+                        .accessibilityIdentifier("account_name_field")
                 }
                 .padding()
 

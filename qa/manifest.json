@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "description": "QA automation manifest — classifies scenarios by automatability",
+  "suites": {
+    "01-onboarding": { "total": 10, "automated": 10, "manual": 0, "notes": "Full coverage" },
+    "02-accounts": { "total": 11, "automated": 11, "manual": 0, "notes": "Full coverage" },
+    "03-categories": { "total": 10, "automated": 10, "manual": 0, "notes": "Full coverage" },
+    "04-tags": { "total": 7, "automated": 7, "manual": 0, "notes": "Full coverage" },
+    "05-transactions": { "total": 34, "automated": 10, "manual": 24, "notes": "Core CRUD covered; bulk edit, quick actions, and complex multi-step scenarios pending" },
+    "06-budgets": { "total": 8, "automated": 8, "manual": 0, "notes": "Full coverage" },
+    "07-scheduled-payments": { "total": 8, "automated": 5, "manual": 3, "notes": "CRUD covered; recurrence and auto-execution are manual" },
+    "08-favorites": { "total": 5, "automated": 5, "manual": 0, "notes": "Full coverage" },
+    "09-panel": { "total": 7, "automated": 7, "manual": 0, "notes": "Full coverage" },
+    "10-statistics": { "total": 6, "automated": 6, "manual": 0, "notes": "Full coverage" },
+    "11-filters": { "total": 6, "automated": 6, "manual": 0, "notes": "Full coverage" },
+    "12-import-export": { "total": 12, "automated": 3, "manual": 9, "notes": "Only export wizard; import requires file picker (not automatable)" },
+    "13-settings": { "total": 13, "automated": 10, "manual": 3, "notes": "Biometric, iCloud sync, and subscription are manual" },
+    "14-edge-cases": { "total": 9, "automated": 6, "manual": 3, "notes": "Empty states, amounts, dark mode covered; performance and crash recovery manual" }
+  },
+  "not_automatable": [
+    "Import (requires file picker / document provider)",
+    "Voice input (requires microphone)",
+    "Image input (requires camera / photo library)",
+    "Biometric auth (requires Face ID / Touch ID simulation)",
+    "WidgetKit (runs in separate process)",
+    "Control Center / Lock Screen",
+    "iCloud Sync (requires multi-device)",
+    "Siri Shortcuts",
+    "Force-kill during save"
+  ],
+  "totals": {
+    "scenarios_in_qa_doc": 244,
+    "automated_scripts": 104,
+    "manual_only": 140,
+    "coverage_percent": 42.6
+  }
+}

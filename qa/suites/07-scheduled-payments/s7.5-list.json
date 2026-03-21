@@ -1,0 +1,8 @@
+[
+  { "command": "find", "positionals": ["Planificación", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Pagos programados", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "snapshot", "positionals": [], "flags": { "i": true } },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s7.5-list.png"], "flags": {} }
+]

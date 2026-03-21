@@ -1,0 +1,14 @@
+[
+  { "command": "find", "positionals": ["Panel", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "scroll", "positionals": ["down"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "scroll", "positionals": ["down"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s9.5-bottom-widgets.png"], "flags": {} },
+  { "command": "scroll", "positionals": ["up"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "scroll", "positionals": ["up"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s9.5-top.png"], "flags": {} }
+]

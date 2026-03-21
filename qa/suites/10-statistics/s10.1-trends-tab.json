@@ -1,0 +1,7 @@
+[
+  { "command": "find", "positionals": ["Estadísticas", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "is", "positionals": ["visible", "label=\"Tendencias\""], "flags": {} },
+  { "command": "snapshot", "positionals": [], "flags": { "i": true } },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s10.1-trends.png"], "flags": {} }
+]

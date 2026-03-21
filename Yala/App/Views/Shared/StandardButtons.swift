@@ -51,6 +51,7 @@ struct YalaSaveButton: View {
 
         .buttonBorderShape(.circle)
         .accessibilityLabel(L10n.Action.save)
+        .accessibilityIdentifier("toolbar_save_button")
     }
 }
 
@@ -96,6 +97,7 @@ struct YalaPrimaryButton: View {
         }
         .disabled(isDisabled || isLoading)
         .buttonStyle(.plain)
+        .accessibilityIdentifier("primary_button")
     }
 }
 

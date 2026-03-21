@@ -1,0 +1,18 @@
+[
+  { "command": "find", "positionals": ["Perfil", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Cuentas", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["label=\"Agregar\"", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "snapshot", "positionals": [], "flags": { "i": true } },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s2.11-account-types.png"], "flags": {} },
+  { "command": "find", "positionals": ["Efectivo", "click"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s2.11-cash.png"], "flags": {} },
+  { "command": "find", "positionals": ["Corriente", "click"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s2.11-checking.png"], "flags": {} },
+  { "command": "find", "positionals": ["Ahorro", "click"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s2.11-savings.png"], "flags": {} },
+  { "command": "find", "positionals": ["Tarjeta", "click"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s2.11-credit.png"], "flags": {} }
+]

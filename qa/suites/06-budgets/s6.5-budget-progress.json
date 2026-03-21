@@ -1,0 +1,10 @@
+[
+  { "command": "find", "positionals": ["Planificación", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Presupuestos", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Alimentación", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "snapshot", "positionals": [], "flags": { "i": true } },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s6.5-budget-detail.png"], "flags": {} }
+]

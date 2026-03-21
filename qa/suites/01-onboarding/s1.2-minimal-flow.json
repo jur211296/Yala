@@ -1,0 +1,19 @@
+[
+  { "command": "wait", "positionals": ["2000"], "flags": {} },
+  { "command": "find", "positionals": ["label=\"Nombre\"", "fill", "Juan"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "find", "positionals": ["Solo gastos", "click"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "find", "positionals": ["Empezar desde cero", "click"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "find", "positionals": ["Empezar", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["3000"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s1.2-minimal-complete.png"], "flags": {} }
+]

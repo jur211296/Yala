@@ -1,0 +1,18 @@
+[
+  { "command": "find", "positionals": ["Planificación", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Pagos programados", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["label=\"Agregar\"", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Ingreso", "click"], "flags": {} },
+  { "command": "find", "positionals": ["label=\"Nombre\"", "fill", "Salario mensual"], "flags": {} },
+  { "command": "find", "positionals": ["label=\"Monto\"", "fill", "3000"], "flags": {} },
+  { "command": "find", "positionals": ["Subcategoría", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Salario", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "find", "positionals": ["id=\"toolbar_save_button\"", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s7.2-income-created.png"], "flags": {} }
+]

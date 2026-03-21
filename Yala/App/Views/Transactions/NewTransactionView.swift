@@ -588,6 +588,7 @@ struct NewTransactionView: View {
                 .multilineTextAlignment(.center)
                 .keyboardType(.decimalPad)
                 .focused($isAmountFieldFocused)
+                .accessibilityIdentifier("new_transaction_amount")
                 .fixedSize(horizontal: true, vertical: false)  // Dynamic width based on content
                 .onChange(of: isAmountFieldFocused) { _, isFocused in
                     // When field gets focus and value is just "0" or "0.00", clear it
@@ -1172,6 +1173,7 @@ struct NewTransactionView: View {
         .controlSize(.large)
         .disabled(!viewModel.canSave || viewModel.isSaving)
         .accessibilityHint(!viewModel.canSave ? L10n.Accessibility.completeFormHint : "")
+        .accessibilityIdentifier("new_transaction_save")
         .dsAnimation(.easeInOut(duration: 0.2), value: viewModel.canSave, reduceMotion: reduceMotion)
     }
 

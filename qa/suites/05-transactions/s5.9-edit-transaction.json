@@ -1,0 +1,10 @@
+[
+  { "command": "find", "positionals": ["Registros", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Supermercado", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["id=\"new_transaction_amount\"", "fill", "99"], "flags": {} },
+  { "command": "find", "positionals": ["id=\"new_transaction_save\"", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s5.9-edited.png"], "flags": {} }
+]

@@ -1,0 +1,14 @@
+[
+  { "command": "find", "positionals": ["id=\"fab_new_transaction\"", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "find", "positionals": ["Manual", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["id=\"new_transaction_amount\"", "fill", "30"], "flags": {} },
+  { "command": "find", "positionals": ["Subcategoría", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Supermercado", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "find", "positionals": ["Fecha", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s5.7-date-picker.png"], "flags": {} }
+]

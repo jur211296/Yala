@@ -1,0 +1,11 @@
+[
+  { "command": "find", "positionals": ["id=\"fab_new_transaction\"", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "find", "positionals": ["Manual", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Subcategoría", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Supermercado", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s5.5-zero-amount-save-disabled.png"], "flags": {} }
+]

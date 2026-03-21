@@ -1,0 +1,13 @@
+[
+  { "command": "wait", "positionals": ["2000"], "flags": {} },
+  { "command": "find", "positionals": ["label=\"Nombre\"", "fill", "Test"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "find", "positionals": ["Solo gastos", "click"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s1.6-expenses-only.png"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s1.6-categories-expenses-only.png"], "flags": {} }
+]

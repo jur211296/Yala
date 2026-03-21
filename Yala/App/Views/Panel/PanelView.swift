@@ -497,6 +497,7 @@ struct PanelView: View {
                 .glassEffect(.regular.interactive())
                 .dsFloatingShadow()
                 .accessibilityLabel(showFABMenu ? L10n.Accessibility.closeMenu : L10n.Accessibility.newRecord)
+                .accessibilityIdentifier("fab_new_transaction")
                 .coachMarkAnchor("fab")
             }
             .padding(.trailing, DS.Spacing.xl)

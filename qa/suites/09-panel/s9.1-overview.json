@@ -1,0 +1,6 @@
+[
+  { "command": "find", "positionals": ["Panel", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "snapshot", "positionals": [], "flags": { "i": true } },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s9.1-panel-overview.png"], "flags": {} }
+]

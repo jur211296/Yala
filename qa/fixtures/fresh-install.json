@@ -1,0 +1,6 @@
+[
+  { "command": "close", "positionals": ["{{APP_NAME}}"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "open", "positionals": ["{{APP_NAME}}"], "flags": {} },
+  { "command": "wait", "positionals": ["3000"], "flags": {} }
+]

@@ -1,0 +1,15 @@
+[
+  { "command": "wait", "positionals": ["2000"], "flags": {} },
+  { "command": "find", "positionals": ["label=\"Nombre\"", "fill", "Test"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "find", "positionals": ["Atrás", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s1.3-back-to-currency.png"], "flags": {} },
+  { "command": "find", "positionals": ["Atrás", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "is", "positionals": ["text", "label=\"Nombre\"", "Test"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s1.3-back-to-name.png"], "flags": {} }
+]
