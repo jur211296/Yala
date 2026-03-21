@@ -6,7 +6,7 @@
   { "command": "find", "positionals": ["Añadir", "click"], "flags": {} },
   { "command": "wait", "positionals": ["1000"], "flags": {} },
   { "command": "find", "positionals": ["account_name_field", "click"}, {"command": "type", "positionals": ["Café diario"], "flags": {} },
-  { "command": "find", "positionals": ["label=\"Monto\"", "fill", "5"], "flags": {} },
+  { "command": "find", "positionals": ["new_transaction_amount", "click"}, {"command": "type", "positionals": ["5"], "flags": {} },
   { "command": "find", "positionals": ["Subcategoría", "click"], "flags": {} },
   { "command": "wait", "positionals": ["1000"], "flags": {} },
   { "command": "find", "positionals": ["Restaurantes", "click"], "flags": {} },

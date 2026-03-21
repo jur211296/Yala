@@ -1,16 +1,16 @@
 [
-  { "command": "find", "positionals": ["id=\"fab_new_transaction\"", "click"], "flags": {} },
+  { "command": "find", "positionals": ["fab_new_transaction", "click"], "flags": {} },
   { "command": "wait", "positionals": ["500"], "flags": {} },
   { "command": "find", "positionals": ["Manual", "click"], "flags": {} },
   { "command": "wait", "positionals": ["1000"], "flags": {} },
   { "command": "find", "positionals": ["Ingreso", "click"], "flags": {} },
   { "command": "wait", "positionals": ["500"], "flags": {} },
-  { "command": "find", "positionals": ["id=\"new_transaction_amount\"", "fill", "3000"], "flags": {} },
+  { "command": "find", "positionals": ["new_transaction_amount", "click"}, {"command": "type", "positionals": ["3000"], "flags": {} },
   { "command": "find", "positionals": ["Subcategoría", "click"], "flags": {} },
   { "command": "wait", "positionals": ["1000"], "flags": {} },
   { "command": "find", "positionals": ["Salario", "click"], "flags": {} },
   { "command": "wait", "positionals": ["500"], "flags": {} },
-  { "command": "find", "positionals": ["id=\"new_transaction_save\"", "click"], "flags": {} },
+  { "command": "find", "positionals": ["new_transaction_save", "click"], "flags": {} },
   { "command": "wait", "positionals": ["1500"], "flags": {} },
   { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s5.3-income-saved.png"], "flags": {} }
 ]

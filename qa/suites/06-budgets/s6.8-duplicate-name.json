@@ -6,6 +6,6 @@
   { "command": "find", "positionals": ["Añadir", "click"], "flags": {} },
   { "command": "wait", "positionals": ["1000"], "flags": {} },
   { "command": "find", "positionals": ["account_name_field", "click"}, {"command": "type", "positionals": ["Alimentación"], "flags": {} },
-  { "command": "find", "positionals": ["label=\"Monto\"", "fill", "100"], "flags": {} },
+  { "command": "find", "positionals": ["new_transaction_amount", "click"}, {"command": "type", "positionals": ["100"], "flags": {} },
   { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s6.8-duplicate.png"], "flags": {} }
 ]

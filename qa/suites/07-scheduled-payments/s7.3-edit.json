@@ -5,7 +5,7 @@
   { "command": "wait", "positionals": ["1000"], "flags": {} },
   { "command": "find", "positionals": ["Netflix", "click"], "flags": {} },
   { "command": "wait", "positionals": ["1000"], "flags": {} },
-  { "command": "find", "positionals": ["label=\"Monto\"", "fill", "19.99"], "flags": {} },
+  { "command": "find", "positionals": ["new_transaction_amount", "click"}, {"command": "type", "positionals": ["19.99"], "flags": {} },
   { "command": "find", "positionals": ["Guardar", "click"], "flags": {} },
   { "command": "wait", "positionals": ["1500"], "flags": {} },
   { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s7.3-edited.png"], "flags": {} }
