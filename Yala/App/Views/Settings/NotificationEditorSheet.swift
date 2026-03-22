@@ -358,7 +358,7 @@ struct NotificationEditorSheet: View {
                                 .foregroundStyle(.secondary)
                                 .frame(width: 28)
 
-                            Text(dataType.displayName.capitalized)
+                            Text(dataType.displayName.prefix(1).uppercased() + dataType.displayName.dropFirst())
                                 .font(DS.Typography.body)
                                 .foregroundStyle(.primary)
 

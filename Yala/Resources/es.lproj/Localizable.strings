@@ -873,9 +873,9 @@
 "insights.funFact" = "Dato curioso";
 "insights.firstTimeTitle" = "Tu resumen inteligente";
 "insights.firstTimeBody" = "Aquí verás un resumen inteligente de tus finanzas. Actívalo en Perfil > Funcionalidades con IA y personaliza las secciones en Personalización.";
-"insights.emptyTitle" = "Sin datos aun";
+"insights.emptyTitle" = "Sin datos aún";
 "insights.emptyBody" = "Registra gastos para ver tus insights";
-"insights.fewTransactions" = "Registra mas para desbloquear todos los insights";
+"insights.fewTransactions" = "Registra más para desbloquear todos los insights";
 "insights.monthly" = "mensual";
 "insights.perDay" = "por día";
 "insights.ofTotal" = "del total";
@@ -2347,11 +2347,11 @@
 
 // Reports
 "notifications.dailyReport.name" = "Resumen del día";
-"notifications.dailyReport.hint" = "A las %@ verás tu %@ del día";
+"notifications.dailyReport.hint" = "A las %@ recibirás un resumen de %@ del día";
 "notifications.weeklyReport.name" = "Resumen semanal";
-"notifications.weeklyReport.hint" = "Cada %2$@ recibirás tu %1$@ de la semana";
+"notifications.weeklyReport.hint" = "Cada %2$@ recibirás un resumen de %1$@ de la semana";
 "notifications.monthlyReport.name" = "Resumen mensual";
-"notifications.monthlyReport.hint" = "El %2$@ verás tu %1$@ del mes";
+"notifications.monthlyReport.hint" = "El %2$@ recibirás un resumen de %1$@ del mes";
 
 // System notifications
 "notifications.scheduledPayments.name" = "Pagos planificados";

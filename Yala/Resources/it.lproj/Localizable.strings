@@ -2171,10 +2171,10 @@
 
 // Reports
 "notifications.dailyReport.name" = "Riepilogo giornaliero";
-"notifications.dailyReport.hint" = "Alle %@ vedrai il tuo %@ del giorno";
-"notifications.weeklyReport.hint" = "Ogni %2$@ riceverai il tuo %1$@ della settimana";
+"notifications.dailyReport.hint" = "Alle %@ riceverai un riepilogo di %@ del giorno";
+"notifications.weeklyReport.hint" = "Ogni %2$@ riceverai un riepilogo di %1$@ della settimana";
 "notifications.monthlyReport.name" = "Riepilogo mensile";
-"notifications.monthlyReport.hint" = "Il %2$@ vedrai il tuo %1$@ del mese";
+"notifications.monthlyReport.hint" = "Il %2$@ riceverai un riepilogo di %1$@ del mese";
 
 // System
 "notifications.scheduledPayments.hint" = "Ti avvisiamo quando hai pagamenti in scadenza";

@@ -2171,10 +2171,10 @@
 
 // Reports
 "notifications.dailyReport.name" = "Résumé du jour";
-"notifications.dailyReport.hint" = "À %@ tu verras ton %@ du jour";
-"notifications.weeklyReport.hint" = "Chaque %2$@ tu recevras ton %1$@ de la semaine";
+"notifications.dailyReport.hint" = "À %@ tu recevras un résumé de %@ du jour";
+"notifications.weeklyReport.hint" = "Chaque %2$@ tu recevras un résumé de %1$@ de la semaine";
 "notifications.monthlyReport.name" = "Résumé mensuel";
-"notifications.monthlyReport.hint" = "Le %2$@ tu verras ton %1$@ du mois";
+"notifications.monthlyReport.hint" = "Le %2$@ tu recevras un résumé de %1$@ du mois";
 
 // System
 "notifications.scheduledPayments.hint" = "On t'informe quand tu as des paiements à venir";
