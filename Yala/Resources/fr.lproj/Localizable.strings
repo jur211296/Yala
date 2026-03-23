@@ -859,7 +859,7 @@
 "insights.quickStats" = "Aperçu rapide";
 "insights.comparison" = "Comparaison";
 "insights.weekdayAverage" = "Dépense moyenne par jour";
-"insights.needDistribution" = "Par besoin";
+"insights.needDistribution" = "Répartition des dépenses par besoin";
 "insights.commitments" = "Engagements";
 "insights.commitmentsNote" = "Période actuelle de chaque budget";
 "insights.pendingPayments" = "Paiements en attente";
@@ -2704,6 +2704,8 @@
 "insights.aiTeaser" = "Insights IA";
 "insights.aiTeaserPlaceholder1" = "Analyse de vos habitudes de dépenses...";
 "insights.aiTeaserPlaceholder2" = "Identification des opportunités d'économies...";
+"insights.generateAI" = "Générer des observations intelligentes";
+"insights.generateAIHint" = "Appuyez sur le bouton ci-dessus pour générer des observations avec l'IA";
 
 // Secondary Currency Suggestion
 "account.secondaryCurrency.title" = "Devise secondaire";

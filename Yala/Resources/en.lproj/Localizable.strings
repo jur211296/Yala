@@ -861,7 +861,7 @@
 "insights.quickStats" = "Quick Stats";
 "insights.comparison" = "Period Comparison";
 "insights.weekdayAverage" = "Average spending by day";
-"insights.needDistribution" = "By Need";
+"insights.needDistribution" = "Spending by Need";
 "insights.commitments" = "Commitments";
 "insights.commitmentsNote" = "Current period for each budget";
 "insights.pendingPayments" = "Pending payments";
@@ -2706,6 +2706,8 @@
 "insights.aiTeaser" = "AI Insights";
 "insights.aiTeaserPlaceholder1" = "Analyzing your spending patterns...";
 "insights.aiTeaserPlaceholder2" = "Identifying saving opportunities...";
+"insights.generateAI" = "Generate smart observations";
+"insights.generateAIHint" = "Tap the button above to generate AI-powered observations";
 
 // Secondary Currency Suggestion
 "account.secondaryCurrency.title" = "Secondary Currency";

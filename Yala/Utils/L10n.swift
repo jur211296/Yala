@@ -453,6 +453,10 @@ enum L10n {
         static var aiTeaser: String { ls("insights.aiTeaser", comment: "") }
         static var aiTeaserPlaceholder1: String { ls("insights.aiTeaserPlaceholder1", comment: "") }
         static var aiTeaserPlaceholder2: String { ls("insights.aiTeaserPlaceholder2", comment: "") }
+
+        // AI on-demand
+        static var generateAI: String { ls("insights.generateAI", comment: "") }
+        static var generateAIHint: String { ls("insights.generateAIHint", comment: "") }
     }
 
     // MARK: - Statistics

@@ -657,29 +657,22 @@ struct DetailContainerView: View {
             comparisonMode: sessionState.comparisonMode
         )
 
-        // Generate AI insights if Pro + consent + online
-        let period = sessionState.selectedPeriod
+        // Reset AI state on context change (button must be pressed again)
+        insightsViewModel.resetAIState()
+
+        // Store context for on-demand AI generation via button
         let criteria = trendsViewModel.filterCriteria
-        let filterHash = criteria.hashValue
-        let txnCount = dataViewModel.allTransactions.count
-        let currency = defaultCurrencyCode
-        let comparison = sessionState.comparisonMode
-        let accounts = dataViewModel.accounts
-        let categories = dataViewModel.categories
-        let tags = dataViewModel.tags
-        Task {
-            await insightsViewModel.generateAIInsights(
-                period: period,
-                filterHash: filterHash,
-                txnCount: txnCount,
-                currencyCode: currency,
-                comparisonMode: comparison,
-                criteria: criteria,
-                accounts: accounts,
-                categories: categories,
-                tags: tags
-            )
-        }
+        insightsViewModel.storeGenerationContext(
+            period: sessionState.selectedPeriod,
+            filterHash: criteria.hashValue,
+            txnCount: dataViewModel.allTransactions.count,
+            currencyCode: defaultCurrencyCode,
+            comparisonMode: sessionState.comparisonMode,
+            criteria: criteria,
+            accounts: dataViewModel.accounts,
+            categories: dataViewModel.categories,
+            tags: dataViewModel.tags
+        )
     }
 
     private func handleEditAction() {
