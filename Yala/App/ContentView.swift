@@ -167,33 +167,33 @@ struct ContentView: View {
             }
             .environment(SessionState.shared)
         }
-        .fullScreenCover(isPresented: $showOnboarding, onDismiss: {
-            if hasCompletedOnboarding && !FeatureGateService.shared.isProUser {
-                Task {
-                    // Wait for bootstrap to finish (products loaded in step 3)
-                    for _ in 0..<20 {
-                        if AppBootstrapper.shared.isInitialized { break }
-                        do {
-                            try await Task.sleep(for: .milliseconds(500))
-                        } catch {
-                            break
-                        }
-                    }
-                    #if DEBUG
-                    print("ContentView: Post-onboarding trial — products=\(StoreKitManager.shared.products.count), bootstrapped=\(AppBootstrapper.shared.isInitialized)")
-                    #endif
-                    // Always show — ProTrialOfferSheet handles loading/non-eligible gracefully
-                    showProTrialOffer = true
-                }
-            } else {
-                SessionState.shared.isReadyForTours = true
-            }
-        }) {
+        .fullScreenCover(isPresented: $showOnboarding) {
             OnboardingView {
+                // Set flag BEFORE dismiss — onChange picks it up reliably
+                if !FeatureGateService.shared.isProUser {
+                    SessionState.shared.needsPostOnboardingTrial = true
+                }
                 hasCompletedOnboarding = true
                 showOnboarding = false
             }
             .environment(SessionState.shared)
+        }
+        .onChange(of: showOnboarding) { oldValue, newValue in
+            // Replaces unreliable fullScreenCover onDismiss for post-onboarding flow.
+            // onChange(of:) fires synchronously on @State change — always reliable.
+            guard oldValue && !newValue && hasCompletedOnboarding else { return }
+            if SessionState.shared.needsPostOnboardingTrial && !FeatureGateService.shared.isProUser {
+                SessionState.shared.needsPostOnboardingTrial = false
+                Task {
+                    // Wait for fullScreenCover dismiss animation (~0.35s)
+                    try? await Task.sleep(for: .seconds(0.8))
+                    await waitForBootstrap()
+                    showProTrialOffer = true
+                }
+            } else {
+                // Pro user or no trial needed — start tours directly
+                SessionState.shared.isReadyForTours = true
+            }
         }
         .sheet(isPresented: $showProTrialOffer, onDismiss: {
             SessionState.shared.isReadyForTours = true
@@ -328,6 +328,17 @@ struct ContentView: View {
         }
     }
 
+    /// Wait for AppBootstrapper to finish (StoreKit products, exchange rates, etc.)
+    private func waitForBootstrap() async {
+        for _ in 0..<20 {
+            if AppBootstrapper.shared.isInitialized { break }
+            do { try await Task.sleep(for: .milliseconds(500)) } catch { break }
+        }
+        #if DEBUG
+        print("ContentView: Bootstrap wait done — products=\(StoreKitManager.shared.products.count), initialized=\(AppBootstrapper.shared.isInitialized)")
+        #endif
+    }
+
     /// Schedule sync banner auto-dismiss after 5 seconds of no data changes
     private func scheduleSyncBannerDismiss() {
         syncDismissTask?.cancel()
@@ -434,8 +445,15 @@ struct ContentView: View {
             if hasExistingData {
                 hasCompletedOnboarding = true
             }
-            // Returning user — check for What's New before enabling tours
-            if prepareWhatsNewIfNeeded() {
+            // Returning user — check for pending trial (app was killed before trial could show)
+            if SessionState.shared.needsPostOnboardingTrial && !FeatureGateService.shared.isProUser {
+                SessionState.shared.needsPostOnboardingTrial = false
+                Task {
+                    await waitForBootstrap()
+                    showProTrialOffer = true
+                }
+                // isReadyForTours set in trial sheet's onDismiss
+            } else if prepareWhatsNewIfNeeded() {
                 showWhatsNew = true
                 // isReadyForTours set in onDismiss
             } else {
