@@ -101,12 +101,36 @@ private struct SpotlightCutoutShape: Shape {
     }
 }
 
+// MARK: - Animatable Spotlight Border
+
+/// Draws just the rounded rect border of the spotlight, sharing the same
+/// AnimatableRect mechanism so the glow stays in sync with the cutout.
+private struct SpotlightBorderShape: Shape {
+    var spotlight: AnimatableRect
+    var cornerRadius: CGFloat
+
+    var animatableData: AnimatablePair<AnimatableRect.AnimatableData, CGFloat> {
+        get { .init(spotlight.animatableData, cornerRadius) }
+        set {
+            spotlight.animatableData = newValue.first
+            cornerRadius = newValue.second
+        }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        Path(roundedRect: spotlight.rect, cornerRadius: cornerRadius)
+    }
+}
+
 // MARK: - Layout Constants
 
 private enum CoachMarkLayout {
     static let dimOpacity: Double = 0.65
+    static let darkDimOpacity: Double = 0.75
     static let tooltipGap: CGFloat = 80
     static let visibilityMargin: CGFloat = 100
+    static let spotlightBorderWidth: CGFloat = 2
+    static let spotlightGlowRadius: CGFloat = 12
 }
 
 // MARK: - Coach Mark Overlay
@@ -163,9 +187,12 @@ struct CoachMarkOverlay: View {
                 let rect = spotlightRect(for: step, frame: frame)
                 let cornerRadius = min(DS.Radius.lg, rect.height / 2)
 
+                let isDarkTheme = theme.baseColorScheme == .dark
+                let dimOpacity = isDarkTheme ? CoachMarkLayout.darkDimOpacity : CoachMarkLayout.dimOpacity
+
                 // Dimmed background with animated spotlight cutout
                 SpotlightCutoutShape(spotlight: AnimatableRect(rect), cornerRadius: cornerRadius)
-                    .fill(.black.opacity(CoachMarkLayout.dimOpacity), style: FillStyle(eoFill: true))
+                    .fill(.black.opacity(dimOpacity), style: FillStyle(eoFill: true))
                     .ignoresSafeArea()
                     .opacity(isVisible ? 1 : 0)
                     .allowsHitTesting(true)
@@ -174,6 +201,16 @@ struct CoachMarkOverlay: View {
                         guard !isTransitioning else { return }
                         advance()
                     }
+
+                // Bright border around spotlight for dark themes
+                if isDarkTheme {
+                    SpotlightBorderShape(spotlight: AnimatableRect(rect), cornerRadius: cornerRadius)
+                        .stroke(theme.accent.opacity(0.8), lineWidth: CoachMarkLayout.spotlightBorderWidth)
+                        .shadow(color: theme.accent.opacity(0.5), radius: CoachMarkLayout.spotlightGlowRadius)
+                        .ignoresSafeArea()
+                        .opacity(isVisible ? 1 : 0)
+                        .allowsHitTesting(false)
+                }
 
                 // Tooltip card
                 tooltipCard(step: step, targetFrame: frame)
