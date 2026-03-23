@@ -61,14 +61,14 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 | SubcategoryTransferViewModel | 8 |
 | + 15 ViewModels más en App/ViewModels/ | — |
 
-### Test Suites (93 suites, 1067 tests)
-FilterServiceTests (22), CalculatorTests (3), TagTests (10), TrendProcessingTests (5), TrendGroupingTests (13), CurrencyCodeTests (4), CurrencyDefaultsTests (3), NewTransactionViewModelTests (45), SplitCalculatorTests (14), BudgetsViewModelTests (11), InboxViewModelTests (10), MerchantCanonicalizerTests (12), AmountParserTests (15), DateParserTests (10), MoneyParsingTests (10), PreviousPeriodHelperTests (24), DateContextProviderTests (5), DraftDeduplicationServiceTests (15), AccountFormViewModelTests (22), TagFormViewModelTests (8), CategoryDetailViewModelTests (9), BudgetEditorViewModelTests (10), ViewModelFilterTests (6), CurrencyConverterTests (8), AccountBalanceCalculatorTests (6), FeatureGateTests (6), ExchangeRateWidgetHelperTests (4), RecordsFiltersViewModelTests (6), ScheduledPaymentDateCalculatorTests (17), YalaTests (1), TagSpendingCalculatorTests (15), BudgetAlertTrackerTests (12), BudgetAlertServiceTests (6), ScheduledPaymentsViewModelTests (10), InsightsRuleBasedTests (10), RecordsViewModelTests (12), PanelViewModelTests (10), CashFlowCalculatorTests (18), CashFlowProjectionCalculatorTests (28), CashFlowPlanViewModelTests (8), BalanceTrendCalculatorTests (8), WeekdaySpendingCalculatorTests (8), TopSpendingCategoriesCalculatorTests (10), TopSubcategoriesCalculatorTests (10), BalanceHelperTests (8), NeedTrendHelperTests (8), StatisticsViewModelTests (16), InitialBalanceServiceTests (9), InsightsViewModelTests (6), BulkEditViewModelTests (6), ScheduledPaymentEditorViewModelTests (15), SubcategoryTransferViewModelTests (8), TransactionServiceTests (6), EntityDeletionServiceTests (4), ExchangeRateServiceTests (7), CurrencyChangeServiceTests (6), TransactionUpdateServiceTests (5), MerchantMemoryServiceTests (14), TranscriptionParserServiceTests (12), DraftServiceTests (6), CategoryDeduplicationServiceTests (6), TransactionsExportServiceTests (26), VisionDraftFactoryTests (19), ScreenshotListExtractorTests (10), ScreenshotSingleExtractorTests (13), ReportNotificationServiceTests (17), + 27 more suites from previous batches
+### Test Suites (93 suites, 1070 tests)
+FilterServiceTests (22), CalculatorTests (3), TagTests (10), TrendProcessingTests (5), TrendGroupingTests (13), CurrencyCodeTests (4), CurrencyDefaultsTests (3), NewTransactionViewModelTests (45), SplitCalculatorTests (14), BudgetsViewModelTests (11), InboxViewModelTests (10), MerchantCanonicalizerTests (12), AmountParserTests (15), DateParserTests (10), MoneyParsingTests (10), PreviousPeriodHelperTests (24), DateContextProviderTests (5), DraftDeduplicationServiceTests (15), AccountFormViewModelTests (22), TagFormViewModelTests (8), CategoryDetailViewModelTests (9), BudgetEditorViewModelTests (10), ViewModelFilterTests (6), CurrencyConverterTests (8), AccountBalanceCalculatorTests (6), FeatureGateTests (9), ExchangeRateWidgetHelperTests (4), RecordsFiltersViewModelTests (6), ScheduledPaymentDateCalculatorTests (17), YalaTests (1), TagSpendingCalculatorTests (15), BudgetAlertTrackerTests (12), BudgetAlertServiceTests (6), ScheduledPaymentsViewModelTests (10), InsightsRuleBasedTests (10), RecordsViewModelTests (12), PanelViewModelTests (10), CashFlowCalculatorTests (18), CashFlowProjectionCalculatorTests (28), CashFlowPlanViewModelTests (8), BalanceTrendCalculatorTests (8), WeekdaySpendingCalculatorTests (8), TopSpendingCategoriesCalculatorTests (10), TopSubcategoriesCalculatorTests (10), BalanceHelperTests (8), NeedTrendHelperTests (8), StatisticsViewModelTests (16), InitialBalanceServiceTests (9), InsightsViewModelTests (6), BulkEditViewModelTests (6), ScheduledPaymentEditorViewModelTests (15), SubcategoryTransferViewModelTests (8), TransactionServiceTests (6), EntityDeletionServiceTests (4), ExchangeRateServiceTests (7), CurrencyChangeServiceTests (6), TransactionUpdateServiceTests (5), MerchantMemoryServiceTests (14), TranscriptionParserServiceTests (12), DraftServiceTests (6), CategoryDeduplicationServiceTests (6), TransactionsExportServiceTests (26), VisionDraftFactoryTests (19), ScreenshotListExtractorTests (10), ScreenshotSingleExtractorTests (13), ReportNotificationServiceTests (17), + 27 more suites from previous batches
 
 ## Product & Stack
 Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, presupuestos y reportes con claridad.
 
 - Swift, SwiftUI, SwiftData (.xcodeproj)
-- Scheme: Yala | Tests: YalaTests
+- Scheme: **Yala** (producción) | **Yala Dev** (pruebas con toggle Pro) | Tests: YalaTests
 - **Target iOS 26+** — SIEMPRE usar APIs nativas (Liquid Glass, ToolbarSpacer, etc.)
 - **Simulador: iPhone 17 Pro** (builds, tests, simulación)
 - ModelContainer via `SwiftDataConfiguration` (12 entidades arriba)
@@ -85,13 +85,13 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 ### Flujo estándar (feature)
 ```
 /clear → /next → Plan Mode (Shift+Tab) → /review-plan → Accept edits
-→ implementar → /verify-ios → /test-smart → /swift-audit
+→ implementar → /verify-ios → /test-smart → /device-qa → /swift-audit
 → /commit-one → /clear
 ```
 
 ### Flujo rápido (bug fix)
 ```
-/next → implementar → /verify-ios → /commit-one
+/next → implementar → /verify-ios → /device-qa → /commit-one
 ```
 
 ### Flujo autónomo (tarea mecánica con plan claro)
@@ -102,7 +102,7 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 ### Flujo complejo (modelo core, multi-archivo)
 ```
 /clear → /next → /analyze-impact → Plan Mode → /review-plan → Accept
-→ implementar → /verify-ios → /test-smart → /simplify → aplicar
+→ implementar → /verify-ios → /test-smart → /device-qa → /simplify → aplicar
 → /commit-one → /context-snapshot → /clear
 ```
 
@@ -112,7 +112,7 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 | Orientación | `/next` |
 | Planificación | Plan Mode (Shift+Tab), `/review-plan` |
 | Análisis | `/analyze-impact` |
-| Verificación | `/verify-ios`, `/verify-quick`, `/test-smart`, `/test-ios` |
+| Verificación | `/verify-ios`, `/verify-quick`, `/test-smart`, `/test-ios`, `/device-qa` |
 | Calidad Swift | `/swift-audit`, `/swiftdata-check`, `/swift-modernize`, `/simplify` |
 | Review | `/review-code`, `/diff-review` |
 | Auditoría periódica | `/deep-scan`, `/a11y-audit`, `/ds-compliance`, `/test-coverage`, `/pre-launch`, `/l10n-check`, `/perf-check` |
@@ -134,6 +134,53 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 | Cambio en UI (Views) | Solo `/verify-ios` |
 | Antes de commit | `/test-smart` siempre |
 | Después de merge o refactor grande | `/test-ios` (todos los tests) |
+
+## Device QA (validación visual en simulador)
+
+**SIEMPRE usar scheme `Yala Dev`** para pruebas en simulador. Tiene toggle "Simular Pro" y flag `DEV_BUILD`.
+
+### Setup Yala Dev
+```bash
+# Build (usa DerivedData separado — config Debug-Dev genera bundle .dev)
+xcodebuild -scheme "Yala Dev" -project Yala.xcodeproj \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  -derivedDataPath /tmp/YalaDevBuild build
+
+# Install + Launch
+xcrun simctl install booted "/tmp/YalaDevBuild/Build/Products/Debug-Dev-iphonesimulator/Yala.app"
+xcrun simctl launch booted com.jurgenschmidt.yala.dev
+
+# Conectar agent-device
+agent-device open com.jurgenschmidt.yala.dev --platform ios
+```
+
+### Patrón de interacción con agent-device
+```bash
+# ✅ CORRECTO: find + click → type (los QA scripts usan este patrón)
+agent-device find "accessibility_id_or_text" click
+agent-device type "texto a escribir"
+
+# ❌ INCORRECTO: fill (escribe en campo equivocado, refs inválidos)
+agent-device fill @e10 "texto"
+
+# Cerrar teclado QWERTY antes de tocar campo cubierto
+agent-device press 200 150   # tap fuera del campo
+
+# Navegar entre campos de texto con teclado activo
+agent-device snapshot -i | grep "Teclado siguiente"
+agent-device press @eN   # botón "Teclado siguiente"
+```
+
+### Flujo device-qa para cada feature/fix
+1. **Build + install Yala Dev** (si hay cambios de código)
+2. **Activar Pro** si la feature lo requiere: Perfil → scroll a "Simular Pro" → toggle ON
+3. **Navegar a la pantalla afectada** y verificar visualmente
+4. **Tomar screenshot** como evidencia: `agent-device screenshot /tmp/yala-qa-[feature].png`
+5. **Actualizar QA-SCENARIOS.md** si la feature es nueva o cambió el flujo esperado
+
+### Onboarding (app fresca)
+Ejecutar fixture: `agent-device batch --steps-file qa/fixtures/onboarding-complete.json --json`
+O seguir pasos manuales con `find + click + type` (ver fixture para secuencia exacta).
 
 ## Self-Maintenance Rule
 Después de crear o modificar modelos, servicios o ViewModels:
