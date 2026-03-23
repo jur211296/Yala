@@ -200,7 +200,7 @@ struct AccountsSettingsListView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
-            .frame(height: CGFloat(viewModel.orderedActiveAccounts.count) * 84)
+            .frame(height: CGFloat(viewModel.orderedActiveAccounts.count) * 80)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(.thCard)
