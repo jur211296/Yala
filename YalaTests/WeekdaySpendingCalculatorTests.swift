@@ -16,6 +16,18 @@ struct WeekdaySpendingCalculatorTests {
 
     private let calendar = Calendar.current
 
+    /// A 7-day interval starting on Sunday March 1, 2026
+    private let weekInterval = DateInterval(
+        start: Calendar.current.date(from: DateComponents(year: 2026, month: 3, day: 1))!,
+        end: Calendar.current.date(from: DateComponents(year: 2026, month: 3, day: 8))!
+    )
+
+    /// A 28-day interval (4 full weeks) starting March 1, 2026
+    private let monthInterval = DateInterval(
+        start: Calendar.current.date(from: DateComponents(year: 2026, month: 3, day: 1))!,
+        end: Calendar.current.date(from: DateComponents(year: 2026, month: 3, day: 29))!
+    )
+
     private func makeCategory(name: String, isIncome: Bool = false) -> YalaCategory {
         YalaCategory(name: name, colorHex: "#FF0000", isIncome: isIncome)
     }
@@ -41,9 +53,8 @@ struct WeekdaySpendingCalculatorTests {
         return tx
     }
 
-    /// Creates a date for a specific weekday (1=Sun..7=Sat) in a recent week.
+    /// Creates a date for a specific weekday (1=Sun..7=Sat) in the first week of March 2026.
     private func dateForWeekday(_ weekday: Int) -> Date {
-        // Find next occurrence of the given weekday from a fixed base date
         let base = calendar.date(from: DateComponents(year: 2026, month: 3, day: 1))! // Sunday
         var current = base
         for _ in 0..<7 {
@@ -60,6 +71,7 @@ struct WeekdaySpendingCalculatorTests {
     @Test func empty_returnsSevenEntriesAllZero() {
         let result = WeekdaySpendingCalculator.calculate(
             transactions: [],
+            interval: weekInterval,
             currencyCode: "USD",
             converter: MockCurrencyConverter()
         )
@@ -79,6 +91,7 @@ struct WeekdaySpendingCalculatorTests {
 
         let result = WeekdaySpendingCalculator.calculate(
             transactions: [tx],
+            interval: weekInterval,
             currencyCode: "USD",
             converter: MockCurrencyConverter()
         )
@@ -86,6 +99,8 @@ struct WeekdaySpendingCalculatorTests {
         let mondayEntry = result.first { $0.weekday == 2 }!
         #expect(mondayEntry.total == 50)
         #expect(mondayEntry.count == 1)
+        // 1 Monday in a 7-day interval → average = 50/1 = 50
+        #expect(mondayEntry.average == 50)
 
         // All other weekdays should be zero
         for entry in result where entry.weekday != 2 {
@@ -101,6 +116,7 @@ struct WeekdaySpendingCalculatorTests {
 
         let result = WeekdaySpendingCalculator.calculate(
             transactions: [tx],
+            interval: weekInterval,
             currencyCode: "USD",
             converter: MockCurrencyConverter()
         )
@@ -123,6 +139,7 @@ struct WeekdaySpendingCalculatorTests {
 
         let result = WeekdaySpendingCalculator.calculate(
             transactions: [tx],
+            interval: weekInterval,
             currencyCode: "USD",
             converter: MockCurrencyConverter()
         )
@@ -138,6 +155,7 @@ struct WeekdaySpendingCalculatorTests {
 
         let result = WeekdaySpendingCalculator.calculate(
             transactions: [tx],
+            interval: weekInterval,
             currencyCode: "USD",
             converter: MockCurrencyConverter()
         )
@@ -147,7 +165,7 @@ struct WeekdaySpendingCalculatorTests {
         }
     }
 
-    @Test func multipleExpenses_sameWeekday_summed() {
+    @Test func multipleExpenses_sameWeekday_averagePerDay() {
         let cat = makeCategory(name: "Food")
         let wednesday = dateForWeekday(4) // Wednesday
         let tx1 = makeTransaction(amount: -30, date: wednesday, category: cat)
@@ -155,6 +173,7 @@ struct WeekdaySpendingCalculatorTests {
 
         let result = WeekdaySpendingCalculator.calculate(
             transactions: [tx1, tx2],
+            interval: weekInterval,
             currencyCode: "USD",
             converter: MockCurrencyConverter()
         )
@@ -162,7 +181,8 @@ struct WeekdaySpendingCalculatorTests {
         let wedEntry = result.first { $0.weekday == 4 }!
         #expect(wedEntry.total == 100)
         #expect(wedEntry.count == 2)
-        #expect(wedEntry.average == 50)
+        // 1 Wednesday in 7-day interval → average = 100/1 = 100
+        #expect(wedEntry.average == 100)
     }
 
     @Test func multiCurrency_conversionApplied() {
@@ -176,6 +196,7 @@ struct WeekdaySpendingCalculatorTests {
 
         let result = WeekdaySpendingCalculator.calculate(
             transactions: [tx],
+            interval: weekInterval,
             currencyCode: "USD",
             converter: converter
         )
@@ -187,6 +208,7 @@ struct WeekdaySpendingCalculatorTests {
     @Test func allSevenDays_haveCorrectWeekdayNumbers() {
         let result = WeekdaySpendingCalculator.calculate(
             transactions: [],
+            interval: weekInterval,
             currencyCode: "USD",
             converter: MockCurrencyConverter()
         )
@@ -194,19 +216,42 @@ struct WeekdaySpendingCalculatorTests {
         let weekdays = result.map { $0.weekday }
         #expect(weekdays == [1, 2, 3, 4, 5, 6, 7])
     }
+
+    // MARK: - Day Occurrences Tests
+
+    @Test func weekdayOccurrences_7days_eachDayAppearsOnce() {
+        let occurrences = WeekdaySpendingCalculator.weekdayOccurrences(in: weekInterval)
+        for day in 1...7 {
+            #expect(occurrences[day] == 1, "Day \(day) should appear once in 7-day interval")
+        }
+    }
+
+    @Test func weekdayOccurrences_28days_eachDayAppears4Times() {
+        let occurrences = WeekdaySpendingCalculator.weekdayOccurrences(in: monthInterval)
+        for day in 1...7 {
+            #expect(occurrences[day] == 4, "Day \(day) should appear 4 times in 28-day interval")
+        }
+    }
+
+    @Test func averagePerDay_multipleWeeks() {
+        let cat = makeCategory(name: "Food")
+        // Two Mondays in the 28-day interval: March 2 and March 9
+        let monday1 = calendar.date(from: DateComponents(year: 2026, month: 3, day: 2))! // Monday
+        let monday2 = calendar.date(from: DateComponents(year: 2026, month: 3, day: 9))! // Monday
+        let tx1 = makeTransaction(amount: -40, date: monday1, category: cat)
+        let tx2 = makeTransaction(amount: -60, date: monday2, category: cat)
+
+        let result = WeekdaySpendingCalculator.calculate(
+            transactions: [tx1, tx2],
+            interval: monthInterval,
+            currencyCode: "USD",
+            converter: MockCurrencyConverter()
+        )
+
+        let mondayEntry = result.first { $0.weekday == 2 }!
+        #expect(mondayEntry.total == 100)
+        #expect(mondayEntry.count == 2)
+        // 4 Mondays in 28-day interval → average = 100/4 = 25
+        #expect(mondayEntry.average == 25)
+    }
 }
-
-/*
-Tests generated:
-1. empty_returnsSevenEntriesAllZero - Empty input returns 7 entries with zero values
-2. singleExpense_onMonday_weekday2HasTotal - Single expense appears on correct weekday
-3. incomeTransactions_excluded - Income categories are filtered out
-4. balanceAdjustments_excluded - Balance adjustments are filtered out
-5. noCategoryTransactions_excluded - Transactions without category are filtered out
-6. multipleExpenses_sameWeekday_summed - Multiple expenses on same day are summed
-7. multiCurrency_conversionApplied - Currency conversion uses MockCurrencyConverter rate
-8. allSevenDays_haveCorrectWeekdayNumbers - Output always has weekdays 1-7
-
-Cases NOT covered (require more context):
-- Locale-specific weekday ordering (would need injecting Calendar)
-*/

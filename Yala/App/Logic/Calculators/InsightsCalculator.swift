@@ -260,6 +260,7 @@ struct InsightsCalculator {
         // Weekday Spending (computed before Quick Stats for highestAvgWeekday)
         let weekdaySpending = WeekdaySpendingCalculator.calculate(
             transactions: periodTxns,
+            interval: interval,
             currencyCode: currencyCode,
             converter: converter
         )
