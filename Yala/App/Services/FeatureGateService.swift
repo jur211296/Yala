@@ -19,6 +19,7 @@ enum ProFeature: String, CaseIterable {
     case proThemes
     case smartInsightsAI
     case cashFlowAdvanced    // Base feature is Free; advanced methods/horizon/charts are Pro
+    case exportExtendedPeriods // Free: week/month periods; Pro: year, all time, custom
 
     /// Free tier limit for countable features (nil = no limit in free tier)
     var freeLimit: Int? {
@@ -32,7 +33,7 @@ enum ProFeature: String, CaseIterable {
     /// Whether this feature is completely unavailable in Free tier
     var isProOnly: Bool {
         switch self {
-        case .voiceInput, .imageInput, .premiumIcons, .proThemes, .smartInsightsAI: return true
+        case .voiceInput, .imageInput, .premiumIcons, .proThemes, .smartInsightsAI, .exportExtendedPeriods: return true
         default: return false
         }
     }
@@ -48,6 +49,7 @@ enum ProFeature: String, CaseIterable {
         case .proThemes: return L10n.FeatureGate.proThemes
         case .smartInsightsAI: return L10n.FeatureGate.smartInsightsAI
         case .cashFlowAdvanced: return L10n.FeatureGate.cashFlowAdvanced
+        case .exportExtendedPeriods: return L10n.FeatureGate.exportExtendedPeriods
         }
     }
 
@@ -62,6 +64,7 @@ enum ProFeature: String, CaseIterable {
         case .proThemes: return "paintpalette.fill"
         case .smartInsightsAI: return "sparkles"
         case .cashFlowAdvanced: return "arrow.left.arrow.right"
+        case .exportExtendedPeriods: return "calendar.badge.clock"
         }
     }
 }
@@ -170,6 +173,9 @@ extension L10n {
         }
         static var cashFlowAdvanced: String {
             NSLocalizedString("featureGate.cashFlowAdvanced", comment: "Cash flow advanced feature name")
+        }
+        static var exportExtendedPeriods: String {
+            NSLocalizedString("featureGate.exportExtendedPeriods", comment: "Export extended periods feature name")
         }
 
         // Titles

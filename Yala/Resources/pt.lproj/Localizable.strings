@@ -2262,6 +2262,7 @@
 "featureGate.proThemes" = "Temas Pro";
 "featureGate.smartInsightsAI" = "Insights inteligentes com IA";
 "featureGate.cashFlowAdvanced" = "Fluxo de caixa avançado";
+"featureGate.exportExtendedPeriods" = "Períodos de exportação estendidos";
 
 // Titles
 "featureGate.limitReachedTitle" = "Limite atingido";

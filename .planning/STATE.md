@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-15)
 Version: 1.2 (en desarrollo)
 Phase: V1.2
 Status: **En desarrollo** — Reportes Financieros (Comparativa + Flujo de Caja), mejoras producción
-Last activity: 2026-03-21 — Scheduled payments bug fixes, advance payment, real history
+Last activity: 2026-03-22 — Visual audit completado (36 pantallas), fixes de texto y UI aplicados
 
 ### Apple Review History (V1.0)
 
@@ -41,6 +41,7 @@ Progress: V1.2 ████████████░░░░ 75% (Reportes Fi
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-22] 8762123 fix: visual audit — correct typos, notification text grammar, and UI truncation
 - [2026-03-21] b906e54 fix: scheduled payments — duplicate drafts, advance payment, real history
 - [2026-03-20] 07ddd09 fix: budget alerts — send only highest threshold notification
 - [2026-03-20] f8677ae fix: TopSubcategories widget — correct percentageOfTotal with categoryFilter and L10n placeholder
@@ -547,9 +548,9 @@ Todos deben resolverse para V1.1 (próxima release). Prioridad: crashes > lógic
    - [ ] Limitar exportación de datos: solo algunos periodos Free, los demás PRO
    - [ ] Onboarding cuenta: teclado tapa todo al escribir nombre + no permitir saldo inicial 0 como default
    - [ ] Onboarding cuenta: paso/banner/popup adicional explicativo
-   - [ ] Bug widget TopSubcategories en PanelView: % de participación incorrecto
-   - [ ] Notificaciones presupuesto: si se superan varios límites, solo enviar el máximo
-   - [ ] Permitir adelantar un pago planificado
+   - [x] Bug widget TopSubcategories en PanelView: % de participación incorrecto — Resuelto (f8677ae)
+   - [x] Notificaciones presupuesto: si se superan varios límites, solo enviar el máximo — Resuelto (07ddd09)
+   - [x] Permitir adelantar un pago planificado — Resuelto (b906e54)
 
 Ver ROADMAP.md para versiones futuras (V1.3, V2.0, V2.1, V2.2, V3.0+).
 
