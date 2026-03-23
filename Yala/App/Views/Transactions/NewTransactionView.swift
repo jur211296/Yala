@@ -593,7 +593,7 @@ struct NewTransactionView: View {
                 .onChange(of: isAmountFieldFocused) { _, isFocused in
                     // When field gets focus and value is just "0" or "0.00", clear it
                     if isFocused
-                        && (viewModel.amountString == "0" || viewModel.amountString == "0.00")
+                        && (viewModel.amountString == "0" || viewModel.amountString == "0.00" || viewModel.amountString == "0,00")
                     {
                         viewModel.amountString = ""
                     }
@@ -602,9 +602,7 @@ struct NewTransactionView: View {
                         if viewModel.amountString.isEmpty {
                             viewModel.amountString = "0.00"
                         } else {
-                            let sep = Locale.current.decimalSeparator ?? "."
-                            viewModel.amountString = String(format: "%.2f", viewModel.amount)
-                                .replacing(".", with: sep)
+                            viewModel.amountString = AmountInputHelper.formatWithGrouping(viewModel.amount)
                         }
                     }
                 }
@@ -778,7 +776,7 @@ struct NewTransactionView: View {
             payment: nil,
             prefill: ScheduledPaymentPrefill(
                 transactionType: viewModel.transactionType.rawValue,
-                amount: String(format: "%.2f", viewModel.amount),
+                amount: AmountInputHelper.formatWithGrouping(viewModel.amount),
                 note: viewModel.note,
                 account: viewModel.selectedAccount,
                 subcategory: viewModel.selectedSubcategory,
@@ -1204,7 +1202,7 @@ struct NewTransactionView: View {
             accountName: account?.name ?? L10n.Transaction.account,
             accountColorHex: account?.colorHex ?? AppConstants.defaultColorHex,
             note: viewModel.note,
-            amount: Decimal(string: viewModel.amountString.replacing(Locale.current.decimalSeparator ?? ".", with: ".")) ?? 0,
+            amount: Decimal(viewModel.amount),
             currencyCode: viewModel.effectiveCurrencyCode,
             subcategoryName: viewModel.selectedSubcategory?.name,
             subcategoryColorHex: viewModel.selectedSubcategory?.colorHex,
@@ -1260,7 +1258,7 @@ struct NewTransactionView: View {
             viewModel.editingTransaction = tx
 
             // Load amount (absolute value, since we store signed amounts)
-            viewModel.amountString = String(format: "%.2f", abs(tx.amount))
+            viewModel.amountString = AmountInputHelper.formatWithGrouping(abs(tx.amount))
 
             // Load account
             viewModel.selectedAccount = tx.account
@@ -1304,7 +1302,7 @@ struct NewTransactionView: View {
                         viewModel.destinationAccount = inTx.account
                         viewModel.editingTransferPair = (out: outTx, in: inTx)
                         // Use absolute amount from the outflow side
-                        viewModel.amountString = String(format: "%.2f", abs(outTx.amount))
+                        viewModel.amountString = AmountInputHelper.formatWithGrouping(abs(outTx.amount))
                     }
                 } catch {
                     #if DEBUG
@@ -1482,7 +1480,7 @@ struct NewTransactionView: View {
 
         // Set amount if available
         if let amount = favorite.amount, amount > 0 {
-            viewModel.amountString = String(format: "%.2f", amount)
+            viewModel.amountString = AmountInputHelper.formatWithGrouping(amount)
         }
 
         // Set account if available

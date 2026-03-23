@@ -379,7 +379,7 @@ struct CashFlowAddLineSheet: View {
         let maxOrder = (viewModel.plan?.lines ?? []).map(\.sortOrder).max() ?? 0
         let method: EstimationMethod = selectedCategory != nil ? selectedMethod : .manual
         let manualAmount: Double? = selectedCategory == nil
-            ? Double(manualAmountText.replacing(",", with: "."))
+            ? AmountInputHelper.parseDecimal(manualAmountText)
             : nil
 
         let line = CashFlowLine(

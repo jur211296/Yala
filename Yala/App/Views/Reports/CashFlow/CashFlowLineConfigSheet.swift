@@ -261,7 +261,7 @@ struct CashFlowLineConfigSheet: View {
     private func applyChanges() {
         line.estimationMethod = selectedMethod.rawValue
         if selectedMethod == .manual {
-            line.manualAmount = Double(manualAmount.replacing(",", with: "."))
+            line.manualAmount = AmountInputHelper.parseDecimal(manualAmount)
         }
         do {
             try viewModel.plan?.modelContext?.save()

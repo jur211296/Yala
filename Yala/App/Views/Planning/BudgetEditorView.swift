@@ -54,6 +54,7 @@ struct BudgetEditorView: View {
 
     // Focus state
     @FocusState private var isNameFieldFocused: Bool
+    @FocusState private var isAmountFieldFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -188,6 +189,22 @@ struct BudgetEditorView: View {
                             .multilineTextAlignment(.trailing)
                             .font(.system(size: scaledAmountSize, weight: .bold))
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                            .focused($isAmountFieldFocused)
+                            .onChange(of: isAmountFieldFocused) { _, isFocused in
+                                if isFocused && (limitAmount == "0" || limitAmount == "0.00" || limitAmount == "0,00") {
+                                    limitAmount = ""
+                                }
+                                if !isFocused && !limitAmount.isEmpty {
+                                    let amount = AmountInputHelper.parseDecimal(limitAmount)
+                                    limitAmount = AmountInputHelper.formatWithGrouping(amount)
+                                }
+                            }
+                            .onChange(of: limitAmount) { _, newValue in
+                                let filtered = AmountInputHelper.filterAmountInput(newValue)
+                                if filtered != newValue {
+                                    limitAmount = filtered
+                                }
+                            }
                     }
                 }
                 .padding()
@@ -699,7 +716,7 @@ struct BudgetEditorView: View {
 
         name = budget.name
         currencyCode = budget.currencyCode
-        limitAmount = String(format: "%.2f", budget.limitAmount)
+        limitAmount = AmountInputHelper.formatWithGrouping(budget.limitAmount)
         selectedPeriodType = BudgetPeriodType(rawValue: budget.periodType) ?? .monthly
         isActive = budget.isActive
 
@@ -731,7 +748,8 @@ struct BudgetEditorView: View {
     }
 
     private func saveBudget() {
-        guard let amount = Double(limitAmount), amount > 0 else { return }
+        let amount = AmountInputHelper.parseDecimal(limitAmount)
+        guard amount > 0 else { return }
 
         let saved = viewModel.saveBudget(
             existing: budget,

@@ -719,10 +719,10 @@ struct OnboardingView: View {
                 onUseBalance: { amount in
                     if amount >= 0 {
                         balanceIsPositive = true
-                        initialBalanceText = String(format: "%.2f", amount)
+                        initialBalanceText = AmountInputHelper.formatWithGrouping(amount)
                     } else {
                         balanceIsPositive = false
-                        initialBalanceText = String(format: "%.2f", abs(amount))
+                        initialBalanceText = AmountInputHelper.formatWithGrouping(abs(amount))
                     }
                 },
                 onDismiss: { showBalanceGuide = false }
@@ -944,7 +944,7 @@ struct OnboardingView: View {
         let selectedCategory = selectedBudgetCategoryIndex
             .flatMap { $0 < cats.count ? cats[$0] : nil }
 
-        let budgetAmount = Double(budgetAmountText.replacing(",", with: ".")) ?? 0
+        let budgetAmount = AmountInputHelper.parseDecimal(budgetAmountText)
         let hasCategory = selectedCategory != nil
         let hasAmount = budgetAmount > 0
 
@@ -1190,11 +1190,10 @@ struct OnboardingView: View {
         case 5:
             // If user wants a budget, require category + valid amount
             if wantsBudget {
-                let cleanedAmount = budgetAmountText.replacing(",", with: ".")
+                let parsedAmount = AmountInputHelper.parseDecimal(budgetAmountText)
                 guard let index = selectedBudgetCategoryIndex,
                       index < budgetCategories.count,
-                      let amount = Double(cleanedAmount),
-                      amount > 0
+                      parsedAmount > 0
                 else { return true }
             }
             return false
@@ -1368,8 +1367,8 @@ struct OnboardingView: View {
 
         // Set initial balance if in full control mode and amount > 0
         if !expensesOnlyMode {
-            let cleanedText = initialBalanceText.replacing(",", with: ".")
-            if let amount = Double(cleanedText), amount != 0 {
+            let amount = AmountInputHelper.parseDecimal(initialBalanceText)
+            if amount != 0 {
                 let signedAmount = balanceIsPositive ? amount : -amount
                 if let sub = InitialBalanceService.findBalanceAdjustmentSubcategory(context: modelContext) {
                     _ = InitialBalanceService.setInitialBalance(
@@ -1391,8 +1390,8 @@ struct OnboardingView: View {
     private func createOnboardingBudget() {
         guard let catIndex = selectedBudgetCategoryIndex else { return }
 
-        let cleanedText = budgetAmountText.replacing(",", with: ".")
-        guard let budgetAmount = Double(cleanedText), budgetAmount > 0 else { return }
+        let budgetAmount = AmountInputHelper.parseDecimal(budgetAmountText)
+        guard budgetAmount > 0 else { return }
 
         // Get the category info from preview
         let cats = budgetCategories

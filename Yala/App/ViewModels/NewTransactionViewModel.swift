@@ -114,10 +114,7 @@ final class NewTransactionViewModel {
 
     /// Monto como Double
     var amount: Double {
-        let normalized = amountString.replacing(
-            Locale.current.decimalSeparator ?? ".", with: "."
-        )
-        return Double(normalized) ?? 0.0
+        AmountInputHelper.parseDecimal(amountString)
     }
 
     /// Monto formateado para display
@@ -908,7 +905,7 @@ final class NewTransactionViewModel {
         self.splitDivisor = divisor
         self.isSplitStale = false
         // Update amount string — programmatic, not manual edit
-        self.amountString = String(format: "%.2f", amount)
+        self.amountString = AmountInputHelper.formatWithGrouping(amount)
 
         // Save last used preferences
         UserDefaults.standard.set(splitType.rawValue, forKey: "lastSplitType")

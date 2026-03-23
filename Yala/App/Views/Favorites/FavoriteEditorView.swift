@@ -270,14 +270,13 @@ struct FavoriteEditorView: View {
                 .focused($isAmountFieldFocused)
                 .frame(width: 250)
                 .onChange(of: isAmountFieldFocused) { _, isFocused in
-                    if isFocused && (amountString == "0" || amountString == "0.00") {
+                    if isFocused && (amountString == "0" || amountString == "0.00" || amountString == "0,00") {
                         amountString = ""
                     }
                     if !isFocused {
-                        if amountString.isEmpty {
-                            amountString = ""
-                        } else if let amount = Double(amountString.replacing(",", with: ".")) {
-                            amountString = String(format: "%.2f", amount)
+                        if !amountString.isEmpty {
+                            let amount = AmountInputHelper.parseDecimal(amountString)
+                            amountString = AmountInputHelper.formatWithGrouping(amount)
                         }
                     }
                 }
@@ -386,7 +385,7 @@ struct FavoriteEditorView: View {
         name = favorite.name
         transactionType = favorite.type
         if let amount = favorite.amount {
-            amountString = String(format: "%.2f", amount)
+            amountString = AmountInputHelper.formatWithGrouping(amount)
         }
         note = favorite.note ?? ""
         selectedAccount = favorite.account

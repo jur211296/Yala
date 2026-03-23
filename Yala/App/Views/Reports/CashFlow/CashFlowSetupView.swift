@@ -345,7 +345,7 @@ struct CashFlowSetupView: View {
             icon: "plus.circle.fill",
             isDisabled: viewModel.suggestedLines.filter(\.isSelected).isEmpty
         ) {
-            let balance = Double(startingBalance.replacing(",", with: ".")) ?? 0
+            let balance = AmountInputHelper.parseDecimal(startingBalance)
             viewModel.createPlan(startingBalance: balance)
         }
     }
@@ -422,7 +422,7 @@ struct CashFlowMethodPickerSheet: View {
                                         .fill(.thCard)
                                 )
                                 .onChange(of: manualAmountText) {
-                                    let parsed = Double(manualAmountText.replacing(",", with: ".")) ?? 0
+                                    let parsed = AmountInputHelper.parseDecimal(manualAmountText)
                                     previewAmount = parsed
                                 }
                         }
@@ -489,7 +489,7 @@ struct CashFlowMethodPickerSheet: View {
 
     private func recalculatePreview() {
         if selectedMethod == .manual {
-            let parsed = Double(manualAmountText.replacing(",", with: ".")) ?? 0
+            let parsed = AmountInputHelper.parseDecimal(manualAmountText)
             previewAmount = parsed
         } else {
             previewAmount = viewModel.previewAmount(for: line, method: selectedMethod)
@@ -501,7 +501,7 @@ struct CashFlowMethodPickerSheet: View {
     }
 
     private func applyAndDismiss() {
-        let manualAmount = Double(manualAmountText.replacing(",", with: "."))
+        let manualAmount: Double? = manualAmountText.isEmpty ? nil : AmountInputHelper.parseDecimal(manualAmountText)
         viewModel.updateEstimationMethod(for: line.id, to: selectedMethod, manualAmount: manualAmount)
         dismiss()
     }

@@ -91,8 +91,8 @@ final class AccountFormViewModel {
     var parsedBalanceAmount: Double? {
         let trimmed = balanceText.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty { return nil }
-        guard let decimal = parseDecimal(from: trimmed) else { return nil }
-        let magnitude = (decimal as NSDecimalNumber).doubleValue
+        let magnitude = AmountInputHelper.parseDecimal(trimmed)
+        if magnitude == 0 && trimmed != "0" && !trimmed.hasPrefix("0") { return nil }
         return isPositive ? magnitude : -magnitude
     }
 

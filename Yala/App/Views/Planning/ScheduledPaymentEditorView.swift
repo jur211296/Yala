@@ -270,6 +270,21 @@ struct ScheduledPaymentEditorView: View {
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .foregroundStyle(transactionType == "income" ? Color.electricIndigo : .primary)
                             .focused($isAmountFieldFocused)
+                            .onChange(of: isAmountFieldFocused) { _, isFocused in
+                                if isFocused && (amount == "0" || amount == "0.00" || amount == "0,00") {
+                                    amount = ""
+                                }
+                                if !isFocused && !amount.isEmpty {
+                                    let value = AmountInputHelper.parseDecimal(amount)
+                                    amount = AmountInputHelper.formatWithGrouping(value)
+                                }
+                            }
+                            .onChange(of: amount) { _, newValue in
+                                let filtered = AmountInputHelper.filterAmountInput(newValue)
+                                if filtered != newValue {
+                                    amount = filtered
+                                }
+                            }
                     }
                 }
                 .padding()
@@ -1009,7 +1024,7 @@ struct ScheduledPaymentEditorView: View {
         guard let payment = payment else { return }
 
         name = payment.name
-        amount = String(format: "%.2f", payment.amount)
+        amount = AmountInputHelper.formatWithGrouping(payment.amount)
         note = payment.note ?? ""
         transactionType = payment.transactionType
         paymentCategory = PaymentCategory(rawValue: payment.paymentCategory) ?? .recurring
@@ -1046,7 +1061,8 @@ struct ScheduledPaymentEditorView: View {
     }
 
     private func savePayment() {
-        guard let amountValue = Double(amount) else { return }
+        let amountValue = AmountInputHelper.parseDecimal(amount)
+        guard amountValue > 0 else { return }
 
         let effectiveEndDate = hasEndDate ? endDate : nil
 

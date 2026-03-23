@@ -496,7 +496,7 @@ private struct EditStartingBalanceSheet: View {
                     )
 
                 YalaPrimaryButton(L10n.CashFlowPlan.editStartingBalanceSave, icon: "checkmark.circle.fill") {
-                    let value = Double(balanceText.replacing(",", with: ".")) ?? 0
+                    let value = AmountInputHelper.parseDecimal(balanceText)
                     viewModel.updateStartingBalance(value)
                     dismiss()
                 }

@@ -54,7 +54,7 @@ final class FavoriteEditorViewModel {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
         guard !trimmedName.isEmpty else { return false }
 
-        let amount: Double? = amountString.isEmpty ? nil : Double(amountString)
+        let amount: Double? = amountString.isEmpty ? nil : AmountInputHelper.parseDecimal(amountString)
         let needRaw: String? =
             needOverride != subcategory?.need
             ? needOverride?.rawValue
