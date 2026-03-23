@@ -333,7 +333,7 @@ struct PanelView: View {
             ScrollViewReader { scrollProxy in
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                        if showSiriTip {
+                        if showSiriTip, transactions.count >= 5 {
                             SiriTipCard(isVisible: $showSiriTip)
                         }
 

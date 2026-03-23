@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-15)
 Version: 1.2 (en desarrollo)
 Phase: V1.2
 Status: **En desarrollo** — Reportes Financieros (Comparativa + Flujo de Caja), mejoras producción
-Last activity: 2026-03-22 — Visual audit completado (36 pantallas), fixes de texto y UI aplicados
+Last activity: 2026-03-23 — Coach mark spotlight contrast fix para dark themes
 
 ### Apple Review History (V1.0)
 
@@ -41,6 +41,11 @@ Progress: V1.2 ████████████░░░░ 75% (Reportes Fi
 
 ## Recent Progress
 <!-- Últimos 10 commits registrados automáticamente por /commit-one -->
+- [2026-03-23] b692964 fix: improve coach mark spotlight contrast in dark themes — add animated glow border
+- [2026-03-23] e89ef03 fix: reliable post-onboarding trial offer — replace unreliable onDismiss with onChange
+- [2026-03-23] 7b1356b fix: reduce account list row height to prevent clipping in reorder mode
+- [2026-03-22] 66d56d9 feat: add thousand grouping separators to all amount input fields
+- [2026-03-22] 03ea9e7 feat: pro gate on export period selector — free users limited to short-range periods
 - [2026-03-22] 8762123 fix: visual audit — correct typos, notification text grammar, and UI truncation
 - [2026-03-21] b906e54 fix: scheduled payments — duplicate drafts, advance payment, real history
 - [2026-03-20] 07ddd09 fix: budget alerts — send only highest threshold notification
@@ -529,6 +534,11 @@ Todos deben resolverse para V1.1 (próxima release). Prioridad: crashes > lógic
 - [x] **BUG-62: Presupuestos en vista Compromisos se desbordan al cambiar periodo** ✅
 - [x] **BUG-63: Notification primer no activa alertas de presupuestos** ✅
 
+### Bugs pendientes V1.2
+
+- [x] **BUG-64: Perfil > Cuentas — lista cortada al reordenar con 3+ cuentas** ✅ (7b1356b)
+- [x] **BUG-65: Trial banner post-onboarding no aparece (producción 1.1.1)** ✅ (e89ef03) — fullScreenCover onDismiss unreliable, reemplazado por onChange + UserDefaults persistence
+
 ### V1.1 features completadas (resumen)
 
 - Sistema de temas independientes (6 temas: 3 free + 3 PRO)
@@ -545,7 +555,7 @@ Todos deben resolverse para V1.1 (próxima release). Prioridad: crashes > lógic
 2. **Reportes Financieros > Flujo de Caja** — Refinar muchos detalles pendientes
 3. **Cambios ya realizados en 1.2** — (listos, solo validar)
 4. **Mejoras de producción:**
-   - [ ] Limitar exportación de datos: solo algunos periodos Free, los demás PRO
+   - [x] Limitar exportación de datos: solo algunos periodos Free, los demás PRO — Resuelto (03ea9e7)
    - [ ] Onboarding cuenta: teclado tapa todo al escribir nombre + no permitir saldo inicial 0 como default
    - [ ] Onboarding cuenta: paso/banner/popup adicional explicativo
    - [x] Bug widget TopSubcategories en PanelView: % de participación incorrecto — Resuelto (f8677ae)
@@ -708,13 +718,11 @@ TransactionService, EntityDeletionService, MerchantMemoryService, CurrencyChange
 
 ## Session Continuity
 
-Last session: 2026-03-21
-Stopped at: Scheduled payments — bug fixes (duplicate drafts), advance payment feature, real history
-Next step: QA manual pagos planificados, luego continuar con siguiente item de V1.2
+Last session: 2026-03-23
+Stopped at: Coach mark spotlight contrast fix — glow border animable para dark themes
+Next step: Continuar con mejoras de producción V1.2 (onboarding cuenta, reportes)
 Resume context:
-- Fix crítico: associateTransaction ahora avanza nextDueDate (bug F1 de HOTFIX-1.1.1)
-- Throttle processDuePayments en foreground resume (30s cooldown)
-- Nueva feature "Adelantar gasto" en detalle de pago planificado
-- Historial muestra fecha/monto reales del registro vinculado
-- Acción "Ver registro" abre edición de transacción vinculada
-- 38 tests pasan (DraftService + ViewModel + ViewModelFilter + DraftService)
+- CoachMarkOverlay: SpotlightBorderShape (animable) + mayor dim opacity en dark themes
+- Verificado visualmente en simulador con dark mode (4 steps del tour)
+- Verificado con device-qa: trial aparece correctamente post-onboarding en fresh install
+- 3 tests nuevos en FeatureGateTests (9 total)
