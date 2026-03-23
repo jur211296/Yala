@@ -42,6 +42,9 @@ struct InboxView: View {
     // Pending next draft (for "Approve Next" flow)
     @State private var pendingNextDraftID: PersistentIdentifier?
 
+    // Auto-dismiss when last draft approved via edit sheet
+    @State private var shouldDismissAfterApproval = false
+
     // Archived account alert
     @State private var showArchivedAccountAlert = false
 
@@ -131,10 +134,17 @@ struct InboxView: View {
                 }
             }
             .tint(.primary)
-            .sheet(item: $selectedDraft, onDismiss: { viewModel.loadData() }) { draft in
+            .sheet(item: $selectedDraft, onDismiss: {
+                if shouldDismissAfterApproval {
+                    shouldDismissAfterApproval = false
+                    dismissIfNoPendingDrafts()
+                } else {
+                    viewModel.loadData()
+                }
+            }) { draft in
                 InboxDraftEditSheet(
                     draft: draft,
-                    onApproved: nil,
+                    onApproved: { shouldDismissAfterApproval = true },
                     onApproveNext: { nextDraft in
                         // Store the ID and close sheet - onChange will open the next
                         pendingNextDraftID = nextDraft.persistentModelID
@@ -196,6 +206,7 @@ struct InboxView: View {
                         },
                         onAccept: {
                             showSwipeSuccessView = false
+                            dismissIfNoPendingDrafts()
                         },
                         onApproveNext: {
                             showSwipeSuccessView = false
@@ -503,6 +514,14 @@ struct InboxView: View {
                 #endif
                 viewModel.loadData()
             }
+        }
+    }
+
+    /// Reload data and dismiss InboxView if no pending drafts remain.
+    private func dismissIfNoPendingDrafts() {
+        viewModel.loadData()
+        if !viewModel.hasPendingDrafts {
+            dismiss()
         }
     }
 
