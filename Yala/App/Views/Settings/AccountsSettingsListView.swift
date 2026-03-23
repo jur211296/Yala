@@ -225,11 +225,12 @@ struct AccountsSettingsListView: View {
         }()
 
         return HStack(spacing: DS.Spacing.md) {
-            RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+            Circle()
                 .fill(colorForHex(account.colorHex))
-                .frame(width: 44, height: 44)
+                .frame(width: 32, height: 32)
                 .overlay(
                     Image(systemName: displayIconName(for: account))
+                        .font(DS.Typography.subheadline)
                         .foregroundStyle(.white)
                 )
 
@@ -237,6 +238,7 @@ struct AccountsSettingsListView: View {
                 Text(primaryText)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
+                    .lineLimit(1)
 
                 Text(accountTypeText(for: account))
                     .font(DS.Typography.subheadline)
@@ -255,6 +257,8 @@ struct AccountsSettingsListView: View {
                 if !sessionState.isExpensesOnlyMode {
                     Text(viewModel.formattedBalance(for: account))
                         .font(DS.Typography.headline)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
                         .foregroundStyle(.primary)
                 }
 
