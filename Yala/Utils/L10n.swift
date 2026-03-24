@@ -1885,6 +1885,7 @@ enum L10n {
             ls("settings.notifications", comment: "")
         }
         static var favorites: String { ls("settings.favorites", comment: "") }
+        static var budgets: String { ls("settings.budgets", comment: "") }
         static var budgetsFavorites: String {
             ls("settings.budgetsFavorites", comment: "")
         }

@@ -348,6 +348,7 @@
 "settings.tags" = "Etiquettes";
 "settings.notifications" = "Notifications";
 "settings.favorites" = "Paiements favoris";
+"settings.budgets" = "Budgets";
 "settings.budgetsFavorites" = "Budgets favoris";
 "settings.budgetsFavoritesInfo" = "Les budgets favoris apparaissent dans le widget Budgets (3 en moyen, 5 en grand).";
 "settings.budgetsFavoritesEmptyHint" = "Creez des budgets dans l'onglet Planification.";

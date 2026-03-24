@@ -67,29 +67,64 @@ struct BudgetsFavoritesSettingsViewModelTests {
         vm.showSaveError = true
         #expect(vm.showSaveError == true)
     }
+
+    // MARK: - CRUD State (Initial)
+
+    @MainActor @Test func initialState_showEditorFalse() {
+        let vm = BudgetsFavoritesSettingsViewModel()
+        #expect(vm.showEditor == false)
+    }
+
+    @MainActor @Test func initialState_budgetToEditNil() {
+        let vm = BudgetsFavoritesSettingsViewModel()
+        #expect(vm.budgetToEdit == nil)
+    }
+
+    @MainActor @Test func initialState_showDeleteErrorFalse() {
+        let vm = BudgetsFavoritesSettingsViewModel()
+        #expect(vm.showDeleteError == false)
+    }
+
+    @MainActor @Test func initialState_showDeleteConfirmationFalse() {
+        let vm = BudgetsFavoritesSettingsViewModel()
+        #expect(vm.showDeleteConfirmation == false)
+    }
+
+    @MainActor @Test func initialState_showUpgradeSheetFalse() {
+        let vm = BudgetsFavoritesSettingsViewModel()
+        #expect(vm.showUpgradeSheet == false)
+    }
+
+    @MainActor @Test func initialState_budgetToDeleteNil() {
+        let vm = BudgetsFavoritesSettingsViewModel()
+        #expect(vm.budgetToDelete == nil)
+    }
+
+    // MARK: - CRUD Operations
+
+    @MainActor @Test func openEditor_forNil_setsShowEditorTrue() {
+        let vm = BudgetsFavoritesSettingsViewModel()
+        vm.openEditor(for: nil)
+        #expect(vm.showEditor == true)
+        #expect(vm.budgetToEdit == nil)
+    }
+
+    @MainActor @Test func closeEditor_resetsEditorState() {
+        let vm = BudgetsFavoritesSettingsViewModel()
+        vm.openEditor(for: nil)
+        vm.closeEditor()
+        #expect(vm.showEditor == false)
+        #expect(vm.budgetToEdit == nil)
+    }
+
+    @MainActor @Test func deleteBudget_withoutBudgetToDelete_isNoOp() {
+        let vm = BudgetsFavoritesSettingsViewModel()
+        vm.deleteBudget()
+        #expect(vm.showDeleteError == false)
+    }
+
+    @MainActor @Test func activeBudgetsCount_emptyData_returnsZero() {
+        let vm = BudgetsFavoritesSettingsViewModel()
+        #expect(vm.activeBudgetsCount == 0)
+    }
 }
-
-/*
-Tests generated:
-1. initialState_activeBudgetsEmpty - Active budgets start empty
-2. initialState_isEmptyTrue - isEmpty true initially
-3. initialState_hasFavoritesFalse - No favorites initially
-4. initialState_isEditModeFalse - Edit mode off by default
-5. initialState_showSaveErrorFalse - No save error initially
-6. budgetsByPeriod_emptyData_returnsEmpty - Grouped budgets empty
-7. favoriteBudgets_emptyData_returnsEmpty - Favorite budgets empty
-8. uiState_toggleEditMode - Edit mode toggle
-9. uiState_showSaveError - Save error state
-
-Cases NOT covered (require ModelContext or private(set) data):
-- budgetsByPeriod grouping/sorting with actual data (activeBudgets is private(set))
-- favoriteBudgets sorting with actual data (activeBudgets is private(set))
-- toggleFavorite (requires context.save)
-- moveBudget (requires context.save)
-- reindexFavorites (private method)
-- loadBudgets (requires ModelContext)
-
-RECOMMENDATION: Extract budgetsByPeriod sorting/grouping logic into a static/standalone function
-that accepts [Budget] as parameter, enabling comprehensive unit tests of the
-grouping, sorting-by-favorite-order, and alphabetical fallback logic.
-*/

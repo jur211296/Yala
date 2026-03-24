@@ -348,6 +348,7 @@
 "settings.tags" = "Etiquetas";
 "settings.notifications" = "Notificacoes";
 "settings.favorites" = "Pagamentos favoritos";
+"settings.budgets" = "Orçamentos";
 "settings.budgetsFavorites" = "Orcamentos favoritos";
 "settings.budgetsFavoritesInfo" = "Os orcamentos favoritos aparecem no widget de Orcamentos (3 em medio, 5 em grande).";
 "settings.budgetsFavoritesEmptyHint" = "Crie orcamentos na aba Planejamento.";

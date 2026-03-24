@@ -2,7 +2,7 @@
 //  BudgetsFavoritesSettingsView.swift
 //  Yala
 //
-//  Manage favorite budgets for widget display.
+//  Manage budgets: create, edit, delete + favorite management for widget display.
 //  Favorite budgets appear in the Budgets widget (top 3 in medium, top 5 in large).
 //
 
@@ -24,23 +24,25 @@ struct BudgetsFavoritesSettingsView: View {
 
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
-                    // Info header
-                    infoHeader
-
-                    // Widget preview
-                    if viewModel.hasFavorites && !viewModel.isEditMode {
-                        widgetPreview
-                    }
-
                     if viewModel.isEmpty {
                         emptyState
-                    } else if viewModel.isEditMode {
-                        // Edit mode: show only favorites for reordering
-                        reorderSection
                     } else {
-                        // Normal mode: show all budgets grouped by period
-                        ForEach(viewModel.budgetsByPeriod, id: \.periodType) { group in
-                            periodSection(periodType: group.periodType, budgets: group.budgets)
+                        // Info header (visible when budgets exist)
+                        infoHeader
+
+                        // Widget preview
+                        if viewModel.hasFavorites && !viewModel.isEditMode {
+                            widgetPreview
+                        }
+
+                        if viewModel.isEditMode {
+                            // Edit mode: show only favorites for reordering
+                            reorderSection
+                        } else {
+                            // Normal mode: show all budgets grouped by period
+                            ForEach(viewModel.budgetsByPeriod, id: \.periodType) { group in
+                                periodSection(periodType: group.periodType, budgets: group.budgets)
+                            }
                         }
                     }
                 }
@@ -48,7 +50,7 @@ struct BudgetsFavoritesSettingsView: View {
                 .padding(.vertical, DS.Spacing.xxl)
             }
         }
-        .navigationTitle(L10n.Settings.budgetsFavorites)
+        .navigationTitle(L10n.Settings.budgets)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {
@@ -57,15 +59,36 @@ struct BudgetsFavoritesSettingsView: View {
                     dismiss()
                 }
             }
+
             ToolbarItem(placement: .topBarTrailing) {
-                if viewModel.hasFavorites {
-                    YalaToolbarButton(systemName: viewModel.isEditMode ? "checkmark" : "arrow.up.arrow.down", label: viewModel.isEditMode ? L10n.Action.done : L10n.Action.reorder) {
-                        dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.8)) {
-                            viewModel.isEditMode.toggle()
+                HStack(spacing: DS.Spacing.xs) {
+                    if viewModel.isEditMode {
+                        YalaToolbarButton(systemName: "checkmark", label: L10n.Action.done) {
+                            dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.8)) {
+                                viewModel.isEditMode.toggle()
+                            }
+                        }
+                    } else {
+                        if viewModel.hasFavorites {
+                            YalaToolbarButton(systemName: "arrow.up.arrow.down", label: L10n.Action.reorder) {
+                                dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.8)) {
+                                    viewModel.isEditMode.toggle()
+                                }
+                            }
+                        }
+
+                        YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
+                            viewModel.requestCreate()
                         }
                     }
                 }
             }
+        }
+        .sheet(isPresented: $viewModel.showEditor, onDismiss: { viewModel.closeEditor() }) {
+            BudgetEditorView(budget: viewModel.budgetToEdit)
+        }
+        .sheet(isPresented: $viewModel.showUpgradeSheet) {
+            UpgradePromptSheet(feature: .budgets, context: .limitReached)
         }
         .alert(
             L10n.Common.error,
@@ -77,6 +100,25 @@ struct BudgetsFavoritesSettingsView: View {
                 Text(L10n.Common.saveError)
             }
         )
+        .alert(
+            L10n.Common.error,
+            isPresented: $viewModel.showDeleteError,
+            actions: {
+                Button(L10n.Common.understood, role: .cancel) {}
+            },
+            message: {
+                Text(L10n.Common.deleteError)
+            }
+        )
+        .alert(
+            NSLocalizedString("budgets.delete.confirm.title", comment: ""),
+            isPresented: $viewModel.showDeleteConfirmation
+        ) {
+            Button(L10n.Action.delete, role: .destructive) { viewModel.deleteBudget() }
+            Button(L10n.Common.cancel, role: .cancel) {}
+        } message: {
+            Text(NSLocalizedString("budgets.delete.confirm.message", comment: ""))
+        }
         .onAppear {
             viewModel.setContext(modelContext, sessionState: sessionState)
         }
@@ -174,22 +216,11 @@ struct BudgetsFavoritesSettingsView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            Image(systemName: "chart.pie")
-                .font(DS.Typography.amountLarge)
-                .foregroundStyle(.tertiary)
-
-            Text(NSLocalizedString("budgets.empty.title", comment: ""))
-                .font(DS.Typography.headline)
-                .foregroundStyle(.secondary)
-
-            Text(L10n.Settings.budgetsFavoritesEmptyHint)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DS.Spacing.xxxl)
+        VStack {
+            Spacer()
+            YalaEmptyState.noBudgets { viewModel.requestCreate() }
+            Spacer()
         }
-        .padding(.top, DS.Spacing.sheetTop)
     }
 
     // MARK: - Period Section
@@ -227,8 +258,44 @@ struct BudgetsFavoritesSettingsView: View {
     // MARK: - Budget Row
 
     private func budgetRow(_ budget: Budget) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            // Favorite toggle
+        let (icon, colorHex) = budget.displayProperties
+
+        return HStack(spacing: DS.Spacing.none) {
+            // Tappable area: opens editor
+            Button {
+                viewModel.openEditor(for: budget)
+            } label: {
+                HStack(spacing: DS.Spacing.md) {
+                    // Icon badge (40x40)
+                    ZStack {
+                        Circle()
+                            .fill(Color(hex: colorHex).opacity(0.15))
+                            .frame(width: 40, height: 40)
+
+                        Image(systemName: icon)
+                            .font(DS.Typography.body)
+                            .foregroundStyle(Color(hex: colorHex))
+                    }
+
+                    // Info
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                        Text(budget.name)
+                            .font(DS.Typography.bodyBold)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+
+                        Text(formatAmount(budget.limitAmount, currency: budget.currencyCode))
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // Favorite star — separate Button, not inside the row Button
             Button {
                 dsWithAnimation(reduceMotion, .spring(response: 0.3, dampingFraction: 0.8)) {
                     viewModel.toggleFavorite(budget)
@@ -237,34 +304,38 @@ struct BudgetsFavoritesSettingsView: View {
                 Image(systemName: budget.isFavorite ? "star.fill" : "star")
                     .font(DS.Typography.body)
                     .foregroundStyle(budget.isFavorite ? DS.Semantic.favoriteIcon : Color.secondary)
-                    .frame(width: 28, height: 28)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
-            // Budget info
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(budget.name)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-
-                Text(formatAmount(budget.limitAmount, currency: budget.currencyCode))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            // Order indicator for favorites
-            if budget.isFavorite {
-                Text("#\(budget.favoriteOrder + 1)")
-                    .font(DS.Typography.captionMono)
+            // Chevron — tapping opens editor too
+            Button {
+                viewModel.openEditor(for: budget)
+            } label: {
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.indicator)
                     .foregroundStyle(.tertiary)
+                    .frame(width: 24, height: 44)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
-        .contentShape(Rectangle())
+        .contextMenu {
+            Button {
+                viewModel.openEditor(for: budget)
+            } label: {
+                Label(L10n.Action.edit, systemImage: "pencil")
+            }
+
+            Button(role: .destructive) {
+                viewModel.confirmDelete(budget)
+            } label: {
+                Label(L10n.Action.delete, systemImage: "trash")
+            }
+        }
     }
 
     // MARK: - Reorder Section (Edit Mode)

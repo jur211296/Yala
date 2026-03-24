@@ -117,7 +117,7 @@ struct ProfileView: View {
         case appIcon
         case notifications
         case favorites
-        case budgetsFavorites
+        case budgets
         case planned
         case userDataReset
         case biometricSecurity
@@ -276,7 +276,7 @@ struct ProfileView: View {
                     NotificationsSettingsView()
                 case .favorites:
                     FavoritesListView(mode: .manage)
-                case .budgetsFavorites:
+                case .budgets:
                     BudgetsFavoritesSettingsView()
                 case .planned:
                     ScheduledPaymentsSettingsView()
@@ -462,9 +462,9 @@ struct ProfileView: View {
                     .coachMarkAnchor("settingsTags")
                 SubsectionDivider()
                 profileRow(
-                    icon: "chart.pie.fill", title: L10n.Settings.budgetsFavorites,
+                    icon: "chart.pie.fill", title: L10n.Settings.budgets,
                     iconColor: .mint,
-                    destination: .budgetsFavorites)
+                    destination: .budgets)
                     .coachMarkAnchor("settingsBudgets")
                 SubsectionDivider()
                 profileRow(

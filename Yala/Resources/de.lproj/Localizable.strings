@@ -348,6 +348,7 @@
 "settings.tags" = "Tags";
 "settings.notifications" = "Benachrichtigungen";
 "settings.favorites" = "Lieblingszahlungen";
+"settings.budgets" = "Budgets";
 "settings.budgetsFavorites" = "Budget-Favoriten";
 "settings.budgetsFavoritesInfo" = "Budget-Favoriten erscheinen im Budget-Widget (3 bei mittel, 5 bei groß).";
 "settings.budgetsFavoritesEmptyHint" = "Erstelle Budgets im Tab Planung.";

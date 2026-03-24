@@ -2,7 +2,7 @@
 //  BudgetsFavoritesSettingsViewModel.swift
 //  Yala
 //
-//  ViewModel for BudgetsFavoritesSettingsView - handles favorite budgets management.
+//  ViewModel for BudgetsFavoritesSettingsView - handles budget CRUD + favorites management.
 //  Fase D: Arquitectura - @Query → ViewModels
 //
 
@@ -27,6 +27,12 @@ final class BudgetsFavoritesSettingsViewModel {
 
     var isEditMode = false
     var showSaveError = false
+    var showEditor = false
+    var budgetToEdit: Budget?
+    var showDeleteError = false
+    var showDeleteConfirmation = false
+    var budgetToDelete: Budget?
+    var showUpgradeSheet = false
 
     // MARK: - Computed Properties
 
@@ -89,6 +95,65 @@ final class BudgetsFavoritesSettingsViewModel {
             #endif
             activeBudgets = []
         }
+    }
+
+    // MARK: - FeatureGate
+
+    var activeBudgetsCount: Int { activeBudgets.count }
+
+    func canCreateBudget() -> Bool {
+        FeatureGateService.shared.canCreate(.budgets, currentCount: activeBudgetsCount)
+    }
+
+    // MARK: - Editor Operations
+
+    func requestCreate() {
+        if canCreateBudget() {
+            openEditor(for: nil)
+        } else {
+            showUpgradeSheet = true
+        }
+    }
+
+    func openEditor(for budget: Budget?) {
+        budgetToEdit = budget
+        showEditor = true
+    }
+
+    func closeEditor() {
+        budgetToEdit = nil
+        showEditor = false
+        loadBudgets()
+        sessionState?.needsBudgetsWidgetRefresh = true
+    }
+
+    // MARK: - Delete Operations
+
+    func confirmDelete(_ budget: Budget) {
+        budgetToDelete = budget
+        showDeleteConfirmation = true
+    }
+
+    func deleteBudget() {
+        guard let context = modelContext, let budget = budgetToDelete else { return }
+
+        let service = EntityDeletionService.shared
+        service.setContext(context)
+
+        do {
+            try service.deleteBudget(budget)
+            WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
+            sessionState?.needsBudgetsWidgetRefresh = true
+            loadBudgets()
+        } catch {
+            #if DEBUG
+            print("BudgetsFavoritesSettingsViewModel: Error deleting: \(error)")
+            #endif
+            showDeleteError = true
+        }
+
+        budgetToDelete = nil
     }
 
     // MARK: - Favorite Operations
