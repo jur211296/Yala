@@ -455,14 +455,15 @@ struct TagsPieWidget: View {
             Color.clear
         } else {
             let dataHash = safeData.map { "\($0.id?.hashValue ?? 0)-\($0.amount)" }.joined()
+            let angularInset: CGFloat = safeData.count == 1 ? 0 : 1.5
 
             Chart(safeData) { item in
                 SectorMark(
                     angle: .value("Gasto", item.amount),
                     innerRadius: .ratio(innerRadiusRatio),
-                    angularInset: 1.5
+                    angularInset: angularInset
                 )
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+                .cornerRadius(DS.Radius.xs)
                 .foregroundStyle(Color(hex: item.colorHex))
                 .opacity(isDimmed(item) ? 0.3 : 1.0)
             }

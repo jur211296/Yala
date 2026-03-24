@@ -94,11 +94,13 @@ struct WidgetSectorChart: View {
         if safeData.isEmpty || !totalAmount.isFinite || totalAmount <= 0 {
             Color.clear
         } else {
+            let angularInset: CGFloat = safeData.count == 1 ? 0 : 1.5
+
             Chart(safeData) { item in
                 SectorMark(
                     angle: .value("Amount", item.amount),
                     innerRadius: .ratio(innerRadiusRatio),
-                    angularInset: 1.5
+                    angularInset: angularInset
                 )
                 .cornerRadius(WDS.Radius.xs)
                 .foregroundStyle(Color(hex: item.colorHex))
