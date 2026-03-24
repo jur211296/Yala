@@ -45,6 +45,7 @@ struct YalaApp: App {
                 .preferredColorScheme(themeManager.userChoice == .system ? nil : themeManager.resolved.baseColorScheme)
                 .tint(themeManager.resolved.accent)
                 .environment(\.yalaTheme, themeManager.resolved)
+                .saturation(themeManager.resolved.mapsColorsToGrayscale ? 0 : 1)
                 .environment(themeManager)
                 .environment(bootstrapper.sessionState)
                 .environment(bootstrapper.currencyConverter)

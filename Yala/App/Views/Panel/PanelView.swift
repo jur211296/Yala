@@ -487,7 +487,7 @@ struct PanelView: View {
                 } label: {
                     Image(systemName: showFABMenu ? "xmark" : "plus")
                         .font(DS.Typography.title)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.contrastingText(for: theme.accent))
                         .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                         .background(showFABMenu ? DS.Semantic.disabledForeground : fabBackground)
                         .clipShape(Circle())
@@ -509,7 +509,7 @@ struct PanelView: View {
             } label: {
                 Image(systemName: "plus")
                     .font(DS.Typography.title)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.contrastingText(for: theme.accent))
                     .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                     .background(fabBackground)
                     .clipShape(Circle())

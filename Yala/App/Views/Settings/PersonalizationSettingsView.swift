@@ -11,12 +11,15 @@ import WidgetKit
 struct PersonalizationSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(SessionState.self) private var sessionState
+    @Environment(\.yalaTheme) private var theme
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
     @AppStorage("defaultPeriod") private var defaultPeriodRaw: String = DetailPeriod.allTime
         .rawValue
     @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
+
+    private var forcesMonochromeIcons: Bool { theme.forcesMonochromeIcons }
     @AppStorage("firstWeekday") private var firstWeekdayRaw: Int = 2  // Default to Monday
     @AppStorage("showWidgetHints") private var showWidgetHints: Bool = true
     @AppStorage("showVariations") private var showVariations: Bool = true
@@ -250,12 +253,13 @@ struct PersonalizationSettingsView: View {
                             HStack {
                                 Text(L10n.Settings.colorfulIcons)
                                     .font(DS.Typography.body)
-                                    .foregroundStyle(.thPrimaryText)
+                                    .foregroundStyle(forcesMonochromeIcons ? .thSecondaryText : .thPrimaryText)
 
                                 Spacer()
 
                                 Toggle(L10n.Settings.colorfulIcons, isOn: $colorfulIcons)
                                     .labelsHidden()
+                                    .disabled(forcesMonochromeIcons)
                                     .onChange(of: colorfulIcons) { _, newValue in
                                         PreferenceSyncService.shared.set(bool: newValue, forKey: "colorfulIcons")
                                     }
@@ -270,7 +274,9 @@ struct PersonalizationSettingsView: View {
                                     .stroke(Color.primary.opacity(0.05), lineWidth: 1)
                             )
 
-                            Text(L10n.Settings.colorfulIconsDescription)
+                            Text(forcesMonochromeIcons
+                                ? L10n.Settings.colorfulIconsDisabledByTheme
+                                : L10n.Settings.colorfulIconsDescription)
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, DS.Spacing.xxs)

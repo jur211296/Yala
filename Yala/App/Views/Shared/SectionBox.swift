@@ -10,6 +10,7 @@ import SwiftUI
 // MARK: - Contenedor visual de secciones (Liquid Glass)
 
 struct SectionBox<Content: View>: View {
+    @Environment(\.yalaTheme) private var theme
     let title: String
     @ViewBuilder let content: () -> Content
 
@@ -23,10 +24,15 @@ struct SectionBox<Content: View>: View {
             VStack(spacing: DS.Spacing.none) {
                 content()
             }
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
+            .background {
+                if theme.usesMaterial {
+                    RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                } else {
+                    RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                        .fill(.thCard)
+                }
+            }
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .stroke(Color.primary.opacity(0.05), lineWidth: 1)

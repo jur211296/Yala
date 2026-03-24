@@ -1951,6 +1951,8 @@ enum L10n {
         static var themeIndigo: String { ls("settings.theme.indigo", comment: "") }
         static var themeRosa: String { ls("settings.theme.rosa", comment: "") }
         static var themeTeal: String { ls("settings.theme.teal", comment: "") }
+        static var themeMinimalist: String { ls("settings.theme.minimalist", comment: "") }
+        static var themeTranslucent: String { ls("settings.theme.translucent", comment: "") }
         static var defaultCurrency: String {
             ls("settings.defaultCurrency", comment: "")
         }
@@ -2022,6 +2024,9 @@ enum L10n {
         }
         static var colorfulIconsDescription: String {
             ls("settings.colorfulIconsDescription", comment: "")
+        }
+        static var colorfulIconsDisabledByTheme: String {
+            ls("settings.colorfulIconsDisabledByTheme", comment: "")
         }
         static var firstWeekday: String {
             ls("settings.firstWeekday", comment: "")

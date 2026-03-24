@@ -18,6 +18,7 @@ struct ThemeSettingsView: View {
     var onThemeChanged: (() -> Void)?
 
     @State private var showUpgradeSheet = false
+    @State private var showTranslucentVariantPicker = false
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
@@ -76,6 +77,25 @@ struct ThemeSettingsView: View {
         .sheet(isPresented: $showUpgradeSheet) {
             UpgradePromptSheet(feature: .proThemes, context: .proFeature)
         }
+        .confirmationDialog(
+            L10n.Settings.themeTranslucent,
+            isPresented: $showTranslucentVariantPicker,
+            titleVisibility: .visible
+        ) {
+            ForEach(TranslucentVariant.allCases) { variant in
+                Button {
+                    themeManager.translucentVariant = variant
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(300))
+                        dismiss()
+                        onThemeChanged?()
+                    }
+                } label: {
+                    Label(variant.label, systemImage: "circle.fill")
+                }
+            }
+            Button(L10n.Action.cancel, role: .cancel) {}
+        }
     }
 
     // MARK: - Theme Card
@@ -88,6 +108,10 @@ struct ThemeSettingsView: View {
         Button {
             if isLocked {
                 showUpgradeSheet = true
+            } else if appTheme == .translucent {
+                // Show variant picker for translucent theme
+                themeManager.userChoice = appTheme
+                showTranslucentVariantPicker = true
             } else {
                 themeManager.userChoice = appTheme
                 // Dismiss theme view + parent profile sheet
@@ -125,19 +149,33 @@ struct ThemeSettingsView: View {
                 }
 
                 // Label row
-                HStack(spacing: DS.Spacing.xs) {
-                    Text(appTheme.label)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(isLocked ? .thSecondaryText : .thPrimaryText)
+                VStack(spacing: DS.Spacing.xxs) {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text(appTheme.label)
+                            .font(DS.Typography.label)
+                            .foregroundStyle(isLocked ? .thSecondaryText : .thPrimaryText)
 
-                    if appTheme.isPro && !isSelected {
-                        ProBadge(size: .small)
+                        if appTheme.isPro && !isSelected {
+                            ProBadge(size: .small)
+                        }
+
+                        if isSelected {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(DS.Typography.subheadline)
+                                .foregroundStyle(.thAccent)
+                        }
                     }
 
-                    if isSelected {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.thAccent)
+                    // Variant indicator for translucent theme
+                    if appTheme == .translucent && isSelected {
+                        HStack(spacing: DS.Spacing.xxs) {
+                            Circle()
+                                .fill(themeManager.translucentVariant.iconColor)
+                                .frame(width: 6, height: 6)
+                            Text(themeManager.translucentVariant.label)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.thSecondaryText)
+                        }
                     }
                 }
             }
@@ -174,12 +212,57 @@ struct ThemeSettingsView: View {
                         .clipped()
                 }
             }
+        } else if appTheme == .translucent {
+            translucentPreview(palette: appTheme.yalaTheme)
         } else {
             themeMockup(palette: appTheme.yalaTheme)
         }
     }
 
     // MARK: - Mock Card
+
+    private func translucentPreview(palette: YalaTheme) -> some View {
+        let gradientColors: [Color] = switch themeManager.translucentVariant {
+        case .indigo: [Color(hex: "1A1040"), Color(hex: "2A1A5E"), Color(hex: "0A0A1A")]
+        case .rosa: [Color(hex: "401028"), Color(hex: "5E1A40"), Color(hex: "1A0A12")]
+        case .teal: [Color(hex: "103830"), Color(hex: "1A5E4A"), Color(hex: "0A1A18")]
+        }
+        return ZStack {
+            // Mini gradient background
+            LinearGradient(
+                colors: gradientColors,
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            // Inner card mock with material-like effect
+            VStack(spacing: DS.Spacing.sm) {
+                HStack(spacing: DS.Spacing.sm) {
+                    Circle().fill(palette.accent).frame(width: 8, height: 8)
+                    Circle().fill(palette.income).frame(width: 8, height: 8)
+                    Circle().fill(palette.expense).frame(width: 8, height: 8)
+                    Spacer()
+                }
+
+                Capsule()
+                    .fill(palette.primaryText.opacity(0.6))
+                    .frame(height: 4)
+                    .frame(maxWidth: .infinity)
+
+                Capsule()
+                    .fill(palette.secondaryText.opacity(0.4))
+                    .frame(height: 4)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.trailing, DS.Spacing.xxl)
+            }
+            .padding(DS.Spacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: DS.Radius.sm)
+                    .fill(Color.white.opacity(0.08))
+            )
+            .padding(DS.Spacing.md)
+        }
+    }
 
     private func themeMockup(palette: YalaTheme) -> some View {
         ZStack {

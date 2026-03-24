@@ -8,6 +8,34 @@
 
 import SwiftUI
 
+// MARK: - Translucent Gradient Variant
+
+enum TranslucentVariant: Int, CaseIterable, Identifiable {
+    case indigo = 0
+    case rosa = 1
+    case teal = 2
+
+    var id: Int { rawValue }
+
+    var label: String {
+        switch self {
+        case .indigo: return L10n.Settings.themeIndigo
+        case .rosa: return L10n.Settings.themeRosa
+        case .teal: return L10n.Settings.themeTeal
+        }
+    }
+
+    var iconColor: Color {
+        switch self {
+        case .indigo: return .electricIndigo
+        case .rosa: return .hotPink
+        case .teal: return .priorityNeed
+        }
+    }
+}
+
+// MARK: - Theme Manager
+
 @MainActor @Observable
 final class ThemeManager {
 
@@ -17,6 +45,15 @@ final class ThemeManager {
     ) ?? .system {
         didSet {
             UserDefaults.standard.set(userChoice.rawValue, forKey: "userTheme")
+        }
+    }
+
+    /// Gradient color variant for the Translucent theme
+    var translucentVariant: TranslucentVariant = TranslucentVariant(
+        rawValue: UserDefaults.standard.integer(forKey: "translucentVariant")
+    ) ?? .indigo {
+        didSet {
+            UserDefaults.standard.set(translucentVariant.rawValue, forKey: "translucentVariant")
         }
     }
 
@@ -38,6 +75,14 @@ final class ThemeManager {
             return .rosa
         case .teal:
             return .teal
+        case .minimalist:
+            return .minimalist
+        case .translucent:
+            switch translucentVariant {
+            case .indigo: return .translucent
+            case .rosa: return .translucentRosa
+            case .teal: return .translucentTeal
+            }
         }
     }
 }

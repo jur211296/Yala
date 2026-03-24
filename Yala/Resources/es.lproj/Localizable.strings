@@ -378,6 +378,8 @@
 "settings.theme.indigo" = "Indigo";
 "settings.theme.rosa" = "Rosa";
 "settings.theme.teal" = "Teal";
+"settings.theme.minimalist" = "Minimalista";
+"settings.theme.translucent" = "Traslúcido";
 "settings.defaultCurrency" = "Moneda predeterminada";
 "settings.currentIcon" = "Ícono actual";
 "settings.resetAllData" = "Vaciar todos tus datos";
@@ -1005,6 +1007,7 @@
 "settings.defaultPeriodDescription" = "Este período se aplicará por defecto cada vez que abras la app. Puedes cambiarlo temporalmente desde el selector de período en cualquier momento.";
 "settings.colorfulIcons" = "Iconos coloridos";
 "settings.colorfulIconsDescription" = "Muestra iconos con colores en la sección de perfil, al estilo de los Ajustes de iOS.";
+"settings.colorfulIconsDisabledByTheme" = "Desactivado automáticamente por el tema actual.";
 "settings.firstWeekday" = "Primer día de la semana";
 "settings.firstWeekdayDescription" = "Define qué día considerar como inicio de semana para filtros como 'Esta semana'.";
 "settings.sunday" = "Domingo";

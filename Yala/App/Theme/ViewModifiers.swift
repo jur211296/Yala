@@ -30,7 +30,15 @@ struct YalaCardModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(padding)
-            .background(theme.card)
+            .background {
+                if theme.usesMaterial {
+                    RoundedRectangle(cornerRadius: radius)
+                        .fill(.ultraThinMaterial)
+                } else {
+                    RoundedRectangle(cornerRadius: radius)
+                        .fill(theme.card)
+                }
+            }
             .clipShape(RoundedRectangle(cornerRadius: radius))
             .overlay(
                 RoundedRectangle(cornerRadius: radius)
@@ -106,7 +114,15 @@ struct YalaFormRowModifier: ViewModifier {
         .padding(.horizontal, DS.FormRow.paddingH)
         .padding(.vertical, DS.FormRow.paddingV)
         .frame(minHeight: DS.FormRow.minHeight)
-        .background(hasBackground ? theme.card : Color.clear)
+        .background {
+            if hasBackground && theme.usesMaterial {
+                Rectangle().fill(.ultraThinMaterial)
+            } else if hasBackground {
+                Rectangle().fill(theme.card)
+            } else {
+                Color.clear
+            }
+        }
     }
 }
 

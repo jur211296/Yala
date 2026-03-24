@@ -437,12 +437,26 @@ final class AppBootstrapper {
         print("AppBootstrapper: Detected downgrade from Pro to Free")
         #endif
 
-        // Reset premium app icon if needed
+        // Reset premium app icon and theme if needed
         resetPremiumIconIfNeeded()
+        resetProThemeIfNeeded()
 
         // Mark that we need to show downgrade resolution
         // The actual resolution sheet is shown from ContentView which has access to data
         sessionState.shouldShowDowngradeResolution = true
+    }
+
+    /// Reset Pro theme to System if user downgraded from Pro
+    private func resetProThemeIfNeeded() {
+        guard !FeatureGateService.shared.isProUser else { return }
+
+        let currentTheme = AppTheme(rawValue: UserDefaults.standard.integer(forKey: "userTheme")) ?? .system
+        if currentTheme.isPro {
+            UserDefaults.standard.set(AppTheme.system.rawValue, forKey: "userTheme")
+            #if DEBUG
+            print("AppBootstrapper: Reset Pro theme '\(currentTheme.label)' to System")
+            #endif
+        }
     }
 
     /// Reset app icon to Original if user is Free and has premium icon

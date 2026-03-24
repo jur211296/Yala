@@ -29,6 +29,9 @@ struct ProfileView: View {
 
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
+    private var effectiveColorfulIcons: Bool {
+        theme.forcesMonochromeIcons ? false : colorfulIcons
+    }
     private var profileStorage: ProfileImageStorage { .shared }
     @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
@@ -545,7 +548,7 @@ struct ProfileView: View {
                 }
             } label: {
                 HStack(spacing: DS.Spacing.md) {
-                    if colorfulIcons {
+                    if effectiveColorfulIcons {
                         Image(systemName: "sparkles")
                             .font(DS.Typography.subheadline).fontWeight(.medium)
                             .foregroundStyle(.white)
@@ -691,7 +694,7 @@ struct ProfileView: View {
                 }
             } label: {
                 HStack(spacing: DS.Spacing.md) {
-                    if colorfulIcons {
+                    if effectiveColorfulIcons {
                         Image(systemName: "waveform.badge.mic")
                             .font(DS.Typography.subheadline).fontWeight(.medium)
                             .foregroundStyle(.white)
@@ -812,7 +815,7 @@ struct ProfileView: View {
             }
         } label: {
             HStack(spacing: DS.Spacing.md) {
-                if colorfulIcons {
+                if effectiveColorfulIcons {
                     Image(systemName: "photo.on.rectangle")
                         .font(DS.Typography.subheadline).fontWeight(.medium)
                         .foregroundStyle(.white)
@@ -1158,7 +1161,7 @@ struct ProfileView: View {
     ) -> some View {
         HStack(spacing: DS.Spacing.md) {
             // Conditionally show colored or plain icons based on setting
-            if colorfulIcons {
+            if effectiveColorfulIcons {
                 // iOS-style colored icon with rounded square background
                 Image(systemName: icon)
                     .font(DS.Typography.subheadline).fontWeight(.medium)
