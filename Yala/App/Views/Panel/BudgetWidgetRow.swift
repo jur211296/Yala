@@ -65,7 +65,8 @@ struct BudgetWidgetRow: View {
                 BudgetProgressBar(
                     percentage: summary.percentage,
                     color: summary.color,
-                    isExceeded: summary.status == .exceeded
+                    isExceeded: summary.status == .exceeded,
+                    simplified: true
                 )
             }
         }

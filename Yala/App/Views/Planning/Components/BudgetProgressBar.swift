@@ -11,6 +11,14 @@ struct BudgetProgressBar: View {
     let percentage: Double  // 0-100+
     let color: String
     let isExceeded: Bool
+    var simplified: Bool = false
+
+    private var barColor: Color {
+        if isExceeded { return Color.hotPink }
+        if simplified { return Color.electricIndigo }
+        if percentage >= 75 { return DS.Semantic.warningForeground }
+        return Color(hex: color)
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -25,7 +33,7 @@ struct BudgetProgressBar: View {
 
                 // Foreground capsule (progress)
                 Capsule()
-                    .fill(isExceeded ? Color.hotPink : percentage >= 75 ? DS.Semantic.warningForeground : Color(hex: color))
+                    .fill(barColor)
                     .frame(width: max(0, width), height: 6)
             }
         }

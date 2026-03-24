@@ -611,7 +611,8 @@ struct InsightsTabView: View {
             BudgetProgressBar(
                 percentage: budget.usagePercent,
                 color: budget.colorHex ?? "4A90D9",
-                isExceeded: budget.usagePercent >= 100
+                isExceeded: budget.usagePercent >= 100,
+                simplified: true
             )
             .frame(height: 6)
         }

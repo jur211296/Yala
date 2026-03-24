@@ -1002,7 +1002,8 @@ struct OnboardingView: View {
                 BudgetProgressBar(
                     percentage: 0,
                     color: colorHex,
-                    isExceeded: false
+                    isExceeded: false,
+                    simplified: true
                 )
             }
             .yalaCard(padding: DS.Spacing.lg, radius: DS.Radius.md)

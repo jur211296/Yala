@@ -144,7 +144,8 @@ struct BudgetsFavoritesSettingsView: View {
                 BudgetProgressBar(
                     percentage: 0,
                     color: colorHex,
-                    isExceeded: false
+                    isExceeded: false,
+                    simplified: true
                 )
             }
         }

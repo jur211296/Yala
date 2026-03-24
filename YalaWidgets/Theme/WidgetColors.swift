@@ -69,9 +69,7 @@ enum WidgetColors {
 
     /// Budget progress color based on percentage used
     static func forBudget(percentUsed: Double) -> Color {
-        if percentUsed >= 100 { return hotPink }
-        if percentUsed >= 75 { return warning }
-        return success
+        percentUsed >= 100 ? hotPink : electricIndigo
     }
 
     // MARK: - Trend Charts
