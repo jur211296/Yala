@@ -1930,6 +1930,14 @@
 "tipkit.fab.pro.message" = "Enregistre manuellement, par voix ou avec une photo.";
 "tipkit.profile.title" = "Ton profil";
 "tipkit.profile.message" = "Configure tout pour que Yala fonctionne exactement comme tu en as besoin.";
+"tipkit.settingsAppIcon.title" = "Ton icône";
+"tipkit.settingsAppIcon.message" = "Change l'icône de l'app pour y ajouter ta touche personnelle.";
+"tipkit.settingsTheme.title" = "Ton thème";
+"tipkit.settingsTheme.message" = "Choisis entre classique, minimaliste ou translucide.";
+"tipkit.contextualGuide.title" = "Des guides dans chaque section";
+"tipkit.contextualGuide.message" = "Tu trouveras des guides comme celui-ci dans chaque section. Ils t'expliquent ce que tu peux y faire.";
+"tipkit.setupChecklist.title" = "Tes premiers pas";
+"tipkit.setupChecklist.message" = "Termine ces étapes pour découvrir tout ce que Yala a pour toi.";
 "tipkit.transactionTypes.title" = "Trois types d'enregistrement";
 "tipkit.transactionTypes.message" = "Enregistre des dépenses, des revenus et des transferts entre tes comptes.";
 "tipkit.favoritePayments.title" = "Paiements favoris";
@@ -2883,3 +2891,90 @@
 "devseed.stepDone" = "Terminé !";
 "devseed.stepDeleting" = "Suppression des données...";
 "devseed.stepReloading" = "Rechargement...";
+
+// MARK: - Setup Checklist
+
+"setup.title" = "Premiers pas";
+"setup.subtitle" = "Configure Yala étape par étape";
+"setup.progress" = "%d sur %d terminés";
+"setup.collapse" = "Réduire";
+"setup.continue" = "Continuer";
+"setup.complete.title" = "Tu es prêt ! 🎉";
+"setup.complete.subtitle" = "Tu as terminé toutes les étapes. Yala est prête pour toi.";
+"setup.step.completed" = "Terminé";
+"setup.step.tapToStart" = "Appuie pour commencer";
+
+"setup.step1.title" = "Découvre tout ce que tu peux personnaliser";
+"setup.step2.title" = "Enregistre ta première dépense";
+"setup.step3.title" = "Crée ton premier budget";
+"setup.step4.title" = "Ajoute un paiement récurrent";
+"setup.step5.title" = "Découvre ce que Yala peut faire d'autre";
+
+"setup.practice.title" = "C'est fait ! Tu as créé ta première %@";
+"setup.practice.message" = "Si c'était juste un essai, tu peux le supprimer sans problème.";
+"setup.practice.keep" = "Garder";
+"setup.practice.delete" = "C'était un essai";
+"setup.practice.type.expense" = "dépense";
+"setup.practice.type.budget" = "budget";
+"setup.practice.type.scheduled" = "paiement programmé";
+
+"setup.personalize.navTitle" = "Personnalise ton Yala";
+"setup.personalize.title" = "Fais-en le tien";
+"setup.personalize.subtitle" = "Ajoute ta touche personnelle. Change le thème, l'icône ou l'apparence de tes widgets.";
+"setup.personalize.personalizeAll" = "Tout personnaliser";
+"setup.personalize.personalizeAllSubtitle" = "Nom, photo, format de devise et plus";
+"setup.personalize.appIcon" = "Change ton icône";
+"setup.personalize.appIconSubtitle" = "Choisis parmi plusieurs designs d'app";
+"setup.personalize.theme" = "Change ton thème";
+"setup.personalize.themeSubtitle" = "Classique, minimaliste ou translucide";
+
+"setup.discover.navTitle" = "Découvre Yala";
+"setup.discover.title" = "Yala peut faire bien plus";
+"setup.discover.subtitleFree" = "Voici ce que tu peux faire — et ce que tu pourrais débloquer.";
+"setup.discover.subtitlePro" = "Profite de toute la puissance de ton plan Pro.";
+"setup.discover.youCanAlready" = "Tu peux déjà";
+"setup.discover.proFeatures" = "Profite de ton Pro";
+"setup.discover.withPro" = "Avec Yala Pro";
+"setup.discover.tryFree" = "Essaie gratuitement 7 jours";
+"setup.discover.done" = "Compris !";
+"setup.discover.feature.manualEntry" = "Enregistrer dépenses et revenus";
+"setup.discover.feature.statistics" = "Voir tes statistiques et tendances";
+"setup.discover.feature.budgets" = "Créer des budgets par catégorie";
+"setup.discover.feature.scheduledPayments" = "Programmer des paiements récurrents";
+"setup.discover.feature.notifications" = "Recevoir des alertes et rappels";
+"setup.discover.feature.aiInsights" = "Analyse intelligente par IA";
+"setup.discover.feature.voice" = "Enregistrer des dépenses par la voix";
+"setup.discover.feature.imageCapture" = "Scanner des reçus avec la caméra";
+"setup.discover.feature.unlimitedBudgets" = "Budgets et comptes illimités";
+
+// MARK: - Contextual Guides
+
+"contextualGuide.dismiss" = "Compris";
+"guide.panel.title" = "Voici ton résumé";
+"guide.panel.message" = "Vois d'un coup d'œil combien tu as dépensé et combien il te reste. Appuie sur + pour ajouter une dépense.";
+"guide.trends.title" = "Comment vont tes dépenses ?";
+"guide.trends.message" = "Ce graphique montre si tu dépenses plus ou moins qu'avant. Si la ligne monte, tu dépenses plus.";
+"guide.categories.title" = "Où va ton argent ?";
+"guide.categories.message" = "Vois combien tu dépenses pour chaque chose : nourriture, transport, etc. La plus grande part montre où tu dépenses le plus.";
+"guide.records.title" = "Toutes tes dépenses";
+"guide.records.message" = "Voici toutes les dépenses enregistrées, triées par date. Appuie sur une pour voir les détails.";
+"guide.budgets.title" = "Fixe des limites de dépenses";
+"guide.budgets.message" = "Un budget est le maximum que tu veux dépenser. Exemple : Ne pas dépenser plus de 500 € en nourriture ce mois.";
+"guide.scheduled.title" = "Dépenses récurrentes";
+"guide.scheduled.message" = "Tu paies Netflix chaque mois ? Le loyer ? Ajoute-les ici et Yala te rappellera avant l'échéance.";
+"guide.accounts.title" = "Ton argent, organisé";
+"guide.accounts.message" = "Chaque compte représente où tu gardes ton argent : espèces, banque, carte. Tu peux en créer plusieurs.";
+"guide.transaction.title" = "Enregistre une dépense ou un revenu";
+"guide.transaction.message" = "Entre juste le montant et une catégorie. Tout le reste est optionnel. Plus tu enregistres, mieux tu comprendras tes dépenses.";
+"guide.comparative.title" = "Compare les périodes";
+"guide.comparative.message" = "Vois si tu as dépensé plus ou moins ce mois-ci par rapport au dernier. Rouge = plus, vert = moins.";
+"guide.cashflow.title" = "Tu vas y arriver ?";
+"guide.cashflow.message" = "Yala calcule si ton argent suffira jusqu'à la fin du mois selon tes revenus et dépenses.";
+"guide.insights.title" = "Yala analyse pour toi";
+"guide.insights.message" = "Selon tes dépenses, Yala te dit des choses utiles : ton jour le plus cher, si tu dépenses plus que d'habitude, etc.";
+"guide.inbox.title" = "En attente de validation";
+"guide.inbox.message" = "Quand tu as des paiements à confirmer ou des dépenses automatiques, ils apparaissent ici.";
+"guide.budgetEditor.title" = "C'est quoi un budget ?";
+"guide.budgetEditor.message" = "C'est une limite que tu définis pour contrôler tes dépenses. Donne-lui un nom, un montant et choisis les catégories concernées. Tu pourras le modifier ou le supprimer quand tu veux.";
+"guide.scheduledEditor.title" = "C'est quoi un paiement programmé ?";
+"guide.scheduledEditor.message" = "C'est une dépense qui se répète : loyer, Netflix, internet... Yala te rappelle avant chaque paiement. Tu pourras le modifier ou le supprimer quand tu veux.";

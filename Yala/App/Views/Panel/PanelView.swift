@@ -103,6 +103,9 @@ struct PanelView: View {
     @State private var interactivityTourIndex = 0
     @State private var panelScrollProxy: ScrollViewProxy?
 
+    /// Setup Checklist state
+    @State private var practiceCleanupItem: PracticeCleanupItem?
+
     /// Upgrade prompt sheets for gated features
     @State private var showUpgradeForVoice = false
     @State private var showUpgradeForImage = false
@@ -143,6 +146,49 @@ struct PanelView: View {
             sessionState.temporaryTab = .statistics
         }
         sessionState.navigateToDetail(detailTab)
+    }
+
+    // MARK: - Practice Cleanup
+
+    private func deletePracticeItem(_ item: PracticeCleanupItem) {
+        do {
+            let model = modelContext.model(for: item.persistentID)
+            modelContext.delete(model)
+            try modelContext.save()
+        } catch {
+            #if DEBUG
+            print("SetupChecklist: Error deleting practice item: \(error)")
+            #endif
+        }
+    }
+
+    // MARK: - Setup Checklist Navigation
+
+    private func handleSetupStep(_ step: SetupStepID) {
+        switch step {
+        case .firstExpense:
+            showNewTransaction = true
+        case .firstBudget:
+            sessionState.shouldAutoOpenBudgetEditor = true
+            sessionState.navigateToBudgets()
+        case .scheduledPayment:
+            sessionState.shouldAutoOpenScheduledEditor = true
+            sessionState.navigateToScheduledPayments()
+        case .exploreSettings:
+            // Opens Profile which will trigger the Settings tour
+            isPresentingSettings = true
+            SetupChecklistManager.shared.markCompleted(.exploreSettings)
+        case .discoverFeatures:
+            if FeatureGateService.shared.isProUser {
+                // Pro users: just mark as completed
+                SetupChecklistManager.shared.markCompleted(.discoverFeatures)
+            } else {
+                // Free users: show subscription/trial sheet
+                subscriptionBannerSource = "setupChecklist"
+                showSubscriptionFromBanner = true
+                SetupChecklistManager.shared.markCompleted(.discoverFeatures)
+            }
+        }
     }
 
     // MARK: - Toolbar Buttons
@@ -203,6 +249,8 @@ struct PanelView: View {
             scrollProxy: panelScrollProxy,
             onComplete: {
                 hasSeenPanelTour = true
+                // Re-expand checklist after tour completes
+                SetupChecklistManager.shared.expandAfterTour()
             }
         )
         .coachMarkOverlay(
@@ -233,6 +281,8 @@ struct PanelView: View {
                 navigateToInboxAfterImage: $navigateToInboxAfterImage,
                 showAIConsentAlert: $showAIConsentAlert,
                 pendingAIInput: $pendingAIInput,
+                practiceCleanupItem: $practiceCleanupItem,
+                deletePracticeItem: deletePracticeItem,
                 existingAccountNames: existingAccountNames,
                 prefillAccountID: viewModel.selectedAccountID,
                 prefillCategoryID: viewModel.selectedCategoryID,
@@ -277,6 +327,7 @@ struct PanelView: View {
                 try? await Task.sleep(for: .milliseconds(200))
             }
             if !hasSeenPanelTour {
+                // Start collapsed — expands after tour completes
                 try? await Task.sleep(for: .seconds(0.6))
                 if !hasSeenPanelTour {
                     showPanelTour = true
@@ -373,6 +424,17 @@ struct PanelView: View {
                             }
                         }
 
+                        // Setup Checklist (persistent for new users)
+                        SetupChecklistCard(
+                            manager: SetupChecklistManager.shared,
+                            onStepTapped: { step in handleSetupStep(step) }
+                        )
+                        .coachMarkAnchor("setupChecklist")
+
+                        // Contextual guide for panel (first visit)
+                        ContextualGuideBanner.panel()
+                            .coachMarkAnchor("contextualGuide")
+
                         accountsSection
                         contextualInsightSection
                         totalBalanceSection
@@ -392,6 +454,27 @@ struct PanelView: View {
                 .onAppear {
                     panelScrollProxy = scrollProxy
                     showPeriodicBanner = ProUpsellService.shared.shouldShowPeriodicBanner()
+
+                    // Setup checklist: auto-detect completed steps & manage collapse state
+                    let mgr = SetupChecklistManager.shared
+                    mgr.autoDetect(
+                        transactionCount: transactions.count,
+                        budgetCount: budgets.count,
+                        scheduledCount: scheduledPayments.count
+                    )
+
+                    // Keep collapsed until panel tour completes (avoids flash)
+                    if !hasSeenPanelTour {
+                        mgr.collapseForTour()
+                    } else {
+                        mgr.checkReExpand()
+                    }
+
+                    // Consume pending practice cleanup from editors
+                    if let pending = mgr.pendingPracticeCleanup {
+                        practiceCleanupItem = pending
+                        mgr.pendingPracticeCleanup = nil
+                    }
                 }
             }
 
@@ -1562,6 +1645,9 @@ private struct PanelSheetsModifier: ViewModifier {
     @Binding var navigateToInboxAfterImage: Bool
     @Binding var showAIConsentAlert: Bool
     @Binding var pendingAIInput: PendingAIInput
+    @Binding var practiceCleanupItem: PracticeCleanupItem?
+    @State private var showPracticeAlert = false
+    let deletePracticeItem: (PracticeCleanupItem) -> Void
 
     let existingAccountNames: (Account?) -> [String]
     let prefillAccountID: PersistentIdentifier?
@@ -1587,7 +1673,7 @@ private struct PanelSheetsModifier: ViewModifier {
             .sheet(isPresented: $isPresentingSettings, onDismiss: {
                 recalculateData()
             }) {
-                ProfileView()
+                ProfileView(initialDestination: SessionState.shared.pendingProfileDestination)
             }
             .sheet(isPresented: $showWidgetPreferences) {
                 WidgetPreferencesView(viewModel: viewModel)
@@ -1657,6 +1743,26 @@ private struct PanelSheetsModifier: ViewModifier {
                 case .voice: showVoiceRecording = true
                 case .image: showImageSelection = true
                 }
+            }
+            .onChange(of: practiceCleanupItem?.id) { _, newValue in
+                showPracticeAlert = newValue != nil
+            }
+            .alert(
+                L10n.SetupChecklist.practiceTitle(practiceCleanupItem?.localizedItemType ?? ""),
+                isPresented: $showPracticeAlert
+            ) {
+                Button(L10n.SetupChecklist.practiceKeep, role: .cancel) {
+                    practiceCleanupItem = nil
+                }
+                Button(L10n.SetupChecklist.practiceDelete, role: .destructive) {
+                    if let item = practiceCleanupItem {
+                        deletePracticeItem(item)
+                    }
+                    practiceCleanupItem = nil
+                    recalculateData()
+                }
+            } message: {
+                Text(L10n.SetupChecklist.practiceMessage)
             }
     }
 

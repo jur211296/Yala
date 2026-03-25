@@ -471,6 +471,17 @@ class SessionState {
     /// Flag to trigger App Store review prompt
     var shouldRequestReview: Bool = false
 
+    // MARK: - Setup Checklist Navigation
+
+    /// When set, ProfileView navigates to this destination on appear (e.g. categories, accounts).
+    var pendingProfileDestination: ProfileDestination?
+
+    /// When true, BudgetsView auto-opens the budget editor on appear.
+    var shouldAutoOpenBudgetEditor: Bool = false
+
+    /// When true, ScheduledPaymentsView auto-opens the editor on appear.
+    var shouldAutoOpenScheduledEditor: Bool = false
+
     /// Signals that post-onboarding flow is complete (trial sheet dismissed or skipped).
     /// Coach mark tours wait for this before starting.
     var isReadyForTours: Bool = false

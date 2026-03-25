@@ -84,6 +84,13 @@ struct BudgetsListView: View {
         .onAppear {
             viewModel.setContext(modelContext)
             refreshData()
+
+            // Auto-open editor from setup checklist (step 3)
+            if sessionState.shouldAutoOpenBudgetEditor {
+                sessionState.shouldAutoOpenBudgetEditor = false
+                viewModel.editingBudget = nil
+                viewModel.showBudgetEditor = true
+            }
         }
         .onChange(of: sessionState.dataVersion) { _, _ in
             refreshData()

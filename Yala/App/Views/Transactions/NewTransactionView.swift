@@ -138,6 +138,11 @@ struct NewTransactionView: View {
                     transactionTypeSelector
                         .padding(.top, DS.Spacing.sm)
 
+                    // Contextual guide for new users
+                    ContextualGuideBanner.transaction()
+                        .padding(.horizontal, DS.Spacing.md)
+                        .padding(.top, DS.Spacing.xs)
+
                     Spacer()
 
                     // Central content area
@@ -1184,7 +1189,20 @@ struct NewTransactionView: View {
     }
 
     private func saveTransaction() {
-        if viewModel.save(context: modelContext) != nil {
+        if let saved = viewModel.save(context: modelContext), let first = saved.first {
+            // Mark setup checklist step 2 with practice cleanup option
+            if SetupChecklistManager.shared.stepCompleted[.firstExpense] != true {
+                SetupChecklistManager.shared.markCompleted(
+                    .firstExpense,
+                    practiceItem: PracticeCleanupItem(
+                        stepID: .firstExpense,
+                        itemName: first.note ?? "",
+                        persistentID: first.persistentModelID
+                    )
+                )
+            } else {
+                SetupChecklistManager.shared.markCompleted(.firstExpense)
+            }
             showTransactionSuccess()
         }
     }

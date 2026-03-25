@@ -25,7 +25,7 @@ extension View {
 
 enum PanelTourSteps {
     static func steps(isProUser: Bool) -> [CoachMarkStep] {
-        [
+        var result = [
             CoachMarkStep(
                 id: "accounts",
                 title: L10n.TipKit.accounts,
@@ -53,8 +53,28 @@ enum PanelTourSteps {
                 title: L10n.TipKit.profile,
                 message: L10n.TipKit.profileMessage,
                 spotlightPadding: DS.Spacing.xs
-            )
+            ),
         ]
+
+        // Contextual guide step — only if the panel guide hasn't been dismissed yet
+        if !UserDefaults.standard.bool(forKey: "guide.panel.dismissed") {
+            result.append(CoachMarkStep(
+                id: "contextualGuide",
+                title: L10n.TipKit.contextualGuide,
+                message: L10n.TipKit.contextualGuideMessage,
+                spotlightPadding: DS.Spacing.xs
+            ))
+        }
+
+        // Setup checklist step — always shown
+        result.append(CoachMarkStep(
+            id: "setupChecklist",
+            title: L10n.TipKit.setupChecklist,
+            message: L10n.TipKit.setupChecklistMessage,
+            spotlightPadding: DS.Spacing.xs
+        ))
+
+        return result
     }
 }
 
@@ -130,6 +150,16 @@ enum SettingsTourSteps {
             id: "settingsPersonalization",
             title: L10n.TipKit.settingsPersonalization,
             message: L10n.TipKit.settingsPersonalizationMessage
+        ),
+        CoachMarkStep(
+            id: "settingsAppIcon",
+            title: L10n.TipKit.settingsAppIcon,
+            message: L10n.TipKit.settingsAppIconMessage
+        ),
+        CoachMarkStep(
+            id: "settingsTheme",
+            title: L10n.TipKit.settingsTheme,
+            message: L10n.TipKit.settingsThemeMessage
         ),
         CoachMarkStep(
             id: "settingsTutorials",

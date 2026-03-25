@@ -205,6 +205,11 @@ struct ScheduledPaymentEditorView: View {
 
     private var editorContent: some View {
         VStack(spacing: DS.Spacing.xxl) {
+            // Contextual guide for new users creating first scheduled payment
+            if payment == nil {
+                ContextualGuideBanner.scheduledEditor()
+            }
+
             basicInfoSection
             togglesSection
             classificationSection
@@ -1094,6 +1099,31 @@ struct ScheduledPaymentEditorView: View {
 
         if let id = savedID {
             onSaved?(id)
+            if payment == nil, SetupChecklistManager.shared.stepCompleted[.scheduledPayment] != true {
+                // Find PersistentIdentifier from UUID
+                let descriptor = FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == id })
+                do {
+                    if let persistentID = try modelContext.fetch(descriptor).first?.persistentModelID {
+                        SetupChecklistManager.shared.markCompleted(
+                            .scheduledPayment,
+                            practiceItem: PracticeCleanupItem(
+                                stepID: .scheduledPayment,
+                                itemName: name,
+                                persistentID: persistentID
+                            )
+                        )
+                    } else {
+                        SetupChecklistManager.shared.markCompleted(.scheduledPayment)
+                    }
+                } catch {
+                    #if DEBUG
+                    print("ScheduledPaymentEditor: Error fetching saved payment: \(error)")
+                    #endif
+                    SetupChecklistManager.shared.markCompleted(.scheduledPayment)
+                }
+            } else {
+                SetupChecklistManager.shared.markCompleted(.scheduledPayment)
+            }
             dismiss()
         }
     }

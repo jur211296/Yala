@@ -36,6 +36,9 @@ struct AccountsSettingsListView: View {
 
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
+                    // Contextual guide for new users
+                    ContextualGuideBanner.accounts()
+
                     // Limit reached banner
                     if isAtLimit {
                         LimitReachedBanner(

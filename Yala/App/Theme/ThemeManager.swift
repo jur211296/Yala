@@ -57,6 +57,12 @@ final class ThemeManager {
         }
     }
 
+    /// Resets theme to factory defaults (used after data wipe)
+    func resetToDefaults() {
+        userChoice = .system
+        translucentVariant = .indigo
+    }
+
     /// Updated from YalaApp's onChange(of: colorScheme)
     var systemColorScheme: ColorScheme = .light
 

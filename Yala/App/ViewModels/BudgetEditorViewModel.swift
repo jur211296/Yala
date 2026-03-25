@@ -142,8 +142,8 @@ final class BudgetEditorViewModel {
         selectedNeeds: Set<SubcategoryNeed>,
         alertEnabled: Bool,
         alertThresholds: Set<Int>
-    ) -> Bool {
-        guard let context = modelContext else { return false }
+    ) -> PersistentIdentifier? {
+        guard let context = modelContext else { return nil }
 
         // Convert PersistentIdentifiers to model objects
         let accountsArray = activeAccounts.filter { selectedAccounts.contains($0.persistentModelID) }
@@ -151,6 +151,8 @@ final class BudgetEditorViewModel {
         let tagsArray = activeTags.filter { selectedTags.contains($0.persistentModelID) }
         let naturesString = selectedNeeds.isEmpty ? nil : selectedNeeds.map { $0.rawValue }.joined(separator: ",")
         let thresholdsString = alertThresholds.isEmpty ? nil : alertThresholds.sorted().map { String($0) }.joined(separator: ",")
+
+        var savedBudgetID: PersistentIdentifier?
 
         if let existingBudget = existing {
             // Update existing budget
@@ -185,6 +187,7 @@ final class BudgetEditorViewModel {
                 alertThresholds: thresholdsString
             )
             context.insert(newBudget)
+            savedBudgetID = newBudget.persistentModelID
         }
 
         do {
@@ -197,13 +200,13 @@ final class BudgetEditorViewModel {
                 "isNew": String(existing == nil),
             ])
 
-            return true
+            return savedBudgetID ?? existing?.persistentModelID
         } catch {
             #if DEBUG
             print("BudgetEditorViewModel: Error saving budget: \(error)")
             #endif
             showSaveError = true
-            return false
+            return nil
         }
     }
 

@@ -213,6 +213,7 @@ final class DataWipeService {
         // --- Personalización ---
         defaults.removeObject(forKey: "defaultPeriod")          // Default: DetailPeriod.allTime.rawValue
         defaults.removeObject(forKey: "userTheme")              // Default: AppTheme.system.rawValue (0)
+        defaults.removeObject(forKey: "translucentVariant")     // Default: TranslucentVariant.indigo.rawValue (0)
         defaults.removeObject(forKey: "colorfulIcons")          // Default: true
         defaults.removeObject(forKey: "firstWeekday")           // Default: 2 (Monday)
         defaults.removeObject(forKey: "showWidgetHints")        // Default: true
@@ -269,6 +270,17 @@ final class DataWipeService {
         defaults.removeObject(forKey: "hasSeenSettingsTour")      // Re-show settings tour
         defaults.removeObject(forKey: "hasSeenCashFlowSetupTour")  // Re-show cash flow setup tour
         defaults.removeObject(forKey: "hasSeenCashFlowTableTour")  // Re-show cash flow table tour
+
+        // --- Setup Checklist ---
+        SetupChecklistManager.shared.resetAll()
+
+        // --- Contextual Guides ---
+        let guideIDs = ["panel", "trends", "categories", "records", "budgets", "scheduled",
+                        "accounts", "transaction", "comparative", "cashflow", "insights", "inbox",
+                        "budgetEditor", "scheduledEditor"]
+        for guideID in guideIDs {
+            defaults.removeObject(forKey: "guide.\(guideID).dismissed")
+        }
 
         // --- Seed guards ---
         defaults.removeObject(forKey: "seedCategoriesExecuted") // Allow re-seed after wipe

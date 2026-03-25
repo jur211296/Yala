@@ -174,6 +174,7 @@ struct ContentView: View {
                     SessionState.shared.needsPostOnboardingTrial = true
                 }
                 hasCompletedOnboarding = true
+                SetupChecklistManager.shared.markAsNewInstall()
                 showOnboarding = false
             }
             .environment(SessionState.shared)
@@ -391,6 +392,7 @@ struct ContentView: View {
                     in: modelContext,
                     broadcastSignal: false  // Reactive wipe — don't re-signal
                 )
+                themeManager.resetToDefaults()
             } catch {
                 #if DEBUG
                 print("ContentView: Remote wipe failed: \(error)")

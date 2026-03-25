@@ -206,11 +206,18 @@ struct DetailContainerView: View {
         ZStack {
             PanelBackgroundView()
 
-            tabContent
-                .safeAreaInset(edge: .top) {
-                    navigationChipsBar
-                        .padding(.vertical, DS.Spacing.sm)
-                }
+            VStack(spacing: DS.Spacing.none) {
+                // Contextual guide for current statistics tab
+                statisticsGuide
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.xs)
+
+                tabContent
+            }
+            .safeAreaInset(edge: .top) {
+                navigationChipsBar
+                    .padding(.vertical, DS.Spacing.sm)
+            }
 
             if selectedTab == .records && !recordsViewModel.isSelectionMode {
                 newRecordFAB
@@ -219,6 +226,20 @@ struct DetailContainerView: View {
             if recordsViewModel.isSelectionMode && !recordsViewModel.selectedRecordIDs.isEmpty {
                 selectionActionBar
             }
+        }
+    }
+
+    @ViewBuilder
+    private var statisticsGuide: some View {
+        switch selectedTab {
+        case .insights:
+            ContextualGuideBanner.insights()
+        case .trends:
+            ContextualGuideBanner.trends()
+        case .categories:
+            ContextualGuideBanner.categories()
+        case .records:
+            ContextualGuideBanner.records()
         }
     }
 

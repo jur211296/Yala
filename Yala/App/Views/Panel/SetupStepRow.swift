@@ -1,0 +1,171 @@
+//
+//  SetupStepRow.swift
+//  Yala
+//
+//  Individual step row in the setup checklist card.
+//
+
+import SwiftUI
+
+struct SetupStepRow: View {
+
+    // MARK: - Properties
+
+    let step: SetupStep
+    let isCurrent: Bool
+    let onTap: () -> Void
+
+    // MARK: - Indicator
+
+    @ViewBuilder
+    private var indicatorImage: some View {
+        if step.isCompleted {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 18))
+                .foregroundStyle(DS.Semantic.successForeground)
+        } else if step.isLocked {
+            Image(systemName: "lock.circle.fill")
+                .font(.system(size: 18))
+                .foregroundStyle(.thSecondaryText)
+        } else if isCurrent {
+            Image(systemName: "arrow.right.circle.fill")
+                .font(.system(size: 18))
+                .foregroundStyle(.thAccent)
+        } else {
+            Image(systemName: "circle")
+                .font(.system(size: 18))
+                .foregroundStyle(.thSecondaryText)
+        }
+    }
+
+    // MARK: - Body
+
+    var body: some View {
+        Button {
+            onTap()
+        } label: {
+            HStack(spacing: DS.Spacing.sm) {
+                // Completion indicator
+                indicatorImage
+
+                // Step icon
+                Image(systemName: step.icon)
+                    .font(.system(size: 14))
+                    .foregroundStyle((step.isCompleted || step.isLocked) ? ThemeColor.thSecondaryText : ThemeColor.thPrimaryText)
+                    .frame(width: 20)
+
+                // Step title
+                Text(step.id.localizedTitle)
+                    .font(isCurrent ? DS.Typography.label : DS.Typography.caption)
+                    .foregroundStyle((step.isCompleted || step.isLocked) ? ThemeColor.thSecondaryText : ThemeColor.thPrimaryText)
+
+                Spacer()
+
+                if isCurrent {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.thAccent)
+                }
+            }
+            .padding(.vertical, DS.Spacing.xxs)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(step.isCompleted || step.isLocked)
+        .accessibilityLabel(step.id.localizedTitle)
+        .accessibilityHint(step.isCompleted ? L10n.SetupChecklist.stepCompleted : L10n.SetupChecklist.stepTapToStart)
+    }
+}
+
+// MARK: - SetupStepID L10n
+
+extension SetupStepID {
+    var localizedTitle: String {
+        switch self {
+        case .exploreSettings: L10n.SetupChecklist.Step.exploreSettings
+        case .firstExpense: L10n.SetupChecklist.Step.firstExpense
+        case .firstBudget: L10n.SetupChecklist.Step.firstBudget
+        case .scheduledPayment: L10n.SetupChecklist.Step.scheduledPayment
+        case .discoverFeatures: L10n.SetupChecklist.Step.discoverFeatures
+        }
+    }
+}
+
+// MARK: - L10n Extension
+
+extension L10n {
+    enum SetupChecklist {
+        static var title: String {
+            NSLocalizedString("setup.title", comment: "Setup checklist title")
+        }
+        static var subtitle: String {
+            NSLocalizedString("setup.subtitle", comment: "Setup checklist subtitle")
+        }
+        static func progress(_ completed: Int, _ total: Int) -> String {
+            String(format: NSLocalizedString("setup.progress", comment: "Setup progress"), completed, total)
+        }
+        static var collapse: String {
+            NSLocalizedString("setup.collapse", comment: "Collapse checklist")
+        }
+        static var continueSetup: String {
+            NSLocalizedString("setup.continue", comment: "Continue setup")
+        }
+        static var completeTitle: String {
+            NSLocalizedString("setup.complete.title", comment: "Setup complete title")
+        }
+        static var completeSubtitle: String {
+            NSLocalizedString("setup.complete.subtitle", comment: "Setup complete subtitle")
+        }
+        static var stepCompleted: String {
+            NSLocalizedString("setup.step.completed", comment: "Accessibility: step completed")
+        }
+        static var stepTapToStart: String {
+            NSLocalizedString("setup.step.tapToStart", comment: "Accessibility: tap to start step")
+        }
+
+        // Practice cleanup
+        static func practiceTitle(_ itemName: String) -> String {
+            String(format: NSLocalizedString("setup.practice.title", comment: "Practice cleanup title"), itemName)
+        }
+        static var practiceMessage: String {
+            NSLocalizedString("setup.practice.message", comment: "Practice cleanup message")
+        }
+        static var practiceKeep: String {
+            NSLocalizedString("setup.practice.keep", comment: "Keep created item")
+        }
+        static var practiceDelete: String {
+            NSLocalizedString("setup.practice.delete", comment: "Delete practice item")
+        }
+
+        enum PracticeType {
+            static var expense: String {
+                NSLocalizedString("setup.practice.type.expense", comment: "Expense type")
+            }
+            static var budget: String {
+                NSLocalizedString("setup.practice.type.budget", comment: "Budget type")
+            }
+            static var scheduled: String {
+                NSLocalizedString("setup.practice.type.scheduled", comment: "Scheduled type")
+            }
+        }
+
+        // Step titles
+        enum Step {
+            static var exploreSettings: String {
+                NSLocalizedString("setup.step1.title", comment: "Step 1 title")
+            }
+            static var firstExpense: String {
+                NSLocalizedString("setup.step2.title", comment: "Step 2 title")
+            }
+            static var firstBudget: String {
+                NSLocalizedString("setup.step3.title", comment: "Step 3 title")
+            }
+            static var scheduledPayment: String {
+                NSLocalizedString("setup.step4.title", comment: "Step 4 title")
+            }
+            static var discoverFeatures: String {
+                NSLocalizedString("setup.step5.title", comment: "Step 5 title")
+            }
+        }
+    }
+}

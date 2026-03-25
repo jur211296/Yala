@@ -3894,6 +3894,10 @@ enum L10n {
         static var fabProMessage: String { ls("tipkit.fab.pro.message", comment: "") }
         static var profile: String { ls("tipkit.profile.title", comment: "") }
         static var profileMessage: String { ls("tipkit.profile.message", comment: "") }
+        static var contextualGuide: String { ls("tipkit.contextualGuide.title", comment: "") }
+        static var contextualGuideMessage: String { ls("tipkit.contextualGuide.message", comment: "") }
+        static var setupChecklist: String { ls("tipkit.setupChecklist.title", comment: "") }
+        static var setupChecklistMessage: String { ls("tipkit.setupChecklist.message", comment: "") }
         // Grupo B
         static var transactionTypes: String { ls("tipkit.transactionTypes.title", comment: "") }
         static var transactionTypesMessage: String { ls("tipkit.transactionTypes.message", comment: "") }
@@ -3924,6 +3928,10 @@ enum L10n {
         static var settingsPlannedMessage: String { ls("tipkit.settings.planned.message", comment: "") }
         static var settingsPersonalization: String { ls("tipkit.settings.personalization.title", comment: "") }
         static var settingsPersonalizationMessage: String { ls("tipkit.settings.personalization.message", comment: "") }
+        static var settingsAppIcon: String { ls("tipkit.settingsAppIcon.title", comment: "") }
+        static var settingsAppIconMessage: String { ls("tipkit.settingsAppIcon.message", comment: "") }
+        static var settingsTheme: String { ls("tipkit.settingsTheme.title", comment: "") }
+        static var settingsThemeMessage: String { ls("tipkit.settingsTheme.message", comment: "") }
         static var settingsTutorials: String { ls("tipkit.settings.tutorials.title", comment: "") }
         static var settingsTutorialsMessage: String { ls("tipkit.settings.tutorials.message", comment: "") }
         // Cash Flow Setup Tour

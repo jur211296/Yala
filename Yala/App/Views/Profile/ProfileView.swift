@@ -16,6 +16,9 @@ import SwiftUI
 
 /// Main profile screen acting as the Configuration Control Center
 struct ProfileView: View {
+    /// Optional destination to navigate to on appear (used by setup checklist).
+    var initialDestination: ProfileDestination?
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @Environment(\.requestReview) private var requestReview
@@ -109,27 +112,7 @@ struct ProfileView: View {
         }
     }
 
-    // Destinations for NavigationStack
-    enum ProfileDestination: Hashable {
-        case accounts
-        case categories
-        case tags
-        case themes
-        case personalization
-        case currency
-        case appIcon
-        case notifications
-        case favorites
-        case budgets
-        case planned
-        case userDataReset
-        case biometricSecurity
-        case subscription
-        case tips
-        case faq
-        case iCloudSync
-        case siriShortcuts
-    }
+    // ProfileDestination extracted to Yala/App/Models/ProfileDestination.swift
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -159,7 +142,7 @@ struct ProfileView: View {
                         }
                         .padding(.vertical, DS.Spacing.xxl)
                     }
-                    .scrollDisabled(showSettingsTour)
+                    .scrollDisabled(false)
                     .onAppear { settingsScrollProxy = scrollProxy }
                 }
             }
@@ -248,6 +231,13 @@ struct ProfileView: View {
                 Button(L10n.Action.cancel, role: .cancel) {}
             } message: {
                 Text(L10n.AIConsent.insightsMessage)
+            }
+            .onAppear {
+                // Auto-navigate to destination from setup checklist
+                if let dest = initialDestination ?? SessionState.shared.pendingProfileDestination {
+                    SessionState.shared.pendingProfileDestination = nil
+                    navigationPath.append(dest)
+                }
             }
             .navigationDestination(for: ProfileDestination.self) { destination in
                 switch destination {
@@ -505,10 +495,12 @@ struct ProfileView: View {
                 profileRow(
                     icon: "app.fill", title: L10n.Settings.appIcon,
                     iconColor: .blue, destination: .appIcon)
+                .coachMarkAnchor("settingsAppIcon")
                 SubsectionDivider()
                 profileRow(
                     icon: "paintpalette.fill", title: L10n.Settings.theme, iconColor: .pink,
                     destination: .themes)
+                .coachMarkAnchor("settingsTheme")
             }
         }
         .padding(.horizontal, DS.Spacing.lg)

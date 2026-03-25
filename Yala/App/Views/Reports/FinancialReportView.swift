@@ -98,7 +98,12 @@ struct FinancialReportView: View {
     private var mainContent: some View {
         ZStack {
             PanelBackgroundView()
-            tabContent
+            VStack(spacing: DS.Spacing.none) {
+                reportGuide
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.xs)
+                tabContent
+            }
         }
         .safeAreaInset(edge: .top) {
             navigationChipsBar
@@ -159,6 +164,18 @@ struct FinancialReportView: View {
             .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Report Guide
+
+    @ViewBuilder
+    private var reportGuide: some View {
+        switch selectedTab {
+        case .comparativa:
+            ContextualGuideBanner.comparative()
+        case .flujoDeCaja:
+            ContextualGuideBanner.cashflow()
+        }
     }
 
     // MARK: - Tab Content

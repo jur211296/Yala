@@ -65,6 +65,13 @@ struct ScheduledPaymentsView: View {
         .onAppear {
             viewModel.setContext(modelContext)
             refreshData()
+
+            // Auto-open editor from setup checklist (step 4)
+            if sessionState.shouldAutoOpenScheduledEditor {
+                sessionState.shouldAutoOpenScheduledEditor = false
+                viewModel.editingPayment = nil
+                viewModel.showPaymentEditor = true
+            }
         }
         .onChange(of: viewModel.selectedTab) { _, _ in
             refreshData()

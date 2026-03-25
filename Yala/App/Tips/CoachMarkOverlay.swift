@@ -232,13 +232,33 @@ struct CoachMarkOverlay: View {
         guard let step = currentStep else { return }
         isTransitioning = true
 
-        // Check if target is already visible (no scroll needed)
-        let needsScroll = resolveFrame(for: step) == nil && scrollProxy != nil
+        // Scroll to center the target on every step transition for best visibility.
+        // scrollTo is a no-op for elements already centered or outside ScrollView (toolbar items).
+        let shouldScroll = scrollProxy != nil
+        let isOffScreen = resolveFrame(for: step) == nil
 
-        if needsScroll {
+        if shouldScroll && (isOffScreen || !initial) {
+            // Target off-screen or advancing between steps — scroll then show
             scrollThenShow(step: step, initial: initial)
+        } else if shouldScroll && initial {
+            // First appearance, target already visible — scroll to center then show
+            withAnimation(.easeInOut(duration: DS.Animation.normal)) {
+                scrollProxy?.scrollTo(step.id, anchor: .center)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.normal + 0.1) {
+                scrollSettleToken += 1
+                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.slow)) {
+                    isVisible = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.fast) {
+                    isTransitioning = false
+                    dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
+                        showTooltip = true
+                    }
+                }
+            }
         } else if initial {
-            // First appearance — fade in dim, then tooltip
+            // No scroll proxy — fade in directly
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                 dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.slow)) {
                     isVisible = true
@@ -251,7 +271,7 @@ struct CoachMarkOverlay: View {
                 }
             }
         } else {
-            // Target visible — crossfade tooltip while spotlight animates
+            // Target visible, no scroll — crossfade tooltip
             dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
                 showTooltip = false
             }

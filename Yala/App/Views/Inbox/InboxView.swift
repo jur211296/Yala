@@ -81,6 +81,10 @@ struct InboxView: View {
                         .padding(.bottom, DS.Spacing.sm)
                     }
 
+                    // Contextual guide for new users
+                    ContextualGuideBanner.inbox()
+                        .padding(.horizontal, DS.Spacing.lg)
+
                     // Content
                     if filteredDrafts.isEmpty {
                         Spacer()

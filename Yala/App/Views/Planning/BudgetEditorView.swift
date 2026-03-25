@@ -60,6 +60,11 @@ struct BudgetEditorView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
+                    // Contextual guide for new users creating first budget
+                    if budget == nil {
+                        ContextualGuideBanner.budgetEditor()
+                    }
+
                     // Basic Information Section
                     basicInfoSection
 
@@ -768,8 +773,20 @@ struct BudgetEditorView: View {
             alertThresholds: selectedThresholds
         )
 
-        if saved {
+        if let savedID = saved {
             sessionState.needsBudgetsWidgetRefresh = true
+            if budget == nil, SetupChecklistManager.shared.stepCompleted[.firstBudget] != true {
+                SetupChecklistManager.shared.markCompleted(
+                    .firstBudget,
+                    practiceItem: PracticeCleanupItem(
+                        stepID: .firstBudget,
+                        itemName: name,
+                        persistentID: savedID
+                    )
+                )
+            } else {
+                SetupChecklistManager.shared.markCompleted(.firstBudget)
+            }
             dismiss()
         }
     }

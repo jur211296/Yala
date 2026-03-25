@@ -62,7 +62,7 @@ struct BudgetEditorViewModelTests {
         #expect(vm.allTags.isEmpty)
     }
 
-    @MainActor @Test func saveBudget_withoutContext_returnsFalse() {
+    @MainActor @Test func saveBudget_withoutContext_returnsNil() {
         let vm = BudgetEditorViewModel()
         let result = vm.saveBudget(
             existing: nil,
@@ -80,7 +80,7 @@ struct BudgetEditorViewModelTests {
             alertEnabled: false,
             alertThresholds: []
         )
-        #expect(result == false)
+        #expect(result == nil)
     }
 
     @MainActor @Test func deleteBudget_withoutContext_returnsFalse() {

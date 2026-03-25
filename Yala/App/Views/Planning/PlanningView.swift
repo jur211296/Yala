@@ -53,11 +53,18 @@ struct PlanningView: View {
             ZStack {
                 PanelBackgroundView()
 
-                tabContent
-                    .safeAreaInset(edge: .top) {
-                        navigationChipsBar
-                            .padding(.vertical, DS.Spacing.sm)
-                    }
+                VStack(spacing: DS.Spacing.none) {
+                    // Contextual guide for current planning tab
+                    planningGuide
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.top, DS.Spacing.xs)
+
+                    tabContent
+                }
+                .safeAreaInset(edge: .top) {
+                    navigationChipsBar
+                        .padding(.vertical, DS.Spacing.sm)
+                }
             }
             .navigationTitle(L10n.Planning.title)
             .navigationBarTitleDisplayMode(.large)
@@ -156,6 +163,18 @@ struct PlanningView: View {
             .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Contextual Guide
+
+    @ViewBuilder
+    private var planningGuide: some View {
+        switch selectedTab {
+        case .budgets:
+            ContextualGuideBanner.budgets()
+        case .scheduledPayments:
+            ContextualGuideBanner.scheduledPayments()
+        }
     }
 
     // MARK: - Content Views
