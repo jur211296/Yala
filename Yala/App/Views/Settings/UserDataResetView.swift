@@ -15,6 +15,7 @@ struct UserDataResetView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(ExchangeRateService.self) private var exchangeRateService
     @Environment(SessionState.self) private var sessionState
+    @Environment(ThemeManager.self) private var themeManager
 
     @State private var isShowingConfirmationAlert = false
     @State private var isProcessing = false
@@ -150,7 +151,10 @@ struct UserDataResetView: View {
                 reseedInitialData: false
             )
 
-            // 6. Small delay to let SwiftData settle before removing overlay
+            // 6. Ensure @Observable tracks the theme reset
+            themeManager.resetToDefaults()
+
+            // 7. Small delay to let SwiftData settle before removing overlay
             try? await Task.sleep(for: .milliseconds(200))
 
             isProcessing = false
