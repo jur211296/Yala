@@ -155,7 +155,7 @@ struct LatestRecordsWidgetView: View {
         }
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(WidgetURLHelper.url(for: "statistics/records"))
+        .widgetURL(WidgetURLHelper.url(for: "records"))
     }
 }
 
