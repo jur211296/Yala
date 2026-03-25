@@ -1607,7 +1607,7 @@
 
 "onboarding.welcomeTitle" = "Empecemos a organizar tu dinero";
 "onboarding.welcomeSubtitle" = "Solo unos pasos para personalizar Yala a tu medida.";
-"onboarding.nameLabel" = "¿Cómo te llamas?";
+"onboarding.nameLabel" = "¿Cómo quieres que te llamemos?";
 "onboarding.namePlaceholder" = "Tu nombre";
 "onboarding.currencyTitle" = "Tu moneda principal";
 "onboarding.currencySubtitle" = "Selecciona la moneda que usas con más frecuencia.";
@@ -1682,6 +1682,13 @@
 "onboarding.accountBalanceGuideClosing" = "No te preocupes si no es perfecto — lo importante es empezar.";
 "onboarding.accountBalanceHintCreditCard" = "Lo que has consumido con esta tarjeta hasta hoy. No necesita ser exacto, puedes ajustarlo después.";
 // Balance Calculator Sheet
+// Calculator field hints
+"onboarding.calc.bankAccountsHint" = "Todo lo que tienes en cuentas corrientes o de débito";
+"onboarding.calc.savingsHint" = "Lo que tienes en cuentas de ahorro o guardado";
+"onboarding.calc.cashHint" = "Billetes y monedas que tienes a la mano";
+"onboarding.calc.creditCardSpendingHint" = "Lo que has gastado en tus tarjetas y aún no pagas";
+"onboarding.calc.creditLineHint" = "El límite total de tu tarjeta";
+"onboarding.calc.availableCreditHint" = "Cuánto te queda por usar";
 "onboarding.calc.title" = "¿Cuánto dinero tienes?";
 "onboarding.calc.intro" = "No necesitas ser exacto — un aproximado está bien.";
 "onboarding.calc.bankAccounts" = "Cuentas de banco";
@@ -1721,6 +1728,64 @@
 "onboarding.budgetAmountPlaceholder" = "Ej: 500";
 "onboarding.budgetMoreTip" = "Puedes crear más presupuestos o editar los existentes en Planificación > Presupuestos.";
 "onboarding.budgetPreviewLabel" = "Así se verá tu presupuesto";
+
+// Purpose step (binary)
+"onboarding.purpose.title" = "¿Qué te gustaría hacer con Yala?";
+"onboarding.purpose.expenses" = "Solo anotar mis gastos";
+"onboarding.purpose.expensesDesc" = "Registra lo que gastas y listo";
+"onboarding.purpose.control" = "Llevar el control de mi dinero";
+"onboarding.purpose.controlDesc" = "Gastos, ingresos y cuánto tienes";
+// Accounts step (binary)
+"onboarding.accounts.title" = "¿Cómo organizas tu dinero?";
+"onboarding.accounts.single" = "Todo en una sola cuenta";
+"onboarding.accounts.singleDesc" = "Una cuenta principal donde entra y sale tu dinero";
+"onboarding.accounts.multiple" = "Tengo cuentas separadas";
+"onboarding.accounts.multipleDesc" = "Ahorros, débito, crédito... cada una por su lado";
+// Account type step
+"onboarding.accountType.title" = "¿Cuál es tu primera cuenta?";
+"onboarding.accountType.subtitle" = "Después puedes agregar más en Perfil";
+"onboarding.accountType.checkingHint" = "Tu cuenta de banco del día a día";
+"onboarding.accountType.savingsHint" = "Donde guardas lo que ahorras";
+"onboarding.accountType.creditHint" = "Tu tarjeta de crédito";
+"onboarding.accountType.cashHint" = "Billetes y monedas que tienes a la mano";
+// Name hint
+"onboarding.nameHint" = "Puede ser tu nombre, apodo o como prefieras";
+"onboarding.categories.viewSubs" = "Ver subcategorías";
+// Goal step (kept for backward compat)
+"onboarding.goal.title" = "¿Qué quieres lograr con Yala?";
+"onboarding.goal.expenses" = "Solo quiero anotar mis gastos";
+"onboarding.goal.expensesDesc" = "Registra lo que gastas sin complicaciones";
+"onboarding.goal.understand" = "Quiero entender a dónde va mi dinero";
+"onboarding.goal.understandDesc" = "Gastos, ingresos y cuánto tienes disponible";
+"onboarding.goal.control" = "Quiero controlar todo: cuentas, deudas, ahorros";
+"onboarding.goal.controlDesc" = "Tu saldo real, incluyendo todo lo que tienes y debes";
+// Style step
+"onboarding.style.title" = "¿Cómo quisieras ver tu dinero?";
+"onboarding.style.subtitle" = "Esto define cómo Yala te muestra tus finanzas. Puedes cambiarlo después.";
+"onboarding.style.flow" = "Lo que entra y sale cada mes";
+"onboarding.style.flowDesc" = "Enfócate en tus ingresos y gastos del período";
+"onboarding.style.total" = "El total que tengo acumulado";
+"onboarding.style.totalDesc" = "Ve tu patrimonio neto y cómo cambia con el tiempo";
+// Account guided step
+"onboarding.account.guidedExpenses" = "Vamos a crear tu cuenta principal para registrar gastos.";
+"onboarding.account.guidedDayToDay" = "Tu cuenta del día a día — donde entra y sale tu dinero.";
+"onboarding.account.guidedFullControl" = "Elige el tipo de cuenta que mejor represente donde guardas tu dinero.";
+// Currency + Name step
+"onboarding.currencyName.title" = "Nombre y divisa";
+"onboarding.currencyName.subtitle" = "Dale un nombre a tu cuenta y elige la divisa que usa.";
+// Balance step
+"onboarding.balance.title" = "¿Cuánto tienes ahí?";
+"onboarding.balance.subtitleDayToDay" = "Un aproximado está bien — lo puedes ajustar después.";
+"onboarding.balance.subtitleFullControl" = "Pon el saldo lo más exacto que puedas para empezar bien.";
+// Confirmation step
+"onboarding.confirm.title" = "Así queda tu Yala";
+"onboarding.confirm.accountLabel" = "Cuenta";
+"onboarding.confirm.currencyLabel" = "Divisa";
+"onboarding.confirm.balanceLabel" = "Saldo";
+"onboarding.confirm.modeLabel" = "Modo";
+"onboarding.confirm.motivationExpenses" = "¡Listo para entender tus gastos!";
+"onboarding.confirm.motivationDayToDay" = "¡Tu plan financiero arranca ahora!";
+"onboarding.confirm.motivationFullControl" = "¡Todo bajo control desde hoy!";
 
 // MARK: - Bulk Edit
 "bulkEdit.currencyWarning" = "Al cambiar de cuenta, se actualizará la divisa de las transacciones seleccionadas.";

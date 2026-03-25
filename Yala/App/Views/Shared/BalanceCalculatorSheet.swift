@@ -167,16 +167,16 @@ struct BalanceCalculatorSheet: View {
 
             // Input fields
             VStack(spacing: DS.Spacing.none) {
-                calcRow(label: L10n.Onboarding.calcBankAccounts, text: $fieldState.bankAccountsText, field: .bankAccounts)
+                calcRow(label: L10n.Onboarding.calcBankAccounts, hint: L10n.Onboarding.calcBankAccountsHint, text: $fieldState.bankAccountsText, field: .bankAccounts)
                 SubsectionDivider()
-                calcRow(label: L10n.Onboarding.calcSavings, text: $fieldState.savingsText, field: .savings)
+                calcRow(label: L10n.Onboarding.calcSavings, hint: L10n.Onboarding.calcSavingsHint, text: $fieldState.savingsText, field: .savings)
                 SubsectionDivider()
-                calcRow(label: L10n.Onboarding.calcCash, text: $fieldState.cashText, field: .cash)
+                calcRow(label: L10n.Onboarding.calcCash, hint: L10n.Onboarding.calcCashHint, text: $fieldState.cashText, field: .cash)
 
                 if mindset == "patrimonial" {
                     SubsectionDivider()
                     VStack(spacing: DS.Spacing.none) {
-                        calcRow(label: L10n.Onboarding.calcCreditCardSpending, text: $fieldState.creditCardSpendingText, field: .creditCardSpending)
+                        calcRow(label: L10n.Onboarding.calcCreditCardSpending, hint: L10n.Onboarding.calcCreditCardSpendingHint, text: $fieldState.creditCardSpendingText, field: .creditCardSpending)
                         Text(L10n.Onboarding.calcOptional)
                             .font(DS.Typography.caption)
                             .foregroundStyle(.tertiary)
@@ -249,9 +249,9 @@ struct BalanceCalculatorSheet: View {
         VStack(spacing: DS.Spacing.xl) {
             // Input fields
             VStack(spacing: DS.Spacing.none) {
-                calcRow(label: L10n.Onboarding.calcCreditLine, text: $fieldState.creditLineText, field: .creditLine)
+                calcRow(label: L10n.Onboarding.calcCreditLine, hint: L10n.Onboarding.calcCreditLineHint, text: $fieldState.creditLineText, field: .creditLine)
                 SubsectionDivider()
-                calcRow(label: L10n.Onboarding.calcAvailableCredit, text: $fieldState.availableCreditText, field: .availableCredit)
+                calcRow(label: L10n.Onboarding.calcAvailableCredit, hint: L10n.Onboarding.calcAvailableCreditHint, text: $fieldState.availableCreditText, field: .availableCredit)
             }
             .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
@@ -318,32 +318,40 @@ struct BalanceCalculatorSheet: View {
 
     // MARK: - Reusable Components
 
-    private func calcRow(label: String, text: Binding<String>, field: CalcField) -> some View {
-        HStack {
-            Text(label)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.primary)
-                .lineLimit(2)
-                .minimumScaleFactor(0.8)
+    private func calcRow(label: String, hint: String? = nil, text: Binding<String>, field: CalcField) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            HStack {
+                Text(label)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
 
-            Spacer()
+                Spacer()
 
-            HStack(spacing: DS.Spacing.xs) {
-                Text(currencySymbol)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.secondary)
-                TextField("0", text: text)
-                    .font(DS.Typography.headline)
-                    .keyboardType(.decimalPad)
-                    .multilineTextAlignment(.trailing)
-                    .frame(minWidth: 80)
-                    .focused($focusedField, equals: field)
-                    .onChange(of: text.wrappedValue) { _, newValue in
-                        let filtered = filterCalcInput(newValue)
-                        if filtered != newValue {
-                            text.wrappedValue = filtered
+                HStack(spacing: DS.Spacing.xs) {
+                    Text(currencySymbol)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.secondary)
+                    TextField("0", text: text)
+                        .font(DS.Typography.headline)
+                        .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.trailing)
+                        .frame(minWidth: 80)
+                        .focused($focusedField, equals: field)
+                        .onChange(of: text.wrappedValue) { _, newValue in
+                            let filtered = filterCalcInput(newValue)
+                            if filtered != newValue {
+                                text.wrappedValue = filtered
+                            }
                         }
-                    }
+                }
+            }
+
+            if let hint {
+                Text(hint)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.tertiary)
             }
         }
         .padding(DS.Spacing.md)

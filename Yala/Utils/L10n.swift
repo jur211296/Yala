@@ -2804,6 +2804,13 @@ enum L10n {
         static var accountBalanceGuideSavings: String { ls("onboarding.accountBalanceGuideSavings", comment: "") }
         static var accountBalanceGuideClosing: String { ls("onboarding.accountBalanceGuideClosing", comment: "") }
         static var accountBalanceHintCreditCard: String { ls("onboarding.accountBalanceHintCreditCard", comment: "") }
+        // Balance Calculator Sheet — field hints
+        static var calcBankAccountsHint: String { ls("onboarding.calc.bankAccountsHint", comment: "") }
+        static var calcSavingsHint: String { ls("onboarding.calc.savingsHint", comment: "") }
+        static var calcCashHint: String { ls("onboarding.calc.cashHint", comment: "") }
+        static var calcCreditCardSpendingHint: String { ls("onboarding.calc.creditCardSpendingHint", comment: "") }
+        static var calcCreditLineHint: String { ls("onboarding.calc.creditLineHint", comment: "") }
+        static var calcAvailableCreditHint: String { ls("onboarding.calc.availableCreditHint", comment: "") }
         // Balance Calculator Sheet
         static var calcTitle: String { ls("onboarding.calc.title", comment: "") }
         static var calcIntro: String { ls("onboarding.calc.intro", comment: "") }
@@ -2835,6 +2842,47 @@ enum L10n {
         static var calcSavingsExplanation: String { ls("onboarding.calc.savingsExplanation", comment: "") }
         static var accountImportTip: String { ls("onboarding.accountImportTip", comment: "") }
         static var accountMoreTip: String { ls("onboarding.accountMoreTip", comment: "") }
+
+        // Purpose step (binary: solo gastos vs control)
+        static var purposeTitle: String { ls("onboarding.purpose.title", comment: "") }
+        static var purposeExpenses: String { ls("onboarding.purpose.expenses", comment: "") }
+        static var purposeExpensesDesc: String { ls("onboarding.purpose.expensesDesc", comment: "") }
+        static var purposeControl: String { ls("onboarding.purpose.control", comment: "") }
+        static var purposeControlDesc: String { ls("onboarding.purpose.controlDesc", comment: "") }
+        // Accounts step (binary: una cuenta vs varias)
+        static var accountsTitle: String { ls("onboarding.accounts.title", comment: "") }
+        static var accountsSingle: String { ls("onboarding.accounts.single", comment: "") }
+        static var accountsSingleDesc: String { ls("onboarding.accounts.singleDesc", comment: "") }
+        static var accountsMultiple: String { ls("onboarding.accounts.multiple", comment: "") }
+        static var accountsMultipleDesc: String { ls("onboarding.accounts.multipleDesc", comment: "") }
+        // Account type step (fullControl only)
+        static var accountTypeTitle: String { ls("onboarding.accountType.title", comment: "") }
+        static var accountTypeSubtitle: String { ls("onboarding.accountType.subtitle", comment: "") }
+        static var accountTypeCheckingHint: String { ls("onboarding.accountType.checkingHint", comment: "") }
+        static var accountTypeSavingsHint: String { ls("onboarding.accountType.savingsHint", comment: "") }
+        static var accountTypeCreditHint: String { ls("onboarding.accountType.creditHint", comment: "") }
+        static var accountTypeCashHint: String { ls("onboarding.accountType.cashHint", comment: "") }
+        // Name hint
+        static var nameHint: String { ls("onboarding.nameHint", comment: "") }
+        // Categories subcategory view
+        static var categoriesViewSubs: String { ls("onboarding.categories.viewSubs", comment: "") }
+        // (v1 goal/style/accountGuided keys removed — unused in v2)
+        // Currency + Name step
+        static var currencyNameTitle: String { ls("onboarding.currencyName.title", comment: "") }
+        static var currencyNameSubtitle: String { ls("onboarding.currencyName.subtitle", comment: "") }
+        // Balance step
+        static var balanceTitle: String { ls("onboarding.balance.title", comment: "") }
+        static var balanceSubtitleDayToDay: String { ls("onboarding.balance.subtitleDayToDay", comment: "") }
+        static var balanceSubtitleFullControl: String { ls("onboarding.balance.subtitleFullControl", comment: "") }
+        // Confirmation step
+        static var confirmTitle: String { ls("onboarding.confirm.title", comment: "") }
+        static var confirmAccountLabel: String { ls("onboarding.confirm.accountLabel", comment: "") }
+        static var confirmCurrencyLabel: String { ls("onboarding.confirm.currencyLabel", comment: "") }
+        static var confirmBalanceLabel: String { ls("onboarding.confirm.balanceLabel", comment: "") }
+        static var confirmModeLabel: String { ls("onboarding.confirm.modeLabel", comment: "") }
+        static var confirmMotivationExpenses: String { ls("onboarding.confirm.motivationExpenses", comment: "") }
+        static var confirmMotivationDayToDay: String { ls("onboarding.confirm.motivationDayToDay", comment: "") }
+        static var confirmMotivationFullControl: String { ls("onboarding.confirm.motivationFullControl", comment: "") }
 
         // Quick Budget step
         static var budgetTitle: String { ls("onboarding.budgetTitle", comment: "") }

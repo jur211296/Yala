@@ -39,6 +39,17 @@ enum AccountType: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Short description of what this account type is (for onboarding type picker)
+    var typeDescription: String {
+        switch self {
+        case .checking: return L10n.Onboarding.accountTypeCheckingHint
+        case .savings: return L10n.Onboarding.accountTypeSavingsHint
+        case .creditCard: return L10n.Onboarding.accountTypeCreditHint
+        case .cash: return L10n.Onboarding.accountTypeCashHint
+        case .general: return ""
+        }
+    }
+
     /// Contextual balance hint for onboarding (varies by account type)
     var balanceHint: String {
         switch self {
