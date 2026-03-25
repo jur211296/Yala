@@ -1,4 +1,4 @@
-# Context Snapshot: QA Calibration Session 1
+# Context Snapshot: QA Automation + Visual Audit
 
 ## Estado actual
 - **Task #1 COMPLETADA**: Fixture onboarding-complete.json calibrado y funcionando
@@ -92,13 +92,26 @@ AGENT_DEVICE_DAEMON_TIMEOUT_MS=180000 agent-device batch --steps-file ...
 - Aparece tras completar onboarding
 - `find "Quizás después" click` lo cierra
 
-## Tasks completadas
-- #1: Fixture onboarding-complete.json ✅
-- #2: Suite 01-onboarding (11 scripts) ✅
+## QA Calibration — COMPLETADA
+- Tasks #1-10 todas completadas
+- 105 scripts calibrados, dry-run 105/105 PASS
+- Commits: 6ecdd302, 2c7fbbb7, b488874d, e57609ab, 6e812d08, b3351689
+- Validación real pendiente (ejecutar `bash qa/runner.sh`)
 
-## Próximo paso
-Continuar con Task #3: Calibrar fixture with-accounts y Tasks #4-9.
-Los scripts de suites 02-14 necesitan actualizar:
-1. Navegación a Profile: `find "Perfil" click` (avatar, no tab)
-2. Textos de secciones: usar los textos exactos descubiertos arriba
-3. Coach marks: agregar `find "Omitir guía" click` en primer acceso a Profile
+## Próximo paso: Auditoría Visual
+Plan aprobado en `.claude/plans/cryptic-stargazing-comet.md`
+- Recorrer ~41 pantallas con agent-device
+- Screenshot cada una → Claude analiza visualmente
+- Reporte de hallazgos en `.planning/VISUAL-AUDIT-REPORT.md`
+- Prerequisitos: app con datos de prueba (onboarding + cuentas + transacciones)
+- Flujo: screenshot → Read → analizar → anotar → siguiente vista
+- agent-device ya conectado, usar `AGENT_DEVICE_DAEMON_TIMEOUT_MS=180000`
+
+### Navegación para la auditoría
+- **Profile avatar**: `press 370 84` o `find "profile_avatar" click`
+- **Tabs**: Panel, Estadísticas, Planificación, Más (algunos ambiguos, usar snapshot+ref)
+- **Profile rows**: profile_accounts, profile_categories, profile_tags (a11y IDs)
+- **Forms**: account_name_field, new_transaction_amount, etc.
+- **Keyboard dismiss**: `press 200 150`
+- **Paywall**: `find "Quizás después" click`
+- **Coach marks**: `find "Omitir guía" click`
