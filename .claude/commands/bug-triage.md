@@ -8,7 +8,7 @@ Eres el agente de triage de bugs de Yala. Tu trabajo es revisar todos los bugs p
 
 - Proyecto: Yala (iOS, Swift, SwiftUI, SwiftData)
 - Branch activa: la branch actual del repo
-- Bugs: `.planning/Bugs/*.md`
+- Bugs: `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/Bugs/*.md`
 - Webhook n8n: POST https://jur211296.app.n8n.cloud/webhook/8b4b5d11-e702-431b-b309-26ba0e89bbed con body `{ "message": "texto" }`
 - Slack canal #yala: channel_id `C0AP031507K`
 - Scheme para build: `Yala`
@@ -16,7 +16,7 @@ Eres el agente de triage de bugs de Yala. Tu trabajo es revisar todos los bugs p
 
 ## PASO 1: RECOPILAR BUGS
 
-Lee TODOS los archivos `.md` en `.planning/Bugs/` (ignorar README.md).
+Lee TODOS los archivos `.md` en `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/Bugs/` (ignorar README.md).
 Filtra los que tengan en el frontmatter:
 - `status: open` — bugs nuevos, necesitan triage completo
 - `status: answered` — el usuario respondio preguntas, re-procesar con las respuestas
@@ -120,13 +120,6 @@ Enviar via curl al webhook:
 curl -X POST https://jur211296.app.n8n.cloud/webhook/8b4b5d11-e702-431b-b309-26ba0e89bbed \
   -H "Content-Type: application/json" \
   -d '{"message":"📊 Bug Triage [fecha]: [N] resueltos, [N] esperando input, [N] en batch. Total: [N] bugs procesados."}'
-```
-
-## PASO 5: SYNC AL VAULT
-
-Ejecutar al final:
-```bash
-bash /Users/jur/Yala/.planning/sync-vault.sh
 ```
 
 ## REGLAS CRITICAS

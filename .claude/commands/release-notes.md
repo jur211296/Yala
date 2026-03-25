@@ -109,7 +109,7 @@ Preguntar al usuario:
 Release notes generadas.
 
 ¿Dónde las guardo?
-1. .planning/appstore/release-notes-v[VERSION].md (todas juntas)
+1. ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/planning/appstore/release-notes-v[VERSION].md (todas juntas)
 2. Mostrar aquí sin guardar
 3. Copiar al clipboard
 ```

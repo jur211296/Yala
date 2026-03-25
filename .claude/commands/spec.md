@@ -8,10 +8,10 @@ Desarrolla a profundidad el spec de un feature del Backlog.
 
 Si el usuario pasa un nombre como argumento (ej: `/spec widget-balance`), buscar el archivo:
 ```
-.planning/Backlog/*widget-balance*
+~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/Backlog/*widget-balance*
 ```
 
-Si no pasa argumento, listar los archivos en `.planning/Backlog/` y preguntar cuál quiere desarrollar.
+Si no pasa argumento, listar los archivos en `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/Backlog/` y preguntar cuál quiere desarrollar.
 
 Ignorar README.md.
 
@@ -72,7 +72,7 @@ Incrementos: [N]
 Complejidad: [baja/media/alta]
 Archivos principales: [lista corta]
 
-El plan esta en .planning/Backlog/[archivo].md
+El plan esta en ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/Backlog/[archivo].md
 Siguiente paso: Plan Mode o /yolo para implementar
 ```
 
@@ -80,4 +80,4 @@ Siguiente paso: Plan Mode o /yolo para implementar
 - NO implementar nada, solo planificar
 - Ser concreto: nombres de archivos reales, no genericos
 - Respetar patrones existentes (leer CLAUDE.md si necesitas referencia)
-- El archivo se sincroniza automaticamente a Obsidian en 30s
+- El archivo se escribe directo en el vault de Obsidian — iCloud lo sincroniza a todos los dispositivos

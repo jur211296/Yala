@@ -6,7 +6,7 @@ Muestra el estado del Backlog de features.
 
 ## PASO 1: LEER BACKLOG
 
-Leer todos los archivos `.md` en `.planning/Backlog/` (ignorar README.md).
+Leer todos los archivos `.md` en `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/Backlog/` (ignorar README.md).
 Para cada archivo, extraer del frontmatter: `status`, `priority`, `area`, `created`.
 
 ## PASO 2: MOSTRAR TABLA

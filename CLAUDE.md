@@ -74,16 +74,19 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 - ModelContainer via `SwiftDataConfiguration` (12 entidades arriba)
 - **Divisas SSOT:** `Yala/Utils/CurrencyUtils.swift` → enum `CurrencyCode` (48 divisas, 7 continentes)
 
-## Obsidian Vault (Backlog & Ideas)
+## Obsidian Vault (SSOT de planning)
 - **Vault:** `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/`
-- **Sync bidireccional** cada 30s con `.planning/` via `sync-vault.sh` (launchd daemon)
-- **Hook post-write:** sync inmediato cuando Claude escribe en `.planning/`
-- **Carpetas del vault sincronizadas localmente:**
-  - `.planning/Backlog/` — Features con spec (status: backlog → spec-ready → in-progress → done)
-  - `.planning/Ideas/` — Ideas sueltas
-  - `.planning/Bugs/` — Bug reports
+- **Abreviatura en este doc:** `$VAULT` = ruta completa del vault
+- Claude lee/escribe **directo en el vault** — iCloud sincroniza entre Macs, iPhone y iPad
+- **Sin daemon ni sync scripts** — iCloud es el único mecanismo de sync
+- **Carpetas:**
+  - `$VAULT/Backlog/` — Features con spec (status: open → spec-ready → backlog → in-progress → done)
+  - `$VAULT/Ideas/` — Ideas sueltas
+  - `$VAULT/Bugs/` — Bug reports
+  - `$VAULT/Attachments/` — Imágenes y videos de bugs/features
+  - `$VAULT/planning/` — Docs técnicos (PROJECT, ROADMAP, STATE, etc.)
 - **Skills:** `/backlog` (listar), `/spec` (desarrollar plan), `/promote` (idea → feature)
-- **Flujo:** Usuario escribe en Obsidian → sync → Claude lee `.planning/Backlog/` → `/spec` → escribe plan → sync → aparece en Obsidian
+- **Flujo:** Usuario escribe en Obsidian → iCloud sync → Claude lee `$VAULT/Backlog/` → `/spec` → escribe plan → iCloud sync → aparece en Obsidian
 
 ## iOS 26 Liquid Glass (OBLIGATORIO)
 - `ToolbarSpacer(.fixed, placement: .topBarTrailing)` — placement es OBLIGATORIO
@@ -91,7 +94,7 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 - Si existe una API de iOS 26 que mejore la integración con el sistema, USARLA
 
 ## Workflow
-**Referencia completa:** `.planning/WORKFLOW.md`
+**Referencia completa:** `$VAULT/planning/WORKFLOW.md`
 
 ### Flujo estándar (feature)
 ```
@@ -137,7 +140,7 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 | Backlog (Obsidian) | `/backlog`, `/spec`, `/promote` |
 | Autónomo | `/yolo` |
 
-**Regla QA-SCENARIOS:** Cada funcionalidad nueva DEBE tener escenarios en `.planning/QA-SCENARIOS.md` ANTES del commit.
+**Regla QA-SCENARIOS:** Cada funcionalidad nueva DEBE tener escenarios en `$VAULT/planning/QA-SCENARIOS.md` ANTES del commit.
 
 ## Testing
 | Tipo de cambio | Comando |
@@ -285,7 +288,7 @@ Vistas hijas simples reciben datos como `let` parameters del padre.
 **Tags:** SIEMPRE formato semver con prefijo `v` → `v1.0.0`, `v1.0.1`, `v1.1.0`, `v1.1.1`. NUNCA sin prefijo o sin los 3 componentes.
 
 ## Design System (OBLIGATORIO para cambios UI)
-**Leer antes de modificar vistas:** `.planning/UI-PATTERNS.md`
+**Leer antes de modificar vistas:** `$VAULT/planning/UI-PATTERNS.md`
 - SIEMPRE `DS.Spacing`, `DS.Radius`, `DS.Typography` — NUNCA valores hardcodeados
 - SIEMPRE filas clicables con `Button` + `contentShape(Rectangle())`
 - SIEMPRE colores semánticos y componentes estándar (YalaPrimaryButton, YalaEmptyState, etc.)
@@ -314,7 +317,7 @@ Vistas hijas simples reciben datos como `let` parameters del padre.
 | `warning` | Advertencia [orange→red] |
 
 ## Brand Voice (OBLIGATORIO para textos)
-**Leer antes de escribir textos:** `.planning/BRAND-VOICE.md`
+**Leer antes de escribir textos:** `$VAULT/planning/BRAND-VOICE.md`
 - Tono cercano ("tú"), español neutro, nunca negativo
 - Términos simples: "gasto" no "transacción"
 - Proponer actualizaciones a BRAND-VOICE.md cuando se defina nuevo copy
@@ -323,13 +326,13 @@ Vistas hijas simples reciben datos como `let` parameters del padre.
 | Archivo | Propósito |
 |---------|-----------|
 | CLAUDE.md | Memoria operativa (este archivo) |
-| .planning/PROJECT.md | Definición de producto |
-| .planning/ROADMAP.md | Plan de entrega por fases |
-| .planning/STATE.md | Progreso y decisiones |
-| .planning/DECISIONS.md | Registro decisiones arquitectura |
-| .planning/UI-PATTERNS.md | Reglas Design System |
-| .planning/BRAND-VOICE.md | Tono y estilo de marca |
-| .planning/QA-SCENARIOS.md | Escenarios de prueba |
+| `$VAULT/planning/PROJECT.md` | Definición de producto |
+| `$VAULT/planning/ROADMAP.md` | Plan de entrega por fases |
+| `$VAULT/planning/STATE.md` | Progreso y decisiones |
+| `$VAULT/planning/DECISIONS.md` | Registro decisiones arquitectura |
+| `$VAULT/planning/UI-PATTERNS.md` | Reglas Design System |
+| `$VAULT/planning/BRAND-VOICE.md` | Tono y estilo de marca |
+| `$VAULT/planning/QA-SCENARIOS.md` | Escenarios de prueba |
 
 ## Decisiones Recientes (TTL: hasta cierre de fase)
 [Formato: [FECHA] Decisión breve — se archiva en DECISIONS.md al cerrar fase]

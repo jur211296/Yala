@@ -8,10 +8,10 @@ Convierte una idea en un feature spec en el Backlog.
 
 Si el usuario pasa un nombre como argumento (ej: `/promote modo-offline`), buscar:
 ```
-.planning/Ideas/*modo-offline*
+~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/Ideas/*modo-offline*
 ```
 
-Si no pasa argumento, listar archivos en `.planning/Ideas/` y preguntar cual promover.
+Si no pasa argumento, listar archivos en `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/Ideas/` y preguntar cual promover.
 
 ## PASO 2: LEER LA IDEA
 
@@ -20,7 +20,7 @@ Extraer: la idea, por que importa, notas.
 
 ## PASO 3: CREAR FEATURE EN BACKLOG
 
-Crear un nuevo archivo en `.planning/Backlog/` con el mismo nombre, usando este formato:
+Crear un nuevo archivo en `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/Backlog/` con el mismo nombre, usando este formato:
 
 ```markdown
 ---

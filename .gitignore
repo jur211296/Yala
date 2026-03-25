@@ -23,9 +23,5 @@ Secrets.xcconfig
 # QA automation results (generated at runtime)
 qa/results/
 
-# Obsidian vault sync
-.planning/sync-vault.sh
-.planning/bug-triage-runner.sh
-.planning/Backlog/
-.planning/Ideas/
-.planning/Bugs/
+# Planning docs live in Obsidian vault (iCloud)
+.planning/

@@ -238,7 +238,7 @@ PASOS OBLIGATORIOS (usando outputs ya guardados):
 
    d) ACTUALIZAR DOCUMENTOS DE TRABAJO CONSULTADOS:
 
-      Revisar TODOS los documentos .md en .planning/ que se leyeron durante
+      Revisar TODOS los documentos .md en el vault Obsidian (~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/) que se leyeron durante
       esta sesión para implementar el trabajo. Ejemplos comunes:
 
       - REFINAMIENTO-*.md → Marcar items completados con ✅
