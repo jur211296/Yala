@@ -58,6 +58,25 @@ struct ThemeSettingsView: View {
                             themeCard(for: appTheme)
                         }
                     }
+                    .confirmationDialog(
+                        L10n.Settings.themeTranslucent,
+                        isPresented: $showTranslucentVariantPicker,
+                        titleVisibility: .visible
+                    ) {
+                        ForEach(TranslucentVariant.allCases) { variant in
+                            Button {
+                                themeManager.translucentVariant = variant
+                                Task {
+                                    try? await Task.sleep(for: .milliseconds(300))
+                                    dismiss()
+                                    onThemeChanged?()
+                                }
+                            } label: {
+                                Label(variant.label, systemImage: "circle.fill")
+                            }
+                        }
+                        Button(L10n.Action.cancel, role: .cancel) {}
+                    }
 
                     Spacer()
                 }
@@ -76,25 +95,6 @@ struct ThemeSettingsView: View {
         }
         .sheet(isPresented: $showUpgradeSheet) {
             UpgradePromptSheet(feature: .proThemes, context: .proFeature)
-        }
-        .confirmationDialog(
-            L10n.Settings.themeTranslucent,
-            isPresented: $showTranslucentVariantPicker,
-            titleVisibility: .visible
-        ) {
-            ForEach(TranslucentVariant.allCases) { variant in
-                Button {
-                    themeManager.translucentVariant = variant
-                    Task {
-                        try? await Task.sleep(for: .milliseconds(300))
-                        dismiss()
-                        onThemeChanged?()
-                    }
-                } label: {
-                    Label(variant.label, systemImage: "circle.fill")
-                }
-            }
-            Button(L10n.Action.cancel, role: .cancel) {}
         }
     }
 
