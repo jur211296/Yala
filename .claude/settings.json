@@ -31,6 +31,12 @@
           {
             "type": "command",
             "command": "echo \"[$(date +%H:%M:%S)] Editado: $CLAUDE_FILE_PATH\" >> .claude/sessions/edits.log"
+          },
+          {
+            "type": "command",
+            "command": "echo $CLAUDE_FILE_PATH | grep -q '.planning/' && bash .planning/sync-vault.sh || true",
+            "timeout": 10,
+            "statusMessage": "Syncing to Obsidian..."
           }
         ]
       },
@@ -40,6 +46,23 @@
           {
             "type": "command",
             "command": "echo \"[$(date +%H:%M:%S)] Escrito: $CLAUDE_FILE_PATH\" >> .claude/sessions/edits.log"
+          },
+          {
+            "type": "command",
+            "command": "echo $CLAUDE_FILE_PATH | grep -q '.planning/' && bash .planning/sync-vault.sh || true",
+            "timeout": 10,
+            "statusMessage": "Syncing to Obsidian..."
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // \"\"' | grep -q 'git commit' && git push origin HEAD 2>&1 || true",
+            "timeout": 30,
+            "statusMessage": "Auto-pushing to remote..."
           }
         ]
       }

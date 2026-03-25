@@ -1,6 +1,7 @@
 # External Integrations
 
 **Analysis Date:** 2026-01-15
+**Updated:** 2026-03-24
 
 ## APIs & External Services
 
@@ -14,107 +15,73 @@
 - Endpoints Used:
   - `/live` - Current exchange rates
   - `/timeframe` - Historical rates (up to 365 days)
-- Supported Currencies: USD, PEN, EUR
+- Supported Currencies: 48 currencies via `CurrencyCode` enum
 - Rate Limiting: Handles 429 (Too Many Requests) responses
 - Timeouts: 30s (live), 60s (historical)
 
-**Payment Processing:**
-- Not detected
+**OpenAI API (GPT-4.1 Mini):**
+- Purpose: AI insights narrativas para usuarios Pro
+- Service File: `Yala/Services/InsightsLLMService.swift`
+- Auth: API key via `Secrets.xcconfig` + `Bundle.main.object(forInfoDictionaryKey:)`
+- Gating: Solo Pro, on-demand (boton generar)
+- Privacy: Solo datos agregados, nunca transacciones individuales
 
-**Email/SMS:**
-- Not detected
+**StoreKit 2:**
+- Purpose: Suscripciones Pro (mensual/anual)
+- Service File: `Yala/App/Services/StoreKitManager.swift`
+- Products: configurados en App Store Connect
+- Gating: `FeatureGateService.swift`
 
-**Analytics:**
-- Not detected (no Firebase, Amplitude, Mixpanel)
+**TelemetryDeck:**
+- Purpose: Analytics privacy-first
+- Service File: `Yala/Services/TelemetryService.swift`
+- Privacy: No PII, datos agregados, GDPR compliant
 
-**Crash Reporting:**
-- Not detected (no Crashlytics, Sentry)
+## Cloud & Sync
+
+**iCloud (CloudKit):**
+- Purpose: Sync de datos SwiftData entre dispositivos
+- Config: CloudKit container en entitlements
+- Service: `Yala/Services/iCloudSyncService.swift` (monitor estado)
+- Preferences: `Yala/App/Services/PreferenceSyncService.swift` (iCloud KV)
+- Dedup: `Yala/App/Services/CategoryDeduplicationService.swift` (merge post-sync)
+- Compatibilidad: Nunca `@Attribute(.unique)`, defaults en todo, relaciones optional
 
 ## Data Storage
 
-**Local Database:**
-- SwiftData (on-device persistence)
-- Configuration: `Yala/App/YalaApp.swift` (ModelContainer setup)
-- 8 Core Entities: Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, FavoritePayment
-
-**Cloud Storage:**
-- Not detected (no CloudKit, iCloud integration)
-
-**File Storage:**
-- Local file system only
-- CSV/Excel import from user files
+**SwiftData (local + iCloud):**
+- Configuration: `Yala/App/SwiftDataConfiguration.swift`
+- 15 Core Entities: Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, FavoritePayment, ScheduledPayment, InboxDraft, MerchantMemory, NotificationItem, CashFlowPlan, CashFlowLine, CashFlowOverride
 
 **Caching:**
 - Exchange rates cached in SwiftData (`ExchangeRate` model)
 - Updated via daily background task
 
-## Authentication & Identity
+## Localization
 
-**Auth Provider:**
-- None (local-only app, no user authentication)
-
-**OAuth Integrations:**
-- None
-
-## Monitoring & Observability
-
-**Error Tracking:**
-- Not detected
-
-**Analytics:**
-- Not detected
-
-**Logs:**
-- Console print statements (debug only)
-- No structured logging framework
-
-## CI/CD & Deployment
-
-**Hosting:**
-- App Store distribution (standard iOS app)
-
-**CI Pipeline:**
-- Not detected (no GitHub Actions, Fastlane configs found)
-
-## Environment Configuration
-
-**Development:**
-- Required: `Yala/Secrets.xcconfig` with `EXCHANGE_RATE_API_KEY`
-- Local SwiftData database
-- No mock services configured
-
-**Production:**
-- API key embedded via build settings
-- On-device SwiftData storage
-- No server-side components
+**Supported Languages:** 6
+- Spanish (es), English (en), German (de), French (fr), Italian (it), Portuguese (pt)
+- System: Type-safe `L10n` enum via `Yala/Utils/L10n.swift`
 
 ## Background Tasks
 
 **Daily Refresh:**
 - Identifier: `com.jurgenschmidt.yala.daily`
-- Configuration: `Yala/Resources/Info.plist` (BGTaskSchedulerPermittedIdentifiers)
 - Handler: `Yala/Services/BackgroundJobs.swift`
-- Purpose: Update exchange rates daily
+- Purpose: Exchange rates, scheduled payment notifications, budget alerts
 
-## Localization
+## Local Notifications
 
-**Supported Languages:**
-- English (en) - `Yala/Resources/en.lproj/Localizable.strings`
-- Spanish (es) - `Yala/Resources/es.lproj/Localizable.strings`
+- `Yala/Services/NotificationService.swift` — Core notifications
+- `Yala/Services/ScheduledPaymentNotificationService.swift` — Payment reminders
+- `Yala/Services/ReportNotificationService.swift` — Financial report notifications
 
-**Localization System:**
-- Type-safe L10n enum: `Yala/Utils/L10n.swift`
-- Pattern: `L10n.Panel.accounts`, `L10n.Tab.statistics`
+## CI/CD & Deployment
 
-## Webhooks & Callbacks
-
-**Incoming:**
-- None
-
-**Outgoing:**
-- None
+- Distribution: App Store (standard)
+- No CI pipeline (local builds)
 
 ---
 
 *Integration audit: 2026-01-15*
-*Update when adding/removing external services*
+*Last updated: 2026-03-24*

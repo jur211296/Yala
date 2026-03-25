@@ -2,7 +2,7 @@
 
 Documento de referencia para los tests de Yala. Consultar antes de agregar, modificar o depurar tests.
 
-**Actualizado:** 2026-02-08 | **Total:** 255 tests, 28 suites, 21 archivos
+**Actualizado:** 2026-03-24 | **Total:** 1085 tests, 93 suites
 
 ---
 
