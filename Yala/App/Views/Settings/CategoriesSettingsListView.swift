@@ -28,6 +28,7 @@ struct CategoriesSettingsListView: View {
                         emptyState
                     } else {
                         if !viewModel.activeCategories.isEmpty {
+                            ContextualGuideBanner.categoriesSettings()
                             activeCategoriesSection
                         }
 

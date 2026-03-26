@@ -116,4 +116,79 @@ struct BudgetEditorViewModelTests {
         let result = vm.selectedCategoriesText(selectedSubcategories: fakeIDs)
         #expect(result == NSLocalizedString("filters.all", comment: ""))
     }
+
+    // MARK: - filterSummaryText
+
+    @MainActor @Test func filterSummaryText_allEmpty_returnsNil() {
+        let vm = BudgetEditorViewModel()
+        let result = vm.filterSummaryText(
+            selectedAccounts: [],
+            selectedSubcategories: [],
+            selectedTags: [],
+            selectedNeeds: []
+        )
+        #expect(result == nil)
+    }
+
+    @MainActor @Test func filterSummaryText_onlyNeeds_returnsNeedNames() {
+        let vm = BudgetEditorViewModel()
+        let result = vm.filterSummaryText(
+            selectedAccounts: [],
+            selectedSubcategories: [],
+            selectedTags: [],
+            selectedNeeds: [.essential]
+        )
+        #expect(result != nil)
+        #expect(result!.contains(SubcategoryNeed.essential.displayName))
+    }
+
+    @MainActor @Test func filterSummaryText_multipleNeeds_formatsFirstPlusN() {
+        let vm = BudgetEditorViewModel()
+        let result = vm.filterSummaryText(
+            selectedAccounts: [],
+            selectedSubcategories: [],
+            selectedTags: [],
+            selectedNeeds: [.essential, .priority, .optional]
+        )
+        #expect(result != nil)
+        #expect(result!.contains("+2"))
+        // Verify first need name is also present (sorted by rawValue)
+        let sortedNeeds = [SubcategoryNeed.essential, .priority, .optional].sorted(by: { $0.rawValue < $1.rawValue })
+        #expect(result!.contains(sortedNeeds.first!.displayName))
+    }
+
+    @MainActor @Test func filterSummaryText_selectedIDsNotInData_returnsNil() {
+        let vm = BudgetEditorViewModel()
+        // Create a fake PersistentIdentifier that won't match any loaded data
+        let cat = Category(name: "Fake", colorHex: "#000000", isIncome: false)
+        let sub = Subcategory(name: "Fake", sortOrder: 0, category: cat)
+        let result = vm.filterSummaryText(
+            selectedAccounts: [],
+            selectedSubcategories: [sub.persistentModelID],
+            selectedTags: [],
+            selectedNeeds: []
+        )
+        // allSubcategories is empty, so no names resolve → nil
+        #expect(result == nil)
+    }
+
+    @MainActor @Test func filterSummaryText_needsAndUnresolvedIDs_onlyShowsNeeds() {
+        let vm = BudgetEditorViewModel()
+        let cat = Category(name: "Fake", colorHex: "#000000", isIncome: false)
+        let sub = Subcategory(name: "Fake", sortOrder: 0, category: cat)
+        let result = vm.filterSummaryText(
+            selectedAccounts: [],
+            selectedSubcategories: [sub.persistentModelID],
+            selectedTags: [],
+            selectedNeeds: [.essential]
+        )
+        // Subcategory IDs don't resolve (no data), but needs do
+        #expect(result != nil)
+        #expect(result!.contains(SubcategoryNeed.essential.displayName))
+    }
+
+    // NOTE: Tests resolving Account/Tag names from ModelContainer skipped
+    // due to CloudKit race condition in iOS 26 simulator (see line 25 comment).
+    // The name resolution logic uses the same filter+map pattern as
+    // selectedCategoriesText which is proven by existing tests.
 }

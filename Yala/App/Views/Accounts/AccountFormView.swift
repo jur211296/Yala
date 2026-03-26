@@ -45,6 +45,7 @@ struct AccountFormView: View {
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
                         generalSection
+                        ContextualGuideBanner.accountForm(accountType: viewModel.selectedType)
                         currencySection
                         if viewModel.selectedType == .creditCard {
                             creditCardSection

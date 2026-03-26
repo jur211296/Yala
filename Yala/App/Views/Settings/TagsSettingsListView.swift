@@ -29,6 +29,7 @@ struct TagsSettingsListView: View {
                         emptyState
                     } else {
                         if !viewModel.orderedActiveTags.isEmpty {
+                            ContextualGuideBanner.tagsSettings()
                             activeTagsSection
                         }
 

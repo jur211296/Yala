@@ -16,6 +16,7 @@ struct ContextualGuideBanner: View {
     let icon: String
     let title: String
     let message: String
+    let isDismissible: Bool
 
     @AppStorage private var dismissed: Bool
 
@@ -24,10 +25,12 @@ struct ContextualGuideBanner: View {
     init(
         guideID: String,
         icon: String = "lightbulb.fill",
+        isDismissible: Bool = true,
         title: String,
         message: String
     ) {
         self.icon = icon
+        self.isDismissible = isDismissible
         self.title = title
         self.message = message
         self._dismissed = AppStorage(wrappedValue: false, "guide.\(guideID).dismissed")
@@ -36,12 +39,12 @@ struct ContextualGuideBanner: View {
     // MARK: - Body
 
     var body: some View {
-        if !dismissed {
+        if !isDismissible || !dismissed {
             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                 HStack(alignment: .top, spacing: DS.Spacing.sm) {
                     Image(systemName: icon)
                         .font(DS.Typography.body)
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(isDismissible ? AnyShapeStyle(.thAccent) : AnyShapeStyle(DS.Semantic.infoForeground))
                         .frame(width: 24)
 
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
@@ -58,18 +61,20 @@ struct ContextualGuideBanner: View {
                     Spacer(minLength: 0)
                 }
 
-                HStack {
-                    Spacer()
-                    Button {
-                        withAnimation(.easeOut(duration: 0.25)) {
-                            dismissed = true
+                if isDismissible {
+                    HStack {
+                        Spacer()
+                        Button {
+                            withAnimation(.easeOut(duration: 0.25)) {
+                                dismissed = true
+                            }
+                        } label: {
+                            Text(L10n.ContextualGuide.dismiss)
+                                .font(DS.Typography.labelSmall)
+                                .foregroundStyle(.thAccent)
+                                .padding(.horizontal, DS.Spacing.md)
+                                .padding(.vertical, DS.Spacing.xs)
                         }
-                    } label: {
-                        Text(L10n.ContextualGuide.dismiss)
-                            .font(DS.Typography.labelSmall)
-                            .foregroundStyle(.thAccent)
-                            .padding(.horizontal, DS.Spacing.md)
-                            .padding(.vertical, DS.Spacing.xs)
                     }
                 }
             }
@@ -221,6 +226,60 @@ extension ContextualGuideBanner {
             message: L10n.ContextualGuide.Inbox.message
         )
     }
+
+    static func accountForm(accountType: AccountType) -> ContextualGuideBanner {
+        let message: String
+        switch accountType {
+        case .general: message = L10n.ContextualGuide.AccountForm.messageGeneral
+        case .cash: message = L10n.ContextualGuide.AccountForm.messageCash
+        case .checking: message = L10n.ContextualGuide.AccountForm.messageChecking
+        case .savings: message = L10n.ContextualGuide.AccountForm.messageSavings
+        case .creditCard: message = L10n.ContextualGuide.AccountForm.messageCreditCard
+        }
+        return ContextualGuideBanner(
+            guideID: "accountForm",
+            icon: "info.circle.fill",
+            title: L10n.ContextualGuide.AccountForm.title,
+            message: message
+        )
+    }
+
+    static func categoriesSettings() -> ContextualGuideBanner {
+        ContextualGuideBanner(
+            guideID: "categoriesSettings",
+            icon: "folder.fill",
+            title: L10n.ContextualGuide.CategoriesSettings.title,
+            message: L10n.ContextualGuide.CategoriesSettings.message
+        )
+    }
+
+    static func tagsSettings() -> ContextualGuideBanner {
+        ContextualGuideBanner(
+            guideID: "tagsSettings",
+            icon: "number",
+            title: L10n.ContextualGuide.TagsSettings.title,
+            message: L10n.ContextualGuide.TagsSettings.message
+        )
+    }
+
+    static func favoritesManage() -> ContextualGuideBanner {
+        ContextualGuideBanner(
+            guideID: "favoritesManage",
+            icon: "star.fill",
+            title: L10n.ContextualGuide.FavoritesManage.title,
+            message: L10n.ContextualGuide.FavoritesManage.message
+        )
+    }
+
+    static func budgetFilterInfo(message: String) -> ContextualGuideBanner {
+        ContextualGuideBanner(
+            guideID: "budgetFilterInfo",
+            icon: "line.3.horizontal.decrease.circle",
+            isDismissible: false,
+            title: L10n.ContextualGuide.BudgetFilter.title,
+            message: message
+        )
+    }
 }
 
 // MARK: - L10n Guide Strings
@@ -352,6 +411,60 @@ extension L10n.ContextualGuide {
             NSLocalizedString("guide.inbox.message", comment: "Inbox guide message")
         }
     }
+
+    enum BudgetFilter {
+        static var title: String {
+            NSLocalizedString("guide.budgetFilter.title", comment: "Budget filter info title")
+        }
+    }
+
+    enum AccountForm {
+        static var title: String {
+            NSLocalizedString("guide.accountForm.title", comment: "Account form guide title")
+        }
+        static var messageGeneral: String {
+            NSLocalizedString("guide.accountForm.messageGeneral", comment: "Account form guide - general")
+        }
+        static var messageCash: String {
+            NSLocalizedString("guide.accountForm.messageCash", comment: "Account form guide - cash")
+        }
+        static var messageChecking: String {
+            NSLocalizedString("guide.accountForm.messageChecking", comment: "Account form guide - checking")
+        }
+        static var messageSavings: String {
+            NSLocalizedString("guide.accountForm.messageSavings", comment: "Account form guide - savings")
+        }
+        static var messageCreditCard: String {
+            NSLocalizedString("guide.accountForm.messageCreditCard", comment: "Account form guide - credit card")
+        }
+    }
+
+    enum CategoriesSettings {
+        static var title: String {
+            NSLocalizedString("guide.categoriesSettings.title", comment: "Categories settings guide title")
+        }
+        static var message: String {
+            NSLocalizedString("guide.categoriesSettings.message", comment: "Categories settings guide message")
+        }
+    }
+
+    enum TagsSettings {
+        static var title: String {
+            NSLocalizedString("guide.tagsSettings.title", comment: "Tags settings guide title")
+        }
+        static var message: String {
+            NSLocalizedString("guide.tagsSettings.message", comment: "Tags settings guide message")
+        }
+    }
+
+    enum FavoritesManage {
+        static var title: String {
+            NSLocalizedString("guide.favoritesManage.title", comment: "Favorites manage guide title")
+        }
+        static var message: String {
+            NSLocalizedString("guide.favoritesManage.message", comment: "Favorites manage guide message")
+        }
+    }
 }
 
 // MARK: - Preview
@@ -360,6 +473,7 @@ extension L10n.ContextualGuide {
     VStack(spacing: DS.Spacing.md) {
         ContextualGuideBanner.budgets()
         ContextualGuideBanner.trends()
+        ContextualGuideBanner.budgetFilterInfo(message: "2 cuentas, Alimentación +3, Fijo")
     }
     .padding()
 }

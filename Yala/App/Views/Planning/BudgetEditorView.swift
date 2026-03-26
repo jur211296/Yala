@@ -85,6 +85,16 @@ struct BudgetEditorView: View {
                     // Filters Section
                     filtersSection
 
+                    // Dynamic filter summary (always visible when filters active)
+                    if let summary = viewModel.filterSummaryText(
+                        selectedAccounts: selectedAccounts,
+                        selectedSubcategories: selectedSubcategories,
+                        selectedTags: selectedTags,
+                        selectedNeeds: selectedNeeds
+                    ) {
+                        ContextualGuideBanner.budgetFilterInfo(message: summary)
+                    }
+
                     // Delete Button (only for existing budgets)
                     if budget != nil {
                         deleteSection
