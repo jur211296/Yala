@@ -2804,6 +2804,12 @@ enum L10n {
         static var accountBalanceGuideSavings: String { ls("onboarding.accountBalanceGuideSavings", comment: "") }
         static var accountBalanceGuideClosing: String { ls("onboarding.accountBalanceGuideClosing", comment: "") }
         static var accountBalanceHintCreditCard: String { ls("onboarding.accountBalanceHintCreditCard", comment: "") }
+        // Balance Calculator Sheet — instruction + mode toggle
+        static var calcInstruction: String { ls("onboarding.calc.instruction", comment: "") }
+        static var calcDirectSpending: String { ls("onboarding.calc.directSpending", comment: "") }
+        static var calcDirectSpendingHint: String { ls("onboarding.calc.directSpendingHint", comment: "") }
+        static var calcSwitchToDirect: String { ls("onboarding.calc.switchToDirect", comment: "") }
+        static var calcSwitchToDetailed: String { ls("onboarding.calc.switchToDetailed", comment: "") }
         // Balance Calculator Sheet — field hints
         static var calcBankAccountsHint: String { ls("onboarding.calc.bankAccountsHint", comment: "") }
         static var calcSavingsHint: String { ls("onboarding.calc.savingsHint", comment: "") }
@@ -2867,13 +2873,14 @@ enum L10n {
         // Categories subcategory view
         static var categoriesViewSubs: String { ls("onboarding.categories.viewSubs", comment: "") }
         // (v1 goal/style/accountGuided keys removed — unused in v2)
-        // Currency + Name step
-        static var currencyNameTitle: String { ls("onboarding.currencyName.title", comment: "") }
-        static var currencyNameSubtitle: String { ls("onboarding.currencyName.subtitle", comment: "") }
+        // Currency + Name step (adaptive by account organization)
+        static var currencyNameTitleSingle: String { ls("onboarding.currencyName.titleSingle", comment: "") }
+        static var currencyNameSubtitleSingle: String { ls("onboarding.currencyName.subtitleSingle", comment: "") }
+        static var currencyNameTitleSeparate: String { ls("onboarding.currencyName.titleSeparate", comment: "") }
+        static var currencyNameSubtitleSeparate: String { ls("onboarding.currencyName.subtitleSeparate", comment: "") }
         // Balance step
         static var balanceTitle: String { ls("onboarding.balance.title", comment: "") }
-        static var balanceSubtitleDayToDay: String { ls("onboarding.balance.subtitleDayToDay", comment: "") }
-        static var balanceSubtitleFullControl: String { ls("onboarding.balance.subtitleFullControl", comment: "") }
+        static var balanceSubtitle: String { ls("onboarding.balance.subtitle", comment: "") }
         // Confirmation step
         static var confirmTitle: String { ls("onboarding.confirm.title", comment: "") }
         static var confirmAccountLabel: String { ls("onboarding.confirm.accountLabel", comment: "") }

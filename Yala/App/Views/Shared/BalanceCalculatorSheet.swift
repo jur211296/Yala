@@ -23,6 +23,7 @@ final class BalanceCalculatorFieldState {
     // Credit card calculator fields
     var creditLineText: String = ""
     var availableCreditText: String = ""
+    var directSpendingText: String = "" // Mode B: direct spending input
 
     // Simple account single field
     var simpleAmountText: String = ""
@@ -36,6 +37,7 @@ final class BalanceCalculatorFieldState {
         iOweText = ""
         creditLineText = ""
         availableCreditText = ""
+        directSpendingText = ""
         simpleAmountText = ""
     }
 }
@@ -57,9 +59,12 @@ struct BalanceCalculatorSheet: View {
     private enum CalcField: Hashable {
         case bankAccounts, savings, cash, creditCardSpending
         case othersOweMe, iOwe
-        case creditLine, availableCredit
+        case creditLine, availableCredit, directSpending
         case simpleAmount
     }
+
+    /// Toggle for credit card calculator: detailed (line+available) vs direct (just spending)
+    @State private var creditCardDirectMode: Bool = false
 
     private var variant: CalculatorVariant {
         switch accountType {
@@ -105,6 +110,10 @@ struct BalanceCalculatorSheet: View {
 
     private var creditCardBalance: Double {
         -creditCardSpending
+    }
+
+    private var directSpendingAmount: Double {
+        parseAmount(fieldState.directSpendingText)
     }
 
     private var simpleAmount: Double {
@@ -162,6 +171,13 @@ struct BalanceCalculatorSheet: View {
             Text(L10n.Onboarding.calcIntro)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, DS.Spacing.md)
+
+            // Instruction
+            Text(L10n.Onboarding.calcInstruction)
+                .font(DS.Typography.bodyBold)
+                .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, DS.Spacing.md)
 
@@ -247,28 +263,60 @@ struct BalanceCalculatorSheet: View {
 
     private var creditCardCalculator: some View {
         VStack(spacing: DS.Spacing.xl) {
-            // Input fields
-            VStack(spacing: DS.Spacing.none) {
-                calcRow(label: L10n.Onboarding.calcCreditLine, hint: L10n.Onboarding.calcCreditLineHint, text: $fieldState.creditLineText, field: .creditLine)
-                SubsectionDivider()
-                calcRow(label: L10n.Onboarding.calcAvailableCredit, hint: L10n.Onboarding.calcAvailableCreditHint, text: $fieldState.availableCreditText, field: .availableCredit)
+            if creditCardDirectMode {
+                // Mode B: Direct spending input
+                VStack(spacing: DS.Spacing.none) {
+                    calcRow(
+                        label: L10n.Onboarding.calcDirectSpending,
+                        hint: L10n.Onboarding.calcDirectSpendingHint,
+                        text: $fieldState.directSpendingText,
+                        field: .directSpending
+                    )
+                }
+                .background(.thCard)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+
+                resultRow(label: L10n.Onboarding.calcYourBalance, amount: -directSpendingAmount)
+
+                useBalanceButton(amount: directSpendingAmount, isPositive: false)
+            } else {
+                // Mode A: Detailed (line + available)
+                VStack(spacing: DS.Spacing.none) {
+                    calcRow(label: L10n.Onboarding.calcCreditLine, hint: L10n.Onboarding.calcCreditLineHint, text: $fieldState.creditLineText, field: .creditLine)
+                    SubsectionDivider()
+                    calcRow(label: L10n.Onboarding.calcAvailableCredit, hint: L10n.Onboarding.calcAvailableCreditHint, text: $fieldState.availableCreditText, field: .availableCredit)
+                }
+                .background(.thCard)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+
+                VStack(spacing: DS.Spacing.sm) {
+                    resultRow(label: L10n.Onboarding.calcCurrentSpending, amount: creditCardSpending)
+                    resultRow(label: L10n.Onboarding.calcYourBalance, amount: creditCardBalance)
+                }
+
+                tipView(text: L10n.Onboarding.calcCreditCardTip)
+
+                useBalanceButton(amount: creditCardSpending, isPositive: false)
             }
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
 
-            // Results
-            VStack(spacing: DS.Spacing.sm) {
-                resultRow(label: L10n.Onboarding.calcCurrentSpending, amount: creditCardSpending)
-                resultRow(label: L10n.Onboarding.calcYourBalance, amount: creditCardBalance)
+            // Toggle between modes — clear the other mode's fields to avoid stale data
+            Button {
+                if creditCardDirectMode {
+                    fieldState.directSpendingText = ""
+                } else {
+                    fieldState.creditLineText = ""
+                    fieldState.availableCreditText = ""
+                }
+                creditCardDirectMode.toggle()
+            } label: {
+                Text(creditCardDirectMode
+                     ? L10n.Onboarding.calcSwitchToDetailed
+                     : L10n.Onboarding.calcSwitchToDirect)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(Color.electricIndigo)
             }
+            .buttonStyle(.plain)
 
-            // Tip
-            tipView(text: L10n.Onboarding.calcCreditCardTip)
-
-            // Use balance button
-            useBalanceButton(amount: creditCardSpending, isPositive: false)
-
-            // Closing note
             Text(L10n.Onboarding.calcAdjustLater)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
@@ -351,7 +399,7 @@ struct BalanceCalculatorSheet: View {
             if let hint {
                 Text(hint)
                     .font(DS.Typography.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.secondary)
             }
         }
         .padding(DS.Spacing.md)

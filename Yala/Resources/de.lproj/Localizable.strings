@@ -1683,12 +1683,12 @@
 "onboarding.calc.bankAccountsHint" = "Alles was du auf Girokonten oder Debitkonten hast";
 "onboarding.calc.savingsHint" = "Was du auf Sparkonten oder beiseite gelegt hast";
 "onboarding.calc.cashHint" = "Scheine und Münzen die du bei dir hast";
-"onboarding.calc.creditCardSpendingHint" = "Was du mit deinen Karten ausgegeben und noch nicht bezahlt hast";
-"onboarding.calc.creditLineHint" = "Das Gesamtlimit deiner Karte";
-"onboarding.calc.availableCreditHint" = "Wie viel du noch nutzen kannst";
+"onboarding.calc.creditCardSpendingHint" = "Was du diesen Monat mit deinen Karten ausgegeben hast";
+"onboarding.calc.creditLineHint" = "Das Gesamtlimit das dir deine Bank gegeben hat";
+"onboarding.calc.availableCreditHint" = "Was dir noch auf deiner Karte zur Verfügung steht";
 
 // Balance Calculator Sheet
-"onboarding.calc.title" = "Wie viel Geld hast du?";
+"onboarding.calc.title" = "Wir helfen dir, deinen Saldo zu berechnen";
 "onboarding.calc.intro" = "Muss nicht exakt sein — eine Schätzung reicht.";
 "onboarding.calc.bankAccounts" = "Bankkonten";
 "onboarding.calc.savings" = "Ersparnisse";
@@ -1701,6 +1701,11 @@
 "onboarding.calc.tipPatrimonial" = "Wenn du Ausgaben mit anderen teilst, gib an was sie dir schulden und was du schuldest für einen genaueren Saldo.";
 "onboarding.calc.useBalance" = "Diesen Saldo verwenden";
 "onboarding.calc.adjustLater" = "Du kannst ihn später jederzeit anpassen.";
+"onboarding.calc.instruction" = "Fülle nur aus, wo du Geld hast. Wir berechnen den Rest.";
+"onboarding.calc.directSpending" = "Wie viel hast du ausgegeben?";
+"onboarding.calc.directSpendingHint" = "Der Gesamtbetrag mit dieser Karte in dieser Währung. Bei Ausgaben in anderen Währungen nur diese angeben.";
+"onboarding.calc.switchToDirect" = "Ich möchte lieber eingeben, wie viel ich ausgegeben habe";
+"onboarding.calc.switchToDetailed" = "Ich möchte lieber Kreditlimit und Verfügbar nutzen";
 // Shared expenses (patrimonial only)
 "onboarding.calc.sharedExpenses" = "Geteilte Ausgaben";
 "onboarding.calc.othersOweMe" = "Schulden dir";
@@ -1734,14 +1739,14 @@
 "onboarding.purpose.control" = "Mein Geld im Griff haben";
 "onboarding.purpose.controlDesc" = "Ausgaben, Einnahmen und wie viel du hast";
 // Accounts step (binary)
-"onboarding.accounts.title" = "Wie organisierst du dein Geld?";
-"onboarding.accounts.single" = "Alles auf einem Konto";
-"onboarding.accounts.singleDesc" = "Ein Hauptkonto wo dein Geld rein und raus geht";
-"onboarding.accounts.multiple" = "Ich habe getrennte Konten";
-"onboarding.accounts.multipleDesc" = "Sparen, Girokonto, Kreditkarte... jedes für sich";
+"onboarding.accounts.title" = "Wie möchtest du dein Geld in Yala organisieren?";
+"onboarding.accounts.single" = "Alles zusammen auf einem Konto";
+"onboarding.accounts.singleDesc" = "Ein Hauptkonto pro Währung für dein gesamtes Geld";
+"onboarding.accounts.multiple" = "Jedes Konto einzeln";
+"onboarding.accounts.multipleDesc" = "Sparen, Girokonto, Kreditkarte... so weißt du, wie viel du wo hast";
 // Account type step
-"onboarding.accountType.title" = "Was ist dein erstes Konto?";
-"onboarding.accountType.subtitle" = "Du kannst später mehr in Profil hinzufügen";
+"onboarding.accountType.title" = "Wir helfen dir, dein erstes Konto zu erstellen";
+"onboarding.accountType.subtitle" = "Wähle welches Konto du jetzt erstellen möchtest. Weitere kannst du später im Profil hinzufügen.";
 "onboarding.accountType.checkingHint" = "Dein Bankkonto für den Alltag";
 "onboarding.accountType.savingsHint" = "Wo du deine Ersparnisse aufbewahrst";
 "onboarding.accountType.creditHint" = "Deine Kreditkarte";
@@ -1749,28 +1754,12 @@
 // Name hint
 "onboarding.nameHint" = "Kann dein Name, Spitzname oder was du möchtest sein";
 "onboarding.categories.viewSubs" = "Unterkategorien ansehen";
-// Goal step (conversational onboarding)
-"onboarding.goal.title" = "Was möchtest du mit Yala erreichen?";
-"onboarding.goal.expenses" = "Ich möchte nur meine Ausgaben erfassen";
-"onboarding.goal.expensesDesc" = "Erfasse deine Ausgaben ohne Komplikationen";
-"onboarding.goal.understand" = "Ich möchte verstehen, wohin mein Geld geht";
-"onboarding.goal.understandDesc" = "Ausgaben, Einnahmen und wie viel du verfügbar hast";
-"onboarding.goal.control" = "Ich möchte alles kontrollieren: Konten, Schulden, Ersparnisse";
-"onboarding.goal.controlDesc" = "Dein tatsächlicher Saldo, einschließlich allem was du hast und schuldest";
-"onboarding.style.title" = "Wie möchtest du dein Geld sehen?";
-"onboarding.style.subtitle" = "Das bestimmt, wie Yala dir deine Finanzen zeigt. Du kannst es später ändern.";
-"onboarding.style.flow" = "Was jeden Monat rein und raus geht";
-"onboarding.style.flowDesc" = "Konzentriere dich auf deine Einnahmen und Ausgaben des Zeitraums";
-"onboarding.style.total" = "Der Gesamtbetrag den ich angesammelt habe";
-"onboarding.style.totalDesc" = "Sieh dein Nettovermögen und wie es sich verändert";
-"onboarding.account.guidedExpenses" = "Lass uns dein Hauptkonto erstellen, um Ausgaben zu erfassen.";
-"onboarding.account.guidedDayToDay" = "Dein Alltagskonto — wo dein Geld kommt und geht.";
-"onboarding.account.guidedFullControl" = "Wähle den Kontotyp, der am besten darstellt, wo du dein Geld aufbewahrst.";
-"onboarding.currencyName.title" = "Name und Währung";
-"onboarding.currencyName.subtitle" = "Gib deinem Konto einen Namen und wähle die Währung.";
-"onboarding.balance.title" = "Wie viel hast du dort?";
-"onboarding.balance.subtitleDayToDay" = "Eine Schätzung reicht — du kannst es später anpassen.";
-"onboarding.balance.subtitleFullControl" = "Gib den genauesten Saldo ein den du kannst, um gut zu starten.";
+"onboarding.currencyName.titleSingle" = "Erstellen wir dein Hauptkonto";
+"onboarding.currencyName.subtitleSingle" = "Konzentrieren wir uns auf deine wichtigste Währung. Dies wird das Konto sein, mit dem du dein Geld verwaltest.";
+"onboarding.currencyName.titleSeparate" = "Gib deinem Konto eine Identität";
+"onboarding.currencyName.subtitleSeparate" = "Gib ihm einen Namen und wähle die Währung.";
+"onboarding.balance.title" = "Wie viel hast du auf diesem Konto?";
+"onboarding.balance.subtitle" = "Eine Schätzung reicht. Du kannst es jederzeit anpassen.";
 "onboarding.confirm.title" = "So sieht dein Yala aus";
 "onboarding.confirm.accountLabel" = "Konto";
 "onboarding.confirm.currencyLabel" = "Währung";

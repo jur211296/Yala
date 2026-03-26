@@ -37,7 +37,7 @@ struct OnboardingView: View {
 
     // Purpose & accounts (binary decisions)
     @State private var selectedUsageMode: UsageMode = .dayToDay
-    @State private var selectedMindset: String = "cashFlow"
+    @State private var selectedMindset: String = "patrimonial"
 
     /// Derived from selectedUsageMode — true when user chose "varias cuentas"
     private var wantsSeparateAccounts: Bool { selectedUsageMode == .fullControl }
@@ -165,12 +165,15 @@ struct OnboardingView: View {
             if defaults.object(forKey: "expensesOnlyMode") != nil {
                 if defaults.bool(forKey: "expensesOnlyMode") {
                     selectedUsageMode = .expensesOnly
-                } else if defaults.string(forKey: "financialMindset") == "patrimonial" {
-                    selectedUsageMode = .fullControl
-                    selectedMindset = "patrimonial"
-                } else {
-                    selectedUsageMode = .dayToDay
                     selectedMindset = "cashFlow"
+                } else if defaults.string(forKey: "financialMindset") == "cashFlow" {
+                    // cashFlow = separate accounts
+                    selectedUsageMode = .fullControl
+                    selectedMindset = "cashFlow"
+                } else {
+                    // patrimonial or default = single account
+                    selectedUsageMode = .dayToDay
+                    selectedMindset = "patrimonial"
                 }
             }
         }
@@ -337,7 +340,7 @@ struct OnboardingView: View {
                             accessibilityId: "onboarding_accounts_single"
                         ) {
                             selectedUsageMode = .dayToDay
-                            selectedMindset = "cashFlow"
+                            selectedMindset = "patrimonial"
                             selectedAccountType = .general
                         }
 
@@ -349,7 +352,7 @@ struct OnboardingView: View {
                             accessibilityId: "onboarding_accounts_multiple"
                         ) {
                             selectedUsageMode = .fullControl
-                            selectedMindset = "patrimonial"
+                            selectedMindset = "cashFlow"
                             selectedAccountType = .checking
                         }
                     }
@@ -403,6 +406,7 @@ struct OnboardingView: View {
                 RoundedRectangle(cornerRadius: DS.Radius.xl)
                     .stroke(isSelected ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
             )
+            .shadow(color: .black.opacity(theme.shadowOpacity), radius: 10, x: 0, y: 5)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(accessibilityId)
@@ -503,23 +507,39 @@ struct OnboardingView: View {
         }
     }
 
+    /// Suggested account name based on type and currency
+    private var suggestedAccountName: String {
+        let currency = accountCurrency.shortPluralName.capitalized
+        if wantsSeparateAccounts {
+            // "Cuenta Corriente Soles", "Ahorros Dólares", etc.
+            return "\(selectedAccountType.localizedName) \(currency)"
+        } else {
+            // "Gastos Soles", "Gastos Dólares", etc.
+            return "\(L10n.CashFlow.expense) \(currency)"
+        }
+    }
+
     private var currencyNameStep: some View {
         ScrollView {
             VStack(spacing: DS.Spacing.xxl) {
                 VStack(spacing: DS.Spacing.md) {
-                    Image(systemName: "textformat")
+                    Image(systemName: wantsSeparateAccounts ? "pencil.circle" : "star.circle")
                         .font(.system(size: heroIconSize))
                         .foregroundStyle(Color.electricIndigo)
                         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                         .accessibilityHidden(true)
 
-                    Text(L10n.Onboarding.currencyNameTitle)
+                    Text(wantsSeparateAccounts
+                         ? L10n.Onboarding.currencyNameTitleSeparate
+                         : L10n.Onboarding.currencyNameTitleSingle)
                         .font(DS.Typography.title)
                         .fontWeight(.bold)
                         .foregroundStyle(.primary)
                         .multilineTextAlignment(.center)
 
-                    Text(L10n.Onboarding.currencyNameSubtitle)
+                    Text(wantsSeparateAccounts
+                         ? L10n.Onboarding.currencyNameSubtitleSeparate
+                         : L10n.Onboarding.currencyNameSubtitleSingle)
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -530,7 +550,7 @@ struct OnboardingView: View {
                 // Account name
                 SectionBox(title: L10n.Onboarding.accountNameLabel) {
                     HStack(spacing: DS.Spacing.md) {
-                        Image(systemName: "textformat")
+                        Image(systemName: "pencil")
                             .foregroundStyle(.secondary)
                         TextField(L10n.Onboarding.accountNamePlaceholder, text: $accountName)
                             .focused($accountNameFocused)
@@ -572,7 +592,7 @@ struct OnboardingView: View {
         .onAppear {
             accountCurrency = selectedCurrency
             if accountName.isEmpty {
-                accountName = selectedAccountType.localizedName
+                accountName = suggestedAccountName
             }
         }
         .sheet(isPresented: $showCurrencyPicker) {
@@ -601,9 +621,7 @@ struct OnboardingView: View {
                             .foregroundStyle(.primary)
                             .multilineTextAlignment(.center)
 
-                        Text(selectedUsageMode == .fullControl
-                             ? L10n.Onboarding.balanceSubtitleFullControl
-                             : L10n.Onboarding.balanceSubtitleDayToDay)
+                        Text(L10n.Onboarding.balanceSubtitle)
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -669,7 +687,7 @@ struct OnboardingView: View {
             .scrollBounceBehavior(.basedOnSize)
             .scrollDismissesKeyboard(.interactively)
         }
-        .task(id: "balanceCalcLaunch") {
+        .task {
             guard !hasLaunchedCalc else { return }
             hasLaunchedCalc = true
             try? await Task.sleep(for: .milliseconds(400))
@@ -1225,6 +1243,7 @@ struct OnboardingView: View {
                         .padding(.vertical, DS.Spacing.md)
                         .background(.thCard)
                         .clipShape(Capsule())
+                        .shadow(color: .black.opacity(theme.shadowOpacity), radius: 6, x: 0, y: 3)
                 }
             }
 

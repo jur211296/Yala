@@ -1688,10 +1688,10 @@
 "onboarding.calc.bankAccountsHint" = "Everything you have in checking or debit accounts";
 "onboarding.calc.savingsHint" = "What you have in savings accounts or set aside";
 "onboarding.calc.cashHint" = "Bills and coins you have on hand";
-"onboarding.calc.creditCardSpendingHint" = "What you've spent on your cards and haven't paid yet";
-"onboarding.calc.creditLineHint" = "Your card's total credit limit";
-"onboarding.calc.availableCreditHint" = "How much you have left to use";
-"onboarding.calc.title" = "How much money do you have?";
+"onboarding.calc.creditCardSpendingHint" = "What you've spent on your cards this month";
+"onboarding.calc.creditLineHint" = "The total limit your bank gave you";
+"onboarding.calc.availableCreditHint" = "How much you have left on your card";
+"onboarding.calc.title" = "We'll help you calculate your balance";
 "onboarding.calc.intro" = "You don't need to be exact — a rough estimate is fine.";
 "onboarding.calc.bankAccounts" = "Bank accounts";
 "onboarding.calc.savings" = "Savings";
@@ -1704,6 +1704,11 @@
 "onboarding.calc.tipPatrimonial" = "If you share expenses with others, include what they owe you and what you owe for a more precise balance.";
 "onboarding.calc.useBalance" = "Use this balance";
 "onboarding.calc.adjustLater" = "You can always adjust it later.";
+"onboarding.calc.instruction" = "Fill in only where you have money. We'll calculate the rest.";
+"onboarding.calc.directSpending" = "How much have you spent?";
+"onboarding.calc.directSpendingHint" = "The total spent with this card in this currency. If you spend in other currencies, only enter this one.";
+"onboarding.calc.switchToDirect" = "I'd rather enter how much I've spent";
+"onboarding.calc.switchToDetailed" = "I'd rather use credit line and available";
 // Shared expenses (patrimonial only)
 "onboarding.calc.sharedExpenses" = "Shared expenses";
 "onboarding.calc.othersOweMe" = "Others owe you";
@@ -1738,14 +1743,14 @@
 "onboarding.purpose.control" = "Manage my money";
 "onboarding.purpose.controlDesc" = "Expenses, income, and how much you have";
 // Accounts step (binary)
-"onboarding.accounts.title" = "How do you organize your money?";
-"onboarding.accounts.single" = "Everything in one account";
-"onboarding.accounts.singleDesc" = "One main account where your money comes and goes";
-"onboarding.accounts.multiple" = "I have separate accounts";
-"onboarding.accounts.multipleDesc" = "Savings, debit, credit... each one on its own";
+"onboarding.accounts.title" = "How do you want to organize your money in Yala?";
+"onboarding.accounts.single" = "Everything together in one account";
+"onboarding.accounts.singleDesc" = "One main account per currency where you include all your money";
+"onboarding.accounts.multiple" = "Each account separately";
+"onboarding.accounts.multipleDesc" = "Savings, debit, credit... so you know how much you have in each";
 // Account type step
-"onboarding.accountType.title" = "What's your first account?";
-"onboarding.accountType.subtitle" = "You can add more later in Profile";
+"onboarding.accountType.title" = "Let's create your first account";
+"onboarding.accountType.subtitle" = "Choose which account to create now. You can add more in your profile later.";
 "onboarding.accountType.checkingHint" = "Your everyday bank account";
 "onboarding.accountType.savingsHint" = "Where you keep your savings";
 "onboarding.accountType.creditHint" = "Your credit card";
@@ -1753,32 +1758,14 @@
 // Name hint
 "onboarding.nameHint" = "It can be your name, nickname, or whatever you prefer";
 "onboarding.categories.viewSubs" = "View subcategories";
-// Goal step (kept for backward compat)
-"onboarding.goal.title" = "What do you want to achieve with Yala?";
-"onboarding.goal.expenses" = "I just want to track my expenses";
-"onboarding.goal.expensesDesc" = "Record your spending without complications";
-"onboarding.goal.understand" = "I want to understand where my money goes";
-"onboarding.goal.understandDesc" = "Expenses, income, and how much you have available";
-"onboarding.goal.control" = "I want full control: accounts, debts, savings";
-"onboarding.goal.controlDesc" = "Your real balance, including everything you own and owe";
-// Style step
-"onboarding.style.title" = "How would you like to see your money?";
-"onboarding.style.subtitle" = "This defines how Yala shows your finances. You can change it later.";
-"onboarding.style.flow" = "What comes in and goes out each month";
-"onboarding.style.flowDesc" = "Focus on your income and expenses for the period";
-"onboarding.style.total" = "The total I have accumulated";
-"onboarding.style.totalDesc" = "See your net worth and how it changes over time";
-// Account guided step
-"onboarding.account.guidedExpenses" = "Let's create your main account to record expenses.";
-"onboarding.account.guidedDayToDay" = "Your everyday account — where your money comes and goes.";
-"onboarding.account.guidedFullControl" = "Choose the account type that best represents where you keep your money.";
-// Currency + Name step
-"onboarding.currencyName.title" = "Name and currency";
-"onboarding.currencyName.subtitle" = "Give your account a name and choose its currency.";
+// Currency + Name step (adaptive)
+"onboarding.currencyName.titleSingle" = "Let's create your main account";
+"onboarding.currencyName.subtitleSingle" = "Let's focus on your most important currency. This will be the account where you track your money.";
+"onboarding.currencyName.titleSeparate" = "Give your account an identity";
+"onboarding.currencyName.subtitleSeparate" = "Give it a name and choose the currency it uses.";
 // Balance step
-"onboarding.balance.title" = "How much do you have there?";
-"onboarding.balance.subtitleDayToDay" = "An approximation is fine — you can adjust it later.";
-"onboarding.balance.subtitleFullControl" = "Enter the most accurate balance you can to start right.";
+"onboarding.balance.title" = "How much do you have in this account?";
+"onboarding.balance.subtitle" = "An approximation is fine. You can always adjust it later.";
 // Confirmation step
 "onboarding.confirm.title" = "Here's your Yala setup";
 "onboarding.confirm.accountLabel" = "Account";

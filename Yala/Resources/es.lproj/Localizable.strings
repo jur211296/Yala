@@ -1686,10 +1686,10 @@
 "onboarding.calc.bankAccountsHint" = "Todo lo que tienes en cuentas corrientes o de débito";
 "onboarding.calc.savingsHint" = "Lo que tienes en cuentas de ahorro o guardado";
 "onboarding.calc.cashHint" = "Billetes y monedas que tienes a la mano";
-"onboarding.calc.creditCardSpendingHint" = "Lo que has gastado en tus tarjetas y aún no pagas";
-"onboarding.calc.creditLineHint" = "El límite total de tu tarjeta";
-"onboarding.calc.availableCreditHint" = "Cuánto te queda por usar";
-"onboarding.calc.title" = "¿Cuánto dinero tienes?";
+"onboarding.calc.creditCardSpendingHint" = "Lo que llevas gastado con tus tarjetas este mes";
+"onboarding.calc.creditLineHint" = "El límite total que te dio tu banco";
+"onboarding.calc.availableCreditHint" = "Lo que te queda disponible en tu tarjeta";
+"onboarding.calc.title" = "Te ayudamos a calcular tu saldo";
 "onboarding.calc.intro" = "No necesitas ser exacto — un aproximado está bien.";
 "onboarding.calc.bankAccounts" = "Cuentas de banco";
 "onboarding.calc.savings" = "Ahorros";
@@ -1702,6 +1702,11 @@
 "onboarding.calc.tipPatrimonial" = "Si compartes gastos con otras personas, incluye lo que te deben y lo que debes para un saldo más preciso.";
 "onboarding.calc.useBalance" = "Usar este saldo";
 "onboarding.calc.adjustLater" = "Siempre puedes ajustarlo después.";
+"onboarding.calc.instruction" = "Llena solo donde tengas dinero. Nosotros calculamos el resto.";
+"onboarding.calc.directSpending" = "¿Cuánto llevas gastado?";
+"onboarding.calc.directSpendingHint" = "El total gastado con esta tarjeta en esta divisa. Si gastas en otras monedas, pon solo lo de esta divisa.";
+"onboarding.calc.switchToDirect" = "Prefiero poner cuánto he gastado";
+"onboarding.calc.switchToDetailed" = "Prefiero usar línea y disponible";
 // Shared expenses (patrimonial only)
 "onboarding.calc.sharedExpenses" = "Gastos compartidos";
 "onboarding.calc.othersOweMe" = "Te deben";
@@ -1736,14 +1741,14 @@
 "onboarding.purpose.control" = "Llevar el control de mi dinero";
 "onboarding.purpose.controlDesc" = "Gastos, ingresos y cuánto tienes";
 // Accounts step (binary)
-"onboarding.accounts.title" = "¿Cómo organizas tu dinero?";
-"onboarding.accounts.single" = "Todo en una sola cuenta";
-"onboarding.accounts.singleDesc" = "Una cuenta principal donde entra y sale tu dinero";
-"onboarding.accounts.multiple" = "Tengo cuentas separadas";
-"onboarding.accounts.multipleDesc" = "Ahorros, débito, crédito... cada una por su lado";
+"onboarding.accounts.title" = "¿Cómo quieres organizar tu dinero en Yala?";
+"onboarding.accounts.single" = "Todo junto en una sola cuenta";
+"onboarding.accounts.singleDesc" = "Una cuenta principal por divisa donde incluyes todo tu dinero";
+"onboarding.accounts.multiple" = "Cada cuenta por separado";
+"onboarding.accounts.multipleDesc" = "Ahorros, débito, crédito... así sabes cuánto tienes en cada una";
 // Account type step
-"onboarding.accountType.title" = "¿Cuál es tu primera cuenta?";
-"onboarding.accountType.subtitle" = "Después puedes agregar más en Perfil";
+"onboarding.accountType.title" = "Te ayudamos a crear tu primera cuenta";
+"onboarding.accountType.subtitle" = "Elige qué cuenta quieres crear ahora. Luego podrás agregar más en tu perfil.";
 "onboarding.accountType.checkingHint" = "Tu cuenta de banco del día a día";
 "onboarding.accountType.savingsHint" = "Donde guardas lo que ahorras";
 "onboarding.accountType.creditHint" = "Tu tarjeta de crédito";
@@ -1751,32 +1756,14 @@
 // Name hint
 "onboarding.nameHint" = "Puede ser tu nombre, apodo o como prefieras";
 "onboarding.categories.viewSubs" = "Ver subcategorías";
-// Goal step (kept for backward compat)
-"onboarding.goal.title" = "¿Qué quieres lograr con Yala?";
-"onboarding.goal.expenses" = "Solo quiero anotar mis gastos";
-"onboarding.goal.expensesDesc" = "Registra lo que gastas sin complicaciones";
-"onboarding.goal.understand" = "Quiero entender a dónde va mi dinero";
-"onboarding.goal.understandDesc" = "Gastos, ingresos y cuánto tienes disponible";
-"onboarding.goal.control" = "Quiero controlar todo: cuentas, deudas, ahorros";
-"onboarding.goal.controlDesc" = "Tu saldo real, incluyendo todo lo que tienes y debes";
-// Style step
-"onboarding.style.title" = "¿Cómo quisieras ver tu dinero?";
-"onboarding.style.subtitle" = "Esto define cómo Yala te muestra tus finanzas. Puedes cambiarlo después.";
-"onboarding.style.flow" = "Lo que entra y sale cada mes";
-"onboarding.style.flowDesc" = "Enfócate en tus ingresos y gastos del período";
-"onboarding.style.total" = "El total que tengo acumulado";
-"onboarding.style.totalDesc" = "Ve tu patrimonio neto y cómo cambia con el tiempo";
-// Account guided step
-"onboarding.account.guidedExpenses" = "Vamos a crear tu cuenta principal para registrar gastos.";
-"onboarding.account.guidedDayToDay" = "Tu cuenta del día a día — donde entra y sale tu dinero.";
-"onboarding.account.guidedFullControl" = "Elige el tipo de cuenta que mejor represente donde guardas tu dinero.";
-// Currency + Name step
-"onboarding.currencyName.title" = "Nombre y divisa";
-"onboarding.currencyName.subtitle" = "Dale un nombre a tu cuenta y elige la divisa que usa.";
+// Currency + Name step (adaptive)
+"onboarding.currencyName.titleSingle" = "Creemos tu cuenta principal";
+"onboarding.currencyName.subtitleSingle" = "Enfoquémonos en tu divisa más importante. Esta será la cuenta donde llevas el control de tu dinero.";
+"onboarding.currencyName.titleSeparate" = "Dale identidad a tu cuenta";
+"onboarding.currencyName.subtitleSeparate" = "Ponle un nombre y elige la divisa que usa.";
 // Balance step
-"onboarding.balance.title" = "¿Cuánto tienes ahí?";
-"onboarding.balance.subtitleDayToDay" = "Un aproximado está bien — lo puedes ajustar después.";
-"onboarding.balance.subtitleFullControl" = "Pon el saldo lo más exacto que puedas para empezar bien.";
+"onboarding.balance.title" = "¿Cuánto tienes en esta cuenta?";
+"onboarding.balance.subtitle" = "Un aproximado está bien. Siempre puedes ajustarlo después.";
 // Confirmation step
 "onboarding.confirm.title" = "Así queda tu Yala";
 "onboarding.confirm.accountLabel" = "Cuenta";
