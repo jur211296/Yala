@@ -1232,7 +1232,9 @@ struct PanelView: View {
             viewModel.calculateBudgetsWidget(
                 budgets: budgets,
                 transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCodeRaw
+                defaultCurrencyCode: defaultCurrencyCodeRaw,
+                excludedCategoryIDs: sessionState.isExcludeMode ? sessionState.selectedCategoryIDs : [],
+                excludedSubcategoryIDs: sessionState.isExcludeMode ? sessionState.selectedSubcategoryIDs : []
             )
         }
     }

@@ -20,7 +20,8 @@ struct TrendWidget: View {
 
     /// Check if any category/subcategory/need filters are active
     private var hasCategoryFilters: Bool {
-        !sessionState.selectedCategoryIDs.isEmpty
+        guard !sessionState.isExcludeMode else { return false }
+        return !sessionState.selectedCategoryIDs.isEmpty
             || !sessionState.selectedSubcategoryIDs.isEmpty
             || !sessionState.selectedNeeds.isEmpty
     }

@@ -1011,7 +1011,7 @@ struct ScheduledPaymentEditorView: View {
         // Pre-fill from transaction data (when creating from "Save as Recurring")
         if payment == nil, let prefill = prefill {
             let calendar = Calendar.current
-            name = prefill.subcategory?.name ?? prefill.note
+            // Don't prefill name — let the user decide the payment name
             amount = prefill.amount
             note = prefill.note
             transactionType = prefill.transactionType

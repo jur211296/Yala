@@ -1407,7 +1407,9 @@ final class PanelViewModel {
     func calculateBudgetsWidget(
         budgets: [Budget],
         transactions: [TransactionItem],
-        defaultCurrencyCode: String
+        defaultCurrencyCode: String,
+        excludedCategoryIDs: Set<PersistentIdentifier> = [],
+        excludedSubcategoryIDs: Set<PersistentIdentifier> = []
     ) {
         // Check if there are budgets but none are favorites
         let hasBudgets = !budgets.isEmpty
@@ -1422,7 +1424,9 @@ final class PanelViewModel {
             calculateBudgetSummary(
                 budget: budget,
                 transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCode
+                defaultCurrencyCode: defaultCurrencyCode,
+                excludedCategoryIDs: excludedCategoryIDs,
+                excludedSubcategoryIDs: excludedSubcategoryIDs
             )
         }
 
@@ -1433,13 +1437,28 @@ final class PanelViewModel {
     private func calculateBudgetSummary(
         budget: Budget,
         transactions: [TransactionItem],
-        defaultCurrencyCode: String
+        defaultCurrencyCode: String,
+        excludedCategoryIDs: Set<PersistentIdentifier> = [],
+        excludedSubcategoryIDs: Set<PersistentIdentifier> = []
     ) -> BudgetSummary? {
         // Get budget period date interval
         let interval = getBudgetDateInterval(budget: budget)
 
         // Filter transactions by date
         var filtered = transactions.filter { interval.contains($0.date) }
+
+        // Apply session exclude filters (user-excluded categories/subcategories)
+        if !excludedCategoryIDs.isEmpty || !excludedSubcategoryIDs.isEmpty {
+            filtered = filtered.filter { transaction in
+                if !excludedCategoryIDs.isEmpty,
+                   let catID = transaction.category?.persistentModelID,
+                   excludedCategoryIDs.contains(catID) { return false }
+                if !excludedSubcategoryIDs.isEmpty,
+                   let subID = transaction.subcategory?.persistentModelID,
+                   excludedSubcategoryIDs.contains(subID) { return false }
+                return true
+            }
+        }
 
         // Apply budget filters
 

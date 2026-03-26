@@ -723,7 +723,9 @@ struct CategoriesTabView: View {
                     AllSubcategoriesListContent(
                         subcategories: subcategorySpending,
                         currencyCode: defaultCurrencyCode,
-                        selectedCategoryIDs: effectiveCategoryIDsForDim,
+                        selectedCategoryIDs: viewModel.isExcludeMode
+                            ? viewModel.selectedCategories
+                            : effectiveCategoryIDsForDim,
                         selectedSubcategoryIDs: viewModel.selectedSubcategories,
                         isExcludeMode: viewModel.isExcludeMode,
                         isExpanded: isListExpanded,
@@ -935,6 +937,7 @@ struct CategoriesTabView: View {
             selectedNeeds: viewModel.selectedNeeds,
             selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
+            isExcludeMode: viewModel.isExcludeMode,
             transactionTypeFilter: .all,
             amountCondition: viewModel.amountCondition,
             searchText: viewModel.searchText,
