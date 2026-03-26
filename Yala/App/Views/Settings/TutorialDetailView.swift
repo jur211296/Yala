@@ -69,6 +69,9 @@ struct TutorialDetailView: View {
         }
         .onChange(of: currentPage) {
             isVideoPlaying = false
+            if currentPage == totalPages - 1 {
+                UserDefaults.standard.set(true, forKey: tutorial.completionKey)
+            }
         }
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .navigationTitle(tutorial.title)
@@ -155,6 +158,14 @@ struct TutorialDetailView: View {
                     .foregroundStyle(.thPrimaryText)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
+
+                if let desc = step.description, !desc.isEmpty {
+                    Text(desc)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.thSecondaryText)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             .padding(.horizontal, DS.Spacing.lg)
 
@@ -278,13 +289,18 @@ private struct LoopingVideoView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: LoopingPlayerUIView, context: Context) {
-        uiView.updateURL(step.videoURL)
         uiView.loopEnabled = loopEnabled
+        // Only reinit player if URL actually changed (prevents mid-play reset)
+        uiView.updateURL(step.videoURL)
         if isPlaying {
             uiView.play()
         } else {
             uiView.pause()
         }
+    }
+
+    static func dismantleUIView(_ uiView: LoopingPlayerUIView, coordinator: ()) {
+        uiView.stop()
     }
 }
 
@@ -343,8 +359,8 @@ private final class LoopingPlayerUIView: UIView {
             self?.scheduleRestart()
         }
 
-        // Start paused — show first frame as thumbnail
-        avPlayer.seek(to: CMTime(seconds: 0.1, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
+        // Start paused — show true first frame as thumbnail
+        avPlayer.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero)
     }
 
     func play() {
@@ -355,6 +371,10 @@ private final class LoopingPlayerUIView: UIView {
         restartWork?.cancel()
         restartWork = nil
         player?.pause()
+    }
+
+    func stop() {
+        cleanUp()
     }
 
     private func scheduleRestart() {

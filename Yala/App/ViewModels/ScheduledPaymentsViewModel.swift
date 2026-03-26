@@ -596,9 +596,10 @@ final class ScheduledPaymentsViewModel {
 
     /// Advance (pay early) the next occurrence of a scheduled payment.
     /// Creates a draft with today's date and advances nextDueDate.
-    func advanceOccurrence(payment: ScheduledPayment) {
-        guard let context = modelContext else { return }
-        guard ScheduledPaymentDraftService.createAdvancedDraft(from: payment, context: context) != nil else { return }
+    @discardableResult
+    func advanceOccurrence(payment: ScheduledPayment) -> InboxDraft? {
+        guard let context = modelContext else { return nil }
+        guard let draft = ScheduledPaymentDraftService.createAdvancedDraft(from: payment, context: context) else { return nil }
         do {
             try context.save()
             WidgetDataCache.updateCache(context: context)
@@ -607,8 +608,10 @@ final class ScheduledPaymentsViewModel {
             #if DEBUG
             print("ScheduledPaymentsViewModel: Error saving advance: \(error)")
             #endif
+            return nil
         }
         loadPayments()
+        return draft
     }
 
     // MARK: - Fetch Linked Transactions

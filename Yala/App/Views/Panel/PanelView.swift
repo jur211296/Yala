@@ -154,10 +154,31 @@ struct PanelView: View {
 
     // MARK: - Practice Cleanup
 
+    private func consumePendingPracticeCleanup() {
+        let mgr = SetupChecklistManager.shared
+        if let pending = mgr.pendingPracticeCleanup {
+            practiceCleanupItem = pending
+            mgr.pendingPracticeCleanup = nil
+        }
+    }
+
     private func deletePracticeItem(_ item: PracticeCleanupItem) {
         do {
-            let model = modelContext.model(for: item.persistentID)
-            modelContext.delete(model)
+            let raw = modelContext.model(for: item.persistentID)
+            // Cast condicional — model(for:) retorna fault que crashea si el objeto ya no existe
+            switch item.stepID {
+            case .firstExpense:
+                guard let tx = raw as? TransactionItem else { return }
+                modelContext.delete(tx)
+            case .firstBudget:
+                guard let budget = raw as? Budget else { return }
+                modelContext.delete(budget)
+            case .scheduledPayment:
+                guard let sp = raw as? ScheduledPayment else { return }
+                modelContext.delete(sp)
+            default:
+                return
+            }
             try modelContext.save()
         } catch {
             #if DEBUG
@@ -502,11 +523,11 @@ struct PanelView: View {
                         mgr.checkReExpand()
                     }
 
-                    // Consume pending practice cleanup from editors
-                    if let pending = mgr.pendingPracticeCleanup {
-                        practiceCleanupItem = pending
-                        mgr.pendingPracticeCleanup = nil
-                    }
+                    consumePendingPracticeCleanup()
+                }
+                .onChange(of: SetupChecklistManager.shared.pendingPracticeCleanup?.id) { _, newID in
+                    guard newID != nil else { return }
+                    consumePendingPracticeCleanup()
                 }
             }
 

@@ -61,6 +61,7 @@ struct OnboardingView: View {
     @State private var showBalanceGuide: Bool = false
     @State private var calcFieldState = BalanceCalculatorFieldState()
     @FocusState private var accountNameFocused: Bool
+    @State private var lastAutoName: String = ""
 
     // Budget state (preserved for completeOnboarding — budget step removed from flow)
     @State private var wantsBudget: Bool = false
@@ -78,9 +79,8 @@ struct OnboardingView: View {
         case accountType = 3   // "¿Cuál es tu primera cuenta?" — skip if not fullControl
         case currencyName = 4
         case balance = 5       // skip if expensesOnly
-        case confirmation = 6
-        case categories = 7
-        case privacy = 8
+        case categories = 6
+        case confirmation = 7  // Resumen + privacidad (último paso)
     }
 
     /// Account types for fullControl picker (no .general — separate accounts have real types)
@@ -125,7 +125,6 @@ struct OnboardingView: View {
             progressIndicator
                 .padding(.top, DS.Spacing.xl)
                 .padding(.bottom, DS.Spacing.xxxl)
-                .opacity(currentStep != .privacy ? 1 : 0)
 
             Group {
                 switch currentStep {
@@ -135,9 +134,8 @@ struct OnboardingView: View {
                 case .accountType: accountTypeStep
                 case .currencyName: currencyNameStep
                 case .balance: balanceStep
-                case .confirmation: confirmationStep
                 case .categories: categoriesStep
-                case .privacy: privacyStep
+                case .confirmation: confirmationStep
                 }
             }
             .transition(.asymmetric(
@@ -591,8 +589,10 @@ struct OnboardingView: View {
         .scrollDismissesKeyboard(.interactively)
         .onAppear {
             accountCurrency = selectedCurrency
-            if accountName.isEmpty {
-                accountName = suggestedAccountName
+            let suggested = suggestedAccountName
+            if accountName.isEmpty || accountName == lastAutoName {
+                accountName = suggested
+                lastAutoName = suggested
             }
         }
         .sheet(isPresented: $showCurrencyPicker) {
@@ -780,6 +780,23 @@ struct OnboardingView: View {
                                 value: L10n.Onboarding.purposeExpenses
                             )
                         }
+
+                        confirmItem(
+                            icon: "folder.fill",
+                            color: .orange,
+                            value: loadSeedCategories
+                                ? L10n.Onboarding.categoriesDefault
+                                : L10n.Onboarding.categoriesCustom
+                        )
+                    }
+                    .padding(.horizontal, DS.Spacing.xl)
+
+                    // Privacy assurances
+                    VStack(spacing: DS.Spacing.sm) {
+                        privacyPoint(icon: "iphone", color: .electricIndigo, text: L10n.Onboarding.privacyLocal)
+                        privacyPoint(icon: "eye.slash.fill", color: .hotPink, text: L10n.Onboarding.privacyNoTracking)
+                        privacyPoint(icon: "person.badge.key.fill", color: .electricIndigo, text: L10n.Onboarding.privacyIcloud)
+                        privacyPoint(icon: "lock.shield.fill", color: .hotPink, text: L10n.Onboarding.privacyNoSharing)
                     }
                     .padding(.horizontal, DS.Spacing.xl)
 
@@ -1004,49 +1021,7 @@ struct OnboardingView: View {
 
     // MARK: - Step 9: Privacy & Finish
 
-    private var privacyStep: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                VStack(spacing: DS.Spacing.xl) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.electricIndigo.opacity(0.12))
-                            .frame(width: privacyIconSize, height: privacyIconSize)
-
-                        Image(systemName: "checkmark.seal.fill")
-                            .font(.system(size: completionIconSize))
-                            .foregroundStyle(Color.electricIndigo)
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                            .accessibilityHidden(true)
-                    }
-
-                    VStack(spacing: DS.Spacing.md) {
-                        Text(L10n.Onboarding.privacyTitle)
-                            .font(DS.Typography.largeTitle)
-                            .foregroundStyle(.primary)
-                            .multilineTextAlignment(.center)
-
-                        Text(L10n.Onboarding.privacySubtitle)
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, DS.Spacing.xl)
-                    }
-
-                    VStack(spacing: DS.Spacing.sm) {
-                        privacyPoint(icon: "iphone", color: .electricIndigo, text: L10n.Onboarding.privacyLocal)
-                        privacyPoint(icon: "eye.slash.fill", color: .hotPink, text: L10n.Onboarding.privacyNoTracking)
-                        privacyPoint(icon: "person.badge.key.fill", color: .electricIndigo, text: L10n.Onboarding.privacyIcloud)
-                        privacyPoint(icon: "lock.shield.fill", color: .hotPink, text: L10n.Onboarding.privacyNoSharing)
-                    }
-                    .padding(.horizontal, DS.Spacing.xl)
-                }
-                .padding(.vertical, DS.Spacing.xl)
-                .frame(minHeight: geometry.size.height)
-            }
-            .scrollBounceBehavior(.basedOnSize)
-        }
-    }
+    // privacyStep removed — content merged into confirmationStep
 
     // MARK: - Reusable Components
 
@@ -1196,8 +1171,12 @@ struct OnboardingView: View {
         switch currentStep {
         case .name:
             return userName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .accountType:
+            return !fullControlAccountTypes.contains(selectedAccountType)
         case .currencyName:
             return accountName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .balance:
+            return initialBalanceText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         default:
             return false
         }
@@ -1248,12 +1227,12 @@ struct OnboardingView: View {
             }
 
             YalaPrimaryButton(
-                currentStep == .privacy ? L10n.Onboarding.finish : L10n.Action.next,
+                currentStep == .confirmation ? L10n.Onboarding.finish : L10n.Action.next,
                 isDisabled: isNextDisabled
             ) {
                 dismissKeyboard()
 
-                if currentStep == .privacy {
+                if currentStep == .confirmation {
                     // Sync currency before completing
                     selectedCurrency = accountCurrency
                     completeOnboarding()

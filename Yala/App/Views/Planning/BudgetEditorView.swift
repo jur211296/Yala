@@ -82,18 +82,8 @@ struct BudgetEditorView: View {
                     // Alert Notifications Section
                     alertsSection
 
-                    // Filters Section
+                    // Filters Section (banner inside, before chips)
                     filtersSection
-
-                    // Dynamic filter summary (always visible when filters active)
-                    if let summary = viewModel.filterSummaryText(
-                        selectedAccounts: selectedAccounts,
-                        selectedSubcategories: selectedSubcategories,
-                        selectedTags: selectedTags,
-                        selectedNeeds: selectedNeeds
-                    ) {
-                        ContextualGuideBanner.budgetFilterInfo(message: summary)
-                    }
 
                     // Delete Button (only for existing budgets)
                     if budget != nil {
@@ -451,6 +441,15 @@ struct BudgetEditorView: View {
     private var filtersSection: some View {
         SectionBox(title: NSLocalizedString("budgets.editor.filters", comment: "")) {
             VStack(spacing: DS.Spacing.none) {
+                if let summary = viewModel.filterSummaryText(
+                    selectedAccounts: selectedAccounts,
+                    selectedSubcategories: selectedSubcategories,
+                    selectedTags: selectedTags,
+                    selectedNeeds: selectedNeeds
+                ) {
+                    ContextualGuideBanner.budgetFilterInfo(message: summary)
+                        .padding(.bottom, DS.Spacing.sm)
+                }
                 accountsContent
                 Divider().padding(.leading, DS.Spacing.lg)
                 categoriesContent

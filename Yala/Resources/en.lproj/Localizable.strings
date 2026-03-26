@@ -1365,7 +1365,7 @@
 "scheduled.editor.basic.info" = "Basic information";
 "scheduled.editor.options" = "Options";
 "scheduled.editor.name.placeholder" = "Payment name";
-"scheduled.editor.note.placeholder" = "Note (optional)";
+"scheduled.editor.note.placeholder" = "Expense description (optional)";
 "scheduled.editor.type" = "Transaction type";
 "scheduled.editor.payment.category" = "Payment category";
 "scheduled.editor.classification" = "Classification";
@@ -1656,6 +1656,8 @@
 "onboarding.privacyNoTracking" = "No tracking or ads";
 "onboarding.privacyIcloud" = "Only you have access to your data";
 "onboarding.privacyNoSharing" = "AI features don't share or store sensitive data";
+"onboarding.categoriesDefault" = "Default categories";
+"onboarding.categoriesCustom" = "Custom categories";
 "onboarding.privacyTutorialsHint" = "Discover Yala's tutorials and tips";
 "onboarding.tutorialsTitle" = "Learn to use Yala";
 "onboarding.tutorialsSubtitle" = "Short guides to get the most out of your finances";
@@ -2633,6 +2635,51 @@
 "tutorials.applePay.step1.title" = "Create the automation";
 "tutorials.applePay.step2.title" = "Select the Yala shortcut";
 "tutorials.applePay.step3.title" = "Configure the parameters";
+
+// Tutorial step descriptions (re-expanded)
+"tutorials.createAccount.step0.desc" = "In your profile, select the Accounts section and tap to create a new account.";
+"tutorials.createAccount.step1.desc" = "You can create an account directly from the Panel by tapping the Add new account card.";
+"tutorials.createAccount.step2.desc" = "Fill in the details for your new account and tap Save.";
+"tutorials.createCategories.step0.desc" = "In your profile, select the Categories section and create a new category.";
+"tutorials.createCategories.step1.desc" = "Remember that there must always be subcategories associated with a category to be able to create it.";
+"tutorials.createCategories.step2.desc" = "Creating subcategories is as easy as creating categories: give it a name, select its nature, and optionally modify its icon.";
+"tutorials.createCategories.step3.desc" = "Customize your category's icon and color to your liking whenever you want.";
+"tutorials.createTags.step0.desc" = "In your profile, select the Tags section and create a new tag.";
+"tutorials.createTags.step1.desc" = "Customize your tag to your liking: give it a name, icon, and color.";
+"tutorials.createRecord.step0.desc" = "On the panel, tap the + button. If you're a Yala Pro user, select Manual.";
+"tutorials.createRecord.step1.desc" = "You can record expenses, income, and even transfers between accounts. Exchange rates are calculated automatically in real time.";
+"tutorials.createRecord.step2.desc" = "Fill in the required fields: amount, account, and subcategory. You can also add a description and any tags you want.";
+"tutorials.createRecord.step3.desc" = "Use quick shortcuts: @ for account, ! for category, and # for tag. Start typing to refine your search within each shortcut.";
+"tutorials.importData.step0.desc" = "In your profile, select the Import data section.";
+"tutorials.importData.step1.desc" = "You can import CSV or Excel as many times as you want following the default template, which you can download right there. If there's data in various currencies, it will ask you to select the accounts for each one.";
+"tutorials.createBudgets.step0.desc" = "In the menu select Planning and make sure you're on the Budgets tab. Use the + button to create a new one.";
+"tutorials.createBudgets.step1.desc" = "Give it a name, amount, and define the period: daily, monthly, annual, or one-time (for a trip, event, etc.). Customize which accounts, categories, tags, and natures you want to track. Turn on notifications if you want alerts at certain thresholds.";
+"tutorials.createBudgets.step2.desc" = "You can add budgets to Favorites to display them in the Panel widget. Choose up to 3 in your preferred order.";
+"tutorials.createBudgets.step3.desc" = "Remember you can always come back to edit your budget by tapping it.";
+"tutorials.createScheduledPayments.step0.desc" = "In the menu select Planning and make sure you're on the Scheduled Payments tab. Use the + button to create a new one.";
+"tutorials.createScheduledPayments.step1.desc" = "Fill in your payment name, amount, note (optional), account, subcategory, and tags (optional).";
+"tutorials.createScheduledPayments.step2.desc" = "Select the payment day and frequency. Choose when the first payment will be and turn on notifications if you want to be notified on the same day or days before.";
+"tutorials.createScheduledPayments.step3.desc" = "Don't forget to turn on the subscription toggle if it's a recurring subscription.";
+"tutorials.createScheduledPayments.step4.desc" = "By tapping a scheduled payment you can see upcoming payments, those already made, and edit it whenever you want.";
+"tutorials.createFavorites.step0.desc" = "Go to the new transaction screen and tap the star at the top to create a new favorite.";
+"tutorials.createFavorites.step1.desc" = "Fill in the fields you want to be pre-filled. Next time, simply tap the favorite and watch all the fields fill in automatically.";
+"tutorials.editPanel.step0.desc" = "Go to the main screen where you see your expense summary with all available widgets.";
+"tutorials.editPanel.step1.desc" = "You can modify which widgets to see and in what order by tapping the customization button on the panel.";
+"tutorials.editPanel.step2.desc" = "Remember you can always return to the default order by tapping \"Reset\" within customization.";
+"tutorials.panelFiltering.step0.desc" = "Get the most out of Yala's interactive charts. Almost all panels are filterable by category, nature, among others. Play with them and find what works best for you.";
+"tutorials.panelFiltering.step1.desc" = "You have a filter bar where you'll see all the applied filters. You can remove them individually or all at once whenever you want.";
+"tutorials.panelFiltering.step2.desc" = "In the different views of the app you'll see you can filter to your liking with the charts.";
+"tutorials.panelFiltering.step3.desc" = "Filters propagate to all views equally, so you can see all kinds of metrics for whatever you want to filter.";
+"tutorials.panelFiltering.step4.desc" = "In some views you'll also have a filters section at the top so you can filter to your liking or remove all with a single button.";
+"tutorials.inboxApproval.step0.desc" = "If you're a Yala Pro user, when you make a record by voice or image, it will automatically take you to the draft. The same if you used the Apple Pay Record shortcut.";
+"tutorials.inboxApproval.step1.desc" = "Simply fill in the required fields and approve. The transaction will be created normally.";
+"tutorials.inboxApproval.step2.desc" = "You can also make voice or image records with multiple transactions. It will tell you how many drafts were created and guide you to the inbox to review them.";
+"tutorials.inboxApproval.step3.desc" = "In your inbox you can approve transactions, select Approve later to see them later, or reject them directly.";
+"tutorials.applePay.step0.desc" = "Open the Shortcuts app and go to the Automations section.";
+"tutorials.applePay.step1.desc" = "Tap New automation, select the Wallet option, choose the cards you want to use, and select Run Immediately.";
+"tutorials.applePay.step2.desc" = "Select Create new shortcut and search for Yala at the very bottom. In Yala select the Apple Pay Record shortcut.";
+"tutorials.applePay.step3.desc" = "For Amount select Shortcut Input and then Amount. Do the same for Merchant and Name respectively. Turn off the \"Show When Run\" toggle.";
+
 "tutorials.applePay.completion.title" = "Apple Pay connected!";
 "tutorials.applePay.completion.desc" = "With this you'll now have automatic records every time you use Apple Pay with the selected cards. Each payment will create a draft in your inbox.";
 
@@ -3015,3 +3062,17 @@
 "guide.budgetEditor.message" = "It's a limit you set to control how much you spend on something. Give it a name, an amount, and choose which categories it applies to. You can edit or delete it anytime.";
 "guide.scheduledEditor.title" = "What's a scheduled payment?";
 "guide.scheduledEditor.message" = "It's an expense that repeats: rent, Netflix, internet... Yala reminds you before each payment. You can edit or delete it anytime.";
+"guide.budgetFilter.title" = "What does this budget cover?";
+"guide.budgetFilter.message" = "Covers %@";
+"guide.accountForm.title" = "About this account";
+"guide.accountForm.messageGeneral" = "Your main account where you track all expenses. It can be your card, wallet, or whatever you prefer.";
+"guide.accountForm.messageCash" = "The money you carry as cash. It helps you know how much you have left without checking your wallet.";
+"guide.accountForm.messageChecking" = "Your everyday bank account. The balance should match what you see in your banking app.";
+"guide.accountForm.messageSavings" = "Money you've set aside. Separating it helps you avoid spending it by accident.";
+"guide.accountForm.messageCreditCard" = "What you owe on your card. Yala subtracts this amount from your total net worth.";
+"guide.categoriesSettings.title" = "Organize your categories";
+"guide.categoriesSettings.message" = "Categories group your expenses: food, transport, entertainment... You can create subcategories for more detail.";
+"guide.tagsSettings.title" = "Tags for everything";
+"guide.tagsSettings.message" = "Tags are cross-cutting: you can mark any expense as 'fixed', 'shared', or whatever you need. An expense can have multiple tags.";
+"guide.favoritesManage.title" = "Your most frequent payments";
+"guide.favoritesManage.message" = "Save your frequent expenses here. When recording, just tap the favorite and everything fills in automatically.";

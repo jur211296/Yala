@@ -24,6 +24,7 @@ struct ScheduledPaymentDetailView: View {
     @State private var selectedOccurrenceDate: Date?
     @State private var linkedTransactions: [TransactionItem] = []
     @State private var editingTransaction: TransactionItem?
+    @State private var advancedDraft: InboxDraft?
 
     // Calculate occurrences using getPaymentDatesInMonth (SSOT for date generation)
     private var pastOccurrences: [Date] {
@@ -129,6 +130,14 @@ struct ScheduledPaymentDetailView: View {
                 .presentationDetents([.large])
                 .onDisappear {
                     editingTransaction = nil
+                    linkedTransactions = viewModel.fetchLinkedTransactions(for: payment)
+                }
+        }
+        .sheet(item: $advancedDraft) { draft in
+            InboxDraftEditSheet(draft: draft)
+                .presentationDetents([.large])
+                .onDisappear {
+                    advancedDraft = nil
                     linkedTransactions = viewModel.fetchLinkedTransactions(for: payment)
                 }
         }
@@ -434,8 +443,9 @@ struct ScheduledPaymentDetailView: View {
                     let isFirstUpcoming = upcomingOccurrences.first.map { Calendar.current.isDate($0, inSameDayAs: date) } == true
                     if isFirstUpcoming || !payment.isRecurring {
                         Button {
-                            viewModel.advanceOccurrence(payment: payment)
-                            linkedTransactions = viewModel.fetchLinkedTransactions(for: payment)
+                            if let draft = viewModel.advanceOccurrence(payment: payment) {
+                                advancedDraft = draft
+                            }
                         } label: {
                             Label(L10n.Scheduled.Detail.advance, systemImage: "arrow.uturn.backward.circle")
                         }

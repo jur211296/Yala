@@ -154,18 +154,32 @@ struct SetupChecklistCard: View {
     // MARK: - Completed View
 
     private var completedView: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            Text(L10n.SetupChecklist.completeTitle)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.thPrimaryText)
+        HStack {
+            VStack(spacing: DS.Spacing.sm) {
+                Text(L10n.SetupChecklist.completeTitle)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.thPrimaryText)
 
-            Text(L10n.SetupChecklist.completeSubtitle)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.thSecondaryText)
+                Text(L10n.SetupChecklist.completeSubtitle)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.thSecondaryText)
+            }
+            .frame(maxWidth: .infinity)
+
+            Button {
+                manager.dismissCompleted()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.thSecondaryText)
+                    .frame(width: 28, height: 28)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(NSLocalizedString("action.close", comment: "Close"))
         }
-        .frame(maxWidth: .infinity)
         .padding(DS.Spacing.lg)
-        .background(DS.Semantic.successBackground)
+        .background(DS.Semantic.infoBackground)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 

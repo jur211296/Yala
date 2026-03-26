@@ -24,6 +24,7 @@ final class SetupChecklistManager {
         static let collapsedAtSession = "setup.collapsedAtSession"
         static let completedAll = "setup.completedAll"
         static let completedAllDate = "setup.completedAllDate"
+        static let completedDismissed = "setup.completedDismissed"
         static let isNewInstall = "setup.isNewInstall"
         // Step keys: SetupStepID.storageKey ("setup.step.N.completed")
     }
@@ -91,9 +92,8 @@ final class SetupChecklistManager {
     /// Whether the checklist card should be visible.
     /// Hidden for: existing users (pre-v1.2), or after all complete + expirationDays passed.
     var shouldShow: Bool {
-        // Don't show for existing users who had a previous app version
-        // (they already know the app — checklist is only for new installs)
         if isExistingUser { return false }
+        if UserDefaults.standard.bool(forKey: Keys.completedDismissed) { return false }
 
         if let date = completedAllDate {
             let daysSinceComplete = Calendar.current.dateComponents(
@@ -178,6 +178,11 @@ final class SetupChecklistManager {
         }
     }
 
+    /// Dismiss the completed banner permanently.
+    func dismissCompleted() {
+        UserDefaults.standard.set(true, forKey: Keys.completedDismissed)
+    }
+
     /// Check if the card should re-expand (called on panel appear).
     func checkReExpand() {
         guard isCollapsed, !isAllComplete else { return }
@@ -201,6 +206,7 @@ final class SetupChecklistManager {
         defaults.removeObject(forKey: Keys.collapsedAtSession)
         defaults.removeObject(forKey: Keys.completedAll)
         defaults.removeObject(forKey: Keys.completedAllDate)
+        defaults.removeObject(forKey: Keys.completedDismissed)
         defaults.removeObject(forKey: Keys.isNewInstall)
 
         stepCompleted = [:]
