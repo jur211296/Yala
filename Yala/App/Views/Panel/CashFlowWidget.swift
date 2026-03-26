@@ -203,20 +203,11 @@ struct CashFlowWidget: View {
             let lastDate = activeChartData.last?.date
         else { return "" }
 
-        // Determine calendar unit for forceGrouping
-        let forceGrouping: Calendar.Component? = {
-            switch grouping {
-            case .month: return .month
-            case .week: return .weekOfYear
-            case .day: return nil  // Use span-based logic for days
-            }
-        }()
-
         return SmartAxisHelper.formatAxisLabel(
             for: date,
             startDate: firstDate,
             endDate: lastDate,
-            forceGrouping: forceGrouping
+            forceGrouping: grouping.forceAxisGrouping
         )
     }
 

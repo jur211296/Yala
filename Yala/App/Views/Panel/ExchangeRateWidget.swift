@@ -256,8 +256,7 @@ struct ExchangeRateWidget: View {
                                     .onChanged { value in
                                         let x = value.location.x - plotFrame.origin.x
                                         if let date: Date = proxy.value(atX: x) {
-                                            let granularity: Calendar.Component = calendarComponent(
-                                                for: grouping)
+                                            let granularity = grouping.calendarComponent
                                             if let match = data.chartPoints.first(where: {
                                                 Calendar.current.isDate(
                                                     $0.date, equalTo: date, toGranularity: granularity)
@@ -276,7 +275,7 @@ struct ExchangeRateWidget: View {
                             let selectedPoint = data.chartPoints.first(where: {
                                 Calendar.current.isDate(
                                     $0.date, equalTo: selectedDate,
-                                    toGranularity: calendarComponent(for: grouping))
+                                    toGranularity: grouping.calendarComponent)
                             }),
                             let xPos = proxy.position(forX: selectedPoint.date)
                         {
@@ -537,14 +536,6 @@ struct ExchangeRateWidget: View {
         case .month: formatter = Self.tooltipMonthFormatter
         }
         return formatter.string(from: date)
-    }
-
-    private func calendarComponent(for grouping: TrendGrouping) -> Calendar.Component {
-        switch grouping {
-        case .day: return .day
-        case .week: return .weekOfYear
-        case .month: return .month
-        }
     }
 
     // MARK: - Smart Axis Helpers

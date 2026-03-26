@@ -30,14 +30,7 @@ struct AverageSegment {
         // If no valid segmentation possible, return empty
         guard let unit = segmentUnit else { return [] }
 
-        // Bar unit: the calendar component each bar occupies
-        let barUnit: Calendar.Component = {
-            switch barGrouping {
-            case .day: return .day
-            case .week: return .weekOfYear
-            case .month: return .month
-            }
-        }()
+        let barUnit = barGrouping.calendarComponent
 
         // Group data by the segment unit
         var groups: [(key: Date, values: [(date: Date, amount: Double)])] = []

@@ -397,55 +397,34 @@ struct PeriodComparisonChartView: View {
     private var smartAxisDates: [Date] {
         guard !filteredCurrentPoints.isEmpty else { return [] }
 
-        let calendarUnit: Calendar.Component = {
-            switch grouping {
-            case .day: return .day
-            case .week: return .weekOfYear
-            case .month: return .month
-            }
-        }()
-
         let rawDates = SmartAxisHelper.calculateSmartAxisDates(
             forDataDates: filteredCurrentPoints.map(\.date),
-            grouping: calendarUnit
+            grouping: grouping.calendarComponent
         )
 
         // Deduplicate: remove dates that would produce the same formatted label
-        guard let firstDate = filteredCurrentPoints.first?.date,
-              let lastDate = filteredCurrentPoints.last?.date else { return rawDates }
-
-        let forceGrouping: Calendar.Component? = {
-            switch grouping {
-            case .month: return .month
-            case .week: return .weekOfYear
-            case .day: return nil
-            }
-        }()
+        guard let firstDate = currentFirstDate,
+              let lastDate = currentLastDate else { return rawDates }
 
         var seen = Set<String>()
         return rawDates.filter { date in
             let label = SmartAxisHelper.formatAxisLabel(
-                for: date, startDate: firstDate, endDate: lastDate, forceGrouping: forceGrouping)
+                for: date, startDate: firstDate, endDate: lastDate, forceGrouping: grouping.forceAxisGrouping)
             return seen.insert(label).inserted
         }
     }
 
     /// Format axis label based on data span
+    private var currentFirstDate: Date? { filteredCurrentPoints.first?.date }
+    private var currentLastDate: Date? { filteredCurrentPoints.last?.date }
+
     private func smartAxisLabel(for date: Date) -> String {
-        guard let firstDate = filteredCurrentPoints.first?.date,
-            let lastDate = filteredCurrentPoints.last?.date
+        guard let firstDate = currentFirstDate,
+            let lastDate = currentLastDate
         else { return "" }
 
-        let forceGrouping: Calendar.Component? = {
-            switch grouping {
-            case .month: return .month
-            case .week: return .weekOfYear
-            case .day: return nil
-            }
-        }()
-
         return SmartAxisHelper.formatAxisLabel(
-            for: date, startDate: firstDate, endDate: lastDate, forceGrouping: forceGrouping)
+            for: date, startDate: firstDate, endDate: lastDate, forceGrouping: grouping.forceAxisGrouping)
     }
 
     /// Find closest point to given date

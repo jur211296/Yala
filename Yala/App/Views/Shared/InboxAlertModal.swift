@@ -150,7 +150,8 @@ struct InboxAlertModal: View {
         dsWithAnimation(reduceMotion) {
             isVisible = false
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        Task {
+            try? await Task.sleep(for: .seconds(0.2))
             onDismiss()
             completion?()
         }

@@ -292,6 +292,15 @@ enum TrendGrouping: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Returns the calendar component for axis label formatting (nil for day = span-based logic)
+    var forceAxisGrouping: Calendar.Component? {
+        switch self {
+        case .day: return nil
+        case .week: return .weekOfYear
+        case .month: return .month
+        }
+    }
+
     /// Returns the start date of the bucket containing the given date
     func dateKey(for date: Date, calendar: Calendar = .current) -> Date {
         switch self {
