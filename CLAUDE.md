@@ -27,6 +27,7 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 | InsightsLLMService | Services/InsightsLLMService.swift | AI insights via GPT-4.1 Mini |
 | TelemetryService | Services/TelemetryService.swift | Analytics privacy-first via TelemetryDeck |
 | ProUpsellService | App/Services/ProUpsellService.swift | Upsells proactivos + frequency capping |
+| AppUpdateService | App/Services/AppUpdateService.swift | Detección versión nueva via iTunes Lookup API |
 
 ### Key Calculators
 | Calculator | Path | Purpose |

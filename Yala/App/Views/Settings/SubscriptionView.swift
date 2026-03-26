@@ -63,7 +63,9 @@ struct SubscriptionView: View {
                 store.didJustSubscribe = false
             }
         }
-        .fullScreenCover(isPresented: $showSuccessView) {
+        .fullScreenCover(isPresented: $showSuccessView, onDismiss: {
+            ProTourManager.shared.triggerIfEligible()
+        }) {
             SubscriptionSuccessView()
         }
     }

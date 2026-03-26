@@ -103,6 +103,10 @@ struct PanelView: View {
     @State private var interactivityTourIndex = 0
     @State private var panelScrollProxy: ScrollViewProxy?
 
+    /// Coach mark: Pro tour (Phase 2)
+    @State private var showProFabTour = false
+    @State private var proFabTourIndex = 0
+
     /// Setup Checklist state
     @State private var practiceCleanupItem: PracticeCleanupItem?
 
@@ -262,6 +266,24 @@ struct PanelView: View {
                 hasSeenInteractivityTour = true
             }
         )
+        .coachMarkOverlay(
+            steps: ProTourSteps.panelSteps,
+            isPresented: $showProFabTour,
+            currentIndex: $proFabTourIndex,
+            scrollProxy: panelScrollProxy,
+            onComplete: {
+                ProTourManager.shared.advancePhase()
+            }
+        )
+        .task(id: ProTourManager.shared.currentPhase) {
+            guard !ProTourManager.shared.hasCompleted,
+                  ProTourManager.shared.currentPhase == .panel else { return }
+            try? await Task.sleep(for: .seconds(0.8))
+            guard ProTourManager.shared.currentPhase == .panel,
+                  !showPanelTour, !showInteractivityTour,
+                  !showProFabTour else { return }
+            showProFabTour = true
+        }
         .modifier(
             PanelSheetsModifier(
                 accountFormSheet: $accountFormSheet,
@@ -386,6 +408,16 @@ struct PanelView: View {
                     VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                         if showSiriTip, transactions.count >= 5 {
                             SiriTipCard(isVisible: $showSiriTip)
+                        }
+
+                        // Update available banner (all users)
+                        if AppUpdateService.shared.shouldShowBanner,
+                           let updateVersion = AppUpdateService.shared.latestVersion {
+                            UpdateAvailableBanner(
+                                version: updateVersion,
+                                appStoreURL: AppUpdateService.shared.appStoreURL,
+                                onDismiss: { AppUpdateService.shared.dismissBanner() }
+                            )
                         }
 
                         // Trial / periodic upgrade banner

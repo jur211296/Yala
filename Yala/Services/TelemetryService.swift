@@ -32,6 +32,10 @@ enum AnalyticsEvent: String {
     case trialStarted
     case purchaseCompleted
     case trialExpiring
+    case proTourStarted
+    case proTourPhaseCompleted
+    case proTourCompleted
+    case proTourSkipped
 }
 
 // MARK: - Telemetry Service

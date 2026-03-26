@@ -72,6 +72,10 @@ struct ProfileView: View {
     @State private var settingsTourIndex = 0
     @State private var settingsScrollProxy: ScrollViewProxy?
 
+    // Coach mark: Pro tour (Phase 1)
+    @State private var showProTour = false
+    @State private var proTourIndex = 0
+
     #if DEBUG
     @State private var seedService = DevSeedService()
     @State private var showSeedConfirmation = false
@@ -295,6 +299,15 @@ struct ProfileView: View {
             scrollProxy: settingsScrollProxy,
             onComplete: { hasSeenSettingsTour = true }
         )
+        .coachMarkOverlay(
+            steps: ProTourSteps.profileSteps,
+            isPresented: $showProTour,
+            currentIndex: $proTourIndex,
+            scrollProxy: settingsScrollProxy,
+            onComplete: {
+                ProTourManager.shared.advancePhase()
+            }
+        )
         .task {
             if !hasSeenSettingsTour {
                 try? await Task.sleep(for: .seconds(0.8))
@@ -302,6 +315,15 @@ struct ProfileView: View {
                     showSettingsTour = true
                 }
             }
+        }
+        .task(id: hasSeenSettingsTour) {
+            // Pro Tour Phase 1: only after Settings Tour is done
+            guard hasSeenSettingsTour,
+                  ProTourManager.shared.currentPhase == .profile else { return }
+            try? await Task.sleep(for: .seconds(0.8))
+            guard ProTourManager.shared.currentPhase == .profile,
+                  !showSettingsTour else { return }
+            showProTour = true
         }
     }
 
@@ -510,10 +532,13 @@ struct ProfileView: View {
         SectionBox(title: L10n.Settings.aiFeatures) {
             VStack(spacing: DS.Spacing.none) {
                 voiceInputRow
+                    .coachMarkAnchor("proVoiceInput")
                 SubsectionDivider()
                 imageInputRow
+                    .coachMarkAnchor("proImageInput")
                 SubsectionDivider()
                 smartInsightsToggleRow
+                    .coachMarkAnchor("proSmartInsights")
 
                 let hasProcessing = aiDataConsentAccepted && (voiceInputEnabled || imageInputEnabled)
                 let hasInsights = aiInsightsConsentAccepted
@@ -905,6 +930,7 @@ struct ProfileView: View {
                 .accessibilityHint(!viewModel.hasTransactions ? L10n.Accessibility.noTransactionsToExport : "")
                 .disabled(!viewModel.hasTransactions)
                 .buttonStyle(.plain)
+                .coachMarkAnchor("proExportExtended")
 
                 SubsectionDivider()
 

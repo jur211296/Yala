@@ -263,6 +263,10 @@ final class DataWipeService {
         // --- What's New ---
         defaults.removeObject(forKey: "lastSeenAppVersion")       // Re-show What's New post-wipe
 
+        // --- App Update ---
+        defaults.removeObject(forKey: "appUpdate.latestVersion")  // Clear cached App Store version
+        defaults.removeObject(forKey: "appUpdate.lastChecked")    // Force re-check after wipe
+
         // --- Coach mark tours ---
         defaults.removeObject(forKey: "hasSeenPanelTour")         // Re-show panel tour
         defaults.removeObject(forKey: "hasSeenRegistroTour")      // Re-show registro tour
@@ -270,6 +274,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "hasSeenSettingsTour")      // Re-show settings tour
         defaults.removeObject(forKey: "hasSeenCashFlowSetupTour")  // Re-show cash flow setup tour
         defaults.removeObject(forKey: "hasSeenCashFlowTableTour")  // Re-show cash flow table tour
+        ProTourManager.shared.reset()                                // Re-show pro tour
 
         // --- Setup Checklist ---
         SetupChecklistManager.shared.resetAll()

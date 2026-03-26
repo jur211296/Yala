@@ -461,6 +461,8 @@ struct ContentView: View {
             } else {
                 SessionState.shared.isReadyForTours = true
             }
+            // Check for app updates (non-blocking)
+            Task { await AppUpdateService.shared.checkForUpdate() }
             // Still check if language selection is needed (new feature, per-device)
             if needsLanguageSelection {
                 showLanguageSelection = true

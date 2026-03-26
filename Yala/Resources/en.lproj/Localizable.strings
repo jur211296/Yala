@@ -2037,6 +2037,24 @@
 "tipkit.comparison.title" = "Compare and learn";
 "tipkit.comparison.message" = "Compare against the previous period or last year to see how you're doing.";
 
+// Pro Tour
+"tipkit.pro.voiceInput.title" = "Voice input";
+"tipkit.pro.voiceInput.message" = "Now you can dictate your expenses. Just speak and Yala records them for you.";
+"tipkit.pro.imageInput.title" = "Image input";
+"tipkit.pro.imageInput.message" = "Attach a photo of any receipt or invoice and Yala extracts one or more transactions for you.";
+"tipkit.pro.smartInsights.title" = "Smart insights";
+"tipkit.pro.smartInsights.message" = "Turn this on so Yala generates AI-powered observations about your finances.";
+"tipkit.pro.exportExtended.title" = "Unlimited export";
+"tipkit.pro.exportExtended.message" = "Export your data by full year, all history, or a custom range.";
+"tipkit.pro.premiumIcons.title" = "Exclusive icons";
+"tipkit.pro.premiumIcons.message" = "Choose from premium icons to personalize your app.";
+"tipkit.pro.proThemes.title" = "Premium themes";
+"tipkit.pro.proThemes.message" = "Discover exclusive color themes that give Yala your personal touch.";
+"tipkit.pro.fab.title" = "New ways to record";
+"tipkit.pro.fab.message" = "Tap here to record by voice, image, or manually. Now you have all three options.";
+"tipkit.pro.aiSummary.title" = "Your AI summary";
+"tipkit.pro.aiSummary.message" = "Generate a smart summary of your finances with one tap. Useful observations, instantly.";
+
 // MARK: - FAQ
 "faq.subtitle" = "Answers to the most common questions";
 "faq.section.general" = "General";
@@ -2765,6 +2783,12 @@
 "whatsNew.v12.insights.description" = "Discover spending patterns with personalized analysis.";
 "whatsNew.v12.sharedBalances.title" = "Shared balances";
 "whatsNew.v12.sharedBalances.description" = "Calculate balances between friends and partners right from onboarding.";
+
+// MARK: - App Update
+"appUpdate.title" = "New version available";
+"appUpdate.message" = "Version %@ is ready to download";
+"appUpdate.updateButton" = "Update";
+"appUpdate.dismissButton" = "Not now";
 
 // MARK: - Split Calculator
 "action.calculate" = "Calculate";

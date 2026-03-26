@@ -2031,6 +2031,24 @@
 "tipkit.comparison.title" = "Compare e aprenda";
 "tipkit.comparison.message" = "Compare com o período anterior ou o ano passado para ver como você está indo.";
 
+// Pro Tour
+"tipkit.pro.voiceInput.title" = "Registro por voz";
+"tipkit.pro.voiceInput.message" = "Agora você pode ditar seus gastos. Fale e o Yala registra para você.";
+"tipkit.pro.imageInput.title" = "Registro com imagem";
+"tipkit.pro.imageInput.message" = "Anexe uma foto de qualquer comprovante e o Yala extrai uma ou mais transações para você.";
+"tipkit.pro.smartInsights.title" = "Resumo inteligente";
+"tipkit.pro.smartInsights.message" = "Ative isso para que o Yala gere observações com IA sobre suas finanças.";
+"tipkit.pro.exportExtended.title" = "Exportação ilimitada";
+"tipkit.pro.exportExtended.message" = "Exporte seus dados por ano completo, todo o histórico ou um período personalizado.";
+"tipkit.pro.premiumIcons.title" = "Ícones exclusivos";
+"tipkit.pro.premiumIcons.message" = "Escolha entre ícones premium para personalizar seu app.";
+"tipkit.pro.proThemes.title" = "Temas premium";
+"tipkit.pro.proThemes.message" = "Descubra temas de cores exclusivos que dão seu toque pessoal ao Yala.";
+"tipkit.pro.fab.title" = "Novas formas de registrar";
+"tipkit.pro.fab.message" = "Toque aqui para registrar por voz, imagem ou manualmente. Agora você tem as três opções.";
+"tipkit.pro.aiSummary.title" = "Seu resumo com IA";
+"tipkit.pro.aiSummary.message" = "Gere um resumo inteligente das suas finanças com um toque. Observações úteis, na hora.";
+
 // MARK: - FAQ
 "faq.subtitle" = "Respostas para as dúvidas mais comuns";
 "faq.section.general" = "Geral";
@@ -2759,6 +2777,12 @@
 "whatsNew.v12.insights.description" = "Descubra padrões nos seus gastos com análises personalizadas.";
 "whatsNew.v12.sharedBalances.title" = "Saldos compartilhados";
 "whatsNew.v12.sharedBalances.description" = "Calcule saldos entre amigos e parceiros direto do onboarding.";
+
+// MARK: - App Update
+"appUpdate.title" = "Nova versão disponível";
+"appUpdate.message" = "A versão %@ está pronta para download";
+"appUpdate.updateButton" = "Atualizar";
+"appUpdate.dismissButton" = "Agora não";
 
 // MARK: - Split Calculator
 "action.calculate" = "Calcular";

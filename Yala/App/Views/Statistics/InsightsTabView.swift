@@ -57,6 +57,10 @@ struct InsightsTabView: View {
     @State private var showCustomPeriodPicker = false
     @State private var showInsightsConsentAlert = false
 
+    // Coach mark: Pro tour (Phase 3)
+    @State private var showProInsightsTour = false
+    @State private var proInsightsTourIndex = 0
+
     private var isProUser: Bool {
         FeatureGateService.shared.canAccess(.smartInsightsAI)
     }
@@ -170,6 +174,22 @@ struct InsightsTabView: View {
             Button(L10n.Action.cancel, role: .cancel) {}
         } message: {
             Text(L10n.AIConsent.insightsMessage)
+        }
+        .coachMarkOverlay(
+            steps: ProTourSteps.insightsSteps,
+            isPresented: $showProInsightsTour,
+            currentIndex: $proInsightsTourIndex,
+            onComplete: {
+                ProTourManager.shared.advancePhase()
+            }
+        )
+        .task(id: ProTourManager.shared.currentPhase) {
+            guard !ProTourManager.shared.hasCompleted,
+                  ProTourManager.shared.currentPhase == .insights else { return }
+            try? await Task.sleep(for: .seconds(0.8))
+            guard ProTourManager.shared.currentPhase == .insights,
+                  !showProInsightsTour else { return }
+            showProInsightsTour = true
         }
     }
 
@@ -348,6 +368,7 @@ struct InsightsTabView: View {
             .background(Color.electricIndigo, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
         }
         .buttonStyle(.plain)
+        .coachMarkAnchor("proAiSummary")
     }
 
     // MARK: - AI Error Card

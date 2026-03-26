@@ -3792,6 +3792,17 @@ enum L10n {
         static var v12SharedBalancesDescription: String { ls("whatsNew.v12.sharedBalances.description", comment: "") }
     }
 
+    // MARK: - App Update
+
+    enum AppUpdate {
+        static var title: String { ls("appUpdate.title", comment: "") }
+        static func message(_ version: String) -> String {
+            String(format: ls("appUpdate.message", comment: ""), version)
+        }
+        static var updateButton: String { ls("appUpdate.updateButton", comment: "") }
+        static var dismissButton: String { ls("appUpdate.dismissButton", comment: "") }
+    }
+
     // MARK: - Weekday
 
     enum Weekday {
@@ -3964,6 +3975,24 @@ enum L10n {
         static var cfTableAvailableMessage: String { ls("tipkit.cfTable.available.message", comment: "") }
         static var cfTableAdd: String { ls("tipkit.cfTable.add.title", comment: "") }
         static var cfTableAddMessage: String { ls("tipkit.cfTable.add.message", comment: "") }
+
+        // Pro Tour (post-subscription)
+        static var proVoiceInputTitle: String { ls("tipkit.pro.voiceInput.title", comment: "") }
+        static var proVoiceInputMessage: String { ls("tipkit.pro.voiceInput.message", comment: "") }
+        static var proImageInputTitle: String { ls("tipkit.pro.imageInput.title", comment: "") }
+        static var proImageInputMessage: String { ls("tipkit.pro.imageInput.message", comment: "") }
+        static var proSmartInsightsTitle: String { ls("tipkit.pro.smartInsights.title", comment: "") }
+        static var proSmartInsightsMessage: String { ls("tipkit.pro.smartInsights.message", comment: "") }
+        static var proExportExtendedTitle: String { ls("tipkit.pro.exportExtended.title", comment: "") }
+        static var proExportExtendedMessage: String { ls("tipkit.pro.exportExtended.message", comment: "") }
+        static var proPremiumIconsTitle: String { ls("tipkit.pro.premiumIcons.title", comment: "") }
+        static var proPremiumIconsMessage: String { ls("tipkit.pro.premiumIcons.message", comment: "") }
+        static var proProThemesTitle: String { ls("tipkit.pro.proThemes.title", comment: "") }
+        static var proProThemesMessage: String { ls("tipkit.pro.proThemes.message", comment: "") }
+        static var proFabTitle: String { ls("tipkit.pro.fab.title", comment: "") }
+        static var proFabMessage: String { ls("tipkit.pro.fab.message", comment: "") }
+        static var proAiSummaryTitle: String { ls("tipkit.pro.aiSummary.title", comment: "") }
+        static var proAiSummaryMessage: String { ls("tipkit.pro.aiSummary.message", comment: "") }
     }
 
     // MARK: - Dev Seed (DEBUG only)

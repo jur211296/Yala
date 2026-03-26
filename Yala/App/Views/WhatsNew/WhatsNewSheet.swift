@@ -49,18 +49,14 @@ struct WhatsNewSheet: View {
                 .opacity(headerOpacity)
 
                 // Features list
-                VStack(alignment: .leading, spacing: DS.Spacing.none) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     ForEach(Array(features.enumerated()), id: \.element.id) { index, feature in
                         featureRow(feature: feature, index: index)
                     }
                 }
                 .padding(.vertical, DS.Spacing.sm)
-                .background(.thCard)
+                .glassEffect(.regular)
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
-                .overlay(
-                    RoundedRectangle(cornerRadius: DS.Radius.xl)
-                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                )
                 .padding(.horizontal, DS.Spacing.lg)
 
                 Spacer(minLength: DS.Spacing.xxl)
@@ -85,9 +81,12 @@ struct WhatsNewSheet: View {
                 dsWithAnimation(reduceMotion) {
                     headerOpacity = 1.0
                 }
-                for i in features.indices {
-                    let delay = Double(i) * 0.1 + 0.2
-                    DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                Task {
+                    try? await Task.sleep(for: .seconds(0.2))
+                    for i in features.indices {
+                        if i > 0 {
+                            try? await Task.sleep(for: .seconds(0.1))
+                        }
                         dsWithAnimation(reduceMotion) {
                             animatedRows.insert(i)
                         }
@@ -103,13 +102,10 @@ struct WhatsNewSheet: View {
         let isVisible = animatedRows.contains(index)
         return HStack(spacing: DS.Spacing.sm) {
             Image(systemName: feature.icon)
-                .font(DS.Typography.caption.weight(.semibold))
+                .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(.white)
-                .frame(width: 26, height: 26)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(feature.iconColor)
-                )
+                .frame(width: 40, height: 40)
+                .background(Circle().fill(feature.iconColor))
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(feature.title)

@@ -2033,6 +2033,24 @@
 "tipkit.comparison.title" = "Compare et apprends";
 "tipkit.comparison.message" = "Compare avec la période précédente ou l'année dernière pour voir comment tu progresses.";
 
+// Pro Tour
+"tipkit.pro.voiceInput.title" = "Saisie vocale";
+"tipkit.pro.voiceInput.message" = "Tu peux maintenant dicter tes dépenses. Parle et Yala les enregistre pour toi.";
+"tipkit.pro.imageInput.title" = "Saisie par image";
+"tipkit.pro.imageInput.message" = "Joins une photo de n'importe quel reçu ou facture et Yala extrait une ou plusieurs transactions pour toi.";
+"tipkit.pro.smartInsights.title" = "Résumé intelligent";
+"tipkit.pro.smartInsights.message" = "Active cette option pour que Yala génère des observations basées sur l'IA de tes finances.";
+"tipkit.pro.exportExtended.title" = "Export illimité";
+"tipkit.pro.exportExtended.message" = "Exporte tes données par année complète, tout l'historique ou une période personnalisée.";
+"tipkit.pro.premiumIcons.title" = "Icônes exclusives";
+"tipkit.pro.premiumIcons.message" = "Choisis parmi des icônes premium pour personnaliser ton app.";
+"tipkit.pro.proThemes.title" = "Thèmes premium";
+"tipkit.pro.proThemes.message" = "Découvre des thèmes de couleur exclusifs qui donnent ta touche personnelle à Yala.";
+"tipkit.pro.fab.title" = "Nouvelles façons d'enregistrer";
+"tipkit.pro.fab.message" = "Touche ici pour enregistrer par voix, image ou manuellement. Tu as maintenant les trois options.";
+"tipkit.pro.aiSummary.title" = "Ton résumé IA";
+"tipkit.pro.aiSummary.message" = "Génère un résumé intelligent de tes finances en un toucher. Des observations utiles, instantanément.";
+
 // MARK: - FAQ
 "faq.subtitle" = "Réponses aux questions les plus courantes";
 "faq.section.general" = "Général";
@@ -2760,6 +2778,12 @@
 "whatsNew.v12.insights.description" = "Découvre les tendances de tes dépenses avec des analyses personnalisées.";
 "whatsNew.v12.sharedBalances.title" = "Soldes partagés";
 "whatsNew.v12.sharedBalances.description" = "Calcule les soldes entre amis et partenaire directement depuis l'onboarding.";
+
+// MARK: - App Update
+"appUpdate.title" = "Nouvelle version disponible";
+"appUpdate.message" = "La version %@ est prête à télécharger";
+"appUpdate.updateButton" = "Mettre à jour";
+"appUpdate.dismissButton" = "Pas maintenant";
 
 // MARK: - Split Calculator
 "action.calculate" = "Calculer";

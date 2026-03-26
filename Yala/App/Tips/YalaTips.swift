@@ -218,6 +218,68 @@ enum CashFlowTableTourSteps {
     ]
 }
 
+// MARK: - Grupo G: Pro Tour (post-subscription)
+
+enum ProTourSteps {
+    /// Phase 1: ProfileView — toggles, export, icons, themes
+    static let profileSteps: [CoachMarkStep] = [
+        CoachMarkStep(
+            id: "proVoiceInput",
+            title: L10n.TipKit.proVoiceInputTitle,
+            message: L10n.TipKit.proVoiceInputMessage,
+            spotlightPadding: DS.Spacing.xs
+        ),
+        CoachMarkStep(
+            id: "proImageInput",
+            title: L10n.TipKit.proImageInputTitle,
+            message: L10n.TipKit.proImageInputMessage,
+            spotlightPadding: DS.Spacing.xs
+        ),
+        CoachMarkStep(
+            id: "proSmartInsights",
+            title: L10n.TipKit.proSmartInsightsTitle,
+            message: L10n.TipKit.proSmartInsightsMessage,
+            spotlightPadding: DS.Spacing.xs
+        ),
+        CoachMarkStep(
+            id: "proExportExtended",
+            title: L10n.TipKit.proExportExtendedTitle,
+            message: L10n.TipKit.proExportExtendedMessage,
+            spotlightPadding: DS.Spacing.xs
+        ),
+        CoachMarkStep(
+            id: "settingsAppIcon",
+            title: L10n.TipKit.proPremiumIconsTitle,
+            message: L10n.TipKit.proPremiumIconsMessage,
+            spotlightPadding: DS.Spacing.xs
+        ),
+        CoachMarkStep(
+            id: "settingsTheme",
+            title: L10n.TipKit.proProThemesTitle,
+            message: L10n.TipKit.proProThemesMessage,
+            spotlightPadding: DS.Spacing.xs
+        ),
+    ]
+
+    /// Phase 2: PanelView — FAB with voice/image options
+    static let panelSteps: [CoachMarkStep] = [
+        CoachMarkStep(
+            id: "fab",
+            title: L10n.TipKit.proFabTitle,
+            message: L10n.TipKit.proFabMessage
+        ),
+    ]
+
+    /// Phase 3: InsightsTabView — AI summary button
+    static let insightsSteps: [CoachMarkStep] = [
+        CoachMarkStep(
+            id: "proAiSummary",
+            title: L10n.TipKit.proAiSummaryTitle,
+            message: L10n.TipKit.proAiSummaryMessage
+        ),
+    ]
+}
+
 // MARK: - TipKit Tip (standalone)
 
 struct ComparisonTip: Tip {
