@@ -173,7 +173,7 @@ struct NeedTrendWidget: View {
                     } label: {
                         Image(systemName: "chevron.right")
                             .font(DS.Typography.headline)
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(.secondary)
                     }
                     .padding(.top, DS.Spacing.xs)
                 }

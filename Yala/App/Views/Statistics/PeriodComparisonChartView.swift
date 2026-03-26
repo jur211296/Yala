@@ -405,10 +405,29 @@ struct PeriodComparisonChartView: View {
             }
         }()
 
-        return SmartAxisHelper.calculateSmartAxisDates(
+        let rawDates = SmartAxisHelper.calculateSmartAxisDates(
             forDataDates: filteredCurrentPoints.map(\.date),
             grouping: calendarUnit
         )
+
+        // Deduplicate: remove dates that would produce the same formatted label
+        guard let firstDate = filteredCurrentPoints.first?.date,
+              let lastDate = filteredCurrentPoints.last?.date else { return rawDates }
+
+        let forceGrouping: Calendar.Component? = {
+            switch grouping {
+            case .month: return .month
+            case .week: return .weekOfYear
+            case .day: return nil
+            }
+        }()
+
+        var seen = Set<String>()
+        return rawDates.filter { date in
+            let label = SmartAxisHelper.formatAxisLabel(
+                for: date, startDate: firstDate, endDate: lastDate, forceGrouping: forceGrouping)
+            return seen.insert(label).inserted
+        }
     }
 
     /// Format axis label based on data span
