@@ -236,9 +236,46 @@ PASOS OBLIGATORIOS (usando outputs ya guardados):
       - Si se creó suite nueva, añadirla a la lista
       - Si se añadieron tests a suite existente, actualizar el conteo
 
-   d) ACTUALIZAR DOCUMENTOS DE TRABAJO CONSULTADOS:
+   d) DOCUMENTAR IMPLEMENTACIÓN EN OBSIDIAN:
 
-      Revisar TODOS los documentos .md en el vault Obsidian (~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/) que se leyeron durante
+      Buscar el documento Obsidian correspondiente al trabajo realizado:
+      - Features: `$VAULT/Backlog/[nombre-feature].md`
+      - Bugs: `$VAULT/Bugs/[nombre-bug].md`
+      - Si no se encuentra documento exacto, buscar con glob en Backlog/ y Bugs/
+
+      Añadir sección `## Implementación` (o actualizar si ya existe) con:
+      - **Fecha y commit:** `[$TODAY] $COMMIT_HASH`
+      - **Archivos modificados:** lista de archivos con descripción breve de cada cambio
+      - **Decisiones técnicas:** por qué se eligió este enfoque sobre alternativas
+      - **Cambios en modelo/servicios:** si aplica, detallar campos añadidos, APIs nuevas
+      - **Tests añadidos:** lista de tests con qué escenario cubren
+      - **Edge cases considerados:** casos borde que se manejaron o descartaron
+      - **Screenshots QA:** embeds de screenshots si existen en Attachments/ (formato `![[screenshot.png]]`)
+      - **Notas para futuras sesiones:** contexto que no es obvio del código
+
+      Formato ejemplo:
+      ```markdown
+      ## Implementación
+      ### $TODAY — $COMMIT_HASH
+      **Resumen:** [descripción concisa de lo implementado]
+
+      **Archivos modificados:**
+      - `Path/Archivo.swift` — [qué cambió y por qué]
+      - `Path/OtroArchivo.swift` — [qué cambió y por qué]
+
+      **Decisiones técnicas:**
+      - [Decisión 1]: [razón]
+
+      **Tests:** [N] tests añadidos en [Suite]
+      - `test_método_escenario_resultado` — [qué valida]
+      ```
+
+      Si el documento tiene checklists o items pendientes, TAMBIÉN marcarlos:
+      - Cambiar "[ ]" a "[x]" o "Pendiente" a "✅ Completado"
+
+   e) ACTUALIZAR DOCUMENTOS DE TRABAJO CONSULTADOS:
+
+      Revisar TODOS los documentos .md en el vault Obsidian que se leyeron durante
       esta sesión para implementar el trabajo. Ejemplos comunes:
 
       - REFINAMIENTO-*.md → Marcar items completados con ✅
@@ -252,16 +289,18 @@ PASOS OBLIGATORIOS (usando outputs ya guardados):
       - Cambiar "[ ]" a "[x]" o "Pendiente" a "✅ Completado"
       - Agregar fecha o hash del commit si el formato lo permite
 
-   e) VERIFICACIÓN FINAL:
+   g) VERIFICACIÓN FINAL:
       - Confirmar que STATE.md refleja el progreso real
+      - Confirmar que el documento Obsidian de la feature/bug tiene la implementación documentada
       - Confirmar que documentos de trabajo están sincronizados
       - Listar documentos actualizados al usuario
 
-   f) INFORMAR AL USUARIO:
+   h) INFORMAR AL USUARIO:
       ```
       ✓ Commit $COMMIT_HASH creado
       ✓ STATE.md actualizado (Recent Progress + Session Continuity)
       ✓ CLAUDE.md actualizado (test count: N → M)  ← solo si cambió
+      ✓ Obsidian [Backlog|Bugs]/[nombre].md — implementación documentada
       ✓ Documentos actualizados: [lista de archivos .md modificados]
       ```
 

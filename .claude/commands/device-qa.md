@@ -1,6 +1,6 @@
 ---
 description: Controla el simulador iOS para QA visual — snapshots, taps, verificación de UI
-allowed-tools: Bash(agent-device:*), Bash(npx agent-device:*), Bash(./qa/runner.sh:*), Bash(bash qa/runner.sh:*), Read
+allowed-tools: Bash(agent-device:*), Bash(npx agent-device:*), Bash(./qa/runner.sh:*), Bash(bash qa/runner.sh:*), Bash(cp:*), Bash(date:*), Read, Write, Edit, Glob
 ---
 
 Controla el simulador iOS via agent-device para inspeccionar y verificar la UI de Yala.
@@ -119,6 +119,47 @@ agent-device batch --steps-file qa/suites/01-onboarding/s1.1-full-flow-part1.jso
 Resultados en `/tmp/qa/{timestamp}/` con screenshots y reportes JSON.
 Ver `qa/manifest.json` para cobertura y clasificación.
 
+DOCUMENTAR EN OBSIDIAN (OBLIGATORIO):
+
+Al finalizar el QA, guardar evidencia en el documento Obsidian correspondiente:
+
+1. COPIAR SCREENSHOTS al vault:
+```bash
+# Determinar nombre descriptivo para el screenshot
+VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki"
+FEATURE_NAME="nombre-feature-o-bug"
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+cp /tmp/yala-qa-*.png "$VAULT/Attachments/qa-${FEATURE_NAME}-${TIMESTAMP}.png"
+```
+
+2. BUSCAR DOCUMENTO correspondiente:
+   - Features: `$VAULT/Backlog/[nombre].md`
+   - Bugs: `$VAULT/Bugs/[nombre].md`
+
+3. AÑADIR SECCIÓN `## QA Visual` (o actualizar si ya existe) con:
+   - Fecha del QA
+   - Screenshots embebidos con formato Obsidian: `![[qa-feature-name-timestamp.png]]`
+   - Descripción de qué muestra cada screenshot
+   - Resultado: PASS / FAIL + detalle si falla
+   - Pasos reproducidos para llegar a cada pantalla
+
+   Formato ejemplo:
+   ```markdown
+   ## QA Visual
+   ### YYYY-MM-DD
+   **Resultado:** ✅ PASS
+
+   **Pantalla principal:**
+   ![[qa-feature-name-20260326-143000.png]]
+   Navegación: Tab Gastos → Lista de transacciones → verificar [aspecto]
+
+   **Estado vacío:**
+   ![[qa-feature-name-20260326-143015.png]]
+   Sin datos cargados, empty state correcto
+   ```
+
+4. Si hay FALLOS, documentar con screenshots del problema y descripción clara del bug.
+
 REGLAS:
 - SIEMPRE re-snapshot después de cualquier interacción (press, fill, scroll) — los refs se invalidan
 - Usar `snapshot -i` (modo iterativo/compacto) para reducir output
@@ -126,3 +167,4 @@ REGLAS:
 - Usar `find "texto"` cuando no conoces el ref exacto
 - NO ejecutar en dispositivo físico salvo que el usuario lo pida explícitamente
 - Reportar hallazgos con screenshots como evidencia
+- SIEMPRE copiar screenshots a $VAULT/Attachments/ y documentar en el documento Obsidian correspondiente
