@@ -713,6 +713,10 @@
 "cashFlowPlan.available" = "Disponible";
 "cashFlowPlan.accumulated" = "Cumulé";
 "cashFlowPlan.addLine" = "Ajouter une ligne";
+"cashFlowPlan.thisMonth" = "Ce mois";
+"cashFlowPlan.pastMonth" = "Passé";
+"cashFlowPlan.futureMonth" = "Prévision";
+"cashFlowPlan.executionPercent" = "%d%% dépensé";
 "cashFlowPlan.densityFull" = "Complet";
 "cashFlowPlan.densityIcons" = "Icônes";
 "cashFlowPlan.estimationMethod" = "Comment calculons-nous ce montant ?";

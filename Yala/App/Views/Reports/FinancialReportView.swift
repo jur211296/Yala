@@ -15,7 +15,6 @@ struct FinancialReportView: View {
     @State private var viewModel = FinancialReportViewModel()
     @State private var cashFlowViewModel = CashFlowPlanViewModel()
     @State private var selectedTab: ReportTab = .comparativa
-    @State private var cashFlowCompactMode = false
     @State private var showCustomDatePicker = false
     @State private var isPresentingSettings = false
     @State private var showResetConfirmation = false
@@ -133,16 +132,6 @@ struct FinancialReportView: View {
                 .padding(.horizontal, DS.Spacing.lg)
             }
 
-            if selectedTab == .flujoDeCaja && cashFlowViewModel.hasPlan {
-                Picker("", selection: $cashFlowCompactMode.animation(.easeInOut(duration: DS.Animation.fast))) {
-                    Label(L10n.CashFlowPlan.densityFull, systemImage: "text.justify.left")
-                        .tag(false)
-                    Label(L10n.CashFlowPlan.densityIcons, systemImage: "square.grid.3x3")
-                        .tag(true)
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, DS.Spacing.lg)
-            }
         }
     }
 
@@ -260,8 +249,7 @@ struct FinancialReportView: View {
                 transactions: transactions,
                 categories: categories,
                 scheduledPayments: scheduledPayments,
-                currencyCode: preferredCurrencyCode,
-                compactMode: cashFlowCompactMode
+                currencyCode: preferredCurrencyCode
             )
         } else {
             CashFlowSetupView(

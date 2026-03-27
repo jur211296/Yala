@@ -46,6 +46,17 @@ final class CashFlowPlanViewModel {
     var addLineIsIncome: Bool = false
     var showEditStartingBalance: Bool = false
 
+    // Month selection (strip + detail)
+    var selectedMonthKey: String = CashFlowProjectionCalculator.monthKey(for: .now, calendar: .current)
+
+    var selectedMonth: CashFlowMonth? {
+        projection?.months.first { $0.monthKey == selectedMonthKey }
+    }
+
+    func line(for lineID: UUID) -> CashFlowLine? {
+        plan?.lines?.first { $0.id == lineID }
+    }
+
     func setContext(_ ctx: ModelContext) {
         modelContext = ctx
         loadPlan()

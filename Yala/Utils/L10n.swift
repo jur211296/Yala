@@ -238,12 +238,16 @@ enum L10n {
             String(format: ls("cashFlowPlan.monthSummaryUnder", comment: ""), percent)
         }
 
-        // Table
+        // Table / Detail
         static var available: String { ls("cashFlowPlan.available", comment: "") }
         static var accumulated: String { ls("cashFlowPlan.accumulated", comment: "") }
         static var addLine: String { ls("cashFlowPlan.addLine", comment: "") }
-        static var densityFull: String { ls("cashFlowPlan.densityFull", comment: "") }
-        static var densityIcons: String { ls("cashFlowPlan.densityIcons", comment: "") }
+        static var thisMonth: String { ls("cashFlowPlan.thisMonth", comment: "") }
+        static var pastMonth: String { ls("cashFlowPlan.pastMonth", comment: "") }
+        static var futureMonth: String { ls("cashFlowPlan.futureMonth", comment: "") }
+        static func executionPercent(_ percent: Int) -> String {
+            String(format: ls("cashFlowPlan.executionPercent", comment: ""), percent)
+        }
 
         // Config
         static var estimationMethod: String { ls("cashFlowPlan.estimationMethod", comment: "") }
