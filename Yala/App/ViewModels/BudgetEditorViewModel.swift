@@ -100,8 +100,11 @@ final class BudgetEditorViewModel {
     // MARK: - Helper Methods
 
     func selectedCategoriesText(selectedSubcategories: Set<PersistentIdentifier>) -> String {
-        resolvedNames(from: allSubcategories, selectedIDs: selectedSubcategories, name: \.name)
-            ?? NSLocalizedString("filters.all", comment: "")
+        let names = resolveNamesList(from: allSubcategories, ids: selectedSubcategories, name: \.name)
+        guard let first = names.first else {
+            return NSLocalizedString("filters.all", comment: "")
+        }
+        return names.count > 1 ? "\(first) +\(names.count - 1)" : first
     }
 
     func filterSummaryText(
@@ -110,39 +113,71 @@ final class BudgetEditorViewModel {
         selectedTags: Set<PersistentIdentifier>,
         selectedNeeds: Set<SubcategoryNeed>
     ) -> String? {
-        if selectedAccounts.isEmpty && selectedSubcategories.isEmpty && selectedTags.isEmpty && selectedNeeds.isEmpty {
-            return nil
+        guard !selectedAccounts.isEmpty || !selectedSubcategories.isEmpty
+           || !selectedTags.isEmpty || !selectedNeeds.isEmpty else { return nil }
+
+        var phrases: [String] = []
+
+        let accountNames = resolveNamesList(from: activeAccounts, ids: selectedAccounts, name: \.name)
+        if !accountNames.isEmpty {
+            let list = naturalJoin(truncatedNames(accountNames))
+            let key = accountNames.count == 1 ? "guide.budgetFilter.account" : "guide.budgetFilter.accounts"
+            phrases.append(String(format: NSLocalizedString(key, comment: ""), list))
         }
 
-        var parts: [String] = []
+        let subNames = resolveNamesList(from: allSubcategories, ids: selectedSubcategories, name: \.name)
+        if !subNames.isEmpty {
+            let list = naturalJoin(truncatedNames(subNames))
+            let key = subNames.count == 1 ? "guide.budgetFilter.subcategory" : "guide.budgetFilter.subcategories"
+            phrases.append(String(format: NSLocalizedString(key, comment: ""), list))
+        }
 
-        if let t = resolvedNames(from: activeAccounts, selectedIDs: selectedAccounts, name: \.name) { parts.append(t) }
-        if let t = resolvedNames(from: allSubcategories, selectedIDs: selectedSubcategories, name: \.name) { parts.append(t) }
-        if let t = resolvedNames(from: activeTags, selectedIDs: selectedTags, name: \.name) { parts.append(t) }
-        if let t = formatSelection(selectedNeeds.sorted(by: { $0.rawValue < $1.rawValue }).map(\.displayName)) { parts.append(t) }
+        let needNames = selectedNeeds.sorted(by: { $0.rawValue < $1.rawValue }).map(\.displayName)
+        if !needNames.isEmpty {
+            let list = naturalJoin(truncatedNames(needNames))
+            phrases.append(String(format: NSLocalizedString("guide.budgetFilter.needs", comment: ""), list))
+        }
 
-        guard !parts.isEmpty else { return nil }
+        let tagNames = resolveNamesList(from: activeTags, ids: selectedTags, name: \.name)
+        if !tagNames.isEmpty {
+            let list = naturalJoin(truncatedNames(tagNames))
+            let key = tagNames.count == 1 ? "guide.budgetFilter.tag" : "guide.budgetFilter.tags"
+            phrases.append(String(format: NSLocalizedString(key, comment: ""), list))
+        }
 
-        let joined = parts.joined(separator: ", ")
-        return String(format: NSLocalizedString("guide.budgetFilter.message", comment: ""), joined)
+        guard !phrases.isEmpty else { return nil }
+
+        let prefix = NSLocalizedString("guide.budgetFilter.prefix", comment: "")
+        return prefix + " " + phrases.joined(separator: ", ")
     }
 
-    private func resolvedNames<T: PersistentModel>(
+    // MARK: - Filter Summary Helpers
+
+    private func resolveNamesList<T: PersistentModel>(
         from collection: [T],
-        selectedIDs: Set<PersistentIdentifier>,
+        ids: Set<PersistentIdentifier>,
         name keyPath: KeyPath<T, String>
-    ) -> String? {
-        guard !selectedIDs.isEmpty else { return nil }
-        let names = collection.filter { selectedIDs.contains($0.persistentModelID) }
-        return formatSelection(names.map { $0[keyPath: keyPath] })
+    ) -> [String] {
+        guard !ids.isEmpty else { return [] }
+        return collection.filter { ids.contains($0.persistentModelID) }.map { $0[keyPath: keyPath] }
     }
 
-    private func formatSelection(_ names: [String]) -> String? {
-        guard let first = names.first else { return nil }
-        if names.count > 1 {
-            return "\(first) +\(names.count - 1)"
+    private func naturalJoin(_ items: [String]) -> String {
+        let conj = NSLocalizedString("guide.budgetFilter.conjunction", comment: "")
+        switch items.count {
+        case 0: return ""
+        case 1: return items[0]
+        case 2: return "\(items[0]) \(conj) \(items[1])"
+        default:
+            guard let last = items.last else { return "" }
+            return items.dropLast().joined(separator: ", ") + " \(conj) \(last)"
         }
-        return first
+    }
+
+    private func truncatedNames(_ names: [String], max: Int = 4) -> [String] {
+        guard names.count > max else { return names }
+        let andMore = String(format: NSLocalizedString("guide.budgetFilter.andMore", comment: ""), names.count - 2)
+        return Array(names.prefix(2)) + [andMore]
     }
 
     // MARK: - Save Operation

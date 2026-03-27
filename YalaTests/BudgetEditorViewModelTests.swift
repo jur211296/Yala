@@ -130,7 +130,7 @@ struct BudgetEditorViewModelTests {
         #expect(result == nil)
     }
 
-    @MainActor @Test func filterSummaryText_onlyNeeds_returnsNeedNames() {
+    @MainActor @Test func filterSummaryText_onlyOneNeed_naturalPhrase() {
         let vm = BudgetEditorViewModel()
         let result = vm.filterSummaryText(
             selectedAccounts: [],
@@ -139,10 +139,14 @@ struct BudgetEditorViewModelTests {
             selectedNeeds: [.essential]
         )
         #expect(result != nil)
+        // Should contain dimension label and need name
         #expect(result!.contains(SubcategoryNeed.essential.displayName))
+        // Should start with prefix "Los gastos"
+        let prefix = NSLocalizedString("guide.budgetFilter.prefix", comment: "")
+        #expect(result!.hasPrefix(prefix))
     }
 
-    @MainActor @Test func filterSummaryText_multipleNeeds_formatsFirstPlusN() {
+    @MainActor @Test func filterSummaryText_multipleNeeds_listsAllWithConjunction() {
         let vm = BudgetEditorViewModel()
         let result = vm.filterSummaryText(
             selectedAccounts: [],
@@ -151,15 +155,19 @@ struct BudgetEditorViewModelTests {
             selectedNeeds: [.essential, .priority, .optional]
         )
         #expect(result != nil)
-        #expect(result!.contains("+2"))
-        // Verify first need name is also present (sorted by rawValue)
+        // All 3 needs should be listed (≤4 rule: list all)
         let sortedNeeds = [SubcategoryNeed.essential, .priority, .optional].sorted(by: { $0.rawValue < $1.rawValue })
-        #expect(result!.contains(sortedNeeds.first!.displayName))
+        for need in sortedNeeds {
+            #expect(result!.contains(need.displayName))
+        }
+        // Should use conjunction, not "+N"
+        let conj = NSLocalizedString("guide.budgetFilter.conjunction", comment: "")
+        #expect(result!.contains(conj))
+        #expect(!result!.contains("+"))
     }
 
     @MainActor @Test func filterSummaryText_selectedIDsNotInData_returnsNil() {
         let vm = BudgetEditorViewModel()
-        // Create a fake PersistentIdentifier that won't match any loaded data
         let cat = Category(name: "Fake", colorHex: "#000000", isIncome: false)
         let sub = Subcategory(name: "Fake", sortOrder: 0, category: cat)
         let result = vm.filterSummaryText(
