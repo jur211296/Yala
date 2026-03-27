@@ -64,6 +64,15 @@ struct InsightsTabView: View {
         FeatureGateService.shared.canAccess(.smartInsightsAI)
     }
 
+    /// All conditions for Phase 3 tour: phase + anchor exists + tour not done.
+    private var insightsTourReady: Bool {
+        !ProTourManager.shared.hasCompleted
+        && ProTourManager.shared.currentPhase == .insights
+        && viewModel.insightData?.periodSummary.transactionCount ?? 0 > 0
+        && isProUser
+        && !viewModel.aiActivated
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -177,13 +186,17 @@ struct InsightsTabView: View {
                 ProTourManager.shared.advancePhase()
             }
         )
-        .task(id: ProTourManager.shared.currentPhase) {
-            guard !ProTourManager.shared.hasCompleted,
-                  ProTourManager.shared.currentPhase == .insights else { return }
+        .task(id: insightsTourReady) {
+            guard insightsTourReady else { return }
             try? await Task.sleep(for: .seconds(0.8))
-            guard ProTourManager.shared.currentPhase == .insights,
-                  !showProInsightsTour else { return }
+            guard insightsTourReady, !showProInsightsTour else { return }
             showProInsightsTour = true
+        }
+        .onChange(of: insightsTourReady) { _, ready in
+            if !ready && showProInsightsTour {
+                showProInsightsTour = false
+                proInsightsTourIndex = 0
+            }
         }
     }
 
