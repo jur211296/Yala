@@ -35,7 +35,8 @@ final class StatisticsViewModel: Filterable {
 
     // Check if any category/subcategory/need filters are active
     var hasCategoryFilters: Bool {
-        !selectedCategories.isEmpty || !selectedSubcategories.isEmpty || !selectedNeeds.isEmpty
+        guard !isExcludeMode else { return false }
+        return !selectedCategories.isEmpty || !selectedSubcategories.isEmpty || !selectedNeeds.isEmpty
     }
 
     /// Enforce metric logic based on filters

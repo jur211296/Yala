@@ -137,6 +137,20 @@ struct StatisticsViewModelTests {
         #expect(vm.hasCategoryFilters == true)
     }
 
+    @MainActor @Test func hasCategoryFilters_falseInExcludeMode() {
+        let vm = makeVM()
+        // Set exclude mode FIRST (didSet clears selections)
+        vm.isExcludeMode = true
+        // Then set needs so they survive
+        vm.selectedNeeds = [.essential]
+        // Sanity: needs are actually populated
+        #expect(vm.selectedNeeds == [.essential])
+        // Guard clause returns false despite active filters
+        #expect(vm.hasCategoryFilters == false)
+        // Cleanup singleton state
+        vm.isExcludeMode = false
+    }
+
     // MARK: - clearFilters
 
     @MainActor @Test func clearFilters_resetsAll() {
