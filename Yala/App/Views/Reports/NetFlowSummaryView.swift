@@ -62,6 +62,6 @@ struct NetFlowSummaryView: View {
             }
         }
         .padding(DS.Spacing.lg)
-        .yalaCard(padding: 0)
+        .solidCard()
     }
 }

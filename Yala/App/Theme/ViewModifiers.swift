@@ -90,6 +90,29 @@ extension View {
         .padding(.vertical, DS.ListRow.paddingV)
         .padding(.horizontal, DS.ListRow.paddingH)
     }
+    /// Aplica estilo de card sólido (mismo fondo que widgets del Panel, sin material)
+    func solidCard(padding: CGFloat = 0, radius: CGFloat = DS.Card.radius) -> some View {
+        modifier(SolidCardModifier(padding: padding, radius: radius))
+    }
+}
+
+// MARK: - Solid Card Modifier (matches PanelView widget styling)
+
+struct SolidCardModifier: ViewModifier {
+    @Environment(\.yalaTheme) private var theme
+    var padding: CGFloat = 0
+    var radius: CGFloat = DS.Card.radius
+
+    func body(content: Content) -> some View {
+        content
+            .padding(padding)
+            .background(.thCard)
+            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .stroke(theme.cardBorder, lineWidth: 1)
+            )
+    }
 }
 
 // MARK: - Form Row Modifier

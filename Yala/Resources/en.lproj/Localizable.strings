@@ -874,8 +874,6 @@
 "insights.yearComparison" = "Last year: %@. This year: %@.";
 "insights.intelligentInsights" = "Observations";
 "insights.funFact" = "Fun fact";
-"insights.firstTimeTitle" = "Your smart summary";
-"insights.firstTimeBody" = "Here you'll see a smart summary of your finances. Enable it in Profile > AI Features and customize sections in Personalization.";
 "insights.emptyTitle" = "No data yet";
 "insights.emptyBody" = "Record expenses to see your insights";
 "insights.fewTransactions" = "Record more to unlock all insights";

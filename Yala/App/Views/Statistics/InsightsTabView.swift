@@ -38,7 +38,6 @@ struct InsightsTabView: View {
 
     @AppStorage("showVariations") private var showVariations: Bool = true
 
-    @AppStorage("hasSeenInsightsIntro") private var hasSeenInsightsIntro = false
     @AppStorage("aiInsightsConsentAccepted") private var aiInsightsConsentAccepted = false
 
     // MARK: - Section Visibility (from Settings)
@@ -88,11 +87,6 @@ struct InsightsTabView: View {
 
                         // Section 1: Period Summary (always visible)
                         periodSummarySection(data.periodSummary)
-
-                        // First-time tip (shown at top for new users)
-                        if !hasSeenInsightsIntro {
-                            firstTimeTip
-                        }
 
                         // Section 2: Hero Insight / AI Button (Pro) or Rule-based (Free)
                         if isProUser {
@@ -300,7 +294,7 @@ struct InsightsTabView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(DS.Spacing.lg)
-        .yalaCard(padding: 0, shadow: false)
+        .solidCard()
     }
 
     private func countCard(count: Int, dailyAverage: Double = 0) -> some View {
@@ -320,7 +314,7 @@ struct InsightsTabView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(DS.Spacing.lg)
-        .yalaCard(padding: 0, shadow: false)
+        .solidCard()
     }
 
     // MARK: - Pro Hero Section (AI button / loading / hero card)
@@ -384,7 +378,7 @@ struct InsightsTabView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Spacing.lg)
-        .yalaCard(padding: 0, shadow: false)
+        .solidCard()
     }
 
     // MARK: - Pro Observations Section
@@ -439,7 +433,7 @@ struct InsightsTabView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(DS.Spacing.lg)
-                .yalaCard(padding: 0, shadow: false)
+                .solidCard()
             }
         }
     }
@@ -551,7 +545,7 @@ struct InsightsTabView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Spacing.md)
-        .yalaCard(padding: 0, radius: DS.Radius.md, shadow: false)
+        .solidCard(radius: DS.Radius.md)
     }
 
     // MARK: - Section 4: Commitments
@@ -638,7 +632,7 @@ struct InsightsTabView: View {
             .frame(height: 6)
         }
         .padding(DS.Spacing.md)
-        .yalaCard(padding: 0, radius: DS.Radius.md, shadow: false)
+        .solidCard(radius: DS.Radius.md)
     }
 
     private func commitmentRow(icon: String, label: String, value: String, secondary: String) -> some View {
@@ -665,7 +659,7 @@ struct InsightsTabView: View {
                 .foregroundStyle(.primary)
         }
         .padding(DS.Spacing.md)
-        .yalaCard(padding: 0, radius: DS.Radius.md, shadow: false)
+        .solidCard(radius: DS.Radius.md)
     }
 
     // MARK: - Section 5: Weekday Spending Chart
@@ -676,7 +670,7 @@ struct InsightsTabView: View {
             YalaSectionHeader(L10n.Insights.weekdayAverage)
 
             WeekdayBarChart(data: data, currencyCode: defaultCurrencyCode)
-                .yalaCard(padding: DS.Spacing.lg, shadow: false)
+                .solidCard(padding: DS.Spacing.lg)
         }
     }
 
@@ -688,7 +682,7 @@ struct InsightsTabView: View {
             YalaSectionHeader(L10n.Insights.needDistribution)
 
             NeedBar(distribution: distribution)
-                .yalaCard(padding: DS.Spacing.lg, shadow: false)
+                .solidCard(padding: DS.Spacing.lg)
         }
     }
 
@@ -718,7 +712,7 @@ struct InsightsTabView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(DS.Spacing.lg)
-        .yalaCard(padding: 0, shadow: false)
+        .solidCard()
     }
 
     // MARK: - AI Insights Teaser (Free users)
@@ -764,7 +758,7 @@ struct InsightsTabView: View {
             }
         }
         .padding(DS.Spacing.lg)
-        .yalaCard(padding: 0, shadow: false)
+        .solidCard()
         .onAppear {
             TelemetryService.trackOnce(.proUpsellShown, key: "insightsTeaser", parameters: TelemetryService.upsellParameters(source: "insightsTeaser"))
         }
@@ -797,47 +791,13 @@ struct InsightsTabView: View {
                 ProBadge(size: .small)
             }
             .padding(DS.Spacing.lg)
-            .yalaCard(padding: 0, shadow: false)
+            .solidCard()
             .opacity(0.7)
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $showUpgradeSheet) {
             UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature)
         }
-    }
-
-    // MARK: - First-Time Tip
-
-    private var firstTimeTip: some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: "lightbulb")
-                .font(DS.Typography.body)
-                .foregroundStyle(theme.accent)
-
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(L10n.Insights.firstTimeTitle)
-                    .font(DS.Typography.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.primary)
-                Text(L10n.Insights.firstTimeBody)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            Button {
-                withAnimation { hasSeenInsightsIntro = true }
-            } label: {
-                Image(systemName: "xmark")
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.tertiary)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.Accessibility.close)
-        }
-        .padding(DS.Spacing.lg)
-        .yalaCard(padding: 0, radius: DS.Radius.xl, shadow: false)
     }
 
     // MARK: - Helpers

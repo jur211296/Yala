@@ -137,8 +137,7 @@ struct CashFlowLineConfigSheet: View {
                     methodRow(.scheduled, label: L10n.CashFlowPlan.scheduled)
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .yalaCard(padding: 0)
+            .solidCard()
         }
     }
 
@@ -223,8 +222,7 @@ struct CashFlowLineConfigSheet: View {
                     .padding(.vertical, DS.Spacing.sm)
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .yalaCard(padding: 0)
+            .solidCard()
         }
     }
 

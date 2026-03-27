@@ -215,8 +215,7 @@ struct CashFlowSetupView: View {
                     }
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .yalaCard(padding: 0)
+            .solidCard()
         }
     }
 
@@ -299,8 +298,7 @@ struct CashFlowSetupView: View {
             )
         }
         .padding(DS.Spacing.lg)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .yalaCard(padding: 0)
+        .solidCard()
     }
 
     private func summaryRow(label: String, amount: Double, color: Color, isBold: Bool = false) -> some View {
@@ -407,8 +405,7 @@ struct CashFlowMethodPickerSheet: View {
                                 }
                             }
                         }
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-                        .yalaCard(padding: 0)
+                        .solidCard()
 
                         // Manual amount field
                         if selectedMethod == .manual {

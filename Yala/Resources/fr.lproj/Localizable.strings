@@ -872,8 +872,6 @@
 "insights.yearComparison" = "L'an dernier : %@. Cette année : %@.";
 "insights.intelligentInsights" = "Observations";
 "insights.funFact" = "Le saviez-vous ?";
-"insights.firstTimeTitle" = "Votre résumé intelligent";
-"insights.firstTimeBody" = "Ici vous verrez un résumé intelligent de vos finances. Activez dans Profil > Fonctionnalités IA et personnalisez les sections dans Personnalisation.";
 "insights.emptyTitle" = "Pas encore de données";
 "insights.emptyBody" = "Enregistrez des dépenses pour voir vos insights";
 "insights.fewTransactions" = "Enregistrez plus pour débloquer tous les insights";

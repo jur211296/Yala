@@ -162,8 +162,7 @@ struct CashFlowTableView: View {
                         }
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-                .yalaCard(padding: 0)
+                .solidCard()
                 .padding(.horizontal, DS.Spacing.lg)
                 .yalaSafeBottomPadding()
             }

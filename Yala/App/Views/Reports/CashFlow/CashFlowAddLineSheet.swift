@@ -218,8 +218,7 @@ struct CashFlowAddLineSheet: View {
                 }
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .yalaCard(padding: 0)
+        .solidCard()
     }
 
     // MARK: - Subcategory Section
@@ -269,8 +268,7 @@ struct CashFlowAddLineSheet: View {
                 }
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .yalaCard(padding: 0)
+        .solidCard()
     }
 
     // MARK: - Method Selector
@@ -369,8 +367,7 @@ struct CashFlowAddLineSheet: View {
                 .foregroundStyle(isIncome ? Color.electricIndigo : Color.hotPink)
         }
         .padding(DS.Spacing.lg)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .yalaCard(padding: 0)
+        .solidCard()
     }
 
     // MARK: - Create

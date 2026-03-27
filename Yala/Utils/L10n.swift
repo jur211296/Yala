@@ -375,8 +375,6 @@ enum L10n {
         }
         static var intelligentInsights: String { ls("insights.intelligentInsights", comment: "") }
         static var funFact: String { ls("insights.funFact", comment: "") }
-        static var firstTimeTitle: String { ls("insights.firstTimeTitle", comment: "") }
-        static var firstTimeBody: String { ls("insights.firstTimeBody", comment: "") }
         static var emptyTitle: String { ls("insights.emptyTitle", comment: "") }
         static var emptyBody: String { ls("insights.emptyBody", comment: "") }
         static var fewTransactions: String { ls("insights.fewTransactions", comment: "") }

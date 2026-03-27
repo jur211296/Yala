@@ -24,18 +24,13 @@ struct SectionBox<Content: View>: View {
             VStack(spacing: DS.Spacing.none) {
                 content()
             }
-            .background {
-                if theme.usesMaterial {
-                    RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                        .fill(.ultraThinMaterial)
-                } else {
-                    RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                        .fill(.thCard)
-                }
-            }
+            .background(
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                    .fill(.thCard)
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                    .stroke(.thCardBorder, lineWidth: 1)
             )
             .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
         }

@@ -42,6 +42,6 @@ struct QuickStatCell: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Spacing.md)
-        .yalaCard(padding: 0, radius: DS.Radius.md, shadow: false)
+        .solidCard(radius: DS.Radius.md)
     }
 }

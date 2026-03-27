@@ -872,8 +872,6 @@
 "insights.yearComparison" = "Letztes Jahr: %@. Dieses Jahr: %@.";
 "insights.intelligentInsights" = "Beobachtungen";
 "insights.funFact" = "Wusstest du?";
-"insights.firstTimeTitle" = "Deine smarte Zusammenfassung";
-"insights.firstTimeBody" = "Hier siehst du eine smarte Zusammenfassung deiner Finanzen. Aktiviere es unter Profil > KI-Funktionen und passe die Abschnitte unter Personalisierung an.";
 "insights.emptyTitle" = "Noch keine Daten";
 "insights.emptyBody" = "Erfasse Ausgaben, um Insights zu sehen";
 "insights.fewTransactions" = "Erfasse mehr, um alle Insights freizuschalten";

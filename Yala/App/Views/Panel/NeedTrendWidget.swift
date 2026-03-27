@@ -175,6 +175,7 @@ struct NeedTrendWidget: View {
                             .font(DS.Typography.headline)
                             .foregroundStyle(.secondary)
                     }
+                    .buttonStyle(.plain)
                     .padding(.top, DS.Spacing.xs)
                 }
             }

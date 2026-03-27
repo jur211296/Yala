@@ -526,7 +526,7 @@ struct CashFlowWidget: View {
                                         Text(net >= 0 ? "+\(formatK(net))" : formatK(net))
                                             .font(DS.Typography.labelTiny)
                                             .fontWeight(.semibold)
-                                            .foregroundStyle(Color.electricIndigo)
+                                            .foregroundStyle(.primary)
                                     }
                                 }
 
@@ -551,13 +551,13 @@ struct CashFlowWidget: View {
                                     }
                                 }
 
-                                // Net Flow Line - Purple line
+                                // Net Flow Line - always indigo regardless of theme
                                 if grouping == .month {
                                     LineMark(
                                         x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
                                         y: .value("Net", data.net)
                                     )
-                                    .foregroundStyle(theme.accent)
+                                    .foregroundStyle(Color.electricIndigo)
                                     .lineStyle(StrokeStyle(lineWidth: 2))
                                     .interpolationMethod(.monotone)
 
@@ -565,7 +565,7 @@ struct CashFlowWidget: View {
                                         x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
                                         y: .value("Net", data.net)
                                     )
-                                    .foregroundStyle(theme.accent)
+                                    .foregroundStyle(Color.electricIndigo)
                                     .symbolSize(20)
                                 }
                             }
@@ -676,7 +676,7 @@ struct CashFlowWidget: View {
                                         }
                                         Divider()
                                         HStack(spacing: DS.Spacing.xs) {
-                                            Circle().fill(theme.accent).frame(width: 6, height: 6)
+                                            Circle().fill(Color.electricIndigo).frame(width: 6, height: 6)
                                             Text(
                                                 YalaFormatter.currency(
                                                     value: selectedData.net,
@@ -979,7 +979,7 @@ struct CashFlowLegendView: View {
             if showNet {
                 HStack(spacing: DS.Spacing.xs) {
                     Circle()
-                        .fill(theme.accent)
+                        .fill(Color.electricIndigo)
                         .frame(width: 6, height: 6)
                     Text(L10n.CashFlow.netFlow)
                         .font(DS.Typography.captionSmall)

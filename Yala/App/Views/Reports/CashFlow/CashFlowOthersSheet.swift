@@ -93,8 +93,7 @@ struct CashFlowOthersSheet: View {
                 }
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .yalaCard(padding: 0)
+        .solidCard()
     }
 
     // MARK: - Hint
