@@ -612,6 +612,11 @@
 "panel.aiInsightsDescription" = "Comentários inteligentes sobre as tuas finanças";
 "panel.dismissInsight" = "Fechar observação";
 "panel.aiConsentRequired" = "Ativa IA em Definições → Observações com IA";
+"panel.preparingInsight" = "A preparar observação...";
+"panel.insightMenuRegenerate" = "Regenerar";
+"panel.insightMenuDifferentAngle" = "Outro ângulo";
+"panel.insightMenuHideHour" = "Esconder por uma hora";
+"panel.insightMenuHideToday" = "Esconder hoje";
 
 "widget.today" = "Hoje";
 

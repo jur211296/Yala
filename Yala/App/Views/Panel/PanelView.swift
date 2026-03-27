@@ -78,7 +78,12 @@ struct PanelView: View {
     /// Contextual AI insight state
     @State private var contextualInsight: String?
     @State private var isLoadingInsight = false
-    @State private var contextualInsightDismissed = false
+    @State private var isPreparingInsight = false
+    @State private var insightDismissedUntil: Date?
+    @State private var excludeInsightText: String?
+    @State private var forcedAngle: String?
+    @State private var regenerationID = UUID()
+    @State private var skipDebounce = false
 
     /// Voice recording sheet
     @State private var showVoiceRecording = false
@@ -506,6 +511,18 @@ struct PanelView: View {
                     .task(id: insightTaskKey) {
                         await loadContextualInsight()
                     }
+                    .task(id: insightDismissedUntil) {
+                        guard let until = insightDismissedUntil else { return }
+                        let remaining = until.timeIntervalSince(.now)
+                        guard remaining > 0 else {
+                            insightDismissedUntil = nil
+                            return
+                        }
+                        try? await Task.sleep(for: .seconds(remaining))
+                        if !Task.isCancelled {
+                            insightDismissedUntil = nil
+                        }
+                    }
                 }
                 .refreshable {
                     await refreshData()
@@ -757,38 +774,55 @@ struct PanelView: View {
         let account = viewModel.selectedAccountID.map { "\($0)" } ?? "all"
         let cats = SessionState.shared.selectedCategoryIDs.map { "\($0)" }.sorted().joined(separator: ",")
         let subs = viewModel.selectedSubcategoryIDs.map { "\($0)" }.sorted().joined(separator: ",")
-        return "\(viewModel.selectedPeriod.rawValue)_\(account)_\(cats)_\(subs)_\(toneSetting)_\(focusSetting)"
+        return "\(viewModel.selectedPeriod.rawValue)_\(account)_\(cats)_\(subs)_\(toneSetting)_\(focusSetting)_\(showAIInsight)_\(regenerationID)"
+    }
+
+    /// Whether the insight is temporarily dismissed. Cleared automatically by .task(id: insightDismissedUntil).
+    private var isDismissed: Bool {
+        insightDismissedUntil != nil
     }
 
     @ViewBuilder
     private var contextualInsightSection: some View {
         let isPro = FeatureGateService.shared.canAccess(.smartInsightsAI)
         let hasConsent = UserDefaults.standard.bool(forKey: "aiInsightsConsentAccepted")
-        let shouldShow = isPro && hasConsent && showAIInsight && !contextualInsightDismissed && transactions.count >= 5
+        let baseVisible = isPro && hasConsent && showAIInsight && !isDismissed
 
-        if shouldShow && isLoadingInsight {
+        if baseVisible && (isPreparingInsight || isLoadingInsight) {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "sparkles")
                     .foregroundStyle(theme.accent)
                     .symbolEffect(.pulse)
                     .accessibilityHidden(true)
-                Text(L10n.Insights.analyzingData)
+                Text(isPreparingInsight ? L10n.Panel.preparingInsight : L10n.Insights.analyzingData)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
             .padding(DS.Spacing.lg)
             .frame(maxWidth: .infinity)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+            .solidCard(radius: DS.Radius.lg)
             .transition(.asymmetric(
                 insertion: .scale(scale: 0.95).combined(with: .opacity),
                 removal: .scale(scale: 0.95).combined(with: .opacity)
             ))
-        } else if shouldShow, let insight = contextualInsight {
+        } else if baseVisible, let insight = contextualInsight {
             ContextualInsightCard(
                 text: insight,
-                onDismiss: {
-                    dsWithAnimation(reduceMotion) {
-                        contextualInsightDismissed = true
+                isRegenerating: isPreparingInsight || isLoadingInsight,
+                onAction: { action in
+                    switch action {
+                    case .regenerate:
+                        triggerInsightRegeneration()
+                    case .differentAngle:
+                        triggerInsightRegeneration(angle: InsightsLLMService.randomAlternativeAngle())
+                    case .hideOneHour:
+                        dsWithAnimation(reduceMotion) {
+                            insightDismissedUntil = Date.now.addingTimeInterval(3600)
+                        }
+                    case .hideToday:
+                        dsWithAnimation(reduceMotion) {
+                            insightDismissedUntil = Calendar.current.startOfDay(for: .now).addingTimeInterval(86400)
+                        }
                     }
                 }
             )
@@ -799,9 +833,21 @@ struct PanelView: View {
         }
     }
 
+    private func triggerInsightRegeneration(angle: String? = nil) {
+        dsWithAnimation(reduceMotion) {
+            excludeInsightText = contextualInsight
+            forcedAngle = angle
+            insightDismissedUntil = nil
+            contextualInsight = nil
+            skipDebounce = true
+            // Memory cleanup: old entries are unreachable after UUID change
+            InsightsLLMService.shared.invalidateContextualCache(forKeyContaining: "panel_")
+            regenerationID = UUID()
+        }
+    }
+
     private func loadContextualInsight() async {
-        // Reset dismiss state when task key changes (period/filter change)
-        contextualInsightDismissed = false
+        let hadPreviousInsight = contextualInsight != nil
         contextualInsight = nil
 
         let isPro = FeatureGateService.shared.canAccess(.smartInsightsAI)
@@ -812,11 +858,19 @@ struct PanelView: View {
             return
         }
 
-        // Debounce: wait 10s after last filter change before calling LLM
-        do {
-            try await Task.sleep(for: .seconds(10))
-        } catch {
-            return // Task cancelled — filters changed again, skip LLM call
+        // Skip debounce for user-initiated actions or first load (toggle just activated)
+        if skipDebounce {
+            skipDebounce = false
+        } else if hadPreviousInsight {
+            isPreparingInsight = true
+            // Debounce: wait 10s after last filter change before calling LLM
+            do {
+                try await Task.sleep(for: .seconds(10))
+            } catch {
+                isPreparingInsight = false
+                return // Task cancelled — filters changed again, skip LLM call
+            }
+            isPreparingInsight = false
         }
 
         let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCodeRaw) ?? .pen
@@ -910,11 +964,15 @@ struct PanelView: View {
                 aggregatedData: aggregated,
                 cacheKey: cacheKey,
                 tone: tone,
-                focus: focus
+                focus: focus,
+                excludeText: excludeInsightText,
+                forcedAngle: forcedAngle
             )
 
             guard !Task.isCancelled else { return }
             contextualInsight = result
+            excludeInsightText = nil
+            forcedAngle = nil
         } catch {
             #if DEBUG
             print("PanelView: Contextual insight error: \(error)")
@@ -1946,9 +2004,14 @@ private struct PanelSessionObservers: ViewModifier {
 
 // MARK: - Contextual Insight Card
 
+private enum InsightCardAction {
+    case regenerate, differentAngle, hideOneHour, hideToday
+}
+
 private struct ContextualInsightCard: View {
     let text: String
-    let onDismiss: () -> Void
+    let isRegenerating: Bool
+    let onAction: (InsightCardAction) -> Void
 
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
@@ -1964,18 +2027,31 @@ private struct ContextualInsightCard: View {
 
             Spacer(minLength: 0)
 
-            Button {
-                onDismiss()
+            Menu {
+                Button { onAction(.regenerate) } label: {
+                    Label(L10n.Panel.insightMenuRegenerate, systemImage: "arrow.trianglehead.2.clockwise")
+                }
+                Button { onAction(.differentAngle) } label: {
+                    Label(L10n.Panel.insightMenuDifferentAngle, systemImage: "arrow.triangle.branch")
+                }
+                Divider()
+                Button { onAction(.hideOneHour) } label: {
+                    Label(L10n.Panel.insightMenuHideHour, systemImage: "clock")
+                }
+                Button { onAction(.hideToday) } label: {
+                    Label(L10n.Panel.insightMenuHideToday, systemImage: "moon.zzz")
+                }
             } label: {
-                Image(systemName: "xmark")
+                Image(systemName: "ellipsis")
                     .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.Panel.dismissInsight)
+            .disabled(isRegenerating)
         }
         .padding(DS.Spacing.lg)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .solidCard(radius: DS.Radius.lg)
     }
 
     private func markdownAttributed(_ text: String) -> AttributedString {

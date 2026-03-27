@@ -12,7 +12,9 @@ struct WidgetPreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.openURL) private var openURL
     @AppStorage("panelShowAIInsight") private var showAIInsight: Bool = false
+    @State private var showConsentAlert = false
 
     private var isProUser: Bool {
         FeatureGateService.shared.canAccess(.smartInsightsAI)
@@ -46,15 +48,9 @@ struct WidgetPreferencesView: View {
                         VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                             Text(L10n.Panel.aiInsightsTitle)
                                 .font(DS.Typography.bodyBold)
-                            if isProUser && !hasAIConsent {
-                                Text(L10n.Panel.aiConsentRequired)
-                                    .font(DS.Typography.captionSmall)
-                                    .foregroundStyle(.secondary)
-                            } else {
-                                Text(L10n.Panel.aiInsightsDescription)
-                                    .font(DS.Typography.captionSmall)
-                                    .foregroundStyle(.secondary)
-                            }
+                            Text(L10n.Panel.aiInsightsDescription)
+                                .font(DS.Typography.captionSmall)
+                                .foregroundStyle(.secondary)
                         }
 
                         Spacer()
@@ -62,7 +58,12 @@ struct WidgetPreferencesView: View {
                         if isProUser {
                             Toggle(L10n.Panel.aiInsightsTitle, isOn: $showAIInsight)
                                 .labelsHidden()
-                                .disabled(!hasAIConsent)
+                                .onChange(of: showAIInsight) { _, newValue in
+                                    if newValue && !hasAIConsent {
+                                        showAIInsight = false
+                                        showConsentAlert = true
+                                    }
+                                }
                         } else {
                             ProBadge(size: .small)
                         }
@@ -125,6 +126,18 @@ struct WidgetPreferencesView: View {
             }
             .scrollContentBackground(.hidden)
             .background(theme.background.ignoresSafeArea())  // Uses app's adaptive background
+            .alert(L10n.AIConsent.insightsTitle, isPresented: $showConsentAlert) {
+                Button(L10n.AIConsent.accept) {
+                    UserDefaults.standard.set(true, forKey: "aiInsightsConsentAccepted")
+                    showAIInsight = true
+                }
+                Button(L10n.AIConsent.privacyPolicy) {
+                    openURL(AppConstants.privacyURL)
+                }
+                Button(L10n.Action.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.AIConsent.insightsMessage)
+            }
         }
     }
 }

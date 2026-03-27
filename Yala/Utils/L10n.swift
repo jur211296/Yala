@@ -115,6 +115,21 @@ enum L10n {
         static var aiConsentRequired: String {
             ls("panel.aiConsentRequired", comment: "Hint when AI consent not accepted")
         }
+        static var preparingInsight: String {
+            ls("panel.preparingInsight", comment: "Loading state before LLM call")
+        }
+        static var insightMenuRegenerate: String {
+            ls("panel.insightMenuRegenerate", comment: "Regenerate insight menu option")
+        }
+        static var insightMenuDifferentAngle: String {
+            ls("panel.insightMenuDifferentAngle", comment: "Different angle menu option")
+        }
+        static var insightMenuHideHour: String {
+            ls("panel.insightMenuHideHour", comment: "Hide for one hour menu option")
+        }
+        static var insightMenuHideToday: String {
+            ls("panel.insightMenuHideToday", comment: "Hide for today menu option")
+        }
     }
 
     // MARK: - Balance Status

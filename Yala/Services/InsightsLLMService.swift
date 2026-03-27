@@ -433,13 +433,28 @@ final class InsightsLLMService {
         let timestamp: Date
     }
 
+    /// Invalidate contextual cache entries matching a prefix.
+    func invalidateContextualCache(forKeyContaining prefix: String) {
+        contextualCache = contextualCache.filter { !$0.key.contains(prefix) }
+    }
+
+    /// Returns a random focus angle different from today's default rotation.
+    static func randomAlternativeAngle() -> String {
+        let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: .now) ?? 1
+        let current = contextualFocusAngles[dayOfYear % contextualFocusAngles.count]
+        let others = contextualFocusAngles.filter { $0 != current }
+        return others.randomElement() ?? current
+    }
+
     /// Generate a single-sentence contextual insight for PanelView.
     /// Internal 30-min TTL cache — caller only provides cacheKey.
     func generateContextualInsight(
         aggregatedData: [String: Any],
         cacheKey key: String,
         tone: InsightTone = .normal,
-        focus: InsightFocus = .balanced
+        focus: InsightFocus = .balanced,
+        excludeText: String? = nil,
+        forcedAngle: String? = nil
     ) async throws -> String? {
         guard let client = openAI else {
             throw InsightsLLMError.noAPIKey
@@ -469,9 +484,14 @@ final class InsightsLLMService {
         let locale = aggregatedData["locale"] as? String ?? "es"
         let country = aggregatedData["country"] as? String ?? ""
 
-        // Rotate focus angle daily so insights don't repeat the same pattern
-        let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: Date.now) ?? 1
-        let focusHint = Self.contextualFocusAngles[dayOfYear % Self.contextualFocusAngles.count]
+        // Use forced angle if provided, otherwise rotate daily
+        let focusHint: String
+        if let forcedAngle {
+            focusHint = forcedAngle
+        } else {
+            let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: Date.now) ?? 1
+            focusHint = Self.contextualFocusAngles[dayOfYear % Self.contextualFocusAngles.count]
+        }
 
         let toneInstruction = Self.toneInstruction(for: tone, country: country)
         let focusInstruction = Self.focusInstruction(for: focus)
@@ -480,7 +500,7 @@ final class InsightsLLMService {
         let currencyDisplay = aggregatedData["currency_display"] as? String ?? currencyCode
 
         let systemPrompt = """
-        Eres un analista financiero personal. Genera UNA SOLA oración sobre las finanzas del usuario.
+        Eres un analista financiero personal. Genera UNA SOLA oración corta (máximo 150 caracteres) sobre las finanzas del usuario.
 
         REGLAS CRÍTICAS:
         - SOLO menciona datos presentes en el JSON. NUNCA inventes categorías, montos o relaciones
@@ -489,7 +509,7 @@ final class InsightsLLMService {
         IDIOMA: \(locale). Tutea ("tú"), lidera con el dato, nunca regañes ni juzgues, nunca hagas preguntas. NUNCA uses "Debes...", "Tienes que...", "Obviamente...". Usa "gasto"/"ingreso", no "transacción". Siempre constructivo y orientado a solución.
 
         ÁNGULO HOY: Prioriza observaciones sobre "\(focusHint)". Si no hay dato relevante, elige el dato más notable.
-        \(toneInstruction)\(focusInstruction)
+        \(excludeText.map { "PROHIBIDO repetir esta observación: \"\($0)\". Genera una COMPLETAMENTE diferente.\n" } ?? "")\(toneInstruction)\(focusInstruction)
         REGLA DE ANCLAJE: Tu oración DEBE citar al menos un número específico de los datos (monto, porcentaje o conteo).
 
         Usa **negritas** para la cifra clave. Los montos están en \(currencyCode). SIEMPRE formatea: \(currencyDisplay) NÚMERO (ej: \(currencyDisplay) 4,500). La divisa SIEMPRE va ANTES del número, NUNCA después.

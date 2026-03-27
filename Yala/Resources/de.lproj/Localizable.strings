@@ -612,6 +612,11 @@
 "panel.aiInsightsDescription" = "Intelligente Kommentare zu deinen Finanzen";
 "panel.dismissInsight" = "Beobachtung schließen";
 "panel.aiConsentRequired" = "Aktiviere KI in Einstellungen → KI-Beobachtungen";
+"panel.preparingInsight" = "Beobachtung wird vorbereitet...";
+"panel.insightMenuRegenerate" = "Neu generieren";
+"panel.insightMenuDifferentAngle" = "Anderer Blickwinkel";
+"panel.insightMenuHideHour" = "Eine Stunde ausblenden";
+"panel.insightMenuHideToday" = "Heute ausblenden";
 
 "widget.today" = "Heute";
 

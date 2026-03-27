@@ -419,7 +419,6 @@ struct CashFlowLineConfigSheet: View {
 
     private func computeHistoricalStats() -> HistoricalStats {
         let calendar = Calendar.current
-        let now = Date.now
         var monthlyTotals: [String: Double] = [:]
 
         for tx in transactions {
