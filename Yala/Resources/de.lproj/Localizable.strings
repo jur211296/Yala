@@ -576,8 +576,8 @@
 "tab.more" = "Mehr";
 "tab.search" = "Suchen";
 "tab.records" = "Datensätze";
-"tab.reports" = "Bericht";
-"report.title" = "Finanzbericht";
+"tab.reports" = "Berichte";
+"report.title" = "Finanzberichte";
 "report.tab.comparative" = "Vergleich";
 "report.tab.cashFlow" = "Cashflow";
 "report.income" = "Einnahmen";
@@ -768,6 +768,11 @@
 "cashFlowPlan.monthSummaryOnTrack" = "Du hast %d%% deiner geschätzten Ausgaben diesen Monat";
 "cashFlowPlan.monthSummaryOver" = "Du liegst %d%% über deiner Schätzung diesen Monat";
 "cashFlowPlan.monthSummaryUnder" = "Nur %d%% ausgegeben — du liegst gut diesen Monat";
+"cashFlowPlan.configureHorizon" = "Horizont konfigurieren";
+"cashFlowPlan.monthsAhead" = "Monate voraus";
+"cashFlowPlan.monthsBack" = "Monate zurück";
+"cashFlowPlan.startingBalanceDateLabel" = "Datum des Saldos";
+"cashFlowPlan.startingBalanceDateHelper" = "Wann hatten Sie diesen Saldo? Ohne Datum wird heute angenommen.";
 
 "common.unknownError" = "Unbekannter Fehler";
 "common.saveError" = "Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen.";

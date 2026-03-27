@@ -219,6 +219,13 @@ enum L10n {
         // Edit starting balance
         static var editStartingBalance: String { ls("cashFlowPlan.editStartingBalance", comment: "") }
         static var editStartingBalanceSave: String { ls("cashFlowPlan.editStartingBalanceSave", comment: "") }
+        static var startingBalanceDateLabel: String { ls("cashFlowPlan.startingBalanceDateLabel", comment: "") }
+        static var startingBalanceDateHelper: String { ls("cashFlowPlan.startingBalanceDateHelper", comment: "") }
+
+        // Horizon config
+        static var configureHorizon: String { ls("cashFlowPlan.configureHorizon", comment: "") }
+        static var monthsAhead: String { ls("cashFlowPlan.monthsAhead", comment: "") }
+        static var monthsBack: String { ls("cashFlowPlan.monthsBack", comment: "") }
 
         // Month summary
         static func monthSummaryOnTrack(_ percent: Int) -> String {

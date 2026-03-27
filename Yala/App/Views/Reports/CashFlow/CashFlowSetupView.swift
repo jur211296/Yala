@@ -281,6 +281,9 @@ struct CashFlowSetupView: View {
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
         .contentShape(Rectangle())
+        .onTapGesture {
+            editingLine = line
+        }
     }
 
     // MARK: - Summary

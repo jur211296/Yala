@@ -69,7 +69,7 @@ final class CashFlowLine {
 
     var plan: CashFlowPlan?
 
-    @Relationship(deleteRule: .nullify, inverse: \CashFlowOverride.line)
+    @Relationship(deleteRule: .cascade, inverse: \CashFlowOverride.line)
     var overrides: [CashFlowOverride]?
 
     // MARK: - Computed

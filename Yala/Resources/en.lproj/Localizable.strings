@@ -578,8 +578,8 @@
 "tab.more" = "More";
 "tab.search" = "Search";
 "tab.records" = "Records";
-"tab.reports" = "Report";
-"report.title" = "Financial Report";
+"tab.reports" = "Reports";
+"report.title" = "Financial Reports";
 "report.tab.comparative" = "Comparative";
 "report.tab.cashFlow" = "Cash Flow";
 "report.income" = "Income";
@@ -770,6 +770,11 @@
 "cashFlowPlan.monthSummaryOnTrack" = "You've spent %d%% of your estimated expenses this month";
 "cashFlowPlan.monthSummaryOver" = "You're %d%% over your estimate this month";
 "cashFlowPlan.monthSummaryUnder" = "Only %d%% spent — you're doing great this month";
+"cashFlowPlan.configureHorizon" = "Configure horizon";
+"cashFlowPlan.monthsAhead" = "Months ahead";
+"cashFlowPlan.monthsBack" = "Months back";
+"cashFlowPlan.startingBalanceDateLabel" = "Balance date";
+"cashFlowPlan.startingBalanceDateHelper" = "When did you have this balance? If no date selected, today is assumed.";
 
 "common.unknownError" = "Something went wrong";
 "common.saveError" = "Changes weren't saved. Try again.";

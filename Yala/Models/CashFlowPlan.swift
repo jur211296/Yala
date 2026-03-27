@@ -18,10 +18,11 @@ final class CashFlowPlan {
     var defaultMonthsAhead: Int = 6
     var defaultMonthsBack: Int = 3
     var showOtherExpenses: Bool = true
+    var startingBalanceDate: Date?
     var createdAt: Date = Date.now
     var updatedAt: Date = Date.now
 
-    @Relationship(deleteRule: .nullify, inverse: \CashFlowLine.plan)
+    @Relationship(deleteRule: .cascade, inverse: \CashFlowLine.plan)
     var lines: [CashFlowLine]?
 
     init(name: String = "", startingBalance: Double = 0) {

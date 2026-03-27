@@ -431,9 +431,10 @@ final class CashFlowPlanViewModel {
 
     // MARK: - Update Starting Balance
 
-    func updateStartingBalance(_ newBalance: Double) {
+    func updateStartingBalance(_ newBalance: Double, date: Date? = nil) {
         guard let plan else { return }
         plan.startingBalance = newBalance
+        plan.startingBalanceDate = date
         do {
             try plan.modelContext?.save()
         } catch {
@@ -443,22 +444,25 @@ final class CashFlowPlanViewModel {
         }
     }
 
+    func updateHorizon(monthsAhead: Int, monthsBack: Int) {
+        guard let plan else { return }
+        plan.defaultMonthsAhead = monthsAhead
+        plan.defaultMonthsBack = monthsBack
+        do {
+            try plan.modelContext?.save()
+        } catch {
+            #if DEBUG
+            print("CashFlowPlanViewModel: Error updating horizon: \(error)")
+            #endif
+        }
+    }
+
     // MARK: - Reset
 
     func resetPlan() {
         guard let ctx = modelContext, let plan else { return }
 
-        // Delete all lines and overrides
-        if let lines = plan.lines {
-            for line in lines {
-                if let overrides = line.overrides {
-                    for override in overrides {
-                        ctx.delete(override)
-                    }
-                }
-                ctx.delete(line)
-            }
-        }
+        // .cascade deleteRule handles lines and overrides automatically
         ctx.delete(plan)
 
         do {

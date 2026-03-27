@@ -18,6 +18,8 @@ struct FinancialReportView: View {
     @State private var cashFlowCompactMode = false
     @State private var showCustomDatePicker = false
     @State private var isPresentingSettings = false
+    @State private var showResetConfirmation = false
+    @State private var showHorizonConfig = false
     @State private var recalculateTask: Task<Void, Never>?
 
     // MARK: - Environment
@@ -72,7 +74,14 @@ struct FinancialReportView: View {
                 )
             }
         }
+        .sheet(isPresented: $showHorizonConfig) {
+            CashFlowHorizonSheet(viewModel: cashFlowViewModel)
+        }
         .appliesPendingRemoteChanges(sessionState)
+        .cashFlowResetDialog(
+            isPresented: $showResetConfirmation,
+            onReset: { cashFlowViewModel.resetPlan() }
+        )
         .onAppear {
             recalculate()
             cashFlowViewModel.setContext(modelContext)
@@ -279,6 +288,25 @@ struct FinancialReportView: View {
                         .foregroundStyle(.thToolbarIcon)
                 }
             }
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button {
+                        showHorizonConfig = true
+                    } label: {
+                        Label(L10n.CashFlowPlan.configureHorizon, systemImage: "calendar.badge.clock")
+                    }
+                    Divider()
+                    Button(role: .destructive) {
+                        showResetConfirmation = true
+                    } label: {
+                        Label(L10n.CashFlowPlan.resetPlan, systemImage: "arrow.counterclockwise")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(DS.Typography.body.weight(.medium))
+                        .foregroundStyle(.thToolbarIcon)
+                }
+            }
         }
 
         ToolbarItem(placement: .topBarTrailing) {
@@ -369,5 +397,33 @@ struct FinancialReportView: View {
             accounts: accounts,
             preferredCurrency: preferredCurrencyCode
         )
+    }
+}
+
+// MARK: - Cash Flow Reset Dialog Modifier
+
+private struct CashFlowResetDialogModifier: ViewModifier {
+    @Binding var isPresented: Bool
+    let onReset: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .confirmationDialog(
+                L10n.CashFlowPlan.resetPlan,
+                isPresented: $isPresented,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.CashFlowPlan.resetPlan, role: .destructive) {
+                    onReset()
+                }
+            } message: {
+                Text(L10n.CashFlowPlan.resetConfirmation)
+            }
+    }
+}
+
+extension View {
+    func cashFlowResetDialog(isPresented: Binding<Bool>, onReset: @escaping () -> Void) -> some View {
+        modifier(CashFlowResetDialogModifier(isPresented: isPresented, onReset: onReset))
     }
 }

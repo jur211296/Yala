@@ -576,8 +576,8 @@
 "tab.more" = "Altro";
 "tab.search" = "Cerca";
 "tab.records" = "Registri";
-"tab.reports" = "Rapporto";
-"report.title" = "Rapporto finanziario";
+"tab.reports" = "Rapporti";
+"report.title" = "Rapporti finanziari";
 "report.tab.comparative" = "Comparativo";
 "report.tab.cashFlow" = "Flusso di cassa";
 "report.income" = "Entrate";
@@ -768,6 +768,11 @@
 "cashFlowPlan.monthSummaryOnTrack" = "Hai speso il %d%% delle spese stimate questo mese";
 "cashFlowPlan.monthSummaryOver" = "Sei %d%% sopra la stima questo mese";
 "cashFlowPlan.monthSummaryUnder" = "Solo %d%% speso — stai andando bene questo mese";
+"cashFlowPlan.configureHorizon" = "Configura orizzonte";
+"cashFlowPlan.monthsAhead" = "Mesi avanti";
+"cashFlowPlan.monthsBack" = "Mesi indietro";
+"cashFlowPlan.startingBalanceDateLabel" = "Data del saldo";
+"cashFlowPlan.startingBalanceDateHelper" = "Quando avevi questo saldo? Se non scegli una data, si assume oggi.";
 
 "common.unknownError" = "Errore sconosciuto";
 "common.saveError" = "Impossibile salvare le modifiche. Riprova.";

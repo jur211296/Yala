@@ -475,6 +475,8 @@ private struct EditStartingBalanceSheet: View {
     @Bindable var viewModel: CashFlowPlanViewModel
     let currencyCode: String
     @State private var balanceText: String = ""
+    @State private var hasDate: Bool = false
+    @State private var balanceDate: Date = Date.now
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -494,9 +496,33 @@ private struct EditStartingBalanceSheet: View {
                             .fill(.thCard)
                     )
 
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    Toggle(L10n.CashFlowPlan.startingBalanceDateLabel, isOn: $hasDate)
+                        .font(DS.Typography.label)
+
+                    if hasDate {
+                        DatePicker(
+                            "",
+                            selection: $balanceDate,
+                            displayedComponents: .date
+                        )
+                        .datePickerStyle(.compact)
+                        .labelsHidden()
+                    }
+
+                    Text(L10n.CashFlowPlan.startingBalanceDateHelper)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(DS.Spacing.lg)
+                .background(
+                    RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                        .fill(.thCard)
+                )
+
                 YalaPrimaryButton(L10n.CashFlowPlan.editStartingBalanceSave, icon: "checkmark.circle.fill") {
                     let value = AmountInputHelper.parseDecimal(balanceText)
-                    viewModel.updateStartingBalance(value)
+                    viewModel.updateStartingBalance(value, date: hasDate ? balanceDate : nil)
                     dismiss()
                 }
             }
@@ -509,9 +535,13 @@ private struct EditStartingBalanceSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
         .onAppear {
             balanceText = String(format: "%.0f", viewModel.plan?.startingBalance ?? 0)
+            if let date = viewModel.plan?.startingBalanceDate {
+                hasDate = true
+                balanceDate = date
+            }
         }
     }
 }

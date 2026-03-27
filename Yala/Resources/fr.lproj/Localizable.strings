@@ -576,8 +576,8 @@
 "tab.more" = "Plus";
 "tab.search" = "Rechercher";
 "tab.records" = "Enregistrements";
-"tab.reports" = "Rapport";
-"report.title" = "Rapport financier";
+"tab.reports" = "Rapports";
+"report.title" = "Rapports financiers";
 "report.tab.comparative" = "Comparatif";
 "report.tab.cashFlow" = "Flux de trésorerie";
 "report.income" = "Revenus";
@@ -768,6 +768,11 @@
 "cashFlowPlan.monthSummaryOnTrack" = "Vous avez dépensé %d%% de vos dépenses estimées ce mois";
 "cashFlowPlan.monthSummaryOver" = "Vous êtes %d%% au-dessus de votre estimation ce mois";
 "cashFlowPlan.monthSummaryUnder" = "Seulement %d%% dépensé — vous êtes en bonne voie ce mois";
+"cashFlowPlan.configureHorizon" = "Configurer l'horizon";
+"cashFlowPlan.monthsAhead" = "Mois à venir";
+"cashFlowPlan.monthsBack" = "Mois passés";
+"cashFlowPlan.startingBalanceDateLabel" = "Date du solde";
+"cashFlowPlan.startingBalanceDateHelper" = "Quand aviez-vous ce solde ? Si aucune date n'est choisie, aujourd'hui est supposé.";
 
 "common.unknownError" = "Erreur inconnue";
 "common.saveError" = "Impossible d'enregistrer les modifications. Veuillez réessayer.";
