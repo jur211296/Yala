@@ -336,7 +336,7 @@ struct BalanceCalculatorSheet: View {
 
             // Single amount field
             VStack(spacing: DS.Spacing.none) {
-                calcRow(label: L10n.Account.balance, text: $fieldState.simpleAmountText, field: .simpleAmount)
+                calcRow(label: simpleBalanceLabel, text: $fieldState.simpleAmountText, field: .simpleAmount)
             }
             .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
@@ -348,6 +348,15 @@ struct BalanceCalculatorSheet: View {
             Text(L10n.Onboarding.calcAdjustLater)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
+        }
+    }
+
+    private var simpleBalanceLabel: String {
+        switch accountType {
+        case .checking: return L10n.Onboarding.calcBalanceLabelChecking
+        case .savings:  return L10n.Onboarding.calcBalanceLabelSavings
+        case .cash:     return L10n.Onboarding.calcBalanceLabelCash
+        default:        return L10n.Account.balance
         }
     }
 

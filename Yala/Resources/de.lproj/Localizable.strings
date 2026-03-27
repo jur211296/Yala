@@ -1721,6 +1721,9 @@
 "onboarding.calc.cashExplanation" = "Schau in dein Portemonnaie und überall, wo du Bargeld aufbewahrst. Zähle alles zusammen — eine Schätzung reicht.";
 "onboarding.calc.checkingExplanation" = "Schau den verfügbaren Saldo in deiner Banking-App oder am Geldautomaten nach. Gib die Zahl ein, die du heute siehst.";
 "onboarding.calc.savingsExplanation" = "Wie viel hast du gespart? Wenn du mehrere Sparkonten hast, kannst du alles zusammenrechnen oder ein Konto für jedes erstellen.";
+"onboarding.calc.balanceLabelChecking" = "Geld auf deinem Konto";
+"onboarding.calc.balanceLabelSavings" = "Gespartes Geld";
+"onboarding.calc.balanceLabelCash" = "Bargeld, das du hast";
 "onboarding.accountImportTip" = "Unter Profil > Importieren kannst du Einträge in jedes deiner Konten importieren.";
 "onboarding.accountMoreTip" = "Du kannst jederzeit weitere Konten hinzufügen. Erstelle mindestens eines pro Währung, wenn du mehrere nutzt.";
 "onboarding.budgetTitle" = "Wie viel erwartest du auszugeben?";

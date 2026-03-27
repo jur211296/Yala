@@ -294,7 +294,6 @@ struct OnboardingView: View {
                         ) {
                             if expensesOnlyMode {
                                 selectedUsageMode = .dayToDay
-                                selectedMindset = "cashFlow"
                             }
                         }
                     }
@@ -361,6 +360,14 @@ struct OnboardingView: View {
                 .frame(minHeight: geometry.size.height)
             }
             .scrollBounceBehavior(.basedOnSize)
+        }
+        .onAppear {
+            if !wantsSeparateAccounts {
+                selectedMindset = "patrimonial"
+                selectedAccountType = .general
+            } else {
+                selectedMindset = "cashFlow"
+            }
         }
     }
 
@@ -602,8 +609,6 @@ struct OnboardingView: View {
 
     // MARK: - Step 6: Balance (auto-launch calculator)
 
-    @State private var hasLaunchedCalc: Bool = false
-
     private var balanceStep: some View {
         GeometryReader { geometry in
             ScrollView {
@@ -688,10 +693,22 @@ struct OnboardingView: View {
             .scrollDismissesKeyboard(.interactively)
         }
         .task {
-            guard !hasLaunchedCalc else { return }
-            hasLaunchedCalc = true
-            try? await Task.sleep(for: .milliseconds(400))
-            showBalanceGuide = true
+            // Derivar mindset correcto según configuración de cuentas
+            if selectedUsageMode == .dayToDay && selectedAccountType == .general {
+                selectedMindset = "patrimonial"
+            } else if selectedUsageMode == .fullControl {
+                selectedMindset = "cashFlow"
+            }
+
+            // Auto-launch calculadora si balance vacío
+            if initialBalanceText.isEmpty && !showBalanceGuide {
+                do {
+                    try await Task.sleep(for: .milliseconds(400))
+                    showBalanceGuide = true
+                } catch {
+                    // Task cancelled (user navigated away) — skip auto-launch
+                }
+            }
         }
         .sheet(isPresented: $showBalanceGuide) {
             BalanceCalculatorSheet(
@@ -1039,12 +1056,12 @@ struct OnboardingView: View {
     private func privacyBullet(icon: String, text: String) -> some View {
         HStack(spacing: DS.Spacing.sm) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
-                .frame(width: 20)
+                .frame(width: 24)
                 .accessibilityHidden(true)
             Text(text)
-                .font(DS.Typography.caption)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
         }

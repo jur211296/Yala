@@ -1722,6 +1722,9 @@
 "onboarding.calc.cashExplanation" = "Revisa tu billetera y donde guardes efectivo. Suma todo — un aproximado está bien.";
 "onboarding.calc.checkingExplanation" = "Consulta el saldo disponible en tu app bancaria o cajero. Pon el número que ves hoy.";
 "onboarding.calc.savingsExplanation" = "¿Cuánto tienes ahorrado? Si tienes varias cuentas de ahorro, puedes sumar todas o crear una cuenta por cada una.";
+"onboarding.calc.balanceLabelChecking" = "Dinero en tu cuenta";
+"onboarding.calc.balanceLabelSavings" = "Monto ahorrado";
+"onboarding.calc.balanceLabelCash" = "Efectivo que tienes";
 "onboarding.accountImportTip" = "En Perfil > Importar puedes importar registros a cualquiera de tus cuentas.";
 "onboarding.accountMoreTip" = "Puedes agregar más cuentas cuando quieras. Crea al menos una por divisa si manejas varias monedas.";
 "onboarding.budgetTitle" = "¿Cuánto esperas gastar?";

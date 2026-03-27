@@ -1723,6 +1723,9 @@
 "onboarding.calc.cashExplanation" = "Controlla il portafoglio e ovunque tieni contanti. Somma tutto — una stima va benissimo.";
 "onboarding.calc.checkingExplanation" = "Consulta il saldo disponibile nell'app della tua banca o al bancomat. Inserisci il numero che vedi oggi.";
 "onboarding.calc.savingsExplanation" = "Quanto hai risparmiato? Se hai più conti risparmio, puoi sommare tutto o creare un conto per ciascuno.";
+"onboarding.calc.balanceLabelChecking" = "Soldi nel tuo conto";
+"onboarding.calc.balanceLabelSavings" = "Importo risparmiato";
+"onboarding.calc.balanceLabelCash" = "Contanti che hai";
 "onboarding.accountImportTip" = "In Profilo > Importa puoi importare registrazioni in qualsiasi conto.";
 "onboarding.accountMoreTip" = "Puoi aggiungere altri conti quando vuoi. Crea almeno uno per valuta se ne usi più di una.";
 "onboarding.budgetTitle" = "Quanto pensi di spendere?";

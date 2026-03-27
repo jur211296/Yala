@@ -1724,6 +1724,9 @@
 "onboarding.calc.cashExplanation" = "Check your wallet and anywhere you keep cash. Add it all up — a rough estimate is fine.";
 "onboarding.calc.checkingExplanation" = "Check the available balance in your banking app or ATM. Enter the number you see today.";
 "onboarding.calc.savingsExplanation" = "How much do you have saved? If you have several savings accounts, you can add them all up or create one account for each.";
+"onboarding.calc.balanceLabelChecking" = "Money in your account";
+"onboarding.calc.balanceLabelSavings" = "Amount saved";
+"onboarding.calc.balanceLabelCash" = "Cash you have";
 "onboarding.accountImportTip" = "In Profile > Import you can import records to any of your accounts.";
 "onboarding.accountMoreTip" = "You can add more accounts anytime. Create at least one per currency if you use multiple.";
 "onboarding.budgetTitle" = "How much do you expect to spend?";

@@ -1723,6 +1723,9 @@
 "onboarding.calc.cashExplanation" = "Vérifie ton portefeuille et partout où tu gardes des espèces. Additionne tout — une approximation suffit.";
 "onboarding.calc.checkingExplanation" = "Consulte le solde disponible dans l'appli de ta banque ou au distributeur. Mets le chiffre que tu vois aujourd'hui.";
 "onboarding.calc.savingsExplanation" = "Combien as-tu épargné ? Si tu as plusieurs comptes d'épargne, tu peux tout additionner ou créer un compte pour chacun.";
+"onboarding.calc.balanceLabelChecking" = "Argent sur ton compte";
+"onboarding.calc.balanceLabelSavings" = "Montant épargné";
+"onboarding.calc.balanceLabelCash" = "Espèces que tu as";
 "onboarding.accountImportTip" = "Dans Profil > Importer tu peux importer des enregistrements vers n'importe quel compte.";
 "onboarding.accountMoreTip" = "Tu peux ajouter d'autres comptes quand tu veux. Crée au moins un par devise si tu en utilises plusieurs.";
 "onboarding.budgetTitle" = "Combien comptes-tu dépenser ?";

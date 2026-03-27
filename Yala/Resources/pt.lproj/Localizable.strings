@@ -1721,6 +1721,9 @@
 "onboarding.calc.cashExplanation" = "Verifica a carteira e onde guardas dinheiro. Soma tudo — uma estimativa serve.";
 "onboarding.calc.checkingExplanation" = "Consulta o saldo disponível na app do teu banco ou multibanco. Põe o número que vês hoje.";
 "onboarding.calc.savingsExplanation" = "Quanto tens poupado? Se tens várias contas poupança, podes somar tudo ou criar uma conta para cada.";
+"onboarding.calc.balanceLabelChecking" = "Dinheiro na tua conta";
+"onboarding.calc.balanceLabelSavings" = "Valor poupado";
+"onboarding.calc.balanceLabelCash" = "Dinheiro que tens";
 "onboarding.accountImportTip" = "Em Perfil > Importar podes importar registos para qualquer conta.";
 "onboarding.accountMoreTip" = "Podes adicionar mais contas quando quiseres. Cria pelo menos uma por moeda se usas várias.";
 "onboarding.budgetTitle" = "Quanto esperas gastar?";

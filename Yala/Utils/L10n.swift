@@ -2846,6 +2846,9 @@ enum L10n {
         static var calcCashExplanation: String { ls("onboarding.calc.cashExplanation", comment: "") }
         static var calcCheckingExplanation: String { ls("onboarding.calc.checkingExplanation", comment: "") }
         static var calcSavingsExplanation: String { ls("onboarding.calc.savingsExplanation", comment: "") }
+        static var calcBalanceLabelChecking: String { ls("onboarding.calc.balanceLabelChecking", comment: "") }
+        static var calcBalanceLabelSavings: String { ls("onboarding.calc.balanceLabelSavings", comment: "") }
+        static var calcBalanceLabelCash: String { ls("onboarding.calc.balanceLabelCash", comment: "") }
         static var accountImportTip: String { ls("onboarding.accountImportTip", comment: "") }
         static var accountMoreTip: String { ls("onboarding.accountMoreTip", comment: "") }
 
