@@ -164,20 +164,13 @@ struct PanelView: View {
 
     private func deletePracticeItem(_ item: PracticeCleanupItem) {
         do {
-            let targetID = item.persistentID
             switch item.stepID {
             case .firstExpense:
-                let all = try modelContext.fetch(FetchDescriptor<TransactionItem>())
-                guard let match = all.first(where: { $0.persistentModelID == targetID }) else { return }
-                modelContext.delete(match)
+                try deletePracticeModel(TransactionItem.self, id: item.persistentID)
             case .firstBudget:
-                let all = try modelContext.fetch(FetchDescriptor<Budget>())
-                guard let match = all.first(where: { $0.persistentModelID == targetID }) else { return }
-                modelContext.delete(match)
+                try deletePracticeModel(Budget.self, id: item.persistentID)
             case .scheduledPayment:
-                let all = try modelContext.fetch(FetchDescriptor<ScheduledPayment>())
-                guard let match = all.first(where: { $0.persistentModelID == targetID }) else { return }
-                modelContext.delete(match)
+                try deletePracticeModel(ScheduledPayment.self, id: item.persistentID)
             default:
                 return
             }
@@ -187,6 +180,17 @@ struct PanelView: View {
             print("SetupChecklist: Error deleting practice item: \(error)")
             #endif
         }
+    }
+
+    private func deletePracticeModel<T: PersistentModel>(_ type: T.Type, id: PersistentIdentifier) throws {
+        let all = try modelContext.fetch(FetchDescriptor<T>())
+        guard let match = all.first(where: { $0.persistentModelID == id }) else {
+            #if DEBUG
+            print("SetupChecklist: Practice \(T.self) not found — ID mismatch")
+            #endif
+            return
+        }
+        modelContext.delete(match)
     }
 
     // MARK: - Setup Checklist Navigation

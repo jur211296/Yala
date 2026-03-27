@@ -208,6 +208,7 @@ final class BudgetEditorViewModel {
         let thresholdsString = alertThresholds.isEmpty ? nil : alertThresholds.sorted().map { String($0) }.joined(separator: ",")
 
         var savedBudgetID: PersistentIdentifier?
+        var newBudgetUUID: UUID?
 
         if let existingBudget = existing {
             // Update existing budget
@@ -242,11 +243,23 @@ final class BudgetEditorViewModel {
                 alertThresholds: thresholdsString
             )
             context.insert(newBudget)
-            savedBudgetID = newBudget.persistentModelID
+            newBudgetUUID = newBudget.id
         }
 
         do {
             try context.save()
+
+            // Re-fetch persistent ID by UUID after save (pre-save IDs may not match)
+            if let uuid = newBudgetUUID {
+                let descriptor = FetchDescriptor<Budget>(predicate: #Predicate { $0.id == uuid })
+                savedBudgetID = try context.fetch(descriptor).first?.persistentModelID
+                #if DEBUG
+                if savedBudgetID == nil {
+                    print("BudgetEditorViewModel: Budget not found after save for UUID: \(uuid)")
+                }
+                #endif
+            }
+
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
 

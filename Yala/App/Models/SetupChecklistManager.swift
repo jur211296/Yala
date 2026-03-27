@@ -211,7 +211,7 @@ final class SetupChecklistManager {
         defaults.removeObject(forKey: Keys.completedAll)
         defaults.removeObject(forKey: Keys.completedAllDate)
         defaults.removeObject(forKey: Keys.completedDismissed)
-        defaults.removeObject(forKey: Keys.isNewInstall)
+        // Keep isNewInstall — a new install remains new after wipe
 
         stepCompleted = [:]
         isCollapsed = false

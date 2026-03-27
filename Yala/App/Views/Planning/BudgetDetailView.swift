@@ -22,11 +22,26 @@ struct BudgetDetailView: View {
     @State private var showCharts = false
     @State private var summary: BudgetSummary?
 
+    private var isBudgetValid: Bool {
+        !budget.isDeleted && budget.modelContext != nil
+    }
+
     private func refreshSummary() {
+        guard isBudgetValid else { return }
         summary = viewModel.buildSummary(for: budget, defaultCurrencyCode: defaultCurrencyCode)
     }
 
     var body: some View {
+        if !isBudgetValid {
+            Color.clear
+                .onAppear { dismiss() }
+        } else {
+            mainContent
+        }
+    }
+
+    @ViewBuilder
+    private var mainContent: some View {
         ZStack {
             PanelBackgroundView()
 
@@ -71,6 +86,7 @@ struct BudgetDetailView: View {
         .sheet(isPresented: $showEditor) {
             BudgetEditorView(budget: budget)
                 .onDisappear {
+                    guard isBudgetValid else { return }
                     viewModel.loadData()
                     refreshSummary()
                 }
