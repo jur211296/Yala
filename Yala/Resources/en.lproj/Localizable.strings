@@ -780,6 +780,49 @@
 "cashFlowPlan.startingBalanceDateLabel" = "Balance date";
 "cashFlowPlan.startingBalanceDateHelper" = "When did you have this balance? If no date selected, today is assumed.";
 
+// Cell Detail Sheet (Inc 4)
+"cashFlowPlan.cellDetailOf" = "of";
+"cashFlowPlan.cellDetailRemaining" = "You have %@ left";
+"cashFlowPlan.cellDetailRecentTransactions" = "Recent transactions";
+"cashFlowPlan.cellDetailSpent" = "You spent";
+"cashFlowPlan.cellDetailEarned" = "You earned";
+"cashFlowPlan.cellDetailMore" = "more";
+"cashFlowPlan.cellDetailLess" = "less";
+"cashFlowPlan.cellDetailOverrideActive" = "Amount manually adjusted";
+"cashFlowPlan.cellDetailNote" = "Note (optional)";
+"cashFlowPlan.cellDetailSaveAdjustment" = "Save adjustment";
+
+// Config improvements (Inc 5)
+"cashFlowPlan.contextHistory" = "Historical context";
+"cashFlowPlan.monthsWithActivity" = "%d of 12 months";
+"cashFlowPlan.addOverride" = "Add adjustment";
+"cashFlowPlan.overrideMonth" = "Month";
+"cashFlowPlan.overrideAmount" = "Amount";
+"cashFlowPlan.configLine" = "Configure line";
+
+// Add Line redesign (Inc 6)
+"cashFlowPlan.addFromExpenses" = "From my expenses";
+"cashFlowPlan.addFromExpensesDesc" = "Pick a subcategory with history";
+"cashFlowPlan.addFromScheduled" = "From scheduled payment";
+"cashFlowPlan.addFromScheduledDesc" = "Use an active payment as a fixed line";
+"cashFlowPlan.addCustomLine" = "Custom line";
+"cashFlowPlan.addCustomLineDesc" = "Free name and amount";
+"cashFlowPlan.monthlyAverage" = "Monthly avg.";
+"cashFlowPlan.frequency" = "Frequency";
+"cashFlowPlan.noScheduledPayments" = "No scheduled payments available";
+"cashFlowPlan.noCategories" = "No categories with history";
+
+// Charts redesign (Inc 7)
+"cashFlowPlan.chartProjection" = "Balance projection";
+"cashFlowPlan.chartDeviation" = "Where you exceed the plan";
+"cashFlowPlan.chartSavings" = "Monthly savings";
+"cashFlowPlan.chartAccuracy" = "Plan accuracy";
+"cashFlowPlan.chartDeviationOver" = "Over budget";
+"cashFlowPlan.chartDeviationUnder" = "Saved";
+"cashFlowPlan.chartDangerZone" = "Danger zone";
+"cashFlowPlan.chartRollingAvg" = "Rolling average";
+"cashFlowPlan.chartNeedMoreData" = "You need at least 2 months of data";
+
 "common.unknownError" = "Something went wrong";
 "common.saveError" = "Changes weren't saved. Try again.";
 "common.deleteError" = "Couldn't delete. Try once more.";

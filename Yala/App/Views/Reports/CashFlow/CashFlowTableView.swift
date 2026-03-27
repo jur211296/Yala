@@ -46,7 +46,8 @@ struct CashFlowTableView: View {
                                 CashFlowMonthDetailView(
                                     month: month,
                                     viewModel: viewModel,
-                                    currencyCode: currencyCode
+                                    currencyCode: currencyCode,
+                                    transactions: transactions
                                 )
                             }
                             .onAppear { scrollProxy = proxy }
@@ -86,7 +87,8 @@ struct CashFlowTableView: View {
                 CashFlowLineConfigSheet(
                     viewModel: viewModel,
                     line: line,
-                    currencyCode: currencyCode
+                    currencyCode: currencyCode,
+                    transactions: transactions
                 )
             }
         }

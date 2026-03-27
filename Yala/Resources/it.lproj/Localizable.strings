@@ -778,6 +778,49 @@
 "cashFlowPlan.startingBalanceDateLabel" = "Data del saldo";
 "cashFlowPlan.startingBalanceDateHelper" = "Quando avevi questo saldo? Se non scegli una data, si assume oggi.";
 
+// Cell Detail Sheet (Inc 4)
+"cashFlowPlan.cellDetailOf" = "di";
+"cashFlowPlan.cellDetailRemaining" = "Ti restano %@";
+"cashFlowPlan.cellDetailRecentTransactions" = "Transazioni recenti";
+"cashFlowPlan.cellDetailSpent" = "Hai speso";
+"cashFlowPlan.cellDetailEarned" = "Hai ricevuto";
+"cashFlowPlan.cellDetailMore" = "in più";
+"cashFlowPlan.cellDetailLess" = "in meno";
+"cashFlowPlan.cellDetailOverrideActive" = "Importo modificato manualmente";
+"cashFlowPlan.cellDetailNote" = "Nota (opzionale)";
+"cashFlowPlan.cellDetailSaveAdjustment" = "Salva modifica";
+
+// Config improvements (Inc 5)
+"cashFlowPlan.contextHistory" = "Contesto storico";
+"cashFlowPlan.monthsWithActivity" = "%d di 12 mesi";
+"cashFlowPlan.addOverride" = "Aggiungi modifica";
+"cashFlowPlan.overrideMonth" = "Mese";
+"cashFlowPlan.overrideAmount" = "Importo";
+"cashFlowPlan.configLine" = "Configura linea";
+
+// Add Line redesign (Inc 6)
+"cashFlowPlan.addFromExpenses" = "Dalle mie spese";
+"cashFlowPlan.addFromExpensesDesc" = "Scegli una sottocategoria con storico";
+"cashFlowPlan.addFromScheduled" = "Da pagamento programmato";
+"cashFlowPlan.addFromScheduledDesc" = "Usa un pagamento attivo come linea fissa";
+"cashFlowPlan.addCustomLine" = "Linea personalizzata";
+"cashFlowPlan.addCustomLineDesc" = "Nome e importo libero";
+"cashFlowPlan.monthlyAverage" = "Media mensile";
+"cashFlowPlan.frequency" = "Frequenza";
+"cashFlowPlan.noScheduledPayments" = "Nessun pagamento programmato disponibile";
+"cashFlowPlan.noCategories" = "Nessuna categoria con storico";
+
+// Charts redesign (Inc 7)
+"cashFlowPlan.chartProjection" = "Proiezione del saldo";
+"cashFlowPlan.chartDeviation" = "Dove superi il piano";
+"cashFlowPlan.chartSavings" = "Risparmio mensile";
+"cashFlowPlan.chartAccuracy" = "Precisione del piano";
+"cashFlowPlan.chartDeviationOver" = "Sopra il budget";
+"cashFlowPlan.chartDeviationUnder" = "Risparmiato";
+"cashFlowPlan.chartDangerZone" = "Zona di pericolo";
+"cashFlowPlan.chartRollingAvg" = "Media mobile";
+"cashFlowPlan.chartNeedMoreData" = "Hai bisogno di almeno 2 mesi di dati";
+
 "common.unknownError" = "Errore sconosciuto";
 "common.saveError" = "Impossibile salvare le modifiche. Riprova.";
 "common.deleteError" = "Impossibile eliminare. Riprova.";

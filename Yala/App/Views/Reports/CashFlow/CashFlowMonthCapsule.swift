@@ -27,7 +27,7 @@ struct CashFlowMonthCapsule: View {
             Text(YalaFormatter.amountCompactTable(value: month.accumulatedBalance))
                 .font(DS.Typography.labelSmall)
                 .fontWeight(.semibold)
-                .foregroundStyle(month.accumulatedBalance >= 0 ? Color.electricIndigo : Color.hotPink)
+                .foregroundStyle(.primary)
                 .monospacedDigit()
 
             // Side-by-side bars (income | expense)
@@ -79,7 +79,7 @@ struct CashFlowMonthCapsule: View {
         let sign = month.netFlow >= 0 ? "+" : ""
         return Text(sign + YalaFormatter.amountCompactTable(value: month.netFlow))
             .font(DS.Typography.captionSmall)
-            .foregroundStyle(month.netFlow >= 0 ? Color.electricIndigo : Color.hotPink)
+            .foregroundStyle(.primary)
             .monospacedDigit()
             .lineLimit(1)
             .minimumScaleFactor(0.7)

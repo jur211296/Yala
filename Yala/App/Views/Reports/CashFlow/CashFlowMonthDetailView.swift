@@ -12,9 +12,11 @@ struct CashFlowMonthDetailView: View {
     let month: CashFlowMonth
     @Bindable var viewModel: CashFlowPlanViewModel
     let currencyCode: String
+    let transactions: [TransactionItem]
 
     @State private var incomeCollapsed = false
     @State private var expenseCollapsed = false
+    @State private var selectedCellLineID: UUID?
 
     @Environment(\.yalaTheme) private var theme
 
@@ -37,7 +39,23 @@ struct CashFlowMonthDetailView: View {
                 .coachMarkAnchor("cfTableAvailable")
         }
         .padding(.horizontal, DS.Spacing.lg)
-        .yalaSafeBottomPadding()
+        .padding(.bottom, DS.Spacing.lg)
+        .sheet(isPresented: Binding(
+            get: { selectedCellLineID != nil },
+            set: { if !$0 { selectedCellLineID = nil } }
+        )) {
+            if let lineID = selectedCellLineID,
+               let lineResult = allLines.first(where: { $0.lineID == lineID }) {
+                CashFlowCellDetailSheet(
+                    lineResult: lineResult,
+                    line: viewModel.line(for: lineID),
+                    month: month,
+                    currencyCode: currencyCode,
+                    transactions: transactions,
+                    viewModel: viewModel
+                )
+            }
+        }
     }
 
     // MARK: - Transition Bar
@@ -175,7 +193,7 @@ struct CashFlowMonthDetailView: View {
                 Text(YalaFormatter.currency(value: month.netFlow, currencyCode: currencyCode))
                     .font(DS.Typography.amount)
                     .fontWeight(.bold)
-                    .foregroundStyle(month.netFlow >= 0 ? Color.electricIndigo : Color.hotPink)
+                    .foregroundStyle(.primary)
                     .monospacedDigit()
             }
 
@@ -205,7 +223,7 @@ struct CashFlowMonthDetailView: View {
                 Text(YalaFormatter.currency(value: month.accumulatedBalance, currencyCode: currencyCode))
                     .font(DS.Typography.amount)
                     .fontWeight(.bold)
-                    .foregroundStyle(month.accumulatedBalance >= 0 ? Color.electricIndigo : Color.hotPink)
+                    .foregroundStyle(.primary)
                     .monospacedDigit()
             }
         }
@@ -224,8 +242,11 @@ struct CashFlowMonthDetailView: View {
                 month: month,
                 currencyCode: currencyCode,
                 onTapLine: {
-                    if let line {
-                        viewModel.selectedLine = line
+                    selectedCellLineID = lineResult.lineID
+                },
+                onConfigLine: line.map { l in
+                    {
+                        viewModel.selectedLine = l
                         viewModel.showLineConfig = true
                     }
                 },
@@ -275,6 +296,10 @@ struct CashFlowMonthDetailView: View {
     }
 
     // MARK: - Add Line Button
+
+    private var allLines: [CashFlowLineResult] {
+        month.incomeLines + month.expenseLines
+    }
 
     private func addLineButton(isIncome: Bool) -> some View {
         Button {

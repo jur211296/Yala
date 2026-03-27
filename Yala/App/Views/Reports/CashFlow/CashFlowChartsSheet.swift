@@ -2,7 +2,7 @@
 //  CashFlowChartsSheet.swift
 //  Yala
 //
-//  Charts sheet with 5 cash flow visualizations.
+//  Charts sheet with 4 cash flow visualizations matching PanelView style.
 //
 
 import Charts
@@ -14,6 +14,13 @@ struct CashFlowChartsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
 
+    @State private var selectedMonth: String?
+
+    // Cached computed data (computed once on appear)
+    @State private var cachedPastMonths: [CashFlowMonth] = []
+    @State private var cachedDeviations: [DeviationItem] = []
+    @State private var cachedRollingAvg: [RollingPoint] = []
+
     private var isPro: Bool {
         FeatureGateService.shared.canAccess(.cashFlowAdvanced)
     }
@@ -22,19 +29,10 @@ struct CashFlowChartsSheet: View {
         NavigationStack {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: DS.Spacing.xl) {
-                    accumulatedBalanceChart
-                    proChartSection(L10n.CashFlowPlan.incomeVsExpense) {
-                        incomeVsExpenseChart
-                    }
-                    proChartSection(L10n.CashFlowPlan.composition) {
-                        compositionChart
-                    }
-                    proChartSection(L10n.CashFlowPlan.realVsPlan) {
-                        realVsPlanChart
-                    }
-                    proChartSection(L10n.CashFlowPlan.trendByLine) {
-                        trendByLineChart
-                    }
+                    projectionChart
+                    proChartSection { deviationChart }
+                    proChartSection { savingsChart }
+                    proChartSection { accuracyChart }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.md)
@@ -50,187 +48,191 @@ struct CashFlowChartsSheet: View {
                 }
             }
         }
+        .onAppear { cacheData() }
     }
 
-    // MARK: - 1. Accumulated Balance (Free)
-
-    private var accumulatedBalanceChart: some View {
-        chartCard(title: L10n.CashFlowPlan.accumulatedBalance) {
-            Chart(projection.months, id: \.monthKey) { month in
-                LineMark(
-                    x: .value("Month", month.date),
-                    y: .value("Balance", month.accumulatedBalance)
-                )
-                .foregroundStyle(theme.accent)
-                .lineStyle(month.isPast || month.isCurrent ? StrokeStyle(lineWidth: 2) : StrokeStyle(lineWidth: 2, dash: [5, 3]))
-
-                AreaMark(
-                    x: .value("Month", month.date),
-                    y: .value("Balance", month.accumulatedBalance)
-                )
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [theme.accent.opacity(0.3), theme.accent.opacity(0.05)],
-                        startPoint: .top, endPoint: .bottom
-                    )
-                )
-            }
-            .chartXAxis {
-                AxisMarks(values: .stride(by: .month)) { value in
-                    AxisGridLine()
-                    AxisValueLabel(format: .dateTime.month(.abbreviated))
-                }
-            }
-            .frame(height: 200)
-        }
+    private func cacheData() {
+        cachedPastMonths = projection.months.filter { $0.isPast || $0.isCurrent }
+        cachedDeviations = Self.buildDeviations(from: cachedPastMonths)
+        cachedRollingAvg = Self.buildRollingAverage(from: cachedPastMonths)
     }
 
-    // MARK: - 2. Income vs Expense (Pro)
+    // MARK: - 1. Balance Projection (Free)
 
-    private var incomeVsExpenseChart: some View {
-        chartCard(title: L10n.CashFlowPlan.incomeVsExpense) {
-            Chart(projection.months, id: \.monthKey) { month in
-                BarMark(
-                    x: .value("Month", month.date),
-                    y: .value("Amount", month.totalIncome)
-                )
-                .foregroundStyle(Color.electricIndigo.opacity(0.8))
-                .position(by: .value("Type", "Income"))
-
-                BarMark(
-                    x: .value("Month", month.date),
-                    y: .value("Amount", month.totalExpense)
-                )
-                .foregroundStyle(Color.hotPink.opacity(0.8))
-                .position(by: .value("Type", "Expense"))
-            }
-            .chartXAxis {
-                AxisMarks(values: .stride(by: .month)) { _ in
-                    AxisGridLine()
-                    AxisValueLabel(format: .dateTime.month(.abbreviated))
-                }
-            }
-            .frame(height: 200)
-        }
-    }
-
-    // MARK: - 3. Expense Composition (Pro)
-
-    private var compositionChart: some View {
-        chartCard(title: L10n.CashFlowPlan.composition) {
+    private var projectionChart: some View {
+        chartCard(
+            title: L10n.CashFlowPlan.chartProjection,
+            kpiValue: YalaFormatter.currency(value: projection.months.last?.accumulatedBalance ?? 0, currencyCode: currencyCode)
+        ) {
             Chart {
                 ForEach(projection.months, id: \.monthKey) { month in
-                    ForEach(month.expenseLines, id: \.lineID) { line in
-                        BarMark(
-                            x: .value("Month", month.date),
-                            y: .value("Amount", line.plannedAmount)
+                    LineMark(
+                        x: .value("Month", month.date),
+                        y: .value("Balance", month.accumulatedBalance)
+                    )
+                    .foregroundStyle(theme.accent)
+                    .lineStyle(month.isPast || month.isCurrent
+                        ? StrokeStyle(lineWidth: 2)
+                        : StrokeStyle(lineWidth: 2, dash: [5, 3]))
+
+                    AreaMark(
+                        x: .value("Month", month.date),
+                        y: .value("Balance", month.accumulatedBalance)
+                    )
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [theme.accent.opacity(0.2), theme.accent.opacity(0.02)],
+                            startPoint: .top, endPoint: .bottom
                         )
-                        .foregroundStyle(by: .value("Line", line.name))
+                    )
+                }
+
+                RuleMark(y: .value("Zero", 0))
+                    .foregroundStyle(Color.hotPink.opacity(0.5))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                    .annotation(position: .topLeading) {
+                        Text(L10n.CashFlowPlan.chartDangerZone)
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(Color.hotPink.opacity(0.7))
                     }
-                }
             }
-            .chartXAxis {
-                AxisMarks(values: .stride(by: .month)) { _ in
-                    AxisGridLine()
-                    AxisValueLabel(format: .dateTime.month(.abbreviated))
-                }
-            }
-            .frame(height: 200)
+            .yalaChartYAxis()
+            .yalaChartXAxisMonthly()
+            .chartXSelection(value: $selectedMonth)
+            .frame(height: 180)
         }
     }
 
-    // MARK: - 4. Real vs Plan (Pro)
+    // MARK: - 2. Where You Exceed the Plan (Pro)
 
-    private var realVsPlanChart: some View {
-        let pastMonths = projection.months.filter { $0.isPast || $0.isCurrent }
-
-        return chartCard(title: L10n.CashFlowPlan.realVsPlan) {
-            if pastMonths.isEmpty {
-                Text(L10n.CashFlowPlan.emptyState)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-                    .frame(height: 200)
+    private var deviationChart: some View {
+        chartCard(
+            title: L10n.CashFlowPlan.chartDeviation,
+            kpiValue: nil
+        ) {
+            if cachedDeviations.isEmpty {
+                needMoreDataView
             } else {
-                Chart(pastMonths, id: \.monthKey) { month in
+                Chart(cachedDeviations, id: \.name) { item in
+                    BarMark(
+                        x: .value("Deviation", item.deviation),
+                        y: .value("Line", item.name)
+                    )
+                    .foregroundStyle(item.deviation > 0 ? Color.hotPink.opacity(0.8) : Color.electricIndigo.opacity(0.8))
+                }
+                .yalaChartYAxis()
+                .frame(height: max(120, CGFloat(cachedDeviations.count) * 36))
+            }
+        }
+    }
+
+    // MARK: - 3. Monthly Savings (Pro)
+
+    private var savingsChart: some View {
+        chartCard(
+            title: L10n.CashFlowPlan.chartSavings,
+            kpiValue: cachedPastMonths.last.map { YalaFormatter.currency(value: $0.netFlow, currencyCode: currencyCode) }
+        ) {
+            if cachedPastMonths.count < 2 {
+                needMoreDataView
+            } else {
+                Chart {
+                    ForEach(cachedPastMonths, id: \.monthKey) { month in
+                        BarMark(
+                            x: .value("Month", month.date),
+                            y: .value("Net", month.netFlow)
+                        )
+                        .foregroundStyle(month.netFlow >= 0 ? Color.electricIndigo.opacity(0.7) : Color.hotPink.opacity(0.7))
+                    }
+
+                    ForEach(cachedRollingAvg, id: \.monthKey) { point in
+                        LineMark(
+                            x: .value("Month", point.date),
+                            y: .value("Avg", point.value)
+                        )
+                        .foregroundStyle(theme.accent)
+                        .lineStyle(StrokeStyle(lineWidth: 2))
+                    }
+                }
+                .yalaChartYAxis()
+                .yalaChartXAxisMonthly()
+                .frame(height: 180)
+            }
+        }
+    }
+
+    // MARK: - 4. Plan Accuracy (Pro)
+
+    private var accuracyChart: some View {
+        chartCard(
+            title: L10n.CashFlowPlan.chartAccuracy,
+            kpiValue: nil
+        ) {
+            if cachedPastMonths.count < 2 {
+                needMoreDataView
+            } else {
+                Chart(cachedPastMonths, id: \.monthKey) { month in
                     BarMark(
                         x: .value("Month", month.date),
                         y: .value("Plan", month.totalExpense)
                     )
                     .foregroundStyle(Color.gray.opacity(0.3))
-                    .position(by: .value("Type", "Plan"))
+                    .position(by: .value("Type", L10n.CashFlowPlan.plan))
 
                     let realExpense = month.expenseLines.reduce(0.0) { $0 + ($1.realAmount ?? 0) }
                     BarMark(
                         x: .value("Month", month.date),
                         y: .value("Real", realExpense)
                     )
-                    .foregroundStyle(realExpense > month.totalExpense ? Color.hotPink.opacity(0.8) : Color.electricIndigo.opacity(0.8))
-                    .position(by: .value("Type", "Real"))
+                    .foregroundStyle(realExpense > month.totalExpense
+                        ? Color.hotPink.opacity(0.8)
+                        : Color.electricIndigo.opacity(0.8))
+                    .position(by: .value("Type", L10n.CashFlowPlan.real))
                 }
-                .chartXAxis {
-                    AxisMarks(values: .stride(by: .month)) { _ in
-                        AxisGridLine()
-                        AxisValueLabel(format: .dateTime.month(.abbreviated))
-                    }
-                }
-                .frame(height: 200)
+                .yalaChartYAxis()
+                .yalaChartXAxisMonthly()
+                .frame(height: 180)
             }
         }
     }
 
-    // MARK: - 5. Trend by Line (Pro)
+    // MARK: - Chart Card Container
 
-    private var trendByLineChart: some View {
-        chartCard(title: L10n.CashFlowPlan.trendByLine) {
-            Chart {
-                ForEach(allExpenseLines, id: \.id) { line in
-                    ForEach(projection.months, id: \.monthKey) { month in
-                        let amount = lineAmount(id: line.id, in: month)
-                        LineMark(
-                            x: .value("Month", month.date),
-                            y: .value("Amount", amount)
-                        )
-                        .foregroundStyle(by: .value("Line", line.name))
-                    }
-                }
-            }
-            .chartXAxis {
-                AxisMarks(values: .stride(by: .month)) { _ in
-                    AxisGridLine()
-                    AxisValueLabel(format: .dateTime.month(.abbreviated))
-                }
-            }
-            .frame(height: 200)
-        }
-    }
-
-    // MARK: - Helpers
-
-    private var allExpenseLines: [(id: UUID, name: String)] {
-        guard let first = projection.months.first else { return [] }
-        return first.expenseLines.map { (id: $0.lineID, name: $0.name) }
-    }
-
-    private func lineAmount(id: UUID, in month: CashFlowMonth) -> Double {
-        month.expenseLines.first(where: { $0.lineID == id })?.plannedAmount ?? 0
-    }
-
-    // MARK: - Card Container
-
-    private func chartCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func chartCard<Content: View>(
+        title: String,
+        kpiValue: String?,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            Text(title)
-                .font(DS.Typography.headline)
+            HStack(alignment: .firstTextBaseline) {
+                Text(title)
+                    .font(DS.Typography.headline)
+                Spacer()
+                if let kpi = kpiValue {
+                    Text(kpi)
+                        .font(DS.Typography.title)
+                        .fontWeight(.bold)
+                        .monospacedDigit()
+                }
+            }
             content()
         }
         .padding(DS.Spacing.lg)
         .solidCard()
     }
 
+    private var needMoreDataView: some View {
+        Text(L10n.CashFlowPlan.chartNeedMoreData)
+            .font(DS.Typography.caption)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .frame(height: 120)
+    }
+
     // MARK: - Pro Gate
 
     @ViewBuilder
-    private func proChartSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func proChartSection<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         if isPro {
             content()
         } else {
@@ -247,6 +249,80 @@ struct CashFlowChartsSheet: View {
                         .font(DS.Typography.label)
                         .foregroundStyle(.secondary)
                 }
+            }
+        }
+    }
+
+    // MARK: - Cached Data Builders
+
+    private struct DeviationItem {
+        let name: String
+        let deviation: Double
+    }
+
+    private struct RollingPoint {
+        let monthKey: String
+        let date: Date
+        let value: Double
+    }
+
+    private static func buildDeviations(from pastMonths: [CashFlowMonth]) -> [DeviationItem] {
+        guard !pastMonths.isEmpty else { return [] }
+
+        var deviations: [UUID: (name: String, totalDeviation: Double, count: Int)] = [:]
+
+        for month in pastMonths {
+            for line in month.expenseLines {
+                guard let real = line.realAmount else { continue }
+                let diff = real - line.plannedAmount
+                var entry = deviations[line.lineID] ?? (name: line.name, totalDeviation: 0, count: 0)
+                entry.totalDeviation += diff
+                entry.count += 1
+                deviations[line.lineID] = entry
+            }
+        }
+
+        return deviations.values
+            .map { DeviationItem(name: $0.name, deviation: $0.totalDeviation / Double(max(1, $0.count))) }
+            .sorted { abs($0.deviation) > abs($1.deviation) }
+    }
+
+    private static func buildRollingAverage(from pastMonths: [CashFlowMonth]) -> [RollingPoint] {
+        guard pastMonths.count >= 2 else { return [] }
+
+        var result: [RollingPoint] = []
+        for i in 0..<pastMonths.count {
+            let windowStart = max(0, i - 2)
+            let window = pastMonths[windowStart...i]
+            let avg = window.map(\.netFlow).reduce(0, +) / Double(window.count)
+            result.append(RollingPoint(monthKey: pastMonths[i].monthKey, date: pastMonths[i].date, value: avg))
+        }
+        return result
+    }
+}
+
+// MARK: - Shared Chart Axis Modifiers
+
+private extension View {
+    func yalaChartYAxis() -> some View {
+        self.chartYAxis {
+            AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                    .foregroundStyle(Color.gray.opacity(0.1))
+                AxisValueLabel {
+                    if let v = value.as(Double.self) {
+                        Text(YalaFormatter.amountCompactTable(value: v))
+                            .font(DS.Typography.captionSmall)
+                    }
+                }
+            }
+        }
+    }
+
+    func yalaChartXAxisMonthly() -> some View {
+        self.chartXAxis {
+            AxisMarks(values: .stride(by: .month)) { _ in
+                AxisValueLabel(format: .dateTime.month(.abbreviated))
             }
         }
     }

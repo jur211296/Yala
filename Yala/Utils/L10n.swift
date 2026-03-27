@@ -302,6 +302,53 @@ enum L10n {
         static var composition: String { ls("cashFlowPlan.composition", comment: "") }
         static var realVsPlan: String { ls("cashFlowPlan.realVsPlan", comment: "") }
         static var trendByLine: String { ls("cashFlowPlan.trendByLine", comment: "") }
+
+        // Cell Detail (Inc 4)
+        static var cellDetailOf: String { ls("cashFlowPlan.cellDetailOf", comment: "") }
+        static func cellDetailRemaining(_ amount: String) -> String {
+            String(format: ls("cashFlowPlan.cellDetailRemaining", comment: ""), amount)
+        }
+        static var cellDetailRecentTransactions: String { ls("cashFlowPlan.cellDetailRecentTransactions", comment: "") }
+        static var cellDetailSpent: String { ls("cashFlowPlan.cellDetailSpent", comment: "") }
+        static var cellDetailEarned: String { ls("cashFlowPlan.cellDetailEarned", comment: "") }
+        static var cellDetailMore: String { ls("cashFlowPlan.cellDetailMore", comment: "") }
+        static var cellDetailLess: String { ls("cashFlowPlan.cellDetailLess", comment: "") }
+        static var cellDetailOverrideActive: String { ls("cashFlowPlan.cellDetailOverrideActive", comment: "") }
+        static var cellDetailNote: String { ls("cashFlowPlan.cellDetailNote", comment: "") }
+        static var cellDetailSaveAdjustment: String { ls("cashFlowPlan.cellDetailSaveAdjustment", comment: "") }
+
+        // Config improvements (Inc 5)
+        static var contextHistory: String { ls("cashFlowPlan.contextHistory", comment: "") }
+        static func monthsWithActivity(_ count: Int) -> String {
+            String(format: ls("cashFlowPlan.monthsWithActivity", comment: ""), count)
+        }
+        static var addOverride: String { ls("cashFlowPlan.addOverride", comment: "") }
+        static var overrideMonth: String { ls("cashFlowPlan.overrideMonth", comment: "") }
+        static var overrideAmount: String { ls("cashFlowPlan.overrideAmount", comment: "") }
+        static var configLine: String { ls("cashFlowPlan.configLine", comment: "") }
+
+        // Add Line redesign (Inc 6)
+        static var addFromExpenses: String { ls("cashFlowPlan.addFromExpenses", comment: "") }
+        static var addFromExpensesDesc: String { ls("cashFlowPlan.addFromExpensesDesc", comment: "") }
+        static var addFromScheduled: String { ls("cashFlowPlan.addFromScheduled", comment: "") }
+        static var addFromScheduledDesc: String { ls("cashFlowPlan.addFromScheduledDesc", comment: "") }
+        static var addCustomLine: String { ls("cashFlowPlan.addCustomLine", comment: "") }
+        static var addCustomLineDesc: String { ls("cashFlowPlan.addCustomLineDesc", comment: "") }
+        static var monthlyAverage: String { ls("cashFlowPlan.monthlyAverage", comment: "") }
+        static var frequency: String { ls("cashFlowPlan.frequency", comment: "") }
+        static var noScheduledPayments: String { ls("cashFlowPlan.noScheduledPayments", comment: "") }
+        static var noCategories: String { ls("cashFlowPlan.noCategories", comment: "") }
+
+        // Charts redesign (Inc 7)
+        static var chartProjection: String { ls("cashFlowPlan.chartProjection", comment: "") }
+        static var chartDeviation: String { ls("cashFlowPlan.chartDeviation", comment: "") }
+        static var chartSavings: String { ls("cashFlowPlan.chartSavings", comment: "") }
+        static var chartAccuracy: String { ls("cashFlowPlan.chartAccuracy", comment: "") }
+        static var chartDeviationOver: String { ls("cashFlowPlan.chartDeviationOver", comment: "") }
+        static var chartDeviationUnder: String { ls("cashFlowPlan.chartDeviationUnder", comment: "") }
+        static var chartDangerZone: String { ls("cashFlowPlan.chartDangerZone", comment: "") }
+        static var chartRollingAvg: String { ls("cashFlowPlan.chartRollingAvg", comment: "") }
+        static var chartNeedMoreData: String { ls("cashFlowPlan.chartNeedMoreData", comment: "") }
     }
 
     // MARK: - Groupings
