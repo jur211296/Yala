@@ -791,12 +791,27 @@ struct OnboardingView: View {
                     }
                     .padding(.horizontal, DS.Spacing.xl)
 
-                    // Privacy assurances
-                    VStack(spacing: DS.Spacing.sm) {
-                        privacyPoint(icon: "iphone", color: .electricIndigo, text: L10n.Onboarding.privacyLocal)
-                        privacyPoint(icon: "eye.slash.fill", color: .hotPink, text: L10n.Onboarding.privacyNoTracking)
-                        privacyPoint(icon: "person.badge.key.fill", color: .electricIndigo, text: L10n.Onboarding.privacyIcloud)
-                        privacyPoint(icon: "lock.shield.fill", color: .hotPink, text: L10n.Onboarding.privacyNoSharing)
+                    // Privacy section — visually distinct from user data
+                    VStack(spacing: DS.Spacing.md) {
+                        HStack {
+                            Rectangle()
+                                .fill(.thSecondaryText.opacity(0.2))
+                                .frame(height: 1)
+                            Text(L10n.Onboarding.privacyTitle)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                                .layoutPriority(1)
+                            Rectangle()
+                                .fill(.thSecondaryText.opacity(0.2))
+                                .frame(height: 1)
+                        }
+
+                        VStack(spacing: DS.Spacing.xs) {
+                            privacyBullet(icon: "iphone", text: L10n.Onboarding.privacyLocal)
+                            privacyBullet(icon: "eye.slash.fill", text: L10n.Onboarding.privacyNoTracking)
+                            privacyBullet(icon: "person.badge.key.fill", text: L10n.Onboarding.privacyIcloud)
+                            privacyBullet(icon: "lock.shield.fill", text: L10n.Onboarding.privacyNoSharing)
+                        }
                     }
                     .padding(.horizontal, DS.Spacing.xl)
 
@@ -1019,34 +1034,20 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 9: Privacy & Finish
-
-    // privacyStep removed — content merged into confirmationStep
-
     // MARK: - Reusable Components
 
-    private func privacyPoint(icon: String, color: Color, text: String) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            ZStack {
-                Circle()
-                    .fill(color.opacity(0.15))
-                    .frame(width: badgeSize, height: badgeSize)
-
-                Image(systemName: icon)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(color)
-                    .accessibilityHidden(true)
-            }
-
+    private func privacyBullet(icon: String, text: String) -> some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundStyle(.secondary)
+                .frame(width: 20)
+                .accessibilityHidden(true)
             Text(text)
-                .font(DS.Typography.body)
-                .foregroundStyle(.primary)
-
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
             Spacer()
         }
-        .padding(DS.Spacing.md)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 
     private func triggerCategoryAnimation() {

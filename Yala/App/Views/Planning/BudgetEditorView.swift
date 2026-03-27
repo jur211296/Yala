@@ -82,7 +82,8 @@ struct BudgetEditorView: View {
                     // Alert Notifications Section
                     alertsSection
 
-                    // Filters Section (banner inside, before chips)
+                    // Filters Section with always-visible info banner
+                    budgetFilterBanner
                     filtersSection
 
                     // Delete Button (only for existing budgets)
@@ -438,18 +439,21 @@ struct BudgetEditorView: View {
 
     // MARK: - Filters Section
 
+    private var budgetFilterBanner: some View {
+        let summary = viewModel.filterSummaryText(
+            selectedAccounts: selectedAccounts,
+            selectedSubcategories: selectedSubcategories,
+            selectedTags: selectedTags,
+            selectedNeeds: selectedNeeds
+        )
+        return ContextualGuideBanner.budgetFilterInfo(
+            message: summary ?? L10n.ContextualGuide.BudgetFilter.allExpenses
+        )
+    }
+
     private var filtersSection: some View {
         SectionBox(title: NSLocalizedString("budgets.editor.filters", comment: "")) {
             VStack(spacing: DS.Spacing.none) {
-                if let summary = viewModel.filterSummaryText(
-                    selectedAccounts: selectedAccounts,
-                    selectedSubcategories: selectedSubcategories,
-                    selectedTags: selectedTags,
-                    selectedNeeds: selectedNeeds
-                ) {
-                    ContextualGuideBanner.budgetFilterInfo(message: summary)
-                        .padding(.bottom, DS.Spacing.sm)
-                }
                 accountsContent
                 Divider().padding(.leading, DS.Spacing.lg)
                 categoriesContent

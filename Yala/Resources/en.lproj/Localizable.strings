@@ -3064,6 +3064,7 @@
 "guide.scheduledEditor.message" = "It's an expense that repeats: rent, Netflix, internet... Yala reminds you before each payment. You can edit or delete it anytime.";
 "guide.budgetFilter.title" = "What does this budget cover?";
 "guide.budgetFilter.message" = "Covers %@";
+"guide.budgetFilter.allExpenses" = "All your expenses";
 "guide.accountForm.title" = "About this account";
 "guide.accountForm.messageGeneral" = "Your main account where you track all expenses. It can be your card, wallet, or whatever you prefer.";
 "guide.accountForm.messageCash" = "The money you carry as cash. It helps you know how much you have left without checking your wallet.";

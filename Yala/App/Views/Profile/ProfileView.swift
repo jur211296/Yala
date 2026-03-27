@@ -317,9 +317,10 @@ struct ProfileView: View {
             }
         }
         .task(id: hasSeenSettingsTour) {
-            // Pro Tour Phase 1: only after Settings Tour is done
-            guard hasSeenSettingsTour,
-                  ProTourManager.shared.currentPhase == .profile else { return }
+            guard hasSeenSettingsTour else { return }
+            // Re-check eligibility (covers race: subscribed before tours completed)
+            ProTourManager.shared.triggerIfEligible()
+            guard ProTourManager.shared.currentPhase == .profile else { return }
             try? await Task.sleep(for: .seconds(0.8))
             guard ProTourManager.shared.currentPhase == .profile,
                   !showSettingsTour else { return }

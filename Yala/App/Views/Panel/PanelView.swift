@@ -164,18 +164,20 @@ struct PanelView: View {
 
     private func deletePracticeItem(_ item: PracticeCleanupItem) {
         do {
-            let raw = modelContext.model(for: item.persistentID)
-            // Cast condicional — model(for:) retorna fault que crashea si el objeto ya no existe
+            let targetID = item.persistentID
             switch item.stepID {
             case .firstExpense:
-                guard let tx = raw as? TransactionItem else { return }
-                modelContext.delete(tx)
+                let all = try modelContext.fetch(FetchDescriptor<TransactionItem>())
+                guard let match = all.first(where: { $0.persistentModelID == targetID }) else { return }
+                modelContext.delete(match)
             case .firstBudget:
-                guard let budget = raw as? Budget else { return }
-                modelContext.delete(budget)
+                let all = try modelContext.fetch(FetchDescriptor<Budget>())
+                guard let match = all.first(where: { $0.persistentModelID == targetID }) else { return }
+                modelContext.delete(match)
             case .scheduledPayment:
-                guard let sp = raw as? ScheduledPayment else { return }
-                modelContext.delete(sp)
+                let all = try modelContext.fetch(FetchDescriptor<ScheduledPayment>())
+                guard let match = all.first(where: { $0.persistentModelID == targetID }) else { return }
+                modelContext.delete(match)
             default:
                 return
             }
@@ -274,8 +276,8 @@ struct PanelView: View {
             scrollProxy: panelScrollProxy,
             onComplete: {
                 hasSeenPanelTour = true
-                // Re-expand checklist after tour completes
                 SetupChecklistManager.shared.expandAfterTour()
+                ProTourManager.shared.triggerIfEligible()
             }
         )
         .coachMarkOverlay(

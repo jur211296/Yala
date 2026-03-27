@@ -50,6 +50,9 @@ final class SetupChecklistManager {
     /// Date when all steps were completed (nil if not yet).
     private(set) var completedAllDate: Date?
 
+    /// Whether the user manually dismissed the completed banner.
+    private(set) var isCompletedDismissed: Bool = false
+
     // MARK: - Computed
 
     /// Number of completed steps.
@@ -93,7 +96,7 @@ final class SetupChecklistManager {
     /// Hidden for: existing users (pre-v1.2), or after all complete + expirationDays passed.
     var shouldShow: Bool {
         if isExistingUser { return false }
-        if UserDefaults.standard.bool(forKey: Keys.completedDismissed) { return false }
+        if isCompletedDismissed { return false }
 
         if let date = completedAllDate {
             let daysSinceComplete = Calendar.current.dateComponents(
@@ -181,6 +184,7 @@ final class SetupChecklistManager {
     /// Dismiss the completed banner permanently.
     func dismissCompleted() {
         UserDefaults.standard.set(true, forKey: Keys.completedDismissed)
+        isCompletedDismissed = true
     }
 
     /// Check if the card should re-expand (called on panel appear).
@@ -212,6 +216,7 @@ final class SetupChecklistManager {
         stepCompleted = [:]
         isCollapsed = false
         isAllComplete = false
+        isCompletedDismissed = false
         completedAllDate = nil
     }
 
@@ -226,6 +231,7 @@ final class SetupChecklistManager {
 
         isCollapsed = defaults.bool(forKey: Keys.collapsed)
         isAllComplete = defaults.bool(forKey: Keys.completedAll)
+        isCompletedDismissed = defaults.bool(forKey: Keys.completedDismissed)
 
         let timestamp = defaults.double(forKey: Keys.completedAllDate)
         if timestamp > 0 {

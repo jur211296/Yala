@@ -3059,6 +3059,7 @@
 "guide.scheduledEditor.message" = "C'est une dépense qui se répète : loyer, Netflix, internet... Yala te rappelle avant chaque paiement. Tu pourras le modifier ou le supprimer quand tu veux.";
 "guide.budgetFilter.title" = "Que couvre ce budget ?";
 "guide.budgetFilter.message" = "Couvre %@";
+"guide.budgetFilter.allExpenses" = "Toutes tes depenses";
 "guide.accountForm.title" = "À propos de ce compte";
 "guide.accountForm.messageGeneral" = "Ton compte principal pour suivre toutes les dépenses. Ça peut être ta carte, ton portefeuille ou ce que tu préfères.";
 "guide.accountForm.messageCash" = "L'argent liquide que tu as sur toi. Ça t'aide à savoir combien il te reste.";

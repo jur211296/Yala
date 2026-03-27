@@ -416,6 +416,9 @@ extension L10n.ContextualGuide {
         static var title: String {
             NSLocalizedString("guide.budgetFilter.title", comment: "Budget filter info title")
         }
+        static var allExpenses: String {
+            NSLocalizedString("guide.budgetFilter.allExpenses", comment: "Budget filter default: all expenses")
+        }
     }
 
     enum AccountForm {

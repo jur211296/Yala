@@ -3058,6 +3058,7 @@
 "guide.scheduledEditor.message" = "É um gasto que se repete: aluguel, Netflix, internet... O Yala te lembra antes de cada pagamento. Você pode editar ou excluir quando quiser.";
 "guide.budgetFilter.title" = "O que esse orçamento cobre?";
 "guide.budgetFilter.message" = "Cobre %@";
+"guide.budgetFilter.allExpenses" = "Todos os seus gastos";
 "guide.accountForm.title" = "Sobre esta conta";
 "guide.accountForm.messageGeneral" = "Sua conta principal onde registra todos os gastos. Pode ser seu cartão, carteira ou o que preferir.";
 "guide.accountForm.messageCash" = "O dinheiro que você carrega em espécie. Ajuda a saber quanto ainda tem sem verificar a carteira.";
