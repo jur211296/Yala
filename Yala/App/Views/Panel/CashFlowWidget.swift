@@ -514,6 +514,22 @@ struct CashFlowWidget: View {
                                     }
                                 }
 
+                                // Net flow label above income bar (bidirectional only, not waterfall)
+                                if activeChartData.count <= Self.maxBarsForLabels {
+                                    let net = data.income - data.expense
+                                    PointMark(
+                                        x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                        y: .value("Net", data.income)
+                                    )
+                                    .symbolSize(0)
+                                    .annotation(position: .top, spacing: DS.Spacing.xs) {
+                                        Text(net >= 0 ? "+\(formatK(net))" : formatK(net))
+                                            .font(DS.Typography.labelTiny)
+                                            .fontWeight(.semibold)
+                                            .foregroundStyle(Color.electricIndigo)
+                                    }
+                                }
+
                                 BarMark(
                                     x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
                                     y: .value("Expense", -data.expense)

@@ -402,16 +402,22 @@ struct PeriodComparisonChartView: View {
             grouping: grouping.calendarComponent
         )
 
-        // Deduplicate: remove dates that would produce the same formatted label
+        // Deduplicate: keep border labels (first/last), remove interior duplicates
         guard let firstDate = currentFirstDate,
-              let lastDate = currentLastDate else { return rawDates }
+              let lastDate = currentLastDate,
+              rawDates.count > 1 else { return rawDates }
 
-        var seen = Set<String>()
-        return rawDates.filter { date in
-            let label = SmartAxisHelper.formatAxisLabel(
-                for: date, startDate: firstDate, endDate: lastDate, forceGrouping: grouping.forceAxisGrouping)
-            return seen.insert(label).inserted
+        let formatLabel = { (date: Date) in
+            SmartAxisHelper.formatAxisLabel(
+                for: date, startDate: firstDate, endDate: lastDate, forceGrouping: self.grouping.forceAxisGrouping)
         }
+        // Pre-seed with border labels so their interior duplicates are removed
+        var seen: Set<String> = [formatLabel(rawDates.first!), formatLabel(rawDates.last!)]
+        return rawDates.enumerated().filter { i, date in
+            if i == 0 || i == rawDates.count - 1 { return true }
+            return seen.insert(formatLabel(date)).inserted
+        }
+        .map(\.1)
     }
 
     /// Format axis label based on data span

@@ -365,7 +365,7 @@ struct InsightsTabView: View {
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, DS.Spacing.md)
-            .background(Color.electricIndigo, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+            .background(theme.accent, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
         }
         .buttonStyle(.plain)
         .coachMarkAnchor("proAiSummary")
@@ -837,8 +837,7 @@ struct InsightsTabView: View {
             .accessibilityLabel(L10n.Accessibility.close)
         }
         .padding(DS.Spacing.lg)
-        .background(DS.Semantic.infoBackground, in: RoundedRectangle(cornerRadius: DS.Radius.xl))
-        .overlay(RoundedRectangle(cornerRadius: DS.Radius.xl).stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1))
+        .yalaCard(padding: 0, radius: DS.Radius.xl, shadow: false)
     }
 
     // MARK: - Helpers
