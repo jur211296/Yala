@@ -121,22 +121,62 @@ Ver `qa/manifest.json` para cobertura y clasificación.
 
 DOCUMENTAR EN OBSIDIAN (OBLIGATORIO):
 
-Al finalizar el QA, guardar evidencia en el documento Obsidian correspondiente:
+Al finalizar el QA, guardar evidencia y actualizar estado del documento Obsidian correspondiente.
+
+VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki"
 
 1. COPIAR SCREENSHOTS al vault:
 ```bash
-# Determinar nombre descriptivo para el screenshot
-VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki"
 FEATURE_NAME="nombre-feature-o-bug"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 cp /tmp/yala-qa-*.png "$VAULT/Attachments/qa-${FEATURE_NAME}-${TIMESTAMP}.png"
 ```
 
 2. BUSCAR DOCUMENTO correspondiente:
-   - Features: `$VAULT/Backlog/[nombre].md`
-   - Bugs: `$VAULT/Bugs/[nombre].md`
+   - Features: `$VAULT/Backlog/[prefijo_][nombre].md` (buscar con glob si no se encuentra)
+   - Bugs: `$VAULT/Bugs/[prefijo_][nombre].md`
 
-3. AÑADIR SECCIÓN `## QA Visual` (o actualizar si ya existe) con:
+3. ACTUALIZAR PREFIJO Y STATUS según resultado del QA:
+
+   **Si QA PASA (todo correcto):**
+   - Renombrar archivo: `qa_feature.md` → `ok_feature.md`
+   - Frontmatter: `status: done` (Backlog) o `status: fixed` (Bugs)
+   - Frontmatter: `qa-status: passed`
+   - Frontmatter: `qa-date: DD/MM/YY`
+
+   **Si QA FALLA (hay problemas):**
+   - Renombrar archivo: `qa_feature.md` → `feature.md` (quitar prefijo)
+   - Frontmatter: `status: reopened`
+   - Frontmatter: `qa-status: failed`
+   - Frontmatter: `qa-date: DD/MM/YY`
+   - Frontmatter: `qa-notes:` descripcion del fallo sin comillas ni acentos
+
+   **Tabla completa de prefijos:**
+
+   Backlog:
+   | Status | Prefijo |
+   |--------|---------|
+   | open / reopened | (ninguno) |
+   | backlog | `next_` |
+   | in-progress | `now_` |
+   | needs-testing | `qa_` |
+   | done | `ok_` |
+   | discarded | `out_` |
+
+   Bugs:
+   | Status | Prefijo |
+   |--------|---------|
+   | open / reopened | (ninguno) |
+   | needs-testing | `qa_` |
+   | fixed | `ok_` |
+   | discarded | `out_` |
+
+   Ejecutar rename:
+   ```bash
+   mv "$VAULT/Backlog/[old_name].md" "$VAULT/Backlog/[new_prefix_name].md"
+   ```
+
+4. AÑADIR SECCIÓN `## QA Visual` (o actualizar si ya existe) con:
    - Fecha del QA
    - Screenshots embebidos con formato Obsidian: `![[qa-feature-name-timestamp.png]]`
    - Descripción de qué muestra cada screenshot
@@ -147,18 +187,14 @@ cp /tmp/yala-qa-*.png "$VAULT/Attachments/qa-${FEATURE_NAME}-${TIMESTAMP}.png"
    ```markdown
    ## QA Visual
    ### YYYY-MM-DD
-   **Resultado:** ✅ PASS
+   **Resultado:** PASS
 
    **Pantalla principal:**
    ![[qa-feature-name-20260326-143000.png]]
-   Navegación: Tab Gastos → Lista de transacciones → verificar [aspecto]
-
-   **Estado vacío:**
-   ![[qa-feature-name-20260326-143015.png]]
-   Sin datos cargados, empty state correcto
+   Navegacion: Tab Gastos > Lista de transacciones > verificar [aspecto]
    ```
 
-4. Si hay FALLOS, documentar con screenshots del problema y descripción clara del bug.
+5. Si hay FALLOS, documentar con screenshots del problema y descripción clara del bug.
 
 REGLAS:
 - SIEMPRE re-snapshot después de cualquier interacción (press, fill, scroll) — los refs se invalidan
