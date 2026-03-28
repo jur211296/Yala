@@ -114,6 +114,8 @@ struct PanelView: View {
 
     /// Setup Checklist state
     @State private var practiceCleanupItem: PracticeCleanupItem?
+    @State private var isVoiceSetupTrial = false
+    @State private var isImageSetupTrial = false
 
     /// Upgrade prompt sheets for gated features
     @State private var showUpgradeForVoice = false
@@ -170,7 +172,7 @@ struct PanelView: View {
     private func deletePracticeItem(_ item: PracticeCleanupItem) {
         do {
             switch item.stepID {
-            case .firstExpense:
+            case .firstExpense, .tryVoiceInput, .tryImageInput:
                 try deletePracticeModel(TransactionItem.self, id: item.persistentID)
             case .firstBudget:
                 try deletePracticeModel(Budget.self, id: item.persistentID)
@@ -224,6 +226,16 @@ struct PanelView: View {
                 showSubscriptionFromBanner = true
                 SetupChecklistManager.shared.markCompleted(.discoverFeatures)
             }
+        case .tryVoiceInput:
+            FeatureGateService.shared.enableSetupTrial(for: .voiceInput)
+            isVoiceSetupTrial = true
+            if !voiceInputEnabled { voiceInputEnabled = true }
+            showVoiceRecording = true
+        case .tryImageInput:
+            FeatureGateService.shared.enableSetupTrial(for: .imageInput)
+            isImageSetupTrial = true
+            if !imageInputEnabled { imageInputEnabled = true }
+            showImageSelection = true
         }
     }
 
@@ -336,6 +348,8 @@ struct PanelView: View {
                 showAIConsentAlert: $showAIConsentAlert,
                 pendingAIInput: $pendingAIInput,
                 practiceCleanupItem: $practiceCleanupItem,
+                isVoiceSetupTrial: $isVoiceSetupTrial,
+                isImageSetupTrial: $isImageSetupTrial,
                 deletePracticeItem: deletePracticeItem,
                 existingAccountNames: existingAccountNames,
                 prefillAccountID: viewModel.selectedAccountID,
@@ -1765,6 +1779,8 @@ private struct PanelSheetsModifier: ViewModifier {
     @Binding var showAIConsentAlert: Bool
     @Binding var pendingAIInput: PendingAIInput
     @Binding var practiceCleanupItem: PracticeCleanupItem?
+    @Binding var isVoiceSetupTrial: Bool
+    @Binding var isImageSetupTrial: Bool
     @State private var showPracticeAlert = false
     let deletePracticeItem: (PracticeCleanupItem) -> Void
 
@@ -1817,15 +1833,44 @@ private struct PanelSheetsModifier: ViewModifier {
                     },
                     onSwitchToImage: {
                         switchToImageAfterVoice = true
-                    }
+                    },
+                    onSetupTrialCompleted: isVoiceSetupTrial ? { transactionID, itemName in
+                        SetupChecklistManager.shared.markCompleted(
+                            .tryVoiceInput,
+                            practiceItem: PracticeCleanupItem(
+                                stepID: .tryVoiceInput,
+                                itemName: itemName,
+                                persistentID: transactionID
+                            )
+                        )
+                    } : nil,
+                    onSetupTrialSkipped: isVoiceSetupTrial ? {
+                        SetupChecklistManager.shared.markCompleted(.tryVoiceInput)
+                    } : nil
                 )
             }
             .sheet(isPresented: $showImageSelection, onDismiss: {
                 handleImageSelectionDismiss()
             }) {
-                ImageSelectionView(onSavedToInbox: {
-                    navigateToInboxAfterImage = true
-                })
+                ImageSelectionView(
+                    onSavedToInbox: {
+                        navigateToInboxAfterImage = true
+                    },
+                    exampleImages: isImageSetupTrial ? loadExampleImages() : nil,
+                    onSetupTrialCompleted: isImageSetupTrial ? { transactionID, itemName in
+                        SetupChecklistManager.shared.markCompleted(
+                            .tryImageInput,
+                            practiceItem: PracticeCleanupItem(
+                                stepID: .tryImageInput,
+                                itemName: itemName,
+                                persistentID: transactionID
+                            )
+                        )
+                    } : nil,
+                    onSetupTrialSkipped: isImageSetupTrial ? {
+                        SetupChecklistManager.shared.markCompleted(.tryImageInput)
+                    } : nil
+                )
             }
             .sheet(isPresented: $showCustomPeriodPicker) {
                 CustomPeriodPickerSheet(
@@ -1886,6 +1931,10 @@ private struct PanelSheetsModifier: ViewModifier {
     }
 
     private func handleVoiceRecordingDismiss() {
+        if isVoiceSetupTrial {
+            isVoiceSetupTrial = false
+            FeatureGateService.shared.disableSetupTrial(for: .voiceInput)
+        }
         if navigateToInboxAfterVoice {
             navigateToInboxAfterVoice = false
             showInbox = true
@@ -1900,6 +1949,10 @@ private struct PanelSheetsModifier: ViewModifier {
     }
 
     private func handleImageSelectionDismiss() {
+        if isImageSetupTrial {
+            isImageSetupTrial = false
+            FeatureGateService.shared.disableSetupTrial(for: .imageInput)
+        }
         if navigateToInboxAfterImage {
             navigateToInboxAfterImage = false
             showInbox = true
@@ -1909,6 +1962,11 @@ private struct PanelSheetsModifier: ViewModifier {
         // If there's a deferred panel action (e.g., Control Center "new-transaction"
         // that arrived while shared image was showing), resolve it now
         AppBootstrapper.shared.showDeferredActionsIfNeeded()
+    }
+
+    private func loadExampleImages() -> [UIImage] {
+        ["example-receipt", "example-bank-alert", "example-transaction-list"]
+            .compactMap { UIImage(named: $0) }
     }
 }
 

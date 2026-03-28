@@ -86,6 +86,8 @@ extension SetupStepID {
         case .firstExpense: L10n.SetupChecklist.Step.firstExpense
         case .firstBudget: L10n.SetupChecklist.Step.firstBudget
         case .scheduledPayment: L10n.SetupChecklist.Step.scheduledPayment
+        case .tryVoiceInput: L10n.SetupChecklist.Step.tryVoiceInput
+        case .tryImageInput: L10n.SetupChecklist.Step.tryImageInput
         case .discoverFeatures: L10n.SetupChecklist.Step.discoverFeatures
         }
     }
@@ -147,6 +149,12 @@ extension L10n {
             static var scheduled: String {
                 NSLocalizedString("setup.practice.type.scheduled", comment: "Scheduled type")
             }
+            static var voiceTrial: String {
+                NSLocalizedString("setup.practice.type.voiceTrial", comment: "Voice trial type")
+            }
+            static var imageTrial: String {
+                NSLocalizedString("setup.practice.type.imageTrial", comment: "Image trial type")
+            }
         }
 
         // Step titles
@@ -163,8 +171,38 @@ extension L10n {
             static var scheduledPayment: String {
                 NSLocalizedString("setup.step4.title", comment: "Step 4 title")
             }
+            static var tryVoiceInput: String {
+                NSLocalizedString("setup.step6.title", comment: "Step 6 title")
+            }
+            static var tryImageInput: String {
+                NSLocalizedString("setup.step7.title", comment: "Step 7 title")
+            }
             static var discoverFeatures: String {
                 NSLocalizedString("setup.step5.title", comment: "Step 5 title")
+            }
+        }
+
+        // Skip step
+        static var skipStep: String {
+            NSLocalizedString("setup.skipStep", comment: "Skip setup step")
+        }
+
+        // Image trial
+        enum ImageTrial {
+            static var pickExample: String {
+                NSLocalizedString("setup.imageTrial.pickExample", comment: "Pick example image")
+            }
+            static var orPickOwn: String {
+                NSLocalizedString("setup.imageTrial.orPickOwn", comment: "Or pick your own")
+            }
+            static var exampleReceipt: String {
+                NSLocalizedString("setup.imageTrial.exampleReceipt", comment: "Receipt example")
+            }
+            static var exampleBankAlert: String {
+                NSLocalizedString("setup.imageTrial.exampleBank", comment: "Bank alert example")
+            }
+            static var exampleTransactionList: String {
+                NSLocalizedString("setup.imageTrial.exampleList", comment: "Transaction list example")
             }
         }
     }

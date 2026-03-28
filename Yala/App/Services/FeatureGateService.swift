@@ -89,6 +89,21 @@ final class FeatureGateService {
         StoreKitManager.shared.isProUser
     }
 
+    // MARK: - Setup Trial Bypass
+
+    /// Features temporarily unlocked for setup checklist trial steps.
+    private(set) var setupTrialFeatures: Set<ProFeature> = []
+
+    /// Enable temporary access to a Pro feature during a setup trial step.
+    func enableSetupTrial(for feature: ProFeature) {
+        setupTrialFeatures.insert(feature)
+    }
+
+    /// Disable temporary access after the setup trial step completes or is dismissed.
+    func disableSetupTrial(for feature: ProFeature) {
+        setupTrialFeatures.remove(feature)
+    }
+
     // MARK: - Access Checks
 
     /// Check if user can access a Pro-only feature
@@ -96,6 +111,7 @@ final class FeatureGateService {
     /// - Returns: true if user has access (either Pro or feature isn't Pro-only)
     func canAccess(_ feature: ProFeature) -> Bool {
         if isProUser { return true }
+        if setupTrialFeatures.contains(feature) { return true }
         if feature.isProOnly {
             var params = TelemetryService.upsellParameters(source: "featureGate")
             params["feature"] = feature.rawValue

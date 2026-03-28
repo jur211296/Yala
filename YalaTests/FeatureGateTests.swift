@@ -40,6 +40,45 @@ struct FeatureGateTests {
         #expect(ProFeature.exportExtendedPeriods.isProOnly == true)
     }
 
+    // MARK: - Setup Trial Bypass
+
+    @MainActor @Test func setupTrial_enablesBypassesProGate() {
+        let gate = FeatureGateService.shared
+        // Ensure trial features are clean
+        gate.disableSetupTrial(for: .voiceInput)
+        gate.disableSetupTrial(for: .imageInput)
+
+        // Without trial, Pro-only features are blocked for Free users
+        #expect(gate.setupTrialFeatures.isEmpty)
+
+        // Enable trial for voice
+        gate.enableSetupTrial(for: .voiceInput)
+        #expect(gate.setupTrialFeatures.contains(.voiceInput))
+
+        // Cleanup
+        gate.disableSetupTrial(for: .voiceInput)
+        #expect(gate.setupTrialFeatures.isEmpty)
+    }
+
+    @MainActor @Test func setupTrial_independentPerFeature() {
+        let gate = FeatureGateService.shared
+        gate.disableSetupTrial(for: .voiceInput)
+        gate.disableSetupTrial(for: .imageInput)
+
+        gate.enableSetupTrial(for: .voiceInput)
+        #expect(gate.setupTrialFeatures.contains(.voiceInput))
+        #expect(!gate.setupTrialFeatures.contains(.imageInput))
+
+        gate.enableSetupTrial(for: .imageInput)
+        #expect(gate.setupTrialFeatures.contains(.imageInput))
+
+        gate.disableSetupTrial(for: .voiceInput)
+        #expect(!gate.setupTrialFeatures.contains(.voiceInput))
+        #expect(gate.setupTrialFeatures.contains(.imageInput))
+
+        gate.disableSetupTrial(for: .imageInput)
+    }
+
     // MARK: - DetailPeriod.isProExportPeriod
 
     @Test func isProExportPeriod_freePeriods_false() {

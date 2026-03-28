@@ -25,10 +25,13 @@ struct SetupChecklistManagerTests {
         defaults.removeObject(forKey: "setup.collapsedAtSession")
         defaults.removeObject(forKey: "setup.completedAll")
         defaults.removeObject(forKey: "setup.completedAllDate")
+        defaults.removeObject(forKey: "setup.completedDismissed")
         defaults.synchronize()
 
         let manager = SetupChecklistManager.shared
         manager.resetAll()
+        // Ensure shouldShow works (requires isNewInstall flag)
+        manager.markAsNewInstall()
         return manager
     }
 
@@ -37,7 +40,7 @@ struct SetupChecklistManagerTests {
     @MainActor @Test func initialState_allStepsPending() {
         let manager = freshManager()
         #expect(manager.completedCount == 0)
-        #expect(manager.totalCount == 5)
+        #expect(manager.totalCount == 7)
         #expect(manager.isAllComplete == false)
         #expect(manager.shouldShow == true)
         #expect(manager.isCollapsed == false)
@@ -82,7 +85,7 @@ struct SetupChecklistManagerTests {
         let manager = freshManager()
         manager.markCompleted(.firstExpense)
         manager.markCompleted(.firstBudget)
-        #expect(manager.progress == 2.0 / 5.0)
+        #expect(manager.progress == 2.0 / 7.0)
     }
 
     // MARK: - All Complete
@@ -93,7 +96,7 @@ struct SetupChecklistManagerTests {
             manager.markCompleted(step)
         }
         #expect(manager.isAllComplete == true)
-        #expect(manager.completedCount == 5)
+        #expect(manager.completedCount == 7)
         #expect(manager.completedAllDate != nil)
         #expect(manager.currentStep == nil)
         #expect(manager.progress == 1.0)
@@ -211,8 +214,46 @@ struct SetupChecklistManagerTests {
         #expect(SetupStepID.firstExpense.hasPracticeCleanup == true)
         #expect(SetupStepID.firstBudget.hasPracticeCleanup == true)
         #expect(SetupStepID.scheduledPayment.hasPracticeCleanup == true)
+        #expect(SetupStepID.tryVoiceInput.hasPracticeCleanup == true)
+        #expect(SetupStepID.tryImageInput.hasPracticeCleanup == true)
         #expect(SetupStepID.exploreSettings.hasPracticeCleanup == false)
         #expect(SetupStepID.discoverFeatures.hasPracticeCleanup == false)
+    }
+
+    // MARK: - Voice/Image Trial Steps
+
+    @MainActor @Test func discoverFeatures_lockedUntilTrialStepsComplete() {
+        let manager = freshManager()
+        // Complete original steps except discoverFeatures and trial steps
+        manager.markCompleted(.exploreSettings)
+        manager.markCompleted(.firstExpense)
+        manager.markCompleted(.firstBudget)
+        manager.markCompleted(.scheduledPayment)
+
+        // Still locked — trial steps not complete
+        let discoverStep = manager.steps.first { $0.id == .discoverFeatures }
+        #expect(discoverStep?.isLocked == true)
+
+        // Complete trial steps
+        manager.markCompleted(.tryVoiceInput)
+        manager.markCompleted(.tryImageInput)
+
+        let discoverStepAfter = manager.steps.first { $0.id == .discoverFeatures }
+        #expect(discoverStepAfter?.isLocked == false)
+    }
+
+    @MainActor @Test func stepsOrder_trialBeforeDiscover() {
+        let manager = freshManager()
+        let ids = manager.steps.map { $0.id }
+        guard let voiceIdx = ids.firstIndex(of: .tryVoiceInput),
+              let imageIdx = ids.firstIndex(of: .tryImageInput),
+              let discoverIdx = ids.firstIndex(of: .discoverFeatures) else {
+            Issue.record("Missing trial or discover steps")
+            return
+        }
+        #expect(voiceIdx < discoverIdx)
+        #expect(imageIdx < discoverIdx)
+        #expect(voiceIdx < imageIdx)
     }
 
     @Test func stepID_allHaveIcons() {

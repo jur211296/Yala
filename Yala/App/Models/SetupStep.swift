@@ -9,11 +9,15 @@ import Foundation
 import SwiftData
 
 /// Identifies each step in the setup checklist.
+/// Declaration order determines CaseIterable iteration (UI order), NOT rawValue.
+/// discoverFeatures keeps rawValue=5 for backward compat with UserDefaults.
 enum SetupStepID: Int, CaseIterable, Identifiable {
     case exploreSettings = 1
     case firstExpense = 2
     case firstBudget = 3
     case scheduledPayment = 4
+    case tryVoiceInput = 6
+    case tryImageInput = 7
     case discoverFeatures = 5
 
     var id: Int { rawValue }
@@ -25,6 +29,8 @@ enum SetupStepID: Int, CaseIterable, Identifiable {
         case .firstExpense: "plus.circle.fill"
         case .firstBudget: "chart.pie.fill"
         case .scheduledPayment: "calendar.badge.clock"
+        case .tryVoiceInput: "waveform"
+        case .tryImageInput: "camera.fill"
         case .discoverFeatures: "sparkles"
         }
     }
@@ -32,7 +38,8 @@ enum SetupStepID: Int, CaseIterable, Identifiable {
     /// Whether this step offers "Era de prueba" cleanup after guided creation.
     var hasPracticeCleanup: Bool {
         switch self {
-        case .firstExpense, .firstBudget, .scheduledPayment: true
+        case .firstExpense, .firstBudget, .scheduledPayment,
+             .tryVoiceInput, .tryImageInput: true
         default: false
         }
     }
@@ -67,6 +74,8 @@ struct PracticeCleanupItem: Identifiable {
         case .firstExpense: L10n.SetupChecklist.PracticeType.expense
         case .firstBudget: L10n.SetupChecklist.PracticeType.budget
         case .scheduledPayment: L10n.SetupChecklist.PracticeType.scheduled
+        case .tryVoiceInput: L10n.SetupChecklist.PracticeType.voiceTrial
+        case .tryImageInput: L10n.SetupChecklist.PracticeType.imageTrial
         default: ""
         }
     }

@@ -40,6 +40,15 @@ struct ImageSelectionView: View {
     /// Callback when draft is saved but not approved (user should go to Inbox)
     var onSavedToInbox: (() -> Void)?
 
+    /// Setup trial: example images to show as selectable cards
+    var exampleImages: [UIImage]?
+
+    /// Setup trial: called when draft is approved with the resulting transaction ID
+    var onSetupTrialCompleted: ((PersistentIdentifier, String) -> Void)?
+
+    /// Setup trial: called when user taps "Ahora no" to skip
+    var onSetupTrialSkipped: (() -> Void)?
+
     // Network monitor
     private let networkMonitor = NetworkMonitor.shared
 
@@ -71,6 +80,15 @@ struct ImageSelectionView: View {
             .toolbar {
                 // Only show X in selection view (during countdown/processing, there's an X below)
                 if !isCountingDown && !isProcessing && !showingResult {
+                    if onSetupTrialSkipped != nil {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button(L10n.SetupChecklist.skipStep) {
+                                onSetupTrialSkipped?()
+                                dismiss()
+                            }
+                            .font(DS.Typography.label)
+                        }
+                    }
                     ToolbarItem(placement: .topBarTrailing) {
                         YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                             dismiss()
@@ -124,6 +142,11 @@ struct ImageSelectionView: View {
                 InboxDraftEditSheet(draft: draft) {
                     // onApproved callback - mark as approved and dismiss image view
                     draftWasApproved = true
+                    // Setup trial: capture transaction for practice cleanup
+                    if let callback = onSetupTrialCompleted,
+                       let transaction = draft.approvedTransaction {
+                        callback(transaction.persistentModelID, draft.note ?? "")
+                    }
                     dismiss()
                 }
             }
@@ -176,33 +199,9 @@ struct ImageSelectionView: View {
             // Remove the temporary file
             SharedContainerService.removePendingImage(at: url)
 
-            // Start the countdown flow with the loaded image
             await MainActor.run {
                 selectedImages = [uiImage]
-                countdownValue = 3
-                isCountingDown = true
-            }
-
-            // Start countdown task
-            countdownTask = Task {
-                for i in (1...3).reversed() {
-                    await MainActor.run {
-                        countdownValue = i
-                        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                    }
-                    do {
-                        try await Task.sleep(for: .seconds(1))
-                    } catch {
-                        return
-                    }
-
-                    if Task.isCancelled { return }
-                }
-
-                await MainActor.run {
-                    isCountingDown = false
-                }
-                await processAllImages()
+                startCountdownWithLoadedImages()
             }
         } catch {
             SharedContainerService.removePendingImage(at: url)
@@ -255,27 +254,84 @@ struct ImageSelectionView: View {
 
             Spacer()
 
+            // Example images gallery (setup trial only)
+            if let examples = exampleImages {
+                exampleImagesGallery(examples)
+            }
+
             // Select button (circle style like Voice)
             PhotosPicker(
                 selection: $selectedPhotos,
-                maxSelectionCount: 10,
+                maxSelectionCount: exampleImages != nil ? 1 : 10,
                 matching: .images
             ) {
-                Image(systemName: "photo.badge.plus")
-                    .font(DS.Typography.title)
-                    .foregroundStyle(.white)
-                    .frame(width: 80, height: 80)
-                    .background(
-                        LinearGradient(
-                            colors: [DS.Semantic.imageAccent, DS.Semantic.imageAccent.opacity(0.85)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                if exampleImages != nil {
+                    // Setup trial: secondary style button
+                    Label(L10n.SetupChecklist.ImageTrial.orPickOwn, systemImage: "photo.badge.plus")
+                        .font(DS.Typography.label)
+                        .foregroundStyle(DS.Semantic.imageAccent)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .background(
+                            Capsule()
+                                .fill(DS.Semantic.imageAccent.opacity(0.12))
                         )
-                    )
-                    .clipShape(Circle())
-                    .shadow(color: DS.Semantic.imageAccent.opacity(0.4), radius: 16, x: 0, y: 8)
+                } else {
+                    Image(systemName: "photo.badge.plus")
+                        .font(DS.Typography.title)
+                        .foregroundStyle(.white)
+                        .frame(width: 80, height: 80)
+                        .background(
+                            LinearGradient(
+                                colors: [DS.Semantic.imageAccent, DS.Semantic.imageAccent.opacity(0.85)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .clipShape(Circle())
+                        .shadow(color: DS.Semantic.imageAccent.opacity(0.4), radius: 16, x: 0, y: 8)
+                }
             }
             .padding(.bottom, DS.Spacing.xxl)
+        }
+    }
+
+    // MARK: - Example Images Gallery (Setup Trial)
+
+    private func exampleImagesGallery(_ examples: [UIImage]) -> some View {
+        VStack(spacing: DS.Spacing.md) {
+            Text(L10n.SetupChecklist.ImageTrial.pickExample)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.primary)
+
+            let labels = [
+                L10n.SetupChecklist.ImageTrial.exampleReceipt,
+                L10n.SetupChecklist.ImageTrial.exampleBankAlert,
+                L10n.SetupChecklist.ImageTrial.exampleTransactionList
+            ]
+
+            HStack(spacing: DS.Spacing.md) {
+                ForEach(examples.indices, id: \.self) { index in
+                    Button {
+                        selectedImages = [examples[index]]
+                        startCountdownWithLoadedImages()
+                    } label: {
+                        VStack(spacing: DS.Spacing.xs) {
+                            Image(uiImage: examples[index])
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 100, height: 130)
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+
+                            Text(index < labels.count ? labels[index] : "")
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
         }
     }
 
@@ -582,19 +638,22 @@ struct ImageSelectionView: View {
             return
         }
 
-        // Show preview and start countdown
-        await MainActor.run {
-            selectedImages = loadedImages
-            countdownValue = 3
-            isCountingDown = true
-        }
+        selectedImages = loadedImages
+        startCountdownWithLoadedImages()
+    }
 
-        // Start countdown task
+    /// Starts the countdown timer with already-loaded images (used by both PhotosPicker and example images)
+    private func startCountdownWithLoadedImages() {
+        guard !selectedImages.isEmpty else { return }
+
+        countdownTask?.cancel()
+        countdownValue = 3
+        isCountingDown = true
+
         countdownTask = Task {
             for i in (1...3).reversed() {
                 await MainActor.run {
                     countdownValue = i
-                    // Haptic feedback on each tick
                     UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                 }
                 do {
@@ -603,11 +662,9 @@ struct ImageSelectionView: View {
                     return
                 }
 
-                // Check if cancelled
                 if Task.isCancelled { return }
             }
 
-            // Countdown finished - start processing
             await MainActor.run {
                 isCountingDown = false
             }
