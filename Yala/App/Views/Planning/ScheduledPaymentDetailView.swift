@@ -116,6 +116,11 @@ struct ScheduledPaymentDetailView: View {
             ScheduledPaymentEditorView(payment: payment, onDelete: {
                 dismiss()
             })
+            .onDisappear {
+                linkedTransactions = viewModel.fetchLinkedTransactions(for: payment)
+                viewModel.loadPayments()
+                viewModel.calculatePaymentData(payments: viewModel.allPayments)
+            }
         }
         .sheet(isPresented: $showAssociationSheet) {
             TransactionAssociationSheet(
@@ -225,11 +230,11 @@ struct ScheduledPaymentDetailView: View {
             if !payment.isActive {
                 HStack {
                     Image(systemName: "pause.circle.fill")
-                        .foregroundStyle(DS.Semantic.warningForeground)
+                        .foregroundStyle(Color.hotPink)
                         .accessibilityHidden(true)
                     Text(L10n.Scheduled.Detail.statusInactive)
                         .font(DS.Typography.label)
-                        .foregroundStyle(DS.Semantic.warningForeground)
+                        .foregroundStyle(Color.hotPink)
                 }
                 .padding(.top, DS.Spacing.sm)
             }
