@@ -193,7 +193,8 @@ final class ScheduledPaymentNotificationService {
 
     private func sendPaymentNotification(payment: ScheduledPayment, type: PaymentNotificationType) async {
         let currencySymbol = CurrencyUtils.symbol(for: payment.currencyCode)
-        let formattedAmount = "\(currencySymbol)\(payment.amount.formatted(.number.precision(.fractionLength(0...2))))"
+        let estimatePrefix = payment.isVariableAmount ? "≈ " : ""
+        let formattedAmount = "\(estimatePrefix)\(currencySymbol)\(payment.amount.formatted(.number.precision(.fractionLength(0...2))))"
         let isIncome = payment.transactionType == "income"
 
         let message: String

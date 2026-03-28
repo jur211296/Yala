@@ -130,7 +130,7 @@ struct ScheduledPaymentsSettingsView: View {
 
                     HStack(spacing: DS.Spacing.sm) {
                         // Amount
-                        Text(formatAmount(payment.amount, currency: payment.currencyCode))
+                        Text(YalaFormatter.currency(value: payment.amount, currencyCode: payment.currencyCode, isEstimate: payment.isVariableAmount))
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
 

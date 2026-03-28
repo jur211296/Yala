@@ -1441,6 +1441,11 @@
 "scheduled.select.subcategory" = "Seleziona sottocategoria";
 "scheduled.is.subscription" = "E' un abbonamento?";
 
+// Variable amount
+"scheduled.variableAmount.toggle" = "Importo stimato";
+"scheduled.variableAmount.helper" = "Potrai modificare l'importo reale ogni volta che lo approvi";
+"scheduled.variableAmount.badge" = "Stimato";
+
 // Recurrence - New logic
 "scheduled.recurrence.onetime" = "Una tantum";
 "scheduled.recurrence.recurring" = "Ricorrente";
@@ -3055,6 +3060,16 @@
 "setup.practice.type.expense" = "spesa";
 "setup.practice.type.budget" = "budget";
 "setup.practice.type.scheduled" = "pagamento programmato";
+"setup.practice.type.voiceTrial" = "spesa vocale";
+"setup.practice.type.imageTrial" = "spesa da foto";
+"setup.step6.title" = "Prova la registrazione vocale";
+"setup.step7.title" = "Prova la registrazione con foto";
+"setup.skipStep" = "Non ora";
+"setup.imageTrial.pickExample" = "Scegli un'immagine di esempio";
+"setup.imageTrial.orPickOwn" = "o scegline una tua";
+"setup.imageTrial.exampleReceipt" = "Scontrino";
+"setup.imageTrial.exampleBank" = "Avviso bancario";
+"setup.imageTrial.exampleList" = "Movimenti";
 
 "setup.personalize.navTitle" = "Personalizza il tuo Yala";
 "setup.personalize.title" = "Fallo tuo";

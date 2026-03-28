@@ -116,7 +116,7 @@ struct TransactionAssociationSheet: View {
                 Text(payment.name)
                     .font(DS.Typography.label)
                     .foregroundStyle(.primary)
-                Text(YalaFormatter.currency(value: payment.amount, currencyCode: payment.currencyCode, forceFullPrecision: true))
+                Text(YalaFormatter.currency(value: payment.amount, currencyCode: payment.currencyCode, forceFullPrecision: true, isEstimate: payment.isVariableAmount))
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }

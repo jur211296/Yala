@@ -317,7 +317,7 @@ struct ScheduledPaymentsWidget: View {
             HStack(spacing: DS.Spacing.xs) {
                 let isIncome = item.payment.transactionType == "income"
                 let prefix = isIncome ? "+" : "-"
-                Text(prefix + YalaFormatter.currency(value: item.payment.amount, currencyCode: item.payment.currencyCode, forceFullPrecision: true))
+                Text(prefix + YalaFormatter.currency(value: item.payment.amount, currencyCode: item.payment.currencyCode, forceFullPrecision: true, isEstimate: item.payment.isVariableAmount))
                     .font(DS.Typography.headline)
                     .foregroundStyle(isIncome ? Color.priorityNeed : Color.hotPink)
                     .opacity(item.isPaid || item.isSkipped ? 0.6 : 1.0)

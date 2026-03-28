@@ -1441,6 +1441,11 @@
 "scheduled.select.subcategory" = "Selecionar subcategoria";
 "scheduled.is.subscription" = "E' uma assinatura?";
 
+// Variable amount
+"scheduled.variableAmount.toggle" = "Valor estimado";
+"scheduled.variableAmount.helper" = "Você poderá ajustar o valor real cada vez que aprovar";
+"scheduled.variableAmount.badge" = "Estimado";
+
 // Recurrence - New logic
 "scheduled.recurrence.onetime" = "Uma vez";
 "scheduled.recurrence.recurring" = "Recorrente";
@@ -3053,6 +3058,16 @@
 "setup.practice.type.expense" = "gasto";
 "setup.practice.type.budget" = "orçamento";
 "setup.practice.type.scheduled" = "pagamento agendado";
+"setup.practice.type.voiceTrial" = "gasto por voz";
+"setup.practice.type.imageTrial" = "gasto por foto";
+"setup.step6.title" = "Experimente o registro por voz";
+"setup.step7.title" = "Experimente o registro por foto";
+"setup.skipStep" = "Agora não";
+"setup.imageTrial.pickExample" = "Escolha uma imagem de exemplo";
+"setup.imageTrial.orPickOwn" = "ou escolha uma sua";
+"setup.imageTrial.exampleReceipt" = "Recibo";
+"setup.imageTrial.exampleBank" = "Alerta bancário";
+"setup.imageTrial.exampleList" = "Movimentos";
 
 "setup.personalize.navTitle" = "Personalize seu Yala";
 "setup.personalize.title" = "Deixe a sua cara";

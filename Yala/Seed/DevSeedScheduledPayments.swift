@@ -44,17 +44,17 @@ struct DevSeedScheduledPayments {
         }
 
         // Days spread across month so most are still upcoming from any seed date
-        let definitions: [(name: String, amount: Double, subKey: String, day: Int, category: String)] = [
+        let definitions: [(name: String, amount: Double, subKey: String, day: Int, category: String, variable: Bool)] = [
             // Subscriptions
-            ("Netflix", 45, L10n.Subcategory.streaming, 20, "subscription"),
-            ("Spotify", 18, L10n.Subcategory.streaming, 18, "subscription"),
-            (L10n.DevSeed.spGym, 150, L10n.Subcategory.fitness, 3, "subscription"),
-            ("iCloud+", 10, L10n.Subcategory.utilitySubs, 22, "subscription"),
+            ("Netflix", 45, L10n.Subcategory.streaming, 20, "subscription", false),
+            ("Spotify", 18, L10n.Subcategory.streaming, 18, "subscription", false),
+            (L10n.DevSeed.spGym, 150, L10n.Subcategory.fitness, 3, "subscription", false),
+            ("iCloud+", 10, L10n.Subcategory.utilitySubs, 22, "subscription", false),
             // Recurring
-            (L10n.DevSeed.spRent, 2200, L10n.Subcategory.rent, 5, "recurring"),
-            (L10n.DevSeed.spPhone, 60, L10n.Subcategory.phone, 15, "recurring"),
-            (L10n.DevSeed.spInternet, 90, L10n.Subcategory.utilities, 25, "recurring"),
-            (L10n.DevSeed.spInsurance, 180, L10n.Subcategory.insurance, 28, "recurring"),
+            (L10n.DevSeed.spRent, 2200, L10n.Subcategory.rent, 5, "recurring", false),
+            (L10n.DevSeed.spPhone, 60, L10n.Subcategory.phone, 15, "recurring", false),
+            (L10n.DevSeed.spInternet, 90, L10n.Subcategory.utilities, 25, "recurring", true),
+            (L10n.DevSeed.spInsurance, 180, L10n.Subcategory.insurance, 28, "recurring", true),
         ]
 
         var payments: [ScheduledPayment] = []
@@ -74,7 +74,8 @@ struct DevSeedScheduledPayments {
                 dayOfMonth: def.day,
                 paymentCategory: def.category,
                 notifyOnDueDate: true,
-                notifyDaysBefore: 3
+                notifyDaysBefore: 3,
+                isVariableAmount: def.variable
             )
             context.insert(payment)
             payments.append(payment)

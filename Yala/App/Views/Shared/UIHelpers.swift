@@ -309,7 +309,8 @@ struct YalaFormatter {
     ///   - forceFullPrecision: If true, always shows 2 decimals (use for individual records)
     /// - Returns: Formatted string like "PEN 20,000.00" or "S/ -20,000.00"
     static func currency(
-        value: Double, currencyCode: String, forceSign: Bool = false, forceFullPrecision: Bool = false
+        value: Double, currencyCode: String, forceSign: Bool = false, forceFullPrecision: Bool = false,
+        isEstimate: Bool = false
     ) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
@@ -332,7 +333,8 @@ struct YalaFormatter {
 
         // Format: "PEN 20,000.00" or "S/ -20,000.00" based on user preference
         let identifier = currencyIdentifier(for: currencyCode)
-        return "\(identifier) \(signedNumber)"
+        let estimatePrefix = isEstimate ? "≈ " : ""
+        return "\(estimatePrefix)\(identifier) \(signedNumber)"
     }
 
     static func compactCurrency(value: Double) -> String {

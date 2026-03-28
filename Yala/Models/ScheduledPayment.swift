@@ -32,6 +32,9 @@ final class ScheduledPayment {
     /// Currency code (ISO 4217)
     var currencyCode: String = "USD"
 
+    /// Whether this payment has a variable/estimated amount (e.g., utility bills)
+    var isVariableAmount: Bool = false
+
     // MARK: - Type (income/expense) (CloudKit: default required)
 
     /// Transaction type: "income" or "expense"
@@ -185,12 +188,14 @@ final class ScheduledPayment {
         paymentCategory: String = "recurring",
         notifyOnDueDate: Bool = true,
         notifyDaysBefore: Int = 3,
-        isActive: Bool = true
+        isActive: Bool = true,
+        isVariableAmount: Bool = false
     ) {
         self.name = name
         self.note = note
         self.amount = amount
         self.currencyCode = currencyCode
+        self.isVariableAmount = isVariableAmount
         self.transactionType = transactionType
         self.account = account
         self.subcategory = subcategory

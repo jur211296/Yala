@@ -538,7 +538,7 @@ struct CashFlowAddFromScheduledView: View {
 
                         Spacer()
 
-                        Text(YalaFormatter.currency(value: abs(payment.amount), currencyCode: currencyCode))
+                        Text(YalaFormatter.currency(value: abs(payment.amount), currencyCode: currencyCode, isEstimate: payment.isVariableAmount))
                             .font(DS.Typography.amountSmall)
                             .monospacedDigit()
                             .foregroundStyle(.secondary)

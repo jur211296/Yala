@@ -52,6 +52,29 @@ struct WidgetScheduledPayment: Codable {
     let isIncome: Bool
     let iconName: String
     let colorHex: String
+    let isVariableAmount: Bool
+
+    init(id: String, name: String, amount: Double, currencyCode: String, nextDueDate: Date, isOverdue: Bool, paymentCategory: String, isIncome: Bool, iconName: String, colorHex: String, isVariableAmount: Bool = false) {
+        self.id = id; self.name = name; self.amount = amount; self.currencyCode = currencyCode
+        self.nextDueDate = nextDueDate; self.isOverdue = isOverdue; self.paymentCategory = paymentCategory
+        self.isIncome = isIncome; self.iconName = iconName; self.colorHex = colorHex
+        self.isVariableAmount = isVariableAmount
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        amount = try container.decode(Double.self, forKey: .amount)
+        currencyCode = try container.decode(String.self, forKey: .currencyCode)
+        nextDueDate = try container.decode(Date.self, forKey: .nextDueDate)
+        isOverdue = try container.decode(Bool.self, forKey: .isOverdue)
+        paymentCategory = try container.decode(String.self, forKey: .paymentCategory)
+        isIncome = try container.decode(Bool.self, forKey: .isIncome)
+        iconName = try container.decode(String.self, forKey: .iconName)
+        colorHex = try container.decode(String.self, forKey: .colorHex)
+        isVariableAmount = try container.decodeIfPresent(Bool.self, forKey: .isVariableAmount) ?? false
+    }
 }
 
 /// Balance trend data point for widgets
@@ -322,7 +345,8 @@ enum WidgetDataCache {
                 paymentCategory: payment.paymentCategory,
                 isIncome: payment.transactionType == "income",
                 iconName: icon,
-                colorHex: color
+                colorHex: color,
+                isVariableAmount: payment.isVariableAmount
             )
         }
 

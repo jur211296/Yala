@@ -71,6 +71,9 @@ struct ScheduledPaymentEditorView: View {
     @State private var notifyOnDueDate: Bool = true
     @State private var notifyDaysBefore: Int = 3
 
+    // Amount type
+    @State private var isVariableAmount: Bool = false
+
     // Status
     @State private var isActive: Bool = true
 
@@ -290,6 +293,27 @@ struct ScheduledPaymentEditorView: View {
                                     amount = filtered
                                 }
                             }
+                    }
+                }
+                .padding()
+
+                SubsectionDivider()
+
+                // Variable Amount Toggle
+                Toggle(isOn: $isVariableAmount) {
+                    HStack(spacing: DS.Spacing.md) {
+                        Image(systemName: "plusminus")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 24)
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                            Text(L10n.Scheduled.VariableAmount.toggle)
+                            if isVariableAmount {
+                                Text(L10n.Scheduled.VariableAmount.helper)
+                                    .font(DS.Typography.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
                 }
                 .padding()
@@ -1063,6 +1087,7 @@ struct ScheduledPaymentEditorView: View {
         notifyOnDueDate = payment.notifyOnDueDate
         notifyDaysBefore = payment.notifyDaysBefore
         isActive = payment.isActive
+        isVariableAmount = payment.isVariableAmount
     }
 
     private func savePayment() {
@@ -1094,7 +1119,8 @@ struct ScheduledPaymentEditorView: View {
             notifyOnDueDate: notifyOnDueDate,
             notifyDaysBefore: notifyDaysBefore,
             isActive: isActive,
-            needOverride: selectedNeed?.rawValue
+            needOverride: selectedNeed?.rawValue,
+            isVariableAmount: isVariableAmount
         )
 
         if let id = savedID {

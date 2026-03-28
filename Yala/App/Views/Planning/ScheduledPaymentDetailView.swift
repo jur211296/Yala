@@ -156,10 +156,19 @@ struct ScheduledPaymentDetailView: View {
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
 
-                Text(formatAmount(payment.amount))
+                Text(formatAmount(payment.amount, isEstimate: payment.isVariableAmount))
                     .font(.system(size: scaledAmountSize, weight: .bold))
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                     .foregroundStyle(payment.transactionType == "income" ? Color.electricIndigo : .primary)
+
+                if payment.isVariableAmount {
+                    Text(L10n.Scheduled.VariableAmount.badge)
+                        .font(DS.Typography.caption)
+                        .padding(.horizontal, DS.Spacing.sm)
+                        .padding(.vertical, DS.Spacing.xxs)
+                        .background(DS.Semantic.infoBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+                }
             }
 
             Divider()
@@ -400,7 +409,8 @@ struct ScheduledPaymentDetailView: View {
                 // Amount + chevron (show real amount from linked transaction if available)
                 HStack(spacing: DS.Spacing.sm) {
                     let displayAmount = rowLinkedTx.map { abs($0.amount) } ?? payment.amount
-                    Text(formatAmount(displayAmount))
+                    let isEstimateRow = rowLinkedTx == nil && payment.isVariableAmount
+                    Text(formatAmount(displayAmount, isEstimate: isEstimateRow))
                         .font(DS.Typography.label)
                         .foregroundStyle(isSkipped ? .secondary : (isPast ? .secondary : (payment.transactionType == "income" ? Color.electricIndigo : .primary)))
 
@@ -537,8 +547,8 @@ struct ScheduledPaymentDetailView: View {
         }
     }
 
-    private func formatAmount(_ amount: Double) -> String {
-        YalaFormatter.currency(value: amount, currencyCode: payment.currencyCode, forceFullPrecision: true)
+    private func formatAmount(_ amount: Double, isEstimate: Bool = false) -> String {
+        YalaFormatter.currency(value: amount, currencyCode: payment.currencyCode, forceFullPrecision: true, isEstimate: isEstimate)
     }
 
     private static let mediumDateFormatter: DateFormatter = {

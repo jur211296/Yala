@@ -1885,6 +1885,12 @@ enum L10n {
             static var candidatesHeader: String { ls("scheduled.associate.candidatesHeader", comment: "") }
         }
 
+        enum VariableAmount {
+            static var toggle: String { ls("scheduled.variableAmount.toggle", comment: "") }
+            static var helper: String { ls("scheduled.variableAmount.helper", comment: "") }
+            static var badge: String { ls("scheduled.variableAmount.badge", comment: "") }
+        }
+
         enum Editor {
             static var recurrence: String { ls("scheduled.editor.recurrence", comment: "") }
             static var dayOfMonth: String { ls("scheduled.editor.day.of.month", comment: "") }

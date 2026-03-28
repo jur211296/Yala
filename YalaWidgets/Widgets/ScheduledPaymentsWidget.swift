@@ -296,7 +296,8 @@ struct PaymentRowView: View {
             ? CurrencySymbols.symbol(for: payment.currencyCode)
             : payment.currencyCode
 
-        return "\(prefix)\(currency) \(formatted)"
+        let estimatePrefix = (payment.isVariableAmount ?? false) ? "≈ " : ""
+        return "\(estimatePrefix)\(prefix)\(currency) \(formatted)"
     }
 }
 
