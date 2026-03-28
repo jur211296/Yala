@@ -17,7 +17,9 @@ struct ScheduledPaymentsViewModelTests {
 
     private func makeSummary(
         isPaid: Bool = false,
-        isSkipped: Bool = false
+        isSkipped: Bool = false,
+        paidAmount: Double? = nil,
+        paidCurrencyCode: String? = nil
     ) -> ScheduledPaymentSummary {
         let now = Date()
         let payment = ScheduledPayment(
@@ -37,6 +39,8 @@ struct ScheduledPaymentsViewModelTests {
         )
         summary.isPaidForMonth = isPaid
         summary.isSkippedForMonth = isSkipped
+        summary.paidAmount = paidAmount
+        summary.paidCurrencyCode = paidCurrencyCode
         return summary
     }
 
@@ -146,5 +150,27 @@ struct ScheduledPaymentsViewModelTests {
 
         let result = vm.filteredGroupedPayments
         #expect(result.isEmpty)
+    }
+
+    // MARK: - displayAmount / displayCurrencyCode
+
+    @Test func displayAmount_whenPaid_returnsRealAmount() {
+        let summary = makeSummary(isPaid: true, paidAmount: 80)
+        #expect(summary.displayAmount == 80)
+    }
+
+    @Test func displayAmount_whenPending_returnsPaymentAmount() {
+        let summary = makeSummary(isPaid: false)
+        #expect(summary.displayAmount == 100) // payment.amount
+    }
+
+    @Test func displayCurrencyCode_whenPaid_returnsRealCurrency() {
+        let summary = makeSummary(isPaid: true, paidAmount: 80, paidCurrencyCode: "EUR")
+        #expect(summary.displayCurrencyCode == "EUR")
+    }
+
+    @Test func displayCurrencyCode_whenPending_returnsPaymentCurrency() {
+        let summary = makeSummary(isPaid: false)
+        #expect(summary.displayCurrencyCode == "USD") // payment.currencyCode
     }
 }

@@ -125,14 +125,15 @@ final class ScheduledPaymentsViewModel {
         let converter = CurrencyConverter.shared
         var total: Double = 0
         for summary in summaries {
-            let amount = summary.payment.amount
-            if summary.payment.currencyCode != preferredCurrencyCode, amount > 0 {
+            let amount = summary.displayAmount
+            let sourceCurrency = summary.displayCurrencyCode
+            if sourceCurrency != preferredCurrencyCode, amount > 0 {
                 let decimal = Decimal(amount)
                 let converted: Decimal
                 if let context = modelContext {
-                    converted = converter.convertWithLatestRate(decimal, from: summary.payment.currencyCode, to: preferredCurrencyCode, context: context)
+                    converted = converter.convertWithLatestRate(decimal, from: sourceCurrency, to: preferredCurrencyCode, context: context)
                 } else {
-                    converted = converter.convertWithFallback(decimal, from: summary.payment.currencyCode, to: preferredCurrencyCode)
+                    converted = converter.convertWithFallback(decimal, from: sourceCurrency, to: preferredCurrencyCode)
                 }
                 total += NSDecimalNumber(decimal: converted).doubleValue
             } else {
@@ -304,9 +305,9 @@ final class ScheduledPaymentsViewModel {
         return filtered
     }
 
-    private func loadPaidStatus(for payments: [ScheduledPayment], month: Date) -> [String: Int] {
+    private func loadPaidAmounts(for payments: [ScheduledPayment], month: Date) -> [String: [PaidOccurrenceInfo]] {
         guard let context = modelContext else { return [:] }
-        return ScheduledPaymentPaidStatusHelper.loadPaidStatus(for: payments, month: month, context: context)
+        return ScheduledPaymentPaidStatusHelper.loadPaidAmounts(for: payments, month: month, context: context)
     }
 
     // MARK: - Data Calculation
@@ -344,16 +345,15 @@ final class ScheduledPaymentsViewModel {
             !getPaymentDatesInMonth(payment: payment, month: selectedMonth).isEmpty
         }
 
-        // Load paid status for all payments in this month (batch)
-        let paidStatus = loadPaidStatus(for: filtered, month: selectedMonth)
-        paidStatusForMonth = paidStatus
+        // Load paid amounts for all payments in this month (batch)
+        let paidAmounts = loadPaidAmounts(for: filtered, month: selectedMonth)
+        paidStatusForMonth = paidAmounts.mapValues(\.count)
 
         // Calculate summaries with one entry per occurrence
         var summaries: [ScheduledPaymentSummary] = []
         for payment in filtered {
             let dates = getPaymentDatesInMonth(payment: payment, month: selectedMonth)
-            let paidCount = paidStatus[payment.id.uuidString] ?? 0
-            var remainingPaid = paidCount
+            var remainingInfos = paidAmounts[payment.id.uuidString] ?? []
 
             for date in dates.sorted() {
                 let dueStatus: DueStatus
@@ -372,8 +372,14 @@ final class ScheduledPaymentsViewModel {
                 let daysUntilDue = calendar.dateComponents([.day], from: today, to: date).day ?? 0
                 let (icon, color) = getPaymentDisplayProperties(payment: payment)
                 let isSkipped = payment.isDateSkipped(date)
-                let isPaid = remainingPaid > 0 && !isSkipped
-                if isPaid { remainingPaid -= 1 }
+                let isPaid = !remainingInfos.isEmpty && !isSkipped
+                var occurrencePaidAmount: Double? = nil
+                var occurrencePaidCurrency: String? = nil
+                if isPaid {
+                    let info = remainingInfos.removeFirst()
+                    occurrencePaidAmount = info.amount
+                    occurrencePaidCurrency = info.currencyCode
+                }
 
                 summaries.append(ScheduledPaymentSummary(
                     payment: payment,
@@ -383,7 +389,9 @@ final class ScheduledPaymentsViewModel {
                     icon: icon,
                     color: color,
                     isPaidForMonth: isPaid,
-                    isSkippedForMonth: isSkipped
+                    isSkippedForMonth: isSkipped,
+                    paidAmount: occurrencePaidAmount,
+                    paidCurrencyCode: occurrencePaidCurrency
                 ))
             }
         }

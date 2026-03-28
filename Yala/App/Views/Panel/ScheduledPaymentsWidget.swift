@@ -27,8 +27,8 @@ struct ScheduledPaymentsWidget: View {
 
     @Namespace private var filterNamespace
 
-    /// Cached paid status to avoid N+1 SwiftData queries per render
-    @State private var paidStatus: [String: Int] = [:]
+    /// Cached paid amounts to avoid N+1 SwiftData queries per render
+    @State private var paidAmounts: [String: [PaidOccurrenceInfo]] = [:]
 
     /// Computed month based on period selection (intelligent mapping)
     private var displayMonth: Date {
@@ -81,9 +81,9 @@ struct ScheduledPaymentsWidget: View {
                 .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
-        .onAppear { paidStatus = loadPaidStatus(for: filteredPayments, month: displayMonth) }
-        .onChange(of: displayMonth) { paidStatus = loadPaidStatus(for: filteredPayments, month: displayMonth) }
-        .onChange(of: filter) { paidStatus = loadPaidStatus(for: filteredPayments, month: displayMonth) }
+        .onAppear { paidAmounts = loadPaidAmounts(for: filteredPayments, month: displayMonth) }
+        .onChange(of: displayMonth) { paidAmounts = loadPaidAmounts(for: filteredPayments, month: displayMonth) }
+        .onChange(of: filter) { paidAmounts = loadPaidAmounts(for: filteredPayments, month: displayMonth) }
     }
 
     // MARK: - Filtered Payments
@@ -97,8 +97,8 @@ struct ScheduledPaymentsWidget: View {
 
     // MARK: - Paid Status
 
-    private func loadPaidStatus(for payments: [ScheduledPayment], month: Date) -> [String: Int] {
-        ScheduledPaymentPaidStatusHelper.loadPaidStatus(for: payments, month: month, context: modelContext)
+    private func loadPaidAmounts(for payments: [ScheduledPayment], month: Date) -> [String: [PaidOccurrenceInfo]] {
+        ScheduledPaymentPaidStatusHelper.loadPaidAmounts(for: payments, month: month, context: modelContext)
     }
 
     // MARK: - Header
@@ -240,19 +240,34 @@ struct ScheduledPaymentsWidget: View {
 
         for payment in expensePayments {
             let occurrences = getPaymentDatesInMonth(payment: payment, month: displayMonth)
-            let rawAmount = payment.amount * Double(occurrences.count)
+            var remainingInfos = paidAmounts[payment.id.uuidString] ?? []
 
-            // Convert currency if needed
-            if payment.currencyCode != currencyCode, rawAmount > 0 {
-                let converted = converter.convertWithLatestRate(
-                    Decimal(rawAmount),
-                    from: payment.currencyCode,
-                    to: currencyCode,
-                    context: modelContext
-                )
-                total += NSDecimalNumber(decimal: converted).doubleValue
-            } else {
-                total += rawAmount
+            for date in occurrences.sorted() {
+                let isSkipped = payment.isDateSkipped(date)
+                let amount: Double
+                let currency: String
+                if !remainingInfos.isEmpty && !isSkipped {
+                    let info = remainingInfos.removeFirst()
+                    amount = info.amount
+                    currency = info.currencyCode
+                } else if !isSkipped {
+                    amount = payment.amount
+                    currency = payment.currencyCode
+                } else {
+                    continue
+                }
+
+                if currency != currencyCode, amount > 0 {
+                    let converted = converter.convertWithLatestRate(
+                        Decimal(amount),
+                        from: currency,
+                        to: currencyCode,
+                        context: modelContext
+                    )
+                    total += NSDecimalNumber(decimal: converted).doubleValue
+                } else {
+                    total += amount
+                }
             }
         }
 
@@ -361,7 +376,7 @@ struct ScheduledPaymentsWidget: View {
 
         for payment in filteredPayments {
             let dates = getPaymentDatesInMonth(payment: payment, month: displayMonth)
-            let paidCount = paidStatus[payment.id.uuidString] ?? 0
+            let paidCount = paidAmounts[payment.id.uuidString]?.count ?? 0
             var remainingPaid = paidCount
 
             let icon = payment.subcategory?.iconName
@@ -459,7 +474,7 @@ struct ScheduledPaymentsWidget: View {
         var paymentsByDay: [Int: [(payment: ScheduledPayment, isPaid: Bool, isSkipped: Bool)]] = [:]
         for payment in filteredPayments {
             let dates = getPaymentDatesInMonth(payment: payment, month: displayMonth).sorted()
-            let paidCount = paidStatus[payment.id.uuidString] ?? 0
+            let paidCount = paidAmounts[payment.id.uuidString]?.count ?? 0
             var remainingPaid = paidCount
 
             for date in dates {
