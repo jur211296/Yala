@@ -2462,7 +2462,7 @@
 
 // ProTrialOfferSheet
 "subscription.trialOffer.title" = "Prova Yala Pro gratis";
-"subscription.trialOffer.subtitle" = "7 giorni con tutte le funzionalità. Senza impegno, cancella quando vuoi.";
+"subscription.trialOffer.subtitle" = "30 giorni con tutte le funzionalità. Senza impegno, cancella quando vuoi.";
 "subscription.trialOffer.startTrial" = "Inizia la prova gratuita";
 "subscription.trialOffer.maybeLater" = "Forse dopo";
 
@@ -3088,7 +3088,7 @@
 "setup.discover.youCanAlready" = "Puoi già";
 "setup.discover.proFeatures" = "Sfrutta il tuo Pro";
 "setup.discover.withPro" = "Con Yala Pro";
-"setup.discover.tryFree" = "Prova gratis 7 giorni";
+"setup.discover.tryFree" = "Prova gratis 30 giorni";
 "setup.discover.done" = "Capito!";
 "setup.discover.feature.manualEntry" = "Registrare spese e entrate";
 "setup.discover.feature.statistics" = "Vedere statistiche e tendenze";
