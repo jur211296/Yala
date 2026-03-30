@@ -30,36 +30,50 @@ struct CashFlowTableView: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: DS.Spacing.none) {
-            if let projection = viewModel.projection {
-                // Month strip
-                CashFlowMonthStrip(
-                    months: projection.months,
-                    selectedMonthKey: $viewModel.selectedMonthKey
-                )
+        ScrollViewReader { proxy in
+            ScrollView(.vertical, showsIndicators: false) {
+                if let projection = viewModel.projection {
+                    VStack(spacing: DS.Spacing.none) {
+                        // Month strip
+                        CashFlowMonthStrip(
+                            months: projection.months,
+                            selectedMonthKey: $viewModel.selectedMonthKey,
+                            currencyCode: currencyCode
+                        )
 
-                // Month detail with swipe
-                TabView(selection: $viewModel.selectedMonthKey) {
-                    ForEach(projection.months, id: \.monthKey) { month in
-                        ScrollViewReader { proxy in
-                            ScrollView(.vertical, showsIndicators: false) {
-                                CashFlowMonthDetailView(
-                                    month: month,
-                                    viewModel: viewModel,
-                                    currencyCode: currencyCode,
-                                    transactions: transactions
-                                )
-                            }
-                            .onAppear { scrollProxy = proxy }
+                        // Month detail for selected month
+                        if let month = projection.months.first(where: { $0.monthKey == viewModel.selectedMonthKey }) {
+                            CashFlowMonthDetailView(
+                                month: month,
+                                viewModel: viewModel,
+                                currencyCode: currencyCode,
+                                transactions: transactions
+                            )
+                            .gesture(
+                                DragGesture(minimumDistance: 50)
+                                    .onEnded { value in
+                                        guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                                        let months = projection.months
+                                        guard let idx = months.firstIndex(where: { $0.monthKey == viewModel.selectedMonthKey }) else { return }
+                                        if value.translation.width < 0, idx + 1 < months.count {
+                                            withAnimation(.easeInOut(duration: DS.Animation.fast)) {
+                                                viewModel.selectedMonthKey = months[idx + 1].monthKey
+                                            }
+                                        } else if value.translation.width > 0, idx - 1 >= 0 {
+                                            withAnimation(.easeInOut(duration: DS.Animation.fast)) {
+                                                viewModel.selectedMonthKey = months[idx - 1].monthKey
+                                            }
+                                        }
+                                    }
+                            )
                         }
-                        .tag(month.monthKey)
                     }
+                } else {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-            } else {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .onAppear { scrollProxy = proxy }
         }
         .coachMarkOverlay(
             steps: CashFlowTableTourSteps.steps,

@@ -370,9 +370,9 @@ struct YalaFormatter {
         return "\(sign)\(formattedNumber)"
     }
 
-    /// Cash flow table cell: forced currency symbol + compact. "S/ 9,999" / "S/ 10.5k"
+    /// Cash flow table cell: currency prefix (respects user preference) + compact. "S/ 9,999" / "PEN 10.5k"
     static func amountCashFlowCell(value: Double, currencyCode: String) -> String {
-        let sym = currencySymbols[currencyCode] ?? currencyCode
+        let sym = currencyIdentifier(for: currencyCode)
         let absValue = abs(value)
         let sign = value < 0 ? "-" : ""
         if absValue >= 100_000 {

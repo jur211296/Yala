@@ -717,6 +717,7 @@
 "cashFlowPlan.bannerBody" = "È il tuo piano di entrate e uscite mese per mese. Ti mostra se i soldi ti bastano o se serve aggiustare qualcosa.";
 "cashFlowPlan.available" = "Disponibile";
 "cashFlowPlan.accumulated" = "Cumulato";
+"cashFlowPlan.accumulatedShort" = "Cumul";
 "cashFlowPlan.addLine" = "Aggiungi riga";
 "cashFlowPlan.thisMonth" = "Questo mese";
 "cashFlowPlan.pastMonth" = "Passato";

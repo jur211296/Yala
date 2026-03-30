@@ -45,9 +45,21 @@ struct FinancialReportView: View {
 
     var body: some View {
         NavigationStack {
-            mainContent
-                .navigationTitle(L10n.Report.title)
-                .navigationBarTitleDisplayMode(.large)
+            ZStack {
+                PanelBackgroundView()
+                VStack(spacing: DS.Spacing.none) {
+                    reportGuide
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.top, DS.Spacing.xs)
+                    tabContent
+                }
+            }
+            .safeAreaInset(edge: .top) {
+                navigationChipsBar
+                    .padding(.vertical, DS.Spacing.sm)
+            }
+            .navigationTitle(L10n.Report.title)
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 reportToolbar
             }
@@ -99,24 +111,8 @@ struct FinancialReportView: View {
         .onChange(of: sessionState.dataVersion) { _, _ in scheduleRecalculate() }
         .onChange(of: viewModel.groupingState.activeDimensions) { _, _ in scheduleRecalculate() }
         .onChange(of: transactions.count) { _, _ in scheduleRecalculate() }
-    }
-
-    // MARK: - Main Content
-
-    private var mainContent: some View {
-        ZStack {
-            PanelBackgroundView()
-            VStack(spacing: DS.Spacing.none) {
-                reportGuide
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.top, DS.Spacing.xs)
-                tabContent
-            }
-        }
-        .safeAreaInset(edge: .top) {
-            navigationChipsBar
-                .padding(.vertical, DS.Spacing.sm)
-        }
+        .onChange(of: preferredCurrencyCode) { _, _ in scheduleRecalculate() }
+        .onChange(of: sessionState.formattingVersion) { _, _ in scheduleRecalculate() }
     }
 
     // MARK: - Navigation Chips
@@ -266,52 +262,67 @@ struct FinancialReportView: View {
 
     @ToolbarContentBuilder
     private var reportToolbar: some ToolbarContent {
-        if selectedTab == .flujoDeCaja && cashFlowViewModel.hasPlan {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    cashFlowViewModel.showChartsSheet = true
-                } label: {
-                    Image(systemName: "chart.bar.xaxis")
-                        .font(DS.Typography.body.weight(.medium))
-                        .foregroundStyle(.thToolbarIcon)
-                }
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Button {
-                        showHorizonConfig = true
-                    } label: {
-                        Label(L10n.CashFlowPlan.configureHorizon, systemImage: "calendar.badge.clock")
-                    }
-                    Divider()
-                    Button(role: .destructive) {
-                        showResetConfirmation = true
-                    } label: {
-                        Label(L10n.CashFlowPlan.resetPlan, systemImage: "arrow.counterclockwise")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(DS.Typography.body.weight(.medium))
-                        .foregroundStyle(.thToolbarIcon)
-                }
-            }
-        }
-
         ToolbarItem(placement: .topBarTrailing) {
-            Button {
-                viewModel.showFiltersSheet = true
-            } label: {
-                Image(systemName: "line.3.horizontal.decrease")
-                    .font(DS.Typography.body.weight(.medium))
-                    .foregroundStyle(.thToolbarIcon)
-            }
-            .accessibilityLabel(L10n.Filters.title)
-            .overlay(alignment: .topTrailing) {
-                if viewModel.activeFilterCount > 0 {
-                    Circle()
-                        .fill(Color.hotPink)
-                        .frame(width: 8, height: 8)
-                        .offset(x: 2, y: -2)
+            HStack(spacing: DS.Spacing.md) {
+                if selectedTab == .flujoDeCaja && cashFlowViewModel.hasPlan {
+                    Button {
+                        cashFlowViewModel.showChartsSheet = true
+                    } label: {
+                        Image(systemName: "chart.bar.xaxis")
+                            .font(DS.Typography.body).fontWeight(.medium)
+                            .foregroundStyle(.thToolbarIcon)
+                    }
+
+                    Menu {
+                        Button {
+                            viewModel.showFiltersSheet = true
+                        } label: {
+                            Label(L10n.Filters.title, systemImage: "line.3.horizontal.decrease")
+                        }
+                        Divider()
+                        Button {
+                            showHorizonConfig = true
+                        } label: {
+                            Label(L10n.CashFlowPlan.configureHorizon, systemImage: "calendar.badge.clock")
+                        }
+                        Divider()
+                        Button(role: .destructive) {
+                            showResetConfirmation = true
+                        } label: {
+                            Label(L10n.CashFlowPlan.resetPlan, systemImage: "arrow.counterclockwise")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .font(DS.Typography.body).fontWeight(.medium)
+                            .foregroundStyle(.thToolbarIcon)
+                            .overlay(alignment: .topTrailing) {
+                                if viewModel.activeFilterCount > 0 {
+                                    Circle()
+                                        .fill(Color.hotPink)
+                                        .frame(width: 8, height: 8)
+                                        .offset(x: 2, y: -2)
+                                }
+                            }
+                    }
+                }
+
+                if selectedTab == .comparativa {
+                    Button {
+                        viewModel.showFiltersSheet = true
+                    } label: {
+                        Image(systemName: "line.3.horizontal.decrease")
+                            .font(DS.Typography.body).fontWeight(.medium)
+                            .foregroundStyle(.thToolbarIcon)
+                    }
+                    .accessibilityLabel(L10n.Filters.title)
+                    .overlay(alignment: .topTrailing) {
+                        if viewModel.activeFilterCount > 0 {
+                            Circle()
+                                .fill(Color.hotPink)
+                                .frame(width: 8, height: 8)
+                                .offset(x: 2, y: -2)
+                        }
+                    }
                 }
             }
         }

@@ -11,6 +11,7 @@ import SwiftUI
 struct CashFlowMonthCapsule: View {
     let month: CashFlowMonth
     let isSelected: Bool
+    let currencyCode: String
 
     @Environment(\.yalaTheme) private var theme
 
@@ -23,18 +24,22 @@ struct CashFlowMonthCapsule: View {
                 .foregroundStyle(foregroundColor)
                 .textCase(.uppercase)
 
-            // Accumulated balance (main number)
-            Text(YalaFormatter.amountCompactTable(value: month.accumulatedBalance))
+            Text(accumulatedText)
                 .font(DS.Typography.labelSmall)
                 .fontWeight(.semibold)
                 .foregroundStyle(.primary)
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
 
-            // Side-by-side bars (income | expense)
             miniBar
 
-            // Net flow (+2,983)
-            netFlowLabel
+            Text(netFlowInfo.text)
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(netFlowInfo.color)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
         .frame(width: 78)
         .padding(.vertical, DS.Spacing.md)
@@ -73,16 +78,22 @@ struct CashFlowMonthCapsule: View {
         .frame(height: barMaxHeight)
     }
 
-    // MARK: - Net Flow Label
+    // MARK: - Computed Text
 
-    private var netFlowLabel: some View {
-        let sign = month.netFlow >= 0 ? "+" : ""
-        return Text(sign + YalaFormatter.amountCompactTable(value: month.netFlow))
-            .font(DS.Typography.captionSmall)
-            .foregroundStyle(.primary)
-            .monospacedDigit()
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
+    private var accumulatedText: String {
+        if isSelected {
+            let amount = YalaFormatter.amountCompactTable(value: month.accumulatedBalance)
+            return "\(L10n.CashFlowPlan.accumulatedShort): \(amount)"
+        }
+        return YalaFormatter.amountCashFlowCell(value: month.accumulatedBalance, currencyCode: currencyCode)
+    }
+
+    private var netFlowInfo: (text: String, color: Color) {
+        let isPositive = month.netFlow >= 0
+        let sign = isPositive ? "+" : ""
+        let text = sign + YalaFormatter.amountCashFlowCell(value: month.netFlow, currencyCode: currencyCode)
+        let color: Color = isPositive ? .electricIndigo : .hotPink
+        return (text, color)
     }
 
     // MARK: - Colors

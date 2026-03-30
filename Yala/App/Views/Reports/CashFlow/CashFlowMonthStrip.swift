@@ -11,6 +11,7 @@ import SwiftUI
 struct CashFlowMonthStrip: View {
     let months: [CashFlowMonth]
     @Binding var selectedMonthKey: String
+    let currencyCode: String
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -19,7 +20,8 @@ struct CashFlowMonthStrip: View {
                     ForEach(months, id: \.monthKey) { month in
                         CashFlowMonthCapsule(
                             month: month,
-                            isSelected: month.monthKey == selectedMonthKey
+                            isSelected: month.monthKey == selectedMonthKey,
+                            currencyCode: currencyCode
                         )
                         .id(month.monthKey)
                         .onTapGesture {

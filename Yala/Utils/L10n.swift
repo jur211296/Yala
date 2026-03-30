@@ -256,6 +256,7 @@ enum L10n {
         // Table / Detail
         static var available: String { ls("cashFlowPlan.available", comment: "") }
         static var accumulated: String { ls("cashFlowPlan.accumulated", comment: "") }
+        static var accumulatedShort: String { ls("cashFlowPlan.accumulatedShort", comment: "") }
         static var addLine: String { ls("cashFlowPlan.addLine", comment: "") }
         static var thisMonth: String { ls("cashFlowPlan.thisMonth", comment: "") }
         static var pastMonth: String { ls("cashFlowPlan.pastMonth", comment: "") }

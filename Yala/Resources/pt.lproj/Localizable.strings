@@ -717,6 +717,7 @@
 "cashFlowPlan.bannerBody" = "É o seu plano de receitas e despesas mês a mês. Mostra se o dinheiro vai dar ou se precisa ajustar algo.";
 "cashFlowPlan.available" = "Disponível";
 "cashFlowPlan.accumulated" = "Acumulado";
+"cashFlowPlan.accumulatedShort" = "Acum";
 "cashFlowPlan.addLine" = "Adicionar linha";
 "cashFlowPlan.thisMonth" = "Este mês";
 "cashFlowPlan.pastMonth" = "Passado";

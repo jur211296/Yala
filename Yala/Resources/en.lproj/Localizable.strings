@@ -719,6 +719,7 @@
 "cashFlowPlan.bannerBody" = "It's your month-by-month plan for income and expenses. It shows you if your money will stretch or if you need to adjust something.";
 "cashFlowPlan.available" = "Available";
 "cashFlowPlan.accumulated" = "Accumulated";
+"cashFlowPlan.accumulatedShort" = "Accum";
 "cashFlowPlan.addLine" = "Add line";
 "cashFlowPlan.thisMonth" = "This month";
 "cashFlowPlan.pastMonth" = "Past";
