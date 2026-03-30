@@ -2942,12 +2942,6 @@
 "milestone.notNow" = "Ahora no";
 "milestone.unlimitedAccounts" = "Cuentas ilimitadas";
 
-// MARK: - Insights AI Teaser
-
-"insights.aiTeaser" = "Insights AI";
-"insights.aiTeaserPlaceholder1" = "Tu gasto promedio subió un 12% comparado con el mes pasado";
-"insights.aiTeaserPlaceholder2" = "La categoría con mayor crecimiento es Restaurantes";
-
 // MARK: - Dev Seed
 
 // Accounts

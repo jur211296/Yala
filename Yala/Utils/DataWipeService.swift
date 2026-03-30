@@ -176,8 +176,17 @@ final class DataWipeService {
         try context.save()
         context.processPendingChanges()
 
+        // 1.11 Eliminar todos los CashFlowPlans (cascade → Lines → Overrides)
+        let cashFlowPlanDescriptor = FetchDescriptor<CashFlowPlan>()
+        let allCashFlowPlans = try context.fetch(cashFlowPlanDescriptor)
+        for plan in allCashFlowPlans {
+            context.delete(plan)
+        }
+        try context.save()
+        context.processPendingChanges()
+
         // ============================================================
-        // PASO 1.11: Limpiar archivo de imagen de perfil
+        // PASO 1.12: Limpiar archivo de imagen de perfil
         // ============================================================
         ProfileImageStorage.shared.delete()
 
@@ -236,6 +245,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "imageInputEnabled")      // Default: false
         defaults.removeObject(forKey: "aiDataConsentAccepted") // Default: false
         defaults.removeObject(forKey: "aiInsightsConsentAccepted") // Default: false
+        defaults.removeObject(forKey: "financialMindset")          // Default: "cashFlow"
 
         // --- Orden de listas ---
         defaults.removeObject(forKey: "accountsSortOrderNames") // Default: ""

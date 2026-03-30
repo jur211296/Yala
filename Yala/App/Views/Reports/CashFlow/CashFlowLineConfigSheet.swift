@@ -222,7 +222,7 @@ struct CashFlowLineConfigSheet: View {
                         .foregroundStyle(enabled ? .primary : .secondary)
                     Text(method.descriptionText)
                         .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.secondary)
                 }
                 Spacer()
                 // Preview amount
@@ -231,7 +231,7 @@ struct CashFlowLineConfigSheet: View {
                     if preview > 0 {
                         Text(YalaFormatter.amountCompactTable(value: preview))
                             .font(DS.Typography.caption)
-                            .foregroundStyle(selectedMethod == method ? AnyShapeStyle(theme.accent) : AnyShapeStyle(.tertiary))
+                            .foregroundStyle(selectedMethod == method ? AnyShapeStyle(theme.accent) : AnyShapeStyle(.secondary))
                             .monospacedDigit()
                     }
                 }

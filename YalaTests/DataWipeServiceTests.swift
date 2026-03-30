@@ -18,16 +18,18 @@ struct DataWipeServiceTests {
 
     /// All keys that resetAllUserPreferences must clear
     private static let expectedResetKeys: [String] = [
-        "defaultPeriod", "userTheme", "colorfulIcons", "firstWeekday",
+        "defaultPeriod", "userTheme", "translucentVariant", "colorfulIcons", "firstWeekday",
         "showWidgetHints", "defaultCurrencyCode", "showVariations",
         "decimalPlaces", "currencyDisplayFormat", "userName", "userAlias",
         "userProfileImageData", "userProfileIcon", "voiceInputEnabled",
         "voiceLanguage", "imageInputEnabled", "aiDataConsentAccepted",
-        "aiInsightsConsentAccepted", "accountsSortOrderNames", "tagsSortOrderNames",
+        "aiInsightsConsentAccepted", "financialMindset",
+        "accountsSortOrderNames", "tagsSortOrderNames",
         "panel_widget_configs_v1", "exchangeRate_lastHistoricalLoad",
         "exchangeRate_lastTodayUpdate", "budgets.hideInactive", "budgetAlertsEnabled",
         "hasCompletedOnboarding", "secondaryCurrencies",
         "lastKnownOnboardingTimestamp", "lastSeenAppVersion",
+        "appUpdate.latestVersion", "appUpdate.lastChecked",
         "hasSeenPanelTour", "hasSeenRegistroTour", "hasSeenInteractivityTour",
         "hasSeenSettingsTour", "hasSeenCashFlowSetupTour", "hasSeenCashFlowTableTour",
         "hasCompletedProTour", "proTourPendingPhase", "proTourTriggered",
@@ -77,11 +79,12 @@ struct DataWipeServiceTests {
 
     // MARK: - Deletion Order Contract
 
-    @Test func deletionOrder_dependentsBeforeParents() {
+    @Test func deletionOrder_dependentsBeforeParents() throws {
         // DataWipeService deletes in this order (most dependent first):
         // TransactionItem.tags → Tag relations → InboxDraft → MerchantMemory →
         // NotificationItem → TransactionItem → Budget → FavoritePayment →
-        // ScheduledPayment → Tag → ExchangeRate → Account → Subcategory → Category
+        // ScheduledPayment → Tag → ExchangeRate → Account → Subcategory → Category →
+        // CashFlowPlan (cascade → CashFlowLine → CashFlowOverride)
         //
         // Verify the order is correct: children before parents
         let deletionOrder = [
@@ -99,29 +102,30 @@ struct DataWipeServiceTests {
             "Account",
             "Subcategory",
             "Category",
+            "CashFlowPlan",
         ]
 
-        // Category must be last (most parent)
-        #expect(deletionOrder.last == "Category")
+        // CashFlowPlan must be last (cascade deletes Lines → Overrides)
+        #expect(deletionOrder.last == "CashFlowPlan")
 
         // TransactionItem must be deleted before Account and Category
-        let txIndex = deletionOrder.firstIndex(of: "TransactionItem")!
-        let accountIndex = deletionOrder.firstIndex(of: "Account")!
-        let categoryIndex = deletionOrder.firstIndex(of: "Category")!
+        let txIndex = try #require(deletionOrder.firstIndex(of: "TransactionItem"))
+        let accountIndex = try #require(deletionOrder.firstIndex(of: "Account"))
+        let categoryIndex = try #require(deletionOrder.firstIndex(of: "Category"))
         #expect(txIndex < accountIndex)
         #expect(txIndex < categoryIndex)
 
         // Budget must be deleted before Account (has account relation)
-        let budgetIndex = deletionOrder.firstIndex(of: "Budget")!
+        let budgetIndex = try #require(deletionOrder.firstIndex(of: "Budget"))
         #expect(budgetIndex < accountIndex)
 
         // Subcategory must be deleted before Category
-        let subIndex = deletionOrder.firstIndex(of: "Subcategory")!
+        let subIndex = try #require(deletionOrder.firstIndex(of: "Subcategory"))
         #expect(subIndex < categoryIndex)
 
         // Tag relations cleaned before Tag deletion
-        let tagRelIndex = deletionOrder.firstIndex(of: "Tag.relations")!
-        let tagIndex = deletionOrder.firstIndex(of: "Tag")!
+        let tagRelIndex = try #require(deletionOrder.firstIndex(of: "Tag.relations"))
+        let tagIndex = try #require(deletionOrder.firstIndex(of: "Tag"))
         #expect(tagRelIndex < tagIndex)
     }
 

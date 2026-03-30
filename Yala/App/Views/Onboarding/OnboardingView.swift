@@ -275,17 +275,6 @@ struct OnboardingView: View {
 
                     VStack(spacing: DS.Spacing.sm) {
                         binaryCard(
-                            isSelected: expensesOnlyMode,
-                            icon: "list.bullet.clipboard",
-                            title: L10n.Onboarding.purposeExpenses,
-                            description: L10n.Onboarding.purposeExpensesDesc,
-                            accessibilityId: "onboarding_purpose_expenses"
-                        ) {
-                            selectedUsageMode = .expensesOnly
-                            selectedMindset = "cashFlow"
-                        }
-
-                        binaryCard(
                             isSelected: !expensesOnlyMode,
                             icon: "dollarsign.circle",
                             title: L10n.Onboarding.purposeControl,
@@ -295,6 +284,17 @@ struct OnboardingView: View {
                             if expensesOnlyMode {
                                 selectedUsageMode = .dayToDay
                             }
+                        }
+
+                        binaryCard(
+                            isSelected: expensesOnlyMode,
+                            icon: "list.bullet.clipboard",
+                            title: L10n.Onboarding.purposeExpenses,
+                            description: L10n.Onboarding.purposeExpensesDesc,
+                            accessibilityId: "onboarding_purpose_expenses"
+                        ) {
+                            selectedUsageMode = .expensesOnly
+                            selectedMindset = "cashFlow"
                         }
                     }
                     .padding(.horizontal, DS.Spacing.xl)

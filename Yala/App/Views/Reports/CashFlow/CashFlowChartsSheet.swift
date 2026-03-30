@@ -14,7 +14,7 @@ struct CashFlowChartsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
 
-    @State private var selectedMonth: String?
+    @State private var selectedMonth: Date?
 
     // Cached computed data (computed once on appear)
     @State private var cachedPastMonths: [CashFlowMonth] = []
@@ -57,6 +57,13 @@ struct CashFlowChartsSheet: View {
         cachedRollingAvg = Self.buildRollingAverage(from: cachedPastMonths)
     }
 
+    private var selectedProjectionMonth: CashFlowMonth? {
+        guard let selectedDate = selectedMonth else { return nil }
+        return projection.months.first(where: {
+            Calendar.current.isDate($0.date, equalTo: selectedDate, toGranularity: .month)
+        })
+    }
+
     // MARK: - 1. Balance Projection (Free)
 
     private var projectionChart: some View {
@@ -87,6 +94,19 @@ struct CashFlowChartsSheet: View {
                     )
                 }
 
+                if let month = selectedProjectionMonth {
+                    PointMark(
+                        x: .value("Month", month.date),
+                        y: .value("Balance", month.accumulatedBalance)
+                    )
+                    .foregroundStyle(theme.accent)
+                    .symbolSize(40)
+
+                    RuleMark(x: .value("Month", month.date))
+                        .foregroundStyle(Color.secondary.opacity(0.3))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 2]))
+                }
+
                 RuleMark(y: .value("Zero", 0))
                     .foregroundStyle(Color.hotPink.opacity(0.5))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
@@ -100,6 +120,34 @@ struct CashFlowChartsSheet: View {
             .yalaChartXAxisMonthly()
             .chartXSelection(value: $selectedMonth)
             .frame(height: 180)
+            .chartOverlay { proxy in
+                GeometryReader { geo in
+                    if let month = selectedProjectionMonth,
+                       let xPos = proxy.position(forX: month.date) {
+                        let plotFrame = proxy.plotFrame.map { geo[$0] } ?? geo.frame(in: .local)
+                        VStack(spacing: DS.Spacing.xxs) {
+                            Text(month.date.formatted(.dateTime.month(.abbreviated).year()))
+                                .font(DS.Typography.captionSmall)
+                                .foregroundStyle(.secondary)
+                            Text(YalaFormatter.currency(value: month.accumulatedBalance, currencyCode: currencyCode))
+                                .font(DS.Typography.label)
+                                .fontWeight(.semibold)
+                                .monospacedDigit()
+                        }
+                        .padding(.horizontal, DS.Spacing.sm)
+                        .padding(.vertical, DS.Spacing.xs)
+                        .background(
+                            RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
+                                .fill(.ultraThinMaterial)
+                                .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
+                        )
+                        .position(
+                            x: min(max(xPos + plotFrame.minX, 40), plotFrame.maxX - 40),
+                            y: plotFrame.minY - 8
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -152,6 +200,13 @@ struct CashFlowChartsSheet: View {
                         )
                         .foregroundStyle(theme.accent)
                         .lineStyle(StrokeStyle(lineWidth: 2))
+
+                        PointMark(
+                            x: .value("Month", point.date),
+                            y: .value("Avg", point.value)
+                        )
+                        .foregroundStyle(theme.accent)
+                        .symbolSize(20)
                     }
                 }
                 .yalaChartYAxis()
