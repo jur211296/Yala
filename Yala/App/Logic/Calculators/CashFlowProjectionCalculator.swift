@@ -174,7 +174,19 @@ struct CashFlowProjectionCalculator {
             monthKey: currentMKey, monthDate: currentMonthStart, index: index, calendar: calendar
         )
 
-        var accumulatedBalance = plan.startingBalance
+        // Resolve starting balance month (nil defaults to current month)
+        let startingBalanceMonthKey: String
+        if let balanceDate = plan.startingBalanceDate {
+            startingBalanceMonthKey = Self.monthKey(for: balanceDate, calendar: calendar)
+        } else {
+            startingBalanceMonthKey = currentMKey
+        }
+
+        let firstMonthKey = Self.monthKey(for: months[0], calendar: calendar)
+        let seedImmediately = startingBalanceMonthKey <= firstMonthKey
+
+        var accumulatedBalance: Double = seedImmediately ? plan.startingBalance : 0
+        var hasAppliedStartingBalance = seedImmediately
         var projectedMonths: [CashFlowMonth] = []
         var totalProjectedIncome: Double = 0
         var totalProjectedExpense: Double = 0
@@ -218,6 +230,10 @@ struct CashFlowProjectionCalculator {
                 + (otherExpenses?.plannedAmount ?? 0)
             let netFlow = totalIncome - totalExpense
 
+            if !hasAppliedStartingBalance && mKey >= startingBalanceMonthKey {
+                accumulatedBalance = plan.startingBalance
+                hasAppliedStartingBalance = true
+            }
             accumulatedBalance += netFlow
             totalProjectedIncome += totalIncome
             totalProjectedExpense += totalExpense
