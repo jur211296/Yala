@@ -13,7 +13,6 @@ struct SetupStepRow: View {
 
     let step: SetupStep
     let isCurrent: Bool
-    let onTap: () -> Void
 
     // MARK: - Indicator
 
@@ -41,39 +40,33 @@ struct SetupStepRow: View {
     // MARK: - Body
 
     var body: some View {
-        Button {
-            onTap()
-        } label: {
-            HStack(spacing: DS.Spacing.sm) {
-                // Completion indicator
-                indicatorImage
+        HStack(spacing: DS.Spacing.sm) {
+            // Completion indicator
+            indicatorImage
 
-                // Step icon
-                Image(systemName: step.icon)
-                    .font(.system(size: 14))
-                    .foregroundStyle((step.isCompleted || step.isLocked) ? ThemeColor.thSecondaryText : ThemeColor.thPrimaryText)
-                    .frame(width: 20)
+            // Step icon
+            Image(systemName: step.icon)
+                .font(.system(size: 14))
+                .foregroundStyle((step.isCompleted || step.isLocked) ? ThemeColor.thSecondaryText : ThemeColor.thPrimaryText)
+                .frame(width: 20)
 
-                // Step title
-                Text(step.id.localizedTitle)
-                    .font(isCurrent ? DS.Typography.label : DS.Typography.caption)
-                    .foregroundStyle((step.isCompleted || step.isLocked) ? ThemeColor.thSecondaryText : ThemeColor.thPrimaryText)
+            // Step title
+            Text(step.id.localizedTitle)
+                .font(isCurrent ? DS.Typography.label : DS.Typography.caption)
+                .foregroundStyle((step.isCompleted || step.isLocked) ? ThemeColor.thSecondaryText : ThemeColor.thPrimaryText)
 
-                Spacer()
+            Spacer()
 
-                if isCurrent {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.thAccent)
-                }
+            if isCurrent {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.thAccent)
             }
-            .padding(.vertical, DS.Spacing.xxs)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .disabled(step.isCompleted || step.isLocked)
+        .padding(.vertical, DS.Spacing.xxs)
+        .accessibilityElement(children: .combine)
         .accessibilityLabel(step.id.localizedTitle)
-        .accessibilityHint(step.isCompleted ? L10n.SetupChecklist.stepCompleted : L10n.SetupChecklist.stepTapToStart)
+        .accessibilityHint(step.isCompleted ? L10n.SetupChecklist.stepCompleted : step.isLocked ? L10n.SetupChecklist.stepLocked : L10n.SetupChecklist.stepTapToStart)
     }
 }
 
@@ -123,6 +116,12 @@ extension L10n {
         }
         static var stepTapToStart: String {
             NSLocalizedString("setup.step.tapToStart", comment: "Accessibility: tap to start step")
+        }
+        static var stepLocked: String {
+            NSLocalizedString("setup.step.locked", comment: "Accessibility: step is locked")
+        }
+        static func nextStep(_ stepTitle: String) -> String {
+            String(format: NSLocalizedString("setup.nextStep", comment: "Accessibility: next step to complete"), stepTitle)
         }
 
         // Practice cleanup

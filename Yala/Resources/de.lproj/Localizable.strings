@@ -3039,6 +3039,8 @@
 "setup.complete.subtitle" = "Du hast alle Schritte abgeschlossen. Yala ist bereit für dich.";
 "setup.step.completed" = "Abgeschlossen";
 "setup.step.tapToStart" = "Tippe zum Starten";
+"setup.step.locked" = "Schritt gesperrt. Schließe zuerst die vorherigen Schritte ab.";
+"setup.nextStep" = "Nächster Schritt: %@";
 
 "setup.step1.title" = "Entdecke alles, was du anpassen kannst";
 "setup.step2.title" = "Erfasse deine erste Ausgabe";

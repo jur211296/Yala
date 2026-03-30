@@ -3045,6 +3045,8 @@
 "setup.complete.subtitle" = "You completed all steps. Yala is ready for you.";
 "setup.step.completed" = "Completed";
 "setup.step.tapToStart" = "Tap to start";
+"setup.step.locked" = "Locked step. Complete earlier steps first.";
+"setup.nextStep" = "Next step: %@";
 
 "setup.step1.title" = "Explore everything you can customize";
 "setup.step2.title" = "Log your first expense";

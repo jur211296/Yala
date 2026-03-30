@@ -55,43 +55,53 @@ struct SetupChecklistCard: View {
     // MARK: - Expanded View
 
     private var expandedView: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            // Header
-            HStack {
-                Image(systemName: "target")
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.thAccent)
+        let currentStep = manager.currentStep
+        let allSteps = manager.steps
 
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.SetupChecklist.title)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.thPrimaryText)
-
-                    Text(L10n.SetupChecklist.progress(manager.completedCount, manager.totalCount))
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.thSecondaryText)
+        return VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            Button {
+                if let step = currentStep {
+                    onStepTapped(step.id)
                 }
+            } label: {
+                VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                    HStack {
+                        Image(systemName: "target")
+                            .font(DS.Typography.headline)
+                            .foregroundStyle(.thAccent)
 
-                Spacer()
-            }
+                        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                            Text(L10n.SetupChecklist.title)
+                                .font(DS.Typography.headline)
+                                .foregroundStyle(.thPrimaryText)
 
-            // Progress bar
-            progressBar
+                            Text(L10n.SetupChecklist.progress(manager.completedCount, manager.totalCount))
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.thSecondaryText)
+                        }
 
-            // Steps list
-            let allSteps = manager.steps
-            let currentID = allSteps.first { !$0.isCompleted && !$0.isLocked }?.id
-            VStack(spacing: DS.Spacing.xxs) {
-                ForEach(allSteps) { step in
-                    SetupStepRow(
-                        step: step,
-                        isCurrent: currentID == step.id,
-                        onTap: { onStepTapped(step.id) }
-                    )
+                        Spacer()
+                    }
+
+                    progressBar
+
+                    VStack(spacing: DS.Spacing.xxs) {
+                        ForEach(allSteps) { step in
+                            SetupStepRow(
+                                step: step,
+                                isCurrent: currentStep?.id == step.id
+                            )
+                        }
+                    }
                 }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(
+                currentStep.map { L10n.SetupChecklist.nextStep($0.id.localizedTitle) } ?? ""
+            )
+            .accessibilityHint(L10n.SetupChecklist.stepTapToStart)
 
-            // Collapse button
             HStack {
                 Spacer()
                 Button {

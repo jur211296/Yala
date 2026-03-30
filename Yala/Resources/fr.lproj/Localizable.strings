@@ -3040,6 +3040,8 @@
 "setup.complete.subtitle" = "Tu as terminé toutes les étapes. Yala est prête pour toi.";
 "setup.step.completed" = "Terminé";
 "setup.step.tapToStart" = "Appuie pour commencer";
+"setup.step.locked" = "Étape verrouillée. Termine les étapes précédentes d'abord.";
+"setup.nextStep" = "Étape suivante : %@";
 
 "setup.step1.title" = "Découvre tout ce que tu peux personnaliser";
 "setup.step2.title" = "Enregistre ta première dépense";

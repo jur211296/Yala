@@ -268,4 +268,60 @@ struct SetupChecklistManagerTests {
             #expect(step.storageKey.hasSuffix(".completed"))
         }
     }
+
+    // MARK: - Sequential Locking
+
+    @MainActor @Test func sequentialLocking_onlyFirstPendingUnlocked() {
+        let manager = freshManager()
+        let steps = manager.steps
+        // First step (exploreSettings) should be unlocked
+        let first = steps.first { $0.id == .exploreSettings }
+        #expect(first?.isLocked == false)
+        #expect(first?.isCompleted == false)
+
+        // All other steps should be locked
+        for step in steps where step.id != .exploreSettings {
+            #expect(step.isLocked == true, "Step \(step.id) should be locked")
+        }
+    }
+
+    @MainActor @Test func sequentialLocking_afterFirstComplete_secondUnlocks() {
+        let manager = freshManager()
+        manager.markCompleted(.exploreSettings)
+        let steps = manager.steps
+
+        // exploreSettings completed
+        #expect(steps.first { $0.id == .exploreSettings }?.isCompleted == true)
+        // firstExpense now unlocked
+        #expect(steps.first { $0.id == .firstExpense }?.isLocked == false)
+        // Steps after firstExpense still locked
+        #expect(steps.first { $0.id == .firstBudget }?.isLocked == true)
+        #expect(steps.first { $0.id == .scheduledPayment }?.isLocked == true)
+    }
+
+    @MainActor @Test func sequentialLocking_outOfOrderComplete_sequencePreserved() {
+        let manager = freshManager()
+        // Complete step 2 without completing step 1
+        manager.markCompleted(.firstExpense)
+
+        // exploreSettings is still the current step (first pending)
+        #expect(manager.currentStep?.id == .exploreSettings)
+        // firstExpense is completed, not locked
+        #expect(manager.steps.first { $0.id == .firstExpense }?.isCompleted == true)
+        // firstBudget is still locked (not first pending)
+        #expect(manager.steps.first { $0.id == .firstBudget }?.isLocked == true)
+    }
+
+    @MainActor @Test func sequentialLocking_autoDetect_skipsCompleted() {
+        let manager = freshManager()
+        manager.autoDetect(transactionCount: 3, budgetCount: 1, scheduledCount: 2)
+        // 3 steps auto-completed: firstExpense, firstBudget, scheduledPayment
+        #expect(manager.completedCount == 3)
+        // First pending is exploreSettings (step 1, not auto-detected)
+        #expect(manager.currentStep?.id == .exploreSettings)
+
+        // After completing exploreSettings, next pending skips to tryVoiceInput
+        manager.markCompleted(.exploreSettings)
+        #expect(manager.currentStep?.id == .tryVoiceInput)
+    }
 }

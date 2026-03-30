@@ -71,19 +71,14 @@ final class SetupChecklistManager {
         return Double(completedCount) / Double(totalCount)
     }
 
-    /// Whether all steps except "discoverFeatures" are completed.
-    private var otherStepsComplete: Bool {
-        SetupStepID.allCases
-            .filter { $0 != .discoverFeatures }
-            .allSatisfy { stepCompleted[$0] == true }
-    }
-
     /// All steps with their current state, in order.
+    /// Sequential locking: only the first pending step is unlocked.
     var steps: [SetupStep] {
-        let othersComplete = otherStepsComplete
+        let firstPendingID = SetupStepID.allCases.first { stepCompleted[$0] != true }
         return SetupStepID.allCases.map { id in
-            let isLocked = (id == .discoverFeatures) && !othersComplete
-            return SetupStep(id: id, isCompleted: stepCompleted[id] ?? false, isLocked: isLocked)
+            let completed = stepCompleted[id] ?? false
+            let isLocked = !completed && id != firstPendingID
+            return SetupStep(id: id, isCompleted: completed, isLocked: isLocked)
         }
     }
 
