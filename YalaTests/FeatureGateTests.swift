@@ -13,7 +13,7 @@ import Testing
 struct FeatureGateTests {
 
     @Test func freeLimit_accounts() {
-        #expect(ProFeature.accounts.freeLimit == 2)
+        #expect(ProFeature.accounts.freeLimit == 4)
     }
 
     @Test func freeLimit_budgets() {

@@ -24,7 +24,7 @@ enum ProFeature: String, CaseIterable {
     /// Free tier limit for countable features (nil = no limit in free tier)
     var freeLimit: Int? {
         switch self {
-        case .accounts: return 2
+        case .accounts: return 4
         case .budgets: return 3
         default: return nil
         }
