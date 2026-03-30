@@ -269,7 +269,7 @@ struct FinancialReportView: View {
                         cashFlowViewModel.showChartsSheet = true
                     } label: {
                         Image(systemName: "chart.bar.xaxis")
-                            .font(DS.Typography.body).fontWeight(.medium)
+                            .font(DS.Typography.bodyBold)
                             .foregroundStyle(.thToolbarIcon)
                     }
 
@@ -293,16 +293,9 @@ struct FinancialReportView: View {
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")
-                            .font(DS.Typography.body).fontWeight(.medium)
+                            .font(DS.Typography.bodyBold)
                             .foregroundStyle(.thToolbarIcon)
-                            .overlay(alignment: .topTrailing) {
-                                if viewModel.activeFilterCount > 0 {
-                                    Circle()
-                                        .fill(Color.hotPink)
-                                        .frame(width: 8, height: 8)
-                                        .offset(x: 2, y: -2)
-                                }
-                            }
+                            .filterBadge(isActive: viewModel.activeFilterCount > 0)
                     }
                 }
 
@@ -311,18 +304,11 @@ struct FinancialReportView: View {
                         viewModel.showFiltersSheet = true
                     } label: {
                         Image(systemName: "line.3.horizontal.decrease")
-                            .font(DS.Typography.body).fontWeight(.medium)
+                            .font(DS.Typography.bodyBold)
                             .foregroundStyle(.thToolbarIcon)
                     }
                     .accessibilityLabel(L10n.Filters.title)
-                    .overlay(alignment: .topTrailing) {
-                        if viewModel.activeFilterCount > 0 {
-                            Circle()
-                                .fill(Color.hotPink)
-                                .frame(width: 8, height: 8)
-                                .offset(x: 2, y: -2)
-                        }
-                    }
+                    .filterBadge(isActive: viewModel.activeFilterCount > 0)
                 }
             }
         }

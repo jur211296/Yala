@@ -13,6 +13,30 @@ import SwiftUI
     import UIKit
 #endif
 
+// MARK: - Filter Badge
+
+struct FilterBadgeModifier: ViewModifier {
+    let isActive: Bool
+
+    func body(content: Content) -> some View {
+        content.overlay(alignment: .topTrailing) {
+            if isActive {
+                Circle()
+                    .fill(Color.hotPink)
+                    .frame(width: 8, height: 8)
+                    .offset(x: 2, y: -2)
+                    .accessibilityHidden(true)
+            }
+        }
+    }
+}
+
+extension View {
+    func filterBadge(isActive: Bool) -> some View {
+        modifier(FilterBadgeModifier(isActive: isActive))
+    }
+}
+
 // MARK: - Design System
 // Note: Design tokens (Spacing, Radius, Opacity) are now unified in:
 // App/Theme/DesignTokens.swift → Use DS.Spacing, DS.Radius, DS.Opacity
@@ -282,21 +306,10 @@ struct YalaFormatter {
         UserDefaults.standard.string(forKey: "currencyDisplayFormat") ?? "code"
     }
 
-    /// Map currency codes to their symbols
-    private static let currencySymbols: [String: String] = [
-        "PEN": "S/",
-        "USD": "$",
-        "EUR": "€",
-        "MXN": "$",
-        "COP": "$",
-        "BRL": "R$",
-        "GBP": "£",
-    ]
-
     /// Returns the currency identifier (code or symbol) based on user preference
     static func currencyIdentifier(for code: String) -> String {
-        if currencyDisplayFormat == "symbol", let symbol = currencySymbols[code] {
-            return symbol
+        if currencyDisplayFormat == "symbol" {
+            return CurrencyUtils.symbol(for: code)
         }
         return code
     }
@@ -373,23 +386,9 @@ struct YalaFormatter {
     /// Cash flow table cell: currency prefix (respects user preference) + compact. "S/ 9,999" / "PEN 10.5k"
     static func amountCashFlowCell(value: Double, currencyCode: String) -> String {
         let sym = currencyIdentifier(for: currencyCode)
-        let absValue = abs(value)
         let sign = value < 0 ? "-" : ""
-        if absValue >= 100_000 {
-            return String(format: "%@%@ %.0fk", sign, sym, absValue / 1000)
-        }
-        if absValue >= 10_000 {
-            let k = absValue / 1000
-            if k.truncatingRemainder(dividingBy: 1) == 0 {
-                return String(format: "%@%@ %.0fk", sign, sym, k)
-            }
-            return String(format: "%@%@ %.1fk", sign, sym, k)
-        }
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        let formattedNumber = formatter.string(from: NSNumber(value: absValue)) ?? "0"
-        return "\(sign)\(sym) \(formattedNumber)"
+        let compact = amountCompactTable(value: abs(value))
+        return "\(sign)\(sym) \(compact)"
     }
 
     /// Compact axis label: 1500 → "2K", -40000 → "-40K", 500 → "500"

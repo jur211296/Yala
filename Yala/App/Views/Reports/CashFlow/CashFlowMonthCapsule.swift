@@ -34,9 +34,10 @@ struct CashFlowMonthCapsule: View {
 
             miniBar
 
-            Text(netFlowInfo.text)
+            let flow = netFlowInfo
+            Text(flow.text)
                 .font(DS.Typography.captionSmall)
-                .foregroundStyle(netFlowInfo.color)
+                .foregroundStyle(flow.color)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)

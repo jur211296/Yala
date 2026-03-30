@@ -53,19 +53,12 @@ struct CashFlowTableView: View {
                                 DragGesture(minimumDistance: 50)
                                     .onEnded { value in
                                         guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                                        let months = projection.months
-                                        guard let idx = months.firstIndex(where: { $0.monthKey == viewModel.selectedMonthKey }) else { return }
-                                        if value.translation.width < 0, idx + 1 < months.count {
-                                            withAnimation(.easeInOut(duration: DS.Animation.fast)) {
-                                                viewModel.selectedMonthKey = months[idx + 1].monthKey
-                                            }
-                                        } else if value.translation.width > 0, idx - 1 >= 0 {
-                                            withAnimation(.easeInOut(duration: DS.Animation.fast)) {
-                                                viewModel.selectedMonthKey = months[idx - 1].monthKey
-                                            }
-                                        }
+                                        navigateMonth(in: projection.months, forward: value.translation.width < 0)
                                     }
                             )
+                            .accessibilityAdjustableAction { direction in
+                                navigateMonth(in: projection.months, forward: direction == .increment)
+                            }
                         }
                     }
                 } else {
@@ -121,6 +114,17 @@ struct CashFlowTableView: View {
         }
         .sheet(isPresented: $viewModel.showEditStartingBalance, onDismiss: { recalculate() }) {
             EditStartingBalanceSheet(viewModel: viewModel, currencyCode: currencyCode)
+        }
+    }
+
+    // MARK: - Navigation
+
+    private func navigateMonth(in months: [CashFlowMonth], forward: Bool) {
+        guard let idx = months.firstIndex(where: { $0.monthKey == viewModel.selectedMonthKey }) else { return }
+        let next = forward ? idx + 1 : idx - 1
+        guard months.indices.contains(next) else { return }
+        withAnimation(.easeInOut(duration: DS.Animation.fast)) {
+            viewModel.selectedMonthKey = months[next].monthKey
         }
     }
 
