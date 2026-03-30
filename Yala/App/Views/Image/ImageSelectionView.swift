@@ -43,8 +43,9 @@ struct ImageSelectionView: View {
     /// Setup trial: example images to show as selectable cards
     var exampleImages: [UIImage]?
 
-    /// Setup trial: called when draft is approved with the resulting transaction ID
-    var onSetupTrialCompleted: ((PersistentIdentifier, String) -> Void)?
+    /// Setup trial: called when step completes (draft created or approved).
+    /// Passes the item ID, name, and kind (.transaction if approved, .draft if saved to inbox).
+    var onSetupTrialCompleted: ((PersistentIdentifier, String, PracticeItemKind) -> Void)?
 
     /// Setup trial: called when user taps "Ahora no" to skip
     var onSetupTrialSkipped: (() -> Void)?
@@ -142,10 +143,10 @@ struct ImageSelectionView: View {
                 InboxDraftEditSheet(draft: draft) {
                     // onApproved callback - mark as approved and dismiss image view
                     draftWasApproved = true
-                    // Setup trial: capture transaction for practice cleanup
+                    // Setup trial: capture approved transaction for practice cleanup
                     if let callback = onSetupTrialCompleted,
                        let transaction = draft.approvedTransaction {
-                        callback(transaction.persistentModelID, draft.note ?? "")
+                        callback(transaction.persistentModelID, draft.note ?? "", .transaction)
                     }
                     dismiss()
                 }
@@ -153,7 +154,11 @@ struct ImageSelectionView: View {
             .onChange(of: createdDraft) { oldValue, newValue in
                 // Detect when EditSheet is dismissed (draft becomes nil)
                 if oldValue != nil && newValue == nil && !draftWasApproved {
-                    // Draft was not approved - just dismiss back to PanelView
+                    // Setup trial: draft created = step complete. Cleanup targets the draft.
+                    // Only fires for drafts — approved path handled above.
+                    if let oldDraft = oldValue {
+                        onSetupTrialCompleted?(oldDraft.persistentModelID, oldDraft.note ?? "", .draft)
+                    }
                     dismiss()
                 }
                 // Reset flag for next use
@@ -792,14 +797,16 @@ struct ImageSelectionView: View {
     }
 
     /// Handles navigation after drafts are created
-    /// - Stores drafts and shows result view with action button
-    /// Handles navigation after drafts are created
+    /// - Setup trial: opens edit sheet for first draft only
     /// - 1 draft: Opens edit sheet directly (like Voice)
     /// - Multiple drafts: Shows result view with "Go to Inbox" button
     private func handleNavigation(drafts: [InboxDraft]) async {
         await MainActor.run {
             createdDrafts = drafts
-            if drafts.count == 1 {
+            if onSetupTrialCompleted != nil {
+                // Setup trial: show first draft only, extras remain in Inbox
+                createdDraft = drafts.first
+            } else if drafts.count == 1 {
                 // Single draft: open edit sheet directly
                 createdDraft = drafts.first
             } else {

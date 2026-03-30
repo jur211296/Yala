@@ -46,8 +46,9 @@ struct VoiceRecordingView: View {
     /// Callback to switch to image input mode
     var onSwitchToImage: (() -> Void)?
 
-    /// Setup trial: called when draft is approved with the resulting transaction ID
-    var onSetupTrialCompleted: ((PersistentIdentifier, String) -> Void)?
+    /// Setup trial: called when step completes (draft created or approved).
+    /// Passes the item ID, name, and kind (.transaction if approved, .draft if saved to inbox).
+    var onSetupTrialCompleted: ((PersistentIdentifier, String, PracticeItemKind) -> Void)?
 
     /// Setup trial: called when user taps "Ahora no" to skip
     var onSetupTrialSkipped: (() -> Void)?
@@ -147,10 +148,10 @@ struct VoiceRecordingView: View {
                 InboxDraftEditSheet(draft: draft) {
                     // onApproved callback - mark as approved and dismiss voice view
                     draftWasApproved = true
-                    // Setup trial: capture transaction for practice cleanup
+                    // Setup trial: capture approved transaction for practice cleanup
                     if let callback = onSetupTrialCompleted,
                        let transaction = draft.approvedTransaction {
-                        callback(transaction.persistentModelID, draft.note ?? "")
+                        callback(transaction.persistentModelID, draft.note ?? "", .transaction)
                     }
                     dismiss()
                 }
@@ -158,7 +159,11 @@ struct VoiceRecordingView: View {
             .onChange(of: createdDraft) { oldValue, newValue in
                 // Detect when EditSheet is dismissed (draft becomes nil)
                 if oldValue != nil && newValue == nil && !draftWasApproved {
-                    // Draft was not approved - just dismiss back to PanelView
+                    // Setup trial: draft created = step complete. Cleanup targets the draft.
+                    // Only fires for drafts — approved path handled above.
+                    if let oldDraft = oldValue {
+                        onSetupTrialCompleted?(oldDraft.persistentModelID, oldDraft.note ?? "", .draft)
+                    }
                     dismiss()
                 }
                 // Reset flag for next use

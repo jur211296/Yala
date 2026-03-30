@@ -171,15 +171,15 @@ struct PanelView: View {
 
     private func deletePracticeItem(_ item: PracticeCleanupItem) {
         do {
-            switch item.stepID {
-            case .firstExpense, .tryVoiceInput, .tryImageInput:
+            switch item.kind {
+            case .transaction:
                 try deletePracticeModel(TransactionItem.self, id: item.persistentID)
-            case .firstBudget:
+            case .draft:
+                try deletePracticeModel(InboxDraft.self, id: item.persistentID)
+            case .budget:
                 try deletePracticeModel(Budget.self, id: item.persistentID)
             case .scheduledPayment:
                 try deletePracticeModel(ScheduledPayment.self, id: item.persistentID)
-            default:
-                return
             }
             try modelContext.save()
         } catch {
@@ -1834,13 +1834,14 @@ private struct PanelSheetsModifier: ViewModifier {
                     onSwitchToImage: {
                         switchToImageAfterVoice = true
                     },
-                    onSetupTrialCompleted: isVoiceSetupTrial ? { transactionID, itemName in
+                    onSetupTrialCompleted: isVoiceSetupTrial ? { itemID, itemName, kind in
                         SetupChecklistManager.shared.markCompleted(
                             .tryVoiceInput,
                             practiceItem: PracticeCleanupItem(
                                 stepID: .tryVoiceInput,
                                 itemName: itemName,
-                                persistentID: transactionID
+                                persistentID: itemID,
+                                kind: kind
                             )
                         )
                     } : nil,
@@ -1857,13 +1858,14 @@ private struct PanelSheetsModifier: ViewModifier {
                         navigateToInboxAfterImage = true
                     },
                     exampleImages: isImageSetupTrial ? loadExampleImages() : nil,
-                    onSetupTrialCompleted: isImageSetupTrial ? { transactionID, itemName in
+                    onSetupTrialCompleted: isImageSetupTrial ? { itemID, itemName, kind in
                         SetupChecklistManager.shared.markCompleted(
                             .tryImageInput,
                             practiceItem: PracticeCleanupItem(
                                 stepID: .tryImageInput,
                                 itemName: itemName,
-                                persistentID: transactionID
+                                persistentID: itemID,
+                                kind: kind
                             )
                         )
                     } : nil,
@@ -1964,9 +1966,10 @@ private struct PanelSheetsModifier: ViewModifier {
         AppBootstrapper.shared.showDeferredActionsIfNeeded()
     }
 
-    private func loadExampleImages() -> [UIImage] {
-        ["example-receipt", "example-bank-alert", "example-transaction-list"]
+    private func loadExampleImages() -> [UIImage]? {
+        let images = ["example-receipt", "example-bank-alert", "example-transaction-list"]
             .compactMap { UIImage(named: $0) }
+        return images.isEmpty ? nil : images
     }
 }
 

@@ -61,12 +61,38 @@ struct SetupStep: Identifiable {
     var hasPracticeCleanup: Bool { id.hasPracticeCleanup }
 }
 
+/// Which SwiftData model a practice cleanup item should delete.
+enum PracticeItemKind {
+    case transaction
+    case draft
+    case budget
+    case scheduledPayment
+
+    /// Infer default kind from the step that created the item.
+    static func defaultKind(for step: SetupStepID) -> PracticeItemKind {
+        switch step {
+        case .firstExpense, .tryVoiceInput, .tryImageInput: .transaction
+        case .firstBudget: .budget
+        case .scheduledPayment: .scheduledPayment
+        default: .transaction
+        }
+    }
+}
+
 /// Tracks a practice item created during guided setup for potential cleanup.
 struct PracticeCleanupItem: Identifiable {
     let id = UUID()
     let stepID: SetupStepID
     let itemName: String
     let persistentID: PersistentIdentifier
+    let kind: PracticeItemKind
+
+    init(stepID: SetupStepID, itemName: String, persistentID: PersistentIdentifier, kind: PracticeItemKind? = nil) {
+        self.stepID = stepID
+        self.itemName = itemName
+        self.persistentID = persistentID
+        self.kind = kind ?? PracticeItemKind.defaultKind(for: stepID)
+    }
 
     /// Localized name for the item type (gasto, presupuesto, pago planificado).
     var localizedItemType: String {
