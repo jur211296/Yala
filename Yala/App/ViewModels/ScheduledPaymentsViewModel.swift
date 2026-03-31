@@ -678,27 +678,40 @@ final class ScheduledPaymentsViewModel {
         // Only count expenses (exclude income payments)
         let expensePayments = subscriptions.filter { $0.isActive && $0.transactionType != "income" }
 
-        for subscription in expensePayments {
-            // Calculate how many times this subscription occurs in the month
-            let occurrences = getPaymentDatesInMonth(payment: subscription, month: month)
-            let rawAmount = subscription.amount * Double(occurrences.count)
+        let paidAmounts = loadPaidAmounts(for: expensePayments, month: month)
 
-            // Convert currency if needed
-            if let target = targetCurrency, subscription.currencyCode != target, rawAmount > 0 {
-                let decimalAmount = Decimal(rawAmount)
-                let converted: Decimal
-                if let context = modelContext {
-                    converted = converter.convertWithLatestRate(
-                        decimalAmount, from: subscription.currencyCode, to: target, context: context
-                    )
+        for payment in expensePayments {
+            let occurrences = getPaymentDatesInMonth(payment: payment, month: month)
+            var remainingInfos = paidAmounts[payment.id.uuidString] ?? []
+
+            for date in occurrences.sorted() {
+                let isSkipped = payment.isDateSkipped(date)
+                let amount: Double
+                let currency: String
+
+                if !remainingInfos.isEmpty && !isSkipped {
+                    let info = remainingInfos.removeFirst()
+                    amount = info.amount
+                    currency = info.currencyCode
+                } else if !isSkipped {
+                    amount = payment.amount
+                    currency = payment.currencyCode
                 } else {
-                    converted = converter.convertWithFallback(
-                        decimalAmount, from: subscription.currencyCode, to: target
-                    )
+                    continue
                 }
-                total += NSDecimalNumber(decimal: converted).doubleValue
-            } else {
-                total += rawAmount
+
+                if let target = targetCurrency, currency != target, amount > 0 {
+                    let decimalAmount = Decimal(amount)
+                    let converted: Decimal
+                    if let context = modelContext {
+                        converted = converter.convertWithLatestRate(decimalAmount, from: currency, to: target, context: context)
+                    } else {
+                        converted = converter.convertWithFallback(decimalAmount, from: currency, to: target)
+                    }
+                    total += NSDecimalNumber(decimal: converted).doubleValue
+                } else {
+                    total += amount
+                }
             }
         }
 
