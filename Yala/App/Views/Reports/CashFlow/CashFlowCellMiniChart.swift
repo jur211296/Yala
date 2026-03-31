@@ -18,6 +18,21 @@ struct CashFlowCellMiniChart: View {
     @Environment(\.yalaTheme) private var theme
     @State private var selectedDay: Int?
 
+    private var chartYDomain: ClosedRange<Double> {
+        let data = cumulativeData
+        let maxVal = max(data.last?.cumulative ?? 0, plannedAmount)
+        return 0...(maxVal * 1.1 + 1)
+    }
+
+    private func tooltipAlignment(for day: Int) -> Alignment {
+        let data = cumulativeData
+        guard let first = data.first?.day, let last = data.last?.day, last > first else { return .center }
+        let pct = Double(day - first) / Double(last - first)
+        if pct < 0.25 { return .leading }
+        else if pct > 0.75 { return .trailing }
+        else { return .center }
+    }
+
     var body: some View {
         let data = cumulativeData
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
@@ -64,6 +79,39 @@ struct CashFlowCellMiniChart: View {
                     RuleMark(x: .value("Day", point.day))
                         .foregroundStyle(Color.secondary.opacity(0.3))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 2]))
+
+                    // Invisible anchor for tooltip
+                    PointMark(
+                        x: .value("Day", point.day),
+                        y: .value("Top", chartYDomain.upperBound)
+                    )
+                    .symbolSize(0)
+                    .annotation(
+                        position: .top,
+                        alignment: tooltipAlignment(for: point.day)
+                    ) {
+                        VStack(spacing: DS.Spacing.xxs) {
+                            Text(L10n.CashFlowPlan.cellDetailOf + " \(day)")
+                                .font(DS.Typography.captionSmall)
+                                .foregroundStyle(.thSecondaryText)
+                            Text(YalaFormatter.currency(value: point.cumulative, currencyCode: currencyCode))
+                                .font(DS.Typography.label)
+                                .fontWeight(.semibold)
+                                .monospacedDigit()
+                            if point.daily > 0 {
+                                Text("+" + YalaFormatter.amountCompactTable(value: point.daily))
+                                    .font(DS.Typography.captionSmall)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                        .padding(.horizontal, DS.Spacing.sm)
+                        .padding(.vertical, DS.Spacing.xs)
+                        .background(
+                            RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
+                                .fill(.thCard.opacity(0.95))
+                                .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
+                        )
+                    }
                 }
             }
             .chartYAxis {
@@ -89,41 +137,7 @@ struct CashFlowCellMiniChart: View {
                 }
             }
             .chartXSelection(value: $selectedDay)
-            .chartOverlay { proxy in
-                GeometryReader { geo in
-                    if let day = selectedDay,
-                       let point = data.first(where: { $0.day == day }),
-                       let xPos = proxy.position(forX: day) {
-                        let plotFrame = proxy.plotFrame.map { geo[$0] } ?? geo.frame(in: .local)
-
-                        VStack(spacing: DS.Spacing.xxs) {
-                            Text(L10n.CashFlowPlan.cellDetailOf + " \(day)")
-                                .font(DS.Typography.captionSmall)
-                                .foregroundStyle(.secondary)
-                            Text(YalaFormatter.currency(value: point.cumulative, currencyCode: currencyCode))
-                                .font(DS.Typography.label)
-                                .fontWeight(.semibold)
-                                .monospacedDigit()
-                            if point.daily > 0 {
-                                Text("+" + YalaFormatter.amountCompactTable(value: point.daily))
-                                    .font(DS.Typography.captionSmall)
-                                    .foregroundStyle(.tertiary)
-                            }
-                        }
-                        .padding(.horizontal, DS.Spacing.sm)
-                        .padding(.vertical, DS.Spacing.xs)
-                        .background(
-                            RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
-                                .fill(.ultraThinMaterial)
-                                .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
-                        )
-                        .position(
-                            x: min(max(xPos + plotFrame.minX, 40), plotFrame.maxX - 40),
-                            y: plotFrame.minY - 8
-                        )
-                    }
-                }
-            }
+            .chartYScale(domain: chartYDomain)
             .frame(height: 160)
 
             // Legend

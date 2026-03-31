@@ -57,6 +57,25 @@ struct CashFlowChartsSheet: View {
         cachedRollingAvg = Self.buildRollingAverage(from: cachedPastMonths)
     }
 
+    private var projectionYDomain: ClosedRange<Double> {
+        let values = projection.months.map(\.accumulatedBalance)
+        let minVal = min(values.min() ?? 0, 0)
+        let maxVal = values.max() ?? 0
+        let headroom = max(abs(maxVal - minVal), 1) * 0.1
+        return minVal...(maxVal + headroom)
+    }
+
+    private func projectionTooltipAlignment(for date: Date) -> Alignment {
+        guard let first = projection.months.first?.date,
+              let last = projection.months.last?.date else { return .center }
+        let total = last.timeIntervalSince(first)
+        guard total > 0 else { return .center }
+        let pct = date.timeIntervalSince(first) / total
+        if pct < 0.25 { return .leading }
+        else if pct > 0.75 { return .trailing }
+        else { return .center }
+    }
+
     private var selectedProjectionMonth: CashFlowMonth? {
         guard let selectedDate = selectedMonth else { return nil }
         return projection.months.first(where: {
@@ -105,6 +124,34 @@ struct CashFlowChartsSheet: View {
                     RuleMark(x: .value("Month", month.date))
                         .foregroundStyle(Color.secondary.opacity(0.3))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 2]))
+
+                    // Invisible anchor for tooltip
+                    PointMark(
+                        x: .value("Month", month.date),
+                        y: .value("Top", projectionYDomain.upperBound)
+                    )
+                    .symbolSize(0)
+                    .annotation(
+                        position: .top,
+                        alignment: projectionTooltipAlignment(for: month.date)
+                    ) {
+                        VStack(alignment: .center, spacing: DS.Spacing.xxs) {
+                            Text(month.date.formatted(.dateTime.month(.abbreviated).year()))
+                                .font(DS.Typography.captionSmall)
+                                .foregroundStyle(.thSecondaryText)
+                            Text(YalaFormatter.currency(value: month.accumulatedBalance, currencyCode: currencyCode))
+                                .font(DS.Typography.label)
+                                .fontWeight(.semibold)
+                                .monospacedDigit()
+                        }
+                        .padding(.horizontal, DS.Spacing.sm)
+                        .padding(.vertical, DS.Spacing.xs)
+                        .background(
+                            RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
+                                .fill(.thCard.opacity(0.95))
+                                .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
+                        )
+                    }
                 }
 
                 RuleMark(y: .value("Zero", 0))
@@ -119,35 +166,8 @@ struct CashFlowChartsSheet: View {
             .yalaChartYAxis()
             .yalaChartXAxisMonthly()
             .chartXSelection(value: $selectedMonth)
+            .chartYScale(domain: projectionYDomain)
             .frame(height: 180)
-            .chartOverlay { proxy in
-                GeometryReader { geo in
-                    if let month = selectedProjectionMonth,
-                       let xPos = proxy.position(forX: month.date) {
-                        let plotFrame = proxy.plotFrame.map { geo[$0] } ?? geo.frame(in: .local)
-                        VStack(spacing: DS.Spacing.xxs) {
-                            Text(month.date.formatted(.dateTime.month(.abbreviated).year()))
-                                .font(DS.Typography.captionSmall)
-                                .foregroundStyle(.secondary)
-                            Text(YalaFormatter.currency(value: month.accumulatedBalance, currencyCode: currencyCode))
-                                .font(DS.Typography.label)
-                                .fontWeight(.semibold)
-                                .monospacedDigit()
-                        }
-                        .padding(.horizontal, DS.Spacing.sm)
-                        .padding(.vertical, DS.Spacing.xs)
-                        .background(
-                            RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
-                                .fill(.ultraThinMaterial)
-                                .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
-                        )
-                        .position(
-                            x: min(max(xPos + plotFrame.minX, 40), plotFrame.maxX - 40),
-                            y: plotFrame.minY - 8
-                        )
-                    }
-                }
-            }
         }
     }
 
