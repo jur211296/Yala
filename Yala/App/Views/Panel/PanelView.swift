@@ -2111,10 +2111,11 @@ private struct ContextualInsightCard: View {
             } label: {
                 Image(systemName: "ellipsis")
                     .font(DS.Typography.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.primary)
                     .frame(width: 28, height: 28)
                     .contentShape(Rectangle())
             }
+            .tint(.primary)
             .disabled(isRegenerating)
         }
         .padding(DS.Spacing.lg)
