@@ -146,7 +146,7 @@ struct ImageSelectionView: View {
                     // Setup trial: capture approved transaction for practice cleanup
                     if let callback = onSetupTrialCompleted,
                        let transaction = draft.approvedTransaction {
-                        callback(transaction.persistentModelID, draft.note ?? "", .transaction)
+                        callback(transaction.persistentModelID, draft.note, .transaction)
                     }
                     dismiss()
                 }
@@ -157,7 +157,7 @@ struct ImageSelectionView: View {
                     // Setup trial: draft created = step complete. Cleanup targets the draft.
                     // Only fires for drafts — approved path handled above.
                     if let oldDraft = oldValue {
-                        onSetupTrialCompleted?(oldDraft.persistentModelID, oldDraft.note ?? "", .draft)
+                        onSetupTrialCompleted?(oldDraft.persistentModelID, oldDraft.note, .draft)
                     }
                     dismiss()
                 }

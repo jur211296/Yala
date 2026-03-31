@@ -152,6 +152,9 @@ struct CoachMarkOverlay: View {
     @State private var isTransitioning = false
     /// Bumped after programmatic scroll to force re-evaluation of anchor frames
     @State private var scrollSettleToken = 0
+    /// Incremented on each transition; stale asyncAfter closures bail out when their
+    /// captured generation no longer matches.
+    @State private var transitionGeneration: UInt = 0
 
     private var currentStep: CoachMarkStep? {
         guard currentIndex < steps.count else { return nil }
@@ -216,6 +219,14 @@ struct CoachMarkOverlay: View {
                 tooltipCard(step: step, targetFrame: frame)
                     .opacity(showTooltip ? 1 : 0)
                     .offset(y: showTooltip ? 0 : 8)
+            } else if isTransitioning {
+                // Full-screen tap blocker while scrolling to a target that is not yet visible.
+                // Prevents touch leakage to underlying content during programmatic scroll.
+                Color.black.opacity(0.001)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(true)
+                    .contentShape(Rectangle())
+                    .onTapGesture { }
             }
         }
         .onAppear {
@@ -231,6 +242,8 @@ struct CoachMarkOverlay: View {
     private func handleStepTransition(initial: Bool) {
         guard let step = currentStep else { return }
         isTransitioning = true
+        transitionGeneration += 1
+        let gen = transitionGeneration
 
         // Scroll to center the target on every step transition for best visibility.
         // scrollTo is a no-op for elements already centered or outside ScrollView (toolbar items).
@@ -239,18 +252,20 @@ struct CoachMarkOverlay: View {
 
         if shouldScroll && (isOffScreen || !initial) {
             // Target off-screen or advancing between steps — scroll then show
-            scrollThenShow(step: step, initial: initial)
+            scrollThenShow(step: step, initial: initial, gen: gen)
         } else if shouldScroll && initial {
             // First appearance, target already visible — scroll to center then show
             withAnimation(.easeInOut(duration: DS.Animation.normal)) {
                 scrollProxy?.scrollTo(step.id, anchor: .center)
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.normal + 0.1) {
+                guard transitionGeneration == gen else { return }
                 scrollSettleToken += 1
                 dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.slow)) {
                     isVisible = true
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.fast) {
+                    guard transitionGeneration == gen else { return }
                     isTransitioning = false
                     dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
                         showTooltip = true
@@ -260,10 +275,12 @@ struct CoachMarkOverlay: View {
         } else if initial {
             // No scroll proxy — fade in directly
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                guard transitionGeneration == gen else { return }
                 dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.slow)) {
                     isVisible = true
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.fast) {
+                    guard transitionGeneration == gen else { return }
                     isTransitioning = false
                     dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
                         showTooltip = true
@@ -276,6 +293,7 @@ struct CoachMarkOverlay: View {
                 showTooltip = false
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.fast) {
+                guard transitionGeneration == gen else { return }
                 isTransitioning = false
                 dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
                     showTooltip = true
@@ -284,7 +302,7 @@ struct CoachMarkOverlay: View {
         }
     }
 
-    private func scrollThenShow(step: CoachMarkStep, initial: Bool) {
+    private func scrollThenShow(step: CoachMarkStep, initial: Bool, gen: UInt) {
         // Hide tooltip during scroll (spotlight stays dimmed)
         if !initial {
             dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.fast)) {
@@ -299,6 +317,7 @@ struct CoachMarkOverlay: View {
 
         // Wait for scroll to settle, then show
         DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.normal + 0.15) {
+            guard transitionGeneration == gen else { return }
             scrollSettleToken += 1
             isTransitioning = false
             if !isVisible {
@@ -307,6 +326,7 @@ struct CoachMarkOverlay: View {
                 }
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.fast) {
+                guard transitionGeneration == gen else { return }
                 dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
                     showTooltip = true
                 }

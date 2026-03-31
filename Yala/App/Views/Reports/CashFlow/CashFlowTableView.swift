@@ -66,6 +66,7 @@ struct CashFlowTableView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
+            .scrollDisabled(showTour)
             .onAppear { scrollProxy = proxy }
         }
         .coachMarkOverlay(
