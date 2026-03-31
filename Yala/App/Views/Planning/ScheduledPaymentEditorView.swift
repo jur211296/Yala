@@ -1019,7 +1019,7 @@ struct ScheduledPaymentEditorView: View {
     private var canSave: Bool {
         !name.isEmpty &&
         !amount.isEmpty &&
-        (Double(amount) ?? 0) > 0 &&
+        AmountInputHelper.parseDecimal(amount) > 0 &&
         selectedAccount != nil &&
         selectedSubcategory != nil
     }

@@ -696,7 +696,8 @@ struct BudgetEditorView: View {
     // MARK: - Validation
 
     private var canSave: Bool {
-        guard !name.isEmpty, !limitAmount.isEmpty, let amount = Double(limitAmount), amount > 0 else {
+        let parsedAmount = AmountInputHelper.parseDecimal(limitAmount)
+        guard !name.isEmpty, !limitAmount.isEmpty, parsedAmount > 0 else {
             return false
         }
         // For unique budgets, validate date range
