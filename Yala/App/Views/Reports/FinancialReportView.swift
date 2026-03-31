@@ -265,13 +265,14 @@ struct FinancialReportView: View {
         ToolbarItem(placement: .topBarTrailing) {
             HStack(spacing: DS.Spacing.md) {
                 if selectedTab == .flujoDeCaja && cashFlowViewModel.hasPlan {
-                    Button {
-                        cashFlowViewModel.showChartsSheet = true
-                    } label: {
-                        Image(systemName: "chart.bar.xaxis")
-                            .font(DS.Typography.bodyBold)
-                            .foregroundStyle(.thToolbarIcon)
-                    }
+                    // Charts button hidden — deferred to future version (see Backlog/graficas-cashflow.md)
+                    // Button {
+                    //     cashFlowViewModel.showChartsSheet = true
+                    // } label: {
+                    //     Image(systemName: "chart.bar.xaxis")
+                    //         .font(DS.Typography.bodyBold)
+                    //         .foregroundStyle(.thToolbarIcon)
+                    // }
 
                     Menu {
                         Button {
