@@ -114,25 +114,18 @@ struct CashFlowChartsSheet: View {
                 }
 
                 if let month = selectedProjectionMonth {
+                    let domain = projectionYDomain
+                    let midpoint = domain.lowerBound + (domain.upperBound - domain.lowerBound) * 0.5
+                    let isUpperHalf = month.accumulatedBalance > midpoint
+
                     PointMark(
                         x: .value("Month", month.date),
                         y: .value("Balance", month.accumulatedBalance)
                     )
                     .foregroundStyle(theme.accent)
                     .symbolSize(40)
-
-                    RuleMark(x: .value("Month", month.date))
-                        .foregroundStyle(Color.secondary.opacity(0.3))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 2]))
-
-                    // Invisible anchor for tooltip
-                    PointMark(
-                        x: .value("Month", month.date),
-                        y: .value("Top", projectionYDomain.upperBound)
-                    )
-                    .symbolSize(0)
                     .annotation(
-                        position: .top,
+                        position: isUpperHalf ? .bottom : .top,
                         alignment: projectionTooltipAlignment(for: month.date)
                     ) {
                         VStack(alignment: .center, spacing: DS.Spacing.xxs) {
@@ -152,6 +145,10 @@ struct CashFlowChartsSheet: View {
                                 .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
                         )
                     }
+
+                    RuleMark(x: .value("Month", month.date))
+                        .foregroundStyle(Color.secondary.opacity(0.3))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 2]))
                 }
 
                 RuleMark(y: .value("Zero", 0))

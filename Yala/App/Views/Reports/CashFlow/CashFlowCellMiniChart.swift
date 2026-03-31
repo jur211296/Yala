@@ -18,14 +18,12 @@ struct CashFlowCellMiniChart: View {
     @Environment(\.yalaTheme) private var theme
     @State private var selectedDay: Int?
 
-    private var chartYDomain: ClosedRange<Double> {
-        let data = cumulativeData
+    private func chartYDomain(for data: [CumulativePoint]) -> ClosedRange<Double> {
         let maxVal = max(data.last?.cumulative ?? 0, plannedAmount)
         return 0...(maxVal * 1.1 + 1)
     }
 
-    private func tooltipAlignment(for day: Int) -> Alignment {
-        let data = cumulativeData
+    private func tooltipAlignment(for day: Int, in data: [CumulativePoint]) -> Alignment {
         guard let first = data.first?.day, let last = data.last?.day, last > first else { return .center }
         let pct = Double(day - first) / Double(last - first)
         if pct < 0.25 { return .leading }
@@ -35,6 +33,7 @@ struct CashFlowCellMiniChart: View {
 
     var body: some View {
         let data = cumulativeData
+        let yDomain = chartYDomain(for: data)
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.CashFlowPlan.cellDetailDailyProgress)
                 .font(DS.Typography.headline)
@@ -72,31 +71,19 @@ struct CashFlowCellMiniChart: View {
 
                 // Selection indicator
                 if let day = selectedDay, let point = data.first(where: { $0.day == day }) {
+                    let isUpperHalf = point.cumulative > yDomain.upperBound * 0.5
+
                     PointMark(
                         x: .value("Day", point.day),
                         y: .value("Amount", point.cumulative)
                     )
                     .foregroundStyle(theme.accent)
                     .symbolSize(40)
-
-                    RuleMark(x: .value("Day", point.day))
-                        .foregroundStyle(Color.secondary.opacity(0.3))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 2]))
-
-                    // Invisible anchor for tooltip
-                    PointMark(
-                        x: .value("Day", point.day),
-                        y: .value("Top", chartYDomain.upperBound)
-                    )
-                    .symbolSize(0)
                     .annotation(
-                        position: .top,
-                        alignment: tooltipAlignment(for: point.day)
+                        position: isUpperHalf ? .bottom : .top,
+                        alignment: tooltipAlignment(for: point.day, in: data)
                     ) {
                         VStack(spacing: DS.Spacing.xxs) {
-                            Text(L10n.CashFlowPlan.cellDetailOf + " \(day)")
-                                .font(DS.Typography.captionSmall)
-                                .foregroundStyle(.thSecondaryText)
                             Text(YalaFormatter.currency(value: point.cumulative, currencyCode: currencyCode))
                                 .font(DS.Typography.label)
                                 .fontWeight(.semibold)
@@ -115,6 +102,10 @@ struct CashFlowCellMiniChart: View {
                                 .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
                         )
                     }
+
+                    RuleMark(x: .value("Day", point.day))
+                        .foregroundStyle(Color.secondary.opacity(0.3))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 2]))
                 }
             }
             .chartYAxis {
@@ -140,7 +131,7 @@ struct CashFlowCellMiniChart: View {
                 }
             }
             .chartXSelection(value: $selectedDay)
-            .chartYScale(domain: chartYDomain)
+            .chartYScale(domain: yDomain)
             .frame(height: 160)
 
             // Legend
