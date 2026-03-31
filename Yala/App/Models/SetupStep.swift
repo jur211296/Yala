@@ -86,12 +86,19 @@ struct PracticeCleanupItem: Identifiable {
     let itemName: String
     let persistentID: PersistentIdentifier
     let kind: PracticeItemKind
+    let additionalIDs: [PersistentIdentifier]
 
-    init(stepID: SetupStepID, itemName: String, persistentID: PersistentIdentifier, kind: PracticeItemKind? = nil) {
+    init(stepID: SetupStepID, itemName: String, persistentID: PersistentIdentifier,
+         kind: PracticeItemKind? = nil, additionalIDs: [PersistentIdentifier] = []) {
         self.stepID = stepID
         self.itemName = itemName
         self.persistentID = persistentID
         self.kind = kind ?? PracticeItemKind.defaultKind(for: stepID)
+        self.additionalIDs = additionalIDs
+    }
+
+    var allPersistentIDs: [PersistentIdentifier] {
+        [persistentID] + additionalIDs
     }
 
     /// Localized name for the item type (gasto, presupuesto, pago planificado).

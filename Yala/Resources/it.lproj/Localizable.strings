@@ -3070,6 +3070,7 @@
 "setup.imageTrial.exampleReceipt" = "Scontrino";
 "setup.imageTrial.exampleBank" = "Avviso bancario";
 "setup.imageTrial.exampleList" = "Movimenti";
+"setup.imageTrial.useThisImage" = "Usa questa immagine";
 
 "setup.personalize.navTitle" = "Personalizza il tuo Yala";
 "setup.personalize.title" = "Fallo tuo";

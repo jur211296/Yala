@@ -116,6 +116,7 @@ struct PanelView: View {
     @State private var practiceCleanupItem: PracticeCleanupItem?
     @State private var isVoiceSetupTrial = false
     @State private var isImageSetupTrial = false
+    @State private var setupTrialExampleImages: [UIImage]? = nil
 
     /// Upgrade prompt sheets for gated features
     @State private var showUpgradeForVoice = false
@@ -171,15 +172,13 @@ struct PanelView: View {
 
     private func deletePracticeItem(_ item: PracticeCleanupItem) {
         do {
-            switch item.kind {
-            case .transaction:
-                try deletePracticeModel(TransactionItem.self, id: item.persistentID)
-            case .draft:
-                try deletePracticeModel(InboxDraft.self, id: item.persistentID)
-            case .budget:
-                try deletePracticeModel(Budget.self, id: item.persistentID)
-            case .scheduledPayment:
-                try deletePracticeModel(ScheduledPayment.self, id: item.persistentID)
+            for pid in item.allPersistentIDs {
+                switch item.kind {
+                case .transaction: try deletePracticeModel(TransactionItem.self, id: pid)
+                case .draft: try deletePracticeModel(InboxDraft.self, id: pid)
+                case .budget: try deletePracticeModel(Budget.self, id: pid)
+                case .scheduledPayment: try deletePracticeModel(ScheduledPayment.self, id: pid)
+                }
             }
             try modelContext.save()
         } catch {
@@ -235,8 +234,21 @@ struct PanelView: View {
             FeatureGateService.shared.enableSetupTrial(for: .imageInput)
             isImageSetupTrial = true
             if !imageInputEnabled { imageInputEnabled = true }
+            setupTrialExampleImages = loadExampleImages()
             showImageSelection = true
         }
+    }
+
+    private func loadExampleImages() -> [UIImage]? {
+        let supportedLangs: Set<String> = ["de", "en", "es", "fr", "it", "pt"]
+        let lang = Bundle.main.preferredLocalizations.first ?? "en"
+        let suffix = supportedLangs.contains(lang) ? lang : "en"
+        let images = [
+            "ExampleImages/example-receipt-\(suffix)",
+            "ExampleImages/example-bank-alert-\(suffix)",
+            "ExampleImages/example-transaction-list-\(suffix)"
+        ].compactMap { UIImage(named: $0) }
+        return images.isEmpty ? nil : images
     }
 
     // MARK: - Toolbar Buttons
@@ -350,6 +362,7 @@ struct PanelView: View {
                 practiceCleanupItem: $practiceCleanupItem,
                 isVoiceSetupTrial: $isVoiceSetupTrial,
                 isImageSetupTrial: $isImageSetupTrial,
+                setupTrialExampleImages: $setupTrialExampleImages,
                 deletePracticeItem: deletePracticeItem,
                 existingAccountNames: existingAccountNames,
                 prefillAccountID: viewModel.selectedAccountID,
@@ -1781,7 +1794,18 @@ private struct PanelSheetsModifier: ViewModifier {
     @Binding var practiceCleanupItem: PracticeCleanupItem?
     @Binding var isVoiceSetupTrial: Bool
     @Binding var isImageSetupTrial: Bool
+    @Binding var setupTrialExampleImages: [UIImage]?
     @State private var showPracticeAlert = false
+
+    /// Deferred practice data — stored during callback, consumed in onDismiss.
+    private struct DeferredPractice {
+        let id: PersistentIdentifier
+        let name: String
+        let kind: PracticeItemKind
+        let additionalIDs: [PersistentIdentifier]
+    }
+    @State private var deferredVoicePractice: DeferredPractice?
+    @State private var deferredImagePractice: DeferredPractice?
     let deletePracticeItem: (PracticeCleanupItem) -> Void
 
     let existingAccountNames: (Account?) -> [String]
@@ -1835,14 +1859,8 @@ private struct PanelSheetsModifier: ViewModifier {
                         switchToImageAfterVoice = true
                     },
                     onSetupTrialCompleted: isVoiceSetupTrial ? { itemID, itemName, kind in
-                        SetupChecklistManager.shared.markCompleted(
-                            .tryVoiceInput,
-                            practiceItem: PracticeCleanupItem(
-                                stepID: .tryVoiceInput,
-                                itemName: itemName,
-                                persistentID: itemID,
-                                kind: kind
-                            )
+                        deferredVoicePractice = DeferredPractice(
+                            id: itemID, name: itemName, kind: kind, additionalIDs: []
                         )
                     } : nil,
                     onSetupTrialSkipped: isVoiceSetupTrial ? {
@@ -1857,16 +1875,10 @@ private struct PanelSheetsModifier: ViewModifier {
                     onSavedToInbox: {
                         navigateToInboxAfterImage = true
                     },
-                    exampleImages: isImageSetupTrial ? loadExampleImages() : nil,
-                    onSetupTrialCompleted: isImageSetupTrial ? { itemID, itemName, kind in
-                        SetupChecklistManager.shared.markCompleted(
-                            .tryImageInput,
-                            practiceItem: PracticeCleanupItem(
-                                stepID: .tryImageInput,
-                                itemName: itemName,
-                                persistentID: itemID,
-                                kind: kind
-                            )
+                    exampleImages: setupTrialExampleImages,
+                    onSetupTrialCompleted: isImageSetupTrial ? { itemID, itemName, kind, additionalIDs in
+                        deferredImagePractice = DeferredPractice(
+                            id: itemID, name: itemName, kind: kind, additionalIDs: additionalIDs
                         )
                     } : nil,
                     onSetupTrialSkipped: isImageSetupTrial ? {
@@ -1947,35 +1959,56 @@ private struct PanelSheetsModifier: ViewModifier {
                 showImageSelection = true
             }
         }
+
+        // Consume deferred practice cleanup — must happen after sheet fully dismisses
+        // so the alert can present without being blocked by the sheet.
+        if let deferred = deferredVoicePractice {
+            deferredVoicePractice = nil
+            SetupChecklistManager.shared.markCompleted(
+                .tryVoiceInput,
+                practiceItem: PracticeCleanupItem(
+                    stepID: .tryVoiceInput,
+                    itemName: deferred.name,
+                    persistentID: deferred.id,
+                    kind: deferred.kind
+                )
+            )
+        }
+
         recalculateData()
     }
 
     private func handleImageSelectionDismiss() {
         if isImageSetupTrial {
             isImageSetupTrial = false
+            setupTrialExampleImages = nil
             FeatureGateService.shared.disableSetupTrial(for: .imageInput)
         }
         if navigateToInboxAfterImage {
             navigateToInboxAfterImage = false
             showInbox = true
         }
+
+        // Consume deferred practice cleanup
+        if let deferred = deferredImagePractice {
+            deferredImagePractice = nil
+            SetupChecklistManager.shared.markCompleted(
+                .tryImageInput,
+                practiceItem: PracticeCleanupItem(
+                    stepID: .tryImageInput,
+                    itemName: deferred.name,
+                    persistentID: deferred.id,
+                    kind: deferred.kind,
+                    additionalIDs: deferred.additionalIDs
+                )
+            )
+        }
+
         recalculateData()
 
         // If there's a deferred panel action (e.g., Control Center "new-transaction"
         // that arrived while shared image was showing), resolve it now
         AppBootstrapper.shared.showDeferredActionsIfNeeded()
-    }
-
-    private func loadExampleImages() -> [UIImage]? {
-        let supportedLangs: Set<String> = ["de", "en", "es", "fr", "it", "pt"]
-        let lang = Bundle.main.preferredLocalizations.first ?? "en"
-        let suffix = supportedLangs.contains(lang) ? lang : "en"
-        let images = [
-            "ExampleImages/example-receipt-\(suffix)",
-            "ExampleImages/example-bank-alert-\(suffix)",
-            "ExampleImages/example-transaction-list-\(suffix)"
-        ].compactMap { UIImage(named: $0) }
-        return images.isEmpty ? nil : images
     }
 }
 

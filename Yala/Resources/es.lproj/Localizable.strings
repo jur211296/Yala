@@ -3071,6 +3071,7 @@
 "setup.imageTrial.exampleReceipt" = "Recibo";
 "setup.imageTrial.exampleBank" = "Alerta bancaria";
 "setup.imageTrial.exampleList" = "Movimientos";
+"setup.imageTrial.useThisImage" = "Usar esta imagen";
 
 // Setup Personalize
 "setup.personalize.navTitle" = "Personaliza tu Yala";

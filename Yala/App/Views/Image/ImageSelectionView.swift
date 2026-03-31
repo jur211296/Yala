@@ -37,6 +37,16 @@ struct ImageSelectionView: View {
     @State private var createdDraft: InboxDraft?
     @State private var draftWasApproved = false
 
+    // Example image preview (setup trial)
+    @State private var previewingExample: ExamplePreview? = nil
+    @State private var pendingExampleImage: UIImage? = nil
+
+    private struct ExamplePreview: Identifiable {
+        let id: Int
+        let image: UIImage
+        let label: String
+    }
+
     /// Callback when draft is saved but not approved (user should go to Inbox)
     var onSavedToInbox: (() -> Void)?
 
@@ -44,8 +54,8 @@ struct ImageSelectionView: View {
     var exampleImages: [UIImage]?
 
     /// Setup trial: called when step completes (draft created or approved).
-    /// Passes the item ID, name, and kind (.transaction if approved, .draft if saved to inbox).
-    var onSetupTrialCompleted: ((PersistentIdentifier, String, PracticeItemKind) -> Void)?
+    /// Passes the item ID, name, kind, and additional IDs for multi-draft cleanup.
+    var onSetupTrialCompleted: ((PersistentIdentifier, String, PracticeItemKind, [PersistentIdentifier]) -> Void)?
 
     /// Setup trial: called when user taps "Ahora no" to skip
     var onSetupTrialSkipped: (() -> Void)?
@@ -146,10 +156,50 @@ struct ImageSelectionView: View {
                     // Setup trial: capture approved transaction for practice cleanup
                     if let callback = onSetupTrialCompleted,
                        let transaction = draft.approvedTransaction {
-                        callback(transaction.persistentModelID, draft.note, .transaction)
+                        callback(transaction.persistentModelID, draft.note, .transaction, [])
                     }
                     dismiss()
                 }
+            }
+            .sheet(item: $previewingExample, onDismiss: {
+                if let img = pendingExampleImage {
+                    pendingExampleImage = nil
+                    selectedImages = [img]
+                    startCountdownWithLoadedImages()
+                }
+            }) { preview in
+                NavigationStack {
+                    VStack(spacing: DS.Spacing.xl) {
+                        Spacer()
+                        Image(uiImage: preview.image)
+                            .resizable()
+                            .scaledToFit()
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                            .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: 10)
+                            .padding(.horizontal, DS.Spacing.lg)
+                        Text(preview.label)
+                            .font(DS.Typography.headline)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        YalaPrimaryButton(L10n.SetupChecklist.ImageTrial.useThisImage, icon: "checkmark") {
+                            pendingExampleImage = preview.image
+                            previewingExample = nil
+                        }
+                        .padding(.horizontal, DS.Spacing.xl)
+                        .padding(.bottom, DS.Spacing.xxl)
+                    }
+                    .background(.thBackground)
+                    .navigationTitle(preview.label)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
+                                previewingExample = nil
+                            }
+                        }
+                    }
+                }
+                .presentationDetents([.large])
             }
             .onChange(of: createdDraft) { oldValue, newValue in
                 // Detect when EditSheet is dismissed (draft becomes nil)
@@ -157,7 +207,7 @@ struct ImageSelectionView: View {
                     // Setup trial: draft created = step complete. Cleanup targets the draft.
                     // Only fires for drafts — approved path handled above.
                     if let oldDraft = oldValue {
-                        onSetupTrialCompleted?(oldDraft.persistentModelID, oldDraft.note, .draft)
+                        onSetupTrialCompleted?(oldDraft.persistentModelID, oldDraft.note, .draft, [])
                     }
                     dismiss()
                 }
@@ -318,8 +368,11 @@ struct ImageSelectionView: View {
             HStack(spacing: DS.Spacing.md) {
                 ForEach(examples.indices, id: \.self) { index in
                     Button {
-                        selectedImages = [examples[index]]
-                        startCountdownWithLoadedImages()
+                        previewingExample = ExamplePreview(
+                            id: index,
+                            image: examples[index],
+                            label: index < labels.count ? labels[index] : ""
+                        )
                     } label: {
                         VStack(spacing: DS.Spacing.xs) {
                             Image(uiImage: examples[index])
@@ -610,13 +663,23 @@ struct ImageSelectionView: View {
 
             Spacer()
 
-            // Go to Inbox button (capsule style)
-            YalaPrimaryButton(L10n.Image.goToInbox, icon: "tray") {
-                onSavedToInbox?()
-                dismiss()
+            if onSetupTrialCompleted != nil {
+                YalaPrimaryButton(L10n.Action.done, icon: "checkmark") {
+                    guard let first = createdDrafts.first else { return }
+                    let extraIDs = Array(createdDrafts.dropFirst().map(\.persistentModelID))
+                    onSetupTrialCompleted?(first.persistentModelID, first.note, .draft, extraIDs)
+                    dismiss()
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.bottom, DS.Spacing.xxl)
+            } else {
+                YalaPrimaryButton(L10n.Image.goToInbox, icon: "tray") {
+                    onSavedToInbox?()
+                    dismiss()
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.bottom, DS.Spacing.xxl)
             }
-            .padding(.horizontal, DS.Spacing.xl)
-            .padding(.bottom, DS.Spacing.xxl)
         }
     }
 
@@ -803,10 +866,7 @@ struct ImageSelectionView: View {
     private func handleNavigation(drafts: [InboxDraft]) async {
         await MainActor.run {
             createdDrafts = drafts
-            if onSetupTrialCompleted != nil {
-                // Setup trial: show first draft only, extras remain in Inbox
-                createdDraft = drafts.first
-            } else if drafts.count == 1 {
+            if drafts.count == 1 {
                 // Single draft: open edit sheet directly
                 createdDraft = drafts.first
             } else {

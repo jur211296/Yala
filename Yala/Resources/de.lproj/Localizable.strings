@@ -3068,6 +3068,7 @@
 "setup.imageTrial.exampleReceipt" = "Beleg";
 "setup.imageTrial.exampleBank" = "Bankbenachrichtigung";
 "setup.imageTrial.exampleList" = "Transaktionen";
+"setup.imageTrial.useThisImage" = "Dieses Bild verwenden";
 
 "setup.personalize.navTitle" = "Personalisiere dein Yala";
 "setup.personalize.title" = "Mach es zu deinem";

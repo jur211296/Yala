@@ -203,6 +203,9 @@ extension L10n {
             static var exampleTransactionList: String {
                 NSLocalizedString("setup.imageTrial.exampleList", comment: "Transaction list example")
             }
+            static var useThisImage: String {
+                NSLocalizedString("setup.imageTrial.useThisImage", comment: "Use this example image")
+            }
         }
     }
 }
