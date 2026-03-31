@@ -1582,6 +1582,13 @@
 "accessibility.accountRow %@ %@" = "Compte %@, devise %@";
 "accessibility.budgetRow %@ %d %@ %@" = "Budget %@, %d pour cent dépensé, %@ sur %@";
 "accessibility.searchResultRow %@ %@ %@" = "%@, %@, %@";
+"accessibility.regeneratingInsights" = "Génération des perspectives en cours, veuillez patienter";
+"accessibility.completeCalculation" = "Complétez les valeurs pour calculer le résultat";
+"accessibility.noDraftsToApprove" = "Aucun brouillon prêt à approuver";
+"accessibility.categoriesLocked" = "Affichage des sous-catégories de la catégorie sélectionnée";
+"accessibility.systemMonochromeIcons" = "Le système requiert des icônes monochromes";
+"accessibility.maxCurrenciesSelected" = "Nombre maximum de devises sélectionné";
+"accessibility.invalidThreshold" = "Entrez une valeur de seuil valide";
 "accessibility.filterScheduledAll" = "Tous les paiements";
 "accessibility.filterScheduledRecurring" = "Filtre : récurrents";
 "accessibility.filterScheduledSubscriptions" = "Filtre : abonnements";

@@ -1580,6 +1580,13 @@
 "accessibility.accountRow %@ %@" = "Account %@, currency %@";
 "accessibility.budgetRow %@ %d %@ %@" = "Budget %@, %d percent spent, %@ of %@";
 "accessibility.searchResultRow %@ %@ %@" = "%@, %@, %@";
+"accessibility.regeneratingInsights" = "Generating insights, please wait";
+"accessibility.completeCalculation" = "Complete the values to calculate the result";
+"accessibility.noDraftsToApprove" = "No drafts are ready to approve";
+"accessibility.categoriesLocked" = "Showing subcategories of the selected category";
+"accessibility.systemMonochromeIcons" = "System setting requires monochrome icons";
+"accessibility.maxCurrenciesSelected" = "Maximum number of currencies selected";
+"accessibility.invalidThreshold" = "Enter a valid threshold value";
 "accessibility.filterScheduledAll" = "All payments";
 "accessibility.filterScheduledRecurring" = "Filter: recurring";
 "accessibility.filterScheduledSubscriptions" = "Filter: subscriptions";

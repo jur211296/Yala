@@ -260,6 +260,7 @@ struct PersonalizationSettingsView: View {
                                 Toggle(L10n.Settings.colorfulIcons, isOn: $colorfulIcons)
                                     .labelsHidden()
                                     .disabled(forcesMonochromeIcons)
+                                    .accessibilityHint(forcesMonochromeIcons ? L10n.Accessibility.systemMonochromeIcons : "")
                                     .onChange(of: colorfulIcons) { _, newValue in
                                         PreferenceSyncService.shared.set(bool: newValue, forKey: "colorfulIcons")
                                     }

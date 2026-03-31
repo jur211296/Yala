@@ -400,6 +400,7 @@ struct BudgetEditorView: View {
                                 }
                                 .buttonStyle(.plain)
                                 .disabled(!isValidCustomThreshold)
+                                .accessibilityHint(!isValidCustomThreshold ? L10n.Accessibility.invalidThreshold : "")
                             }
                             .padding(.horizontal, DS.Spacing.lg)
                         }

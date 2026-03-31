@@ -1582,6 +1582,13 @@
 "accessibility.accountRow %@ %@" = "Konto %@, Währung %@";
 "accessibility.budgetRow %@ %d %@ %@" = "Budget %@, %d Prozent ausgegeben, %@ von %@";
 "accessibility.searchResultRow %@ %@ %@" = "%@, %@, %@";
+"accessibility.regeneratingInsights" = "Erkenntnisse werden generiert, bitte warten";
+"accessibility.completeCalculation" = "Vervollständige die Werte, um das Ergebnis zu berechnen";
+"accessibility.noDraftsToApprove" = "Keine Entwürfe zum Genehmigen bereit";
+"accessibility.categoriesLocked" = "Zeigt Unterkategorien der ausgewählten Kategorie";
+"accessibility.systemMonochromeIcons" = "Systemeinstellung erfordert einfarbige Symbole";
+"accessibility.maxCurrenciesSelected" = "Maximale Anzahl an Währungen ausgewählt";
+"accessibility.invalidThreshold" = "Gib einen gültigen Schwellenwert ein";
 "accessibility.filterScheduledAll" = "Alle Zahlungen";
 "accessibility.filterScheduledRecurring" = "Filter: Wiederkehrend";
 "accessibility.filterScheduledSubscriptions" = "Filter: Abonnements";

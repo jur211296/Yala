@@ -1580,6 +1580,13 @@
 "accessibility.accountRow %@ %@" = "Cuenta %@, moneda %@";
 "accessibility.budgetRow %@ %d %@ %@" = "Presupuesto %@, %d por ciento gastado, %@ de %@";
 "accessibility.searchResultRow %@ %@ %@" = "%@, %@, %@";
+"accessibility.regeneratingInsights" = "Generando perspectivas, espera un momento";
+"accessibility.completeCalculation" = "Completa los valores para calcular el resultado";
+"accessibility.noDraftsToApprove" = "No hay borradores listos para aprobar";
+"accessibility.categoriesLocked" = "Mostrando subcategorías de la categoría seleccionada";
+"accessibility.systemMonochromeIcons" = "El sistema requiere iconos monocromáticos";
+"accessibility.maxCurrenciesSelected" = "Cantidad máxima de divisas seleccionada";
+"accessibility.invalidThreshold" = "Ingresa un valor de umbral válido";
 "accessibility.filterScheduledAll" = "Todos los pagos";
 "accessibility.filterScheduledRecurring" = "Filtro: recurrentes";
 "accessibility.filterScheduledSubscriptions" = "Filtro: suscripciones";

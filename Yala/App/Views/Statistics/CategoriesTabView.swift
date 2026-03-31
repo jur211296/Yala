@@ -793,6 +793,7 @@ struct CategoriesTabView: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .opacity((isLocked && viewType == .categories) ? 0.4 : 1.0)
         .disabled(isLocked && viewType == .categories)
+        .accessibilityHint((isLocked && viewType == .categories) ? L10n.Accessibility.categoriesLocked : "")
     }
 
     // MARK: - List View Auto-switching Logic

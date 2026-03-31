@@ -125,7 +125,7 @@ struct PanelView: View {
 
     /// Check if accounts limit is reached (Pro feature)
     private var isAccountsLimitReached: Bool {
-        let activeCount = accounts.filter { !$0.isArchived }.count
+        let activeCount = accounts.count(where: { !$0.isArchived })
         return !FeatureGateService.shared.canCreate(.accounts, currentCount: activeCount)
     }
 
@@ -1040,7 +1040,7 @@ struct PanelView: View {
                     hasNeedFilter, hasSubcategoryFilter, hasTagFilter,
                     hasCurrencyFilter, hasAmountFilter, hasNoteFilter,
                     hasTransactionNatureFilter,
-                ].filter { $0 }.count
+                ].count(where: { $0 })
 
                 if activeFilterCount > 0 {
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -2150,6 +2150,7 @@ private struct ContextualInsightCard: View {
             }
             .tint(.primary)
             .disabled(isRegenerating)
+            .accessibilityHint(isRegenerating ? L10n.Accessibility.regeneratingInsights : "")
         }
         .padding(DS.Spacing.lg)
         .solidCard(radius: DS.Radius.lg)

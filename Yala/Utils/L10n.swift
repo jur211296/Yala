@@ -880,6 +880,13 @@ enum L10n {
         static func accountRow(_ name: String, _ currency: String) -> String { String(format: ls("accessibility.accountRow %@ %@", comment: ""), name, currency) }
         static func budgetRow(_ name: String, _ percent: Int, _ spent: String, _ limit: String) -> String { String(format: ls("accessibility.budgetRow %@ %d %@ %@", comment: ""), name, percent, spent, limit) }
         static func searchResultRow(_ note: String, _ amount: String, _ category: String) -> String { String(format: ls("accessibility.searchResultRow %@ %@ %@", comment: ""), note, amount, category) }
+        static var regeneratingInsights: String { ls("accessibility.regeneratingInsights", comment: "") }
+        static var completeCalculation: String { ls("accessibility.completeCalculation", comment: "") }
+        static var noDraftsToApprove: String { ls("accessibility.noDraftsToApprove", comment: "") }
+        static var categoriesLocked: String { ls("accessibility.categoriesLocked", comment: "") }
+        static var systemMonochromeIcons: String { ls("accessibility.systemMonochromeIcons", comment: "") }
+        static var maxCurrenciesSelected: String { ls("accessibility.maxCurrenciesSelected", comment: "") }
+        static var invalidThreshold: String { ls("accessibility.invalidThreshold", comment: "") }
         static var filterScheduledAll: String { ls("accessibility.filterScheduledAll", comment: "") }
         static var filterScheduledRecurring: String { ls("accessibility.filterScheduledRecurring", comment: "") }
         static var filterScheduledSubscriptions: String { ls("accessibility.filterScheduledSubscriptions", comment: "") }

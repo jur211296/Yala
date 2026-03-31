@@ -160,6 +160,7 @@ struct SplitCalculatorSheet: View {
                         onDismiss()
                     }
                     .disabled(calculatedResult == nil)
+                    .accessibilityHint(calculatedResult == nil ? L10n.Accessibility.completeCalculation : "")
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.lg)
