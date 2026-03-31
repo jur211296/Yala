@@ -448,12 +448,6 @@ final class ScheduledPaymentsViewModel {
         showPaymentEditor = true
     }
 
-    /// Open editor for existing payment
-    func editPayment(_ payment: ScheduledPayment) {
-        editingPayment = payment
-        showPaymentEditor = true
-    }
-
     // MARK: - Transaction Association (M3)
 
     /// Fetch candidate transactions for manual association with a scheduled payment.

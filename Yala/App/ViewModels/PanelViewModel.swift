@@ -335,13 +335,6 @@ final class PanelViewModel {
         }
     }
 
-    /// Called when user manually selects a trend type
-    func setTrendTypeManually(_ type: TrendType, sessionState: SessionState) {
-        trendType = type
-        // Mark as manual selection (not automatic)
-        sessionState.isExpenseAutomatic = false
-    }
-
     // MARK: - SessionState Synchronization (SSOT: Filters are now computed properties)
     // These functions are kept for backward compatibility but do minimal work
     // since filter properties now read/write directly to SessionState

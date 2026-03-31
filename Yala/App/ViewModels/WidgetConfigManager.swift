@@ -116,11 +116,6 @@ final class WidgetConfigManager {
         return configs.filter { $0.isVisible }
     }
 
-    /// Returns the set of active widget types (for lazy evaluation)
-    func activeTypes() -> Set<WidgetType> {
-        return Set(activeWidgets().map { $0.type })
-    }
-
     // MARK: - Mutations
 
     /// Toggles visibility for a widget
