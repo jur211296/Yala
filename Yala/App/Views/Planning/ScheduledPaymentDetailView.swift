@@ -116,11 +116,7 @@ struct ScheduledPaymentDetailView: View {
             ScheduledPaymentEditorView(payment: payment, onDelete: {
                 dismiss()
             })
-            .onDisappear {
-                linkedTransactions = viewModel.fetchLinkedTransactions(for: payment)
-                viewModel.loadPayments()
-                viewModel.calculatePaymentData(payments: viewModel.allPayments)
-            }
+            .onDisappear(perform: refreshPaymentData)
         }
         .sheet(isPresented: $showAssociationSheet) {
             TransactionAssociationSheet(
@@ -129,6 +125,7 @@ struct ScheduledPaymentDetailView: View {
                 viewModel: viewModel
             )
             .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
+            .onDisappear(perform: refreshPaymentData)
         }
         .sheet(item: $editingTransaction) { transaction in
             NewTransactionView(transactionToEdit: transaction)
@@ -340,9 +337,9 @@ struct ScheduledPaymentDetailView: View {
 
     private func occurrenceRow(date: Date, isPast: Bool, index: Int?) -> some View {
         let isSkipped = payment.isDateSkipped(date)
-        let isPaidForDate = occurrenceIsPaid(date: date, isPast: isPast)
-        // Pre-compute linked transaction once per row (avoids repeated O(n) lookups)
-        let rowLinkedTx = isPaidForDate ? findLinkedTransaction(for: date) : nil
+        // Derive paid status from actual linked transaction (works across all months)
+        let rowLinkedTx = findLinkedTransaction(for: date)
+        let isPaidForDate = rowLinkedTx != nil
 
         // Binding: true only when THIS row's date is the selected one
         let isDialogPresented = Binding<Bool>(
@@ -478,16 +475,11 @@ struct ScheduledPaymentDetailView: View {
         }
     }
 
-    /// Check if a specific occurrence date has been paid
-    private func occurrenceIsPaid(date: Date, isPast: Bool) -> Bool {
-        let paidCount = viewModel.paidStatusForMonth[payment.id.uuidString] ?? 0
-        guard paidCount > 0 else { return false }
-        // Simple heuristic: if paid count > 0 and this is a past occurrence, mark earliest as paid
-        let dates = viewModel.getPaymentDatesInMonth(payment: payment, month: viewModel.selectedMonth)
-            .filter { !payment.isDateSkipped($0) }
-            .sorted()
-        guard let index = dates.firstIndex(where: { Calendar.current.isDate($0, inSameDayAs: date) }) else { return false }
-        return index < paidCount
+    /// Refresh linked transactions and recalculate payment data after sheet dismissal
+    private func refreshPaymentData() {
+        linkedTransactions = viewModel.fetchLinkedTransactions(for: payment)
+        viewModel.loadPayments()
+        viewModel.calculatePaymentData(payments: viewModel.allPayments)
     }
 
     /// Unlink transactions associated with this payment for a specific date
