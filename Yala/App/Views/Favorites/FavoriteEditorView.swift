@@ -168,7 +168,8 @@ struct FavoriteEditorView: View {
             loadFavoriteData()
             // Auto-focus name field for new favorites
             if favorite == nil {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(500))
                     isNameFieldFocused = true
                 }
             }

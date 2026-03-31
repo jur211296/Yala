@@ -638,7 +638,8 @@ struct BulkNoteEditorSheet: View {
                 }
             }
             .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(100))
                     isFocused = true
                 }
             }
@@ -715,7 +716,8 @@ struct BulkAmountEditorSheet: View {
                 }
             }
             .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(100))
                     isFocused = true
                 }
             }

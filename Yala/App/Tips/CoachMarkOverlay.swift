@@ -258,33 +258,33 @@ struct CoachMarkOverlay: View {
             withAnimation(.easeInOut(duration: DS.Animation.normal)) {
                 scrollProxy?.scrollTo(step.id, anchor: .center)
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.normal + 0.1) {
+            Task {
+                try? await Task.sleep(for: .seconds(DS.Animation.normal + 0.1))
                 guard transitionGeneration == gen else { return }
                 scrollSettleToken += 1
                 dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.slow)) {
                     isVisible = true
                 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.fast) {
-                    guard transitionGeneration == gen else { return }
-                    isTransitioning = false
-                    dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
-                        showTooltip = true
-                    }
+                try? await Task.sleep(for: .seconds(DS.Animation.fast))
+                guard transitionGeneration == gen else { return }
+                isTransitioning = false
+                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
+                    showTooltip = true
                 }
             }
         } else if initial {
             // No scroll proxy — fade in directly
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            Task {
+                try? await Task.sleep(for: .milliseconds(50))
                 guard transitionGeneration == gen else { return }
                 dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.slow)) {
                     isVisible = true
                 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.fast) {
-                    guard transitionGeneration == gen else { return }
-                    isTransitioning = false
-                    dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
-                        showTooltip = true
-                    }
+                try? await Task.sleep(for: .seconds(DS.Animation.fast))
+                guard transitionGeneration == gen else { return }
+                isTransitioning = false
+                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
+                    showTooltip = true
                 }
             }
         } else {
@@ -292,7 +292,8 @@ struct CoachMarkOverlay: View {
             dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
                 showTooltip = false
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.fast) {
+            Task {
+                try? await Task.sleep(for: .seconds(DS.Animation.fast))
                 guard transitionGeneration == gen else { return }
                 isTransitioning = false
                 dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
@@ -316,7 +317,8 @@ struct CoachMarkOverlay: View {
         }
 
         // Wait for scroll to settle, then show
-        DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.normal + 0.15) {
+        Task {
+            try? await Task.sleep(for: .seconds(DS.Animation.normal + 0.15))
             guard transitionGeneration == gen else { return }
             scrollSettleToken += 1
             isTransitioning = false
@@ -325,11 +327,10 @@ struct CoachMarkOverlay: View {
                     isVisible = true
                 }
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.fast) {
-                guard transitionGeneration == gen else { return }
-                dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
-                    showTooltip = true
-                }
+            try? await Task.sleep(for: .seconds(DS.Animation.fast))
+            guard transitionGeneration == gen else { return }
+            dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
+                showTooltip = true
             }
         }
     }
@@ -421,7 +422,8 @@ struct CoachMarkOverlay: View {
             showTooltip = false
             isVisible = false
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + DS.Animation.fast + 0.05) {
+        Task {
+            try? await Task.sleep(for: .seconds(DS.Animation.fast + 0.05))
             isPresented = false
             onComplete()
         }

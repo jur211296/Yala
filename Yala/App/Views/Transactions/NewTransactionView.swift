@@ -360,7 +360,8 @@ struct NewTransactionView: View {
             }
             // Auto-focus field based on user preference (only for new transactions)
             if transactionToEdit == nil && autoFocusField != "none" {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(50))
                     if autoFocusField == "amount" {
                         isAmountFieldFocused = true
                     } else {
@@ -1236,16 +1237,16 @@ struct NewTransactionView: View {
         )
 
         // Delay animation to let keyboard dismiss
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+        Task {
+            try? await Task.sleep(for: .milliseconds(150))
             dsWithAnimation(reduceMotion) {
                 showSuccessScreen = true
             }
 
             // Check notification primer AFTER animation completes (~800ms)
-            Task {
-                try await Task.sleep(for: .milliseconds(800))
-                await viewModel.checkNotificationPrimer()
-            }
+            try? await Task.sleep(for: .milliseconds(800))
+            guard !Task.isCancelled else { return }
+            await viewModel.checkNotificationPrimer()
         }
     }
 
@@ -1388,7 +1389,8 @@ struct NewTransactionView: View {
         }
 
         // After animation out, update state and animate back in
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+        Task {
+            try? await Task.sleep(for: .milliseconds(150))
             // Keep all current form data but clear the editing reference
             // This turns the form into "create new" mode with prefilled data
             viewModel.editingTransaction = nil

@@ -653,7 +653,8 @@ struct MainTabView: View {
                     sessionState.selectedMainTab = .planning
                 case .recordsStandalone:
                     sessionState.temporaryTab = .records
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(50))
                         sessionState.selectedMainTab = .records
                     }
                 }
@@ -846,7 +847,8 @@ struct MorePlaceholderView: View {
             // Set temporary tab first, then navigate after SwiftUI adds the tab
             SessionState.shared.temporaryTab = tab
             // Small delay to let TabView add the new tab before selecting it
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            Task {
+                try? await Task.sleep(for: .milliseconds(50))
                 SessionState.shared.selectedMainTab = tab.appTab
             }
         } label: {

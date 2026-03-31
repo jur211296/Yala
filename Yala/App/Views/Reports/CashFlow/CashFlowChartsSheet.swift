@@ -248,7 +248,7 @@ struct CashFlowChartsSheet: View {
                         x: .value("Month", month.date),
                         y: .value("Plan", month.totalExpense)
                     )
-                    .foregroundStyle(Color.gray.opacity(0.3))
+                    .foregroundStyle(Color.gray.opacity(DS.Opacity.overlay))
                     .position(by: .value("Type", L10n.CashFlowPlan.plan))
 
                     let realExpense = month.expenseLines.reduce(0.0) { $0 + ($1.realAmount ?? 0) }
@@ -380,7 +380,7 @@ private extension View {
         self.chartYAxis {
             AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                    .foregroundStyle(Color.gray.opacity(0.1))
+                    .foregroundStyle(DS.Semantic.neutralBackground)
                 AxisValueLabel {
                     if let v = value.as(Double.self) {
                         Text(YalaFormatter.amountCompactTable(value: v))

@@ -197,7 +197,8 @@ struct ScheduledPaymentEditorView: View {
             transactionType = "expense"
         }
         if payment == nil && prefill == nil {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            Task {
+                try? await Task.sleep(for: .milliseconds(500))
                 isNameFieldFocused = true
             }
         }

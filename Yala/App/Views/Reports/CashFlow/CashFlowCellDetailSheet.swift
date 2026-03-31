@@ -190,7 +190,7 @@ struct CashFlowCellDetailSheet: View {
                         let clamped = min(1.0, max(0, progress))
                         ZStack(alignment: .leading) {
                             Capsule()
-                                .fill(Color.gray.opacity(0.15))
+                                .fill(DS.Semantic.neutralBackground)
                                 .frame(height: 8)
                             Capsule()
                                 .fill(progress > 1.0 ? Color.hotPink : theme.accent)

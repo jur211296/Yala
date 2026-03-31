@@ -316,7 +316,7 @@ struct BudgetsFavoritesSettingsView: View {
                 Image(systemName: "chevron.right")
                     .font(DS.Typography.indicator)
                     .foregroundStyle(.tertiary)
-                    .frame(width: 24, height: 44)
+                    .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)

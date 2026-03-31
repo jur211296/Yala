@@ -93,7 +93,7 @@ struct CurrencySettingsView: View {
 
             // Progress Overlay
             if isUpdating {
-                Color.black.opacity(0.4)
+                Color.black.opacity(DS.Opacity.overlay)
                     .ignoresSafeArea()
 
                 VStack(spacing: DS.Spacing.lg) {

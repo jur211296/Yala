@@ -168,7 +168,7 @@ struct CashFlowDetailLineRow: View {
             let barWidth = geo.size.width * clamped
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(Color.gray.opacity(0.15))
+                    .fill(DS.Semantic.neutralBackground)
                     .frame(height: 4)
                 Capsule()
                     .fill(progress > 1.0 ? Color.hotPink : theme.accent)

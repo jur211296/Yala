@@ -164,9 +164,10 @@ struct TabBarConfigView: View {
                 } label: {
                     Image(systemName: "minus.circle.fill")
                         .font(DS.Typography.title)
-                        .foregroundStyle(.red.opacity(0.8))
+                        .foregroundStyle(DS.Semantic.errorForeground)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(String(localized: "Quitar \(tab.displayName)"))
             }
         }
         .padding(.horizontal, DS.Spacing.lg)

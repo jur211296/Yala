@@ -82,7 +82,7 @@ struct GroupingReorderSheet: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: dimension.isMandatory ? "lock.fill" : "minus.circle.fill")
                 .font(.body)
-                .foregroundStyle(dimension.isMandatory ? Color.secondary : Color.red)
+                .foregroundStyle(dimension.isMandatory ? Color.secondary : DS.Semantic.errorForeground)
                 .frame(width: DS.FormRow.iconWidth)
                 .contentShape(Rectangle())
                 .onTapGesture {

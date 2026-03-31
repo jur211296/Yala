@@ -1069,8 +1069,10 @@ struct OnboardingView: View {
 
     private func triggerCategoryAnimation() {
         showCategoryIcons = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [reduceMotion] in
-            dsWithAnimation(reduceMotion) {
+        let reduce = reduceMotion
+        Task {
+            try? await Task.sleep(for: .milliseconds(100))
+            dsWithAnimation(reduce) {
                 showCategoryIcons = true
             }
         }

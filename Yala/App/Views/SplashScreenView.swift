@@ -90,7 +90,8 @@ struct SplashScreenView: View {
                 }
 
                 // Start continuous animations after entrance
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(800))
                     startPulseAnimation()
                     startParticleAnimation(in: geometry.size)
                 }

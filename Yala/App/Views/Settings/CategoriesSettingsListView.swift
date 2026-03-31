@@ -150,7 +150,7 @@ struct CategoriesSettingsListView: View {
 
                     if index < viewModel.activeCategories.count - 1 {
                         Divider()
-                            .padding(.leading, viewModel.isEditing ? 56 : 16)
+                            .padding(.leading, viewModel.isEditing ? DS.Spacing.formIndent + DS.Spacing.xs : DS.Spacing.lg)
                     }
                 }
             }
@@ -210,7 +210,7 @@ struct CategoriesSettingsListView: View {
 
                     if index < viewModel.hiddenCategories.count - 1 {
                         Divider()
-                            .padding(.leading, viewModel.isEditing ? 56 : 16)
+                            .padding(.leading, viewModel.isEditing ? DS.Spacing.formIndent + DS.Spacing.xs : DS.Spacing.lg)
                     }
                 }
             }

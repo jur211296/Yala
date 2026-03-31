@@ -14,7 +14,7 @@ import SwiftUI
 
 /// Unified filter criteria used across all views that filter transactions.
 /// This eliminates the need for each ViewModel to define its own filter state separately.
-struct FilterCriteria: Hashable {
+struct FilterCriteria: Hashable, Sendable {
 
     // MARK: - Entity Filters
 
@@ -100,7 +100,7 @@ struct FilterCriteria: Hashable {
     // MARK: - Factory
 
     /// Empty filter criteria (no filters applied)
-    nonisolated(unsafe) static let empty = FilterCriteria()
+    nonisolated static let empty = FilterCriteria()
 
     // MARK: - Mutation
 

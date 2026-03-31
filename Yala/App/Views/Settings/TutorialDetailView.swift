@@ -309,7 +309,7 @@ private final class LoopingPlayerUIView: UIView {
     private var player: AVPlayer?
     private var currentURL: URL?
     private var endObserver: Any?
-    private var restartWork: DispatchWorkItem?
+    private var restartTask: Task<Void, Never>?
     var loopEnabled: Bool = true
 
     /// Seconds to freeze on the last frame before restarting
@@ -368,8 +368,8 @@ private final class LoopingPlayerUIView: UIView {
     }
 
     func pause() {
-        restartWork?.cancel()
-        restartWork = nil
+        restartTask?.cancel()
+        restartTask = nil
         player?.pause()
     }
 
@@ -379,18 +379,19 @@ private final class LoopingPlayerUIView: UIView {
 
     private func scheduleRestart() {
         guard loopEnabled else { return }
-        let work = DispatchWorkItem { [weak self] in
+        let freeze = freezeDuration
+        restartTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(freeze))
+            guard !Task.isCancelled else { return }
             guard let self, let player = self.player else { return }
-            player.seek(to: .zero)
+            await player.seek(to: .zero)
             player.play()
         }
-        restartWork = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + freezeDuration, execute: work)
     }
 
     private func cleanUp() {
-        restartWork?.cancel()
-        restartWork = nil
+        restartTask?.cancel()
+        restartTask = nil
         if let endObserver {
             NotificationCenter.default.removeObserver(endObserver)
         }

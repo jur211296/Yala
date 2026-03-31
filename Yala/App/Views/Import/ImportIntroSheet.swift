@@ -474,7 +474,8 @@ struct ImportIntroSheet: View {
                     count: 0
                 )
                 dismiss()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(300))
                     self.onImportCompleted?(errorResult)
                 }
                 return
@@ -498,7 +499,8 @@ struct ImportIntroSheet: View {
                             count: 0
                         )
                         dismiss()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        Task {
+                            try? await Task.sleep(for: .milliseconds(300))
                             self.onImportCompleted?(errorResult)
                         }
                     } else if matchingAccounts.count == 1, let account = matchingAccounts.first {
@@ -521,7 +523,8 @@ struct ImportIntroSheet: View {
                         count: 0
                     )
                     dismiss()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(300))
                         self.onImportCompleted?(errorResult)
                     }
                 }
@@ -532,7 +535,8 @@ struct ImportIntroSheet: View {
                     count: 0
                 )
                 dismiss()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(300))
                     self.onImportCompleted?(errorResult)
                 }
             }
@@ -642,7 +646,8 @@ struct ImportIntroSheet: View {
                     count: 0
                 )
                 dismiss()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(300))
                     self.onImportCompleted?(errorResult)
                 }
             }
@@ -747,7 +752,8 @@ struct ImportIntroSheet: View {
                     count: 0
                 )
                 dismiss()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(300))
                     self.onImportCompleted?(errorResult)
                 }
             }

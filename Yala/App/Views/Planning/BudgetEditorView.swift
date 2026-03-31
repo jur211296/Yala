@@ -138,7 +138,8 @@ struct BudgetEditorView: View {
                 loadBudgetData()
                 // Auto-focus name field for new budgets
                 if budget == nil {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(500))
                         isNameFieldFocused = true
                     }
                 }

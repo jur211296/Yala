@@ -187,7 +187,7 @@ struct NotificationEditorSheet: View {
                         Image(systemName: "pencil.circle.fill")
                             .font(DS.Typography.largeTitle)
                             .foregroundStyle(Color(hex: selectedColorHex))
-                            .background(Circle().fill(.thBackground).padding(2))
+                            .background(Circle().fill(.thBackground).padding(DS.Spacing.xxs))
                     }
                 }
                 .frame(width: 80, height: 80)
@@ -499,7 +499,7 @@ struct NotificationEditorSheet: View {
                             .font(DS.Typography.body)
                             .foregroundStyle(.secondary)
                             .frame(width: 28)
-                            .padding(.top, 2)
+                            .padding(.top, DS.Spacing.xxs)
 
                         VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                             TextField(L10n.Notifications.textPlaceholder, text: $text, axis: .vertical)

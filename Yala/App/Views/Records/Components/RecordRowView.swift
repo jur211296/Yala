@@ -93,7 +93,7 @@ struct RecordRowView: View {
                     HStack(spacing: DS.Spacing.xs) {
                         if record.splitType != nil {
                             Image(systemName: "percent")
-                                .font(.system(size: 8))
+                                .font(DS.Typography.chipIcon)
                                 .padding(.horizontal, DS.Chip.paddingV)
                                 .padding(.vertical, DS.Spacing.xxs)
                                 .background(Capsule().fill(Color.secondary.opacity(0.1)))
@@ -248,7 +248,7 @@ struct RecordRowView: View {
 
 #Preview {
     ZStack {
-        Color.gray.opacity(0.1)
+        DS.Semantic.neutralBackground
             .ignoresSafeArea()
 
         VStack(spacing: DS.Spacing.md) {
