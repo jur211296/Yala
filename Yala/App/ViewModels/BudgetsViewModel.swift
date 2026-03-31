@@ -76,7 +76,7 @@ final class BudgetsViewModel {
 
     /// Count of active budgets (for Pro tier limit checking)
     var activeBudgetsCount: Int {
-        allBudgets.filter { $0.isActive }.count
+        allBudgets.count(where: { $0.isActive })
     }
 
     // MARK: - Initialization

@@ -275,7 +275,7 @@ struct CategorySelectorSheet: View {
     private func selectionSummary(for category: Category) -> String {
         let subs = visibleSubcategories(for: category)
         let total = subs.count
-        let selected = subs.filter { selectedSubcategories.contains($0.persistentModelID) }.count
+        let selected = subs.count(where: { selectedSubcategories.contains($0.persistentModelID) })
 
         if total == 0 { return L10n.Filters.noSubcategories }
         if selected == 0 { return L10n.Filters.noneSelected }

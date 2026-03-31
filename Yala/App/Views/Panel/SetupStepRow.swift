@@ -16,6 +16,7 @@ struct SetupStepRow: View {
 
     // MARK: - Indicator
 
+    // A11Y-DT: SF Symbol icon sizing — fixed size for checklist indicator alignment
     @ViewBuilder
     private var indicatorImage: some View {
         if step.isCompleted {
@@ -46,7 +47,7 @@ struct SetupStepRow: View {
 
             // Step icon
             Image(systemName: step.icon)
-                .font(.system(size: 14))
+                .font(.system(size: 14)) // A11Y-DT: SF Symbol icon sizing for step icon
                 .foregroundStyle((step.isCompleted || step.isLocked) ? ThemeColor.thSecondaryText : ThemeColor.thPrimaryText)
                 .frame(width: 20)
 
@@ -59,7 +60,7 @@ struct SetupStepRow: View {
 
             if isCurrent {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold)) // A11Y-DT: SF Symbol icon sizing for chevron
                     .foregroundStyle(.thAccent)
             }
         }

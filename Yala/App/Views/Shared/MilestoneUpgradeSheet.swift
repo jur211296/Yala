@@ -38,7 +38,7 @@ struct MilestoneUpgradeSheet: View {
                         .blur(radius: 10)
 
                     Text("\(milestone)")
-                        .font(.system(size: 64, weight: .bold, design: .rounded))
+                        .font(.system(size: 64, weight: .bold, design: .rounded)) // A11Y-DT: decorative milestone number, fixed layout
                         .foregroundStyle(
                             LinearGradient(
                                 colors: DS.Gradients.proBadge,

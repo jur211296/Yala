@@ -21,7 +21,7 @@ struct GroupingChipsBar: View {
                     ForEach(Array(state.activeDimensions.enumerated()), id: \.element.id) { index, dimension in
                         if index > 0 {
                             Image(systemName: "chevron.right")
-                                .font(.system(size: 8, weight: .semibold))
+                                .font(.system(size: 8, weight: .semibold)) // A11Y-DT: SF Symbol breadcrumb separator
                                 .foregroundStyle(.tertiary)
                         }
 

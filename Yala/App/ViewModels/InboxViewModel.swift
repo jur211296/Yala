@@ -126,9 +126,9 @@ final class InboxViewModel {
     func countForFilter(_ filter: InboxFilter) -> Int {
         switch filter {
         case .pending:
-            return allDrafts.filter { $0.status == .pending }.count
+            return allDrafts.count(where: { $0.status == .pending })
         case .archived:
-            return allDrafts.filter { ($0.status == .approved || $0.status == .rejected) && $0.cachedAccountName != nil }.count
+            return allDrafts.count(where: { ($0.status == .approved || $0.status == .rejected) && $0.cachedAccountName != nil })
         }
     }
 
@@ -183,9 +183,9 @@ final class InboxViewModel {
     func countDrafts(statuses: [DraftStatus], for filter: InboxFilter) -> Int {
         switch filter {
         case .pending:
-            return statuses.filter { $0 == .pending }.count
+            return statuses.count(where: { $0 == .pending })
         case .archived:
-            return statuses.filter { $0 == .approved || $0 == .rejected }.count
+            return statuses.count(where: { $0 == .approved || $0 == .rejected })
         }
     }
 
