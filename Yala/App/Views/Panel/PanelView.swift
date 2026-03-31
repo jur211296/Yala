@@ -334,7 +334,7 @@ struct PanelView: View {
         .task(id: ProTourManager.shared.currentPhase) {
             guard !ProTourManager.shared.hasCompleted,
                   ProTourManager.shared.currentPhase == .panel else { return }
-            try? await Task.sleep(for: .seconds(0.8))
+            do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
             guard ProTourManager.shared.currentPhase == .panel,
                   !showPanelTour, !showInteractivityTour,
                   !showProFabTour else { return }
@@ -405,11 +405,11 @@ struct PanelView: View {
         .task {
             // Wait for post-onboarding flow (trial sheet) to complete
             while !sessionState.isReadyForTours {
-                try? await Task.sleep(for: .milliseconds(200))
+                do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
             }
             if !hasSeenPanelTour {
                 // Start collapsed — expands after tour completes
-                try? await Task.sleep(for: .seconds(0.6))
+                do { try await Task.sleep(for: .seconds(0.6)) } catch { return }
                 if !hasSeenPanelTour {
                     showPanelTour = true
                 }

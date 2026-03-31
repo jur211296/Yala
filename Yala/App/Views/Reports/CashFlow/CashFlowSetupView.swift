@@ -125,7 +125,7 @@ struct CashFlowSetupView: View {
             hasSeenTour = true
         }
         .task {
-            try? await Task.sleep(for: .seconds(1))
+            do { try await Task.sleep(for: .seconds(1)) } catch { return }
             if !viewModel.suggestedLines.isEmpty && !hasSeenTour {
                 showTour = true
             }

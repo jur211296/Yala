@@ -310,7 +310,7 @@ struct ProfileView: View {
         )
         .task {
             if !hasSeenSettingsTour {
-                try? await Task.sleep(for: .seconds(0.8))
+                do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
                 if !hasSeenSettingsTour {
                     showSettingsTour = true
                 }
@@ -321,7 +321,7 @@ struct ProfileView: View {
             // Re-check eligibility (covers race: subscribed before tours completed)
             ProTourManager.shared.triggerIfEligible()
             guard ProTourManager.shared.currentPhase == .profile else { return }
-            try? await Task.sleep(for: .seconds(0.8))
+            do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
             guard ProTourManager.shared.currentPhase == .profile,
                   !showSettingsTour else { return }
             showProTour = true

@@ -188,7 +188,7 @@ struct InsightsTabView: View {
         )
         .task(id: insightsTourReady) {
             guard insightsTourReady else { return }
-            try? await Task.sleep(for: .seconds(0.8))
+            do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
             guard insightsTourReady, !showProInsightsTour else { return }
             showProInsightsTour = true
         }
