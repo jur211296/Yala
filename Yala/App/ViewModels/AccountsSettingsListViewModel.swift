@@ -113,7 +113,8 @@ final class AccountsSettingsListViewModel {
             accounts = []
         }
 
-        // Load transactions (for balance calculation)
+        // Perf-note: fetches all transactions for per-account balance calculation.
+        // Settings screen is not a hot path; per-account queries would be N+1.
         let transactionDescriptor = FetchDescriptor<TransactionItem>(
             sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse), SortDescriptor(\TransactionItem.createdAt, order: .reverse)]
         )

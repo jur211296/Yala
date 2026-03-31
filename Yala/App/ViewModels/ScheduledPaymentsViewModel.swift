@@ -461,13 +461,14 @@ final class ScheduledPaymentsViewModel {
         let monthStart = monthInterval.start
         let monthEnd = monthInterval.end
         do {
-            let descriptor = FetchDescriptor<TransactionItem>(
+            var descriptor = FetchDescriptor<TransactionItem>(
                 predicate: #Predicate<TransactionItem> { tx in
                     tx.date >= monthStart && tx.date < monthEnd &&
                     tx.scheduledPaymentID == nil
                 },
                 sortBy: [SortDescriptor(\.date, order: .reverse)]
             )
+            descriptor.fetchLimit = 100 // Perf: candidate picker — month-bounded + unlinked
             var transactions = try context.fetch(descriptor)
 
             // Filter by transaction type (income matches income, expense matches expense)

@@ -389,7 +389,7 @@ extension View {
                 }
                 Spacer()
                 Text("-S/ 150.00")
-                    .foregroundStyle(.red)
+                    .foregroundStyle(DS.Semantic.errorForeground)
             }
             .yalaListRow()
 

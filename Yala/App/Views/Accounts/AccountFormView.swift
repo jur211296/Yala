@@ -393,7 +393,7 @@ struct AccountFormView: View {
                             if viewModel.balanceText.isEmpty {
                                 Text("0.00")
                                     .font(DS.Typography.largeTitle)
-                                    .foregroundStyle(.gray.opacity(0.4))
+                                    .foregroundStyle(DS.Semantic.disabledForeground.opacity(DS.Opacity.overlay))
                             }
 
                             TextField("", text: $viewModel.balanceText)

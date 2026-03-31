@@ -893,7 +893,7 @@ struct MorePlaceholderView: View {
                         .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
                         .background(
                             RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.gray) // A11Y-DM: gray badge on brand accent bg — visible both modes
+                                .fill(DS.Semantic.disabledForeground) // A11Y-DM: gray badge on brand accent bg — visible both modes
                         )
 
                     Text(L10n.Profile.title)

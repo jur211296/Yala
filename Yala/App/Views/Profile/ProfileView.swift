@@ -1076,14 +1076,14 @@ struct ProfileView: View {
 
             Image(systemName: "cylinder.split.1x2.fill")
                 .font(.system(size: 48)) // A11Y-DT: debug-only seed progress view
-                .foregroundStyle(.teal)
+                .foregroundStyle(DS.Semantic.imageAccent)
 
             Text("Generando datos de prueba")
                 .font(DS.Typography.headline)
 
             VStack(spacing: DS.Spacing.sm) {
                 ProgressView(value: seedService.progress)
-                    .tint(.teal)
+                    .tint(DS.Semantic.imageAccent)
 
                 Text(seedService.stepLabel)
                     .font(DS.Typography.caption)

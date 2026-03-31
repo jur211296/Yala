@@ -343,7 +343,7 @@ struct SplitCalculatorSheet: View {
                     if text.wrappedValue.isEmpty {
                         Text("0")
                             .font(DS.Typography.largeTitle)
-                            .foregroundStyle(.gray.opacity(0.4))
+                            .foregroundStyle(DS.Semantic.disabledForeground.opacity(DS.Opacity.overlay))
                     }
                     TextField("", text: text)
                         .font(DS.Typography.largeTitle)
