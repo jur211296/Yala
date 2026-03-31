@@ -795,6 +795,7 @@
 "cashFlowPlan.cellDetailOverrideActive" = "Valor ajustado manualmente";
 "cashFlowPlan.cellDetailNote" = "Nota (opcional)";
 "cashFlowPlan.cellDetailSaveAdjustment" = "Guardar ajuste";
+"cashFlowPlan.cellDetailDailyProgress" = "Progresso diário";
 
 // Config improvements (Inc 5)
 "cashFlowPlan.contextHistory" = "Contexto histórico";
@@ -2880,14 +2881,16 @@
 "whatsNew.v11.budgetDetail.description" = "Explore como cada orçamento se distribui por subcategorias.";
 "whatsNew.v11.exclude.title" = "Modo excluir nos filtros";
 "whatsNew.v11.exclude.description" = "Filtre excluindo o que você não quer ver em vez de selecionar tudo.";
-"whatsNew.v12.coachMarks.title" = "Guias passo a passo";
-"whatsNew.v12.coachMarks.description" = "Agora mostramos como usar cada seção com guias interativos.";
-"whatsNew.v12.notifications.title" = "Notificações mais inteligentes";
-"whatsNew.v12.notifications.description" = "Ative lembretes e relatórios para nunca perder de vista suas finanças.";
-"whatsNew.v12.insights.title" = "Insights com IA";
-"whatsNew.v12.insights.description" = "Descubra padrões nos seus gastos com análises personalizadas.";
-"whatsNew.v12.sharedBalances.title" = "Saldos compartilhados";
-"whatsNew.v12.sharedBalances.description" = "Calcule saldos entre amigos e parceiros direto do onboarding.";
+"whatsNew.v12.cashFlow.title" = "Fluxo de caixa";
+"whatsNew.v12.cashFlow.description" = "Projete seu saldo futuro com uma tabela interativa e 7 métodos de estimativa.";
+"whatsNew.v12.comparative.title" = "Relatório comparativo";
+"whatsNew.v12.comparative.description" = "Compare receitas e despesas entre períodos com tabelas dinâmicas e filtros avançados.";
+"whatsNew.v12.themes.title" = "Temas PRO";
+"whatsNew.v12.themes.description" = "Personalize o app com os novos temas Minimalista e Translúcido.";
+"whatsNew.v12.scheduled.title" = "Pagamentos programados";
+"whatsNew.v12.scheduled.description" = "Agora com valores variáveis e a opção de pular ocorrências.";
+"whatsNew.v12.moreForYou.title" = "Mais para você";
+"whatsNew.v12.moreForYou.description" = "Agora com 4 contas grátis e 30 dias de teste gratuito.";
 
 // MARK: - App Update
 "appUpdate.title" = "Nova versão disponível";

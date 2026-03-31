@@ -795,6 +795,7 @@
 "cashFlowPlan.cellDetailOverrideActive" = "Betrag manuell angepasst";
 "cashFlowPlan.cellDetailNote" = "Notiz (optional)";
 "cashFlowPlan.cellDetailSaveAdjustment" = "Anpassung speichern";
+"cashFlowPlan.cellDetailDailyProgress" = "Tagesfortschritt";
 
 // Config improvements (Inc 5)
 "cashFlowPlan.contextHistory" = "Historischer Kontext";
@@ -2880,14 +2881,16 @@
 "whatsNew.v11.budgetDetail.description" = "Sieh dir an, wie sich jedes Budget auf Unterkategorien verteilt.";
 "whatsNew.v11.exclude.title" = "Ausschlussmodus in Filtern";
 "whatsNew.v11.exclude.description" = "Filtere, indem du ausschließt, was du nicht sehen willst, statt alles auszuwählen.";
-"whatsNew.v12.coachMarks.title" = "Schritt-für-Schritt-Anleitungen";
-"whatsNew.v12.coachMarks.description" = "Wir zeigen dir jetzt, wie du jeden Bereich mit interaktiven Guides nutzt.";
-"whatsNew.v12.notifications.title" = "Intelligentere Benachrichtigungen";
-"whatsNew.v12.notifications.description" = "Aktiviere Erinnerungen und Berichte, um deine Finanzen im Blick zu behalten.";
-"whatsNew.v12.insights.title" = "KI-gestützte Insights";
-"whatsNew.v12.insights.description" = "Entdecke Ausgabenmuster mit personalisierten Analysen.";
-"whatsNew.v12.sharedBalances.title" = "Geteilte Salden";
-"whatsNew.v12.sharedBalances.description" = "Berechne Salden zwischen Freunden und Partner direkt beim Onboarding.";
+"whatsNew.v12.cashFlow.title" = "Cashflow";
+"whatsNew.v12.cashFlow.description" = "Projiziere deinen zukünftigen Kontostand mit einer interaktiven Tabelle und 7 Schätzmethoden.";
+"whatsNew.v12.comparative.title" = "Vergleichsbericht";
+"whatsNew.v12.comparative.description" = "Vergleiche Einnahmen und Ausgaben über Zeiträume hinweg mit Pivottabellen und erweiterten Filtern.";
+"whatsNew.v12.themes.title" = "PRO-Themes";
+"whatsNew.v12.themes.description" = "Passe die App mit den neuen Themes Minimalistisch und Transluzent an.";
+"whatsNew.v12.scheduled.title" = "Geplante Zahlungen";
+"whatsNew.v12.scheduled.description" = "Jetzt mit variablen Beträgen und der Option, Zahlungen zu überspringen.";
+"whatsNew.v12.moreForYou.title" = "Mehr für dich";
+"whatsNew.v12.moreForYou.description" = "Jetzt mit 4 kostenlosen Konten und 30 Tagen kostenloser Testversion.";
 
 // MARK: - App Update
 "appUpdate.title" = "Neue Version verfügbar";

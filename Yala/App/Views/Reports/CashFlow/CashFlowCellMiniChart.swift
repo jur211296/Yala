@@ -36,6 +36,9 @@ struct CashFlowCellMiniChart: View {
     var body: some View {
         let data = cumulativeData
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Text(L10n.CashFlowPlan.cellDetailDailyProgress)
+                .font(DS.Typography.headline)
+
             Chart {
                 ForEach(data, id: \.day) { point in
                     LineMark(

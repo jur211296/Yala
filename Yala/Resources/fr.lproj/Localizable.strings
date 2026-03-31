@@ -795,6 +795,7 @@
 "cashFlowPlan.cellDetailOverrideActive" = "Montant ajusté manuellement";
 "cashFlowPlan.cellDetailNote" = "Note (optionnel)";
 "cashFlowPlan.cellDetailSaveAdjustment" = "Enregistrer l'ajustement";
+"cashFlowPlan.cellDetailDailyProgress" = "Progression quotidienne";
 
 // Config improvements (Inc 5)
 "cashFlowPlan.contextHistory" = "Contexte historique";
@@ -2881,14 +2882,16 @@
 "whatsNew.v11.budgetDetail.description" = "Explore comment chaque budget se répartit par sous-catégories.";
 "whatsNew.v11.exclude.title" = "Mode exclusion dans les filtres";
 "whatsNew.v11.exclude.description" = "Filtre en excluant ce que tu ne veux pas voir au lieu de tout sélectionner.";
-"whatsNew.v12.coachMarks.title" = "Guides pas à pas";
-"whatsNew.v12.coachMarks.description" = "Nous te montrons maintenant comment utiliser chaque section avec des guides interactifs.";
-"whatsNew.v12.notifications.title" = "Notifications plus intelligentes";
-"whatsNew.v12.notifications.description" = "Active les rappels et rapports pour ne jamais perdre de vue tes finances.";
-"whatsNew.v12.insights.title" = "Insights par IA";
-"whatsNew.v12.insights.description" = "Découvre les tendances de tes dépenses avec des analyses personnalisées.";
-"whatsNew.v12.sharedBalances.title" = "Soldes partagés";
-"whatsNew.v12.sharedBalances.description" = "Calcule les soldes entre amis et partenaire directement depuis l'onboarding.";
+"whatsNew.v12.cashFlow.title" = "Flux de trésorerie";
+"whatsNew.v12.cashFlow.description" = "Projette ton solde futur avec un tableau interactif et 7 méthodes d'estimation.";
+"whatsNew.v12.comparative.title" = "Rapport comparatif";
+"whatsNew.v12.comparative.description" = "Compare tes revenus et dépenses entre périodes avec des tableaux croisés et des filtres avancés.";
+"whatsNew.v12.themes.title" = "Thèmes PRO";
+"whatsNew.v12.themes.description" = "Personnalise l'app avec les nouveaux thèmes Minimaliste et Translucide.";
+"whatsNew.v12.scheduled.title" = "Paiements programmés";
+"whatsNew.v12.scheduled.description" = "Maintenant avec des montants variables et la possibilité de sauter des échéances.";
+"whatsNew.v12.moreForYou.title" = "Plus pour toi";
+"whatsNew.v12.moreForYou.description" = "Maintenant avec 4 comptes gratuits et 30 jours d'essai gratuit.";
 
 // MARK: - App Update
 "appUpdate.title" = "Nouvelle version disponible";

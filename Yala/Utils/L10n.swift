@@ -332,6 +332,7 @@ enum L10n {
         static var cellDetailOverrideActive: String { ls("cashFlowPlan.cellDetailOverrideActive", comment: "") }
         static var cellDetailNote: String { ls("cashFlowPlan.cellDetailNote", comment: "") }
         static var cellDetailSaveAdjustment: String { ls("cashFlowPlan.cellDetailSaveAdjustment", comment: "") }
+        static var cellDetailDailyProgress: String { ls("cashFlowPlan.cellDetailDailyProgress", comment: "") }
 
         // Config improvements (Inc 5)
         static var contextHistory: String { ls("cashFlowPlan.contextHistory", comment: "") }
@@ -3908,14 +3909,16 @@ enum L10n {
         static var v11ExcludeDescription: String { ls("whatsNew.v11.exclude.description", comment: "") }
 
         // v1.2 features
-        static var v12CoachMarksTitle: String { ls("whatsNew.v12.coachMarks.title", comment: "") }
-        static var v12CoachMarksDescription: String { ls("whatsNew.v12.coachMarks.description", comment: "") }
-        static var v12NotificationsTitle: String { ls("whatsNew.v12.notifications.title", comment: "") }
-        static var v12NotificationsDescription: String { ls("whatsNew.v12.notifications.description", comment: "") }
-        static var v12InsightsTitle: String { ls("whatsNew.v12.insights.title", comment: "") }
-        static var v12InsightsDescription: String { ls("whatsNew.v12.insights.description", comment: "") }
-        static var v12SharedBalancesTitle: String { ls("whatsNew.v12.sharedBalances.title", comment: "") }
-        static var v12SharedBalancesDescription: String { ls("whatsNew.v12.sharedBalances.description", comment: "") }
+        static var v12CashFlowTitle: String { ls("whatsNew.v12.cashFlow.title", comment: "") }
+        static var v12CashFlowDescription: String { ls("whatsNew.v12.cashFlow.description", comment: "") }
+        static var v12ComparativeTitle: String { ls("whatsNew.v12.comparative.title", comment: "") }
+        static var v12ComparativeDescription: String { ls("whatsNew.v12.comparative.description", comment: "") }
+        static var v12ThemesTitle: String { ls("whatsNew.v12.themes.title", comment: "") }
+        static var v12ThemesDescription: String { ls("whatsNew.v12.themes.description", comment: "") }
+        static var v12ScheduledTitle: String { ls("whatsNew.v12.scheduled.title", comment: "") }
+        static var v12ScheduledDescription: String { ls("whatsNew.v12.scheduled.description", comment: "") }
+        static var v12MoreForYouTitle: String { ls("whatsNew.v12.moreForYou.title", comment: "") }
+        static var v12MoreForYouDescription: String { ls("whatsNew.v12.moreForYou.description", comment: "") }
     }
 
     // MARK: - App Update

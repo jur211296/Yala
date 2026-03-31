@@ -797,6 +797,7 @@
 "cashFlowPlan.cellDetailOverrideActive" = "Amount manually adjusted";
 "cashFlowPlan.cellDetailNote" = "Note (optional)";
 "cashFlowPlan.cellDetailSaveAdjustment" = "Save adjustment";
+"cashFlowPlan.cellDetailDailyProgress" = "Daily progress";
 
 // Config improvements (Inc 5)
 "cashFlowPlan.contextHistory" = "Historical context";
@@ -2886,14 +2887,16 @@
 "whatsNew.v11.budgetDetail.description" = "Explore how each budget is distributed across subcategories.";
 "whatsNew.v11.exclude.title" = "Exclude mode in filters";
 "whatsNew.v11.exclude.description" = "Filter by excluding what you don't want to see instead of selecting everything.";
-"whatsNew.v12.coachMarks.title" = "Step-by-step guides";
-"whatsNew.v12.coachMarks.description" = "We now show you how to use each section with interactive guides.";
-"whatsNew.v12.notifications.title" = "Smarter notifications";
-"whatsNew.v12.notifications.description" = "Enable reminders and reports so you never lose track of your finances.";
-"whatsNew.v12.insights.title" = "AI-powered insights";
-"whatsNew.v12.insights.description" = "Discover spending patterns with personalized analysis.";
-"whatsNew.v12.sharedBalances.title" = "Shared balances";
-"whatsNew.v12.sharedBalances.description" = "Calculate balances between friends and partners right from onboarding.";
+"whatsNew.v12.cashFlow.title" = "Cash flow";
+"whatsNew.v12.cashFlow.description" = "Project your future balance with an interactive table and 7 estimation methods.";
+"whatsNew.v12.comparative.title" = "Comparative report";
+"whatsNew.v12.comparative.description" = "Compare income and expenses across periods with pivot tables and advanced filters.";
+"whatsNew.v12.themes.title" = "PRO themes";
+"whatsNew.v12.themes.description" = "Customize the app with new Minimalist and Translucent themes.";
+"whatsNew.v12.scheduled.title" = "Scheduled payments";
+"whatsNew.v12.scheduled.description" = "Now with variable amounts and the option to skip occurrences.";
+"whatsNew.v12.moreForYou.title" = "More for you";
+"whatsNew.v12.moreForYou.description" = "Now with 4 free accounts and a 30-day free trial.";
 
 // MARK: - App Update
 "appUpdate.title" = "New version available";

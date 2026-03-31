@@ -52,28 +52,34 @@ enum WhatsNewConfig {
 
     private static let version1_2: [WhatsNewFeature] = [
         WhatsNewFeature(
-            icon: "hand.point.up.left.fill",
+            icon: "chart.line.uptrend.xyaxis",
             iconColor: .blue,
-            title: L10n.WhatsNew.v12CoachMarksTitle,
-            description: L10n.WhatsNew.v12CoachMarksDescription
+            title: L10n.WhatsNew.v12CashFlowTitle,
+            description: L10n.WhatsNew.v12CashFlowDescription
         ),
         WhatsNewFeature(
-            icon: "bell.badge.fill",
+            icon: "tablecells",
             iconColor: .orange,
-            title: L10n.WhatsNew.v12NotificationsTitle,
-            description: L10n.WhatsNew.v12NotificationsDescription
+            title: L10n.WhatsNew.v12ComparativeTitle,
+            description: L10n.WhatsNew.v12ComparativeDescription
         ),
         WhatsNewFeature(
-            icon: "sparkles",
+            icon: "paintpalette.fill",
             iconColor: .purple,
-            title: L10n.WhatsNew.v12InsightsTitle,
-            description: L10n.WhatsNew.v12InsightsDescription
+            title: L10n.WhatsNew.v12ThemesTitle,
+            description: L10n.WhatsNew.v12ThemesDescription
         ),
         WhatsNewFeature(
-            icon: "person.2.fill",
+            icon: "calendar.badge.clock",
+            iconColor: .teal,
+            title: L10n.WhatsNew.v12ScheduledTitle,
+            description: L10n.WhatsNew.v12ScheduledDescription
+        ),
+        WhatsNewFeature(
+            icon: "gift.fill",
             iconColor: .green,
-            title: L10n.WhatsNew.v12SharedBalancesTitle,
-            description: L10n.WhatsNew.v12SharedBalancesDescription
+            title: L10n.WhatsNew.v12MoreForYouTitle,
+            description: L10n.WhatsNew.v12MoreForYouDescription
         ),
     ]
 
