@@ -412,7 +412,8 @@ struct PeriodComparisonChartView: View {
                 for: date, startDate: firstDate, endDate: lastDate, forceGrouping: self.grouping.forceAxisGrouping)
         }
         // Pre-seed with border labels so their interior duplicates are removed
-        var seen: Set<String> = [formatLabel(rawDates.first!), formatLabel(rawDates.last!)]
+        guard let firstRaw = rawDates.first, let lastRaw = rawDates.last else { return rawDates }
+        var seen: Set<String> = [formatLabel(firstRaw), formatLabel(lastRaw)]
         return rawDates.enumerated().filter { i, date in
             if i == 0 || i == rawDates.count - 1 { return true }
             return seen.insert(formatLabel(date)).inserted

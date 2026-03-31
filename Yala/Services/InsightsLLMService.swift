@@ -237,10 +237,7 @@ final class InsightsLLMService {
         let userMessage = "Datos financieros del periodo:\n\(jsonString)"
 
         let query = ChatQuery(
-            messages: [
-                .init(role: .system, content: systemPrompt)!,
-                .init(role: .user, content: userMessage)!
-            ],
+            messages: try buildChatMessages(system: systemPrompt, user: userMessage),
             model: .gpt4_1_mini,
             responseFormat: .jsonObject,
             temperature: 0.4
@@ -264,6 +261,17 @@ final class InsightsLLMService {
         } catch {
             throw InsightsLLMError.networkError(error)
         }
+    }
+
+    // MARK: - Chat Helpers
+
+    private func buildChatMessages(system: String, user: String) throws -> [ChatQuery.ChatCompletionMessageParam] {
+        let messages: [ChatQuery.ChatCompletionMessageParam] = [
+            .init(role: .system, content: system),
+            .init(role: .user, content: user)
+        ].compactMap { $0 }
+        guard messages.count == 2 else { throw InsightsLLMError.parseFailed }
+        return messages
     }
 
     // MARK: - Parse
@@ -520,10 +528,7 @@ final class InsightsLLMService {
         let userMessage = "Datos financieros del periodo:\n\(jsonString)"
 
         let query = ChatQuery(
-            messages: [
-                .init(role: .system, content: systemPrompt)!,
-                .init(role: .user, content: userMessage)!
-            ],
+            messages: try buildChatMessages(system: systemPrompt, user: userMessage),
             model: .gpt4_1_mini,
             responseFormat: .jsonObject,
             temperature: 0.4
