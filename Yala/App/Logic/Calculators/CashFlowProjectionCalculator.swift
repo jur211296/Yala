@@ -26,6 +26,7 @@ struct CashFlowMonth {
     let incomeLines: [CashFlowLineResult]
     let expenseLines: [CashFlowLineResult]
     let otherExpenses: CashFlowOtherResult?
+    let otherIncome: CashFlowOtherResult?
     let totalIncome: Double
     let totalExpense: Double                 // Positive magnitude
     let netFlow: Double                      // income - expense
@@ -130,6 +131,7 @@ struct CashFlowProjectionCalculator {
         lines: [CashFlowLine],
         transactions: [TransactionItem],
         allExpenseCategories: [Category],
+        allIncomeCategories: [Category] = [],
         scheduledPayments: [ScheduledPayment],
         monthsBack: Int,
         monthsAhead: Int,
@@ -158,9 +160,13 @@ struct CashFlowProjectionCalculator {
             converter: converter, calendar: calendar
         )
 
-        // Assigned category IDs for "other expenses" calculation
+        // Assigned category IDs for "other" calculations
         let assignedCategoryIDs = Set(
             lines.filter { $0.isEnabled && !$0.isIncome && $0.category != nil }
+                .compactMap { $0.category?.persistentModelID }
+        )
+        let assignedIncomeCategoryIDs = Set(
+            lines.filter { $0.isEnabled && $0.isIncome && $0.category != nil }
                 .compactMap { $0.category?.persistentModelID }
         )
 
@@ -213,19 +219,25 @@ struct CashFlowProjectionCalculator {
             }
 
             let otherExpenses: CashFlowOtherResult?
-            if plan.showOtherExpenses {
-                otherExpenses = calculateOtherExpenses(
-                    allExpenseCategories: allExpenseCategories,
-                    assignedCategoryIDs: assignedCategoryIDs,
-                    monthDate: monthDate, monthKey: mKey,
-                    isPast: isPast, isCurrent: isCurrent,
-                    index: index, calendar: calendar
+            let otherIncome: CashFlowOtherResult?
+            if plan.showOtherExpenses && (isPast || isCurrent) {
+                otherExpenses = calculateUncategorizedTotal(
+                    categories: allExpenseCategories,
+                    assignedIDs: assignedCategoryIDs,
+                    monthKey: mKey, index: index
+                )
+                otherIncome = calculateUncategorizedTotal(
+                    categories: allIncomeCategories,
+                    assignedIDs: assignedIncomeCategoryIDs,
+                    monthKey: mKey, index: index
                 )
             } else {
                 otherExpenses = nil
+                otherIncome = nil
             }
 
             let totalIncome = incomeResults.reduce(0.0) { $0 + $1.plannedAmount }
+                + (otherIncome?.plannedAmount ?? 0)
             let totalExpense = expenseResults.reduce(0.0) { $0 + $1.plannedAmount }
                 + (otherExpenses?.plannedAmount ?? 0)
             let netFlow = totalIncome - totalExpense
@@ -241,7 +253,7 @@ struct CashFlowProjectionCalculator {
             projectedMonths.append(CashFlowMonth(
                 monthKey: mKey, date: monthDate, isPast: isPast, isCurrent: isCurrent,
                 incomeLines: incomeResults, expenseLines: expenseResults,
-                otherExpenses: otherExpenses,
+                otherExpenses: otherExpenses, otherIncome: otherIncome,
                 totalIncome: totalIncome, totalExpense: totalExpense,
                 netFlow: netFlow, accumulatedBalance: accumulatedBalance
             ))
@@ -513,52 +525,34 @@ struct CashFlowProjectionCalculator {
         return count > 0 ? total / Double(count) : 0
     }
 
-    // MARK: - Other Expenses
+    // MARK: - Uncategorized Totals (Income / Expenses)
 
-    static func calculateOtherExpenses(
-        allExpenseCategories: [Category],
-        assignedCategoryIDs: Set<PersistentIdentifier>,
-        monthDate: Date, monthKey: String,
-        isPast: Bool, isCurrent: Bool,
-        index: TransactionIndex,
-        calendar: Calendar
+    /// Sums real transaction amounts for categories not assigned to any plan line.
+    /// Called only for past/current months — future months skip this entirely.
+    static func calculateUncategorizedTotal(
+        categories: [Category],
+        assignedIDs: Set<PersistentIdentifier>,
+        monthKey: String,
+        index: TransactionIndex
     ) -> CashFlowOtherResult {
-        let unassignedCategories = allExpenseCategories.filter { cat in
-            !cat.isIncome && !assignedCategoryIDs.contains(cat.persistentModelID)
-        }
-
         var breakdown: [OtherCategoryItem] = []
-        var totalPlanned: Double = 0
         var totalReal: Double = 0
 
-        for cat in unassignedCategories {
-            let planned = estimateAverage(
-                months: 6, category: cat, referenceDate: monthDate,
-                index: index, calendar: calendar
-            )
-            totalPlanned += planned
-
-            if isPast || isCurrent {
-                let real = index.total(for: cat.persistentModelID, monthKey: monthKey)
-                totalReal += real
-
-                if real > 0 {
-                    breakdown.append(OtherCategoryItem(
-                        categoryName: cat.name, iconName: cat.iconName ?? "folder",
-                        colorHex: cat.colorHex, amount: real
-                    ))
-                }
-            } else if planned > 0 {
+        for cat in categories {
+            guard !assignedIDs.contains(cat.persistentModelID) else { continue }
+            let real = index.total(for: cat.persistentModelID, monthKey: monthKey)
+            totalReal += real
+            if real > 0 {
                 breakdown.append(OtherCategoryItem(
                     categoryName: cat.name, iconName: cat.iconName ?? "folder",
-                    colorHex: cat.colorHex, amount: planned
+                    colorHex: cat.colorHex, amount: real
                 ))
             }
         }
 
         return CashFlowOtherResult(
-            plannedAmount: totalPlanned,
-            realAmount: (isPast || isCurrent) ? totalReal : nil,
+            plannedAmount: totalReal,
+            realAmount: totalReal,
             categoryBreakdown: breakdown.sorted { $0.amount > $1.amount }
         )
     }

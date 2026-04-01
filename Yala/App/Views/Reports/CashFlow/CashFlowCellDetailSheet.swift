@@ -29,6 +29,12 @@ struct CashFlowCellDetailSheet: View {
     @State private var adjustAmountText = ""
     @State private var adjustNote = ""
 
+    @State private var showOverrideScopeAlert = false
+    @State private var pendingOverrideAmount: Double = 0
+    @State private var pendingOverrideNote: String = ""
+    @State private var pendingOverrideLine: CashFlowLine?
+    @State private var pendingOverrideMonthKey: String = ""
+
     // Derived from activeMonthKey
     private var activeMonth: CashFlowMonth? {
         viewModel.projection?.months.first { $0.monthKey == activeMonthKey }
@@ -92,6 +98,23 @@ struct CashFlowCellDetailSheet: View {
         }
         .presentationDetents([.large])
         .onAppear { activeMonthKey = month.monthKey }
+        .alert(L10n.CashFlowPlan.overrideScopeTitle, isPresented: $showOverrideScopeAlert) {
+            Button(L10n.CashFlowPlan.overrideScopeThisMonth) {
+                if let line = pendingOverrideLine {
+                    viewModel.setOverride(line: line, monthKey: pendingOverrideMonthKey, amount: pendingOverrideAmount, note: pendingOverrideNote)
+                }
+                dismiss()
+            }
+            Button(L10n.CashFlowPlan.overrideScopeThisAndFuture) {
+                if let line = pendingOverrideLine {
+                    viewModel.setOverrideAndUpdateFuture(line: line, monthKey: pendingOverrideMonthKey, amount: pendingOverrideAmount, note: pendingOverrideNote)
+                }
+                dismiss()
+            }
+            Button(L10n.Action.cancel, role: .cancel) { }
+        } message: {
+            Text(L10n.CashFlowPlan.overrideScopeMessage)
+        }
     }
 
     // MARK: - Header
@@ -434,9 +457,14 @@ struct CashFlowCellDetailSheet: View {
                     YalaPrimaryButton(L10n.CashFlowPlan.cellDetailSaveAdjustment, icon: "checkmark.circle.fill") {
                         let amount = AmountInputHelper.parseDecimal(adjustAmountText)
                         if let line, amount > 0 {
-                            viewModel.setOverride(line: line, monthKey: m.monthKey, amount: amount, note: adjustNote)
+                            pendingOverrideAmount = amount
+                            pendingOverrideNote = adjustNote
+                            pendingOverrideLine = line
+                            pendingOverrideMonthKey = m.monthKey
+                            showOverrideScopeAlert = true
+                        } else {
+                            dismiss()
                         }
-                        dismiss()
                     }
                 }
                 .padding(DS.Spacing.lg)

@@ -47,7 +47,8 @@ struct CashFlowTableView: View {
                                 month: month,
                                 viewModel: viewModel,
                                 currencyCode: currencyCode,
-                                transactions: transactions
+                                transactions: transactions,
+                                onCellDetailDismiss: { recalculate() }
                             )
                             .gesture(
                                 DragGesture(minimumDistance: 50)
@@ -106,6 +107,13 @@ struct CashFlowTableView: View {
                 currencyCode: currencyCode
             )
         }
+        .sheet(isPresented: $viewModel.showOthersIncomeBreakdown, onDismiss: { recalculate() }) {
+            CashFlowOthersSheet(
+                viewModel: viewModel,
+                currencyCode: currencyCode,
+                isIncome: true
+            )
+        }
         .sheet(isPresented: $viewModel.showAddLine, onDismiss: { recalculate() }) {
             CashFlowAddLineSheet(
                 viewModel: viewModel,
@@ -133,9 +141,11 @@ struct CashFlowTableView: View {
 
     private func recalculate() {
         let expenseCategories = categories.filter { !$0.isIncome }
+        let incomeCategories = categories.filter { $0.isIncome }
         viewModel.recalculate(
             transactions: transactions,
             allExpenseCategories: expenseCategories,
+            allIncomeCategories: incomeCategories,
             scheduledPayments: scheduledPayments,
             currencyCode: currencyCode,
             converter: CurrencyConverter.shared

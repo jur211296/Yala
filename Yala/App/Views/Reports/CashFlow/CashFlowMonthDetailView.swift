@@ -13,6 +13,7 @@ struct CashFlowMonthDetailView: View {
     @Bindable var viewModel: CashFlowPlanViewModel
     let currencyCode: String
     let transactions: [TransactionItem]
+    var onCellDetailDismiss: (() -> Void)?
 
     @State private var incomeCollapsed = false
     @State private var expenseCollapsed = false
@@ -43,7 +44,7 @@ struct CashFlowMonthDetailView: View {
         .sheet(isPresented: Binding(
             get: { selectedCellLineID != nil },
             set: { if !$0 { selectedCellLineID = nil } }
-        )) {
+        ), onDismiss: onCellDetailDismiss) {
             if let lineID = selectedCellLineID,
                let lineResult = allLines.first(where: { $0.lineID == lineID }) {
                 CashFlowCellDetailSheet(
@@ -119,6 +120,12 @@ struct CashFlowMonthDetailView: View {
                 Divider().padding(.horizontal, DS.Spacing.lg)
                 lineRows(for: month.incomeLines)
                 addLineButton(isIncome: true)
+
+                uncategorizedRow(
+                    result: month.otherIncome,
+                    label: L10n.CashFlowPlan.otherIncomeLabel,
+                    action: { viewModel.showOthersIncomeBreakdown = true }
+                )
             }
         }
     }
@@ -142,34 +149,11 @@ struct CashFlowMonthDetailView: View {
                 addLineButton(isIncome: false)
                     .coachMarkAnchor("cfTableAdd")
 
-                if let other = month.otherExpenses {
-                    Divider()
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .dashPattern()
-
-                    Button {
-                        viewModel.showOthersBreakdown = true
-                    } label: {
-                        HStack(spacing: DS.Spacing.md) {
-                            Image(systemName: "ellipsis.circle")
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.tertiary)
-                            Text(L10n.CashFlowPlan.otherExpensesLabel)
-                                .font(DS.Typography.subheadline)
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            let displayAmount = other.realAmount ?? other.plannedAmount
-                            Text(YalaFormatter.currency(value: displayAmount, currencyCode: currencyCode))
-                                .font(DS.Typography.amountSmall)
-                                .foregroundStyle(.tertiary)
-                                .monospacedDigit()
-                        }
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.vertical, DS.Spacing.md)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
+                uncategorizedRow(
+                    result: month.otherExpenses,
+                    label: L10n.CashFlowPlan.otherExpensesLabel,
+                    action: { viewModel.showOthersBreakdown = true }
+                )
             }
         }
     }
@@ -244,16 +228,42 @@ struct CashFlowMonthDetailView: View {
                 onTapLine: {
                     selectedCellLineID = lineResult.lineID
                 },
-                onConfigLine: line.map { l in
-                    {
-                        viewModel.selectedLine = l
-                        viewModel.showLineConfig = true
-                    }
-                },
                 onDeleteLine: line.map { l in
                     { viewModel.removeLine(l) }
                 }
             )
+        }
+    }
+
+    // MARK: - Uncategorized Row
+
+    @ViewBuilder
+    private func uncategorizedRow(result: CashFlowOtherResult?, label: String, action: @escaping () -> Void) -> some View {
+        if let result, result.plannedAmount > 0 {
+            Divider()
+                .padding(.horizontal, DS.Spacing.lg)
+                .dashPattern()
+
+            Button(action: action) {
+                HStack(spacing: DS.Spacing.md) {
+                    Image(systemName: "ellipsis.circle")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.tertiary)
+                    Text(label)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    let displayAmount = result.realAmount ?? result.plannedAmount
+                    Text(YalaFormatter.currency(value: displayAmount, currencyCode: currencyCode))
+                        .font(DS.Typography.amountSmall)
+                        .foregroundStyle(.tertiary)
+                        .monospacedDigit()
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.md)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
         }
     }
 

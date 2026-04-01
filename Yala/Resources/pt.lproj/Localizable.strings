@@ -707,8 +707,9 @@
 "cashFlowPlan.incomeSection" = "Receitas";
 "cashFlowPlan.expenseSection" = "Despesas";
 "cashFlowPlan.recommendedBadge" = "Recomendado";
-"cashFlowPlan.otherExpenses" = "Outras despesas";
-"cashFlowPlan.otherExpensesDesc" = "Despesas sem linha no seu plano";
+"cashFlowPlan.otherExpenses" = "Despesas não consideradas";
+"cashFlowPlan.otherExpensesDesc" = "Despesas de categorias sem linha no seu plano";
+"cashFlowPlan.otherIncome" = "Receitas não consideradas";
 "cashFlowPlan.emptyState" = "Sem dados ainda";
 "cashFlowPlan.emptyStateMessage" = "Registre suas despesas e receitas por pelo menos um mês e a gente monta seu plano.";
 "cashFlowPlan.monthsActive" = "meses";
@@ -743,9 +744,12 @@
 "cashFlowPlan.realIncome" = "Recebido";
 "cashFlowPlan.difference" = "Diferença";
 "cashFlowPlan.adjustAmount" = "Ajustar valor";
-"cashFlowPlan.othersTitle" = "Outras despesas";
+"cashFlowPlan.othersTitle" = "Despesas não consideradas";
 "cashFlowPlan.othersDesc" = "Estas são despesas que encontramos nos seus registros mas que não estão no seu plano. Você pode adicioná-las tocando em +.";
 "cashFlowPlan.othersHint" = "Não se preocupe se algumas são esporádicas — adicione apenas as que se repetem todo mês.";
+"cashFlowPlan.othersIncomeTitle" = "Receitas não consideradas";
+"cashFlowPlan.othersIncomeDesc" = "Estas são receitas que encontramos nos seus registros mas que não estão no seu plano. Você pode adicioná-las tocando em +.";
+"cashFlowPlan.othersIncomeHint" = "Adicione apenas as que se repetem todo mês.";
 "cashFlowPlan.promoteCategory" = "Adicionar ao plano";
 "cashFlowPlan.resetPlan" = "Reiniciar plano";
 "cashFlowPlan.resetConfirmation" = "Reiniciar seu plano? Todas as linhas e ajustes serão excluídos. Esta ação não pode ser desfeita.";
@@ -795,6 +799,10 @@
 "cashFlowPlan.cellDetailOverrideActive" = "Valor ajustado manualmente";
 "cashFlowPlan.cellDetailNote" = "Nota (opcional)";
 "cashFlowPlan.cellDetailSaveAdjustment" = "Guardar ajuste";
+"cashFlowPlan.overrideScopeTitle" = "Alcance do ajuste";
+"cashFlowPlan.overrideScopeMessage" = "Deseja aplicar este valor apenas a este mês ou também aos meses futuros?";
+"cashFlowPlan.overrideScopeThisMonth" = "Apenas este mês";
+"cashFlowPlan.overrideScopeThisAndFuture" = "Este mês e futuros";
 "cashFlowPlan.cellDetailDailyProgress" = "Progresso diário";
 
 // Config improvements (Inc 5)

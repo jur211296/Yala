@@ -707,8 +707,9 @@
 "cashFlowPlan.incomeSection" = "Einnahmen";
 "cashFlowPlan.expenseSection" = "Ausgaben";
 "cashFlowPlan.recommendedBadge" = "Empfohlen";
-"cashFlowPlan.otherExpenses" = "Sonstige Ausgaben";
-"cashFlowPlan.otherExpensesDesc" = "Ausgaben ohne Zeile in deinem Plan";
+"cashFlowPlan.otherExpenses" = "Nicht berücksichtigte Ausgaben";
+"cashFlowPlan.otherExpensesDesc" = "Ausgaben aus Kategorien ohne Zeile in deinem Plan";
+"cashFlowPlan.otherIncome" = "Nicht berücksichtigte Einnahmen";
 "cashFlowPlan.emptyState" = "Noch keine Daten";
 "cashFlowPlan.emptyStateMessage" = "Erfasse deine Ausgaben und Einnahmen für mindestens einen Monat und wir erstellen deinen Plan.";
 "cashFlowPlan.monthsActive" = "Monate";
@@ -743,9 +744,12 @@
 "cashFlowPlan.realIncome" = "Erhalten";
 "cashFlowPlan.difference" = "Differenz";
 "cashFlowPlan.adjustAmount" = "Betrag anpassen";
-"cashFlowPlan.othersTitle" = "Sonstige Ausgaben";
+"cashFlowPlan.othersTitle" = "Nicht berücksichtigte Ausgaben";
 "cashFlowPlan.othersDesc" = "Das sind Ausgaben, die wir in deinen Aufzeichnungen gefunden haben, die aber nicht in deinem Plan sind. Du kannst sie mit + hinzufügen.";
 "cashFlowPlan.othersHint" = "Mach dir keine Sorgen, wenn einige sporadisch sind — füge nur die hinzu, die sich jeden Monat wiederholen.";
+"cashFlowPlan.othersIncomeTitle" = "Nicht berücksichtigte Einnahmen";
+"cashFlowPlan.othersIncomeDesc" = "Das sind Einnahmen, die wir in deinen Aufzeichnungen gefunden haben, die aber nicht in deinem Plan sind. Du kannst sie mit + hinzufügen.";
+"cashFlowPlan.othersIncomeHint" = "Füge nur die hinzu, die sich jeden Monat wiederholen.";
 "cashFlowPlan.promoteCategory" = "Zum Plan hinzufügen";
 "cashFlowPlan.resetPlan" = "Plan zurücksetzen";
 "cashFlowPlan.resetConfirmation" = "Plan zurücksetzen? Alle Zeilen und Anpassungen werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.";
@@ -795,6 +799,10 @@
 "cashFlowPlan.cellDetailOverrideActive" = "Betrag manuell angepasst";
 "cashFlowPlan.cellDetailNote" = "Notiz (optional)";
 "cashFlowPlan.cellDetailSaveAdjustment" = "Anpassung speichern";
+"cashFlowPlan.overrideScopeTitle" = "Anpassungsbereich";
+"cashFlowPlan.overrideScopeMessage" = "Möchtest du diesen Betrag nur für diesen Monat oder auch für zukünftige Monate anwenden?";
+"cashFlowPlan.overrideScopeThisMonth" = "Nur diesen Monat";
+"cashFlowPlan.overrideScopeThisAndFuture" = "Diesen und zukünftige Monate";
 "cashFlowPlan.cellDetailDailyProgress" = "Tagesfortschritt";
 
 // Config improvements (Inc 5)

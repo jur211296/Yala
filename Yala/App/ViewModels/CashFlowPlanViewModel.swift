@@ -42,6 +42,7 @@ final class CashFlowPlanViewModel {
     var showLineConfig: Bool = false
     var showChartsSheet: Bool = false
     var showOthersBreakdown: Bool = false
+    var showOthersIncomeBreakdown: Bool = false
     var showAddLine: Bool = false
     var addLineIsIncome: Bool = false
     var showEditStartingBalance: Bool = false
@@ -352,7 +353,7 @@ final class CashFlowPlanViewModel {
         let maxOrder = (plan.lines ?? []).map(\.sortOrder).max() ?? 0
         let line = CashFlowLine(
             name: category.name,
-            isIncome: false,
+            isIncome: category.isIncome,
             sortOrder: maxOrder + 1,
             estimationMethod: .average6m,
             category: category
@@ -383,6 +384,22 @@ final class CashFlowPlanViewModel {
         }
     }
 
+    func setOverrideAndUpdateFuture(line: CashFlowLine, monthKey: String, amount: Double, note: String) {
+        setOverride(line: line, monthKey: monthKey, amount: amount, note: note)
+
+        // Update line to manual estimation for all future months
+        line.estimationMethod = EstimationMethod.manual.rawValue
+        line.manualAmount = amount
+
+        do {
+            try modelContext?.save()
+        } catch {
+            #if DEBUG
+            print("CashFlowPlanViewModel: Error updating future estimation: \(error)")
+            #endif
+        }
+    }
+
     func removeOverride(line: CashFlowLine, monthKey: String) {
         guard let ctx = modelContext else { return }
         if let existing = line.overrides?.first(where: { $0.monthKey == monthKey }) {
@@ -402,6 +419,7 @@ final class CashFlowPlanViewModel {
     func recalculate(
         transactions: [TransactionItem],
         allExpenseCategories: [Category],
+        allIncomeCategories: [Category] = [],
         scheduledPayments: [ScheduledPayment],
         currencyCode: String,
         converter: CurrencyConverting
@@ -432,6 +450,7 @@ final class CashFlowPlanViewModel {
             lines: lines,
             transactions: transactions,
             allExpenseCategories: allExpenseCategories,
+            allIncomeCategories: allIncomeCategories,
             scheduledPayments: scheduledPayments,
             monthsBack: monthsBack,
             monthsAhead: monthsAhead,

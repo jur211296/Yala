@@ -11,11 +11,16 @@ import SwiftUI
 struct CashFlowOthersSheet: View {
     @Bindable var viewModel: CashFlowPlanViewModel
     let currencyCode: String
+    var isIncome: Bool = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
 
     private var otherResult: CashFlowOtherResult? {
-        viewModel.projection?.months.first(where: \.isCurrent)?.otherExpenses
+        if isIncome {
+            return viewModel.projection?.months.first(where: \.isCurrent)?.otherIncome
+                ?? viewModel.projection?.months.first?.otherIncome
+        }
+        return viewModel.projection?.months.first(where: \.isCurrent)?.otherExpenses
             ?? viewModel.projection?.months.first?.otherExpenses
     }
 
@@ -33,7 +38,7 @@ struct CashFlowOthersSheet: View {
                 .padding(.top, DS.Spacing.md)
                 .yalaSafeBottomPadding()
             }
-            .navigationTitle(L10n.CashFlowPlan.othersTitle)
+            .navigationTitle(isIncome ? L10n.CashFlowPlan.othersIncomeTitle : L10n.CashFlowPlan.othersTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -49,7 +54,7 @@ struct CashFlowOthersSheet: View {
     // MARK: - Description
 
     private var descriptionText: some View {
-        Text(L10n.CashFlowPlan.othersDesc)
+        Text(isIncome ? L10n.CashFlowPlan.othersIncomeDesc : L10n.CashFlowPlan.othersDesc)
             .font(DS.Typography.body)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -99,7 +104,7 @@ struct CashFlowOthersSheet: View {
     // MARK: - Hint
 
     private var hintText: some View {
-        Text(L10n.CashFlowPlan.othersHint)
+        Text(isIncome ? L10n.CashFlowPlan.othersIncomeHint : L10n.CashFlowPlan.othersHint)
             .font(DS.Typography.caption)
             .foregroundStyle(.tertiary)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -108,13 +113,11 @@ struct CashFlowOthersSheet: View {
     // MARK: - Promote
 
     private func promoteCategory(named name: String) {
-        // Find the category from the plan's allExpenseCategories
-        // We need to search in the model context
         guard let ctx = viewModel.plan?.modelContext else { return }
         do {
             let descriptor = FetchDescriptor<Category>()
             let categories = try ctx.fetch(descriptor)
-            if let category = categories.first(where: { $0.name == name }) {
+            if let category = categories.first(where: { $0.name == name && $0.isIncome == isIncome }) {
                 viewModel.promoteFromOthers(category)
                 dismiss()
             }

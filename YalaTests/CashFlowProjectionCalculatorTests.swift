@@ -402,15 +402,13 @@ struct CashFlowProjectionCalculatorTests {
         // Food is assigned to a line, gifts and health are not
         let foodLine = makeLine(name: "Food", method: .manual, manualAmount: 500, category: foodCat)
 
-        // Create transactions for all categories in past months
-        var transactions: [TransactionItem] = []
-        for i in 1...6 {
-            let monthDate = calendar.date(byAdding: .month, value: -i, to: currentMonthStart)!
-            let txDate = calendar.date(byAdding: .day, value: 5, to: monthDate)!
-            transactions.append(makeTransaction(amount: -100, date: txDate, category: foodCat))
-            transactions.append(makeTransaction(amount: -50, date: txDate, category: giftsCat))
-            transactions.append(makeTransaction(amount: -30, date: txDate, category: healthCat))
-        }
+        // Create transactions for the current month (uncategorized lines use real data only)
+        let txDate = calendar.date(byAdding: .day, value: 2, to: currentMonthStart)!
+        let transactions: [TransactionItem] = [
+            makeTransaction(amount: -100, date: txDate, category: foodCat),
+            makeTransaction(amount: -50, date: txDate, category: giftsCat),
+            makeTransaction(amount: -30, date: txDate, category: healthCat)
+        ]
 
         let result = CashFlowProjectionCalculator.calculate(
             plan: plan, lines: [foodLine], transactions: transactions,
@@ -419,7 +417,7 @@ struct CashFlowProjectionCalculatorTests {
             currencyCode: "USD", converter: MockCurrencyConverter()
         )
 
-        // Other expenses should include gifts (50) + health (30) = 80
+        // Other expenses should include gifts (50) + health (30) = 80 from current month real data
         let other = result.months[0].otherExpenses
         #expect(other != nil)
         #expect(abs(other!.plannedAmount - 80) < 0.01)

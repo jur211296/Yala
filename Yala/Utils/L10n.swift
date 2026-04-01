@@ -212,6 +212,7 @@ enum L10n {
         static var recommendedBadge: String { ls("cashFlowPlan.recommendedBadge", comment: "") }
         static var otherExpensesLabel: String { ls("cashFlowPlan.otherExpenses", comment: "") }
         static var otherExpensesDesc: String { ls("cashFlowPlan.otherExpensesDesc", comment: "") }
+        static var otherIncomeLabel: String { ls("cashFlowPlan.otherIncome", comment: "") }
         static var emptyState: String { ls("cashFlowPlan.emptyState", comment: "") }
         static var emptyStateMessage: String { ls("cashFlowPlan.emptyStateMessage", comment: "") }
         static var monthsActive: String { ls("cashFlowPlan.monthsActive", comment: "") }
@@ -301,6 +302,9 @@ enum L10n {
         static var othersTitle: String { ls("cashFlowPlan.othersTitle", comment: "") }
         static var othersDesc: String { ls("cashFlowPlan.othersDesc", comment: "") }
         static var othersHint: String { ls("cashFlowPlan.othersHint", comment: "") }
+        static var othersIncomeTitle: String { ls("cashFlowPlan.othersIncomeTitle", comment: "") }
+        static var othersIncomeDesc: String { ls("cashFlowPlan.othersIncomeDesc", comment: "") }
+        static var othersIncomeHint: String { ls("cashFlowPlan.othersIncomeHint", comment: "") }
         static var promoteCategory: String { ls("cashFlowPlan.promoteCategory", comment: "") }
 
         // Actions
@@ -332,6 +336,10 @@ enum L10n {
         static var cellDetailOverrideActive: String { ls("cashFlowPlan.cellDetailOverrideActive", comment: "") }
         static var cellDetailNote: String { ls("cashFlowPlan.cellDetailNote", comment: "") }
         static var cellDetailSaveAdjustment: String { ls("cashFlowPlan.cellDetailSaveAdjustment", comment: "") }
+        static var overrideScopeTitle: String { ls("cashFlowPlan.overrideScopeTitle", comment: "") }
+        static var overrideScopeMessage: String { ls("cashFlowPlan.overrideScopeMessage", comment: "") }
+        static var overrideScopeThisMonth: String { ls("cashFlowPlan.overrideScopeThisMonth", comment: "") }
+        static var overrideScopeThisAndFuture: String { ls("cashFlowPlan.overrideScopeThisAndFuture", comment: "") }
         static var cellDetailDailyProgress: String { ls("cashFlowPlan.cellDetailDailyProgress", comment: "") }
 
         // Config improvements (Inc 5)
