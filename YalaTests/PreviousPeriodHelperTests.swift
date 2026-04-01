@@ -136,6 +136,26 @@ struct PreviousPeriodHelperTests {
         #expect(result == nil)
     }
 
+    // MARK: - calculateVariation (caller contract: expenses as positive magnitude)
+
+    @Test func calculateVariation_expenseDoubled_positive100() {
+        // Caller passes abs(): 3300→6600 = spent double
+        let result = PreviousPeriodHelper.calculateVariation(currentAmount: 6600, previousAmount: 3300)
+        #expect(result == 100.0)
+    }
+
+    @Test func calculateVariation_expenseHalved_negativeFifty() {
+        // Caller passes abs(): 6600→3300 = spent half
+        let result = PreviousPeriodHelper.calculateVariation(currentAmount: 3300, previousAmount: 6600)
+        #expect(result == -50.0)
+    }
+
+    @Test func calculateVariation_signedNetFlow_worseningDeficit() {
+        // Net flow stays signed: -200→-500 = deficit grew
+        let result = PreviousPeriodHelper.calculateVariation(currentAmount: -500, previousAmount: -200)
+        #expect(result == -150.0)
+    }
+
     // MARK: - formatVariation
 
     @Test func formatVariation_nil_NA() {

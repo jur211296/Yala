@@ -184,8 +184,8 @@ struct PivotTableCalculatorTests {
         #expect(foodNode.amount == -150)
         #expect(foodNode.previousAmount == -100)
         let variation = try #require(foodNode.variation)
-        // Variation = ((-150) - (-100)) / abs(-100) * 100 = -50%
-        #expect(variation == -50.0)
+        // Variation = (150 - 100) / 100 * 100 = +50% (spent 50% more)
+        #expect(variation == 50.0)
     }
 
     @Test("Missing previous data shows nil previousAmount")

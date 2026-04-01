@@ -49,8 +49,8 @@ struct PivotTableCalculator {
 
             let previousAmount: Double? = previousTxns.isEmpty ? nil : previousAmountValue
             let variation = PreviousPeriodHelper.calculateVariation(
-                currentAmount: currentAmount,
-                previousAmount: previousAmount ?? 0
+                currentAmount: abs(currentAmount),
+                previousAmount: abs(previousAmount ?? 0)
             )
 
             // Currency code for the node
