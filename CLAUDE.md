@@ -75,6 +75,11 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 - ModelContainer via `SwiftDataConfiguration` (12 entidades arriba)
 - **Divisas SSOT:** `Yala/Utils/CurrencyUtils.swift` → enum `CurrencyCode` (48 divisas, 7 continentes)
 
+## General Rules
+- Hacer SOLO los cambios explícitamente solicitados. No mover elementos UI, refactorizar código adyacente, ni añadir mejoras no pedidas. En caso de duda, proponer el fix mínimo.
+- Al referenciar plan files, task docs o backlog items, confirmar que la ruta exacta existe antes de proceder. Si no se encuentra, preguntar al usuario en vez de buscar extensivamente.
+- Antes de editar, listar archivos a modificar y qué cambia en cada uno. Esperar aprobación si son más de 3 archivos.
+
 ## Obsidian Vault (SSOT de planning)
 - **Vault:** `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/`
 - **Abreviatura en este doc:** `$VAULT` = ruta completa del vault
@@ -150,6 +155,9 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 | Cambio en UI (Views) | Solo `/verify-ios` |
 | Antes de commit | `/test-smart` siempre |
 | Después de merge o refactor grande | `/test-ios` (todos los tests) |
+
+## Build & Verification
+Después de implementar cualquier cambio, SIEMPRE ejecutar verificación de build completa (`/verify-ios` o `xcodebuild`) antes de presentar el trabajo como completado. Nunca saltar este paso.
 
 ## Device QA (validación visual en simulador)
 
@@ -322,6 +330,14 @@ Vistas hijas simples reciben datos como `let` parameters del padre.
 - Tono cercano ("tú"), español neutro, nunca negativo
 - Términos simples: "gasto" no "transacción"
 - Proponer actualizaciones a BRAND-VOICE.md cuando se defina nuevo copy
+
+## Localization
+- Para cambios de localización: SIEMPRE leer el archivo `.lproj/Localizable.strings` destino antes de editar.
+- Verificar que se usan los assets del idioma correcto (no defaults en inglés para otros locales).
+
+## Documentation & Copy
+- Al escribir documentación o release notes, describir features desde la perspectiva del USUARIO (qué ve/hace), no desde una perspectiva técnica/código.
+- NUNCA fabricar ni asumir que existen features — solo referenciar lo confirmado en scope.
 
 ## Project Files
 | Archivo | Propósito |
