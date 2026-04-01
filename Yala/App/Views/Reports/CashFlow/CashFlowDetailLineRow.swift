@@ -15,7 +15,6 @@ struct CashFlowDetailLineRow: View {
     let month: CashFlowMonth
     let currencyCode: String
     let onTapLine: () -> Void
-    let onConfigLine: (() -> Void)?
     let onDeleteLine: (() -> Void)?
 
     @Environment(\.yalaTheme) private var theme
@@ -53,13 +52,6 @@ struct CashFlowDetailLineRow: View {
         }
         .buttonStyle(.plain)
         .contextMenu {
-            if let onConfigLine {
-                Button {
-                    onConfigLine()
-                } label: {
-                    Label(L10n.CashFlowPlan.estimationMethod, systemImage: "slider.horizontal.3")
-                }
-            }
             if let onDeleteLine {
                 Button(role: .destructive) {
                     onDeleteLine()

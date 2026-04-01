@@ -276,12 +276,6 @@ struct FinancialReportView: View {
 
                     Menu {
                         Button {
-                            viewModel.showFiltersSheet = true
-                        } label: {
-                            Label(L10n.Filters.title, systemImage: "line.3.horizontal.decrease")
-                        }
-                        Divider()
-                        Button {
                             showHorizonConfig = true
                         } label: {
                             Label(L10n.CashFlowPlan.configureHorizon, systemImage: "calendar.badge.clock")
@@ -296,7 +290,6 @@ struct FinancialReportView: View {
                         Image(systemName: "ellipsis.circle")
                             .font(DS.Typography.bodyBold)
                             .foregroundStyle(.thToolbarIcon)
-                            .filterBadge(isActive: viewModel.activeFilterCount > 0)
                     }
                 }
 
