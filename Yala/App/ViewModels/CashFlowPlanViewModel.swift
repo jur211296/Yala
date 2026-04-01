@@ -37,6 +37,12 @@ final class CashFlowPlanViewModel {
     var suggestedLines: [SuggestedLine] = []
     private(set) var isLoading: Bool = false
 
+    // Cash flow comment state
+    private(set) var cashFlowComment: String?
+    private(set) var isLoadingComment: Bool = false
+    private var lastCommentProjectionHash: Int = 0
+    private var lastCommentWasAI: Bool = false
+
     // UI state
     var selectedLine: CashFlowLine?
     var showLineConfig: Bool = false
@@ -517,5 +523,62 @@ final class CashFlowPlanViewModel {
         return payments.filter { payment in
             payment.isActive && !linkedPaymentIDs.contains(payment.persistentModelID)
         }
+    }
+
+    // MARK: - Cash Flow Comment
+
+    func loadCashFlowComment(currencyCode: String) async {
+        guard let projection else { return }
+
+        let hash = InsightsLLMService.projectionHash(projection)
+        let needsReload = cashFlowComment == nil || hash != lastCommentProjectionHash || !lastCommentWasAI
+        guard needsReload else { return }
+
+        isLoadingComment = true
+        do {
+            cashFlowComment = try await InsightsLLMService.shared.generateCashFlowInsight(
+                projection: projection,
+                currencyCode: currencyCode
+            )
+            lastCommentWasAI = true
+        } catch {
+            #if DEBUG
+            print("CashFlowPlanViewModel: LLM error: \(error)")
+            #endif
+            cashFlowComment = nil
+            lastCommentWasAI = false
+        }
+        isLoadingComment = false
+        lastCommentProjectionHash = hash
+    }
+
+    static func generateRuleBasedComment(_ projection: CashFlowProjection, currencyCode: String) -> String {
+        let months = projection.months
+        guard !months.isEmpty else { return "" }
+
+        let negativeMonths = months.filter { $0.accumulatedBalance < 0 }
+        let currentMonth = months.first(where: { $0.isCurrent })
+
+        // Check for months going negative
+        if let firstNegative = negativeMonths.first {
+            let monthName = firstNegative.date.formatted(.dateTime.month(.wide)).lowercased()
+            return L10n.CashFlowPlan.commentNegative(monthName)
+        }
+
+        // Current month tight (net < 10% of income)
+        if let current = currentMonth, current.totalIncome > 0,
+           current.netFlow < current.totalIncome * 0.1 {
+            let margin = YalaFormatter.currency(value: current.netFlow, currencyCode: currencyCode)
+            return L10n.CashFlowPlan.commentTight(margin)
+        }
+
+        // All positive — good health
+        if negativeMonths.isEmpty, let lastMonth = months.last {
+            let endBalance = YalaFormatter.currency(value: lastMonth.accumulatedBalance, currencyCode: currencyCode)
+            return L10n.CashFlowPlan.commentHealthy(endBalance)
+        }
+
+        // Default
+        return L10n.CashFlowPlan.commentDefault(months.count)
     }
 }

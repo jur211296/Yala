@@ -78,9 +78,9 @@ struct FinancialReportView: View {
             ProfileView()
         }
         .sheet(isPresented: $cashFlowViewModel.showChartsSheet) {
-            if let projection = cashFlowViewModel.projection {
+            if cashFlowViewModel.projection != nil {
                 CashFlowChartsSheet(
-                    projection: projection,
+                    viewModel: cashFlowViewModel,
                     currencyCode: preferredCurrencyCode
                 )
             }
@@ -263,37 +263,36 @@ struct FinancialReportView: View {
     @ToolbarContentBuilder
     private var reportToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            HStack(spacing: DS.Spacing.md) {
+            Group {
                 if selectedTab == .flujoDeCaja && cashFlowViewModel.hasPlan {
-                    // Charts button hidden — deferred to future version (see Backlog/graficas-cashflow.md)
-                    // Button {
-                    //     cashFlowViewModel.showChartsSheet = true
-                    // } label: {
-                    //     Image(systemName: "chart.bar.xaxis")
-                    //         .font(DS.Typography.bodyBold)
-                    //         .foregroundStyle(.thToolbarIcon)
-                    // }
-
-                    Menu {
+                    HStack(spacing: DS.Spacing.md) {
                         Button {
-                            showHorizonConfig = true
+                            cashFlowViewModel.showChartsSheet = true
                         } label: {
-                            Label(L10n.CashFlowPlan.configureHorizon, systemImage: "calendar.badge.clock")
+                            Image(systemName: "chart.bar.xaxis")
+                                .font(DS.Typography.bodyBold)
+                                .foregroundStyle(.thToolbarIcon)
                         }
-                        Divider()
-                        Button(role: .destructive) {
-                            showResetConfirmation = true
-                        } label: {
-                            Label(L10n.CashFlowPlan.resetPlan, systemImage: "arrow.counterclockwise")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .font(DS.Typography.bodyBold)
-                            .foregroundStyle(.thToolbarIcon)
-                    }
-                }
 
-                if selectedTab == .comparativa {
+                        Menu {
+                            Button {
+                                showHorizonConfig = true
+                            } label: {
+                                Label(L10n.CashFlowPlan.configureHorizon, systemImage: "calendar.badge.clock")
+                            }
+                            Divider()
+                            Button(role: .destructive) {
+                                showResetConfirmation = true
+                            } label: {
+                                Label(L10n.CashFlowPlan.resetPlan, systemImage: "arrow.counterclockwise")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                                .font(DS.Typography.bodyBold)
+                                .foregroundStyle(.thToolbarIcon)
+                        }
+                    }
+                } else if selectedTab == .comparativa {
                     Button {
                         viewModel.showFiltersSheet = true
                     } label: {

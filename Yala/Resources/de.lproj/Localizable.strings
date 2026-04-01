@@ -835,6 +835,12 @@
 "cashFlowPlan.chartDangerZone" = "Gefahrenzone";
 "cashFlowPlan.chartRollingAvg" = "Gleitender Durchschnitt";
 "cashFlowPlan.chartNeedMoreData" = "Du brauchst mindestens 2 Monate Daten";
+"cashFlowPlan.analyzingProjection" = "Deine Prognose wird analysiert...";
+"cashFlowPlan.enableAIObservations" = "KI für Beobachtungen nutzen";
+"cashFlowPlan.commentNegative" = "Ab %@ wird dein Saldo negativ — prüfe, ob du etwas anpassen kannst";
+"cashFlowPlan.commentTight" = "Dieser Monat ist knapp — dir bleiben %@ Spielraum";
+"cashFlowPlan.commentHealthy" = "Dein Plan sieht gesund aus — am Ende des Zeitraums hättest du %@ angespart";
+"cashFlowPlan.commentDefault" = "Deine Prognose umfasst %d Monate";
 
 "common.unknownError" = "Unbekannter Fehler";
 "common.saveError" = "Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen.";

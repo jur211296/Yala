@@ -835,6 +835,12 @@
 "cashFlowPlan.chartDangerZone" = "Zona de perigo";
 "cashFlowPlan.chartRollingAvg" = "Média móvel";
 "cashFlowPlan.chartNeedMoreData" = "Precisas de pelo menos 2 meses de dados";
+"cashFlowPlan.analyzingProjection" = "Analisando sua projeção...";
+"cashFlowPlan.enableAIObservations" = "Usar IA para observações";
+"cashFlowPlan.commentNegative" = "A partir de %@ seu saldo fica negativo — veja se pode ajustar algo";
+"cashFlowPlan.commentTight" = "Este mês está apertado — sobram %@ de margem";
+"cashFlowPlan.commentHealthy" = "Seu plano está saudável — no final do período teria %@ acumulado";
+"cashFlowPlan.commentDefault" = "Sua projeção cobre %d meses à frente";
 
 "common.unknownError" = "Erro desconhecido";
 "common.saveError" = "Não foi possível salvar as alterações. Tente novamente.";

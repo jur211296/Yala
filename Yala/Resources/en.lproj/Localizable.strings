@@ -837,6 +837,12 @@
 "cashFlowPlan.chartDangerZone" = "Danger zone";
 "cashFlowPlan.chartRollingAvg" = "Rolling average";
 "cashFlowPlan.chartNeedMoreData" = "You need at least 2 months of data";
+"cashFlowPlan.analyzingProjection" = "Analyzing your projection...";
+"cashFlowPlan.enableAIObservations" = "Use AI for observations";
+"cashFlowPlan.commentNegative" = "Starting in %@ your balance goes negative — check if you can adjust something";
+"cashFlowPlan.commentTight" = "This month is tight — you have %@ of margin left";
+"cashFlowPlan.commentHealthy" = "Your plan looks healthy — you'd end the period with %@ accumulated";
+"cashFlowPlan.commentDefault" = "Your projection covers %d months ahead";
 
 "common.unknownError" = "Something went wrong";
 "common.saveError" = "Changes weren't saved. Try again.";

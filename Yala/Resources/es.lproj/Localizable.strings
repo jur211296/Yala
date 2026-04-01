@@ -837,6 +837,12 @@
 "cashFlowPlan.chartDangerZone" = "Zona de peligro";
 "cashFlowPlan.chartRollingAvg" = "Promedio móvil";
 "cashFlowPlan.chartNeedMoreData" = "Necesitas al menos 2 meses de datos";
+"cashFlowPlan.analyzingProjection" = "Analizando tu proyección...";
+"cashFlowPlan.enableAIObservations" = "Usar IA para observaciones";
+"cashFlowPlan.commentNegative" = "A partir de %@ tu acumulado entra en negativo — revisa si puedes ajustar algo";
+"cashFlowPlan.commentTight" = "Este mes viene ajustado — te quedan %@ de margen";
+"cashFlowPlan.commentHealthy" = "Tu plan se ve saludable — al final del periodo tendrías %@ acumulado";
+"cashFlowPlan.commentDefault" = "Tu proyección cubre %d meses hacia adelante";
 
 "common.unknownError" = "Algo salió mal";
 "common.saveError" = "Los cambios no se guardaron. Intenta de nuevo.";

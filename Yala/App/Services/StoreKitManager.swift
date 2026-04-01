@@ -232,6 +232,12 @@ final class StoreKitManager {
             isProUser = true
             return
         }
+        // Dev build: default to Free — Configuration.storekit provides sandbox
+        // entitlements that would otherwise always grant Pro
+        if Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true {
+            isProUser = false
+            return
+        }
         #endif
 
         var foundActive: StoreKit.Transaction?
@@ -411,8 +417,9 @@ final class StoreKitManager {
             isProUser = true
             wasProUser = true
         } else {
-            // Re-evaluate real entitlements instead of assuming free
-            Task { await updateSubscriptionStatus() }
+            devForceFreeTier = true
+            UserDefaults.standard.set(true, forKey: Self.devForceFreeTierKey)
+            isProUser = false
         }
         UserDefaults.standard.set(devForceProTier, forKey: Self.devForceProTierKey)
         syncToAppGroup()

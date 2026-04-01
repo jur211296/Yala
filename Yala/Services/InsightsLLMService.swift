@@ -474,9 +474,12 @@ final class InsightsLLMService {
             throw InsightsLLMError.rateLimited
         }
 
-        // Evict expired contextual entries (30 min TTL)
+        // Evict expired contextual entries (30 min default, 24h for cash flow)
         let now = Date.now
-        contextualCache = contextualCache.filter { now.timeIntervalSince($0.value.timestamp) < 1800 }
+        contextualCache = contextualCache.filter { entry in
+            let ttl: TimeInterval = entry.key.hasPrefix("cashflow_") ? 86400 : 1800
+            return now.timeIntervalSince(entry.value.timestamp) < ttl
+        }
 
         // Check cache (eviction above guarantees all entries are < 30 min)
         if let entry = contextualCache[key] {
@@ -556,5 +559,143 @@ final class InsightsLLMService {
         } catch {
             throw InsightsLLMError.networkError(error)
         }
+    }
+
+    // MARK: - Cash Flow Projection Insight
+
+    /// Generate a single-sentence insight about the cash flow projection.
+    /// Uses contextualCache with 24h TTL. Key includes projection hash for invalidation.
+    func generateCashFlowInsight(
+        projection: CashFlowProjection,
+        currencyCode: String
+    ) async throws -> String? {
+        guard let client = openAI else {
+            throw InsightsLLMError.noAPIKey
+        }
+
+        if let lastCall = lastContextualCallTime,
+           Date.now.timeIntervalSince(lastCall) < 5 {
+            throw InsightsLLMError.rateLimited
+        }
+
+        // Cache key: date + projection hash
+        let dayString = Self.dayFormatter.string(from: Date.now)
+        let projHash = Self.projectionHash(projection)
+        let cacheKey = "cashflow_\(dayString)_\(projHash)"
+
+        // Check cache (24h TTL)
+        if let entry = contextualCache[cacheKey],
+           Date.now.timeIntervalSince(entry.timestamp) < 86400 {
+            return entry.text
+        }
+
+        lastContextualCallTime = Date.now
+
+        // Build compact JSON
+        let data = Self.buildCashFlowPayload(projection: projection, currencyCode: currencyCode)
+        let jsonData = try JSONSerialization.data(withJSONObject: data)
+        let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
+
+        let currencyDisplay = CurrencyCode(rawValue: currencyCode)?.symbol ?? currencyCode
+
+        let systemPrompt = """
+        Eres un analista financiero personal. Genera UNA SOLA oración (máximo 150 caracteres) sobre la proyección de flujo de caja del usuario.
+
+        REGLAS CRÍTICAS:
+        - SOLO menciona datos presentes en el JSON. NUNCA inventes montos o meses
+        - Cada afirmación debe corresponder a un campo específico
+        - Tutea ("tú"), lidera con el dato, nunca regañes ni juzgues, nunca hagas preguntas
+        - NUNCA uses "Debes...", "Tienes que...", "Obviamente..."
+        - Usa "gasto"/"ingreso", no "transacción". Siempre constructivo
+        - Usa **negritas** para la cifra clave
+        - Montos en \(currencyCode): SIEMPRE \(currencyDisplay) NÚMERO (ej: \(currencyDisplay) 4,500). Divisa ANTES del número
+
+        JSON: {"comment": "una oración"} o {"comment": null} si no hay nada interesante.
+        """
+
+        let query = ChatQuery(
+            messages: try buildChatMessages(system: systemPrompt, user: "Proyección de flujo de caja:\n\(jsonString)"),
+            model: .gpt4_1_mini,
+            responseFormat: .jsonObject,
+            temperature: 0.4
+        )
+
+        do {
+            let result = try await client.chats(query: query)
+
+            guard let content = result.choices.first?.message.content,
+                  let rawData = content.data(using: .utf8),
+                  let dict = try JSONSerialization.jsonObject(with: rawData) as? [String: Any] else {
+                throw InsightsLLMError.parseFailed
+            }
+
+            let comment = dict["comment"] as? String
+
+            if let comment {
+                contextualCache[cacheKey] = ContextualCacheEntry(text: comment, timestamp: Date.now)
+            }
+
+            return comment
+        } catch let error as InsightsLLMError {
+            throw error
+        } catch {
+            throw InsightsLLMError.networkError(error)
+        }
+    }
+
+    private static let dayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
+    static func projectionHash(_ projection: CashFlowProjection) -> Int {
+        var hash = projection.months.count
+        hash = hash &* 31 &+ Int(projection.months.last?.accumulatedBalance ?? 0)
+        hash = hash &* 31 &+ Int(projection.totalProjectedNet)
+        return hash
+    }
+
+    private static func buildCashFlowPayload(projection: CashFlowProjection, currencyCode: String) -> [String: Any] {
+        let months = projection.months
+        let currentMonth = months.first(where: { $0.isCurrent })
+        let lowestMonth = months.min(by: { $0.accumulatedBalance < $1.accumulatedBalance })
+        let monthsNegative = months.filter { $0.accumulatedBalance < 0 }.count
+        let avgNet = months.isEmpty ? 0 : months.map(\.netFlow).reduce(0, +) / Double(months.count)
+
+        var payload: [String: Any] = [
+            "startingBalance": projection.startingBalance,
+            "monthsTotal": months.count,
+            "monthsPositive": months.count - monthsNegative,
+            "monthsNegative": monthsNegative,
+            "avgMonthlyNet": Int(avgNet),
+            "currency": currencyCode,
+        ]
+
+        if let current = currentMonth {
+            payload["currentMonth"] = [
+                "name": current.date.formatted(.dateTime.month(.abbreviated).year()).lowercased(),
+                "income": Int(current.totalIncome),
+                "expense": Int(current.totalExpense),
+                "net": Int(current.netFlow),
+                "accumulated": Int(current.accumulatedBalance),
+            ]
+        }
+
+        if let last = months.last {
+            payload["endMonth"] = [
+                "name": last.date.formatted(.dateTime.month(.abbreviated).year()).lowercased(),
+                "accumulated": Int(last.accumulatedBalance),
+            ]
+        }
+
+        if let lowest = lowestMonth {
+            payload["lowestAccumulated"] = [
+                "month": lowest.date.formatted(.dateTime.month(.abbreviated).year()).lowercased(),
+                "balance": Int(lowest.accumulatedBalance),
+            ]
+        }
+
+        return payload
     }
 }

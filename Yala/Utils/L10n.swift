@@ -374,6 +374,20 @@ enum L10n {
         static var chartDangerZone: String { ls("cashFlowPlan.chartDangerZone", comment: "") }
         static var chartRollingAvg: String { ls("cashFlowPlan.chartRollingAvg", comment: "") }
         static var chartNeedMoreData: String { ls("cashFlowPlan.chartNeedMoreData", comment: "") }
+        static var analyzingProjection: String { ls("cashFlowPlan.analyzingProjection", comment: "") }
+        static var enableAIObservations: String { ls("cashFlowPlan.enableAIObservations", comment: "") }
+        static func commentNegative(_ month: String) -> String {
+            String(format: ls("cashFlowPlan.commentNegative", comment: ""), month)
+        }
+        static func commentTight(_ margin: String) -> String {
+            String(format: ls("cashFlowPlan.commentTight", comment: ""), margin)
+        }
+        static func commentHealthy(_ balance: String) -> String {
+            String(format: ls("cashFlowPlan.commentHealthy", comment: ""), balance)
+        }
+        static func commentDefault(_ count: Int) -> String {
+            String(format: ls("cashFlowPlan.commentDefault", comment: ""), count)
+        }
     }
 
     // MARK: - Groupings
