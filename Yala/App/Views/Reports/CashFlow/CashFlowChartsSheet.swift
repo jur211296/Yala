@@ -465,7 +465,7 @@ struct CashFlowChartsSheet: View {
                     allWithinPlanView
                 }
             } else {
-                let maxDeviation = cachedDeviations.map(\.deviation).max() ?? 1
+                let maxTotal = cachedDeviations.map(\.total).max() ?? 1
 
                 VStack(spacing: DS.Spacing.md) {
                     ForEach(cachedDeviations, id: \.lineID) { item in
@@ -479,10 +479,25 @@ struct CashFlowChartsSheet: View {
                                     .clipShape(Circle())
 
                                 GeometryReader { geo in
+                                    let barAreaWidth = geo.size.width * 0.55
+                                    let totalBarWidth = max(4, barAreaWidth * (item.total / maxTotal))
+                                    let planLineX = barAreaWidth * (item.plannedAmount / maxTotal)
+
                                     HStack(spacing: DS.Spacing.xs) {
-                                        RoundedRectangle(cornerRadius: DS.Radius.xs)
-                                            .fill(Color.hotPink.gradient)
-                                            .frame(width: max(4, geo.size.width * 0.55 * (item.deviation / maxDeviation)))
+                                        ZStack(alignment: .leading) {
+                                            RoundedRectangle(cornerRadius: DS.Radius.xs)
+                                                .fill(Color.hotPink.gradient)
+                                                .frame(width: totalBarWidth)
+
+                                            // Plan dotted line
+                                            Path { path in
+                                                path.move(to: CGPoint(x: planLineX, y: 0))
+                                                path.addLine(to: CGPoint(x: planLineX, y: geo.size.height))
+                                            }
+                                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [3, 2]))
+                                            .foregroundStyle(.thPrimaryText.opacity(0.7))
+                                        }
+                                        .frame(width: totalBarWidth)
 
                                         Text(YalaFormatter.axisK(item.total) + " (+" + YalaFormatter.axisK(item.deviation) + ")")
                                             .font(DS.Typography.labelTiny)
