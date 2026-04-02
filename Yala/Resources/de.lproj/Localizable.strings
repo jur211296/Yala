@@ -827,7 +827,7 @@
 
 // Charts redesign (Inc 7)
 "cashFlowPlan.chartProjection" = "Saldoprojektion";
-"cashFlowPlan.chartDeviation" = "Wo du den Plan überschreitest";
+"cashFlowPlan.chartDeviation" = "Ausgaben zum Überprüfen";
 "cashFlowPlan.chartSavings" = "Monatliche Ersparnisse";
 "cashFlowPlan.chartAccuracy" = "Plangenauigkeit";
 "cashFlowPlan.chartDeviationOver" = "Über Budget";
@@ -841,6 +841,9 @@
 "cashFlowPlan.commentTight" = "Dieser Monat ist knapp — dir bleiben %@ Spielraum";
 "cashFlowPlan.commentHealthy" = "Dein Plan sieht gesund aus — am Ende des Zeitraums hättest du %@ angespart";
 "cashFlowPlan.commentDefault" = "Deine Prognose umfasst %d Monate";
+"cashFlowPlan.chartAllWithinPlan" = "Alle Ausgabenposten liegen im Plan";
+"cashFlowPlan.deviationCommentSingle" = "%@ überschreitet den Plan um durchschnittlich %@";
+"cashFlowPlan.deviationCommentMultiple" = "%@ führt die Überschreitungen mit %@ an — der Gesamtüberschuss beträgt %@";
 
 "common.unknownError" = "Unbekannter Fehler";
 "common.saveError" = "Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen.";

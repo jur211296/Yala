@@ -388,6 +388,13 @@ enum L10n {
         static func commentDefault(_ count: Int) -> String {
             String(format: ls("cashFlowPlan.commentDefault", comment: ""), count)
         }
+        static var chartAllWithinPlan: String { ls("cashFlowPlan.chartAllWithinPlan", comment: "") }
+        static func deviationCommentSingle(_ name: String, _ amount: String) -> String {
+            String(format: ls("cashFlowPlan.deviationCommentSingle", comment: ""), name, amount)
+        }
+        static func deviationCommentMultiple(_ name: String, _ amount: String, _ total: String) -> String {
+            String(format: ls("cashFlowPlan.deviationCommentMultiple", comment: ""), name, amount, total)
+        }
     }
 
     // MARK: - Groupings

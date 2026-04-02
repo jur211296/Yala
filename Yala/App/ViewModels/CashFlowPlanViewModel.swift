@@ -581,4 +581,22 @@ final class CashFlowPlanViewModel {
         // Default
         return L10n.CashFlowPlan.commentDefault(months.count)
     }
+
+    static func generateDeviationRuleComment(
+        _ deviations: [(name: String, amount: Double)],
+        currencyCode: String
+    ) -> String {
+        guard !deviations.isEmpty else { return "" }
+
+        let top = deviations[0]
+        let topFormatted = YalaFormatter.currency(value: top.amount, currencyCode: currencyCode)
+
+        if deviations.count == 1 {
+            return L10n.CashFlowPlan.deviationCommentSingle(top.name, topFormatted)
+        }
+
+        let totalExcess = deviations.reduce(0.0) { $0 + $1.amount }
+        let totalFormatted = YalaFormatter.currency(value: totalExcess, currencyCode: currencyCode)
+        return L10n.CashFlowPlan.deviationCommentMultiple(top.name, topFormatted, totalFormatted)
+    }
 }

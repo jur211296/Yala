@@ -31,6 +31,7 @@ struct CashFlowChartsSheet: View {
     @State private var cachedDeviations: [DeviationItem] = []
     @State private var cachedRollingAvg: [RollingPoint] = []
     @State private var cachedRuleComment: String = ""
+    @State private var cachedDeviationRuleComment: String = ""
 
     private var isPro: Bool {
         FeatureGateService.shared.isProUser
@@ -48,7 +49,8 @@ struct CashFlowChartsSheet: View {
                 VStack(spacing: DS.Spacing.xl) {
                     projectionChart
                     projectionCommentCard
-                    proChartSection { deviationChart }
+                    deviationChart
+                    deviationCommentCard
                     proChartSection { savingsChart }
                     proChartSection { accuracyChart }
                 }
@@ -87,9 +89,25 @@ struct CashFlowChartsSheet: View {
 
     private func cacheData() {
         cachedPastMonths = projection.months.filter { $0.isPast || $0.isCurrent }
-        cachedDeviations = Self.buildDeviations(from: cachedPastMonths)
+
+        let iconLookup: [UUID: (iconName: String?, colorHex: String?)] = {
+            guard let lines = viewModel.plan?.lines else { return [:] }
+            var lookup: [UUID: (iconName: String?, colorHex: String?)] = [:]
+            for line in lines {
+                let icon = line.subcategory?.iconName ?? line.category?.iconName
+                let color = line.subcategory?.colorHex ?? line.category?.colorHex
+                lookup[line.id] = (iconName: icon, colorHex: color)
+            }
+            return lookup
+        }()
+
+        cachedDeviations = Self.buildDeviations(from: cachedPastMonths, iconLookup: iconLookup)
         cachedRollingAvg = Self.buildRollingAverage(from: cachedPastMonths)
         cachedRuleComment = CashFlowPlanViewModel.generateRuleBasedComment(projection, currencyCode: currencyCode)
+        cachedDeviationRuleComment = CashFlowPlanViewModel.generateDeviationRuleComment(
+            cachedDeviations.map { (name: $0.name, amount: $0.deviation) },
+            currencyCode: currencyCode
+        )
     }
 
     // MARK: - Shared Helpers
@@ -428,23 +446,12 @@ struct CashFlowChartsSheet: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(DS.Spacing.md)
             .solidCard()
-        } else if !cachedRuleComment.isEmpty {
-            // Rule-based fallback
-            HStack(alignment: .top, spacing: DS.Spacing.sm) {
-                Image(systemName: "lightbulb.fill")
-                    .foregroundStyle(.secondary)
-                    .font(DS.Typography.subheadline)
-                Text(LocalizedStringKey(cachedRuleComment))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.thPrimaryText)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(DS.Spacing.md)
-            .solidCard()
+        } else {
+            ruleCommentCard(cachedRuleComment)
         }
     }
 
-    // MARK: - 2. Where You Exceed the Plan (Pro) — CashFlowWidget bar style
+    // MARK: - 2. Where You Exceed the Plan
 
     private var deviationChart: some View {
         chartCard(
@@ -452,58 +459,56 @@ struct CashFlowChartsSheet: View {
             kpiValue: nil
         ) {
             if cachedDeviations.isEmpty {
-                needMoreDataView
+                if cachedPastMonths.count < 2 {
+                    needMoreDataView
+                } else {
+                    allWithinPlanView
+                }
             } else {
-                Chart(cachedDeviations, id: \.name) { item in
-                    BarMark(
-                        x: .value("Deviation", item.deviation),
-                        y: .value("Line", item.name)
-                    )
-                    .foregroundStyle(
-                        item.deviation > 0
-                            ? Color.expenseGraph.gradient
-                            : Color.incomeGraph.gradient
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+                let maxDeviation = cachedDeviations.map(\.deviation).max() ?? 1
 
-                    // Data label
-                    PointMark(
-                        x: .value("Deviation", item.deviation),
-                        y: .value("Line", item.name)
-                    )
-                    .symbolSize(0)
-                    .annotation(
-                        position: item.deviation > 0 ? .trailing : .leading,
-                        spacing: DS.Spacing.xs
-                    ) {
-                        Text(YalaFormatter.axisK(item.deviation))
-                            .font(DS.Typography.labelTiny)
-                            .foregroundStyle(.thSecondaryText)
-                    }
-                }
-                .chartYAxis {
-                    AxisMarks(position: .leading) { _ in
-                        AxisValueLabel()
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.thSecondaryText)
-                    }
-                }
-                .chartXAxis {
-                    AxisMarks(position: .bottom, values: .automatic(desiredCount: 3)) { value in
-                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                            .foregroundStyle(.thSecondaryText.opacity(0.1))
-                        AxisValueLabel {
-                            if let v = value.as(Double.self) {
-                                Text(YalaFormatter.axisK(v))
-                                    .font(DS.Typography.captionSmall)
-                                    .foregroundStyle(.thSecondaryText)
+                VStack(spacing: DS.Spacing.md) {
+                    ForEach(cachedDeviations, id: \.lineID) { item in
+                        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                            HStack(spacing: DS.Spacing.sm) {
+                                Image(systemName: item.iconName)
+                                    .font(.system(size: DS.Icon.sizeSmall, weight: .medium))
+                                    .foregroundStyle(.white)
+                                    .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
+                                    .background(Color(hex: item.colorHex))
+                                    .clipShape(Circle())
+
+                                GeometryReader { geo in
+                                    HStack(spacing: DS.Spacing.xs) {
+                                        RoundedRectangle(cornerRadius: DS.Radius.xs)
+                                            .fill(Color.hotPink.gradient)
+                                            .frame(width: max(4, geo.size.width * 0.55 * (item.deviation / maxDeviation)))
+
+                                        Text(YalaFormatter.axisK(item.total) + " (+" + YalaFormatter.axisK(item.deviation) + ")")
+                                            .font(DS.Typography.labelTiny)
+                                            .foregroundStyle(Color.hotPink)
+                                            .fixedSize()
+                                    }
+                                }
+                                .frame(height: DS.Icon.badgeSmall)
                             }
+
+                            Text(item.name + " · Plan: " + YalaFormatter.currency(value: item.plannedAmount, currencyCode: currencyCode))
+                                .font(DS.Typography.captionSmall)
+                                .foregroundStyle(.thSecondaryText)
+                                .padding(.leading, DS.Icon.badgeSmall + DS.Spacing.sm)
                         }
                     }
                 }
-                .frame(height: max(120, CGFloat(cachedDeviations.count) * 36))
             }
         }
+    }
+
+    // MARK: - Deviation Comment Card
+
+    @ViewBuilder
+    private var deviationCommentCard: some View {
+        ruleCommentCard(cachedDeviationRuleComment)
     }
 
     // MARK: - 3. Monthly Savings (Pro) — CashFlowWidget bar style
@@ -645,11 +650,36 @@ struct CashFlowChartsSheet: View {
     }
 
     private var needMoreDataView: some View {
-        Text(L10n.CashFlowPlan.chartNeedMoreData)
+        chartPlaceholder(L10n.CashFlowPlan.chartNeedMoreData)
+    }
+
+    private var allWithinPlanView: some View {
+        chartPlaceholder(L10n.CashFlowPlan.chartAllWithinPlan)
+    }
+
+    private func chartPlaceholder(_ text: String) -> some View {
+        Text(text)
             .font(DS.Typography.caption)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .center)
             .frame(height: 120)
+    }
+
+    @ViewBuilder
+    private func ruleCommentCard(_ comment: String) -> some View {
+        if !comment.isEmpty {
+            HStack(alignment: .top, spacing: DS.Spacing.sm) {
+                Image(systemName: "lightbulb.fill")
+                    .foregroundStyle(.secondary)
+                    .font(DS.Typography.subheadline)
+                Text(LocalizedStringKey(comment))
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.thPrimaryText)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(DS.Spacing.md)
+            .solidCard()
+        }
     }
 
     // MARK: - Pro Gate
@@ -679,8 +709,14 @@ struct CashFlowChartsSheet: View {
     // MARK: - Cached Data Builders
 
     private struct DeviationItem {
+        let lineID: UUID
         let name: String
+        let plannedAmount: Double
         let deviation: Double
+        let iconName: String
+        let colorHex: String
+
+        var total: Double { plannedAmount + deviation }
     }
 
     private struct RollingPoint {
@@ -689,25 +725,41 @@ struct CashFlowChartsSheet: View {
         let value: Double
     }
 
-    private static func buildDeviations(from pastMonths: [CashFlowMonth]) -> [DeviationItem] {
+    private static func buildDeviations(
+        from pastMonths: [CashFlowMonth],
+        iconLookup: [UUID: (iconName: String?, colorHex: String?)]
+    ) -> [DeviationItem] {
         guard !pastMonths.isEmpty else { return [] }
 
-        var deviations: [UUID: (name: String, totalDeviation: Double, count: Int)] = [:]
+        var deviations: [UUID: (name: String, totalDeviation: Double, totalPlanned: Double, count: Int)] = [:]
 
         for month in pastMonths {
             for line in month.expenseLines {
                 guard let real = line.realAmount else { continue }
                 let diff = real - line.plannedAmount
-                var entry = deviations[line.lineID] ?? (name: line.name, totalDeviation: 0, count: 0)
+                var entry = deviations[line.lineID] ?? (name: line.name, totalDeviation: 0, totalPlanned: 0, count: 0)
                 entry.totalDeviation += diff
+                entry.totalPlanned += line.plannedAmount
                 entry.count += 1
                 deviations[line.lineID] = entry
             }
         }
 
-        return deviations.values
-            .map { DeviationItem(name: $0.name, deviation: $0.totalDeviation / Double(max(1, $0.count))) }
-            .sorted { abs($0.deviation) > abs($1.deviation) }
+        return deviations
+            .map { id, entry in
+                let count = Double(max(1, entry.count))
+                let icons = iconLookup[id]
+                return DeviationItem(
+                    lineID: id,
+                    name: entry.name,
+                    plannedAmount: entry.totalPlanned / count,
+                    deviation: entry.totalDeviation / count,
+                    iconName: icons?.iconName ?? "creditcard.fill",
+                    colorHex: icons?.colorHex ?? "#9CA3AF"
+                )
+            }
+            .filter { $0.deviation > 0 }
+            .sorted { $0.deviation > $1.deviation }
     }
 
     private static func buildRollingAverage(from pastMonths: [CashFlowMonth]) -> [RollingPoint] {
