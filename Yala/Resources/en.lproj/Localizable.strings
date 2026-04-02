@@ -830,6 +830,7 @@
 // Charts redesign (Inc 7)
 "cashFlowPlan.chartProjection" = "Balance projection";
 "cashFlowPlan.chartDeviation" = "Expenses to review";
+"cashFlowPlan.chartDeviationSubtitle" = "Subcategories where you spent more than planned";
 "cashFlowPlan.chartSavings" = "Monthly savings";
 "cashFlowPlan.chartAccuracy" = "Plan accuracy";
 "cashFlowPlan.chartDeviationOver" = "Over budget";
@@ -844,8 +845,8 @@
 "cashFlowPlan.commentHealthy" = "Your plan looks healthy — you'd end the period with %@ accumulated";
 "cashFlowPlan.commentDefault" = "Your projection covers %d months ahead";
 "cashFlowPlan.chartAllWithinPlan" = "All your expense lines are within the plan";
-"cashFlowPlan.deviationCommentSingle" = "%@ exceeds your plan by an average of %@";
-"cashFlowPlan.deviationCommentMultiple" = "%@ leads the overages at %@ — total excess averages %@";
+"cashFlowPlan.deviationCommentSingle" = "In %@ you spent %@ more than planned";
+"cashFlowPlan.deviationCommentMultiple" = "%@ is where you went over the most, by %@ extra — you spent %@ over plan in total";
 
 "common.unknownError" = "Something went wrong";
 "common.saveError" = "Changes weren't saved. Try again.";

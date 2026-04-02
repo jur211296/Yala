@@ -828,6 +828,7 @@
 // Charts redesign (Inc 7)
 "cashFlowPlan.chartProjection" = "Projeção do saldo";
 "cashFlowPlan.chartDeviation" = "Despesas para revisar";
+"cashFlowPlan.chartDeviationSubtitle" = "Subcategorias onde gastaste mais do que o planeado";
 "cashFlowPlan.chartSavings" = "Poupança mensal";
 "cashFlowPlan.chartAccuracy" = "Precisão do plano";
 "cashFlowPlan.chartDeviationOver" = "Acima do orçamento";
@@ -842,8 +843,8 @@
 "cashFlowPlan.commentHealthy" = "Seu plano está saudável — no final do período teria %@ acumulado";
 "cashFlowPlan.commentDefault" = "Sua projeção cobre %d meses à frente";
 "cashFlowPlan.chartAllWithinPlan" = "Todas as linhas de despesa estão dentro do plano";
-"cashFlowPlan.deviationCommentSingle" = "%@ ultrapassa o plano em uma média de %@";
-"cashFlowPlan.deviationCommentMultiple" = "%@ lidera os excessos com %@ — o excesso total é de %@";
+"cashFlowPlan.deviationCommentSingle" = "Em %@ gastaste %@ a mais do que o planeado";
+"cashFlowPlan.deviationCommentMultiple" = "%@ é onde mais ultrapassaste o plano, com %@ extra — no total gastaste %@ a mais entre todas";
 
 "common.unknownError" = "Erro desconhecido";
 "common.saveError" = "Não foi possível salvar as alterações. Tente novamente.";

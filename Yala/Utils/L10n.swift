@@ -367,6 +367,7 @@ enum L10n {
         // Charts redesign (Inc 7)
         static var chartProjection: String { ls("cashFlowPlan.chartProjection", comment: "") }
         static var chartDeviation: String { ls("cashFlowPlan.chartDeviation", comment: "") }
+        static var chartDeviationSubtitle: String { ls("cashFlowPlan.chartDeviationSubtitle", comment: "") }
         static var chartSavings: String { ls("cashFlowPlan.chartSavings", comment: "") }
         static var chartAccuracy: String { ls("cashFlowPlan.chartAccuracy", comment: "") }
         static var chartDeviationOver: String { ls("cashFlowPlan.chartDeviationOver", comment: "") }

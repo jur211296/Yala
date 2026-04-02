@@ -456,6 +456,7 @@ struct CashFlowChartsSheet: View {
     private var deviationChart: some View {
         chartCard(
             title: L10n.CashFlowPlan.chartDeviation,
+            subtitle: L10n.CashFlowPlan.chartDeviationSubtitle,
             kpiValue: nil
         ) {
             if cachedDeviations.isEmpty {
@@ -642,6 +643,7 @@ struct CashFlowChartsSheet: View {
 
     private func chartCard<Content: View>(
         title: String,
+        subtitle: String? = nil,
         kpiValue: String?,
         @ViewBuilder content: () -> Content
     ) -> some View {
@@ -650,6 +652,11 @@ struct CashFlowChartsSheet: View {
                 Text(title)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.thPrimaryText)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.thSecondaryText)
+                }
                 if let kpi = kpiValue {
                     Text(kpi)
                         .font(DS.Typography.title)
