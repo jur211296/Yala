@@ -756,6 +756,7 @@
 "cashFlowPlan.deleteLineConfirmation" = "Eliminare questa riga dal piano? Questa azione non può essere annullata.";
 "cashFlowPlan.suggestPayment" = "Nuovo pagamento: %@. Aggiungere al piano?";
 "cashFlowPlan.chartsTitle" = "Grafici";
+"cashFlowPlan.chartsSectionTitle" = "Il tuo flusso di cassa";
 "cashFlowPlan.accumulatedBalance" = "Saldo cumulato";
 "cashFlowPlan.incomeVsExpense" = "Entrate vs Uscite";
 "cashFlowPlan.composition" = "Composizione delle spese";
@@ -845,6 +846,11 @@
 "cashFlowPlan.chartAllWithinPlan" = "Tutte le voci di spesa sono nel piano";
 "cashFlowPlan.deviationCommentSingle" = "In %@ hai speso %@ in più del previsto";
 "cashFlowPlan.deviationCommentMultiple" = "%@ è dove hai superato di più il piano, con %@ in più — in totale hai speso %@ di troppo";
+"cashFlowPlan.chartSavingsSubtitle" = "Quanto risparmi ogni mese vs il tuo piano";
+"cashFlowPlan.chartPlanned" = "Pianificato";
+"cashFlowPlan.commentSavingsBelow" = "Stai risparmiando %@ in meno al mese rispetto al piano — puoi tagliare qualche spesa?";
+"cashFlowPlan.commentSavingsAbove" = "Sei %@ sopra il tuo piano di risparmio — il tuo saldo arriverebbe a %@";
+"cashFlowPlan.commentHealthyWithSavings" = "Il tuo piano è buono — risparmi circa %@/mese e finiresti con %@";
 
 "common.unknownError" = "Errore sconosciuto";
 "common.saveError" = "Impossibile salvare le modifiche. Riprova.";
@@ -2142,6 +2148,10 @@
 "tipkit.pro.fab.message" = "Tocca qui per registrare con voce, immagine o manualmente. Ora hai tutte e tre le opzioni.";
 "tipkit.pro.aiSummary.title" = "Il tuo riepilogo IA";
 "tipkit.pro.aiSummary.message" = "Genera un riepilogo intelligente delle tue finanze con un tocco. Osservazioni utili, all'istante.";
+"tipkit.aiCharts.pro.title" = "Osservazioni con IA";
+"tipkit.aiCharts.pro.message" = "Tocca qui per ottenere osservazioni intelligenti sul tuo flusso di cassa.";
+"tipkit.aiCharts.free.title" = "Osservazioni intelligenti";
+"tipkit.aiCharts.free.message" = "Diventa Pro per ottenere analisi con IA sulle tue finanze.";
 
 // MARK: - FAQ
 "faq.subtitle" = "Risposte alle domande più comuni";

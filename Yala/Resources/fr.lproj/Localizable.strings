@@ -756,6 +756,7 @@
 "cashFlowPlan.deleteLineConfirmation" = "Supprimer cette ligne de votre plan ? Cette action est irréversible.";
 "cashFlowPlan.suggestPayment" = "Nouveau paiement : %@. Ajouter au plan ?";
 "cashFlowPlan.chartsTitle" = "Graphiques";
+"cashFlowPlan.chartsSectionTitle" = "Ton flux de trésorerie";
 "cashFlowPlan.accumulatedBalance" = "Solde cumulé";
 "cashFlowPlan.incomeVsExpense" = "Revenus vs Dépenses";
 "cashFlowPlan.composition" = "Composition des dépenses";
@@ -843,8 +844,13 @@
 "cashFlowPlan.commentHealthy" = "Ton plan a l'air sain — tu terminerais la période avec %@ cumulé";
 "cashFlowPlan.commentDefault" = "Ta projection couvre %d mois à venir";
 "cashFlowPlan.chartAllWithinPlan" = "Toutes tes lignes de dépenses sont dans le plan";
-"cashFlowPlan.deviationCommentSingle" = "Tu as dépensé %@ de plus que prévu en %@";
+"cashFlowPlan.deviationCommentSingle" = "En %@, tu as dépensé %@ de plus que prévu";
 "cashFlowPlan.deviationCommentMultiple" = "%@ est là où tu as le plus dépassé le plan, avec %@ en plus — au total tu as dépensé %@ de trop";
+"cashFlowPlan.chartSavingsSubtitle" = "Combien tu épargnes chaque mois vs ton plan";
+"cashFlowPlan.chartPlanned" = "Prévu";
+"cashFlowPlan.commentSavingsBelow" = "Tu épargnes %@ de moins par mois que prévu — tu peux réduire une dépense ?";
+"cashFlowPlan.commentSavingsAbove" = "Tu es %@ au-dessus de ton plan d'épargne — ton solde atteindrait %@";
+"cashFlowPlan.commentHealthyWithSavings" = "Ton plan a l'air bien — tu épargnes environ %@/mois et tu finirais avec %@";
 
 "common.unknownError" = "Erreur inconnue";
 "common.saveError" = "Impossible d'enregistrer les modifications. Veuillez réessayer.";
@@ -2142,6 +2148,10 @@
 "tipkit.pro.fab.message" = "Touche ici pour enregistrer par voix, image ou manuellement. Tu as maintenant les trois options.";
 "tipkit.pro.aiSummary.title" = "Ton résumé IA";
 "tipkit.pro.aiSummary.message" = "Génère un résumé intelligent de tes finances en un toucher. Des observations utiles, instantanément.";
+"tipkit.aiCharts.pro.title" = "Observations avec IA";
+"tipkit.aiCharts.pro.message" = "Touche ici pour obtenir des observations intelligentes sur ton flux de trésorerie.";
+"tipkit.aiCharts.free.title" = "Observations intelligentes";
+"tipkit.aiCharts.free.message" = "Passe à Pro pour obtenir des analyses IA sur tes finances.";
 
 // MARK: - FAQ
 "faq.subtitle" = "Réponses aux questions les plus courantes";

@@ -432,6 +432,8 @@ final class InsightsLLMService {
 
     @ObservationIgnored
     private var lastContextualCallTime: Date?
+    @ObservationIgnored
+    private var lastDeviationCallTime: Date?
 
     @ObservationIgnored
     private var contextualCache: [String: ContextualCacheEntry] = [:]
@@ -697,5 +699,89 @@ final class InsightsLLMService {
         }
 
         return payload
+    }
+
+    // MARK: - Cash Flow Deviation Insight
+
+    func generateDeviationInsight(
+        deviations: [(name: String, planned: Double, actual: Double, excess: Double)],
+        currencyCode: String
+    ) async throws -> String? {
+        guard let client = openAI else {
+            throw InsightsLLMError.noAPIKey
+        }
+
+        if let lastCall = lastDeviationCallTime,
+           Date.now.timeIntervalSince(lastCall) < 5 {
+            throw InsightsLLMError.rateLimited
+        }
+
+        guard !deviations.isEmpty else { return nil }
+
+        let cacheKey = "deviation_\(Self.dayFormatter.string(from: Date.now))_\(deviations.map(\.name).joined())"
+
+        if let entry = contextualCache[cacheKey],
+           Date.now.timeIntervalSince(entry.timestamp) < 86400 {
+            return entry.text
+        }
+
+        lastDeviationCallTime = Date.now
+
+        let items = deviations.map { d in
+            ["name": d.name, "planned": Int(d.planned), "actual": Int(d.actual), "excess": Int(d.excess)] as [String: Any]
+        }
+        let totalExcess = deviations.reduce(0.0) { $0 + $1.excess }
+        let payload: [String: Any] = [
+            "items": items,
+            "totalExcess": Int(totalExcess),
+            "currency": currencyCode,
+        ]
+
+        let jsonData = try JSONSerialization.data(withJSONObject: payload)
+        let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
+        let currencyDisplay = CurrencyCode(rawValue: currencyCode)?.symbol ?? currencyCode
+
+        let systemPrompt = """
+        Eres un analista financiero personal. Genera UNA SOLA oración (máximo 150 caracteres) sobre las subcategorías donde el usuario gastó más de lo planeado.
+
+        REGLAS CRÍTICAS:
+        - SOLO menciona datos presentes en el JSON. NUNCA inventes montos o nombres
+        - Tutea ("tú"), lidera con el dato, nunca regañes ni juzgues, nunca hagas preguntas
+        - NUNCA uses "Debes...", "Tienes que...", "Obviamente..."
+        - Usa "gasto", no "transacción". Siempre constructivo, sugiere algo práctico si puedes
+        - Usa **negritas** para la cifra clave
+        - Montos en \(currencyCode): SIEMPRE \(currencyDisplay) NÚMERO (ej: \(currencyDisplay) 4,500). Divisa ANTES del número
+
+        JSON: {"comment": "una oración"} o {"comment": null} si no hay nada interesante.
+        """
+
+        let query = ChatQuery(
+            messages: try buildChatMessages(system: systemPrompt, user: "Desviaciones del plan:\n\(jsonString)"),
+            model: .gpt4_1_mini,
+            responseFormat: .jsonObject,
+            temperature: 0.4
+        )
+
+        do {
+            let result = try await client.chats(query: query)
+
+            guard let content = result.choices.first?.message.content,
+                  let rawData = content.data(using: .utf8),
+                  let dict = try JSONSerialization.jsonObject(with: rawData) as? [String: Any] else {
+                throw InsightsLLMError.parseFailed
+            }
+
+            let comment = dict["comment"] as? String
+
+            if let comment {
+                contextualCache[cacheKey] = ContextualCacheEntry(text: comment, timestamp: Date.now)
+            }
+
+            return comment
+        } catch let error as InsightsLLMError {
+            throw error
+        } catch {
+            throw InsightsLLMError.networkError(error)
+        }
     }
 }

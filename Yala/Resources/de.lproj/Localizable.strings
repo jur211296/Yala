@@ -756,6 +756,7 @@
 "cashFlowPlan.deleteLineConfirmation" = "Diese Zeile aus deinem Plan löschen? Diese Aktion kann nicht rückgängig gemacht werden.";
 "cashFlowPlan.suggestPayment" = "Neue Zahlung: %@. Zum Plan hinzufügen?";
 "cashFlowPlan.chartsTitle" = "Diagramme";
+"cashFlowPlan.chartsSectionTitle" = "Dein Cashflow";
 "cashFlowPlan.accumulatedBalance" = "Kumulierter Saldo";
 "cashFlowPlan.incomeVsExpense" = "Einnahmen vs Ausgaben";
 "cashFlowPlan.composition" = "Ausgabenzusammensetzung";
@@ -845,6 +846,11 @@
 "cashFlowPlan.chartAllWithinPlan" = "Alle Ausgabenposten liegen im Plan";
 "cashFlowPlan.deviationCommentSingle" = "Bei %@ hast du %@ mehr als geplant ausgegeben";
 "cashFlowPlan.deviationCommentMultiple" = "%@ ist dort, wo du den Plan am meisten überschritten hast, mit %@ extra — insgesamt hast du %@ zu viel ausgegeben";
+"cashFlowPlan.chartSavingsSubtitle" = "Wie viel du pro Monat sparst vs. dein Plan";
+"cashFlowPlan.chartPlanned" = "Geplant";
+"cashFlowPlan.commentSavingsBelow" = "Du sparst %@ weniger pro Monat als geplant — kannst du irgendwo kürzen?";
+"cashFlowPlan.commentSavingsAbove" = "Du liegst %@ über deinem Sparplan — dein Saldo würde %@ erreichen";
+"cashFlowPlan.commentHealthyWithSavings" = "Dein Plan sieht gut aus — du sparst etwa %@/Monat und würdest mit %@ enden";
 
 "common.unknownError" = "Unbekannter Fehler";
 "common.saveError" = "Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen.";
@@ -2140,6 +2146,10 @@
 "tipkit.pro.fab.message" = "Tippe hier, um per Sprache, Bild oder manuell zu erfassen. Jetzt hast du alle drei Optionen.";
 "tipkit.pro.aiSummary.title" = "Deine KI-Zusammenfassung";
 "tipkit.pro.aiSummary.message" = "Erstelle mit einem Tipp eine intelligente Zusammenfassung deiner Finanzen. Nützliche Einblicke, sofort.";
+"tipkit.aiCharts.pro.title" = "KI-Beobachtungen";
+"tipkit.aiCharts.pro.message" = "Tippe hier, um intelligente Beobachtungen zu deinem Cashflow zu erhalten.";
+"tipkit.aiCharts.free.title" = "Intelligente Beobachtungen";
+"tipkit.aiCharts.free.message" = "Werde Pro, um KI-gestützte Analysen deiner Finanzen zu erhalten.";
 
 // MARK: - FAQ
 "faq.subtitle" = "Antworten auf die häufigsten Fragen";

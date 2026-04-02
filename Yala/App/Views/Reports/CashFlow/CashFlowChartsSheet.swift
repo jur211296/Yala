@@ -7,6 +7,7 @@
 
 import Charts
 import SwiftUI
+import TipKit
 
 struct CashFlowChartsSheet: View {
     let viewModel: CashFlowPlanViewModel
@@ -25,21 +26,26 @@ struct CashFlowChartsSheet: View {
     @State private var showInsightsConsentAlert = false
 
     @AppStorage("aiInsightsConsentAccepted") private var aiInsightsConsent = false
+    @AppStorage("cashFlowAIEnabled") private var aiToggleEnabled = false
 
     // Cached computed data (computed once on appear)
     @State private var cachedPastMonths: [CashFlowMonth] = []
     @State private var cachedDeviations: [DeviationItem] = []
-    @State private var cachedRollingAvg: [RollingPoint] = []
-    @State private var cachedRuleComment: String = ""
+    @State private var cachedSavings: [SavingsPoint] = []
+    @State private var cachedCombinedComment: String = ""
     @State private var cachedDeviationRuleComment: String = ""
+    @State private var showUpgradePrompt = false
 
     private var isPro: Bool {
         FeatureGateService.shared.isProUser
     }
 
     private var isAIEnabled: Bool {
-        isPro && aiInsightsConsent
+        aiToggleEnabled && aiInsightsConsent
     }
+
+    private let aiProTip = AIChartsProTip()
+    private let aiFreeUpsellTip = AIChartsFreeUpsellTip()
 
     private let primaryLineColor: Color = TrendType.balance.color
 
@@ -47,12 +53,24 @@ struct CashFlowChartsSheet: View {
         NavigationStack {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: DS.Spacing.xl) {
-                    projectionChart
-                    projectionCommentCard
+                    // Projection + Savings section
+                    VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                        HStack {
+                            Text(L10n.CashFlowPlan.chartsSectionTitle)
+                                .font(DS.Typography.title2)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.thPrimaryText)
+                            Spacer()
+                            aiChip
+                        }
+                        projectionChart
+                        savingsChart
+                        projectionCommentCard
+                    }
+
                     deviationChart
                     deviationCommentCard
-                    proChartSection { savingsChart }
-                    proChartSection { accuracyChart }
+                    accuracyChart
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.md)
@@ -69,14 +87,24 @@ struct CashFlowChartsSheet: View {
                 }
             }
         }
-        .onAppear { cacheData() }
+        .onAppear {
+            cacheData()
+            AIChartsProTip.hasSeenCharts = true
+            AIChartsFreeUpsellTip.hasSeenCharts = true
+        }
         .task(id: isAIEnabled) {
             guard isAIEnabled else { return }
-            await viewModel.loadCashFlowComment(currencyCode: currencyCode)
+            let deviationData = cachedDeviations.map {
+                (name: $0.name, planned: $0.plannedAmount, actual: $0.total, excess: $0.deviation)
+            }
+            async let cfTask: () = viewModel.loadCashFlowComment(currencyCode: currencyCode)
+            async let devTask: () = viewModel.loadDeviationComment(deviations: deviationData, currencyCode: currencyCode)
+            _ = await (cfTask, devTask)
         }
         .alert(L10n.AIConsent.insightsTitle, isPresented: $showInsightsConsentAlert) {
             Button(L10n.AIConsent.accept) {
                 aiInsightsConsent = true
+                aiToggleEnabled = true
             }
             Button(L10n.AIConsent.privacyPolicy) {
                 UIApplication.shared.open(AppConstants.privacyURL)
@@ -84,6 +112,9 @@ struct CashFlowChartsSheet: View {
             Button(L10n.Action.cancel, role: .cancel) {}
         } message: {
             Text(L10n.AIConsent.insightsMessage)
+        }
+        .sheet(isPresented: $showUpgradePrompt) {
+            UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature, source: "cashFlowCharts")
         }
     }
 
@@ -102,8 +133,32 @@ struct CashFlowChartsSheet: View {
         }()
 
         cachedDeviations = Self.buildDeviations(from: cachedPastMonths, iconLookup: iconLookup)
-        cachedRollingAvg = Self.buildRollingAverage(from: cachedPastMonths)
-        cachedRuleComment = CashFlowPlanViewModel.generateRuleBasedComment(projection, currencyCode: currencyCode)
+
+        cachedSavings = projection.months.map { month in
+            let isPastOrCurrent = month.isPast || month.isCurrent
+            let realInc: Double
+            let realExp: Double
+            if isPastOrCurrent {
+                realInc = month.incomeLines.reduce(0.0) { $0 + ($1.realAmount ?? $1.plannedAmount) }
+                    + (month.otherIncome?.realAmount ?? 0)
+                realExp = month.expenseLines.reduce(0.0) { $0 + ($1.realAmount ?? $1.plannedAmount) }
+                    + (month.otherExpenses?.realAmount ?? 0)
+            } else {
+                realInc = month.totalIncome
+                realExp = month.totalExpense
+            }
+            return SavingsPoint(
+                monthKey: month.monthKey, date: month.date,
+                actual: realInc - realExp, planned: month.netFlow,
+                isPast: isPastOrCurrent
+            )
+        }
+
+        let pastSavings = cachedSavings.filter(\.isPast)
+        let savingsForComment = pastSavings.map { (actual: $0.actual, planned: $0.planned) }
+        cachedCombinedComment = CashFlowPlanViewModel.generateCombinedComment(
+            projection, savings: savingsForComment, currencyCode: currencyCode
+        )
         cachedDeviationRuleComment = CashFlowPlanViewModel.generateDeviationRuleComment(
             cachedDeviations.map { (name: $0.name, amount: $0.deviation) },
             currencyCode: currencyCode
@@ -130,6 +185,12 @@ struct CashFlowChartsSheet: View {
 
     private var barCenteredDates: [Date] {
         SmartAxisHelper.centerDatesInCalendarUnit(barSmartAxisDates, unit: .month)
+    }
+
+    /// X-axis dates for the savings chart — identical to projection (every other month)
+    private var savingsAxisLabelDates: [Date] {
+        let dates = cachedSavings.map(\.date)
+        return stride(from: 0, to: dates.count, by: 2).map { dates[$0] }
     }
 
     private var barYAxisContent: some AxisContent {
@@ -399,29 +460,58 @@ struct CashFlowChartsSheet: View {
         }
     }
 
-    // MARK: - Projection Comment Card
+    // MARK: - AI Chip Toggle
+
+    private var aiChipLabel: some View {
+        HStack(spacing: DS.Chip.spacing) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 10, weight: .semibold))
+            Text("IA")
+                .font(DS.Typography.labelSmall)
+                .fontWeight(.semibold)
+        }
+        .foregroundStyle(aiToggleEnabled ? AnyShapeStyle(Color.white) : AnyShapeStyle(.thSecondaryText))
+        .padding(.horizontal, DS.Chip.paddingH)
+        .padding(.vertical, DS.Chip.paddingV)
+        .background {
+            Capsule()
+                .fill(aiToggleEnabled ? AnyShapeStyle(theme.accent) : AnyShapeStyle(.thSecondaryText.opacity(0.08)))
+        }
+        .overlay(
+            Capsule()
+                .stroke(aiToggleEnabled ? theme.accent.opacity(0.3) : .clear, lineWidth: 1)
+        )
+    }
+
+    private var aiChip: some View {
+        Button {
+            if isPro {
+                if aiInsightsConsent {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        aiToggleEnabled.toggle()
+                    }
+                } else {
+                    showInsightsConsentAlert = true
+                }
+            } else {
+                showUpgradePrompt = true
+            }
+        } label: {
+            if isPro {
+                aiChipLabel.popoverTip(aiProTip, arrowEdge: .top)
+            } else {
+                aiChipLabel.popoverTip(aiFreeUpsellTip, arrowEdge: .top)
+            }
+        }
+        .buttonStyle(.plain)
+        .contentShape(Capsule())
+    }
+
+    // MARK: - Comment Cards
 
     @ViewBuilder
-    private var projectionCommentCard: some View {
-        if isPro && !aiInsightsConsent {
-            // Pro without consent → activation button
-            Button {
-                showInsightsConsentAlert = true
-            } label: {
-                HStack(spacing: DS.Spacing.sm) {
-                    Image(systemName: "sparkles")
-                    Text(L10n.CashFlowPlan.enableAIObservations)
-                }
-                .font(DS.Typography.label)
-                .fontWeight(.semibold)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, DS.Spacing.md)
-                .background(theme.accent, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
-            }
-            .buttonStyle(.plain)
-        } else if isAIEnabled && viewModel.isLoadingComment {
-            // AI loading
+    private func aiOrRuleComment(isLoading: Bool, aiComment: String?, ruleComment: String) -> some View {
+        if isAIEnabled && isLoading {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "sparkles")
                     .foregroundStyle(theme.accent)
@@ -433,8 +523,7 @@ struct CashFlowChartsSheet: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(DS.Spacing.md)
             .solidCard()
-        } else if isAIEnabled, let comment = viewModel.cashFlowComment {
-            // AI comment
+        } else if isAIEnabled, let comment = aiComment {
             HStack(alignment: .top, spacing: DS.Spacing.sm) {
                 Image(systemName: "sparkles")
                     .foregroundStyle(theme.accent)
@@ -447,8 +536,16 @@ struct CashFlowChartsSheet: View {
             .padding(DS.Spacing.md)
             .solidCard()
         } else {
-            ruleCommentCard(cachedRuleComment)
+            ruleCommentCard(ruleComment)
         }
+    }
+
+    private var projectionCommentCard: some View {
+        aiOrRuleComment(
+            isLoading: viewModel.isLoadingComment,
+            aiComment: viewModel.cashFlowComment,
+            ruleComment: cachedCombinedComment
+        )
     }
 
     // MARK: - 2. Where You Exceed the Plan
@@ -480,7 +577,8 @@ struct CashFlowChartsSheet: View {
                                     .clipShape(Circle())
 
                                 GeometryReader { geo in
-                                    let barAreaWidth = geo.size.width * 0.55
+                                    let barWidthRatio: CGFloat = 0.55
+                                    let barAreaWidth = geo.size.width * barWidthRatio
                                     let totalBarWidth = max(4, barAreaWidth * (item.total / maxTotal))
                                     let planLineX = barAreaWidth * (item.plannedAmount / maxTotal)
 
@@ -520,72 +618,83 @@ struct CashFlowChartsSheet: View {
         }
     }
 
-    // MARK: - Deviation Comment Card
-
-    @ViewBuilder
     private var deviationCommentCard: some View {
-        ruleCommentCard(cachedDeviationRuleComment)
+        aiOrRuleComment(
+            isLoading: viewModel.isLoadingDeviationComment,
+            aiComment: viewModel.deviationComment,
+            ruleComment: cachedDeviationRuleComment
+        )
     }
 
-    // MARK: - 3. Monthly Savings (Pro) — CashFlowWidget bar style
+    // MARK: - 3. Monthly Savings (Pro) — actual vs planned
 
     private var savingsChart: some View {
-        chartCard(
+        let pastSavings = cachedSavings.filter(\.isPast)
+        let avgSavings = pastSavings.isEmpty ? 0.0
+            : pastSavings.map(\.actual).reduce(0, +) / Double(pastSavings.count)
+
+        return chartCard(
             title: L10n.CashFlowPlan.chartSavings,
-            kpiValue: cachedPastMonths.last.map { YalaFormatter.currency(value: $0.netFlow, currencyCode: currencyCode) }
+            subtitle: L10n.CashFlowPlan.chartSavingsSubtitle,
+            kpiValue: pastSavings.count >= 2
+                ? YalaFormatter.currency(value: avgSavings, currencyCode: currencyCode)
+                : nil
         ) {
-            if cachedPastMonths.count < 2 {
+            if cachedSavings.count < 2 {
                 needMoreDataView
             } else {
-                let showLabels = cachedPastMonths.count <= 10
+                let showLabels = cachedSavings.count <= 10
+
                 Chart {
-                    ForEach(cachedPastMonths, id: \.monthKey) { month in
-                        BarMark(
-                            x: .value("Month", month.date, unit: .month),
-                            y: .value("Net", month.netFlow)
-                        )
-                        .foregroundStyle(
-                            month.netFlow >= 0
-                                ? Color.incomeGraph.gradient
-                                : Color.expenseGraph.gradient
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+                    ForEach(cachedSavings, id: \.monthKey) { point in
+                        if point.isPast {
+                            // Past: actual savings bar (teal/hotPink)
+                            BarMark(
+                                x: .value("Month", point.date, unit: .month),
+                                y: .value("Net", point.actual)
+                            )
+                            .foregroundStyle(
+                                point.actual >= 0
+                                    ? Color.incomeGraph.gradient
+                                    : Color.expenseGraph.gradient
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+
+                            // Plan reference tick
+                            RuleMark(
+                                xStart: .value("Start", point.date, unit: .month),
+                                xEnd: .value("End", point.date, unit: .month),
+                                y: .value("Plan", point.planned)
+                            )
+                            .lineStyle(StrokeStyle(lineWidth: 2, dash: [3, 2]))
+                            .foregroundStyle(.thPrimaryText.opacity(0.5))
+                        } else {
+                            // Future: planned savings bar (grey)
+                            BarMark(
+                                x: .value("Month", point.date, unit: .month),
+                                y: .value("Net", point.planned)
+                            )
+                            .foregroundStyle(Color.gray.opacity(0.3).gradient)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+                        }
 
                         // Data labels
                         if showLabels {
+                            let displayValue = point.isPast ? point.actual : point.planned
                             PointMark(
-                                x: .value("Month", month.date, unit: .month),
-                                y: .value("Net", month.netFlow)
+                                x: .value("Month", point.date, unit: .month),
+                                y: .value("Net", displayValue)
                             )
                             .symbolSize(0)
                             .annotation(
-                                position: month.netFlow >= 0 ? .top : .bottom,
+                                position: displayValue >= 0 ? .top : .bottom,
                                 spacing: DS.Spacing.xs
                             ) {
-                                Text(YalaFormatter.axisK(month.netFlow))
+                                Text(YalaFormatter.axisK(displayValue))
                                     .font(DS.Typography.labelTiny)
                                     .foregroundStyle(.thSecondaryText)
                             }
                         }
-                    }
-
-                    // Rolling average line
-                    ForEach(cachedRollingAvg, id: \.monthKey) { point in
-                        let centeredDate = SmartAxisHelper.centerInCalendarUnit(point.date, unit: .month)
-                        LineMark(
-                            x: .value("Month", centeredDate),
-                            y: .value("Avg", point.value)
-                        )
-                        .foregroundStyle(primaryLineColor)
-                        .lineStyle(StrokeStyle(lineWidth: 2))
-                        .interpolationMethod(.monotone)
-
-                        PointMark(
-                            x: .value("Month", centeredDate),
-                            y: .value("Avg", point.value)
-                        )
-                        .foregroundStyle(primaryLineColor)
-                        .symbolSize(20)
                     }
 
                     // Zero baseline
@@ -594,7 +703,20 @@ struct CashFlowChartsSheet: View {
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
                 }
                 .chartYAxis { barYAxisContent }
-                .chartXAxis { barXAxisContent }
+                .chartXAxis {
+                    AxisMarks(values: savingsAxisLabelDates) { value in
+                        AxisGridLine()
+                            .foregroundStyle(.thSecondaryText.opacity(0.1))
+
+                        if let date = value.as(Date.self) {
+                            AxisValueLabel {
+                                Text(date.formatted(.dateTime.month(.abbreviated)).lowercased().replacing(".", with: ""))
+                                    .font(DS.Typography.labelTiny)
+                                    .foregroundStyle(.thSecondaryText)
+                            }
+                        }
+                    }
+                }
                 .frame(height: 180)
             }
         }
@@ -704,30 +826,6 @@ struct CashFlowChartsSheet: View {
         }
     }
 
-    // MARK: - Pro Gate
-
-    @ViewBuilder
-    private func proChartSection<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        if isPro {
-            content()
-        } else {
-            ZStack {
-                content()
-                    .blur(radius: 6)
-                    .allowsHitTesting(false)
-
-                VStack(spacing: DS.Spacing.md) {
-                    Image(systemName: "lock.fill")
-                        .font(DS.Typography.title)
-                        .foregroundStyle(.secondary)
-                    Text(L10n.FeatureGate.upgradeToPro)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-    }
-
     // MARK: - Cached Data Builders
 
     private struct DeviationItem {
@@ -739,12 +837,6 @@ struct CashFlowChartsSheet: View {
         let colorHex: String
 
         var total: Double { plannedAmount + deviation }
-    }
-
-    private struct RollingPoint {
-        let monthKey: String
-        let date: Date
-        let value: Double
     }
 
     private static func buildDeviations(
@@ -784,16 +876,11 @@ struct CashFlowChartsSheet: View {
             .sorted { $0.deviation > $1.deviation }
     }
 
-    private static func buildRollingAverage(from pastMonths: [CashFlowMonth]) -> [RollingPoint] {
-        guard pastMonths.count >= 2 else { return [] }
-
-        var result: [RollingPoint] = []
-        for i in 0..<pastMonths.count {
-            let windowStart = max(0, i - 2)
-            let window = pastMonths[windowStart...i]
-            let avg = window.map(\.netFlow).reduce(0, +) / Double(window.count)
-            result.append(RollingPoint(monthKey: pastMonths[i].monthKey, date: pastMonths[i].date, value: avg))
-        }
-        return result
+    private struct SavingsPoint {
+        let monthKey: String
+        let date: Date
+        let actual: Double
+        let planned: Double
+        let isPast: Bool
     }
 }

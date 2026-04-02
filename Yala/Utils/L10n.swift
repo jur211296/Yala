@@ -317,6 +317,7 @@ enum L10n {
 
         // Charts
         static var chartsTitle: String { ls("cashFlowPlan.chartsTitle", comment: "") }
+        static var chartsSectionTitle: String { ls("cashFlowPlan.chartsSectionTitle", comment: "") }
         static var accumulatedBalance: String { ls("cashFlowPlan.accumulatedBalance", comment: "") }
         static var incomeVsExpense: String { ls("cashFlowPlan.incomeVsExpense", comment: "") }
         static var composition: String { ls("cashFlowPlan.composition", comment: "") }
@@ -395,6 +396,17 @@ enum L10n {
         }
         static func deviationCommentMultiple(_ name: String, _ amount: String, _ total: String) -> String {
             String(format: ls("cashFlowPlan.deviationCommentMultiple", comment: ""), name, amount, total)
+        }
+        static var chartSavingsSubtitle: String { ls("cashFlowPlan.chartSavingsSubtitle", comment: "") }
+        static var chartPlanned: String { ls("cashFlowPlan.chartPlanned", comment: "") }
+        static func commentSavingsBelow(_ diff: String) -> String {
+            String(format: ls("cashFlowPlan.commentSavingsBelow", comment: ""), diff)
+        }
+        static func commentSavingsAbove(_ diff: String, _ balance: String) -> String {
+            String(format: ls("cashFlowPlan.commentSavingsAbove", comment: ""), diff, balance)
+        }
+        static func commentHealthyWithSavings(_ avg: String, _ balance: String) -> String {
+            String(format: ls("cashFlowPlan.commentHealthyWithSavings", comment: ""), avg, balance)
         }
     }
 
@@ -4106,6 +4118,11 @@ enum L10n {
         static var interactiveWidgetsMessage: String { ls("tipkit.interactiveWidgets.message", comment: "") }
         static var comparison: String { ls("tipkit.comparison.title", comment: "") }
         static var comparisonMessage: String { ls("tipkit.comparison.message", comment: "") }
+        // AI Charts tips
+        static var aiChartsPro: String { ls("tipkit.aiCharts.pro.title", comment: "") }
+        static var aiChartsProMessage: String { ls("tipkit.aiCharts.pro.message", comment: "") }
+        static var aiChartsFree: String { ls("tipkit.aiCharts.free.title", comment: "") }
+        static var aiChartsFreeMessage: String { ls("tipkit.aiCharts.free.message", comment: "") }
         // Grupo D: Settings
         static var settingsAccounts: String { ls("tipkit.settings.accounts.title", comment: "") }
         static var settingsAccountsMessage: String { ls("tipkit.settings.accounts.message", comment: "") }

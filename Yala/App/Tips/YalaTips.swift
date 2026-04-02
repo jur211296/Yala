@@ -293,3 +293,27 @@ struct ComparisonTip: Tip {
         [#Rule(Self.$hasVisitedStatistics) { $0 == true }]
     }
 }
+
+struct AIChartsProTip: Tip {
+    @Parameter
+    static var hasSeenCharts: Bool = false
+
+    var title: Text { Text(L10n.TipKit.aiChartsPro) }
+    var message: Text? { Text(L10n.TipKit.aiChartsProMessage) }
+
+    var rules: [Rule] {
+        [#Rule(Self.$hasSeenCharts) { $0 == true }]
+    }
+}
+
+struct AIChartsFreeUpsellTip: Tip {
+    @Parameter
+    static var hasSeenCharts: Bool = false
+
+    var title: Text { Text(L10n.TipKit.aiChartsFree) }
+    var message: Text? { Text(L10n.TipKit.aiChartsFreeMessage) }
+
+    var rules: [Rule] {
+        [#Rule(Self.$hasSeenCharts) { $0 == true }]
+    }
+}

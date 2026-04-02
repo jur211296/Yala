@@ -758,6 +758,7 @@
 "cashFlowPlan.deleteLineConfirmation" = "Delete this line from your plan? This action cannot be undone.";
 "cashFlowPlan.suggestPayment" = "New payment: %@. Add to plan?";
 "cashFlowPlan.chartsTitle" = "Charts";
+"cashFlowPlan.chartsSectionTitle" = "Your cash flow";
 "cashFlowPlan.accumulatedBalance" = "Accumulated balance";
 "cashFlowPlan.incomeVsExpense" = "Income vs Expense";
 "cashFlowPlan.composition" = "Expense composition";
@@ -847,6 +848,11 @@
 "cashFlowPlan.chartAllWithinPlan" = "All your expense lines are within the plan";
 "cashFlowPlan.deviationCommentSingle" = "In %@ you spent %@ more than planned";
 "cashFlowPlan.deviationCommentMultiple" = "%@ is where you went over the most, by %@ extra — you spent %@ over plan in total";
+"cashFlowPlan.chartSavingsSubtitle" = "How much you save each month vs your plan";
+"cashFlowPlan.chartPlanned" = "Planned";
+"cashFlowPlan.commentSavingsBelow" = "You're saving %@ less per month than planned — can you trim any expense?";
+"cashFlowPlan.commentSavingsAbove" = "You're %@ above your monthly savings plan — your balance would reach %@";
+"cashFlowPlan.commentHealthyWithSavings" = "Your plan looks good — you save about %@/month and would end with %@";
 
 "common.unknownError" = "Something went wrong";
 "common.saveError" = "Changes weren't saved. Try again.";
@@ -2146,6 +2152,10 @@
 "tipkit.pro.fab.message" = "Tap here to record by voice, image, or manually. Now you have all three options.";
 "tipkit.pro.aiSummary.title" = "Your AI summary";
 "tipkit.pro.aiSummary.message" = "Generate a smart summary of your finances with one tap. Useful observations, instantly.";
+"tipkit.aiCharts.pro.title" = "AI observations";
+"tipkit.aiCharts.pro.message" = "Tap here to get smart observations about your cash flow.";
+"tipkit.aiCharts.free.title" = "Smart observations";
+"tipkit.aiCharts.free.message" = "Go Pro to get AI-powered insights about your finances.";
 
 // MARK: - FAQ
 "faq.subtitle" = "Answers to the most common questions";

@@ -758,6 +758,7 @@
 "cashFlowPlan.deleteLineConfirmation" = "¿Eliminar esta línea de tu plan? Esta acción no se puede deshacer.";
 "cashFlowPlan.suggestPayment" = "Nuevo pago: %@. ¿Agregar al plan?";
 "cashFlowPlan.chartsTitle" = "Gráficas";
+"cashFlowPlan.chartsSectionTitle" = "Tu flujo de caja";
 "cashFlowPlan.accumulatedBalance" = "Saldo acumulado";
 "cashFlowPlan.incomeVsExpense" = "Ingreso vs Gasto";
 "cashFlowPlan.composition" = "Composición de gastos";
@@ -847,6 +848,11 @@
 "cashFlowPlan.chartAllWithinPlan" = "Todas tus líneas de gasto están dentro del plan";
 "cashFlowPlan.deviationCommentSingle" = "En %@ gastaste %@ más de lo planeado";
 "cashFlowPlan.deviationCommentMultiple" = "%@ es donde más te pasaste del plan, con %@ extra — en total gastaste %@ de más entre todas";
+"cashFlowPlan.chartSavingsSubtitle" = "Cuánto guardas cada mes vs tu plan";
+"cashFlowPlan.chartPlanned" = "Planeado";
+"cashFlowPlan.commentSavingsBelow" = "Vas ahorrando %@ menos al mes de lo planeado — ¿puedes recortar algún gasto?";
+"cashFlowPlan.commentSavingsAbove" = "Vas %@ por encima de tu plan de ahorro — tu saldo llegaría a %@";
+"cashFlowPlan.commentHealthyWithSavings" = "Tu plan se ve bien — ahorras unos %@/mes y terminarías con %@";
 
 "common.unknownError" = "Algo salió mal";
 "common.saveError" = "Los cambios no se guardaron. Intenta de nuevo.";
@@ -2144,6 +2150,10 @@
 "tipkit.pro.fab.message" = "Toca aquí para registrar por voz, imagen o de forma manual. Ahora tienes las tres opciones.";
 "tipkit.pro.aiSummary.title" = "Tu resumen con IA";
 "tipkit.pro.aiSummary.message" = "Genera un resumen inteligente de tus finanzas con un toque. Observaciones útiles, al instante.";
+"tipkit.aiCharts.pro.title" = "Observaciones con IA";
+"tipkit.aiCharts.pro.message" = "Toca aquí para obtener observaciones inteligentes sobre tu flujo de caja.";
+"tipkit.aiCharts.free.title" = "Observaciones inteligentes";
+"tipkit.aiCharts.free.message" = "Hazte Pro para obtener análisis con IA sobre tus finanzas.";
 
 // MARK: - Tutorials
 "tutorials.subtitle" = "Aprende a sacarle el máximo provecho a Yala";

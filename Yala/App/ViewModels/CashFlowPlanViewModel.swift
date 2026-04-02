@@ -43,6 +43,11 @@ final class CashFlowPlanViewModel {
     private var lastCommentProjectionHash: Int = 0
     private var lastCommentWasAI: Bool = false
 
+    // Deviation comment state
+    private(set) var deviationComment: String?
+    private(set) var isLoadingDeviationComment: Bool = false
+    private var lastDeviationKey: String = ""
+
     // UI state
     var selectedLine: CashFlowLine?
     var showLineConfig: Bool = false
@@ -552,6 +557,29 @@ final class CashFlowPlanViewModel {
         lastCommentProjectionHash = hash
     }
 
+    func loadDeviationComment(
+        deviations: [(name: String, planned: Double, actual: Double, excess: Double)],
+        currencyCode: String
+    ) async {
+        let key = deviations.map(\.name).joined(separator: ",")
+        guard !deviations.isEmpty, key != lastDeviationKey || deviationComment == nil else { return }
+
+        isLoadingDeviationComment = true
+        do {
+            deviationComment = try await InsightsLLMService.shared.generateDeviationInsight(
+                deviations: deviations,
+                currencyCode: currencyCode
+            )
+        } catch {
+            #if DEBUG
+            print("CashFlowPlanViewModel: Deviation LLM error: \(error)")
+            #endif
+            deviationComment = nil
+        }
+        isLoadingDeviationComment = false
+        lastDeviationKey = key
+    }
+
     static func generateRuleBasedComment(_ projection: CashFlowProjection, currencyCode: String) -> String {
         let months = projection.months
         guard !months.isEmpty else { return "" }
@@ -598,5 +626,60 @@ final class CashFlowPlanViewModel {
         let totalExcess = deviations.reduce(0.0) { $0 + $1.amount }
         let totalFormatted = YalaFormatter.currency(value: totalExcess, currencyCode: currencyCode)
         return L10n.CashFlowPlan.deviationCommentMultiple(top.name, topFormatted, totalFormatted)
+    }
+
+    static func generateCombinedComment(
+        _ projection: CashFlowProjection,
+        savings: [(actual: Double, planned: Double)],
+        currencyCode: String
+    ) -> String {
+        let months = projection.months
+        guard !months.isEmpty else { return "" }
+
+        let negativeMonths = months.filter { $0.accumulatedBalance < 0 }
+        let currentMonth = months.first(where: { $0.isCurrent })
+        let hasSavings = !savings.isEmpty
+        let avgActual = hasSavings ? savings.map(\.actual).reduce(0, +) / Double(savings.count) : 0
+        let avgPlanned = hasSavings ? savings.map(\.planned).reduce(0, +) / Double(savings.count) : 0
+
+        // 1. Balance goes negative
+        if let firstNegative = negativeMonths.first {
+            let monthName = firstNegative.date.formatted(.dateTime.month(.wide)).lowercased()
+            return L10n.CashFlowPlan.commentNegative(monthName)
+        }
+
+        // 2. Actual savings consistently below plan
+        if hasSavings, avgPlanned > 0, avgActual < avgPlanned * 0.8 {
+            let diff = YalaFormatter.currency(value: avgPlanned - avgActual, currencyCode: currencyCode)
+            return L10n.CashFlowPlan.commentSavingsBelow(diff)
+        }
+
+        // 3. Current month tight (net < 10% of income)
+        if let current = currentMonth, current.totalIncome > 0,
+           current.netFlow < current.totalIncome * 0.1 {
+            let margin = YalaFormatter.currency(value: current.netFlow, currencyCode: currencyCode)
+            return L10n.CashFlowPlan.commentTight(margin)
+        }
+
+        // 4. Actual savings beat plan
+        if hasSavings, avgActual >= avgPlanned, avgPlanned > 0, let lastMonth = months.last {
+            let diff = YalaFormatter.currency(value: avgActual - avgPlanned, currencyCode: currencyCode)
+            let endBalance = YalaFormatter.currency(value: lastMonth.accumulatedBalance, currencyCode: currencyCode)
+            return L10n.CashFlowPlan.commentSavingsAbove(diff, endBalance)
+        }
+
+        // 5. Healthy plan
+        if negativeMonths.isEmpty, let lastMonth = months.last {
+            if hasSavings {
+                let avgFormatted = YalaFormatter.currency(value: avgActual, currencyCode: currencyCode)
+                let endBalance = YalaFormatter.currency(value: lastMonth.accumulatedBalance, currencyCode: currencyCode)
+                return L10n.CashFlowPlan.commentHealthyWithSavings(avgFormatted, endBalance)
+            }
+            let endBalance = YalaFormatter.currency(value: lastMonth.accumulatedBalance, currencyCode: currencyCode)
+            return L10n.CashFlowPlan.commentHealthy(endBalance)
+        }
+
+        // 6. Default
+        return L10n.CashFlowPlan.commentDefault(months.count)
     }
 }

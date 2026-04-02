@@ -756,6 +756,7 @@
 "cashFlowPlan.deleteLineConfirmation" = "Excluir esta linha do seu plano? Esta ação não pode ser desfeita.";
 "cashFlowPlan.suggestPayment" = "Novo pagamento: %@. Adicionar ao plano?";
 "cashFlowPlan.chartsTitle" = "Gráficos";
+"cashFlowPlan.chartsSectionTitle" = "Teu fluxo de caixa";
 "cashFlowPlan.accumulatedBalance" = "Saldo acumulado";
 "cashFlowPlan.incomeVsExpense" = "Receita vs Despesa";
 "cashFlowPlan.composition" = "Composição de despesas";
@@ -845,6 +846,11 @@
 "cashFlowPlan.chartAllWithinPlan" = "Todas as linhas de despesa estão dentro do plano";
 "cashFlowPlan.deviationCommentSingle" = "Em %@ gastaste %@ a mais do que o planeado";
 "cashFlowPlan.deviationCommentMultiple" = "%@ é onde mais ultrapassaste o plano, com %@ extra — no total gastaste %@ a mais entre todas";
+"cashFlowPlan.chartSavingsSubtitle" = "Quanto poupas por mês vs o teu plano";
+"cashFlowPlan.chartPlanned" = "Planeado";
+"cashFlowPlan.commentSavingsBelow" = "Estás a poupar %@ a menos por mês do que o planeado — consegues cortar alguma despesa?";
+"cashFlowPlan.commentSavingsAbove" = "Estás %@ acima do teu plano de poupança — o teu saldo chegaria a %@";
+"cashFlowPlan.commentHealthyWithSavings" = "O teu plano está bem — poupas cerca de %@/mês e terminarias com %@";
 
 "common.unknownError" = "Erro desconhecido";
 "common.saveError" = "Não foi possível salvar as alterações. Tente novamente.";
@@ -2140,6 +2146,10 @@
 "tipkit.pro.fab.message" = "Toque aqui para registrar por voz, imagem ou manualmente. Agora você tem as três opções.";
 "tipkit.pro.aiSummary.title" = "Seu resumo com IA";
 "tipkit.pro.aiSummary.message" = "Gere um resumo inteligente das suas finanças com um toque. Observações úteis, na hora.";
+"tipkit.aiCharts.pro.title" = "Observações com IA";
+"tipkit.aiCharts.pro.message" = "Toca aqui para obter observações inteligentes sobre o teu fluxo de caixa.";
+"tipkit.aiCharts.free.title" = "Observações inteligentes";
+"tipkit.aiCharts.free.message" = "Torna-te Pro para obter análises com IA sobre as tuas finanças.";
 
 // MARK: - FAQ
 "faq.subtitle" = "Respostas para as dúvidas mais comuns";
