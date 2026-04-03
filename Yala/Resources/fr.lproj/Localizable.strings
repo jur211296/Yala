@@ -3190,3 +3190,34 @@
 "guide.tagsSettings.message" = "Les étiquettes sont transversales : tu peux marquer n'importe quelle dépense comme 'fixe', 'partagée' ou ce dont tu as besoin. Une dépense peut avoir plusieurs étiquettes.";
 "guide.favoritesManage.title" = "Tes paiements les plus fréquents";
 "guide.favoritesManage.message" = "Enregistre ici tes dépenses fréquentes. Pour saisir, touche simplement le favori et tout se remplit automatiquement.";
+
+// MARK: - Chat Assistant
+"chat.title" = "Demande à Yala";
+"chat.inputPlaceholder" = "Écris ta question...";
+"chat.send" = "Envoyer";
+"chat.emptySubtitle" = "Explore tes finances avec des questions";
+"chat.errorTimeout" = "La réponse a pris trop de temps. Réessaie.";
+"chat.errorOffline" = "Tu as besoin d'une connexion pour utiliser l'assistant.";
+"chat.errorGeneric" = "Quelque chose s'est mal passé. Réessaie.";
+"chat.errorNoData" = "Aucune donnée trouvée pour cette requête. Peux-tu être plus précis ?";
+"chat.dailyLimitReached" = "Tu as utilisé tes questions pour aujourd'hui. Reviens demain !";
+"chat.questionsRemaining" = "Il te reste %d questions aujourd'hui";
+"chat.loading" = "Consultation...";
+"chat.questionTooLong" = "Ta question est trop longue. Essaie d'être plus concis.";
+"chat.suggestion.topMerchant" = "Où est-ce que je dépense le plus ?";
+"chat.suggestion.topMerchantWith" = "Combien ai-je dépensé chez %@ ?";
+"chat.suggestion.biggestCategory" = "Dans quoi ai-je le plus dépensé ce mois-ci ?";
+"chat.suggestion.activeBudget" = "Comment va mon budget %@ ?";
+"chat.suggestion.comparison" = "Ai-je dépensé plus ou moins que le mois dernier ?";
+"chat.suggestion.general" = "Comment ça va ce mois-ci ?";
+
+// MARK: - Chat Assistant Consent
+"aiConsent.chatTitle" = "Assistant financier";
+"aiConsent.chatMessage" = "Cette fonction envoie des données spécifiques à ta requête à OpenAI pour répondre à tes questions : noms de commerces, montants et dates des transactions pertinentes, et état des budgets associés.\n\nTon historique complet, tes notes personnelles et noms de comptes ne sont jamais partagés. OpenAI n'utilise pas ces données pour entraîner ses modèles.";
+"aiConsent.inlineHintChat" = "Les données de ta requête sont traitées par OpenAI. Elles ne sont pas stockées de façon permanente.";
+"aiConsent.inlineHintMultiple" = "Plusieurs fonctions IA utilisent OpenAI pour traiter tes données. Elles ne sont pas stockées de façon permanente.";
+
+// MARK: - Chat Assistant Feature Gate & Settings
+"featureGate.chatAssistant" = "Assistant de chat";
+"settings.chatAssistant" = "Demande à Yala";
+"subscription.feature.aiAssistant" = "Assistant financier IA";

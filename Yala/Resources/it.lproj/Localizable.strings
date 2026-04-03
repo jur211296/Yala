@@ -3191,3 +3191,34 @@
 "guide.tagsSettings.message" = "Le etichette sono trasversali: puoi contrassegnare qualsiasi spesa come 'fissa', 'condivisa' o quello che ti serve. Una spesa può avere più etichette.";
 "guide.favoritesManage.title" = "I tuoi pagamenti più frequenti";
 "guide.favoritesManage.message" = "Salva qui le spese frequenti. Per registrare, tocca il preferito e tutto si compila automaticamente.";
+
+// MARK: - Chat Assistant
+"chat.title" = "Chiedi a Yala";
+"chat.inputPlaceholder" = "Scrivi la tua domanda...";
+"chat.send" = "Invia";
+"chat.emptySubtitle" = "Esplora le tue finanze con domande";
+"chat.errorTimeout" = "La risposta ha impiegato troppo tempo. Riprova.";
+"chat.errorOffline" = "Hai bisogno di una connessione per usare l'assistente.";
+"chat.errorGeneric" = "Qualcosa è andato storto. Riprova.";
+"chat.errorNoData" = "Nessun dato trovato per quella ricerca. Puoi essere più specifico?";
+"chat.dailyLimitReached" = "Hai usato le tue domande per oggi. Torna domani!";
+"chat.questionsRemaining" = "Ti restano %d domande oggi";
+"chat.loading" = "Consultando...";
+"chat.questionTooLong" = "La tua domanda è troppo lunga. Prova a essere più conciso.";
+"chat.suggestion.topMerchant" = "Dove spendo di più?";
+"chat.suggestion.topMerchantWith" = "Quanto ho speso da %@?";
+"chat.suggestion.biggestCategory" = "In cosa ho speso di più questo mese?";
+"chat.suggestion.activeBudget" = "Come va il mio budget per %@?";
+"chat.suggestion.comparison" = "Ho speso di più o di meno rispetto al mese scorso?";
+"chat.suggestion.general" = "Come sto andando questo mese?";
+
+// MARK: - Chat Assistant Consent
+"aiConsent.chatTitle" = "Assistente finanziario";
+"aiConsent.chatMessage" = "Questa funzione invia dati specifici della tua richiesta a OpenAI per rispondere alle tue domande: nomi dei commercianti, importi e date delle transazioni rilevanti e stato dei budget correlati.\n\nLa tua cronologia completa, le note personali e i nomi dei conti non vengono mai condivisi. OpenAI non utilizza questi dati per addestrare i suoi modelli.";
+"aiConsent.inlineHintChat" = "I dati della tua richiesta vengono elaborati da OpenAI. Non vengono archiviati permanentemente.";
+"aiConsent.inlineHintMultiple" = "Diverse funzioni IA utilizzano OpenAI per elaborare i tuoi dati. Non vengono archiviati permanentemente.";
+
+// MARK: - Chat Assistant Feature Gate & Settings
+"featureGate.chatAssistant" = "Assistente di chat";
+"settings.chatAssistant" = "Chiedi a Yala";
+"subscription.feature.aiAssistant" = "Assistente finanziario IA";

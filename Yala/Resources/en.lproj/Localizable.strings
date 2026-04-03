@@ -3195,3 +3195,34 @@
 "guide.tagsSettings.message" = "Tags are cross-cutting: you can mark any expense as 'fixed', 'shared', or whatever you need. An expense can have multiple tags.";
 "guide.favoritesManage.title" = "Your most frequent payments";
 "guide.favoritesManage.message" = "Save your frequent expenses here. When recording, just tap the favorite and everything fills in automatically.";
+
+// MARK: - Chat Assistant
+"chat.title" = "Ask Yala";
+"chat.inputPlaceholder" = "Type your question...";
+"chat.send" = "Send";
+"chat.emptySubtitle" = "Explore your finances with questions";
+"chat.errorTimeout" = "Response took too long. Try again.";
+"chat.errorOffline" = "You need an internet connection to use the assistant.";
+"chat.errorGeneric" = "Something went wrong. Try again.";
+"chat.errorNoData" = "No data found for that query. Can you be more specific?";
+"chat.dailyLimitReached" = "You've used your questions for today. Come back tomorrow!";
+"chat.questionsRemaining" = "You have %d questions left today";
+"chat.loading" = "Thinking...";
+"chat.questionTooLong" = "Your question is too long. Try to be more concise.";
+"chat.suggestion.topMerchant" = "Where do I spend most?";
+"chat.suggestion.topMerchantWith" = "How much have I spent at %@?";
+"chat.suggestion.biggestCategory" = "What did I spend most on this month?";
+"chat.suggestion.activeBudget" = "How is my %@ budget doing?";
+"chat.suggestion.comparison" = "Did I spend more or less than last month?";
+"chat.suggestion.general" = "How am I doing this month?";
+
+// MARK: - Chat Assistant Consent
+"aiConsent.chatTitle" = "Financial assistant";
+"aiConsent.chatMessage" = "This feature sends data specific to your query to OpenAI to answer your questions: merchant names, amounts and dates of relevant transactions, and related budget status.\n\nYour full history, personal notes, and account names are never shared. OpenAI does not use this data to train its models.";
+"aiConsent.inlineHintChat" = "Your query data is processed by OpenAI. It is not stored permanently.";
+"aiConsent.inlineHintMultiple" = "Multiple AI features use OpenAI to process your data. It is not stored permanently.";
+
+// MARK: - Chat Assistant Feature Gate & Settings
+"featureGate.chatAssistant" = "Chat assistant";
+"settings.chatAssistant" = "Ask Yala";
+"subscription.feature.aiAssistant" = "AI financial assistant";

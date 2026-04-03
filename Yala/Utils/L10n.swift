@@ -860,6 +860,42 @@ enum L10n {
         static var inlineHintProcessing: String { ls("aiConsent.inlineHintProcessing", comment: "") }
         static var inlineHintInsights: String { ls("aiConsent.inlineHintInsights", comment: "") }
         static var inlineHintBoth: String { ls("aiConsent.inlineHintBoth", comment: "") }
+        static var chatTitle: String { ls("aiConsent.chatTitle", comment: "") }
+        static var chatMessage: String { ls("aiConsent.chatMessage", comment: "") }
+        static var inlineHintChat: String { ls("aiConsent.inlineHintChat", comment: "") }
+        static var inlineHintMultiple: String { ls("aiConsent.inlineHintMultiple", comment: "") }
+    }
+
+    // MARK: - Chat Assistant
+
+    enum Chat {
+        static var title: String { ls("chat.title", comment: "") }
+        static var inputPlaceholder: String { ls("chat.inputPlaceholder", comment: "") }
+        static var send: String { ls("chat.send", comment: "") }
+        static var emptySubtitle: String { ls("chat.emptySubtitle", comment: "") }
+        static var errorTimeout: String { ls("chat.errorTimeout", comment: "") }
+        static var errorOffline: String { ls("chat.errorOffline", comment: "") }
+        static var errorGeneric: String { ls("chat.errorGeneric", comment: "") }
+        static var errorNoData: String { ls("chat.errorNoData", comment: "") }
+        static var dailyLimitReached: String { ls("chat.dailyLimitReached", comment: "") }
+        static func questionsRemaining(_ count: Int) -> String {
+            String(format: ls("chat.questionsRemaining", comment: ""), count)
+        }
+        static var loading: String { ls("chat.loading", comment: "") }
+        static var questionTooLong: String { ls("chat.questionTooLong", comment: "") }
+
+        enum Suggestion {
+            static var topMerchant: String { ls("chat.suggestion.topMerchant", comment: "") }
+            static func topMerchantWith(_ name: String) -> String {
+                String(format: ls("chat.suggestion.topMerchantWith", comment: ""), name)
+            }
+            static var biggestCategory: String { ls("chat.suggestion.biggestCategory", comment: "") }
+            static func activeBudget(_ name: String) -> String {
+                String(format: ls("chat.suggestion.activeBudget", comment: ""), name)
+            }
+            static var comparison: String { ls("chat.suggestion.comparison", comment: "") }
+            static var general: String { ls("chat.suggestion.general", comment: "") }
+        }
     }
 
     // MARK: - Accessibility
@@ -2118,6 +2154,7 @@ enum L10n {
         static var organization: String { ls("settings.organization", comment: "") }
         static var preferences: String { ls("settings.preferences", comment: "") }
         static var aiFeatures: String { ls("settings.aiFeatures", comment: "") }
+        static var chatAssistant: String { ls("settings.chatAssistant", comment: "") }
         static var data: String { ls("settings.data", comment: "") }
         static var security: String { ls("settings.security", comment: "") }
         static var help: String { ls("settings.help", comment: "") }
@@ -3548,6 +3585,7 @@ enum L10n {
         static var featureCurrencies: String { ls("subscription.feature.currencies", comment: "") }
         static var featureThemes: String { ls("subscription.feature.themes", comment: "") }
         static var featureExport: String { ls("subscription.feature.export", comment: "") }
+        static var featureAIAssistant: String { ls("subscription.feature.aiAssistant", comment: "") }
         static var legalFooter: String { ls("subscription.legalFooter", comment: "") }
         static var termsOfUseLink: String { ls("subscription.termsOfUseLink", comment: "") }
         static var privacyPolicyLink: String { ls("subscription.privacyPolicyLink", comment: "") }

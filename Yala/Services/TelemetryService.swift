@@ -36,6 +36,12 @@ enum AnalyticsEvent: String {
     case proTourPhaseCompleted
     case proTourCompleted
     case proTourSkipped
+    case chatSheetOpened
+    case chatSheetDismissed
+    case chatQuestionAsked
+    case chatSuggestionTapped
+    case chatErrorOccurred
+    case chatDailyLimitReached
 }
 
 // MARK: - Telemetry Service

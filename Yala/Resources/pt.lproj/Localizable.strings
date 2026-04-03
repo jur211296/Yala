@@ -3189,3 +3189,34 @@
 "guide.tagsSettings.message" = "As tags são transversais: você pode marcar qualquer gasto como 'fixo', 'compartilhado' ou o que precisar. Um gasto pode ter várias tags.";
 "guide.favoritesManage.title" = "Seus pagamentos mais frequentes";
 "guide.favoritesManage.message" = "Salve aqui seus gastos frequentes. Ao registrar, toque no favorito e tudo se preenche automaticamente.";
+
+// MARK: - Chat Assistant
+"chat.title" = "Pergunte ao Yala";
+"chat.inputPlaceholder" = "Escreva sua pergunta...";
+"chat.send" = "Enviar";
+"chat.emptySubtitle" = "Explore suas finanças com perguntas";
+"chat.errorTimeout" = "A resposta demorou demais. Tente novamente.";
+"chat.errorOffline" = "Você precisa de conexão para usar o assistente.";
+"chat.errorGeneric" = "Algo deu errado. Tente novamente.";
+"chat.errorNoData" = "Nenhum dado encontrado para essa consulta. Pode ser mais específico?";
+"chat.dailyLimitReached" = "Você usou suas perguntas de hoje. Volte amanhã!";
+"chat.questionsRemaining" = "Você tem %d perguntas restantes hoje";
+"chat.loading" = "Consultando...";
+"chat.questionTooLong" = "Sua pergunta é muito longa. Tente ser mais conciso.";
+"chat.suggestion.topMerchant" = "Onde eu gasto mais?";
+"chat.suggestion.topMerchantWith" = "Quanto gastei no %@?";
+"chat.suggestion.biggestCategory" = "No que mais gastei este mês?";
+"chat.suggestion.activeBudget" = "Como está meu orçamento de %@?";
+"chat.suggestion.comparison" = "Gastei mais ou menos que o mês passado?";
+"chat.suggestion.general" = "Como estou indo este mês?";
+
+// MARK: - Chat Assistant Consent
+"aiConsent.chatTitle" = "Assistente financeiro";
+"aiConsent.chatMessage" = "Esta função envia dados específicos da sua consulta ao OpenAI para responder suas perguntas: nomes de comerciantes, valores e datas das transações relevantes, e status dos orçamentos relacionados.\n\nSeu histórico completo, notas pessoais e nomes de contas nunca são compartilhados. O OpenAI não usa esses dados para treinar seus modelos.";
+"aiConsent.inlineHintChat" = "Os dados da sua consulta são processados pelo OpenAI. Não são armazenados permanentemente.";
+"aiConsent.inlineHintMultiple" = "Várias funções de IA usam o OpenAI para processar seus dados. Não são armazenados permanentemente.";
+
+// MARK: - Chat Assistant Feature Gate & Settings
+"featureGate.chatAssistant" = "Assistente de chat";
+"settings.chatAssistant" = "Pergunte ao Yala";
+"subscription.feature.aiAssistant" = "Assistente financeiro com IA";

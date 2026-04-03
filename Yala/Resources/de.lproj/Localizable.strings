@@ -3189,3 +3189,34 @@
 "guide.tagsSettings.message" = "Tags sind übergreifend: Du kannst jede Ausgabe als 'fix', 'geteilt' oder was du brauchst markieren. Eine Ausgabe kann mehrere Tags haben.";
 "guide.favoritesManage.title" = "Deine häufigsten Zahlungen";
 "guide.favoritesManage.message" = "Speichere hier deine häufigen Ausgaben. Beim Erfassen tippst du einfach auf den Favoriten und alles wird automatisch ausgefüllt.";
+
+// MARK: - Chat Assistant
+"chat.title" = "Frag Yala";
+"chat.inputPlaceholder" = "Schreib deine Frage...";
+"chat.send" = "Senden";
+"chat.emptySubtitle" = "Erkunde deine Finanzen mit Fragen";
+"chat.errorTimeout" = "Die Antwort hat zu lange gedauert. Versuch es nochmal.";
+"chat.errorOffline" = "Du brauchst eine Internetverbindung, um den Assistenten zu nutzen.";
+"chat.errorGeneric" = "Etwas ist schiefgelaufen. Versuch es nochmal.";
+"chat.errorNoData" = "Keine Daten für diese Abfrage gefunden. Kannst du genauer sein?";
+"chat.dailyLimitReached" = "Du hast deine Fragen für heute aufgebraucht. Komm morgen wieder!";
+"chat.questionsRemaining" = "Du hast noch %d Fragen heute";
+"chat.loading" = "Wird abgefragt...";
+"chat.questionTooLong" = "Deine Frage ist zu lang. Versuch es kürzer.";
+"chat.suggestion.topMerchant" = "Wo gebe ich am meisten aus?";
+"chat.suggestion.topMerchantWith" = "Wie viel habe ich bei %@ ausgegeben?";
+"chat.suggestion.biggestCategory" = "Wofür habe ich diesen Monat am meisten ausgegeben?";
+"chat.suggestion.activeBudget" = "Wie steht mein Budget für %@?";
+"chat.suggestion.comparison" = "Habe ich mehr oder weniger als letzten Monat ausgegeben?";
+"chat.suggestion.general" = "Wie läuft es diesen Monat?";
+
+// MARK: - Chat Assistant Consent
+"aiConsent.chatTitle" = "Finanzassistent";
+"aiConsent.chatMessage" = "Diese Funktion sendet abfragespezifische Daten an OpenAI, um deine Fragen zu beantworten: Händlernamen, Beträge und Daten relevanter Transaktionen sowie den Status zugehöriger Budgets.\n\nDein vollständiger Verlauf, persönliche Notizen und Kontonamen werden nie geteilt. OpenAI verwendet diese Daten nicht zum Trainieren seiner Modelle.";
+"aiConsent.inlineHintChat" = "Deine Abfragedaten werden von OpenAI verarbeitet. Sie werden nicht dauerhaft gespeichert.";
+"aiConsent.inlineHintMultiple" = "Mehrere KI-Funktionen nutzen OpenAI zur Datenverarbeitung. Daten werden nicht dauerhaft gespeichert.";
+
+// MARK: - Chat Assistant Feature Gate & Settings
+"featureGate.chatAssistant" = "Chat-Assistent";
+"settings.chatAssistant" = "Frag Yala";
+"subscription.feature.aiAssistant" = "KI-Finanzassistent";
