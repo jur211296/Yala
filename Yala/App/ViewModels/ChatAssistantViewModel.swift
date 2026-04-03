@@ -101,11 +101,6 @@ final class ChatAssistantViewModel {
                 ))
             }
 
-            // Comparison
-            result.append(ChatSuggestion(
-                text: L10n.Chat.Suggestion.comparison,
-                icon: "arrow.left.arrow.right", type: .comparison
-            ))
         } catch {
             #if DEBUG
             print("ChatAssistantViewModel: Error loading suggestions: \(error)")
@@ -114,12 +109,11 @@ final class ChatAssistantViewModel {
             result = [
                 ChatSuggestion(text: L10n.Chat.Suggestion.biggestCategory, icon: "chart.pie", type: .biggestCategory),
                 ChatSuggestion(text: L10n.Chat.Suggestion.general, icon: "chart.bar", type: .general),
-                ChatSuggestion(text: L10n.Chat.Suggestion.comparison, icon: "arrow.left.arrow.right", type: .comparison),
                 ChatSuggestion(text: L10n.Chat.Suggestion.topMerchant, icon: "storefront", type: .topMerchant)
             ]
         }
 
-        suggestions = Array(result.prefix(4))
+        suggestions = Array(result.prefix(3))
     }
 
     // MARK: - Send Question

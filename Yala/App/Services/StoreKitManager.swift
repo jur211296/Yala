@@ -269,8 +269,15 @@ final class StoreKitManager {
             subscriptionExpirationDate = nil
         }
 
+        // Force chat FAB visible when transitioning to Pro
+        let wasAlreadyPro = isProUser
+
         // Update Pro status
         isProUser = nowProUser
+
+        if nowProUser && !wasAlreadyPro {
+            UserDefaults.standard.set(true, forKey: "chatFABVisible")
+        }
 
         // Track for downgrade detection
         if isProUser {
@@ -416,6 +423,7 @@ final class StoreKitManager {
             UserDefaults.standard.removeObject(forKey: Self.devForceFreeTierKey)
             isProUser = true
             wasProUser = true
+            UserDefaults.standard.set(true, forKey: "chatFABVisible")
         } else {
             devForceFreeTier = true
             UserDefaults.standard.set(true, forKey: Self.devForceFreeTierKey)

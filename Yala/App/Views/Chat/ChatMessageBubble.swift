@@ -24,6 +24,12 @@ struct ChatMessageBubble: View {
                 .padding(.vertical, DS.Spacing.sm)
                 .background(message.role == .user ? AnyShapeStyle(theme.accent) : AnyShapeStyle(.thCard))
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                .overlay(
+                    message.role == .assistant
+                    ? RoundedRectangle(cornerRadius: DS.Radius.lg)
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                    : nil
+                )
 
             if message.role == .assistant { Spacer(minLength: DS.Spacing.xxl) }
         }

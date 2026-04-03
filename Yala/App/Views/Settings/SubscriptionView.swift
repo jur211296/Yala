@@ -255,11 +255,11 @@ struct SubscriptionView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.none) {
             featureRow(icon: "building.columns.fill", text: L10n.Subscription.featureUnlimitedAccounts, color: .blue)
             featureRow(icon: "chart.pie.fill", text: L10n.Subscription.featureUnlimitedBudgets, color: .purple)
+            featureRow(icon: "sparkles", text: L10n.Subscription.featureAIAssistant, color: .electricIndigo)
             featureRow(icon: "waveform.badge.mic", text: L10n.Subscription.featureVoice, color: .hotPink)
             featureRow(icon: "photo.on.rectangle", text: L10n.Subscription.featureImage, color: .teal)
             featureRow(icon: "paintpalette.fill", text: L10n.Subscription.featureThemes, color: .orange)
             featureRow(icon: "app.fill", text: L10n.Subscription.featurePremiumIcons, color: .pink)
-            featureRow(icon: "sparkles", text: L10n.Subscription.featureAIAssistant, color: .electricIndigo)
         }
         .padding(.vertical, DS.Spacing.sm)
         .background(.thCard)

@@ -100,6 +100,7 @@ struct PanelView: View {
     @State private var showChatConsentAlert = false
     @AppStorage("aiChatConsentAccepted") private var aiChatConsentAccepted: Bool = false
     @AppStorage("chatAssistantEnabled") private var chatAssistantEnabled: Bool = false
+    @AppStorage("chatFABVisible") private var chatFABVisible: Bool = true
 
     /// Coach mark: Panel tour (A1-A4)
     @AppStorage("hasSeenPanelTour") private var hasSeenPanelTour = false
@@ -601,6 +602,7 @@ struct PanelView: View {
                         isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
                         chatConsentAccepted: aiChatConsentAccepted,
                         chatEnabled: chatAssistantEnabled,
+                        chatFABVisible: chatFABVisible,
                         onVoiceTap: { showVoiceRecording = true },
                         onImageTap: { showImageSelection = true },
                         onManualTap: { showNewTransaction = true },

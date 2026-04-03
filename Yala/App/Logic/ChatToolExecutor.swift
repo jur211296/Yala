@@ -71,10 +71,7 @@ struct ChatToolExecutor {
 
         // Category filter (by name, case-insensitive — matches category OR subcategory)
         if let catName = params.category {
-            filtered = filtered.filter { tx in
-                tx.category?.name.localizedCaseInsensitiveContains(catName) == true ||
-                tx.subcategory?.name.localizedCaseInsensitiveContains(catName) == true
-            }
+            filtered = filtered.filter { matchesCategoryOrSubcategory($0, name: catName) }
         }
 
         // Currency filter
@@ -259,7 +256,8 @@ struct ChatToolExecutor {
         var filteredBudgets = budgets
         if let catName = params.category {
             filteredBudgets = budgets.filter {
-                $0.category?.name.localizedCaseInsensitiveContains(catName) == true
+                $0.category?.name.localizedCaseInsensitiveContains(catName) == true ||
+                $0.category?.subcategories?.contains(where: { $0.name.localizedCaseInsensitiveContains(catName) }) == true
             }
         }
 
@@ -313,10 +311,10 @@ struct ChatToolExecutor {
         var txA = allTx.filter { intervalA.contains($0.date) }
         var txB = allTx.filter { intervalB.contains($0.date) }
 
-        // Optional category/merchant filter
+        // Optional category/subcategory/merchant filter
         if let catName = params.category {
-            txA = txA.filter { $0.category?.name.localizedCaseInsensitiveContains(catName) == true }
-            txB = txB.filter { $0.category?.name.localizedCaseInsensitiveContains(catName) == true }
+            txA = txA.filter { matchesCategoryOrSubcategory($0, name: catName) }
+            txB = txB.filter { matchesCategoryOrSubcategory($0, name: catName) }
         }
         if let merchant = params.merchant {
             let cq = MerchantCanonicalizer.canonicalize(merchant)
@@ -475,6 +473,12 @@ extension ChatToolExecutor {
     }
 
     // MARK: - Merchant Matching
+
+    /// Match transaction by category or subcategory name (case-insensitive).
+    private func matchesCategoryOrSubcategory(_ tx: TransactionItem, name: String) -> Bool {
+        tx.category?.name.localizedCaseInsensitiveContains(name) == true ||
+        tx.subcategory?.name.localizedCaseInsensitiveContains(name) == true
+    }
 
     /// Match transaction against a pre-canonicalized merchant query.
     private func matchesMerchant(_ tx: TransactionItem, canonicalQuery: String) -> Bool {

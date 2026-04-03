@@ -100,7 +100,7 @@ struct ChatAssistantViewModelTests {
 
     // MARK: - Suggestions
 
-    @MainActor @Test func loadSuggestions_returnsUpTo4() throws {
+    @MainActor @Test func loadSuggestions_returnsUpTo3() throws {
         let vm = ChatAssistantViewModel()
         let context = try makeTestContext()
 
@@ -113,7 +113,7 @@ struct ChatAssistantViewModelTests {
         try context.save()
 
         vm.setContext(context)
-        #expect(vm.suggestions.count <= 4)
+        #expect(vm.suggestions.count <= 3)
         #expect(vm.suggestions.count >= 1)
     }
 

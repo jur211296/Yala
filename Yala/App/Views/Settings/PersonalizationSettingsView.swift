@@ -37,6 +37,11 @@ struct PersonalizationSettingsView: View {
     @State private var showingLanguagePicker = false
     @State private var showingExpensesOnlyConfirmation = false
     @State private var showingSmartInsightsSettings = false
+    @AppStorage("chatFABVisible") private var chatFABVisible: Bool = true
+
+    private var isProUser: Bool {
+        FeatureGateService.shared.canAccess(.chatAssistant)
+    }
 
     private var selectedPeriod: DetailPeriod {
         DetailPeriod(rawValue: defaultPeriodRaw) ?? .thisMonth
@@ -246,6 +251,37 @@ struct PersonalizationSettingsView: View {
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, DS.Spacing.xxs)
+                        }
+
+                        // Chat FAB visibility (Free users only — Pro users use WidgetPreferencesView)
+                        if !isProUser {
+                            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                                HStack {
+                                    Text(L10n.Widget.chatFabToggle)
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.thPrimaryText)
+
+                                    ProBadge(size: .small)
+
+                                    Spacer()
+
+                                    Toggle(L10n.Widget.chatFabToggle, isOn: $chatFABVisible)
+                                        .labelsHidden()
+                                }
+                                .padding(.horizontal, DS.FormRow.paddingH)
+                                .padding(.vertical, DS.FormRow.paddingV)
+                                .background(.thCard)
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                                )
+
+                                Text(L10n.Widget.chatFabHint)
+                                    .font(DS.Typography.caption)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal, DS.Spacing.xxs)
+                            }
                         }
 
                         // Colorful Icons Toggle

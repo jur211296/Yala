@@ -245,6 +245,11 @@ final class InsightsViewModel {
             result["top_subcategory"] = ["name": subName, "amount": Int(topSub.amount), "pct_of_total": pctOfTotal] as [String: Any]
         }
 
+        // Category → Subcategory tree (full context for LLM)
+        if !categories.isEmpty {
+            result["category_tree"] = categories.visibleCategoryTreeLabels()
+        }
+
         // Highest expense
         if let highest = data.quickStats.highestExpense {
             result["highest_expense"] = ["amount": Int(highest.amount), "description": highest.note] as [String: Any]

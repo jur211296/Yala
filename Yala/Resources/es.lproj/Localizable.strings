@@ -665,6 +665,10 @@
 "scheduled.calendar.month.empty" = "Sin pagos este mes";
 
 "widget.sizeLabel" = "Tamaño";
+"widget.chatFab.toggle" = "Pregúntale a Yala";
+"widget.chatFab.description" = "Muestra el botón del asistente financiero con IA.";
+"widget.chatFab.hint" = "Controla si el botón de chat aparece en las pantallas principales.";
+"widget.aiCapabilities.header" = "Capacidades con IA";
 
 "common.all" = "Todas";
 "widget.main" = "Principal";
@@ -2148,6 +2152,8 @@
 "tipkit.pro.proThemes.message" = "Descubre temas de color exclusivos que le dan tu toque personal a Yala.";
 "tipkit.pro.fab.title" = "Nuevas formas de registrar";
 "tipkit.pro.fab.message" = "Toca aquí para registrar por voz, imagen o de forma manual. Ahora tienes las tres opciones.";
+"tipkit.pro.chatFab.title" = "Tu asistente financiero";
+"tipkit.pro.chatFab.message" = "Pregúntale a Yala sobre tus gastos, presupuestos y más.";
 "tipkit.pro.aiSummary.title" = "Tu resumen con IA";
 "tipkit.pro.aiSummary.message" = "Genera un resumen inteligente de tus finanzas con un toque. Observaciones útiles, al instante.";
 "tipkit.aiCharts.pro.title" = "Observaciones con IA";

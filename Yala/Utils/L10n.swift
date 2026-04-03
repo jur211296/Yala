@@ -2474,6 +2474,10 @@ enum L10n {
         static var alwaysVisible: String { ls("widget.alwaysVisible", comment: "") }
         static var fixedPosition: String { ls("widget.fixedPosition", comment: "") }
         static var sizeLabel: String { ls("widget.sizeLabel", comment: "") }
+        static var chatFabToggle: String { ls("widget.chatFab.toggle", comment: "") }
+        static var chatFabDescription: String { ls("widget.chatFab.description", comment: "") }
+        static var chatFabHint: String { ls("widget.chatFab.hint", comment: "") }
+        static var aiCapabilitiesHeader: String { ls("widget.aiCapabilities.header", comment: "") }
         static var main: String { ls("widget.main", comment: "") }
         static var topCategories: String { ls("widget.topCategories", comment: "") }
         static var topSubcategories: String {
@@ -4212,6 +4216,8 @@ enum L10n {
         static var proProThemesMessage: String { ls("tipkit.pro.proThemes.message", comment: "") }
         static var proFabTitle: String { ls("tipkit.pro.fab.title", comment: "") }
         static var proFabMessage: String { ls("tipkit.pro.fab.message", comment: "") }
+        static var proChatFabTitle: String { ls("tipkit.pro.chatFab.title", comment: "") }
+        static var proChatFabMessage: String { ls("tipkit.pro.chatFab.message", comment: "") }
         static var proAiSummaryTitle: String { ls("tipkit.pro.aiSummary.title", comment: "") }
         static var proAiSummaryMessage: String { ls("tipkit.pro.aiSummary.message", comment: "") }
     }

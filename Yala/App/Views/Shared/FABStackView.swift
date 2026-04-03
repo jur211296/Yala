@@ -18,6 +18,7 @@ struct FABStackView: View {
     let isChatLocked: Bool
     let chatConsentAccepted: Bool
     let chatEnabled: Bool
+    let chatFABVisible: Bool
 
     // MARK: - Callbacks
 
@@ -57,10 +58,12 @@ struct FABStackView: View {
                     menuButtons
                 }
 
-                // AI FAB (sparkles) — hides when transaction menu is expanded
-                aiFAB
-                    .opacity(showFABMenu ? 0 : 1)
-                    .animation(.easeOut(duration: 0.15), value: showFABMenu)
+                // AI FAB (sparkles) — hides when transaction menu is expanded or user toggled off
+                if chatFABVisible {
+                    aiFAB
+                        .opacity(showFABMenu ? 0 : 1)
+                        .animation(.easeOut(duration: 0.15), value: showFABMenu)
+                }
 
                 // Transaction FAB (plus/xmark)
                 transactionFAB(background: fabBackground)
@@ -101,22 +104,32 @@ struct FABStackView: View {
             ZStack {
                 Image(systemName: "sparkles")
                     .font(DS.Typography.body.weight(.semibold))
-                    .foregroundStyle(Color.contrastingText(for: theme.accent))
+                    .foregroundStyle(isChatLocked ? DS.Semantic.disabledForeground : .white)
 
                 if isChatLocked {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 8))
-                        .foregroundStyle(.white.opacity(0.8))
-                        .offset(x: 10, y: 10)
+                        .font(.system(size: 8)) // A11Y-DT: decorative lock badge on FAB
+                        .foregroundStyle(DS.Semantic.disabledForeground)
+                        .offset(x: 14, y: 14)
                 }
             }
-            .frame(width: DS.Button.fabSizeSmall, height: DS.Button.fabSizeSmall)
-            .background(theme.accent)
+            .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
+            .background {
+                if isChatLocked {
+                    DS.Semantic.neutralBackground
+                } else {
+                    LinearGradient(
+                        colors: DS.Gradients.proBadge,
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                }
+            }
             .clipShape(Circle())
+            .shadow(color: (isChatLocked ? Color.gray : Color.orange).opacity(0.3), radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
         }
         .buttonStyle(.plain)
-        .glassEffect(.regular.interactive())
-        .dsFloatingShadow()
+        .coachMarkAnchor("proChatFab")
         .accessibilityLabel(L10n.Chat.title)
     }
 

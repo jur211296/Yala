@@ -261,12 +261,17 @@ enum ProTourSteps {
         ),
     ]
 
-    /// Phase 2: PanelView — FAB with voice/image options
+    /// Phase 2: PanelView — FAB with voice/image options + chat assistant
     static let panelSteps: [CoachMarkStep] = [
         CoachMarkStep(
             id: "fab",
             title: L10n.TipKit.proFabTitle,
             message: L10n.TipKit.proFabMessage
+        ),
+        CoachMarkStep(
+            id: "proChatFab",
+            title: L10n.TipKit.proChatFabTitle,
+            message: L10n.TipKit.proChatFabMessage
         ),
     ]
 

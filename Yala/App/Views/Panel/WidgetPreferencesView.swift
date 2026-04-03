@@ -14,10 +14,15 @@ struct WidgetPreferencesView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.openURL) private var openURL
     @AppStorage("panelShowAIInsight") private var showAIInsight: Bool = false
+    @AppStorage("chatFABVisible") private var chatFABVisible: Bool = true
     @State private var showConsentAlert = false
 
-    private var isProUser: Bool {
+    private var canAccessInsights: Bool {
         FeatureGateService.shared.canAccess(.smartInsightsAI)
+    }
+
+    private var canAccessChat: Bool {
+        FeatureGateService.shared.canAccess(.chatAssistant)
     }
 
     private var hasAIConsent: Bool {
@@ -35,8 +40,9 @@ struct WidgetPreferencesView: View {
                         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 8, trailing: 0))
                 }
 
-                // AI Observations toggle
+                // AI capabilities section
                 Section {
+                    // AI Observations toggle
                     HStack(spacing: DS.Spacing.md) {
                         Image(systemName: "sparkles")
                             .font(DS.Typography.title)
@@ -55,7 +61,7 @@ struct WidgetPreferencesView: View {
 
                         Spacer()
 
-                        if isProUser {
+                        if canAccessInsights {
                             Toggle(L10n.Panel.aiInsightsTitle, isOn: $showAIInsight)
                                 .labelsHidden()
                                 .onChange(of: showAIInsight) { _, newValue in
@@ -70,6 +76,35 @@ struct WidgetPreferencesView: View {
                     }
                     .padding(.vertical, DS.Spacing.xs)
                     .listRowBackground(theme.card)
+
+                    // Chat FAB visibility toggle
+                    if canAccessChat {
+                        HStack(spacing: DS.Spacing.md) {
+                            Image(systemName: "bubble.left.and.text.bubble.right")
+                                .font(DS.Typography.title)
+                                .foregroundStyle(.thAccent)
+                                .frame(width: 32, height: 32)
+                                .background(Circle().fill(theme.accent.opacity(0.1)))
+                                .accessibilityHidden(true)
+
+                            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                                Text(L10n.Chat.title)
+                                    .font(DS.Typography.bodyBold)
+                                Text(L10n.Widget.chatFabDescription)
+                                    .font(DS.Typography.captionSmall)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            Toggle(L10n.Chat.title, isOn: $chatFABVisible)
+                                .labelsHidden()
+                        }
+                        .padding(.vertical, DS.Spacing.xs)
+                        .listRowBackground(theme.card)
+                    }
+                } header: {
+                    Text(L10n.Widget.aiCapabilitiesHeader)
                 }
 
                 Section {

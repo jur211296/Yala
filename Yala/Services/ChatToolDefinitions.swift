@@ -82,7 +82,7 @@ enum ChatToolDefinitions {
             parameters: .schema(
                 .type(.object),
                 .properties([
-                    "category": .schema(.type(.string), .description("Filter by category name (optional — returns all active budgets if omitted)"))
+                    "category": .schema(.type(.string), .description("Category or subcategory name to filter by (optional — returns all active budgets if omitted)"))
                 ])
             )
         )
@@ -100,7 +100,7 @@ enum ChatToolDefinitions {
                     "metric": .schema(.type(.string), .enumValues(["expense", "income", "balance", "category"]), .description("Financial metric to compare")),
                     "period_a": .schema(.type(.string), .enumValues(periodEnum), .description("First period (usually current)")),
                     "period_b": .schema(.type(.string), .enumValues(periodEnum), .description("Second period (usually previous)")),
-                    "category": .schema(.type(.string), .description("Category to compare (for metric=category)")),
+                    "category": .schema(.type(.string), .description("Category or subcategory name to compare")),
                     "merchant": .schema(.type(.string), .description("Merchant to compare"))
                 ]),
                 .required(["metric", "period_a", "period_b"])

@@ -43,6 +43,7 @@ struct RecordsStandaloneView: View {
     @State private var showChatConsentAlert = false
     @AppStorage("aiChatConsentAccepted") private var aiChatConsentAccepted: Bool = false
     @AppStorage("chatAssistantEnabled") private var chatAssistantEnabled: Bool = false
+    @AppStorage("chatFABVisible") private var chatFABVisible: Bool = true
 
     // MARK: - Pro Feature Gates
 
@@ -142,6 +143,7 @@ struct RecordsStandaloneView: View {
                                 isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
                                 chatConsentAccepted: aiChatConsentAccepted,
                                 chatEnabled: chatAssistantEnabled,
+                                chatFABVisible: chatFABVisible,
                                 onVoiceTap: { showVoiceRecording = true },
                                 onImageTap: { showImageSelection = true },
                                 onManualTap: { recordsViewModel.showNewTransaction = true },

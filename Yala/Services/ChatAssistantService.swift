@@ -69,10 +69,14 @@ final class ChatAssistantService {
         }
     }
 
+    private static let dayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
     private static func todayString() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: Date.now)
+        dayFormatter.string(from: Date.now)
     }
 
     // MARK: - Main Entry Point
@@ -283,6 +287,15 @@ final class ChatAssistantService {
         case .sarcastic: toneInstruction = "Sé directo y con humor sutil, como un amigo cercano que tiene confianza."
         }
 
+        // Focus (shared with Insights)
+        let focus = InsightFocus.current
+        let focusInstruction: String
+        switch focus {
+        case .balanced: focusInstruction = ""
+        case .saver: focusInstruction = "Enfatiza oportunidades de ahorro y señala gastos potencialmente innecesarios."
+        case .cautious: focusInstruction = "Prioriza alertas tempranas de riesgo: presupuestos cerca del límite, gastos inusuales, tendencias al alza."
+        }
+
         // Register (formality based on language)
         let register: String
         switch language {
@@ -294,14 +307,23 @@ final class ChatAssistantService {
         default: register = "informal you"
         }
 
-        // Category names for resolution
+        // Category → Subcategory tree for resolution
         let categories: [Category]
         do {
             categories = try modelContext.fetch(FetchDescriptor<Category>())
         } catch {
             categories = []
         }
-        let categoryNames = categories.filter(\.isVisible).map(\.name).joined(separator: ", ")
+        let categoryTree = categories.visibleCategoryTreeLabels().joined(separator: "; ")
+
+        // Account names for context
+        let accountNames: String
+        do {
+            let accounts = try modelContext.fetch(FetchDescriptor<Account>())
+            accountNames = accounts.map(\.name).joined(separator: ", ")
+        } catch {
+            accountNames = ""
+        }
 
         return """
         Eres el asistente financiero de Yala. Ayudas al usuario a entender sus finanzas respondiendo preguntas específicas sobre sus gastos, ingresos, presupuestos y patrones.
@@ -312,18 +334,21 @@ final class ChatAssistantService {
         3. Responde en el idioma del usuario: \(language).
         4. Usa el formato de moneda del usuario: \(currencySymbol) antes del monto.
         5. Negritas para cifras importantes (**\(currencySymbol)45.50**).
-        6. Máximo 3-4 oraciones. Sé conciso pero informativo.
-        7. Si detectas algo notable (aumento inusual, presupuesto en riesgo), menciónalo brevemente al final.
+        6. Máximo 3-4 oraciones. Sé conciso pero informativo. Habla como si le explicaras a alguien que no sabe de finanzas.
+        7. Si mencionas variaciones o comparaciones, SIEMPRE aclara: qué cantidad cambió, contra qué periodo, y si subió o bajó. Ejemplo: "Gastaste **\(currencySymbol)118** en Combustible, un **20% más** que el mes pasado (antes \(currencySymbol)98)". NUNCA digas solo un porcentaje sin explicar qué significa.
         8. NUNCA des consejos de inversión ni recomendaciones de productos financieros.
         9. Registro: \(register)
         10. Si la pregunta NO es sobre finanzas personales, responde amablemente que solo puedes ayudar con temas financieros. NO llames ninguna tool.
-        \(toneInstruction.isEmpty ? "" : "11. Tono: \(toneInstruction)")
+        11. Usa los nombres exactos de categorías y subcategorías del usuario para buscar. Si el usuario dice un sinónimo (ej: "gasolina"), resuélvelo a la subcategoría correcta (ej: "Combustible" dentro de "Vehículo"). En tu respuesta, SIEMPRE usa los nombres reales de categorías/subcategorías, NUNCA sinónimos ni generalizaciones.
+        \(toneInstruction.isEmpty ? "" : "12. Tono: \(toneInstruction)")
+        \(focusInstruction.isEmpty ? "" : "13. Enfoque: \(focusInstruction)")
 
         CONTEXTO:
         - Moneda principal: \(currencyCode)
         - Idioma: \(language)
         - País: \(country)
-        - Categorías disponibles: \(categoryNames)
+        - Categorías y subcategorías: \(categoryTree)
+        - Cuentas: \(accountNames)
 
         \(dateContext)
         """

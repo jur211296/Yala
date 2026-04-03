@@ -663,6 +663,10 @@
 "scheduled.calendar.month.empty" = "Keine Zahlungen in diesem Monat";
 
 "widget.sizeLabel" = "Größe";
+"widget.chatFab.toggle" = "Frag Yala";
+"widget.chatFab.description" = "Zeigt den KI-Finanzassistent-Button an.";
+"widget.chatFab.hint" = "Steuert, ob der Chat-Button auf den Hauptbildschirmen angezeigt wird.";
+"widget.aiCapabilities.header" = "KI-Funktionen";
 
 "common.all" = "Alle";
 "widget.main" = "Haupt";
@@ -2144,6 +2148,8 @@
 "tipkit.pro.proThemes.message" = "Entdecke exklusive Farbthemen, die Yala deinen persönlichen Touch verleihen.";
 "tipkit.pro.fab.title" = "Neue Wege zum Erfassen";
 "tipkit.pro.fab.message" = "Tippe hier, um per Sprache, Bild oder manuell zu erfassen. Jetzt hast du alle drei Optionen.";
+"tipkit.pro.chatFab.title" = "Dein Finanzassistent";
+"tipkit.pro.chatFab.message" = "Frag Yala nach deinen Ausgaben, Budgets und mehr.";
 "tipkit.pro.aiSummary.title" = "Deine KI-Zusammenfassung";
 "tipkit.pro.aiSummary.message" = "Erstelle mit einem Tipp eine intelligente Zusammenfassung deiner Finanzen. Nützliche Einblicke, sofort.";
 "tipkit.aiCharts.pro.title" = "KI-Beobachtungen";

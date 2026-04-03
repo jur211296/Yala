@@ -245,6 +245,9 @@ final class DataWipeService {
         defaults.removeObject(forKey: "imageInputEnabled")      // Default: false
         defaults.removeObject(forKey: "aiDataConsentAccepted") // Default: false
         defaults.removeObject(forKey: "aiInsightsConsentAccepted") // Default: false
+        defaults.removeObject(forKey: "aiChatConsentAccepted")  // Default: false
+        defaults.removeObject(forKey: "chatAssistantEnabled")   // Default: false
+        defaults.removeObject(forKey: "chatFABVisible")         // Default: true
         defaults.removeObject(forKey: "financialMindset")          // Default: "cashFlow"
 
         // --- Orden de listas ---

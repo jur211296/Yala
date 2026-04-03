@@ -64,3 +64,16 @@ final class Category {
         self.subcategories = subcategories
     }
 }
+
+// MARK: - LLM Context
+
+extension [Category] {
+    /// Visible category → subcategory tree labels for LLM context.
+    /// Example: `["Vehículo (Combustible, Seguro)", "Alimentación (Restaurantes, Delivery)"]`
+    func visibleCategoryTreeLabels() -> [String] {
+        filter(\.isVisible).map { cat in
+            let subs = (cat.subcategories ?? []).filter(\.isVisible).map(\.name)
+            return subs.isEmpty ? cat.name : "\(cat.name) (\(subs.joined(separator: ", ")))"
+        }
+    }
+}

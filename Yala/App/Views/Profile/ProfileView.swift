@@ -698,8 +698,8 @@ struct ProfileView: View {
             }
             .buttonStyle(.plain)
 
-            // Tone selector (only visible when enabled and not locked)
-            if aiInsightsConsentAccepted && !isSmartInsightsLocked {
+            // Tone selector (visible when insights OR chatbot is active)
+            if (aiInsightsConsentAccepted && !isSmartInsightsLocked) || (aiChatConsentAccepted && chatAssistantEnabled) {
                 HStack(spacing: DS.Spacing.md) {
                     Color.clear
                         .frame(width: 28, height: 28)

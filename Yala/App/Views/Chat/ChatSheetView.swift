@@ -41,11 +41,7 @@ struct ChatSheetView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .symbolRenderingMode(.hierarchical)
-                            .foregroundStyle(.secondary)
-                    }
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) { dismiss() }
                 }
             }
         }
@@ -82,7 +78,7 @@ struct ChatSheetView: View {
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: DS.Spacing.sm) {
+            VStack(spacing: DS.Spacing.sm) {
                 ForEach(viewModel.suggestions) { suggestion in
                     ChatSuggestionChip(suggestion: suggestion) {
                         Task { await viewModel.sendSuggestion(suggestion) }
@@ -146,27 +142,35 @@ struct ChatSheetView: View {
     // MARK: - Input Bar
 
     private var chatInputBar: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            TextField(L10n.Chat.inputPlaceholder, text: $viewModel.inputText, axis: .vertical)
-                .font(DS.Typography.body)
-                .lineLimit(1...4)
-                .textFieldStyle(.plain)
+        VStack(spacing: DS.Spacing.none) {
+            Divider()
 
-            Button {
-                Task { await viewModel.sendQuestion(viewModel.inputText) }
-            } label: {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 28)) // A11Y-DT: send button icon
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.thAccent)
+            HStack(spacing: DS.Spacing.sm) {
+                TextField(L10n.Chat.inputPlaceholder, text: $viewModel.inputText, axis: .vertical)
+                    .font(DS.Typography.body)
+                    .lineLimit(1...4)
+                    .textFieldStyle(.plain)
+
+                Button {
+                    Task { await viewModel.sendQuestion(viewModel.inputText) }
+                } label: {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 28)) // A11Y-DT: send button icon
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.thAccent)
+                }
+                .disabled(viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isLoading || !viewModel.canAskMore)
             }
-            .disabled(viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isLoading || !viewModel.canAskMore)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.sm)
+            .background(.thCard)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.xl)
+                    .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+            )
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.sm)
         }
-        .padding(.horizontal, DS.Spacing.md)
-        .padding(.vertical, DS.Spacing.sm)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.bottom, DS.Spacing.md)
     }
 }
