@@ -2,7 +2,7 @@
 //  CashFlowChartsSheet.swift
 //  Yala
 //
-//  Charts sheet with 4 cash flow visualizations matching TrendChartView & CashFlowWidget style.
+//  Charts sheet: projection, savings, deviation — with AI + rule-based comments.
 //
 
 import Charts
@@ -70,7 +70,6 @@ struct CashFlowChartsSheet: View {
 
                     deviationChart
                     deviationCommentCard
-                    accuracyChart
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.md)
@@ -163,6 +162,7 @@ struct CashFlowChartsSheet: View {
             cachedDeviations.map { (name: $0.name, amount: $0.deviation) },
             currencyCode: currencyCode
         )
+
     }
 
     // MARK: - Shared Helpers
@@ -260,12 +260,10 @@ struct CashFlowChartsSheet: View {
         return first.addingTimeInterval(-padding)...last.addingTimeInterval(padding)
     }
 
-    private func tooltipAlignment(for date: Date) -> Alignment {
-        guard let first = projection.months.first?.date,
-              let last = projection.months.last?.date else { return .center }
-        let total = last.timeIntervalSince(first)
+    private func tooltipAlignment(for date: Date, firstDate: Date, lastDate: Date) -> Alignment {
+        let total = lastDate.timeIntervalSince(firstDate)
         guard total > 0 else { return .center }
-        let pct = date.timeIntervalSince(first) / total
+        let pct = date.timeIntervalSince(firstDate) / total
         if pct < 0.25 { return .leading }
         else if pct > 0.75 { return .trailing }
         else { return .center }
@@ -276,6 +274,7 @@ struct CashFlowChartsSheet: View {
     private var projectionChart: some View {
         chartCard(
             title: L10n.CashFlowPlan.chartProjection,
+            subtitle: L10n.CashFlowPlan.chartProjectionSubtitle,
             kpiValue: YalaFormatter.currency(value: projection.months.last?.accumulatedBalance ?? 0, currencyCode: currencyCode)
         ) {
             let today = Calendar.current.startOfDay(for: Date.now)
@@ -411,7 +410,7 @@ struct CashFlowChartsSheet: View {
                     .foregroundStyle(.thCard)
                     .annotation(
                         position: isUpperHalf ? .bottom : .top,
-                        alignment: tooltipAlignment(for: selectedMonth.date)
+                        alignment: tooltipAlignment(for: selectedMonth.date, firstDate: projection.months.first?.date ?? .now, lastDate: projection.months.last?.date ?? .now)
                     ) {
                         VStack(alignment: .center, spacing: DS.Spacing.xs) {
                             Text(selectedMonth.date.formatted(.dateTime.month(.abbreviated).year()))
@@ -722,45 +721,6 @@ struct CashFlowChartsSheet: View {
         }
     }
 
-    // MARK: - 4. Plan Accuracy (Pro) — CashFlowWidget grouped bar style
-
-    private var accuracyChart: some View {
-        chartCard(
-            title: L10n.CashFlowPlan.chartAccuracy,
-            kpiValue: nil
-        ) {
-            if cachedPastMonths.count < 2 {
-                needMoreDataView
-            } else {
-                Chart(cachedPastMonths, id: \.monthKey) { month in
-                    BarMark(
-                        x: .value("Month", month.date, unit: .month),
-                        y: .value("Plan", month.totalExpense)
-                    )
-                    .foregroundStyle(Color.gray.opacity(0.4).gradient)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
-                    .position(by: .value("Type", L10n.CashFlowPlan.plan))
-
-                    let realExpense = month.expenseLines.reduce(0.0) { $0 + ($1.realAmount ?? 0) }
-                    BarMark(
-                        x: .value("Month", month.date, unit: .month),
-                        y: .value("Real", realExpense)
-                    )
-                    .foregroundStyle(
-                        realExpense > month.totalExpense
-                            ? Color.expenseGraph.gradient
-                            : Color.incomeGraph.gradient
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
-                    .position(by: .value("Type", L10n.CashFlowPlan.real))
-                }
-                .chartYAxis { barYAxisContent }
-                .chartXAxis { barXAxisContent }
-                .frame(height: 180)
-            }
-        }
-    }
-
     // MARK: - Chart Card Container
 
     private func chartCard<Content: View>(
@@ -883,4 +843,5 @@ struct CashFlowChartsSheet: View {
         let planned: Double
         let isPast: Bool
     }
+
 }

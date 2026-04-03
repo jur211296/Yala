@@ -682,4 +682,5 @@ final class CashFlowPlanViewModel {
         // 6. Default
         return L10n.CashFlowPlan.commentDefault(months.count)
     }
+
 }

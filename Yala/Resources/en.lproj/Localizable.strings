@@ -833,7 +833,7 @@
 "cashFlowPlan.chartDeviation" = "Expenses to review";
 "cashFlowPlan.chartDeviationSubtitle" = "Subcategories where you spent more than planned";
 "cashFlowPlan.chartSavings" = "Monthly savings";
-"cashFlowPlan.chartAccuracy" = "Plan accuracy";
+"cashFlowPlan.chartProjectionSubtitle" = "Accumulated balance over time";
 "cashFlowPlan.chartDeviationOver" = "Over budget";
 "cashFlowPlan.chartDeviationUnder" = "Saved";
 "cashFlowPlan.chartDangerZone" = "Danger zone";

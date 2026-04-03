@@ -784,4 +784,5 @@ final class InsightsLLMService {
             throw InsightsLLMError.networkError(error)
         }
     }
+
 }

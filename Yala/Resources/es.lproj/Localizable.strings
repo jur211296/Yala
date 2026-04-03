@@ -833,7 +833,7 @@
 "cashFlowPlan.chartDeviation" = "Gastos por revisar";
 "cashFlowPlan.chartDeviationSubtitle" = "Subcategorías donde gastaste más de lo planeado";
 "cashFlowPlan.chartSavings" = "Ahorro mensual";
-"cashFlowPlan.chartAccuracy" = "Precisión del plan";
+"cashFlowPlan.chartProjectionSubtitle" = "Saldo acumulado en el tiempo";
 "cashFlowPlan.chartDeviationOver" = "Por encima";
 "cashFlowPlan.chartDeviationUnder" = "Ahorraste";
 "cashFlowPlan.chartDangerZone" = "Zona de peligro";

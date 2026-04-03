@@ -370,7 +370,7 @@ enum L10n {
         static var chartDeviation: String { ls("cashFlowPlan.chartDeviation", comment: "") }
         static var chartDeviationSubtitle: String { ls("cashFlowPlan.chartDeviationSubtitle", comment: "") }
         static var chartSavings: String { ls("cashFlowPlan.chartSavings", comment: "") }
-        static var chartAccuracy: String { ls("cashFlowPlan.chartAccuracy", comment: "") }
+        static var chartProjectionSubtitle: String { ls("cashFlowPlan.chartProjectionSubtitle", comment: "") }
         static var chartDeviationOver: String { ls("cashFlowPlan.chartDeviationOver", comment: "") }
         static var chartDeviationUnder: String { ls("cashFlowPlan.chartDeviationUnder", comment: "") }
         static var chartDangerZone: String { ls("cashFlowPlan.chartDangerZone", comment: "") }
