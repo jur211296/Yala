@@ -94,8 +94,12 @@ struct PanelView: View {
     @State private var showImageSelection = false
     @State private var navigateToInboxAfterImage = false
 
-    /// FAB menu expanded state
-    @State private var showFABMenu = false
+    /// Chat Assistant
+    @State private var showChatSheet = false
+    @State private var showUpgradeForChat = false
+    @State private var showChatConsentAlert = false
+    @AppStorage("aiChatConsentAccepted") private var aiChatConsentAccepted: Bool = false
+    @AppStorage("chatAssistantEnabled") private var chatAssistantEnabled: Bool = false
 
     /// Coach mark: Panel tour (A1-A4)
     @AppStorage("hasSeenPanelTour") private var hasSeenPanelTour = false
@@ -354,6 +358,11 @@ struct PanelView: View {
                 showUpgradeForVoice: $showUpgradeForVoice,
                 showUpgradeForImage: $showUpgradeForImage,
                 showUpgradeForAccounts: $showUpgradeForAccounts,
+                showChatSheet: $showChatSheet,
+                showUpgradeForChat: $showUpgradeForChat,
+                showChatConsentAlert: $showChatConsentAlert,
+                aiChatConsentAccepted: $aiChatConsentAccepted,
+                chatAssistantEnabled: $chatAssistantEnabled,
                 navigateToInboxAfterVoice: $navigateToInboxAfterVoice,
                 switchToImageAfterVoice: $switchToImageAfterVoice,
                 navigateToInboxAfterImage: $navigateToInboxAfterImage,
@@ -431,7 +440,6 @@ struct PanelView: View {
                 allSubcategories: allSubcategories,
                 sessionState: sessionState,
                 viewModel: viewModel,
-                showFABMenu: $showFABMenu,
                 accountsSortOrderNamesRaw: $accountsSortOrderNamesRaw,
                 defaultCurrencyCodeRaw: $defaultCurrencyCodeRaw,
                 recalculateData: recalculateData
@@ -586,7 +594,22 @@ struct PanelView: View {
                 Spacer()
                 HStack {
                     Spacer()
-                    newRecordFAB
+                    FABStackView(
+                        canUseVoiceInput: canUseVoiceInput,
+                        isVoiceLocked: isVoiceLocked,
+                        isImageLocked: isImageLocked,
+                        isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
+                        chatConsentAccepted: aiChatConsentAccepted,
+                        chatEnabled: chatAssistantEnabled,
+                        onVoiceTap: { showVoiceRecording = true },
+                        onImageTap: { showImageSelection = true },
+                        onManualTap: { showNewTransaction = true },
+                        onUpgradeVoice: { showUpgradeForVoice = true },
+                        onUpgradeImage: { showUpgradeForImage = true },
+                        onChatTap: { showChatSheet = true },
+                        onUpgradeChat: { showUpgradeForChat = true },
+                        onChatConsentNeeded: { showChatConsentAlert = true }
+                    )
                 }
             }
         }
@@ -594,165 +617,6 @@ struct PanelView: View {
 
     // MARK: - New Record FAB
 
-    @ViewBuilder
-    private var newRecordFAB: some View {
-        let fabBackground = canUseVoiceInput ? theme.accent : DS.Semantic.disabledForeground.opacity(0.5)
-
-        if canUseVoiceInput {
-            // Custom FAB with popup menu above (always 3 options)
-            VStack(alignment: .trailing, spacing: DS.Spacing.md) {
-                // Menu options (shown when expanded)
-                if showFABMenu {
-                    VStack(spacing: DS.Spacing.sm) {
-                        // Voice option
-                        fabMenuButton(
-                            icon: "waveform",
-                            text: L10n.Panel.fabVoice,
-                            color: .hotPink,
-                            isLocked: isVoiceLocked
-                        ) {
-                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                showFABMenu = false
-                            }
-                            if isVoiceLocked {
-                                showUpgradeForVoice = true
-                            } else if !aiDataConsentAccepted {
-                                pendingAIInput = .voice
-                                showAIConsentAlert = true
-                            } else {
-                                if !voiceInputEnabled { voiceInputEnabled = true }
-                                showVoiceRecording = true
-                            }
-                        }
-
-                        // Image option
-                        fabMenuButton(
-                            icon: "photo",
-                            text: L10n.Panel.fabImage,
-                            color: .teal,
-                            isLocked: isImageLocked
-                        ) {
-                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                showFABMenu = false
-                            }
-                            if isImageLocked {
-                                showUpgradeForImage = true
-                            } else if !aiDataConsentAccepted {
-                                pendingAIInput = .image
-                                showAIConsentAlert = true
-                            } else {
-                                if !imageInputEnabled { imageInputEnabled = true }
-                                showImageSelection = true
-                            }
-                        }
-
-                        // Manual option (always shown)
-                        fabMenuButton(
-                            icon: "square.and.pencil",
-                            text: L10n.Panel.fabManual,
-                            color: .electricIndigo
-                        ) {
-                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                showFABMenu = false
-                            }
-                            showNewTransaction = true
-                        }
-                    }
-                    .transition(.asymmetric(
-                        insertion: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity),
-                        removal: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity)
-                    ))
-                }
-
-                // FAB button
-                Button {
-                    DS.Haptic.medium()
-                    dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                        showFABMenu.toggle()
-                    }
-                } label: {
-                    Image(systemName: showFABMenu ? "xmark" : "plus")
-                        .font(DS.Typography.title)
-                        .foregroundStyle(Color.contrastingText(for: theme.accent))
-                        .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                        .background(showFABMenu ? DS.Semantic.disabledForeground : fabBackground)
-                        .clipShape(Circle())
-                        .rotationEffect(.degrees(showFABMenu ? 90 : 0))
-                }
-                .buttonStyle(.plain)
-                .glassEffect(.regular.interactive())
-                .dsFloatingShadow()
-                .accessibilityLabel(showFABMenu ? L10n.Accessibility.closeMenu : L10n.Accessibility.newRecord)
-                .accessibilityIdentifier("fab_new_transaction")
-                .coachMarkAnchor("fab")
-            }
-            .padding(.trailing, DS.Spacing.xl)
-            .padding(.bottom, DS.Spacing.xxl)
-        } else {
-            // Simple FAB (no accounts/subcategories — disabled)
-            Button {
-                // No-op: disabled state
-            } label: {
-                Image(systemName: "plus")
-                    .font(DS.Typography.title)
-                    .foregroundStyle(Color.contrastingText(for: theme.accent))
-                    .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                    .background(fabBackground)
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .glassEffect(.regular.interactive())
-            .dsFloatingShadow()
-            .coachMarkAnchor("fab")
-            .padding(.trailing, DS.Spacing.xl)
-            .padding(.bottom, DS.Spacing.xxl)
-            .disabled(true)
-            .accessibilityLabel(L10n.Accessibility.newRecord)
-            .accessibilityHint(L10n.Accessibility.createAccountFirst)
-        }
-    }
-
-    private func fabMenuButton(
-        icon: String,
-        text: String,
-        color: Color,
-        isLocked: Bool = false,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button {
-            DS.Haptic.selection()
-            action()
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                Image(systemName: icon)
-                    .font(DS.Typography.headline)
-                    .frame(width: DS.Button.fabMenuIconSize)
-
-                Text(text)
-                    .font(DS.Typography.headline)
-
-                Spacer(minLength: 0)
-
-                if isLocked {
-                    ProBadge(size: .small)
-                }
-            }
-            .foregroundStyle(.white)
-            .frame(width: DS.Button.fabMenuWidth)
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.md)
-            .background(isLocked ? DS.Semantic.disabledForeground : color)
-            .clipShape(Capsule())
-            .shadow(color: (isLocked ? DS.Semantic.disabledForeground : color).opacity(0.3), radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
-        }
-        .buttonStyle(.plain)
-        .phaseAnimator(reduceMotion ? [false] : [false, true]) { content, phase in
-            content
-                .scaleEffect(phase ? 1.03 : 1.0)
-        } animation: { _ in
-            .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
-        }
-    }
 
     private var accountsSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
@@ -1659,18 +1523,12 @@ private struct PanelDataObservers: ViewModifier {
     let allSubcategories: [Subcategory]
     let sessionState: SessionState
     let viewModel: PanelViewModel
-    @Binding var showFABMenu: Bool
     @Binding var accountsSortOrderNamesRaw: String
     @Binding var defaultCurrencyCodeRaw: String
     let recalculateData: () -> Void
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: sessionState.selectedMainTab) { _, _ in
-                if showFABMenu {
-                    showFABMenu = false
-                }
-            }
             .onChange(of: accounts) { _, _ in
                 let newOrder = viewModel.ensureAccountsSortOrderConsistency(
                     accounts: accounts,
@@ -1786,6 +1644,11 @@ private struct PanelSheetsModifier: ViewModifier {
     @Binding var showUpgradeForVoice: Bool
     @Binding var showUpgradeForImage: Bool
     @Binding var showUpgradeForAccounts: Bool
+    @Binding var showChatSheet: Bool
+    @Binding var showUpgradeForChat: Bool
+    @Binding var showChatConsentAlert: Bool
+    @Binding var aiChatConsentAccepted: Bool
+    @Binding var chatAssistantEnabled: Bool
     @Binding var navigateToInboxAfterVoice: Bool
     @Binding var switchToImageAfterVoice: Bool
     @Binding var navigateToInboxAfterImage: Bool
@@ -1916,11 +1779,30 @@ private struct PanelSheetsModifier: ViewModifier {
             .sheet(isPresented: $showUpgradeForAccounts) {
                 UpgradePromptSheet(feature: .accounts, context: .limitReached)
             }
+            .sheet(isPresented: $showChatSheet) {
+                ChatSheetView()
+            }
+            .sheet(isPresented: $showUpgradeForChat) {
+                UpgradePromptSheet(feature: .chatAssistant, context: .proFeature)
+            }
             .aiConsentAlert(isPresented: $showAIConsentAlert, pendingInput: $pendingAIInput) { input in
                 switch input {
                 case .voice: showVoiceRecording = true
                 case .image: showImageSelection = true
                 }
+            }
+            .alert(L10n.AIConsent.chatTitle, isPresented: $showChatConsentAlert) {
+                Button(L10n.AIConsent.accept) {
+                    aiChatConsentAccepted = true
+                    chatAssistantEnabled = true
+                    showChatSheet = true
+                }
+                Button(L10n.AIConsent.privacyPolicy) {
+                    UIApplication.shared.open(AppConstants.privacyURL)
+                }
+                Button(L10n.Action.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.AIConsent.chatMessage)
             }
             .onChange(of: practiceCleanupItem?.id) { _, newValue in
                 showPracticeAlert = newValue != nil

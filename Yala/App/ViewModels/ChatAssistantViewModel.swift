@@ -54,13 +54,14 @@ final class ChatAssistantViewModel {
 
         // Top merchant this month
         do {
+            let monthStart = Calendar.current.dateInterval(of: .month, for: Date.now)?.start ?? Date.now
             let descriptor = FetchDescriptor<TransactionItem>(
+                predicate: #Predicate<TransactionItem> { $0.date >= monthStart },
                 sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse)]
             )
             let txns = try context.fetch(descriptor)
-            let monthStart = Calendar.current.dateInterval(of: .month, for: Date.now)?.start ?? Date.now
             let monthTxns = txns.filter {
-                $0.date >= monthStart && $0.balanceAdjustmentType == nil &&
+                $0.balanceAdjustmentType == nil &&
                 $0.category?.isIncome == false && $0.account?.excludeFromStatistics != true
             }
 

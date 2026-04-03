@@ -97,6 +97,7 @@ struct SubscriptionSuccessView: View {
             unlockedFeatureRow(icon: "photo.on.rectangle", text: L10n.Subscription.featureImage, color: .teal)
             unlockedFeatureRow(icon: "paintpalette.fill", text: L10n.Subscription.featureThemes, color: .orange)
             unlockedFeatureRow(icon: "app.fill", text: L10n.Subscription.featurePremiumIcons, color: .pink)
+            unlockedFeatureRow(icon: "sparkles", text: L10n.Subscription.featureAIAssistant, color: .electricIndigo)
         }
         .padding(.horizontal, DS.Spacing.xl)
     }

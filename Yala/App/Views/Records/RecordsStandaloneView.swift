@@ -32,11 +32,17 @@ struct RecordsStandaloneView: View {
 
     // MARK: - FAB State
 
-    @State private var showFABMenu = false
     @State private var showVoiceRecording = false
     @State private var showImageSelection = false
     @State private var showUpgradeForVoice = false
     @State private var showUpgradeForImage = false
+
+    // MARK: - Chat Assistant
+    @State private var showChatSheet = false
+    @State private var showUpgradeForChat = false
+    @State private var showChatConsentAlert = false
+    @AppStorage("aiChatConsentAccepted") private var aiChatConsentAccepted: Bool = false
+    @AppStorage("chatAssistantEnabled") private var chatAssistantEnabled: Bool = false
 
     // MARK: - Pro Feature Gates
 
@@ -74,6 +80,11 @@ struct RecordsStandaloneView: View {
                 showImageSelection: $showImageSelection,
                 showUpgradeForVoice: $showUpgradeForVoice,
                 showUpgradeForImage: $showUpgradeForImage,
+                showChatSheet: $showChatSheet,
+                showUpgradeForChat: $showUpgradeForChat,
+                showChatConsentAlert: $showChatConsentAlert,
+                aiChatConsentAccepted: $aiChatConsentAccepted,
+                chatAssistantEnabled: $chatAssistantEnabled,
                 isPresentingSettings: $isPresentingSettings,
                 modelContext: modelContext,
                 refreshRecordsData: refreshRecordsData
@@ -82,7 +93,6 @@ struct RecordsStandaloneView: View {
                 sessionState: sessionState,
                 recordsViewModel: recordsViewModel,
                 dataViewModel: dataViewModel,
-                showFABMenu: $showFABMenu,
                 refreshRecordsData: refreshRecordsData
             ))
             .appliesPendingRemoteChanges(sessionState)
@@ -121,7 +131,28 @@ struct RecordsStandaloneView: View {
 
                 // FAB (only when not in selection mode)
                 if !recordsViewModel.isSelectionMode {
-                    newRecordFAB
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            FABStackView(
+                                canUseVoiceInput: canUseVoiceInput,
+                                isVoiceLocked: isVoiceLocked,
+                                isImageLocked: isImageLocked,
+                                isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
+                                chatConsentAccepted: aiChatConsentAccepted,
+                                chatEnabled: chatAssistantEnabled,
+                                onVoiceTap: { showVoiceRecording = true },
+                                onImageTap: { showImageSelection = true },
+                                onManualTap: { recordsViewModel.showNewTransaction = true },
+                                onUpgradeVoice: { showUpgradeForVoice = true },
+                                onUpgradeImage: { showUpgradeForImage = true },
+                                onChatTap: { showChatSheet = true },
+                                onUpgradeChat: { showUpgradeForChat = true },
+                                onChatConsentNeeded: { showChatConsentAlert = true }
+                            )
+                        }
+                    }
                 }
 
                 // Selection action bar (with animation)
@@ -213,173 +244,6 @@ struct RecordsStandaloneView: View {
     // MARK: - New Record FAB
 
     @ViewBuilder
-    private var newRecordFAB: some View {
-        let fabBackground = canUseVoiceInput ? theme.accent : DS.Semantic.disabledForeground.opacity(0.5)
-
-        if canUseVoiceInput {
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
-                    // Custom FAB with popup menu above (always 3 options)
-                    VStack(alignment: .trailing, spacing: DS.Spacing.md) {
-                        // Menu options (shown when expanded)
-                        if showFABMenu {
-                            VStack(spacing: DS.Spacing.sm) {
-                                // Voice option
-                                fabMenuButton(
-                                    icon: "waveform",
-                                    text: L10n.Panel.fabVoice,
-                                    color: .hotPink,
-                                    isLocked: isVoiceLocked
-                                ) {
-                                    dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                        showFABMenu = false
-                                    }
-                                    if isVoiceLocked {
-                                        showUpgradeForVoice = true
-                                    } else if !aiDataConsentAccepted {
-                                        pendingAIInput = .voice
-                                        showAIConsentAlert = true
-                                    } else {
-                                        if !voiceInputEnabled { voiceInputEnabled = true }
-                                        showVoiceRecording = true
-                                    }
-                                }
-
-                                // Image option
-                                fabMenuButton(
-                                    icon: "photo",
-                                    text: L10n.Panel.fabImage,
-                                    color: .teal,
-                                    isLocked: isImageLocked
-                                ) {
-                                    dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                        showFABMenu = false
-                                    }
-                                    if isImageLocked {
-                                        showUpgradeForImage = true
-                                    } else if !aiDataConsentAccepted {
-                                        pendingAIInput = .image
-                                        showAIConsentAlert = true
-                                    } else {
-                                        if !imageInputEnabled { imageInputEnabled = true }
-                                        showImageSelection = true
-                                    }
-                                }
-
-                                // Manual option (always shown)
-                                fabMenuButton(
-                                    icon: "square.and.pencil",
-                                    text: L10n.Panel.fabManual,
-                                    color: .electricIndigo
-                                ) {
-                                    dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                        showFABMenu = false
-                                    }
-                                    recordsViewModel.showNewTransaction = true
-                                }
-                            }
-                            .transition(.asymmetric(
-                                insertion: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity),
-                                removal: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity)
-                            ))
-                        }
-
-                        // FAB button
-                        Button {
-                            DS.Haptic.medium()
-                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                showFABMenu.toggle()
-                            }
-                        } label: {
-                            Image(systemName: showFABMenu ? "xmark" : "plus")
-                                .font(DS.Typography.title)
-                                .foregroundStyle(.white)
-                                .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                                .background(showFABMenu ? DS.Semantic.disabledForeground : fabBackground)
-                                .clipShape(Circle())
-                                .rotationEffect(.degrees(showFABMenu ? 90 : 0))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(showFABMenu ? L10n.Accessibility.closeMenu : L10n.Accessibility.newRecord)
-                        .glassEffect(.regular.interactive())
-                        .dsFloatingShadow()
-                    }
-                    .padding(.trailing, DS.Spacing.xl)
-                    .padding(.bottom, DS.Spacing.xxl)
-                }
-            }
-        } else {
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
-                    // Simple FAB (no accounts/subcategories — disabled)
-                    Button {
-                        // No-op: disabled state
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(DS.Typography.title)
-                            .foregroundStyle(.white)
-                            .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                            .background(fabBackground)
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(L10n.Accessibility.newRecord)
-                    .glassEffect(.regular.interactive())
-                    .dsFloatingShadow()
-                    .padding(.trailing, DS.Spacing.xl)
-                    .padding(.bottom, DS.Spacing.xxl)
-                    .disabled(true)
-                    .accessibilityHint(L10n.Accessibility.createAccountFirst)
-                }
-            }
-        }
-    }
-
-    private func fabMenuButton(
-        icon: String,
-        text: String,
-        color: Color,
-        isLocked: Bool = false,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button {
-            DS.Haptic.selection()
-            action()
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                Image(systemName: icon)
-                    .font(DS.Typography.headline)
-                    .frame(width: DS.Button.fabMenuIconSize)
-
-                Text(text)
-                    .font(DS.Typography.headline)
-
-                Spacer(minLength: 0)
-
-                if isLocked {
-                    ProBadge(size: .small)
-                }
-            }
-            .foregroundStyle(.white)
-            .frame(width: DS.Button.fabMenuWidth)
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.md)
-            .background(isLocked ? DS.Semantic.disabledForeground : color)
-            .clipShape(Capsule())
-            .shadow(color: (isLocked ? DS.Semantic.disabledForeground : color).opacity(0.3), radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
-        }
-        .buttonStyle(.plain)
-        .phaseAnimator(reduceMotion ? [false] : [false, true]) { content, phase in
-            content
-                .scaleEffect(phase ? 1.03 : 1.0)
-        } animation: { _ in
-            .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
-        }
-    }
 
     // MARK: - Selection Action Bar
 
@@ -471,6 +335,11 @@ private struct RecordsStandaloneSheets: ViewModifier {
     @Binding var showImageSelection: Bool
     @Binding var showUpgradeForVoice: Bool
     @Binding var showUpgradeForImage: Bool
+    @Binding var showChatSheet: Bool
+    @Binding var showUpgradeForChat: Bool
+    @Binding var showChatConsentAlert: Bool
+    @Binding var aiChatConsentAccepted: Bool
+    @Binding var chatAssistantEnabled: Bool
     @Binding var isPresentingSettings: Bool
     let modelContext: ModelContext
     let refreshRecordsData: () -> Void
@@ -497,6 +366,25 @@ private struct RecordsStandaloneSheets: ViewModifier {
             }
             .sheet(isPresented: $showUpgradeForImage) {
                 UpgradePromptSheet(feature: .imageInput, context: .proFeature)
+            }
+            .sheet(isPresented: $showChatSheet) {
+                ChatSheetView()
+            }
+            .sheet(isPresented: $showUpgradeForChat) {
+                UpgradePromptSheet(feature: .chatAssistant, context: .proFeature)
+            }
+            .alert(L10n.AIConsent.chatTitle, isPresented: $showChatConsentAlert) {
+                Button(L10n.AIConsent.accept) {
+                    aiChatConsentAccepted = true
+                    chatAssistantEnabled = true
+                    showChatSheet = true
+                }
+                Button(L10n.AIConsent.privacyPolicy) {
+                    UIApplication.shared.open(AppConstants.privacyURL)
+                }
+                Button(L10n.Action.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.AIConsent.chatMessage)
             }
             .sheet(isPresented: $recordsViewModel.showEditTransaction) {
                 if let transaction = recordsViewModel.editingTransaction {
@@ -539,13 +427,11 @@ private struct RecordsStandaloneSheets: ViewModifier {
 /// Session state navigation observer
 private struct RecordsNavObserver: ViewModifier {
     let sessionState: SessionState
-    @Binding var showFABMenu: Bool
     let refreshRecordsData: () -> Void
 
     func body(content: Content) -> some View {
         content
             .onChange(of: sessionState.selectedMainTab) { _, newTab in
-                if showFABMenu { showFABMenu = false }
                 if newTab == .records { refreshRecordsData() }
             }
     }
@@ -638,14 +524,12 @@ private struct RecordsViewModelObservers2: ViewModifier {
 /// Combined observers modifier - Part 1
 private struct RecordsStandaloneObservers1: ViewModifier {
     let sessionState: SessionState
-    @Binding var showFABMenu: Bool
     let refreshRecordsData: () -> Void
 
     func body(content: Content) -> some View {
         content
             .modifier(RecordsNavObserver(
                 sessionState: sessionState,
-                showFABMenu: $showFABMenu,
                 refreshRecordsData: refreshRecordsData
             ))
             .modifier(RecordsSessionObservers1a(
@@ -702,14 +586,12 @@ private struct RecordsStandaloneObservers: ViewModifier {
     let sessionState: SessionState
     @Bindable var recordsViewModel: RecordsViewModel
     let dataViewModel: DetailContainerViewModel
-    @Binding var showFABMenu: Bool
     let refreshRecordsData: () -> Void
 
     func body(content: Content) -> some View {
         content
             .modifier(RecordsStandaloneObservers1(
                 sessionState: sessionState,
-                showFABMenu: $showFABMenu,
                 refreshRecordsData: refreshRecordsData
             ))
             .modifier(RecordsStandaloneObservers2(

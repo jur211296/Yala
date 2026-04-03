@@ -173,6 +173,7 @@ struct ProTrialOfferSheet: View {
             featureRow(icon: "photo.on.rectangle", text: L10n.Subscription.featureImage, color: .teal)
             featureRow(icon: "paintpalette.fill", text: L10n.Subscription.featureThemes, color: .orange)
             featureRow(icon: "app.fill", text: L10n.Subscription.featurePremiumIcons, color: .pink)
+            featureRow(icon: "sparkles", text: L10n.Subscription.featureAIAssistant, color: .electricIndigo)
         }
         .padding(.vertical, DS.Spacing.sm)
         .background(.thCard)

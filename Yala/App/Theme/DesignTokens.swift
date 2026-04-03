@@ -298,6 +298,9 @@ enum DS {
         /// FAB (Floating Action Button) diameter - 56pt standard
         static let fabSize: CGFloat = 56
 
+        /// AI FAB diameter - 44pt (smaller than transaction FAB)
+        static let fabSizeSmall: CGFloat = 44
+
         /// Action button size (toolbar, selection bar) - 44pt HIG minimum
         static let actionSize: CGFloat = 44
 

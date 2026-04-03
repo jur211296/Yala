@@ -46,7 +46,10 @@ struct ProfileView: View {
     @AppStorage(InsightFocus.storageKey) private var insightsFocusRaw: String = InsightFocus.balanced.rawValue
     @State private var showAIConsentAlert: Bool = false
     @State private var showInsightsConsentAlert: Bool = false
+    @State private var showChatConsentAlert: Bool = false
     @State private var pendingConsentForVoice: Bool = true
+    @AppStorage("aiChatConsentAccepted") private var aiChatConsentAccepted: Bool = false
+    @AppStorage("chatAssistantEnabled") private var chatAssistantEnabled: Bool = false
 
     // Navigation & Sheets
     @State private var navigationPath = NavigationPath()
@@ -64,6 +67,7 @@ struct ProfileView: View {
     @State private var showUpgradeForVoice = false
     @State private var showUpgradeForImage = false
     @State private var showUpgradeForInsights = false
+    @State private var showUpgradeForChat = false
     @State private var showSupportSheet = false
 
     // Coach mark: Settings tour
@@ -96,6 +100,10 @@ struct ProfileView: View {
 
     private var isSmartInsightsLocked: Bool {
         !FeatureGateService.shared.canAccess(.smartInsightsAI)
+    }
+
+    private var isChatLocked: Bool {
+        !FeatureGateService.shared.canAccess(.chatAssistant)
     }
 
     private var selectedTone: InsightTone {
@@ -426,6 +434,9 @@ struct ProfileView: View {
         .sheet(isPresented: $showUpgradeForInsights) {
             UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature)
         }
+        .sheet(isPresented: $showUpgradeForChat) {
+            UpgradePromptSheet(feature: .chatAssistant, context: .proFeature)
+        }
     }
 
     // MARK: - Pro Badge with Cyan Spark
@@ -538,15 +549,21 @@ struct ProfileView: View {
                 imageInputRow
                     .coachMarkAnchor("proImageInput")
                 SubsectionDivider()
+                chatAssistantRow
+                    .coachMarkAnchor("proChatAssistant")
+                SubsectionDivider()
                 smartInsightsToggleRow
                     .coachMarkAnchor("proSmartInsights")
 
                 let hasProcessing = aiDataConsentAccepted && (voiceInputEnabled || imageInputEnabled)
                 let hasInsights = aiInsightsConsentAccepted
-                if hasProcessing || hasInsights {
-                    Text(hasProcessing && hasInsights ? L10n.AIConsent.inlineHintBoth
+                let hasChat = aiChatConsentAccepted && chatAssistantEnabled
+                let activeCount = [hasProcessing, hasInsights, hasChat].count(where: { $0 })
+                if activeCount > 0 {
+                    Text(activeCount >= 2 ? L10n.AIConsent.inlineHintMultiple
                          : hasProcessing ? L10n.AIConsent.inlineHintProcessing
-                         : L10n.AIConsent.inlineHintInsights)
+                         : hasInsights ? L10n.AIConsent.inlineHintInsights
+                         : L10n.AIConsent.inlineHintChat)
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, DS.Spacing.lg)
@@ -555,6 +572,68 @@ struct ProfileView: View {
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    private var chatAssistantRow: some View {
+        Button {
+            if isChatLocked { showUpgradeForChat = true }
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                if effectiveColorfulIcons {
+                    Image(systemName: "bubble.left.and.text.bubble.right")
+                        .font(DS.Typography.subheadline).fontWeight(.medium)
+                        .foregroundStyle(.white)
+                        .frame(width: 28, height: 28)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(Color.electricIndigo))
+                        .opacity(isChatLocked ? 0.5 : 1)
+                } else {
+                    Image(systemName: "bubble.left.and.text.bubble.right")
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.primary)
+                        .frame(width: 28)
+                        .opacity(isChatLocked ? 0.5 : 1)
+                }
+
+                Text(L10n.Settings.chatAssistant)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(isChatLocked ? .secondary : .primary)
+
+                if isChatLocked { ProBadge(size: .small) }
+
+                Spacer()
+
+                if isChatLocked {
+                    Image(systemName: "lock.fill")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
+                } else {
+                    Toggle(L10n.Settings.chatAssistant, isOn: $chatAssistantEnabled)
+                        .labelsHidden()
+                        .onChange(of: chatAssistantEnabled) { _, isEnabled in
+                            guard isEnabled, !aiChatConsentAccepted else { return }
+                            chatAssistantEnabled = false
+                            showChatConsentAlert = true
+                        }
+                }
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .alert(L10n.AIConsent.chatTitle, isPresented: $showChatConsentAlert) {
+            Button(L10n.AIConsent.accept) {
+                aiChatConsentAccepted = true
+                chatAssistantEnabled = true
+            }
+            Button(L10n.AIConsent.privacyPolicy) {
+                UIApplication.shared.open(AppConstants.privacyURL)
+            }
+            Button(L10n.Action.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.AIConsent.chatMessage)
+        }
     }
 
     private var smartInsightsToggleRow: some View {
