@@ -287,6 +287,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "hasSeenSettingsTour")      // Re-show settings tour
         defaults.removeObject(forKey: "hasSeenCashFlowSetupTour")  // Re-show cash flow setup tour
         defaults.removeObject(forKey: "hasSeenCashFlowTableTour")  // Re-show cash flow table tour
+        defaults.removeObject(forKey: "hasSeenChatContextHint")     // Re-show chat context hint
         ProTourManager.shared.reset()                                // Re-show pro tour
 
         // --- Setup Checklist ---

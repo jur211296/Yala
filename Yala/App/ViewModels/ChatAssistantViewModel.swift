@@ -208,6 +208,19 @@ final class ChatAssistantViewModel {
         }
     }
 
+    // MARK: - Context Hint (one-time, after first response)
+
+    private var contextHintDismissed: Bool = UserDefaults.standard.bool(forKey: "hasSeenChatContextHint")
+
+    var showContextHint: Bool {
+        !contextHintDismissed && messages.contains(where: { $0.role == .assistant })
+    }
+
+    func dismissContextHint() {
+        contextHintDismissed = true
+        UserDefaults.standard.set(true, forKey: "hasSeenChatContextHint")
+    }
+
     // MARK: - Limits
 
     var questionsRemaining: Int {

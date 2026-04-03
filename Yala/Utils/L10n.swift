@@ -883,6 +883,7 @@ enum L10n {
         }
         static var loading: String { ls("chat.loading", comment: "") }
         static var questionTooLong: String { ls("chat.questionTooLong", comment: "") }
+        static var contextHint: String { ls("chat.contextHint", comment: "") }
 
         enum Suggestion {
             static var topMerchant: String { ls("chat.suggestion.topMerchant", comment: "") }

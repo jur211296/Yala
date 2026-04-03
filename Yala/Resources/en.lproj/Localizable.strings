@@ -3221,6 +3221,7 @@
 "chat.suggestion.activeBudget" = "How is my %@ budget doing?";
 "chat.suggestion.comparison" = "Did I spend more or less than last month?";
 "chat.suggestion.general" = "How am I doing this month?";
+"chat.contextHint" = "I can remember your last question for follow-ups";
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Financial assistant";

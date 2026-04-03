@@ -103,6 +103,16 @@ struct ChatSheetView: View {
                             .id(message.id)
                     }
 
+                    if viewModel.showContextHint {
+                        Text(L10n.Chat.contextHint)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, DS.Spacing.xs)
+                            .onAppear { viewModel.dismissContextHint() }
+                    }
+
                     if viewModel.isLoading {
                         ChatLoadingIndicator()
                             .id("loading")
