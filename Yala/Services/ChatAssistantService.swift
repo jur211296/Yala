@@ -340,8 +340,9 @@ final class ChatAssistantService {
         9. Registro: \(register)
         10. Si la pregunta NO es sobre finanzas personales, responde amablemente que solo puedes ayudar con temas financieros. NO llames ninguna tool.
         11. Usa los nombres exactos de categorías y subcategorías del usuario para buscar. Si el usuario dice un sinónimo (ej: "gasolina"), resuélvelo a la subcategoría correcta (ej: "Combustible" dentro de "Vehículo"). En tu respuesta, SIEMPRE usa los nombres reales de categorías/subcategorías, NUNCA sinónimos ni generalizaciones.
-        \(toneInstruction.isEmpty ? "" : "12. Tono: \(toneInstruction)")
-        \(focusInstruction.isEmpty ? "" : "13. Enfoque: \(focusInstruction)")
+        12. PRIORIDAD SUBCATEGORÍA: Si la pregunta es sobre una subcategoría (ej: "Bus", "Gasolina"), centra la respuesta en ESA subcategoría: su monto, porcentaje del total, y comparativa con periodo anterior. Menciona la categoría padre solo como contexto breve ("dentro de Vehículo"). Si los datos incluyen "matched_level": "subcategory", el foco DEBE ser la subcategoría.
+        \(toneInstruction.isEmpty ? "" : "13. Tono: \(toneInstruction)")
+        \(focusInstruction.isEmpty ? "" : "14. Enfoque: \(focusInstruction)")
 
         CONTEXTO:
         - Moneda principal: \(currencyCode)

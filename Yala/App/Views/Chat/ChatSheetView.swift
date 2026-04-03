@@ -37,6 +37,7 @@ struct ChatSheetView: View {
 
                 chatInputBar
             }
+            .background(.thBackground.opacity(selectedDetent == .large ? 1 : 0))
             .navigationTitle(L10n.Chat.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -142,35 +143,27 @@ struct ChatSheetView: View {
     // MARK: - Input Bar
 
     private var chatInputBar: some View {
-        VStack(spacing: DS.Spacing.none) {
-            Divider()
+        HStack(spacing: DS.Spacing.sm) {
+            TextField(L10n.Chat.inputPlaceholder, text: $viewModel.inputText, axis: .vertical)
+                .font(DS.Typography.body)
+                .lineLimit(1...4)
+                .textFieldStyle(.plain)
 
-            HStack(spacing: DS.Spacing.sm) {
-                TextField(L10n.Chat.inputPlaceholder, text: $viewModel.inputText, axis: .vertical)
-                    .font(DS.Typography.body)
-                    .lineLimit(1...4)
-                    .textFieldStyle(.plain)
-
-                Button {
-                    Task { await viewModel.sendQuestion(viewModel.inputText) }
-                } label: {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 28)) // A11Y-DT: send button icon
-                        .symbolRenderingMode(.hierarchical)
-                        .foregroundStyle(.thAccent)
-                }
-                .disabled(viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isLoading || !viewModel.canAskMore)
+            Button {
+                Task { await viewModel.sendQuestion(viewModel.inputText) }
+            } label: {
+                Image(systemName: "arrow.up.circle.fill")
+                    .font(.system(size: 28)) // A11Y-DT: send button icon
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.thAccent)
             }
-            .padding(.horizontal, DS.Spacing.md)
-            .padding(.vertical, DS.Spacing.sm)
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl)
-                    .stroke(Color.primary.opacity(0.1), lineWidth: 1)
-            )
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.sm)
+            .disabled(viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isLoading || !viewModel.canAskMore)
         }
+        .padding(.horizontal, DS.Spacing.md)
+        .padding(.vertical, DS.Spacing.sm)
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.sm)
     }
 }

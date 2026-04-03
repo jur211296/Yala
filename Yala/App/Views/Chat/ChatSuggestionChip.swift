@@ -28,7 +28,8 @@ struct ChatSuggestionChip: View {
             .padding(.horizontal, DS.Spacing.md)
             .padding(.vertical, DS.Spacing.sm)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .glassEffect(.regular.interactive())
+            .background(.thCard)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
         }
         .buttonStyle(.plain)
     }

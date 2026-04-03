@@ -70,8 +70,15 @@ struct ChatToolExecutor {
         }
 
         // Category filter (by name, case-insensitive — matches category OR subcategory)
+        var matchedBySubcategory = false
         if let catName = params.category {
-            filtered = filtered.filter { matchesCategoryOrSubcategory($0, name: catName) }
+            filtered = filtered.filter { tx in
+                let matches = matchesCategoryOrSubcategory(tx, name: catName)
+                if matches && tx.subcategory?.name.localizedCaseInsensitiveContains(catName) == true {
+                    matchedBySubcategory = true
+                }
+                return matches
+            }
         }
 
         // Currency filter
@@ -142,14 +149,23 @@ struct ChatToolExecutor {
             }
         }
 
+        var summaryDict: [String: Any] = [
+            "count": filtered.count,
+            "total": totalAmount,
+            "average": avgAmount,
+            "currency": currencyCode
+        ]
+        if matchedBySubcategory, let catName = params.category {
+            summaryDict["matched_level"] = "subcategory"
+            summaryDict["subcategory_name"] = catName
+            if let parentName = filtered.first?.category?.name {
+                summaryDict["parent_category"] = parentName
+            }
+        }
+
         var result: [String: Any] = [
             "transactions": transactions,
-            "summary": [
-                "count": filtered.count,
-                "total": totalAmount,
-                "average": avgAmount,
-                "currency": currencyCode
-            ] as [String: Any],
+            "summary": summaryDict,
             "comparison": [
                 "previous_total": prevTotal,
                 "variation_percent": PreviousPeriodHelper.calculateVariation(currentAmount: totalAmount, previousAmount: prevTotal) as Any
