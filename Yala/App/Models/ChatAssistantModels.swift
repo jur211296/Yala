@@ -63,6 +63,20 @@ enum ChatToolName: String, CaseIterable {
     case budgetStatus = "budget_status"
     case comparePeriods = "compare_periods"
     case financialOverview = "financial_overview"
+    case accountBalances = "account_balances"
+    case upcomingPayments = "upcoming_payments"
+    case analyzePatterns = "analyze_patterns"
+    case spendingProjection = "spending_projection"
+}
+
+// MARK: - Analysis Type (for analyze_patterns tool)
+
+enum ChatAnalysisType: String, Codable {
+    case smallRecurring = "small_recurring"
+    case frequencyRanking = "frequency_ranking"
+    case unusualSpending = "unusual_spending"
+    case weekdayPattern = "weekday_pattern"
+    case needsBreakdown = "needs_breakdown"
 }
 
 // MARK: - Chat Date Range
@@ -134,6 +148,11 @@ struct SearchTransactionsParams: Codable {
     let type: String?
     let currency: String?
     let limit: Int?
+    let amountMin: Double?
+    let amountMax: Double?
+    let sortBy: String?
+    let tag: String?
+    let account: String?
 
     enum CodingKeys: String, CodingKey {
         case merchant, category
@@ -141,6 +160,10 @@ struct SearchTransactionsParams: Codable {
         case dateFrom = "date_from"
         case dateTo = "date_to"
         case type, currency, limit
+        case amountMin = "amount_min"
+        case amountMax = "amount_max"
+        case sortBy = "sort_by"
+        case tag, account
     }
 }
 
@@ -149,16 +172,26 @@ struct SpendingSummaryParams: Codable {
     let groupBy: String
     let type: String?
     let limit: Int?
+    let amountMin: Double?
+    let amountMax: Double?
 
     enum CodingKeys: String, CodingKey {
         case dateRange = "date_range"
         case groupBy = "group_by"
         case type, limit
+        case amountMin = "amount_min"
+        case amountMax = "amount_max"
     }
 }
 
 struct BudgetStatusParams: Codable {
     let category: String?
+    let dateRange: String?
+
+    enum CodingKeys: String, CodingKey {
+        case category
+        case dateRange = "date_range"
+    }
 }
 
 struct ComparePeriodsParams: Codable {
@@ -182,6 +215,39 @@ struct FinancialOverviewParams: Codable {
     enum CodingKeys: String, CodingKey {
         case dateRange = "date_range"
     }
+}
+
+struct AccountBalancesParams: Codable {
+    let account: String?
+}
+
+struct UpcomingPaymentsParams: Codable {
+    let daysAhead: Int?
+    let category: String?
+
+    enum CodingKeys: String, CodingKey {
+        case daysAhead = "days_ahead"
+        case category
+    }
+}
+
+struct AnalyzePatternsParams: Codable {
+    let analysisType: String
+    let dateRange: String
+    let thresholdAmount: Double?
+    let category: String?
+    let limit: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case analysisType = "analysis_type"
+        case dateRange = "date_range"
+        case thresholdAmount = "threshold_amount"
+        case category, limit
+    }
+}
+
+struct SpendingProjectionParams: Codable {
+    let category: String?
 }
 
 // MARK: - Chat Message
