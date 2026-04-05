@@ -28,6 +28,9 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 | TelemetryService | Services/TelemetryService.swift | Analytics privacy-first via TelemetryDeck |
 | ProUpsellService | App/Services/ProUpsellService.swift | Upsells proactivos + frequency capping |
 | AppUpdateService | App/Services/AppUpdateService.swift | Detección versión nueva via iTunes Lookup API |
+| SplitSyncManager | Services/Groups/SplitSyncManager.swift | CKSyncEngine dual (private+shared) para grupos |
+| SplitZoneManager | Services/Groups/SplitZoneManager.swift | Zone CRUD y CKShare creation para grupos |
+| CKRecordTranslator | Services/Groups/CKRecordTranslator.swift | Traducción CKRecord ↔ SwiftData con encryption |
 
 ### Key Calculators
 | Calculator | Path | Purpose |
@@ -62,7 +65,7 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 | SubcategoryTransferViewModel | 8 |
 | + 15 ViewModels más en App/ViewModels/ | — |
 
-### Test Suites (95 suites, 1137 tests)
+### Test Suites (104 suites, 1171 tests)
 FilterServiceTests (22), CalculatorTests (3), TagTests (10), TrendProcessingTests (5), TrendGroupingTests (13), CurrencyCodeTests (4), CurrencyDefaultsTests (3), NewTransactionViewModelTests (45), SplitCalculatorTests (14), BudgetsViewModelTests (11), InboxViewModelTests (10), MerchantCanonicalizerTests (12), AmountParserTests (15), DateParserTests (10), MoneyParsingTests (10), PreviousPeriodHelperTests (24), DateContextProviderTests (5), DraftDeduplicationServiceTests (15), AccountFormViewModelTests (22), TagFormViewModelTests (8), CategoryDetailViewModelTests (9), BudgetEditorViewModelTests (15), ViewModelFilterTests (6), CurrencyConverterTests (8), AccountBalanceCalculatorTests (6), FeatureGateTests (9), ExchangeRateWidgetHelperTests (4), RecordsFiltersViewModelTests (6), ScheduledPaymentDateCalculatorTests (17), YalaTests (1), TagSpendingCalculatorTests (15), BudgetAlertTrackerTests (12), BudgetAlertServiceTests (6), ScheduledPaymentsViewModelTests (14), InsightsRuleBasedTests (10), RecordsViewModelTests (12), PanelViewModelTests (10), CashFlowCalculatorTests (18), CashFlowProjectionCalculatorTests (33), CashFlowPlanViewModelTests (8), BalanceTrendCalculatorTests (8), WeekdaySpendingCalculatorTests (11), TopSpendingCategoriesCalculatorTests (10), TopSubcategoriesCalculatorTests (10), BalanceHelperTests (8), NeedTrendHelperTests (8), StatisticsViewModelTests (17), InitialBalanceServiceTests (9), InsightsViewModelTests (8), BulkEditViewModelTests (6), ScheduledPaymentEditorViewModelTests (15), SubcategoryTransferViewModelTests (8), TransactionServiceTests (6), EntityDeletionServiceTests (4), ExchangeRateServiceTests (7), CurrencyChangeServiceTests (6), TransactionUpdateServiceTests (5), MerchantMemoryServiceTests (14), TranscriptionParserServiceTests (12), DraftServiceTests (6), CategoryDeduplicationServiceTests (6), TransactionsExportServiceTests (26), VisionDraftFactoryTests (19), ScreenshotListExtractorTests (10), ScreenshotSingleExtractorTests (13), ReportNotificationServiceTests (17), SplitModelsTests (11), + 27 more suites from previous batches
 
 ## Product & Stack

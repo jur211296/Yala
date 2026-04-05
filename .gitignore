@@ -25,3 +25,6 @@ qa/results/
 
 # Planning docs live in Obsidian vault (iCloud)
 .planning/
+
+# Agent skills (third-party, reinstall via: npx skills add)
+.agents/

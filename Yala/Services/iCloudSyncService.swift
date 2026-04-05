@@ -36,6 +36,11 @@ final class iCloudSyncService {
         SwiftDataConfiguration.isICloudAvailable()
     }
 
+    /// Split group sync status (from CKSyncEngine)
+    var splitSyncStatus: SplitSyncManager.SyncStatus {
+        SplitSyncManager.shared.syncStatus
+    }
+
     // MARK: - Initialization
 
     private init() {

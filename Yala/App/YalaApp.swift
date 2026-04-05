@@ -14,6 +14,7 @@ import UIKit
 @main
 struct YalaApp: App {
 
+    @UIApplicationDelegateAdaptor(YalaAppDelegate.self) var appDelegate
     @Environment(\.scenePhase) private var scenePhase
 
     init() {

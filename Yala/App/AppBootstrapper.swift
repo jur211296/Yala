@@ -140,6 +140,10 @@ final class AppBootstrapper {
         // 13. Observe CloudKit remote changes to auto-refresh UI
         observeRemoteStoreChanges()
 
+        // 14. Initialize CKSyncEngine for shared group data (coexists with SwiftData auto-sync)
+        SplitSyncManager.shared.setContext(context)
+        SplitSyncManager.shared.initialize()
+
         isInitialized = true
     }
 

@@ -657,6 +657,9 @@ struct MainTabView: View {
                         try? await Task.sleep(for: .milliseconds(50))
                         sessionState.selectedMainTab = .records
                     }
+                case .groups:
+                    // Groups UI will be implemented in GC-04
+                    sessionState.selectedMainTab = .panel
                 }
 
                 // Clear after handling

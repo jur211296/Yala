@@ -67,6 +67,7 @@ enum DeepLinkDestination {
     case inbox
     case scheduledPayments  // Planning > Pagos Planificados
     case recordsStandalone  // Tab Records (standalone)
+    case groups             // Grupos (gastos compartidos)
 }
 
 /// Global session state to manage synchronization between views

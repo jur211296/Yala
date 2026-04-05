@@ -36,7 +36,7 @@ final class SplitGroup {
         autoCreateTransaction: Bool = true
     ) {
         self.id = UUID()
-        self.cloudKitZoneID = "SplitGroup-\(self.id.uuidString)"
+        self.cloudKitZoneID = "\(CKConstants.zonePrefix)\(self.id.uuidString)"
         self.name = name
         self.iconName = iconName
         self.colorHex = colorHex
