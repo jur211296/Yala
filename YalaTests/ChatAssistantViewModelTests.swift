@@ -164,9 +164,10 @@ struct ChatAssistantViewModelTests {
 
     @Test func chatDateRange_custom_parsesISODates() {
         let interval = ChatDateRange.custom.toDateInterval(dateFrom: "2026-01-01", dateTo: "2026-01-31")
-        let calendar = Calendar.current
-        #expect(calendar.component(.month, from: interval.start) == 1)
-        #expect(calendar.component(.year, from: interval.start) == 2026)
+        var utcCalendar = Calendar.current
+        utcCalendar.timeZone = .gmt
+        #expect(utcCalendar.component(.month, from: interval.start) == 1)
+        #expect(utcCalendar.component(.year, from: interval.start) == 2026)
     }
 
     @Test func chatDateRange_yesterday_isOneDayBefore() {
