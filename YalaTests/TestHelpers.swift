@@ -35,6 +35,14 @@ func makeTestContext() throws -> ModelContext {
         InboxDraft.self,
         MerchantMemory.self,
         NotificationItem.self,
+        CashFlowPlan.self,
+        CashFlowLine.self,
+        CashFlowOverride.self,
+        SplitGroup.self,
+        SplitMember.self,
+        SplitExpense.self,
+        SplitShare.self,
+        SplitSettlement.self,
     ])
 
     let config = ModelConfiguration(isStoredInMemoryOnly: true)

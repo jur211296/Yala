@@ -57,6 +57,11 @@ enum SwiftDataConfiguration {
             CashFlowPlan.self,
             CashFlowLine.self,
             CashFlowOverride.self,
+            SplitGroup.self,
+            SplitMember.self,
+            SplitExpense.self,
+            SplitShare.self,
+            SplitSettlement.self,
         ])
     }
 

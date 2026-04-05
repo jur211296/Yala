@@ -115,6 +115,12 @@ final class InboxDraft: Identifiable {
     /// ID del pago planificado que originó este draft (si aplica)
     var sourceScheduledPaymentID: String?
 
+    // MARK: - Shared Expense Link
+    /// ID del SplitExpense que originó este draft
+    var splitExpenseID: String?
+    /// Zone ID del grupo para queries rápidos
+    var splitGroupZoneID: String?
+
     // MARK: - Timestamps (CloudKit: defaults required)
 
     var createdAt: Date = Date.now

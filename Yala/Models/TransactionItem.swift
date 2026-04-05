@@ -74,6 +74,12 @@ final class TransactionItem {
     /// Divisor total (nil para exact)
     var splitDivisor: Double?
 
+    // MARK: - Shared Expense Link
+    /// ID del SplitExpense vinculado (nil = gasto personal normal)
+    var splitExpenseID: String?
+    /// Zone ID del grupo para queries rápidos
+    var splitGroupZoneID: String?
+
     // MARK: - Metadata
     /// Timestamp de creación del registro (usado para ordenar registros del mismo día)
     var createdAt: Date = Date.now
