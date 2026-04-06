@@ -1,0 +1,303 @@
+//
+//  GroupTransactionBridge.swift
+//  Yala
+//
+//  Bridge between shared expenses and personal TransactionItem/InboxDraft.
+//  Creates/updates/removes personal records when group expenses change.
+//
+
+import Foundation
+import SwiftData
+
+@MainActor
+@Observable
+final class GroupTransactionBridge {
+
+    // MARK: - Singleton
+
+    static let shared = GroupTransactionBridge()
+
+    // MARK: - Properties
+
+    private var modelContext: ModelContext?
+
+    /// Whether the bridge has been initialized with a context.
+    var isReady: Bool { modelContext != nil }
+
+    // MARK: - Init
+
+    private init() {}
+
+    // MARK: - Context Injection
+
+    func setContext(_ context: ModelContext) {
+        self.modelContext = context
+    }
+
+    private func requireContext() throws -> ModelContext {
+        guard let context = modelContext else {
+            throw GroupTransactionBridgeError.noContext
+        }
+        return context
+    }
+
+    // MARK: - Bridge Operations
+
+    /// Create or update a personal TransactionItem/InboxDraft for a shared expense.
+    /// - Parameters:
+    ///   - expense: The shared expense to bridge.
+    ///   - group: The group containing the expense.
+    ///   - shouldSave: Whether to save the context (false when called from sync batch).
+    func bridgeExpense(_ expense: SplitExpense, in group: SplitGroup, shouldSave: Bool = true) throws {
+        let context = try requireContext()
+
+        // TODO: GC-08 — skip bridge for groupInvite users
+
+        // Find current user's member in this group
+        let zoneID = group.cloudKitZoneID
+        let memberDescriptor = FetchDescriptor<SplitMember>(
+            predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true }
+        )
+        guard let currentMember = try context.fetch(memberDescriptor).first else { return }
+
+        let currentMemberID = currentMember.id.uuidString
+
+        // Find current user's share in this expense
+        let expenseID = expense.id
+        let shareDescriptor = FetchDescriptor<SplitShare>(
+            predicate: #Predicate { $0.expenseID == expenseID && $0.memberID == currentMemberID }
+        )
+        guard let myShare = try context.fetch(shareDescriptor).first else { return }
+
+        // Idempotency: check if already bridged
+        let expenseIDStr = expense.id.uuidString
+        let txDescriptor = FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitExpenseID == expenseIDStr }
+        )
+        if let existingTx = try context.fetch(txDescriptor).first {
+            // Update existing transaction
+            updateTransaction(existingTx, from: expense, share: myShare, context: context)
+            if shouldSave {
+                try context.save()
+                SessionState.shared.incrementDataVersion()
+            }
+            return
+        }
+
+        let draftDescriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.splitExpenseID == expenseIDStr }
+        )
+        if let existingDraft = try context.fetch(draftDescriptor).first {
+            // Update existing draft
+            updateDraft(existingDraft, from: expense, share: myShare)
+            if shouldSave {
+                try context.save()
+                SessionState.shared.incrementDataVersion()
+            }
+            return
+        }
+
+        // Resolve account and subcategory
+        let account = GroupTransactionBridge.resolveAccount(group: group, context: context)
+        let subcategory = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
+
+        if group.autoCreateTransaction {
+            let transaction = TransactionItem(
+                date: expense.date,
+                amount: -myShare.amount,
+                currencyCode: expense.currencyCode,
+                note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
+                subcategory: subcategory,
+                account: account
+            )
+            transaction.category = subcategory?.safeCategory
+            transaction.splitExpenseID = expense.id.uuidString
+            transaction.splitGroupZoneID = expense.groupZoneID
+            transaction.splitTotalAmount = expense.amount
+            transaction.splitType = expense.splitType
+
+            context.insert(transaction)
+            transaction.recalculatePreferredCurrency(context: context)
+
+            if shouldSave {
+                try context.save()
+                SessionState.shared.incrementDataVersion()
+                WidgetDataCache.updateCache(context: context)
+                Task {
+                    await BudgetAlertService.shared.checkBudgetsAndNotify()
+                }
+            }
+        } else {
+            let needsInput: [String] = subcategory == nil ? ["subcategory"] : []
+            let draft = InboxDraft(
+                note: expense.expenseDescription,
+                amount: -myShare.amount,
+                date: expense.date,
+                account: account,
+                subcategory: subcategory,
+                sourceType: .automation,
+                confidenceAmount: 1.0,
+                confidenceDate: 1.0,
+                confidenceMerchant: 1.0,
+                confidenceSubcategory: subcategory != nil ? 0.8 : nil,
+                needsUserInput: needsInput
+            )
+            draft.splitExpenseID = expense.id.uuidString
+            draft.splitGroupZoneID = expense.groupZoneID
+
+            context.insert(draft)
+
+            if shouldSave {
+                try context.save()
+                SessionState.shared.incrementDataVersion()
+            }
+        }
+    }
+
+    /// Bridge remote expenses received in a sync batch. Called after context.save().
+    func bridgeRemoteExpenses(_ expenses: [SplitExpense]) throws {
+        let context = try requireContext()
+
+        for expense in expenses {
+            // Find the group for this expense
+            let zoneID = expense.groupZoneID
+            let groupDescriptor = FetchDescriptor<SplitGroup>(
+                predicate: #Predicate { $0.cloudKitZoneID == zoneID }
+            )
+            guard let group = try context.fetch(groupDescriptor).first else { continue }
+
+            do {
+                try bridgeExpense(expense, in: group, shouldSave: false)
+            } catch {
+                #if DEBUG
+                print("GroupTransactionBridge: Failed to bridge expense \(expense.id): \(error)")
+                #endif
+            }
+        }
+
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+    }
+
+    /// Remove the bridged TransactionItem or InboxDraft for a deleted expense.
+    func unbridgeExpense(expenseID: String) throws {
+        let context = try requireContext()
+
+        let txDescriptor = FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitExpenseID == expenseID }
+        )
+        if let tx = try context.fetch(txDescriptor).first {
+            context.delete(tx)
+        }
+
+        let draftDescriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.splitExpenseID == expenseID }
+        )
+        if let draft = try context.fetch(draftDescriptor).first {
+            context.delete(draft)
+        }
+
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+    }
+
+    /// Remove all bridged records for a group (used when deleting/leaving a group).
+    func unbridgeExpenses(for group: SplitGroup) throws {
+        let context = try requireContext()
+        let zoneID = group.cloudKitZoneID
+
+        let txDescriptor = FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitGroupZoneID == zoneID }
+        )
+        let transactions = try context.fetch(txDescriptor)
+        for tx in transactions { context.delete(tx) }
+
+        let draftDescriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.splitGroupZoneID == zoneID }
+        )
+        let drafts = try context.fetch(draftDescriptor)
+        for draft in drafts { context.delete(draft) }
+
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+    }
+
+    // MARK: - Category Matching
+
+    /// Match a subcategory name to a user's personal Subcategory.
+    /// Priority: exact (case-insensitive) → contains → nil.
+    static func matchSubcategory(name: String?, context: ModelContext) -> Subcategory? {
+        guard let name, !name.isEmpty else { return nil }
+
+        let descriptor = FetchDescriptor<Subcategory>()
+        guard let all = try? context.fetch(descriptor) else { return nil }
+
+        // Exact match (case-insensitive)
+        if let exact = all.first(where: { $0.name.lowercased() == name.lowercased() }) {
+            return exact
+        }
+
+        // Contains match
+        if let partial = all.first(where: { $0.name.localizedCaseInsensitiveContains(name) }) {
+            return partial
+        }
+
+        return nil
+    }
+
+    // MARK: - Account Resolution
+
+    /// Resolve account: first non-archived account (by name).
+    /// Note: group.defaultAccountID will be wired via UI in GC-04.
+    static func resolveAccount(group: SplitGroup, context: ModelContext) -> Account? {
+        var descriptor = FetchDescriptor<Account>(
+            predicate: #Predicate { !$0.isArchived },
+            sortBy: [SortDescriptor(\.name)]
+        )
+        descriptor.fetchLimit = 1
+        return try? context.fetch(descriptor).first
+    }
+
+    // MARK: - Private Helpers
+
+    private func updateTransaction(
+        _ tx: TransactionItem,
+        from expense: SplitExpense,
+        share: SplitShare,
+        context: ModelContext
+    ) {
+        tx.amount = -share.amount
+        tx.currencyCode = expense.currencyCode
+        tx.date = expense.date
+        tx.note = expense.expenseDescription.isEmpty ? nil : expense.expenseDescription
+        tx.splitTotalAmount = expense.amount
+        tx.splitType = expense.splitType
+        tx.recalculatePreferredCurrency(context: context)
+    }
+
+    private func updateDraft(
+        _ draft: InboxDraft,
+        from expense: SplitExpense,
+        share: SplitShare
+    ) {
+        draft.amount = -share.amount
+        draft.date = expense.date
+        draft.note = expense.expenseDescription
+    }
+}
+
+// MARK: - Errors
+
+enum GroupTransactionBridgeError: LocalizedError {
+    case noContext
+
+    var errorDescription: String? {
+        switch self {
+        case .noContext:
+            return "GroupTransactionBridge: No ModelContext available"
+        }
+    }
+}

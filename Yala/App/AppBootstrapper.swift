@@ -144,6 +144,11 @@ final class AppBootstrapper {
         SplitSyncManager.shared.setContext(context)
         SplitSyncManager.shared.initialize()
 
+        // 15. Initialize Group Services (GC-03)
+        GroupService.shared.setContext(context)
+        GroupExpenseService.shared.setContext(context)
+        GroupTransactionBridge.shared.setContext(context)
+
         isInitialized = true
     }
 

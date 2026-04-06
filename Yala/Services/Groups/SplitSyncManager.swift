@@ -339,9 +339,17 @@ final class SplitSyncManager {
     private func handleFetchedRecordZoneChanges(_ fetched: CKSyncEngine.Event.FetchedRecordZoneChanges, engineName: String) {
         guard let modelContext else { return }
 
+        var processedExpenseIDs: Set<UUID> = []
+
         for modification in fetched.modifications {
             let record = modification.record
             applyRemoteRecord(record, context: modelContext)
+
+            // Track expense IDs for bridge hook
+            if record.recordType == CKConstants.RecordType.splitExpense,
+               let modelID = CKConstants.modelID(from: record.recordID) {
+                processedExpenseIDs.insert(modelID)
+            }
         }
 
         for deletion in fetched.deletions {
@@ -354,6 +362,22 @@ final class SplitSyncManager {
             #if DEBUG
             logger.error("[\(engineName)] Failed to save after remote changes: \(error)")
             #endif
+        }
+
+        // GC-03: Bridge remote expenses to personal TransactionItem/InboxDraft
+        if !processedExpenseIDs.isEmpty, GroupTransactionBridge.shared.isReady {
+            do {
+                // Set.contains not supported in #Predicate — filter in memory
+                let allExpenses = try modelContext.fetch(FetchDescriptor<SplitExpense>())
+                let matched = allExpenses.filter { processedExpenseIDs.contains($0.id) }
+                if !matched.isEmpty {
+                    try GroupTransactionBridge.shared.bridgeRemoteExpenses(matched)
+                }
+            } catch {
+                #if DEBUG
+                logger.error("[\(engineName)] Failed to bridge remote expenses: \(error)")
+                #endif
+            }
         }
 
         // Trigger UI refresh via existing pattern
