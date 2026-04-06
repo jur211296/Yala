@@ -45,7 +45,7 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 | DebtSimplificationService | Services/Groups/DebtSimplificationService.swift | Minimum cash flow — simplificación de deudas |
 | GroupBalanceService | Services/Groups/GroupBalanceService.swift | Balances por miembro, deudas, resumen global |
 
-### Key ViewModels (36)
+### Key ViewModels (38)
 | ViewModel | Tests |
 |-----------|-------|
 | CashFlowPlanViewModel | 8 |
@@ -68,6 +68,8 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 | BulkEditViewModel | 6 |
 | ScheduledPaymentEditorViewModel | 15 |
 | SubcategoryTransferViewModel | 8 |
+| GroupsViewModel | — |
+| GroupDetailViewModel | — |
 | + 15 ViewModels más en App/ViewModels/ | — |
 
 ### Test Suites (109 suites, 1240 tests)

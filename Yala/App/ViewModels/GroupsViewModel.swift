@@ -1,0 +1,160 @@
+//
+//  GroupsViewModel.swift
+//  Yala
+//
+//  ViewModel for the Groups tab — list, global summary, per-group balances.
+//
+
+import Foundation
+import SwiftData
+
+@MainActor
+@Observable
+final class GroupsViewModel {
+
+    // MARK: - Dependencies
+
+    private var modelContext: ModelContext?
+
+    // MARK: - Data
+
+    private(set) var groups: [SplitGroup] = []
+    private(set) var membersByGroup: [String: [SplitMember]] = [:]       // zoneID → members
+    private(set) var balancesByGroup: [String: [MemberBalance]] = [:]    // zoneID → balances
+    private(set) var globalSummary: GroupGlobalSummary?
+
+    // MARK: - UI State
+
+    var showCreateGroup: Bool = false
+    var selectedGroup: SplitGroup?
+    var showGroupDetail: Bool = false
+    var searchText: String = ""
+
+    // MARK: - Computed
+
+    var activeGroups: [SplitGroup] {
+        groups.filter { !$0.isArchived }
+    }
+
+    var filteredGroups: [SplitGroup] {
+        let base = activeGroups
+        guard !searchText.isEmpty else { return base }
+        let query = searchText.lowercased()
+        return base.filter { $0.name.lowercased().contains(query) }
+    }
+
+    // MARK: - Context
+
+    func setContext(_ context: ModelContext) {
+        self.modelContext = context
+        loadData()
+    }
+
+    // MARK: - Data Loading
+
+    func loadData() {
+        guard modelContext != nil else { return }
+
+        do {
+            groups = try GroupService.shared.fetchActiveGroups()
+
+            // Per-group data
+            var allExpenses: [SplitExpense] = []
+            var allShares: [SplitShare] = []
+            var allSettlements: [SplitSettlement] = []
+            var currentUserMemberIDs = Set<String>()
+
+            for group in groups {
+                let members = try GroupService.shared.fetchMembers(for: group)
+                membersByGroup[group.cloudKitZoneID] = members
+
+                let expenses = try GroupExpenseService.shared.fetchExpenses(for: group)
+                let shares = try GroupExpenseService.shared.fetchAllShares(for: group)
+                let settlements = try GroupExpenseService.shared.fetchSettlements(for: group)
+
+                // Per-group balances (for card display)
+                let balances = GroupBalanceService.calculateBalances(
+                    expenses: expenses,
+                    shares: shares,
+                    members: members,
+                    settlements: settlements
+                )
+                balancesByGroup[group.cloudKitZoneID] = balances
+
+                // Accumulate for global summary
+                allExpenses.append(contentsOf: expenses)
+                allShares.append(contentsOf: shares)
+                allSettlements.append(contentsOf: settlements)
+
+                // Collect current user member IDs
+                for member in members where member.isCurrentUser {
+                    currentUserMemberIDs.insert(member.id.uuidString)
+                }
+            }
+
+            // Global summary
+            if !groups.isEmpty {
+                globalSummary = GroupBalanceService.globalSummary(
+                    allExpenses: allExpenses,
+                    allShares: allShares,
+                    allSettlements: allSettlements,
+                    currentUserMemberIDs: currentUserMemberIDs
+                )
+            } else {
+                globalSummary = nil
+            }
+        } catch {
+            #if DEBUG
+            print("GroupsViewModel: Error loading data: \(error)")
+            #endif
+        }
+    }
+
+    // MARK: - Helpers
+
+    /// Get the current user's net balance for a specific group.
+    func currentUserBalance(for group: SplitGroup) -> MemberBalance? {
+        guard let balances = balancesByGroup[group.cloudKitZoneID],
+              let members = membersByGroup[group.cloudKitZoneID],
+              let currentMember = members.first(where: { $0.isCurrentUser }) else {
+            return nil
+        }
+        let memberID = currentMember.id.uuidString
+        return balances.first { $0.memberID == memberID }
+    }
+
+    /// Member count for a group.
+    func memberCount(for group: SplitGroup) -> Int {
+        membersByGroup[group.cloudKitZoneID]?.count ?? 0
+    }
+
+    // MARK: - Actions
+
+    func deleteGroup(_ group: SplitGroup) {
+        do {
+            try GroupService.shared.deleteGroup(group)
+            loadData()
+        } catch {
+            #if DEBUG
+            print("GroupsViewModel: Error deleting group: \(error)")
+            #endif
+        }
+    }
+
+    func archiveGroup(_ group: SplitGroup) {
+        do {
+            try GroupService.shared.setArchived(group, isArchived: true)
+            loadData()
+        } catch {
+            #if DEBUG
+            print("GroupsViewModel: Error archiving group: \(error)")
+            #endif
+        }
+    }
+
+    /// Open group detail via isPresented binding.
+    func openDetail(for group: SplitGroup) {
+        selectedGroup = group
+        showGroupDetail = true
+    }
+}

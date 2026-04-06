@@ -428,6 +428,7 @@ enum L10n {
         static var search: String { ls("tab.search", comment: "") }
         static var records: String { ls("tab.records", comment: "") }
         static var reports: String { ls("tab.reports", comment: "") }
+        static var groups: String { ls("tab.groups", comment: "") }
     }
 
     // MARK: - Period
@@ -846,6 +847,92 @@ enum L10n {
         static var sharesYouPay: String { ls("split.sharesYouPay", comment: "") }
         static var sharesOf: String { ls("split.sharesOf", comment: "") }
         static var sharesParts: String { ls("split.sharesParts", comment: "") }
+    }
+
+    // MARK: - Groups
+
+    enum Groups {
+        static var title: String { ls("groups.title", comment: "") }
+        static var newGroup: String { ls("groups.new", comment: "") }
+        static var editGroup: String { ls("groups.edit", comment: "") }
+
+        enum Empty {
+            static var title: String { ls("groups.empty.title", comment: "") }
+            static var message: String { ls("groups.empty.message", comment: "") }
+            static var action: String { ls("groups.empty.action", comment: "") }
+        }
+
+        enum Summary {
+            static var owedToMe: String { ls("groups.summary.owedToMe", comment: "") }
+            static var iOwe: String { ls("groups.summary.iOwe", comment: "") }
+            static var pendingSettlements: String { ls("groups.summary.pendingSettlements", comment: "") }
+            static var allSettled: String { ls("groups.summary.allSettled", comment: "") }
+        }
+
+        enum Detail {
+            static var records: String { ls("groups.detail.records", comment: "") }
+            static var balances: String { ls("groups.detail.balances", comment: "") }
+            static var stats: String { ls("groups.detail.stats", comment: "") }
+            static var comingSoon: String { ls("groups.detail.comingSoon", comment: "") }
+        }
+
+        enum Form {
+            static var name: String { ls("groups.form.name", comment: "") }
+            static var namePlaceholder: String { ls("groups.form.namePlaceholder", comment: "") }
+            static var currency: String { ls("groups.form.currency", comment: "") }
+            static var icon: String { ls("groups.form.icon", comment: "") }
+            static var simplifyDebts: String { ls("groups.form.simplifyDebts", comment: "") }
+            static var simplifyDebtsHint: String { ls("groups.form.simplifyDebtsHint", comment: "") }
+            static var defaultAccount: String { ls("groups.form.defaultAccount", comment: "") }
+            static var defaultAccountHint: String { ls("groups.form.defaultAccountHint", comment: "") }
+            static var autoCreate: String { ls("groups.form.autoCreate", comment: "") }
+            static var autoCreateHint: String { ls("groups.form.autoCreateHint", comment: "") }
+            static var none: String { ls("groups.form.none", comment: "") }
+        }
+
+        enum Settings {
+            static var title: String { ls("groups.settings.title", comment: "") }
+            static var members: String { ls("groups.settings.members", comment: "") }
+            static var addMember: String { ls("groups.settings.addMember", comment: "") }
+            static var addMemberPrompt: String { ls("groups.settings.addMemberPrompt", comment: "") }
+            static var invite: String { ls("groups.settings.invite", comment: "") }
+            static var leaveGroup: String { ls("groups.settings.leaveGroup", comment: "") }
+            static var leaveGroupConfirm: String { ls("groups.settings.leaveGroupConfirm", comment: "") }
+            static var deleteGroup: String { ls("groups.settings.deleteGroup", comment: "") }
+            static var deleteGroupConfirm: String { ls("groups.settings.deleteGroupConfirm", comment: "") }
+            static var archive: String { ls("groups.settings.archive", comment: "") }
+            static var unarchive: String { ls("groups.settings.unarchive", comment: "") }
+            static var options: String { ls("groups.settings.options", comment: "") }
+            static var info: String { ls("groups.settings.info", comment: "") }
+            static var dangerZone: String { ls("groups.settings.dangerZone", comment: "") }
+        }
+
+        enum Member {
+            static var admin: String { ls("groups.member.admin", comment: "") }
+            static var member: String { ls("groups.member.member", comment: "") }
+            static var you: String { ls("groups.member.you", comment: "") }
+            static var changeRole: String { ls("groups.member.changeRole", comment: "") }
+            static var remove: String { ls("groups.member.remove", comment: "") }
+            static var removeConfirm: String { ls("groups.member.removeConfirm", comment: "") }
+            static func people(_ count: Int) -> String { String(format: ls("groups.member.people %d", comment: ""), count) }
+        }
+
+        enum Balance {
+            static var title: String { ls("groups.balance.title", comment: "") }
+            static var owes: String { ls("groups.balance.owes", comment: "") }
+            static var isOwed: String { ls("groups.balance.isOwed", comment: "") }
+            static var noDebts: String { ls("groups.balance.noDebts", comment: "") }
+            static var pendingDebts: String { ls("groups.balance.pendingDebts", comment: "") }
+            static var settlements: String { ls("groups.balance.settlements", comment: "") }
+            static var confirmed: String { ls("groups.balance.confirmed", comment: "") }
+            static var pending: String { ls("groups.balance.pending", comment: "") }
+        }
+
+        enum Expense {
+            static var noExpenses: String { ls("groups.expense.noExpenses", comment: "") }
+            static var paidBy: String { ls("groups.expense.paidBy", comment: "") }
+            static var newExpense: String { ls("groups.expense.newExpense", comment: "") }
+        }
     }
 
     // MARK: - AI Consent

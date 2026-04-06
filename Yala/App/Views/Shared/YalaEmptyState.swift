@@ -143,6 +143,17 @@ extension YalaEmptyState {
         )
     }
 
+    /// Empty state for no groups
+    static func noGroups(action: (() -> Void)? = nil) -> YalaEmptyState {
+        YalaEmptyState(
+            icon: "person.2.fill",
+            title: L10n.Groups.Empty.title,
+            message: L10n.Groups.Empty.message,
+            actionTitle: action != nil ? L10n.Groups.Empty.action : nil,
+            action: action
+        )
+    }
+
     /// Empty state for no scheduled payments
     static func noScheduledPayments(icon: String = "calendar.badge.clock", action: (() -> Void)? = nil) -> YalaEmptyState {
         YalaEmptyState(

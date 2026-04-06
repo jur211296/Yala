@@ -658,8 +658,11 @@ struct MainTabView: View {
                         sessionState.selectedMainTab = .records
                     }
                 case .groups:
-                    // Groups UI will be implemented in GC-04
-                    sessionState.selectedMainTab = .panel
+                    sessionState.temporaryTab = .groups
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(50))
+                        sessionState.selectedMainTab = .groups
+                    }
                 }
 
                 // Clear after handling
@@ -736,6 +739,8 @@ struct MainTabView: View {
             RecordsStandaloneView()
         case .reports:
             FinancialReportView()
+        case .groups:
+            GroupsContainerView()
         }
     }
 
@@ -766,6 +771,7 @@ enum AppTab: Hashable {
     case search
     case records
     case reports
+    case groups
 }
 
 // MARK: - More View

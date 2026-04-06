@@ -379,6 +379,9 @@ final class AppBootstrapper {
         case "records":
             setOrDeferDeepLink(.recordsStandalone)
 
+        case "groups":
+            setOrDeferDeepLink(.groups)
+
         default:
             #if DEBUG
             print("AppBootstrapper: Unknown deep link host: \(url.host ?? "nil")")

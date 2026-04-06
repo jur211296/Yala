@@ -14,6 +14,7 @@ enum ConfigurableTab: String, Codable, CaseIterable, Identifiable {
     case planning
     case records
     case reports
+    case groups
 
     var id: String { rawValue }
 
@@ -24,6 +25,7 @@ enum ConfigurableTab: String, Codable, CaseIterable, Identifiable {
         case .planning: return L10n.Tab.planning
         case .records: return L10n.Tab.records
         case .reports: return L10n.Tab.reports
+        case .groups: return L10n.Tab.groups
         }
     }
 
@@ -34,6 +36,7 @@ enum ConfigurableTab: String, Codable, CaseIterable, Identifiable {
         case .planning: return "calendar"
         case .records: return "list.bullet.rectangle"
         case .reports: return "tablecells"
+        case .groups: return "person.2.fill"
         }
     }
 
@@ -45,6 +48,7 @@ enum ConfigurableTab: String, Codable, CaseIterable, Identifiable {
         case .planning: return .planning
         case .records: return .records
         case .reports: return .reports
+        case .groups: return .groups
         }
     }
 }

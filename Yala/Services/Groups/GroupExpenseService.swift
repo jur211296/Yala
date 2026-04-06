@@ -284,6 +284,19 @@ final class GroupExpenseService {
         return try context.fetch(descriptor)
     }
 
+    /// Fetch ALL shares for a group via per-expense indexed queries.
+    func fetchAllShares(for group: SplitGroup) throws -> [SplitShare] {
+        let expenses = try fetchExpenses(for: group)
+        guard !expenses.isEmpty else { return [] }
+        var result: [SplitShare] = []
+        result.reserveCapacity(expenses.count * 3)
+        for expense in expenses {
+            let shares = try fetchShares(for: expense)
+            result.append(contentsOf: shares)
+        }
+        return result
+    }
+
     func fetchSettlements(for group: SplitGroup) throws -> [SplitSettlement] {
         let context = try requireContext()
         let zoneID = group.cloudKitZoneID

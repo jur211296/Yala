@@ -1,0 +1,320 @@
+//
+//  GroupFormView.swift
+//  Yala
+//
+//  Sheet para crear o editar un grupo compartido.
+//
+
+import SwiftUI
+import SwiftData
+
+struct GroupFormView: View {
+
+    // MARK: - Environment
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.yalaTheme) private var theme
+
+    // MARK: - Input
+
+    let group: SplitGroup?
+
+    // MARK: - Form State
+
+    @State private var name: String = ""
+    @State private var iconName: String = "person.2.fill"
+    @State private var colorHex: String = "#8B5CF6"
+    @State private var selectedCurrency: CurrencyCode = .pen
+    @State private var simplifyDebts: Bool = false
+    @State private var autoCreateTransaction: Bool = true
+    @State private var selectedAccountName: String = "" // Account picker — bridge resolves by first non-archived account
+
+    // MARK: - Sheet State
+
+    @State private var showIconPicker = false
+    @State private var showCurrencyPicker = false
+    @State private var accounts: [Account] = []
+
+    @FocusState private var isNameFocused: Bool
+
+    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
+
+    // MARK: - Body
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    // Icon preview
+                    iconPreview
+
+                    // Name
+                    nameSection
+
+                    // Currency
+                    currencySection
+
+                    // Account
+                    accountSection
+
+                    // Options
+                    optionsSection
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xl)
+            }
+            .background(.thBackground)
+            .navigationTitle(group == nil ? L10n.Groups.newGroup : L10n.Groups.editGroup)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.cancel) {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    YalaSaveButton(action: save, isDisabled: name.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+            .sheet(isPresented: $showIconPicker) {
+                IconColorPickerSheet(
+                    selectedIconName: $iconName,
+                    selectedColorHex: $colorHex
+                )
+            }
+            .navigationDestination(isPresented: $showCurrencyPicker) {
+                CurrencySelectorView(selectedCurrency: $selectedCurrency)
+            }
+            .onAppear {
+                loadAccounts()
+                populateFromGroup()
+            }
+        }
+    }
+
+    // MARK: - Icon Preview
+
+    private var iconPreview: some View {
+        Button {
+            showIconPicker = true
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(Color(hex: colorHex))
+                    .frame(width: 80, height: 80)
+
+                Image(systemName: iconName)
+                    .font(.system(size: 32, weight: .medium)) // A11Y-DT: decorative icon preview, fixed size
+                    .foregroundStyle(.white)
+            }
+            .shadow(color: Color(hex: colorHex).opacity(0.4), radius: 8, x: 0, y: 4)
+            .overlay(alignment: .bottomTrailing) {
+                Image(systemName: "pencil.circle.fill")
+                    .font(DS.Typography.title2)
+                    .foregroundStyle(.thAccent)
+                    .background(Circle().fill(.thBackground).padding(-2))
+            }
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .padding(.top, DS.Spacing.md)
+        .accessibilityLabel(L10n.Groups.Form.icon)
+    }
+
+    // MARK: - Name Section
+
+    private var nameSection: some View {
+        SectionBox(title: L10n.Groups.Form.name) {
+            TextField(L10n.Groups.Form.namePlaceholder, text: $name)
+                .font(DS.Typography.body)
+                .focused($isNameFocused)
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
+        }
+    }
+
+    // MARK: - Currency Section
+
+    private var currencySection: some View {
+        SectionBox(title: L10n.Groups.Form.currency) {
+            Button {
+                showCurrencyPicker = true
+            } label: {
+                HStack(spacing: DS.Spacing.md) {
+                    let info = currencyInfo(for: selectedCurrency)
+                    Text(info.flag)
+                        .font(DS.Typography.title)
+
+                    Text(info.code)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.primary)
+
+                    Spacer()
+
+                    Text(info.name.capitalized)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+
+                    Image(systemName: "chevron.right")
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
+            }
+            .buttonStyle(.plain)
+            .contentShape(Rectangle())
+        }
+    }
+
+    // MARK: - Account Section
+
+    private var accountSection: some View {
+        SectionBox(title: L10n.Groups.Form.defaultAccount) {
+            VStack(spacing: DS.Spacing.none) {
+                // Account picker
+                if accounts.isEmpty {
+                    Text(L10n.Groups.Form.none)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, DS.FormRow.paddingH)
+                        .padding(.vertical, DS.FormRow.paddingV)
+                } else {
+                    Picker("", selection: $selectedAccountName) {
+                        Text(L10n.Groups.Form.none).tag("")
+                        ForEach(accounts, id: \.persistentModelID) { account in
+                            Text(account.name).tag(account.name)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .padding(.horizontal, DS.FormRow.paddingH)
+                    .padding(.vertical, DS.Spacing.xs)
+                }
+
+                // Hint
+                Text(L10n.Groups.Form.defaultAccountHint)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, DS.FormRow.paddingH)
+                    .padding(.bottom, DS.Spacing.sm)
+            }
+        }
+    }
+
+    // MARK: - Options Section
+
+    private var optionsSection: some View {
+        SectionBox(title: L10n.Groups.Settings.options) {
+            VStack(spacing: DS.Spacing.none) {
+                // Simplify Debts
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    Toggle(L10n.Groups.Form.simplifyDebts, isOn: $simplifyDebts)
+                        .font(DS.Typography.body)
+
+                    Text(L10n.Groups.Form.simplifyDebtsHint)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
+
+                Divider()
+                    .padding(.leading, DS.FormRow.paddingH)
+
+                // Auto-create transaction
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    Toggle(L10n.Groups.Form.autoCreate, isOn: $autoCreateTransaction)
+                        .font(DS.Typography.body)
+
+                    Text(L10n.Groups.Form.autoCreateHint)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
+            }
+        }
+    }
+
+    // MARK: - Actions
+
+    private func save() {
+        let trimmedName = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmedName.isEmpty else { return }
+
+        do {
+            // Resolve account name to ID (if selected)
+            let accountID = resolveAccountID()
+
+            if let group {
+                // Update
+                try GroupService.shared.updateGroup(
+                    group,
+                    name: trimmedName,
+                    iconName: iconName,
+                    colorHex: colorHex,
+                    currencyCode: selectedCurrency.rawValue,
+                    simplifyDebts: simplifyDebts,
+                    defaultAccountID: accountID,
+                    autoCreateTransaction: autoCreateTransaction
+                )
+            } else {
+                // Create
+                try GroupService.shared.createGroup(
+                    name: trimmedName,
+                    iconName: iconName,
+                    colorHex: colorHex,
+                    currencyCode: selectedCurrency.rawValue,
+                    simplifyDebts: simplifyDebts,
+                    defaultAccountID: accountID,
+                    autoCreateTransaction: autoCreateTransaction
+                )
+            }
+            DS.Haptic.success()
+            dismiss()
+        } catch {
+            #if DEBUG
+            print("GroupFormView: Error saving group: \(error)")
+            #endif
+        }
+    }
+
+    private func loadAccounts() {
+        do {
+            let descriptor = FetchDescriptor<Account>(
+                predicate: #Predicate { !$0.isArchived },
+                sortBy: [SortDescriptor(\.name)]
+            )
+            accounts = try modelContext.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("GroupFormView: Error loading accounts: \(error)")
+            #endif
+        }
+    }
+
+    private func populateFromGroup() {
+        if let group {
+            name = group.name
+            iconName = group.iconName
+            colorHex = group.colorHex
+            selectedCurrency = CurrencyCode(rawValue: group.currencyCode) ?? .pen
+            simplifyDebts = group.simplifyDebts
+            autoCreateTransaction = group.autoCreateTransaction
+            // Reverse-resolve account ID to name
+            if let accID = group.defaultAccountID,
+               let match = accounts.first(where: { $0.persistentModelID.hashValue == accID.hashValue }) {
+                selectedAccountName = match.name
+            }
+        } else {
+            selectedCurrency = CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen
+        }
+    }
+
+    private func resolveAccountID() -> UUID? {
+        // defaultAccountID is unused by bridge (resolves by name), so we store nil
+        // The bridge uses the first non-archived account as fallback
+        nil
+    }
+}
