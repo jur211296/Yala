@@ -15,7 +15,8 @@
     "11-filters": { "total": 6, "automated": 6, "manual": 0, "notes": "Full coverage" },
     "12-import-export": { "total": 12, "automated": 3, "manual": 9, "notes": "Only export wizard; import requires file picker (not automatable)" },
     "13-settings": { "total": 13, "automated": 10, "manual": 3, "notes": "Biometric, iCloud sync, and subscription are manual" },
-    "14-edge-cases": { "total": 9, "automated": 6, "manual": 3, "notes": "Empty states, amounts, dark mode covered; performance and crash recovery manual" }
+    "14-edge-cases": { "total": 9, "automated": 6, "manual": 3, "notes": "Empty states, amounts, dark mode covered; performance and crash recovery manual" },
+    "15-groups": { "total": 3, "automated": 3, "manual": 0, "notes": "Group form: create, currency toggle, split type picker" }
   },
   "not_automatable": [
     "Import (requires file picker / document provider)",
@@ -30,8 +31,8 @@
   ],
   "totals": {
     "scenarios_in_qa_doc": 244,
-    "automated_scripts": 104,
+    "automated_scripts": 107,
     "manual_only": 140,
-    "coverage_percent": 42.6
+    "coverage_percent": 43.3
   }
 }

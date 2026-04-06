@@ -1,0 +1,14 @@
+[
+  { "command": "press", "positionals": ["280", "830"], "flags": {}, "_comment": "Tab Más (sheet)" },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Grupos", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Crear grupo", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "press", "positionals": ["350", "500"], "flags": {}, "_comment": "Toggle moneda única ON" },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s15.2-currency-toggle-on.png"], "flags": {} },
+  { "command": "find", "positionals": ["PEN", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s15.2-currency-picker-sheet.png"], "flags": {} }
+]
