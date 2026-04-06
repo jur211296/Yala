@@ -23,20 +23,25 @@ struct GroupSettingsView: View {
 
     // MARK: - State
 
-    @State private var showEditGroup = false
-    @State private var showAddMemberAlert = false
-    @State private var newMemberName = ""
-    @State private var showLeaveConfirm = false
-    @State private var showDeleteConfirm = false
+    @State private var editName: String = ""
+    @State private var editIconName: String = ""
+    @State private var editColorHex: String = ""
+    @State private var showIconPicker: Bool = false
+    @State private var isCreatingShare = false
+    @State private var shareURL: URL?
+    @State private var showShareSheet = false
     @State private var showRemoveMemberConfirm = false
     @State private var memberToRemove: SplitMember?
     @State private var simplifyDebts: Bool = false
     @State private var showDebtsInSingleCurrency: Bool = false
+    @State private var selectedCurrency: CurrencyCode = .pen
+    @State private var showCurrencyPicker: Bool = false
     @State private var defaultSplitType: SplitType = .equal
     @State private var membersCanInvite: Bool = true
     @State private var personalAutoCreate: Bool = true
-    @State private var personalAccountName: String = ""
-    @State private var accounts: [Account] = []
+    @State private var groupCurrencies: [String] = []
+    @State private var accountPrefs: [String: String] = [:]   // currencyCode → accountName
+    @State private var accountsByCurrency: [String: [Account]] = [:]
 
     // MARK: - Body
 
@@ -56,13 +61,14 @@ struct GroupSettingsView: View {
                     // Personal settings section
                     mySettingsSection
 
-                    // Danger zone
-                    dangerZoneSection
+                    // Archive
+                    archiveSection
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xl)
             }
             .background(.thBackground)
+            .onDisappear { saveIdentity() }
             .navigationTitle(L10n.Groups.Settings.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -72,41 +78,15 @@ struct GroupSettingsView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showEditGroup, onDismiss: {
-                viewModel.loadData()
-            }) {
-                GroupFormView(group: group)
-            }
-            .alert(L10n.Groups.Settings.addMember, isPresented: $showAddMemberAlert) {
-                TextField(L10n.Groups.Settings.addMemberPrompt, text: $newMemberName)
-                Button(L10n.Action.cancel, role: .cancel) {
-                    newMemberName = ""
-                }
-                Button(L10n.Action.add) {
-                    addMember()
+            .sheet(isPresented: $showCurrencyPicker) {
+                NavigationStack {
+                    CurrencySelectorView(selectedCurrency: $selectedCurrency)
                 }
             }
-            .confirmationDialog(
-                L10n.Groups.Settings.leaveGroup,
-                isPresented: $showLeaveConfirm,
-                titleVisibility: .visible
-            ) {
-                Button(L10n.Groups.Settings.leaveGroup, role: .destructive) {
-                    leaveGroup()
+            .sheet(isPresented: $showShareSheet) {
+                if let url = shareURL {
+                    ActivityView(activityItems: [url])
                 }
-            } message: {
-                Text(L10n.Groups.Settings.leaveGroupConfirm)
-            }
-            .confirmationDialog(
-                L10n.Groups.Settings.deleteGroup,
-                isPresented: $showDeleteConfirm,
-                titleVisibility: .visible
-            ) {
-                Button(L10n.Groups.Settings.deleteGroup, role: .destructive) {
-                    deleteGroup()
-                }
-            } message: {
-                Text(L10n.Groups.Settings.deleteGroupConfirm)
             }
             .confirmationDialog(
                 L10n.Groups.Member.remove,
@@ -126,42 +106,50 @@ struct GroupSettingsView: View {
 
     private var infoSection: some View {
         SectionBox(title: L10n.Groups.Settings.info) {
-            Button {
-                showEditGroup = true
-            } label: {
-                HStack(spacing: DS.Spacing.md) {
-                    // Group icon
+            HStack(spacing: DS.Spacing.md) {
+                // Group icon — tappable to change
+                Button {
+                    showIconPicker = true
+                } label: {
                     ZStack {
                         Circle()
-                            .fill(Color(hex: group.colorHex))
-                            .frame(width: 48, height: 48)
+                            .fill(Color(hex: editColorHex))
+                            .frame(width: 48, height: 48) // A11Y-DT: fixed icon size matching CategoryDetailView pattern
 
-                        Image(systemName: group.iconName)
+                        Image(systemName: editIconName)
                             .font(DS.Typography.title2)
                             .foregroundStyle(.white)
+
+                        // A11Y-DT: decorative edit badge on group icon
+                        Image(systemName: "pencil.circle.fill")
+                            .font(.system(size: 18))
+                            .foregroundStyle(Color(hex: editColorHex))
+                            .background(Circle().fill(.white).frame(width: 16, height: 16))
+                            .offset(x: 16, y: 16)
                     }
-
-                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                        Text(group.name)
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.primary)
-
-                        Text(L10n.Groups.Member.people(viewModel.members.count))
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
                 }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
+                .buttonStyle(.plain)
+
+                // Group name — editable inline
+                TextField(L10n.Groups.Form.namePlaceholder, text: $editName)
+                    .font(DS.Typography.headline)
+                    .onSubmit { saveIdentity() }
             }
-            .buttonStyle(.plain)
-            .contentShape(Rectangle())
+            .padding(.horizontal, DS.FormRow.paddingH)
+            .padding(.vertical, DS.FormRow.paddingV)
+        }
+        .onAppear {
+            editName = group.name
+            editIconName = group.iconName
+            editColorHex = group.colorHex
+        }
+        .sheet(isPresented: $showIconPicker, onDismiss: {
+            saveIdentity()
+        }) {
+            IconColorPickerSheet(
+                selectedIconName: $editIconName,
+                selectedColorHex: $editColorHex
+            )
         }
     }
 
@@ -188,26 +176,33 @@ struct GroupSettingsView: View {
                     }
                 }
 
-                // Add member button
+                // Invite by link
                 if viewModel.isCurrentUserAdmin || group.membersCanInvite {
                     Divider()
                     Button {
-                        showAddMemberAlert = true
+                        Task { await createShareLink() }
                     } label: {
                         HStack(spacing: DS.Spacing.md) {
-                            Image(systemName: "plus.circle.fill")
+                            Image(systemName: "link.badge.plus")
                                 .font(DS.Typography.title2)
                                 .foregroundStyle(.thAccent)
 
-                            Text(L10n.Groups.Settings.addMember)
+                            Text(L10n.Groups.Settings.invite)
                                 .font(DS.Typography.body)
                                 .foregroundStyle(.thAccent)
+
+                            Spacer()
+
+                            if isCreatingShare {
+                                ProgressView()
+                            }
                         }
                         .padding(.horizontal, DS.FormRow.paddingH)
                         .padding(.vertical, DS.FormRow.paddingV)
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .contentShape(Rectangle())
+                    .disabled(isCreatingShare)
                 }
             }
         }
@@ -244,11 +239,43 @@ struct GroupSettingsView: View {
                     Text(L10n.Groups.Form.showDebtsInSingleCurrencyHint)
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
+
+                    if showDebtsInSingleCurrency {
+                        Button {
+                            showCurrencyPicker = true
+                        } label: {
+                            HStack(spacing: DS.Spacing.md) {
+                                let info = currencyInfo(for: selectedCurrency)
+                                Text(info.flag)
+                                    .font(DS.Typography.body)
+
+                                Text(info.code)
+                                    .font(DS.Typography.body)
+                                    .foregroundStyle(.primary)
+
+                                Spacer()
+
+                                Text(info.name.capitalized)
+                                    .font(DS.Typography.captionSmall)
+                                    .foregroundStyle(.secondary)
+
+                                Image(systemName: "chevron.right")
+                                    .font(DS.Typography.captionSmall)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.vertical, DS.Spacing.sm)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
                 .padding(.horizontal, DS.FormRow.paddingH)
                 .padding(.vertical, DS.FormRow.paddingV)
                 .onChange(of: showDebtsInSingleCurrency) { _, newValue in
                     updateGroupOption { $0.showDebtsInSingleCurrency = newValue }
+                }
+                .onChange(of: selectedCurrency) { _, newValue in
+                    updateGroupOption { $0.currencyCode = newValue.rawValue }
                 }
 
                 Divider()
@@ -296,6 +323,7 @@ struct GroupSettingsView: View {
         .onAppear {
             simplifyDebts = group.simplifyDebts
             showDebtsInSingleCurrency = group.showDebtsInSingleCurrency
+            selectedCurrency = CurrencyCode(rawValue: group.currencyCode) ?? .pen
             defaultSplitType = SplitType(rawValue: group.defaultSplitType) ?? .equal
             membersCanInvite = group.membersCanInvite
         }
@@ -321,31 +349,31 @@ struct GroupSettingsView: View {
                     GroupPersonalPreferences.setAutoCreateTransaction(newValue, for: group.cloudKitZoneID)
                 }
 
-                Divider()
-                    .padding(.leading, DS.FormRow.paddingH)
+                if personalAutoCreate {
+                    ForEach(groupCurrencies, id: \.self) { code in
+                        Divider()
+                            .padding(.leading, DS.FormRow.paddingH)
 
-                // Default account (personal)
-                HStack {
-                    Text(L10n.Groups.Form.defaultAccount)
-                        .font(DS.Typography.body)
+                        HStack {
+                            let label = groupCurrencies.count > 1
+                                ? "\(L10n.Groups.Form.defaultAccount) (\(code))"
+                                : L10n.Groups.Form.defaultAccount
+                            Text(label)
+                                .font(DS.Typography.body)
 
-                    Spacer()
+                            Spacer()
 
-                    Picker("", selection: $personalAccountName) {
-                        Text(L10n.Groups.Form.none).tag("")
-                        ForEach(accounts, id: \.persistentModelID) { account in
-                            Text(account.name).tag(account.name)
+                            Picker("", selection: accountBinding(for: code)) {
+                                Text(L10n.Groups.Form.none).tag("")
+                                ForEach(accountsByCurrency[code] ?? [], id: \.persistentModelID) { account in
+                                    Text(account.name).tag(account.name)
+                                }
+                            }
+                            .pickerStyle(.menu)
                         }
+                        .padding(.horizontal, DS.FormRow.paddingH)
+                        .padding(.vertical, DS.FormRow.paddingV)
                     }
-                    .pickerStyle(.menu)
-                }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
-                .onChange(of: personalAccountName) { _, newValue in
-                    GroupPersonalPreferences.setDefaultAccountName(
-                        newValue.isEmpty ? nil : newValue,
-                        for: group.cloudKitZoneID
-                    )
                 }
 
                 // Hint
@@ -359,92 +387,110 @@ struct GroupSettingsView: View {
         .onAppear {
             personalAutoCreate = GroupPersonalPreferences.autoCreateTransaction(for: group.cloudKitZoneID)
                 ?? group.autoCreateTransaction
-            personalAccountName = GroupPersonalPreferences.defaultAccountName(for: group.cloudKitZoneID) ?? ""
-            loadAccounts()
+            loadAccountPreferences()
         }
     }
 
-    // MARK: - Danger Zone
+    // MARK: - Archive Section
 
-    private var dangerZoneSection: some View {
-        SectionBox(title: L10n.Groups.Settings.dangerZone) {
-            VStack(spacing: DS.Spacing.none) {
-                // Archive / Unarchive
-                Button {
-                    toggleArchive()
-                } label: {
-                    HStack {
-                        Text(group.isArchived ? L10n.Groups.Settings.unarchive : L10n.Groups.Settings.archive)
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        Image(systemName: group.isArchived ? "archivebox" : "archivebox.fill")
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.vertical, DS.FormRow.paddingV)
+    private var archiveSection: some View {
+        VStack(spacing: DS.Spacing.none) {
+            Button {
+                toggleArchive()
+            } label: {
+                HStack {
+                    Image(systemName: group.isArchived ? "archivebox.fill" : "archivebox")
+                        .foregroundStyle(DS.Semantic.errorForeground)
+                    Text(group.isArchived ? L10n.Groups.Settings.unarchive : L10n.Groups.Settings.archive)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(DS.Semantic.errorForeground)
+                    Spacer()
                 }
-                .buttonStyle(.plain)
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
                 .contentShape(Rectangle())
-
-                Divider()
-                    .padding(.leading, DS.FormRow.paddingH)
-
-                // Leave or Delete
-                if group.isOwner {
-                    Button {
-                        showDeleteConfirm = true
-                    } label: {
-                        HStack {
-                            Text(L10n.Groups.Settings.deleteGroup)
-                                .font(DS.Typography.body)
-                                .foregroundStyle(DS.Semantic.errorForeground)
-                            Spacer()
-                            Image(systemName: "trash")
-                                .foregroundStyle(DS.Semantic.errorForeground)
-                        }
-                        .padding(.horizontal, DS.FormRow.paddingH)
-                        .padding(.vertical, DS.FormRow.paddingV)
-                    }
-                    .buttonStyle(.plain)
-                    .contentShape(Rectangle())
-                } else {
-                    Button {
-                        showLeaveConfirm = true
-                    } label: {
-                        HStack {
-                            Text(L10n.Groups.Settings.leaveGroup)
-                                .font(DS.Typography.body)
-                                .foregroundStyle(DS.Semantic.errorForeground)
-                            Spacer()
-                            Image(systemName: "rectangle.portrait.and.arrow.right")
-                                .foregroundStyle(DS.Semantic.errorForeground)
-                        }
-                        .padding(.horizontal, DS.FormRow.paddingH)
-                        .padding(.vertical, DS.FormRow.paddingV)
-                    }
-                    .buttonStyle(.plain)
-                    .contentShape(Rectangle())
-                }
             }
+            .buttonStyle(.plain)
+
+            Text(L10n.Groups.Settings.archiveHint)
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.bottom, DS.Spacing.sm)
         }
+        .background(RoundedRectangle(cornerRadius: DS.Radius.card).fill(.thCard))
+        .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(.thCardBorder, lineWidth: 1))
+    }
+
+    // MARK: - Bindings
+
+    private func accountBinding(for code: String) -> Binding<String> {
+        Binding<String>(
+            get: { accountPrefs[code] ?? "" },
+            set: { newValue in
+                accountPrefs[code] = newValue
+                GroupPersonalPreferences.setAccountName(
+                    newValue.isEmpty ? nil : newValue,
+                    for: group.cloudKitZoneID,
+                    currencyCode: code
+                )
+            }
+        )
     }
 
     // MARK: - Actions
 
-    private func addMember() {
-        let name = newMemberName.trimmingCharacters(in: .whitespaces)
-        guard !name.isEmpty else { return }
+    private func saveIdentity() {
+        let trimmedName = editName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return }
+        let nameChanged = trimmedName != group.name
+        let iconChanged = editIconName != group.iconName
+        let colorChanged = editColorHex != group.colorHex
+        guard nameChanged || iconChanged || colorChanged else { return }
+
         do {
-            try GroupService.shared.addMember(to: group, displayName: name)
+            try GroupService.shared.updateGroup(
+                group,
+                name: trimmedName,
+                iconName: editIconName,
+                colorHex: editColorHex,
+                currencyCode: group.currencyCode,
+                simplifyDebts: group.simplifyDebts,
+                showDebtsInSingleCurrency: group.showDebtsInSingleCurrency,
+                defaultSplitType: group.defaultSplitType,
+                membersCanInvite: group.membersCanInvite
+            )
             viewModel.loadData()
-            DS.Haptic.success()
         } catch {
             #if DEBUG
-            print("GroupSettingsView: Error adding member: \(error)")
+            print("GroupSettingsView: Error saving identity: \(error)")
             #endif
         }
-        newMemberName = ""
+    }
+
+    private func createShareLink() async {
+        guard !isCreatingShare else { return }
+
+        // Return cached URL if available
+        if let cached = shareURL {
+            showShareSheet = true
+            return
+        }
+
+        isCreatingShare = true
+        do {
+            let (_, url) = try await SplitZoneManager().createShare(for: group)
+            shareURL = url
+            isCreatingShare = false
+            if url != nil {
+                showShareSheet = true
+            }
+        } catch {
+            isCreatingShare = false
+            #if DEBUG
+            print("GroupSettingsView: Error creating share: \(error)")
+            #endif
+        }
     }
 
     private func changeRole(_ member: SplitMember) {
@@ -477,31 +523,12 @@ struct GroupSettingsView: View {
         do {
             try GroupService.shared.setArchived(group, isArchived: !group.isArchived)
             viewModel.loadData()
+            if group.isArchived {
+                dismiss()
+            }
         } catch {
             #if DEBUG
             print("GroupSettingsView: Error toggling archive: \(error)")
-            #endif
-        }
-    }
-
-    private func leaveGroup() {
-        do {
-            try GroupService.shared.leaveGroup(group)
-            dismiss()
-        } catch {
-            #if DEBUG
-            print("GroupSettingsView: Error leaving group: \(error)")
-            #endif
-        }
-    }
-
-    private func deleteGroup() {
-        do {
-            try GroupService.shared.deleteGroup(group)
-            dismiss()
-        } catch {
-            #if DEBUG
-            print("GroupSettingsView: Error deleting group: \(error)")
             #endif
         }
     }
@@ -528,16 +555,37 @@ struct GroupSettingsView: View {
         }
     }
 
-    private func loadAccounts() {
+    private func loadAccountPreferences() {
         do {
+            // Get distinct currencies from group expenses
+            var currencies = try GroupExpenseService.shared.fetchDistinctCurrencyCodes(for: group)
+            if currencies.isEmpty {
+                currencies = [group.currencyCode]
+            }
+            groupCurrencies = currencies
+
+            // Load all non-archived accounts
             let descriptor = FetchDescriptor<Account>(
                 predicate: #Predicate { !$0.isArchived },
                 sortBy: [SortDescriptor(\.name)]
             )
-            accounts = try modelContext.fetch(descriptor)
+            let allAccounts = try modelContext.fetch(descriptor)
+
+            // Group accounts by currency
+            var byCurrency: [String: [Account]] = [:]
+            for code in currencies {
+                byCurrency[code] = allAccounts.filter { $0.currencyCode == code }
+            }
+            accountsByCurrency = byCurrency
+
+            // Load saved preferences
+            accountPrefs = GroupPersonalPreferences.allAccountPreferences(
+                for: group.cloudKitZoneID,
+                currencies: currencies
+            )
         } catch {
             #if DEBUG
-            print("GroupSettingsView: Error loading accounts: \(error)")
+            print("GroupSettingsView: Error loading account preferences: \(error)")
             #endif
         }
     }

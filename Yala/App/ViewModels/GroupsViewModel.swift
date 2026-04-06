@@ -36,12 +36,18 @@ final class GroupsViewModel {
         groups.filter { !$0.isArchived }
     }
 
+    var archivedGroups: [SplitGroup] {
+        groups.filter { $0.isArchived }
+    }
+
     var filteredGroups: [SplitGroup] {
         let base = activeGroups
         guard !searchText.isEmpty else { return base }
         let query = searchText.lowercased()
         return base.filter { $0.name.lowercased().contains(query) }
     }
+
+    var showArchived: Bool = false
 
     // MARK: - Context
 
@@ -56,7 +62,7 @@ final class GroupsViewModel {
         guard modelContext != nil else { return }
 
         do {
-            groups = try GroupService.shared.fetchActiveGroups()
+            groups = try GroupService.shared.fetchAllGroups()
 
             // Per-group data
             var allExpenses: [SplitExpense] = []
@@ -68,11 +74,13 @@ final class GroupsViewModel {
                 let members = try GroupService.shared.fetchMembers(for: group)
                 membersByGroup[group.cloudKitZoneID] = members
 
+                // Skip heavy data loading for archived groups
+                guard !group.isArchived else { continue }
+
                 let expenses = try GroupExpenseService.shared.fetchExpenses(for: group)
                 let shares = try GroupExpenseService.shared.fetchAllShares(for: group)
                 let settlements = try GroupExpenseService.shared.fetchSettlements(for: group)
 
-                // Per-group balances (for card display)
                 let balances = GroupBalanceService.calculateBalances(
                     expenses: expenses,
                     shares: shares,
@@ -81,12 +89,10 @@ final class GroupsViewModel {
                 )
                 balancesByGroup[group.cloudKitZoneID] = balances
 
-                // Accumulate for global summary
                 allExpenses.append(contentsOf: expenses)
                 allShares.append(contentsOf: shares)
                 allSettlements.append(contentsOf: settlements)
 
-                // Collect current user member IDs
                 for member in members where member.isCurrentUser {
                     currentUserMemberIDs.insert(member.id.uuidString)
                 }

@@ -2988,7 +2988,7 @@
 "groups.form.icon" = "Ícone";
 "groups.form.simplifyDebts" = "Simplificar dívidas";
 "groups.form.simplifyDebtsHint" = "Reduz o número de pagamentos necessários entre membros";
-"groups.form.defaultAccount" = "Conta destino";
+"groups.form.defaultAccount" = "Conta para registros";
 "groups.form.defaultAccountHint" = "Conta onde as despesas do grupo são registradas";
 "groups.form.autoCreate" = "Adicionar aos meus registros";
 "groups.form.autoCreateHint" = "Cria automaticamente uma despesa pessoal ao registrar uma despesa compartilhada";
@@ -3009,6 +3009,9 @@
 "groups.settings.deleteGroupConfirm" = "Esta ação é permanente e excluirá todos os dados do grupo.";
 "groups.settings.archive" = "Arquivar grupo";
 "groups.settings.unarchive" = "Desarquivar grupo";
+"groups.settings.archiveHint" = "As despesas e saldos são preservados. Você pode desarquivar quando quiser.";
+"groups.settings.showArchived" = "Ver arquivados";
+"groups.settings.hideArchived" = "Ocultar arquivados";
 "groups.settings.options" = "Opções";
 "groups.settings.info" = "Informação";
 "groups.settings.dangerZone" = "Zona de perigo";

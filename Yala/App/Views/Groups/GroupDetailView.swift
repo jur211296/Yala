@@ -107,6 +107,9 @@ struct GroupDetailView: View {
             }
             .onChange(of: sessionState.dataVersion) {
                 viewModel.loadData()
+                if group.isArchived {
+                    dismiss()
+                }
             }
         }
     }

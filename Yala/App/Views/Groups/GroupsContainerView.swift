@@ -28,9 +28,18 @@ struct GroupsContainerView: View {
             ZStack {
                 PanelBackgroundView()
 
-                if viewModel.activeGroups.isEmpty {
+                if viewModel.activeGroups.isEmpty && viewModel.archivedGroups.isEmpty {
                     YalaEmptyState.noGroups {
                         viewModel.showCreateGroup = true
+                    }
+                } else if viewModel.activeGroups.isEmpty {
+                    // Only archived groups exist
+                    VStack(spacing: DS.Spacing.xl) {
+                        YalaEmptyState.noGroups {
+                            viewModel.showCreateGroup = true
+                        }
+                        archivedGroupsSection
+                            .padding(.horizontal, DS.Spacing.lg)
                     }
                 } else {
                     ScrollView {
@@ -49,6 +58,11 @@ struct GroupsContainerView: View {
                                 ) {
                                     viewModel.openDetail(for: group)
                                 }
+                            }
+
+                            // Archived groups
+                            if !viewModel.archivedGroups.isEmpty {
+                                archivedGroupsSection
                             }
                         }
                         .padding(.horizontal, DS.Spacing.lg)
@@ -94,6 +108,44 @@ struct GroupsContainerView: View {
             }
             .onChange(of: sessionState.dataVersion) {
                 viewModel.loadData()
+            }
+        }
+    }
+
+    // MARK: - Archived Groups
+
+    private var archivedGroupsSection: some View {
+        VStack(spacing: DS.Spacing.md) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    viewModel.showArchived.toggle()
+                }
+            } label: {
+                HStack(spacing: DS.Spacing.sm) {
+                    Image(systemName: viewModel.showArchived ? "chevron.down" : "chevron.right")
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                    Text(viewModel.showArchived
+                         ? L10n.Groups.Settings.hideArchived
+                         : "\(L10n.Groups.Settings.showArchived) (\(viewModel.archivedGroups.count))")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+            }
+            .buttonStyle(.plain)
+
+            if viewModel.showArchived {
+                ForEach(viewModel.archivedGroups, id: \.id) { group in
+                    GroupCardView(
+                        group: group,
+                        memberCount: viewModel.memberCount(for: group),
+                        balance: viewModel.currentUserBalance(for: group)
+                    ) {
+                        viewModel.openDetail(for: group)
+                    }
+                    .opacity(0.6)
+                }
             }
         }
     }

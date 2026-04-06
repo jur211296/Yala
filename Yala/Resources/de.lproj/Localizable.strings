@@ -2988,7 +2988,7 @@
 "groups.form.icon" = "Symbol";
 "groups.form.simplifyDebts" = "Schulden vereinfachen";
 "groups.form.simplifyDebtsHint" = "Reduziert die Anzahl der Zahlungen zwischen Mitgliedern";
-"groups.form.defaultAccount" = "Zielkonto";
+"groups.form.defaultAccount" = "Konto für Einträge";
 "groups.form.defaultAccountHint" = "Konto, auf dem Gruppenausgaben verbucht werden";
 "groups.form.autoCreate" = "Zu meinen Einträgen hinzufügen";
 "groups.form.autoCreateHint" = "Erstellt automatisch eine persönliche Ausgabe bei gemeinsamen Ausgaben";
@@ -3009,6 +3009,9 @@
 "groups.settings.deleteGroupConfirm" = "Diese Aktion ist dauerhaft und löscht alle Gruppendaten.";
 "groups.settings.archive" = "Gruppe archivieren";
 "groups.settings.unarchive" = "Gruppe wiederherstellen";
+"groups.settings.archiveHint" = "Ausgaben und Salden bleiben erhalten. Du kannst jederzeit wiederherstellen.";
+"groups.settings.showArchived" = "Archivierte anzeigen";
+"groups.settings.hideArchived" = "Archivierte ausblenden";
 "groups.settings.options" = "Optionen";
 "groups.settings.info" = "Information";
 "groups.settings.dangerZone" = "Gefahrenzone";

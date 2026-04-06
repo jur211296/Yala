@@ -98,7 +98,7 @@ final class GroupTransactionBridge {
         }
 
         // Resolve account and subcategory
-        let account = GroupTransactionBridge.resolveAccount(group: group, context: context)
+        let account = GroupTransactionBridge.resolveAccount(group: group, currencyCode: expense.currencyCode, context: context)
         let subcategory = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
 
         let shouldAutoCreate = GroupPersonalPreferences.autoCreateTransaction(for: group.cloudKitZoneID) ?? group.autoCreateTransaction
@@ -251,26 +251,43 @@ final class GroupTransactionBridge {
 
     // MARK: - Account Resolution
 
-    /// Resolve account: personal preference by name, then first non-archived account.
-    static func resolveAccount(group: SplitGroup, context: ModelContext) -> Account? {
-        // Try personal preference first
-        if let preferredName = GroupPersonalPreferences.defaultAccountName(for: group.cloudKitZoneID),
-           !preferredName.isEmpty {
-            let descriptor = FetchDescriptor<Account>(
-                predicate: #Predicate { !$0.isArchived },
-                sortBy: [SortDescriptor(\.name)]
-            )
-            if let match = try? context.fetch(descriptor).first(where: { $0.name == preferredName }) {
-                return match
-            }
-        }
-        // Fallback: first non-archived account
-        var descriptor = FetchDescriptor<Account>(
+    /// Resolve account: per-currency preference → legacy single preference → first account with matching currency → any first account.
+    static func resolveAccount(group: SplitGroup, currencyCode: String, context: ModelContext) -> Account? {
+        let descriptor = FetchDescriptor<Account>(
             predicate: #Predicate { !$0.isArchived },
             sortBy: [SortDescriptor(\.name)]
         )
-        descriptor.fetchLimit = 1
-        return try? context.fetch(descriptor).first
+        let allAccounts: [Account]
+        do {
+            allAccounts = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("GroupTransactionBridge: Error fetching accounts: \(error)")
+            #endif
+            return nil
+        }
+
+        // 1. Per-currency preference
+        if let preferredName = GroupPersonalPreferences.accountName(for: group.cloudKitZoneID, currencyCode: currencyCode),
+           !preferredName.isEmpty,
+           let match = allAccounts.first(where: { $0.name == preferredName }) {
+            return match
+        }
+
+        // 2. Legacy single-account preference (migration)
+        if let legacyName = GroupPersonalPreferences.defaultAccountName(for: group.cloudKitZoneID),
+           !legacyName.isEmpty,
+           let match = allAccounts.first(where: { $0.name == legacyName }) {
+            return match
+        }
+
+        // 3. First account matching the expense currency
+        if let match = allAccounts.first(where: { $0.currencyCode == currencyCode }) {
+            return match
+        }
+
+        // 4. Absolute fallback: any first account
+        return allAccounts.first
     }
 
     // MARK: - Private Helpers

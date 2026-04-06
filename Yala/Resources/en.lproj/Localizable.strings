@@ -2994,7 +2994,7 @@
 "groups.form.icon" = "Icon";
 "groups.form.simplifyDebts" = "Simplify debts";
 "groups.form.simplifyDebtsHint" = "Reduces the number of payments needed between members";
-"groups.form.defaultAccount" = "Destination account";
+"groups.form.defaultAccount" = "Account for records";
 "groups.form.defaultAccountHint" = "Account where group expenses are recorded";
 "groups.form.autoCreate" = "Add to my records";
 "groups.form.autoCreateHint" = "Automatically creates a personal expense when registering a shared expense";
@@ -3015,6 +3015,9 @@
 "groups.settings.deleteGroupConfirm" = "This action is permanent and will delete all group data.";
 "groups.settings.archive" = "Archive group";
 "groups.settings.unarchive" = "Unarchive group";
+"groups.settings.archiveHint" = "Expenses and balances are preserved. You can unarchive anytime.";
+"groups.settings.showArchived" = "Show archived";
+"groups.settings.hideArchived" = "Hide archived";
 "groups.settings.options" = "Options";
 "groups.settings.info" = "Info";
 "groups.settings.dangerZone" = "Danger zone";

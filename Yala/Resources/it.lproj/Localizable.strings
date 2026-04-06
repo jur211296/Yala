@@ -2990,7 +2990,7 @@
 "groups.form.icon" = "Icona";
 "groups.form.simplifyDebts" = "Semplifica debiti";
 "groups.form.simplifyDebtsHint" = "Riduce il numero di pagamenti necessari tra i membri";
-"groups.form.defaultAccount" = "Conto di destinazione";
+"groups.form.defaultAccount" = "Conto per i registri";
 "groups.form.defaultAccountHint" = "Conto in cui vengono registrate le spese del gruppo";
 "groups.form.autoCreate" = "Aggiungi ai miei registri";
 "groups.form.autoCreateHint" = "Crea automaticamente una spesa personale quando registri una spesa condivisa";
@@ -3011,6 +3011,9 @@
 "groups.settings.deleteGroupConfirm" = "Questa azione è permanente e cancellerà tutti i dati del gruppo.";
 "groups.settings.archive" = "Archivia gruppo";
 "groups.settings.unarchive" = "Ripristina gruppo";
+"groups.settings.archiveHint" = "Le spese e i saldi vengono conservati. Puoi ripristinare in qualsiasi momento.";
+"groups.settings.showArchived" = "Mostra archiviati";
+"groups.settings.hideArchived" = "Nascondi archiviati";
 "groups.settings.options" = "Opzioni";
 "groups.settings.info" = "Informazioni";
 "groups.settings.dangerZone" = "Zona pericolosa";

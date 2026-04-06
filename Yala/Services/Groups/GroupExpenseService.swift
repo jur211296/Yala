@@ -297,6 +297,13 @@ final class GroupExpenseService {
         return result
     }
 
+    /// Returns distinct currency codes used in expenses for a group.
+    func fetchDistinctCurrencyCodes(for group: SplitGroup) throws -> [String] {
+        let expenses = try fetchExpenses(for: group)
+        let codes = Set(expenses.map { $0.currencyCode })
+        return codes.sorted()
+    }
+
     func fetchSettlements(for group: SplitGroup) throws -> [SplitSettlement] {
         let context = try requireContext()
         let zoneID = group.cloudKitZoneID

@@ -907,11 +907,13 @@ enum L10n {
             static var deleteGroupConfirm: String { ls("groups.settings.deleteGroupConfirm", comment: "") }
             static var archive: String { ls("groups.settings.archive", comment: "") }
             static var unarchive: String { ls("groups.settings.unarchive", comment: "") }
+            static var archiveHint: String { ls("groups.settings.archiveHint", comment: "") }
             static var options: String { ls("groups.settings.options", comment: "") }
             static var info: String { ls("groups.settings.info", comment: "") }
-            static var dangerZone: String { ls("groups.settings.dangerZone", comment: "") }
             static var mySettings: String { ls("groups.settings.mySettings", comment: "") }
             static var mySettingsHint: String { ls("groups.settings.mySettingsHint", comment: "") }
+            static var showArchived: String { ls("groups.settings.showArchived", comment: "") }
+            static var hideArchived: String { ls("groups.settings.hideArchived", comment: "") }
         }
 
         enum Member {

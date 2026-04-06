@@ -6,6 +6,7 @@
 //  Creates CKRecordZones via SplitZoneManager and enqueues sync via SplitSyncManager.
 //
 
+import CloudKit
 import Foundation
 import SwiftData
 import os.log
@@ -31,6 +32,9 @@ final class GroupService {
 
     func setContext(_ context: ModelContext) {
         self.modelContext = context
+        if cachedDisplayName == nil {
+            Task { await refreshUserDisplayName() }
+        }
     }
 
     private func requireContext() throws -> ModelContext {
@@ -172,6 +176,7 @@ final class GroupService {
         }
 
         try cascadeDeleteGroupData(zoneName: group.cloudKitZoneID, context: context)
+        GroupPersonalPreferences.removeAll(for: group.cloudKitZoneID)
         context.delete(group)
 
         do {
@@ -288,6 +293,7 @@ final class GroupService {
         }
 
         try cascadeDeleteGroupData(zoneName: group.cloudKitZoneID, context: context)
+        GroupPersonalPreferences.removeAll(for: group.cloudKitZoneID)
         context.delete(group)
 
         do {
@@ -356,13 +362,38 @@ final class GroupService {
         return try context.fetch(descriptor)
     }
 
-    // MARK: - Private Helpers
+    // MARK: - User Display Name
 
-    /// Get display name for current user (from iCloud or fallback).
+    private var cachedDisplayName: String?
+
+    /// Get display name for current user. Returns cached value or "Yo" fallback.
     private func currentUserDisplayName() -> String {
-        // In production, this comes from CKCurrentUserDefaultName or the user's iCloud name.
-        // For now, return a localized default.
-        "Yo"
+        cachedDisplayName ?? "Yo"
+    }
+
+    /// Fetch the user's real name from iCloud. Call once during setup.
+    func refreshUserDisplayName() async {
+        do {
+            let container = CKContainer.default()
+            let recordID = try await container.userRecordID()
+            let identity = try await container.userIdentity(forUserRecordID: recordID)
+            if let components = identity?.nameComponents {
+                let formatter = PersonNameComponentsFormatter()
+                formatter.style = .default
+                let name = formatter.string(from: components)
+                if !name.isEmpty {
+                    cachedDisplayName = name
+                    #if DEBUG
+                    logger.info("User display name resolved: \(name)")
+                    #endif
+                }
+            }
+        } catch {
+            #if DEBUG
+            logger.info("Could not resolve user display name: \(error.localizedDescription)")
+            #endif
+            // Fallback stays as "Yo" — non-critical
+        }
     }
 }
 
