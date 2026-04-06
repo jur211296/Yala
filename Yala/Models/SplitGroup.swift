@@ -24,6 +24,9 @@ final class SplitGroup {
     var isArchived: Bool = false
     var defaultAccountID: UUID?           // ID ref, NO @Relationship (zonas distintas)
     var autoCreateTransaction: Bool = true // true = TransactionItem directo, false = Draft
+    var showDebtsInSingleCurrency: Bool = false
+    var defaultSplitType: String = "equal" // "equal" | "percentage" | "exact" | "shares"
+    var membersCanInvite: Bool = true
 
     init(
         name: String = "",
@@ -33,7 +36,10 @@ final class SplitGroup {
         simplifyDebts: Bool = false,
         isOwner: Bool = false,
         defaultAccountID: UUID? = nil,
-        autoCreateTransaction: Bool = true
+        autoCreateTransaction: Bool = true,
+        showDebtsInSingleCurrency: Bool = false,
+        defaultSplitType: String = "equal",
+        membersCanInvite: Bool = true
     ) {
         self.id = UUID()
         self.cloudKitZoneID = "\(CKConstants.zonePrefix)\(self.id.uuidString)"
@@ -46,5 +52,8 @@ final class SplitGroup {
         self.isOwner = isOwner
         self.defaultAccountID = defaultAccountID
         self.autoCreateTransaction = autoCreateTransaction
+        self.showDebtsInSingleCurrency = showDebtsInSingleCurrency
+        self.defaultSplitType = defaultSplitType
+        self.membersCanInvite = membersCanInvite
     }
 }

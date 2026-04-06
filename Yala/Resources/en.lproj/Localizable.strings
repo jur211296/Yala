@@ -2999,6 +2999,11 @@
 "groups.form.autoCreate" = "Add to my records";
 "groups.form.autoCreateHint" = "Automatically creates a personal expense when registering a shared expense";
 "groups.form.none" = "None";
+"groups.form.showDebtsInSingleCurrency" = "Single currency for debts";
+"groups.form.showDebtsInSingleCurrencyHint" = "Convert all balances to a preferred currency";
+"groups.form.defaultSplitType" = "Default split";
+"groups.form.membersCanInvite" = "Members can invite";
+"groups.form.membersCanInviteHint" = "Allow any member to add people to the group";
 "groups.settings.title" = "Group settings";
 "groups.settings.members" = "Members";
 "groups.settings.addMember" = "Add member";
@@ -3013,6 +3018,8 @@
 "groups.settings.options" = "Options";
 "groups.settings.info" = "Info";
 "groups.settings.dangerZone" = "Danger zone";
+"groups.settings.mySettings" = "My settings";
+"groups.settings.mySettingsHint" = "These settings only apply to you";
 "groups.member.admin" = "Admin";
 "groups.member.member" = "Member";
 "groups.member.you" = "(You)";

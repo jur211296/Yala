@@ -116,11 +116,15 @@
 		};
 		96CFFFA72EC3CF09002AC31C /* YalaTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = YalaTests;
 			sourceTree = "<group>";
 		};
 		96CFFFB12EC3CF09002AC31C /* YalaUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = YalaUITests;
 			sourceTree = "<group>";
 		};
@@ -269,8 +273,6 @@
 				96CFFFA72EC3CF09002AC31C /* YalaTests */,
 			);
 			name = YalaTests;
-			packageProductDependencies = (
-			);
 			productName = YalaTests;
 			productReference = 96CFFFA42EC3CF09002AC31C /* YalaTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -292,8 +294,6 @@
 				96CFFFB12EC3CF09002AC31C /* YalaUITests */,
 			);
 			name = YalaUITests;
-			packageProductDependencies = (
-			);
 			productName = YalaUITests;
 			productReference = 96CFFFAE2EC3CF09002AC31C /* YalaUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -314,8 +314,6 @@
 				CFADC3B92F2A42810040D198 /* YalaShare */,
 			);
 			name = YalaShare;
-			packageProductDependencies = (
-			);
 			productName = YalaShare;
 			productReference = CFADC3B82F2A42810040D198 /* YalaShare.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -336,8 +334,6 @@
 				CFB1B6B22F30EC930083BC08 /* YalaWidgets */,
 			);
 			name = YalaWidgetsExtension;
-			packageProductDependencies = (
-			);
 			productName = YalaWidgetsExtension;
 			productReference = CFB1B6AC2F30EC930083BC08 /* YalaWidgetsExtension.appex */;
 			productType = "com.apple.product-type.app-extension";

@@ -25,16 +25,16 @@ struct GroupFormView: View {
     @State private var name: String = ""
     @State private var iconName: String = "person.2.fill"
     @State private var colorHex: String = "#8B5CF6"
-    @State private var selectedCurrency: CurrencyCode = .pen
     @State private var simplifyDebts: Bool = false
-    @State private var autoCreateTransaction: Bool = true
-    @State private var selectedAccountName: String = "" // Account picker — bridge resolves by first non-archived account
+    @State private var showDebtsInSingleCurrency: Bool = false
+    @State private var selectedCurrency: CurrencyCode = .pen
+    @State private var defaultSplitType: SplitType = .equal
+    @State private var membersCanInvite: Bool = true
 
     // MARK: - Sheet State
 
     @State private var showIconPicker = false
     @State private var showCurrencyPicker = false
-    @State private var accounts: [Account] = []
 
     @FocusState private var isNameFocused: Bool
 
@@ -51,12 +51,6 @@ struct GroupFormView: View {
 
                     // Name
                     nameSection
-
-                    // Currency
-                    currencySection
-
-                    // Account
-                    accountSection
 
                     // Options
                     optionsSection
@@ -83,11 +77,12 @@ struct GroupFormView: View {
                     selectedColorHex: $colorHex
                 )
             }
-            .navigationDestination(isPresented: $showCurrencyPicker) {
-                CurrencySelectorView(selectedCurrency: $selectedCurrency)
+            .sheet(isPresented: $showCurrencyPicker) {
+                NavigationStack {
+                    CurrencySelectorView(selectedCurrency: $selectedCurrency)
+                }
             }
             .onAppear {
-                loadAccounts()
                 populateFromGroup()
             }
         }
@@ -110,10 +105,19 @@ struct GroupFormView: View {
             }
             .shadow(color: Color(hex: colorHex).opacity(0.4), radius: 8, x: 0, y: 4)
             .overlay(alignment: .bottomTrailing) {
-                Image(systemName: "pencil.circle.fill")
-                    .font(DS.Typography.title2)
-                    .foregroundStyle(.thAccent)
-                    .background(Circle().fill(.thBackground).padding(-2))
+                Circle()
+                    .fill(.thCard)
+                    .frame(width: 24, height: 24)
+                    .overlay(
+                        Image(systemName: "pencil")
+                            .font(DS.Typography.labelSmall)
+                            .foregroundStyle(Color(hex: colorHex))
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(.thBackground, lineWidth: 2)
+                    )
+                    .offset(x: 4, y: 4)
             }
         }
         .buttonStyle(.plain)
@@ -131,74 +135,6 @@ struct GroupFormView: View {
                 .focused($isNameFocused)
                 .padding(.horizontal, DS.FormRow.paddingH)
                 .padding(.vertical, DS.FormRow.paddingV)
-        }
-    }
-
-    // MARK: - Currency Section
-
-    private var currencySection: some View {
-        SectionBox(title: L10n.Groups.Form.currency) {
-            Button {
-                showCurrencyPicker = true
-            } label: {
-                HStack(spacing: DS.Spacing.md) {
-                    let info = currencyInfo(for: selectedCurrency)
-                    Text(info.flag)
-                        .font(DS.Typography.title)
-
-                    Text(info.code)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.primary)
-
-                    Spacer()
-
-                    Text(info.name.capitalized)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
-            }
-            .buttonStyle(.plain)
-            .contentShape(Rectangle())
-        }
-    }
-
-    // MARK: - Account Section
-
-    private var accountSection: some View {
-        SectionBox(title: L10n.Groups.Form.defaultAccount) {
-            VStack(spacing: DS.Spacing.none) {
-                // Account picker
-                if accounts.isEmpty {
-                    Text(L10n.Groups.Form.none)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, DS.FormRow.paddingH)
-                        .padding(.vertical, DS.FormRow.paddingV)
-                } else {
-                    Picker("", selection: $selectedAccountName) {
-                        Text(L10n.Groups.Form.none).tag("")
-                        ForEach(accounts, id: \.persistentModelID) { account in
-                            Text(account.name).tag(account.name)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.vertical, DS.Spacing.xs)
-                }
-
-                // Hint
-                Text(L10n.Groups.Form.defaultAccountHint)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.bottom, DS.Spacing.sm)
-            }
         }
     }
 
@@ -222,12 +158,76 @@ struct GroupFormView: View {
                 Divider()
                     .padding(.leading, DS.FormRow.paddingH)
 
-                // Auto-create transaction
+                // Show debts in single currency
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Toggle(L10n.Groups.Form.autoCreate, isOn: $autoCreateTransaction)
+                    Toggle(L10n.Groups.Form.showDebtsInSingleCurrency, isOn: $showDebtsInSingleCurrency)
                         .font(DS.Typography.body)
 
-                    Text(L10n.Groups.Form.autoCreateHint)
+                    Text(L10n.Groups.Form.showDebtsInSingleCurrencyHint)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+
+                    if showDebtsInSingleCurrency {
+                        Button {
+                            showCurrencyPicker = true
+                        } label: {
+                            HStack(spacing: DS.Spacing.md) {
+                                let info = currencyInfo(for: selectedCurrency)
+                                Text(info.flag)
+                                    .font(DS.Typography.body)
+
+                                Text(info.code)
+                                    .font(DS.Typography.body)
+                                    .foregroundStyle(.primary)
+
+                                Spacer()
+
+                                Text(info.name.capitalized)
+                                    .font(DS.Typography.captionSmall)
+                                    .foregroundStyle(.secondary)
+
+                                Image(systemName: "chevron.right")
+                                    .font(DS.Typography.captionSmall)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.vertical, DS.Spacing.sm)
+                        }
+                        .buttonStyle(.plain)
+                        .contentShape(Rectangle())
+                    }
+                }
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
+
+                Divider()
+                    .padding(.leading, DS.FormRow.paddingH)
+
+                // Default split type
+                HStack {
+                    Text(L10n.Groups.Form.defaultSplitType)
+                        .font(DS.Typography.body)
+
+                    Spacer()
+
+                    Picker("", selection: $defaultSplitType) {
+                        ForEach(SplitType.allCases) { type in
+                            Text(type.displayName).tag(type)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
+
+                Divider()
+                    .padding(.leading, DS.FormRow.paddingH)
+
+                // Members can invite
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    Toggle(L10n.Groups.Form.membersCanInvite, isOn: $membersCanInvite)
+                        .font(DS.Typography.body)
+
+                    Text(L10n.Groups.Form.membersCanInviteHint)
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
                 }
@@ -243,10 +243,9 @@ struct GroupFormView: View {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
         guard !trimmedName.isEmpty else { return }
 
-        do {
-            // Resolve account name to ID (if selected)
-            let accountID = resolveAccountID()
+        let currencyCode = showDebtsInSingleCurrency ? selectedCurrency.rawValue : defaultCurrencyCode
 
+        do {
             if let group {
                 // Update
                 try GroupService.shared.updateGroup(
@@ -254,10 +253,11 @@ struct GroupFormView: View {
                     name: trimmedName,
                     iconName: iconName,
                     colorHex: colorHex,
-                    currencyCode: selectedCurrency.rawValue,
+                    currencyCode: currencyCode,
                     simplifyDebts: simplifyDebts,
-                    defaultAccountID: accountID,
-                    autoCreateTransaction: autoCreateTransaction
+                    showDebtsInSingleCurrency: showDebtsInSingleCurrency,
+                    defaultSplitType: defaultSplitType.rawValue,
+                    membersCanInvite: membersCanInvite
                 )
             } else {
                 // Create
@@ -265,10 +265,11 @@ struct GroupFormView: View {
                     name: trimmedName,
                     iconName: iconName,
                     colorHex: colorHex,
-                    currencyCode: selectedCurrency.rawValue,
+                    currencyCode: currencyCode,
                     simplifyDebts: simplifyDebts,
-                    defaultAccountID: accountID,
-                    autoCreateTransaction: autoCreateTransaction
+                    showDebtsInSingleCurrency: showDebtsInSingleCurrency,
+                    defaultSplitType: defaultSplitType.rawValue,
+                    membersCanInvite: membersCanInvite
                 )
             }
             DS.Haptic.success()
@@ -280,41 +281,18 @@ struct GroupFormView: View {
         }
     }
 
-    private func loadAccounts() {
-        do {
-            let descriptor = FetchDescriptor<Account>(
-                predicate: #Predicate { !$0.isArchived },
-                sortBy: [SortDescriptor(\.name)]
-            )
-            accounts = try modelContext.fetch(descriptor)
-        } catch {
-            #if DEBUG
-            print("GroupFormView: Error loading accounts: \(error)")
-            #endif
-        }
-    }
-
     private func populateFromGroup() {
         if let group {
             name = group.name
             iconName = group.iconName
             colorHex = group.colorHex
-            selectedCurrency = CurrencyCode(rawValue: group.currencyCode) ?? .pen
             simplifyDebts = group.simplifyDebts
-            autoCreateTransaction = group.autoCreateTransaction
-            // Reverse-resolve account ID to name
-            if let accID = group.defaultAccountID,
-               let match = accounts.first(where: { $0.persistentModelID.hashValue == accID.hashValue }) {
-                selectedAccountName = match.name
-            }
+            showDebtsInSingleCurrency = group.showDebtsInSingleCurrency
+            selectedCurrency = CurrencyCode(rawValue: group.currencyCode) ?? .pen
+            defaultSplitType = SplitType(rawValue: group.defaultSplitType) ?? .equal
+            membersCanInvite = group.membersCanInvite
         } else {
             selectedCurrency = CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen
         }
-    }
-
-    private func resolveAccountID() -> UUID? {
-        // defaultAccountID is unused by bridge (resolves by name), so we store nil
-        // The bridge uses the first non-archived account as fallback
-        nil
     }
 }

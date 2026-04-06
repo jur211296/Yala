@@ -500,4 +500,57 @@ struct GroupBalanceServiceTests {
 
         #expect(result.isEmpty) // No debt to yourself
     }
+
+    // MARK: - Consolidated Balances
+
+    @Test func consolidatedBalances_singleCurrency_unchanged() {
+        let balances = [
+            MemberBalance(memberID: "A", displayName: "A", totalPaid: 100, totalOwes: 50, netBalance: 50, currencyCode: "PEN"),
+            MemberBalance(memberID: "B", displayName: "B", totalPaid: 0, totalOwes: 50, netBalance: -50, currencyCode: "PEN"),
+        ]
+
+        let result = GroupBalanceService.consolidatedBalances(
+            from: balances, targetCurrency: "PEN", converter: MockCurrencyConverter()
+        )
+
+        #expect(result.count == 2)
+        let balA = result.first { $0.memberID == "A" }
+        #expect(balA?.netBalance == 50)
+        #expect(balA?.currencyCode == "PEN")
+    }
+
+    @Test func consolidatedBalances_multiCurrency_converts() {
+        // A has +50 PEN, -30 USD. With 1:1 rate → net = 50 - 30 = 20
+        let balances = [
+            MemberBalance(memberID: "A", displayName: "A", totalPaid: 100, totalOwes: 50, netBalance: 50, currencyCode: "PEN"),
+            MemberBalance(memberID: "A", displayName: "A", totalPaid: 0, totalOwes: 30, netBalance: -30, currencyCode: "USD"),
+        ]
+
+        let converter = MockCurrencyConverter(fixedRate: 1.0)
+        let result = GroupBalanceService.consolidatedBalances(
+            from: balances, targetCurrency: "PEN", converter: converter
+        )
+
+        #expect(result.count == 1)
+        let balA = result.first { $0.memberID == "A" }
+        #expect(balA?.netBalance == 20)
+        #expect(balA?.currencyCode == "PEN")
+    }
+
+    @Test func consolidatedDebts_multiCurrency_converts() {
+        let debts = [
+            Debt(fromMemberID: "B", toMemberID: "A", amount: 50, currencyCode: "PEN"),
+            Debt(fromMemberID: "B", toMemberID: "A", amount: 30, currencyCode: "USD"),
+        ]
+
+        let converter = MockCurrencyConverter(fixedRate: 1.0)
+        let result = GroupBalanceService.consolidatedDebts(
+            from: debts, targetCurrency: "PEN", converter: converter
+        )
+
+        // Both merged into one debt in PEN: 50 + 30 = 80
+        #expect(result.count == 1)
+        #expect(result[0].amount == 80)
+        #expect(result[0].currencyCode == "PEN")
+    }
 }

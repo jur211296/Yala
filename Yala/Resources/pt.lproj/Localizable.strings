@@ -2993,6 +2993,11 @@
 "groups.form.autoCreate" = "Adicionar aos meus registros";
 "groups.form.autoCreateHint" = "Cria automaticamente uma despesa pessoal ao registrar uma despesa compartilhada";
 "groups.form.none" = "Nenhuma";
+"groups.form.showDebtsInSingleCurrency" = "Moeda única para dívidas";
+"groups.form.showDebtsInSingleCurrencyHint" = "Converter todos os saldos para uma moeda preferida";
+"groups.form.defaultSplitType" = "Divisão padrão";
+"groups.form.membersCanInvite" = "Membros podem convidar";
+"groups.form.membersCanInviteHint" = "Permite que qualquer membro adicione pessoas ao grupo";
 "groups.settings.title" = "Configurações do grupo";
 "groups.settings.members" = "Membros";
 "groups.settings.addMember" = "Adicionar membro";
@@ -3007,6 +3012,8 @@
 "groups.settings.options" = "Opções";
 "groups.settings.info" = "Informação";
 "groups.settings.dangerZone" = "Zona de perigo";
+"groups.settings.mySettings" = "Minhas configurações";
+"groups.settings.mySettingsHint" = "Estas configurações se aplicam apenas a você";
 "groups.member.admin" = "Admin";
 "groups.member.member" = "Membro";
 "groups.member.you" = "(Você)";

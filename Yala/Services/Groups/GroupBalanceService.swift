@@ -248,6 +248,73 @@ enum GroupBalanceService {
         )
     }
 
+    // MARK: - Consolidated Balances (single currency)
+
+    /// Consolidate multi-currency balances into a single target currency.
+    /// Groups balances by member and converts each via the provided converter.
+    static func consolidatedBalances(
+        from balances: [MemberBalance],
+        targetCurrency: String,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> [MemberBalance] {
+        let grouped = Dictionary(grouping: balances, by: \.memberID)
+
+        return grouped.compactMap { memberID, memberBalances -> MemberBalance? in
+            guard let first = memberBalances.first else { return nil }
+
+            var totalPaid: Double = 0
+            var totalOwes: Double = 0
+
+            for balance in memberBalances {
+                if balance.currencyCode == targetCurrency {
+                    totalPaid += balance.totalPaid
+                    totalOwes += balance.totalOwes
+                } else {
+                    let convertedPaid = converter.convertWithLatestRate(
+                        Decimal(balance.totalPaid), from: balance.currencyCode, to: targetCurrency
+                    )
+                    let convertedOwes = converter.convertWithLatestRate(
+                        Decimal(balance.totalOwes), from: balance.currencyCode, to: targetCurrency
+                    )
+                    totalPaid += NSDecimalNumber(decimal: convertedPaid).doubleValue
+                    totalOwes += NSDecimalNumber(decimal: convertedOwes).doubleValue
+                }
+            }
+
+            let net = roundToTwoDecimals(totalPaid - totalOwes)
+            return MemberBalance(
+                memberID: memberID,
+                displayName: first.displayName,
+                totalPaid: roundToTwoDecimals(totalPaid),
+                totalOwes: roundToTwoDecimals(totalOwes),
+                netBalance: net,
+                currencyCode: targetCurrency
+            )
+        }.sorted { $0.memberID < $1.memberID }
+    }
+
+    /// Consolidate multi-currency debts into a single target currency.
+    static func consolidatedDebts(
+        from debts: [Debt],
+        targetCurrency: String,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> [Debt] {
+        // Convert each debt to target currency, then re-consolidate
+        let converted = debts.map { debt -> Debt in
+            if debt.currencyCode == targetCurrency { return debt }
+            let convertedAmount = converter.convertWithLatestRate(
+                Decimal(debt.amount), from: debt.currencyCode, to: targetCurrency
+            )
+            return Debt(
+                fromMemberID: debt.fromMemberID,
+                toMemberID: debt.toMemberID,
+                amount: NSDecimalNumber(decimal: convertedAmount).doubleValue,
+                currencyCode: targetCurrency
+            )
+        }
+        return consolidateDebts(converted)
+    }
+
     // MARK: - Helpers
 
     private static func roundToTwoDecimals(_ value: Double) -> Double {

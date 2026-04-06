@@ -31,7 +31,12 @@ struct GroupSettingsView: View {
     @State private var showRemoveMemberConfirm = false
     @State private var memberToRemove: SplitMember?
     @State private var simplifyDebts: Bool = false
-    @State private var autoCreateTransaction: Bool = true
+    @State private var showDebtsInSingleCurrency: Bool = false
+    @State private var defaultSplitType: SplitType = .equal
+    @State private var membersCanInvite: Bool = true
+    @State private var personalAutoCreate: Bool = true
+    @State private var personalAccountName: String = ""
+    @State private var accounts: [Account] = []
 
     // MARK: - Body
 
@@ -45,8 +50,11 @@ struct GroupSettingsView: View {
                     // Members section
                     membersSection
 
-                    // Options section
+                    // Group options section
                     optionsSection
+
+                    // Personal settings section
+                    mySettingsSection
 
                     // Danger zone
                     dangerZoneSection
@@ -138,7 +146,7 @@ struct GroupSettingsView: View {
                             .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
 
-                        Text(group.currencyCode)
+                        Text(L10n.Groups.Member.people(viewModel.members.count))
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -181,7 +189,7 @@ struct GroupSettingsView: View {
                 }
 
                 // Add member button
-                if viewModel.isCurrentUserAdmin {
+                if viewModel.isCurrentUserAdmin || group.membersCanInvite {
                     Divider()
                     Button {
                         showAddMemberAlert = true
@@ -210,6 +218,7 @@ struct GroupSettingsView: View {
     private var optionsSection: some View {
         SectionBox(title: L10n.Groups.Settings.options) {
             VStack(spacing: DS.Spacing.none) {
+                // Simplify Debts
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Toggle(L10n.Groups.Form.simplifyDebts, isOn: $simplifyDebts)
                         .font(DS.Typography.body)
@@ -227,8 +236,79 @@ struct GroupSettingsView: View {
                 Divider()
                     .padding(.leading, DS.FormRow.paddingH)
 
+                // Show debts in single currency
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Toggle(L10n.Groups.Form.autoCreate, isOn: $autoCreateTransaction)
+                    Toggle(L10n.Groups.Form.showDebtsInSingleCurrency, isOn: $showDebtsInSingleCurrency)
+                        .font(DS.Typography.body)
+
+                    Text(L10n.Groups.Form.showDebtsInSingleCurrencyHint)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
+                .onChange(of: showDebtsInSingleCurrency) { _, newValue in
+                    updateGroupOption { $0.showDebtsInSingleCurrency = newValue }
+                }
+
+                Divider()
+                    .padding(.leading, DS.FormRow.paddingH)
+
+                // Default split type
+                HStack {
+                    Text(L10n.Groups.Form.defaultSplitType)
+                        .font(DS.Typography.body)
+
+                    Spacer()
+
+                    Picker("", selection: $defaultSplitType) {
+                        ForEach(SplitType.allCases) { type in
+                            Text(type.displayName).tag(type)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
+                .onChange(of: defaultSplitType) { _, newValue in
+                    updateGroupOption { $0.defaultSplitType = newValue.rawValue }
+                }
+
+                Divider()
+                    .padding(.leading, DS.FormRow.paddingH)
+
+                // Members can invite
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    Toggle(L10n.Groups.Form.membersCanInvite, isOn: $membersCanInvite)
+                        .font(DS.Typography.body)
+
+                    Text(L10n.Groups.Form.membersCanInviteHint)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
+                .onChange(of: membersCanInvite) { _, newValue in
+                    updateGroupOption { $0.membersCanInvite = newValue }
+                }
+            }
+        }
+        .onAppear {
+            simplifyDebts = group.simplifyDebts
+            showDebtsInSingleCurrency = group.showDebtsInSingleCurrency
+            defaultSplitType = SplitType(rawValue: group.defaultSplitType) ?? .equal
+            membersCanInvite = group.membersCanInvite
+        }
+    }
+
+    // MARK: - My Settings Section
+
+    private var mySettingsSection: some View {
+        SectionBox(title: L10n.Groups.Settings.mySettings) {
+            VStack(spacing: DS.Spacing.none) {
+                // Auto-create transaction (personal)
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    Toggle(L10n.Groups.Form.autoCreate, isOn: $personalAutoCreate)
                         .font(DS.Typography.body)
 
                     Text(L10n.Groups.Form.autoCreateHint)
@@ -237,14 +317,50 @@ struct GroupSettingsView: View {
                 }
                 .padding(.horizontal, DS.FormRow.paddingH)
                 .padding(.vertical, DS.FormRow.paddingV)
-                .onChange(of: autoCreateTransaction) { _, newValue in
-                    updateGroupOption { $0.autoCreateTransaction = newValue }
+                .onChange(of: personalAutoCreate) { _, newValue in
+                    GroupPersonalPreferences.setAutoCreateTransaction(newValue, for: group.cloudKitZoneID)
                 }
+
+                Divider()
+                    .padding(.leading, DS.FormRow.paddingH)
+
+                // Default account (personal)
+                HStack {
+                    Text(L10n.Groups.Form.defaultAccount)
+                        .font(DS.Typography.body)
+
+                    Spacer()
+
+                    Picker("", selection: $personalAccountName) {
+                        Text(L10n.Groups.Form.none).tag("")
+                        ForEach(accounts, id: \.persistentModelID) { account in
+                            Text(account.name).tag(account.name)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
+                .onChange(of: personalAccountName) { _, newValue in
+                    GroupPersonalPreferences.setDefaultAccountName(
+                        newValue.isEmpty ? nil : newValue,
+                        for: group.cloudKitZoneID
+                    )
+                }
+
+                // Hint
+                Text(L10n.Groups.Settings.mySettingsHint)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, DS.FormRow.paddingH)
+                    .padding(.bottom, DS.Spacing.sm)
             }
         }
         .onAppear {
-            simplifyDebts = group.simplifyDebts
-            autoCreateTransaction = group.autoCreateTransaction
+            personalAutoCreate = GroupPersonalPreferences.autoCreateTransaction(for: group.cloudKitZoneID)
+                ?? group.autoCreateTransaction
+            personalAccountName = GroupPersonalPreferences.defaultAccountName(for: group.cloudKitZoneID) ?? ""
+            loadAccounts()
         }
     }
 
@@ -400,13 +516,28 @@ struct GroupSettingsView: View {
                 colorHex: group.colorHex,
                 currencyCode: group.currencyCode,
                 simplifyDebts: group.simplifyDebts,
-                defaultAccountID: group.defaultAccountID,
-                autoCreateTransaction: group.autoCreateTransaction
+                showDebtsInSingleCurrency: group.showDebtsInSingleCurrency,
+                defaultSplitType: group.defaultSplitType,
+                membersCanInvite: group.membersCanInvite
             )
             viewModel.loadData()
         } catch {
             #if DEBUG
             print("GroupSettingsView: Error updating group: \(error)")
+            #endif
+        }
+    }
+
+    private func loadAccounts() {
+        do {
+            let descriptor = FetchDescriptor<Account>(
+                predicate: #Predicate { !$0.isArchived },
+                sortBy: [SortDescriptor(\.name)]
+            )
+            accounts = try modelContext.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("GroupSettingsView: Error loading accounts: \(error)")
             #endif
         }
     }

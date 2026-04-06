@@ -101,7 +101,8 @@ final class GroupTransactionBridge {
         let account = GroupTransactionBridge.resolveAccount(group: group, context: context)
         let subcategory = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
 
-        if group.autoCreateTransaction {
+        let shouldAutoCreate = GroupPersonalPreferences.autoCreateTransaction(for: group.cloudKitZoneID) ?? group.autoCreateTransaction
+        if shouldAutoCreate {
             let transaction = TransactionItem(
                 date: expense.date,
                 amount: -myShare.amount,
@@ -250,9 +251,20 @@ final class GroupTransactionBridge {
 
     // MARK: - Account Resolution
 
-    /// Resolve account: first non-archived account (by name).
-    /// Note: group.defaultAccountID will be wired via UI in GC-04.
+    /// Resolve account: personal preference by name, then first non-archived account.
     static func resolveAccount(group: SplitGroup, context: ModelContext) -> Account? {
+        // Try personal preference first
+        if let preferredName = GroupPersonalPreferences.defaultAccountName(for: group.cloudKitZoneID),
+           !preferredName.isEmpty {
+            let descriptor = FetchDescriptor<Account>(
+                predicate: #Predicate { !$0.isArchived },
+                sortBy: [SortDescriptor(\.name)]
+            )
+            if let match = try? context.fetch(descriptor).first(where: { $0.name == preferredName }) {
+                return match
+            }
+        }
+        // Fallback: first non-archived account
         var descriptor = FetchDescriptor<Account>(
             predicate: #Predicate { !$0.isArchived },
             sortBy: [SortDescriptor(\.name)]

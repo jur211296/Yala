@@ -2993,6 +2993,11 @@
 "groups.form.autoCreate" = "Zu meinen Einträgen hinzufügen";
 "groups.form.autoCreateHint" = "Erstellt automatisch eine persönliche Ausgabe bei gemeinsamen Ausgaben";
 "groups.form.none" = "Keine";
+"groups.form.showDebtsInSingleCurrency" = "Einheitliche Währung für Schulden";
+"groups.form.showDebtsInSingleCurrencyHint" = "Alle Salden in eine bevorzugte Währung umrechnen";
+"groups.form.defaultSplitType" = "Standard-Aufteilung";
+"groups.form.membersCanInvite" = "Mitglieder können einladen";
+"groups.form.membersCanInviteHint" = "Erlaubt jedem Mitglied, Personen zur Gruppe hinzuzufügen";
 "groups.settings.title" = "Gruppeneinstellungen";
 "groups.settings.members" = "Mitglieder";
 "groups.settings.addMember" = "Mitglied hinzufügen";
@@ -3007,6 +3012,8 @@
 "groups.settings.options" = "Optionen";
 "groups.settings.info" = "Information";
 "groups.settings.dangerZone" = "Gefahrenzone";
+"groups.settings.mySettings" = "Meine Einstellungen";
+"groups.settings.mySettingsHint" = "Diese Einstellungen gelten nur für dich";
 "groups.member.admin" = "Admin";
 "groups.member.member" = "Mitglied";
 "groups.member.you" = "(Du)";

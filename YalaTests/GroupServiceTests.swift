@@ -86,5 +86,8 @@ struct GroupServiceTests {
         #expect(group.autoCreateTransaction == true)
         #expect(group.simplifyDebts == false)
         #expect(group.currencyCode == "PEN")
+        #expect(group.showDebtsInSingleCurrency == false)
+        #expect(group.defaultSplitType == "equal")
+        #expect(group.membersCanInvite == true)
     }
 }

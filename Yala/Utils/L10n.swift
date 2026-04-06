@@ -888,6 +888,11 @@ enum L10n {
             static var autoCreate: String { ls("groups.form.autoCreate", comment: "") }
             static var autoCreateHint: String { ls("groups.form.autoCreateHint", comment: "") }
             static var none: String { ls("groups.form.none", comment: "") }
+            static var showDebtsInSingleCurrency: String { ls("groups.form.showDebtsInSingleCurrency", comment: "") }
+            static var showDebtsInSingleCurrencyHint: String { ls("groups.form.showDebtsInSingleCurrencyHint", comment: "") }
+            static var defaultSplitType: String { ls("groups.form.defaultSplitType", comment: "") }
+            static var membersCanInvite: String { ls("groups.form.membersCanInvite", comment: "") }
+            static var membersCanInviteHint: String { ls("groups.form.membersCanInviteHint", comment: "") }
         }
 
         enum Settings {
@@ -905,6 +910,8 @@ enum L10n {
             static var options: String { ls("groups.settings.options", comment: "") }
             static var info: String { ls("groups.settings.info", comment: "") }
             static var dangerZone: String { ls("groups.settings.dangerZone", comment: "") }
+            static var mySettings: String { ls("groups.settings.mySettings", comment: "") }
+            static var mySettingsHint: String { ls("groups.settings.mySettingsHint", comment: "") }
         }
 
         enum Member {

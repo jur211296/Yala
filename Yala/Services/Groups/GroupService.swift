@@ -50,8 +50,9 @@ final class GroupService {
         colorHex: String = "#8B5CF6",
         currencyCode: String = "PEN",
         simplifyDebts: Bool = false,
-        defaultAccountID: UUID? = nil,
-        autoCreateTransaction: Bool = true
+        showDebtsInSingleCurrency: Bool = false,
+        defaultSplitType: String = "equal",
+        membersCanInvite: Bool = true
     ) throws -> SplitGroup {
         let context = try requireContext()
 
@@ -64,8 +65,9 @@ final class GroupService {
             colorHex: colorHex,
             currencyCode: currencyCode,
             simplifyDebts: simplifyDebts,
-            defaultAccountID: defaultAccountID,
-            autoCreateTransaction: autoCreateTransaction
+            showDebtsInSingleCurrency: showDebtsInSingleCurrency,
+            defaultSplitType: defaultSplitType,
+            membersCanInvite: membersCanInvite
         )
         group.isOwner = true
         context.insert(group)
@@ -106,8 +108,9 @@ final class GroupService {
         colorHex: String,
         currencyCode: String,
         simplifyDebts: Bool,
-        defaultAccountID: UUID?,
-        autoCreateTransaction: Bool
+        showDebtsInSingleCurrency: Bool,
+        defaultSplitType: String,
+        membersCanInvite: Bool
     ) throws {
         let context = try requireContext()
 
@@ -119,8 +122,9 @@ final class GroupService {
         group.colorHex = colorHex
         group.currencyCode = currencyCode
         group.simplifyDebts = simplifyDebts
-        group.defaultAccountID = defaultAccountID
-        group.autoCreateTransaction = autoCreateTransaction
+        group.showDebtsInSingleCurrency = showDebtsInSingleCurrency
+        group.defaultSplitType = defaultSplitType
+        group.membersCanInvite = membersCanInvite
 
         do {
             try context.save()

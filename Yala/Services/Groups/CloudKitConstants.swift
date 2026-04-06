@@ -36,6 +36,9 @@ enum CKConstants {
         static let iconName = "iconName"
         static let colorHex = "colorHex"
         static let simplifyDebts = "simplifyDebts"
+        static let showDebtsInSingleCurrency = "showDebtsInSingleCurrency"
+        static let defaultSplitType = "defaultSplitType"
+        static let membersCanInvite = "membersCanInvite"
     }
 
     // MARK: - SplitExpense Fields

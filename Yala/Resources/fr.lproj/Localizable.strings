@@ -2994,6 +2994,11 @@
 "groups.form.autoCreate" = "Ajouter à mes registres";
 "groups.form.autoCreateHint" = "Crée automatiquement une dépense personnelle lors de l'enregistrement d'une dépense partagée";
 "groups.form.none" = "Aucun";
+"groups.form.showDebtsInSingleCurrency" = "Devise unique pour les dettes";
+"groups.form.showDebtsInSingleCurrencyHint" = "Convertir tous les soldes dans une devise préférée";
+"groups.form.defaultSplitType" = "Répartition par défaut";
+"groups.form.membersCanInvite" = "Les membres peuvent inviter";
+"groups.form.membersCanInviteHint" = "Permet à tout membre d'ajouter des personnes au groupe";
 "groups.settings.title" = "Paramètres du groupe";
 "groups.settings.members" = "Membres";
 "groups.settings.addMember" = "Ajouter un membre";
@@ -3008,6 +3013,8 @@
 "groups.settings.options" = "Options";
 "groups.settings.info" = "Informations";
 "groups.settings.dangerZone" = "Zone de danger";
+"groups.settings.mySettings" = "Mes paramètres";
+"groups.settings.mySettingsHint" = "Ces paramètres ne s'appliquent qu'à vous";
 "groups.member.admin" = "Admin";
 "groups.member.member" = "Membre";
 "groups.member.you" = "(Vous)";

@@ -21,6 +21,11 @@ enum CKRecordTranslator {
         (record[key] as? Int64 ?? 0) != 0
     }
 
+    private static func readBool(_ record: CKRecord, key: String, default defaultValue: Bool) -> Bool {
+        guard let val = record[key] as? Int64 else { return defaultValue }
+        return val != 0
+    }
+
     // MARK: - SplitGroup ↔ GroupMeta
 
     static func record(from group: SplitGroup, in zoneID: CKRecordZone.ID) -> CKRecord {
@@ -40,6 +45,9 @@ enum CKRecordTranslator {
         record[F.iconName] = group.iconName as CKRecordValue
         record[F.colorHex] = group.colorHex as CKRecordValue
         record[F.simplifyDebts] = ckBool(group.simplifyDebts)
+        record[F.showDebtsInSingleCurrency] = ckBool(group.showDebtsInSingleCurrency)
+        record[F.defaultSplitType] = group.defaultSplitType as CKRecordValue
+        record[F.membersCanInvite] = ckBool(group.membersCanInvite)
     }
 
     static func group(from record: CKRecord) -> SplitGroup? {
@@ -54,6 +62,9 @@ enum CKRecordTranslator {
         group.iconName = record[F.iconName] as? String ?? "person.2.fill"
         group.colorHex = record[F.colorHex] as? String ?? "#8B5CF6"
         group.simplifyDebts = readBool(record, key: F.simplifyDebts)
+        group.showDebtsInSingleCurrency = readBool(record, key: F.showDebtsInSingleCurrency)
+        group.defaultSplitType = record[F.defaultSplitType] as? String ?? "equal"
+        group.membersCanInvite = readBool(record, key: F.membersCanInvite, default: true)
         group.isOwner = false
         return group
     }
@@ -66,6 +77,9 @@ enum CKRecordTranslator {
         group.iconName = record[F.iconName] as? String ?? group.iconName
         group.colorHex = record[F.colorHex] as? String ?? group.colorHex
         group.simplifyDebts = readBool(record, key: F.simplifyDebts)
+        group.showDebtsInSingleCurrency = readBool(record, key: F.showDebtsInSingleCurrency)
+        group.defaultSplitType = record[F.defaultSplitType] as? String ?? group.defaultSplitType
+        group.membersCanInvite = readBool(record, key: F.membersCanInvite, default: group.membersCanInvite)
     }
 
     // MARK: - SplitExpense ↔ SplitExpense CKRecord

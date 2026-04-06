@@ -26,6 +26,9 @@ struct SplitModelsTests {
         #expect(group.isArchived == false)
         #expect(group.defaultAccountID == nil)
         #expect(group.autoCreateTransaction == true)
+        #expect(group.showDebtsInSingleCurrency == false)
+        #expect(group.defaultSplitType == "equal")
+        #expect(group.membersCanInvite == true)
         #expect(group.cloudKitZoneID.hasPrefix("SplitGroup-"))
     }
 
@@ -84,12 +87,18 @@ struct SplitModelsTests {
             name: "Depa Miraflores",
             currencyCode: "PEN",
             isOwner: true,
-            autoCreateTransaction: false
+            autoCreateTransaction: false,
+            showDebtsInSingleCurrency: true,
+            defaultSplitType: "percentage",
+            membersCanInvite: false
         )
         #expect(group.name == "Depa Miraflores")
         #expect(group.currencyCode == "PEN")
         #expect(group.isOwner == true)
         #expect(group.autoCreateTransaction == false)
+        #expect(group.showDebtsInSingleCurrency == true)
+        #expect(group.defaultSplitType == "percentage")
+        #expect(group.membersCanInvite == false)
         #expect(group.cloudKitZoneID.hasPrefix("SplitGroup-"))
         #expect(group.cloudKitZoneID.count > "SplitGroup-".count)
     }
