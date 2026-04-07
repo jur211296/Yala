@@ -404,7 +404,7 @@ struct GroupExpenseFormView: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.large])
     }
 
     // MARK: - Register Button

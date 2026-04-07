@@ -2,7 +2,7 @@
 //  GroupSplitSelectorView.swift
 //  Yala
 //
-//  Picker de tipo de split + inputs por participante según el tipo seleccionado.
+//  Picker de tipo de split + inputs por participante — estilo SplitCalculatorSheet.
 //
 
 import SwiftUI
@@ -14,16 +14,20 @@ struct GroupSplitSelectorView: View {
 
     @Environment(\.yalaTheme) private var theme
 
+    private var currencySymbol: String {
+        YalaFormatter.currencyIdentifier(for: viewModel.currencyCode)
+    }
+
     var body: some View {
-        VStack(spacing: DS.Spacing.md) {
-            // Split type picker
+        VStack(spacing: DS.Spacing.xxl) {
             splitTypePicker
 
-            // Per-member rows
             if !viewModel.selectedMemberIDs.isEmpty && viewModel.amount > 0 {
-                memberSharesList
-                summaryBar
+                memberSharesCard
+                resultRow
             }
+
+            tipView
         }
     }
 
@@ -36,12 +40,11 @@ struct GroupSplitSelectorView: View {
             }
         }
         .pickerStyle(.segmented)
-        .padding(.horizontal, DS.FormRow.paddingH)
     }
 
-    // MARK: - Member Shares List
+    // MARK: - Member Shares Card
 
-    private var memberSharesList: some View {
+    private var memberSharesCard: some View {
         VStack(spacing: DS.Spacing.none) {
             ForEach(viewModel.selectedMembers, id: \.id) { member in
                 let id = member.id.uuidString
@@ -50,29 +53,20 @@ struct GroupSplitSelectorView: View {
 
                 if member.id != viewModel.selectedMembers.last?.id {
                     Divider()
-                        .padding(.leading, DS.FormRow.paddingH)
+                        .padding(.leading, DS.Spacing.lg)
                 }
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .fill(.thCard)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(.thCardBorder, lineWidth: 1)
-        )
+        .solidCard(radius: DS.Radius.xl)
     }
 
     @ViewBuilder
     private func memberRow(member: SplitMember, id: String) -> some View {
-        HStack(spacing: DS.Spacing.md) {
+        VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
             Text(viewModel.memberNameLookup[id] ?? member.displayName)
-                .font(DS.Typography.body)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-
-            Spacer()
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .trailing)
 
             switch viewModel.splitType {
             case .equal:
@@ -85,93 +79,162 @@ struct GroupSplitSelectorView: View {
                 sharesInput(id: id)
             }
         }
-        .padding(.horizontal, DS.FormRow.paddingH)
-        .padding(.vertical, DS.FormRow.paddingV)
+        .padding(DS.Spacing.lg)
     }
 
     // MARK: - Per-Type Displays
 
     private func equalDisplay(id: String) -> some View {
         let share = viewModel.calculatedShares?.first(where: { $0.memberID == id })?.amount ?? 0
-        return Text(YalaFormatter.currency(value: share, currencyCode: viewModel.currencyCode))
-            .font(DS.Typography.caption)
-            .foregroundStyle(.secondary)
+        return HStack(spacing: DS.Spacing.xs) {
+            Spacer()
+            Text(currencySymbol)
+                .font(DS.Typography.title2)
+                .foregroundStyle(.tertiary)
+            Text(YalaFormatter.number(value: share, forceFullPrecision: true))
+                .font(DS.Typography.title2)
+                .foregroundStyle(.secondary)
+        }
     }
 
     private func exactInput(id: String) -> some View {
         HStack(spacing: DS.Spacing.xs) {
-            TextField("0", text: binding(for: id, in: \.exactAmounts))
-                .keyboardType(.decimalPad)
-                .multilineTextAlignment(.trailing)
-                .font(DS.Typography.body)
-                .frame(width: 100)
-                .focused($focusedMember, equals: id)
+            Spacer()
+            Text(currencySymbol)
+                .font(DS.Typography.title2)
+                .foregroundStyle(.secondary)
+
+            splitField(
+                id: id,
+                placeholder: "0",
+                keyPath: \.exactAmounts,
+                keyboard: .decimalPad,
+                filter: AmountInputHelper.filterAmountInput
+            )
         }
     }
 
     private func percentageInput(id: String) -> some View {
-        HStack(spacing: DS.Spacing.xxs) {
-            TextField("0", text: binding(for: id, in: \.percentages))
-                .keyboardType(.decimalPad)
-                .multilineTextAlignment(.trailing)
-                .font(DS.Typography.body)
-                .frame(width: 70)
-                .focused($focusedMember, equals: id)
+        HStack(spacing: DS.Spacing.xs) {
+            Spacer()
+
+            splitField(
+                id: id,
+                placeholder: "0",
+                keyPath: \.percentages,
+                keyboard: .decimalPad,
+                filter: AmountInputHelper.filterAmountInput
+            )
 
             Text("%")
-                .font(DS.Typography.caption)
+                .font(DS.Typography.title2)
                 .foregroundStyle(.secondary)
         }
     }
 
     private func sharesInput(id: String) -> some View {
-        HStack(spacing: DS.Spacing.xxs) {
-            TextField("1", text: binding(for: id, in: \.sharesCounts))
-                .keyboardType(.numberPad)
-                .multilineTextAlignment(.trailing)
-                .font(DS.Typography.body)
-                .frame(width: 50)
-                .focused($focusedMember, equals: id)
+        HStack(spacing: DS.Spacing.xs) {
+            Spacer()
+
+            splitField(
+                id: id,
+                placeholder: "1",
+                keyPath: \.sharesCounts,
+                keyboard: .numberPad,
+                filter: AmountInputHelper.filterIntegerInput
+            )
 
             Text(L10n.Split.sharesParts)
-                .font(DS.Typography.captionSmall)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
         }
     }
 
-    // MARK: - Summary Bar
+    // MARK: - Split Field (shared ZStack + placeholder + filtering)
 
-    private var summaryBar: some View {
+    @ViewBuilder
+    private func splitField(
+        id: String,
+        placeholder: String,
+        keyPath: ReferenceWritableKeyPath<GroupExpenseViewModel, [String: String]>,
+        keyboard: UIKeyboardType,
+        filter: @escaping (String) -> String
+    ) -> some View {
+        ZStack(alignment: .trailing) {
+            if (viewModel[keyPath: keyPath][id] ?? "").isEmpty {
+                Text(placeholder)
+                    .font(DS.Typography.title2)
+                    .foregroundStyle(DS.Semantic.disabledForeground.opacity(DS.Opacity.overlay))
+            }
+            TextField("", text: binding(for: id, in: keyPath))
+                .keyboardType(keyboard)
+                .multilineTextAlignment(.trailing)
+                .font(DS.Typography.title2)
+                .focused($focusedMember, equals: id)
+                .onChange(of: viewModel[keyPath: keyPath][id] ?? "") { _, newValue in
+                    let filtered = filter(newValue)
+                    if filtered != newValue {
+                        viewModel[keyPath: keyPath][id] = filtered
+                    }
+                }
+        }
+    }
+
+    // MARK: - Result Row
+
+    private var resultRow: some View {
         HStack {
             if viewModel.splitType == .equal {
                 Text(L10n.Groups.Expense.eachPays)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+            } else if viewModel.isSharesBalanced {
+                Label(L10n.Groups.Expense.balanced, systemImage: "checkmark.circle.fill")
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(DS.Semantic.successForeground)
             } else {
-                let remaining = viewModel.remainingToAllocate
-                let isBalanced = viewModel.isSharesBalanced
-
-                if isBalanced {
-                    Label(L10n.Groups.Expense.balanced, systemImage: "checkmark.circle.fill")
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(DS.Semantic.successForeground)
-                } else {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: "exclamationmark.circle.fill")
-                        Text("\(L10n.Groups.Expense.remaining): \(YalaFormatter.currency(value: abs(remaining), currencyCode: viewModel.currencyCode))")
-                    }
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(Color.hotPink)
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "exclamationmark.circle.fill")
+                    Text("\(L10n.Groups.Expense.remaining): \(YalaFormatter.currency(value: abs(viewModel.remainingToAllocate), currencyCode: viewModel.currencyCode))")
                 }
+                .font(DS.Typography.headline)
+                .foregroundStyle(Color.hotPink)
             }
 
             Spacer()
 
             Text(YalaFormatter.currency(value: viewModel.sharesTotal, currencyCode: viewModel.currencyCode))
+                .font(DS.Typography.title2)
+                .foregroundStyle(resultAccentColor)
+        }
+        .padding(DS.Spacing.md)
+        .background(resultAccentColor.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+    }
+
+    private var resultAccentColor: Color {
+        if viewModel.splitType == .equal || viewModel.isSharesBalanced {
+            return DS.Semantic.successForeground
+        }
+        return Color.hotPink
+    }
+
+    // MARK: - Tip View
+
+    private var tipView: some View {
+        HStack(alignment: .top, spacing: DS.Spacing.sm) {
+            Image(systemName: "lightbulb.fill")
+                .font(DS.Typography.body)
+                .foregroundStyle(Color.hotPink)
+                .accessibilityHidden(true)
+            Text(viewModel.splitType.hintText)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, DS.FormRow.paddingH)
+        .padding(DS.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.hotPink.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 
     // MARK: - Binding Helper

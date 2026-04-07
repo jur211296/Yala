@@ -3322,7 +3322,7 @@
 "groups.expense.date" = "Fecha";
 "groups.expense.splitType" = "Tipo de división";
 "groups.expense.remaining" = "Restante";
-"groups.expense.balanced" = "Cuadrado";
+"groups.expense.balanced" = "Balanceado";
 "groups.expense.eachPays" = "Cada uno paga";
 
 // GC-05: Settlements
