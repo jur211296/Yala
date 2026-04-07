@@ -33,6 +33,9 @@ final class GroupExpenseViewModel {
     var paidByMemberID: String = ""
     var currencyCode: String = ""
     var subcategoryName: String?
+    var selectedSubcategory: Subcategory? {
+        didSet { subcategoryName = selectedSubcategory?.name }
+    }
     var splitType: SplitType = .equal
 
     // Per-participant state
@@ -165,6 +168,7 @@ final class GroupExpenseViewModel {
         paidByMemberID = expense.paidByMemberID
         currencyCode = expense.currencyCode
         subcategoryName = expense.subcategoryName
+        resolveSubcategory()
         splitType = SplitType(rawValue: expense.splitType) ?? .equal
 
         selectedMemberIDs = Set(shares.map(\.memberID))
@@ -206,6 +210,22 @@ final class GroupExpenseViewModel {
     }
 
     // MARK: - Private
+
+    /// Resuelve subcategoryName (String) → Subcategory object via fetch
+    private func resolveSubcategory() {
+        guard let name = subcategoryName, let ctx = modelContext else { return }
+        do {
+            var descriptor = FetchDescriptor<Subcategory>(
+                predicate: #Predicate { $0.name == name }
+            )
+            descriptor.fetchLimit = 1
+            selectedSubcategory = try ctx.fetch(descriptor).first
+        } catch {
+            #if DEBUG
+            print("GroupExpenseViewModel: Error resolving subcategory '\(name)': \(error)")
+            #endif
+        }
+    }
 
     private func buildParticipants() -> [GroupSplitCalculator.Participant] {
         let selected = members.filter { selectedMemberIDs.contains($0.id.uuidString) }

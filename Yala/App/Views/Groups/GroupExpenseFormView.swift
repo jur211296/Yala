@@ -3,6 +3,7 @@
 //  Yala
 //
 //  Formulario de creación/edición de gastos compartidos.
+//  Layout hero centrado — identidad visual con NewTransactionView.
 //
 
 import SwiftUI
@@ -15,6 +16,7 @@ struct GroupExpenseFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - Input
 
@@ -34,6 +36,12 @@ struct GroupExpenseFormView: View {
     @State private var showPaidByPicker = false
     @State private var showMemberSelector = false
     @State private var showCurrencyPicker = false
+    @State private var showDatePicker = false
+    @State private var showSubcategorySelector = false
+    @State private var showSplitDetail = false
+
+    // Amount scaling
+    @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
 
     // MARK: - Init
 
@@ -60,25 +68,26 @@ struct GroupExpenseFormView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
-                    // Amount input
-                    amountSection
+            ZStack {
+                theme.background
+                    .ignoresSafeArea()
+                    .dismissKeyboardOnTap()
 
-                    // Details
-                    detailsSection
+                VStack(spacing: DS.Spacing.none) {
+                    Spacer()
 
-                    // Paid by
-                    paidBySection
+                    centralContent
 
-                    // Split
-                    splitSection
+                    Spacer()
+
+                    bottomChips
+                        .padding(.bottom, DS.Spacing.lg)
+
+                    registerButton
+                        .padding(.horizontal, DS.Spacing.xl)
+                        .padding(.bottom, DS.Spacing.xxl)
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.top, DS.Spacing.sm)
-                .padding(.bottom, DS.Spacing.safeBottom)
             }
-            .background(PanelBackgroundView())
             .navigationTitle(viewModel.isEditMode ? L10n.Groups.Expense.editTitle : L10n.Groups.Expense.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -86,10 +95,6 @@ struct GroupExpenseFormView: View {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    YalaSaveButton(action: handleSave, isDisabled: !viewModel.canSave)
                 }
             }
             .onAppear {
@@ -99,6 +104,10 @@ struct GroupExpenseFormView: View {
                 } else {
                     focusedField = .amount
                 }
+            }
+            .sheet(isPresented: $showDatePicker) {
+                DatePickerSheet(selectedDate: $viewModel.date)
+                    .presentationDetents([.medium, .large])
             }
             .sheet(isPresented: $showPaidByPicker) {
                 MemberPickerView(
@@ -129,147 +138,300 @@ struct GroupExpenseFormView: View {
             .sheet(isPresented: $showCurrencyPicker) {
                 CurrencySelectorView(selectedCurrency: currencyCodeBinding)
             }
+            .sheet(isPresented: $showSubcategorySelector) {
+                SubcategorySelectorSheet(
+                    selectedSubcategory: $viewModel.selectedSubcategory,
+                    transactionType: .expense
+                )
+            }
+            .sheet(isPresented: $showSplitDetail) {
+                splitDetailSheet
+            }
         }
     }
 
-    // MARK: - Amount Section
+    // MARK: - Central Content
 
-    private var amountSection: some View {
-        VStack(spacing: DS.Spacing.sm) {
+    private var centralContent: some View {
+        VStack(spacing: DS.Spacing.xxl) {
+            dateChip
+            descriptionField
+            amountDisplay
+            splitMethodChip
+            noteField
+            categoryChip
+        }
+    }
+
+    // MARK: - Date Chip
+
+    private var dateChip: some View {
+        Button {
+            showDatePicker = true
+        } label: {
             HStack(spacing: DS.Spacing.sm) {
-                Button {
-                    showCurrencyPicker = true
-                } label: {
-                    Text(viewModel.currencyCode)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.thAccent)
-                }
-                .buttonStyle(.plain)
-
-                TextField("0.00", text: $viewModel.amountString)
-                    .font(.system(size: 40, weight: .bold, design: .rounded)) // A11Y-DT: amount display, large by design
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.center)
-                    .keyboardType(.decimalPad)
-                    .focused($focusedField, equals: .amount)
-                    .onChange(of: viewModel.amountString) { _, newValue in
-                        let filtered = AmountInputHelper.filterAmountInput(newValue)
-                        if filtered != newValue {
-                            viewModel.amountString = filtered
-                        }
-                    }
+                Image(systemName: "calendar")
+                    .font(DS.Typography.label)
+                Text(dateChipText)
+                    .font(DS.Typography.label)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, DS.Spacing.xl)
+            .foregroundStyle(.primary)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
+            .background(
+                Capsule()
+                    .fill(Color.primary.opacity(0.08))
+            )
         }
+        .buttonStyle(.plain)
     }
 
-    // MARK: - Details Section
-
-    private var detailsSection: some View {
-        SectionBox(title: L10n.Groups.Expense.descriptionLabel) {
-            // Description
-            VStack(spacing: DS.Spacing.none) {
-                TextField(L10n.Groups.Expense.descriptionPlaceholder, text: $viewModel.expenseDescription)
-                    .font(DS.Typography.body)
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.vertical, DS.FormRow.paddingV)
-                    .focused($focusedField, equals: .description)
-
-                Divider().padding(.leading, DS.FormRow.paddingH)
-
-                // Date
-                DatePicker(L10n.Groups.Expense.date, selection: $viewModel.date, displayedComponents: .date)
-                    .font(DS.Typography.body)
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.vertical, DS.FormRow.paddingV)
-
-                Divider().padding(.leading, DS.FormRow.paddingH)
-
-                // Note
-                TextField(L10n.Groups.Expense.notePlaceholder, text: $viewModel.note)
-                    .font(DS.Typography.body)
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.vertical, DS.FormRow.paddingV)
-                    .focused($focusedField, equals: .note)
-            }
-        }
+    private var dateChipText: String {
+        if Calendar.current.isDateInToday(viewModel.date) { return L10n.Date.today }
+        if Calendar.current.isDateInYesterday(viewModel.date) { return L10n.Date.yesterday }
+        return viewModel.date.formatted(.dateTime.day().month(.abbreviated))
     }
 
-    // MARK: - Paid By Section
+    // MARK: - Description Field
 
-    private var paidBySection: some View {
-        SectionBox(title: L10n.Groups.Expense.paidByTitle) {
+    private var descriptionField: some View {
+        TextField(L10n.Groups.Expense.descriptionPlaceholder, text: $viewModel.expenseDescription)
+            .font(DS.Typography.title)
+            .foregroundStyle(.primary)
+            .multilineTextAlignment(.center)
+            .textContentType(.none)
+            .autocorrectionDisabled(false)
+            .focused($focusedField, equals: .description)
+            .frame(maxWidth: 280)
+            .tint(Color.primary)
+    }
+
+    // MARK: - Amount Display
+
+    private var amountFontSize: CGFloat {
+        let length = viewModel.amountString.count
+        let ratio: CGFloat
+        switch length {
+        case 0...7: ratio = 1.0
+        case 8...9: ratio = 54.0 / 64.0
+        case 10...11: ratio = 46.0 / 64.0
+        case 12...13: ratio = 38.0 / 64.0
+        default: ratio = 32.0 / 64.0
+        }
+        return baseAmountSize * ratio
+    }
+
+    private var amountDisplay: some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
             Button {
-                showPaidByPicker = true
+                dismissKeyboard()
+                showCurrencyPicker = true
             } label: {
-                HStack(spacing: DS.Spacing.md) {
-                    paidByAvatar
-
-                    Text(memberNameLookup[viewModel.paidByMemberID] ?? "—")
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.primary)
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
-                .contentShape(Rectangle())
+                Text(YalaFormatter.currencyIdentifier(for: viewModel.currencyCode))
+                    .font(.system(size: amountFontSize * 0.44, weight: .medium, design: .rounded))
+                    .foregroundStyle(theme.accent.opacity(0.7))
+                    .contentTransition(.numericText())
             }
             .buttonStyle(.plain)
-        }
-    }
 
-    private var paidByAvatar: some View {
-        ZStack {
-            Circle()
-                .fill(Color(hex: group.colorHex).opacity(0.2))
-                .frame(width: 36, height: 36)
-
-            let name = memberNameLookup[viewModel.paidByMemberID] ?? ""
-            Text(String(name.prefix(1)).uppercased())
-                .font(DS.Typography.label)
-                .foregroundStyle(Color(hex: group.colorHex))
-        }
-    }
-
-    // MARK: - Split Section
-
-    private var splitSection: some View {
-        SectionBox(title: L10n.Groups.Expense.divideBetween) {
-            VStack(spacing: DS.Spacing.md) {
-                // Member selector row
-                Button {
-                    showMemberSelector = true
-                } label: {
-                    HStack {
-                        Text(L10n.Groups.Expense.membersSelected(viewModel.selectedMemberIDs.count, members.count))
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.primary)
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.secondary)
+            TextField("0.00", text: $viewModel.amountString)
+                .font(.system(size: amountFontSize, weight: .bold, design: .rounded))
+                .foregroundStyle(theme.accent)
+                .multilineTextAlignment(.center)
+                .keyboardType(.decimalPad)
+                .focused($focusedField, equals: .amount)
+                .accessibilityIdentifier("group_expense_amount")
+                .fixedSize(horizontal: true, vertical: false)
+                .onChange(of: focusedField) { _, newFocus in
+                    if newFocus == .amount
+                        && (viewModel.amountString == "0" || viewModel.amountString == "0.00" || viewModel.amountString == "0,00")
+                    {
+                        viewModel.amountString = ""
                     }
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.vertical, DS.FormRow.paddingV)
-                    .contentShape(Rectangle())
+                    if newFocus != .amount {
+                        if viewModel.amountString.isEmpty {
+                            viewModel.amountString = "0.00"
+                        } else {
+                            viewModel.amountString = AmountInputHelper.formatWithGrouping(viewModel.amount)
+                        }
+                    }
                 }
-                .buttonStyle(.plain)
+                .onChange(of: viewModel.amountString) { _, newValue in
+                    let filtered = AmountInputHelper.filterAmountInput(newValue)
+                    if filtered != newValue {
+                        viewModel.amountString = filtered
+                    }
+                }
+        }
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+    }
 
-                Divider().padding(.leading, DS.FormRow.paddingH)
+    // MARK: - Split Method Chip
 
-                // Split selector
-                GroupSplitSelectorView(viewModel: viewModel)
-                    .padding(.bottom, DS.Spacing.sm)
+    private var splitMethodChip: some View {
+        Menu {
+            ForEach(SplitType.allCases) { type in
+                Button {
+                    viewModel.splitType = type
+                    if type != .equal {
+                        showSplitDetail = true
+                    }
+                } label: {
+                    Label(type.displayName, systemImage: type.iconName)
+                }
+            }
+        } label: {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: viewModel.splitType.iconName)
+                    .font(DS.Typography.labelSmall)
+                Text(viewModel.splitType.displayName)
+                    .font(DS.Typography.labelSmall)
+                if viewModel.splitType != .equal && !viewModel.isSharesBalanced {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .font(DS.Typography.labelTiny)
+                        .foregroundStyle(Color.hotPink)
+                }
+            }
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.xs)
+            .background(Capsule().fill(Color.secondary.opacity(0.1)))
+        }
+    }
+
+    // MARK: - Note Field
+
+    private var noteField: some View {
+        TextField(L10n.Groups.Expense.notePlaceholder, text: $viewModel.note)
+            .font(DS.Typography.caption)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: 200)
+            .focused($focusedField, equals: .note)
+    }
+
+    // MARK: - Category Chip
+
+    @ViewBuilder
+    private var categoryChip: some View {
+        if let subcategory = viewModel.selectedSubcategory {
+            let category = subcategory.safeCategory
+            let categoryColor = Color(hex: category.colorHex)
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: category.iconName ?? "folder")
+                    .font(DS.Typography.labelTiny)
+                    .accessibilityHidden(true)
+                Text(category.name)
+                    .font(DS.Typography.labelTiny)
+            }
+            .foregroundStyle(categoryColor)
+            .padding(.horizontal, DS.Chip.paddingH)
+            .padding(.vertical, DS.Chip.paddingV)
+            .background(Capsule().fill(categoryColor.opacity(0.12)))
+        }
+    }
+
+    // MARK: - Bottom Chips
+
+    private var bottomChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: DS.Spacing.sm) {
+                SelectionChip(
+                    icon: "tag",
+                    text: viewModel.selectedSubcategory?.name ?? L10n.Transaction.subcategory,
+                    isSelected: viewModel.selectedSubcategory != nil,
+                    color: subcategoryChipColor
+                ) {
+                    dismissKeyboard()
+                    showSubcategorySelector = true
+                }
+
+                SelectionChip(
+                    icon: "person.fill",
+                    text: paidByChipText,
+                    isSelected: !viewModel.paidByMemberID.isEmpty,
+                    color: !viewModel.paidByMemberID.isEmpty ? Color(hex: group.colorHex) : nil
+                ) {
+                    dismissKeyboard()
+                    showPaidByPicker = true
+                }
+
+                SelectionChip(
+                    icon: "person.2",
+                    text: L10n.Groups.Expense.membersSelected(viewModel.selectedMemberIDs.count, members.count),
+                    isSelected: !viewModel.selectedMemberIDs.isEmpty,
+                    color: !viewModel.selectedMemberIDs.isEmpty ? Color(hex: group.colorHex) : nil
+                ) {
+                    dismissKeyboard()
+                    showMemberSelector = true
+                }
+            }
+            .padding(.horizontal, DS.Spacing.xl)
+        }
+    }
+
+    private var paidByChipText: String {
+        if viewModel.paidByMemberID.isEmpty {
+            return L10n.Groups.Expense.paidByTitle
+        }
+        return memberNameLookup[viewModel.paidByMemberID] ?? "—"
+    }
+
+    private var subcategoryChipColor: Color? {
+        guard let sub = viewModel.selectedSubcategory else { return nil }
+        return Color(hex: sub.safeCategory.colorHex)
+    }
+
+    // MARK: - Split Detail Sheet
+
+    private var splitDetailSheet: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: DS.Spacing.lg) {
+                    GroupSplitSelectorView(viewModel: viewModel)
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.md)
+            }
+            .background(PanelBackgroundView())
+            .navigationTitle(L10n.Groups.Expense.divideBetween)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
+                        showSplitDetail = false
+                    }
+                }
             }
         }
+        .presentationDetents([.medium, .large])
+    }
+
+    // MARK: - Register Button
+
+    private var registerButton: some View {
+        Button {
+            handleSave()
+        } label: {
+            HStack {
+                if viewModel.isSaving {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                } else {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(DS.Typography.headline)
+                    Text(L10n.Action.save)
+                        .font(DS.Typography.headline)
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(viewModel.canSave ? theme.accent : DS.Semantic.disabledForeground.opacity(0.4))
+        .controlSize(.large)
+        .disabled(!viewModel.canSave || viewModel.isSaving)
+        .accessibilityIdentifier("group_expense_save")
+        .dsAnimation(.easeInOut(duration: 0.2), value: viewModel.canSave, reduceMotion: reduceMotion)
     }
 
     // MARK: - Actions
@@ -280,6 +442,10 @@ struct GroupExpenseFormView: View {
             onSave()
             dismiss()
         }
+    }
+
+    private func dismissKeyboard() {
+        focusedField = nil
     }
 
     // MARK: - Helpers
