@@ -533,6 +533,11 @@ final class BudgetsViewModel {
             filtered = filtered.filter { natures.contains($0.effectiveNeed) }
         }
 
+        // Shared expense inclusion
+        if !budget.includeSharedExpenses {
+            filtered = filtered.filter { $0.splitExpenseID == nil }
+        }
+
         return filtered.filter { $0.category?.isIncome == false }
     }
 

@@ -10,6 +10,14 @@ import Foundation
 import SwiftData
 import SwiftUI
 
+// MARK: - Shared Expense Filter
+
+enum SharedExpenseFilter: String, CaseIterable, Hashable, Sendable {
+    case all        // No filter
+    case personal   // splitExpenseID == nil
+    case shared     // splitExpenseID != nil
+}
+
 // MARK: - Filter Criteria
 
 /// Unified filter criteria used across all views that filter transactions.
@@ -56,6 +64,9 @@ struct FilterCriteria: Hashable, Sendable {
     /// Search text for note filtering
     var searchText: String = ""
 
+    /// Shared/personal expense filter
+    var sharedExpenseFilter: SharedExpenseFilter = .all
+
     // MARK: - Date Filters
 
     /// Optional date interval for filtering (nil = no date filter)
@@ -80,6 +91,7 @@ struct FilterCriteria: Hashable, Sendable {
             || !selectedCurrencies.isEmpty
             || !searchText.isEmpty
             || hasTransactionNatureFilter
+            || sharedExpenseFilter != .all
     }
 
     /// Number of active filter types (for badge)
@@ -94,6 +106,7 @@ struct FilterCriteria: Hashable, Sendable {
         if !selectedCurrencies.isEmpty { count += 1 }
         if hasTransactionNatureFilter { count += 1 }
         if !searchText.isEmpty { count += 1 }
+        if sharedExpenseFilter != .all { count += 1 }
         return count
     }
 
@@ -117,6 +130,7 @@ struct FilterCriteria: Hashable, Sendable {
         isExcludeMode = false
         amountCondition = .any
         searchText = ""
+        sharedExpenseFilter = .all
         // Note: dateInterval is NOT cleared as it's typically controlled by period selector
     }
 }
@@ -252,6 +266,15 @@ struct FilterService {
             guard (transaction.note ?? "").localizedCaseInsensitiveContains(criteria.searchText) else {
                 return false
             }
+        }
+
+        // Shared expense filter
+        switch criteria.sharedExpenseFilter {
+        case .all: break
+        case .personal:
+            guard transaction.splitExpenseID == nil else { return false }
+        case .shared:
+            guard transaction.splitExpenseID != nil else { return false }
         }
 
         return true

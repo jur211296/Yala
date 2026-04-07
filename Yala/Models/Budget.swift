@@ -47,6 +47,9 @@ final class Budget {
     var alertEnabled: Bool = false
     var alertThresholds: String? = nil  // CSV: "50,75,100"
 
+    // Shared expenses
+    var includeSharedExpenses: Bool = true
+
     init(
         id: UUID = UUID(),
         currencyCode: String,
@@ -66,7 +69,8 @@ final class Budget {
         isFavorite: Bool = false,
         favoriteOrder: Int = 0,
         alertEnabled: Bool = false,
-        alertThresholds: String? = nil
+        alertThresholds: String? = nil,
+        includeSharedExpenses: Bool = true
     ) {
         self.id = id
         self.currencyCode = currencyCode
@@ -87,6 +91,7 @@ final class Budget {
         self.favoriteOrder = favoriteOrder
         self.alertEnabled = alertEnabled
         self.alertThresholds = alertThresholds
+        self.includeSharedExpenses = includeSharedExpenses
     }
 
     // MARK: - Display Properties

@@ -548,6 +548,11 @@ class SessionState {
         selectedMainTab = .planning
     }
 
+    /// Navigate to Groups tab
+    func navigateToGroups() {
+        selectedMainTab = .groups
+    }
+
     /// Toggle budget filters - if same budget is tapped again, clear filters
     func applyBudgetFilters(_ budget: Budget) {
         let budgetID = budget.persistentModelID

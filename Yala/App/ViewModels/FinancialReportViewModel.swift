@@ -72,6 +72,8 @@ final class FinancialReportViewModel: Filterable {
         set { SessionState.shared.isExcludeMode = newValue }
     }
 
+    var sharedExpenseFilter: SharedExpenseFilter = .all
+
     var detailPeriod: DetailPeriod {
         get { SessionState.shared.selectedPeriod }
         set { SessionState.shared.selectedPeriod = newValue }

@@ -19,6 +19,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
     case exchangeRate = "tipo_cambio"
     case budgets = "presupuestos"
     case scheduledPayments = "pagos_planificados"
+    case groupsSummary = "resumen_grupos"
 
     var id: String { rawValue }
 
@@ -35,6 +36,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .exchangeRate: return L10n.WidgetType.exchangeRate
         case .budgets: return L10n.WidgetType.budgets
         case .scheduledPayments: return L10n.WidgetType.scheduledPayments
+        case .groupsSummary: return L10n.WidgetType.groupsSummary
         }
     }
 
@@ -51,6 +53,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .exchangeRate: return "arrow.left.arrow.right"
         case .budgets: return "chart.pie.fill"
         case .scheduledPayments: return "calendar.badge.clock"
+        case .groupsSummary: return "person.2.fill"
         }
     }
 
@@ -67,6 +70,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .exchangeRate: return [.medium]  // Tamaño único
         case .budgets: return [.medium, .large]  // Top 3 / Top 5
         case .scheduledPayments: return [.medium]  // Single size, mode selected in preferences
+        case .groupsSummary: return [.medium]
         }
     }
 
@@ -77,7 +81,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
             return size == .medium ? L10n.Widget.compact : L10n.Widget.expanded
         case .topSpending, .topSubcategories, .budgets:
             return size == .medium ? L10n.Widget.top3 : L10n.Widget.top5
-        case .trend, .categoriesPie, .subcategoriesPie, .latestRecords, .exchangeRate, .scheduledPayments:
+        case .trend, .categoriesPie, .subcategoriesPie, .latestRecords, .exchangeRate, .scheduledPayments, .groupsSummary:
             return nil  // Single size, no name needed
         }
     }
@@ -117,6 +121,7 @@ struct WidgetConfig: Identifiable, Codable, Equatable {
             WidgetConfig(id: UUID(), type: .budgets, isVisible: false, size: .medium),
             WidgetConfig(id: UUID(), type: .scheduledPayments, isVisible: false, size: .medium),
             WidgetConfig(id: UUID(), type: .exchangeRate, isVisible: false, size: .medium),
+            WidgetConfig(id: UUID(), type: .groupsSummary, isVisible: false, size: .medium),
         ]
     }
 }

@@ -78,7 +78,8 @@ struct BudgetEditorViewModelTests {
             selectedTags: [],
             selectedNeeds: [],
             alertEnabled: false,
-            alertThresholds: []
+            alertThresholds: [],
+            includeSharedExpenses: true
         )
         #expect(result == nil)
     }

@@ -314,6 +314,34 @@ final class InsightsViewModel {
             )
         }
 
+        // Shared expenses context for AI
+        if let groupCtx = data.groupInsightsContext {
+            var sharedDict: [String: Any] = [
+                "total_shared": Int(groupCtx.totalSharedExpense),
+                "total_personal": Int(groupCtx.totalPersonalExpense),
+                "shared_count": groupCtx.sharedExpenseCount,
+                "active_groups": groupCtx.groupCount
+            ]
+            let totalExpense = data.periodSummary.totalExpense
+            if totalExpense > 0 {
+                sharedDict["shared_pct"] = Int((groupCtx.totalSharedExpense / totalExpense) * 100)
+            }
+            if !groupCtx.groupExpensesByGroup.isEmpty {
+                sharedDict["by_group"] = groupCtx.groupExpensesByGroup.prefix(5).map {
+                    ["name": $0.groupName, "amount": Int($0.total)] as [String: Any]
+                }
+            }
+            if !groupCtx.sharedCategoryBreakdown.isEmpty {
+                sharedDict["top_shared_categories"] = groupCtx.sharedCategoryBreakdown.prefix(3).map {
+                    ["name": $0.category, "amount": Int($0.amount)] as [String: Any]
+                }
+            }
+            if groupCtx.pendingDebtTotal > 0 {
+                sharedDict["pending_debt"] = Int(groupCtx.pendingDebtTotal)
+            }
+            result["shared_expenses"] = sharedDict
+        }
+
         return result
     }
 

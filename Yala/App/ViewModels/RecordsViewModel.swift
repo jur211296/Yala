@@ -95,6 +95,8 @@ final class RecordsViewModel: Filterable {
         set { SessionState.shared.isExcludeMode = newValue }
     }
 
+    var sharedExpenseFilter: SharedExpenseFilter = .all
+
     // MARK: - UI State
 
     /// Whether search bar is expanded

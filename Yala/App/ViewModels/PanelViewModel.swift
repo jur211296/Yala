@@ -37,6 +37,12 @@ final class PanelViewModel {
     private(set) var budgets: [Budget] = []
     private(set) var scheduledPayments: [ScheduledPayment] = []
     private(set) var pendingDrafts: [InboxDraft] = []
+    private(set) var groupGlobalSummary: GroupGlobalSummary?
+
+    var hasGroupsWithPendingBalances: Bool {
+        guard let summary = groupGlobalSummary else { return false }
+        return !summary.totalOwedToMe.isEmpty || !summary.totalIOwe.isEmpty || summary.pendingSettlements > 0
+    }
 
     // MARK: - State
 
@@ -202,6 +208,35 @@ final class PanelViewModel {
             #endif
         }
 
+        // Load group balance summary for widget
+        loadGroupSummary(context: context)
+
+    }
+
+    private func loadGroupSummary(context: ModelContext) {
+        do {
+            let allExpenses = try context.fetch(FetchDescriptor<SplitExpense>())
+            guard !allExpenses.isEmpty else {
+                groupGlobalSummary = nil
+                return
+            }
+            let allShares = try context.fetch(FetchDescriptor<SplitShare>())
+            let allSettlements = try context.fetch(FetchDescriptor<SplitSettlement>())
+            let allMembers = try context.fetch(FetchDescriptor<SplitMember>())
+            let currentUserMemberIDs = Set(allMembers.filter(\.isCurrentUser).map(\.id).map(\.uuidString))
+
+            groupGlobalSummary = GroupBalanceService.globalSummary(
+                allExpenses: allExpenses,
+                allShares: allShares,
+                allSettlements: allSettlements,
+                currentUserMemberIDs: currentUserMemberIDs
+            )
+        } catch {
+            #if DEBUG
+            print("PanelViewModel: Error loading group summary: \(error)")
+            #endif
+            groupGlobalSummary = nil
+        }
     }
 
     var topSpendingCategories: [CategorySpendingSummary] = []

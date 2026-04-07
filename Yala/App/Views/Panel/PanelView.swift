@@ -1453,6 +1453,14 @@ struct PanelView: View {
                 filter: $viewModel.scheduledPaymentsWidgetFilter,
                 onShowMore: { sessionState.navigateToScheduledPayments() }
             )
+        } else if config.type == .groupsSummary {
+            if let summary = viewModel.groupGlobalSummary, viewModel.hasGroupsWithPendingBalances {
+                GroupsSummaryWidget(
+                    summary: summary,
+                    currencyCode: preferredCurrency.rawValue,
+                    onShowMore: { sessionState.navigateToGroups() }
+                )
+            }
         }
     }
 

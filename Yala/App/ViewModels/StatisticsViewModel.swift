@@ -129,6 +129,8 @@ final class StatisticsViewModel: Filterable {
         set { SessionState.shared.isExcludeMode = newValue }
     }
 
+    var sharedExpenseFilter: SharedExpenseFilter = .all
+
     /// Selected period (using DetailPeriod for expanded options)
     var detailPeriod: DetailPeriod {
         get { SessionState.shared.selectedPeriod }

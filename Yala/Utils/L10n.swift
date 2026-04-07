@@ -547,6 +547,27 @@ enum L10n {
         }
         static var tipOptionalHigh: String { ls("insights.tipOptionalHigh", comment: "") }
 
+        // Group insight rules
+        static func ruleSharedRatio(_ pct: Int, tone: InsightTone = .normal) -> String {
+            String(format: ls("insights.ruleSharedRatio.\(tone.rawValue)", comment: ""), pct)
+        }
+        static func ruleMostExpensiveGroup(_ name: String, _ pct: Int, tone: InsightTone = .normal) -> String {
+            String(format: ls("insights.ruleMostExpensiveGroup.\(tone.rawValue)", comment: ""), name, pct)
+        }
+        static func ruleSharedFrequency(_ count: Int, tone: InsightTone = .normal) -> String {
+            String(format: ls("insights.ruleSharedFrequency.\(tone.rawValue)", comment: ""), count)
+        }
+        static func ruleHighDebt(_ amount: String, tone: InsightTone = .normal) -> String {
+            String(format: ls("insights.ruleHighDebt.\(tone.rawValue)", comment: ""), amount)
+        }
+        static func ruleDominantSharedCategory(_ name: String, _ pct: Int, tone: InsightTone = .normal) -> String {
+            String(format: ls("insights.ruleDominantSharedCategory.\(tone.rawValue)", comment: ""), name, pct)
+        }
+        static func ruleSharedMoM(_ variation: String, tone: InsightTone = .normal) -> String {
+            String(format: ls("insights.ruleSharedMoM.\(tone.rawValue)", comment: ""), variation)
+        }
+        static var tipHighDebt: String { ls("insights.tipHighDebt", comment: "") }
+
         // Tone/Focus display names
         static func toneName(_ tone: InsightTone) -> String {
             ls("insights.tone.\(tone.rawValue)", comment: "")
@@ -874,6 +895,21 @@ enum L10n {
             static var balances: String { ls("groups.detail.balances", comment: "") }
             static var stats: String { ls("groups.detail.stats", comment: "") }
             static var comingSoon: String { ls("groups.detail.comingSoon", comment: "") }
+        }
+
+        enum Stats {
+            static var totalSpent: String { ls("groups.stats.totalSpent", comment: "") }
+            static var myPortion: String { ls("groups.stats.myPortion", comment: "") }
+            static var whoPaysMost: String { ls("groups.stats.whoPaysMost", comment: "") }
+            static var categories: String { ls("groups.stats.categories", comment: "") }
+            static var monthlyTrend: String { ls("groups.stats.monthlyTrend", comment: "") }
+            static var noExpenses: String { ls("groups.stats.noExpenses", comment: "") }
+            static var uncategorized: String { ls("groups.stats.uncategorized", comment: "") }
+            static var thisMonth: String { ls("groups.stats.thisMonth", comment: "") }
+            static var last3Months: String { ls("groups.stats.last3Months", comment: "") }
+            static var last6Months: String { ls("groups.stats.last6Months", comment: "") }
+            static var thisYear: String { ls("groups.stats.thisYear", comment: "") }
+            static var allTime: String { ls("groups.stats.allTime", comment: "") }
         }
 
         enum Form {
@@ -2750,6 +2786,9 @@ enum L10n {
         static var scheduledPayments: String {
             ls("widgetType.scheduledPayments", comment: "")
         }
+        static var groupsSummary: String {
+            ls("widgetType.groupsSummary", comment: "")
+        }
     }
 
     // MARK: - Budgets
@@ -2769,6 +2808,10 @@ enum L10n {
 
         static var emptyTitle: String { ls("budgets.empty.title", comment: "") }
         static var emptyMessage: String { ls("budgets.empty.message", comment: "") }
+
+        // Shared expenses
+        static var includeSharedExpenses: String { ls("budgets.includeSharedExpenses", comment: "") }
+        static var includeSharedExpensesHint: String { ls("budgets.includeSharedExpensesHint", comment: "") }
 
         // Alert notifications
         static var alertsTitle: String {

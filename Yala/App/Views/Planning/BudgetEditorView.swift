@@ -45,6 +45,7 @@ struct BudgetEditorView: View {
     @State private var selectedSubcategories: Set<PersistentIdentifier> = []
     @State private var selectedTags: Set<PersistentIdentifier> = []
     @State private var selectedNeeds: Set<SubcategoryNeed> = []
+    @State private var includeSharedExpenses: Bool = true
 
     // Sheet states
     @State private var showCategoriesSheet = false
@@ -85,6 +86,9 @@ struct BudgetEditorView: View {
                     // Filters Section with always-visible info banner
                     budgetFilterBanner
                     filtersSection
+
+                    // Shared expenses toggle
+                    sharedExpensesToggle
 
                     // Delete Button (only for existing budgets)
                     if budget != nil {
@@ -295,6 +299,20 @@ struct BudgetEditorView: View {
                 .font(DS.Typography.body)
         }
 
+    }
+
+    // MARK: - Shared Expenses Toggle
+
+    private var sharedExpensesToggle: some View {
+        Toggle(isOn: $includeSharedExpenses) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.Budgets.includeSharedExpenses)
+                    .font(DS.Typography.body)
+                Text(L10n.Budgets.includeSharedExpensesHint)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 
     // MARK: - Alerts Section
@@ -759,6 +777,9 @@ struct BudgetEditorView: View {
             selectedNeeds = Set(needStrings.compactMap { SubcategoryNeed(rawValue: $0) })
         }
 
+        // Load shared expenses setting
+        includeSharedExpenses = budget.includeSharedExpenses
+
         // Load alert settings
         alertEnabled = budget.alertEnabled
         if let thresholdsString = budget.alertThresholds {
@@ -786,7 +807,8 @@ struct BudgetEditorView: View {
             selectedTags: selectedTags,
             selectedNeeds: selectedNeeds,
             alertEnabled: alertEnabled,
-            alertThresholds: selectedThresholds
+            alertThresholds: selectedThresholds,
+            includeSharedExpenses: includeSharedExpenses
         )
 
         if let savedID = saved {

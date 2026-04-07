@@ -196,7 +196,8 @@ final class BudgetEditorViewModel {
         selectedTags: Set<PersistentIdentifier>,
         selectedNeeds: Set<SubcategoryNeed>,
         alertEnabled: Bool,
-        alertThresholds: Set<Int>
+        alertThresholds: Set<Int>,
+        includeSharedExpenses: Bool
     ) -> PersistentIdentifier? {
         guard let context = modelContext else { return nil }
 
@@ -225,6 +226,7 @@ final class BudgetEditorViewModel {
             existingBudget.natures = naturesString
             existingBudget.alertEnabled = alertEnabled
             existingBudget.alertThresholds = thresholdsString
+            existingBudget.includeSharedExpenses = includeSharedExpenses
         } else {
             // Create new budget
             let newBudget = Budget(
@@ -240,7 +242,8 @@ final class BudgetEditorViewModel {
                 natures: naturesString,
                 isActive: isActive,
                 alertEnabled: alertEnabled,
-                alertThresholds: thresholdsString
+                alertThresholds: thresholdsString,
+                includeSharedExpenses: includeSharedExpenses
             )
             context.insert(newBudget)
             newBudgetUUID = newBudget.id

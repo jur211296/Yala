@@ -425,6 +425,8 @@
 "budgets.title" = "Budgets";
 "budgets.empty.title" = "You don't have any budgets yet";
 "budgets.empty.message" = "Create budgets to better control your spending.";
+"budgets.includeSharedExpenses" = "Include shared expenses";
+"budgets.includeSharedExpensesHint" = "When off, only your personal expenses count";
 "budgets.widget.noFavorites.title" = "No favorite budgets";
 "budgets.widget.noFavorites.message" = "Mark budgets as favorites in Settings > Budgets to see them here.";
 "budgets.widget.selectFavorites" = "Select favorites";
@@ -652,6 +654,7 @@
 "widgetType.exchangeRate" = "Exchange Rate";
 "widgetType.budgets" = "Budgets";
 "widgetType.scheduledPayments" = "Scheduled Payments";
+"widgetType.groupsSummary" = "Groups";
 
 // MARK: - Scheduled Payments Widget
 "scheduled.widget.count" = "%d active payments";
@@ -2895,6 +2898,25 @@
 "insights.tipExpenseUp" = "Compare with your lowest-spending month to see what changed";
 "insights.tipBudgetRisk" = "There are still days left — try to hold back on %@ for the rest";
 "insights.tipOptionalHigh" = "Review your optional expenses and see which ones you could postpone";
+"insights.ruleSharedRatio.normal" = "%d%% of your expenses this period are shared";
+"insights.ruleSharedRatio.considerate" = "%d%% of your spending was shared — sharing is caring";
+"insights.ruleSharedRatio.sarcastic" = "%d%% of your spending is shared. Who pays next?";
+"insights.ruleMostExpensiveGroup.normal" = "%@ is your most expensive group with %d%% of shared spending";
+"insights.ruleMostExpensiveGroup.considerate" = "%@ accounts for %d%% of your shared spending — your main group";
+"insights.ruleMostExpensiveGroup.sarcastic" = "%@ takes %d%% of your shared spending. Dominant.";
+"insights.ruleSharedFrequency.normal" = "You have %d shared expenses this period";
+"insights.ruleSharedFrequency.considerate" = "%d shared expenses — you share quite a lot with your group";
+"insights.ruleSharedFrequency.sarcastic" = "%d shared expenses. Do you do EVERYTHING together?";
+"insights.ruleHighDebt.normal" = "You have %@ pending in group debts";
+"insights.ruleHighDebt.considerate" = "There's %@ in pending debts — worth checking";
+"insights.ruleHighDebt.sarcastic" = "%@ in group debts. Time to collect.";
+"insights.ruleDominantSharedCategory.normal" = "%@ dominates your shared expenses (%d%%)";
+"insights.ruleDominantSharedCategory.considerate" = "Most of your shared expenses (%d%%) are in %@";
+"insights.ruleDominantSharedCategory.sarcastic" = "%@ is %d%% of your shared spending. Only eat together?";
+"insights.ruleSharedMoM.normal" = "Your shared spending went up %@ vs the previous period";
+"insights.ruleSharedMoM.considerate" = "Shared spending up %@ — check if there were extra expenses";
+"insights.ruleSharedMoM.sarcastic" = "Shared spending +%@. What were you celebrating?";
+"insights.tipHighDebt" = "Check your group balances and send reminders";
 // Tone & Focus settings
 "insights.tone.normal" = "Normal";
 "insights.tone.considerate" = "Careful";
@@ -3000,6 +3022,18 @@
 "groups.detail.balances" = "Balances";
 "groups.detail.stats" = "Statistics";
 "groups.detail.comingSoon" = "Coming soon";
+"groups.stats.totalSpent" = "Total spent";
+"groups.stats.myPortion" = "My share";
+"groups.stats.whoPaysMost" = "Who pays most";
+"groups.stats.categories" = "Categories";
+"groups.stats.monthlyTrend" = "Monthly trend";
+"groups.stats.noExpenses" = "No expenses yet";
+"groups.stats.uncategorized" = "Uncategorized";
+"groups.stats.thisMonth" = "This month";
+"groups.stats.last3Months" = "3 months";
+"groups.stats.last6Months" = "6 months";
+"groups.stats.thisYear" = "This year";
+"groups.stats.allTime" = "All time";
 "groups.form.name" = "Name";
 "groups.form.namePlaceholder" = "Group name";
 "groups.form.currency" = "Currency";

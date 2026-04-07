@@ -219,17 +219,14 @@ struct GroupDetailView: View {
             )
 
         case .stats:
-            // Placeholder — GC-07
-            VStack(spacing: DS.Spacing.lg) {
-                Image(systemName: "chart.pie")
-                    .font(.system(size: 48, weight: .light)) // A11Y-DT: decorative placeholder icon
-                    .foregroundStyle(.secondary.opacity(0.6))
-
-                Text(L10n.Groups.Detail.comingSoon)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            GroupStatsView(
+                expenses: viewModel.expenses,
+                shares: viewModel.shares,
+                members: viewModel.members,
+                settlements: viewModel.settlements,
+                currentUserMemberID: viewModel.currentUserMember?.id.uuidString,
+                currencyCode: group.currencyCode
+            )
         }
     }
 

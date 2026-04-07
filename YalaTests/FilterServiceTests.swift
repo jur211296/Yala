@@ -281,4 +281,57 @@ struct FilterServiceTests {
             tags: tags
         )
     }
+
+    // MARK: - Shared Expense Filter Tests
+
+    @Test func sharedExpenseFilter_personal_excludesShared() {
+        let personal = makeTransaction(amount: 100, note: "personal")
+        let shared = makeTransaction(amount: 200, note: "shared")
+        shared.splitExpenseID = "some-expense"
+
+        var criteria = FilterCriteria()
+        criteria.sharedExpenseFilter = .personal
+
+        #expect(FilterService.matchesCriteria(personal, criteria: criteria) == true)
+        #expect(FilterService.matchesCriteria(shared, criteria: criteria) == false)
+    }
+
+    @Test func sharedExpenseFilter_shared_excludesPersonal() {
+        let personal = makeTransaction(amount: 100, note: "personal")
+        let shared = makeTransaction(amount: 200, note: "shared")
+        shared.splitExpenseID = "some-expense"
+
+        var criteria = FilterCriteria()
+        criteria.sharedExpenseFilter = .shared
+
+        #expect(FilterService.matchesCriteria(personal, criteria: criteria) == false)
+        #expect(FilterService.matchesCriteria(shared, criteria: criteria) == true)
+    }
+
+    @Test func sharedExpenseFilter_all_includesEverything() {
+        let personal = makeTransaction(amount: 100, note: "personal")
+        let shared = makeTransaction(amount: 200, note: "shared")
+        shared.splitExpenseID = "some-expense"
+
+        var criteria = FilterCriteria()
+        criteria.sharedExpenseFilter = .all
+
+        #expect(FilterService.matchesCriteria(personal, criteria: criteria) == true)
+        #expect(FilterService.matchesCriteria(shared, criteria: criteria) == true)
+    }
+
+    @Test func hasActiveFilters_trueWhenSharedFilterSet() {
+        var criteria = FilterCriteria()
+        #expect(criteria.hasActiveFilters == false)
+
+        criteria.sharedExpenseFilter = .personal
+        #expect(criteria.hasActiveFilters == true)
+    }
+
+    @Test func clearAll_resetsSharedFilter() {
+        var criteria = FilterCriteria()
+        criteria.sharedExpenseFilter = .shared
+        criteria.clearAll()
+        #expect(criteria.sharedExpenseFilter == .all)
+    }
 }

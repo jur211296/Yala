@@ -52,6 +52,9 @@ protocol Filterable: AnyObject {
     /// Selected transaction natures (income/expense chips)
     var selectedTransactionNatures: Set<TransactionNature> { get set }
 
+    /// Shared/personal expense filter
+    var sharedExpenseFilter: SharedExpenseFilter { get set }
+
     // MARK: - Actions
 
     /// Clear all filters
@@ -75,6 +78,7 @@ extension Filterable {
         c.isExcludeMode = isExcludeMode
         c.amountCondition = amountCondition
         c.searchText = searchText
+        c.sharedExpenseFilter = sharedExpenseFilter
         return c
     }
 
@@ -100,5 +104,6 @@ extension Filterable {
         amountCondition = .any
         searchText = ""
         isExcludeMode = false
+        sharedExpenseFilter = .all
     }
 }

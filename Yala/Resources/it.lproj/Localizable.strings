@@ -423,6 +423,8 @@
 "budgets.title" = "Budget";
 "budgets.empty.title" = "Nessun budget";
 "budgets.empty.message" = "Crea budget per controllare le tue spese.";
+"budgets.includeSharedExpenses" = "Includi spese condivise";
+"budgets.includeSharedExpensesHint" = "Se disattivato, contano solo le spese personali";
 "budgets.widget.noFavorites.title" = "Nessun preferito";
 "budgets.widget.noFavorites.message" = "Segna i budget come preferiti in Impostazioni > Budget per vederli qui.";
 "budgets.widget.selectFavorites" = "Seleziona preferiti";
@@ -650,6 +652,7 @@
 "widgetType.exchangeRate" = "Tasso di cambio";
 "widgetType.budgets" = "Budget";
 "widgetType.scheduledPayments" = "Pagamenti pianificati";
+"widgetType.groupsSummary" = "Gruppi";
 
 // MARK: - Scheduled Payments Widget
 "scheduled.widget.count" = "%d pagamenti attivi";
@@ -2891,6 +2894,25 @@
 "insights.tipExpenseUp" = "Confronta con il mese in cui hai speso meno per capire cosa è cambiato";
 "insights.tipBudgetRisk" = "Restano ancora giorni — prova a frenare le spese in %@ per il resto";
 "insights.tipOptionalHigh" = "Rivedi le tue spese opzionali e vedi quali potresti rimandare";
+"insights.ruleSharedRatio.normal" = "Il %d%% delle tue spese in questo periodo sono condivise";
+"insights.ruleSharedRatio.considerate" = "Il %d%% delle tue spese erano condivise — condividere e bello";
+"insights.ruleSharedRatio.sarcastic" = "Il %d%% delle tue spese sono condivise. Chi paga la prossima?";
+"insights.ruleMostExpensiveGroup.normal" = "%@ e il tuo gruppo piu costoso con il %d%% delle spese condivise";
+"insights.ruleMostExpensiveGroup.considerate" = "%@ rappresenta il %d%% delle spese condivise — il tuo gruppo principale";
+"insights.ruleMostExpensiveGroup.sarcastic" = "%@ prende il %d%% delle spese condivise. Dominante.";
+"insights.ruleSharedFrequency.normal" = "Hai %d spese condivise in questo periodo";
+"insights.ruleSharedFrequency.considerate" = "%d spese condivise — condividi parecchio";
+"insights.ruleSharedFrequency.sarcastic" = "%d spese condivise. Fate TUTTO insieme?";
+"insights.ruleHighDebt.normal" = "Hai %@ in sospeso nei debiti di gruppo";
+"insights.ruleHighDebt.considerate" = "Ci sono %@ di debiti in sospeso — vale la pena controllare";
+"insights.ruleHighDebt.sarcastic" = "%@ di debiti di gruppo. Ora di riscuotere.";
+"insights.ruleDominantSharedCategory.normal" = "%@ domina le tue spese condivise (%d%%)";
+"insights.ruleDominantSharedCategory.considerate" = "La maggior parte delle spese condivise (%d%%) sono in %@";
+"insights.ruleDominantSharedCategory.sarcastic" = "%@ e il %d%% delle spese condivise. Mangiate solo insieme?";
+"insights.ruleSharedMoM.normal" = "Le tue spese condivise sono aumentate del %@ rispetto al periodo precedente";
+"insights.ruleSharedMoM.considerate" = "Spese condivise in aumento del %@ — controlla se ci sono stati extra";
+"insights.ruleSharedMoM.sarcastic" = "Spese condivise +%@. Cosa avete festeggiato?";
+"insights.tipHighDebt" = "Controlla i saldi del gruppo e invia promemoria";
 // Tone & Focus settings
 "insights.tone.normal" = "Normale";
 "insights.tone.considerate" = "Prudente";
@@ -2996,6 +3018,18 @@
 "groups.detail.balances" = "Saldi";
 "groups.detail.stats" = "Statistiche";
 "groups.detail.comingSoon" = "Prossimamente";
+"groups.stats.totalSpent" = "Totale speso";
+"groups.stats.myPortion" = "La mia parte";
+"groups.stats.whoPaysMost" = "Chi paga di più";
+"groups.stats.categories" = "Categorie";
+"groups.stats.monthlyTrend" = "Tendenza mensile";
+"groups.stats.noExpenses" = "Nessuna spesa ancora";
+"groups.stats.uncategorized" = "Senza categoria";
+"groups.stats.thisMonth" = "Questo mese";
+"groups.stats.last3Months" = "3 mesi";
+"groups.stats.last6Months" = "6 mesi";
+"groups.stats.thisYear" = "Quest'anno";
+"groups.stats.allTime" = "Tutto";
 "groups.form.name" = "Nome";
 "groups.form.namePlaceholder" = "Nome del gruppo";
 "groups.form.currency" = "Valuta";
