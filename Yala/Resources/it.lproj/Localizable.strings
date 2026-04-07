@@ -3301,3 +3301,33 @@
 "featureGate.chatAssistant" = "Assistente di chat";
 "settings.chatAssistant" = "Chiedi a Yala";
 "subscription.feature.aiAssistant" = "Assistente finanziario IA";
+
+// GC-05: Expense Form
+"groups.expense.paidByTitle" = "Pagato da";
+"groups.expense.divideBetween" = "Dividi tra";
+"groups.expense.selectAll" = "Seleziona tutti";
+"groups.expense.deselectAll" = "Nessuno";
+"groups.expense.membersSelected %d %d" = "%d di %d selezionati";
+"groups.expense.title" = "Nuova spesa";
+"groups.expense.editTitle" = "Modifica spesa";
+"groups.expense.description" = "Descrizione";
+"groups.expense.descriptionPlaceholder" = "Per cosa era?";
+"groups.expense.note" = "Nota";
+"groups.expense.notePlaceholder" = "Aggiungi una nota...";
+"groups.expense.category" = "Categoria";
+"groups.expense.currency" = "Valuta";
+"groups.expense.date" = "Data";
+"groups.expense.splitType" = "Tipo di divisione";
+"groups.expense.remaining" = "Rimanente";
+"groups.expense.balanced" = "Bilanciato";
+"groups.expense.eachPays" = "Ognuno paga";
+
+// GC-05: Settlements
+"groups.settlement.title" = "Registra pagamento";
+"groups.settlement.payTo" = "paga a";
+"groups.settlement.registerPayment" = "Registra pagamento";
+"groups.settlement.confirm" = "Conferma";
+"groups.settlement.reject" = "Rifiuta";
+"groups.settlement.settle" = "Salda";
+"groups.settlement.confirmQuestion" = "Confermare questo pagamento?";
+"groups.settlement.rejectQuestion" = "Rifiutare questo pagamento?";

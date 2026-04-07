@@ -942,6 +942,37 @@ enum L10n {
             static var noExpenses: String { ls("groups.expense.noExpenses", comment: "") }
             static var paidBy: String { ls("groups.expense.paidBy", comment: "") }
             static var newExpense: String { ls("groups.expense.newExpense", comment: "") }
+            static var paidByTitle: String { ls("groups.expense.paidByTitle", comment: "") }
+            static var divideBetween: String { ls("groups.expense.divideBetween", comment: "") }
+            static var selectAll: String { ls("groups.expense.selectAll", comment: "") }
+            static var deselectAll: String { ls("groups.expense.deselectAll", comment: "") }
+            static func membersSelected(_ count: Int, _ total: Int) -> String {
+                String(format: ls("groups.expense.membersSelected %d %d", comment: ""), count, total)
+            }
+            static var title: String { ls("groups.expense.title", comment: "") }
+            static var editTitle: String { ls("groups.expense.editTitle", comment: "") }
+            static var descriptionLabel: String { ls("groups.expense.description", comment: "") }
+            static var descriptionPlaceholder: String { ls("groups.expense.descriptionPlaceholder", comment: "") }
+            static var noteLabel: String { ls("groups.expense.note", comment: "") }
+            static var notePlaceholder: String { ls("groups.expense.notePlaceholder", comment: "") }
+            static var category: String { ls("groups.expense.category", comment: "") }
+            static var currency: String { ls("groups.expense.currency", comment: "") }
+            static var date: String { ls("groups.expense.date", comment: "") }
+            static var splitType: String { ls("groups.expense.splitType", comment: "") }
+            static var remaining: String { ls("groups.expense.remaining", comment: "") }
+            static var balanced: String { ls("groups.expense.balanced", comment: "") }
+            static var eachPays: String { ls("groups.expense.eachPays", comment: "") }
+        }
+
+        enum Settlement {
+            static var title: String { ls("groups.settlement.title", comment: "") }
+            static var payTo: String { ls("groups.settlement.payTo", comment: "") }
+            static var registerPayment: String { ls("groups.settlement.registerPayment", comment: "") }
+            static var confirm: String { ls("groups.settlement.confirm", comment: "") }
+            static var reject: String { ls("groups.settlement.reject", comment: "") }
+            static var settle: String { ls("groups.settlement.settle", comment: "") }
+            static var confirmQuestion: String { ls("groups.settlement.confirmQuestion", comment: "") }
+            static var rejectQuestion: String { ls("groups.settlement.rejectQuestion", comment: "") }
         }
     }
 

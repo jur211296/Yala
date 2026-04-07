@@ -3299,3 +3299,33 @@
 "featureGate.chatAssistant" = "Assistente de chat";
 "settings.chatAssistant" = "Pergunte ao Yala";
 "subscription.feature.aiAssistant" = "Assistente financeiro com IA";
+
+// GC-05: Expense Form
+"groups.expense.paidByTitle" = "Pago por";
+"groups.expense.divideBetween" = "Dividir entre";
+"groups.expense.selectAll" = "Selecionar todos";
+"groups.expense.deselectAll" = "Nenhum";
+"groups.expense.membersSelected %d %d" = "%d de %d selecionados";
+"groups.expense.title" = "Nova despesa";
+"groups.expense.editTitle" = "Editar despesa";
+"groups.expense.description" = "Descrição";
+"groups.expense.descriptionPlaceholder" = "Para que foi?";
+"groups.expense.note" = "Nota";
+"groups.expense.notePlaceholder" = "Adicionar nota...";
+"groups.expense.category" = "Categoria";
+"groups.expense.currency" = "Moeda";
+"groups.expense.date" = "Data";
+"groups.expense.splitType" = "Tipo de divisão";
+"groups.expense.remaining" = "Restante";
+"groups.expense.balanced" = "Equilibrado";
+"groups.expense.eachPays" = "Cada um paga";
+
+// GC-05: Settlements
+"groups.settlement.title" = "Registrar pagamento";
+"groups.settlement.payTo" = "paga a";
+"groups.settlement.registerPayment" = "Registrar pagamento";
+"groups.settlement.confirm" = "Confirmar";
+"groups.settlement.reject" = "Rejeitar";
+"groups.settlement.settle" = "Liquidar";
+"groups.settlement.confirmQuestion" = "Marcar este pagamento como confirmado?";
+"groups.settlement.rejectQuestion" = "Rejeitar este pagamento?";

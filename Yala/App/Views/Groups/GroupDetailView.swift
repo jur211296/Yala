@@ -93,14 +93,14 @@ struct GroupDetailView: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "gearshape", label: L10n.Groups.Settings.title) {
-                        viewModel.showSettings = true
+                        viewModel.activeSheet = .settings
                     }
                 }
             }
-            .sheet(isPresented: $viewModel.showSettings, onDismiss: {
+            .sheet(item: $viewModel.activeSheet, onDismiss: {
                 viewModel.loadData()
-            }) {
-                GroupSettingsView(group: group, viewModel: viewModel)
+            }) { sheet in
+                sheetContent(for: sheet)
             }
             .onAppear {
                 viewModel.setContext(modelContext)
@@ -111,6 +111,42 @@ struct GroupDetailView: View {
                     dismiss()
                 }
             }
+        }
+    }
+
+    // MARK: - Sheet Content
+
+    @ViewBuilder
+    private func sheetContent(for sheet: GroupSheet) -> some View {
+        switch sheet {
+        case .settings:
+            GroupSettingsView(group: group, viewModel: viewModel)
+
+        case .addExpense:
+            GroupExpenseFormView(
+                group: group,
+                members: viewModel.members,
+                memberNameLookup: viewModel.memberNameLookup,
+                onSave: {}
+            )
+
+        case .editExpense(let expense):
+            GroupExpenseFormView(
+                group: group,
+                members: viewModel.members,
+                memberNameLookup: viewModel.memberNameLookup,
+                expenseToEdit: expense,
+                existingShares: viewModel.sharesForExpense(expense),
+                onSave: {}
+            )
+
+        case .settlement(let debt):
+            SettlementFormView(
+                group: group,
+                debt: debt,
+                memberNameLookup: viewModel.memberNameLookup,
+                onSave: {}
+            )
         }
     }
 
@@ -166,7 +202,9 @@ struct GroupDetailView: View {
                 expenses: viewModel.expenses,
                 shares: viewModel.shares,
                 memberNameLookup: viewModel.memberNameLookup,
-                currencyCode: group.currencyCode
+                currencyCode: group.currencyCode,
+                onTapExpense: { viewModel.activeSheet = .editExpense($0) },
+                onDeleteExpense: { viewModel.deleteExpense($0) }
             )
 
         case .balances:
@@ -174,7 +212,10 @@ struct GroupDetailView: View {
                 balances: viewModel.balances,
                 debts: viewModel.debts,
                 settlements: viewModel.settlements,
-                memberNameLookup: viewModel.memberNameLookup
+                memberNameLookup: viewModel.memberNameLookup,
+                onSettleDebt: { viewModel.activeSheet = .settlement($0) },
+                onConfirmSettlement: { viewModel.confirmSettlement($0) },
+                onRejectSettlement: { viewModel.rejectSettlement($0) }
             )
 
         case .stats:
@@ -200,7 +241,7 @@ struct GroupDetailView: View {
             HStack {
                 Spacer()
                 Button {
-                    viewModel.showAddExpense = true
+                    viewModel.activeSheet = .addExpense
                 } label: {
                     Image(systemName: "plus")
                         .font(DS.Typography.title)

@@ -14,6 +14,11 @@ struct GroupBalancesView: View {
     let settlements: [SplitSettlement]
     let memberNameLookup: [String: String]
 
+    // Callbacks (optional for backwards compatibility)
+    var onSettleDebt: ((Debt) -> Void)?
+    var onConfirmSettlement: ((SplitSettlement) -> Void)?
+    var onRejectSettlement: ((SplitSettlement) -> Void)?
+
     @Environment(\.yalaTheme) private var theme
 
     var body: some View {
@@ -101,10 +106,10 @@ struct GroupBalancesView: View {
                 .padding(.leading, DS.Spacing.sm)
 
             VStack(spacing: DS.Spacing.none) {
-                ForEach(debts.indices, id: \.self) { index in
-                    debtRow(debts[index])
+                ForEach(debts) { debt in
+                    debtRow(debt)
 
-                    if index < debts.count - 1 {
+                    if debt.id != debts.last?.id {
                         Divider()
                             .padding(.leading, DS.FormRow.paddingH)
                     }
@@ -144,6 +149,20 @@ struct GroupBalancesView: View {
             Text(YalaFormatter.currency(value: debt.amount, currencyCode: debt.currencyCode))
                 .font(DS.Typography.headline)
                 .foregroundStyle(Color.hotPink)
+
+            if onSettleDebt != nil {
+                Button {
+                    onSettleDebt?(debt)
+                } label: {
+                    Text(L10n.Groups.Settlement.settle)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.thAccent)
+                        .padding(.horizontal, DS.Spacing.sm)
+                        .padding(.vertical, DS.Spacing.xxs)
+                        .background(Capsule().fill(.thAccent.opacity(0.12)))
+                }
+                .buttonStyle(.plain)
+            }
         }
         .padding(.horizontal, DS.FormRow.paddingH)
         .padding(.vertical, DS.FormRow.paddingV)
@@ -203,6 +222,29 @@ struct GroupBalancesView: View {
             Text(YalaFormatter.currency(value: settlement.amount, currencyCode: settlement.currencyCode))
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
+
+            // Confirm/Reject buttons for pending settlements
+            if !settlement.isConfirmed && onConfirmSettlement != nil {
+                HStack(spacing: DS.Spacing.xs) {
+                    Button {
+                        onConfirmSettlement?(settlement)
+                    } label: {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(DS.Typography.headline)
+                            .foregroundStyle(DS.Semantic.successForeground)
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        onRejectSettlement?(settlement)
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(DS.Typography.headline)
+                            .foregroundStyle(DS.Semantic.errorForeground)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
         }
         .padding(.horizontal, DS.FormRow.paddingH)
         .padding(.vertical, DS.FormRow.paddingV)

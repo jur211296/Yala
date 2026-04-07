@@ -14,7 +14,12 @@ struct GroupRecordsView: View {
     let memberNameLookup: [String: String]
     let currencyCode: String
 
+    // Callbacks (optional for backwards compatibility)
+    var onTapExpense: ((SplitExpense) -> Void)?
+    var onDeleteExpense: ((SplitExpense) -> Void)?
+
     @Environment(\.yalaTheme) private var theme
+    @State private var expenseToDelete: SplitExpense?
 
     var body: some View {
         if expenses.isEmpty {
@@ -28,7 +33,30 @@ struct GroupRecordsView: View {
                     ForEach(groupedByDate, id: \.key) { dateString, dayExpenses in
                         Section {
                             ForEach(dayExpenses, id: \.id) { expense in
-                                expenseRow(expense)
+                                if onTapExpense != nil {
+                                    Button {
+                                        onTapExpense?(expense)
+                                    } label: {
+                                        expenseRow(expense)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .contentShape(Rectangle())
+                                    .contextMenu {
+                                        Button {
+                                            onTapExpense?(expense)
+                                        } label: {
+                                            Label(L10n.Action.edit, systemImage: "pencil")
+                                        }
+
+                                        Button(role: .destructive) {
+                                            expenseToDelete = expense
+                                        } label: {
+                                            Label(L10n.Action.delete, systemImage: "trash")
+                                        }
+                                    }
+                                } else {
+                                    expenseRow(expense)
+                                }
                             }
                         } header: {
                             sectionHeader(dateString)
@@ -37,6 +65,21 @@ struct GroupRecordsView: View {
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.safeBottom)
+            }
+            .confirmationDialog(
+                L10n.Action.delete,
+                isPresented: Binding(
+                    get: { expenseToDelete != nil },
+                    set: { if !$0 { expenseToDelete = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Action.delete, role: .destructive) {
+                    if let expense = expenseToDelete {
+                        onDeleteExpense?(expense)
+                        expenseToDelete = nil
+                    }
+                }
             }
         }
     }

@@ -9,7 +9,8 @@
 import Foundation
 
 /// A debt between two members in a specific currency.
-struct Debt: Equatable, Sendable {
+struct Debt: Equatable, Sendable, Identifiable {
+    var id: String { "\(fromMemberID)-\(toMemberID)-\(currencyCode)" }
     let fromMemberID: String
     let toMemberID: String
     let amount: Double

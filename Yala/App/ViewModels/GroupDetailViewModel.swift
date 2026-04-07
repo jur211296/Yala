@@ -41,8 +41,7 @@ final class GroupDetailViewModel {
 
     // MARK: - UI State
 
-    var showSettings: Bool = false
-    var showAddExpense: Bool = false
+    var activeSheet: GroupSheet?
 
     // MARK: - Init
 
@@ -108,5 +107,49 @@ final class GroupDetailViewModel {
     /// Name for a member ID, with fallback.
     func memberName(for memberID: String) -> String {
         memberNameLookup[memberID] ?? memberID
+    }
+
+    func confirmSettlement(_ settlement: SplitSettlement) {
+        do {
+            try GroupExpenseService.shared.confirmSettlement(settlement, in: group)
+            loadData()
+        } catch {
+            #if DEBUG
+            print("GroupDetailViewModel: Error confirming settlement: \(error)")
+            #endif
+        }
+    }
+
+    func rejectSettlement(_ settlement: SplitSettlement) {
+        do {
+            try GroupExpenseService.shared.deleteSettlement(settlement, in: group)
+            loadData()
+        } catch {
+            #if DEBUG
+            print("GroupDetailViewModel: Error rejecting settlement: \(error)")
+            #endif
+        }
+    }
+
+    func sharesForExpense(_ expense: SplitExpense) -> [SplitShare] {
+        shares.filter { $0.expenseID == expense.id }
+    }
+}
+
+// MARK: - Sheet Enum
+
+enum GroupSheet: Identifiable {
+    case settings
+    case addExpense
+    case editExpense(SplitExpense)
+    case settlement(Debt)
+
+    var id: String {
+        switch self {
+        case .settings: "settings"
+        case .addExpense: "addExpense"
+        case .editExpense(let e): "editExpense-\(e.id)"
+        case .settlement(let d): "settlement-\(d.id)"
+        }
     }
 }
