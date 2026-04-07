@@ -57,7 +57,7 @@ enum InboxNotificationType {
 }
 
 /// Deep link destinations from widgets
-enum DeepLinkDestination {
+enum DeepLinkDestination: Equatable {
     case panel
     case statistics
     case records
@@ -68,6 +68,7 @@ enum DeepLinkDestination {
     case scheduledPayments  // Planning > Pagos Planificados
     case recordsStandalone  // Tab Records (standalone)
     case groups             // Grupos (gastos compartidos)
+    case groupDetail(groupID: String)  // Grupo especifico
 }
 
 /// Global session state to manage synchronization between views
@@ -504,6 +505,9 @@ class SessionState {
     /// Deep link destination from widgets
     /// When set, app navigates to specified destination and clears this
     var deepLinkDestination: DeepLinkDestination?
+
+    /// Pending group ID for deep link navigation to specific group
+    var pendingGroupID: String?
 
     // MARK: - Navigation State
 

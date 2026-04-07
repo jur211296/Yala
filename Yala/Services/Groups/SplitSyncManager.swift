@@ -339,17 +339,48 @@ final class SplitSyncManager {
     private func handleFetchedRecordZoneChanges(_ fetched: CKSyncEngine.Event.FetchedRecordZoneChanges, engineName: String) {
         guard let modelContext else { return }
 
-        var processedExpenseIDs: Set<UUID> = []
+        var changeSet = RemoteChangeSet()
+
+        // Pre-fetch existing IDs for new-vs-modified classification (GC-06)
+        var existingExpenseIDs: Set<UUID> = []
+        var existingSettlementIDs: Set<UUID> = []
+        var existingMemberIDs: Set<UUID> = []
+        do {
+            existingExpenseIDs = Set(try modelContext.fetch(FetchDescriptor<SplitExpense>()).map(\.id))
+            existingSettlementIDs = Set(try modelContext.fetch(FetchDescriptor<SplitSettlement>()).map(\.id))
+            existingMemberIDs = Set(try modelContext.fetch(FetchDescriptor<SplitMember>()).map(\.id))
+        } catch {
+            #if DEBUG
+            logger.error("[\(engineName)] Pre-fetch for change classification failed: \(error)")
+            #endif
+        }
 
         for modification in fetched.modifications {
             let record = modification.record
-            applyRemoteRecord(record, context: modelContext)
 
-            // Track expense IDs for bridge hook
-            if record.recordType == CKConstants.RecordType.splitExpense,
-               let modelID = CKConstants.modelID(from: record.recordID) {
-                processedExpenseIDs.insert(modelID)
+            // GC-06: Classify changes for notifications
+            if let modelID = CKConstants.modelID(from: record.recordID),
+               let groupID = CKConstants.groupID(from: record.recordID.zoneID.zoneName) {
+                switch record.recordType {
+                case CKConstants.RecordType.splitExpense:
+                    if existingExpenseIDs.contains(modelID) {
+                        changeSet.modifiedExpenses.append((modelID, groupID))
+                    } else {
+                        changeSet.newExpenses.append((modelID, groupID))
+                    }
+                case CKConstants.RecordType.splitSettlement:
+                    if !existingSettlementIDs.contains(modelID) {
+                        changeSet.newSettlements.append((modelID, groupID))
+                    }
+                case CKConstants.RecordType.splitMember:
+                    if !existingMemberIDs.contains(modelID) {
+                        changeSet.newMembers.append((modelID, groupID))
+                    }
+                default: break
+                }
             }
+
+            applyRemoteRecord(record, context: modelContext)
         }
 
         for deletion in fetched.deletions {
@@ -365,6 +396,7 @@ final class SplitSyncManager {
         }
 
         // GC-03: Bridge remote expenses to personal TransactionItem/InboxDraft
+        let processedExpenseIDs = Set(changeSet.newExpenses.map(\.id) + changeSet.modifiedExpenses.map(\.id))
         if !processedExpenseIDs.isEmpty, GroupTransactionBridge.shared.isReady {
             do {
                 // Set.contains not supported in #Predicate — filter in memory
@@ -378,6 +410,11 @@ final class SplitSyncManager {
                 logger.error("[\(engineName)] Failed to bridge remote expenses: \(error)")
                 #endif
             }
+        }
+
+        // GC-06: Notify user about remote group changes
+        if !changeSet.isEmpty {
+            GroupNotificationService.shared.processRemoteChanges(changeSet)
         }
 
         // Trigger UI refresh via existing pattern

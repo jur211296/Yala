@@ -559,6 +559,8 @@ struct NotificationEditorSheet: View {
             return getTestTextForDataType(period: .monthly)
         case .scheduledPayments:
             return L10n.Notifications.testScheduledPayment
+        case .groups:
+            return L10n.Notifications.groupsHint
         case .endOfDay, .lunchTime, .custom:
             return text.isEmpty ? L10n.Notifications.endOfDayText : text
         }

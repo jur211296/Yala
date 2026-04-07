@@ -974,6 +974,12 @@ enum L10n {
             static var confirmQuestion: String { ls("groups.settlement.confirmQuestion", comment: "") }
             static var rejectQuestion: String { ls("groups.settlement.rejectQuestion", comment: "") }
         }
+
+        enum Notifications {
+            static var promptTitle: String { ls("groups.notifications.prompt.title", comment: "") }
+            static var promptMessage: String { ls("groups.notifications.prompt.message", comment: "") }
+            static var promptEnable: String { ls("groups.notifications.prompt.enable", comment: "") }
+        }
     }
 
     // MARK: - AI Consent
@@ -4016,6 +4022,33 @@ enum L10n {
         // System notifications
         static var scheduledPaymentsName: String { ls("notifications.scheduledPayments.name", comment: "") }
         static var scheduledPaymentsHint: String { ls("notifications.scheduledPayments.hint", comment: "") }
+
+        // Groups
+        static var groupsName: String { ls("notifications.groups.name", comment: "") }
+        static var groupsHint: String { ls("notifications.groups.hint", comment: "") }
+
+        enum Group {
+            static func newExpense(_ member: String, _ amount: String, _ desc: String) -> String {
+                String(format: ls("notifications.groups.newExpense", comment: ""), member, amount, desc)
+            }
+            static func newExpenseNoDesc(_ member: String, _ amount: String) -> String {
+                String(format: ls("notifications.groups.newExpenseNoDesc", comment: ""), member, amount)
+            }
+            static func modifiedExpense(_ member: String, _ desc: String) -> String {
+                String(format: ls("notifications.groups.modifiedExpense", comment: ""), member, desc)
+            }
+            static func settlement(_ member: String, _ amount: String) -> String {
+                String(format: ls("notifications.groups.settlement", comment: ""), member, amount)
+            }
+            static func newMember(_ member: String) -> String {
+                String(format: ls("notifications.groups.newMember", comment: ""), member)
+            }
+            static func multipleChanges(_ count: Int) -> String {
+                String(format: ls("notifications.groups.multipleChanges", comment: ""), count)
+            }
+            static var fallbackGroup: String { ls("notifications.groups.fallbackGroup", comment: "") }
+            static var fallbackMember: String { ls("notifications.groups.fallbackMember", comment: "") }
+        }
 
 
         // Empty state

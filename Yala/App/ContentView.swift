@@ -657,8 +657,11 @@ struct MainTabView: View {
                         try? await Task.sleep(for: .milliseconds(50))
                         sessionState.selectedMainTab = .records
                     }
-                case .groups:
+                case .groups, .groupDetail:
                     sessionState.temporaryTab = .groups
+                    if case .groupDetail(let groupID) = destination {
+                        sessionState.pendingGroupID = groupID
+                    }
                     Task {
                         try? await Task.sleep(for: .milliseconds(50))
                         sessionState.selectedMainTab = .groups

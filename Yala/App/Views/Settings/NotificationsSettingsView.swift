@@ -172,9 +172,9 @@ struct NotificationsSettingsView: View {
                     }
                 }
             },
-            onTap: {
+            onTap: notification.notificationType.isEditable ? {
                 viewModel.selectedNotification = notification
-            },
+            } : {},
             onDelete: notification.notificationType.isDeletable ? {
                 deleteNotification(notification)
             } : nil
@@ -282,9 +282,11 @@ struct NotificationCard: View {
 
                         Spacer()
 
-                        Text(notification.formattedTime)
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
+                        if !notification.notificationType.isEventDriven {
+                            Text(notification.formattedTime)
+                                .font(DS.Typography.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
                     }
 
                     Text(notification.displayText)

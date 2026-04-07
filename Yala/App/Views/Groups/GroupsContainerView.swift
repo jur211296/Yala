@@ -20,6 +20,8 @@ struct GroupsContainerView: View {
 
     @State private var viewModel = GroupsViewModel()
     @State private var isPresentingSettings = false
+    @AppStorage("hasSeenGroupsNotificationPrompt") private var hasSeenPrompt = false
+    @State private var showNotificationPrompt = false
 
     // MARK: - Body
 
@@ -109,6 +111,49 @@ struct GroupsContainerView: View {
             .onChange(of: sessionState.dataVersion) {
                 viewModel.loadData()
             }
+            .onChange(of: viewModel.activeGroups.count) { _, newCount in
+                if !hasSeenPrompt && newCount > 0 {
+                    showNotificationPrompt = true
+                }
+            }
+            .onChange(of: sessionState.pendingGroupID) { _, groupID in
+                guard let groupID else { return }
+                sessionState.pendingGroupID = nil
+                if let uuid = UUID(uuidString: groupID),
+                   let group = viewModel.activeGroups.first(where: { $0.id == uuid }) {
+                    viewModel.openDetail(for: group)
+                }
+            }
+            .alert(L10n.Groups.Notifications.promptTitle, isPresented: $showNotificationPrompt) {
+                Button(L10n.Groups.Notifications.promptEnable) {
+                    hasSeenPrompt = true
+                    activateGroupsNotification()
+                }
+                Button(L10n.Action.cancel, role: .cancel) {
+                    hasSeenPrompt = true
+                }
+            } message: {
+                Text(L10n.Groups.Notifications.promptMessage)
+            }
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func activateGroupsNotification() {
+        // typeRaw matches NotificationType.groups
+        let descriptor = FetchDescriptor<NotificationItem>(
+            predicate: #Predicate { $0.typeRaw == "groups" }
+        )
+        do {
+            if let item = try modelContext.fetch(descriptor).first {
+                item.isActive = true
+                try modelContext.save()
+            }
+        } catch {
+            #if DEBUG
+            print("GroupsContainerView: Error activating groups notification: \(error)")
+            #endif
         }
     }
 

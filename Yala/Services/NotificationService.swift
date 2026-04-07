@@ -58,6 +58,12 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
     /// Parse deep link string to DeepLinkDestination
     static func parseDestination(_ destination: String) -> DeepLinkDestination? {
+        // Group-specific deep link: "groups/{UUID}"
+        if destination.hasPrefix("groups/") {
+            let groupID = String(destination.dropFirst("groups/".count))
+            return .groupDetail(groupID: groupID)
+        }
+
         switch destination {
         case "statistics": return .statistics
         case "planning": return .planning
@@ -67,6 +73,7 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         case "inbox": return .inbox
         case "scheduledPayments": return .scheduledPayments
         case "recordsStandalone": return .recordsStandalone
+        case "groups": return .groups
         default:
             #if DEBUG
             print("NotificationService: Unknown deep link: \(destination)")

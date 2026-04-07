@@ -149,6 +149,9 @@ final class AppBootstrapper {
         GroupExpenseService.shared.setContext(context)
         GroupTransactionBridge.shared.setContext(context)
 
+        // 16. Initialize Group Notification Service (GC-06)
+        GroupNotificationService.shared.setContext(context)
+
         isInitialized = true
     }
 
@@ -380,7 +383,11 @@ final class AppBootstrapper {
             setOrDeferDeepLink(.recordsStandalone)
 
         case "groups":
-            setOrDeferDeepLink(.groups)
+            if let groupID = url.pathComponents.last, groupID != "/" {
+                setOrDeferDeepLink(.groupDetail(groupID: groupID))
+            } else {
+                setOrDeferDeepLink(.groups)
+            }
 
         default:
             #if DEBUG

@@ -2365,6 +2365,18 @@
 // System
 "notifications.scheduledPayments.hint" = "Wir informieren dich über anstehende Zahlungen";
 
+// Groups
+"notifications.groups.name" = "Gruppen";
+"notifications.groups.hint" = "Benachrichtigungen wenn andere Mitglieder Ausgaben hinzufügen oder dich bezahlen";
+"notifications.groups.newExpense" = "%@ hat eine Ausgabe von %@ hinzugefügt: %@";
+"notifications.groups.newExpenseNoDesc" = "%@ hat eine Ausgabe von %@ hinzugefügt";
+"notifications.groups.modifiedExpense" = "%@ hat '%@' bearbeitet";
+"notifications.groups.settlement" = "%@ hat dir %@ bezahlt";
+"notifications.groups.newMember" = "%@ ist der Gruppe beigetreten";
+"notifications.groups.multipleChanges" = "%d neue Änderungen";
+"notifications.groups.fallbackGroup" = "Gruppe";
+"notifications.groups.fallbackMember" = "Jemand";
+
 // Section headers
 "notifications.section.reminders" = "Erinnerungen";
 "notifications.section.reports" = "Berichte";
@@ -3329,3 +3341,8 @@
 "groups.settlement.settle" = "Begleichen";
 "groups.settlement.confirmQuestion" = "Diese Zahlung als bestätigt markieren?";
 "groups.settlement.rejectQuestion" = "Diese Zahlung ablehnen?";
+
+// Groups Notifications
+"groups.notifications.prompt.title" = "Gruppenbenachrichtigungen";
+"groups.notifications.prompt.message" = "Erhalte Benachrichtigungen wenn jemand eine Ausgabe hinzufügt oder dich bezahlt";
+"groups.notifications.prompt.enable" = "Aktivieren";

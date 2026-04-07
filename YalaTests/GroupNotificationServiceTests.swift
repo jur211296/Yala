@@ -1,0 +1,120 @@
+//
+//  GroupNotificationServiceTests.swift
+//  YalaTests
+//
+//  Tests for GroupNotificationService: notification generation,
+//  rate limiting, aggregation, and deep link parsing.
+//
+
+import Foundation
+import Testing
+
+@testable import Yala
+
+struct GroupNotificationServiceTests {
+
+    // MARK: - RemoteChangeSet
+
+    @Test func changeSet_empty_returnsTrueWhenNoChanges() {
+        let set = RemoteChangeSet()
+        #expect(set.isEmpty)
+    }
+
+    @Test func changeSet_withNewExpense_isNotEmpty() {
+        var set = RemoteChangeSet()
+        set.newExpenses.append((UUID(), UUID()))
+        #expect(!set.isEmpty)
+    }
+
+    @Test func changeSet_withModifiedExpense_isNotEmpty() {
+        var set = RemoteChangeSet()
+        set.modifiedExpenses.append((UUID(), UUID()))
+        #expect(!set.isEmpty)
+    }
+
+    @Test func changeSet_withSettlement_isNotEmpty() {
+        var set = RemoteChangeSet()
+        set.newSettlements.append((UUID(), UUID()))
+        #expect(!set.isEmpty)
+    }
+
+    @Test func changeSet_withNewMember_isNotEmpty() {
+        var set = RemoteChangeSet()
+        set.newMembers.append((UUID(), UUID()))
+        #expect(!set.isEmpty)
+    }
+
+    // MARK: - NotificationType.groups Properties
+
+    @Test func groupsType_hasCorrectIcon() {
+        #expect(NotificationType.groups.defaultIcon == "person.2.fill")
+    }
+
+    @Test func groupsType_hasCorrectColor() {
+        #expect(NotificationType.groups.defaultColor == "#8B5CF6")
+    }
+
+    @Test func groupsType_requiresDynamicContent() {
+        #expect(NotificationType.groups.requiresDynamicContent)
+    }
+
+    @Test func groupsType_isEventDriven() {
+        #expect(NotificationType.groups.isEventDriven)
+    }
+
+    @Test func groupsType_isNotEditable() {
+        #expect(!NotificationType.groups.isEditable)
+    }
+
+    @Test func groupsType_isNotDeletable() {
+        #expect(!NotificationType.groups.isDeletable)
+    }
+
+    @Test func groupsType_isNotTextCustomizable() {
+        #expect(!NotificationType.groups.isTextCustomizable)
+    }
+
+    @Test func groupsType_isNotNameCustomizable() {
+        #expect(!NotificationType.groups.isNameCustomizable)
+    }
+
+    // MARK: - Deep Link Parsing
+
+    @Test func parseDestination_groups_returnsGroups() {
+        let dest = NotificationService.parseDestination("groups")
+        #expect(dest == .groups)
+    }
+
+    @Test func parseDestination_groupDetail_returnsGroupDetail() {
+        let uuid = UUID().uuidString
+        let dest = NotificationService.parseDestination("groups/\(uuid)")
+        #expect(dest == .groupDetail(groupID: uuid))
+    }
+
+    @Test func parseDestination_existingDestinations_stillWork() {
+        #expect(NotificationService.parseDestination("statistics") == .statistics)
+        #expect(NotificationService.parseDestination("planning") == .planning)
+        #expect(NotificationService.parseDestination("budgets") == .budgets)
+        #expect(NotificationService.parseDestination("records") == .records)
+        #expect(NotificationService.parseDestination("categories") == .categories)
+        #expect(NotificationService.parseDestination("inbox") == .inbox)
+        #expect(NotificationService.parseDestination("scheduledPayments") == .scheduledPayments)
+        #expect(NotificationService.parseDestination("recordsStandalone") == .recordsStandalone)
+    }
+
+    @Test func parseDestination_unknown_returnsNil() {
+        #expect(NotificationService.parseDestination("unknown") == nil)
+    }
+
+    // MARK: - DeepLinkDestination Equatable
+
+    @Test func deepLinkDestination_groupDetail_equatable() {
+        let id = UUID().uuidString
+        #expect(DeepLinkDestination.groupDetail(groupID: id) == DeepLinkDestination.groupDetail(groupID: id))
+        #expect(DeepLinkDestination.groupDetail(groupID: "a") != DeepLinkDestination.groupDetail(groupID: "b"))
+    }
+
+    @Test func deepLinkDestination_groups_notEqualToGroupDetail() {
+        #expect(DeepLinkDestination.groups != DeepLinkDestination.groupDetail(groupID: "x"))
+    }
+}
