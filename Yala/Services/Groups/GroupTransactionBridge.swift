@@ -51,7 +51,8 @@ final class GroupTransactionBridge {
     func bridgeExpense(_ expense: SplitExpense, in group: SplitGroup, shouldSave: Bool = true) throws {
         let context = try requireContext()
 
-        // TODO: GC-08 — skip bridge for groupInvite users
+        // GC-08: groupInvite users have no personal finance context — skip bridge
+        guard !SessionState.shared.isGroupInviteMode else { return }
 
         // Find current user's member in this group
         let zoneID = group.cloudKitZoneID
@@ -129,23 +130,7 @@ final class GroupTransactionBridge {
                 }
             }
         } else {
-            let needsInput: [String] = subcategory == nil ? ["subcategory"] : []
-            let draft = InboxDraft(
-                note: expense.expenseDescription,
-                amount: -myShare.amount,
-                date: expense.date,
-                account: account,
-                subcategory: subcategory,
-                sourceType: .automation,
-                confidenceAmount: 1.0,
-                confidenceDate: 1.0,
-                confidenceMerchant: 1.0,
-                confidenceSubcategory: subcategory != nil ? 0.8 : nil,
-                needsUserInput: needsInput
-            )
-            draft.splitExpenseID = expense.id.uuidString
-            draft.splitGroupZoneID = expense.groupZoneID
-
+            let draft = Self.makeBridgedDraft(from: expense, share: myShare, account: account, subcategory: subcategory)
             context.insert(draft)
 
             if shouldSave {
@@ -224,6 +209,96 @@ final class GroupTransactionBridge {
         try context.save()
         SessionState.shared.incrementDataVersion()
         WidgetDataCache.updateCache(context: context)
+    }
+
+    // MARK: - Import Group History (GC-08)
+
+    /// Import all group expenses as InboxDrafts for a user activating full mode.
+    /// Creates drafts (not TransactionItems) so the user can review before committing.
+    func importGroupHistoryAsDrafts(for groups: [SplitGroup]) throws {
+        let context = try requireContext()
+
+        // Batch pre-fetch to avoid N+1 queries
+        let allSubcategories = try context.fetch(FetchDescriptor<Subcategory>())
+        let allDrafts = try context.fetch(FetchDescriptor<InboxDraft>())
+        let bridgedDraftIDs = Set(allDrafts.compactMap(\.splitExpenseID))
+        let allTxs = try context.fetch(FetchDescriptor<TransactionItem>())
+        let bridgedTxIDs = Set(allTxs.compactMap(\.splitExpenseID))
+
+        for group in groups {
+            let zoneID = group.cloudKitZoneID
+
+            let memberDescriptor = FetchDescriptor<SplitMember>(
+                predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true }
+            )
+            guard let currentMember = try context.fetch(memberDescriptor).first else { continue }
+            let currentMemberID = currentMember.id.uuidString
+
+            let expenseDescriptor = FetchDescriptor<SplitExpense>(
+                predicate: #Predicate { $0.groupZoneID == zoneID }
+            )
+            let expenses = try context.fetch(expenseDescriptor)
+
+            let account = Self.resolveAccount(group: group, currencyCode: group.currencyCode, context: context)
+
+            for expense in expenses {
+                let existingID = expense.id.uuidString
+                if bridgedDraftIDs.contains(existingID) || bridgedTxIDs.contains(existingID) { continue }
+
+                let expenseID = expense.id
+                let shareDescriptor = FetchDescriptor<SplitShare>(
+                    predicate: #Predicate { $0.expenseID == expenseID && $0.memberID == currentMemberID }
+                )
+                guard let myShare = try context.fetch(shareDescriptor).first else { continue }
+
+                let subcategory = Self.matchSubcategoryFromList(name: expense.subcategoryName, allSubcategories: allSubcategories)
+                let draft = Self.makeBridgedDraft(from: expense, share: myShare, account: account, subcategory: subcategory)
+                context.insert(draft)
+            }
+        }
+
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+    }
+
+    // MARK: - Draft Factory
+
+    /// Creates a bridged InboxDraft from a shared expense and the user's share.
+    static func makeBridgedDraft(
+        from expense: SplitExpense,
+        share: SplitShare,
+        account: Account?,
+        subcategory: Subcategory?
+    ) -> InboxDraft {
+        let needsInput: [String] = subcategory == nil ? ["subcategory"] : []
+        let draft = InboxDraft(
+            note: expense.expenseDescription,
+            amount: -share.amount,
+            date: expense.date,
+            account: account,
+            subcategory: subcategory,
+            sourceType: .automation,
+            confidenceAmount: 1.0,
+            confidenceDate: 1.0,
+            confidenceMerchant: 1.0,
+            confidenceSubcategory: subcategory != nil ? 0.8 : nil,
+            needsUserInput: needsInput
+        )
+        draft.splitExpenseID = expense.id.uuidString
+        draft.splitGroupZoneID = expense.groupZoneID
+        return draft
+    }
+
+    /// Match subcategory from a pre-fetched list (avoids per-expense refetch).
+    static func matchSubcategoryFromList(name: String?, allSubcategories: [Subcategory]) -> Subcategory? {
+        guard let name, !name.isEmpty else { return nil }
+        if let exact = allSubcategories.first(where: { $0.name.lowercased() == name.lowercased() }) {
+            return exact
+        }
+        if let partial = allSubcategories.first(where: { $0.name.localizedCaseInsensitiveContains(name) }) {
+            return partial
+        }
+        return nil
     }
 
     // MARK: - Category Matching

@@ -152,6 +152,10 @@ final class AppBootstrapper {
         // 16. Initialize Group Notification Service (GC-06)
         GroupNotificationService.shared.setContext(context)
 
+        // 17. Initialize User Segment Service (GC-08)
+        UserSegmentService.shared.setContext(context)
+        UserSegmentService.shared.recalculate()
+
         isInitialized = true
     }
 

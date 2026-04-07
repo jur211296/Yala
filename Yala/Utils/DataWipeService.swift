@@ -267,6 +267,8 @@ final class DataWipeService {
 
         // --- Onboarding ---
         defaults.removeObject(forKey: "hasCompletedOnboarding") // Default: false (triggers onboarding)
+        defaults.removeObject(forKey: "onboardingMode")         // Default: .full (normal onboarding)
+        defaults.removeObject(forKey: "sessionTimestamps")      // Default: [] (UserSegmentService sessions)
         defaults.removeObject(forKey: "secondaryCurrencies")    // Default: "" (no secondary currencies)
 
         // --- Cross-device wipe coordination ---

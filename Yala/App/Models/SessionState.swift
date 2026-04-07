@@ -365,10 +365,24 @@ class SessionState {
         globalFilters.dateInterval = selectedPeriod.dateInterval()
 
         // Reset navigation to initial state (important after data wipe)
-        selectedMainTab = .panel
+        // Mode-aware: groupInvite users default to .groups tab
+        selectedMainTab = isGroupInviteMode ? .groups : .panel
         selectedDetailTab = .insights
         selectedPlanningTab = .budgets
     }
+
+    // MARK: - Onboarding Mode
+
+    /// Current onboarding mode — determines tab layout, bridge behavior, and UI gating.
+    /// Persisted in UserDefaults, synced via PreferenceSyncService with never-downgrade rule.
+    var onboardingMode: OnboardingMode = OnboardingMode.current() {
+        didSet {
+            OnboardingMode.setCurrent(onboardingMode)
+        }
+    }
+
+    /// Convenience: true when user arrived via group invitation and hasn't activated full mode
+    var isGroupInviteMode: Bool { onboardingMode == .groupInvite }
 
     // MARK: - Subscription State
 
@@ -493,6 +507,17 @@ class SessionState {
     var needsPostOnboardingTrial: Bool = UserDefaults.standard.bool(forKey: "needsPostOnboardingTrial") {
         didSet { UserDefaults.standard.set(needsPostOnboardingTrial, forKey: "needsPostOnboardingTrial") }
     }
+
+    // MARK: - Group Invite Routing (GC-08)
+
+    /// When true, shows GroupInviteOnboardingView (2-step invite flow for new users)
+    var shouldShowGroupInviteOnboarding: Bool = false
+
+    /// When true, shows GroupReconnectView (sheet for dormant users accepting invite)
+    var shouldShowGroupReconnect: Bool = false
+
+    /// Name of the group from pending invitation (resolved after sync)
+    var pendingInviteGroupName: String?
 
     // MARK: - Splash State
 

@@ -90,6 +90,23 @@ struct TabBarConfiguration: Codable, Equatable {
         return true
     }
 
+    // MARK: - Mode-Aware Configurations (GC-08)
+
+    /// Fixed tab configuration for groupInvite users (only Groups tab).
+    /// Search and More are always shown by MainTabView independently.
+    static let groupInvite = TabBarConfiguration(activeTabs: [.groups])
+
+    /// Returns the appropriate tab configuration for the given onboarding mode.
+    /// For groupInvite: fixed config (ignores stored JSON). For full/completed: stored config.
+    static func forMode(_ mode: OnboardingMode, stored: TabBarConfiguration) -> TabBarConfiguration {
+        switch mode {
+        case .groupInvite:
+            return .groupInvite
+        case .full, .completed:
+            return stored
+        }
+    }
+
     /// Valida y corrige la configuración para asegurar que .panel esté siempre primero
     mutating func ensurePanelFirst() {
         // Add panel if missing

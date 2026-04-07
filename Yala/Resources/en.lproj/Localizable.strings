@@ -3386,3 +3386,31 @@
 "groups.notifications.prompt.title" = "Group notifications";
 "groups.notifications.prompt.message" = "Get alerts when someone adds an expense or pays you";
 "groups.notifications.prompt.enable" = "Enable";
+
+// Groups — Invite Onboarding (GC-08)
+"groups.invite.welcome" = "You've been invited to a group";
+"groups.invite.welcomeWithGroup" = "You've been invited to %@";
+"groups.invite.subtitle" = "Yala helps you split expenses and know who owes what";
+"groups.invite.namePlaceholder" = "Your name";
+"groups.invite.joinButton" = "Join group";
+"groups.invite.ready" = "All set!";
+"groups.invite.goToGroup" = "Go to group";
+
+// Groups — Reconnect (GC-08)
+"groups.reconnect.title" = "Welcome back!";
+"groups.reconnect.subtitle" = "You've been invited to a shared group";
+"groups.reconnect.subtitleWithGroup" = "You've been invited to %@";
+
+// Groups — Activate Full Mode (GC-08)
+"groups.activate.title" = "Activate full Yala";
+"groups.activate.subtitle" = "Track expenses, budgets, and more";
+"groups.activate.accountStep" = "What's your main account?";
+"groups.activate.accountName" = "Account name";
+"groups.activate.notificationStep" = "Want us to notify you?";
+"groups.activate.notificationMessage" = "Get spending reminders and budget alerts";
+"groups.activate.enableNotifications" = "Enable notifications";
+"groups.activate.skipNotifications" = "Not now";
+"groups.activate.done" = "Get started";
+"groups.activate.importPrompt" = "You have %d shared expenses. Add them to your records?";
+"groups.activate.importYes" = "Yes, add them";
+"groups.activate.importNo" = "No, thanks";

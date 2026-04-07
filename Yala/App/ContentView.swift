@@ -30,6 +30,8 @@ struct ContentView: View {
     @State private var whatsNewData: (features: [WhatsNewFeature], version: String)?
     @AppStorage("lastSeenAppVersion") private var lastSeenAppVersion: String = ""
     @State private var isInitialCheckDone: Bool = false
+    @State private var showGroupInviteOnboarding: Bool = false
+    @State private var showGroupReconnect: Bool = false
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ThemeManager.self) private var themeManager
@@ -179,6 +181,11 @@ struct ContentView: View {
             }
             .environment(SessionState.shared)
         }
+        .modifier(GroupInviteModifier(
+            showGroupInviteOnboarding: $showGroupInviteOnboarding,
+            showGroupReconnect: $showGroupReconnect,
+            hasCompletedOnboarding: $hasCompletedOnboarding
+        ))
         .onChange(of: showOnboarding) { oldValue, newValue in
             // Replaces unreliable fullScreenCover onDismiss for post-onboarding flow.
             // onChange(of:) fires synchronously on @State change — always reliable.
@@ -254,6 +261,8 @@ struct ContentView: View {
                 authService.appDidEnterBackground()
             case .active:
                 authService.appDidEnterForeground()
+                // GC-08: Recalculate user segment on each foreground activation
+                UserSegmentService.shared.recalculate()
             default:
                 break
             }
@@ -432,6 +441,13 @@ struct ContentView: View {
     /// Check initial state and decide whether to show language selection, onboarding, or go straight to app.
     /// Runs during splash so the wait is invisible to the user.
     private func checkInitialSyncState() async {
+        // GC-08: If group invite onboarding is pending, skip normal flow entirely.
+        // The CKShare was already accepted eagerly — just let the invite UI take over.
+        if SessionState.shared.shouldShowGroupInviteOnboarding {
+            isInitialCheckDone = true
+            return
+        }
+
         // Wait during splash to give iCloud time to deliver data
         do {
             try await Task.sleep(for: .seconds(2))
@@ -447,8 +463,11 @@ struct ContentView: View {
             if hasExistingData {
                 hasCompletedOnboarding = true
             }
-            // Returning user — check for pending trial (app was killed before trial could show)
-            if SessionState.shared.needsPostOnboardingTrial && !FeatureGateService.shared.isProUser {
+            // GC-08: Skip trial/What's New for groupInvite users — they have no context yet
+            if SessionState.shared.isGroupInviteMode {
+                SessionState.shared.isReadyForTours = true
+            } else if SessionState.shared.needsPostOnboardingTrial && !FeatureGateService.shared.isProUser {
+                // Returning user — check for pending trial (app was killed before trial could show)
                 SessionState.shared.needsPostOnboardingTrial = false
                 Task {
                     await waitForBootstrap()
@@ -559,6 +578,41 @@ struct ContentView: View {
     }
 }
 
+// MARK: - Group Invite Modifier (GC-08)
+
+/// Extracted to a ViewModifier to avoid type-checker complexity in ContentView body.
+private struct GroupInviteModifier: ViewModifier {
+    @Binding var showGroupInviteOnboarding: Bool
+    @Binding var showGroupReconnect: Bool
+    @Binding var hasCompletedOnboarding: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .fullScreenCover(isPresented: $showGroupInviteOnboarding) {
+                GroupInviteOnboardingView {
+                    hasCompletedOnboarding = true
+                    showGroupInviteOnboarding = false
+                    SessionState.shared.shouldShowGroupInviteOnboarding = false
+                }
+                .environment(SessionState.shared)
+            }
+            .sheet(isPresented: $showGroupReconnect) {
+                GroupReconnectView {
+                    showGroupReconnect = false
+                    SessionState.shared.shouldShowGroupReconnect = false
+                    SessionState.shared.deepLinkDestination = .groups
+                }
+                .environment(SessionState.shared)
+            }
+            .onChange(of: SessionState.shared.shouldShowGroupInviteOnboarding) { _, shouldShow in
+                if shouldShow { showGroupInviteOnboarding = true }
+            }
+            .onChange(of: SessionState.shared.shouldShowGroupReconnect) { _, shouldShow in
+                if shouldShow { showGroupReconnect = true }
+            }
+    }
+}
+
 // MARK: - TabView Principal con Search Role (iOS 18+)
 
 struct MainTabView: View {
@@ -579,9 +633,10 @@ struct MainTabView: View {
         TabBarConfiguration.fromJSON(tabConfigJSON)
     }
 
-    /// Tabs to show: active tabs + temporary tab (if set and not already active)
+    /// Tabs to show: mode-aware config + temporary tab (if set and not already active)
     private var visibleTabs: [ConfigurableTab] {
-        var tabs = tabConfig.activeTabs
+        let modeConfig = TabBarConfiguration.forMode(sessionState.onboardingMode, stored: tabConfig)
+        var tabs = modeConfig.activeTabs
         if let temp = sessionState.temporaryTab, !tabs.contains(temp) {
             tabs.append(temp)
         }
@@ -621,13 +676,25 @@ struct MainTabView: View {
             .transaction { $0.animation = nil }
             .onChange(of: sessionState.shouldShowSharedImage) { _, shouldShow in
                 // Navigate to Panel when shared image arrives (from Share Extension)
-                if shouldShow && sessionState.selectedMainTab != .panel {
+                // GC-08: Skip if panel is not available (groupInvite mode)
+                if shouldShow && sessionState.selectedMainTab != .panel && !sessionState.isGroupInviteMode {
                     sessionState.selectedMainTab = .panel
                 }
             }
             .onChange(of: sessionState.deepLinkDestination) { _, destination in
                 // Handle deep links from widgets
                 guard let destination = destination else { return }
+
+                // GC-08: For groupInvite mode, only handle .groups and .groupDetail deep links
+                if sessionState.isGroupInviteMode {
+                    switch destination {
+                    case .groups, .groupDetail:
+                        break // Handle below
+                    default:
+                        sessionState.deepLinkDestination = nil
+                        return
+                    }
+                }
 
                 switch destination {
                 case .panel:
@@ -783,9 +850,21 @@ struct MorePlaceholderView: View {
     @Environment(\.yalaTheme) private var theme
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
     @State private var showProfile = false
+    @State private var showFullModeActivation = false
 
     private var tabConfig: TabBarConfiguration {
         TabBarConfiguration.fromJSON(tabConfigJSON)
+    }
+
+    /// GC-08: Whether the user is in groupInvite mode
+    private var isGroupInviteMode: Bool {
+        SessionState.shared.isGroupInviteMode
+    }
+
+    /// GC-08: Inactive tabs filtered by mode — groupInvite users don't see full-app tabs
+    private var availableInactiveTabs: [ConfigurableTab] {
+        if isGroupInviteMode { return [] }
+        return tabConfig.inactiveTabs
     }
 
     var body: some View {
@@ -795,8 +874,13 @@ struct MorePlaceholderView: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.lg) {
-                        // Hidden tabs section
-                        if !tabConfig.inactiveTabs.isEmpty {
+                        // GC-08: "Activate Full Yala" button for groupInvite users
+                        if isGroupInviteMode {
+                            activateFullYalaButton
+                        }
+
+                        // Hidden tabs section (not shown for groupInvite)
+                        if !availableInactiveTabs.isEmpty {
                             hiddenTabsSection
                         }
 
@@ -813,6 +897,12 @@ struct MorePlaceholderView: View {
         .sheet(isPresented: $showProfile) {
             ProfileView()
                 .transaction { $0.animation = nil }
+        }
+        .sheet(isPresented: $showFullModeActivation) {
+            FullModeActivationView {
+                showFullModeActivation = false
+            }
+            .environment(SessionState.shared)
         }
         .onChange(of: SessionState.shared.shouldOpenProfile) { _, shouldOpen in
             if shouldOpen {
@@ -832,10 +922,10 @@ struct MorePlaceholderView: View {
                 .padding(.leading, DS.Spacing.xs)
 
             VStack(spacing: DS.Spacing.none) {
-                ForEach(Array(tabConfig.inactiveTabs.enumerated()), id: \.element) { index, tab in
+                ForEach(Array(availableInactiveTabs.enumerated()), id: \.element) { index, tab in
                     hiddenTabRow(tab)
 
-                    if index < tabConfig.inactiveTabs.count - 1 {
+                    if index < availableInactiveTabs.count - 1 {
                         Divider()
                             .padding(.leading, DS.FormRow.iconWidth + DS.FormRow.iconSpacing + DS.FormRow.paddingH)
                     }
@@ -889,6 +979,57 @@ struct MorePlaceholderView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Activate Full Yala (GC-08)
+
+    private var activateFullYalaButton: some View {
+        VStack(spacing: DS.Spacing.none) {
+            Button {
+                showFullModeActivation = true
+            } label: {
+                HStack(spacing: DS.FormRow.iconSpacing) {
+                    Image(systemName: "sparkles")
+                        .font(DS.Typography.label)
+                        .foregroundStyle(.white)
+                        .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(theme.accent)
+                        )
+
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                        Text(L10n.Groups.Activate.title)
+                            .font(DS.Typography.body)
+                            .foregroundStyle(.primary)
+
+                        Text(L10n.Groups.Activate.subtitle)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(DS.Typography.chevron)
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                .fill(.thCard)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+        )
+        .dsSubtleShadow()
     }
 
     // MARK: - Profile Button

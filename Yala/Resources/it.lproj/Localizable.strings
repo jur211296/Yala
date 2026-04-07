@@ -3382,3 +3382,31 @@
 "groups.notifications.prompt.title" = "Notifiche di gruppo";
 "groups.notifications.prompt.message" = "Ricevi avvisi quando qualcuno aggiunge una spesa o ti paga";
 "groups.notifications.prompt.enable" = "Attiva";
+
+// Groups — Invite Onboarding (GC-08)
+"groups.invite.welcome" = "Sei stato invitato in un gruppo";
+"groups.invite.welcomeWithGroup" = "Sei stato invitato nel gruppo %@";
+"groups.invite.subtitle" = "Yala ti aiuta a dividere le spese e sapere chi deve cosa";
+"groups.invite.namePlaceholder" = "Il tuo nome";
+"groups.invite.joinButton" = "Unisciti al gruppo";
+"groups.invite.ready" = "Tutto pronto!";
+"groups.invite.goToGroup" = "Vai al gruppo";
+
+// Groups — Reconnect (GC-08)
+"groups.reconnect.title" = "Bentornato!";
+"groups.reconnect.subtitle" = "Sei stato invitato in un gruppo condiviso";
+"groups.reconnect.subtitleWithGroup" = "Sei stato invitato nel gruppo %@";
+
+// Groups — Activate Full Mode (GC-08)
+"groups.activate.title" = "Attiva Yala completo";
+"groups.activate.subtitle" = "Traccia spese, budget e altro";
+"groups.activate.accountStep" = "Qual è il tuo conto principale?";
+"groups.activate.accountName" = "Nome del conto";
+"groups.activate.notificationStep" = "Vuoi ricevere notifiche?";
+"groups.activate.notificationMessage" = "Ricevi promemoria sulle spese e avvisi budget";
+"groups.activate.enableNotifications" = "Attiva notifiche";
+"groups.activate.skipNotifications" = "Non ora";
+"groups.activate.done" = "Inizia";
+"groups.activate.importPrompt" = "Hai %d spese condivise. Aggiungerle ai tuoi registri?";
+"groups.activate.importYes" = "Sì, aggiungi";
+"groups.activate.importNo" = "No, grazie";

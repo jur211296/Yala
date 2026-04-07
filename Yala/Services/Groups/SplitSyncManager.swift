@@ -149,7 +149,8 @@ final class SplitSyncManager {
     // MARK: - Share Acceptance
 
     /// Accept a CKShare invitation (called from AppDelegate).
-    func acceptShare(metadata: CKShare.Metadata) async {
+    /// - Parameter skipNavigation: When true, accepts share but does NOT navigate (used for invite onboarding).
+    func acceptShare(metadata: CKShare.Metadata, skipNavigation: Bool = false) async {
         guard let container else {
             #if DEBUG
             logger.error("Cannot accept share: container not initialized")
@@ -168,13 +169,34 @@ final class SplitSyncManager {
                 try? await sharedEngine.fetchChanges()
             }
 
-            // Navigate to Groups tab
-            SessionState.shared.deepLinkDestination = .groups
+            // Navigate to Groups tab (unless routing is handled by invite/reconnect flow)
+            if !skipNavigation {
+                SessionState.shared.deepLinkDestination = .groups
+            }
         } catch {
             #if DEBUG
             logger.error("Share acceptance failed: \(error)")
             #endif
         }
+    }
+
+    /// Query the local SplitGroup name for a given zone ID (resolved after sync).
+    func groupName(for zoneID: String) -> String? {
+        guard let context = modelContext else { return nil }
+        let descriptor = FetchDescriptor<SplitGroup>(
+            predicate: #Predicate { $0.cloudKitZoneID == zoneID }
+        )
+        return (try? context.fetch(descriptor))?.first?.name
+    }
+
+    /// Find the most recently synced group (useful after accepting a share).
+    func mostRecentGroup() -> SplitGroup? {
+        guard let context = modelContext else { return nil }
+        var descriptor = FetchDescriptor<SplitGroup>(
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 1
+        return (try? context.fetch(descriptor))?.first
     }
 
     // MARK: - Access Requests (iOS 26)

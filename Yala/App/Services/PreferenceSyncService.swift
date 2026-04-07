@@ -51,6 +51,7 @@ final class PreferenceSyncService {
         case insightsTone
         case insightsFocus
         case financialMindset
+        case onboardingMode
     }
 
     /// Keys for cross-device wipe coordination (iKV = remote, local = UserDefaults)
@@ -152,6 +153,16 @@ final class PreferenceSyncService {
                     }
                 }
 
+            case .onboardingMode:
+                // Never-downgrade merge: remote only wins if its rank is higher
+                if let remoteRaw = iKV.string(forKey: k), !remoteRaw.isEmpty,
+                   let remoteMode = OnboardingMode(rawValue: remoteRaw) {
+                    let localMode = OnboardingMode.current()
+                    if remoteMode.rank > localMode.rank {
+                        local.set(remoteRaw, forKey: k)
+                    }
+                }
+
             case .budgetAlertsEnabled, .expensesOnlyMode, .colorfulIcons, .showVariations:
                 if iKV.object(forKey: k) != nil {
                     local.set(iKV.bool(forKey: k), forKey: k)
@@ -182,6 +193,9 @@ final class PreferenceSyncService {
         if let mindset = local.string(forKey: SyncKey.financialMindset.rawValue), !mindset.isEmpty {
             SessionState.shared.financialMindset = mindset
         }
+
+        // onboardingMode (never-downgrade already applied above)
+        SessionState.shared.onboardingMode = OnboardingMode.current()
 
         // Trigger UI refresh when formatting preferences change remotely
         if formattingChanged {

@@ -1016,6 +1016,37 @@ enum L10n {
             static var promptMessage: String { ls("groups.notifications.prompt.message", comment: "") }
             static var promptEnable: String { ls("groups.notifications.prompt.enable", comment: "") }
         }
+
+        enum Invite {
+            static var welcome: String { ls("groups.invite.welcome", comment: "") }
+            static func welcomeWithGroup(_ name: String) -> String { String(format: ls("groups.invite.welcomeWithGroup", comment: ""), name) }
+            static var subtitle: String { ls("groups.invite.subtitle", comment: "") }
+            static var namePlaceholder: String { ls("groups.invite.namePlaceholder", comment: "") }
+            static var joinButton: String { ls("groups.invite.joinButton", comment: "") }
+            static var ready: String { ls("groups.invite.ready", comment: "") }
+            static var goToGroup: String { ls("groups.invite.goToGroup", comment: "") }
+        }
+
+        enum Reconnect {
+            static var title: String { ls("groups.reconnect.title", comment: "") }
+            static var subtitle: String { ls("groups.reconnect.subtitle", comment: "") }
+            static func subtitleWithGroup(_ name: String) -> String { String(format: ls("groups.reconnect.subtitleWithGroup", comment: ""), name) }
+        }
+
+        enum Activate {
+            static var title: String { ls("groups.activate.title", comment: "") }
+            static var subtitle: String { ls("groups.activate.subtitle", comment: "") }
+            static var accountStep: String { ls("groups.activate.accountStep", comment: "") }
+            static var accountName: String { ls("groups.activate.accountName", comment: "") }
+            static var notificationStep: String { ls("groups.activate.notificationStep", comment: "") }
+            static var notificationMessage: String { ls("groups.activate.notificationMessage", comment: "") }
+            static var enableNotifications: String { ls("groups.activate.enableNotifications", comment: "") }
+            static var skipNotifications: String { ls("groups.activate.skipNotifications", comment: "") }
+            static var done: String { ls("groups.activate.done", comment: "") }
+            static func importPrompt(_ count: Int) -> String { String(format: ls("groups.activate.importPrompt", comment: ""), count) }
+            static var importYes: String { ls("groups.activate.importYes", comment: "") }
+            static var importNo: String { ls("groups.activate.importNo", comment: "") }
+        }
     }
 
     // MARK: - AI Consent
