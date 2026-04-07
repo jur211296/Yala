@@ -2990,6 +2990,7 @@
 "groups.form.simplifyDebtsHint" = "Reduz o número de pagamentos necessários entre membros";
 "groups.form.defaultAccount" = "Conta para registros";
 "groups.form.defaultAccountHint" = "Conta onde as despesas do grupo são registradas";
+"groups.form.defaultAccountPickerHint" = "Escolha uma conta por moeda para seus registros";
 "groups.form.autoCreate" = "Adicionar aos meus registros";
 "groups.form.autoCreateHint" = "Cria automaticamente uma despesa pessoal ao registrar uma despesa compartilhada";
 "groups.form.none" = "Nenhuma";

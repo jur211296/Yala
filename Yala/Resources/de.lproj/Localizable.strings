@@ -2990,6 +2990,7 @@
 "groups.form.simplifyDebtsHint" = "Reduziert die Anzahl der Zahlungen zwischen Mitgliedern";
 "groups.form.defaultAccount" = "Konto für Einträge";
 "groups.form.defaultAccountHint" = "Konto, auf dem Gruppenausgaben verbucht werden";
+"groups.form.defaultAccountPickerHint" = "Wähle ein Konto pro Währung für deine Einträge";
 "groups.form.autoCreate" = "Zu meinen Einträgen hinzufügen";
 "groups.form.autoCreateHint" = "Erstellt automatisch eine persönliche Ausgabe bei gemeinsamen Ausgaben";
 "groups.form.none" = "Keine";

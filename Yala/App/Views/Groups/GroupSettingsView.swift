@@ -350,15 +350,23 @@ struct GroupSettingsView: View {
                 }
 
                 if personalAutoCreate {
-                    ForEach(groupCurrencies, id: \.self) { code in
-                        Divider()
-                            .padding(.leading, DS.FormRow.paddingH)
+                    Divider()
+                        .padding(.leading, DS.FormRow.paddingH)
 
-                        HStack {
-                            let label = groupCurrencies.count > 1
-                                ? "\(L10n.Groups.Form.defaultAccount) (\(code))"
-                                : L10n.Groups.Form.defaultAccount
-                            Text(label)
+                    Text(L10n.Groups.Form.defaultAccountPickerHint)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, DS.FormRow.paddingH)
+                        .padding(.top, DS.Spacing.sm)
+
+                    ForEach(groupCurrencies, id: \.self) { code in
+                        let info = currencyInfo(for: CurrencyCode(rawValue: code) ?? .usd)
+
+                        HStack(spacing: DS.Spacing.md) {
+                            Text(info.flag)
+                                .font(DS.Typography.body)
+
+                            Text(info.code)
                                 .font(DS.Typography.body)
 
                             Spacer()
@@ -370,9 +378,15 @@ struct GroupSettingsView: View {
                                 }
                             }
                             .pickerStyle(.menu)
+                            .fixedSize()
                         }
                         .padding(.horizontal, DS.FormRow.paddingH)
                         .padding(.vertical, DS.FormRow.paddingV)
+
+                        if code != groupCurrencies.last {
+                            Divider()
+                                .padding(.leading, DS.FormRow.paddingH)
+                        }
                     }
                 }
 
@@ -381,12 +395,16 @@ struct GroupSettingsView: View {
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, DS.FormRow.paddingH)
+                    .padding(.top, DS.Spacing.md)
                     .padding(.bottom, DS.Spacing.sm)
             }
         }
         .onAppear {
             personalAutoCreate = GroupPersonalPreferences.autoCreateTransaction(for: group.cloudKitZoneID)
                 ?? group.autoCreateTransaction
+            loadAccountPreferences()
+        }
+        .onChange(of: selectedCurrency) {
             loadAccountPreferences()
         }
     }
@@ -559,9 +577,11 @@ struct GroupSettingsView: View {
         do {
             // Get distinct currencies from group expenses
             var currencies = try GroupExpenseService.shared.fetchDistinctCurrencyCodes(for: group)
-            if currencies.isEmpty {
-                currencies = [group.currencyCode]
+            // Always include group's preferred currency first
+            if let idx = currencies.firstIndex(of: group.currencyCode) {
+                currencies.remove(at: idx)
             }
+            currencies.insert(group.currencyCode, at: 0)
             groupCurrencies = currencies
 
             // Load all non-archived accounts

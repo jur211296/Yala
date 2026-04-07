@@ -2992,6 +2992,7 @@
 "groups.form.simplifyDebtsHint" = "Riduce il numero di pagamenti necessari tra i membri";
 "groups.form.defaultAccount" = "Conto per i registri";
 "groups.form.defaultAccountHint" = "Conto in cui vengono registrate le spese del gruppo";
+"groups.form.defaultAccountPickerHint" = "Scegli un conto per valuta per i tuoi registri";
 "groups.form.autoCreate" = "Aggiungi ai miei registri";
 "groups.form.autoCreateHint" = "Crea automaticamente una spesa personale quando registri una spesa condivisa";
 "groups.form.none" = "Nessuno";

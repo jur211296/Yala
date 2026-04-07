@@ -885,6 +885,7 @@ enum L10n {
             static var simplifyDebtsHint: String { ls("groups.form.simplifyDebtsHint", comment: "") }
             static var defaultAccount: String { ls("groups.form.defaultAccount", comment: "") }
             static var defaultAccountHint: String { ls("groups.form.defaultAccountHint", comment: "") }
+            static var defaultAccountPickerHint: String { ls("groups.form.defaultAccountPickerHint", comment: "") }
             static var autoCreate: String { ls("groups.form.autoCreate", comment: "") }
             static var autoCreateHint: String { ls("groups.form.autoCreateHint", comment: "") }
             static var none: String { ls("groups.form.none", comment: "") }

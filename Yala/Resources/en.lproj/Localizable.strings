@@ -2996,6 +2996,7 @@
 "groups.form.simplifyDebtsHint" = "Reduces the number of payments needed between members";
 "groups.form.defaultAccount" = "Account for records";
 "groups.form.defaultAccountHint" = "Account where group expenses are recorded";
+"groups.form.defaultAccountPickerHint" = "Choose an account per currency for your records";
 "groups.form.autoCreate" = "Add to my records";
 "groups.form.autoCreateHint" = "Automatically creates a personal expense when registering a shared expense";
 "groups.form.none" = "None";
