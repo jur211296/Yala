@@ -109,7 +109,7 @@ struct GroupSplitSelectorView: View {
                 placeholder: "0",
                 keyPath: \.exactAmounts,
                 keyboard: .decimalPad,
-                filter: AmountInputHelper.filterAmountInput
+                filter: { AmountInputHelper.filterAmountInput($0) }
             )
         }
     }
@@ -123,7 +123,7 @@ struct GroupSplitSelectorView: View {
                 placeholder: "0",
                 keyPath: \.percentages,
                 keyboard: .decimalPad,
-                filter: AmountInputHelper.filterAmountInput
+                filter: { AmountInputHelper.filterAmountInput($0) }
             )
 
             Text("%")
@@ -141,7 +141,7 @@ struct GroupSplitSelectorView: View {
                 placeholder: "1",
                 keyPath: \.sharesCounts,
                 keyboard: .numberPad,
-                filter: AmountInputHelper.filterIntegerInput
+                filter: { AmountInputHelper.filterIntegerInput($0) }
             )
 
             Text(L10n.Split.sharesParts)

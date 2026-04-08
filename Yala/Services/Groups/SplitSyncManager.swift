@@ -37,7 +37,7 @@ final class SplitSyncManager {
     private(set) var sharedEngine: CKSyncEngine?
 
     // nonisolated reference for identity check from delegate (set once during init)
-    nonisolated(unsafe) private var _privateEngineRef: CKSyncEngine?
+    @ObservationIgnored nonisolated(unsafe) private var _privateEngineRef: CKSyncEngine?
 
     // MARK: - Dependencies
 
@@ -757,7 +757,7 @@ extension SplitSettlement: HasUUID {}
 /// Model updates are dispatched to @MainActor.
 private final class SplitSyncDelegate: CKSyncEngineDelegate {
 
-    private weak var manager: SplitSyncManager?
+    nonisolated(unsafe) private weak var manager: SplitSyncManager?
 
     init(manager: SplitSyncManager) {
         self.manager = manager

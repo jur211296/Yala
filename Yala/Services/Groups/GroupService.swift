@@ -32,9 +32,6 @@ final class GroupService {
 
     func setContext(_ context: ModelContext) {
         self.modelContext = context
-        if cachedDisplayName == nil {
-            Task { await refreshUserDisplayName() }
-        }
     }
 
     private func requireContext() throws -> ModelContext {
@@ -77,7 +74,7 @@ final class GroupService {
         context.insert(group)
 
         // Create CK zone + GroupMeta root record
-        SplitZoneManager().createZone(for: group)
+        SplitZoneManager(syncManager: .shared).createZone(for: group)
 
         // Add current user as admin member
         let member = SplitMember(
@@ -164,7 +161,7 @@ final class GroupService {
         guard group.isOwner else { throw GroupServiceError.notOwner }
 
         // Delete CK zone (cascade deletes all remote records)
-        SplitZoneManager().deleteZone(for: group)
+        SplitZoneManager(syncManager: .shared).deleteZone(for: group)
 
         // Unbridge personal TX/Drafts before deleting expenses
         if GroupTransactionBridge.shared.isReady {
@@ -367,36 +364,9 @@ final class GroupService {
 
     // MARK: - User Display Name
 
-    private var cachedDisplayName: String?
-
-    /// Get display name for current user. Returns cached value or "Yo" fallback.
     private func currentUserDisplayName() -> String {
-        cachedDisplayName ?? "Yo"
-    }
-
-    /// Fetch the user's real name from iCloud. Call once during setup.
-    func refreshUserDisplayName() async {
-        do {
-            let container = CKContainer.default()
-            let recordID = try await container.userRecordID()
-            let identity = try await container.userIdentity(forUserRecordID: recordID)
-            if let components = identity?.nameComponents {
-                let formatter = PersonNameComponentsFormatter()
-                formatter.style = .default
-                let name = formatter.string(from: components)
-                if !name.isEmpty {
-                    cachedDisplayName = name
-                    #if DEBUG
-                    logger.info("User display name resolved: \(name)")
-                    #endif
-                }
-            }
-        } catch {
-            #if DEBUG
-            logger.info("Could not resolve user display name: \(error.localizedDescription)")
-            #endif
-            // Fallback stays as "Yo" — non-critical
-        }
+        let name = UserDefaults.standard.string(forKey: "userName") ?? ""
+        return name.isEmpty ? "Yo" : name
     }
 }
 

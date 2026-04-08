@@ -16,7 +16,7 @@ final class SplitZoneManager {
     private let syncManager: SplitSyncManager
     private let logger = Logger(subsystem: "com.yala", category: "SplitZone")
 
-    init(syncManager: SplitSyncManager = .shared) {
+    init(syncManager: SplitSyncManager) {
         self.syncManager = syncManager
     }
 

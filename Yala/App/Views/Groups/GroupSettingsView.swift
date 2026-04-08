@@ -492,14 +492,14 @@ struct GroupSettingsView: View {
         guard !isCreatingShare else { return }
 
         // Return cached URL if available
-        if let cached = shareURL {
+        if shareURL != nil {
             showShareSheet = true
             return
         }
 
         isCreatingShare = true
         do {
-            let (_, url) = try await SplitZoneManager().createShare(for: group)
+            let (_, url) = try await SplitZoneManager(syncManager: .shared).createShare(for: group)
             shareURL = url
             isCreatingShare = false
             if url != nil {
