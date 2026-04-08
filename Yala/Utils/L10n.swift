@@ -950,6 +950,7 @@ enum L10n {
             static var mySettings: String { ls("groups.settings.mySettings", comment: "") }
             static var mySettingsHint: String { ls("groups.settings.mySettingsHint", comment: "") }
             static var showArchived: String { ls("groups.settings.showArchived", comment: "") }
+            static func showArchivedCount(_ count: Int) -> String { String(format: ls("groups.settings.showArchivedCount", comment: ""), count) }
             static var hideArchived: String { ls("groups.settings.hideArchived", comment: "") }
         }
 
@@ -960,6 +961,7 @@ enum L10n {
             static var changeRole: String { ls("groups.member.changeRole", comment: "") }
             static var remove: String { ls("groups.member.remove", comment: "") }
             static var removeConfirm: String { ls("groups.member.removeConfirm", comment: "") }
+            static var actions: String { ls("groups.member.actions", comment: "") }
             static func people(_ count: Int) -> String { String(format: ls("groups.member.people %d", comment: ""), count) }
         }
 
@@ -996,6 +998,7 @@ enum L10n {
             static var date: String { ls("groups.expense.date", comment: "") }
             static var splitType: String { ls("groups.expense.splitType", comment: "") }
             static var remaining: String { ls("groups.expense.remaining", comment: "") }
+            static func remainingAmount(_ amount: String) -> String { String(format: ls("groups.expense.remainingAmount", comment: ""), amount) }
             static var balanced: String { ls("groups.expense.balanced", comment: "") }
             static var eachPays: String { ls("groups.expense.eachPays", comment: "") }
         }
@@ -1007,6 +1010,7 @@ enum L10n {
             static var confirm: String { ls("groups.settlement.confirm", comment: "") }
             static var reject: String { ls("groups.settlement.reject", comment: "") }
             static var settle: String { ls("groups.settlement.settle", comment: "") }
+            static var settleHint: String { ls("groups.settlement.settleHint", comment: "") }
             static var confirmQuestion: String { ls("groups.settlement.confirmQuestion", comment: "") }
             static var rejectQuestion: String { ls("groups.settlement.rejectQuestion", comment: "") }
         }

@@ -47,7 +47,7 @@ struct GroupInviteOnboardingView: View {
             Spacer()
 
             Image(systemName: "person.2.fill")
-                .font(.system(size: 56))
+                .font(.system(size: 56)) // A11Y-DT: decorative hero icon, fixed size
                 .foregroundStyle(theme.accent)
 
             VStack(spacing: DS.Spacing.sm) {
@@ -89,7 +89,7 @@ struct GroupInviteOnboardingView: View {
             Spacer()
 
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 56))
+                .font(.system(size: 56)) // A11Y-DT: decorative hero icon, fixed size
                 .foregroundStyle(DS.Semantic.successForeground)
 
             Text(L10n.Groups.Invite.ready)

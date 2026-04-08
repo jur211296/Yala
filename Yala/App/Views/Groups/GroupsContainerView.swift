@@ -60,6 +60,7 @@ struct GroupsContainerView: View {
                                     onAction: {
                                         NudgeService.shared.recordInteracted(nudge)
                                         withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                                        handleNudgeAction(nudge)
                                     },
                                     onDismiss: {
                                         NudgeService.shared.recordDismissed(nudge)
@@ -126,6 +127,7 @@ struct GroupsContainerView: View {
                     GroupDetailView(group: group)
                 }
             }
+            .refreshable { viewModel.loadData() }
             .onAppear {
                 viewModel.setContext(modelContext)
                 evaluateNudge()
@@ -174,6 +176,21 @@ struct GroupsContainerView: View {
         }
     }
 
+    private func handleNudgeAction(_ nudge: NudgeType) {
+        switch nudge.actionType {
+        case .activateFullMode:
+            SessionState.shared.shouldOpenFullModeActivation = true
+        case .openPanel:
+            sessionState.selectedMainTab = .panel
+        case .openGroupDetail:
+            if let group = viewModel.activeGroups.first {
+                viewModel.openDetail(for: group)
+            }
+        case .dismiss:
+            break
+        }
+    }
+
     private func activateGroupsNotification() {
         // typeRaw matches NotificationType.groups
         let descriptor = FetchDescriptor<NotificationItem>(
@@ -206,7 +223,7 @@ struct GroupsContainerView: View {
                         .foregroundStyle(.secondary)
                     Text(viewModel.showArchived
                          ? L10n.Groups.Settings.hideArchived
-                         : "\(L10n.Groups.Settings.showArchived) (\(viewModel.archivedGroups.count))")
+                         : L10n.Groups.Settings.showArchivedCount(viewModel.archivedGroups.count))
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                     Spacer()

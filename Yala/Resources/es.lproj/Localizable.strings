@@ -3062,6 +3062,7 @@
 "groups.settings.unarchive" = "Desarchivar grupo";
 "groups.settings.archiveHint" = "Los gastos y balances se conservan. Puedes desarchivar cuando quieras.";
 "groups.settings.showArchived" = "Ver archivados";
+"groups.settings.showArchivedCount" = "Ver archivados (%d)";
 "groups.settings.hideArchived" = "Ocultar archivados";
 "groups.settings.options" = "Opciones";
 "groups.settings.info" = "Información";
@@ -3074,6 +3075,7 @@
 "groups.member.changeRole" = "Cambiar rol";
 "groups.member.remove" = "Eliminar miembro";
 "groups.member.removeConfirm" = "¿Eliminar a este miembro del grupo?";
+"groups.member.actions" = "Acciones de miembro";
 "groups.member.people %d" = "%d personas";
 "groups.balance.title" = "Balances";
 "groups.balance.owes" = "debe";
@@ -3369,6 +3371,7 @@
 "groups.expense.date" = "Fecha";
 "groups.expense.splitType" = "Tipo de división";
 "groups.expense.remaining" = "Restante";
+"groups.expense.remainingAmount" = "Restante: %@";
 "groups.expense.balanced" = "Balanceado";
 "groups.expense.eachPays" = "Cada uno paga";
 
@@ -3379,6 +3382,7 @@
 "groups.settlement.confirm" = "Confirmar";
 "groups.settlement.reject" = "Rechazar";
 "groups.settlement.settle" = "Liquidar";
+"groups.settlement.settleHint" = "Abre el formulario para registrar este pago";
 "groups.settlement.confirmQuestion" = "¿Marcar este pago como confirmado?";
 "groups.settlement.rejectQuestion" = "¿Rechazar este pago?";
 

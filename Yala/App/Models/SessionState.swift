@@ -487,6 +487,9 @@ class SessionState {
     /// Flag to auto-open Profile from Insights banner redirect
     var shouldOpenProfile: Bool = false
 
+    /// Flag to present FullModeActivationView from any view (nudge CTA routing)
+    var shouldOpenFullModeActivation: Bool = false
+
     /// Flag to trigger App Store review prompt
     var shouldRequestReview: Bool = false
 

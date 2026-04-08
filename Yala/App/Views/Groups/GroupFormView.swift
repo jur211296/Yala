@@ -30,6 +30,8 @@ struct GroupFormView: View {
     @State private var selectedCurrency: CurrencyCode = .pen
     @State private var defaultSplitType: SplitType = .equal
     @State private var membersCanInvite: Bool = true
+    @State private var showSaveError: Bool = false
+    @State private var saveErrorMessage: String = ""
 
     // MARK: - Sheet State
 
@@ -84,6 +86,11 @@ struct GroupFormView: View {
             }
             .onAppear {
                 populateFromGroup()
+            }
+            .alert(L10n.Common.error, isPresented: $showSaveError) {
+                Button(L10n.Common.ok) {}
+            } message: {
+                Text(saveErrorMessage)
             }
         }
     }
@@ -278,6 +285,9 @@ struct GroupFormView: View {
             #if DEBUG
             print("GroupFormView: Error saving group: \(error)")
             #endif
+            DS.Haptic.warning()
+            saveErrorMessage = error.localizedDescription
+            showSaveError = true
         }
     }
 

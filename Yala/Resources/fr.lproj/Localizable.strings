@@ -3059,6 +3059,7 @@
 "groups.settings.unarchive" = "Désarchiver le groupe";
 "groups.settings.archiveHint" = "Les dépenses et soldes sont conservés. Vous pouvez désarchiver à tout moment.";
 "groups.settings.showArchived" = "Voir archivés";
+"groups.settings.showArchivedCount" = "Voir archivés (%d)";
 "groups.settings.hideArchived" = "Masquer archivés";
 "groups.settings.options" = "Options";
 "groups.settings.info" = "Informations";
@@ -3071,6 +3072,7 @@
 "groups.member.changeRole" = "Changer le rôle";
 "groups.member.remove" = "Supprimer le membre";
 "groups.member.removeConfirm" = "Supprimer ce membre du groupe ?";
+"groups.member.actions" = "Actions du membre";
 "groups.member.people %d" = "%d personnes";
 "groups.balance.title" = "Soldes";
 "groups.balance.owes" = "doit";
@@ -3364,6 +3366,7 @@
 "groups.expense.date" = "Date";
 "groups.expense.splitType" = "Type de répartition";
 "groups.expense.remaining" = "Restant";
+"groups.expense.remainingAmount" = "Restant : %@";
 "groups.expense.balanced" = "Équilibré";
 "groups.expense.eachPays" = "Chacun paie";
 
@@ -3374,6 +3377,7 @@
 "groups.settlement.confirm" = "Confirmer";
 "groups.settlement.reject" = "Rejeter";
 "groups.settlement.settle" = "Régler";
+"groups.settlement.settleHint" = "Ouvre le formulaire pour enregistrer ce paiement";
 "groups.settlement.confirmQuestion" = "Marquer ce paiement comme confirmé ?";
 "groups.settlement.rejectQuestion" = "Rejeter ce paiement ?";
 

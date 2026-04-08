@@ -911,6 +911,12 @@ struct MorePlaceholderView: View {
                 SessionState.shared.shouldOpenProfile = false
             }
         }
+        .onChange(of: SessionState.shared.shouldOpenFullModeActivation) { _, shouldOpen in
+            if shouldOpen {
+                showFullModeActivation = true
+                SessionState.shared.shouldOpenFullModeActivation = false
+            }
+        }
     }
 
     // MARK: - Hidden Tabs Section

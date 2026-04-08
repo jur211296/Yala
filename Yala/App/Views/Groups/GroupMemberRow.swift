@@ -62,6 +62,7 @@ struct GroupMemberRow: View {
                         .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                         .contentShape(Rectangle())
                 }
+                .accessibilityLabel(L10n.Groups.Member.actions)
             }
         }
         .padding(.horizontal, DS.FormRow.paddingH)

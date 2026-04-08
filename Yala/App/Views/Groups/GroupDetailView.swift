@@ -78,6 +78,7 @@ struct GroupDetailView: View {
                             onAction: {
                                 NudgeService.shared.recordInteracted(nudge)
                                 withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                                handleNudgeAction(nudge)
                             },
                             onDismiss: {
                                 NudgeService.shared.recordDismissed(nudge)
@@ -126,6 +127,7 @@ struct GroupDetailView: View {
             }) { sheet in
                 sheetContent(for: sheet)
             }
+            .refreshable { viewModel.loadData() }
             .onAppear {
                 viewModel.setContext(modelContext)
                 // Only evaluate if no nudge is already showing (avoid overriding GroupsContainer nudge)
@@ -261,6 +263,19 @@ struct GroupDetailView: View {
                 currentUserMemberID: viewModel.currentUserMember?.id.uuidString,
                 currencyCode: group.currencyCode
             )
+        }
+    }
+
+    // MARK: - Nudge CTA Routing
+
+    private func handleNudgeAction(_ nudge: NudgeType) {
+        switch nudge.actionType {
+        case .activateFullMode:
+            SessionState.shared.shouldOpenFullModeActivation = true
+        case .openPanel:
+            dismiss()
+        case .openGroupDetail, .dismiss:
+            break
         }
     }
 

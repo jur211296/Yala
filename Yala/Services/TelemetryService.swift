@@ -50,7 +50,10 @@ enum AnalyticsEvent: String {
     case groupDeleted
     case groupMemberAdded
     case groupExpenseAdded
-    case groupSettlementCompleted
+    case groupSettlementCreated
+    case groupSettlementConfirmed
+    case groupSettlementRejected
+    case groupHistoryImported
     case groupInviteSent
     case groupInviteAccepted
 

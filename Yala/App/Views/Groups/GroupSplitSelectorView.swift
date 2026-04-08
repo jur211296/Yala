@@ -195,7 +195,7 @@ struct GroupSplitSelectorView: View {
             } else {
                 HStack(spacing: DS.Spacing.xs) {
                     Image(systemName: "exclamationmark.circle.fill")
-                    Text("\(L10n.Groups.Expense.remaining): \(YalaFormatter.currency(value: abs(viewModel.remainingToAllocate), currencyCode: viewModel.currencyCode))")
+                    Text(L10n.Groups.Expense.remainingAmount(YalaFormatter.currency(value: abs(viewModel.remainingToAllocate), currencyCode: viewModel.currencyCode)))
                 }
                 .font(DS.Typography.headline)
                 .foregroundStyle(Color.hotPink)

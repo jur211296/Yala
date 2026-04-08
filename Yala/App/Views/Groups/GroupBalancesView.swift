@@ -162,6 +162,7 @@ struct GroupBalancesView: View {
                         .background(Capsule().fill(.thAccent.opacity(0.12)))
                 }
                 .buttonStyle(.plain)
+                .accessibilityHint(L10n.Groups.Settlement.settleHint)
             }
         }
         .padding(.horizontal, DS.FormRow.paddingH)
@@ -234,6 +235,7 @@ struct GroupBalancesView: View {
                             .foregroundStyle(DS.Semantic.successForeground)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.Groups.Settlement.confirm)
 
                     Button {
                         onRejectSettlement?(settlement)
@@ -243,6 +245,7 @@ struct GroupBalancesView: View {
                             .foregroundStyle(DS.Semantic.errorForeground)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.Groups.Settlement.reject)
                 }
             }
         }

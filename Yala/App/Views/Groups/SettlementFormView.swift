@@ -28,7 +28,8 @@ struct SettlementFormView: View {
     @State private var note: String = ""
     @State private var date: Date = .now
     @State private var isSaving: Bool = false
-    @State private var saveError: String?
+    @State private var showSaveError: Bool = false
+    @State private var saveErrorMessage: String = ""
 
     // MARK: - Init
 
@@ -79,6 +80,11 @@ struct SettlementFormView: View {
                         dismiss()
                     }
                 }
+            }
+            .alert(L10n.Common.error, isPresented: $showSaveError) {
+                Button(L10n.Common.ok) {}
+            } message: {
+                Text(saveErrorMessage)
             }
         }
     }
@@ -194,7 +200,7 @@ struct SettlementFormView: View {
                 date: date
             )
             DS.Haptic.success()
-            TelemetryService.track(.groupSettlementCompleted)
+            TelemetryService.track(.groupSettlementCreated)
             isSaving = false
             onSave()
             dismiss()
@@ -202,7 +208,8 @@ struct SettlementFormView: View {
             #if DEBUG
             print("SettlementFormView: Error saving: \(error)")
             #endif
-            saveError = error.localizedDescription
+            saveErrorMessage = error.localizedDescription
+            showSaveError = true
             isSaving = false
         }
     }

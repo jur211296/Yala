@@ -122,13 +122,14 @@ struct GroupSettingsView: View {
 
                         // A11Y-DT: decorative edit badge on group icon
                         Image(systemName: "pencil.circle.fill")
-                            .font(.system(size: 18))
+                            .font(DS.Typography.label)
                             .foregroundStyle(Color(hex: editColorHex))
                             .background(Circle().fill(.white).frame(width: 16, height: 16))
                             .offset(x: 16, y: 16)
                     }
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(L10n.Groups.Form.icon)
 
                 // Group name — editable inline
                 TextField(L10n.Groups.Form.namePlaceholder, text: $editName)
@@ -429,6 +430,7 @@ struct GroupSettingsView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityHint(L10n.Groups.Settings.archiveHint)
 
             Text(L10n.Groups.Settings.archiveHint)
                 .font(DS.Typography.captionSmall)
@@ -542,6 +544,7 @@ struct GroupSettingsView: View {
             let willArchive = !group.isArchived
             try GroupService.shared.setArchived(group, isArchived: willArchive)
             if willArchive { TelemetryService.track(.groupArchived) }
+            DS.Haptic.success()
             viewModel.loadData()
             if group.isArchived {
                 dismiss()

@@ -112,6 +112,8 @@ final class GroupDetailViewModel {
     func confirmSettlement(_ settlement: SplitSettlement) {
         do {
             try GroupExpenseService.shared.confirmSettlement(settlement, in: group)
+            TelemetryService.track(.groupSettlementConfirmed)
+            DS.Haptic.success()
             loadData()
         } catch {
             #if DEBUG
@@ -123,6 +125,8 @@ final class GroupDetailViewModel {
     func rejectSettlement(_ settlement: SplitSettlement) {
         do {
             try GroupExpenseService.shared.deleteSettlement(settlement, in: group)
+            TelemetryService.track(.groupSettlementRejected)
+            DS.Haptic.warning()
             loadData()
         } catch {
             #if DEBUG

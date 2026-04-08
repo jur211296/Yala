@@ -24,7 +24,7 @@ struct GroupReconnectView: View {
                     Spacer()
 
                     Image(systemName: "hand.wave.fill")
-                        .font(.system(size: 56))
+                        .font(.system(size: 56)) // A11Y-DT: decorative hero icon, fixed size
                         .foregroundStyle(theme.accent)
 
                     VStack(spacing: DS.Spacing.sm) {

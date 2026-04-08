@@ -156,6 +156,9 @@ final class AppBootstrapper {
         UserSegmentService.shared.setContext(context)
         UserSegmentService.shared.recalculate()
 
+        // 18. Initialize Nudge Service (GC-09)
+        NudgeService.shared.setContext(context)
+
         isInitialized = true
     }
 

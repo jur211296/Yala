@@ -74,7 +74,7 @@ struct FullModeActivationView: View {
             Spacer()
 
             Image(systemName: "banknote.fill")
-                .font(.system(size: 48))
+                .font(.system(size: 48)) // A11Y-DT: decorative hero icon, fixed size
                 .foregroundStyle(theme.accent)
 
             Text(L10n.Groups.Activate.accountStep)
@@ -117,7 +117,7 @@ struct FullModeActivationView: View {
             Spacer()
 
             Image(systemName: "bell.fill")
-                .font(.system(size: 48))
+                .font(.system(size: 48)) // A11Y-DT: decorative hero icon, fixed size
                 .foregroundStyle(theme.accent)
 
             VStack(spacing: DS.Spacing.sm) {
@@ -255,6 +255,7 @@ struct FullModeActivationView: View {
         guard !groups.isEmpty else { return }
         do {
             try GroupTransactionBridge.shared.importGroupHistoryAsDrafts(for: groups)
+            TelemetryService.track(.groupHistoryImported, parameters: ["count": String(groupExpenseCount)])
         } catch {
             #if DEBUG
             print("FullModeActivationView: Import error: \(error)")

@@ -3064,6 +3064,7 @@
 "groups.settings.unarchive" = "Unarchive group";
 "groups.settings.archiveHint" = "Expenses and balances are preserved. You can unarchive anytime.";
 "groups.settings.showArchived" = "Show archived";
+"groups.settings.showArchivedCount" = "Show archived (%d)";
 "groups.settings.hideArchived" = "Hide archived";
 "groups.settings.options" = "Options";
 "groups.settings.info" = "Info";
@@ -3076,6 +3077,7 @@
 "groups.member.changeRole" = "Change role";
 "groups.member.remove" = "Remove member";
 "groups.member.removeConfirm" = "Remove this member from the group?";
+"groups.member.actions" = "Member actions";
 "groups.member.people %d" = "%d people";
 "groups.balance.title" = "Balances";
 "groups.balance.owes" = "owes";
@@ -3369,6 +3371,7 @@
 "groups.expense.date" = "Date";
 "groups.expense.splitType" = "Split type";
 "groups.expense.remaining" = "Remaining";
+"groups.expense.remainingAmount" = "Remaining: %@";
 "groups.expense.balanced" = "Balanced";
 "groups.expense.eachPays" = "Each pays";
 
@@ -3379,6 +3382,7 @@
 "groups.settlement.confirm" = "Confirm";
 "groups.settlement.reject" = "Reject";
 "groups.settlement.settle" = "Settle";
+"groups.settlement.settleHint" = "Opens the form to register this payment";
 "groups.settlement.confirmQuestion" = "Mark this payment as confirmed?";
 "groups.settlement.rejectQuestion" = "Reject this payment?";
 

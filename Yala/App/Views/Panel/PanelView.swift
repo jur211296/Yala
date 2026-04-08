@@ -207,6 +207,19 @@ struct PanelView: View {
         modelContext.delete(match)
     }
 
+    // MARK: - Nudge CTA Routing
+
+    private func handleNudgeAction(_ nudge: NudgeType) {
+        switch nudge.actionType {
+        case .activateFullMode:
+            SessionState.shared.shouldOpenFullModeActivation = true
+        case .openGroupDetail:
+            SessionState.shared.navigateToGroups()
+        case .openPanel, .dismiss:
+            break
+        }
+    }
+
     // MARK: - Setup Checklist Navigation
 
     private func handleSetupStep(_ step: SetupStepID) {
@@ -535,6 +548,7 @@ struct PanelView: View {
                                 onAction: {
                                     NudgeService.shared.recordInteracted(nudge)
                                     withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                                    handleNudgeAction(nudge)
                                 },
                                 onDismiss: {
                                     NudgeService.shared.recordDismissed(nudge)
