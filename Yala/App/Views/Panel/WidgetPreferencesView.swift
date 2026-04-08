@@ -77,19 +77,13 @@ struct WidgetPreferencesView: View {
                         WidgetRow(
                             config: config,
                             onToggle: {
-                                dsWithAnimation(reduceMotion) {
-                                    viewModel.toggleWidgetVisibility(id: config.id)
-                                }
+                                viewModel.toggleWidgetVisibility(id: config.id)
                             },
                             onSizeChange: { newSize in
-                                dsWithAnimation(reduceMotion) {
-                                    viewModel.updateWidgetSize(id: config.id, newSize: newSize)
-                                }
+                                viewModel.updateWidgetSize(id: config.id, newSize: newSize)
                             },
                             onScheduledPaymentsModeChange: { mode in
-                                dsWithAnimation(reduceMotion) {
-                                    viewModel.updateScheduledPaymentsMode(id: config.id, mode: mode)
-                                }
+                                viewModel.updateScheduledPaymentsMode(id: config.id, mode: mode)
                             }
                         )
                         .listRowSeparator(.hidden)
@@ -105,9 +99,7 @@ struct WidgetPreferencesView: View {
 
                 Section {
                     Button(role: .destructive) {
-                        dsWithAnimation(reduceMotion) {
-                            viewModel.resetWidgetConfigs()
-                        }
+                        viewModel.resetWidgetConfigs()
                     } label: {
                         Text(L10n.Widget.resetLayout)
                             .frame(maxWidth: .infinity, alignment: .center)
@@ -196,7 +188,9 @@ private struct WidgetRow: View {
                     config.type.displayName,
                     isOn: Binding(
                         get: { config.isVisible },
-                        set: { _ in onToggle() }
+                        set: { newValue in
+                            if newValue != config.isVisible { onToggle() }
+                        }
                     )
                 )
                 .labelsHidden()
@@ -212,7 +206,9 @@ private struct WidgetRow: View {
                     L10n.Widget.sizeLabel,
                     selection: Binding(
                         get: { config.scheduledPaymentsMode },
-                        set: { onScheduledPaymentsModeChange($0) }
+                        set: { newMode in
+                            if newMode != config.scheduledPaymentsMode { onScheduledPaymentsModeChange(newMode) }
+                        }
                     )
                 ) {
                     ForEach(ScheduledPaymentsWidgetMode.allCases) { mode in
@@ -229,7 +225,9 @@ private struct WidgetRow: View {
                     L10n.Widget.sizeLabel,
                     selection: Binding(
                         get: { config.size },
-                        set: { onSizeChange($0) }
+                        set: { newSize in
+                            if newSize != config.size { onSizeChange(newSize) }
+                        }
                     )
                 ) {
                     ForEach(availableSizes(for: config.type)) { size in
