@@ -18,6 +18,7 @@ final class CashFlowPlan {
     var defaultMonthsAhead: Int = 6
     var defaultMonthsBack: Int = 3
     var showOtherExpenses: Bool = true
+    var showAccumulatedBalance: Bool = true
     var startingBalanceDate: Date?
     var createdAt: Date = Date.now
     var updatedAt: Date = Date.now

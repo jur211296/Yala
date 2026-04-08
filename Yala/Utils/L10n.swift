@@ -242,6 +242,7 @@ enum L10n {
         static var configureHorizon: String { ls("cashFlowPlan.configureHorizon", comment: "") }
         static var monthsAhead: String { ls("cashFlowPlan.monthsAhead", comment: "") }
         static var monthsBack: String { ls("cashFlowPlan.monthsBack", comment: "") }
+        static var showAccumulatedBalance: String { ls("cashFlowPlan.showAccumulatedBalance", comment: "") }
 
         // Month summary
         static func monthSummaryOnTrack(_ percent: Int) -> String {

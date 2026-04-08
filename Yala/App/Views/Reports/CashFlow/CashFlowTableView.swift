@@ -38,7 +38,8 @@ struct CashFlowTableView: View {
                         CashFlowMonthStrip(
                             months: projection.months,
                             selectedMonthKey: $viewModel.selectedMonthKey,
-                            currencyCode: currencyCode
+                            currencyCode: currencyCode,
+                            showAccumulatedBalance: viewModel.plan?.showAccumulatedBalance ?? true
                         )
 
                         // Month detail for selected month

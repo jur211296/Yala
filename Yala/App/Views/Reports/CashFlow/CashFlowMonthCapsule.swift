@@ -12,6 +12,7 @@ struct CashFlowMonthCapsule: View {
     let month: CashFlowMonth
     let isSelected: Bool
     let currencyCode: String
+    let showAccumulatedBalance: Bool
 
     @Environment(\.yalaTheme) private var theme
 
@@ -24,13 +25,15 @@ struct CashFlowMonthCapsule: View {
                 .foregroundStyle(foregroundColor)
                 .textCase(.uppercase)
 
-            Text(accumulatedText)
-                .font(DS.Typography.labelSmall)
-                .fontWeight(.semibold)
-                .foregroundStyle(.primary)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+            if showAccumulatedBalance {
+                Text(accumulatedText)
+                    .font(DS.Typography.labelSmall)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.primary)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
 
             miniBar
 

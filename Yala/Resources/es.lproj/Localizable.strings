@@ -796,6 +796,7 @@
 "cashFlowPlan.configureHorizon" = "Configurar horizonte";
 "cashFlowPlan.monthsAhead" = "Meses hacia adelante";
 "cashFlowPlan.monthsBack" = "Meses hacia atrás";
+"cashFlowPlan.showAccumulatedBalance" = "Mostrar acumulado";
 "cashFlowPlan.startingBalanceDateLabel" = "Fecha del saldo";
 "cashFlowPlan.startingBalanceDateHelper" = "¿Cuándo tenías este saldo? Si no eliges fecha, se asume que es hoy.";
 

@@ -181,34 +181,36 @@ struct CashFlowMonthDetailView: View {
                     .monospacedDigit()
             }
 
-            Divider()
+            if viewModel.plan?.showAccumulatedBalance ?? true {
+                Divider()
 
-            // Accumulated
-            HStack {
-                HStack(spacing: DS.Spacing.xs) {
-                    Text(L10n.CashFlowPlan.accumulated)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.secondary)
-                    InfoHintButton(
-                        title: L10n.CashFlowPlan.accumulatedHintTitle,
-                        message: L10n.CashFlowPlan.accumulatedHintMessage
-                    )
-                    Spacer()
-                    Button {
-                        viewModel.showEditStartingBalance = true
-                    } label: {
-                        Image(systemName: "pencil.circle")
+                // Accumulated
+                HStack {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text(L10n.CashFlowPlan.accumulated)
                             .font(DS.Typography.label)
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(.secondary)
+                        InfoHintButton(
+                            title: L10n.CashFlowPlan.accumulatedHintTitle,
+                            message: L10n.CashFlowPlan.accumulatedHintMessage
+                        )
+                        Spacer()
+                        Button {
+                            viewModel.showEditStartingBalance = true
+                        } label: {
+                            Image(systemName: "pencil.circle")
+                                .font(DS.Typography.label)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
+                    Spacer()
+                    Text(YalaFormatter.currency(value: month.accumulatedBalance, currencyCode: currencyCode))
+                        .font(DS.Typography.amount)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.primary)
+                        .monospacedDigit()
                 }
-                Spacer()
-                Text(YalaFormatter.currency(value: month.accumulatedBalance, currencyCode: currencyCode))
-                    .font(DS.Typography.amount)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.primary)
-                    .monospacedDigit()
             }
         }
         .padding(DS.Spacing.lg)

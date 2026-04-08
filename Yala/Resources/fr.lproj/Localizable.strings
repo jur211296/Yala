@@ -794,6 +794,7 @@
 "cashFlowPlan.configureHorizon" = "Configurer l'horizon";
 "cashFlowPlan.monthsAhead" = "Mois à venir";
 "cashFlowPlan.monthsBack" = "Mois passés";
+"cashFlowPlan.showAccumulatedBalance" = "Afficher le cumulé";
 "cashFlowPlan.startingBalanceDateLabel" = "Date du solde";
 "cashFlowPlan.startingBalanceDateHelper" = "Quand aviez-vous ce solde ? Si aucune date n'est choisie, aujourd'hui est supposé.";
 

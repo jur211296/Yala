@@ -485,10 +485,11 @@ final class CashFlowPlanViewModel {
         }
     }
 
-    func updateHorizon(monthsAhead: Int, monthsBack: Int) {
+    func updateHorizon(monthsAhead: Int, monthsBack: Int, showAccumulatedBalance: Bool) {
         guard let plan else { return }
         plan.defaultMonthsAhead = monthsAhead
         plan.defaultMonthsBack = monthsBack
+        plan.showAccumulatedBalance = showAccumulatedBalance
         do {
             try plan.modelContext?.save()
         } catch {
