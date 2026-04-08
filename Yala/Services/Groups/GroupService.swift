@@ -319,13 +319,13 @@ final class GroupService {
         let expenseDesc = FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.groupZoneID == zoneName })
         let expenses = try context.fetch(expenseDesc)
 
-        // SplitShare has no groupZoneID — filter in memory (Set.contains not supported in #Predicate)
-        let expenseIDs = Set(expenses.map(\.id))
-        if !expenseIDs.isEmpty {
-            let allShares = try context.fetch(FetchDescriptor<SplitShare>())
-            for share in allShares where expenseIDs.contains(share.expenseID) {
-                context.delete(share)
-            }
+        // SplitShare has no groupZoneID — fetch per expense (indexed by expenseID)
+        for expense in expenses {
+            let expenseID = expense.id
+            let shareDesc = FetchDescriptor<SplitShare>(
+                predicate: #Predicate { $0.expenseID == expenseID }
+            )
+            for share in try context.fetch(shareDesc) { context.delete(share) }
         }
         for expense in expenses { context.delete(expense) }
 

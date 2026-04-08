@@ -65,6 +65,17 @@ struct GroupCardView: View {
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
+        .accessibilityLabel(accessibilityText)
+    }
+
+    private var accessibilityText: String {
+        var parts = [group.name, L10n.Groups.Member.people(memberCount)]
+        if let balance {
+            let amount = YalaFormatter.currency(value: abs(balance.netBalance), currencyCode: balance.currencyCode)
+            let label = balanceLabel(balance.netBalance)
+            if !label.isEmpty { parts.append("\(amount) \(label)") }
+        }
+        return parts.joined(separator: ", ")
     }
 
     // MARK: - Components

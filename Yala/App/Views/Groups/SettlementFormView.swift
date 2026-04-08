@@ -113,23 +113,24 @@ struct SettlementFormView: View {
     }
 
     private func memberBubble(_ memberID: String) -> some View {
-        VStack(spacing: DS.Spacing.xs) {
+        let name = memberNameLookup[memberID] ?? "?"
+        return VStack(spacing: DS.Spacing.xs) {
             ZStack {
                 Circle()
                     .fill(Color(hex: group.colorHex).opacity(0.2))
-                    .frame(width: 48, height: 48)
+                    .frame(width: 48, height: 48) // A11Y-DT: decorative avatar, fixed size
 
-                let name = memberNameLookup[memberID] ?? "?"
                 Text(String(name.prefix(1)).uppercased())
                     .font(DS.Typography.headline)
                     .foregroundStyle(Color(hex: group.colorHex))
             }
 
-            Text(memberNameLookup[memberID] ?? "?")
+            Text(name)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
         }
+        .accessibilityLabel(name)
     }
 
     // MARK: - Amount Section

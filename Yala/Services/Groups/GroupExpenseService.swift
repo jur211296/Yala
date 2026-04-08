@@ -59,6 +59,7 @@ final class GroupExpenseService {
         guard amount > 0 else { throw GroupExpenseServiceError.invalidAmount }
         guard !shares.isEmpty else { throw GroupExpenseServiceError.noShares }
         guard !paidByMemberID.isEmpty else { throw GroupExpenseServiceError.noPayer }
+        try validateSharesSum(shares, amount: amount)
 
         let expense = SplitExpense(
             groupZoneID: group.cloudKitZoneID,
@@ -123,6 +124,7 @@ final class GroupExpenseService {
 
         guard amount > 0 else { throw GroupExpenseServiceError.invalidAmount }
         guard !shares.isEmpty else { throw GroupExpenseServiceError.noShares }
+        try validateSharesSum(shares, amount: amount)
 
         // Delete old shares
         let oldShares = try fetchShares(for: expense)
@@ -317,6 +319,18 @@ final class GroupExpenseService {
         )
         return try context.fetch(descriptor)
     }
+
+    // MARK: - Validation
+
+    /// Rounding tolerance for shares sum — matches GroupSplitCalculator and GroupExpenseViewModel.
+    private static let sharesTolerance: Double = 0.02
+
+    private func validateSharesSum(_ shares: [(memberID: String, amount: Double)], amount: Double) throws {
+        let sum = shares.reduce(0.0) { $0 + $1.amount }
+        guard abs(sum - amount) < Self.sharesTolerance else {
+            throw GroupExpenseServiceError.sharesSumMismatch
+        }
+    }
 }
 
 // MARK: - Errors
@@ -325,6 +339,7 @@ enum GroupExpenseServiceError: LocalizedError {
     case noContext
     case invalidAmount
     case noShares
+    case sharesSumMismatch
     case noPayer
     case selfSettlement
     case saveFailed(Error)
@@ -337,6 +352,8 @@ enum GroupExpenseServiceError: LocalizedError {
             return "GroupExpenseService: Amount must be greater than zero"
         case .noShares:
             return "GroupExpenseService: At least one share is required"
+        case .sharesSumMismatch:
+            return "GroupExpenseService: Sum of shares does not match the expense amount"
         case .noPayer:
             return "GroupExpenseService: Payer member ID is required"
         case .selfSettlement:

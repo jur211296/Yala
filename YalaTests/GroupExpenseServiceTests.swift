@@ -64,6 +64,32 @@ struct GroupExpenseServiceTests {
         #expect(a === b)
     }
 
+    @Test func error_sharesSumMismatch_hasDescription() {
+        let error = GroupExpenseServiceError.sharesSumMismatch
+        #expect(error.errorDescription != nil)
+        #expect(error.errorDescription!.contains("shares"))
+    }
+
+    // MARK: - Shares Sum Validation
+
+    @Test func sharesSum_withinTolerance_isAccepted() {
+        let amount = 100.0
+        let shares: [(memberID: String, amount: Double)] = [
+            ("A", 33.33), ("B", 33.33), ("C", 33.34)
+        ]
+        let sum = shares.reduce(0.0) { $0 + $1.amount }
+        #expect(abs(sum - amount) < 0.02)
+    }
+
+    @Test func sharesSum_outsideTolerance_isRejected() {
+        let amount = 100.0
+        let shares: [(memberID: String, amount: Double)] = [
+            ("A", 30.0), ("B", 30.0), ("C", 30.0)
+        ]
+        let sum = shares.reduce(0.0) { $0 + $1.amount }
+        #expect(abs(sum - amount) >= 0.02)
+    }
+
     // MARK: - Bridge Error Types
 
     @Test func bridgeError_noContext_hasDescription() {

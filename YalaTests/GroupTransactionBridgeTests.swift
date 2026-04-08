@@ -129,4 +129,71 @@ struct GroupTransactionBridgeTests {
         #expect(draft.splitExpenseID == "test-expense-id")
         #expect(draft.splitGroupZoneID == "SplitGroup-test-zone")
     }
+
+    // MARK: - Category Matching (matchSubcategoryFromList)
+
+    @Test @MainActor func matchSubcategoryFromList_exact_caseInsensitive() {
+        let sub = Subcategory(name: "Groceries", category: nil)
+        let result = GroupTransactionBridge.matchSubcategoryFromList(name: "groceries", allSubcategories: [sub])
+        #expect(result === sub)
+    }
+
+    @Test @MainActor func matchSubcategoryFromList_containsMatch() {
+        let sub = Subcategory(name: "Groceries & Food", category: nil)
+        let result = GroupTransactionBridge.matchSubcategoryFromList(name: "Groceries", allSubcategories: [sub])
+        #expect(result === sub)
+    }
+
+    @Test @MainActor func matchSubcategoryFromList_noMatch_returnsNil() {
+        let sub = Subcategory(name: "Transport", category: nil)
+        let result = GroupTransactionBridge.matchSubcategoryFromList(name: "Groceries", allSubcategories: [sub])
+        #expect(result == nil)
+    }
+
+    @Test @MainActor func matchSubcategoryFromList_nilName_returnsNil() {
+        let sub = Subcategory(name: "Transport", category: nil)
+        let result = GroupTransactionBridge.matchSubcategoryFromList(name: nil, allSubcategories: [sub])
+        #expect(result == nil)
+    }
+
+    @Test @MainActor func matchSubcategoryFromList_emptyName_returnsNil() {
+        let sub = Subcategory(name: "Transport", category: nil)
+        let result = GroupTransactionBridge.matchSubcategoryFromList(name: "", allSubcategories: [sub])
+        #expect(result == nil)
+    }
+
+    @Test @MainActor func matchSubcategoryFromList_exactTakesPriority() {
+        let exact = Subcategory(name: "Food", category: nil)
+        let partial = Subcategory(name: "Food & Drinks", category: nil)
+        let result = GroupTransactionBridge.matchSubcategoryFromList(name: "Food", allSubcategories: [partial, exact])
+        #expect(result === exact)
+    }
+
+    // MARK: - Draft Factory (makeBridgedDraft)
+
+    @Test @MainActor func makeBridgedDraft_setsCorrectFields() {
+        let expense = SplitExpense(
+            groupZoneID: "zone-test",
+            amount: 100,
+            currencyCode: "PEN",
+            expenseDescription: "Taxi",
+            date: Date(timeIntervalSince1970: 1_000_000),
+            paidByMemberID: "A"
+        )
+        let share = SplitShare(expenseID: expense.id, memberID: "B", amount: 50)
+
+        let draft = GroupTransactionBridge.makeBridgedDraft(from: expense, share: share, account: nil, subcategory: nil)
+        #expect(draft.amount == -50.0)
+        #expect(draft.note == "Taxi")
+        #expect(draft.splitExpenseID == expense.id.uuidString)
+        #expect(draft.splitGroupZoneID == "zone-test")
+    }
+
+    @Test @MainActor func makeBridgedDraft_needsSubcategoryWhenNil() {
+        let expense = SplitExpense()
+        let share = SplitShare(expenseID: expense.id, memberID: "A", amount: 10)
+
+        let draft = GroupTransactionBridge.makeBridgedDraft(from: expense, share: share, account: nil, subcategory: nil)
+        #expect(draft.needsUserInput.contains("subcategory"))
+    }
 }

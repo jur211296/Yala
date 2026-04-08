@@ -77,7 +77,7 @@ final class GroupTransactionBridge {
         )
         if let existingTx = try context.fetch(txDescriptor).first {
             // Update existing transaction
-            updateTransaction(existingTx, from: expense, share: myShare, context: context)
+            updateTransaction(existingTx, from: expense, share: myShare, group: group, context: context)
             if shouldSave {
                 try context.save()
                 SessionState.shared.incrementDataVersion()
@@ -90,7 +90,7 @@ final class GroupTransactionBridge {
         )
         if let existingDraft = try context.fetch(draftDescriptor).first {
             // Update existing draft
-            updateDraft(existingDraft, from: expense, share: myShare)
+            updateDraft(existingDraft, from: expense, share: myShare, group: group, context: context)
             if shouldSave {
                 try context.save()
                 SessionState.shared.incrementDataVersion()
@@ -239,8 +239,7 @@ final class GroupTransactionBridge {
             )
             let expenses = try context.fetch(expenseDescriptor)
 
-            let account = Self.resolveAccount(group: group, currencyCode: group.currencyCode, context: context)
-
+            var accountCache: [String: Account?] = [:]
             for expense in expenses {
                 let existingID = expense.id.uuidString
                 if bridgedDraftIDs.contains(existingID) || bridgedTxIDs.contains(existingID) { continue }
@@ -251,6 +250,10 @@ final class GroupTransactionBridge {
                 )
                 guard let myShare = try context.fetch(shareDescriptor).first else { continue }
 
+                if accountCache[expense.currencyCode] == nil {
+                    accountCache[expense.currencyCode] = Self.resolveAccount(group: group, currencyCode: expense.currencyCode, context: context)
+                }
+                let account = accountCache[expense.currencyCode] ?? nil
                 let subcategory = Self.matchSubcategoryFromList(name: expense.subcategoryName, allSubcategories: allSubcategories)
                 let draft = Self.makeBridgedDraft(from: expense, share: myShare, account: account, subcategory: subcategory)
                 context.insert(draft)
@@ -371,8 +374,20 @@ final class GroupTransactionBridge {
         _ tx: TransactionItem,
         from expense: SplitExpense,
         share: SplitShare,
+        group: SplitGroup,
         context: ModelContext
     ) {
+        // Re-resolve account only if currency changed
+        if tx.currencyCode != expense.currencyCode {
+            let newAccount = Self.resolveAccount(group: group, currencyCode: expense.currencyCode, context: context)
+            if let newAccount { tx.account = newAccount }
+        }
+        // Re-resolve subcategory only if name changed
+        if tx.subcategory?.name.lowercased() != expense.subcategoryName?.lowercased() {
+            let newSub = Self.matchSubcategory(name: expense.subcategoryName, context: context)
+            tx.subcategory = newSub
+            tx.category = newSub?.safeCategory
+        }
         tx.amount = -share.amount
         tx.currencyCode = expense.currencyCode
         tx.date = expense.date
@@ -385,8 +400,20 @@ final class GroupTransactionBridge {
     private func updateDraft(
         _ draft: InboxDraft,
         from expense: SplitExpense,
-        share: SplitShare
+        share: SplitShare,
+        group: SplitGroup,
+        context: ModelContext
     ) {
+        // Re-resolve account if currency changed (InboxDraft currency comes from account)
+        if draft.account?.currencyCode != expense.currencyCode {
+            let newAccount = Self.resolveAccount(group: group, currencyCode: expense.currencyCode, context: context)
+            if let newAccount { draft.account = newAccount }
+        }
+        // Re-resolve subcategory only if name changed
+        if draft.subcategory?.name.lowercased() != expense.subcategoryName?.lowercased() {
+            let newSub = Self.matchSubcategory(name: expense.subcategoryName, context: context)
+            if let newSub { draft.subcategory = newSub }
+        }
         draft.amount = -share.amount
         draft.date = expense.date
         draft.note = expense.expenseDescription

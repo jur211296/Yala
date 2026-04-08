@@ -160,6 +160,7 @@ struct GroupSplitSelectorView: View {
         keyboard: UIKeyboardType,
         filter: @escaping (String) -> String
     ) -> some View {
+        let memberName = viewModel.memberNameLookup[id] ?? id
         ZStack(alignment: .trailing) {
             if (viewModel[keyPath: keyPath][id] ?? "").isEmpty {
                 Text(placeholder)
@@ -177,6 +178,7 @@ struct GroupSplitSelectorView: View {
                         viewModel[keyPath: keyPath][id] = filtered
                     }
                 }
+                .accessibilityLabel("\(viewModel.splitType.displayName) \(memberName)")
         }
     }
 

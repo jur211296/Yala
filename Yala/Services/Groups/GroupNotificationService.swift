@@ -34,8 +34,21 @@ final class GroupNotificationService {
     private var modelContext: ModelContext?
 
     /// Rate limiting: max 1 notification per group every 5 minutes.
+    /// In-memory cache + UserDefaults persistence to survive app restarts.
     private var lastNotifiedDates: [UUID: Date] = [:]
     private let rateLimitInterval: TimeInterval = 300
+    private static let rateKeyPrefix = "GroupNotifications.lastNotified."
+
+    private func persistTimestamp(for groupID: UUID) {
+        UserDefaults.standard.set(Date.now.timeIntervalSince1970,
+                                  forKey: Self.rateKeyPrefix + groupID.uuidString)
+    }
+
+    private func loadTimestamp(for groupID: UUID) -> Date? {
+        let ts = UserDefaults.standard.double(forKey: Self.rateKeyPrefix + groupID.uuidString)
+        guard ts > 0 else { return nil }
+        return Date(timeIntervalSince1970: ts)
+    }
 
     func setContext(_ ctx: ModelContext) {
         modelContext = ctx
@@ -85,6 +98,7 @@ final class GroupNotificationService {
             if let (title, body) = buildNotification(groupID: groupID, summary: summary) {
                 let deepLink = "groups/\(groupID.uuidString)"
                 lastNotifiedDates[groupID] = Date.now
+                persistTimestamp(for: groupID)
                 Task {
                     await NotificationService.shared.sendNotification(
                         title: title, body: body, deepLink: deepLink
@@ -97,7 +111,8 @@ final class GroupNotificationService {
     // MARK: - Private
 
     private func isRateLimited(groupID: UUID) -> Bool {
-        guard let last = lastNotifiedDates[groupID] else { return false }
+        let last = lastNotifiedDates[groupID] ?? loadTimestamp(for: groupID)
+        guard let last else { return false }
         return Date.now.timeIntervalSince(last) < rateLimitInterval
     }
 

@@ -110,7 +110,7 @@ struct GroupFormView: View {
                     .font(.system(size: 32, weight: .medium)) // A11Y-DT: decorative icon preview, fixed size
                     .foregroundStyle(.white)
             }
-            .shadow(color: Color(hex: colorHex).opacity(0.4), radius: 8, x: 0, y: 4)
+            .shadow(color: Color(hex: colorHex).opacity(0.4), radius: DS.Shadow.medium.radius, x: DS.Shadow.medium.x, y: DS.Shadow.medium.y)
             .overlay(alignment: .bottomTrailing) {
                 Circle()
                     .fill(.thCard)

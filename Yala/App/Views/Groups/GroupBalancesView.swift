@@ -167,6 +167,7 @@ struct GroupBalancesView: View {
         }
         .padding(.horizontal, DS.FormRow.paddingH)
         .padding(.vertical, DS.FormRow.paddingV)
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Settlements Section

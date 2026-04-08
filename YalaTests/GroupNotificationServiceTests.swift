@@ -117,4 +117,20 @@ struct GroupNotificationServiceTests {
     @Test func deepLinkDestination_groups_notEqualToGroupDetail() {
         #expect(DeepLinkDestination.groups != DeepLinkDestination.groupDetail(groupID: "x"))
     }
+
+    // MARK: - E2E Deep Link Flow
+
+    @Test @MainActor func deepLink_groupDetail_setsSessionState() {
+        let groupID = UUID().uuidString
+        let destination = NotificationService.parseDestination("groups/\(groupID)")
+        #expect(destination == .groupDetail(groupID: groupID))
+
+        // Simulate assignment (as done in notification tap handler)
+        SessionState.shared.deepLinkDestination = destination
+        #expect(SessionState.shared.deepLinkDestination == .groupDetail(groupID: groupID))
+
+        // Clear simulates consumption by the view
+        SessionState.shared.deepLinkDestination = nil
+        #expect(SessionState.shared.deepLinkDestination == nil)
+    }
 }
