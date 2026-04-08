@@ -539,7 +539,9 @@ struct GroupSettingsView: View {
 
     private func toggleArchive() {
         do {
-            try GroupService.shared.setArchived(group, isArchived: !group.isArchived)
+            let willArchive = !group.isArchived
+            try GroupService.shared.setArchived(group, isArchived: willArchive)
+            if willArchive { TelemetryService.track(.groupArchived) }
             viewModel.loadData()
             if group.isArchived {
                 dismiss()

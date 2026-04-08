@@ -96,6 +96,8 @@ final class GroupService {
         }
 
         SessionState.shared.incrementDataVersion()
+        TelemetryService.track(.groupCreated, parameters: ["memberCount": "1"])
+        NudgeService.shared.recordGroupJoinIfNeeded()
 
         #if DEBUG
         logger.info("Created group '\(trimmedName)' with zone \(group.cloudKitZoneID)")
@@ -186,6 +188,7 @@ final class GroupService {
         }
 
         SessionState.shared.incrementDataVersion()
+        TelemetryService.track(.groupDeleted)
     }
 
     // MARK: - Member Management

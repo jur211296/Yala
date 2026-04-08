@@ -116,15 +116,11 @@
 		};
 		96CFFFA72EC3CF09002AC31C /* YalaTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = YalaTests;
 			sourceTree = "<group>";
 		};
 		96CFFFB12EC3CF09002AC31C /* YalaUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = YalaUITests;
 			sourceTree = "<group>";
 		};

@@ -3414,3 +3414,41 @@
 "groups.activate.importPrompt" = "Tienes %d gastos compartidos. ¿Quieres agregarlos a tus registros?";
 "groups.activate.importYes" = "Sí, agregar";
 "groups.activate.importNo" = "No, gracias";
+
+// Groups — Nudges (GC-09)
+// Invited
+"groups.nudge.invitedSpendingInsight.title" = "Tus gastos compartidos crecen";
+"groups.nudge.invitedSpendingInsight.message" = "Llevas %@ en gastos compartidos. ¿Quieres ver en qué más gastas?";
+"groups.nudge.invitedSpendingInsight.cta" = "Explorar Yala";
+"groups.nudge.invitedPostSettlement.title" = "Pago registrado";
+"groups.nudge.invitedPostSettlement.message" = "Acabas de liquidar una deuda. ¿Quieres registrar de dónde salió?";
+"groups.nudge.invitedPostSettlement.cta" = "Activar Yala completo";
+"groups.nudge.invitedMonthTwo.title" = "Solo ves una parte";
+"groups.nudge.invitedMonthTwo.message" = "Tus grupos representan el %d%% de lo que gastas. El resto no lo estás viendo.";
+"groups.nudge.invitedMonthTwo.cta" = "Ver todo";
+"groups.nudge.invitedSocialProof.title" = "Tus amigos ya usan Yala";
+"groups.nudge.invitedSocialProof.message" = "%d personas en tu grupo ya usan Yala completo.";
+"groups.nudge.invitedSocialProof.cta" = "Activar Yala completo";
+// Dormant
+"groups.nudge.dormantGroupsAsMain.title" = "Tus grupos te esperan";
+"groups.nudge.dormantGroupsAsMain.message" = "Tienes gastos compartidos pendientes. Revisa cómo van.";
+"groups.nudge.dormantGroupsAsMain.cta" = "Ver grupos";
+"groups.nudge.dormantNewExpenses.title" = "Hay novedades";
+"groups.nudge.dormantNewExpenses.message" = "Tu grupo tiene %d gastos nuevos desde tu última visita.";
+"groups.nudge.dormantNewExpenses.cta" = "Ver gastos";
+"groups.nudge.dormantSpendingGap.title" = "Gastos sin registrar";
+"groups.nudge.dormantSpendingGap.message" = "Llevas varios gastos compartidos pero tus otros gastos no están registrados.";
+"groups.nudge.dormantSpendingGap.cta" = "Registrar un gasto";
+"groups.nudge.dormantQuickEntry.title" = "Registro rápido";
+"groups.nudge.dormantQuickEntry.message" = "Registra un gasto personal en 5 segundos.";
+"groups.nudge.dormantQuickEntry.cta" = "Registrar";
+// Sporadic
+"groups.nudge.sporadicImbalance.title" = "Desbalance detectado";
+"groups.nudge.sporadicImbalance.message" = "Registraste %d gastos compartidos pero solo %d personales esta semana.";
+"groups.nudge.sporadicImbalance.cta" = "Entendido";
+"groups.nudge.sporadicBudgetSuggestion.title" = "¿Presupuesto para compartidos?";
+"groups.nudge.sporadicBudgetSuggestion.message" = "Llevas muchos gastos compartidos este mes. Un presupuesto te ayudaría a controlarlos.";
+"groups.nudge.sporadicBudgetSuggestion.cta" = "Entendido";
+"groups.nudge.sporadicTrendAlert.title" = "Tendencia al alza";
+"groups.nudge.sporadicTrendAlert.message" = "Tus gastos compartidos subieron %d%% respecto al mes pasado.";
+"groups.nudge.sporadicTrendAlert.cta" = "Entendido";

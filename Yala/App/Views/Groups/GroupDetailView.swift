@@ -54,6 +54,7 @@ struct GroupDetailView: View {
 
     @State private var viewModel: GroupDetailViewModel
     @State private var selectedTab: GroupDetailTab = .records
+    @State private var showNudgeBanner = false
 
     // MARK: - Init
 
@@ -69,7 +70,30 @@ struct GroupDetailView: View {
             ZStack {
                 PanelBackgroundView()
 
-                tabContent
+                VStack(spacing: 0) {
+                    if let nudge = NudgeService.shared.currentNudge, showNudgeBanner {
+                        GroupNudgeBanner(
+                            nudge: nudge,
+                            message: NudgeService.shared.currentNudgeMessage ?? "",
+                            onAction: {
+                                NudgeService.shared.recordInteracted(nudge)
+                                withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                            },
+                            onDismiss: {
+                                NudgeService.shared.recordDismissed(nudge)
+                                withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                            },
+                            onAutoDismiss: {
+                                NudgeService.shared.recordDismissed(nudge, autoDismissed: true)
+                                withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                            }
+                        )
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.top, DS.Spacing.sm)
+                    }
+
+                    tabContent
+                }
 
                 // FAB — new expense (only on records tab)
                 if selectedTab == .records {
@@ -104,6 +128,16 @@ struct GroupDetailView: View {
             }
             .onAppear {
                 viewModel.setContext(modelContext)
+                // Only evaluate if no nudge is already showing (avoid overriding GroupsContainer nudge)
+                if NudgeService.shared.currentNudge == nil {
+                    NudgeService.shared.evaluate()
+                }
+                if NudgeService.shared.currentNudge != nil {
+                    withAnimation(.easeOut(duration: 0.3)) { showNudgeBanner = true }
+                }
+            }
+            .onDisappear {
+                showNudgeBanner = false
             }
             .onChange(of: sessionState.dataVersion) {
                 viewModel.loadData()

@@ -51,6 +51,9 @@ struct PanelView: View {
     /// Periodic banner visibility
     @State private var showPeriodicBanner = false
 
+    /// Nudge banner visibility (dormant/sporadic users)
+    @State private var showNudgeBanner = false
+
     /// Budget Favorites Settings Sheet
     @State private var showBudgetFavoritesSettings = false
 
@@ -524,6 +527,26 @@ struct PanelView: View {
                             }
                         }
 
+                        // Nudge banner (dormant/sporadic users — only if no Pro upsell showing)
+                        if let nudge = NudgeService.shared.currentNudge, showNudgeBanner {
+                            GroupNudgeBanner(
+                                nudge: nudge,
+                                message: NudgeService.shared.currentNudgeMessage ?? "",
+                                onAction: {
+                                    NudgeService.shared.recordInteracted(nudge)
+                                    withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                                },
+                                onDismiss: {
+                                    NudgeService.shared.recordDismissed(nudge)
+                                    withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                                },
+                                onAutoDismiss: {
+                                    NudgeService.shared.recordDismissed(nudge, autoDismissed: true)
+                                    withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                                }
+                            )
+                        }
+
                         // Setup Checklist (persistent for new users)
                         SetupChecklistCard(
                             manager: SetupChecklistManager.shared,
@@ -566,6 +589,12 @@ struct PanelView: View {
                 .onAppear {
                     panelScrollProxy = scrollProxy
                     showPeriodicBanner = ProUpsellService.shared.shouldShowPeriodicBanner()
+
+                    // Evaluate nudge only if no Pro upsell showing
+                    if !showPeriodicBanner {
+                        NudgeService.shared.evaluate()
+                        showNudgeBanner = NudgeService.shared.currentNudge != nil
+                    }
 
                     // Setup checklist: auto-detect completed steps & manage collapse state
                     let mgr = SetupChecklistManager.shared

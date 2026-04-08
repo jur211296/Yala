@@ -58,6 +58,7 @@ struct FullModeActivationView: View {
             }
         }
         .onAppear {
+            TelemetryService.track(.fullModeActivationStarted)
             // Pre-select currency from group if available
             if let group = SplitSyncManager.shared.mostRecentGroup(),
                let code = CurrencyCode(rawValue: group.currencyCode) {
@@ -182,6 +183,9 @@ struct FullModeActivationView: View {
         // 6. Track telemetry
         TelemetryService.track(.onboardingCompleted, parameters: [
             "mode": "fullActivation",
+        ])
+        TelemetryService.track(.fullModeActivationCompleted, parameters: [
+            "fromSegment": UserSegmentService.shared.currentSegment.rawValue
         ])
 
         // 7. Check for group expenses to import

@@ -42,6 +42,28 @@ enum AnalyticsEvent: String {
     case chatSuggestionTapped
     case chatErrorOccurred
     case chatDailyLimitReached
+
+    // Group lifecycle
+    case groupCreated
+    case groupJoined
+    case groupArchived
+    case groupDeleted
+    case groupMemberAdded
+    case groupExpenseAdded
+    case groupSettlementCompleted
+    case groupInviteSent
+    case groupInviteAccepted
+
+    // Nudges
+    case nudgeShown
+    case nudgeTapped
+    case nudgeDismissed
+    case nudgeAutoDismissed
+
+    // Conversion
+    case fullModeActivationStarted
+    case fullModeActivationCompleted
+    case groupInviteOnboardingCompleted
 }
 
 // MARK: - Telemetry Service

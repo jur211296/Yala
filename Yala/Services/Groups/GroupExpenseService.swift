@@ -92,6 +92,10 @@ final class GroupExpenseService {
 
         SessionState.shared.incrementDataVersion()
         SplitSyncManager.shared.enqueueSave(modelID: expense.id, group: group)
+        TelemetryService.track(.groupExpenseAdded, parameters: [
+            "splitType": splitType,
+            "memberCount": String(shares.count)
+        ])
 
         // Bridge to personal transaction/draft (guard: bridge may not be initialized yet)
         if GroupTransactionBridge.shared.isReady {

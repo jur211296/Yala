@@ -99,6 +99,8 @@ struct GroupInviteOnboardingView: View {
             Spacer()
 
             YalaPrimaryButton(L10n.Groups.Invite.goToGroup) {
+                TelemetryService.track(.groupInviteOnboardingCompleted)
+                NudgeService.shared.recordGroupJoinIfNeeded()
                 onComplete()
                 // Navigate to groups after dismiss
                 Task {

@@ -194,6 +194,7 @@ struct SettlementFormView: View {
                 date: date
             )
             DS.Haptic.success()
+            TelemetryService.track(.groupSettlementCompleted)
             isSaving = false
             onSave()
             dismiss()

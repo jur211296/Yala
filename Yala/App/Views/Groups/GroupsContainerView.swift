@@ -22,6 +22,7 @@ struct GroupsContainerView: View {
     @State private var isPresentingSettings = false
     @AppStorage("hasSeenGroupsNotificationPrompt") private var hasSeenPrompt = false
     @State private var showNotificationPrompt = false
+    @State private var showNudgeBanner = false
 
     // MARK: - Body
 
@@ -49,6 +50,26 @@ struct GroupsContainerView: View {
                             // Global summary
                             if let summary = viewModel.globalSummary {
                                 GroupSummaryHeader(summary: summary)
+                            }
+
+                            // Nudge banner
+                            if let nudge = NudgeService.shared.currentNudge, showNudgeBanner {
+                                GroupNudgeBanner(
+                                    nudge: nudge,
+                                    message: NudgeService.shared.currentNudgeMessage ?? "",
+                                    onAction: {
+                                        NudgeService.shared.recordInteracted(nudge)
+                                        withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                                    },
+                                    onDismiss: {
+                                        NudgeService.shared.recordDismissed(nudge)
+                                        withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                                    },
+                                    onAutoDismiss: {
+                                        NudgeService.shared.recordDismissed(nudge, autoDismissed: true)
+                                        withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                                    }
+                                )
                             }
 
                             // Group cards
@@ -107,6 +128,10 @@ struct GroupsContainerView: View {
             }
             .onAppear {
                 viewModel.setContext(modelContext)
+                evaluateNudge()
+            }
+            .onDisappear {
+                showNudgeBanner = false
             }
             .onChange(of: sessionState.dataVersion) {
                 viewModel.loadData()
@@ -139,6 +164,15 @@ struct GroupsContainerView: View {
     }
 
     // MARK: - Helpers
+
+    private func evaluateNudge() {
+        NudgeService.shared.evaluate()
+        if NudgeService.shared.currentNudge != nil {
+            withAnimation(.easeOut(duration: 0.3)) {
+                showNudgeBanner = true
+            }
+        }
+    }
 
     private func activateGroupsNotification() {
         // typeRaw matches NotificationType.groups

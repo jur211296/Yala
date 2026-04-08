@@ -1047,6 +1047,54 @@ enum L10n {
             static var importYes: String { ls("groups.activate.importYes", comment: "") }
             static var importNo: String { ls("groups.activate.importNo", comment: "") }
         }
+
+        // MARK: Nudge (GC-09)
+
+        enum Nudge {
+            // Titles (static)
+            static func title(for nudge: NudgeType) -> String {
+                ls("groups.nudge.\(nudge.rawValue).title", comment: "")
+            }
+
+            // CTA labels (static)
+            static func cta(for nudge: NudgeType) -> String {
+                ls("groups.nudge.\(nudge.rawValue).cta", comment: "")
+            }
+
+            // Messages (dynamic — some have placeholders)
+            static func message(for nudge: NudgeType, context: NudgeTriggerContext) -> String {
+                let template = ls("groups.nudge.\(nudge.rawValue).message", comment: "")
+                switch nudge {
+                case .invitedSpendingInsight:
+                    return String(format: template, formattedAmount(context.totalSharedAmount))
+                case .invitedPostSettlement:
+                    return template
+                case .invitedMonthTwo:
+                    let pct = context.personalTransactionCount > 0
+                        ? Int(Double(context.sharedExpenseCount) / Double(context.sharedExpenseCount + context.personalTransactionCount) * 100)
+                        : 100
+                    return String(format: template, pct)
+                case .invitedSocialProof:
+                    return String(format: template, context.groupMemberCount)
+                case .dormantNewExpenses:
+                    return String(format: template, context.sharedExpenseCount)
+                case .sporadicImbalance:
+                    return String(format: template, context.sharedExpenseCount, context.personalTransactionCount)
+                case .sporadicTrendAlert:
+                    return String(format: template, Int(context.monthOverMonthVariation * 100))
+                default:
+                    return template
+                }
+            }
+
+            /// Quick format for amounts in nudge messages (no currency symbol — too complex per-user).
+            private static func formattedAmount(_ amount: Double) -> String {
+                let formatter = NumberFormatter()
+                formatter.numberStyle = .decimal
+                formatter.maximumFractionDigits = 0
+                return formatter.string(from: NSNumber(value: amount)) ?? "\(Int(amount))"
+            }
+        }
     }
 
     // MARK: - AI Consent

@@ -726,6 +726,7 @@ struct MainTabView: View {
                     }
                 case .groups, .groupDetail:
                     sessionState.temporaryTab = .groups
+                    sessionState.enteredViaGroupNotification = true
                     if case .groupDetail(let groupID) = destination {
                         sessionState.pendingGroupID = groupID
                     }
