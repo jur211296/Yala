@@ -448,6 +448,14 @@ final class PanelViewModel {
         widgetConfig.move(from: source, to: destination)
     }
 
+    func beginWidgetPreferencesEditing() {
+        widgetConfig.deferLayoutUpdates = true
+    }
+
+    func endWidgetPreferencesEditing() {
+        widgetConfig.deferLayoutUpdates = false
+    }
+
     // We keep these as simple properties or computed ones based on what the View passes
     // or we can load them if we want to move AppStorage here (requires a wrapper or passing values).
     // For simplicity in MVVM with SwiftUI, we can keep AppStorage in View and sync,

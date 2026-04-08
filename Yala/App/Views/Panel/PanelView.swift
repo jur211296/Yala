@@ -1707,9 +1707,14 @@ private struct PanelSheetsModifier: ViewModifier {
             }) {
                 ProfileView(initialDestination: SessionState.shared.pendingProfileDestination)
             }
-            .sheet(isPresented: $showWidgetPreferences) {
+            .sheet(isPresented: $showWidgetPreferences, onDismiss: {
+                viewModel.endWidgetPreferencesEditing()
+            }) {
                 WidgetPreferencesView(viewModel: viewModel)
                     .presentationDragIndicator(.visible)
+                    .onAppear {
+                        viewModel.beginWidgetPreferencesEditing()
+                    }
             }
             .sheet(isPresented: $showNewTransaction, onDismiss: {
                 recalculateData()
