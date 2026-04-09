@@ -11,6 +11,10 @@ struct BarPoint: Identifiable, Equatable {
     let id = UUID()
     let date: Date
     let value: Double
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.date == rhs.date && lhs.value == rhs.value
+    }
 }
 
 struct TrendProcessingHelper {

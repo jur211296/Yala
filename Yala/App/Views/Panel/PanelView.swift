@@ -60,6 +60,12 @@ struct PanelView: View {
 /// Custom period picker sheet
     @State private var showCustomPeriodPicker = false
 
+    /// Debounced recalculation task — used by onChange/onDismiss handlers to coalesce rapid changes
+    @State private var recalculateTask: Task<Void, Never>?
+    /// Tracks whether a pending debounced task needs to reload data from SwiftData.
+    /// Prevents recalculateData() from downgrading a pending reloadAndRecalculate().
+    @State private var pendingReload = false
+
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen.rawValue
     @AppStorage("showVariations") private var showVariations: Bool = true
@@ -372,7 +378,7 @@ struct PanelView: View {
                 customDateRange: sessionState.customDateRange,
                 viewModel: viewModel,
                 navigateToStatistics: navigateToStatistics,
-                recalculateData: recalculateData
+                reloadAndRecalculate: reloadAndRecalculate
             )
         )
         .sheet(isPresented: $showSubscriptionFromBanner) {
@@ -397,7 +403,12 @@ struct PanelView: View {
             if newOrder != accountsSortOrderNamesRaw {
                 accountsSortOrderNamesRaw = newOrder
             }
-            recalculateData()
+            // Always synchronous — equality guards in loadData/enforceTrendLock/syncToSessionState
+            // prevent the cascading onChange loops that previously caused crashes.
+            performRecalculation()
+        }
+        .onDisappear {
+            recalculateTask?.cancel()
         }
         .onChange(of: sizeClass) { _, newValue in
             viewModel.widgetConfig.columns = DS.Adaptive.columns(newValue)
@@ -434,7 +445,8 @@ struct PanelView: View {
                 showFABMenu: $showFABMenu,
                 accountsSortOrderNamesRaw: $accountsSortOrderNamesRaw,
                 defaultCurrencyCodeRaw: $defaultCurrencyCodeRaw,
-                recalculateData: recalculateData
+                recalculateData: recalculateData,
+                reloadAndRecalculate: reloadAndRecalculate
             )
         )
         .modifier(
@@ -533,8 +545,7 @@ struct PanelView: View {
                     .padding(.horizontal, DS.Adaptive.horizontalPadding(sizeClass))
                     .padding(.top, DS.Spacing.lg)
                     .padding(.bottom, DS.Spacing.xxxl)
-                    // Force complete re-render when formatting settings change
-                    .id(sessionState.formattingVersion)
+                    // Formatting changes handled by onChange(formattingVersion) in PanelDataObservers.
                     .task(id: insightTaskKey) {
                         await loadContextualInsight()
                     }
@@ -1280,6 +1291,9 @@ struct PanelView: View {
             .coachMarkAnchor("interactiveWidgets")
 
             // Remaining widget rows
+            // Note: VStack (not Lazy) — LazyVStack caused crashes on tab switch because it
+            // destroys off-screen widgets, then recreates them on return while performRecalculation
+            // runs synchronously, overwhelming the main thread.
             VStack(spacing: DS.Spacing.lg) {
                 ForEach(viewModel.layoutRows.dropFirst()) { row in
                     widgetRow(for: row)
@@ -1294,6 +1308,9 @@ struct PanelView: View {
                     recalculateData()
                 }
                 .onChange(of: viewModel.selectedNeed) {
+                    recalculateData()
+                }
+                .onChange(of: viewModel.subcategoriesWidgetFilter) {
                     recalculateData()
                 }
         }
@@ -1314,7 +1331,7 @@ struct PanelView: View {
     /// Pull-to-refresh: sync preferences + reload data
     private func refreshData() async {
         PreferenceSyncService.shared.bootstrap()
-        recalculateData()
+        reloadAndRecalculate()
         try? await Task.sleep(for: .milliseconds(300))
         DS.Haptic.light()
     }
@@ -1357,30 +1374,57 @@ struct PanelView: View {
         }
     }
 
-    /// Recalculate trend data with smooth animation
+    /// Debounced recalculation (150ms) — coalesces rapid onChange cascades into a single computation.
+    /// Does NOT reload data from SwiftData — filter changes only need recalculation, not re-fetch.
     private func recalculateData() {
-        // Reload fresh data from SwiftData first
-        viewModel.loadData()
+        // Don't downgrade a pending reload to a calculate-only
+        scheduleRecalculation(reload: false)
+    }
 
-        // Direct synchronous call for instant response
-        dsWithAnimation(reduceMotion, .easeOut(duration: 0.15)) {
-            viewModel.calculateTrendData(
-                accounts: accounts,
-                transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCodeRaw,
-                context: modelContext,
-                sessionState: sessionState
-            )
+    /// Debounced reload + recalculation — used when actual data may have changed
+    /// (dataVersion, sheet dismissals where user created/edited/deleted data).
+    private func reloadAndRecalculate() {
+        scheduleRecalculation(reload: true)
+    }
 
-            // Calculate budgets widget data
-            viewModel.calculateBudgetsWidget(
-                budgets: budgets,
-                transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCodeRaw,
-                excludedCategoryIDs: sessionState.isExcludeMode ? sessionState.selectedCategoryIDs : [],
-                excludedSubcategoryIDs: sessionState.isExcludeMode ? sessionState.selectedSubcategoryIDs : []
-            )
+    /// Shared debounce (150ms). `pendingReload` ensures a reload request isn't lost
+    /// if a subsequent calculate-only call arrives within the debounce window.
+    private func scheduleRecalculation(reload: Bool) {
+        if reload { pendingReload = true }
+        recalculateTask?.cancel()
+        recalculateTask = Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+            guard !Task.isCancelled else { return }
+            let shouldReload = pendingReload
+            pendingReload = false
+            if shouldReload { viewModel.loadData() }
+            performCalculation()
         }
+    }
+
+    /// Synchronous full reload — used only for the initial onAppear where widgets need data immediately.
+    private func performRecalculation() {
+        viewModel.loadData()
+        performCalculation()
+    }
+
+    /// Runs all widget calculations from cached data (no SwiftData fetch).
+    private func performCalculation() {
+        viewModel.calculateTrendData(
+            accounts: accounts,
+            transactions: transactions,
+            defaultCurrencyCode: defaultCurrencyCodeRaw,
+            context: modelContext,
+            sessionState: sessionState
+        )
+
+        viewModel.calculateBudgetsWidget(
+            budgets: budgets,
+            transactions: transactions,
+            defaultCurrencyCode: defaultCurrencyCodeRaw,
+            excludedCategoryIDs: sessionState.isExcludeMode ? sessionState.selectedCategoryIDs : [],
+            excludedSubcategoryIDs: sessionState.isExcludeMode ? sessionState.selectedSubcategoryIDs : []
+        )
     }
 
     // MARK: - Widget Helpers
@@ -1394,30 +1438,23 @@ struct PanelView: View {
     @ViewBuilder
     private func actualWidgetView(for config: WidgetConfig) -> some View {
         let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCodeRaw) ?? .pen
-        let balance = viewModel.displayedBalanceInDefaultCurrency(
-            accounts: accounts,
-            transactions: transactions,
-            defaultCurrencyCode: defaultCurrencyCodeRaw
-        )
 
         // All widgets below have 'onShowMore' or 'onViewDetail' removed (or passed as nil) to remove chevrons
 
         if config.type == .trend {
+            let balance = viewModel.displayedBalanceInDefaultCurrency(
+                accounts: accounts,
+                transactions: transactions,
+                defaultCurrencyCode: defaultCurrencyCodeRaw
+            )
             TrendWidget(
                 viewModel: viewModel,
                 sessionState: sessionState,
                 currencyCode: preferredCurrency.rawValue,
                 currentBalance: balance
             )
-            .onChange(of: viewModel.subcategoriesWidgetFilter) { _, _ in
-                recalculateData()
-            }
-            .onChange(of: viewModel.selectedSubcategoryIDs) { _, _ in
-                recalculateData()
-            }
-            .onChange(of: viewModel.trendType) { _, _ in
-                recalculateData()
-            }
+            // trendType onChange: PanelDataObservers (includes syncToSessionState)
+            // subcategoriesWidgetFilter onChange: EmptyView block (always-evaluated)
         } else if config.type == .topSpending {
             TopCategoriesWidget(
                 categories: viewModel.topSpendingCategories,
@@ -1662,7 +1699,10 @@ private struct PanelDataObservers: ViewModifier {
     @Binding var showFABMenu: Bool
     @Binding var accountsSortOrderNamesRaw: String
     @Binding var defaultCurrencyCodeRaw: String
+    /// Recalculate from cached data (no SwiftData fetch) — for filter changes
     let recalculateData: () -> Void
+    /// Reload from SwiftData + recalculate — for actual data changes
+    let reloadAndRecalculate: () -> Void
 
     func body(content: Content) -> some View {
         content
@@ -1680,6 +1720,8 @@ private struct PanelDataObservers: ViewModifier {
                     accountsSortOrderNamesRaw = newOrder
                 }
             }
+            // Data collection changes: only recalculate (data already loaded by the
+            // loadData() call that caused the mutation — no need to re-fetch).
             .onChange(of: transactions) { _, _ in
                 recalculateData()
             }
@@ -1701,8 +1743,9 @@ private struct PanelDataObservers: ViewModifier {
             .onChange(of: sessionState.formattingVersion) { _, _ in
                 recalculateData()
             }
+            // dataVersion means actual DB data changed (CRUD, sync) — must reload
             .onChange(of: sessionState.dataVersion) { _, _ in
-                recalculateData()
+                reloadAndRecalculate()
             }
             .onChange(of: viewModel.trendType) { _, _ in
                 viewModel.syncToSessionState(sessionState)
@@ -1816,7 +1859,8 @@ private struct PanelSheetsModifier: ViewModifier {
     let customDateRange: DateInterval?
     let viewModel: PanelViewModel
     let navigateToStatistics: (DetailViewTab) -> Void
-    let recalculateData: () -> Void
+    /// Reload + recalculate — sheets can create/edit/delete data
+    let reloadAndRecalculate: () -> Void
 
     func body(content: Content) -> some View {
         content
@@ -1826,16 +1870,17 @@ private struct PanelSheetsModifier: ViewModifier {
                     accountToEdit: sheet.account
                 )
                 .onDisappear {
-                    recalculateData()
+                    reloadAndRecalculate()
                 }
             }
             .sheet(isPresented: $isPresentingSettings, onDismiss: {
-                recalculateData()
+                reloadAndRecalculate()
             }) {
                 ProfileView(initialDestination: SessionState.shared.pendingProfileDestination)
             }
             .sheet(isPresented: $showWidgetPreferences, onDismiss: {
                 viewModel.endWidgetPreferencesEditing()
+                reloadAndRecalculate()
             }) {
                 WidgetPreferencesView(viewModel: viewModel)
                     .presentationDragIndicator(.visible)
@@ -1844,7 +1889,7 @@ private struct PanelSheetsModifier: ViewModifier {
                     }
             }
             .sheet(isPresented: $showNewTransaction, onDismiss: {
-                recalculateData()
+                reloadAndRecalculate()
             }) {
                 NewTransactionView(
                     prefillAccountID: prefillAccountID,
@@ -1899,14 +1944,14 @@ private struct PanelSheetsModifier: ViewModifier {
                 )
             }
             .sheet(isPresented: $showBudgetFavoritesSettings, onDismiss: {
-                recalculateData()
+                reloadAndRecalculate()
             }) {
                 NavigationStack {
                     BudgetsFavoritesSettingsView()
                 }
             }
             .sheet(isPresented: $showInbox, onDismiss: {
-                recalculateData()
+                reloadAndRecalculate()
             }) {
                 InboxView(onNavigateToRecords: {
                     navigateToStatistics(.records)
@@ -1942,7 +1987,7 @@ private struct PanelSheetsModifier: ViewModifier {
                         deletePracticeItem(item)
                     }
                     practiceCleanupItem = nil
-                    recalculateData()
+                    reloadAndRecalculate()
                 }
             } message: {
                 Text(L10n.SetupChecklist.practiceMessage)
@@ -1981,7 +2026,7 @@ private struct PanelSheetsModifier: ViewModifier {
             )
         }
 
-        recalculateData()
+        reloadAndRecalculate()
     }
 
     private func handleImageSelectionDismiss() {
@@ -2010,7 +2055,7 @@ private struct PanelSheetsModifier: ViewModifier {
             )
         }
 
-        recalculateData()
+        reloadAndRecalculate()
 
         // If there's a deferred panel action (e.g., Control Center "new-transaction"
         // that arrived while shared image was showing), resolve it now

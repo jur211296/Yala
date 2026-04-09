@@ -10,7 +10,7 @@ import Foundation
 // MARK: - Exchange Rate Chart Point
 
 /// A single data point for the exchange rate line chart.
-struct ExchangeRateChartPoint: Identifiable {
+struct ExchangeRateChartPoint: Identifiable, Equatable {
     let id = UUID()
     let date: Date
     /// Rates from preferred currency to each comparison currency.
@@ -20,12 +20,16 @@ struct ExchangeRateChartPoint: Identifiable {
     func rate(for currency: String) -> Double? {
         rates[currency]
     }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.date == rhs.date && lhs.rates == rhs.rates
+    }
 }
 
 // MARK: - Exchange Rate Widget Data
 
 /// Aggregated data for the Exchange Rate widget display.
-struct ExchangeRateWidgetData {
+struct ExchangeRateWidgetData: Equatable {
     /// The preferred currency (base currency for display).
     let preferredCurrency: String
 
@@ -46,6 +50,15 @@ struct ExchangeRateWidgetData {
     /// Error state if data couldn't be loaded.
     let hasError: Bool
     let errorMessage: String?
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.preferredCurrency == rhs.preferredCurrency
+            && lhs.currentRates == rhs.currentRates
+            && lhs.currentRatesDate == rhs.currentRatesDate
+            && lhs.chartPoints == rhs.chartPoints
+            && lhs.hasError == rhs.hasError
+            && lhs.errorMessage == rhs.errorMessage
+    }
 
     // MARK: - Initializers
 

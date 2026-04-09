@@ -97,6 +97,9 @@ final class PanelViewModel {
         exchangeRateService: ExchangeRateService? = nil,
         currencyConverter: CurrencyConverter? = nil
     ) {
+        // Skip if already configured with the same context (tab switch back).
+        // performRecalculation() in onAppear handles the data refresh.
+        let isNewContext = self.modelContext !== context
         self.modelContext = context
         if let service = exchangeRateService {
             self.exchangeRateService = service
@@ -104,53 +107,55 @@ final class PanelViewModel {
         if let converter = currencyConverter {
             self.currencyConverter = converter
         }
-        loadData()
+        if isNewContext { loadData() }
     }
 
     func loadData() {
         guard let context = modelContext else { return }
 
-        // Load accounts
+        // Equality checks prevent unnecessary @Observable notifications, which break the
+        // loadData → onChange(of: transactions) → recalculateData → loadData feedback loop.
+
         let accountsDesc = FetchDescriptor<Account>(sortBy: [SortDescriptor(\.name)])
         do {
-            accounts = try context.fetch(accountsDesc)
+            let fetched = try context.fetch(accountsDesc)
+            if fetched != accounts { accounts = fetched }
         } catch {
             #if DEBUG
             print("PanelViewModel: Error loading accounts: \(error)")
             #endif
         }
 
-        // Load tags
         let tagsDesc = FetchDescriptor<Tag>(sortBy: [SortDescriptor(\.name)])
         do {
-            tags = try context.fetch(tagsDesc)
+            let fetched = try context.fetch(tagsDesc)
+            if fetched != tags { tags = fetched }
         } catch {
             #if DEBUG
             print("PanelViewModel: Error loading tags: \(error)")
             #endif
         }
 
-        // Load categories
         let categoriesDesc = FetchDescriptor<Category>(sortBy: [SortDescriptor(\.sortOrder)])
         do {
-            categories = try context.fetch(categoriesDesc)
+            let fetched = try context.fetch(categoriesDesc)
+            if fetched != categories { categories = fetched }
         } catch {
             #if DEBUG
             print("PanelViewModel: Error loading categories: \(error)")
             #endif
         }
 
-        // Load subcategories
         let subcategoriesDesc = FetchDescriptor<Subcategory>(sortBy: [SortDescriptor(\.name)])
         do {
-            allSubcategories = try context.fetch(subcategoriesDesc)
+            let fetched = try context.fetch(subcategoriesDesc)
+            if fetched != allSubcategories { allSubcategories = fetched }
         } catch {
             #if DEBUG
             print("PanelViewModel: Error loading subcategories: \(error)")
             #endif
         }
 
-        // Load transactions
         let transactionsDesc = FetchDescriptor<TransactionItem>(
             sortBy: [
                 SortDescriptor(\.date, order: .reverse),
@@ -158,44 +163,45 @@ final class PanelViewModel {
             ]
         )
         do {
-            transactions = try context.fetch(transactionsDesc)
+            let fetched = try context.fetch(transactionsDesc)
+            if fetched != transactions { transactions = fetched }
         } catch {
             #if DEBUG
             print("PanelViewModel: Error loading transactions: \(error)")
             #endif
         }
 
-        // Load active budgets
         let budgetsDesc = FetchDescriptor<Budget>(
             predicate: #Predicate<Budget> { $0.isActive },
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
         do {
-            budgets = try context.fetch(budgetsDesc)
+            let fetched = try context.fetch(budgetsDesc)
+            if fetched != budgets { budgets = fetched }
         } catch {
             #if DEBUG
             print("PanelViewModel: Error loading budgets: \(error)")
             #endif
         }
 
-        // Load scheduled payments
         let paymentsDesc = FetchDescriptor<ScheduledPayment>(
             sortBy: [SortDescriptor(\.nextDueDate)]
         )
         do {
-            scheduledPayments = try context.fetch(paymentsDesc)
+            let fetched = try context.fetch(paymentsDesc)
+            if fetched != scheduledPayments { scheduledPayments = fetched }
         } catch {
             #if DEBUG
             print("PanelViewModel: Error loading scheduled payments: \(error)")
             #endif
         }
 
-        // Load pending inbox drafts
         let draftsDesc = FetchDescriptor<InboxDraft>(
             predicate: #Predicate<InboxDraft> { $0.statusRaw == "pending" }
         )
         do {
-            pendingDrafts = try context.fetch(draftsDesc)
+            let fetched = try context.fetch(draftsDesc)
+            if fetched != pendingDrafts { pendingDrafts = fetched }
         } catch {
             #if DEBUG
             print("PanelViewModel: Error loading pending drafts: \(error)")
@@ -317,22 +323,23 @@ final class PanelViewModel {
     /// Note: Auto-expense logic for category/subcategory filters is handled in PanelView onChange handlers
     /// which properly check if categories are expense-only before setting the filter.
     private func enforceTrendLock(sessionState: SessionState) {
-        // In expenses-only mode, always force expense
+        let resolved: TrendType
         if sessionState.isExpensesOnlyMode {
-            trendType = .expense
-            return
-        }
-        // Derive trendType from chip (single source of truth)
-        if sessionState.selectedTransactionNatures.count == 1 {
+            resolved = .expense
+        } else if sessionState.selectedTransactionNatures.count == 1 {
             if sessionState.selectedTransactionNatures.contains(.income) {
-                trendType = .income
-            } else if sessionState.selectedTransactionNatures.contains(.expense) {
-                trendType = .expense
+                resolved = .income
+            } else {
+                resolved = .expense
             }
         } else if sessionState.selectedTransactionNatures.isEmpty {
-            // No chip = balance
-            trendType = .balance
+            resolved = .balance
+        } else {
+            return // mixed selection — keep current
         }
+        // Guard: @Observable fires notifications even when value is identical,
+        // which triggers onChange(of: trendType) → recalculateData → infinite loop.
+        if resolved != trendType { trendType = resolved }
     }
 
     // MARK: - SessionState Synchronization (SSOT: Filters are now computed properties)
@@ -341,17 +348,18 @@ final class PanelViewModel {
 
     /// Sync non-filter state FROM SessionState (call on appear/resume)
     func syncFromSessionState(_ sessionState: SessionState) {
-        // Trend Metric - convert TrendMetric to TrendType
-        self.trendType = convertMetricToTrendType(sessionState.selectedTrendMetric)
-
-        // Apply trend lock logic
+        let metric = convertMetricToTrendType(sessionState.selectedTrendMetric)
+        if metric != trendType { trendType = metric }
         enforceTrendLock(sessionState: sessionState)
     }
 
     /// Sync non-filter state TO SessionState (call after changes)
     func syncToSessionState(_ sessionState: SessionState) {
-        // Trend Metric - convert TrendType to TrendMetric
-        sessionState.selectedTrendMetric = convertTrendTypeToMetric(self.trendType)
+        let metric = convertTrendTypeToMetric(self.trendType)
+        // Guard: prevents onChange(of: selectedTrendMetric) → recalculateData loop
+        if metric != sessionState.selectedTrendMetric {
+            sessionState.selectedTrendMetric = metric
+        }
     }
 
     /// Convert TrendMetric to TrendType
@@ -673,30 +681,32 @@ final class PanelViewModel {
         let newPreviousNeedAmounts = needResult.previousAmounts
 
         // 3. BATCH STATE UPDATE - Single render cycle
+        // Equality guards on ALL properties prevent unnecessary @Observable notifications.
+        // Without guards, every recalculation fires notifications even when data hasn't changed,
+        // causing cascading re-renders across all widgets.
         enforceTrendLock(sessionState: sessionState)
 
-        self.trendGrouping = calcContext.trendGrouping
-        self.cashFlowGrouping = calcContext.cashFlowGrouping
-        self.needGrouping = calcContext.needGrouping
-        self.topSpendingCategories = newTopSpendingCategories
-        self.previousCategoriesTotalAmount = newPreviousCategoriesTotal
-        self.topSubcategories = newTopSubcategories
-        self.previousSubcategoriesTotalAmount = newPreviousSubcategoriesTotal
-        self.cashFlowSummary = newCashFlowSummary
-        self.latestRecords = newLatestRecords
-        self.needTrendPoints = newNeedTrendPoints
-        self.previousNeedTotalAmount = newPreviousNeedTotal
-        self.previousNeedAmounts = newPreviousNeedAmounts
-        self.processedTrendPoints = newProcessedData.points
-        self.rawTrendPoints = newProcessedData.rawPoints
-        self.processedYDomain = newProcessedData.yDomain
-        self.currentInterval = calcContext.effectiveInterval
-        self.currentPeriod = self.selectedPeriod
-        self.trendTotalIncome = newTrendTotalIncome
-        self.trendTotalExpense = newTrendTotalExpense
-        self.trendFinalBalance = newTrendFinalBalance
-        // Track the metric for which data was calculated (prevents stale data rendering)
-        self.dataTrendType = self.trendType
+        if calcContext.trendGrouping != trendGrouping { self.trendGrouping = calcContext.trendGrouping }
+        if calcContext.cashFlowGrouping != cashFlowGrouping { self.cashFlowGrouping = calcContext.cashFlowGrouping }
+        if calcContext.needGrouping != needGrouping { self.needGrouping = calcContext.needGrouping }
+        if newTopSpendingCategories != topSpendingCategories { self.topSpendingCategories = newTopSpendingCategories }
+        if newPreviousCategoriesTotal != previousCategoriesTotalAmount { self.previousCategoriesTotalAmount = newPreviousCategoriesTotal }
+        if newTopSubcategories != topSubcategories { self.topSubcategories = newTopSubcategories }
+        if newPreviousSubcategoriesTotal != previousSubcategoriesTotalAmount { self.previousSubcategoriesTotalAmount = newPreviousSubcategoriesTotal }
+        if newCashFlowSummary != cashFlowSummary { self.cashFlowSummary = newCashFlowSummary }
+        if newLatestRecords != latestRecords { self.latestRecords = newLatestRecords }
+        if newNeedTrendPoints != needTrendPoints { self.needTrendPoints = newNeedTrendPoints }
+        if newPreviousNeedTotal != previousNeedTotalAmount { self.previousNeedTotalAmount = newPreviousNeedTotal }
+        if newPreviousNeedAmounts != previousNeedAmounts { self.previousNeedAmounts = newPreviousNeedAmounts }
+        if newProcessedData.points != processedTrendPoints { self.processedTrendPoints = newProcessedData.points }
+        if newProcessedData.rawPoints != rawTrendPoints { self.rawTrendPoints = newProcessedData.rawPoints }
+        if newProcessedData.yDomain != processedYDomain { self.processedYDomain = newProcessedData.yDomain }
+        if calcContext.effectiveInterval != currentInterval { self.currentInterval = calcContext.effectiveInterval }
+        if self.selectedPeriod != currentPeriod { self.currentPeriod = self.selectedPeriod }
+        if newTrendTotalIncome != trendTotalIncome { self.trendTotalIncome = newTrendTotalIncome }
+        if newTrendTotalExpense != trendTotalExpense { self.trendTotalExpense = newTrendTotalExpense }
+        if newTrendFinalBalance != trendFinalBalance { self.trendFinalBalance = newTrendFinalBalance }
+        if self.trendType != dataTrendType { self.dataTrendType = self.trendType }
 
         // 4. Exchange Rate Widget Data (conditional refresh)
         updateExchangeRateDataIfNeeded(defaultCurrencyCode: defaultCurrencyCode, context: context)
@@ -924,18 +934,21 @@ final class PanelViewModel {
         let expenseFiltered = filtered.filter { $0.balanceAdjustmentType == nil }
 
         // Calculate effective interval (optimized for All Time)
+        // Note: Use endOfToday (stable within the same day) instead of Date.now to prevent
+        // currentInterval from changing on every recalculation, which causes unnecessary re-renders.
         let effectiveInterval: DateInterval
         if selectedPeriod == .allTime {
+            let endOfToday = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: .now)) ?? .now
             if let firstTxDate = filtered.map(\.date).min() {
                 let start =
                     calendar.date(
                         from: calendar.dateComponents([.year, .month], from: firstTxDate))
                     ?? firstTxDate
-                effectiveInterval = DateInterval(start: start, end: Date.now)
+                effectiveInterval = DateInterval(start: start, end: endOfToday)
             } else {
                 let startOfYear = calendar.date(
-                    from: calendar.dateComponents([.year], from: Date.now)) ?? Date.now
-                effectiveInterval = DateInterval(start: startOfYear, end: Date.now)
+                    from: calendar.dateComponents([.year], from: .now)) ?? .now
+                effectiveInterval = DateInterval(start: startOfYear, end: endOfToday)
             }
         } else {
             effectiveInterval = self.panelDateInterval
@@ -1415,7 +1428,8 @@ final class PanelViewModel {
         // Check if there are budgets but none are favorites
         let hasBudgets = !budgets.isEmpty
         let favoriteBudgets = budgets.filter { $0.isFavorite }
-        hasBudgetsButNoFavorites = hasBudgets && favoriteBudgets.isEmpty
+        let newHasBudgetsButNoFavorites = hasBudgets && favoriteBudgets.isEmpty
+        if newHasBudgetsButNoFavorites != hasBudgetsButNoFavorites { hasBudgetsButNoFavorites = newHasBudgetsButNoFavorites }
 
         // Get budgets to display: favorites first (sorted by order), then fill with active non-favorites
         let sortedFavorites = favoriteBudgets.sorted { $0.favoriteOrder < $1.favoriteOrder }
@@ -1431,7 +1445,7 @@ final class PanelViewModel {
             )
         }
 
-        topBudgetSummaries = summaries
+        if summaries != topBudgetSummaries { topBudgetSummaries = summaries }
     }
 
     /// Calculate summary for a single budget
