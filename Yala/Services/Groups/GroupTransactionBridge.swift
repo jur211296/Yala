@@ -162,8 +162,7 @@ final class GroupTransactionBridge {
         }
 
         try context.save()
-        SessionState.shared.incrementDataVersion()
-        WidgetDataCache.updateCache(context: context)
+        // UI refresh handled by SplitSyncManager's deferred markRemoteChangePending()
     }
 
     /// Remove the bridged TransactionItem or InboxDraft for a deleted expense.

@@ -51,15 +51,29 @@ final class SplitSyncManager {
     // Pending record IDs — internal tracking, not observed by views
     private var pendingRecordSaves: Set<CKRecord.ID> = []
 
+    // Coalescing task for deferred bridge/notifications after remote changes
+    private var deferredBridgeTask: Task<Void, Never>?
+    private var pendingBridgeExpenseIDs: Set<UUID> = []
+    private var pendingBridgeChangeSet = RemoteChangeSet()
+
     // MARK: - State Persistence
 
     // nonisolated-safe: file I/O only, no model access
     private nonisolated let stateDirectory: URL = {
-        guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            return FileManager.default.temporaryDirectory.appendingPathComponent("SplitSync", isDirectory: true)
+        let fm = FileManager.default
+        guard let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            let fallback = fm.temporaryDirectory.appendingPathComponent("SplitSync", isDirectory: true)
+            try? fm.createDirectory(at: fallback, withIntermediateDirectories: true)
+            return fallback
         }
         let dir = appSupport.appendingPathComponent("SplitSync", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        do {
+            try fm.createDirectory(at: dir, withIntermediateDirectories: true, attributes: nil)
+        } catch {
+            #if DEBUG
+            print("SplitSyncManager: Failed to create state directory: \(error)")
+            #endif
+        }
         return dir
     }()
 
@@ -121,7 +135,13 @@ final class SplitSyncManager {
 
     // nonisolated: Called synchronously from CKSyncEngine delegate (not on MainActor)
     nonisolated func saveState(_ serialization: CKSyncEngine.State.Serialization, name: String) {
-        let url = stateDirectory.appendingPathComponent("\(name).json")
+        let fm = FileManager.default
+        let dir = stateDirectory
+        // Defensive: re-create directory if purged by OS (disk pressure cleanup)
+        if !fm.fileExists(atPath: dir.path) {
+            try? fm.createDirectory(at: dir, withIntermediateDirectories: true, attributes: nil)
+        }
+        let url = dir.appendingPathComponent("\(name).json")
         do {
             let data = try JSONEncoder().encode(serialization)
             try data.write(to: url, options: .atomic)
@@ -134,7 +154,12 @@ final class SplitSyncManager {
 
     nonisolated func loadState(name: String) -> CKSyncEngine.State.Serialization? {
         let url = stateDirectory.appendingPathComponent("\(name).json")
-        guard FileManager.default.fileExists(atPath: url.path) else { return nil }
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            #if DEBUG
+            logger.info("No saved sync state for '\(name)' — starting fresh")
+            #endif
+            return nil
+        }
         do {
             let data = try Data(contentsOf: url)
             return try JSONDecoder().decode(CKSyncEngine.State.Serialization.self, from: data)
@@ -410,6 +435,8 @@ final class SplitSyncManager {
         }
 
         do {
+            // Persist remote records before deferred bridge. Auto-sync overhead is
+            // mitigated by state persistence limiting CKSyncEngine to incremental fetches.
             try modelContext.save()
         } catch {
             #if DEBUG
@@ -417,30 +444,51 @@ final class SplitSyncManager {
             #endif
         }
 
-        // GC-03: Bridge remote expenses to personal TransactionItem/InboxDraft
-        let processedExpenseIDs = Set(changeSet.newExpenses.map(\.id) + changeSet.modifiedExpenses.map(\.id))
-        if !processedExpenseIDs.isEmpty, GroupTransactionBridge.shared.isReady {
-            do {
-                // Set.contains not supported in #Predicate — filter in memory
-                let allExpenses = try modelContext.fetch(FetchDescriptor<SplitExpense>())
-                let matched = allExpenses.filter { processedExpenseIDs.contains($0.id) }
-                if !matched.isEmpty {
-                    try GroupTransactionBridge.shared.bridgeRemoteExpenses(matched)
+        // Accumulate IDs and changeSets, then coalesce into a single deferred Task.
+        // Avoids spawning N independent Tasks if N fetch events arrive in rapid succession.
+        pendingBridgeExpenseIDs.formUnion(changeSet.newExpenses.map(\.id) + changeSet.modifiedExpenses.map(\.id))
+        pendingBridgeChangeSet.newExpenses.append(contentsOf: changeSet.newExpenses)
+        pendingBridgeChangeSet.modifiedExpenses.append(contentsOf: changeSet.modifiedExpenses)
+        pendingBridgeChangeSet.newSettlements.append(contentsOf: changeSet.newSettlements)
+        pendingBridgeChangeSet.newMembers.append(contentsOf: changeSet.newMembers)
+
+        // Cancel previous deferred task and restart — coalescing rapid events
+        deferredBridgeTask?.cancel()
+        deferredBridgeTask = Task { @MainActor [weak self] in
+            // Let CKSyncEngine finish its current event batch before triggering more saves
+            try? await Task.sleep(for: .milliseconds(50))
+            guard !Task.isCancelled else { return }
+            guard let self, let modelContext = self.modelContext else { return }
+
+            let expenseIDs = self.pendingBridgeExpenseIDs
+            let accumulated = self.pendingBridgeChangeSet
+            self.pendingBridgeExpenseIDs.removeAll()
+            self.pendingBridgeChangeSet = RemoteChangeSet()
+
+            // GC-03: Bridge remote expenses to personal TransactionItem/InboxDraft
+            if !expenseIDs.isEmpty, GroupTransactionBridge.shared.isReady {
+                do {
+                    // Set.contains not supported in #Predicate — filter in memory
+                    let allExpenses = try modelContext.fetch(FetchDescriptor<SplitExpense>())
+                    let matched = allExpenses.filter { expenseIDs.contains($0.id) }
+                    if !matched.isEmpty {
+                        try GroupTransactionBridge.shared.bridgeRemoteExpenses(matched)
+                    }
+                } catch {
+                    #if DEBUG
+                    self.logger.error("Failed to bridge remote expenses: \(error)")
+                    #endif
                 }
-            } catch {
-                #if DEBUG
-                logger.error("[\(engineName)] Failed to bridge remote expenses: \(error)")
-                #endif
             }
-        }
 
-        // GC-06: Notify user about remote group changes
-        if !changeSet.isEmpty {
-            GroupNotificationService.shared.processRemoteChanges(changeSet)
-        }
+            // GC-06: Notify user about remote group changes
+            if !accumulated.isEmpty {
+                GroupNotificationService.shared.processRemoteChanges(accumulated)
+            }
 
-        // Trigger UI refresh via existing pattern
-        SessionState.shared.markRemoteChangePending()
+            // Trigger UI refresh — single notification after everything settles
+            SessionState.shared.markRemoteChangePending()
+        }
     }
 
     private func handleSentDatabaseChanges(_ sent: CKSyncEngine.Event.SentDatabaseChanges, engineName: String) {

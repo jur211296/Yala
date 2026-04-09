@@ -50,6 +50,7 @@ final class AppBootstrapper {
     private var controlActionTask: Task<Void, Never>?
     private var subscriptionCheckTask: Task<Void, Never>?
     private var remoteChangeTask: Task<Void, Never>?
+    private var remoteChangeLeadingFired = false
     private var lastNotificationCheckDate = Date.distantPast
     private var lastProcessDuePaymentsDate = Date.distantPast
 
@@ -172,15 +173,25 @@ final class AppBootstrapper {
         ) { _ in
             MainActor.assumeIsolated {
                 let bootstrapper = AppBootstrapper.shared
-                // Trailing-edge debounce: coalesce rapid CloudKit notifications into a single refresh
+
+                // Leading edge: fire immediately on first notification in a burst
+                if !bootstrapper.remoteChangeLeadingFired {
+                    bootstrapper.remoteChangeLeadingFired = true
+                    bootstrapper.sessionState.markRemoteChangePending()
+                    #if DEBUG
+                    print("AppBootstrapper: Remote CloudKit change — leading edge")
+                    #endif
+                }
+
+                // Trailing edge: coalesce within 3-second window, then reset
                 bootstrapper.remoteChangeTask?.cancel()
                 bootstrapper.remoteChangeTask = Task { @MainActor in
-                    try? await Task.sleep(for: .seconds(2))
+                    try? await Task.sleep(for: .seconds(3))
                     guard !Task.isCancelled else { return }
+                    bootstrapper.remoteChangeLeadingFired = false
                     bootstrapper.sessionState.markRemoteChangePending()
-
                     #if DEBUG
-                    print("AppBootstrapper: Remote CloudKit change — queued for next view navigation")
+                    print("AppBootstrapper: Remote CloudKit change — trailing edge")
                     #endif
                 }
             }
