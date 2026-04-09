@@ -17,36 +17,15 @@ typealias YalaTag = Yala.Tag
 
 // MARK: - In-Memory SwiftData Context
 
-/// Creates an in-memory ModelContext for testing
-/// Each test should call this to get a fresh, isolated context
+/// Creates an in-memory ModelContext for testing with dual config (mirrors production).
+/// Each test should call this to get a fresh, isolated context.
 @MainActor
 func makeTestContext() throws -> ModelContext {
-    // Use Schema like the main app does
-    let schema = Schema([
-        Yala.Category.self,
-        Subcategory.self,
-        Tag.self,
-        Account.self,
-        TransactionItem.self,
-        Budget.self,
-        ExchangeRate.self,
-        FavoritePayment.self,
-        ScheduledPayment.self,
-        InboxDraft.self,
-        MerchantMemory.self,
-        NotificationItem.self,
-        CashFlowPlan.self,
-        CashFlowLine.self,
-        CashFlowOverride.self,
-        SplitGroup.self,
-        SplitMember.self,
-        SplitExpense.self,
-        SplitShare.self,
-        SplitSettlement.self,
-    ])
-
-    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try ModelContainer(for: schema, configurations: config)
+    let container = try ModelContainer(
+        for: SwiftDataConfiguration.schema,
+        configurations: SwiftDataConfiguration.personalConfiguration,
+                       SwiftDataConfiguration.groupsConfiguration
+    )
     return container.mainContext
 }
 

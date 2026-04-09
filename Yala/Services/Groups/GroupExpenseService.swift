@@ -79,7 +79,8 @@ final class GroupExpenseService {
             let splitShare = SplitShare(
                 expenseID: expense.id,
                 memberID: share.memberID,
-                amount: share.amount
+                amount: share.amount,
+                groupZoneID: group.cloudKitZoneID
             )
             context.insert(splitShare)
             SplitSyncManager.shared.enqueueSave(modelID: splitShare.id, group: group)
@@ -148,7 +149,8 @@ final class GroupExpenseService {
             let splitShare = SplitShare(
                 expenseID: expense.id,
                 memberID: share.memberID,
-                amount: share.amount
+                amount: share.amount,
+                groupZoneID: expense.groupZoneID
             )
             context.insert(splitShare)
             SplitSyncManager.shared.enqueueSave(modelID: splitShare.id, group: group)
@@ -290,17 +292,14 @@ final class GroupExpenseService {
         return try context.fetch(descriptor)
     }
 
-    /// Fetch ALL shares for a group via per-expense indexed queries.
+    /// Fetch ALL shares for a group via single query on groupZoneID.
     func fetchAllShares(for group: SplitGroup) throws -> [SplitShare] {
-        let expenses = try fetchExpenses(for: group)
-        guard !expenses.isEmpty else { return [] }
-        var result: [SplitShare] = []
-        result.reserveCapacity(expenses.count * 3)
-        for expense in expenses {
-            let shares = try fetchShares(for: expense)
-            result.append(contentsOf: shares)
-        }
-        return result
+        let context = try requireContext()
+        let zoneID = group.cloudKitZoneID
+        let descriptor = FetchDescriptor<SplitShare>(
+            predicate: #Predicate { $0.groupZoneID == zoneID }
+        )
+        return try context.fetch(descriptor)
     }
 
     /// Returns distinct currency codes used in expenses for a group.

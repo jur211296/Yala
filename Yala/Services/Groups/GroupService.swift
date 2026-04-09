@@ -313,18 +313,11 @@ final class GroupService {
         let memberDesc = FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zoneName })
         for member in try context.fetch(memberDesc) { context.delete(member) }
 
-        let expenseDesc = FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.groupZoneID == zoneName })
-        let expenses = try context.fetch(expenseDesc)
+        let shareDesc = FetchDescriptor<SplitShare>(predicate: #Predicate { $0.groupZoneID == zoneName })
+        for share in try context.fetch(shareDesc) { context.delete(share) }
 
-        // SplitShare has no groupZoneID — fetch per expense (indexed by expenseID)
-        for expense in expenses {
-            let expenseID = expense.id
-            let shareDesc = FetchDescriptor<SplitShare>(
-                predicate: #Predicate { $0.expenseID == expenseID }
-            )
-            for share in try context.fetch(shareDesc) { context.delete(share) }
-        }
-        for expense in expenses { context.delete(expense) }
+        let expenseDesc = FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.groupZoneID == zoneName })
+        for expense in try context.fetch(expenseDesc) { context.delete(expense) }
 
         let settlementDesc = FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.groupZoneID == zoneName })
         for settlement in try context.fetch(settlementDesc) { context.delete(settlement) }

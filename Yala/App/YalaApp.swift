@@ -24,11 +24,13 @@ struct YalaApp: App {
     }
 
     /// ModelContainer compartido para toda la app.
+    /// Dos configs: personal (CloudKit) + groups (local, synced por CKSyncEngine).
     var sharedModelContainer: ModelContainer = {
         do {
             return try ModelContainer(
                 for: SwiftDataConfiguration.schema,
-                configurations: SwiftDataConfiguration.configuration
+                configurations: SwiftDataConfiguration.personalConfiguration,
+                               SwiftDataConfiguration.groupsConfiguration
             )
         } catch {
             fatalError("Error al inicializar ModelContainer de Yala: \(error)")

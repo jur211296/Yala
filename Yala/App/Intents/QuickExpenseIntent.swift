@@ -179,8 +179,8 @@ struct QuickExpenseIntent: AppIntent {
     private func setupModelContext() -> ModelContext? {
         do {
             let container = try ModelContainer(
-                for: SwiftDataConfiguration.schema,
-                configurations: SwiftDataConfiguration.configuration
+                for: SwiftDataConfiguration.personalSchema,
+                configurations: SwiftDataConfiguration.personalConfiguration
             )
             return container.mainContext
         } catch {
@@ -420,8 +420,8 @@ struct AccountQuery: EntityQuery {
         let container: ModelContainer
         do {
             container = try ModelContainer(
-                for: SwiftDataConfiguration.schema,
-                configurations: SwiftDataConfiguration.configuration
+                for: SwiftDataConfiguration.personalSchema,
+                configurations: SwiftDataConfiguration.personalConfiguration
             )
         } catch {
             #if DEBUG
@@ -485,8 +485,8 @@ struct ExpenseSubcategoryQuery: EntityQuery {
         let container: ModelContainer
         do {
             container = try ModelContainer(
-                for: SwiftDataConfiguration.schema,
-                configurations: SwiftDataConfiguration.configuration
+                for: SwiftDataConfiguration.personalSchema,
+                configurations: SwiftDataConfiguration.personalConfiguration
             )
         } catch {
             #if DEBUG
@@ -560,8 +560,8 @@ struct IncomeSubcategoryQuery: EntityQuery {
         let container: ModelContainer
         do {
             container = try ModelContainer(
-                for: SwiftDataConfiguration.schema,
-                configurations: SwiftDataConfiguration.configuration
+                for: SwiftDataConfiguration.personalSchema,
+                configurations: SwiftDataConfiguration.personalConfiguration
             )
         } catch {
             #if DEBUG
@@ -758,8 +758,8 @@ struct ApplePayTransactionIntent: AppIntent {
         let container: ModelContainer
         do {
             container = try ModelContainer(
-                for: SwiftDataConfiguration.schema,
-                configurations: SwiftDataConfiguration.configuration
+                for: SwiftDataConfiguration.personalSchema,
+                configurations: SwiftDataConfiguration.personalConfiguration
             )
         } catch {
             #if DEBUG
@@ -1029,8 +1029,8 @@ struct AutomationEntryIntent: AppIntent {
         let container: ModelContainer
         do {
             container = try ModelContainer(
-                for: SwiftDataConfiguration.schema,
-                configurations: SwiftDataConfiguration.configuration
+                for: SwiftDataConfiguration.personalSchema,
+                configurations: SwiftDataConfiguration.personalConfiguration
             )
         } catch {
             #if DEBUG
@@ -1168,8 +1168,8 @@ struct SiriNaturalEntryIntent: AppIntent {
         let container: ModelContainer
         do {
             container = try ModelContainer(
-                for: SwiftDataConfiguration.schema,
-                configurations: SwiftDataConfiguration.configuration
+                for: SwiftDataConfiguration.personalSchema,
+                configurations: SwiftDataConfiguration.personalConfiguration
             )
         } catch {
             #if DEBUG

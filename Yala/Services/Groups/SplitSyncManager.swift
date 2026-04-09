@@ -87,6 +87,17 @@ final class SplitSyncManager {
         let ckContainer = CKContainer(identifier: containerID)
         self.container = ckContainer
 
+        // One-time: clear stale state from old container after migration
+        let migrationKey = "SplitSync_ContainerMigrated_v1"
+        if !UserDefaults.standard.bool(forKey: migrationKey) {
+            clearState(name: "private")
+            clearState(name: "shared")
+            UserDefaults.standard.set(true, forKey: migrationKey)
+            #if DEBUG
+            logger.info("Cleared old sync state for container migration")
+            #endif
+        }
+
         delegate = SplitSyncDelegate(manager: self)
         guard let delegate else { return }
 
@@ -168,6 +179,18 @@ final class SplitSyncManager {
             logger.error("Failed to load sync state '\(name)': \(error)")
             #endif
             return nil
+        }
+    }
+
+    private nonisolated func clearState(name: String) {
+        let url = stateDirectory.appendingPathComponent("\(name).json")
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+        do {
+            try FileManager.default.removeItem(at: url)
+        } catch {
+            #if DEBUG
+            print("SplitSyncManager: clearState('\(name)') failed: \(error)")
+            #endif
         }
     }
 
@@ -326,9 +349,7 @@ final class SplitSyncManager {
             handleAccountChange(change)
 
         case .fetchedDatabaseChanges(let fetched):
-            #if DEBUG
-            logger.info("[\(name)] fetchedDatabaseChanges: \(fetched.modifications.count) mods, \(fetched.deletions.count) dels")
-            #endif
+            handleFetchedDatabaseChanges(fetched, engineName: name, engine: engine)
 
         case .fetchedRecordZoneChanges(let fetched):
             handleFetchedRecordZoneChanges(fetched, engineName: name)
@@ -361,6 +382,59 @@ final class SplitSyncManager {
 
     // MARK: - Event Handlers
 
+    private func handleFetchedDatabaseChanges(_ fetched: CKSyncEngine.Event.FetchedDatabaseChanges, engineName: String, engine: CKSyncEngine) {
+        #if DEBUG
+        logger.info("[\(engineName)] fetchedDatabaseChanges: \(fetched.modifications.count) mods, \(fetched.deletions.count) dels")
+        #endif
+
+        guard !fetched.deletions.isEmpty, let modelContext else { return }
+
+        for deletion in fetched.deletions {
+            let zoneName = deletion.zoneID.zoneName
+            guard let groupID = CKConstants.groupID(from: zoneName) else { continue }
+
+            #if DEBUG
+            logger.info("[\(engineName)] Zone deleted: \(zoneName) — cleaning up local data")
+            #endif
+
+            deleteGroupCache(groupID: groupID, context: modelContext)
+
+            // Purge pending record zone changes for the deleted zone
+            let pendingToRemove = engine.state.pendingRecordZoneChanges.filter { change in
+                switch change {
+                case .saveRecord(let recordID):
+                    return recordID.zoneID == deletion.zoneID
+                case .deleteRecord(let recordID):
+                    return recordID.zoneID == deletion.zoneID
+                @unknown default:
+                    return false
+                }
+            }
+            if !pendingToRemove.isEmpty {
+                engine.state.remove(pendingRecordZoneChanges: pendingToRemove)
+            }
+
+            // Purge pending database changes for the deleted zone
+            let pendingDBChanges = engine.state.pendingDatabaseChanges.filter {
+                if case .deleteZone(let zoneID) = $0 { return zoneID == deletion.zoneID }
+                if case .saveZone(let zone) = $0 { return zone.zoneID == deletion.zoneID }
+                return false
+            }
+            if !pendingDBChanges.isEmpty {
+                engine.state.remove(pendingDatabaseChanges: pendingDBChanges)
+            }
+        }
+
+        do {
+            try modelContext.save()
+            SessionState.shared.markRemoteChangePending()
+        } catch {
+            #if DEBUG
+            logger.error("[\(engineName)] Failed to save after zone deletion cleanup: \(error)")
+            #endif
+        }
+    }
+
     private func handleAccountChange(_ change: CKSyncEngine.Event.AccountChange) {
         switch change.changeType {
         case .signIn:
@@ -388,14 +462,21 @@ final class SplitSyncManager {
 
         var changeSet = RemoteChangeSet()
 
-        // Pre-fetch existing IDs for new-vs-modified classification (GC-06)
+        // Pre-fetch existing IDs scoped to affected zones (GC-06)
+        let batchZoneNames = Set(fetched.modifications.map { $0.record.recordID.zoneID.zoneName })
         var existingExpenseIDs: Set<UUID> = []
         var existingSettlementIDs: Set<UUID> = []
         var existingMemberIDs: Set<UUID> = []
         do {
-            existingExpenseIDs = Set(try modelContext.fetch(FetchDescriptor<SplitExpense>()).map(\.id))
-            existingSettlementIDs = Set(try modelContext.fetch(FetchDescriptor<SplitSettlement>()).map(\.id))
-            existingMemberIDs = Set(try modelContext.fetch(FetchDescriptor<SplitMember>()).map(\.id))
+            for zoneName in batchZoneNames {
+                let zName = zoneName
+                let expDesc = FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.groupZoneID == zName })
+                existingExpenseIDs.formUnion(try modelContext.fetch(expDesc).map(\.id))
+                let setDesc = FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.groupZoneID == zName })
+                existingSettlementIDs.formUnion(try modelContext.fetch(setDesc).map(\.id))
+                let memDesc = FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zName })
+                existingMemberIDs.formUnion(try modelContext.fetch(memDesc).map(\.id))
+            }
         } catch {
             #if DEBUG
             logger.error("[\(engineName)] Pre-fetch for change classification failed: \(error)")
@@ -593,32 +674,32 @@ final class SplitSyncManager {
     private func deleteGroupCache(groupID: UUID, context: ModelContext) {
         let zoneName = CKConstants.zoneName(for: groupID)
 
-        // Delete group
-        let groupDesc = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == groupID })
-        if let group = try? context.fetch(groupDesc).first {
-            context.delete(group)
-        }
-
-        // Delete members, expenses, shares, settlements by zone
-        let memberDesc = FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zoneName })
-        for member in (try? context.fetch(memberDesc)) ?? [] { context.delete(member) }
-
-        let expenseDesc = FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.groupZoneID == zoneName })
-        let expenses = (try? context.fetch(expenseDesc)) ?? []
-
-        // Delete SplitShares linked to these expenses (no groupZoneID on SplitShare)
-        let expenseIDs = Set(expenses.map(\.id))
-        if !expenseIDs.isEmpty {
-            let allShares = (try? context.fetch(FetchDescriptor<SplitShare>())) ?? []
-            for share in allShares where expenseIDs.contains(share.expenseID) {
-                context.delete(share)
+        do {
+            // Delete group
+            let groupDesc = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == groupID })
+            if let group = try context.fetch(groupDesc).first {
+                context.delete(group)
             }
+
+            // Delete members by zone
+            let memberDesc = FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zoneName })
+            for member in try context.fetch(memberDesc) { context.delete(member) }
+
+            let shareDesc = FetchDescriptor<SplitShare>(predicate: #Predicate { $0.groupZoneID == zoneName })
+            for share in try context.fetch(shareDesc) { context.delete(share) }
+
+            // Delete expenses by zone
+            let expenseDesc = FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.groupZoneID == zoneName })
+            for expense in try context.fetch(expenseDesc) { context.delete(expense) }
+
+            // Delete settlements by zone
+            let settlementDesc = FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.groupZoneID == zoneName })
+            for settlement in try context.fetch(settlementDesc) { context.delete(settlement) }
+        } catch {
+            #if DEBUG
+            logger.error("deleteGroupCache: Failed for group \(groupID): \(error)")
+            #endif
         }
-
-        for expense in expenses { context.delete(expense) }
-
-        let settlementDesc = FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.groupZoneID == zoneName })
-        for settlement in (try? context.fetch(settlementDesc)) ?? [] { context.delete(settlement) }
     }
 
     // MARK: - Remote Record Application

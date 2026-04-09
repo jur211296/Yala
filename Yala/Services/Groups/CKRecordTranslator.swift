@@ -217,6 +217,7 @@ enum CKRecordTranslator {
         }
         share.memberID = record[F.memberID] as? String ?? ""
         share.isPaid = readBool(record, key: F.isPaid)
+        share.groupZoneID = record.recordID.zoneID.zoneName
         return share
     }
 
@@ -228,6 +229,7 @@ enum CKRecordTranslator {
         }
         share.memberID = record[F.memberID] as? String ?? share.memberID
         share.isPaid = readBool(record, key: F.isPaid)
+        share.groupZoneID = record.recordID.zoneID.zoneName
     }
 
     // MARK: - SplitSettlement ↔ SplitSettlement CKRecord

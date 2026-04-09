@@ -16,17 +16,20 @@ final class SplitShare {
     var memberID: String = ""
     var amount: Double = 0
     var isPaid: Bool = false
+    var groupZoneID: String = ""
 
     init(
         expenseID: UUID = UUID(),
         memberID: String = "",
         amount: Double = 0,
-        isPaid: Bool = false
+        isPaid: Bool = false,
+        groupZoneID: String = ""
     ) {
         self.id = UUID()
         self.expenseID = expenseID
         self.memberID = memberID
         self.amount = amount
         self.isPaid = isPaid
+        self.groupZoneID = groupZoneID
     }
 }

@@ -143,7 +143,11 @@ final class AppBootstrapper {
         // 13. Observe CloudKit remote changes to auto-refresh UI
         observeRemoteStoreChanges()
 
-        // 14. Initialize CKSyncEngine for shared group data (coexists with SwiftData auto-sync)
+        // 13.5. One-time cleanup of orphan SplitGroup zones from personal container
+        // Non-blocking: cleanup targets personal container, independent of groups engine init
+        Task { await cleanupOrphanGroupZones() }
+
+        // 14. Initialize CKSyncEngine for shared group data (separate groups store)
         SplitSyncManager.shared.setContext(context)
         SplitSyncManager.shared.initialize()
 
@@ -154,6 +158,9 @@ final class AppBootstrapper {
 
         // 16. Initialize Group Notification Service (GC-06)
         GroupNotificationService.shared.setContext(context)
+
+        // 16.5. One-time backfill of SplitShare.groupZoneID for existing shares
+        migrateShareGroupZoneIDs(context: context)
 
         // 17. Initialize User Segment Service (GC-08)
         UserSegmentService.shared.setContext(context)
@@ -203,6 +210,79 @@ final class AppBootstrapper {
                     #endif
                 }
             }
+        }
+    }
+
+    // MARK: - One-Time Migrations
+
+    /// Delete orphan SplitGroup-* zones from the personal CloudKit container.
+    /// These were created by CKSyncEngine before it was moved to its own container.
+    private func cleanupOrphanGroupZones() async {
+        let migrationKey = "Yala_OrphanZoneCleanup_v1"
+        guard !UserDefaults.standard.bool(forKey: migrationKey) else { return }
+        guard SwiftDataConfiguration.isICloudAvailable() else { return }
+
+        let personalContainer = CKContainer(identifier: SwiftDataConfiguration.cloudKitContainerIdentifier)
+        let privateDB = personalContainer.privateCloudDatabase
+
+        do {
+            let zones = try await privateDB.allRecordZones()
+            let orphanZoneIDs = zones.compactMap { zone -> CKRecordZone.ID? in
+                let name = zone.zoneID.zoneName
+                guard name.hasPrefix(CKConstants.zonePrefix) else { return nil }
+                let uuidPart = String(name.dropFirst(CKConstants.zonePrefix.count))
+                guard UUID(uuidString: uuidPart) != nil else { return nil }
+                return zone.zoneID
+            }
+
+            if !orphanZoneIDs.isEmpty {
+                for zoneID in orphanZoneIDs {
+                    do {
+                        try await privateDB.deleteRecordZone(withID: zoneID)
+                    } catch let error as CKError where error.code == .zoneNotFound {
+                        // Already deleted — safe to ignore
+                    }
+                }
+                #if DEBUG
+                print("AppBootstrapper: Deleted \(orphanZoneIDs.count) orphan SplitGroup zones from personal container")
+                #endif
+            }
+            UserDefaults.standard.set(true, forKey: migrationKey)
+        } catch {
+            #if DEBUG
+            print("AppBootstrapper: Orphan zone cleanup failed: \(error) — will retry next launch")
+            #endif
+        }
+    }
+
+    /// Backfill SplitShare.groupZoneID for shares created before the field was added.
+    private func migrateShareGroupZoneIDs(context: ModelContext) {
+        let migKey = "Yala_SplitShareGroupZoneID_v1"
+        guard !UserDefaults.standard.bool(forKey: migKey) else { return }
+        do {
+            let unsetZoneID = ""
+            let desc = FetchDescriptor<SplitShare>(predicate: #Predicate { $0.groupZoneID == unsetZoneID })
+            let orphans = try context.fetch(desc)
+            guard !orphans.isEmpty else {
+                UserDefaults.standard.set(true, forKey: migKey)
+                return
+            }
+            let expenses = try context.fetch(FetchDescriptor<SplitExpense>())
+            let lookup = Dictionary(uniqueKeysWithValues: expenses.map { ($0.id, $0.groupZoneID) })
+            for share in orphans {
+                if let zone = lookup[share.expenseID], !zone.isEmpty {
+                    share.groupZoneID = zone
+                }
+            }
+            try context.save()
+            UserDefaults.standard.set(true, forKey: migKey)
+            #if DEBUG
+            print("AppBootstrapper: Backfilled groupZoneID for \(orphans.count) SplitShare records")
+            #endif
+        } catch {
+            #if DEBUG
+            print("AppBootstrapper: SplitShare migration failed: \(error) — will retry next launch")
+            #endif
         }
     }
 
