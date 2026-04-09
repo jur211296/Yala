@@ -22,6 +22,24 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
 
+    // MARK: - Universal Link Handling (GC-11)
+
+    func application(
+        _ application: UIApplication,
+        continue userActivity: NSUserActivity,
+        restorationHandler: @escaping ([any UIUserActivityRestoring]?) -> Void
+    ) -> Bool {
+        guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+              let url = userActivity.webpageURL,
+              InviteLinkService.isInviteLink(url)
+        else { return false }
+
+        Task { @MainActor in
+            AppBootstrapper.shared.handleInviteLink(url)
+        }
+        return true
+    }
+
     // MARK: - CKShare Acceptance (GC-08: segment-based routing)
 
     func application(

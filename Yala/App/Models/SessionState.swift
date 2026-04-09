@@ -536,6 +536,9 @@ class SessionState {
     /// Pending group ID for deep link navigation to specific group
     var pendingGroupID: String?
 
+    /// Show error alert when an invite link fails (expired, revoked, or invalid)
+    var showInviteError: Bool = false
+
     // MARK: - Navigation State
 
     /// Currently selected main tab (Panel, Statistics, etc.)

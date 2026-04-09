@@ -574,9 +574,21 @@ private struct GroupInviteModifier: ViewModifier {
     @Binding var showGroupInviteOnboarding: Bool
     @Binding var showGroupReconnect: Bool
     @Binding var hasCompletedOnboarding: Bool
+    @State private var showInviteError: Bool = false
 
     func body(content: Content) -> some View {
         content
+            .alert("Enlace no válido", isPresented: $showInviteError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("El enlace de invitación ya no es válido o ha expirado.")
+            }
+            .onChange(of: SessionState.shared.showInviteError) { _, show in
+                if show {
+                    showInviteError = true
+                    SessionState.shared.showInviteError = false
+                }
+            }
             .fullScreenCover(isPresented: $showGroupInviteOnboarding) {
                 GroupInviteOnboardingView {
                     hasCompletedOnboarding = true

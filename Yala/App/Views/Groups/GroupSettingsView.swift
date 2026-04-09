@@ -499,10 +499,17 @@ struct GroupSettingsView: View {
 
         isCreatingShare = true
         do {
-            let (_, url) = try await SplitZoneManager(syncManager: .shared).createShare(for: group)
-            shareURL = url
+            let (_, ckURL) = try await SplitZoneManager(syncManager: .shared).createShare(for: group)
+            if let ckURL {
+                // Build branded invite URL; fallback to raw CKShare URL
+                shareURL = InviteLinkService.buildInviteURL(
+                    shareURL: ckURL,
+                    group: group,
+                    members: viewModel.members
+                ) ?? ckURL
+            }
             isCreatingShare = false
-            if url != nil {
+            if shareURL != nil {
                 showShareSheet = true
             }
         } catch {

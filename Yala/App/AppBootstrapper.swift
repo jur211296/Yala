@@ -6,6 +6,7 @@
 //  Resuelve ARCH-005: Inicialización dispersa en YalaApp.
 //
 
+import CloudKit
 import CoreData
 import SwiftData
 import SwiftUI
@@ -47,6 +48,7 @@ final class AppBootstrapper {
     var deferredInboxNotification: PendingInboxNotification?
     var deferredSharedImageURL: URL?
     var deferredPanelAction: DeferredPanelAction?
+    var deferredInviteShareURL: URL?
     private var controlActionTask: Task<Void, Never>?
     private var subscriptionCheckTask: Task<Void, Never>?
     private var remoteChangeTask: Task<Void, Never>?
@@ -161,6 +163,12 @@ final class AppBootstrapper {
         NudgeService.shared.setContext(context)
 
         isInitialized = true
+
+        // 19. Process deferred invite link (cold launch via universal link)
+        if let pendingShareURL = deferredInviteShareURL {
+            deferredInviteShareURL = nil
+            Task { await acceptShareFromURL(pendingShareURL) }
+        }
     }
 
     // MARK: - Remote Change Observation
@@ -342,8 +350,14 @@ final class AppBootstrapper {
         Bundle.main.object(forInfoDictionaryKey: "URL_SCHEME") as? String ?? "yala"
     }
 
-    /// Procesa URLs entrantes (deep links)
+    /// Procesa URLs entrantes (deep links y universal links)
     func handleIncomingURL(_ url: URL) {
+        // Universal link: https://yala-app.pe/invite?s=...
+        if InviteLinkService.isInviteLink(url) {
+            handleInviteLink(url)
+            return
+        }
+
         guard url.scheme == urlScheme else { return }
 
         #if DEBUG
@@ -411,6 +425,57 @@ final class AppBootstrapper {
             #if DEBUG
             print("AppBootstrapper: Unknown deep link host: \(url.host ?? "nil")")
             #endif
+        }
+    }
+
+    // MARK: - Invite Link Handling
+
+    /// Procesa un universal link de invitación de grupo.
+    /// Acceso internal para que YalaAppDelegate pueda llamarlo.
+    func handleInviteLink(_ url: URL) {
+        guard let shareURL = InviteLinkService.extractShareURL(from: url) else {
+            #if DEBUG
+            print("AppBootstrapper: Invalid invite link: \(url.absoluteString)")
+            #endif
+            return
+        }
+
+        #if DEBUG
+        print("AppBootstrapper: Invite link received, CKShare URL: \(shareURL.absoluteString)")
+        #endif
+
+        if !isInitialized {
+            deferredInviteShareURL = shareURL
+            #if DEBUG
+            print("AppBootstrapper: Deferring invite — not yet initialized")
+            #endif
+            return
+        }
+
+        Task { await acceptShareFromURL(shareURL) }
+    }
+
+    /// Acepta un CKShare a partir de su URL, reutilizando la lógica de segmentos del AppDelegate.
+    private func acceptShareFromURL(_ shareURL: URL) async {
+        do {
+            let metadata = try await InviteLinkService.fetchShareMetadata(for: shareURL)
+
+            let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+
+            if !hasCompletedOnboarding && sessionState.onboardingMode != .groupInvite {
+                await SplitSyncManager.shared.acceptShare(metadata: metadata, skipNavigation: true)
+                sessionState.shouldShowGroupInviteOnboarding = true
+            } else if hasCompletedOnboarding && UserSegmentService.shared.currentSegment == .dormant {
+                await SplitSyncManager.shared.acceptShare(metadata: metadata, skipNavigation: true)
+                sessionState.shouldShowGroupReconnect = true
+            } else {
+                await SplitSyncManager.shared.acceptShare(metadata: metadata)
+            }
+        } catch {
+            #if DEBUG
+            print("AppBootstrapper: Failed to accept share from URL: \(error)")
+            #endif
+            sessionState.showInviteError = true
         }
     }
 
