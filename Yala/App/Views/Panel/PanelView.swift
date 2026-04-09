@@ -403,9 +403,9 @@ struct PanelView: View {
             if newOrder != accountsSortOrderNamesRaw {
                 accountsSortOrderNamesRaw = newOrder
             }
-            // Always synchronous — equality guards in loadData/enforceTrendLock/syncToSessionState
-            // prevent the cascading onChange loops that previously caused crashes.
-            performRecalculation()
+            // Deferred to next run-loop turn so the first frame renders without blocking.
+            // Prevents 0x8BADF00D if the system still considers the app "Background".
+            scheduleRecalculation(reload: true)
         }
         .onDisappear {
             recalculateTask?.cancel()
