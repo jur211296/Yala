@@ -96,7 +96,7 @@ struct RecordsStandaloneView: View {
             .modifier(RecordsStandaloneObservers(
                 sessionState: sessionState,
                 dataViewModel: dataViewModel,
-                refreshRecordsData: refreshRecordsData
+                recalculateData: recalculateData
             ))
             .appliesPendingRemoteChanges(sessionState)
             .onAppear {
@@ -462,12 +462,12 @@ private struct RecordsStandaloneSheets: ViewModifier {
 /// Session state navigation observer
 private struct RecordsNavObserver: ViewModifier {
     let sessionState: SessionState
-    let refreshRecordsData: () -> Void
+    let recalculateData: () -> Void
 
     func body(content: Content) -> some View {
         content
             .onChange(of: sessionState.selectedMainTab) { _, newTab in
-                if newTab == .records { refreshRecordsData() }
+                if newTab == .records { recalculateData() }
             }
     }
 }
@@ -529,13 +529,13 @@ private struct RecordsSessionObservers2b: ViewModifier {
 /// Combined observers modifier - Part 1
 private struct RecordsStandaloneObservers1: ViewModifier {
     let sessionState: SessionState
-    let refreshRecordsData: () -> Void
+    let recalculateData: () -> Void
 
     func body(content: Content) -> some View {
         content
             .modifier(RecordsNavObserver(
                 sessionState: sessionState,
-                refreshRecordsData: refreshRecordsData
+                recalculateData: recalculateData
             ))
             .modifier(RecordsSessionObservers1a(
                 sessionState: sessionState,
@@ -572,13 +572,13 @@ private struct RecordsStandaloneObservers2: ViewModifier {
 private struct RecordsStandaloneObservers: ViewModifier {
     let sessionState: SessionState
     let dataViewModel: DetailContainerViewModel
-    let refreshRecordsData: () -> Void
+    let recalculateData: () -> Void
 
     func body(content: Content) -> some View {
         content
             .modifier(RecordsStandaloneObservers1(
                 sessionState: sessionState,
-                refreshRecordsData: refreshRecordsData
+                recalculateData: recalculateData
             ))
             .modifier(RecordsStandaloneObservers2(
                 sessionState: sessionState,
