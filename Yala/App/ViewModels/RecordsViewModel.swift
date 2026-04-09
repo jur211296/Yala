@@ -240,7 +240,8 @@ final class RecordsViewModel: Filterable {
         }
 
         // Balance is simply the difference (cash flow)
-        recordsSummary = (income - expense, income, expense)
+        let newSummary = (income - expense, income, expense)
+        if newSummary != recordsSummary { recordsSummary = newSummary }
     }
 
     /// Get effective date interval from current period

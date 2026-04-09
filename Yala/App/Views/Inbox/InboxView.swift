@@ -554,15 +554,16 @@ struct InboxView: View {
         // Haptic feedback for positive action
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
 
-        dsWithAnimation(reduceMotion) {
-            draftService.setContext(modelContext)
-            do {
-                let transaction = try draftService.approveDraft(
-                    draft,
-                    currencyConverter: currencyConverter
-                )
+        // DB work OUTSIDE animation — only animate UI state changes
+        draftService.setContext(modelContext)
+        do {
+            let transaction = try draftService.approveDraft(
+                draft,
+                currencyConverter: currencyConverter
+            )
 
-                // Prepare and show success view
+            // Animate only the UI transition
+            dsWithAnimation(reduceMotion) {
                 swipeApprovedTransaction = transaction
                 swipeSuccessData = InboxApproveSuccessData(
                     date: draft.effectiveDate,
@@ -577,11 +578,11 @@ struct InboxView: View {
                     isExpense: amount < 0
                 )
                 showSwipeSuccessView = true
-            } catch {
-                #if DEBUG
-                print("InboxView: Error approving draft: \(error)")
-                #endif
             }
+        } catch {
+            #if DEBUG
+            print("InboxView: Error approving draft: \(error)")
+            #endif
         }
     }
 

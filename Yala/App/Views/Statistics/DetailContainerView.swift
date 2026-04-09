@@ -36,7 +36,8 @@ struct DetailContainerView: View {
     @State private var showDeleteConfirmation = false
     @State private var showBulkEditSheet = false
     @State private var isPresentingSettings = false
-    @State private var isSyncingState = false  // Anti-loop flag for session sync
+    @State private var recalculateTask: Task<Void, Never>?
+    @State private var pendingReload = false
     private let isFromSearch: Bool  // Skip session sync when coming from global search
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
@@ -131,50 +132,30 @@ struct DetailContainerView: View {
                     showUpgradeForVoice: $showUpgradeForVoice,
                     showUpgradeForImage: $showUpgradeForImage,
                     modelContext: modelContext,
-                    refreshRecordsData: refreshRecordsData,
-                    calculateTrendsData: calculateTrendsData,
-                    calculateInsightsData: calculateInsightsData
+                    recalculateData: recalculateData,
+                    reloadAndRecalculate: reloadAndRecalculate
                 )
             )
-            .onRecordsFilterChange(viewModel: recordsViewModel) {
-                refreshRecordsData()
-            }
-            .onTrendsFilterChange(viewModel: trendsViewModel) {
-                calculateTrendsData()
-                calculateInsightsData()
-            }
             .appliesPendingRemoteChanges(sessionState)
             .onAppear {
                 dataViewModel.setContext(modelContext)
-                refreshRecordsData()
-                calculateTrendsData()
-                calculateInsightsData()
+                performRecalculation()
             }
+            .onDisappear { recalculateTask?.cancel() }
             .onChange(of: selectedTab) { _, _ in
                 calculateInsightsData()
             }
             .onChange(of: sessionState.selectedMainTab) { _, newTab in
-                // Close FAB menu when navigating away from Statistics
-                if showFABMenu {
-                    showFABMenu = false
-                }
-                // Sync filters when navigating to Statistics tab (view may already be mounted)
+                if showFABMenu { showFABMenu = false }
                 if newTab == .statistics && !isFromSearch {
-                    calculateTrendsData()
-                    refreshRecordsData()
-                    calculateInsightsData()
+                    recalculateData()
                 }
             }
             .onChange(of: dataViewModel.allTransactions) {
-                // Recalculate when transactions change (e.g., initial balance modified)
-                calculateTrendsData()
-                refreshRecordsData()
-                if selectedTab == .insights { calculateInsightsData() }
+                recalculateData()
             }
             .onChange(of: sessionState.dataVersion) { _, _ in
-                refreshRecordsData()
-                calculateTrendsData()
-                if selectedTab == .insights { calculateInsightsData() }
+                reloadAndRecalculate()
             }
             .onChange(of: sessionState.comparisonMode) {
                 if selectedTab == .insights { calculateInsightsData() }
@@ -185,12 +166,9 @@ struct DetailContainerView: View {
                 DetailContainerObservers(
                     sessionState: sessionState,
                     trendsViewModel: trendsViewModel,
-                    recordsViewModel: recordsViewModel,
                     categories: dataViewModel.categories,
                     subcategories: dataViewModel.allSubcategories,
-                    handleSessionStateFilterChange: handleSessionStateFilterChange,
-                    calculateTrendsData: calculateTrendsData,
-                    refreshRecordsData: refreshRecordsData
+                    recalculateData: recalculateData
                 ))
             .aiConsentAlert(isPresented: $showAIConsentAlert, pendingInput: $pendingAIInput) { input in
                 switch input {
@@ -290,7 +268,7 @@ struct DetailContainerView: View {
                 subcategories: dataViewModel.allSubcategories,
                 transactionDateRange: dataViewModel.computeTransactionDateRange(),
                 defaultCurrencyCode: defaultCurrencyCode,
-                onFilterChange: { refreshRecordsData() }
+                onFilterChange: { recalculateData() }
             )
         }
     }
@@ -639,28 +617,52 @@ struct DetailContainerView: View {
 
     // MARK: - Actions
 
-    private func refreshRecordsData() {
-        Task { @MainActor in
-            // Reload fresh data from SwiftData before applying filters
-            // This ensures deleted/modified transactions are reflected immediately
-            dataViewModel.loadData()
-            recordsViewModel.applyFilters(
-                transactions: dataViewModel.allTransactions,
-                accounts: dataViewModel.accounts,
-                categories: dataViewModel.categories,
-                tags: dataViewModel.tags
-            )
+    /// Filter changes — recalculate from cache, NO DB fetch
+    private func recalculateData() {
+        scheduleRecalculation(reload: false)
+    }
+
+    /// Data mutations (dataVersion, sheet dismiss) — reload DB + recalculate
+    private func reloadAndRecalculate() {
+        scheduleRecalculation(reload: true)
+    }
+
+    /// Debounced recalculation (150ms). `pendingReload` ensures a reload request isn't lost
+    /// if a subsequent calculate-only call arrives within the debounce window.
+    private func scheduleRecalculation(reload: Bool) {
+        if reload { pendingReload = true }
+        recalculateTask?.cancel()
+        recalculateTask = Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+            guard !Task.isCancelled else { return }
+            if pendingReload {
+                dataViewModel.loadData()
+                pendingReload = false
+            }
+            performCalculation()
         }
     }
 
-    private func calculateTrendsData() {
-        Task { @MainActor in
-            trendsViewModel.calculateTrendData(
-                accounts: dataViewModel.accounts,
-                transactions: dataViewModel.allTransactions,
-                defaultCurrencyCode: defaultCurrencyCode
-            )
-        }
+    /// Synchronous full reload — used only for the initial onAppear where data is needed immediately.
+    private func performRecalculation() {
+        dataViewModel.loadData()
+        performCalculation()
+    }
+
+    /// Runs all calculations from cached ViewModel data (no SwiftData fetch).
+    private func performCalculation() {
+        recordsViewModel.applyFilters(
+            transactions: dataViewModel.allTransactions,
+            accounts: dataViewModel.accounts,
+            categories: dataViewModel.categories,
+            tags: dataViewModel.tags
+        )
+        trendsViewModel.calculateTrendData(
+            accounts: dataViewModel.accounts,
+            transactions: dataViewModel.allTransactions,
+            defaultCurrencyCode: defaultCurrencyCode
+        )
+        if selectedTab == .insights { calculateInsightsData() }
     }
 
     private func calculateInsightsData() {
@@ -711,17 +713,6 @@ struct DetailContainerView: View {
             showBulkEditSheet = true
         }
     }
-
-    /// Handles changes to session state filter properties
-    private func handleSessionStateFilterChange() {
-        guard !isSyncingState else { return }
-        isSyncingState = true
-        defer { isSyncingState = false }
-
-        calculateTrendsData()
-        refreshRecordsData()
-        calculateInsightsData()
-    }
 }
 
 // MARK: - Preview
@@ -733,42 +724,6 @@ struct DetailContainerView: View {
 }
 
 // MARK: - View Helpers
-
-extension View {
-    fileprivate func onRecordsFilterChange(
-        viewModel: RecordsViewModel, action: @escaping () -> Void
-    ) -> some View {
-        self
-            .onChange(of: viewModel.period) { _, _ in action() }
-            .onChange(of: viewModel.selectedAccounts) { _, _ in action() }
-            .onChange(of: viewModel.selectedCategories) { _, _ in action() }
-            .onChange(of: viewModel.selectedSubcategories) { _, _ in action() }
-            .onChange(of: viewModel.selectedTags) { _, _ in action() }
-            .onChange(of: viewModel.selectedNeeds) { _, _ in action() }
-            .onChange(of: viewModel.selectedTransactionNatures) { _, _ in action() }
-            .onChange(of: viewModel.selectedCurrencies) { _, _ in action() }
-            .onChange(of: viewModel.amountCondition) { _, _ in action() }
-            .onChange(of: viewModel.searchText) { _, _ in action() }
-    }
-
-    func onTrendsFilterChange(viewModel: StatisticsViewModel, action: @escaping () -> Void)
-        -> some View
-    {
-        self
-            .onChange(of: viewModel.detailPeriod) { _, _ in action() }
-            .onChange(of: viewModel.selectedMetric) { _, _ in action() }
-            .onChange(of: viewModel.isAggregatedView) { _, _ in action() }
-            .onChange(of: viewModel.selectedAccounts) { _, _ in action() }
-            .onChange(of: viewModel.selectedCategories) { _, _ in action() }
-            .onChange(of: viewModel.selectedSubcategories) { _, _ in action() }
-            .onChange(of: viewModel.selectedTags) { _, _ in action() }
-            .onChange(of: viewModel.selectedNeeds) { _, _ in action() }
-            .onChange(of: viewModel.selectedTransactionNatures) { _, _ in action() }
-            .onChange(of: viewModel.selectedCurrencies) { _, _ in action() }
-            .onChange(of: viewModel.amountCondition) { _, _ in action() }
-            .onChange(of: viewModel.searchText) { _, _ in action() }
-    }
-}
 
 // MARK: - ViewModifiers to break up expression complexity
 
@@ -784,20 +739,19 @@ private struct DetailContainerSheets: ViewModifier {
     @Binding var showUpgradeForVoice: Bool
     @Binding var showUpgradeForImage: Bool
     let modelContext: ModelContext
-    let refreshRecordsData: () -> Void
-    let calculateTrendsData: () -> Void
-    let calculateInsightsData: () -> Void
+    let recalculateData: () -> Void
+    let reloadAndRecalculate: () -> Void
 
     func body(content: Content) -> some View {
         content
             .sheet(isPresented: $recordsViewModel.showFiltersSheet) {
                 RecordsFiltersView(recordsViewModel: recordsViewModel)
-                    .onDisappear { refreshRecordsData() }
+                    .onDisappear { recalculateData() }
             }
             .sheet(isPresented: $recordsViewModel.showNewTransaction) {
                 NewTransactionView()
                     .presentationDetents([.large])
-                    .onDisappear { refreshRecordsData() }
+                    .onDisappear { reloadAndRecalculate() }
             }
             .sheet(isPresented: $showVoiceRecording) {
                 VoiceRecordingView()
@@ -817,16 +771,13 @@ private struct DetailContainerSheets: ViewModifier {
                         .presentationDetents([.large])
                         .onDisappear {
                             recordsViewModel.editingTransaction = nil
-                            refreshRecordsData()
+                            reloadAndRecalculate()
                         }
                 }
             }
             .sheet(isPresented: $trendsViewModel.showFiltersSheet) {
                 RecordsFiltersView(recordsViewModel: recordsViewModel)
-                    .onDisappear {
-                        calculateTrendsData()
-                        calculateInsightsData()
-                    }
+                    .onDisappear { recalculateData() }
             }
             .confirmationDialog(
                 L10n.Records.deleteConfirmTitle(recordsViewModel.selectedRecordIDs.count),
@@ -835,7 +786,7 @@ private struct DetailContainerSheets: ViewModifier {
             ) {
                 Button(L10n.Action.delete, role: .destructive) {
                     recordsViewModel.deleteSelected(context: modelContext)
-                    refreshRecordsData()
+                    reloadAndRecalculate()
                 }
                 Button(L10n.Action.cancel, role: .cancel) {}
             } message: {
@@ -845,7 +796,7 @@ private struct DetailContainerSheets: ViewModifier {
                 BulkEditSheet(
                     viewModel: recordsViewModel,
                     selectedCount: recordsViewModel.selectedRecordIDs.count,
-                    onComplete: refreshRecordsData
+                    onComplete: reloadAndRecalculate
                 )
             }
             .sheet(isPresented: $isPresentingSettings) {
@@ -858,12 +809,9 @@ private struct DetailContainerSheets: ViewModifier {
 private struct DetailContainerObservers: ViewModifier {
     let sessionState: SessionState
     @Bindable var trendsViewModel: StatisticsViewModel
-    @Bindable var recordsViewModel: RecordsViewModel
     let categories: [Category]
     let subcategories: [Subcategory]
-    let handleSessionStateFilterChange: () -> Void
-    let calculateTrendsData: () -> Void
-    let refreshRecordsData: () -> Void
+    let recalculateData: () -> Void
 
     func body(content: Content) -> some View {
         content
@@ -871,16 +819,10 @@ private struct DetailContainerObservers: ViewModifier {
                 sessionState: sessionState,
                 categories: categories,
                 subcategories: subcategories,
-                handleSessionStateFilterChange: handleSessionStateFilterChange,
-                calculateTrendsData: calculateTrendsData,
-                refreshRecordsData: refreshRecordsData
+                recalculateData: recalculateData
             ))
-            .modifier(ViewModelObservers(
-                trendsViewModel: trendsViewModel,
-                recordsViewModel: recordsViewModel,
-                calculateTrendsData: calculateTrendsData,
-                refreshRecordsData: refreshRecordsData
-            ))
+            // isAggregatedView is local to StatisticsViewModel (not a SessionState proxy)
+            .onChange(of: trendsViewModel.isAggregatedView) { _, _ in recalculateData() }
     }
 }
 
@@ -889,14 +831,12 @@ private struct SessionStateObservers: ViewModifier {
     let sessionState: SessionState
     let categories: [Category]
     let subcategories: [Subcategory]
-    let handleSessionStateFilterChange: () -> Void
-    let calculateTrendsData: () -> Void
-    let refreshRecordsData: () -> Void
+    let recalculateData: () -> Void
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: sessionState.selectedPeriod) { handleSessionStateFilterChange() }
-            .onChange(of: sessionState.selectedAccountIDs) { handleSessionStateFilterChange() }
+            .onChange(of: sessionState.selectedPeriod) { recalculateData() }
+            .onChange(of: sessionState.selectedAccountIDs) { recalculateData() }
             .onChange(of: sessionState.selectedCategoryIDs) {
                 if !sessionState.isExcludeMode && !sessionState.selectedCategoryIDs.isEmpty {
                     let selectedCats = categories.filter {
@@ -906,13 +846,13 @@ private struct SessionStateObservers: ViewModifier {
                         sessionState.selectedTransactionNatures = [.expense]
                     }
                 }
-                handleSessionStateFilterChange()
+                recalculateData()
             }
             .onChange(of: sessionState.selectedNeeds) {
                 if !sessionState.isExcludeMode && !sessionState.selectedNeeds.isEmpty {
                     sessionState.selectedTransactionNatures = [.expense]
                 }
-                handleSessionStateFilterChange()
+                recalculateData()
             }
             .onChange(of: sessionState.selectedSubcategoryIDs) {
                 if !sessionState.isExcludeMode && !sessionState.selectedSubcategoryIDs.isEmpty {
@@ -923,38 +863,15 @@ private struct SessionStateObservers: ViewModifier {
                         sessionState.selectedTransactionNatures = [.expense]
                     }
                 }
-                handleSessionStateFilterChange()
+                recalculateData()
             }
-            .onChange(of: sessionState.selectedTags) { handleSessionStateFilterChange() }
-            .onChange(of: sessionState.selectedCurrencies) { handleSessionStateFilterChange() }
-            .onChange(of: sessionState.selectedTransactionNatures) { handleSessionStateFilterChange() }
-            .onChange(of: sessionState.amountCondition) { handleSessionStateFilterChange() }
-            .onChange(of: sessionState.searchText) { handleSessionStateFilterChange() }
-            .onChange(of: sessionState.isExcludeMode) { handleSessionStateFilterChange() }
-            .onChange(of: sessionState.selectedTrendMetric) {
-                calculateTrendsData()
-            }
-            .onChange(of: sessionState.customDateRange) {
-                calculateTrendsData()
-                refreshRecordsData()
-            }
-    }
-}
-
-/// ViewModel onChange observers — split to reduce type-checker complexity.
-private struct ViewModelObservers: ViewModifier {
-    @Bindable var trendsViewModel: StatisticsViewModel
-    @Bindable var recordsViewModel: RecordsViewModel
-    let calculateTrendsData: () -> Void
-    let refreshRecordsData: () -> Void
-
-    func body(content: Content) -> some View {
-        content
-            .onChange(of: trendsViewModel.selectedMetric) { _, _ in
-                calculateTrendsData()
-            }
-            .onChange(of: trendsViewModel.isAggregatedView) { _, _ in calculateTrendsData() }
-            .onChange(of: trendsViewModel.detailPeriod) { _, _ in calculateTrendsData() }
-            .onChange(of: recordsViewModel.searchText) { refreshRecordsData() }
+            .onChange(of: sessionState.selectedTags) { recalculateData() }
+            .onChange(of: sessionState.selectedCurrencies) { recalculateData() }
+            .onChange(of: sessionState.selectedTransactionNatures) { recalculateData() }
+            .onChange(of: sessionState.amountCondition) { recalculateData() }
+            .onChange(of: sessionState.searchText) { recalculateData() }
+            .onChange(of: sessionState.isExcludeMode) { recalculateData() }
+            .onChange(of: sessionState.selectedTrendMetric) { recalculateData() }
+            .onChange(of: sessionState.customDateRange) { recalculateData() }
     }
 }

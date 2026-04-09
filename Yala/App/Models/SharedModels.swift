@@ -345,7 +345,7 @@ struct CategorySpendingSummary: Identifiable, Equatable {
     }
 }
 
-struct TagSpendingSummary: Identifiable {
+struct TagSpendingSummary: Identifiable, Equatable {
     let tag: Tag
     let amount: Double
     let percentage: Double
@@ -356,6 +356,13 @@ struct TagSpendingSummary: Identifiable {
     /// Variation percentage vs previous period
     var variation: Double? {
         PreviousPeriodHelper.calculateVariation(currentAmount: amount, previousAmount: previousAmount ?? 0)
+    }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.tag.persistentModelID == rhs.tag.persistentModelID
+            && lhs.amount == rhs.amount
+            && lhs.percentage == rhs.percentage
+            && lhs.previousAmount == rhs.previousAmount
     }
 }
 

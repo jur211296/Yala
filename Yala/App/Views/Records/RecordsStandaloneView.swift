@@ -29,6 +29,8 @@ struct RecordsStandaloneView: View {
     @State private var showDeleteConfirmation = false
     @State private var showBulkEditSheet = false
     @State private var isPresentingSettings = false
+    @State private var recalculateTask: Task<Void, Never>?
+    @State private var pendingReload = false
 
     // MARK: - FAB State
 
@@ -76,22 +78,23 @@ struct RecordsStandaloneView: View {
                 showUpgradeForImage: $showUpgradeForImage,
                 isPresentingSettings: $isPresentingSettings,
                 modelContext: modelContext,
-                refreshRecordsData: refreshRecordsData
+                recalculateData: recalculateData,
+                reloadAndRecalculate: reloadAndRecalculate
             ))
             .modifier(RecordsStandaloneObservers(
                 sessionState: sessionState,
-                recordsViewModel: recordsViewModel,
                 dataViewModel: dataViewModel,
                 showFABMenu: $showFABMenu,
-                refreshRecordsData: refreshRecordsData
+                recalculateData: recalculateData
             ))
             .appliesPendingRemoteChanges(sessionState)
             .onAppear {
                 dataViewModel.setContext(modelContext)
-                refreshRecordsData()
+                performRecalculation()
             }
+            .onDisappear { recalculateTask?.cancel() }
             .onChange(of: sessionState.dataVersion) { _, _ in
-                refreshRecordsData()
+                reloadAndRecalculate()
             }
             .aiConsentAlert(isPresented: $showAIConsentAlert, pendingInput: $pendingAIInput) { input in
                 switch input {
@@ -116,7 +119,7 @@ struct RecordsStandaloneView: View {
                     subcategories: dataViewModel.allSubcategories,
                     transactionDateRange: dataViewModel.computeTransactionDateRange(),
                     defaultCurrencyCode: defaultCurrencyCode,
-                    onFilterChange: { refreshRecordsData() }
+                    onFilterChange: { recalculateData() }
                 )
 
                 // FAB (only when not in selection mode)
@@ -434,8 +437,37 @@ struct RecordsStandaloneView: View {
 
     // MARK: - Actions
 
-    private func refreshRecordsData() {
+    /// Filter changes — recalculate from cache, NO DB fetch
+    private func recalculateData() {
+        scheduleRecalculation(reload: false)
+    }
+
+    /// Data mutations (dataVersion, sheet dismiss) — reload DB + recalculate
+    private func reloadAndRecalculate() {
+        scheduleRecalculation(reload: true)
+    }
+
+    private func scheduleRecalculation(reload: Bool) {
+        if reload { pendingReload = true }
+        recalculateTask?.cancel()
+        recalculateTask = Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+            guard !Task.isCancelled else { return }
+            if pendingReload {
+                dataViewModel.loadData()
+                pendingReload = false
+            }
+            performCalculation()
+        }
+    }
+
+    /// Synchronous full reload — used only for the initial onAppear.
+    private func performRecalculation() {
         dataViewModel.loadData()
+        performCalculation()
+    }
+
+    private func performCalculation() {
         recordsViewModel.applyFilters(
             transactions: dataViewModel.allTransactions,
             accounts: dataViewModel.accounts,
@@ -473,18 +505,19 @@ private struct RecordsStandaloneSheets: ViewModifier {
     @Binding var showUpgradeForImage: Bool
     @Binding var isPresentingSettings: Bool
     let modelContext: ModelContext
-    let refreshRecordsData: () -> Void
+    let recalculateData: () -> Void
+    let reloadAndRecalculate: () -> Void
 
     func body(content: Content) -> some View {
         content
             .sheet(isPresented: $recordsViewModel.showFiltersSheet) {
                 RecordsFiltersView(recordsViewModel: recordsViewModel)
-                    .onDisappear { refreshRecordsData() }
+                    .onDisappear { recalculateData() }
             }
             .sheet(isPresented: $recordsViewModel.showNewTransaction) {
                 NewTransactionView()
                     .presentationDetents([.large])
-                    .onDisappear { refreshRecordsData() }
+                    .onDisappear { reloadAndRecalculate() }
             }
             .sheet(isPresented: $showVoiceRecording) {
                 VoiceRecordingView()
@@ -504,7 +537,7 @@ private struct RecordsStandaloneSheets: ViewModifier {
                         .presentationDetents([.large])
                         .onDisappear {
                             recordsViewModel.editingTransaction = nil
-                            refreshRecordsData()
+                            reloadAndRecalculate()
                         }
                 }
             }
@@ -515,7 +548,7 @@ private struct RecordsStandaloneSheets: ViewModifier {
             ) {
                 Button(L10n.Action.delete, role: .destructive) {
                     recordsViewModel.deleteSelected(context: modelContext)
-                    refreshRecordsData()
+                    reloadAndRecalculate()
                 }
                 Button(L10n.Action.cancel, role: .cancel) {}
             } message: {
@@ -525,7 +558,7 @@ private struct RecordsStandaloneSheets: ViewModifier {
                 BulkEditSheet(
                     viewModel: recordsViewModel,
                     selectedCount: recordsViewModel.selectedRecordIDs.count,
-                    onComplete: refreshRecordsData
+                    onComplete: reloadAndRecalculate
                 )
             }
             .sheet(isPresented: $isPresentingSettings) {
@@ -540,13 +573,13 @@ private struct RecordsStandaloneSheets: ViewModifier {
 private struct RecordsNavObserver: ViewModifier {
     let sessionState: SessionState
     @Binding var showFABMenu: Bool
-    let refreshRecordsData: () -> Void
+    let recalculateData: () -> Void
 
     func body(content: Content) -> some View {
         content
             .onChange(of: sessionState.selectedMainTab) { _, newTab in
                 if showFABMenu { showFABMenu = false }
-                if newTab == .records { refreshRecordsData() }
+                if newTab == .records { recalculateData() }
             }
     }
 }
@@ -554,38 +587,38 @@ private struct RecordsNavObserver: ViewModifier {
 /// Session state filter observers - Part 1a
 private struct RecordsSessionObservers1a: ViewModifier {
     let sessionState: SessionState
-    let refreshRecordsData: () -> Void
+    let recalculateData: () -> Void
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: sessionState.selectedAccountIDs) { _, _ in refreshRecordsData() }
-            .onChange(of: sessionState.selectedCategoryIDs) { _, _ in refreshRecordsData() }
-            .onChange(of: sessionState.selectedSubcategoryIDs) { _, _ in refreshRecordsData() }
+            .onChange(of: sessionState.selectedAccountIDs) { _, _ in recalculateData() }
+            .onChange(of: sessionState.selectedCategoryIDs) { _, _ in recalculateData() }
+            .onChange(of: sessionState.selectedSubcategoryIDs) { _, _ in recalculateData() }
     }
 }
 
 /// Session state filter observers - Part 1b
 private struct RecordsSessionObservers1b: ViewModifier {
     let sessionState: SessionState
-    let refreshRecordsData: () -> Void
+    let recalculateData: () -> Void
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: sessionState.selectedTags) { _, _ in refreshRecordsData() }
-            .onChange(of: sessionState.selectedPeriod) { _, _ in refreshRecordsData() }
+            .onChange(of: sessionState.selectedTags) { _, _ in recalculateData() }
+            .onChange(of: sessionState.selectedPeriod) { _, _ in recalculateData() }
     }
 }
 
 /// Session state filter observers - Part 2a
 private struct RecordsSessionObservers2a: ViewModifier {
     let sessionState: SessionState
-    let refreshRecordsData: () -> Void
+    let recalculateData: () -> Void
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: sessionState.selectedNeeds) { _, _ in refreshRecordsData() }
-            .onChange(of: sessionState.selectedTransactionNatures) { _, _ in refreshRecordsData() }
-            .onChange(of: sessionState.selectedCurrencies) { _, _ in refreshRecordsData() }
+            .onChange(of: sessionState.selectedNeeds) { _, _ in recalculateData() }
+            .onChange(of: sessionState.selectedTransactionNatures) { _, _ in recalculateData() }
+            .onChange(of: sessionState.selectedCurrencies) { _, _ in recalculateData() }
     }
 }
 
@@ -593,45 +626,15 @@ private struct RecordsSessionObservers2a: ViewModifier {
 private struct RecordsSessionObservers2b: ViewModifier {
     let sessionState: SessionState
     let dataViewModel: DetailContainerViewModel
-    let refreshRecordsData: () -> Void
+    let recalculateData: () -> Void
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: sessionState.amountCondition) { _, _ in refreshRecordsData() }
-            .onChange(of: sessionState.searchText) { _, _ in refreshRecordsData() }
-            .onChange(of: sessionState.isExcludeMode) { _, _ in refreshRecordsData() }
-            .onChange(of: sessionState.customDateRange) { _, _ in refreshRecordsData() }
-            .onChange(of: dataViewModel.allTransactions) { refreshRecordsData() }
-    }
-}
-
-/// ViewModel filter observers - Part 1
-private struct RecordsViewModelObservers1: ViewModifier {
-    @Bindable var recordsViewModel: RecordsViewModel
-    let refreshRecordsData: () -> Void
-
-    func body(content: Content) -> some View {
-        content
-            .onChange(of: recordsViewModel.period) { _, _ in refreshRecordsData() }
-            .onChange(of: recordsViewModel.selectedAccounts) { _, _ in refreshRecordsData() }
-            .onChange(of: recordsViewModel.selectedCategories) { _, _ in refreshRecordsData() }
-            .onChange(of: recordsViewModel.selectedSubcategories) { _, _ in refreshRecordsData() }
-            .onChange(of: recordsViewModel.selectedTags) { _, _ in refreshRecordsData() }
-    }
-}
-
-/// ViewModel filter observers - Part 2
-private struct RecordsViewModelObservers2: ViewModifier {
-    @Bindable var recordsViewModel: RecordsViewModel
-    let refreshRecordsData: () -> Void
-
-    func body(content: Content) -> some View {
-        content
-            .onChange(of: recordsViewModel.selectedNeeds) { _, _ in refreshRecordsData() }
-            .onChange(of: recordsViewModel.selectedTransactionNatures) { _, _ in refreshRecordsData() }
-            .onChange(of: recordsViewModel.selectedCurrencies) { _, _ in refreshRecordsData() }
-            .onChange(of: recordsViewModel.amountCondition) { _, _ in refreshRecordsData() }
-            .onChange(of: recordsViewModel.searchText) { _, _ in refreshRecordsData() }
+            .onChange(of: sessionState.amountCondition) { _, _ in recalculateData() }
+            .onChange(of: sessionState.searchText) { _, _ in recalculateData() }
+            .onChange(of: sessionState.isExcludeMode) { _, _ in recalculateData() }
+            .onChange(of: sessionState.customDateRange) { _, _ in recalculateData() }
+            .onChange(of: dataViewModel.allTransactions) { recalculateData() }
     }
 }
 
@@ -639,22 +642,22 @@ private struct RecordsViewModelObservers2: ViewModifier {
 private struct RecordsStandaloneObservers1: ViewModifier {
     let sessionState: SessionState
     @Binding var showFABMenu: Bool
-    let refreshRecordsData: () -> Void
+    let recalculateData: () -> Void
 
     func body(content: Content) -> some View {
         content
             .modifier(RecordsNavObserver(
                 sessionState: sessionState,
                 showFABMenu: $showFABMenu,
-                refreshRecordsData: refreshRecordsData
+                recalculateData: recalculateData
             ))
             .modifier(RecordsSessionObservers1a(
                 sessionState: sessionState,
-                refreshRecordsData: refreshRecordsData
+                recalculateData: recalculateData
             ))
             .modifier(RecordsSessionObservers1b(
                 sessionState: sessionState,
-                refreshRecordsData: refreshRecordsData
+                recalculateData: recalculateData
             ))
     }
 }
@@ -663,36 +666,18 @@ private struct RecordsStandaloneObservers1: ViewModifier {
 private struct RecordsStandaloneObservers2: ViewModifier {
     let sessionState: SessionState
     let dataViewModel: DetailContainerViewModel
-    let refreshRecordsData: () -> Void
+    let recalculateData: () -> Void
 
     func body(content: Content) -> some View {
         content
             .modifier(RecordsSessionObservers2a(
                 sessionState: sessionState,
-                refreshRecordsData: refreshRecordsData
+                recalculateData: recalculateData
             ))
             .modifier(RecordsSessionObservers2b(
                 sessionState: sessionState,
                 dataViewModel: dataViewModel,
-                refreshRecordsData: refreshRecordsData
-            ))
-    }
-}
-
-/// Combined observers modifier - Part 3 (ViewModel)
-private struct RecordsStandaloneObservers3: ViewModifier {
-    @Bindable var recordsViewModel: RecordsViewModel
-    let refreshRecordsData: () -> Void
-
-    func body(content: Content) -> some View {
-        content
-            .modifier(RecordsViewModelObservers1(
-                recordsViewModel: recordsViewModel,
-                refreshRecordsData: refreshRecordsData
-            ))
-            .modifier(RecordsViewModelObservers2(
-                recordsViewModel: recordsViewModel,
-                refreshRecordsData: refreshRecordsData
+                recalculateData: recalculateData
             ))
     }
 }
@@ -700,26 +685,21 @@ private struct RecordsStandaloneObservers3: ViewModifier {
 /// Main combined observers modifier
 private struct RecordsStandaloneObservers: ViewModifier {
     let sessionState: SessionState
-    @Bindable var recordsViewModel: RecordsViewModel
     let dataViewModel: DetailContainerViewModel
     @Binding var showFABMenu: Bool
-    let refreshRecordsData: () -> Void
+    let recalculateData: () -> Void
 
     func body(content: Content) -> some View {
         content
             .modifier(RecordsStandaloneObservers1(
                 sessionState: sessionState,
                 showFABMenu: $showFABMenu,
-                refreshRecordsData: refreshRecordsData
+                recalculateData: recalculateData
             ))
             .modifier(RecordsStandaloneObservers2(
                 sessionState: sessionState,
                 dataViewModel: dataViewModel,
-                refreshRecordsData: refreshRecordsData
-            ))
-            .modifier(RecordsStandaloneObservers3(
-                recordsViewModel: recordsViewModel,
-                refreshRecordsData: refreshRecordsData
+                recalculateData: recalculateData
             ))
     }
 }

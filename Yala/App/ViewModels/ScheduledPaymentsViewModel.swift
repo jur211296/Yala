@@ -190,8 +190,9 @@ final class ScheduledPaymentsViewModel {
     // MARK: - Context Setup
 
     func setContext(_ context: ModelContext) {
+        let isNewContext = self.modelContext !== context
         self.modelContext = context
-        loadPayments()
+        if isNewContext { loadPayments() }
     }
 
     func loadPayments() {
@@ -202,10 +203,13 @@ final class ScheduledPaymentsViewModel {
         )
 
         do {
-            allPayments = try context.fetch(descriptor)
-            // Clean up skipped dates older than 1 year (prevents unbounded growth via iCloud sync)
-            for payment in allPayments {
-                payment.cleanupOldSkippedDates()
+            let fetched = try context.fetch(descriptor)
+            if fetched != allPayments {
+                allPayments = fetched
+                // Clean up skipped dates older than 1 year (prevents unbounded growth via iCloud sync)
+                for payment in allPayments {
+                    payment.cleanupOldSkippedDates()
+                }
             }
         } catch {
             #if DEBUG

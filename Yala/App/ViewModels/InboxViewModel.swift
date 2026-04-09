@@ -51,8 +51,9 @@ final class InboxViewModel {
     // MARK: - Setup
 
     func setContext(_ context: ModelContext) {
+        let isNewContext = self.modelContext !== context
         self.modelContext = context
-        loadData()
+        if isNewContext { loadData() }
     }
 
     func loadData() {
@@ -68,7 +69,8 @@ final class InboxViewModel {
         )
 
         do {
-            allDrafts = try context.fetch(descriptor)
+            let fetched = try context.fetch(descriptor)
+            if fetched != allDrafts { allDrafts = fetched }
         } catch {
             #if DEBUG
             print("InboxViewModel: Error loading all drafts: \(error)")
@@ -85,7 +87,8 @@ final class InboxViewModel {
         )
 
         do {
-            pendingDrafts = try context.fetch(descriptor)
+            let fetched = try context.fetch(descriptor)
+            if fetched != pendingDrafts { pendingDrafts = fetched }
         } catch {
             #if DEBUG
             print("InboxViewModel: Error loading pending drafts: \(error)")
