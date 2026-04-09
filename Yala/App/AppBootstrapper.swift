@@ -475,6 +475,7 @@ final class AppBootstrapper {
             #if DEBUG
             print("AppBootstrapper: Failed to accept share from URL: \(error)")
             #endif
+            sessionState.inviteErrorDetail = "\(error)"
             sessionState.showInviteError = true
         }
     }

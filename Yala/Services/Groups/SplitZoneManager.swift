@@ -65,10 +65,53 @@ final class SplitZoneManager {
         #endif
     }
 
+    // MARK: - CKShare Check
+
+    /// Checks if a CKShare already exists for the group.
+    func hasShare(for group: SplitGroup) async -> Bool {
+        guard let engine = syncManager.privateEngine else { return false }
+        let zoneID = CKConstants.zoneID(for: group.id)
+        let recordID = CKConstants.recordID(for: group.id, in: zoneID)
+        do {
+            let record = try await engine.database.record(for: recordID)
+            return record.share != nil
+        } catch {
+            return false
+        }
+    }
+
+    // MARK: - CKShare Deletion
+
+    /// Deletes the existing CKShare for a group, invalidating all invite links.
+    func deleteShare(for group: SplitGroup) async throws {
+        guard let engine = syncManager.privateEngine else {
+            throw SplitZoneError.engineNotInitialized
+        }
+
+        let zoneID = CKConstants.zoneID(for: group.id)
+        let recordID = CKConstants.recordID(for: group.id, in: zoneID)
+
+        let database = engine.database
+        let record = try await database.record(for: recordID)
+
+        guard let shareRef = record.share else {
+            #if DEBUG
+            logger.info("No share exists for group: \(group.name)")
+            #endif
+            return
+        }
+
+        try await database.deleteRecord(withID: shareRef.recordID)
+
+        #if DEBUG
+        logger.info("Deleted CKShare for group: \(group.name)")
+        #endif
+    }
+
     // MARK: - CKShare Creation
 
-    /// Creates a CKShare for a group zone, enabling invitation by link.
-    /// Returns the share URL for the share sheet.
+    /// Creates or retrieves a CKShare for a group zone, enabling invitation by link.
+    /// If a share already exists, returns it — the URL is stable until explicitly deleted.
     func createShare(for group: SplitGroup) async throws -> (CKShare, URL?) {
         guard let engine = syncManager.privateEngine else {
             throw SplitZoneError.engineNotInitialized
@@ -77,24 +120,34 @@ final class SplitZoneManager {
         let zoneID = CKConstants.zoneID(for: group.id)
         let recordID = CKConstants.recordID(for: group.id, in: zoneID)
 
-        // Fetch the existing GroupMeta record to attach the share
         let database = engine.database
         let record = try await database.record(for: recordID)
 
-        // Create CKShare attached to the root record
+        // Return existing share if one already exists
+        if let shareRef = record.share {
+            let existingShare = try await database.record(for: shareRef.recordID)
+            if let ckShare = existingShare as? CKShare {
+                #if DEBUG
+                logger.info("Returning existing CKShare for group: \(group.name)")
+                #endif
+                return (ckShare, ckShare.url)
+            }
+        }
+
+        // Create new CKShare attached to the root record
         let share = CKShare(rootRecord: record)
         share[CKShare.SystemFieldKey.title] = group.name as CKRecordValue
-        share.publicPermission = .none // No public access — invite only
+        share.publicPermission = .readWrite // URL-based sharing — anyone with the link can join
 
         // Save both the share and the updated root record
         let modifyOperation = CKModifyRecordsOperation(recordsToSave: [record, share])
         modifyOperation.savePolicy = .changedKeys
 
         return try await withCheckedThrowingContinuation { continuation in
-            modifyOperation.perRecordSaveBlock = { [self] _, result in
+            modifyOperation.perRecordSaveBlock = { [weak self] _, result in
                 if case .failure(let error) = result {
                     #if DEBUG
-                    self.logger.error("Record save error during share: \(error)")
+                    self?.logger.error("Record save error during share: \(error)")
                     #endif
                 }
             }

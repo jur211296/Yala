@@ -366,7 +366,7 @@ final class GroupService {
 
     private func currentUserDisplayName() -> String {
         let name = UserDefaults.standard.string(forKey: "userName") ?? ""
-        return name.isEmpty ? "Yo" : name
+        return name.isEmpty ? "Usuario" : name
     }
 }
 

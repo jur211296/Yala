@@ -538,6 +538,7 @@ class SessionState {
 
     /// Show error alert when an invite link fails (expired, revoked, or invalid)
     var showInviteError: Bool = false
+    var inviteErrorDetail: String = ""
 
     // MARK: - Navigation State
 

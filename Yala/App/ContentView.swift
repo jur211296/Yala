@@ -581,7 +581,10 @@ private struct GroupInviteModifier: ViewModifier {
             .alert("Enlace no válido", isPresented: $showInviteError) {
                 Button("OK", role: .cancel) {}
             } message: {
-                Text("El enlace de invitación ya no es válido o ha expirado.")
+                // TODO: Revertir a mensaje genérico antes de release
+                Text(SessionState.shared.inviteErrorDetail.isEmpty
+                     ? "El enlace de invitación ya no es válido o ha expirado."
+                     : SessionState.shared.inviteErrorDetail)
             }
             .onChange(of: SessionState.shared.showInviteError) { _, show in
                 if show {

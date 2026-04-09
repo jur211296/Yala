@@ -3026,6 +3026,8 @@
 "groups.settings.addMember" = "Adicionar membro";
 "groups.settings.addMemberPrompt" = "Nome do membro";
 "groups.settings.invite" = "Convidar por link";
+"groups.settings.regenerateLink" = "Regenerar link";
+"groups.settings.regenerateLinkConfirm" = "O link atual deixará de funcionar. Quer gerar um novo?";
 "groups.settings.leaveGroup" = "Sair do grupo";
 "groups.settings.leaveGroupConfirm" = "Tem certeza? Suas despesas pessoais serão mantidas.";
 "groups.settings.deleteGroup" = "Excluir grupo";

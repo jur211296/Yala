@@ -20,7 +20,8 @@ enum InviteLinkService {
     static func buildInviteURL(
         shareURL: URL,
         group: SplitGroup,
-        members: [SplitMember]
+        members: [SplitMember],
+        inviterName: String
     ) -> URL? {
         var components = URLComponents()
         components.scheme = "https"
@@ -32,10 +33,15 @@ enum InviteLinkService {
 
         let memberNames = members
             .prefix(5)
-            .map { String($0.displayName.prefix(20)) }
+            .map { member -> String in
+                if member.isCurrentUser {
+                    return String(inviterName.prefix(20))
+                }
+                return String(member.displayName.prefix(20))
+            }
             .joined(separator: ",")
 
-        let colorClean = group.colorHex.replacingOccurrences(of: "#", with: "")
+        let colorClean = group.colorHex.replacing("#", with: "")
 
         components.queryItems = [
             URLQueryItem(name: "s", value: encoded),
@@ -43,6 +49,7 @@ enum InviteLinkService {
             URLQueryItem(name: "i", value: group.iconName),
             URLQueryItem(name: "c", value: colorClean),
             URLQueryItem(name: "m", value: memberNames),
+            URLQueryItem(name: "u", value: String(inviterName.prefix(30))),
         ]
 
         return components.url
@@ -51,27 +58,35 @@ enum InviteLinkService {
     // MARK: - Extract
 
     /// Extrae el CKShare URL original de un invite URL branded.
+    /// Acepta universal links (https://yala-app.pe/invite?s=...) y custom schemes (yaladev://invite?s=...).
     static func extractShareURL(from url: URL) -> URL? {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              components.host == host || components.host == "www.\(host)",
-              components.path == path,
               let encoded = components.queryItems?.first(where: { $0.name == "s" })?.value,
               let data = base64URLDecode(encoded),
               let urlString = String(data: data, encoding: .utf8),
               let shareURL = URL(string: urlString)
         else { return nil }
 
+        // Validate: universal link (yala-app.pe/invite) or custom scheme (yaladev://invite)
+        let isUniversalLink = (components.host == host || components.host == "www.\(host)")
+            && components.path == path
+        let isCustomSchemeInvite = components.host == "invite"
+
+        guard isUniversalLink || isCustomSchemeInvite else { return nil }
+
         return shareURL
     }
 
     // MARK: - Check
 
-    /// Verifica si una URL es un invite link de Yala.
+    /// Verifica si una URL es un invite link de Yala (universal link o custom scheme).
     static func isInviteLink(_ url: URL) -> Bool {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return false }
-        return (components.host == host || components.host == "www.\(host)")
+        let hasShareParam = components.queryItems?.contains(where: { $0.name == "s" }) == true
+        let isUniversalLink = (components.host == host || components.host == "www.\(host)")
             && components.path == path
-            && components.queryItems?.contains(where: { $0.name == "s" }) == true
+        let isCustomSchemeInvite = components.host == "invite"
+        return (isUniversalLink || isCustomSchemeInvite) && hasShareParam
     }
 
     // MARK: - Fetch Share Metadata

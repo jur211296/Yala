@@ -3028,6 +3028,8 @@
 "groups.settings.addMember" = "Aggiungi membro";
 "groups.settings.addMemberPrompt" = "Nome del membro";
 "groups.settings.invite" = "Invita tramite link";
+"groups.settings.regenerateLink" = "Rigenera link";
+"groups.settings.regenerateLinkConfirm" = "Il link attuale smetterà di funzionare. Vuoi generarne uno nuovo?";
 "groups.settings.leaveGroup" = "Lascia il gruppo";
 "groups.settings.leaveGroupConfirm" = "Sei sicuro? Le tue spese personali verranno mantenute.";
 "groups.settings.deleteGroup" = "Elimina gruppo";

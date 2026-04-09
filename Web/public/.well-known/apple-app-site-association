@@ -3,7 +3,10 @@
     "apps": [],
     "details": [
       {
-        "appIDs": ["3WKFFVD66J.com.jurgenschmidt.yala"],
+        "appIDs": [
+          "3WKFFVD66J.com.jurgenschmidt.yala",
+          "3WKFFVD66J.com.jurgenschmidt.yala.dev"
+        ],
         "components": [
           {
             "/": "/invite",

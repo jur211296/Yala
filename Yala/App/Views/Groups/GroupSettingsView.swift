@@ -29,6 +29,7 @@ struct GroupSettingsView: View {
     @State private var showIconPicker: Bool = false
     @State private var isCreatingShare = false
     @State private var shareURL: URL?
+    @State private var hasExistingShare = false
     @State private var showShareSheet = false
     @State private var showRemoveMemberConfirm = false
     @State private var memberToRemove: SplitMember?
@@ -38,6 +39,8 @@ struct GroupSettingsView: View {
     @State private var showCurrencyPicker: Bool = false
     @State private var defaultSplitType: SplitType = .equal
     @State private var membersCanInvite: Bool = true
+    @State private var showRegenerateLinkConfirm = false
+    @State private var isRegeneratingLink = false
     @State private var personalAutoCreate: Bool = true
     @State private var groupCurrencies: [String] = []
     @State private var accountPrefs: [String: String] = [:]   // currencyCode → accountName
@@ -69,6 +72,9 @@ struct GroupSettingsView: View {
             }
             .background(.thBackground)
             .onDisappear { saveIdentity() }
+            .task {
+                hasExistingShare = await SplitZoneManager(syncManager: .shared).hasShare(for: group)
+            }
             .navigationTitle(L10n.Groups.Settings.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -98,6 +104,17 @@ struct GroupSettingsView: View {
                 }
             } message: {
                 Text(L10n.Groups.Member.removeConfirm)
+            }
+            .confirmationDialog(
+                L10n.Groups.Settings.regenerateLink,
+                isPresented: $showRegenerateLinkConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Groups.Settings.regenerateLink, role: .destructive) {
+                    Task { await regenerateShareLink() }
+                }
+            } message: {
+                Text(L10n.Groups.Settings.regenerateLinkConfirm)
             }
         }
     }
@@ -204,6 +221,35 @@ struct GroupSettingsView: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(isCreatingShare)
+
+                    // Regenerate link (visible if a share exists in CloudKit)
+                    if hasExistingShare {
+                        Divider()
+                        Button {
+                            showRegenerateLinkConfirm = true
+                        } label: {
+                            HStack(spacing: DS.Spacing.md) {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .font(DS.Typography.title2)
+                                    .foregroundStyle(DS.Semantic.errorForeground)
+
+                                Text(L10n.Groups.Settings.regenerateLink)
+                                    .font(DS.Typography.body)
+                                    .foregroundStyle(DS.Semantic.errorForeground)
+
+                                Spacer()
+
+                                if isRegeneratingLink {
+                                    ProgressView()
+                                }
+                            }
+                            .padding(.horizontal, DS.FormRow.paddingH)
+                            .padding(.vertical, DS.FormRow.paddingV)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isRegeneratingLink)
+                    }
                 }
             }
         }
@@ -501,15 +547,11 @@ struct GroupSettingsView: View {
         do {
             let (_, ckURL) = try await SplitZoneManager(syncManager: .shared).createShare(for: group)
             if let ckURL {
-                // Build branded invite URL; fallback to raw CKShare URL
-                shareURL = InviteLinkService.buildInviteURL(
-                    shareURL: ckURL,
-                    group: group,
-                    members: viewModel.members
-                ) ?? ckURL
+                shareURL = buildBrandedInviteURL(from: ckURL)
             }
             isCreatingShare = false
             if shareURL != nil {
+                hasExistingShare = true
                 showShareSheet = true
             }
         } catch {
@@ -518,6 +560,39 @@ struct GroupSettingsView: View {
             print("GroupSettingsView: Error creating share: \(error)")
             #endif
         }
+    }
+
+    private func regenerateShareLink() async {
+        guard !isRegeneratingLink else { return }
+        isRegeneratingLink = true
+        do {
+            try await SplitZoneManager(syncManager: .shared).deleteShare(for: group)
+            shareURL = nil
+            let (_, ckURL) = try await SplitZoneManager(syncManager: .shared).createShare(for: group)
+            if let ckURL {
+                shareURL = buildBrandedInviteURL(from: ckURL)
+            }
+            isRegeneratingLink = false
+            if shareURL != nil {
+                showShareSheet = true
+            }
+        } catch {
+            isRegeneratingLink = false
+            #if DEBUG
+            print("GroupSettingsView: Error regenerating share: \(error)")
+            #endif
+        }
+    }
+
+    private func buildBrandedInviteURL(from ckURL: URL) -> URL {
+        let name = UserDefaults.standard.string(forKey: "userName") ?? ""
+        let inviterName = name.isEmpty ? "Usuario" : name
+        return InviteLinkService.buildInviteURL(
+            shareURL: ckURL,
+            group: group,
+            members: viewModel.members,
+            inviterName: inviterName
+        ) ?? ckURL
     }
 
     private func changeRole(_ member: SplitMember) {

@@ -939,6 +939,8 @@ enum L10n {
             static var addMember: String { ls("groups.settings.addMember", comment: "") }
             static var addMemberPrompt: String { ls("groups.settings.addMemberPrompt", comment: "") }
             static var invite: String { ls("groups.settings.invite", comment: "") }
+            static var regenerateLink: String { ls("groups.settings.regenerateLink", comment: "") }
+            static var regenerateLinkConfirm: String { ls("groups.settings.regenerateLinkConfirm", comment: "") }
             static var leaveGroup: String { ls("groups.settings.leaveGroup", comment: "") }
             static var leaveGroupConfirm: String { ls("groups.settings.leaveGroupConfirm", comment: "") }
             static var deleteGroup: String { ls("groups.settings.deleteGroup", comment: "") }
