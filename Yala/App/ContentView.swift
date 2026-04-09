@@ -54,8 +54,14 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            // Main content only when onboarding is done; static background otherwise
-            if hasCompletedOnboarding {
+            // Main content deferred until initial state check completes (~2s after launch).
+            // Creating MainTabView during the first commit triggers PanelView data loading
+            // synchronously on the main thread. Before the first frame renders, the system
+            // considers the app "Background" (WatchdogVisibility), with a 5-second timeout.
+            // The heavy SwiftData fetches + calculations exceed that, causing 0x8BADF00D.
+            // By waiting for isInitialCheckDone, the first frame (just the splash) renders
+            // instantly, promoting the app to Foreground (20s timeout).
+            if hasCompletedOnboarding && isInitialCheckDone {
                 MainTabView()
                     .environment(SessionState.shared)
             } else if isWaitingForSync {
