@@ -30,8 +30,9 @@ final class DetailContainerViewModel {
     // MARK: - Setup
 
     func setContext(_ context: ModelContext) {
+        let isNewContext = self.modelContext !== context
         self.modelContext = context
-        loadData()
+        if isNewContext { loadData() }
     }
 
     func loadData() {
@@ -45,7 +46,8 @@ final class DetailContainerViewModel {
             ]
         )
         do {
-            allTransactions = try context.fetch(transactionsDescriptor)
+            let fetched = try context.fetch(transactionsDescriptor)
+            if fetched != allTransactions { allTransactions = fetched }
         } catch {
             #if DEBUG
             print("DetailContainerViewModel: Error loading transactions: \(error)")
@@ -57,7 +59,8 @@ final class DetailContainerViewModel {
             sortBy: [SortDescriptor(\.name)]
         )
         do {
-            accounts = try context.fetch(accountsDescriptor)
+            let fetched = try context.fetch(accountsDescriptor)
+            if fetched != accounts { accounts = fetched }
         } catch {
             #if DEBUG
             print("DetailContainerViewModel: Error loading accounts: \(error)")
@@ -69,7 +72,8 @@ final class DetailContainerViewModel {
             sortBy: [SortDescriptor(\.sortOrder)]
         )
         do {
-            categories = try context.fetch(categoriesDescriptor)
+            let fetched = try context.fetch(categoriesDescriptor)
+            if fetched != categories { categories = fetched }
         } catch {
             #if DEBUG
             print("DetailContainerViewModel: Error loading categories: \(error)")
@@ -81,7 +85,8 @@ final class DetailContainerViewModel {
             sortBy: [SortDescriptor(\.name)]
         )
         do {
-            allSubcategories = try context.fetch(subcategoriesDescriptor)
+            let fetched = try context.fetch(subcategoriesDescriptor)
+            if fetched != allSubcategories { allSubcategories = fetched }
         } catch {
             #if DEBUG
             print("DetailContainerViewModel: Error loading subcategories: \(error)")
@@ -93,7 +98,8 @@ final class DetailContainerViewModel {
             sortBy: [SortDescriptor(\.name)]
         )
         do {
-            tags = try context.fetch(tagsDescriptor)
+            let fetched = try context.fetch(tagsDescriptor)
+            if fetched != tags { tags = fetched }
         } catch {
             #if DEBUG
             print("DetailContainerViewModel: Error loading tags: \(error)")
@@ -105,7 +111,8 @@ final class DetailContainerViewModel {
             sortBy: [SortDescriptor(\.name)]
         )
         do {
-            budgets = try context.fetch(budgetsDescriptor)
+            let fetched = try context.fetch(budgetsDescriptor)
+            if fetched != budgets { budgets = fetched }
         } catch {
             #if DEBUG
             print("DetailContainerViewModel: Error loading budgets: \(error)")
@@ -117,7 +124,8 @@ final class DetailContainerViewModel {
             sortBy: [SortDescriptor(\.nextDueDate)]
         )
         do {
-            scheduledPayments = try context.fetch(paymentsDescriptor)
+            let fetched = try context.fetch(paymentsDescriptor)
+            if fetched != scheduledPayments { scheduledPayments = fetched }
         } catch {
             #if DEBUG
             print("DetailContainerViewModel: Error loading scheduled payments: \(error)")

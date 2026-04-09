@@ -83,7 +83,10 @@ struct BudgetsListView: View {
         .appliesPendingRemoteChanges(sessionState)
         .onAppear {
             viewModel.setContext(modelContext)
-            refreshData()
+            viewModel.refreshBudgetData(
+                hideInactive: hideInactive,
+                defaultCurrencyCode: defaultCurrencyCode
+            )
 
             // Auto-open editor from setup checklist (step 3)
             if sessionState.shouldAutoOpenBudgetEditor {

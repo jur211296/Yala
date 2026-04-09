@@ -7,15 +7,22 @@
 
 import Foundation
 
-struct CashFlowData: Identifiable {
+struct CashFlowData: Identifiable, Equatable {
     let id = UUID()
     let date: Date
     let income: Double
     let expense: Double
     let net: Double
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.date == rhs.date
+            && lhs.income == rhs.income
+            && lhs.expense == rhs.expense
+            && lhs.net == rhs.net
+    }
 }
 
-struct CashFlowSummary {
+struct CashFlowSummary: Equatable {
     let totalIncome: Double
     let totalExpense: Double
     let netFlow: Double

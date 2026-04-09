@@ -900,13 +900,14 @@ struct CategoriesTabView: View {
             ? nil  // Default: expense only
             : viewModel.selectedTransactionNatures
 
-        categorySpending = TopSpendingCategoriesCalculator.calculateTopSpending(
+        let newCategorySpending = TopSpendingCategoriesCalculator.calculateTopSpending(
             transactions: pieFiltered,
             interval: interval,
             currencyCode: defaultCurrencyCode,
             transactionNatures: naturesFilter,
 
         )
+        if newCategorySpending != categorySpending { categorySpending = newCategorySpending }
 
         // Calculate subcategory spending - filter by category if one is selected
         let subcategoryTransactions: [TransactionItem]
@@ -920,7 +921,7 @@ struct CategoriesTabView: View {
             subcategoryTransactions = pieFiltered
         }
 
-        subcategorySpending = TopSubcategoriesCalculator.calculateTopSubcategories(
+        let newSubcategorySpending = TopSubcategoriesCalculator.calculateTopSubcategories(
             transactions: subcategoryTransactions,
             interval: interval,
             currencyCode: defaultCurrencyCode,
@@ -928,6 +929,7 @@ struct CategoriesTabView: View {
             transactionNatures: naturesFilter,
 
         )
+        if newSubcategorySpending != subcategorySpending { subcategorySpending = newSubcategorySpending }
 
         // Calculate tag spending — respects category/subcategory filters but shows ALL tags
         let tagCriteria = FilterCriteria(
@@ -947,23 +949,25 @@ struct CategoriesTabView: View {
         let tagFiltered = FilterService.filterForTrends(
             transactions: allTransactions, accounts: accounts, criteria: tagCriteria
         )
-        tagSpending = TagSpendingCalculator.calculateTopSpending(
+        let newTagSpending = TagSpendingCalculator.calculateTopSpending(
             transactions: tagFiltered,
             interval: interval,
             currencyCode: defaultCurrencyCode,
             transactionNatures: naturesFilter
         )
+        if newTagSpending != tagSpending { tagSpending = newTagSpending }
 
         // Calculate need trend data with correct grouping based on period
         // Uses needFiltered (no need filter) so selection = visual dim, not data filter
         let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen
-        needTrendPoints = NeedTrendHelper.calculateTrend(
+        let newNeedTrendPoints = NeedTrendHelper.calculateTrend(
             transactions: needFiltered,
             grouping: needGrouping,
             interval: interval,
             preferredCurrency: preferredCurrency,
 
         )
+        if newNeedTrendPoints != needTrendPoints { needTrendPoints = newNeedTrendPoints }
 
         // Apply list view lock logic after data calculation
         enforceListViewLock()

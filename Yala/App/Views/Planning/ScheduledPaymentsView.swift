@@ -64,7 +64,7 @@ struct ScheduledPaymentsView: View {
         .appliesPendingRemoteChanges(sessionState)
         .onAppear {
             viewModel.setContext(modelContext)
-            refreshData()
+            viewModel.calculatePaymentData(payments: viewModel.allPayments)
 
             // Auto-open editor from setup checklist (step 4)
             if sessionState.shouldAutoOpenScheduledEditor {
@@ -74,10 +74,10 @@ struct ScheduledPaymentsView: View {
             }
         }
         .onChange(of: viewModel.selectedTab) { _, _ in
-            refreshData()
+            viewModel.calculatePaymentData(payments: viewModel.allPayments)
         }
         .onChange(of: viewModel.selectedMonth) { _, _ in
-            refreshData()
+            viewModel.calculatePaymentData(payments: viewModel.allPayments)
         }
         .onChange(of: sessionState.dataVersion) { _, _ in
             refreshData()

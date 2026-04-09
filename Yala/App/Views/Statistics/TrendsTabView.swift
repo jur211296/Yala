@@ -1080,13 +1080,14 @@ struct TrendsTabView: View {
         )
 
         // 1. Calculate TOTAL cash flow data
-        cashFlowSummary = CashFlowCalculator.calculateCashFlow(
+        let newCashFlow = CashFlowCalculator.calculateCashFlow(
             transactions: filtered,
             interval: interval,
             grouping: cashFlowGrouping,
             currencyCode: defaultCurrencyCode,
 
         )
+        if newCashFlow != cashFlowSummary { cashFlowSummary = newCashFlow }
 
         // 2. Calculate cash flow BY ACCOUNT (single-pass grouping: O(n) instead of O(a×n))
         let groupedByAccount = Dictionary(grouping: filtered) { $0.account?.persistentModelID }
@@ -1102,7 +1103,7 @@ struct TrendsTabView: View {
             )
             byAccount[account.persistentModelID] = summary
         }
-        cashFlowByAccount = byAccount
+        if byAccount != cashFlowByAccount { cashFlowByAccount = byAccount }
 
         // 3. Calculate cash flow BY CURRENCY (single-pass grouping: O(n) instead of O(c×n))
         let groupedByCurrency = Dictionary(grouping: filtered) { $0.currencyCode }
@@ -1117,7 +1118,7 @@ struct TrendsTabView: View {
             )
             byCurrency[currencyCode] = summary
         }
-        cashFlowByCurrency = byCurrency
+        if byCurrency != cashFlowByCurrency { cashFlowByCurrency = byCurrency }
 
         // 4. Calculate PREVIOUS period cash flow for variation chip
         calculatePreviousCashFlow(fetchedTransactions: fetchedTransactions)
@@ -1307,15 +1308,16 @@ struct TrendsTabView: View {
 
         )
 
-        // Update state
-        currentPeriodPoints = currentResult.points
-        previousPeriodPoints = previousResult.points
+        // Update state with equality guards
+        if currentResult.points != currentPeriodPoints { currentPeriodPoints = currentResult.points }
+        if previousResult.points != previousPeriodPoints { previousPeriodPoints = previousResult.points }
 
         // Calculate totals for VariationChip
-        // All metrics use cumulative values, so last point is the total
-        currentPeriodTotal = currentResult.points.last?.value ?? 0
+        let newCurrentTotal = currentResult.points.last?.value ?? 0
+        if newCurrentTotal != currentPeriodTotal { currentPeriodTotal = newCurrentTotal }
         let prevTotal = previousResult.points.last?.value ?? 0
-        previousPeriodTotal = previousResult.points.isEmpty ? nil : prevTotal
+        let newPreviousTotal: Double? = previousResult.points.isEmpty ? nil : prevTotal
+        if newPreviousTotal != previousPeriodTotal { previousPeriodTotal = newPreviousTotal }
 
         // Calculate combined Y domain
         let allValues =
