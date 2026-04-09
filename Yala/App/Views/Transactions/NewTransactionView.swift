@@ -49,11 +49,6 @@ struct NewTransactionView: View {
     // Notification primer
     @State private var showingNotificationPrimer = false
 
-    /// Coach mark: Registro tour (B1-B3)
-    @AppStorage("hasSeenRegistroTour") private var hasSeenRegistroTour = false
-    @State private var showRegistroTour = false
-    @State private var registroTourIndex = 0
-
     // Prefill parameters
     let prefillAccountID: PersistentIdentifier?
     let prefillCategoryID: PersistentIdentifier?
@@ -185,7 +180,6 @@ struct NewTransactionView: View {
                             .foregroundStyle(Color.primary)
                     }
                     .buttonStyle(.plain)
-                    .coachMarkAnchor("favoritePayments")
                     .accessibilityLabel(L10n.Accessibility.favoriteTemplates)
                     .tint(Color.primary)
                 }
@@ -380,20 +374,6 @@ struct NewTransactionView: View {
                 await viewModel.loadExchangeRate(context: modelContext)
             }
         }
-        .coachMarkOverlay(
-            steps: RegistroTourSteps.steps,
-            isPresented: $showRegistroTour,
-            currentIndex: $registroTourIndex,
-            onComplete: { hasSeenRegistroTour = true }
-        )
-        .task {
-            if !hasSeenRegistroTour && transactionToEdit == nil {
-                try? await Task.sleep(for: .seconds(0.8))
-                if !hasSeenRegistroTour {
-                    showRegistroTour = true
-                }
-            }
-        }
     }
 
     // MARK: - Transaction Type Selector
@@ -412,7 +392,6 @@ struct NewTransactionView: View {
                 }
             }
         )
-        .coachMarkAnchor("transactionTypes")
     }
 
     // MARK: - Central Content
@@ -553,7 +532,6 @@ struct NewTransactionView: View {
             // Quick actions bar
             quickActionsBar
                 .padding(.top, DS.Spacing.lg)
-                .coachMarkAnchor("quickActions")
         }
         .onChange(of: viewModel.selectedSubcategory) { _, newSubcategory in
             // Sync nature when subcategory changes

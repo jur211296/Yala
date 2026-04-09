@@ -2075,35 +2075,10 @@
 "tipkit.skip" = "Anleitung überspringen";
 "tipkit.next" = "Weiter";
 "tipkit.done" = "Fertig";
-"tipkit.accounts.title" = "Deine Konten";
-"tipkit.accounts.message" = "Hier siehst du jederzeit deine aktiven Konten und deren Salden.";
-"tipkit.widgets.title" = "Deine Diagramme";
-"tipkit.widgets.message" = "Widgets mit Zusammenfassungen und Diagrammen deiner Ausgaben und Einnahmen. Passe über den Einstellungs-Button an, welche angezeigt werden.";
-"tipkit.fab.title" = "Schnell erfassen";
-"tipkit.fab.free.message" = "Tippe hier, um deine Ausgaben und Einnahmen zu erfassen.";
-"tipkit.fab.pro.message" = "Erfasse manuell, per Sprache oder mit Foto.";
-"tipkit.profile.title" = "Dein Profil";
-"tipkit.profile.message" = "Stelle alles ein, damit Yala genau so funktioniert, wie du es brauchst.";
 "tipkit.settingsAppIcon.title" = "Dein Symbol";
 "tipkit.settingsAppIcon.message" = "Ändere das App-Symbol für deinen persönlichen Touch.";
 "tipkit.settingsTheme.title" = "Dein Design";
 "tipkit.settingsTheme.message" = "Wähle zwischen klassisch, minimalistisch oder transluzent.";
-"tipkit.contextualGuide.title" = "Anleitungen in jedem Bereich";
-"tipkit.contextualGuide.message" = "Du findest solche Anleitungen in jedem Bereich. Sie erklären dir, was du dort tun kannst.";
-"tipkit.setupChecklist.title" = "Deine ersten Schritte";
-"tipkit.setupChecklist.message" = "Schließe diese Schritte ab, um alles zu entdecken, was Yala für dich bereithält.";
-"tipkit.transactionTypes.title" = "Drei Buchungsarten";
-"tipkit.transactionTypes.message" = "Erfasse Ausgaben, Einnahmen und Überweisungen zwischen deinen Konten.";
-"tipkit.favoritePayments.title" = "Lieblingszahlungen";
-"tipkit.favoritePayments.message" = "Speichere häufige Ausgaben, damit du nicht jedes Mal alles ausfüllen musst.";
-"tipkit.quickActions.title" = "Schnellaktionen";
-"tipkit.quickActions.message" = "Erstelle Favoriten und geplante Zahlungen von hier aus.";
-"tipkit.filterAccount.title" = "Mit einem Tippen filtern";
-"tipkit.filterAccount.message" = "Tippe auf ein Konto, um alle Diagramme nur dafür zu filtern.";
-"tipkit.interactiveWidgets.title" = "Tippen und entdecken";
-"tipkit.interactiveWidgets.message" = "Widgets sind interaktiv: Tippe darauf, um zu filtern und Muster zu entdecken.";
-"tipkit.widgetPreferences.title" = "Widget-Einstellungen";
-"tipkit.widgetPreferences.message" = "Wähle hier, welche Diagramme du sehen möchtest und in welcher Reihenfolge.";
 
 // Gruppe D: Einstellungen-Tour
 "tipkit.settings.accounts.title" = "Deine Konten";

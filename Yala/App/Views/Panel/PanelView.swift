@@ -111,15 +111,6 @@ struct PanelView: View {
     @AppStorage("chatAssistantEnabled") private var chatAssistantEnabled: Bool = false
     @AppStorage("chatFABVisible") private var chatFABVisible: Bool = true
 
-    /// Coach mark: Panel tour (A1-A4)
-    @AppStorage("hasSeenPanelTour") private var hasSeenPanelTour = false
-    @State private var showPanelTour = false
-    @State private var panelTourIndex = 0
-
-    /// Coach mark: Interactivity tour (C1-C2)
-    @AppStorage("hasSeenInteractivityTour") private var hasSeenInteractivityTour = false
-    @State private var showInteractivityTour = false
-    @State private var interactivityTourIndex = 0
     @State private var panelScrollProxy: ScrollViewProxy?
 
     /// Coach mark: Pro tour (Phase 2)
@@ -330,26 +321,6 @@ struct PanelView: View {
                 }
         }
         .coachMarkOverlay(
-            steps: PanelTourSteps.steps(isProUser: FeatureGateService.shared.isProUser),
-            isPresented: $showPanelTour,
-            currentIndex: $panelTourIndex,
-            scrollProxy: panelScrollProxy,
-            onComplete: {
-                hasSeenPanelTour = true
-                SetupChecklistManager.shared.expandAfterTour()
-                ProTourManager.shared.triggerIfEligible()
-            }
-        )
-        .coachMarkOverlay(
-            steps: InteractivityTourSteps.steps,
-            isPresented: $showInteractivityTour,
-            currentIndex: $interactivityTourIndex,
-            scrollProxy: panelScrollProxy,
-            onComplete: {
-                hasSeenInteractivityTour = true
-            }
-        )
-        .coachMarkOverlay(
             steps: ProTourSteps.panelSteps,
             isPresented: $showProFabTour,
             currentIndex: $proFabTourIndex,
@@ -363,7 +334,6 @@ struct PanelView: View {
                   ProTourManager.shared.currentPhase == .panel else { return }
             do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
             guard ProTourManager.shared.currentPhase == .panel,
-                  !showPanelTour, !showInteractivityTour,
                   !showProFabTour else { return }
             showProFabTour = true
         }
@@ -438,27 +408,6 @@ struct PanelView: View {
         }
         .onChange(of: sizeClass) { _, newValue in
             viewModel.widgetConfig.columns = DS.Adaptive.columns(newValue)
-        }
-        .task {
-            // Wait for post-onboarding flow (trial sheet) to complete
-            while !sessionState.isReadyForTours {
-                do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
-            }
-            if !hasSeenPanelTour {
-                // Start collapsed — expands after tour completes
-                do { try await Task.sleep(for: .seconds(0.6)) } catch { return }
-                if !hasSeenPanelTour {
-                    showPanelTour = true
-                }
-            }
-        }
-        .onChange(of: showPanelTour) { _, isShowing in
-            if !isShowing && hasSeenPanelTour {
-                triggerInteractivityTourIfEligible()
-            }
-        }
-        .onChange(of: transactions.count) { _, _ in
-            triggerInteractivityTourIfEligible()
         }
         .modifier(
             PanelDataObservers(
@@ -578,11 +527,9 @@ struct PanelView: View {
                             manager: SetupChecklistManager.shared,
                             onStepTapped: { step in handleSetupStep(step) }
                         )
-                        .coachMarkAnchor("setupChecklist")
 
                         // Contextual guide for panel (first visit)
                         ContextualGuideBanner.panel()
-                            .coachMarkAnchor("contextualGuide")
 
                         accountsSection
                         contextualInsightSection
@@ -629,12 +576,7 @@ struct PanelView: View {
                         scheduledCount: scheduledPayments.count
                     )
 
-                    // Keep collapsed until panel tour completes (avoids flash)
-                    if !hasSeenPanelTour {
-                        mgr.collapseForTour()
-                    } else {
-                        mgr.checkReExpand()
-                    }
+                    mgr.checkReExpand()
 
                     consumePendingPracticeCleanup()
                 }
@@ -707,8 +649,6 @@ struct PanelView: View {
                         accountFormSheet = AccountFormSheet(account: account)
                     }
                 )
-                .coachMarkAnchor("accounts")
-                .coachMarkAnchor("filterAccount")
             }
         }
     }
@@ -1187,17 +1127,14 @@ struct PanelView: View {
                             .foregroundStyle(Color.primary)
                     }
                     .accessibilityLabel(L10n.Accessibility.widgetPreferences)
-                    .coachMarkAnchor("widgetPreferences")
                 }
                 .padding(.trailing, DS.Spacing.xxs)
 
-                // First widget row (included in "widgets" spotlight)
+                // First widget row
                 if let firstRow = viewModel.layoutRows.first {
                     widgetRow(for: firstRow)
                 }
             }
-            .coachMarkAnchor("widgets")
-            .coachMarkAnchor("interactiveWidgets")
 
             // Remaining widget rows
             // Note: VStack (not Lazy) — LazyVStack caused crashes on tab switch because it
@@ -1266,19 +1203,6 @@ struct PanelView: View {
                     Color.clear
                         .frame(maxWidth: .infinity)
                 }
-            }
-        }
-    }
-
-    /// Check and trigger interactivity tour if conditions are met
-    private func triggerInteractivityTourIfEligible() {
-        guard hasSeenPanelTour, !hasSeenInteractivityTour, !showPanelTour, !showInteractivityTour else { return }
-        let uniqueDays = Set(transactions.map { Calendar.current.startOfDay(for: $0.date) }).count
-        guard uniqueDays >= 2 else { return }
-        Task {
-            try? await Task.sleep(for: .seconds(1.0))
-            if !showInteractivityTour {
-                showInteractivityTour = true
             }
         }
     }

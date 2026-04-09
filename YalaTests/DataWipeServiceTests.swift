@@ -30,7 +30,6 @@ struct DataWipeServiceTests {
         "hasCompletedOnboarding", "secondaryCurrencies",
         "lastKnownOnboardingTimestamp", "lastSeenAppVersion",
         "appUpdate.latestVersion", "appUpdate.lastChecked",
-        "hasSeenPanelTour", "hasSeenRegistroTour", "hasSeenInteractivityTour",
         "hasSeenSettingsTour", "hasSeenCashFlowSetupTour", "hasSeenCashFlowTableTour",
         "hasCompletedProTour", "proTourPendingPhase", "proTourTriggered",
         "seedCategoriesExecuted", "notificationsSeeded", "preferredCurrency",

@@ -2,7 +2,7 @@
 //  YalaTips.swift
 //  Yala
 //
-//  Coach mark step definitions (Groups A/B) and TipKit tips (Group C).
+//  Coach mark step definitions (Groups D-G) and TipKit tips.
 //
 
 import SwiftUI
@@ -19,102 +19,6 @@ extension View {
             self
         }
     }
-}
-
-// MARK: - Coach Mark Steps (Groups A & B)
-
-enum PanelTourSteps {
-    static func steps(isProUser: Bool) -> [CoachMarkStep] {
-        var result = [
-            CoachMarkStep(
-                id: "accounts",
-                title: L10n.TipKit.accounts,
-                message: L10n.TipKit.accountsMessage
-            ),
-            CoachMarkStep(
-                id: "widgets",
-                title: L10n.TipKit.widgets,
-                message: L10n.TipKit.widgetsMessage,
-                spotlightPadding: DS.Spacing.xs
-            ),
-            CoachMarkStep(
-                id: "widgetPreferences",
-                title: L10n.TipKit.widgetPreferences,
-                message: L10n.TipKit.widgetPreferencesMessage,
-                spotlightPadding: DS.Spacing.md
-            ),
-            CoachMarkStep(
-                id: "fab",
-                title: L10n.TipKit.fab,
-                message: isProUser ? L10n.TipKit.fabProMessage : L10n.TipKit.fabFreeMessage
-            ),
-            CoachMarkStep(
-                id: "profile",
-                title: L10n.TipKit.profile,
-                message: L10n.TipKit.profileMessage,
-                spotlightPadding: DS.Spacing.xs
-            ),
-        ]
-
-        // Contextual guide step — only if the panel guide hasn't been dismissed yet
-        if !UserDefaults.standard.bool(forKey: "guide.panel.dismissed") {
-            result.append(CoachMarkStep(
-                id: "contextualGuide",
-                title: L10n.TipKit.contextualGuide,
-                message: L10n.TipKit.contextualGuideMessage,
-                spotlightPadding: DS.Spacing.xs
-            ))
-        }
-
-        // Setup checklist step — always shown
-        result.append(CoachMarkStep(
-            id: "setupChecklist",
-            title: L10n.TipKit.setupChecklist,
-            message: L10n.TipKit.setupChecklistMessage,
-            spotlightPadding: DS.Spacing.xs
-        ))
-
-        return result
-    }
-}
-
-enum RegistroTourSteps {
-    static let steps: [CoachMarkStep] = [
-        CoachMarkStep(
-            id: "transactionTypes",
-            title: L10n.TipKit.transactionTypes,
-            message: L10n.TipKit.transactionTypesMessage
-        ),
-        CoachMarkStep(
-            id: "favoritePayments",
-            title: L10n.TipKit.favoritePayments,
-            message: L10n.TipKit.favoritePaymentsMessage,
-            spotlightPadding: DS.Spacing.xs
-        ),
-        CoachMarkStep(
-            id: "quickActions",
-            title: L10n.TipKit.quickActions,
-            message: L10n.TipKit.quickActionsMessage
-        )
-    ]
-}
-
-// MARK: - Grupo C: Interactivity Tour (coach marks)
-
-enum InteractivityTourSteps {
-    static let steps: [CoachMarkStep] = [
-        CoachMarkStep(
-            id: "filterAccount",
-            title: L10n.TipKit.filterAccount,
-            message: L10n.TipKit.filterAccountMessage
-        ),
-        CoachMarkStep(
-            id: "interactiveWidgets",
-            title: L10n.TipKit.interactiveWidgets,
-            message: L10n.TipKit.interactiveWidgetsMessage,
-            spotlightPadding: DS.Spacing.xs
-        )
-    ]
 }
 
 // MARK: - Grupo D: Tour de Settings

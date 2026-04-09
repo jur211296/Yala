@@ -2075,35 +2075,10 @@
 "tipkit.skip" = "Pular guia";
 "tipkit.next" = "Próximo";
 "tipkit.done" = "Pronto";
-"tipkit.accounts.title" = "Suas contas";
-"tipkit.accounts.message" = "Aqui você vê suas contas ativas e seus saldos a qualquer momento.";
-"tipkit.widgets.title" = "Seus gráficos";
-"tipkit.widgets.message" = "Widgets com resumos e gráficos dos seus gastos e receitas. Personalize quais ver pelo botão de configurações.";
-"tipkit.fab.title" = "Registre rápido";
-"tipkit.fab.free.message" = "Toque aqui para registrar seus gastos e receitas.";
-"tipkit.fab.pro.message" = "Registre manualmente, por voz ou com foto.";
-"tipkit.profile.title" = "Seu perfil";
-"tipkit.profile.message" = "Configure tudo para que Yala funcione do jeito que você precisa.";
 "tipkit.settingsAppIcon.title" = "Seu ícone";
 "tipkit.settingsAppIcon.message" = "Mude o ícone do app para dar seu toque pessoal.";
 "tipkit.settingsTheme.title" = "Seu tema";
 "tipkit.settingsTheme.message" = "Escolha entre clássico, minimalista ou translúcido.";
-"tipkit.contextualGuide.title" = "Guias em cada seção";
-"tipkit.contextualGuide.message" = "Você encontrará guias como este em cada seção. Eles explicam o que você pode fazer ali.";
-"tipkit.setupChecklist.title" = "Seus primeiros passos";
-"tipkit.setupChecklist.message" = "Complete esses passos para descobrir tudo o que Yala tem para você.";
-"tipkit.transactionTypes.title" = "Três tipos de registro";
-"tipkit.transactionTypes.message" = "Registre gastos, receitas e transferências entre suas contas.";
-"tipkit.favoritePayments.title" = "Pagamentos favoritos";
-"tipkit.favoritePayments.message" = "Salve gastos frequentes para não preencher tudo toda vez.";
-"tipkit.quickActions.title" = "Ações rápidas";
-"tipkit.quickActions.message" = "Crie favoritos e pagamentos programados daqui.";
-"tipkit.filterAccount.title" = "Filtre com um toque";
-"tipkit.filterAccount.message" = "Toque em uma conta para filtrar todos os gráficos só para ela.";
-"tipkit.interactiveWidgets.title" = "Toque e explore";
-"tipkit.interactiveWidgets.message" = "Os widgets são interativos: toque neles para filtrar e descobrir padrões.";
-"tipkit.widgetPreferences.title" = "Preferências de widgets";
-"tipkit.widgetPreferences.message" = "Escolha quais gráficos ver e em que ordem a partir daqui.";
 
 // Grupo D: Tour de Configurações
 "tipkit.settings.accounts.title" = "Suas contas";

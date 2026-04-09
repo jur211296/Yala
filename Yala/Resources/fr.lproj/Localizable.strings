@@ -2077,35 +2077,10 @@
 "tipkit.skip" = "Passer le guide";
 "tipkit.next" = "Suivant";
 "tipkit.done" = "Terminé";
-"tipkit.accounts.title" = "Tes comptes";
-"tipkit.accounts.message" = "Ici tu vois tes comptes actifs et leurs soldes à tout moment.";
-"tipkit.widgets.title" = "Tes graphiques";
-"tipkit.widgets.message" = "Des widgets avec des résumés et graphiques de tes dépenses et revenus. Personnalise lesquels afficher depuis le bouton de réglages.";
-"tipkit.fab.title" = "Enregistre vite";
-"tipkit.fab.free.message" = "Appuie ici pour enregistrer tes dépenses et revenus.";
-"tipkit.fab.pro.message" = "Enregistre manuellement, par voix ou avec une photo.";
-"tipkit.profile.title" = "Ton profil";
-"tipkit.profile.message" = "Configure tout pour que Yala fonctionne exactement comme tu en as besoin.";
 "tipkit.settingsAppIcon.title" = "Ton icône";
 "tipkit.settingsAppIcon.message" = "Change l'icône de l'app pour y ajouter ta touche personnelle.";
 "tipkit.settingsTheme.title" = "Ton thème";
 "tipkit.settingsTheme.message" = "Choisis entre classique, minimaliste ou translucide.";
-"tipkit.contextualGuide.title" = "Des guides dans chaque section";
-"tipkit.contextualGuide.message" = "Tu trouveras des guides comme celui-ci dans chaque section. Ils t'expliquent ce que tu peux y faire.";
-"tipkit.setupChecklist.title" = "Tes premiers pas";
-"tipkit.setupChecklist.message" = "Termine ces étapes pour découvrir tout ce que Yala a pour toi.";
-"tipkit.transactionTypes.title" = "Trois types d'enregistrement";
-"tipkit.transactionTypes.message" = "Enregistre des dépenses, des revenus et des transferts entre tes comptes.";
-"tipkit.favoritePayments.title" = "Paiements favoris";
-"tipkit.favoritePayments.message" = "Enregistre les dépenses fréquentes pour ne pas tout remplir à chaque fois.";
-"tipkit.quickActions.title" = "Actions rapides";
-"tipkit.quickActions.message" = "Crée des favoris et des paiements programmés depuis ici.";
-"tipkit.filterAccount.title" = "Filtre en un toucher";
-"tipkit.filterAccount.message" = "Touche un compte pour filtrer tous les graphiques uniquement pour celui-ci.";
-"tipkit.interactiveWidgets.title" = "Touche et explore";
-"tipkit.interactiveWidgets.message" = "Les widgets sont interactifs : touche-les pour filtrer et découvrir des tendances.";
-"tipkit.widgetPreferences.title" = "Préférences de widgets";
-"tipkit.widgetPreferences.message" = "Choisis quels graphiques afficher et dans quel ordre depuis ici.";
 
 // Groupe D : Tour des réglages
 "tipkit.settings.accounts.title" = "Tes comptes";

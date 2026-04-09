@@ -504,10 +504,6 @@ class SessionState {
     /// When true, ScheduledPaymentsView auto-opens the editor on appear.
     var shouldAutoOpenScheduledEditor: Bool = false
 
-    /// Signals that post-onboarding flow is complete (trial sheet dismissed or skipped).
-    /// Coach mark tours wait for this before starting.
-    var isReadyForTours: Bool = false
-
     /// Flag set by OnboardingView completion to trigger trial offer after fullScreenCover dismisses.
     /// Persisted in UserDefaults so it survives app kill during the dismiss animation window.
     var needsPostOnboardingTrial: Bool = UserDefaults.standard.bool(forKey: "needsPostOnboardingTrial") {
