@@ -46,9 +46,15 @@ struct GroupInviteOnboardingView: View {
         VStack(spacing: DS.Spacing.xl) {
             Spacer()
 
-            Image(systemName: "person.2.fill")
-                .font(.system(size: 56)) // A11Y-DT: decorative hero icon, fixed size
-                .foregroundStyle(theme.accent)
+            ZStack {
+                Circle()
+                    .fill(groupColor)
+                    .frame(width: 72, height: 72) // A11Y-DT: decorative hero icon, fixed size
+
+                Image(systemName: sessionState.pendingInviteGroupIcon ?? "person.2.fill")
+                    .font(.system(size: 32)) // A11Y-DT: decorative icon inside circle
+                    .foregroundStyle(.white)
+            }
 
             VStack(spacing: DS.Spacing.sm) {
                 if let groupName = sessionState.pendingInviteGroupName {
@@ -69,7 +75,16 @@ struct GroupInviteOnboardingView: View {
 
             TextField(L10n.Groups.Invite.namePlaceholder, text: $userName)
                 .font(DS.Typography.body)
-                .textFieldStyle(.roundedBorder)
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
+                .background(
+                    RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+                        .fill(.thCard)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+                        .stroke(.thCardBorder, lineWidth: 1)
+                )
                 .padding(.horizontal, DS.Spacing.lg)
 
             Spacer()
@@ -186,4 +201,10 @@ struct GroupInviteOnboardingView: View {
         modelContext.insert(account)
     }
 
+    private var groupColor: Color {
+        if let hex = sessionState.pendingInviteGroupColor {
+            return Color(hex: hex)
+        }
+        return theme.accent
+    }
 }

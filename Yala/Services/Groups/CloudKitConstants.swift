@@ -10,9 +10,9 @@ import Foundation
 
 enum CKConstants {
 
-    /// CloudKit container identifier (reuses SwiftDataConfiguration)
+    /// CloudKit container identifier for CKSyncEngine (groups only).
     static var containerID: String {
-        SwiftDataConfiguration.cloudKitContainerIdentifier
+        SwiftDataConfiguration.groupsCloudKitContainerIdentifier
     }
 
     // MARK: - Record Types

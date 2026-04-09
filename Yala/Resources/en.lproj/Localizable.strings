@@ -3035,6 +3035,8 @@
 "groups.settings.leaveGroupConfirm" = "Are you sure? Your personal expenses will be kept.";
 "groups.settings.deleteGroup" = "Delete group";
 "groups.settings.deleteGroupConfirm" = "This action is permanent and will delete all group data.";
+"groups.settings.deleteGroupFinalConfirm" = "The group and all its data will be permanently deleted for all members. This action cannot be undone.";
+"groups.settings.deleteGroupDisabledHint" = "To delete the group, first remove all expenses or all other members.";
 "groups.settings.archive" = "Archive group";
 "groups.settings.unarchive" = "Unarchive group";
 "groups.settings.archiveHint" = "Expenses and balances are preserved. You can unarchive anytime.";
@@ -3376,7 +3378,7 @@
 "groups.invite.goToGroup" = "Go to group";
 
 // Groups — Reconnect (GC-08)
-"groups.reconnect.title" = "Welcome back!";
+"groups.reconnect.title" = "Join group";
 "groups.reconnect.subtitle" = "You've been invited to a shared group";
 "groups.reconnect.subtitleWithGroup" = "You've been invited to %@";
 

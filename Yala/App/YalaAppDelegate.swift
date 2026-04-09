@@ -54,13 +54,11 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
                 // New user (or mid-onboarding): accept share eagerly, then show invite onboarding
                 await SplitSyncManager.shared.acceptShare(metadata: cloudKitShareMetadata, skipNavigation: true)
                 sessionState.shouldShowGroupInviteOnboarding = true
-            } else if hasCompletedOnboarding && UserSegmentService.shared.currentSegment == .dormant {
-                // Dormant user: accept share, show reconnection screen
-                await SplitSyncManager.shared.acceptShare(metadata: cloudKitShareMetadata, skipNavigation: true)
-                sessionState.shouldShowGroupReconnect = true
             } else {
-                // Active/sporadic/power user: accept share and navigate (existing flow)
-                await SplitSyncManager.shared.acceptShare(metadata: cloudKitShareMetadata)
+                // All existing users: defer acceptance, show confirmation first
+                // Note: direct CKShare path has no branded URL metadata (name/icon/color)
+                sessionState.pendingShareMetadata = cloudKitShareMetadata
+                sessionState.shouldShowGroupReconnect = true
             }
         }
     }

@@ -128,6 +128,7 @@ struct GroupsContainerView: View {
                 }
             }
             .refreshable { viewModel.loadData() }
+            .appliesPendingRemoteChanges(sessionState)
             .onAppear {
                 viewModel.setContext(modelContext)
                 evaluateNudge()

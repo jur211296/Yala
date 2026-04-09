@@ -45,6 +45,8 @@ struct GroupSettingsView: View {
     @State private var groupCurrencies: [String] = []
     @State private var accountPrefs: [String: String] = [:]   // currencyCode → accountName
     @State private var accountsByCurrency: [String: [Account]] = [:]
+    @State private var showDeleteGroupConfirm = false
+    @State private var showDeleteGroupFinalConfirm = false
 
     // MARK: - Body
 
@@ -64,8 +66,10 @@ struct GroupSettingsView: View {
                     // Personal settings section
                     mySettingsSection
 
-                    // Archive
-                    archiveSection
+                    // Danger zone (archive + delete)
+                    if viewModel.isCurrentUserAdmin || group.isOwner {
+                        dangerZoneSection
+                    }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xl)
@@ -116,6 +120,28 @@ struct GroupSettingsView: View {
             } message: {
                 Text(L10n.Groups.Settings.regenerateLinkConfirm)
             }
+            .confirmationDialog(
+                L10n.Groups.Settings.deleteGroup,
+                isPresented: $showDeleteGroupConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Groups.Settings.deleteGroup, role: .destructive) {
+                    showDeleteGroupFinalConfirm = true
+                }
+            } message: {
+                Text(L10n.Groups.Settings.deleteGroupConfirm)
+            }
+            .alert(
+                L10n.Groups.Settings.deleteGroup,
+                isPresented: $showDeleteGroupFinalConfirm
+            ) {
+                Button(L10n.Action.cancel, role: .cancel) {}
+                Button(L10n.Groups.Settings.deleteGroup, role: .destructive) {
+                    deleteGroup()
+                }
+            } message: {
+                Text(L10n.Groups.Settings.deleteGroupFinalConfirm)
+            }
         }
     }
 
@@ -124,10 +150,37 @@ struct GroupSettingsView: View {
     private var infoSection: some View {
         SectionBox(title: L10n.Groups.Settings.info) {
             HStack(spacing: DS.Spacing.md) {
-                // Group icon — tappable to change
-                Button {
-                    showIconPicker = true
-                } label: {
+                if viewModel.isCurrentUserAdmin {
+                    // Group icon — tappable to change (admin only)
+                    Button {
+                        showIconPicker = true
+                    } label: {
+                        ZStack {
+                            Circle()
+                                .fill(Color(hex: editColorHex))
+                                .frame(width: 48, height: 48) // A11Y-DT: fixed icon size matching CategoryDetailView pattern
+
+                            Image(systemName: editIconName)
+                                .font(DS.Typography.title2)
+                                .foregroundStyle(.white)
+
+                            // A11Y-DT: decorative edit badge on group icon
+                            Image(systemName: "pencil.circle.fill")
+                                .font(DS.Typography.label)
+                                .foregroundStyle(Color(hex: editColorHex))
+                                .background(Circle().fill(.white).frame(width: 16, height: 16))
+                                .offset(x: 16, y: 16)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.Groups.Form.icon)
+
+                    // Group name — editable inline (admin only)
+                    TextField(L10n.Groups.Form.namePlaceholder, text: $editName)
+                        .font(DS.Typography.headline)
+                        .onSubmit { saveIdentity() }
+                } else {
+                    // Group icon — static (non-admin)
                     ZStack {
                         Circle()
                             .fill(Color(hex: editColorHex))
@@ -136,22 +189,12 @@ struct GroupSettingsView: View {
                         Image(systemName: editIconName)
                             .font(DS.Typography.title2)
                             .foregroundStyle(.white)
-
-                        // A11Y-DT: decorative edit badge on group icon
-                        Image(systemName: "pencil.circle.fill")
-                            .font(DS.Typography.label)
-                            .foregroundStyle(Color(hex: editColorHex))
-                            .background(Circle().fill(.white).frame(width: 16, height: 16))
-                            .offset(x: 16, y: 16)
                     }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.Groups.Form.icon)
 
-                // Group name — editable inline
-                TextField(L10n.Groups.Form.namePlaceholder, text: $editName)
-                    .font(DS.Typography.headline)
-                    .onSubmit { saveIdentity() }
+                    // Group name — read-only (non-admin)
+                    Text(editName)
+                        .font(DS.Typography.headline)
+                }
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
@@ -275,95 +318,98 @@ struct GroupSettingsView: View {
                     updateGroupOption { $0.simplifyDebts = newValue }
                 }
 
-                Divider()
-                    .padding(.leading, DS.FormRow.paddingH)
+                // Admin-only options
+                if viewModel.isCurrentUserAdmin {
+                    Divider()
+                        .padding(.leading, DS.FormRow.paddingH)
 
-                // Show debts in single currency
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Toggle(L10n.Groups.Form.showDebtsInSingleCurrency, isOn: $showDebtsInSingleCurrency)
-                        .font(DS.Typography.body)
+                    // Show debts in single currency
+                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                        Toggle(L10n.Groups.Form.showDebtsInSingleCurrency, isOn: $showDebtsInSingleCurrency)
+                            .font(DS.Typography.body)
 
-                    Text(L10n.Groups.Form.showDebtsInSingleCurrencyHint)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
+                        Text(L10n.Groups.Form.showDebtsInSingleCurrencyHint)
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(.secondary)
 
-                    if showDebtsInSingleCurrency {
-                        Button {
-                            showCurrencyPicker = true
-                        } label: {
-                            HStack(spacing: DS.Spacing.md) {
-                                let info = currencyInfo(for: selectedCurrency)
-                                Text(info.flag)
-                                    .font(DS.Typography.body)
+                        if showDebtsInSingleCurrency {
+                            Button {
+                                showCurrencyPicker = true
+                            } label: {
+                                HStack(spacing: DS.Spacing.md) {
+                                    let info = currencyInfo(for: selectedCurrency)
+                                    Text(info.flag)
+                                        .font(DS.Typography.body)
 
-                                Text(info.code)
-                                    .font(DS.Typography.body)
-                                    .foregroundStyle(.primary)
+                                    Text(info.code)
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.primary)
 
-                                Spacer()
+                                    Spacer()
 
-                                Text(info.name.capitalized)
-                                    .font(DS.Typography.captionSmall)
-                                    .foregroundStyle(.secondary)
+                                    Text(info.name.capitalized)
+                                        .font(DS.Typography.captionSmall)
+                                        .foregroundStyle(.secondary)
 
-                                Image(systemName: "chevron.right")
-                                    .font(DS.Typography.captionSmall)
-                                    .foregroundStyle(.secondary)
+                                    Image(systemName: "chevron.right")
+                                        .font(DS.Typography.captionSmall)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(.vertical, DS.Spacing.sm)
+                                .contentShape(Rectangle())
                             }
-                            .padding(.vertical, DS.Spacing.sm)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
-                .onChange(of: showDebtsInSingleCurrency) { _, newValue in
-                    updateGroupOption { $0.showDebtsInSingleCurrency = newValue }
-                }
-                .onChange(of: selectedCurrency) { _, newValue in
-                    updateGroupOption { $0.currencyCode = newValue.rawValue }
-                }
-
-                Divider()
-                    .padding(.leading, DS.FormRow.paddingH)
-
-                // Default split type
-                HStack {
-                    Text(L10n.Groups.Form.defaultSplitType)
-                        .font(DS.Typography.body)
-
-                    Spacer()
-
-                    Picker("", selection: $defaultSplitType) {
-                        ForEach(SplitType.allCases) { type in
-                            Text(type.displayName).tag(type)
+                            .buttonStyle(.plain)
                         }
                     }
-                    .pickerStyle(.menu)
-                }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
-                .onChange(of: defaultSplitType) { _, newValue in
-                    updateGroupOption { $0.defaultSplitType = newValue.rawValue }
-                }
+                    .padding(.horizontal, DS.FormRow.paddingH)
+                    .padding(.vertical, DS.FormRow.paddingV)
+                    .onChange(of: showDebtsInSingleCurrency) { _, newValue in
+                        updateGroupOption { $0.showDebtsInSingleCurrency = newValue }
+                    }
+                    .onChange(of: selectedCurrency) { _, newValue in
+                        updateGroupOption { $0.currencyCode = newValue.rawValue }
+                    }
 
-                Divider()
-                    .padding(.leading, DS.FormRow.paddingH)
+                    Divider()
+                        .padding(.leading, DS.FormRow.paddingH)
 
-                // Members can invite
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Toggle(L10n.Groups.Form.membersCanInvite, isOn: $membersCanInvite)
-                        .font(DS.Typography.body)
+                    // Default split type
+                    HStack {
+                        Text(L10n.Groups.Form.defaultSplitType)
+                            .font(DS.Typography.body)
 
-                    Text(L10n.Groups.Form.membersCanInviteHint)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
-                .onChange(of: membersCanInvite) { _, newValue in
-                    updateGroupOption { $0.membersCanInvite = newValue }
+                        Spacer()
+
+                        Picker("", selection: $defaultSplitType) {
+                            ForEach(SplitType.allCases) { type in
+                                Text(type.displayName).tag(type)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
+                    .padding(.horizontal, DS.FormRow.paddingH)
+                    .padding(.vertical, DS.FormRow.paddingV)
+                    .onChange(of: defaultSplitType) { _, newValue in
+                        updateGroupOption { $0.defaultSplitType = newValue.rawValue }
+                    }
+
+                    Divider()
+                        .padding(.leading, DS.FormRow.paddingH)
+
+                    // Members can invite
+                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                        Toggle(L10n.Groups.Form.membersCanInvite, isOn: $membersCanInvite)
+                            .font(DS.Typography.body)
+
+                        Text(L10n.Groups.Form.membersCanInviteHint)
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, DS.FormRow.paddingH)
+                    .padding(.vertical, DS.FormRow.paddingV)
+                    .onChange(of: membersCanInvite) { _, newValue in
+                        updateGroupOption { $0.membersCanInvite = newValue }
+                    }
                 }
             }
         }
@@ -456,33 +502,68 @@ struct GroupSettingsView: View {
         }
     }
 
-    // MARK: - Archive Section
+    // MARK: - Danger Zone (Archive + Delete)
 
-    private var archiveSection: some View {
+    private var canDeleteGroup: Bool {
+        viewModel.expenses.isEmpty || viewModel.members.count <= 1
+    }
+
+    private var dangerZoneSection: some View {
         VStack(spacing: DS.Spacing.none) {
-            Button {
-                toggleArchive()
-            } label: {
-                HStack {
-                    Image(systemName: group.isArchived ? "archivebox.fill" : "archivebox")
-                        .foregroundStyle(DS.Semantic.errorForeground)
-                    Text(group.isArchived ? L10n.Groups.Settings.unarchive : L10n.Groups.Settings.archive)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(DS.Semantic.errorForeground)
-                    Spacer()
+            // Archive (admin only)
+            if viewModel.isCurrentUserAdmin {
+                Button {
+                    toggleArchive()
+                } label: {
+                    HStack {
+                        Image(systemName: group.isArchived ? "archivebox.fill" : "archivebox")
+                            .foregroundStyle(DS.Semantic.errorForeground)
+                        Text(group.isArchived ? L10n.Groups.Settings.unarchive : L10n.Groups.Settings.archive)
+                            .font(DS.Typography.body)
+                            .foregroundStyle(DS.Semantic.errorForeground)
+                        Spacer()
+                    }
+                    .padding(.horizontal, DS.FormRow.paddingH)
+                    .padding(.vertical, DS.FormRow.paddingV)
+                    .contentShape(Rectangle())
                 }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
-            .accessibilityHint(L10n.Groups.Settings.archiveHint)
 
-            Text(L10n.Groups.Settings.archiveHint)
-                .font(DS.Typography.captionSmall)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.bottom, DS.Spacing.sm)
+            // Delete (owner only)
+            if group.isOwner {
+                if viewModel.isCurrentUserAdmin {
+                    Divider()
+                        .padding(.leading, DS.FormRow.paddingH)
+                }
+
+                Button {
+                    showDeleteGroupConfirm = true
+                } label: {
+                    HStack {
+                        Image(systemName: "trash")
+                            .foregroundStyle(DS.Semantic.errorForeground)
+                        Text(L10n.Groups.Settings.deleteGroup)
+                            .font(DS.Typography.body)
+                            .foregroundStyle(DS.Semantic.errorForeground)
+                        Spacer()
+                    }
+                    .padding(.horizontal, DS.FormRow.paddingH)
+                    .padding(.vertical, DS.FormRow.paddingV)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(!canDeleteGroup)
+                .opacity(canDeleteGroup ? 1 : 0.4)
+
+                if !canDeleteGroup {
+                    Text(L10n.Groups.Settings.deleteGroupDisabledHint)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, DS.FormRow.paddingH)
+                        .padding(.bottom, DS.Spacing.sm)
+                }
+            }
         }
         .background(RoundedRectangle(cornerRadius: DS.Radius.card).fill(.thCard))
         .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(.thCardBorder, lineWidth: 1))
@@ -634,6 +715,18 @@ struct GroupSettingsView: View {
         } catch {
             #if DEBUG
             print("GroupSettingsView: Error toggling archive: \(error)")
+            #endif
+        }
+    }
+
+    private func deleteGroup() {
+        do {
+            try GroupService.shared.deleteGroup(group)
+            DS.Haptic.warning()
+            dismiss()
+        } catch {
+            #if DEBUG
+            print("GroupSettingsView: Error deleting group: \(error)")
             #endif
         }
     }

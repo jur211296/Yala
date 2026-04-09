@@ -600,12 +600,26 @@ private struct GroupInviteModifier: ViewModifier {
                 }
                 .environment(SessionState.shared)
             }
-            .sheet(isPresented: $showGroupReconnect) {
-                GroupReconnectView {
-                    showGroupReconnect = false
-                    SessionState.shared.shouldShowGroupReconnect = false
-                    SessionState.shared.deepLinkDestination = .groups
-                }
+            .sheet(isPresented: $showGroupReconnect, onDismiss: {
+                SessionState.shared.clearPendingInviteMetadata()
+            }) {
+                GroupReconnectView(
+                    onJoin: {
+                        showGroupReconnect = false
+                        Task {
+                            if let metadata = SessionState.shared.pendingShareMetadata {
+                                await SplitSyncManager.shared.acceptShare(metadata: metadata)
+                                // Give CKSyncEngine time to fetch group data before navigating
+                                try? await Task.sleep(for: .seconds(2))
+                                SessionState.shared.incrementDataVersion()
+                            }
+                            SessionState.shared.deepLinkDestination = .groups
+                        }
+                    },
+                    onDismiss: {
+                        showGroupReconnect = false
+                    }
+                )
                 .environment(SessionState.shared)
             }
             .onChange(of: SessionState.shared.shouldShowGroupInviteOnboarding) { _, shouldShow in

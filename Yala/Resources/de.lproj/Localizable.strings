@@ -3032,6 +3032,8 @@
 "groups.settings.leaveGroupConfirm" = "Bist du sicher? Deine persönlichen Ausgaben bleiben erhalten.";
 "groups.settings.deleteGroup" = "Gruppe löschen";
 "groups.settings.deleteGroupConfirm" = "Diese Aktion ist dauerhaft und löscht alle Gruppendaten.";
+"groups.settings.deleteGroupFinalConfirm" = "Die Gruppe und alle Daten werden für alle Mitglieder dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.";
+"groups.settings.deleteGroupDisabledHint" = "Um die Gruppe zu löschen, entferne zuerst alle Ausgaben oder alle anderen Mitglieder.";
 "groups.settings.archive" = "Gruppe archivieren";
 "groups.settings.unarchive" = "Gruppe wiederherstellen";
 "groups.settings.archiveHint" = "Ausgaben und Salden bleiben erhalten. Du kannst jederzeit wiederherstellen.";
@@ -3373,9 +3375,9 @@
 "groups.invite.goToGroup" = "Zur Gruppe";
 
 // Groups — Reconnect (GC-08)
-"groups.reconnect.title" = "Willkommen zurück!";
+"groups.reconnect.title" = "Gruppe beitreten";
 "groups.reconnect.subtitle" = "Du wurdest in eine gemeinsame Gruppe eingeladen";
-"groups.reconnect.subtitleWithGroup" = "Du wurdest in die Gruppe %@ eingeladen";
+"groups.reconnect.subtitleWithGroup" = "Du wurdest in %@ eingeladen";
 
 // Groups — Activate Full Mode (GC-08)
 "groups.activate.title" = "Volles Yala aktivieren";

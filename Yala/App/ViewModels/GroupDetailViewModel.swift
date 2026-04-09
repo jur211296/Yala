@@ -138,6 +138,39 @@ final class GroupDetailViewModel {
     func sharesForExpense(_ expense: SplitExpense) -> [SplitShare] {
         shares.filter { $0.expenseID == expense.id }
     }
+
+    // MARK: - Share Link
+
+    private(set) var shareURL: URL?
+    var isCreatingShare = false
+
+    func createShareLink() async {
+        guard !isCreatingShare else { return }
+        if shareURL != nil { return }
+        isCreatingShare = true
+        do {
+            let (_, ckURL) = try await SplitZoneManager(syncManager: .shared).createShare(for: group)
+            if let ckURL {
+                shareURL = buildBrandedInviteURL(from: ckURL)
+            }
+        } catch {
+            #if DEBUG
+            print("GroupDetailViewModel: Error creating share: \(error)")
+            #endif
+        }
+        isCreatingShare = false
+    }
+
+    private func buildBrandedInviteURL(from ckURL: URL) -> URL {
+        let name = UserDefaults.standard.string(forKey: "userName") ?? ""
+        let inviterName = name.isEmpty ? L10n.Profile.defaultName : name
+        return InviteLinkService.buildInviteURL(
+            shareURL: ckURL,
+            group: group,
+            members: members,
+            inviterName: inviterName
+        ) ?? ckURL
+    }
 }
 
 // MARK: - Sheet Enum

@@ -77,6 +77,22 @@ enum InviteLinkService {
         return shareURL
     }
 
+    // MARK: - Extract Metadata
+
+    /// Extrae metadata del grupo desde un invite URL branded (params n, i, c, m).
+    static func extractMetadata(from url: URL) -> (name: String?, icon: String?, color: String?, members: [String]?) {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return (nil, nil, nil, nil)
+        }
+        let items = components.queryItems ?? []
+        let name = items.first(where: { $0.name == "n" })?.value
+        let icon = items.first(where: { $0.name == "i" })?.value
+        let color = items.first(where: { $0.name == "c" })?.value
+        let membersRaw = items.first(where: { $0.name == "m" })?.value
+        let members = membersRaw?.split(separator: ",").map(String.init)
+        return (name, icon, color, members)
+    }
+
     // MARK: - Check
 
     /// Verifica si una URL es un invite link de Yala (universal link o custom scheme).

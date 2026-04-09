@@ -17,6 +17,7 @@ struct GroupRecordsView: View {
     // Callbacks (optional for backwards compatibility)
     var onTapExpense: ((SplitExpense) -> Void)?
     var onDeleteExpense: ((SplitExpense) -> Void)?
+    var onInvite: (() -> Void)?
 
     @Environment(\.yalaTheme) private var theme
     @State private var expenseToDelete: SplitExpense?
@@ -25,7 +26,9 @@ struct GroupRecordsView: View {
         if expenses.isEmpty {
             YalaEmptyState(
                 icon: "receipt",
-                title: L10n.Groups.Expense.noExpenses
+                title: L10n.Groups.Expense.noExpenses,
+                actionTitle: onInvite != nil ? L10n.Groups.Settings.invite : nil,
+                action: onInvite
             )
         } else {
             ScrollView {

@@ -945,6 +945,8 @@ enum L10n {
             static var leaveGroupConfirm: String { ls("groups.settings.leaveGroupConfirm", comment: "") }
             static var deleteGroup: String { ls("groups.settings.deleteGroup", comment: "") }
             static var deleteGroupConfirm: String { ls("groups.settings.deleteGroupConfirm", comment: "") }
+            static var deleteGroupFinalConfirm: String { ls("groups.settings.deleteGroupFinalConfirm", comment: "") }
+            static var deleteGroupDisabledHint: String { ls("groups.settings.deleteGroupDisabledHint", comment: "") }
             static var archive: String { ls("groups.settings.archive", comment: "") }
             static var unarchive: String { ls("groups.settings.unarchive", comment: "") }
             static var archiveHint: String { ls("groups.settings.archiveHint", comment: "") }

@@ -5,6 +5,7 @@
 //  Created by Yala Refactoring.
 //
 
+import CloudKit
 import SwiftData
 import SwiftUI
 import WidgetKit
@@ -518,8 +519,24 @@ class SessionState {
     /// When true, shows GroupReconnectView (sheet for dormant users accepting invite)
     var shouldShowGroupReconnect: Bool = false
 
-    /// Name of the group from pending invitation (resolved after sync)
+    /// Metadata del grupo desde invite URL branded (params n, i, c, m)
     var pendingInviteGroupName: String?
+    var pendingInviteGroupIcon: String?
+    var pendingInviteGroupColor: String?
+    var pendingInviteGroupMembers: [String]?
+
+    /// CKShare.Metadata pendiente — almacenada antes de que el usuario confirme unirse
+    var pendingShareMetadata: CKShare.Metadata?
+
+    /// Limpia toda la metadata pendiente de invitación de grupo
+    func clearPendingInviteMetadata() {
+        shouldShowGroupReconnect = false
+        pendingShareMetadata = nil
+        pendingInviteGroupName = nil
+        pendingInviteGroupIcon = nil
+        pendingInviteGroupColor = nil
+        pendingInviteGroupMembers = nil
+    }
 
     // MARK: - Splash State
 

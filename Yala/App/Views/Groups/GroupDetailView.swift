@@ -55,6 +55,8 @@ struct GroupDetailView: View {
     @State private var viewModel: GroupDetailViewModel
     @State private var selectedTab: GroupDetailTab = .records
     @State private var showNudgeBanner = false
+    @State private var showShareSheet = false
+    @State private var wasArchivedOnAppear = false
 
     // MARK: - Init
 
@@ -127,8 +129,15 @@ struct GroupDetailView: View {
             }) { sheet in
                 sheetContent(for: sheet)
             }
+            .sheet(isPresented: $showShareSheet) {
+                if let url = viewModel.shareURL {
+                    ActivityView(activityItems: [url])
+                }
+            }
             .refreshable { viewModel.loadData() }
+            .appliesPendingRemoteChanges(sessionState)
             .onAppear {
+                wasArchivedOnAppear = group.isArchived
                 viewModel.setContext(modelContext)
                 // Only evaluate if no nudge is already showing (avoid overriding GroupsContainer nudge)
                 if NudgeService.shared.currentNudge == nil {
@@ -143,7 +152,12 @@ struct GroupDetailView: View {
             }
             .onChange(of: sessionState.dataVersion) {
                 viewModel.loadData()
-                if group.isArchived {
+                if group.modelContext == nil || group.isDeleted {
+                    dismiss()
+                    return
+                }
+                // Only dismiss if group BECAME archived during this session
+                if group.isArchived && !wasArchivedOnAppear {
                     dismiss()
                 }
             }
@@ -240,7 +254,16 @@ struct GroupDetailView: View {
                 memberNameLookup: viewModel.memberNameLookup,
                 currencyCode: group.currencyCode,
                 onTapExpense: { viewModel.activeSheet = .editExpense($0) },
-                onDeleteExpense: { viewModel.deleteExpense($0) }
+                onDeleteExpense: { viewModel.deleteExpense($0) },
+                onInvite: {
+                    guard !viewModel.isCreatingShare else { return }
+                    Task {
+                        await viewModel.createShareLink()
+                        if viewModel.shareURL != nil {
+                            showShareSheet = true
+                        }
+                    }
+                }
             )
 
         case .balances:
