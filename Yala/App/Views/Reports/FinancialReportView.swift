@@ -20,12 +20,15 @@ struct FinancialReportView: View {
     @State private var showResetConfirmation = false
     @State private var showHorizonConfig = false
     @State private var recalculateTask: Task<Void, Never>?
+    /// Whether the app is in background — suppresses recalculation to prevent 0x8BADF00D watchdog kill.
+    @State private var isInBackground = false
 
     // MARK: - Environment
 
     @Environment(SessionState.self) private var sessionState
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.scenePhase) private var scenePhase
 
     // MARK: - Queries
 
@@ -98,6 +101,19 @@ struct FinancialReportView: View {
             cashFlowViewModel.setContext(modelContext)
         }
         .onDisappear { recalculateTask?.cancel() }
+        .onChange(of: scenePhase) { _, newPhase in
+            switch newPhase {
+            case .background:
+                isInBackground = true
+                recalculateTask?.cancel()
+                recalculateTask = nil
+            case .active:
+                isInBackground = false
+                scheduleRecalculate()
+            default:
+                break
+            }
+        }
         .onChange(of: sessionState.selectedPeriod) { _, _ in scheduleRecalculate() }
         .onChange(of: sessionState.customDateRange) { _, _ in scheduleRecalculate() }
         .onChange(of: sessionState.comparisonMode) { _, _ in scheduleRecalculate() }
@@ -360,6 +376,7 @@ struct FinancialReportView: View {
     }
 
     private func scheduleRecalculate() {
+        guard !isInBackground else { return }
         recalculateTask?.cancel()
         recalculateTask = Task {
             do {
