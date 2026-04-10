@@ -11,6 +11,25 @@ import Foundation
 
 enum CKRecordTranslator {
 
+    // MARK: - CKRecord System Fields (conflict-free uploads)
+
+    /// Encode CKRecord system fields (changeTag, modificationDate, etc.) into Data for local storage.
+    static func encodeSystemFields(of record: CKRecord) -> Data {
+        let archiver = NSKeyedArchiver(requiringSecureCoding: true)
+        record.encodeSystemFields(with: archiver)
+        archiver.finishEncoding()
+        return archiver.encodedData
+    }
+
+    /// Restore a CKRecord from stored system fields, preserving the server's changeTag.
+    static func recordFromSystemFields(_ data: Data) -> CKRecord? {
+        guard let unarchiver = try? NSKeyedUnarchiver(forReadingFrom: data) else { return nil }
+        unarchiver.requiresSecureCoding = true
+        let record = CKRecord(coder: unarchiver)
+        unarchiver.finishDecoding()
+        return record
+    }
+
     // MARK: - Bool ↔ Int64 Helpers (CloudKit stores Bool as Int64)
 
     private static func ckBool(_ value: Bool) -> CKRecordValue {
@@ -29,8 +48,13 @@ enum CKRecordTranslator {
     // MARK: - SplitGroup ↔ GroupMeta
 
     static func record(from group: SplitGroup, in zoneID: CKRecordZone.ID) -> CKRecord {
-        let recordID = CKConstants.recordID(for: group.id, in: zoneID)
-        let record = CKRecord(recordType: CKConstants.RecordType.groupMeta, recordID: recordID)
+        let record: CKRecord
+        if let data = group.ckSystemFieldsData, let restored = recordFromSystemFields(data) {
+            record = restored
+        } else {
+            let recordID = CKConstants.recordID(for: group.id, in: zoneID)
+            record = CKRecord(recordType: CKConstants.RecordType.groupMeta, recordID: recordID)
+        }
         applyGroupFields(from: group, to: record)
         return record
     }
@@ -66,6 +90,7 @@ enum CKRecordTranslator {
         group.defaultSplitType = record[F.defaultSplitType] as? String ?? "equal"
         group.membersCanInvite = readBool(record, key: F.membersCanInvite, default: true)
         group.isOwner = false
+        group.ckSystemFieldsData = encodeSystemFields(of: record)
         return group
     }
 
@@ -80,13 +105,19 @@ enum CKRecordTranslator {
         group.showDebtsInSingleCurrency = readBool(record, key: F.showDebtsInSingleCurrency)
         group.defaultSplitType = record[F.defaultSplitType] as? String ?? group.defaultSplitType
         group.membersCanInvite = readBool(record, key: F.membersCanInvite, default: group.membersCanInvite)
+        group.ckSystemFieldsData = encodeSystemFields(of: record)
     }
 
     // MARK: - SplitExpense ↔ SplitExpense CKRecord
 
     static func record(from expense: SplitExpense, in zoneID: CKRecordZone.ID) -> CKRecord {
-        let recordID = CKConstants.recordID(for: expense.id, in: zoneID)
-        let record = CKRecord(recordType: CKConstants.RecordType.splitExpense, recordID: recordID)
+        let record: CKRecord
+        if let data = expense.ckSystemFieldsData, let restored = recordFromSystemFields(data) {
+            record = restored
+        } else {
+            let recordID = CKConstants.recordID(for: expense.id, in: zoneID)
+            record = CKRecord(recordType: CKConstants.RecordType.splitExpense, recordID: recordID)
+        }
         applyExpenseFields(from: expense, to: record)
         return record
     }
@@ -127,6 +158,7 @@ enum CKRecordTranslator {
         expense.currencyCode = record[F.currencyCode] as? String ?? "USD"
         expense.subcategoryName = record[F.subcategoryName] as? String
         expense.createdAt = record[F.createdAt] as? Date ?? Date.now
+        expense.ckSystemFieldsData = encodeSystemFields(of: record)
         return expense
     }
 
@@ -142,13 +174,19 @@ enum CKRecordTranslator {
         expense.currencyCode = record[F.currencyCode] as? String ?? expense.currencyCode
         expense.subcategoryName = record[F.subcategoryName] as? String
         expense.createdAt = record[F.createdAt] as? Date ?? expense.createdAt
+        expense.ckSystemFieldsData = encodeSystemFields(of: record)
     }
 
     // MARK: - SplitMember ↔ SplitMember CKRecord
 
     static func record(from member: SplitMember, in zoneID: CKRecordZone.ID) -> CKRecord {
-        let recordID = CKConstants.recordID(for: member.id, in: zoneID)
-        let record = CKRecord(recordType: CKConstants.RecordType.splitMember, recordID: recordID)
+        let record: CKRecord
+        if let data = member.ckSystemFieldsData, let restored = recordFromSystemFields(data) {
+            record = restored
+        } else {
+            let recordID = CKConstants.recordID(for: member.id, in: zoneID)
+            record = CKRecord(recordType: CKConstants.RecordType.splitMember, recordID: recordID)
+        }
         applyMemberFields(from: member, to: record)
         return record
     }
@@ -175,6 +213,7 @@ enum CKRecordTranslator {
         member.role = record[F.role] as? String ?? "member"
         member.joinedAt = record[F.joinedAt] as? Date ?? Date.now
         member.isCurrentUser = readBool(record, key: F.isCurrentUser)
+        member.ckSystemFieldsData = encodeSystemFields(of: record)
         return member
     }
 
@@ -185,13 +224,19 @@ enum CKRecordTranslator {
         member.role = record[F.role] as? String ?? member.role
         member.joinedAt = record[F.joinedAt] as? Date ?? member.joinedAt
         member.isCurrentUser = readBool(record, key: F.isCurrentUser)
+        member.ckSystemFieldsData = encodeSystemFields(of: record)
     }
 
     // MARK: - SplitShare ↔ SplitShare CKRecord
 
     static func record(from share: SplitShare, in zoneID: CKRecordZone.ID) -> CKRecord {
-        let recordID = CKConstants.recordID(for: share.id, in: zoneID)
-        let record = CKRecord(recordType: CKConstants.RecordType.splitShare, recordID: recordID)
+        let record: CKRecord
+        if let data = share.ckSystemFieldsData, let restored = recordFromSystemFields(data) {
+            record = restored
+        } else {
+            let recordID = CKConstants.recordID(for: share.id, in: zoneID)
+            record = CKRecord(recordType: CKConstants.RecordType.splitShare, recordID: recordID)
+        }
         applyShareFields(from: share, to: record)
         return record
     }
@@ -218,6 +263,7 @@ enum CKRecordTranslator {
         share.memberID = record[F.memberID] as? String ?? ""
         share.isPaid = readBool(record, key: F.isPaid)
         share.groupZoneID = record.recordID.zoneID.zoneName
+        share.ckSystemFieldsData = encodeSystemFields(of: record)
         return share
     }
 
@@ -230,13 +276,19 @@ enum CKRecordTranslator {
         share.memberID = record[F.memberID] as? String ?? share.memberID
         share.isPaid = readBool(record, key: F.isPaid)
         share.groupZoneID = record.recordID.zoneID.zoneName
+        share.ckSystemFieldsData = encodeSystemFields(of: record)
     }
 
     // MARK: - SplitSettlement ↔ SplitSettlement CKRecord
 
     static func record(from settlement: SplitSettlement, in zoneID: CKRecordZone.ID) -> CKRecord {
-        let recordID = CKConstants.recordID(for: settlement.id, in: zoneID)
-        let record = CKRecord(recordType: CKConstants.RecordType.splitSettlement, recordID: recordID)
+        let record: CKRecord
+        if let data = settlement.ckSystemFieldsData, let restored = recordFromSystemFields(data) {
+            record = restored
+        } else {
+            let recordID = CKConstants.recordID(for: settlement.id, in: zoneID)
+            record = CKRecord(recordType: CKConstants.RecordType.splitSettlement, recordID: recordID)
+        }
         applySettlementFields(from: settlement, to: record)
         return record
     }
@@ -269,6 +321,7 @@ enum CKRecordTranslator {
         settlement.date = record[F.date] as? Date ?? Date.now
         settlement.isConfirmed = readBool(record, key: F.isConfirmed)
         settlement.currencyCode = record[F.currencyCode] as? String ?? "USD"
+        settlement.ckSystemFieldsData = encodeSystemFields(of: record)
         return settlement
     }
 
@@ -281,5 +334,6 @@ enum CKRecordTranslator {
         settlement.date = record[F.date] as? Date ?? settlement.date
         settlement.isConfirmed = readBool(record, key: F.isConfirmed)
         settlement.currencyCode = record[F.currencyCode] as? String ?? settlement.currencyCode
+        settlement.ckSystemFieldsData = encodeSystemFields(of: record)
     }
 }

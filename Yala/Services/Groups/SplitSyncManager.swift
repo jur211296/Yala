@@ -393,35 +393,32 @@ final class SplitSyncManager {
             let zoneName = deletion.zoneID.zoneName
             guard let groupID = CKConstants.groupID(from: zoneName) else { continue }
 
-            #if DEBUG
-            logger.info("[\(engineName)] Zone deleted: \(zoneName) — cleaning up local data")
-            #endif
+            switch deletion.reason {
+            case .deleted:
+                #if DEBUG
+                logger.info("[\(engineName)] Zone deleted: \(zoneName) — cleaning up local data")
+                #endif
+                deleteGroupCache(groupID: groupID, context: modelContext)
+                purgePendingChanges(for: deletion.zoneID, engine: engine)
 
-            deleteGroupCache(groupID: groupID, context: modelContext)
+            case .purged:
+                #if DEBUG
+                logger.info("[\(engineName)] Zone purged: \(zoneName) — clearing data + state")
+                #endif
+                deleteGroupCache(groupID: groupID, context: modelContext)
+                purgePendingChanges(for: deletion.zoneID, engine: engine)
+                clearState(name: engineName)
 
-            // Purge pending record zone changes for the deleted zone
-            let pendingToRemove = engine.state.pendingRecordZoneChanges.filter { change in
-                switch change {
-                case .saveRecord(let recordID):
-                    return recordID.zoneID == deletion.zoneID
-                case .deleteRecord(let recordID):
-                    return recordID.zoneID == deletion.zoneID
-                @unknown default:
-                    return false
-                }
-            }
-            if !pendingToRemove.isEmpty {
-                engine.state.remove(pendingRecordZoneChanges: pendingToRemove)
-            }
+            case .encryptedDataReset:
+                #if DEBUG
+                logger.info("[\(engineName)] Encrypted data reset: \(zoneName) — clearing system fields + re-uploading")
+                #endif
+                clearState(name: engineName)
+                reuploadGroupRecords(groupID: groupID, zoneID: deletion.zoneID, engine: engine, context: modelContext)
 
-            // Purge pending database changes for the deleted zone
-            let pendingDBChanges = engine.state.pendingDatabaseChanges.filter {
-                if case .deleteZone(let zoneID) = $0 { return zoneID == deletion.zoneID }
-                if case .saveZone(let zone) = $0 { return zone.zoneID == deletion.zoneID }
-                return false
-            }
-            if !pendingDBChanges.isEmpty {
-                engine.state.remove(pendingDatabaseChanges: pendingDBChanges)
+            @unknown default:
+                deleteGroupCache(groupID: groupID, context: modelContext)
+                purgePendingChanges(for: deletion.zoneID, engine: engine)
             }
         }
 
@@ -442,18 +439,43 @@ final class SplitSyncManager {
             #if DEBUG
             logger.info("iCloud account signed in")
             #endif
+
         case .signOut:
             syncStatus = .noAccount
+            clearAllLocalGroupData()
             #if DEBUG
-            logger.info("iCloud account signed out")
+            logger.info("iCloud account signed out — cleared local group data")
             #endif
+
         case .switchAccounts:
             syncStatus = .idle
+            clearAllLocalGroupData()
+            clearState(name: "private")
+            clearState(name: "shared")
             #if DEBUG
-            logger.info("iCloud account switched — should clear local group cache")
+            logger.info("iCloud account switched — cleared data + state for re-fetch")
             #endif
+
         @unknown default:
             break
+        }
+    }
+
+    /// Delete all local group data (used on sign-out and account switch for privacy).
+    private func clearAllLocalGroupData() {
+        guard let modelContext else { return }
+
+        do {
+            let groups = try modelContext.fetch(FetchDescriptor<SplitGroup>())
+            for group in groups {
+                deleteGroupCache(groupID: group.id, context: modelContext)
+            }
+            try modelContext.save()
+            SessionState.shared.markRemoteChangePending()
+        } catch {
+            #if DEBUG
+            logger.error("clearAllLocalGroupData: Failed: \(error)")
+            #endif
         }
     }
 
@@ -581,8 +603,23 @@ final class SplitSyncManager {
     }
 
     private func handleSentRecordZoneChanges(_ sent: CKSyncEngine.Event.SentRecordZoneChanges, engineName: String) {
+        // Always clean up pending tracking regardless of context availability
         for record in sent.savedRecords {
             pendingRecordSaves.remove(record.recordID)
+        }
+
+        // Store system fields from successfully saved records (for conflict-free future uploads)
+        if !sent.savedRecords.isEmpty, let modelContext {
+            for record in sent.savedRecords {
+                storeSystemFields(of: record, context: modelContext)
+            }
+            do {
+                try modelContext.save()
+            } catch {
+                #if DEBUG
+                logger.error("[\(engineName)] Failed to save system fields after successful upload: \(error)")
+                #endif
+            }
         }
 
         for failure in sent.failedRecordSaves {
@@ -698,6 +735,82 @@ final class SplitSyncManager {
         } catch {
             #if DEBUG
             logger.error("deleteGroupCache: Failed for group \(groupID): \(error)")
+            #endif
+        }
+    }
+
+    // MARK: - Pending Changes Purge
+
+    private func purgePendingChanges(for zoneID: CKRecordZone.ID, engine: CKSyncEngine) {
+        let pendingToRemove = engine.state.pendingRecordZoneChanges.filter { change in
+            switch change {
+            case .saveRecord(let recordID):
+                return recordID.zoneID == zoneID
+            case .deleteRecord(let recordID):
+                return recordID.zoneID == zoneID
+            @unknown default:
+                return false
+            }
+        }
+        if !pendingToRemove.isEmpty {
+            engine.state.remove(pendingRecordZoneChanges: pendingToRemove)
+        }
+
+        let pendingDBChanges = engine.state.pendingDatabaseChanges.filter {
+            if case .deleteZone(let id) = $0 { return id == zoneID }
+            if case .saveZone(let zone) = $0 { return zone.zoneID == zoneID }
+            return false
+        }
+        if !pendingDBChanges.isEmpty {
+            engine.state.remove(pendingDatabaseChanges: pendingDBChanges)
+        }
+    }
+
+    /// Clear system fields and re-enqueue all records for a group (used after encryptedDataReset).
+    private func reuploadGroupRecords(groupID: UUID, zoneID: CKRecordZone.ID, engine: CKSyncEngine, context: ModelContext) {
+        let zoneName = CKConstants.zoneName(for: groupID)
+
+        do {
+            // Clear system fields and re-enqueue each model type
+            let groups = try context.fetch(FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == groupID }))
+            for group in groups {
+                group.ckSystemFieldsData = nil
+                let recordID = CKConstants.recordID(for: group.id, in: zoneID)
+                engine.state.add(pendingRecordZoneChanges: [.saveRecord(recordID)])
+            }
+
+            let members = try context.fetch(FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zoneName }))
+            for member in members {
+                member.ckSystemFieldsData = nil
+                let recordID = CKConstants.recordID(for: member.id, in: zoneID)
+                engine.state.add(pendingRecordZoneChanges: [.saveRecord(recordID)])
+            }
+
+            let expenses = try context.fetch(FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.groupZoneID == zoneName }))
+            for expense in expenses {
+                expense.ckSystemFieldsData = nil
+                let recordID = CKConstants.recordID(for: expense.id, in: zoneID)
+                engine.state.add(pendingRecordZoneChanges: [.saveRecord(recordID)])
+            }
+
+            let shares = try context.fetch(FetchDescriptor<SplitShare>(predicate: #Predicate { $0.groupZoneID == zoneName }))
+            for share in shares {
+                share.ckSystemFieldsData = nil
+                let recordID = CKConstants.recordID(for: share.id, in: zoneID)
+                engine.state.add(pendingRecordZoneChanges: [.saveRecord(recordID)])
+            }
+
+            let settlements = try context.fetch(FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.groupZoneID == zoneName }))
+            for settlement in settlements {
+                settlement.ckSystemFieldsData = nil
+                let recordID = CKConstants.recordID(for: settlement.id, in: zoneID)
+                engine.state.add(pendingRecordZoneChanges: [.saveRecord(recordID)])
+            }
+
+            try context.save()
+        } catch {
+            #if DEBUG
+            logger.error("reuploadGroupRecords: Failed for group \(groupID): \(error)")
             #endif
         }
     }
@@ -832,6 +945,39 @@ final class SplitSyncManager {
         }
     }
 
+    // MARK: - System Fields Persistence
+
+    /// Store CKRecord system fields on the matching local model so future uploads include the changeTag.
+    private func storeSystemFields(of record: CKRecord, context: ModelContext) {
+        guard let modelID = CKConstants.modelID(from: record.recordID) else { return }
+        let data = CKRecordTranslator.encodeSystemFields(of: record)
+
+        switch record.recordType {
+        case CKConstants.RecordType.groupMeta:
+            if let model = fetchByID(SplitGroup.self, id: modelID, context: context) {
+                model.ckSystemFieldsData = data
+            }
+        case CKConstants.RecordType.splitExpense:
+            if let model = fetchByID(SplitExpense.self, id: modelID, context: context) {
+                model.ckSystemFieldsData = data
+            }
+        case CKConstants.RecordType.splitMember:
+            if let model = fetchByID(SplitMember.self, id: modelID, context: context) {
+                model.ckSystemFieldsData = data
+            }
+        case CKConstants.RecordType.splitShare:
+            if let model = fetchByID(SplitShare.self, id: modelID, context: context) {
+                model.ckSystemFieldsData = data
+            }
+        case CKConstants.RecordType.splitSettlement:
+            if let model = fetchByID(SplitSettlement.self, id: modelID, context: context) {
+                model.ckSystemFieldsData = data
+            }
+        default:
+            break
+        }
+    }
+
     // MARK: - Record Building (for nextRecordZoneChangeBatch)
 
     func buildRecord(for recordID: CKRecord.ID) -> CKRecord? {
@@ -862,7 +1008,14 @@ final class SplitSyncManager {
 
     private func fetchByID<T: PersistentModel>(_ type: T.Type, id: UUID, context: ModelContext) -> T? where T: HasUUID {
         let descriptor = FetchDescriptor<T>(predicate: #Predicate { $0.id == id })
-        return try? context.fetch(descriptor).first
+        do {
+            return try context.fetch(descriptor).first
+        } catch {
+            #if DEBUG
+            logger.error("fetchByID(\(String(describing: T.self)), \(id)) failed: \(error)")
+            #endif
+            return nil
+        }
     }
 }
 

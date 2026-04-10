@@ -20,6 +20,7 @@ final class SplitSettlement {
     var note: String?
     var date: Date = Date.now
     var isConfirmed: Bool = false
+    var ckSystemFieldsData: Data?            // CKRecord system fields for conflict-free uploads
 
     init(
         groupZoneID: String = "",

@@ -382,6 +382,65 @@ struct GroupBalanceServiceTests {
         #expect(result[0].amount == 20)
     }
 
+    // MARK: - Debts: Bidirectional (regression — consolidateDebts reverse > forward)
+
+    @Test func debts_bidirectional_reverseLargerThanForward_netsCorrectly() {
+        // Given: A pays 20 (B owes A 10), B pays 60 (A owes B 30)
+        // Net: A owes B 20 — previously lost when reverse debt was larger
+        let aID = UUID(), bID = UUID()
+
+        let e1ID = UUID()
+        let e1 = makeExpense(id: e1ID, amount: 20, paidByMemberID: aID.uuidString)
+        let shares1 = [
+            makeShare(expenseID: e1ID, memberID: aID.uuidString, amount: 10),
+            makeShare(expenseID: e1ID, memberID: bID.uuidString, amount: 10),
+        ]
+
+        let e2ID = UUID()
+        let e2 = makeExpense(id: e2ID, amount: 60, paidByMemberID: bID.uuidString)
+        let shares2 = [
+            makeShare(expenseID: e2ID, memberID: aID.uuidString, amount: 30),
+            makeShare(expenseID: e2ID, memberID: bID.uuidString, amount: 30),
+        ]
+
+        // When: non-simplified debts
+        let result = GroupBalanceService.calculateDebts(
+            expenses: [e1, e2], shares: shares1 + shares2, settlements: [], simplifyDebts: false
+        )
+
+        // Then: single debt A→B of 20 (net of 10 and 30)
+        #expect(result.count == 1)
+        #expect(result[0].fromMemberID == aID.uuidString)
+        #expect(result[0].toMemberID == bID.uuidString)
+        #expect(result[0].amount == 20)
+    }
+
+    @Test func debts_bidirectional_equalOpposite_cancelsOut() {
+        // Given: A pays 100 (B owes 50), B pays 100 (A owes 50)
+        let aID = UUID(), bID = UUID()
+
+        let e1ID = UUID()
+        let e1 = makeExpense(id: e1ID, amount: 100, paidByMemberID: aID.uuidString)
+        let shares1 = [
+            makeShare(expenseID: e1ID, memberID: aID.uuidString, amount: 50),
+            makeShare(expenseID: e1ID, memberID: bID.uuidString, amount: 50),
+        ]
+
+        let e2ID = UUID()
+        let e2 = makeExpense(id: e2ID, amount: 100, paidByMemberID: bID.uuidString)
+        let shares2 = [
+            makeShare(expenseID: e2ID, memberID: aID.uuidString, amount: 50),
+            makeShare(expenseID: e2ID, memberID: bID.uuidString, amount: 50),
+        ]
+
+        let result = GroupBalanceService.calculateDebts(
+            expenses: [e1, e2], shares: shares1 + shares2, settlements: [], simplifyDebts: false
+        )
+
+        // Then: debts cancel out completely
+        #expect(result.isEmpty)
+    }
+
     // MARK: - Debts: All Settled
 
     @Test func debts_allSettled_noDebts() {

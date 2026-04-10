@@ -17,6 +17,7 @@ final class SplitShare {
     var amount: Double = 0
     var isPaid: Bool = false
     var groupZoneID: String = ""
+    var ckSystemFieldsData: Data?            // CKRecord system fields for conflict-free uploads
 
     init(
         expenseID: UUID = UUID(),

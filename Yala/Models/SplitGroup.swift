@@ -27,6 +27,7 @@ final class SplitGroup {
     var showDebtsInSingleCurrency: Bool = false
     var defaultSplitType: String = "equal" // "equal" | "percentage" | "exact" | "shares"
     var membersCanInvite: Bool = true
+    var ckSystemFieldsData: Data?            // CKRecord system fields for conflict-free uploads
 
     init(
         name: String = "",

@@ -23,6 +23,7 @@ final class SplitExpense {
     var isSettled: Bool = false
     var subcategoryName: String?           // Nombre subcategoría del creador (para matching)
     var createdAt: Date = Date.now
+    var ckSystemFieldsData: Data?            // CKRecord system fields for conflict-free uploads
 
     init(
         groupZoneID: String = "",

@@ -18,6 +18,7 @@ final class SplitMember {
     var role: String = "member"            // "admin" | "member"
     var isCurrentUser: Bool = false
     var joinedAt: Date = Date.now
+    var ckSystemFieldsData: Data?            // CKRecord system fields for conflict-free uploads
 
     init(
         groupZoneID: String = "",

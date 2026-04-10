@@ -163,47 +163,48 @@ enum GroupBalanceService {
     }
 
     /// Consolidate debts: merge same (from, to, currency) pairs and net bidirectional.
+    /// Uses canonical pair key (min, max) to correctly handle debts in both directions.
     private static func consolidateDebts(_ debts: [Debt]) -> [Debt] {
-        // Use DebtSimplificationService which already handles this correctly
-        // but for non-simplified mode, we just group and net
-        typealias PairKey = String
-        func key(_ a: String, _ b: String, _ c: String) -> PairKey { "\(a)|\(b)|\(c)" }
+        struct PairKey: Hashable {
+            let memberA: String  // always min(from, to)
+            let memberB: String  // always max(from, to)
+            let currency: String
+        }
 
+        // Positive = A owes B, negative = B owes A
         var netAmounts: [PairKey: Double] = [:]
-        var pairInfo: [PairKey: (from: String, to: String, currency: String)] = [:]
 
         for debt in debts {
-            let k = key(debt.fromMemberID, debt.toMemberID, debt.currencyCode)
-            let reverseK = key(debt.toMemberID, debt.fromMemberID, debt.currencyCode)
-
-            if netAmounts[reverseK] != nil {
-                // Subtract from reverse direction
-                netAmounts[reverseK, default: 0] -= debt.amount
+            let isForward = debt.fromMemberID <= debt.toMemberID
+            let key = PairKey(
+                memberA: min(debt.fromMemberID, debt.toMemberID),
+                memberB: max(debt.fromMemberID, debt.toMemberID),
+                currency: debt.currencyCode
+            )
+            if isForward {
+                netAmounts[key, default: 0] += debt.amount
             } else {
-                netAmounts[k, default: 0] += debt.amount
-                pairInfo[k] = (debt.fromMemberID, debt.toMemberID, debt.currencyCode)
+                netAmounts[key, default: 0] -= debt.amount
             }
         }
 
         var result: [Debt] = []
-        for (k, amount) in netAmounts {
+        for (key, amount) in netAmounts {
             guard abs(amount) > epsilon else { continue }
-            if let info = pairInfo[k] {
-                if amount > 0 {
-                    result.append(Debt(
-                        fromMemberID: info.from,
-                        toMemberID: info.to,
-                        amount: roundToTwoDecimals(amount),
-                        currencyCode: info.currency
-                    ))
-                } else {
-                    result.append(Debt(
-                        fromMemberID: info.to,
-                        toMemberID: info.from,
-                        amount: roundToTwoDecimals(abs(amount)),
-                        currencyCode: info.currency
-                    ))
-                }
+            if amount > 0 {
+                result.append(Debt(
+                    fromMemberID: key.memberA,
+                    toMemberID: key.memberB,
+                    amount: roundToTwoDecimals(amount),
+                    currencyCode: key.currency
+                ))
+            } else {
+                result.append(Debt(
+                    fromMemberID: key.memberB,
+                    toMemberID: key.memberA,
+                    amount: roundToTwoDecimals(abs(amount)),
+                    currencyCode: key.currency
+                ))
             }
         }
 
