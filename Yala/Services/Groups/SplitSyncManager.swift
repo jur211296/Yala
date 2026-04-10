@@ -56,6 +56,9 @@ final class SplitSyncManager {
     private var pendingBridgeExpenseIDs: Set<UUID> = []
     private var pendingBridgeChangeSet = RemoteChangeSet()
 
+    // Records that failed due to quota exceeded — retried on foreground
+    private var quotaFailedRecordIDs: Set<CKRecord.ID> = []
+
     // MARK: - State Persistence
 
     // nonisolated-safe: file I/O only, no model access
@@ -479,6 +482,27 @@ final class SplitSyncManager {
         }
     }
 
+    /// Retry records that previously failed due to iCloud quota exceeded.
+    /// Call from sceneDidBecomeActive or when quota status may have changed.
+    func retryQuotaFailedRecords() {
+        guard !quotaFailedRecordIDs.isEmpty else { return }
+        let toRetry = quotaFailedRecordIDs
+        quotaFailedRecordIDs.removeAll()
+
+        // Re-enqueue to private engine (shared records go through the same path)
+        if let engine = privateEngine {
+            engine.state.add(pendingRecordZoneChanges: toRetry.map { .saveRecord($0) })
+        }
+        if let engine = sharedEngine {
+            engine.state.add(pendingRecordZoneChanges: toRetry.map { .saveRecord($0) })
+        }
+
+        syncStatus = .idle
+        #if DEBUG
+        logger.info("Retrying \(toRetry.count) quota-failed records")
+        #endif
+    }
+
     private func handleFetchedRecordZoneChanges(_ fetched: CKSyncEngine.Event.FetchedRecordZoneChanges, engineName: String) {
         guard let modelContext else { return }
 
@@ -640,8 +664,9 @@ final class SplitSyncManager {
 
             case .quotaExceeded:
                 syncStatus = .error("iCloud storage full")
+                quotaFailedRecordIDs.insert(failure.record.recordID)
                 #if DEBUG
-                logger.error("[\(engineName)] Quota exceeded")
+                logger.error("[\(engineName)] Quota exceeded — \(failure.record.recordID.recordName) queued for retry")
                 #endif
 
             default:

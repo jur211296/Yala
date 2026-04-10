@@ -52,7 +52,7 @@ enum GroupSplitCalculator {
 
         return participants.enumerated().map { index, p in
             var amount = baseAmount
-            if remainder > 0.004 {
+            if remainder >= 0.005 {
                 amount += 0.01
                 remainder -= 0.01
             }

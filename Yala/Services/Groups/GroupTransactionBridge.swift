@@ -311,7 +311,12 @@ final class GroupTransactionBridge {
         guard let name, !name.isEmpty else { return nil }
 
         let descriptor = FetchDescriptor<Subcategory>()
-        guard let all = try? context.fetch(descriptor) else { return nil }
+        guard let all = (try? context.fetch(descriptor)) else {
+            #if DEBUG
+            print("GroupTransactionBridge: Subcategory fetch failed")
+            #endif
+            return nil
+        }
 
         // Exact match (case-insensitive)
         if let exact = all.first(where: { $0.name.lowercased() == name.lowercased() }) {

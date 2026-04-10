@@ -101,7 +101,13 @@ final class GroupExpenseService {
 
         // Bridge to personal transaction/draft (guard: bridge may not be initialized yet)
         if GroupTransactionBridge.shared.isReady {
-            try? GroupTransactionBridge.shared.bridgeExpense(expense, in: group, shouldSave: false)
+            do {
+                try GroupTransactionBridge.shared.bridgeExpense(expense, in: group, shouldSave: false)
+            } catch {
+                #if DEBUG
+                print("GroupExpenseService: Bridge failed for new expense \(expense.id): \(error)")
+                #endif
+            }
         }
 
         return expense
@@ -167,7 +173,13 @@ final class GroupExpenseService {
 
         // Update bridged record
         if GroupTransactionBridge.shared.isReady {
-            try? GroupTransactionBridge.shared.bridgeExpense(expense, in: group, shouldSave: false)
+            do {
+                try GroupTransactionBridge.shared.bridgeExpense(expense, in: group, shouldSave: false)
+            } catch {
+                #if DEBUG
+                print("GroupExpenseService: Bridge failed for updated expense \(expense.id): \(error)")
+                #endif
+            }
         }
     }
 
@@ -184,7 +196,13 @@ final class GroupExpenseService {
 
         // Unbridge personal transaction/draft
         if GroupTransactionBridge.shared.isReady {
-            try? GroupTransactionBridge.shared.unbridgeExpense(expenseID: expense.id.uuidString)
+            do {
+                try GroupTransactionBridge.shared.unbridgeExpense(expenseID: expense.id.uuidString)
+            } catch {
+                #if DEBUG
+                print("GroupExpenseService: Unbridge failed for expense \(expense.id): \(error)")
+                #endif
+            }
         }
 
         SplitSyncManager.shared.enqueueDeletion(modelID: expense.id, group: group)
