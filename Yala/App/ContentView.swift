@@ -35,20 +35,15 @@ struct ContentView: View {
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.yalaTheme) private var theme
 
-    /// Queries to detect existing data (for iCloud sync detection)
-    @Query private var accounts: [Account]
-    @Query private var categories: [Category]
+    /// Lightweight state for existing data detection (replaces @Query to prevent
+    /// synchronous SwiftData fetches during iOS snapshot capture — 0x8BADF00D fix).
+    @State private var hasExistingData: Bool = false
     @Environment(\.modelContext) private var modelContext
 
     private let authService = BiometricAuthService.shared
 
-    /// Minimum splash duration (2.5 seconds to enjoy the animation)
-    private let minimumSplashDuration: Double = 2.5
-
-    /// Check if there's existing data (accounts or categories synced from iCloud or local)
-    private var hasExistingData: Bool {
-        !accounts.isEmpty || !categories.isEmpty
-    }
+    /// Minimum splash duration (3.5 seconds — extra margin for initial data loading)
+    private let minimumSplashDuration: Double = 3.5
 
     var body: some View {
         ZStack {
@@ -104,18 +99,17 @@ struct ContentView: View {
         .task {
             await checkInitialSyncState()
         }
-        .onChange(of: accounts.count + categories.count) { _, newTotal in
-            // R3: Only show "data found" alert on sync-wait screen, NOT mid-onboarding.
-            // If user is mid-onboarding, their explicit choices (currency, period) are better
-            // than auto-detected defaults. CategoryDeduplicationService handles seed overlap.
-            if isWaitingForSync && newTotal > 0 {
+        .onChange(of: SessionState.shared.dataVersion) { _, _ in
+            // Replaces @Query-based observation. dataVersion increments on CRUD, CloudKit sync,
+            // and sheet dismissals — covers all cases where data may have arrived or changed.
+            let nowHasData = checkHasExistingData()
+            hasExistingData = nowHasData
+            if isWaitingForSync && nowHasData {
                 showICloudDataFound = true
             }
-            // Activate sync banner when data arrives (not during wipe)
-            if newTotal > 0 && !SessionState.shared.isWipingData {
+            if nowHasData && !SessionState.shared.isWipingData {
                 withAnimation(.easeInOut) { showSyncBanner = true }
             }
-            // Auto-dismiss: if no changes for 5 seconds, hide banner
             scheduleSyncBannerDismiss()
         }
         .onChange(of: hasCompletedOnboarding) { _, newValue in
@@ -346,6 +340,13 @@ struct ContentView: View {
         #endif
     }
 
+    /// Lightweight check — fetchCount doesn't materialize objects or trigger observation.
+    private func checkHasExistingData() -> Bool {
+        let accountCount = (try? modelContext.fetchCount(FetchDescriptor<Account>())) ?? 0
+        let categoryCount = (try? modelContext.fetchCount(FetchDescriptor<Category>())) ?? 0
+        return accountCount > 0 || categoryCount > 0
+    }
+
     /// Schedule sync banner auto-dismiss after 5 seconds of no data changes
     private func scheduleSyncBannerDismiss() {
         syncDismissTask?.cancel()
@@ -445,12 +446,14 @@ struct ContentView: View {
             // Task cancelled, continue with state check
         }
 
-        if hasCompletedOnboarding || hasExistingData {
+        let existingData = checkHasExistingData()
+        hasExistingData = existingData
+        if hasCompletedOnboarding || existingData {
             // Returning user (data from iCloud or previous install)
             // R6 mitigation: hasCompletedOnboarding is per-device (not synced).
             // If iCloud data exists but flag is false (reinstall without backup),
             // auto-promote here. Late arrivals handled by dedup service + onChange.
-            if hasExistingData {
+            if existingData {
                 hasCompletedOnboarding = true
             }
             // Returning user — check for pending trial (app was killed before trial could show)
@@ -496,7 +499,9 @@ struct ContentView: View {
                     #endif
                     txCount = 0
                 }
-                if hasExistingData || txCount > 0 {
+                let latestCheck = checkHasExistingData()
+                hasExistingData = latestCheck
+                if latestCheck || txCount > 0 {
                     hasCompletedOnboarding = true
                     isWaitingForSync = false
                     isInitialCheckDone = true
@@ -571,12 +576,13 @@ struct MainTabView: View {
     @Bindable private var sessionState: SessionState
     @Environment(\.requestReview) private var requestReview
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.modelContext) private var modelContext
     @State private var searchText: String = ""
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
 
-    // Queries for downgrade resolution
-    @Query private var allAccounts: [Account]
-    @Query private var allBudgets: [Budget]
+    // On-demand data for downgrade resolution (replaces @Query to prevent 0x8BADF00D)
+    @State private var downgradeAccounts: [Account] = []
+    @State private var downgradeBudgets: [Budget] = []
     @State private var showDowngradeResolution = false
     @State private var showTrialExpired = false
     @State private var showMilestoneUpgrade = false
@@ -682,12 +688,16 @@ struct MainTabView: View {
             }
             .onChange(of: sessionState.shouldShowDowngradeResolution) { _, shouldShow in
                 // Show downgrade resolution sheet when triggered by AppBootstrapper
+                // Fetches on-demand instead of @Query to prevent 0x8BADF00D during snapshot
                 if shouldShow {
-                    // Check if there's actual excess before showing
-                    let activeAccounts = allAccounts.filter { !$0.isArchived }
-                    let activeBudgets = allBudgets.filter { $0.isActive }
-
-                    if activeAccounts.count > 2 || activeBudgets.count > 3 {
+                    let accounts = (try? modelContext.fetch(FetchDescriptor<Account>())) ?? []
+                    let budgets = (try? modelContext.fetch(
+                        FetchDescriptor<Budget>(predicate: #Predicate { $0.isActive })
+                    )) ?? []
+                    let activeAccounts = accounts.filter { !$0.isArchived }
+                    if activeAccounts.count > 2 || budgets.count > 3 {
+                        downgradeAccounts = accounts
+                        downgradeBudgets = budgets
                         showDowngradeResolution = true
                     }
                     sessionState.shouldShowDowngradeResolution = false
@@ -695,8 +705,8 @@ struct MainTabView: View {
             }
             .sheet(isPresented: $showDowngradeResolution) {
                 DowngradeResolutionSheet(
-                    accounts: allAccounts,
-                    budgets: allBudgets
+                    accounts: downgradeAccounts,
+                    budgets: downgradeBudgets
                 ) {
                     showDowngradeResolution = false
                 }

@@ -40,6 +40,9 @@ final class PanelViewModel {
 
     // MARK: - State
 
+    /// True after first loadData() completes. PanelView shows skeleton placeholder while false.
+    private(set) var isReady: Bool = false
+
     // UI State (not filters)
     var leadingColumnIndex: Int? = 0
 
@@ -97,9 +100,6 @@ final class PanelViewModel {
         exchangeRateService: ExchangeRateService? = nil,
         currencyConverter: CurrencyConverter? = nil
     ) {
-        // Skip if already configured with the same context (tab switch back).
-        // performRecalculation() in onAppear handles the data refresh.
-        let isNewContext = self.modelContext !== context
         self.modelContext = context
         if let service = exchangeRateService {
             self.exchangeRateService = service
@@ -107,7 +107,8 @@ final class PanelViewModel {
         if let converter = currencyConverter {
             self.currencyConverter = converter
         }
-        if isNewContext { loadData() }
+        // loadData() deferred to scheduleRecalculation(reload: true) in PanelView.onAppear.
+        // This ensures the isInBackground guard protects against 0x8BADF00D watchdog kills.
     }
 
     func loadData() {
@@ -156,12 +157,13 @@ final class PanelViewModel {
             #endif
         }
 
-        let transactionsDesc = FetchDescriptor<TransactionItem>(
+        var transactionsDesc = FetchDescriptor<TransactionItem>(
             sortBy: [
                 SortDescriptor(\.date, order: .reverse),
                 SortDescriptor(\.createdAt, order: .reverse)
             ]
         )
+        transactionsDesc.fetchLimit = 2000
         do {
             let fetched = try context.fetch(transactionsDesc)
             if fetched != transactions { transactions = fetched }
@@ -208,6 +210,7 @@ final class PanelViewModel {
             #endif
         }
 
+        if !isReady { isReady = true }
     }
 
     var topSpendingCategories: [CategorySpendingSummary] = []

@@ -17,6 +17,7 @@ struct PanelView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(SessionState.self) private var sessionState
     @Environment(ExchangeRateService.self) private var exchangeRateService
     @Environment(CurrencyConverter.self) private var currencyConverter
@@ -65,6 +66,8 @@ struct PanelView: View {
     /// Tracks whether a pending debounced task needs to reload data from SwiftData.
     /// Prevents recalculateData() from downgrading a pending reloadAndRecalculate().
     @State private var pendingReload = false
+    /// Whether the app is in background — suppresses recalculation to prevent 0x8BADF00D watchdog kill.
+    @State private var isInBackground = false
 
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen.rawValue
@@ -297,6 +300,7 @@ struct PanelView: View {
     var body: some View {
         NavigationStack {
             mainContent
+                .yalaSkeleton(!viewModel.isReady)
                 .navigationTitle(L10n.Panel.title(userName))
                 .navigationBarTitleDisplayMode(.large)
                 .toolbar {
@@ -394,7 +398,7 @@ struct PanelView: View {
                 exchangeRateService: exchangeRateService,
                 currencyConverter: currencyConverter
             )
-            TransferMigrationService.migratePositiveTransfersIfNeeded(in: modelContext)
+            Task { TransferMigrationService.migratePositiveTransfersIfNeeded(in: modelContext) }
             viewModel.syncFromSessionState(sessionState)
             let newOrder = viewModel.ensureAccountsSortOrderConsistency(
                 accounts: accounts,
@@ -409,6 +413,20 @@ struct PanelView: View {
         }
         .onDisappear {
             recalculateTask?.cancel()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            switch newPhase {
+            case .background:
+                isInBackground = true
+                recalculateTask?.cancel()
+                recalculateTask = nil
+                pendingReload = false
+            case .active:
+                isInBackground = false
+                reloadAndRecalculate()
+            default:
+                break
+            }
         }
         .onChange(of: sizeClass) { _, newValue in
             viewModel.widgetConfig.columns = DS.Adaptive.columns(newValue)
@@ -1389,7 +1407,9 @@ struct PanelView: View {
 
     /// Shared debounce (150ms). `pendingReload` ensures a reload request isn't lost
     /// if a subsequent calculate-only call arrives within the debounce window.
+    /// Guarded by isInBackground to prevent 0x8BADF00D during snapshot capture.
     private func scheduleRecalculation(reload: Bool) {
+        guard !isInBackground else { return }
         if reload { pendingReload = true }
         recalculateTask?.cancel()
         recalculateTask = Task { @MainActor in
