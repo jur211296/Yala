@@ -27,7 +27,7 @@ struct GroupGlobalSummary: Equatable, Sendable {
 
 enum GroupBalanceService {
 
-    private static let epsilon: Double = 0.001
+    private static let epsilon: Double = 0.01
 
     // MARK: - Balances
 

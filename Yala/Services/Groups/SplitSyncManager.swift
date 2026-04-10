@@ -65,7 +65,9 @@ final class SplitSyncManager {
     private nonisolated let stateDirectory: URL = {
         let fm = FileManager.default
         guard let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            let fallback = fm.temporaryDirectory.appendingPathComponent("SplitSync", isDirectory: true)
+            // Fallback to Documents (not /tmp/ which OS can purge)
+            let docs = fm.urls(for: .documentDirectory, in: .userDomainMask).first!
+            let fallback = docs.appendingPathComponent("SplitSync", isDirectory: true)
             try? fm.createDirectory(at: fallback, withIntermediateDirectories: true)
             return fallback
         }

@@ -19,7 +19,7 @@ struct Debt: Equatable, Sendable, Identifiable {
 
 enum DebtSimplificationService {
 
-    private static let epsilon: Double = 0.001
+    private static let epsilon: Double = 0.01
 
     /// Simplifies debts using the minimum cash flow algorithm.
     /// Groups debts by currency and simplifies each group independently.
