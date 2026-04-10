@@ -21,6 +21,8 @@ struct MemberPickerView: View {
     let groupColorHex: String
     let mode: MemberPickerMode
 
+    @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
+
     // Single select
     @Binding var selectedMemberID: String
 
@@ -141,7 +143,7 @@ struct MemberPickerView: View {
         ZStack {
             Circle()
                 .fill(Color(hex: groupColorHex).opacity(0.2))
-                .frame(width: 36, height: 36)
+                .frame(width: avatarSize, height: avatarSize)
 
             Text(String(member.displayName.prefix(1)).uppercased())
                 .font(DS.Typography.label)

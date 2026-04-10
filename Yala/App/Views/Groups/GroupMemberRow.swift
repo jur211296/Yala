@@ -15,6 +15,8 @@ struct GroupMemberRow: View {
     let onChangeRole: () -> Void
     let onRemove: () -> Void
 
+    @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
+
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
             // Avatar
@@ -75,7 +77,7 @@ struct GroupMemberRow: View {
         ZStack {
             Circle()
                 .fill(Color(hex: groupColorHex).opacity(0.2))
-                .frame(width: 36, height: 36)
+                .frame(width: avatarSize, height: avatarSize)
 
             Text(initialLetter)
                 .font(DS.Typography.label)

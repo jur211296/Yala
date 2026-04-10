@@ -129,6 +129,7 @@ struct GroupStatsView: View {
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
                 }
+                .accessibilityLabel("\(member.displayName): \(YalaFormatter.currency(value: member.totalPaid, currencyCode: currencyCode))")
             }
             .chartXAxis(.hidden)
             .chartYAxis {
@@ -167,6 +168,7 @@ struct GroupStatsView: View {
                     )
                     .foregroundStyle(by: .value("category", cat.subcategoryName))
                     .cornerRadius(DS.Radius.xs)
+                    .accessibilityLabel("\(cat.subcategoryName): \(YalaFormatter.currency(value: cat.amount, currencyCode: currencyCode))")
                 }
                 .chartLegend(position: .bottom, alignment: .leading, spacing: DS.Spacing.sm)
                 .frame(height: 200) // A11Y-DT: fixed chart height for consistent layout
@@ -205,7 +207,9 @@ struct GroupStatsView: View {
                 )
                 .foregroundStyle(theme.accent.opacity(0.15))
                 .interpolationMethod(.catmullRom)
+                .accessibilityHidden(true)
             }
+            .accessibilityElement(children: .combine)
             .chartXAxis {
                 AxisMarks(values: .stride(by: .month)) { _ in
                     AxisValueLabel(format: .dateTime.month(.abbreviated))

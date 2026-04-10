@@ -204,6 +204,7 @@ struct GroupExpenseFormView: View {
             .focused($focusedField, equals: .description)
             .frame(maxWidth: 280)
             .tint(Color.primary)
+            .accessibilityLabel(L10n.Groups.Expense.descriptionPlaceholder)
     }
 
     // MARK: - Amount Display
@@ -308,6 +309,7 @@ struct GroupExpenseFormView: View {
             .multilineTextAlignment(.center)
             .frame(maxWidth: 200)
             .focused($focusedField, equals: .note)
+            .accessibilityLabel(L10n.Groups.Expense.notePlaceholder)
     }
 
     // MARK: - Category Chip
