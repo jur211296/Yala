@@ -136,17 +136,6 @@ final class GroupsViewModel {
 
     // MARK: - Actions
 
-    func deleteGroup(_ group: SplitGroup) {
-        do {
-            try GroupService.shared.deleteGroup(group)
-            loadData()
-        } catch {
-            #if DEBUG
-            print("GroupsViewModel: Error deleting group: \(error)")
-            #endif
-        }
-    }
-
     func archiveGroup(_ group: SplitGroup) {
         do {
             try GroupService.shared.setArchived(group, isArchived: true)

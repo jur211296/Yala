@@ -45,9 +45,6 @@ struct GroupSettingsView: View {
     @State private var groupCurrencies: [String] = []
     @State private var accountPrefs: [String: String] = [:]   // currencyCode → accountName
     @State private var accountsByCurrency: [String: [Account]] = [:]
-    @State private var showDeleteGroupConfirm = false
-    @State private var showDeleteGroupFinalConfirm = false
-
     // MARK: - Body
 
     var body: some View {
@@ -66,8 +63,8 @@ struct GroupSettingsView: View {
                     // Personal settings section
                     mySettingsSection
 
-                    // Danger zone (archive + delete)
-                    if viewModel.isCurrentUserAdmin || group.isOwner {
+                    // Danger zone (archive)
+                    if viewModel.isCurrentUserAdmin {
                         dangerZoneSection
                     }
                 }
@@ -119,28 +116,6 @@ struct GroupSettingsView: View {
                 }
             } message: {
                 Text(L10n.Groups.Settings.regenerateLinkConfirm)
-            }
-            .confirmationDialog(
-                L10n.Groups.Settings.deleteGroup,
-                isPresented: $showDeleteGroupConfirm,
-                titleVisibility: .visible
-            ) {
-                Button(L10n.Groups.Settings.deleteGroup, role: .destructive) {
-                    showDeleteGroupFinalConfirm = true
-                }
-            } message: {
-                Text(L10n.Groups.Settings.deleteGroupConfirm)
-            }
-            .alert(
-                L10n.Groups.Settings.deleteGroup,
-                isPresented: $showDeleteGroupFinalConfirm
-            ) {
-                Button(L10n.Action.cancel, role: .cancel) {}
-                Button(L10n.Groups.Settings.deleteGroup, role: .destructive) {
-                    deleteGroup()
-                }
-            } message: {
-                Text(L10n.Groups.Settings.deleteGroupFinalConfirm)
             }
         }
     }
@@ -502,68 +477,26 @@ struct GroupSettingsView: View {
         }
     }
 
-    // MARK: - Danger Zone (Archive + Delete)
-
-    private var canDeleteGroup: Bool {
-        viewModel.expenses.isEmpty || viewModel.members.count <= 1
-    }
+    // MARK: - Danger Zone (Archive)
 
     private var dangerZoneSection: some View {
         VStack(spacing: DS.Spacing.none) {
-            // Archive (admin only)
-            if viewModel.isCurrentUserAdmin {
-                Button {
-                    toggleArchive()
-                } label: {
-                    HStack {
-                        Image(systemName: group.isArchived ? "archivebox.fill" : "archivebox")
-                            .foregroundStyle(DS.Semantic.errorForeground)
-                        Text(group.isArchived ? L10n.Groups.Settings.unarchive : L10n.Groups.Settings.archive)
-                            .font(DS.Typography.body)
-                            .foregroundStyle(DS.Semantic.errorForeground)
-                        Spacer()
-                    }
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.vertical, DS.FormRow.paddingV)
-                    .contentShape(Rectangle())
+            Button {
+                toggleArchive()
+            } label: {
+                HStack {
+                    Image(systemName: group.isArchived ? "archivebox.fill" : "archivebox")
+                        .foregroundStyle(DS.Semantic.errorForeground)
+                    Text(group.isArchived ? L10n.Groups.Settings.unarchive : L10n.Groups.Settings.archive)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(DS.Semantic.errorForeground)
+                    Spacer()
                 }
-                .buttonStyle(.plain)
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
+                .contentShape(Rectangle())
             }
-
-            // Delete (owner only)
-            if group.isOwner {
-                if viewModel.isCurrentUserAdmin {
-                    Divider()
-                        .padding(.leading, DS.FormRow.paddingH)
-                }
-
-                Button {
-                    showDeleteGroupConfirm = true
-                } label: {
-                    HStack {
-                        Image(systemName: "trash")
-                            .foregroundStyle(DS.Semantic.errorForeground)
-                        Text(L10n.Groups.Settings.deleteGroup)
-                            .font(DS.Typography.body)
-                            .foregroundStyle(DS.Semantic.errorForeground)
-                        Spacer()
-                    }
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.vertical, DS.FormRow.paddingV)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .disabled(!canDeleteGroup)
-                .opacity(canDeleteGroup ? 1 : 0.4)
-
-                if !canDeleteGroup {
-                    Text(L10n.Groups.Settings.deleteGroupDisabledHint)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, DS.FormRow.paddingH)
-                        .padding(.bottom, DS.Spacing.sm)
-                }
-            }
+            .buttonStyle(.plain)
         }
         .background(RoundedRectangle(cornerRadius: DS.Radius.card).fill(.thCard))
         .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(.thCardBorder, lineWidth: 1))
@@ -715,18 +648,6 @@ struct GroupSettingsView: View {
         } catch {
             #if DEBUG
             print("GroupSettingsView: Error toggling archive: \(error)")
-            #endif
-        }
-    }
-
-    private func deleteGroup() {
-        do {
-            try GroupService.shared.deleteGroup(group)
-            DS.Haptic.warning()
-            dismiss()
-        } catch {
-            #if DEBUG
-            print("GroupSettingsView: Error deleting group: \(error)")
             #endif
         }
     }
