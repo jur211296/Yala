@@ -416,15 +416,16 @@ struct PanelView: View {
         }
         .onChange(of: scenePhase) { _, newPhase in
             switch newPhase {
-            case .background:
+            case .background, .inactive:
                 isInBackground = true
                 recalculateTask?.cancel()
                 recalculateTask = nil
                 pendingReload = false
             case .active:
+                guard UIApplication.shared.applicationState == .active else { return }
                 isInBackground = false
                 reloadAndRecalculate()
-            default:
+            @unknown default:
                 break
             }
         }
@@ -1410,6 +1411,9 @@ struct PanelView: View {
     /// Guarded by isInBackground to prevent 0x8BADF00D during snapshot capture.
     private func scheduleRecalculation(reload: Bool) {
         guard !isInBackground else { return }
+        // Secondary guard: scenePhase can lag behind actual UIApplication state.
+        // Crash logs show procRole="Non UI" while scenePhase reports .active.
+        guard UIApplication.shared.applicationState == .active else { return }
         if reload { pendingReload = true }
         recalculateTask?.cancel()
         recalculateTask = Task { @MainActor in
@@ -1417,7 +1421,18 @@ struct PanelView: View {
             guard !Task.isCancelled else { return }
             let shouldReload = pendingReload
             pendingReload = false
-            if shouldReload { viewModel.loadData() }
+            if shouldReload {
+                viewModel.loadData()
+                // Sort order depends on account names — must run after reload
+                // to catch adds, removes, and renames.
+                let newOrder = viewModel.ensureAccountsSortOrderConsistency(
+                    accounts: viewModel.accounts,
+                    currentOrderRaw: accountsSortOrderNamesRaw
+                )
+                if newOrder != accountsSortOrderNamesRaw {
+                    accountsSortOrderNamesRaw = newOrder
+                }
+            }
             performCalculation()
         }
     }
@@ -1731,24 +1746,19 @@ private struct PanelDataObservers: ViewModifier {
                     showFABMenu = false
                 }
             }
-            .onChange(of: accounts) { _, _ in
-                let newOrder = viewModel.ensureAccountsSortOrderConsistency(
-                    accounts: accounts,
-                    currentOrderRaw: accountsSortOrderNamesRaw
-                )
-                if newOrder != accountsSortOrderNamesRaw {
-                    accountsSortOrderNamesRaw = newOrder
-                }
-            }
-            // Data collection changes: only recalculate (data already loaded by the
-            // loadData() call that caused the mutation — no need to re-fetch).
-            .onChange(of: transactions) { _, _ in
+            // Count-based proxies: avoid comparing full SwiftData model arrays
+            // (which triggers performAndWait faults during sheet transitions).
+            // Content edits (same count) are handled by dataVersion → reloadAndRecalculate.
+            .onChange(of: accounts.count) { _, _ in
                 recalculateData()
             }
-            .onChange(of: budgets) { _, _ in
+            .onChange(of: transactions.count) { _, _ in
                 recalculateData()
             }
-            .onChange(of: allSubcategories) { _, _ in
+            .onChange(of: budgets.count) { _, _ in
+                recalculateData()
+            }
+            .onChange(of: allSubcategories.count) { _, _ in
                 recalculateData()
             }
             .onChange(of: sessionState.needsBudgetsWidgetRefresh) { _, needsRefresh in

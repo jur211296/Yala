@@ -64,9 +64,10 @@ final class InboxViewModel {
     private func loadAllDrafts() {
         guard let context = modelContext else { return }
 
-        let descriptor = FetchDescriptor<InboxDraft>(
+        var descriptor = FetchDescriptor<InboxDraft>(
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
+        descriptor.fetchLimit = 500
 
         do {
             let fetched = try context.fetch(descriptor)
@@ -81,10 +82,11 @@ final class InboxViewModel {
     private func loadPendingDrafts() {
         guard let context = modelContext else { return }
 
-        let descriptor = FetchDescriptor<InboxDraft>(
+        var descriptor = FetchDescriptor<InboxDraft>(
             predicate: #Predicate<InboxDraft> { $0.statusRaw == "pending" },
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
+        descriptor.fetchLimit = 200
 
         do {
             let fetched = try context.fetch(descriptor)

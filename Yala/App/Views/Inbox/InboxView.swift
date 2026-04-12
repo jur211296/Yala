@@ -232,7 +232,7 @@ struct InboxView: View {
                 }
             }
             .appliesPendingRemoteChanges(sessionState)
-            .onAppear {
+            .task {
                 viewModel.setContext(modelContext)
             }
             .onChange(of: sessionState.dataVersion) { _, _ in
