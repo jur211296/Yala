@@ -25,6 +25,7 @@ struct ContentView: View {
     @State private var wipeGraceTask: Task<Void, Never>?
     @State private var remoteWipeTask: Task<Void, Never>?
     @State private var showRemoteWipeAlert: Bool = false
+    @State private var showICloudRestartAlert: Bool = false
     @State private var showProTrialOffer: Bool = false
     @State private var showWhatsNew: Bool = false
     @State private var whatsNewData: (features: [WhatsNewFeature], version: String)?
@@ -157,6 +158,11 @@ struct ContentView: View {
         } message: {
             Text(L10n.iCloud.dataFoundMessage)
         }
+        .alert(L10n.iCloud.mismatchTitle, isPresented: $showICloudRestartAlert) {
+            Button(L10n.iCloud.mismatchAction) {}
+        } message: {
+            Text(L10n.iCloud.mismatchMessage)
+        }
         .fullScreenCover(isPresented: $showLanguageSelection) {
             LanguageSelectionView {
                 showLanguageSelection = false
@@ -285,6 +291,10 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .remoteOnboardingCompleted)) { _ in
             handleRemoteOnboardingCompleted()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .iCloudMismatchDetected)) { _ in
+            guard hasCompletedOnboarding else { return }
+            showICloudRestartAlert = true
         }
     }
 

@@ -140,7 +140,41 @@ final class AppBootstrapper {
         // 13. Observe CloudKit remote changes to auto-refresh UI
         observeRemoteStoreChanges()
 
+        // 14. Observe iCloud account changes — detect mismatch if container was created without CloudKit
+        observeICloudAccountChanges()
+
         isInitialized = true
+    }
+
+    // MARK: - iCloud Mismatch Detection
+
+    private func observeICloudAccountChanges() {
+        NotificationCenter.default.addObserver(
+            forName: .NSUbiquityIdentityDidChange,
+            object: nil,
+            queue: .main
+        ) { _ in
+            MainActor.assumeIsolated {
+                AppBootstrapper.shared.checkForICloudMismatch()
+            }
+        }
+    }
+
+    private var iCloudMismatchAlreadyDetected = false
+
+    private func checkForICloudMismatch() {
+        guard !iCloudMismatchAlreadyDetected else { return }
+
+        let wasCreatedWithCloudKit = SwiftDataConfiguration.containerWasCreatedWithCloudKit
+        let isNowAvailable = SwiftDataConfiguration.isICloudAvailable()
+
+        if !wasCreatedWithCloudKit && isNowAvailable {
+            iCloudMismatchAlreadyDetected = true
+            #if DEBUG
+            print("AppBootstrapper: iCloud mismatch — container was local, iCloud now available")
+            #endif
+            NotificationCenter.default.post(name: .iCloudMismatchDetected, object: nil)
+        }
     }
 
     // MARK: - Remote Change Observation
@@ -174,6 +208,9 @@ final class AppBootstrapper {
     func handleBecameActive(context: ModelContext) {
         // Apply any pending remote CloudKit changes on foreground resume
         sessionState.applyPendingChangesIfNeeded()
+
+        // Check if iCloud became available after container was created without it
+        checkForICloudMismatch()
 
         // Re-verify subscription status on foreground resume
         subscriptionCheckTask?.cancel()

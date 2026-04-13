@@ -2419,6 +2419,9 @@
 "icloud.remoteWipe.cancel" = "Keep Waiting";
 "icloud.forceSync.button" = "Force Sync";
 "icloud.forceSync.description" = "Checks for pending data from iCloud. Use if your data isn't appearing on this device.";
+"icloud.mismatch.title" = "iCloud Now Available";
+"icloud.mismatch.message" = "Yala opened before iCloud was ready. Close and reopen the app to sync your data.";
+"icloud.mismatch.action" = "Got It";
 
 // MARK: - Feature Gate
 

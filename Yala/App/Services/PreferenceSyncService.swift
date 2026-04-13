@@ -19,6 +19,9 @@ extension Notification.Name {
     /// Fired when a remote device completed onboarding after a wipe.
     /// Used to pull a device out of mid-onboarding and show a sync banner instead.
     static let remoteOnboardingCompleted = Notification.Name("remoteOnboardingCompleted")
+
+    /// Fired when iCloud became available after the container was created without CloudKit.
+    static let iCloudMismatchDetected = Notification.Name("iCloudMismatchDetected")
 }
 
 @MainActor

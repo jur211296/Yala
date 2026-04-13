@@ -25,6 +25,8 @@ struct YalaApp: App {
     /// ModelContainer compartido para toda la app.
     var sharedModelContainer: ModelContainer = {
         do {
+            let iCloudWasAvailable = SwiftDataConfiguration.isICloudAvailable()
+            SwiftDataConfiguration.markContainerCloudKitState(iCloudWasAvailable)
             return try ModelContainer(
                 for: SwiftDataConfiguration.schema,
                 configurations: SwiftDataConfiguration.configuration
