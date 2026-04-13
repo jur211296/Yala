@@ -2413,6 +2413,8 @@
 "icloud.remoteWipe.message" = "Tes données ont été supprimées d'iCloud. Tu peux repartir à zéro ou attendre qu'elles se re-synchronisent.";
 "icloud.remoteWipe.confirm" = "Repartir à zéro";
 "icloud.remoteWipe.cancel" = "Continuer d'attendre";
+"icloud.forceSync.button" = "Forcer la synchronisation";
+"icloud.forceSync.description" = "Vérifie les données en attente sur iCloud. Utilise cette option si tes données n'apparaissent pas sur cet appareil.";
 
 // MARK: - Feature Gate
 

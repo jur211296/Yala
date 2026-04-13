@@ -2411,6 +2411,8 @@
 "icloud.remoteWipe.message" = "Seus dados foram removidos do iCloud. Você pode recomeçar ou aguardar a sincronização.";
 "icloud.remoteWipe.confirm" = "Recomeçar";
 "icloud.remoteWipe.cancel" = "Continuar aguardando";
+"icloud.forceSync.button" = "Forçar sincronização";
+"icloud.forceSync.description" = "Verifica dados pendentes no iCloud. Use se seus dados não estão aparecendo neste dispositivo.";
 
 // MARK: - Feature Gate
 

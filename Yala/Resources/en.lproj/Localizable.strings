@@ -2417,6 +2417,8 @@
 "icloud.remoteWipe.message" = "Your data was removed from iCloud. You can start fresh or wait for it to sync back.";
 "icloud.remoteWipe.confirm" = "Start Fresh";
 "icloud.remoteWipe.cancel" = "Keep Waiting";
+"icloud.forceSync.button" = "Force Sync";
+"icloud.forceSync.description" = "Checks for pending data from iCloud. Use if your data isn't appearing on this device.";
 
 // MARK: - Feature Gate
 

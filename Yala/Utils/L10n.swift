@@ -3984,6 +3984,8 @@ enum L10n {
         static var remoteWipeMessage: String { ls("icloud.remoteWipe.message", comment: "") }
         static var remoteWipeConfirm: String { ls("icloud.remoteWipe.confirm", comment: "") }
         static var remoteWipeCancel: String { ls("icloud.remoteWipe.cancel", comment: "") }
+        static var forceSyncButton: String { ls("icloud.forceSync.button", comment: "") }
+        static var forceSyncDescription: String { ls("icloud.forceSync.description", comment: "") }
     }
 
     // MARK: - Shortcut Notifications
