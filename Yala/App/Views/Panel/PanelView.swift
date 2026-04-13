@@ -24,15 +24,7 @@ struct PanelView: View {
 
     @State private var viewModel = PanelViewModel()
 
-    // Convenience accessors for data from ViewModel
-    private var accounts: [Account] { viewModel.accounts }
-    private var tags: [Tag] { viewModel.tags }
-    private var categories: [Category] { viewModel.categories }
-    private var allSubcategories: [Subcategory] { viewModel.allSubcategories }
-    private var transactions: [TransactionItem] { viewModel.transactions }
-    private var budgets: [Budget] { viewModel.budgets }
-    private var scheduledPayments: [ScheduledPayment] { viewModel.scheduledPayments }
-    private var pendingDrafts: [InboxDraft] { viewModel.pendingDrafts }
+
 
     @State private var isPresentingSettings = false
 
@@ -61,14 +53,6 @@ struct PanelView: View {
 /// Custom period picker sheet
     @State private var showCustomPeriodPicker = false
 
-    /// Debounced recalculation task — used by onChange/onDismiss handlers to coalesce rapid changes
-    @State private var recalculateTask: Task<Void, Never>?
-    /// Tracks whether a pending debounced task needs to reload data from SwiftData.
-    /// Prevents recalculateData() from downgrading a pending reloadAndRecalculate().
-    @State private var pendingReload = false
-    /// Whether the app is in background — suppresses recalculation to prevent 0x8BADF00D watchdog kill.
-    @State private var isInBackground = false
-
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen.rawValue
     @AppStorage("showVariations") private var showVariations: Bool = true
@@ -80,20 +64,6 @@ struct PanelView: View {
     @State private var showAIConsentAlert = false
     @State private var pendingAIInput: PendingAIInput = .voice
     @AppStorage("showSiriTip") private var showSiriTip: Bool = true
-    @AppStorage("panelShowAIInsight") private var showAIInsight: Bool = false
-    @AppStorage(InsightTone.storageKey) private var toneSetting: String = InsightTone.normal.rawValue
-    @AppStorage(InsightFocus.storageKey) private var focusSetting: String = InsightFocus.balanced.rawValue
-
-    /// Contextual AI insight state
-    @State private var contextualInsight: String?
-    @State private var isLoadingInsight = false
-    @State private var isPreparingInsight = false
-    @State private var insightDismissedUntil: Date?
-    @State private var excludeInsightText: String?
-    @State private var forcedAngle: String?
-    @State private var regenerationID = UUID()
-    @State private var skipDebounce = false
-
     /// Voice recording sheet
     @State private var showVoiceRecording = false
     @State private var navigateToInboxAfterVoice = false
@@ -134,7 +104,7 @@ struct PanelView: View {
 
     /// Check if accounts limit is reached (Pro feature)
     private var isAccountsLimitReached: Bool {
-        let activeCount = accounts.count(where: { !$0.isArchived })
+        let activeCount = viewModel.accounts.count(where: { !$0.isArchived })
         return !FeatureGateService.shared.canCreate(.accounts, currentCount: activeCount)
     }
 
@@ -145,8 +115,8 @@ struct PanelView: View {
 
     /// Check if voice input can be used (requires accounts and subcategories)
     private var canUseVoiceInput: Bool {
-        let hasActiveAccounts = accounts.contains { !$0.isArchived }
-        let hasVisibleSubcategories = allSubcategories.contains { $0.isVisible }
+        let hasActiveAccounts = viewModel.accounts.contains { !$0.isArchived }
+        let hasVisibleSubcategories = viewModel.allSubcategories.contains { $0.isVisible }
         return hasActiveAccounts && hasVisibleSubcategories
     }
 
@@ -272,8 +242,8 @@ struct PanelView: View {
                     .foregroundStyle(.thToolbarIcon)
 
                 // Badge with count
-                if pendingDrafts.count > 0 {
-                    Text("\(min(pendingDrafts.count, 99))")
+                if viewModel.pendingDrafts.count > 0 {
+                    Text("\(min(viewModel.pendingDrafts.count, 99))")
                         .font(DS.Typography.captionSmall).fontWeight(.bold)
                         .foregroundStyle(.white)
                         .padding(.horizontal, DS.Spacing.xs)
@@ -293,7 +263,7 @@ struct PanelView: View {
     /// Prefill subcategory name for NewTransactionView
     private var prefillSubcategoryName: String? {
         viewModel.selectedSubcategoryIDs.first.flatMap { subcategoryID in
-            allSubcategories.first(where: { $0.persistentModelID == subcategoryID })?.name
+            viewModel.allSubcategories.first(where: { $0.persistentModelID == subcategoryID })?.name
         }
     }
 
@@ -381,8 +351,7 @@ struct PanelView: View {
                 transactionDateRange: transactionDateRange,
                 customDateRange: sessionState.customDateRange,
                 viewModel: viewModel,
-                navigateToStatistics: navigateToStatistics,
-                reloadAndRecalculate: reloadAndRecalculate
+                navigateToStatistics: navigateToStatistics
             )
         )
         .sheet(isPresented: $showSubscriptionFromBanner) {
@@ -396,41 +365,42 @@ struct PanelView: View {
             viewModel.setContext(
                 modelContext,
                 exchangeRateService: exchangeRateService,
-                currencyConverter: currencyConverter
+                currencyConverter: currencyConverter,
+                defaultCurrencyCode: defaultCurrencyCodeRaw,
+                sessionState: sessionState
             )
             Task { TransferMigrationService.migratePositiveTransfersIfNeeded(in: modelContext) }
             viewModel.syncFromSessionState(sessionState)
             let newOrder = viewModel.ensureAccountsSortOrderConsistency(
-                accounts: accounts,
+                accounts: viewModel.accounts,
                 currentOrderRaw: accountsSortOrderNamesRaw
             )
             if newOrder != accountsSortOrderNamesRaw {
                 accountsSortOrderNamesRaw = newOrder
             }
-            // Deferred to next run-loop turn so the first frame renders without blocking.
-            // Prevents 0x8BADF00D if the system still considers the app "Background".
-            scheduleRecalculation(reload: true)
+            viewModel.reloadAndRecalculate()
         }
         .onDisappear {
-            recalculateTask?.cancel()
+            viewModel.cancelRecalculation()
         }
         .onChange(of: scenePhase) { _, newPhase in
             switch newPhase {
             case .background, .inactive:
-                isInBackground = true
-                recalculateTask?.cancel()
-                recalculateTask = nil
-                pendingReload = false
+                viewModel.setBackground(true)
             case .active:
                 guard UIApplication.shared.applicationState == .active else { return }
-                isInBackground = false
-                reloadAndRecalculate()
+                viewModel.setBackground(false)
+                viewModel.reloadAndRecalculate()
             @unknown default:
                 break
             }
         }
         .onChange(of: sizeClass) { _, newValue in
             viewModel.widgetConfig.columns = DS.Adaptive.columns(newValue)
+        }
+        .onChange(of: defaultCurrencyCodeRaw) { _, newValue in
+            viewModel.updateDefaultCurrencyCode(newValue)
+            viewModel.recalculateData()
         }
         .task {
             // Wait for post-onboarding flow (trial sheet) to complete
@@ -450,22 +420,14 @@ struct PanelView: View {
                 triggerInteractivityTourIfEligible()
             }
         }
-        .onChange(of: transactions.count) { _, _ in
+        .onChange(of: viewModel.transactions.count) { _, _ in
             triggerInteractivityTourIfEligible()
         }
         .modifier(
             PanelDataObservers(
-                accounts: accounts,
-                transactions: transactions,
-                budgets: budgets,
-                allSubcategories: allSubcategories,
-                sessionState: sessionState,
                 viewModel: viewModel,
-                showFABMenu: $showFABMenu,
-                accountsSortOrderNamesRaw: $accountsSortOrderNamesRaw,
-                defaultCurrencyCodeRaw: $defaultCurrencyCodeRaw,
-                recalculateData: recalculateData,
-                reloadAndRecalculate: reloadAndRecalculate
+                sessionState: sessionState,
+                showFABMenu: $showFABMenu
             )
         )
         .modifier(
@@ -481,10 +443,8 @@ struct PanelView: View {
         )
         .modifier(
             PanelSessionObservers(
-                sessionState: sessionState,
-                categories: categories,
-                subcategories: allSubcategories,
-                recalculateData: recalculateData
+                viewModel: viewModel,
+                sessionState: sessionState
             )
         )
     }
@@ -496,7 +456,7 @@ struct PanelView: View {
             ScrollViewReader { scrollProxy in
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                        if showSiriTip, transactions.count >= 5 {
+                        if showSiriTip, viewModel.transactions.count >= 5 {
                             SiriTipCard(isVisible: $showSiriTip)
                         }
 
@@ -558,28 +518,11 @@ struct PanelView: View {
                             .coachMarkAnchor("contextualGuide")
 
                         accountsSection
-                        contextualInsightSection
                         totalBalanceSection
                     }
                     .padding(.horizontal, DS.Adaptive.horizontalPadding(sizeClass))
                     .padding(.top, DS.Spacing.lg)
                     .padding(.bottom, DS.Spacing.xxxl)
-                    // Formatting changes handled by onChange(formattingVersion) in PanelDataObservers.
-                    .task(id: insightTaskKey) {
-                        await loadContextualInsight()
-                    }
-                    .task(id: insightDismissedUntil) {
-                        guard let until = insightDismissedUntil else { return }
-                        let remaining = until.timeIntervalSince(.now)
-                        guard remaining > 0 else {
-                            insightDismissedUntil = nil
-                            return
-                        }
-                        try? await Task.sleep(for: .seconds(remaining))
-                        if !Task.isCancelled {
-                            insightDismissedUntil = nil
-                        }
-                    }
                 }
                 .refreshable {
                     await refreshData()
@@ -591,9 +534,9 @@ struct PanelView: View {
                     // Setup checklist: auto-detect completed steps & manage collapse state
                     let mgr = SetupChecklistManager.shared
                     mgr.autoDetect(
-                        transactionCount: transactions.count,
-                        budgetCount: budgets.count,
-                        scheduledCount: scheduledPayments.count
+                        transactionCount: viewModel.transactions.count,
+                        budgetCount: viewModel.budgets.count,
+                        scheduledCount: viewModel.scheduledPayments.count
                     )
 
                     // Keep collapsed until panel tour completes (avoids flash)
@@ -789,7 +732,7 @@ struct PanelView: View {
             Text(L10n.Panel.accounts)
                 .font(DS.Typography.title)
 
-            if accounts.isEmpty {
+            if viewModel.accounts.isEmpty {
                 YalaEmptyState.noAccounts {
                     if isAccountsLimitReached {
                         showUpgradeForAccounts = true
@@ -801,10 +744,10 @@ struct PanelView: View {
                 AccountsCarouselView(
                     viewModel: viewModel,
                     orderedAccounts: viewModel.orderedActiveAccounts(
-                        from: accounts,
+                        from: viewModel.accounts,
                         sortOrderNames: accountsSortOrderNamesRaw.split(separator: "|").map(String.init)
                     ),
-                    transactions: transactions,
+                    transactions: viewModel.transactions,
                     isExpensesOnlyMode: sessionState.isExpensesOnlyMode,
                     onAddAccount: {
                         if isAccountsLimitReached {
@@ -820,220 +763,6 @@ struct PanelView: View {
                 .coachMarkAnchor("accounts")
                 .coachMarkAnchor("filterAccount")
             }
-        }
-    }
-
-    // MARK: - Contextual AI Insight
-
-    /// Stable task key that triggers re-computation when period or filters change.
-    /// Must be deterministic (no Hasher — its seed changes per launch).
-    private var insightTaskKey: String {
-        let account = viewModel.selectedAccountID.map { "\($0)" } ?? "all"
-        let cats = SessionState.shared.selectedCategoryIDs.map { "\($0)" }.sorted().joined(separator: ",")
-        let subs = viewModel.selectedSubcategoryIDs.map { "\($0)" }.sorted().joined(separator: ",")
-        return "\(viewModel.selectedPeriod.rawValue)_\(account)_\(cats)_\(subs)_\(toneSetting)_\(focusSetting)_\(showAIInsight)_\(regenerationID)"
-    }
-
-    /// Whether the insight is temporarily dismissed. Cleared automatically by .task(id: insightDismissedUntil).
-    private var isDismissed: Bool {
-        insightDismissedUntil != nil
-    }
-
-    @ViewBuilder
-    private var contextualInsightSection: some View {
-        let isPro = FeatureGateService.shared.canAccess(.smartInsightsAI)
-        let hasConsent = UserDefaults.standard.bool(forKey: "aiInsightsConsentAccepted")
-        let baseVisible = isPro && hasConsent && showAIInsight && !isDismissed
-
-        if baseVisible && (isPreparingInsight || isLoadingInsight) {
-            HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: "sparkles")
-                    .foregroundStyle(theme.accent)
-                    .symbolEffect(.pulse)
-                    .accessibilityHidden(true)
-                Text(isPreparingInsight ? L10n.Panel.preparingInsight : L10n.Insights.analyzingData)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(DS.Spacing.lg)
-            .frame(maxWidth: .infinity)
-            .solidCard(radius: DS.Radius.lg)
-            .transition(.asymmetric(
-                insertion: .scale(scale: 0.95).combined(with: .opacity),
-                removal: .scale(scale: 0.95).combined(with: .opacity)
-            ))
-        } else if baseVisible, let insight = contextualInsight {
-            ContextualInsightCard(
-                text: insight,
-                isRegenerating: isPreparingInsight || isLoadingInsight,
-                onAction: { action in
-                    switch action {
-                    case .regenerate:
-                        triggerInsightRegeneration()
-                    case .differentAngle:
-                        triggerInsightRegeneration(angle: InsightsLLMService.randomAlternativeAngle())
-                    case .hideOneHour:
-                        dsWithAnimation(reduceMotion) {
-                            insightDismissedUntil = Date.now.addingTimeInterval(3600)
-                        }
-                    case .hideToday:
-                        dsWithAnimation(reduceMotion) {
-                            insightDismissedUntil = Calendar.current.startOfDay(for: .now).addingTimeInterval(86400)
-                        }
-                    }
-                }
-            )
-            .transition(.asymmetric(
-                insertion: .scale(scale: 0.95).combined(with: .opacity),
-                removal: .scale(scale: 0.95).combined(with: .opacity)
-            ))
-        }
-    }
-
-    private func triggerInsightRegeneration(angle: String? = nil) {
-        dsWithAnimation(reduceMotion) {
-            excludeInsightText = contextualInsight
-            forcedAngle = angle
-            insightDismissedUntil = nil
-            contextualInsight = nil
-            skipDebounce = true
-            // Memory cleanup: old entries are unreachable after UUID change
-            InsightsLLMService.shared.invalidateContextualCache(forKeyContaining: "panel_")
-            regenerationID = UUID()
-        }
-    }
-
-    private func loadContextualInsight() async {
-        let hadPreviousInsight = contextualInsight != nil
-        contextualInsight = nil
-
-        let isPro = FeatureGateService.shared.canAccess(.smartInsightsAI)
-        let hasConsent = UserDefaults.standard.bool(forKey: "aiInsightsConsentAccepted")
-        let isOnline = NetworkMonitor.shared.isConnected
-
-        guard isPro, hasConsent, isOnline, transactions.count >= 5 else {
-            return
-        }
-
-        // Skip debounce for user-initiated actions or first load (toggle just activated)
-        if skipDebounce {
-            skipDebounce = false
-        } else if hadPreviousInsight {
-            isPreparingInsight = true
-            // Debounce: wait 10s after last filter change before calling LLM
-            do {
-                try await Task.sleep(for: .seconds(10))
-            } catch {
-                isPreparingInsight = false
-                return // Task cancelled — filters changed again, skip LLM call
-            }
-            isPreparingInsight = false
-        }
-
-        let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCodeRaw) ?? .pen
-        let txnCount = transactions.count
-        let tone = InsightTone.current
-        let focus = InsightFocus.current
-        let country = Locale.current.region?.identifier ?? ""
-        let currencyFormat = UserDefaults.standard.string(forKey: "currencyDisplayFormat") ?? "code"
-        let cacheKey = "panel_\(insightTaskKey)_\(txnCount)_\(country)_\(currencyFormat)"
-
-        // Calculate InsightData
-        let criteria = viewModel.buildFilterCriteria(dateInterval: viewModel.panelDateInterval)
-        let data = InsightsCalculator.calculate(
-            transactions: transactions,
-            accounts: accounts,
-            categories: categories,
-            budgets: budgets,
-            scheduledPayments: scheduledPayments,
-            period: viewModel.selectedPeriod,
-            criteria: criteria,
-            currencyCode: preferredCurrency.rawValue,
-            customRange: viewModel.customDateRange
-        )
-
-        // Build lightweight aggregated dict (subset — no filter context, no year-over-year)
-        var aggregated: [String: Any] = [
-            "currency": preferredCurrency.rawValue,
-            "currency_display": YalaFormatter.currencyIdentifier(for: preferredCurrency.rawValue),
-            "locale": Locale.current.language.languageCode?.identifier ?? "es",
-            "country": Locale.current.region?.identifier ?? "",
-            "total_expense": Int(data.periodSummary.totalExpense),
-            "total_income": Int(data.periodSummary.totalIncome),
-            "spending_total_variation": data.periodSummary.expenseVariation.map { "\(Int($0))%" } ?? "N/A",
-            "income_variation": data.periodSummary.incomeVariation.map { "\(Int($0))%" } ?? "N/A",
-            "daily_avg_variation": data.periodSummary.dailyAverageVariation.map { "\(Int($0))%" } ?? "N/A",
-            "count": data.periodSummary.transactionCount,
-            "daily_avg": Int(data.quickStats.dailyAverage)
-        ]
-
-        // Top 3 categories with amounts (reduced vs full insights top 5)
-        if !data.quickStats.topCategories.isEmpty {
-            aggregated["top_categories"] = data.quickStats.topCategories.prefix(3).map {
-                ["name": $0.category.name, "amount": Int($0.amount), "pct": Int($0.percentage)] as [String: Any]
-            }
-        }
-
-        // Top subcategory
-        if let topSub = data.quickStats.topSubcategory {
-            let subName = topSub.subcategory?.name ?? topSub.subcategoryName
-            let totalExpense = data.periodSummary.totalExpense
-            let pctOfTotal = totalExpense > 0 ? Int((topSub.amount / totalExpense) * 100) : 0
-            aggregated["top_subcategory"] = ["name": subName, "amount": Int(topSub.amount), "pct_of_total": pctOfTotal] as [String: Any]
-        }
-
-        // Highest expense
-        if let highest = data.quickStats.highestExpense {
-            aggregated["highest_expense"] = ["amount": Int(highest.amount), "description": highest.note] as [String: Any]
-        }
-
-        // Subscriptions (Netflix, Spotify, etc.)
-        if data.commitments.activeSubscriptionsCount > 0 {
-            aggregated["subscriptions"] = ["count": data.commitments.activeSubscriptionsCount, "monthly_total": Int(data.commitments.activeSubscriptionsMonthly)] as [String: Any]
-        }
-
-        // Recurring payments (rent, utilities, payroll, etc.)
-        if data.commitments.activeRecurringCount > 0 {
-            aggregated["recurring_payments"] = ["count": data.commitments.activeRecurringCount, "monthly_total": Int(data.commitments.activeRecurringMonthly)] as [String: Any]
-        }
-
-        let needDist = data.needDistribution
-        if needDist.total > 0 {
-            aggregated["need_split"] = [
-                "essential": ["pct": Int(needDist.essentialPercent), "amount": Int(needDist.essential)] as [String: Any],
-                "priority": ["pct": Int(needDist.priorityPercent), "amount": Int(needDist.priority)] as [String: Any],
-                "optional": ["pct": Int(needDist.optionalPercent), "amount": Int(needDist.optional)] as [String: Any]
-            ]
-        }
-
-        if !data.commitments.budgetsAtRisk.isEmpty {
-            aggregated["budgets_at_risk"] = data.commitments.budgetsAtRisk.map {
-                ["name": $0.name, "spent": Int($0.spent), "limit": Int($0.limit), "usage_pct": Int($0.usagePercent)] as [String: Any]
-            }
-        }
-
-        // Loading state only covers the async LLM call
-        isLoadingInsight = true
-        defer { isLoadingInsight = false }
-
-        do {
-            let result = try await InsightsLLMService.shared.generateContextualInsight(
-                aggregatedData: aggregated,
-                cacheKey: cacheKey,
-                tone: tone,
-                focus: focus,
-                excludeText: excludeInsightText,
-                forcedAngle: forcedAngle
-            )
-
-            guard !Task.isCancelled else { return }
-            contextualInsight = result
-            excludeInsightText = nil
-            forcedAngle = nil
-        } catch {
-            #if DEBUG
-            print("PanelView: Contextual insight error: \(error)")
-            #endif
         }
     }
 
@@ -1093,7 +822,7 @@ struct PanelView: View {
 
                             // Account Chip
                             if let selectedID = viewModel.selectedAccountID,
-                                let account = accounts.first(where: {
+                                let account = viewModel.accounts.first(where: {
                                     $0.persistentModelID == selectedID
                                 })
                             {
@@ -1116,12 +845,12 @@ struct PanelView: View {
                             }
 
                             // Category Chip - show when category is directly selected OR when subcategories are selected
-                            let selectedSubsByID = allSubcategories.filter {
+                            let selectedSubsByID = viewModel.allSubcategories.filter {
                                 viewModel.selectedSubcategoryIDs.contains($0.persistentModelID)
                             }
                             let isAllSubsSelected =
                                 !selectedSubsByID.isEmpty
-                                && selectedSubsByID.count == allSubcategories.count
+                                && selectedSubsByID.count == viewModel.allSubcategories.count
 
                             // Show category chip if:
                             // 1. A category is directly selected (from pie chart), OR
@@ -1206,7 +935,7 @@ struct PanelView: View {
 
                             // Tag Chips
                             ForEach(Array(viewModel.selectedTags), id: \.self) { tagID in
-                                if let tag = tags.first(where: { $0.persistentModelID == tagID }) {
+                                if let tag = viewModel.tags.first(where: { $0.persistentModelID == tagID }) {
                                     FilterChipView(
                                         tagName: tag.name,
                                         iconName: tag.iconName,
@@ -1319,19 +1048,6 @@ struct PanelView: View {
                 }
             }
 
-            EmptyView()
-                .onChange(of: viewModel.selectedCategoryID) {
-                    recalculateData()
-                }
-                .onChange(of: viewModel.focusedDate) {
-                    recalculateData()
-                }
-                .onChange(of: viewModel.selectedNeed) {
-                    recalculateData()
-                }
-                .onChange(of: viewModel.subcategoriesWidgetFilter) {
-                    recalculateData()
-                }
         }
 
     }
@@ -1350,7 +1066,7 @@ struct PanelView: View {
     /// Pull-to-refresh: sync preferences + reload data
     private func refreshData() async {
         PreferenceSyncService.shared.bootstrap()
-        reloadAndRecalculate()
+        viewModel.reloadAndRecalculate()
         try? await Task.sleep(for: .milliseconds(300))
         DS.Haptic.light()
     }
@@ -1383,7 +1099,7 @@ struct PanelView: View {
     /// Check and trigger interactivity tour if conditions are met
     private func triggerInteractivityTourIfEligible() {
         guard hasSeenPanelTour, !hasSeenInteractivityTour, !showPanelTour, !showInteractivityTour else { return }
-        let uniqueDays = Set(transactions.map { Calendar.current.startOfDay(for: $0.date) }).count
+        let uniqueDays = Set(viewModel.transactions.map { Calendar.current.startOfDay(for: $0.date) }).count
         guard uniqueDays >= 2 else { return }
         Task {
             try? await Task.sleep(for: .seconds(1.0))
@@ -1393,304 +1109,38 @@ struct PanelView: View {
         }
     }
 
-    /// Debounced recalculation (150ms) — coalesces rapid onChange cascades into a single computation.
-    /// Does NOT reload data from SwiftData — filter changes only need recalculation, not re-fetch.
-    private func recalculateData() {
-        // Don't downgrade a pending reload to a calculate-only
-        scheduleRecalculation(reload: false)
-    }
-
-    /// Debounced reload + recalculation — used when actual data may have changed
-    /// (dataVersion, sheet dismissals where user created/edited/deleted data).
-    private func reloadAndRecalculate() {
-        scheduleRecalculation(reload: true)
-    }
-
-    /// Shared debounce (150ms). `pendingReload` ensures a reload request isn't lost
-    /// if a subsequent calculate-only call arrives within the debounce window.
-    /// Guarded by isInBackground to prevent 0x8BADF00D during snapshot capture.
-    private func scheduleRecalculation(reload: Bool) {
-        guard !isInBackground else { return }
-        // Secondary guard: scenePhase can lag behind actual UIApplication state.
-        // Crash logs show procRole="Non UI" while scenePhase reports .active.
-        guard UIApplication.shared.applicationState == .active else { return }
-        if reload { pendingReload = true }
-        recalculateTask?.cancel()
-        recalculateTask = Task { @MainActor in
-            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
-            guard !Task.isCancelled else { return }
-            let shouldReload = pendingReload
-            pendingReload = false
-            if shouldReload {
-                viewModel.loadData()
-                // Sort order depends on account names — must run after reload
-                // to catch adds, removes, and renames.
-                let newOrder = viewModel.ensureAccountsSortOrderConsistency(
-                    accounts: viewModel.accounts,
-                    currentOrderRaw: accountsSortOrderNamesRaw
-                )
-                if newOrder != accountsSortOrderNamesRaw {
-                    accountsSortOrderNamesRaw = newOrder
-                }
-            }
-            performCalculation()
-        }
-    }
-
-    /// Synchronous full reload — used only for the initial onAppear where widgets need data immediately.
-    private func performRecalculation() {
-        viewModel.loadData()
-        performCalculation()
-    }
-
-    /// Runs all widget calculations from cached data (no SwiftData fetch).
-    private func performCalculation() {
-        viewModel.calculateTrendData(
-            accounts: accounts,
-            transactions: transactions,
-            defaultCurrencyCode: defaultCurrencyCodeRaw,
-            context: modelContext,
-            sessionState: sessionState
-        )
-
-        viewModel.calculateBudgetsWidget(
-            budgets: budgets,
-            transactions: transactions,
-            defaultCurrencyCode: defaultCurrencyCodeRaw,
-            excludedCategoryIDs: sessionState.isExcludeMode ? sessionState.selectedCategoryIDs : [],
-            excludedSubcategoryIDs: sessionState.isExcludeMode ? sessionState.selectedSubcategoryIDs : []
-        )
-    }
-
     // MARK: - Widget Helpers
 
     @ViewBuilder
     private func widgetView(for config: WidgetConfig) -> some View {
-        // Render actual widget directly - calculations are fast enough now
-        actualWidgetView(for: config)
-    }
-
-    @ViewBuilder
-    private func actualWidgetView(for config: WidgetConfig) -> some View {
         let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCodeRaw) ?? .pen
-
-        // All widgets below have 'onShowMore' or 'onViewDetail' removed (or passed as nil) to remove chevrons
-
-        if config.type == .trend {
-            let balance = viewModel.displayedBalanceInDefaultCurrency(
-                accounts: accounts,
-                transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCodeRaw
-            )
-            TrendWidget(
-                viewModel: viewModel,
-                sessionState: sessionState,
-                currencyCode: preferredCurrency.rawValue,
-                currentBalance: balance
-            )
-            // trendType onChange: PanelDataObservers (includes syncToSessionState)
-            // subcategoriesWidgetFilter onChange: EmptyView block (always-evaluated)
-        } else if config.type == .topSpending {
-            TopCategoriesWidget(
-                categories: viewModel.topSpendingCategories,
-                currencyCode: preferredCurrency.rawValue,
-                selectedCategoryID: viewModel.selectedCategoryID,
-                isExcludeMode: viewModel.isExcludeMode,
-                onSelectCategory: { id in
-                    dsWithAnimation(reduceMotion) {
-                        viewModel.toggleCategoryFilter(id)
-                    }
-                },
-                onShowMore: { navigateToStatistics(.categories) },
-                size: mapWidgetSize(config.size),
-                period: viewModel.selectedPeriod,
-                previousTotalAmount: viewModel.previousCategoriesTotalAmount,
-                showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
-            )
-        } else if config.type == .topSubcategories {
-            TopSubcategoriesWidget(
-                subcategories: viewModel.topSubcategories,
-                currencyCode: preferredCurrency.rawValue,
-                globalCategoryFilterID: viewModel.selectedCategoryID,
-                localCategoryFilterID: $viewModel.subcategoriesWidgetFilter,
-                onSelectSubcategory: { subcategoryID in
-                    dsWithAnimation(reduceMotion) {
-                        viewModel.toggleSubcategoryFilter(
-                            subcategoryID,
-                            transactions: transactions,
-                            accounts: accounts,
-                            defaultCurrencyCode: preferredCurrency.rawValue,
-                            context: modelContext,
-                            sessionState: sessionState
-                        )
-                    }
-                },
-                selectedSubcategoryIDs: viewModel.selectedSubcategoryIDs,
-                isExcludeMode: viewModel.isExcludeMode,
-                onShowMore: { navigateToStatistics(.categories) },
-                size: mapWidgetSize(config.size),
-                period: viewModel.selectedPeriod,
-                previousTotalAmount: viewModel.previousSubcategoriesTotalAmount,
-                showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
-            )
-        } else if config.type == .categoriesPie {
-            CategoriesPieWidget(
-                categories: viewModel.topSpendingCategories,
-                currencyCode: preferredCurrency.rawValue,
-                selectedCategoryIDs: viewModel.selectedCategoryID.map { Set([$0]) } ?? [],
-                onSelectCategory: { id in
-                    dsWithAnimation(reduceMotion) {
-                        viewModel.toggleCategoryFilter(id)
-                    }
-                },
-                onShowDetail: { navigateToStatistics(.categories) },
-                isExcludeMode: viewModel.isExcludeMode,
-                size: config.size,
-                period: viewModel.selectedPeriod,
-                previousTotalAmount: viewModel.previousCategoriesTotalAmount,
-                showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
-            )
-        } else if config.type == .subcategoriesPie {
-            SubcategoriesPieWidget(
-                subcategories: viewModel.topSubcategories,
-                currencyCode: preferredCurrency.rawValue,
-                selectedCategoryID: viewModel.selectedCategoryID,
-                selectedSubcategoryIDs: viewModel.selectedSubcategoryIDs,
-                onSelectSubcategory: { subcategoryID in
-                    dsWithAnimation(reduceMotion) {
-                        viewModel.toggleSubcategoryFilter(
-                            subcategoryID,
-                            transactions: transactions,
-                            accounts: accounts,
-                            defaultCurrencyCode: preferredCurrency.rawValue,
-                            context: modelContext,
-                            sessionState: sessionState
-                        )
-                    }
-                },
-                onShowDetail: { navigateToStatistics(.categories) },
-                isExcludeMode: viewModel.isExcludeMode,
-                size: config.size,
-                period: viewModel.selectedPeriod,
-                previousTotalAmount: viewModel.previousSubcategoriesTotalAmount,
-                showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
-            )
-        } else if config.type == .cashFlow {
-            if let summary = viewModel.cashFlowSummary {
-                CashFlowWidget(
-                    summary: summary,
-                    size: config.size,
-                    period: viewModel.selectedPeriod.rawValue,
-                    grouping: viewModel.cashFlowGrouping,
-                    interval: viewModel.currentInterval,
-                    onShowDetail: { navigateToStatistics(.trends) },
-                    displayMode: viewModel.trendType,
-                    selectedTransactionNatures: viewModel.selectedTransactionNatures,
-                    isExpensesOnlyMode: sessionState.isExpensesOnlyMode
-                )
-            } else {
-                YalaEmptyState(
-                    icon: "chart.bar.fill",
-                    title: L10n.Empty.noData,
-                    message: L10n.Statistics.noRecordsDescription
-                )
-                .frame(height: 200)
-            }
-        } else if config.type == .latestRecords {
-            RecentRecordsWidget(
-                records: viewModel.latestRecords,
-                currencyCode: preferredCurrency.rawValue,
-                onShowMore: { navigateToStatistics(.records) }
-            )
-        } else if config.type == .expensesByNeed {
-            NeedTrendWidget(
-                trendPoints: viewModel.needTrendPoints,
-                selectedNeed: viewModel.selectedNeed,
-                currencyCode: preferredCurrency.rawValue,
-                size: mapWidgetSize(config.size),
-                grouping: viewModel.needGrouping,
-                interval: viewModel.currentInterval,
-                onSelectNeed: { need in
-                    dsWithAnimation(reduceMotion) {
-                        viewModel.toggleNeedFilter(need)
-                    }
-                },
-                onShowDetail: { navigateToStatistics(.categories) },
-                period: viewModel.selectedPeriod,
-                previousTotalAmount: viewModel.previousNeedTotalAmount,
-                previousAmountByNeed: viewModel.previousNeedAmounts,
-                showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime,
-                isIncomeMode: viewModel.selectedTransactionNatures == [.income]
-            )
-        } else if config.type == .exchangeRate {
-            ExchangeRateWidget(
-                data: viewModel.exchangeRateWidgetData,
-                preferredCurrency: preferredCurrency.rawValue,
-                selectedCurrencies: $viewModel.selectedComparisonCurrencies,
-                grouping: viewModel.exchangeRateGrouping,
-                onShowDetail: nil  // REMOVED CHEVRON
-            )
-        } else if config.type == .budgets {
-            let selectedBudget = sessionState.selectedBudgetID.flatMap { selectedID in
-                viewModel.topBudgetSummaries.first { $0.budget.persistentModelID == selectedID }?.budget
-            }
-            let displayCurrency = selectedBudget?.currencyCode ?? preferredCurrency.rawValue
-
-            BudgetsWidget(
-                budgets: viewModel.topBudgetSummaries,
-                currencyCode: displayCurrency,
-                hasBudgetsButNoFavorites: viewModel.hasBudgetsButNoFavorites,
-                selectedBudgetID: sessionState.selectedBudgetID,
-                isExcludeMode: viewModel.isExcludeMode,
-                onSelectBudget: { budget in
-                    sessionState.applyBudgetFilters(budget)
-                },
-                onShowMore: { sessionState.navigateToBudgets() },
-                onEditFavorites: { showBudgetFavoritesSettings = true },
-                size: mapBudgetsWidgetSize(config.size)
-            )
-        } else if config.type == .scheduledPayments {
-            ScheduledPaymentsWidget(
-                payments: scheduledPayments,
-                currencyCode: preferredCurrency.rawValue,
-                period: viewModel.selectedPeriod,
-                customDateRange: sessionState.customDateRange,
-                mode: config.scheduledPaymentsMode,
-                filter: $viewModel.scheduledPaymentsWidgetFilter,
-                onShowMore: { sessionState.navigateToScheduledPayments() }
-            )
-        }
-    }
-
-    private func mapWidgetSize(_ size: WidgetSize) -> TopCategoriesWidget.CardSize {
-        switch size {
-        case .medium: return .medium
-        case .large: return .large
-        }
-    }
-
-    private func mapBudgetsWidgetSize(_ size: WidgetSize) -> BudgetsWidget.CardSize {
-        switch size {
-        case .medium: return .medium
-        case .large: return .large
-        }
+        PanelWidgetRouter(
+            config: config,
+            viewModel: viewModel,
+            sessionState: sessionState,
+            currencyCode: preferredCurrency.rawValue,
+            showVariations: showVariations,
+            reduceMotion: reduceMotion,
+            onNavigate: navigateToStatistics,
+            onEditBudgetFavorites: { showBudgetFavoritesSettings = true }
+        )
     }
 
     // MARK: - Helpers
 
     private func existingAccountNames(editingAccount: Account?) -> [String] {
         guard let editingAccount = editingAccount else {
-            return accounts.map { $0.name }
+            return viewModel.accounts.map { $0.name }
         }
         return
-            accounts
+            viewModel.accounts
             .filter { $0.persistentModelID != editingAccount.persistentModelID }
             .map { $0.name }
     }
 
     /// Date range of all transactions (for custom period picker limits)
     private var transactionDateRange: (start: Date, end: Date) {
-        let dates = transactions.map(\.date)
+        let dates = viewModel.transactions.map(\.date)
         let start = dates.min() ?? Date.now
         let end = dates.max() ?? Date.now
         return (start, end)
@@ -1723,63 +1173,80 @@ struct AccountFormSheet: Identifiable {
 
 // MARK: - Panel Data Observers Modifier
 
-/// Encapsulates data-related onChange observers to reduce body complexity
+/// Encapsulates data-related onChange observers to reduce body complexity.
+/// Uses viewModel reference (O(1) comparison) instead of SwiftData arrays.
 private struct PanelDataObservers: ViewModifier {
-    let accounts: [Account]
-    let transactions: [TransactionItem]
-    let budgets: [Budget]
-    let allSubcategories: [Subcategory]
-    let sessionState: SessionState
     let viewModel: PanelViewModel
+    let sessionState: SessionState
     @Binding var showFABMenu: Bool
-    @Binding var accountsSortOrderNamesRaw: String
-    @Binding var defaultCurrencyCodeRaw: String
-    /// Recalculate from cached data (no SwiftData fetch) — for filter changes
-    let recalculateData: () -> Void
-    /// Reload from SwiftData + recalculate — for actual data changes
-    let reloadAndRecalculate: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .modifier(PanelDataCountObservers(viewModel: viewModel, sessionState: sessionState, showFABMenu: $showFABMenu))
+            .modifier(PanelDataFilterObservers(viewModel: viewModel, sessionState: sessionState))
+    }
+}
+
+/// Split 1: Count-based and session observers
+private struct PanelDataCountObservers: ViewModifier {
+    let viewModel: PanelViewModel
+    let sessionState: SessionState
+    @Binding var showFABMenu: Bool
 
     func body(content: Content) -> some View {
         content
             .onChange(of: sessionState.selectedMainTab) { _, _ in
-                if showFABMenu {
-                    showFABMenu = false
-                }
+                if showFABMenu { showFABMenu = false }
             }
-            // Count-based proxies: avoid comparing full SwiftData model arrays
-            // (which triggers performAndWait faults during sheet transitions).
-            // Content edits (same count) are handled by dataVersion → reloadAndRecalculate.
-            .onChange(of: accounts.count) { _, _ in
-                recalculateData()
+            .onChange(of: viewModel.accounts.count) { _, _ in
+                viewModel.recalculateData()
             }
-            .onChange(of: transactions.count) { _, _ in
-                recalculateData()
+            .onChange(of: viewModel.transactions.count) { _, _ in
+                viewModel.recalculateData()
             }
-            .onChange(of: budgets.count) { _, _ in
-                recalculateData()
+            .onChange(of: viewModel.budgets.count) { _, _ in
+                viewModel.recalculateData()
             }
-            .onChange(of: allSubcategories.count) { _, _ in
-                recalculateData()
+            .onChange(of: viewModel.allSubcategories.count) { _, _ in
+                viewModel.recalculateData()
             }
             .onChange(of: sessionState.needsBudgetsWidgetRefresh) { _, needsRefresh in
                 if needsRefresh {
-                    recalculateData()
+                    viewModel.recalculateData()
                     sessionState.needsBudgetsWidgetRefresh = false
                 }
             }
-            .onChange(of: defaultCurrencyCodeRaw) { _, _ in
-                recalculateData()
-            }
             .onChange(of: sessionState.formattingVersion) { _, _ in
-                recalculateData()
+                viewModel.recalculateData()
             }
-            // dataVersion means actual DB data changed (CRUD, sync) — must reload
+    }
+}
+
+/// Split 2: Data version and ViewModel-local filter observers
+private struct PanelDataFilterObservers: ViewModifier {
+    let viewModel: PanelViewModel
+    let sessionState: SessionState
+
+    func body(content: Content) -> some View {
+        content
             .onChange(of: sessionState.dataVersion) { _, _ in
-                reloadAndRecalculate()
+                viewModel.reloadAndRecalculate()
             }
             .onChange(of: viewModel.trendType) { _, _ in
                 viewModel.syncToSessionState(sessionState)
-                recalculateData()
+                viewModel.recalculateData()
+            }
+            .onChange(of: viewModel.selectedCategoryID) {
+                viewModel.recalculateData()
+            }
+            .onChange(of: viewModel.focusedDate) {
+                viewModel.recalculateData()
+            }
+            .onChange(of: viewModel.selectedNeed) {
+                viewModel.recalculateData()
+            }
+            .onChange(of: viewModel.subcategoriesWidgetFilter) {
+                viewModel.recalculateData()
             }
     }
 }
@@ -1889,8 +1356,6 @@ private struct PanelSheetsModifier: ViewModifier {
     let customDateRange: DateInterval?
     let viewModel: PanelViewModel
     let navigateToStatistics: (DetailViewTab) -> Void
-    /// Reload + recalculate — sheets can create/edit/delete data
-    let reloadAndRecalculate: () -> Void
 
     func body(content: Content) -> some View {
         content
@@ -1900,17 +1365,17 @@ private struct PanelSheetsModifier: ViewModifier {
                     accountToEdit: sheet.account
                 )
                 .onDisappear {
-                    reloadAndRecalculate()
+                    viewModel.reloadAndRecalculate()
                 }
             }
             .sheet(isPresented: $isPresentingSettings, onDismiss: {
-                reloadAndRecalculate()
+                viewModel.reloadAndRecalculate()
             }) {
                 ProfileView(initialDestination: SessionState.shared.pendingProfileDestination)
             }
             .sheet(isPresented: $showWidgetPreferences, onDismiss: {
                 viewModel.endWidgetPreferencesEditing()
-                reloadAndRecalculate()
+                viewModel.reloadAndRecalculate()
             }) {
                 WidgetPreferencesView(viewModel: viewModel)
                     .presentationDragIndicator(.visible)
@@ -1919,7 +1384,7 @@ private struct PanelSheetsModifier: ViewModifier {
                     }
             }
             .sheet(isPresented: $showNewTransaction, onDismiss: {
-                reloadAndRecalculate()
+                viewModel.reloadAndRecalculate()
             }) {
                 NewTransactionView(
                     prefillAccountID: prefillAccountID,
@@ -1974,14 +1439,14 @@ private struct PanelSheetsModifier: ViewModifier {
                 )
             }
             .sheet(isPresented: $showBudgetFavoritesSettings, onDismiss: {
-                reloadAndRecalculate()
+                viewModel.reloadAndRecalculate()
             }) {
                 NavigationStack {
                     BudgetsFavoritesSettingsView()
                 }
             }
             .sheet(isPresented: $showInbox, onDismiss: {
-                reloadAndRecalculate()
+                viewModel.reloadAndRecalculate()
             }) {
                 InboxView(onNavigateToRecords: {
                     navigateToStatistics(.records)
@@ -2017,7 +1482,7 @@ private struct PanelSheetsModifier: ViewModifier {
                         deletePracticeItem(item)
                     }
                     practiceCleanupItem = nil
-                    reloadAndRecalculate()
+                    viewModel.reloadAndRecalculate()
                 }
             } message: {
                 Text(L10n.SetupChecklist.practiceMessage)
@@ -2056,7 +1521,7 @@ private struct PanelSheetsModifier: ViewModifier {
             )
         }
 
-        reloadAndRecalculate()
+        viewModel.reloadAndRecalculate()
     }
 
     private func handleImageSelectionDismiss() {
@@ -2085,7 +1550,7 @@ private struct PanelSheetsModifier: ViewModifier {
             )
         }
 
-        reloadAndRecalculate()
+        viewModel.reloadAndRecalculate()
 
         // If there's a deferred panel action (e.g., Control Center "new-transaction"
         // that arrived while shared image was showing), resolve it now
@@ -2099,27 +1564,22 @@ private struct PanelSheetsModifier: ViewModifier {
 /// Note: With SSOT refactor, syncFromSessionState is no longer needed - filters are computed properties
 /// that read/write directly to SessionState.shared. Only recalculateData is needed.
 private struct PanelSessionObservers: ViewModifier {
+    let viewModel: PanelViewModel
     let sessionState: SessionState
-    let categories: [Category]
-    let subcategories: [Subcategory]
-    let recalculateData: () -> Void
 
     func body(content: Content) -> some View {
         content
             .onChange(of: sessionState.selectedPeriod) {
-                recalculateData()
+                viewModel.recalculateData()
             }
             .onChange(of: sessionState.selectedAccountIDs) {
-                recalculateData()
+                viewModel.recalculateData()
             }
             .onChange(of: sessionState.selectedCategoryIDs) {
-                // Auto-create expense chip only if ALL selected categories are expense (not income)
-                // Skip in exclude mode — selecting a category to exclude doesn't imply expense-only
                 if !sessionState.isExcludeMode && !sessionState.selectedCategoryIDs.isEmpty {
-                    let selectedCats = categories.filter {
+                    let selectedCats = viewModel.categories.filter {
                         sessionState.selectedCategoryIDs.contains($0.persistentModelID)
                     }
-                    // Only set expense/income if we found matching categories AND all share the same type
                     if !selectedCats.isEmpty {
                         if selectedCats.allSatisfy({ !$0.isIncome }) {
                             sessionState.selectedTransactionNatures = [.expense]
@@ -2128,24 +1588,19 @@ private struct PanelSessionObservers: ViewModifier {
                         }
                     }
                 }
-                recalculateData()
+                viewModel.recalculateData()
             }
             .onChange(of: sessionState.selectedNeeds) {
-                // Auto-create expense chip when nature filter applied (natures are expense-only)
-                // Skip in exclude mode
                 if !sessionState.isExcludeMode && !sessionState.selectedNeeds.isEmpty {
                     sessionState.selectedTransactionNatures = [.expense]
                 }
-                recalculateData()
+                viewModel.recalculateData()
             }
             .onChange(of: sessionState.selectedSubcategoryIDs) {
-                // Auto-create expense chip only if ALL selected subcategories are from expense categories
-                // Skip in exclude mode
                 if !sessionState.isExcludeMode && !sessionState.selectedSubcategoryIDs.isEmpty {
-                    let selectedSubs = subcategories.filter {
+                    let selectedSubs = viewModel.allSubcategories.filter {
                         sessionState.selectedSubcategoryIDs.contains($0.persistentModelID)
                     }
-                    // Only set expense/income if we found matching subcategories AND all share the same type
                     if !selectedSubs.isEmpty {
                         if selectedSubs.allSatisfy({ !$0.safeCategory.isIncome }) {
                             sessionState.selectedTransactionNatures = [.expense]
@@ -2154,91 +1609,32 @@ private struct PanelSessionObservers: ViewModifier {
                         }
                     }
                 }
-                recalculateData()
+                viewModel.recalculateData()
             }
             .onChange(of: sessionState.selectedTags) {
-                recalculateData()
+                viewModel.recalculateData()
             }
             .onChange(of: sessionState.selectedCurrencies) {
-                recalculateData()
+                viewModel.recalculateData()
             }
             .onChange(of: sessionState.selectedTransactionNatures) {
-                recalculateData()
+                viewModel.recalculateData()
             }
             .onChange(of: sessionState.amountCondition) {
-                recalculateData()
+                viewModel.recalculateData()
             }
             .onChange(of: sessionState.searchText) {
-                recalculateData()
+                viewModel.recalculateData()
             }
             .onChange(of: sessionState.isExcludeMode) {
-                recalculateData()
+                viewModel.recalculateData()
             }
             .onChange(of: sessionState.selectedTrendMetric) {
-                recalculateData()
+                viewModel.recalculateData()
             }
             .onChange(of: sessionState.customDateRange) {
-                recalculateData()
+                viewModel.recalculateData()
             }
-    }
-}
-
-// MARK: - Contextual Insight Card
-
-private enum InsightCardAction {
-    case regenerate, differentAngle, hideOneHour, hideToday
-}
-
-private struct ContextualInsightCard: View {
-    let text: String
-    let isRegenerating: Bool
-    let onAction: (InsightCardAction) -> Void
-
-    var body: some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: "sparkles")
-                .font(DS.Typography.title)
-                .foregroundStyle(.tint)
-                .frame(width: 36, height: 36)
-
-            Text(markdownAttributed(text))
-                .font(DS.Typography.caption)
-                .foregroundStyle(.primary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Spacer(minLength: 0)
-
-            Menu {
-                Button { onAction(.regenerate) } label: {
-                    Label(L10n.Panel.insightMenuRegenerate, systemImage: "arrow.trianglehead.2.clockwise")
-                }
-                Button { onAction(.differentAngle) } label: {
-                    Label(L10n.Panel.insightMenuDifferentAngle, systemImage: "arrow.triangle.branch")
-                }
-                Divider()
-                Button { onAction(.hideOneHour) } label: {
-                    Label(L10n.Panel.insightMenuHideHour, systemImage: "clock")
-                }
-                Button { onAction(.hideToday) } label: {
-                    Label(L10n.Panel.insightMenuHideToday, systemImage: "moon.zzz")
-                }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.primary)
-                    .frame(width: 28, height: 28)
-                    .contentShape(Rectangle())
-            }
-            .tint(.primary)
-            .disabled(isRegenerating)
-            .accessibilityHint(isRegenerating ? L10n.Accessibility.regeneratingInsights : "")
-        }
-        .padding(DS.Spacing.lg)
-        .solidCard(radius: DS.Radius.lg)
-    }
-
-    private func markdownAttributed(_ text: String) -> AttributedString {
-        (try? AttributedString(markdown: text)) ?? AttributedString(text)
     }
 }
 

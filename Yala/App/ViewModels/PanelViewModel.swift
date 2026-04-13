@@ -17,6 +17,7 @@ struct PanelTrendData: Equatable {
     var trendFinalBalance: Double = 0
     var trendGrouping: TrendGrouping = .day
     var dataTrendType: TrendType = .balance
+    var currentBalance: Double = 0
 }
 
 struct PanelCategoriesData: Equatable {
@@ -75,6 +76,23 @@ final class PanelViewModel {
 
     /// Currency converter - injected or falls back to shared singleton
     private var currencyConverter: CurrencyConverter = .shared
+
+    /// Default currency code — synced from PanelView's @AppStorage
+    private(set) var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
+
+    /// Session state — weak to avoid retain cycle
+    private weak var sessionState: SessionState?
+
+    // MARK: - Recalculation State
+
+    /// Debounced recalculation task — coalesces rapid onChange cascades
+    private var recalculateTask: Task<Void, Never>?
+
+    /// Whether a pending debounced task needs to reload data from SwiftData
+    private var pendingReload = false
+
+    /// Whether the app is in background — suppresses recalculation to prevent 0x8BADF00D
+    private(set) var isInBackground = false
 
     // MARK: - Loaded Data
 
@@ -140,14 +158,12 @@ final class PanelViewModel {
     // MARK: - Context Setup
 
     /// Sets the model context and optionally injects services.
-    /// - Parameters:
-    ///   - context: The SwiftData ModelContext
-    ///   - exchangeRateService: Optional service injection (defaults to .shared)
-    ///   - currencyConverter: Optional service injection (defaults to .shared)
     func setContext(
         _ context: ModelContext,
         exchangeRateService: ExchangeRateService? = nil,
-        currencyConverter: CurrencyConverter? = nil
+        currencyConverter: CurrencyConverter? = nil,
+        defaultCurrencyCode: String,
+        sessionState: SessionState
     ) {
         self.modelContext = context
         if let service = exchangeRateService {
@@ -156,8 +172,8 @@ final class PanelViewModel {
         if let converter = currencyConverter {
             self.currencyConverter = converter
         }
-        // loadData() deferred to scheduleRecalculation(reload: true) in PanelView.onAppear.
-        // This ensures the isInBackground guard protects against 0x8BADF00D watchdog kills.
+        self.defaultCurrencyCode = defaultCurrencyCode
+        self.sessionState = sessionState
     }
 
     func loadData() {
@@ -303,6 +319,7 @@ final class PanelViewModel {
     var trendFinalBalance: Double { trendChart.trendFinalBalance }
     var trendGrouping: TrendGrouping { trendChart.trendGrouping }
     var dataTrendType: TrendType { trendChart.dataTrendType }
+    var currentBalance: Double { trendChart.currentBalance }
     var cashFlowGrouping: TrendGrouping { cashFlowWidget.cashFlowGrouping }
     var needGrouping: TrendGrouping { needWidget.needGrouping }
 
@@ -733,6 +750,11 @@ final class PanelViewModel {
         // @Observable notifications into ~6 struct-level comparisons.
         enforceTrendLock(sessionState: sessionState)
 
+        let newBalance = displayedBalanceInDefaultCurrency(
+            accounts: accounts,
+            transactions: transactions,
+            defaultCurrencyCode: defaultCurrencyCode
+        )
         let newTrend = PanelTrendData(
             processedTrendPoints: newProcessedData.points,
             rawTrendPoints: newProcessedData.rawPoints,
@@ -743,7 +765,8 @@ final class PanelViewModel {
             trendTotalExpense: newTrendTotalExpense,
             trendFinalBalance: newTrendFinalBalance,
             trendGrouping: calcContext.trendGrouping,
-            dataTrendType: self.trendType
+            dataTrendType: self.trendType,
+            currentBalance: newBalance
         )
         if newTrend != trendChart { trendChart = newTrend }
 
@@ -1368,6 +1391,19 @@ final class PanelViewModel {
         )
     }
 
+    /// Convenience for widget sections that don't have access to raw params
+    func toggleSubcategoryFilterFromPanel(_ subcategoryID: PersistentIdentifier) {
+        guard let sessionState, let context = modelContext else { return }
+        toggleSubcategoryFilter(
+            subcategoryID,
+            transactions: transactions,
+            accounts: accounts,
+            defaultCurrencyCode: defaultCurrencyCode,
+            context: context,
+            sessionState: sessionState
+        )
+    }
+
     func toggleNeedFilter(_ need: SubcategoryNeed) {
         if selectedNeed == need {
             selectedNeed = nil
@@ -1694,6 +1730,86 @@ final class PanelViewModel {
     }
 
     /// Get display properties for budget
+
+    // MARK: - Recalculation (moved from PanelView)
+
+    /// Update default currency code — called from PanelView when @AppStorage changes
+    func updateDefaultCurrencyCode(_ code: String) {
+        defaultCurrencyCode = code
+    }
+
+    /// Set background state — suppresses recalculation to prevent 0x8BADF00D
+    func setBackground(_ value: Bool) {
+        isInBackground = value
+        if value {
+            recalculateTask?.cancel()
+            recalculateTask = nil
+            pendingReload = false
+        }
+    }
+
+    /// Cancel any pending recalculation
+    func cancelRecalculation() {
+        recalculateTask?.cancel()
+    }
+
+    /// Debounced recalculation (150ms) — coalesces rapid onChange cascades.
+    /// Does NOT reload from SwiftData — filter changes only need recalculation.
+    func recalculateData() {
+        scheduleRecalculation(reload: false)
+    }
+
+    /// Debounced reload + recalculation — used when actual data may have changed
+    func reloadAndRecalculate() {
+        scheduleRecalculation(reload: true)
+    }
+
+    /// Shared debounce (150ms). `pendingReload` ensures a reload request isn't lost
+    /// if a subsequent calculate-only call arrives within the debounce window.
+    /// Guarded by isInBackground to prevent 0x8BADF00D during snapshot capture.
+    private func scheduleRecalculation(reload: Bool) {
+        guard !isInBackground else { return }
+        guard UIApplication.shared.applicationState == .active else { return }
+        if reload { pendingReload = true }
+        recalculateTask?.cancel()
+        recalculateTask = Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+            guard !Task.isCancelled else { return }
+            let shouldReload = pendingReload
+            pendingReload = false
+            if shouldReload {
+                loadData()
+                let currentOrder = UserDefaults.standard.string(forKey: "accountsSortOrderNames") ?? ""
+                let newOrder = ensureAccountsSortOrderConsistency(
+                    accounts: accounts,
+                    currentOrderRaw: currentOrder
+                )
+                if newOrder != currentOrder {
+                    PreferenceSyncService.shared.set(string: newOrder, forKey: "accountsSortOrderNames")
+                }
+            }
+            performCalculation()
+        }
+    }
+
+    /// Runs all widget calculations from cached data (no SwiftData fetch).
+    private func performCalculation() {
+        guard let sessionState, let context = modelContext else { return }
+        calculateTrendData(
+            accounts: accounts,
+            transactions: transactions,
+            defaultCurrencyCode: defaultCurrencyCode,
+            context: context,
+            sessionState: sessionState
+        )
+        calculateBudgetsWidget(
+            budgets: budgets,
+            transactions: transactions,
+            defaultCurrencyCode: defaultCurrencyCode,
+            excludedCategoryIDs: sessionState.isExcludeMode ? sessionState.selectedCategoryIDs : [],
+            excludedSubcategoryIDs: sessionState.isExcludeMode ? sessionState.selectedSubcategoryIDs : []
+        )
+    }
 }
 
 // MARK: - Calendar Extension for Budget Calculations
