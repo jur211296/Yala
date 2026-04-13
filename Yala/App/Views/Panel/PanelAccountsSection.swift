@@ -22,6 +22,7 @@ struct PanelAccountsSection: View {
     }
 
     var body: some View {
+        let _ = viewModel.dataVersion
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             Text(L10n.Panel.accounts)
                 .font(DS.Typography.title)

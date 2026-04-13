@@ -234,6 +234,7 @@ struct PanelView: View {
 
 
     var body: some View {
+        let _ = viewModel.dataVersion
         NavigationStack {
             mainContent
                 .yalaSkeleton(!viewModel.isReady)

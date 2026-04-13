@@ -32,6 +32,7 @@ struct TrendWidget: View {
     }
 
     var body: some View {
+        let _ = viewModel.dataVersion
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             // Header - simplified when no data
             chartHeader
