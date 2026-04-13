@@ -740,7 +740,7 @@ struct MainTabView: View {
     private func viewForTab(_ tab: ConfigurableTab) -> some View {
         switch tab {
         case .panel:
-            PanelView()
+            PanelShell()
         case .statistics:
             StatisticsView()
         case .planning:

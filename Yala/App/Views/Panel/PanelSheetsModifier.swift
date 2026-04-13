@@ -3,41 +3,24 @@
 //  Yala
 //
 //  Sheet presentations extracted from PanelView.
+//  Applied at PanelShell level to keep UISheetPresentationController
+//  out of PanelView's body evaluation cycle.
 //
 
 import SwiftData
 import SwiftUI
 import UIKit
 
-/// Wrapper to enable `.sheet(item:)` pattern for both new and edit account forms.
-struct AccountFormSheet: Identifiable {
-    let id = UUID()
-    let account: Account?
-}
-
-/// Encapsulates sheet presentations to reduce body complexity and avoid type-checker limits
+/// Encapsulates sheet presentations to reduce body complexity and avoid type-checker limits.
+/// Applied at PanelShell (not PanelView) so UISheetPresentationController.layoutBelowIfNeeded
+/// forces re-evaluation of PanelShell (trivial) instead of PanelView (expensive).
 struct PanelSheetsModifier: ViewModifier {
-    @Binding var accountFormSheet: AccountFormSheet?
-    @Binding var isPresentingSettings: Bool
-    @Binding var showWidgetPreferences: Bool
-    @Binding var showNewTransaction: Bool
-    @Binding var showVoiceRecording: Bool
-    @Binding var showImageSelection: Bool
-    @Binding var showCustomPeriodPicker: Bool
-    @Binding var showBudgetFavoritesSettings: Bool
-    @Binding var showInbox: Bool
-    @Binding var showUpgradeForVoice: Bool
-    @Binding var showUpgradeForImage: Bool
-    @Binding var showUpgradeForAccounts: Bool
-    @Binding var navigateToInboxAfterVoice: Bool
-    @Binding var switchToImageAfterVoice: Bool
-    @Binding var navigateToInboxAfterImage: Bool
-    @Binding var showAIConsentAlert: Bool
-    @Binding var pendingAIInput: PendingAIInput
-    @Binding var practiceCleanupItem: PracticeCleanupItem?
-    @Binding var isVoiceSetupTrial: Bool
-    @Binding var isImageSetupTrial: Bool
-    @Binding var setupTrialExampleImages: [UIImage]?
+    @Binding var sheets: PanelSheetState
+    let viewModel: PanelViewModel
+
+    /// Read lazily inside sheet closures — NOT during body evaluation.
+    @Environment(SessionState.self) private var sessionState
+
     @State private var showPracticeAlert = false
 
     /// Deferred practice data — stored during callback, consumed in onDismiss.
@@ -49,16 +32,10 @@ struct PanelSheetsModifier: ViewModifier {
     }
     @State private var deferredVoicePractice: DeferredPractice?
     @State private var deferredImagePractice: DeferredPractice?
-    let deletePracticeItem: (PracticeCleanupItem) -> Void
-
-    let prefillAccountID: PersistentIdentifier?
-    let prefillCategoryID: PersistentIdentifier?
-    let customDateRange: DateInterval?
-    let viewModel: PanelViewModel
 
     func body(content: Content) -> some View {
         content
-            .sheet(item: $accountFormSheet) { sheet in
+            .sheet(item: $sheets.accountFormSheet) { sheet in
                 let names: [String] = {
                     guard let editing = sheet.account else {
                         return viewModel.accounts.map(\.name)
@@ -75,12 +52,12 @@ struct PanelSheetsModifier: ViewModifier {
                     viewModel.reloadAndRecalculate()
                 }
             }
-            .sheet(isPresented: $isPresentingSettings, onDismiss: {
+            .sheet(isPresented: $sheets.isPresentingSettings, onDismiss: {
                 viewModel.reloadAndRecalculate()
             }) {
                 ProfileView(initialDestination: SessionState.shared.pendingProfileDestination)
             }
-            .sheet(isPresented: $showWidgetPreferences, onDismiss: {
+            .sheet(isPresented: $sheets.showWidgetPreferences, onDismiss: {
                 viewModel.endWidgetPreferencesEditing()
                 viewModel.reloadAndRecalculate()
             }) {
@@ -90,108 +67,108 @@ struct PanelSheetsModifier: ViewModifier {
                         viewModel.beginWidgetPreferencesEditing()
                     }
             }
-            .sheet(isPresented: $showNewTransaction, onDismiss: {
+            .sheet(isPresented: $sheets.showNewTransaction, onDismiss: {
                 viewModel.reloadAndRecalculate()
             }) {
                 let subcategoryName = viewModel.selectedSubcategoryIDs.first.flatMap { id in
                     viewModel.allSubcategories.first { $0.persistentModelID == id }?.name
                 }
                 NewTransactionView(
-                    prefillAccountID: prefillAccountID,
-                    prefillCategoryID: prefillCategoryID,
+                    prefillAccountID: viewModel.selectedAccountID,
+                    prefillCategoryID: viewModel.selectedCategoryID,
                     prefillSubcategoryName: subcategoryName
                 )
                 .presentationDetents([.large])
             }
-            .sheet(isPresented: $showVoiceRecording, onDismiss: {
+            .sheet(isPresented: $sheets.showVoiceRecording, onDismiss: {
                 handleVoiceRecordingDismiss()
             }) {
                 VoiceRecordingView(
                     onSavedToInbox: {
-                        navigateToInboxAfterVoice = true
+                        sheets.navigateToInboxAfterVoice = true
                     },
                     onSwitchToImage: {
-                        switchToImageAfterVoice = true
+                        sheets.switchToImageAfterVoice = true
                     },
-                    onSetupTrialCompleted: isVoiceSetupTrial ? { itemID, itemName, kind in
+                    onSetupTrialCompleted: sheets.isVoiceSetupTrial ? { itemID, itemName, kind in
                         deferredVoicePractice = DeferredPractice(
                             id: itemID, name: itemName, kind: kind, additionalIDs: []
                         )
                     } : nil,
-                    onSetupTrialSkipped: isVoiceSetupTrial ? {
+                    onSetupTrialSkipped: sheets.isVoiceSetupTrial ? {
                         SetupChecklistManager.shared.markCompleted(.tryVoiceInput)
                     } : nil
                 )
             }
-            .sheet(isPresented: $showImageSelection, onDismiss: {
+            .sheet(isPresented: $sheets.showImageSelection, onDismiss: {
                 handleImageSelectionDismiss()
             }) {
                 ImageSelectionView(
                     onSavedToInbox: {
-                        navigateToInboxAfterImage = true
+                        sheets.navigateToInboxAfterImage = true
                     },
-                    exampleImages: setupTrialExampleImages,
-                    onSetupTrialCompleted: isImageSetupTrial ? { itemID, itemName, kind, additionalIDs in
+                    exampleImages: sheets.setupTrialExampleImages,
+                    onSetupTrialCompleted: sheets.isImageSetupTrial ? { itemID, itemName, kind, additionalIDs in
                         deferredImagePractice = DeferredPractice(
                             id: itemID, name: itemName, kind: kind, additionalIDs: additionalIDs
                         )
                     } : nil,
-                    onSetupTrialSkipped: isImageSetupTrial ? {
+                    onSetupTrialSkipped: sheets.isImageSetupTrial ? {
                         SetupChecklistManager.shared.markCompleted(.tryImageInput)
                     } : nil
                 )
             }
-            .sheet(isPresented: $showCustomPeriodPicker) {
+            .sheet(isPresented: $sheets.showCustomPeriodPicker) {
                 CustomPeriodPickerSheet(
                     minDate: viewModel.transactionDateRange.start,
                     maxDate: viewModel.transactionDateRange.end,
-                    currentRange: customDateRange
+                    currentRange: sessionState.customDateRange
                 )
             }
-            .sheet(isPresented: $showBudgetFavoritesSettings, onDismiss: {
+            .sheet(isPresented: $sheets.showBudgetFavoritesSettings, onDismiss: {
                 viewModel.reloadAndRecalculate()
             }) {
                 NavigationStack {
                     BudgetsFavoritesSettingsView()
                 }
             }
-            .sheet(isPresented: $showInbox, onDismiss: {
+            .sheet(isPresented: $sheets.showInbox, onDismiss: {
                 viewModel.reloadAndRecalculate()
             }) {
                 InboxView(onNavigateToRecords: {
                     viewModel.navigateToStatistics(.records)
                 })
             }
-            .sheet(isPresented: $showUpgradeForVoice) {
+            .sheet(isPresented: $sheets.showUpgradeForVoice) {
                 UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
             }
-            .sheet(isPresented: $showUpgradeForImage) {
+            .sheet(isPresented: $sheets.showUpgradeForImage) {
                 UpgradePromptSheet(feature: .imageInput, context: .proFeature)
             }
-            .sheet(isPresented: $showUpgradeForAccounts) {
+            .sheet(isPresented: $sheets.showUpgradeForAccounts) {
                 UpgradePromptSheet(feature: .accounts, context: .limitReached)
             }
-            .aiConsentAlert(isPresented: $showAIConsentAlert, pendingInput: $pendingAIInput) { input in
+            .aiConsentAlert(isPresented: $sheets.showAIConsentAlert, pendingInput: $sheets.pendingAIInput) { input in
                 switch input {
-                case .voice: showVoiceRecording = true
-                case .image: showImageSelection = true
+                case .voice: sheets.showVoiceRecording = true
+                case .image: sheets.showImageSelection = true
                 }
             }
-            .onChange(of: practiceCleanupItem?.id) { _, newValue in
+            .onChange(of: sheets.practiceCleanupItem?.id) { _, newValue in
                 showPracticeAlert = newValue != nil
             }
             .alert(
-                L10n.SetupChecklist.practiceTitle(practiceCleanupItem?.localizedItemType ?? ""),
+                L10n.SetupChecklist.practiceTitle(sheets.practiceCleanupItem?.localizedItemType ?? ""),
                 isPresented: $showPracticeAlert
             ) {
                 Button(L10n.SetupChecklist.practiceKeep, role: .cancel) {
-                    practiceCleanupItem = nil
+                    sheets.practiceCleanupItem = nil
                 }
                 Button(L10n.SetupChecklist.practiceDelete, role: .destructive) {
-                    if let item = practiceCleanupItem {
-                        deletePracticeItem(item)
+                    if let item = sheets.practiceCleanupItem {
+                        viewModel.deletePracticeItem(item)
                     }
-                    practiceCleanupItem = nil
+                    sheets.practiceCleanupItem = nil
                     viewModel.reloadAndRecalculate()
                 }
             } message: {
@@ -200,19 +177,19 @@ struct PanelSheetsModifier: ViewModifier {
     }
 
     private func handleVoiceRecordingDismiss() {
-        if isVoiceSetupTrial {
-            isVoiceSetupTrial = false
+        if sheets.isVoiceSetupTrial {
+            sheets.isVoiceSetupTrial = false
             FeatureGateService.shared.disableSetupTrial(for: .voiceInput)
         }
-        if navigateToInboxAfterVoice {
-            navigateToInboxAfterVoice = false
-            showInbox = true
+        if sheets.navigateToInboxAfterVoice {
+            sheets.navigateToInboxAfterVoice = false
+            sheets.showInbox = true
         }
-        if switchToImageAfterVoice {
-            switchToImageAfterVoice = false
+        if sheets.switchToImageAfterVoice {
+            sheets.switchToImageAfterVoice = false
             Task {
                 try? await Task.sleep(for: .milliseconds(300))
-                showImageSelection = true
+                sheets.showImageSelection = true
             }
         }
 
@@ -233,14 +210,14 @@ struct PanelSheetsModifier: ViewModifier {
     }
 
     private func handleImageSelectionDismiss() {
-        if isImageSetupTrial {
-            isImageSetupTrial = false
-            setupTrialExampleImages = nil
+        if sheets.isImageSetupTrial {
+            sheets.isImageSetupTrial = false
+            sheets.setupTrialExampleImages = nil
             FeatureGateService.shared.disableSetupTrial(for: .imageInput)
         }
-        if navigateToInboxAfterImage {
-            navigateToInboxAfterImage = false
-            showInbox = true
+        if sheets.navigateToInboxAfterImage {
+            sheets.navigateToInboxAfterImage = false
+            sheets.showInbox = true
         }
 
         if let deferred = deferredImagePractice {

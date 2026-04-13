@@ -1793,6 +1793,38 @@ final class PanelViewModel {
         scheduleRecalculation(reload: false)
     }
 
+    // MARK: - Practice Cleanup
+
+    func deletePracticeItem(_ item: PracticeCleanupItem) {
+        guard let ctx = modelContext else { return }
+        do {
+            for pid in item.allPersistentIDs {
+                switch item.kind {
+                case .transaction: try deletePracticeModel(TransactionItem.self, id: pid, context: ctx)
+                case .draft: try deletePracticeModel(InboxDraft.self, id: pid, context: ctx)
+                case .budget: try deletePracticeModel(Budget.self, id: pid, context: ctx)
+                case .scheduledPayment: try deletePracticeModel(ScheduledPayment.self, id: pid, context: ctx)
+                }
+            }
+            try ctx.save()
+        } catch {
+            #if DEBUG
+            print("SetupChecklist: Error deleting practice item: \(error)")
+            #endif
+        }
+    }
+
+    private func deletePracticeModel<T: PersistentModel>(_ type: T.Type, id: PersistentIdentifier, context: ModelContext) throws {
+        let all = try context.fetch(FetchDescriptor<T>())
+        guard let match = all.first(where: { $0.persistentModelID == id }) else {
+            #if DEBUG
+            print("SetupChecklist: Practice \(T.self) not found — ID mismatch")
+            #endif
+            return
+        }
+        context.delete(match)
+    }
+
     /// Debounced reload + recalculation — used when actual data may have changed
     func reloadAndRecalculate() {
         scheduleRecalculation(reload: true)

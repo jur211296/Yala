@@ -22,36 +22,11 @@ struct PanelView: View {
     @Environment(ExchangeRateService.self) private var exchangeRateService
     @Environment(CurrencyConverter.self) private var currencyConverter
 
-    @State private var viewModel = PanelViewModel()
-
-
-
-    @State private var isPresentingSettings = false
-
-    /// Sheet presentation state for account form
-    @State private var accountFormSheet: AccountFormSheet?
-
-/// Widget Preferences Sheet
-    @State private var showWidgetPreferences = false
-
-    /// New Transaction Sheet
-    @State private var showNewTransaction = false
-
-    /// Subscription sheet from banners
-    @State private var showSubscriptionFromBanner = false
-    @State private var subscriptionBannerSource = "direct"
+    let viewModel: PanelViewModel
+    @Binding var sheets: PanelSheetState
 
     /// Periodic banner visibility
     @State private var showPeriodicBanner = false
-
-    /// Budget Favorites Settings Sheet
-    @State private var showBudgetFavoritesSettings = false
-
-    /// Inbox View Sheet
-    @State private var showInbox = false
-
-/// Custom period picker sheet
-    @State private var showCustomPeriodPicker = false
 
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen.rawValue
@@ -61,17 +36,7 @@ struct PanelView: View {
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
     @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
-    @State private var showAIConsentAlert = false
-    @State private var pendingAIInput: PendingAIInput = .voice
     @AppStorage("showSiriTip") private var showSiriTip: Bool = true
-    /// Voice recording sheet
-    @State private var showVoiceRecording = false
-    @State private var navigateToInboxAfterVoice = false
-    @State private var switchToImageAfterVoice = false
-
-    /// Image selection sheet
-    @State private var showImageSelection = false
-    @State private var navigateToInboxAfterImage = false
 
     /// FAB menu expanded state
     @State private var showFABMenu = false
@@ -91,17 +56,6 @@ struct PanelView: View {
     @State private var showProFabTour = false
     @State private var proFabTourIndex = 0
 
-    /// Setup Checklist state
-    @State private var practiceCleanupItem: PracticeCleanupItem?
-    @State private var isVoiceSetupTrial = false
-    @State private var isImageSetupTrial = false
-    @State private var setupTrialExampleImages: [UIImage]? = nil
-
-    /// Upgrade prompt sheets for gated features
-    @State private var showUpgradeForVoice = false
-    @State private var showUpgradeForImage = false
-    @State private var showUpgradeForAccounts = false
-
     /// Check if voice input is locked (Pro feature)
     private var isVoiceLocked: Bool {
         !FeatureGateService.shared.canAccess(.voiceInput)
@@ -117,38 +71,9 @@ struct PanelView: View {
     private func consumePendingPracticeCleanup() {
         let mgr = SetupChecklistManager.shared
         if let pending = mgr.pendingPracticeCleanup {
-            practiceCleanupItem = pending
+            sheets.practiceCleanupItem = pending
             mgr.pendingPracticeCleanup = nil
         }
-    }
-
-    private func deletePracticeItem(_ item: PracticeCleanupItem) {
-        do {
-            for pid in item.allPersistentIDs {
-                switch item.kind {
-                case .transaction: try deletePracticeModel(TransactionItem.self, id: pid)
-                case .draft: try deletePracticeModel(InboxDraft.self, id: pid)
-                case .budget: try deletePracticeModel(Budget.self, id: pid)
-                case .scheduledPayment: try deletePracticeModel(ScheduledPayment.self, id: pid)
-                }
-            }
-            try modelContext.save()
-        } catch {
-            #if DEBUG
-            print("SetupChecklist: Error deleting practice item: \(error)")
-            #endif
-        }
-    }
-
-    private func deletePracticeModel<T: PersistentModel>(_ type: T.Type, id: PersistentIdentifier) throws {
-        let all = try modelContext.fetch(FetchDescriptor<T>())
-        guard let match = all.first(where: { $0.persistentModelID == id }) else {
-            #if DEBUG
-            print("SetupChecklist: Practice \(T.self) not found — ID mismatch")
-            #endif
-            return
-        }
-        modelContext.delete(match)
     }
 
     // MARK: - Setup Checklist Navigation
@@ -156,7 +81,7 @@ struct PanelView: View {
     private func handleSetupStep(_ step: SetupStepID) {
         switch step {
         case .firstExpense:
-            showNewTransaction = true
+            sheets.showNewTransaction = true
         case .firstBudget:
             sessionState.shouldAutoOpenBudgetEditor = true
             sessionState.navigateToBudgets()
@@ -164,30 +89,27 @@ struct PanelView: View {
             sessionState.shouldAutoOpenScheduledEditor = true
             sessionState.navigateToScheduledPayments()
         case .exploreSettings:
-            // Opens Profile which will trigger the Settings tour
-            isPresentingSettings = true
+            sheets.isPresentingSettings = true
             SetupChecklistManager.shared.markCompleted(.exploreSettings)
         case .discoverFeatures:
             if FeatureGateService.shared.isProUser {
-                // Pro users: just mark as completed
                 SetupChecklistManager.shared.markCompleted(.discoverFeatures)
             } else {
-                // Free users: show subscription/trial sheet
-                subscriptionBannerSource = "setupChecklist"
-                showSubscriptionFromBanner = true
+                sheets.subscriptionBannerSource = "setupChecklist"
+                sheets.showSubscriptionFromBanner = true
                 SetupChecklistManager.shared.markCompleted(.discoverFeatures)
             }
         case .tryVoiceInput:
             FeatureGateService.shared.enableSetupTrial(for: .voiceInput)
-            isVoiceSetupTrial = true
+            sheets.isVoiceSetupTrial = true
             if !voiceInputEnabled { voiceInputEnabled = true }
-            showVoiceRecording = true
+            sheets.showVoiceRecording = true
         case .tryImageInput:
             FeatureGateService.shared.enableSetupTrial(for: .imageInput)
-            isImageSetupTrial = true
+            sheets.isImageSetupTrial = true
             if !imageInputEnabled { imageInputEnabled = true }
-            setupTrialExampleImages = loadExampleImages()
-            showImageSelection = true
+            sheets.setupTrialExampleImages = loadExampleImages()
+            sheets.showImageSelection = true
         }
     }
 
@@ -207,7 +129,7 @@ struct PanelView: View {
 
     private var inboxToolbarButton: some View {
         Button {
-            showInbox = true
+            sheets.showInbox = true
         } label: {
             ZStack(alignment: .topTrailing) {
                 Image(systemName: "tray.fill")
@@ -244,7 +166,7 @@ struct PanelView: View {
                         inboxToolbarButton
                     }
                     ProfileToolbarItem {
-                        isPresentingSettings = true
+                        sheets.isPresentingSettings = true
                     }
                 }
         }
@@ -285,41 +207,6 @@ struct PanelView: View {
                   !showPanelTour, !showInteractivityTour,
                   !showProFabTour else { return }
             showProFabTour = true
-        }
-        .modifier(
-            PanelSheetsModifier(
-                accountFormSheet: $accountFormSheet,
-                isPresentingSettings: $isPresentingSettings,
-                showWidgetPreferences: $showWidgetPreferences,
-                showNewTransaction: $showNewTransaction,
-                showVoiceRecording: $showVoiceRecording,
-                showImageSelection: $showImageSelection,
-                showCustomPeriodPicker: $showCustomPeriodPicker,
-                showBudgetFavoritesSettings: $showBudgetFavoritesSettings,
-                showInbox: $showInbox,
-                showUpgradeForVoice: $showUpgradeForVoice,
-                showUpgradeForImage: $showUpgradeForImage,
-                showUpgradeForAccounts: $showUpgradeForAccounts,
-                navigateToInboxAfterVoice: $navigateToInboxAfterVoice,
-                switchToImageAfterVoice: $switchToImageAfterVoice,
-                navigateToInboxAfterImage: $navigateToInboxAfterImage,
-                showAIConsentAlert: $showAIConsentAlert,
-                pendingAIInput: $pendingAIInput,
-                practiceCleanupItem: $practiceCleanupItem,
-                isVoiceSetupTrial: $isVoiceSetupTrial,
-                isImageSetupTrial: $isImageSetupTrial,
-                setupTrialExampleImages: $setupTrialExampleImages,
-                deletePracticeItem: deletePracticeItem,
-                prefillAccountID: viewModel.selectedAccountID,
-                prefillCategoryID: viewModel.selectedCategoryID,
-                customDateRange: sessionState.customDateRange,
-                viewModel: viewModel
-            )
-        )
-        .sheet(isPresented: $showSubscriptionFromBanner) {
-            NavigationStack {
-                SubscriptionView(source: subscriptionBannerSource)
-            }
         }
         .appliesPendingRemoteChanges(sessionState)
         .onAppear {
@@ -395,12 +282,7 @@ struct PanelView: View {
         .modifier(
             PanelSheetTriggers(
                 sessionState: sessionState,
-                showInbox: $showInbox,
-                showImageSelection: $showImageSelection,
-                showVoiceRecording: $showVoiceRecording,
-                showNewTransaction: $showNewTransaction,
-                showUpgradeForVoice: $showUpgradeForVoice,
-                showUpgradeForImage: $showUpgradeForImage
+                sheets: $sheets
             )
         )
         .modifier(
@@ -438,8 +320,8 @@ struct PanelView: View {
                                 daysRemaining: StoreKitManager.shared.trialDaysRemaining
                             ) {
                                 TelemetryService.track(.proUpsellTapped, parameters: TelemetryService.upsellParameters(source: "trialBanner"))
-                                subscriptionBannerSource = "trialBanner"
-                                showSubscriptionFromBanner = true
+                                sheets.subscriptionBannerSource = "trialBanner"
+                                sheets.showSubscriptionFromBanner = true
                             }
                             .onAppear {
                                 var params = TelemetryService.upsellParameters(source: "trialBanner")
@@ -453,8 +335,8 @@ struct PanelView: View {
                             ProUpgradeBanner(
                                 onUpgrade: {
                                     TelemetryService.track(.proUpsellTapped, parameters: TelemetryService.upsellParameters(source: "periodicBanner"))
-                                    subscriptionBannerSource = "periodicBanner"
-                                    showSubscriptionFromBanner = true
+                                    sheets.subscriptionBannerSource = "periodicBanner"
+                                    sheets.showSubscriptionFromBanner = true
                                 },
                                 onDismiss: {
                                     TelemetryService.track(.proUpsellDismissed, parameters: TelemetryService.upsellParameters(source: "periodicBanner"))
@@ -483,8 +365,8 @@ struct PanelView: View {
                             viewModel: viewModel,
                             sessionState: sessionState,
                             accountsSortOrderNames: accountsSortOrderNamesRaw.split(separator: "|").map(String.init),
-                            accountFormSheet: $accountFormSheet,
-                            showUpgradeForAccounts: $showUpgradeForAccounts
+                            accountFormSheet: $sheets.accountFormSheet,
+                            showUpgradeForAccounts: $sheets.showUpgradeForAccounts
                         )
 
                         PanelFilterAndWidgetsSection(
@@ -492,9 +374,9 @@ struct PanelView: View {
                             sessionState: sessionState,
                             defaultCurrencyCodeRaw: defaultCurrencyCodeRaw,
                             showVariations: showVariations,
-                            showWidgetPreferences: $showWidgetPreferences,
-                            showCustomPeriodPicker: $showCustomPeriodPicker,
-                            showBudgetFavoritesSettings: $showBudgetFavoritesSettings
+                            showWidgetPreferences: $sheets.showWidgetPreferences,
+                            showCustomPeriodPicker: $sheets.showCustomPeriodPicker,
+                            showBudgetFavoritesSettings: $sheets.showBudgetFavoritesSettings
                         )
                     }
                     .padding(.horizontal, DS.Adaptive.horizontalPadding(sizeClass))
@@ -565,13 +447,13 @@ struct PanelView: View {
                                 showFABMenu = false
                             }
                             if isVoiceLocked {
-                                showUpgradeForVoice = true
+                                sheets.showUpgradeForVoice = true
                             } else if !aiDataConsentAccepted {
-                                pendingAIInput = .voice
-                                showAIConsentAlert = true
+                                sheets.pendingAIInput = .voice
+                                sheets.showAIConsentAlert = true
                             } else {
                                 if !voiceInputEnabled { voiceInputEnabled = true }
-                                showVoiceRecording = true
+                                sheets.showVoiceRecording = true
                             }
                         }
 
@@ -586,13 +468,13 @@ struct PanelView: View {
                                 showFABMenu = false
                             }
                             if isImageLocked {
-                                showUpgradeForImage = true
+                                sheets.showUpgradeForImage = true
                             } else if !aiDataConsentAccepted {
-                                pendingAIInput = .image
-                                showAIConsentAlert = true
+                                sheets.pendingAIInput = .image
+                                sheets.showAIConsentAlert = true
                             } else {
                                 if !imageInputEnabled { imageInputEnabled = true }
-                                showImageSelection = true
+                                sheets.showImageSelection = true
                             }
                         }
 
@@ -605,7 +487,7 @@ struct PanelView: View {
                             dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
                                 showFABMenu = false
                             }
-                            showNewTransaction = true
+                            sheets.showNewTransaction = true
                         }
                     }
                     .transition(.asymmetric(
