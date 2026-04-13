@@ -21,7 +21,6 @@ struct PanelFilterAndWidgetsSection: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        let _ = viewModel.dataVersion
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
 
             // Unified Period Selector & Filters Row

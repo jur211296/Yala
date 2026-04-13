@@ -94,24 +94,16 @@ final class PanelViewModel {
     /// Whether the app is in background — suppresses recalculation to prevent 0x8BADF00D
     private(set) var isInBackground = false
 
-    // MARK: - Observation Surface Control
-    // Heavy data is @ObservationIgnored to prevent ObservationCenter dictionary resize
-    // during sheet transitions (0x8BADF00D). Views subscribe to `dataVersion` instead.
+    // MARK: - Loaded Data
 
-    /// Single tracked counter — incremented after loadData/performCalculation.
-    /// Views read this to subscribe to data updates without tracking individual arrays/structs.
-    private(set) var dataVersion: UInt = 0
-
-    // MARK: - Loaded Data (@ObservationIgnored — use dataVersion)
-
-    @ObservationIgnored private(set) var accounts: [Account] = []
-    @ObservationIgnored private(set) var tags: [Tag] = []
-    @ObservationIgnored private(set) var categories: [Category] = []
-    @ObservationIgnored private(set) var allSubcategories: [Subcategory] = []
-    @ObservationIgnored private(set) var transactions: [TransactionItem] = []
-    @ObservationIgnored private(set) var budgets: [Budget] = []
-    @ObservationIgnored private(set) var scheduledPayments: [ScheduledPayment] = []
-    @ObservationIgnored private(set) var pendingDrafts: [InboxDraft] = []
+    private(set) var accounts: [Account] = []
+    private(set) var tags: [Tag] = []
+    private(set) var categories: [Category] = []
+    private(set) var allSubcategories: [Subcategory] = []
+    private(set) var transactions: [TransactionItem] = []
+    private(set) var budgets: [Budget] = []
+    private(set) var scheduledPayments: [ScheduledPayment] = []
+    private(set) var pendingDrafts: [InboxDraft] = []
 
     // MARK: - State
 
@@ -303,22 +295,22 @@ final class PanelViewModel {
         if !isReady { isReady = true }
     }
 
-    // MARK: - Widget Data (@ObservationIgnored — use dataVersion)
+    // MARK: - Widget Data (struct-backed — reduces observation surface)
 
-    @ObservationIgnored var trendChart = PanelTrendData()
-    @ObservationIgnored var categoriesWidget = PanelCategoriesData()
-    @ObservationIgnored var subcategoriesWidget = PanelSubcategoriesData()
-    @ObservationIgnored var needWidget = PanelNeedData()
-    @ObservationIgnored var cashFlowWidget = PanelCashFlowData()
-    @ObservationIgnored var budgetsWidget = PanelBudgetsData()
-    @ObservationIgnored var exchangeRateWidget = PanelExchangeRateData()
+    var trendChart = PanelTrendData()
+    var categoriesWidget = PanelCategoriesData()
+    var subcategoriesWidget = PanelSubcategoriesData()
+    var needWidget = PanelNeedData()
+    var cashFlowWidget = PanelCashFlowData()
+    var budgetsWidget = PanelBudgetsData()
+    var exchangeRateWidget = PanelExchangeRateData()
 
-    // Pre-computed account data (@ObservationIgnored — use dataVersion)
-    @ObservationIgnored private(set) var accountBalances: [PersistentIdentifier: Double] = [:]
-    @ObservationIgnored private(set) var accountPeriodExpenses: [PersistentIdentifier: Double] = [:]
+    // Pre-computed account data — eliminates passing [TransactionItem] to AccountsCarouselView
+    private(set) var accountBalances: [PersistentIdentifier: Double] = [:]
+    private(set) var accountPeriodExpenses: [PersistentIdentifier: Double] = [:]
 
-    // Pre-computed transaction date range (@ObservationIgnored — use dataVersion)
-    @ObservationIgnored private(set) var transactionDateRange: (start: Date, end: Date) = (.now, .now)
+    // Pre-computed transaction date range — eliminates iterating all transactions in body eval
+    private(set) var transactionDateRange: (start: Date, end: Date) = (.now, .now)
 
     // Backward-compatible read-only accessors (do NOT create independent observers)
     var topSpendingCategories: [CategorySpendingSummary] { categoriesWidget.topSpendingCategories }
@@ -348,10 +340,10 @@ final class PanelViewModel {
     var cashFlowGrouping: TrendGrouping { cashFlowWidget.cashFlowGrouping }
     var needGrouping: TrendGrouping { needWidget.needGrouping }
 
-    @ObservationIgnored var chartTransactions: [ChartTransaction] = []
+    var chartTransactions: [ChartTransaction] = []
 
     // Stored separately — SwiftData model identity comparison may miss in-place mutations
-    @ObservationIgnored private var _latestRecords: [TransactionItem] = []
+    private var _latestRecords: [TransactionItem] = []
     var subcategoriesWidgetFilter: PersistentIdentifier?
 
     var selectedSubcategoryIDs: Set<PersistentIdentifier> {
@@ -1831,8 +1823,6 @@ final class PanelViewModel {
                 }
             }
             performCalculation()
-            // Single notification — all @ObservationIgnored data is ready
-            dataVersion &+= 1
         }
     }
 

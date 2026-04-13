@@ -59,7 +59,6 @@ private struct PanelTrendSection: View {
     let currencyCode: String
 
     var body: some View {
-        let _ = viewModel.dataVersion
         TrendWidget(
             viewModel: viewModel,
             sessionState: sessionState,
@@ -79,7 +78,6 @@ private struct PanelCategoriesSection: View {
     let reduceMotion: Bool
 
     var body: some View {
-        let _ = viewModel.dataVersion
         TopCategoriesWidget(
             categories: viewModel.topSpendingCategories,
             currencyCode: currencyCode,
@@ -109,7 +107,6 @@ private struct PanelSubcategoriesSection: View {
     let reduceMotion: Bool
 
     var body: some View {
-        let _ = viewModel.dataVersion
         TopSubcategoriesWidget(
             subcategories: viewModel.topSubcategories,
             currencyCode: currencyCode,
@@ -141,7 +138,6 @@ private struct PanelCategoriesPieSection: View {
     let reduceMotion: Bool
 
     var body: some View {
-        let _ = viewModel.dataVersion
         CategoriesPieWidget(
             categories: viewModel.topSpendingCategories,
             currencyCode: currencyCode,
@@ -171,7 +167,6 @@ private struct PanelSubcategoriesPieSection: View {
     let reduceMotion: Bool
 
     var body: some View {
-        let _ = viewModel.dataVersion
         SubcategoriesPieWidget(
             subcategories: viewModel.topSubcategories,
             currencyCode: currencyCode,
@@ -200,7 +195,6 @@ private struct PanelCashFlowSection: View {
     let size: WidgetSize
 
     var body: some View {
-        let _ = viewModel.dataVersion
         if let summary = viewModel.cashFlowSummary {
             CashFlowWidget(
                 summary: summary,
@@ -231,7 +225,6 @@ private struct PanelRecentRecordsSection: View {
     let currencyCode: String
 
     var body: some View {
-        let _ = viewModel.dataVersion
         RecentRecordsWidget(
             records: viewModel.latestRecords,
             currencyCode: currencyCode,
@@ -250,7 +243,6 @@ private struct PanelNeedTrendSection: View {
     let reduceMotion: Bool
 
     var body: some View {
-        let _ = viewModel.dataVersion
         NeedTrendWidget(
             trendPoints: viewModel.needTrendPoints,
             selectedNeed: viewModel.selectedNeed,
@@ -280,7 +272,6 @@ private struct PanelExchangeRateSection: View {
     let currencyCode: String
 
     var body: some View {
-        let _ = viewModel.dataVersion
         ExchangeRateWidget(
             data: viewModel.exchangeRateWidgetData,
             preferredCurrency: currencyCode,
@@ -301,7 +292,6 @@ private struct PanelBudgetsSection: View {
     @Binding var showBudgetFavoritesSettings: Bool
 
     var body: some View {
-        let _ = viewModel.dataVersion
         let selectedBudget = sessionState.selectedBudgetID.flatMap { selectedID in
             viewModel.topBudgetSummaries.first { $0.budget.persistentModelID == selectedID }?.budget
         }
@@ -332,7 +322,6 @@ private struct PanelScheduledPaymentsSection: View {
     let mode: ScheduledPaymentsWidgetMode
 
     var body: some View {
-        let _ = viewModel.dataVersion
         ScheduledPaymentsWidget(
             payments: viewModel.scheduledPayments,
             currencyCode: currencyCode,

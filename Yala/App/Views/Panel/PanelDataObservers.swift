@@ -25,7 +25,6 @@ struct PanelDataCountObservers: ViewModifier {
     @Binding var showFABMenu: Bool
 
     func body(content: Content) -> some View {
-        let _ = viewModel.dataVersion
         content
             .onChange(of: sessionState.selectedMainTab) { _, _ in
                 if showFABMenu { showFABMenu = false }
