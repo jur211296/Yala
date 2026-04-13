@@ -63,8 +63,14 @@ struct PanelSheetsModifier: ViewModifier {
             }) {
                 WidgetPreferencesView(viewModel: viewModel)
                     .presentationDragIndicator(.visible)
-                    .onAppear {
-                        viewModel.beginWidgetPreferencesEditing()
+                    // Deferred: mutating @Observable in .onAppear during sheet transition
+                    // causes an infinite layoutBelowIfNeeded loop (watchdog 0x8BADF00D).
+                    // The delay lets the transition finish; .task auto-cancels on dismiss.
+                    .task {
+                        do {
+                            try await Task.sleep(for: .milliseconds(500))
+                            viewModel.beginWidgetPreferencesEditing()
+                        } catch {}
                     }
             }
             .sheet(isPresented: $sheets.showNewTransaction, onDismiss: {

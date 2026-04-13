@@ -42,8 +42,8 @@ struct ContentView: View {
 
     private let authService = BiometricAuthService.shared
 
-    /// Minimum splash duration (3.5 seconds — extra margin for initial data loading)
-    private let minimumSplashDuration: Double = 3.5
+    /// Minimum splash duration (2.5 seconds to enjoy the animation)
+    private let minimumSplashDuration: Double = 2.5
 
     var body: some View {
         ZStack {
