@@ -4,6 +4,7 @@
 //
 //  Widget wrapper views that isolate @Observable tracking from PanelView's body.
 //  Each section reads only its own slice of PanelViewModel in its own body scope.
+//  Parent-to-child navigation uses viewModel methods, not closure parameters.
 //
 
 import SwiftData
@@ -12,7 +13,7 @@ import SwiftUI
 // MARK: - Widget Router
 
 /// Routes a WidgetConfig to the appropriate section wrapper.
-/// Reads only `config.type` in PanelView's body — all ViewModel reads happen in child bodies.
+/// Reads only `config.type` — all ViewModel reads happen in child bodies.
 struct PanelWidgetRouter: View {
     let config: WidgetConfig
     let viewModel: PanelViewModel
@@ -20,33 +21,32 @@ struct PanelWidgetRouter: View {
     let currencyCode: String
     let showVariations: Bool
     let reduceMotion: Bool
-    let onNavigate: (DetailViewTab) -> Void
-    let onEditBudgetFavorites: () -> Void
+    @Binding var showBudgetFavoritesSettings: Bool
 
     var body: some View {
         switch config.type {
         case .trend:
             PanelTrendSection(viewModel: viewModel, sessionState: sessionState, currencyCode: currencyCode)
         case .topSpending:
-            PanelCategoriesSection(viewModel: viewModel, currencyCode: currencyCode, size: config.size, showVariations: showVariations, reduceMotion: reduceMotion, onNavigate: onNavigate)
+            PanelCategoriesSection(viewModel: viewModel, currencyCode: currencyCode, size: config.size, showVariations: showVariations, reduceMotion: reduceMotion)
         case .topSubcategories:
-            PanelSubcategoriesSection(viewModel: viewModel, currencyCode: currencyCode, size: config.size, showVariations: showVariations, reduceMotion: reduceMotion, onNavigate: onNavigate)
+            PanelSubcategoriesSection(viewModel: viewModel, currencyCode: currencyCode, size: config.size, showVariations: showVariations, reduceMotion: reduceMotion)
         case .categoriesPie:
-            PanelCategoriesPieSection(viewModel: viewModel, currencyCode: currencyCode, size: config.size, showVariations: showVariations, reduceMotion: reduceMotion, onNavigate: onNavigate)
+            PanelCategoriesPieSection(viewModel: viewModel, currencyCode: currencyCode, size: config.size, showVariations: showVariations, reduceMotion: reduceMotion)
         case .subcategoriesPie:
-            PanelSubcategoriesPieSection(viewModel: viewModel, currencyCode: currencyCode, size: config.size, showVariations: showVariations, reduceMotion: reduceMotion, onNavigate: onNavigate)
+            PanelSubcategoriesPieSection(viewModel: viewModel, currencyCode: currencyCode, size: config.size, showVariations: showVariations, reduceMotion: reduceMotion)
         case .cashFlow:
-            PanelCashFlowSection(viewModel: viewModel, sessionState: sessionState, size: config.size, onNavigate: onNavigate)
+            PanelCashFlowSection(viewModel: viewModel, sessionState: sessionState, size: config.size)
         case .latestRecords:
-            PanelRecentRecordsSection(viewModel: viewModel, currencyCode: currencyCode, onNavigate: onNavigate)
+            PanelRecentRecordsSection(viewModel: viewModel, currencyCode: currencyCode)
         case .expensesByNeed:
-            PanelNeedTrendSection(viewModel: viewModel, currencyCode: currencyCode, size: config.size, showVariations: showVariations, reduceMotion: reduceMotion, onNavigate: onNavigate)
+            PanelNeedTrendSection(viewModel: viewModel, currencyCode: currencyCode, size: config.size, showVariations: showVariations, reduceMotion: reduceMotion)
         case .exchangeRate:
             PanelExchangeRateSection(viewModel: viewModel, currencyCode: currencyCode)
         case .budgets:
-            PanelBudgetsSection(viewModel: viewModel, sessionState: sessionState, currencyCode: currencyCode, size: config.size, onNavigate: onNavigate, onEditFavorites: onEditBudgetFavorites)
+            PanelBudgetsSection(viewModel: viewModel, sessionState: sessionState, currencyCode: currencyCode, size: config.size, showBudgetFavoritesSettings: $showBudgetFavoritesSettings)
         case .scheduledPayments:
-            PanelScheduledPaymentsSection(viewModel: viewModel, sessionState: sessionState, currencyCode: currencyCode, mode: config.scheduledPaymentsMode, onNavigate: onNavigate)
+            PanelScheduledPaymentsSection(viewModel: viewModel, sessionState: sessionState, currencyCode: currencyCode, mode: config.scheduledPaymentsMode)
         }
     }
 }
@@ -76,7 +76,6 @@ private struct PanelCategoriesSection: View {
     let size: WidgetSize
     let showVariations: Bool
     let reduceMotion: Bool
-    let onNavigate: (DetailViewTab) -> Void
 
     var body: some View {
         TopCategoriesWidget(
@@ -89,7 +88,7 @@ private struct PanelCategoriesSection: View {
                     viewModel.toggleCategoryFilter(id)
                 }
             },
-            onShowMore: { onNavigate(.categories) },
+            onShowMore: { viewModel.navigateToStatistics(.categories) },
             size: mapWidgetSize(size),
             period: viewModel.selectedPeriod,
             previousTotalAmount: viewModel.previousCategoriesTotalAmount,
@@ -106,7 +105,6 @@ private struct PanelSubcategoriesSection: View {
     let size: WidgetSize
     let showVariations: Bool
     let reduceMotion: Bool
-    let onNavigate: (DetailViewTab) -> Void
 
     var body: some View {
         TopSubcategoriesWidget(
@@ -121,7 +119,7 @@ private struct PanelSubcategoriesSection: View {
             },
             selectedSubcategoryIDs: viewModel.selectedSubcategoryIDs,
             isExcludeMode: viewModel.isExcludeMode,
-            onShowMore: { onNavigate(.categories) },
+            onShowMore: { viewModel.navigateToStatistics(.categories) },
             size: mapWidgetSize(size),
             period: viewModel.selectedPeriod,
             previousTotalAmount: viewModel.previousSubcategoriesTotalAmount,
@@ -138,7 +136,6 @@ private struct PanelCategoriesPieSection: View {
     let size: WidgetSize
     let showVariations: Bool
     let reduceMotion: Bool
-    let onNavigate: (DetailViewTab) -> Void
 
     var body: some View {
         CategoriesPieWidget(
@@ -150,7 +147,7 @@ private struct PanelCategoriesPieSection: View {
                     viewModel.toggleCategoryFilter(id)
                 }
             },
-            onShowDetail: { onNavigate(.categories) },
+            onShowDetail: { viewModel.navigateToStatistics(.categories) },
             isExcludeMode: viewModel.isExcludeMode,
             size: size,
             period: viewModel.selectedPeriod,
@@ -168,7 +165,6 @@ private struct PanelSubcategoriesPieSection: View {
     let size: WidgetSize
     let showVariations: Bool
     let reduceMotion: Bool
-    let onNavigate: (DetailViewTab) -> Void
 
     var body: some View {
         SubcategoriesPieWidget(
@@ -181,7 +177,7 @@ private struct PanelSubcategoriesPieSection: View {
                     viewModel.toggleSubcategoryFilterFromPanel(subcategoryID)
                 }
             },
-            onShowDetail: { onNavigate(.categories) },
+            onShowDetail: { viewModel.navigateToStatistics(.categories) },
             isExcludeMode: viewModel.isExcludeMode,
             size: size,
             period: viewModel.selectedPeriod,
@@ -197,7 +193,6 @@ private struct PanelCashFlowSection: View {
     let viewModel: PanelViewModel
     let sessionState: SessionState
     let size: WidgetSize
-    let onNavigate: (DetailViewTab) -> Void
 
     var body: some View {
         if let summary = viewModel.cashFlowSummary {
@@ -207,7 +202,7 @@ private struct PanelCashFlowSection: View {
                 period: viewModel.selectedPeriod.rawValue,
                 grouping: viewModel.cashFlowGrouping,
                 interval: viewModel.currentInterval,
-                onShowDetail: { onNavigate(.trends) },
+                onShowDetail: { viewModel.navigateToStatistics(.trends) },
                 displayMode: viewModel.trendType,
                 selectedTransactionNatures: viewModel.selectedTransactionNatures,
                 isExpensesOnlyMode: sessionState.isExpensesOnlyMode
@@ -228,13 +223,12 @@ private struct PanelCashFlowSection: View {
 private struct PanelRecentRecordsSection: View {
     let viewModel: PanelViewModel
     let currencyCode: String
-    let onNavigate: (DetailViewTab) -> Void
 
     var body: some View {
         RecentRecordsWidget(
             records: viewModel.latestRecords,
             currencyCode: currencyCode,
-            onShowMore: { onNavigate(.records) }
+            onShowMore: { viewModel.navigateToStatistics(.records) }
         )
     }
 }
@@ -247,7 +241,6 @@ private struct PanelNeedTrendSection: View {
     let size: WidgetSize
     let showVariations: Bool
     let reduceMotion: Bool
-    let onNavigate: (DetailViewTab) -> Void
 
     var body: some View {
         NeedTrendWidget(
@@ -262,7 +255,7 @@ private struct PanelNeedTrendSection: View {
                     viewModel.toggleNeedFilter(need)
                 }
             },
-            onShowDetail: { onNavigate(.categories) },
+            onShowDetail: { viewModel.navigateToStatistics(.categories) },
             period: viewModel.selectedPeriod,
             previousTotalAmount: viewModel.previousNeedTotalAmount,
             previousAmountByNeed: viewModel.previousNeedAmounts,
@@ -296,8 +289,7 @@ private struct PanelBudgetsSection: View {
     let sessionState: SessionState
     let currencyCode: String
     let size: WidgetSize
-    let onNavigate: (DetailViewTab) -> Void
-    let onEditFavorites: () -> Void
+    @Binding var showBudgetFavoritesSettings: Bool
 
     var body: some View {
         let selectedBudget = sessionState.selectedBudgetID.flatMap { selectedID in
@@ -315,7 +307,7 @@ private struct PanelBudgetsSection: View {
                 sessionState.applyBudgetFilters(budget)
             },
             onShowMore: { sessionState.navigateToBudgets() },
-            onEditFavorites: onEditFavorites,
+            onEditFavorites: { showBudgetFavoritesSettings = true },
             size: mapBudgetsWidgetSize(size)
         )
     }
@@ -328,7 +320,6 @@ private struct PanelScheduledPaymentsSection: View {
     let sessionState: SessionState
     let currencyCode: String
     let mode: ScheduledPaymentsWidgetMode
-    let onNavigate: (DetailViewTab) -> Void
 
     var body: some View {
         ScheduledPaymentsWidget(

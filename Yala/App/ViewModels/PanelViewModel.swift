@@ -282,6 +282,16 @@ final class PanelViewModel {
             #endif
         }
 
+        // Pre-compute transaction date range — O(1) since transactions are sorted by date desc
+        let newStart = transactions.last?.date ?? .now
+        let newEnd = transactions.first?.date ?? .now
+        if newStart != transactionDateRange.start || newEnd != transactionDateRange.end {
+            transactionDateRange = (start: newStart, end: newEnd)
+        }
+
+        // Pre-compute account balances (not period-dependent — only changes when transactions change)
+        calculateAccountBalances()
+
         if !isReady { isReady = true }
     }
 
@@ -294,6 +304,13 @@ final class PanelViewModel {
     var cashFlowWidget = PanelCashFlowData()
     var budgetsWidget = PanelBudgetsData()
     var exchangeRateWidget = PanelExchangeRateData()
+
+    // Pre-computed account data — eliminates passing [TransactionItem] to AccountsCarouselView
+    private(set) var accountBalances: [PersistentIdentifier: Double] = [:]
+    private(set) var accountPeriodExpenses: [PersistentIdentifier: Double] = [:]
+
+    // Pre-computed transaction date range — eliminates iterating all transactions in body eval
+    private(set) var transactionDateRange: (start: Date, end: Date) = (.now, .now)
 
     // Backward-compatible read-only accessors (do NOT create independent observers)
     var topSpendingCategories: [CategorySpendingSummary] { categoriesWidget.topSpendingCategories }
@@ -611,6 +628,23 @@ final class PanelViewModel {
         return allTransactions.filter {
             calendar.isDate($0.date, inSameDayAs: focusedDate)
         }
+    }
+
+    // MARK: - Navigation
+
+    /// Navigates to a Statistics detail tab, setting temporary tab if Statistics is hidden.
+    /// Moved from PanelView to eliminate closure parameters in child views.
+    func navigateToStatistics(_ detailTab: DetailViewTab) {
+        let json = UserDefaults.standard.string(forKey: TabBarConfiguration.storageKey)
+            ?? TabBarConfiguration.default.toJSON()
+        let isVisible = TabBarConfiguration.fromJSON(json).activeTabs.contains(.statistics)
+        if !isVisible { sessionState?.temporaryTab = .statistics }
+        sessionState?.navigateToDetail(detailTab)
+    }
+
+    /// Whether voice input can be used (requires active accounts and visible subcategories).
+    var canUseVoiceInput: Bool {
+        accounts.contains { !$0.isArchived } && allSubcategories.contains { $0.isVisible }
     }
 
     // MARK: - Layout Logic
@@ -1809,6 +1843,38 @@ final class PanelViewModel {
             excludedCategoryIDs: sessionState.isExcludeMode ? sessionState.selectedCategoryIDs : [],
             excludedSubcategoryIDs: sessionState.isExcludeMode ? sessionState.selectedSubcategoryIDs : []
         )
+        calculateAccountPeriodExpenses()
+    }
+
+    /// Pre-computes total account balances (not period-dependent).
+    /// Called from loadData() — only when transactions actually change.
+    private func calculateAccountBalances() {
+        let batchBalances = AccountBalanceCalculator.batchCalculateBalances(
+            accounts: accounts,
+            transactions: transactions
+        )
+        let newBalances = batchBalances.mapValues { ($0 as NSDecimalNumber).doubleValue }
+        if newBalances != accountBalances { accountBalances = newBalances }
+    }
+
+    /// Pre-computes period-specific expenses per account (expenses-only mode).
+    /// Called from performCalculation() — recalculates on period/filter changes.
+    private func calculateAccountPeriodExpenses() {
+        let interval = panelDateInterval
+        var newExpenses: [PersistentIdentifier: Double] = [:]
+        for account in accounts {
+            newExpenses[account.persistentModelID] = 0
+        }
+        for transaction in transactions {
+            guard let account = transaction.account else { continue }
+            let accountID = account.persistentModelID
+            guard newExpenses[accountID] != nil else { continue }
+            guard interval.contains(transaction.date) else { continue }
+            guard transaction.balanceAdjustmentType == nil else { continue }
+            guard transaction.category?.isIncome == false else { continue }
+            newExpenses[accountID] = (newExpenses[accountID] ?? 0) + abs(transaction.amount)
+        }
+        if newExpenses != accountPeriodExpenses { accountPeriodExpenses = newExpenses }
     }
 }
 
