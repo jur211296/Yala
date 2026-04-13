@@ -159,12 +159,6 @@ final class SetupChecklistManager {
         if scheduledCount > 0 { markCompleted(.scheduledPayment) }
     }
 
-    /// Temporarily collapse for the panel tour (does NOT persist to UserDefaults).
-    func collapseForTour() { isCollapsed = true }
-
-    /// Re-expand after the panel tour completes (does NOT persist).
-    func expandAfterTour() { isCollapsed = false }
-
     /// Toggle collapsed state.
     func toggleCollapsed() {
         isCollapsed.toggle()

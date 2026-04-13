@@ -41,17 +41,6 @@ struct PanelView: View {
     /// FAB menu expanded state
     @State private var showFABMenu = false
 
-    /// Coach mark: Panel tour (A1-A4)
-    @AppStorage("hasSeenPanelTour") private var hasSeenPanelTour = false
-    @State private var showPanelTour = false
-    @State private var panelTourIndex = 0
-
-    /// Coach mark: Interactivity tour (C1-C2)
-    @AppStorage("hasSeenInteractivityTour") private var hasSeenInteractivityTour = false
-    @State private var showInteractivityTour = false
-    @State private var interactivityTourIndex = 0
-    @State private var panelScrollProxy: ScrollViewProxy?
-
     /// Coach mark: Pro tour (Phase 2)
     @State private var showProFabTour = false
     @State private var proFabTourIndex = 0
@@ -171,30 +160,9 @@ struct PanelView: View {
                 }
         }
         .coachMarkOverlay(
-            steps: PanelTourSteps.steps(isProUser: FeatureGateService.shared.isProUser),
-            isPresented: $showPanelTour,
-            currentIndex: $panelTourIndex,
-            scrollProxy: panelScrollProxy,
-            onComplete: {
-                hasSeenPanelTour = true
-                SetupChecklistManager.shared.expandAfterTour()
-                ProTourManager.shared.triggerIfEligible()
-            }
-        )
-        .coachMarkOverlay(
-            steps: InteractivityTourSteps.steps,
-            isPresented: $showInteractivityTour,
-            currentIndex: $interactivityTourIndex,
-            scrollProxy: panelScrollProxy,
-            onComplete: {
-                hasSeenInteractivityTour = true
-            }
-        )
-        .coachMarkOverlay(
             steps: ProTourSteps.panelSteps,
             isPresented: $showProFabTour,
             currentIndex: $proFabTourIndex,
-            scrollProxy: panelScrollProxy,
             onComplete: {
                 ProTourManager.shared.advancePhase()
             }
@@ -204,7 +172,6 @@ struct PanelView: View {
                   ProTourManager.shared.currentPhase == .panel else { return }
             do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
             guard ProTourManager.shared.currentPhase == .panel,
-                  !showPanelTour, !showInteractivityTour,
                   !showProFabTour else { return }
             showProFabTour = true
         }
@@ -250,27 +217,6 @@ struct PanelView: View {
         .onChange(of: defaultCurrencyCodeRaw) { _, newValue in
             viewModel.updateDefaultCurrencyCode(newValue)
             viewModel.recalculateData()
-        }
-        .task {
-            // Wait for post-onboarding flow (trial sheet) to complete
-            while !sessionState.isReadyForTours {
-                do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
-            }
-            if !hasSeenPanelTour {
-                // Start collapsed — expands after tour completes
-                do { try await Task.sleep(for: .seconds(0.6)) } catch { return }
-                if !hasSeenPanelTour {
-                    showPanelTour = true
-                }
-            }
-        }
-        .onChange(of: showPanelTour) { _, isShowing in
-            if !isShowing && hasSeenPanelTour {
-                triggerInteractivityTourIfEligible()
-            }
-        }
-        .onChange(of: viewModel.transactions.count) { _, _ in
-            triggerInteractivityTourIfEligible()
         }
         .modifier(
             PanelDataObservers(
@@ -355,11 +301,9 @@ struct PanelView: View {
                             manager: SetupChecklistManager.shared,
                             onStepTapped: { step in handleSetupStep(step) }
                         )
-                        .coachMarkAnchor("setupChecklist")
 
                         // Contextual guide for panel (first visit)
                         ContextualGuideBanner.panel()
-                            .coachMarkAnchor("contextualGuide")
 
                         PanelAccountsSection(
                             viewModel: viewModel,
@@ -387,7 +331,6 @@ struct PanelView: View {
                     await refreshData()
                 }
                 .onAppear {
-                    panelScrollProxy = scrollProxy
                     showPeriodicBanner = ProUpsellService.shared.shouldShowPeriodicBanner()
 
                     // Setup checklist: auto-detect completed steps & manage collapse state
@@ -397,13 +340,7 @@ struct PanelView: View {
                         budgetCount: viewModel.budgets.count,
                         scheduledCount: viewModel.scheduledPayments.count
                     )
-
-                    // Keep collapsed until panel tour completes (avoids flash)
-                    if !hasSeenPanelTour {
-                        mgr.collapseForTour()
-                    } else {
-                        mgr.checkReExpand()
-                    }
+                    mgr.checkReExpand()
 
                     consumePendingPracticeCleanup()
                 }
@@ -592,19 +529,6 @@ struct PanelView: View {
         viewModel.reloadAndRecalculate()
         try? await Task.sleep(for: .milliseconds(300))
         DS.Haptic.light()
-    }
-
-    /// Check and trigger interactivity tour if conditions are met
-    private func triggerInteractivityTourIfEligible() {
-        guard hasSeenPanelTour, !hasSeenInteractivityTour, !showPanelTour, !showInteractivityTour else { return }
-        let uniqueDays = Set(viewModel.transactions.map { Calendar.current.startOfDay(for: $0.date) }).count
-        guard uniqueDays >= 2 else { return }
-        Task {
-            try? await Task.sleep(for: .seconds(1.0))
-            if !showInteractivityTour {
-                showInteractivityTour = true
-            }
-        }
     }
 
 }

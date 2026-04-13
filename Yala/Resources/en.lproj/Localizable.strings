@@ -2053,38 +2053,15 @@
 "tipkit.skip" = "Skip guide";
 "tipkit.next" = "Next";
 "tipkit.done" = "Done";
+"tipkit.comparison.title" = "Compare and learn";
+"tipkit.comparison.message" = "Compare against the previous period or last year to see how you're doing.";
 // Group A: Panel Tour
-"tipkit.accounts.title" = "Your accounts";
-"tipkit.accounts.message" = "See your active accounts and their balances at a glance.";
-"tipkit.widgets.title" = "Your charts";
-"tipkit.widgets.message" = "Widgets with summaries and charts of your expenses and income. Customize which ones to show from the settings button.";
-"tipkit.fab.title" = "Record quickly";
-"tipkit.fab.free.message" = "Tap here to record your expenses and income.";
-"tipkit.fab.pro.message" = "Record manually, by voice, or with a photo.";
-"tipkit.profile.title" = "Your profile";
-"tipkit.profile.message" = "Set everything up so Yala works just the way you need it.";
 "tipkit.settingsAppIcon.title" = "Your icon";
 "tipkit.settingsAppIcon.message" = "Change the app icon to give it your personal touch.";
 "tipkit.settingsTheme.title" = "Your theme";
 "tipkit.settingsTheme.message" = "Choose between classic, minimalist, or translucent for your style.";
-"tipkit.contextualGuide.title" = "Guides in every section";
-"tipkit.contextualGuide.message" = "You'll find guides like this in every section. They explain what you can do there.";
-"tipkit.setupChecklist.title" = "Your first steps";
-"tipkit.setupChecklist.message" = "Complete these steps to discover everything Yala has for you.";
 // Group B: Transaction Tour
-"tipkit.transactionTypes.title" = "Three record types";
-"tipkit.transactionTypes.message" = "Record expenses, income, and transfers between your accounts.";
-"tipkit.favoritePayments.title" = "Favorite payments";
-"tipkit.favoritePayments.message" = "Save frequent expenses so you don't have to fill everything in each time.";
-"tipkit.quickActions.title" = "Quick actions";
-"tipkit.quickActions.message" = "Create favorites and scheduled payments from here.";
 // Group C: Contextual tips
-"tipkit.filterAccount.title" = "Filter with a tap";
-"tipkit.filterAccount.message" = "Tap an account to filter all charts just for it.";
-"tipkit.interactiveWidgets.title" = "Tap and explore";
-"tipkit.interactiveWidgets.message" = "Widgets are interactive: tap them to filter and discover patterns.";
-"tipkit.widgetPreferences.title" = "Widget preferences";
-"tipkit.widgetPreferences.message" = "Choose which charts to see and in what order from here.";
 
 // Group D: Settings Tour
 "tipkit.settings.accounts.title" = "Your accounts";
@@ -2116,8 +2093,6 @@
 "tipkit.cfTable.add.title" = "Add lines";
 "tipkit.cfTable.add.message" = "If you're missing an income or expense, add it here.";
 
-"tipkit.comparison.title" = "Compare and learn";
-"tipkit.comparison.message" = "Compare against the previous period or last year to see how you're doing.";
 
 // Pro Tour
 "tipkit.pro.voiceInput.title" = "Voice input";

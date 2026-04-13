@@ -2052,35 +2052,12 @@
 "tipkit.skip" = "Salta la guida";
 "tipkit.next" = "Avanti";
 "tipkit.done" = "Fatto";
-"tipkit.accounts.title" = "I tuoi conti";
-"tipkit.accounts.message" = "Qui vedi i tuoi conti attivi e i loro saldi in qualsiasi momento.";
-"tipkit.widgets.title" = "I tuoi grafici";
-"tipkit.widgets.message" = "Widget con riepiloghi e grafici delle tue spese e entrate. Personalizza quali vedere dal pulsante impostazioni.";
-"tipkit.fab.title" = "Registra veloce";
-"tipkit.fab.free.message" = "Tocca qui per registrare le tue spese e entrate.";
-"tipkit.fab.pro.message" = "Registra manualmente, con la voce o con una foto.";
-"tipkit.profile.title" = "Il tuo profilo";
-"tipkit.profile.message" = "Configura tutto affinché Yala funzioni esattamente come ti serve.";
+"tipkit.comparison.title" = "Confronta e impara";
+"tipkit.comparison.message" = "Confronta con il periodo precedente o l'anno scorso per vedere come stai andando.";
 "tipkit.settingsAppIcon.title" = "La tua icona";
 "tipkit.settingsAppIcon.message" = "Cambia l'icona dell'app per darle il tuo tocco personale.";
 "tipkit.settingsTheme.title" = "Il tuo tema";
 "tipkit.settingsTheme.message" = "Scegli tra classico, minimalista o traslucido.";
-"tipkit.contextualGuide.title" = "Guide in ogni sezione";
-"tipkit.contextualGuide.message" = "Troverai guide come questa in ogni sezione. Ti spiegano cosa puoi fare lì.";
-"tipkit.setupChecklist.title" = "I tuoi primi passi";
-"tipkit.setupChecklist.message" = "Completa questi passaggi per scoprire tutto ciò che Yala ha per te.";
-"tipkit.transactionTypes.title" = "Tre tipi di registrazione";
-"tipkit.transactionTypes.message" = "Registra spese, entrate e trasferimenti tra i tuoi conti.";
-"tipkit.favoritePayments.title" = "Pagamenti preferiti";
-"tipkit.favoritePayments.message" = "Salva le spese frequenti per non compilare tutto ogni volta.";
-"tipkit.quickActions.title" = "Azioni rapide";
-"tipkit.quickActions.message" = "Crea preferiti e pagamenti programmati da qui.";
-"tipkit.filterAccount.title" = "Filtra con un tocco";
-"tipkit.filterAccount.message" = "Tocca un conto per filtrare tutti i grafici solo per quello.";
-"tipkit.interactiveWidgets.title" = "Tocca e scopri";
-"tipkit.interactiveWidgets.message" = "I widget sono interattivi: toccali per filtrare e scoprire tendenze.";
-"tipkit.widgetPreferences.title" = "Preferenze widget";
-"tipkit.widgetPreferences.message" = "Scegli quali grafici vedere e in che ordine da qui.";
 
 // Gruppo D: Tour delle impostazioni
 "tipkit.settings.accounts.title" = "I tuoi conti";
@@ -2112,8 +2089,6 @@
 "tipkit.cfTable.add.title" = "Aggiungi righe";
 "tipkit.cfTable.add.message" = "Se manca un'entrata o un'uscita, aggiungila qui.";
 
-"tipkit.comparison.title" = "Confronta e impara";
-"tipkit.comparison.message" = "Confronta con il periodo precedente o l'anno scorso per vedere come stai andando.";
 
 // Pro Tour
 "tipkit.pro.voiceInput.title" = "Inserimento vocale";

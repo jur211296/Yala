@@ -162,21 +162,6 @@ struct SetupChecklistManagerTests {
         #expect(manager.isCollapsed == false)
     }
 
-    @MainActor @Test func collapseForTour_doesNotPersist() {
-        let manager = freshManager()
-        manager.collapseForTour()
-        #expect(manager.isCollapsed == true)
-        // Not persisted — UserDefaults should still be false
-        #expect(UserDefaults.standard.bool(forKey: "setup.collapsed") == false)
-    }
-
-    @MainActor @Test func expandAfterTour_restores() {
-        let manager = freshManager()
-        manager.collapseForTour()
-        manager.expandAfterTour()
-        #expect(manager.isCollapsed == false)
-    }
-
     @MainActor @Test func reExpand_afterIntervalSessions() {
         let manager = freshManager()
         UserDefaults.standard.set(10, forKey: "pro.upsell.sessionCount")

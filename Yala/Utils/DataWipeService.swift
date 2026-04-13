@@ -278,9 +278,6 @@ final class DataWipeService {
         defaults.removeObject(forKey: "appUpdate.lastChecked")    // Force re-check after wipe
 
         // --- Coach mark tours ---
-        defaults.removeObject(forKey: "hasSeenPanelTour")         // Re-show panel tour
-        defaults.removeObject(forKey: "hasSeenRegistroTour")      // Re-show registro tour
-        defaults.removeObject(forKey: "hasSeenInteractivityTour") // Re-show interactivity tour
         defaults.removeObject(forKey: "hasSeenSettingsTour")      // Re-show settings tour
         defaults.removeObject(forKey: "hasSeenCashFlowSetupTour")  // Re-show cash flow setup tour
         defaults.removeObject(forKey: "hasSeenCashFlowTableTour")  // Re-show cash flow table tour

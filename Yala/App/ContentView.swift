@@ -197,13 +197,9 @@ struct ContentView: View {
                     await waitForBootstrap()
                     showProTrialOffer = true
                 }
-            } else {
-                // Pro user or no trial needed — start tours directly
-                SessionState.shared.isReadyForTours = true
             }
         }
         .sheet(isPresented: $showProTrialOffer, onDismiss: {
-            SessionState.shared.isReadyForTours = true
         }) {
             ProTrialOfferSheet {
                 showProTrialOffer = false
@@ -214,7 +210,6 @@ struct ContentView: View {
                 lastSeenAppVersion = data.version
             }
             whatsNewData = nil
-            SessionState.shared.isReadyForTours = true
         }) {
             if let data = whatsNewData {
                 WhatsNewSheet(features: data.features, version: data.version) {
@@ -397,7 +392,6 @@ struct ContentView: View {
         remoteWipeTask?.cancel()
         remoteWipeTask = Task {
             let sessionState = SessionState.shared
-            sessionState.isReadyForTours = false
             sessionState.resetToDefaults()
             sessionState.isWipingData = true
 
@@ -473,12 +467,8 @@ struct ContentView: View {
                     await waitForBootstrap()
                     showProTrialOffer = true
                 }
-                // isReadyForTours set in trial sheet's onDismiss
             } else if prepareWhatsNewIfNeeded() {
                 showWhatsNew = true
-                // isReadyForTours set in onDismiss
-            } else {
-                SessionState.shared.isReadyForTours = true
             }
             // Check for app updates (non-blocking)
             Task { await AppUpdateService.shared.checkForUpdate() }

@@ -275,7 +275,6 @@ struct PanelFilterAndWidgetsSection: View {
                             .foregroundStyle(Color.primary)
                     }
                     .accessibilityLabel(L10n.Accessibility.widgetPreferences)
-                    .coachMarkAnchor("widgetPreferences")
                 }
                 .padding(.trailing, DS.Spacing.xxs)
 
@@ -284,8 +283,6 @@ struct PanelFilterAndWidgetsSection: View {
                     widgetRow(for: firstRow)
                 }
             }
-            .coachMarkAnchor("widgets")
-            .coachMarkAnchor("interactiveWidgets")
 
             // Remaining widget rows
             // Note: VStack (not Lazy) — LazyVStack caused crashes on tab switch

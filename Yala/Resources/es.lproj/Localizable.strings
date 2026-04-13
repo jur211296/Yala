@@ -2051,38 +2051,15 @@
 "tipkit.skip" = "Omitir guía";
 "tipkit.next" = "Siguiente";
 "tipkit.done" = "Listo";
+"tipkit.comparison.title" = "Compara y aprende";
+"tipkit.comparison.message" = "Compara contra el periodo anterior o el año pasado para ver cómo vas.";
 // Grupo A: Tour del Panel
-"tipkit.accounts.title" = "Tus cuentas";
-"tipkit.accounts.message" = "Aquí ves tus cuentas activas y sus saldos en todo momento.";
-"tipkit.widgets.title" = "Tus gráficas";
-"tipkit.widgets.message" = "Widgets con resúmenes y gráficas de tus gastos e ingresos. Personaliza cuáles ver desde el botón de ajustes.";
-"tipkit.fab.title" = "Registra rápido";
-"tipkit.fab.free.message" = "Toca aquí para registrar tus gastos e ingresos.";
-"tipkit.fab.pro.message" = "Registra manual, con voz o con foto.";
-"tipkit.profile.title" = "Tu perfil";
-"tipkit.profile.message" = "Configura todo para que Yala funcione justo como la necesitas.";
 "tipkit.settingsAppIcon.title" = "Tu ícono";
 "tipkit.settingsAppIcon.message" = "Cambia el ícono de la app para darle tu toque personal.";
 "tipkit.settingsTheme.title" = "Tu tema";
 "tipkit.settingsTheme.message" = "Elige entre clásico, minimalista o translúcido para tu estilo.";
-"tipkit.contextualGuide.title" = "Guías en cada sección";
-"tipkit.contextualGuide.message" = "Encontrarás guías como esta en cada sección. Te explican qué puedes hacer ahí.";
-"tipkit.setupChecklist.title" = "Tus primeros pasos";
-"tipkit.setupChecklist.message" = "Completa estos pasos para conocer todo lo que Yala tiene para ti.";
 // Grupo B: Tour de Registro
-"tipkit.transactionTypes.title" = "Tres tipos de registro";
-"tipkit.transactionTypes.message" = "Registra gastos, ingresos y transferencias entre tus cuentas.";
-"tipkit.favoritePayments.title" = "Pagos favoritos";
-"tipkit.favoritePayments.message" = "Guarda los gastos frecuentes para no llenar todo cada vez.";
-"tipkit.quickActions.title" = "Acciones rápidas";
-"tipkit.quickActions.message" = "Crea favoritos y pagos planificados desde aquí.";
 // Grupo C: Tips contextuales
-"tipkit.filterAccount.title" = "Filtra con un toque";
-"tipkit.filterAccount.message" = "Toca una cuenta para filtrar todas las gráficas solo para ella.";
-"tipkit.interactiveWidgets.title" = "Toca y explora";
-"tipkit.interactiveWidgets.message" = "Los widgets son interactivos: tócalos para filtrar y descubrir patrones.";
-"tipkit.widgetPreferences.title" = "Preferencias de widgets";
-"tipkit.widgetPreferences.message" = "Elige qué gráficas ver y en qué orden desde aquí.";
 
 // Grupo D: Tour de Settings
 "tipkit.settings.accounts.title" = "Tus cuentas";
@@ -2114,8 +2091,6 @@
 "tipkit.cfTable.add.title" = "Agrega líneas";
 "tipkit.cfTable.add.message" = "Si te falta un ingreso o gasto, agrégalo aquí.";
 
-"tipkit.comparison.title" = "Compara y aprende";
-"tipkit.comparison.message" = "Compara contra el periodo anterior o el año pasado para ver cómo vas.";
 
 // Pro Tour
 "tipkit.pro.voiceInput.title" = "Registro por voz";

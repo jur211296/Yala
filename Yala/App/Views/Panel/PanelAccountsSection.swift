@@ -55,8 +55,6 @@ struct PanelAccountsSection: View {
                         accountFormSheet = AccountFormSheet(account: account)
                     }
                 )
-                .coachMarkAnchor("accounts")
-                .coachMarkAnchor("filterAccount")
             }
         }
     }
