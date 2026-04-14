@@ -378,6 +378,7 @@
 "settings.theme.teal" = "Teal";
 "settings.theme.minimalist" = "Minimaliste";
 "settings.theme.translucent" = "Translucide";
+"settings.theme.liquidGlass" = "Liquid Glass";
 "settings.defaultCurrency" = "Devise par defaut";
 "settings.currentIcon" = "Icone actuelle";
 "settings.resetAllData" = "Reinitialiser toutes vos donnees";
@@ -2077,6 +2078,8 @@
 "tipkit.skip" = "Passer le guide";
 "tipkit.next" = "Suivant";
 "tipkit.done" = "Terminé";
+"tipkit.comparison.title" = "Compare et apprends";
+"tipkit.comparison.message" = "Compare avec la période précédente ou l'année dernière pour voir comment tu progresses.";
 "tipkit.settingsAppIcon.title" = "Ton icône";
 "tipkit.settingsAppIcon.message" = "Change l'icône de l'app pour y ajouter ta touche personnelle.";
 "tipkit.settingsTheme.title" = "Ton thème";
@@ -2112,8 +2115,6 @@
 "tipkit.cfTable.add.title" = "Ajouter des lignes";
 "tipkit.cfTable.add.message" = "S'il manque un revenu ou une dépense, ajoute-le ici.";
 
-"tipkit.comparison.title" = "Compare et apprends";
-"tipkit.comparison.message" = "Compare avec la période précédente ou l'année dernière pour voir comment tu progresses.";
 
 // Pro Tour
 "tipkit.pro.voiceInput.title" = "Saisie vocale";
@@ -2431,6 +2432,11 @@
 "icloud.remoteWipe.message" = "Tes données ont été supprimées d'iCloud. Tu peux repartir à zéro ou attendre qu'elles se re-synchronisent.";
 "icloud.remoteWipe.confirm" = "Repartir à zéro";
 "icloud.remoteWipe.cancel" = "Continuer d'attendre";
+"icloud.forceSync.button" = "Forcer la synchronisation";
+"icloud.forceSync.description" = "Vérifie les données en attente sur iCloud. Utilise cette option si tes données n'apparaissent pas sur cet appareil.";
+"icloud.mismatch.title" = "iCloud maintenant disponible";
+"icloud.mismatch.message" = "Yala s'est ouvert avant qu'iCloud ne soit prêt. Ferme et rouvre l'app pour synchroniser tes données.";
+"icloud.mismatch.action" = "Compris";
 
 // MARK: - Feature Gate
 

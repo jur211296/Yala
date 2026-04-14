@@ -2376,6 +2376,7 @@ enum L10n {
         static var themeTeal: String { ls("settings.theme.teal", comment: "") }
         static var themeMinimalist: String { ls("settings.theme.minimalist", comment: "") }
         static var themeTranslucent: String { ls("settings.theme.translucent", comment: "") }
+        static var themeLiquidGlass: String { ls("settings.theme.liquidGlass", comment: "") }
         static var defaultCurrency: String {
             ls("settings.defaultCurrency", comment: "")
         }
@@ -4353,6 +4354,11 @@ enum L10n {
         static var remoteWipeMessage: String { ls("icloud.remoteWipe.message", comment: "") }
         static var remoteWipeConfirm: String { ls("icloud.remoteWipe.confirm", comment: "") }
         static var remoteWipeCancel: String { ls("icloud.remoteWipe.cancel", comment: "") }
+        static var forceSyncButton: String { ls("icloud.forceSync.button", comment: "") }
+        static var forceSyncDescription: String { ls("icloud.forceSync.description", comment: "") }
+        static var mismatchTitle: String { ls("icloud.mismatch.title", comment: "") }
+        static var mismatchMessage: String { ls("icloud.mismatch.message", comment: "") }
+        static var mismatchAction: String { ls("icloud.mismatch.action", comment: "") }
     }
 
     // MARK: - Shortcut Notifications

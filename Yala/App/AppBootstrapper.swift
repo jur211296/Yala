@@ -143,26 +143,29 @@ final class AppBootstrapper {
         // 13. Observe CloudKit remote changes to auto-refresh UI
         observeRemoteStoreChanges()
 
-        // 14. Initialize CKSyncEngine for shared group data (separate groups store)
+        // 14. Observe iCloud account changes — detect mismatch if container was created without CloudKit
+        observeICloudAccountChanges()
+
+        // 15. Initialize CKSyncEngine for shared group data (separate groups store)
         SplitSyncManager.shared.setContext(context)
         SplitSyncManager.shared.initialize()
 
-        // 15. Initialize Group Services (GC-03)
+        // 16. Initialize Group Services (GC-03)
         GroupService.shared.setContext(context)
         GroupExpenseService.shared.setContext(context)
         GroupTransactionBridge.shared.setContext(context)
 
-        // 16. Initialize Group Notification Service (GC-06)
+        // 17. Initialize Group Notification Service (GC-06)
         GroupNotificationService.shared.setContext(context)
 
-        // 16.5. One-time backfill of SplitShare.groupZoneID for existing shares
+        // 17.5. One-time backfill of SplitShare.groupZoneID for existing shares
         migrateShareGroupZoneIDs(context: context)
 
-        // 17. Initialize User Segment Service (GC-08)
+        // 18. Initialize User Segment Service (GC-08)
         UserSegmentService.shared.setContext(context)
         UserSegmentService.shared.recalculate()
 
-        // 18. Initialize Nudge Service (GC-09)
+        // 19. Initialize Nudge Service (GC-09)
         NudgeService.shared.setContext(context)
 
         isInitialized = true
@@ -171,6 +174,37 @@ final class AppBootstrapper {
         if let pendingShareURL = deferredInviteShareURL {
             deferredInviteShareURL = nil
             Task { await acceptShareFromURL(pendingShareURL) }
+        }
+    }
+
+    // MARK: - iCloud Mismatch Detection
+
+    private func observeICloudAccountChanges() {
+        NotificationCenter.default.addObserver(
+            forName: .NSUbiquityIdentityDidChange,
+            object: nil,
+            queue: .main
+        ) { _ in
+            MainActor.assumeIsolated {
+                AppBootstrapper.shared.checkForICloudMismatch()
+            }
+        }
+    }
+
+    private var iCloudMismatchAlreadyDetected = false
+
+    private func checkForICloudMismatch() {
+        guard !iCloudMismatchAlreadyDetected else { return }
+
+        let wasCreatedWithCloudKit = SwiftDataConfiguration.containerWasCreatedWithCloudKit
+        let isNowAvailable = SwiftDataConfiguration.isICloudAvailable()
+
+        if !wasCreatedWithCloudKit && isNowAvailable {
+            iCloudMismatchAlreadyDetected = true
+            #if DEBUG
+            print("AppBootstrapper: iCloud mismatch — container was local, iCloud now available")
+            #endif
+            NotificationCenter.default.post(name: .iCloudMismatchDetected, object: nil)
         }
     }
 
@@ -248,6 +282,9 @@ final class AppBootstrapper {
     func handleBecameActive(context: ModelContext) {
         // Apply any pending remote CloudKit changes on foreground resume
         sessionState.applyPendingChangesIfNeeded()
+
+        // Check if iCloud became available after container was created without it
+        checkForICloudMismatch()
 
         // Re-verify subscription status on foreground resume
         subscriptionCheckTask?.cancel()
@@ -592,11 +629,11 @@ final class AppBootstrapper {
     private func resetProThemeIfNeeded() {
         guard !FeatureGateService.shared.isProUser else { return }
 
-        let currentTheme = AppTheme(rawValue: UserDefaults.standard.integer(forKey: "userTheme")) ?? .system
+        let currentTheme = AppTheme(rawValue: UserDefaults.standard.integer(forKey: "userTheme")) ?? .liquidGlass
         if currentTheme.isPro {
-            UserDefaults.standard.set(AppTheme.system.rawValue, forKey: "userTheme")
+            UserDefaults.standard.set(AppTheme.liquidGlass.rawValue, forKey: "userTheme")
             #if DEBUG
-            print("AppBootstrapper: Reset Pro theme '\(currentTheme.label)' to System")
+            print("AppBootstrapper: Reset Pro theme '\(currentTheme.label)' to Liquid Glass")
             #endif
         }
     }

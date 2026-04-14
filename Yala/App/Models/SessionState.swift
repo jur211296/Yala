@@ -670,7 +670,11 @@ class SessionState {
 
 extension View {
     /// Applies pending remote CloudKit changes when this view appears.
-    /// Use on main views that observe `sessionState.dataVersion`.
+    /// Use on top-level navigation views that observe `sessionState.dataVersion`.
+    ///
+    /// - Warning: NEVER use on views presented as sheets. Mutating @Observable
+    ///   during sheet transition creates an infinite layoutBelowIfNeeded loop
+    ///   that triggers watchdog 0x8BADF00D. See: b583ea5e
     func appliesPendingRemoteChanges(_ sessionState: SessionState) -> some View {
         self.onAppear {
             sessionState.applyPendingChangesIfNeeded()

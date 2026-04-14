@@ -7,6 +7,7 @@
 
 import SwiftData
 import SwiftUI
+import UIKit
 
 struct FinancialReportView: View {
 
@@ -103,14 +104,15 @@ struct FinancialReportView: View {
         .onDisappear { recalculateTask?.cancel() }
         .onChange(of: scenePhase) { _, newPhase in
             switch newPhase {
-            case .background:
+            case .background, .inactive:
                 isInBackground = true
                 recalculateTask?.cancel()
                 recalculateTask = nil
             case .active:
+                guard UIApplication.shared.applicationState == .active else { return }
                 isInBackground = false
                 scheduleRecalculate()
-            default:
+            @unknown default:
                 break
             }
         }
@@ -377,6 +379,7 @@ struct FinancialReportView: View {
 
     private func scheduleRecalculate() {
         guard !isInBackground else { return }
+        guard UIApplication.shared.applicationState == .active else { return }
         recalculateTask?.cancel()
         recalculateTask = Task {
             do {

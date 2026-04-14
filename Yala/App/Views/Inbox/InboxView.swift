@@ -231,8 +231,10 @@ struct InboxView: View {
                     selectionBar
                 }
             }
-            .appliesPendingRemoteChanges(sessionState)
-            .onAppear {
+            // Note: NO .appliesPendingRemoteChanges here — InboxView is always
+            // presented as a sheet, and mutating @Observable during sheet transition
+            // causes watchdog 0x8BADF00D. Reacts to remote changes via .onChange below.
+            .task {
                 viewModel.setContext(modelContext)
             }
             .onChange(of: sessionState.dataVersion) { _, _ in

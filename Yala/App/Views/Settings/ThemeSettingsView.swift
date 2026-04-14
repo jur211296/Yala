@@ -54,7 +54,7 @@ struct ThemeSettingsView: View {
 
                     // Theme Grid
                     LazyVGrid(columns: columns, spacing: DS.Spacing.lg) {
-                        ForEach(AppTheme.allCases) { appTheme in
+                        ForEach(AppTheme.displayOrder) { appTheme in
                             themeCard(for: appTheme)
                         }
                     }
@@ -212,6 +212,8 @@ struct ThemeSettingsView: View {
                         .clipped()
                 }
             }
+        } else if appTheme == .liquidGlass {
+            translucentPreview(palette: appTheme.yalaTheme, variant: .indigo, isLiquidGlass: true)
         } else if appTheme == .translucent {
             translucentPreview(palette: appTheme.yalaTheme)
         } else {
@@ -221,11 +223,20 @@ struct ThemeSettingsView: View {
 
     // MARK: - Mock Card
 
-    private func translucentPreview(palette: YalaTheme) -> some View {
-        let gradientColors: [Color] = switch themeManager.translucentVariant {
-        case .indigo: [Color(hex: "1A1040"), Color(hex: "2A1A5E"), Color(hex: "0A0A1A")]
-        case .rosa: [Color(hex: "401028"), Color(hex: "5E1A40"), Color(hex: "1A0A12")]
-        case .teal: [Color(hex: "103830"), Color(hex: "1A5E4A"), Color(hex: "0A1A18")]
+    private func translucentPreview(
+        palette: YalaTheme,
+        variant: TranslucentVariant? = nil,
+        isLiquidGlass: Bool = false
+    ) -> some View {
+        let effectiveVariant = variant ?? themeManager.translucentVariant
+        let gradientColors: [Color] = if isLiquidGlass {
+            [Color(hex: "0E0A24"), Color(hex: "14102E"), Color(hex: "050510")]
+        } else {
+            switch effectiveVariant {
+            case .indigo: [Color(hex: "1A1040"), Color(hex: "2A1A5E"), Color(hex: "0A0A1A")]
+            case .rosa: [Color(hex: "401028"), Color(hex: "5E1A40"), Color(hex: "1A0A12")]
+            case .teal: [Color(hex: "103830"), Color(hex: "1A5E4A"), Color(hex: "0A1A18")]
+            }
         }
         return ZStack {
             // Mini gradient background

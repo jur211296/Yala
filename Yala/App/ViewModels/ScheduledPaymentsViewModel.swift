@@ -82,6 +82,9 @@ final class ScheduledPaymentsViewModel {
     /// Paid count for each payment in the selected month (paymentID -> count)
     private(set) var paidStatusForMonth: [String: Int] = [:]
 
+    /// Cached paid amounts — pre-computed in calculatePaymentData(), consumed by calculateMonthlyTotal()
+    private(set) var cachedPaidAmounts: [String: [PaidOccurrenceInfo]] = [:]
+
     /// Payment status filter (all/paid/pending)
     var paymentStatusFilter: PaymentStatusFilter = .all
 
@@ -349,8 +352,9 @@ final class ScheduledPaymentsViewModel {
             !getPaymentDatesInMonth(payment: payment, month: selectedMonth).isEmpty
         }
 
-        // Load paid amounts for all payments in this month (batch)
-        let paidAmounts = loadPaidAmounts(for: filtered, month: selectedMonth)
+        // Load paid amounts for ALL payments (not just filtered) so calculateMonthlyTotal() can use the cache
+        cachedPaidAmounts = loadPaidAmounts(for: payments, month: selectedMonth)
+        let paidAmounts = cachedPaidAmounts
         paidStatusForMonth = paidAmounts.mapValues(\.count)
 
         // Calculate summaries with one entry per occurrence
@@ -677,7 +681,7 @@ final class ScheduledPaymentsViewModel {
         // Only count expenses (exclude income payments)
         let expensePayments = subscriptions.filter { $0.isActive && $0.transactionType != "income" }
 
-        let paidAmounts = loadPaidAmounts(for: expensePayments, month: month)
+        let paidAmounts = cachedPaidAmounts
 
         for payment in expensePayments {
             let occurrences = getPaymentDatesInMonth(payment: payment, month: month)

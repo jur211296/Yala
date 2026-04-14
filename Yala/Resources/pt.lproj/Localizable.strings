@@ -378,6 +378,7 @@
 "settings.theme.teal" = "Teal";
 "settings.theme.minimalist" = "Minimalista";
 "settings.theme.translucent" = "Translúcido";
+"settings.theme.liquidGlass" = "Liquid Glass";
 "settings.defaultCurrency" = "Moeda padrao";
 "settings.currentIcon" = "Icone atual";
 "settings.resetAllData" = "Apagar todos os seus dados";
@@ -2075,6 +2076,8 @@
 "tipkit.skip" = "Pular guia";
 "tipkit.next" = "Próximo";
 "tipkit.done" = "Pronto";
+"tipkit.comparison.title" = "Compare e aprenda";
+"tipkit.comparison.message" = "Compare com o período anterior ou o ano passado para ver como você está indo.";
 "tipkit.settingsAppIcon.title" = "Seu ícone";
 "tipkit.settingsAppIcon.message" = "Mude o ícone do app para dar seu toque pessoal.";
 "tipkit.settingsTheme.title" = "Seu tema";
@@ -2110,8 +2113,6 @@
 "tipkit.cfTable.add.title" = "Adicionar linhas";
 "tipkit.cfTable.add.message" = "Se falta alguma receita ou despesa, adicione aqui.";
 
-"tipkit.comparison.title" = "Compare e aprenda";
-"tipkit.comparison.message" = "Compare com o período anterior ou o ano passado para ver como você está indo.";
 
 // Pro Tour
 "tipkit.pro.voiceInput.title" = "Registro por voz";
@@ -2429,6 +2430,11 @@
 "icloud.remoteWipe.message" = "Seus dados foram removidos do iCloud. Você pode recomeçar ou aguardar a sincronização.";
 "icloud.remoteWipe.confirm" = "Recomeçar";
 "icloud.remoteWipe.cancel" = "Continuar aguardando";
+"icloud.forceSync.button" = "Forçar sincronização";
+"icloud.forceSync.description" = "Verifica dados pendentes no iCloud. Use se seus dados não estão aparecendo neste dispositivo.";
+"icloud.mismatch.title" = "iCloud agora disponível";
+"icloud.mismatch.message" = "Yala abriu antes do iCloud estar pronto. Feche e reabra o app para sincronizar seus dados.";
+"icloud.mismatch.action" = "Entendi";
 
 // MARK: - Feature Gate
 

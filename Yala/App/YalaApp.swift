@@ -27,6 +27,8 @@ struct YalaApp: App {
     /// Dos configs: personal (CloudKit) + groups (local, synced por CKSyncEngine).
     var sharedModelContainer: ModelContainer = {
         do {
+            let iCloudWasAvailable = SwiftDataConfiguration.isICloudAvailable()
+            SwiftDataConfiguration.markContainerCloudKitState(iCloudWasAvailable)
             return try ModelContainer(
                 for: SwiftDataConfiguration.schema,
                 configurations: SwiftDataConfiguration.personalConfiguration,

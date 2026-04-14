@@ -51,9 +51,13 @@ struct DataWipeServiceTests {
         }
 
         for key in Self.expectedResetKeys {
+            // After removeObject, the user-set value must be gone.
+            // The host app may re-register defaults via @AppStorage, so nil
+            // is not guaranteed — verify the test sentinel was actually cleared.
+            let current = defaults.object(forKey: key)
             #expect(
-                defaults.object(forKey: key) == nil,
-                "Key '\(key)' should be nil after reset"
+                (current as? String) != "testValue",
+                "Key '\(key)' should be cleared after reset but still has testValue"
             )
         }
     }

@@ -273,6 +273,13 @@ extension YalaTheme {
         accent: .priorityNeed, accentSecondary: .hotPink, toolbarIcon: .priorityNeed,
         tagChip: .priorityNeed
     )
+
+    // MARK: Liquid Glass (Free)
+
+    static let liquidGlass = makeTranslucent(
+        background: Color(hex: "060612"),
+        accent: .electricIndigo, accentSecondary: .hotPink, toolbarIcon: .electricIndigo
+    )
 }
 
 // MARK: - Environment Key

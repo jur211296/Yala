@@ -116,6 +116,20 @@ enum SwiftDataConfiguration {
         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     }
 
+    // MARK: - Container CloudKit State
+
+    private static let containerCloudKitKey = "containerCreatedWithCloudKit"
+
+    static func markContainerCloudKitState(_ withCloudKit: Bool) {
+        UserDefaults.standard.set(withCloudKit, forKey: containerCloudKitKey)
+    }
+
+    static var containerWasCreatedWithCloudKit: Bool {
+        // Si la key nunca fue escrita, asumir true (usuario existente pre-update)
+        guard UserDefaults.standard.object(forKey: containerCloudKitKey) != nil else { return true }
+        return UserDefaults.standard.bool(forKey: containerCloudKitKey)
+    }
+
     /// Personal data — CloudKit synced (same databaseName = same SQLite file).
     static var personalConfiguration: ModelConfiguration {
         if isRunningTests {

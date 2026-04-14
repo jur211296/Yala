@@ -6,7 +6,8 @@ struct AccountsCarouselView: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Bindable var viewModel: PanelViewModel
     let orderedAccounts: [Account]
-    let transactions: [TransactionItem]
+    let accountBalances: [PersistentIdentifier: Double]
+    let accountPeriodExpenses: [PersistentIdentifier: Double]
     var isExpensesOnlyMode: Bool = false
     let onAddAccount: () -> Void
     let onEditAccount: (Account) -> Void
@@ -83,8 +84,8 @@ struct AccountsCarouselView: View {
                 AccountCardView(
                     account: account,
                     currentBalance: isExpensesOnlyMode
-                        ? viewModel.expenseForPeriod(for: account, allTransactions: transactions)
-                        : currentBalance(for: account),
+                        ? accountPeriodExpenses[account.persistentModelID] ?? 0
+                        : accountBalances[account.persistentModelID] ?? 0,
                     isSelected: isSelected,
                     isExcludeMode: viewModel.isExcludeMode,
                     onEditTapped: {
@@ -100,11 +101,4 @@ struct AccountsCarouselView: View {
         }
     }
 
-    private func currentBalance(for account: Account) -> Double {
-        let currentDecimal = AccountBalanceCalculator.currentBalance(
-            for: account,
-            allTransactions: transactions
-        )
-        return (currentDecimal as NSDecimalNumber).doubleValue
-    }
 }

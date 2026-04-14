@@ -16,7 +16,10 @@ struct PanelBackgroundView: View {
     var body: some View {
         Group {
             if theme.usesMaterial {
-                AnimatedMeshBackground(variant: themeManager.translucentVariant)
+                AnimatedMeshBackground(
+                    variant: themeManager.translucentVariant,
+                    isLiquidGlass: themeManager.userChoice == .liquidGlass
+                )
             } else if theme.hasGradient {
                 LinearGradient(
                     colors: [
@@ -39,6 +42,12 @@ struct PanelBackgroundView: View {
 struct AnimatedMeshBackground: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let variant: TranslucentVariant
+    let isLiquidGlass: Bool
+
+    init(variant: TranslucentVariant, isLiquidGlass: Bool = false) {
+        self.variant = variant
+        self.isLiquidGlass = isLiquidGlass
+    }
 
     var body: some View {
         if reduceMotion {
@@ -55,6 +64,11 @@ struct AnimatedMeshBackground: View {
         meshGradient(time: 0)
     }
 
+    private static let liquidGlassColors: [Color] = [
+        Color(hex: "050510"), Color(hex: "0E0A24"), Color(hex: "050510"),
+        Color(hex: "0A0818"), Color(hex: "14102E"), Color(hex: "0C0A1C"),
+        Color(hex: "050510"), Color(hex: "0B0918"), Color(hex: "050510"),
+    ]
     private static let indigoColors: [Color] = [
         Color(hex: "0A0A1A"), Color(hex: "1A1040"), Color(hex: "0A0A1A"),
         Color(hex: "10082A"), Color(hex: "2A1A5E"), Color(hex: "1A0A30"),
@@ -72,10 +86,11 @@ struct AnimatedMeshBackground: View {
     ]
 
     private var colors: [Color] {
+        if isLiquidGlass { return Self.liquidGlassColors }
         switch variant {
-        case .indigo: Self.indigoColors
-        case .rosa: Self.rosaColors
-        case .teal: Self.tealColors
+        case .indigo: return Self.indigoColors
+        case .rosa: return Self.rosaColors
+        case .teal: return Self.tealColors
         }
     }
 

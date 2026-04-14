@@ -25,6 +25,7 @@ struct ContentView: View {
     @State private var wipeGraceTask: Task<Void, Never>?
     @State private var remoteWipeTask: Task<Void, Never>?
     @State private var showRemoteWipeAlert: Bool = false
+    @State private var showICloudRestartAlert: Bool = false
     @State private var showProTrialOffer: Bool = false
     @State private var showWhatsNew: Bool = false
     @State private var whatsNewData: (features: [WhatsNewFeature], version: String)?
@@ -44,8 +45,8 @@ struct ContentView: View {
 
     private let authService = BiometricAuthService.shared
 
-    /// Minimum splash duration (3.5 seconds — extra margin for initial data loading)
-    private let minimumSplashDuration: Double = 3.5
+    /// Minimum splash duration (2.5 seconds to enjoy the animation)
+    private let minimumSplashDuration: Double = 2.5
 
     var body: some View {
         ZStack {
@@ -159,6 +160,11 @@ struct ContentView: View {
         } message: {
             Text(L10n.iCloud.dataFoundMessage)
         }
+        .alert(L10n.iCloud.mismatchTitle, isPresented: $showICloudRestartAlert) {
+            Button(L10n.iCloud.mismatchAction) {}
+        } message: {
+            Text(L10n.iCloud.mismatchMessage)
+        }
         .fullScreenCover(isPresented: $showLanguageSelection) {
             LanguageSelectionView {
                 showLanguageSelection = false
@@ -200,7 +206,8 @@ struct ContentView: View {
                 }
             }
         }
-        .sheet(isPresented: $showProTrialOffer) {
+        .sheet(isPresented: $showProTrialOffer, onDismiss: {
+        }) {
             ProTrialOfferSheet {
                 showProTrialOffer = false
             }
@@ -288,6 +295,10 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .remoteOnboardingCompleted)) { _ in
             handleRemoteOnboardingCompleted()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .iCloudMismatchDetected)) { _ in
+            guard hasCompletedOnboarding else { return }
+            showICloudRestartAlert = true
         }
     }
 
@@ -835,7 +846,7 @@ struct MainTabView: View {
     private func viewForTab(_ tab: ConfigurableTab) -> some View {
         switch tab {
         case .panel:
-            PanelView()
+            PanelShell()
         case .statistics:
             StatisticsView()
         case .planning:

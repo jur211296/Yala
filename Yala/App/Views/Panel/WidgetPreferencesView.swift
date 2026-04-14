@@ -12,22 +12,6 @@ struct WidgetPreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.openURL) private var openURL
-    @AppStorage("panelShowAIInsight") private var showAIInsight: Bool = false
-    @AppStorage("chatFABVisible") private var chatFABVisible: Bool = true
-    @State private var showConsentAlert = false
-
-    private var canAccessInsights: Bool {
-        FeatureGateService.shared.canAccess(.smartInsightsAI)
-    }
-
-    private var canAccessChat: Bool {
-        FeatureGateService.shared.canAccess(.chatAssistant)
-    }
-
-    private var hasAIConsent: Bool {
-        UserDefaults.standard.bool(forKey: "aiInsightsConsentAccepted")
-    }
 
     var body: some View {
         NavigationStack {
@@ -38,73 +22,6 @@ struct WidgetPreferencesView: View {
                         .foregroundStyle(.secondary)
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 8, trailing: 0))
-                }
-
-                // AI capabilities section
-                Section {
-                    // AI Observations toggle
-                    HStack(spacing: DS.Spacing.md) {
-                        Image(systemName: "sparkles")
-                            .font(DS.Typography.title)
-                            .foregroundStyle(.thAccent)
-                            .frame(width: 32, height: 32)
-                            .background(Circle().fill(theme.accent.opacity(0.1)))
-                            .accessibilityHidden(true)
-
-                        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                            Text(L10n.Panel.aiInsightsTitle)
-                                .font(DS.Typography.bodyBold)
-                            Text(L10n.Panel.aiInsightsDescription)
-                                .font(DS.Typography.captionSmall)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer()
-
-                        if canAccessInsights {
-                            Toggle(L10n.Panel.aiInsightsTitle, isOn: $showAIInsight)
-                                .labelsHidden()
-                                .onChange(of: showAIInsight) { _, newValue in
-                                    if newValue && !hasAIConsent {
-                                        showAIInsight = false
-                                        showConsentAlert = true
-                                    }
-                                }
-                        } else {
-                            ProBadge(size: .small)
-                        }
-                    }
-                    .padding(.vertical, DS.Spacing.xs)
-                    .listRowBackground(theme.card)
-
-                    // Chat FAB visibility toggle
-                    if canAccessChat {
-                        HStack(spacing: DS.Spacing.md) {
-                            Image(systemName: "bubble.left.and.text.bubble.right")
-                                .font(DS.Typography.title)
-                                .foregroundStyle(.thAccent)
-                                .frame(width: 32, height: 32)
-                                .background(Circle().fill(theme.accent.opacity(0.1)))
-                                .accessibilityHidden(true)
-
-                            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                                Text(L10n.Chat.title)
-                                    .font(DS.Typography.bodyBold)
-                                Text(L10n.Widget.chatFabDescription)
-                                    .font(DS.Typography.captionSmall)
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            Spacer()
-
-                            Toggle(L10n.Chat.title, isOn: $chatFABVisible)
-                                .labelsHidden()
-                        }
-                        .padding(.vertical, DS.Spacing.xs)
-                        .listRowBackground(theme.card)
-                    }
-                } header: {
-                    Text(L10n.Widget.aiCapabilitiesHeader)
                 }
 
                 Section {
@@ -152,19 +69,7 @@ struct WidgetPreferencesView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(theme.background.ignoresSafeArea())  // Uses app's adaptive background
-            .alert(L10n.AIConsent.insightsTitle, isPresented: $showConsentAlert) {
-                Button(L10n.AIConsent.accept) {
-                    UserDefaults.standard.set(true, forKey: "aiInsightsConsentAccepted")
-                    showAIInsight = true
-                }
-                Button(L10n.AIConsent.privacyPolicy) {
-                    openURL(AppConstants.privacyURL)
-                }
-                Button(L10n.Action.cancel, role: .cancel) {}
-            } message: {
-                Text(L10n.AIConsent.insightsMessage)
-            }
+            .background(theme.background.ignoresSafeArea())
         }
     }
 }

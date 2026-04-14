@@ -2,6 +2,88 @@ import Foundation
 import SwiftData
 import SwiftUI
 
+// MARK: - Widget Data Structs
+// Equatable value types that collapse many @Observable tracking points into one per widget.
+// SwiftUI observes the struct (1 observer) instead of N individual properties.
+
+struct PanelTrendData: Equatable {
+    var processedTrendPoints: [BarPoint] = []
+    var rawTrendPoints: [BarPoint] = []
+    var processedYDomain: ClosedRange<Double> = 0...100
+    var currentInterval: DateInterval = DateInterval(start: .distantPast, end: .distantPast)
+    var currentPeriod: DetailPeriod = .thisYear
+    var trendTotalIncome: Double = 0
+    var trendTotalExpense: Double = 0
+    var trendFinalBalance: Double = 0
+    var trendGrouping: TrendGrouping = .day
+    var dataTrendType: TrendType = .balance
+    var currentBalance: Double = 0
+}
+
+struct PanelCategoriesData: Equatable {
+    var topSpendingCategories: [CategorySpendingSummary] = []
+    var previousTotalAmount: Double? = nil
+}
+
+struct PanelSubcategoriesData: Equatable {
+    var topSubcategories: [SubcategorySpendingSummary] = []
+    var previousTotalAmount: Double? = nil
+}
+
+struct PanelNeedData: Equatable {
+    var needTrendPoints: [NeedTrendPoint] = []
+    var previousTotalAmount: Double? = nil
+    var previousAmounts: [SubcategoryNeed: Double] = [:]
+    var needGrouping: TrendGrouping = .day
+}
+
+struct PanelCashFlowData: Equatable {
+    var cashFlowSummary: CashFlowSummary? = nil
+    var cashFlowGrouping: TrendGrouping = .day
+}
+
+struct PanelBudgetsData: Equatable {
+    var topBudgetSummaries: [BudgetSummary] = []
+    var hasBudgetsButNoFavorites: Bool = false
+}
+
+struct PanelExchangeRateData: Equatable {
+    var exchangeRateWidgetData: ExchangeRateWidgetData? = nil
+    var exchangeRateGrouping: TrendGrouping = .day
+}
+
+struct ScheduledPaymentListItem: Equatable, Identifiable {
+    let id: String
+    let name: String
+    let amount: Double
+    let currencyCode: String
+    let isIncome: Bool
+    let isVariableAmount: Bool
+    let icon: String
+    let color: String
+    let dueDate: Date
+    let dueStatus: DueStatus
+    let dueDateLabel: String
+    let isPaid: Bool
+    let isSkipped: Bool
+}
+
+struct ScheduledPaymentCalendarEntry: Equatable, Identifiable {
+    let id: String
+    let name: String
+    let isPaid: Bool
+    let isSkipped: Bool
+}
+
+struct PanelScheduledPaymentsData: Equatable {
+    var monthlyTotal: Double = 0
+    var activeCount: Int = 0
+    var displayMonth: Date = .now
+    var periodLabel: String = ""
+    var upcomingPayments: [ScheduledPaymentListItem] = []
+    var paymentsByDay: [Int: [ScheduledPaymentCalendarEntry]] = [:]
+}
+
 @MainActor
 @Observable
 final class PanelViewModel {
@@ -17,6 +99,18 @@ final class PanelViewModel {
         return f
     }()
 
+    private static let monthYearFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMMM yyyy"
+        return f
+    }()
+
+    private static let shortDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "d MMM"
+        return f
+    }()
+
     // MARK: - Dependencies
 
     private var modelContext: ModelContext?
@@ -26,6 +120,23 @@ final class PanelViewModel {
 
     /// Currency converter - injected or falls back to shared singleton
     private var currencyConverter: CurrencyConverter = .shared
+
+    /// Default currency code — synced from PanelView's @AppStorage
+    private(set) var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
+
+    /// Session state — weak to avoid retain cycle
+    private weak var sessionState: SessionState?
+
+    // MARK: - Recalculation State
+
+    /// Debounced recalculation task — coalesces rapid onChange cascades
+    private var recalculateTask: Task<Void, Never>?
+
+    /// Whether a pending debounced task needs to reload data from SwiftData
+    private var pendingReload = false
+
+    /// Whether the app is in background — suppresses recalculation to prevent 0x8BADF00D
+    private(set) var isInBackground = false
 
     // MARK: - Loaded Data
 
@@ -97,14 +208,12 @@ final class PanelViewModel {
     // MARK: - Context Setup
 
     /// Sets the model context and optionally injects services.
-    /// - Parameters:
-    ///   - context: The SwiftData ModelContext
-    ///   - exchangeRateService: Optional service injection (defaults to .shared)
-    ///   - currencyConverter: Optional service injection (defaults to .shared)
     func setContext(
         _ context: ModelContext,
         exchangeRateService: ExchangeRateService? = nil,
-        currencyConverter: CurrencyConverter? = nil
+        currencyConverter: CurrencyConverter? = nil,
+        defaultCurrencyCode: String,
+        sessionState: SessionState
     ) {
         self.modelContext = context
         if let service = exchangeRateService {
@@ -113,8 +222,8 @@ final class PanelViewModel {
         if let converter = currencyConverter {
             self.currencyConverter = converter
         }
-        // loadData() deferred to scheduleRecalculation(reload: true) in PanelView.onAppear.
-        // This ensures the isInBackground guard protects against 0x8BADF00D watchdog kills.
+        self.defaultCurrencyCode = defaultCurrencyCode
+        self.sessionState = sessionState
     }
 
     func loadData() {
@@ -123,7 +232,8 @@ final class PanelViewModel {
         // Equality checks prevent unnecessary @Observable notifications, which break the
         // loadData → onChange(of: transactions) → recalculateData → loadData feedback loop.
 
-        let accountsDesc = FetchDescriptor<Account>(sortBy: [SortDescriptor(\.name)])
+        var accountsDesc = FetchDescriptor<Account>(sortBy: [SortDescriptor(\.name)])
+        accountsDesc.fetchLimit = 100
         do {
             let fetched = try context.fetch(accountsDesc)
             if fetched != accounts { accounts = fetched }
@@ -133,7 +243,8 @@ final class PanelViewModel {
             #endif
         }
 
-        let tagsDesc = FetchDescriptor<Tag>(sortBy: [SortDescriptor(\.name)])
+        var tagsDesc = FetchDescriptor<Tag>(sortBy: [SortDescriptor(\.name)])
+        tagsDesc.fetchLimit = 200
         do {
             let fetched = try context.fetch(tagsDesc)
             if fetched != tags { tags = fetched }
@@ -143,7 +254,8 @@ final class PanelViewModel {
             #endif
         }
 
-        let categoriesDesc = FetchDescriptor<Category>(sortBy: [SortDescriptor(\.sortOrder)])
+        var categoriesDesc = FetchDescriptor<Category>(sortBy: [SortDescriptor(\.sortOrder)])
+        categoriesDesc.fetchLimit = 100
         do {
             let fetched = try context.fetch(categoriesDesc)
             if fetched != categories { categories = fetched }
@@ -153,7 +265,8 @@ final class PanelViewModel {
             #endif
         }
 
-        let subcategoriesDesc = FetchDescriptor<Subcategory>(sortBy: [SortDescriptor(\.name)])
+        var subcategoriesDesc = FetchDescriptor<Subcategory>(sortBy: [SortDescriptor(\.name)])
+        subcategoriesDesc.fetchLimit = 500
         do {
             let fetched = try context.fetch(subcategoriesDesc)
             if fetched != allSubcategories { allSubcategories = fetched }
@@ -179,10 +292,11 @@ final class PanelViewModel {
             #endif
         }
 
-        let budgetsDesc = FetchDescriptor<Budget>(
+        var budgetsDesc = FetchDescriptor<Budget>(
             predicate: #Predicate<Budget> { $0.isActive },
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
+        budgetsDesc.fetchLimit = 50
         do {
             let fetched = try context.fetch(budgetsDesc)
             if fetched != budgets { budgets = fetched }
@@ -192,9 +306,10 @@ final class PanelViewModel {
             #endif
         }
 
-        let paymentsDesc = FetchDescriptor<ScheduledPayment>(
+        var paymentsDesc = FetchDescriptor<ScheduledPayment>(
             sortBy: [SortDescriptor(\.nextDueDate)]
         )
+        paymentsDesc.fetchLimit = 200
         do {
             let fetched = try context.fetch(paymentsDesc)
             if fetched != scheduledPayments { scheduledPayments = fetched }
@@ -204,9 +319,10 @@ final class PanelViewModel {
             #endif
         }
 
-        let draftsDesc = FetchDescriptor<InboxDraft>(
+        var draftsDesc = FetchDescriptor<InboxDraft>(
             predicate: #Predicate<InboxDraft> { $0.statusRaw == "pending" }
         )
+        draftsDesc.fetchLimit = 100
         do {
             let fetched = try context.fetch(draftsDesc)
             if fetched != pendingDrafts { pendingDrafts = fetched }
@@ -215,6 +331,16 @@ final class PanelViewModel {
             print("PanelViewModel: Error loading pending drafts: \(error)")
             #endif
         }
+
+        // Pre-compute transaction date range — O(1) since transactions are sorted by date desc
+        let newStart = transactions.last?.date ?? .now
+        let newEnd = transactions.first?.date ?? .now
+        if newStart != transactionDateRange.start || newEnd != transactionDateRange.end {
+            transactionDateRange = (start: newStart, end: newEnd)
+        }
+
+        // Pre-compute account balances (not period-dependent — only changes when transactions change)
+        calculateAccountBalances()
 
         // Load group balance summary for widget
         loadGroupSummary(context: context)
@@ -248,16 +374,56 @@ final class PanelViewModel {
         }
     }
 
-    var topSpendingCategories: [CategorySpendingSummary] = []
+    // MARK: - Widget Data (struct-backed — reduces observation surface)
+
+    var trendChart = PanelTrendData()
+    var categoriesWidget = PanelCategoriesData()
+    var subcategoriesWidget = PanelSubcategoriesData()
+    var needWidget = PanelNeedData()
+    var cashFlowWidget = PanelCashFlowData()
+    var budgetsWidget = PanelBudgetsData()
+    var exchangeRateWidget = PanelExchangeRateData()
+    var scheduledPaymentsWidget = PanelScheduledPaymentsData()
+
+    // Pre-computed account data — eliminates passing [TransactionItem] to AccountsCarouselView
+    private(set) var accountBalances: [PersistentIdentifier: Double] = [:]
+    private(set) var accountPeriodExpenses: [PersistentIdentifier: Double] = [:]
+
+    // Pre-computed transaction date range — eliminates iterating all transactions in body eval
+    private(set) var transactionDateRange: (start: Date, end: Date) = (.now, .now)
+
+    // Backward-compatible read-only accessors (do NOT create independent observers)
+    var topSpendingCategories: [CategorySpendingSummary] { categoriesWidget.topSpendingCategories }
+    var previousCategoriesTotalAmount: Double? { categoriesWidget.previousTotalAmount }
+    var topSubcategories: [SubcategorySpendingSummary] { subcategoriesWidget.topSubcategories }
+    var previousSubcategoriesTotalAmount: Double? { subcategoriesWidget.previousTotalAmount }
+    var needTrendPoints: [NeedTrendPoint] { needWidget.needTrendPoints }
+    var previousNeedTotalAmount: Double? { needWidget.previousTotalAmount }
+    var previousNeedAmounts: [SubcategoryNeed: Double] { needWidget.previousAmounts }
+    var cashFlowSummary: CashFlowSummary? { cashFlowWidget.cashFlowSummary }
+    var latestRecords: [TransactionItem] { _latestRecords }
+    var topBudgetSummaries: [BudgetSummary] { budgetsWidget.topBudgetSummaries }
+    var hasBudgetsButNoFavorites: Bool { budgetsWidget.hasBudgetsButNoFavorites }
+    var exchangeRateWidgetData: ExchangeRateWidgetData? { exchangeRateWidget.exchangeRateWidgetData }
+    var exchangeRateGrouping: TrendGrouping { exchangeRateWidget.exchangeRateGrouping }
+    var processedTrendPoints: [BarPoint] { trendChart.processedTrendPoints }
+    var rawTrendPoints: [BarPoint] { trendChart.rawTrendPoints }
+    var processedYDomain: ClosedRange<Double> { trendChart.processedYDomain }
+    var currentInterval: DateInterval { trendChart.currentInterval }
+    var currentPeriod: DetailPeriod { trendChart.currentPeriod }
+    var trendTotalIncome: Double { trendChart.trendTotalIncome }
+    var trendTotalExpense: Double { trendChart.trendTotalExpense }
+    var trendFinalBalance: Double { trendChart.trendFinalBalance }
+    var trendGrouping: TrendGrouping { trendChart.trendGrouping }
+    var dataTrendType: TrendType { trendChart.dataTrendType }
+    var currentBalance: Double { trendChart.currentBalance }
+    var cashFlowGrouping: TrendGrouping { cashFlowWidget.cashFlowGrouping }
+    var needGrouping: TrendGrouping { needWidget.needGrouping }
+
     var chartTransactions: [ChartTransaction] = []
 
-    // Previous period totals (for widget headers)
-    // These are the ACTUAL totals from the previous period, not derived from current items
-    var previousCategoriesTotalAmount: Double? = nil
-    var previousSubcategoriesTotalAmount: Double? = nil
-
-    // Subcategory Widget State
-    var topSubcategories: [SubcategorySpendingSummary] = []
+    // Stored separately — SwiftData model identity comparison may miss in-place mutations
+    private var _latestRecords: [TransactionItem] = []
     var subcategoriesWidgetFilter: PersistentIdentifier?
 
     var selectedSubcategoryIDs: Set<PersistentIdentifier> {
@@ -307,52 +473,25 @@ final class PanelViewModel {
         set { SessionState.shared.isExcludeMode = newValue }
     }
 
-    // Need Widget State
-    var needTrendPoints: [NeedTrendPoint] = []
-    var previousNeedTotalAmount: Double? = nil
-    var previousNeedAmounts: [SubcategoryNeed: Double] = [:]
-
-    // Cash Flow State
-    var cashFlowSummary: CashFlowSummary?
-
-    // Latest Records State
-    var latestRecords: [TransactionItem] = []
-
-    // Budgets Widget State
-    var topBudgetSummaries: [BudgetSummary] = []
-    var hasBudgetsButNoFavorites: Bool = false
+    // Need, CashFlow, LatestRecords, Budgets — now struct-backed (see computed accessors above)
 
     // Scheduled Payments Widget State
-    var scheduledPaymentsWidgetFilter: ScheduledPaymentsWidgetFilter = .all
+    var scheduledPaymentsWidgetFilter: ScheduledPaymentsWidgetFilter = .all {
+        didSet {
+            if oldValue != scheduledPaymentsWidgetFilter {
+                scheduleRecalculation(reload: false)
+            }
+        }
+    }
 
-    // MARK: - Exchange Rate Widget State
-    var exchangeRateWidgetData: ExchangeRateWidgetData?
-    var exchangeRateGrouping: TrendGrouping = .day
+    // ExchangeRate, Trend chart, KPI values — now struct-backed (see computed accessors above)
     /// Tracks the last period for which exchange rate was calculated (to avoid redundant recalculations)
     private var lastExchangeRatePeriod: DetailPeriod?
 
     /// Selected currencies to compare against the preferred currency (max 2).
     var selectedComparisonCurrencies: [CurrencyCode] = []
 
-    // MARK: - Processed Chart Data
     typealias BarPoint = Yala.BarPoint
-
-    var processedTrendPoints: [BarPoint] = []
-    /// Original unsmoothed points for hover display
-    var rawTrendPoints: [BarPoint] = []
-    var processedYDomain: ClosedRange<Double> = 0...100
-
-    // Stored interval - updated in batch with chart data to stay in sync
-    var currentInterval: DateInterval = DateInterval(start: Date.now, end: Date.now)
-
-    // Stored period - updated in batch with chart data to stay in sync
-    var currentPeriod: DetailPeriod = .thisYear
-
-    // KPI values for trends - from TrendDataProcessor for unified calculation
-    var trendTotalIncome: Double = 0
-    var trendTotalExpense: Double = 0
-    /// Actual final balance before smoothing - use for KPI instead of last smoothed point
-    var trendFinalBalance: Double = 0
 
     // Loading State - tracks when heavy calculations are in progress
     var isCalculating: Bool = false
@@ -577,6 +716,23 @@ final class PanelViewModel {
         }
     }
 
+    // MARK: - Navigation
+
+    /// Navigates to a Statistics detail tab, setting temporary tab if Statistics is hidden.
+    /// Moved from PanelView to eliminate closure parameters in child views.
+    func navigateToStatistics(_ detailTab: DetailViewTab) {
+        let json = UserDefaults.standard.string(forKey: TabBarConfiguration.storageKey)
+            ?? TabBarConfiguration.default.toJSON()
+        let isVisible = TabBarConfiguration.fromJSON(json).activeTabs.contains(.statistics)
+        if !isVisible { sessionState?.temporaryTab = .statistics }
+        sessionState?.navigateToDetail(detailTab)
+    }
+
+    /// Whether voice input can be used (requires active accounts and visible subcategories).
+    var canUseVoiceInput: Bool {
+        accounts.contains { !$0.isArchived } && allSubcategories.contains { $0.isVisible }
+    }
+
     // MARK: - Layout Logic
 
     // Note: computeLayoutRows is now handled by WidgetConfigManager
@@ -639,19 +795,11 @@ final class PanelViewModel {
         }
     }
 
-    // Trend State
-
-    // Restored Properties
+    // Trend State (standalone — not struct-backed because they're user-interactive)
     var balanceStatus: BalanceStatus = .unknown
     var historicalThreshold: Double = 0
-    var trendGrouping: TrendGrouping = .day
-    var cashFlowGrouping: TrendGrouping = .day  // Explicit grouping for Cash Flow widget
-    var needGrouping: TrendGrouping = .day  // Explicit grouping for Need widget
     var trendType: TrendType = .balance
-    /// Tracks the trendType for which current data was calculated.
-    /// Used to prevent rendering stale data with wrong colors during metric transitions.
-    var dataTrendType: TrendType = .balance
-    var focusedDate: Date? = nil  // Global Focus State
+    var focusedDate: Date? = nil
 
     /// Calculates trend data and status based on the current period, selected account, and selected category.
     /// Refactored for smooth UX - all calculations done first, then state updated in one batch.
@@ -718,33 +866,57 @@ final class PanelViewModel {
         let newPreviousNeedTotal = needResult.previousTotal
         let newPreviousNeedAmounts = needResult.previousAmounts
 
-        // 3. BATCH STATE UPDATE - Single render cycle
-        // Equality guards on ALL properties prevent unnecessary @Observable notifications.
-        // Without guards, every recalculation fires notifications even when data hasn't changed,
-        // causing cascading re-renders across all widgets.
+        // 3. BATCH STATE UPDATE — Atomic struct assignments collapse ~21 individual
+        // @Observable notifications into ~6 struct-level comparisons.
         enforceTrendLock(sessionState: sessionState)
 
-        if calcContext.trendGrouping != trendGrouping { self.trendGrouping = calcContext.trendGrouping }
-        if calcContext.cashFlowGrouping != cashFlowGrouping { self.cashFlowGrouping = calcContext.cashFlowGrouping }
-        if calcContext.needGrouping != needGrouping { self.needGrouping = calcContext.needGrouping }
-        if newTopSpendingCategories != topSpendingCategories { self.topSpendingCategories = newTopSpendingCategories }
-        if newPreviousCategoriesTotal != previousCategoriesTotalAmount { self.previousCategoriesTotalAmount = newPreviousCategoriesTotal }
-        if newTopSubcategories != topSubcategories { self.topSubcategories = newTopSubcategories }
-        if newPreviousSubcategoriesTotal != previousSubcategoriesTotalAmount { self.previousSubcategoriesTotalAmount = newPreviousSubcategoriesTotal }
-        if newCashFlowSummary != cashFlowSummary { self.cashFlowSummary = newCashFlowSummary }
-        if newLatestRecords != latestRecords { self.latestRecords = newLatestRecords }
-        if newNeedTrendPoints != needTrendPoints { self.needTrendPoints = newNeedTrendPoints }
-        if newPreviousNeedTotal != previousNeedTotalAmount { self.previousNeedTotalAmount = newPreviousNeedTotal }
-        if newPreviousNeedAmounts != previousNeedAmounts { self.previousNeedAmounts = newPreviousNeedAmounts }
-        if newProcessedData.points != processedTrendPoints { self.processedTrendPoints = newProcessedData.points }
-        if newProcessedData.rawPoints != rawTrendPoints { self.rawTrendPoints = newProcessedData.rawPoints }
-        if newProcessedData.yDomain != processedYDomain { self.processedYDomain = newProcessedData.yDomain }
-        if calcContext.effectiveInterval != currentInterval { self.currentInterval = calcContext.effectiveInterval }
-        if self.selectedPeriod != currentPeriod { self.currentPeriod = self.selectedPeriod }
-        if newTrendTotalIncome != trendTotalIncome { self.trendTotalIncome = newTrendTotalIncome }
-        if newTrendTotalExpense != trendTotalExpense { self.trendTotalExpense = newTrendTotalExpense }
-        if newTrendFinalBalance != trendFinalBalance { self.trendFinalBalance = newTrendFinalBalance }
-        if self.trendType != dataTrendType { self.dataTrendType = self.trendType }
+        let newBalance = displayedBalanceInDefaultCurrency(
+            accounts: accounts,
+            transactions: transactions,
+            defaultCurrencyCode: defaultCurrencyCode
+        )
+        let newTrend = PanelTrendData(
+            processedTrendPoints: newProcessedData.points,
+            rawTrendPoints: newProcessedData.rawPoints,
+            processedYDomain: newProcessedData.yDomain,
+            currentInterval: calcContext.effectiveInterval,
+            currentPeriod: self.selectedPeriod,
+            trendTotalIncome: newTrendTotalIncome,
+            trendTotalExpense: newTrendTotalExpense,
+            trendFinalBalance: newTrendFinalBalance,
+            trendGrouping: calcContext.trendGrouping,
+            dataTrendType: self.trendType,
+            currentBalance: newBalance
+        )
+        if newTrend != trendChart { trendChart = newTrend }
+
+        let newCategories = PanelCategoriesData(
+            topSpendingCategories: newTopSpendingCategories,
+            previousTotalAmount: newPreviousCategoriesTotal
+        )
+        if newCategories != categoriesWidget { categoriesWidget = newCategories }
+
+        let newSubcategories = PanelSubcategoriesData(
+            topSubcategories: newTopSubcategories,
+            previousTotalAmount: newPreviousSubcategoriesTotal
+        )
+        if newSubcategories != subcategoriesWidget { subcategoriesWidget = newSubcategories }
+
+        let newNeed = PanelNeedData(
+            needTrendPoints: newNeedTrendPoints,
+            previousTotalAmount: newPreviousNeedTotal,
+            previousAmounts: newPreviousNeedAmounts,
+            needGrouping: calcContext.needGrouping
+        )
+        if newNeed != needWidget { needWidget = newNeed }
+
+        let newCashFlow = PanelCashFlowData(
+            cashFlowSummary: newCashFlowSummary,
+            cashFlowGrouping: calcContext.cashFlowGrouping
+        )
+        if newCashFlow != cashFlowWidget { cashFlowWidget = newCashFlow }
+
+        if newLatestRecords != _latestRecords { _latestRecords = newLatestRecords }
 
         // 4. Exchange Rate Widget Data (conditional refresh)
         updateExchangeRateDataIfNeeded(defaultCurrencyCode: defaultCurrencyCode, context: context)
@@ -1339,6 +1511,19 @@ final class PanelViewModel {
         )
     }
 
+    /// Convenience for widget sections that don't have access to raw params
+    func toggleSubcategoryFilterFromPanel(_ subcategoryID: PersistentIdentifier) {
+        guard let sessionState, let context = modelContext else { return }
+        toggleSubcategoryFilter(
+            subcategoryID,
+            transactions: transactions,
+            accounts: accounts,
+            defaultCurrencyCode: defaultCurrencyCode,
+            context: context,
+            sessionState: sessionState
+        )
+    }
+
     func toggleNeedFilter(_ need: SubcategoryNeed) {
         if selectedNeed == need {
             selectedNeed = nil
@@ -1382,17 +1567,13 @@ final class PanelViewModel {
         let targetCurrencies = selectedComparisonCurrencies.filter { $0 != preferredCurrency }
 
         // Determine grouping based on period
-        switch selectedPeriod {
-        case .thisWeek, .last7Days:
-            exchangeRateGrouping = .day
-        case .thisMonth, .lastMonth, .last30Days:
-            exchangeRateGrouping = .week
-        default:
-            exchangeRateGrouping = .month
+        let newGrouping: TrendGrouping = switch selectedPeriod {
+        case .thisWeek, .last7Days: .day
+        case .thisMonth, .lastMonth, .last30Days: .week
+        default: .month
         }
 
         // For "All Time", use the actual stored data range instead of 10 years
-        // This prevents iterating through years of dates with no data
         let interval: DateInterval
         if selectedPeriod == .allTime {
             if let storedRange = exchangeRateService.getStoredDateRange(context: context) {
@@ -1408,11 +1589,14 @@ final class PanelViewModel {
         let latestRate = exchangeRateService.getLatestRate(context: context)
 
         guard let latestRate = latestRate else {
-            // No data available
-            exchangeRateWidgetData = ExchangeRateWidgetData(
-                preferredCurrency: preferredCurrencyCode,
-                errorMessage: L10n.ExchangeRate.loadError
+            let newER = PanelExchangeRateData(
+                exchangeRateWidgetData: ExchangeRateWidgetData(
+                    preferredCurrency: preferredCurrencyCode,
+                    errorMessage: L10n.ExchangeRate.loadError
+                ),
+                exchangeRateGrouping: newGrouping
             )
+            if newER != exchangeRateWidget { exchangeRateWidget = newER }
             return
         }
 
@@ -1433,18 +1617,22 @@ final class PanelViewModel {
         // Build chart points for selected comparison currencies only
         let chartPoints = ExchangeRateWidgetHelper.buildChartPoints(
             interval: interval,
-            grouping: exchangeRateGrouping,
+            grouping: newGrouping,
             preferredCurrency: preferredCurrencyCode,
             targetCurrencies: targetCurrencies.map { $0.rawValue },
             context: context
         )
 
-        exchangeRateWidgetData = ExchangeRateWidgetData(
-            preferredCurrency: preferredCurrencyCode,
-            currentRates: currentRates,
-            currentRatesDate: currentRatesDate,
-            chartPoints: chartPoints
+        let newER = PanelExchangeRateData(
+            exchangeRateWidgetData: ExchangeRateWidgetData(
+                preferredCurrency: preferredCurrencyCode,
+                currentRates: currentRates,
+                currentRatesDate: currentRatesDate,
+                chartPoints: chartPoints
+            ),
+            exchangeRateGrouping: newGrouping
         )
+        if newER != exchangeRateWidget { exchangeRateWidget = newER }
     }
 
     /// Updates the selected comparison currencies.
@@ -1467,7 +1655,6 @@ final class PanelViewModel {
         let hasBudgets = !budgets.isEmpty
         let favoriteBudgets = budgets.filter { $0.isFavorite }
         let newHasBudgetsButNoFavorites = hasBudgets && favoriteBudgets.isEmpty
-        if newHasBudgetsButNoFavorites != hasBudgetsButNoFavorites { hasBudgetsButNoFavorites = newHasBudgetsButNoFavorites }
 
         // Get budgets to display: favorites first (sorted by order), then fill with active non-favorites
         let sortedFavorites = favoriteBudgets.sorted { $0.favoriteOrder < $1.favoriteOrder }
@@ -1483,7 +1670,11 @@ final class PanelViewModel {
             )
         }
 
-        if summaries != topBudgetSummaries { topBudgetSummaries = summaries }
+        let newBudgets = PanelBudgetsData(
+            topBudgetSummaries: summaries,
+            hasBudgetsButNoFavorites: newHasBudgetsButNoFavorites
+        )
+        if newBudgets != budgetsWidget { budgetsWidget = newBudgets }
     }
 
     /// Calculate summary for a single budget
@@ -1659,6 +1850,339 @@ final class PanelViewModel {
     }
 
     /// Get display properties for budget
+
+    // MARK: - Recalculation (moved from PanelView)
+
+    /// Update default currency code — called from PanelView when @AppStorage changes
+    func updateDefaultCurrencyCode(_ code: String) {
+        defaultCurrencyCode = code
+    }
+
+    /// Set background state — suppresses recalculation to prevent 0x8BADF00D
+    func setBackground(_ value: Bool) {
+        isInBackground = value
+        if value {
+            recalculateTask?.cancel()
+            recalculateTask = nil
+            pendingReload = false
+        }
+    }
+
+    /// Cancel any pending recalculation
+    func cancelRecalculation() {
+        recalculateTask?.cancel()
+    }
+
+    /// Debounced recalculation (150ms) — coalesces rapid onChange cascades.
+    /// Does NOT reload from SwiftData — filter changes only need recalculation.
+    func recalculateData() {
+        scheduleRecalculation(reload: false)
+    }
+
+    // MARK: - Practice Cleanup
+
+    func deletePracticeItem(_ item: PracticeCleanupItem) {
+        guard let ctx = modelContext else { return }
+        do {
+            for pid in item.allPersistentIDs {
+                switch item.kind {
+                case .transaction: try deletePracticeModel(TransactionItem.self, id: pid, context: ctx)
+                case .draft: try deletePracticeModel(InboxDraft.self, id: pid, context: ctx)
+                case .budget: try deletePracticeModel(Budget.self, id: pid, context: ctx)
+                case .scheduledPayment: try deletePracticeModel(ScheduledPayment.self, id: pid, context: ctx)
+                }
+            }
+            try ctx.save()
+        } catch {
+            #if DEBUG
+            print("SetupChecklist: Error deleting practice item: \(error)")
+            #endif
+        }
+    }
+
+    private func deletePracticeModel<T: PersistentModel>(_ type: T.Type, id: PersistentIdentifier, context: ModelContext) throws {
+        let all = try context.fetch(FetchDescriptor<T>())
+        guard let match = all.first(where: { $0.persistentModelID == id }) else {
+            #if DEBUG
+            print("SetupChecklist: Practice \(T.self) not found — ID mismatch")
+            #endif
+            return
+        }
+        context.delete(match)
+    }
+
+    /// Debounced reload + recalculation — used when actual data may have changed
+    func reloadAndRecalculate() {
+        scheduleRecalculation(reload: true)
+    }
+
+    /// Shared debounce (150ms). `pendingReload` ensures a reload request isn't lost
+    /// if a subsequent calculate-only call arrives within the debounce window.
+    /// Guarded by isInBackground to prevent 0x8BADF00D during snapshot capture.
+    private func scheduleRecalculation(reload: Bool) {
+        guard !isInBackground else { return }
+        guard UIApplication.shared.applicationState == .active else { return }
+        if reload { pendingReload = true }
+        recalculateTask?.cancel()
+        recalculateTask = Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+            guard !Task.isCancelled else { return }
+            let shouldReload = pendingReload
+            pendingReload = false
+            if shouldReload {
+                loadData()
+                let currentOrder = UserDefaults.standard.string(forKey: "accountsSortOrderNames") ?? ""
+                let newOrder = ensureAccountsSortOrderConsistency(
+                    accounts: accounts,
+                    currentOrderRaw: currentOrder
+                )
+                if newOrder != currentOrder {
+                    PreferenceSyncService.shared.set(string: newOrder, forKey: "accountsSortOrderNames")
+                }
+            }
+            performCalculation()
+        }
+    }
+
+    /// Runs all widget calculations from cached data (no SwiftData fetch).
+    private func performCalculation() {
+        guard let sessionState, let context = modelContext else { return }
+        calculateTrendData(
+            accounts: accounts,
+            transactions: transactions,
+            defaultCurrencyCode: defaultCurrencyCode,
+            context: context,
+            sessionState: sessionState
+        )
+        calculateBudgetsWidget(
+            budgets: budgets,
+            transactions: transactions,
+            defaultCurrencyCode: defaultCurrencyCode,
+            excludedCategoryIDs: sessionState.isExcludeMode ? sessionState.selectedCategoryIDs : [],
+            excludedSubcategoryIDs: sessionState.isExcludeMode ? sessionState.selectedSubcategoryIDs : []
+        )
+        calculateAccountPeriodExpenses()
+        calculateScheduledPaymentsWidget()
+    }
+
+    /// Pre-computes total account balances (not period-dependent).
+    /// Called from loadData() — only when transactions actually change.
+    private func calculateAccountBalances() {
+        let batchBalances = AccountBalanceCalculator.batchCalculateBalances(
+            accounts: accounts,
+            transactions: transactions
+        )
+        let newBalances = batchBalances.mapValues { ($0 as NSDecimalNumber).doubleValue }
+        if newBalances != accountBalances { accountBalances = newBalances }
+    }
+
+    /// Pre-computes period-specific expenses per account (expenses-only mode).
+    /// Called from performCalculation() — recalculates on period/filter changes.
+    private func calculateAccountPeriodExpenses() {
+        let interval = panelDateInterval
+        var newExpenses: [PersistentIdentifier: Double] = [:]
+        for account in accounts {
+            newExpenses[account.persistentModelID] = 0
+        }
+        for transaction in transactions {
+            guard let account = transaction.account else { continue }
+            let accountID = account.persistentModelID
+            guard newExpenses[accountID] != nil else { continue }
+            guard interval.contains(transaction.date) else { continue }
+            guard transaction.balanceAdjustmentType == nil else { continue }
+            guard transaction.category?.isIncome == false else { continue }
+            newExpenses[accountID] = (newExpenses[accountID] ?? 0) + abs(transaction.amount)
+        }
+        if newExpenses != accountPeriodExpenses { accountPeriodExpenses = newExpenses }
+    }
+
+    // MARK: - Scheduled Payments Widget Calculation
+
+    /// Display month derived from selectedPeriod — mirrors logic previously in ScheduledPaymentsWidget.
+    private var scheduledPaymentsDisplayMonth: Date {
+        let calendar = Calendar.current
+        let now = Date.now
+        switch selectedPeriod {
+        case .thisWeek, .last7Days, .last30Days, .thisMonth:
+            return now
+        case .lastMonth:
+            return calendar.date(byAdding: .month, value: -1, to: now) ?? now
+        case .thisYear:
+            return now
+        case .lastYear:
+            return calendar.date(byAdding: .year, value: -1, to: now) ?? now
+        case .allTime:
+            return now
+        case .custom:
+            return customDateRange?.start ?? now
+        }
+    }
+
+    private func formatScheduledDueDate(days: Int, date: Date) -> String {
+        if days < 0 {
+            return String(format: L10n.Scheduled.Widget.daysAgo, abs(days))
+        } else if days == 0 {
+            return L10n.Date.today
+        } else if days == 1 {
+            return L10n.Scheduled.Widget.tomorrow
+        } else if days <= 7 {
+            return String(format: L10n.Scheduled.Widget.inDays, days)
+        } else {
+            return Self.shortDateFormatter.string(from: date)
+        }
+    }
+
+    /// Pre-computes all scheduled payments widget data from cached models.
+    /// Called from performCalculation() — runs outside the SwiftUI render pass.
+    private func calculateScheduledPaymentsWidget() {
+        guard let context = modelContext else { return }
+
+        let displayMonth = scheduledPaymentsDisplayMonth
+        let calendar = Calendar.current
+
+        // 1. Filter payments (replaces widget's filteredPayments computed property)
+        let filtered: [ScheduledPayment]
+        if let categoryFilter = scheduledPaymentsWidgetFilter.paymentCategoryFilter {
+            filtered = scheduledPayments.filter { $0.isActive && $0.paymentCategory == categoryFilter }
+        } else {
+            filtered = scheduledPayments.filter { $0.isActive }
+        }
+
+        // 2. Load paid amounts (moves from widget's .task(id:) to here)
+        let paidAmounts = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
+            for: filtered, month: displayMonth, context: context
+        )
+
+        // 3. Calculate monthly total (moves from widget's calculateMonthlyTotal())
+        var monthlyTotal: Double = 0
+        if calendar.dateInterval(of: .month, for: displayMonth) != nil {
+            let converter = currencyConverter
+            let expensePayments = filtered.filter { $0.transactionType != "income" }
+
+            for payment in expensePayments {
+                let occurrences = ScheduledPaymentDateCalculator.paymentDatesInMonth(
+                    params: payment.dateCalculatorParams, month: displayMonth
+                )
+                var remainingInfos = paidAmounts[payment.id.uuidString] ?? []
+
+                for date in occurrences.sorted() {
+                    let isSkipped = payment.isDateSkipped(date)
+                    let amount: Double
+                    let currency: String
+                    if !remainingInfos.isEmpty && !isSkipped {
+                        let info = remainingInfos.removeFirst()
+                        amount = info.amount
+                        currency = info.currencyCode
+                    } else if !isSkipped {
+                        amount = payment.amount
+                        currency = payment.currencyCode
+                    } else {
+                        continue
+                    }
+
+                    if currency != defaultCurrencyCode, amount > 0 {
+                        let converted = converter.convertWithLatestRate(
+                            Decimal(amount),
+                            from: currency,
+                            to: defaultCurrencyCode,
+                            context: context
+                        )
+                        monthlyTotal += NSDecimalNumber(decimal: converted).doubleValue
+                    } else {
+                        monthlyTotal += amount
+                    }
+                }
+            }
+        }
+
+        // 4. Build upcoming payments list (moves from widget's getUpcomingPayments())
+        let today = calendar.startOfDay(for: Date.now)
+        var listItems: [ScheduledPaymentListItem] = []
+
+        for payment in filtered {
+            let dates = ScheduledPaymentDateCalculator.paymentDatesInMonth(
+                params: payment.dateCalculatorParams, month: displayMonth
+            )
+            let paidCount = paidAmounts[payment.id.uuidString]?.count ?? 0
+            var remainingPaid = paidCount
+
+            let icon = payment.subcategory?.iconName
+                ?? payment.subcategory?.category?.iconName
+                ?? (payment.paymentCategory == PaymentCategory.subscription.rawValue
+                    ? PaymentCategory.subscription.iconName
+                    : PaymentCategory.recurring.iconName)
+            let color = payment.subcategory?.colorHex
+                ?? payment.subcategory?.category?.colorHex
+                ?? AppConstants.defaultColorHex
+
+            for date in dates.sorted() {
+                let dueDate = calendar.startOfDay(for: date)
+                let days = calendar.dateComponents([.day], from: today, to: dueDate).day ?? 0
+                let dueStatus: DueStatus = days < 0 ? .past : (days == 0 ? .today : .upcoming)
+                let isSkipped = payment.isDateSkipped(date)
+                let isPaid = remainingPaid > 0 && !isSkipped
+                if isPaid { remainingPaid -= 1 }
+
+                listItems.append(ScheduledPaymentListItem(
+                    id: "\(payment.persistentModelID)-\(date.timeIntervalSince1970)",
+                    name: payment.name,
+                    amount: payment.amount,
+                    currencyCode: payment.currencyCode,
+                    isIncome: payment.transactionType == "income",
+                    isVariableAmount: payment.isVariableAmount,
+                    icon: icon,
+                    color: color,
+                    dueDate: dueDate,
+                    dueStatus: dueStatus,
+                    dueDateLabel: formatScheduledDueDate(days: days, date: date),
+                    isPaid: isPaid,
+                    isSkipped: isSkipped
+                ))
+            }
+        }
+
+        // Filter to pending only, sort by date, limit to 3
+        let upcomingPayments = Array(
+            listItems
+                .filter { !$0.isPaid && !$0.isSkipped }
+                .sorted { $0.dueDate < $1.dueDate }
+                .prefix(3)
+        )
+
+        // 5. Build calendar paymentsByDay (moves from widget's calendarGrid)
+        var paymentsByDay: [Int: [ScheduledPaymentCalendarEntry]] = [:]
+        for payment in filtered {
+            let dates = ScheduledPaymentDateCalculator.paymentDatesInMonth(
+                params: payment.dateCalculatorParams, month: displayMonth
+            ).sorted()
+            let paidCount = paidAmounts[payment.id.uuidString]?.count ?? 0
+            var remainingPaid = paidCount
+
+            for date in dates {
+                let day = calendar.component(.day, from: date)
+                let isSkipped = payment.isDateSkipped(date)
+                let isPaid = remainingPaid > 0 && !isSkipped
+                if isPaid { remainingPaid -= 1 }
+                paymentsByDay[day, default: []].append(ScheduledPaymentCalendarEntry(
+                    id: "\(payment.persistentModelID)-\(date.timeIntervalSince1970)",
+                    name: payment.name,
+                    isPaid: isPaid,
+                    isSkipped: isSkipped
+                ))
+            }
+        }
+
+        // 6. Assemble and compare
+        let newData = PanelScheduledPaymentsData(
+            monthlyTotal: monthlyTotal,
+            activeCount: filtered.count,
+            displayMonth: displayMonth,
+            periodLabel: Self.monthYearFormatter.string(from: displayMonth).capitalized,
+            upcomingPayments: upcomingPayments,
+            paymentsByDay: paymentsByDay
+        )
+        if newData != scheduledPaymentsWidget { scheduledPaymentsWidget = newData }
+    }
 }
 
 // MARK: - Calendar Extension for Budget Calculations

@@ -34,28 +34,28 @@ enum ScheduledPaymentPaidStatusHelper {
 
         var result: [String: [PaidOccurrenceInfo]] = [:]
         let paymentIDs = Set(payments.map { $0.id.uuidString })
-        var countedTransactionIDs: Set<PersistentIdentifier> = []
+        let monthStart = monthInterval.start
+        let monthEnd = monthInterval.end
+        var countedPairs: Set<String> = []
 
-        // Query 1: InboxDrafts approved with sourceScheduledPaymentID
+        // Query 1: InboxDrafts approved with sourceScheduledPaymentID (filtered by month)
         do {
             var draftDescriptor = FetchDescriptor<InboxDraft>(
                 predicate: #Predicate<InboxDraft> { draft in
-                    draft.statusRaw == "approved" && draft.sourceScheduledPaymentID != nil
+                    draft.statusRaw == "approved"
+                        && draft.sourceScheduledPaymentID != nil
+                        && draft.createdAt >= monthStart && draft.createdAt < monthEnd
                 }
             )
-            draftDescriptor.propertiesToFetch = [\.sourceScheduledPaymentID, \.date, \.amount]
+            draftDescriptor.propertiesToFetch = [\.sourceScheduledPaymentID, \.date, \.amount, \.createdAt, \.cachedCurrencyCode]
             let approvedDrafts = try context.fetch(draftDescriptor)
 
             for draft in approvedDrafts {
                 guard let spID = draft.sourceScheduledPaymentID, paymentIDs.contains(spID) else { continue }
-                let draftDate = draft.approvedTransaction?.date ?? draft.date ?? draft.createdAt
-                if draftDate >= monthInterval.start && draftDate < monthInterval.end {
-                    // Prefer real transaction amount; fallback to draft amount
-                    let realAmount = draft.approvedTransaction.map { abs($0.amount) }
-                        ?? draft.amount.map { abs($0) }
-                    let realCurrency = draft.approvedTransaction?.currencyCode
-                        ?? draft.cachedCurrencyCode
-                        ?? "USD"
+                let draftDate = draft.date ?? draft.createdAt
+                if draftDate >= monthStart && draftDate < monthEnd {
+                    let realAmount = draft.amount.map { abs($0) }
+                    let realCurrency = draft.cachedCurrencyCode ?? "USD"
                     #if DEBUG
                     if realAmount == nil {
                         print("ScheduledPaymentPaidStatusHelper: Approved draft has no amount — using 0 for payment \(spID)")
@@ -66,9 +66,9 @@ enum ScheduledPaymentPaidStatusHelper {
                         currencyCode: realCurrency,
                         date: draftDate
                     ))
-                    if let tx = draft.approvedTransaction {
-                        countedTransactionIDs.insert(tx.persistentModelID)
-                    }
+                    // Dedup key: spID + day-level date (avoids relationship access)
+                    let dayKey = calendar.startOfDay(for: draftDate)
+                    countedPairs.insert("\(spID)_\(dayKey.timeIntervalSince1970)")
                 }
             }
         } catch {
@@ -77,26 +77,27 @@ enum ScheduledPaymentPaidStatusHelper {
             #endif
         }
 
-        // Query 2: TransactionItems with scheduledPaymentID (skip already counted from drafts)
+        // Query 2: TransactionItems with scheduledPaymentID (filtered by month, skip already counted from drafts)
         do {
             var txDescriptor = FetchDescriptor<TransactionItem>(
                 predicate: #Predicate<TransactionItem> { tx in
                     tx.scheduledPaymentID != nil
+                        && tx.date >= monthStart && tx.date < monthEnd
                 }
             )
             txDescriptor.propertiesToFetch = [\.scheduledPaymentID, \.date, \.amount, \.currencyCode]
             let linkedTransactions = try context.fetch(txDescriptor)
 
             for tx in linkedTransactions {
-                guard !countedTransactionIDs.contains(tx.persistentModelID) else { continue }
                 guard let spID = tx.scheduledPaymentID, paymentIDs.contains(spID) else { continue }
-                if tx.date >= monthInterval.start && tx.date < monthInterval.end {
-                    result[spID, default: []].append(PaidOccurrenceInfo(
-                        amount: abs(tx.amount),
-                        currencyCode: tx.currencyCode,
-                        date: tx.date
-                    ))
-                }
+                let dayKey = calendar.startOfDay(for: tx.date)
+                let pairKey = "\(spID)_\(dayKey.timeIntervalSince1970)"
+                guard !countedPairs.contains(pairKey) else { continue }
+                result[spID, default: []].append(PaidOccurrenceInfo(
+                    amount: abs(tx.amount),
+                    currencyCode: tx.currencyCode,
+                    date: tx.date
+                ))
             }
         } catch {
             #if DEBUG
