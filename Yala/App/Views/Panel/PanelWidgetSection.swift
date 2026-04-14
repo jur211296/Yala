@@ -323,10 +323,8 @@ private struct PanelScheduledPaymentsSection: View {
 
     var body: some View {
         ScheduledPaymentsWidget(
-            payments: viewModel.scheduledPayments,
+            data: viewModel.scheduledPaymentsWidget,
             currencyCode: currencyCode,
-            period: viewModel.selectedPeriod,
-            customDateRange: sessionState.customDateRange,
             mode: mode,
             filter: $viewModel.scheduledPaymentsWidgetFilter,
             onShowMore: { sessionState.navigateToScheduledPayments() }

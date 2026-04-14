@@ -52,6 +52,38 @@ struct PanelExchangeRateData: Equatable {
     var exchangeRateGrouping: TrendGrouping = .day
 }
 
+struct ScheduledPaymentListItem: Equatable, Identifiable {
+    let id: String
+    let name: String
+    let amount: Double
+    let currencyCode: String
+    let isIncome: Bool
+    let isVariableAmount: Bool
+    let icon: String
+    let color: String
+    let dueDate: Date
+    let dueStatus: DueStatus
+    let dueDateLabel: String
+    let isPaid: Bool
+    let isSkipped: Bool
+}
+
+struct ScheduledPaymentCalendarEntry: Equatable, Identifiable {
+    let id: String
+    let name: String
+    let isPaid: Bool
+    let isSkipped: Bool
+}
+
+struct PanelScheduledPaymentsData: Equatable {
+    var monthlyTotal: Double = 0
+    var activeCount: Int = 0
+    var displayMonth: Date = .now
+    var periodLabel: String = ""
+    var upcomingPayments: [ScheduledPaymentListItem] = []
+    var paymentsByDay: [Int: [ScheduledPaymentCalendarEntry]] = [:]
+}
+
 @MainActor
 @Observable
 final class PanelViewModel {
@@ -64,6 +96,18 @@ final class PanelViewModel {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
         f.timeZone = TimeZone(identifier: "UTC")
+        return f
+    }()
+
+    private static let monthYearFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMMM yyyy"
+        return f
+    }()
+
+    private static let shortDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "d MMM"
         return f
     }()
 
@@ -304,6 +348,7 @@ final class PanelViewModel {
     var cashFlowWidget = PanelCashFlowData()
     var budgetsWidget = PanelBudgetsData()
     var exchangeRateWidget = PanelExchangeRateData()
+    var scheduledPaymentsWidget = PanelScheduledPaymentsData()
 
     // Pre-computed account data — eliminates passing [TransactionItem] to AccountsCarouselView
     private(set) var accountBalances: [PersistentIdentifier: Double] = [:]
@@ -396,7 +441,13 @@ final class PanelViewModel {
     // Need, CashFlow, LatestRecords, Budgets — now struct-backed (see computed accessors above)
 
     // Scheduled Payments Widget State
-    var scheduledPaymentsWidgetFilter: ScheduledPaymentsWidgetFilter = .all
+    var scheduledPaymentsWidgetFilter: ScheduledPaymentsWidgetFilter = .all {
+        didSet {
+            if oldValue != scheduledPaymentsWidgetFilter {
+                scheduleRecalculation(reload: false)
+            }
+        }
+    }
 
     // ExchangeRate, Trend chart, KPI values — now struct-backed (see computed accessors above)
     /// Tracks the last period for which exchange rate was calculated (to avoid redundant recalculations)
@@ -1876,6 +1927,7 @@ final class PanelViewModel {
             excludedSubcategoryIDs: sessionState.isExcludeMode ? sessionState.selectedSubcategoryIDs : []
         )
         calculateAccountPeriodExpenses()
+        calculateScheduledPaymentsWidget()
     }
 
     /// Pre-computes total account balances (not period-dependent).
@@ -1907,6 +1959,194 @@ final class PanelViewModel {
             newExpenses[accountID] = (newExpenses[accountID] ?? 0) + abs(transaction.amount)
         }
         if newExpenses != accountPeriodExpenses { accountPeriodExpenses = newExpenses }
+    }
+
+    // MARK: - Scheduled Payments Widget Calculation
+
+    /// Display month derived from selectedPeriod — mirrors logic previously in ScheduledPaymentsWidget.
+    private var scheduledPaymentsDisplayMonth: Date {
+        let calendar = Calendar.current
+        let now = Date.now
+        switch selectedPeriod {
+        case .thisWeek, .last7Days, .last30Days, .thisMonth:
+            return now
+        case .lastMonth:
+            return calendar.date(byAdding: .month, value: -1, to: now) ?? now
+        case .thisYear:
+            return now
+        case .lastYear:
+            return calendar.date(byAdding: .year, value: -1, to: now) ?? now
+        case .allTime:
+            return now
+        case .custom:
+            return customDateRange?.start ?? now
+        }
+    }
+
+    private func formatScheduledDueDate(days: Int, date: Date) -> String {
+        if days < 0 {
+            return String(format: L10n.Scheduled.Widget.daysAgo, abs(days))
+        } else if days == 0 {
+            return L10n.Date.today
+        } else if days == 1 {
+            return L10n.Scheduled.Widget.tomorrow
+        } else if days <= 7 {
+            return String(format: L10n.Scheduled.Widget.inDays, days)
+        } else {
+            return Self.shortDateFormatter.string(from: date)
+        }
+    }
+
+    /// Pre-computes all scheduled payments widget data from cached models.
+    /// Called from performCalculation() — runs outside the SwiftUI render pass.
+    private func calculateScheduledPaymentsWidget() {
+        guard let context = modelContext else { return }
+
+        let displayMonth = scheduledPaymentsDisplayMonth
+        let calendar = Calendar.current
+
+        // 1. Filter payments (replaces widget's filteredPayments computed property)
+        let filtered: [ScheduledPayment]
+        if let categoryFilter = scheduledPaymentsWidgetFilter.paymentCategoryFilter {
+            filtered = scheduledPayments.filter { $0.isActive && $0.paymentCategory == categoryFilter }
+        } else {
+            filtered = scheduledPayments.filter { $0.isActive }
+        }
+
+        // 2. Load paid amounts (moves from widget's .task(id:) to here)
+        let paidAmounts = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
+            for: filtered, month: displayMonth, context: context
+        )
+
+        // 3. Calculate monthly total (moves from widget's calculateMonthlyTotal())
+        var monthlyTotal: Double = 0
+        if calendar.dateInterval(of: .month, for: displayMonth) != nil {
+            let converter = currencyConverter
+            let expensePayments = filtered.filter { $0.transactionType != "income" }
+
+            for payment in expensePayments {
+                let occurrences = ScheduledPaymentDateCalculator.paymentDatesInMonth(
+                    params: payment.dateCalculatorParams, month: displayMonth
+                )
+                var remainingInfos = paidAmounts[payment.id.uuidString] ?? []
+
+                for date in occurrences.sorted() {
+                    let isSkipped = payment.isDateSkipped(date)
+                    let amount: Double
+                    let currency: String
+                    if !remainingInfos.isEmpty && !isSkipped {
+                        let info = remainingInfos.removeFirst()
+                        amount = info.amount
+                        currency = info.currencyCode
+                    } else if !isSkipped {
+                        amount = payment.amount
+                        currency = payment.currencyCode
+                    } else {
+                        continue
+                    }
+
+                    if currency != defaultCurrencyCode, amount > 0 {
+                        let converted = converter.convertWithLatestRate(
+                            Decimal(amount),
+                            from: currency,
+                            to: defaultCurrencyCode,
+                            context: context
+                        )
+                        monthlyTotal += NSDecimalNumber(decimal: converted).doubleValue
+                    } else {
+                        monthlyTotal += amount
+                    }
+                }
+            }
+        }
+
+        // 4. Build upcoming payments list (moves from widget's getUpcomingPayments())
+        let today = calendar.startOfDay(for: Date.now)
+        var listItems: [ScheduledPaymentListItem] = []
+
+        for payment in filtered {
+            let dates = ScheduledPaymentDateCalculator.paymentDatesInMonth(
+                params: payment.dateCalculatorParams, month: displayMonth
+            )
+            let paidCount = paidAmounts[payment.id.uuidString]?.count ?? 0
+            var remainingPaid = paidCount
+
+            let icon = payment.subcategory?.iconName
+                ?? payment.subcategory?.category?.iconName
+                ?? (payment.paymentCategory == PaymentCategory.subscription.rawValue
+                    ? PaymentCategory.subscription.iconName
+                    : PaymentCategory.recurring.iconName)
+            let color = payment.subcategory?.colorHex
+                ?? payment.subcategory?.category?.colorHex
+                ?? AppConstants.defaultColorHex
+
+            for date in dates.sorted() {
+                let dueDate = calendar.startOfDay(for: date)
+                let days = calendar.dateComponents([.day], from: today, to: dueDate).day ?? 0
+                let dueStatus: DueStatus = days < 0 ? .past : (days == 0 ? .today : .upcoming)
+                let isSkipped = payment.isDateSkipped(date)
+                let isPaid = remainingPaid > 0 && !isSkipped
+                if isPaid { remainingPaid -= 1 }
+
+                listItems.append(ScheduledPaymentListItem(
+                    id: "\(payment.persistentModelID)-\(date.timeIntervalSince1970)",
+                    name: payment.name,
+                    amount: payment.amount,
+                    currencyCode: payment.currencyCode,
+                    isIncome: payment.transactionType == "income",
+                    isVariableAmount: payment.isVariableAmount,
+                    icon: icon,
+                    color: color,
+                    dueDate: dueDate,
+                    dueStatus: dueStatus,
+                    dueDateLabel: formatScheduledDueDate(days: days, date: date),
+                    isPaid: isPaid,
+                    isSkipped: isSkipped
+                ))
+            }
+        }
+
+        // Filter to pending only, sort by date, limit to 3
+        let upcomingPayments = Array(
+            listItems
+                .filter { !$0.isPaid && !$0.isSkipped }
+                .sorted { $0.dueDate < $1.dueDate }
+                .prefix(3)
+        )
+
+        // 5. Build calendar paymentsByDay (moves from widget's calendarGrid)
+        var paymentsByDay: [Int: [ScheduledPaymentCalendarEntry]] = [:]
+        for payment in filtered {
+            let dates = ScheduledPaymentDateCalculator.paymentDatesInMonth(
+                params: payment.dateCalculatorParams, month: displayMonth
+            ).sorted()
+            let paidCount = paidAmounts[payment.id.uuidString]?.count ?? 0
+            var remainingPaid = paidCount
+
+            for date in dates {
+                let day = calendar.component(.day, from: date)
+                let isSkipped = payment.isDateSkipped(date)
+                let isPaid = remainingPaid > 0 && !isSkipped
+                if isPaid { remainingPaid -= 1 }
+                paymentsByDay[day, default: []].append(ScheduledPaymentCalendarEntry(
+                    id: "\(payment.persistentModelID)-\(date.timeIntervalSince1970)",
+                    name: payment.name,
+                    isPaid: isPaid,
+                    isSkipped: isSkipped
+                ))
+            }
+        }
+
+        // 6. Assemble and compare
+        let newData = PanelScheduledPaymentsData(
+            monthlyTotal: monthlyTotal,
+            activeCount: filtered.count,
+            displayMonth: displayMonth,
+            periodLabel: Self.monthYearFormatter.string(from: displayMonth).capitalized,
+            upcomingPayments: upcomingPayments,
+            paymentsByDay: paymentsByDay
+        )
+        if newData != scheduledPaymentsWidget { scheduledPaymentsWidget = newData }
     }
 }
 
