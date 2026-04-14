@@ -121,6 +121,7 @@ enum AppTheme: Int, CaseIterable, Identifiable {
     case teal = 5
     case minimalist = 6
     case translucent = 7
+    case liquidGlass = 8
 
     var id: Int { rawValue }
 
@@ -134,6 +135,7 @@ enum AppTheme: Int, CaseIterable, Identifiable {
         case .teal: return L10n.Settings.themeTeal
         case .minimalist: return L10n.Settings.themeMinimalist
         case .translucent: return L10n.Settings.themeTranslucent
+        case .liquidGlass: return L10n.Settings.themeLiquidGlass
         }
     }
 
@@ -141,7 +143,7 @@ enum AppTheme: Int, CaseIterable, Identifiable {
         switch self {
         case .system: return nil
         case .light: return .light
-        case .dark, .indigo, .rosa, .teal, .minimalist, .translucent: return .dark
+        case .dark, .indigo, .rosa, .teal, .minimalist, .translucent, .liquidGlass: return .dark
         }
     }
 
@@ -155,13 +157,20 @@ enum AppTheme: Int, CaseIterable, Identifiable {
         case .teal: return .teal
         case .minimalist: return .minimalist
         case .translucent: return .translucent
+        case .liquidGlass: return .liquidGlass
         }
     }
+
+    /// Orden para la grilla de selección de tema.
+    /// liquidGlass primero como tema estrella; el rawValue no cambia.
+    static let displayOrder: [AppTheme] = [
+        .liquidGlass, .system, .light, .dark, .indigo, .rosa, .teal, .minimalist, .translucent
+    ]
 
     /// Whether this theme requires PRO subscription
     var isPro: Bool {
         switch self {
-        case .system, .light, .dark: return false
+        case .system, .light, .dark, .liquidGlass: return false
         case .indigo, .rosa, .teal, .minimalist, .translucent: return true
         }
     }

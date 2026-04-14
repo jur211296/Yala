@@ -40,9 +40,13 @@ enum TranslucentVariant: Int, CaseIterable, Identifiable {
 final class ThemeManager {
 
     /// The user's persisted theme choice (stored property so @Observable tracks it)
-    var userChoice: AppTheme = AppTheme(
-        rawValue: UserDefaults.standard.integer(forKey: "userTheme")
-    ) ?? .system {
+    var userChoice: AppTheme = {
+        let defaults = UserDefaults.standard
+        if defaults.object(forKey: "userTheme") == nil {
+            return .liquidGlass
+        }
+        return AppTheme(rawValue: defaults.integer(forKey: "userTheme")) ?? .liquidGlass
+    }() {
         didSet {
             UserDefaults.standard.set(userChoice.rawValue, forKey: "userTheme")
         }
@@ -59,7 +63,7 @@ final class ThemeManager {
 
     /// Resets theme to factory defaults (used after data wipe)
     func resetToDefaults() {
-        userChoice = .system
+        userChoice = .liquidGlass
         translucentVariant = .indigo
     }
 
@@ -89,6 +93,8 @@ final class ThemeManager {
             case .rosa: return .translucentRosa
             case .teal: return .translucentTeal
             }
+        case .liquidGlass:
+            return .liquidGlass
         }
     }
 }

@@ -2047,6 +2047,7 @@ enum L10n {
         static var themeTeal: String { ls("settings.theme.teal", comment: "") }
         static var themeMinimalist: String { ls("settings.theme.minimalist", comment: "") }
         static var themeTranslucent: String { ls("settings.theme.translucent", comment: "") }
+        static var themeLiquidGlass: String { ls("settings.theme.liquidGlass", comment: "") }
         static var defaultCurrency: String {
             ls("settings.defaultCurrency", comment: "")
         }

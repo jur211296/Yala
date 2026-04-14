@@ -490,11 +490,11 @@ final class AppBootstrapper {
     private func resetProThemeIfNeeded() {
         guard !FeatureGateService.shared.isProUser else { return }
 
-        let currentTheme = AppTheme(rawValue: UserDefaults.standard.integer(forKey: "userTheme")) ?? .system
+        let currentTheme = AppTheme(rawValue: UserDefaults.standard.integer(forKey: "userTheme")) ?? .liquidGlass
         if currentTheme.isPro {
-            UserDefaults.standard.set(AppTheme.system.rawValue, forKey: "userTheme")
+            UserDefaults.standard.set(AppTheme.liquidGlass.rawValue, forKey: "userTheme")
             #if DEBUG
-            print("AppBootstrapper: Reset Pro theme '\(currentTheme.label)' to System")
+            print("AppBootstrapper: Reset Pro theme '\(currentTheme.label)' to Liquid Glass")
             #endif
         }
     }

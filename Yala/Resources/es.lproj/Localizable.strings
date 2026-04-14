@@ -380,6 +380,7 @@
 "settings.theme.teal" = "Teal";
 "settings.theme.minimalist" = "Minimalista";
 "settings.theme.translucent" = "Traslúcido";
+"settings.theme.liquidGlass" = "Liquid Glass";
 "settings.defaultCurrency" = "Moneda predeterminada";
 "settings.currentIcon" = "Ícono actual";
 "settings.resetAllData" = "Vaciar todos tus datos";
