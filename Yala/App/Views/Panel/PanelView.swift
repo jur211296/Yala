@@ -24,6 +24,7 @@ struct PanelView: View {
 
     let viewModel: PanelViewModel
     @Binding var sheets: PanelSheetState
+    @Binding var showFABMenu: Bool
 
     /// Periodic banner visibility
     @State private var showPeriodicBanner = false
@@ -37,9 +38,6 @@ struct PanelView: View {
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
     @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
     @AppStorage("showSiriTip") private var showSiriTip: Bool = true
-
-    /// FAB menu expanded state
-    @State private var showFABMenu = false
 
     /// Coach mark: Pro tour (Phase 2)
     @State private var showProFabTour = false
@@ -218,25 +216,6 @@ struct PanelView: View {
             viewModel.updateDefaultCurrencyCode(newValue)
             viewModel.recalculateData()
         }
-        .modifier(
-            PanelDataObservers(
-                viewModel: viewModel,
-                sessionState: sessionState,
-                showFABMenu: $showFABMenu
-            )
-        )
-        .modifier(
-            PanelSheetTriggers(
-                sessionState: sessionState,
-                sheets: $sheets
-            )
-        )
-        .modifier(
-            PanelSessionObservers(
-                viewModel: viewModel,
-                sessionState: sessionState
-            )
-        )
     }
 
     private var mainContent: some View {
