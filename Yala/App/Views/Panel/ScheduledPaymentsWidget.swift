@@ -30,6 +30,12 @@ struct ScheduledPaymentsWidget: View {
     /// Cached paid amounts to avoid N+1 SwiftData queries per render
     @State private var paidAmounts: [String: [PaidOccurrenceInfo]] = [:]
 
+    /// Combined key for .task(id:) — triggers re-fetch when month or filter changes
+    private struct PaidAmountsKey: Equatable {
+        let month: Date
+        let filter: ScheduledPaymentsWidgetFilter
+    }
+
     /// Computed month based on period selection (intelligent mapping)
     private var displayMonth: Date {
         let calendar = Calendar.current
@@ -81,9 +87,11 @@ struct ScheduledPaymentsWidget: View {
                 .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
-        .onAppear { paidAmounts = loadPaidAmounts(for: filteredPayments, month: displayMonth) }
-        .onChange(of: displayMonth) { paidAmounts = loadPaidAmounts(for: filteredPayments, month: displayMonth) }
-        .onChange(of: filter) { paidAmounts = loadPaidAmounts(for: filteredPayments, month: displayMonth) }
+        .task(id: PaidAmountsKey(month: displayMonth, filter: filter)) {
+            paidAmounts = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
+                for: filteredPayments, month: displayMonth, context: modelContext
+            )
+        }
     }
 
     // MARK: - Filtered Payments
@@ -93,12 +101,6 @@ struct ScheduledPaymentsWidget: View {
             return payments.filter { $0.isActive }
         }
         return payments.filter { $0.isActive && $0.paymentCategory == categoryFilter }
-    }
-
-    // MARK: - Paid Status
-
-    private func loadPaidAmounts(for payments: [ScheduledPayment], month: Date) -> [String: [PaidOccurrenceInfo]] {
-        ScheduledPaymentPaidStatusHelper.loadPaidAmounts(for: payments, month: month, context: modelContext)
     }
 
     // MARK: - Header
