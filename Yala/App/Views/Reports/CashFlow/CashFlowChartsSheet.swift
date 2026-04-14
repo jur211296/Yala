@@ -245,7 +245,7 @@ struct CashFlowChartsSheet: View {
     }
 
     private var projectionYDomain: ClosedRange<Double> {
-        let values = projection.months.map(\.accumulatedBalance)
+        let values = projection.months.compactMap(\.accumulatedBalance)
         let minVal = min(values.min() ?? 0, 0)
         let maxVal = values.max() ?? 0
         let headroom = max(abs(maxVal - minVal), 1) * 0.1
@@ -275,10 +275,10 @@ struct CashFlowChartsSheet: View {
         chartCard(
             title: L10n.CashFlowPlan.chartProjection,
             subtitle: L10n.CashFlowPlan.chartProjectionSubtitle,
-            kpiValue: YalaFormatter.currency(value: projection.months.last?.accumulatedBalance ?? 0, currencyCode: currencyCode)
+            kpiValue: YalaFormatter.currency(value: projection.months.last(where: { $0.accumulatedBalance != nil })?.accumulatedBalance ?? 0, currencyCode: currencyCode)
         ) {
             let today = Calendar.current.startOfDay(for: Date.now)
-            let data = projection.months
+            let data = projection.months.filter { $0.accumulatedBalance != nil }
 
             let pastPoints = data.filter { $0.isPast || $0.isCurrent }
             let futurePoints = data.filter { !$0.isPast } // current + future for connection
@@ -310,7 +310,7 @@ struct CashFlowChartsSheet: View {
                     AreaMark(
                         x: .value("Month", month.date),
                         yStart: .value("Base", yBase),
-                        yEnd: .value("Balance", month.accumulatedBalance)
+                        yEnd: .value("Balance", month.accumulatedBalance ?? 0)
                     )
                     .interpolationMethod(.monotone)
                     .foregroundStyle(areaGradient)
@@ -320,7 +320,7 @@ struct CashFlowChartsSheet: View {
                 ForEach(pastPoints, id: \.monthKey) { month in
                     LineMark(
                         x: .value("Month", month.date),
-                        y: .value("Balance", month.accumulatedBalance)
+                        y: .value("Balance", month.accumulatedBalance ?? 0)
                     )
                     .interpolationMethod(.monotone)
                     .foregroundStyle(by: .value("Period", "actual"))
@@ -328,7 +328,7 @@ struct CashFlowChartsSheet: View {
 
                     PointMark(
                         x: .value("Month", month.date),
-                        y: .value("Balance", month.accumulatedBalance)
+                        y: .value("Balance", month.accumulatedBalance ?? 0)
                     )
                     .foregroundStyle(primaryLineColor)
                     .symbolSize(20)
@@ -337,11 +337,11 @@ struct CashFlowChartsSheet: View {
                     if labelMonthKeys.contains(month.monthKey) {
                         PointMark(
                             x: .value("Month", month.date),
-                            y: .value("Balance", month.accumulatedBalance)
+                            y: .value("Balance", month.accumulatedBalance ?? 0)
                         )
                         .symbolSize(0)
-                        .annotation(position: month.accumulatedBalance > midY ? .bottom : .top, spacing: DS.Spacing.xs) {
-                            dataLabel(month.accumulatedBalance)
+                        .annotation(position: month.accumulatedBalance ?? 0 > midY ? .bottom : .top, spacing: DS.Spacing.xs) {
+                            dataLabel(month.accumulatedBalance ?? 0)
                         }
                     }
                 }
@@ -350,7 +350,7 @@ struct CashFlowChartsSheet: View {
                 ForEach(futurePoints, id: \.monthKey) { month in
                     LineMark(
                         x: .value("Month", month.date),
-                        y: .value("Balance", month.accumulatedBalance)
+                        y: .value("Balance", month.accumulatedBalance ?? 0)
                     )
                     .interpolationMethod(.monotone)
                     .foregroundStyle(by: .value("Period", "projected"))
@@ -358,7 +358,7 @@ struct CashFlowChartsSheet: View {
 
                     PointMark(
                         x: .value("Month", month.date),
-                        y: .value("Balance", month.accumulatedBalance)
+                        y: .value("Balance", month.accumulatedBalance ?? 0)
                     )
                     .foregroundStyle(Color.secondary)
                     .symbolSize(16)
@@ -367,11 +367,11 @@ struct CashFlowChartsSheet: View {
                     if month.monthKey == data.last?.monthKey {
                         PointMark(
                             x: .value("Month", month.date),
-                            y: .value("Balance", month.accumulatedBalance)
+                            y: .value("Balance", month.accumulatedBalance ?? 0)
                         )
                         .symbolSize(0)
-                        .annotation(position: month.accumulatedBalance > midY ? .bottom : .top, spacing: DS.Spacing.xs) {
-                            dataLabel(month.accumulatedBalance)
+                        .annotation(position: month.accumulatedBalance ?? 0 > midY ? .bottom : .top, spacing: DS.Spacing.xs) {
+                            dataLabel(month.accumulatedBalance ?? 0)
                         }
                     }
                 }
@@ -388,8 +388,9 @@ struct CashFlowChartsSheet: View {
 
                 // Hover/selection
                 if let activeDate = draggingDate,
-                   let selectedMonth = closestMonth(to: activeDate) {
-                    let isUpperHalf = selectedMonth.accumulatedBalance > midY
+                   let selectedMonth = closestMonth(to: activeDate),
+                   let selectedBalance = selectedMonth.accumulatedBalance {
+                    let isUpperHalf = selectedBalance > midY
 
                     RuleMark(x: .value("Selected", selectedMonth.date))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
@@ -397,14 +398,14 @@ struct CashFlowChartsSheet: View {
 
                     PointMark(
                         x: .value("Selected", selectedMonth.date),
-                        y: .value("Balance", selectedMonth.accumulatedBalance)
+                        y: .value("Balance", selectedBalance)
                     )
                     .symbolSize(140)
                     .foregroundStyle(primaryLineColor)
 
                     PointMark(
                         x: .value("Selected", selectedMonth.date),
-                        y: .value("Balance", selectedMonth.accumulatedBalance)
+                        y: .value("Balance", selectedBalance)
                     )
                     .symbolSize(100)
                     .foregroundStyle(.thCard)
@@ -416,7 +417,7 @@ struct CashFlowChartsSheet: View {
                             Text(selectedMonth.date.formatted(.dateTime.month(.abbreviated).year()))
                                 .font(DS.Typography.captionSmall)
                                 .foregroundStyle(.thSecondaryText)
-                            Text(YalaFormatter.currency(value: selectedMonth.accumulatedBalance, currencyCode: currencyCode))
+                            Text(YalaFormatter.currency(value: selectedBalance, currencyCode: currencyCode))
                                 .font(DS.Typography.labelSmall)
                                 .foregroundStyle(.thPrimaryText)
                             Divider()

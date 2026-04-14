@@ -409,7 +409,7 @@ struct CashFlowCellDetailSheet: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                            Text(YalaFormatter.currency(value: abs(tx.amount), currencyCode: currencyCode))
+                            Text(YalaFormatter.currency(value: abs(tx.amount), currencyCode: tx.currencyCode, forceFullPrecision: true))
                                 .font(DS.Typography.amountSmall)
                                 .monospacedDigit()
                             Text(tx.date.formatted(.dateTime.day().month(.abbreviated)))

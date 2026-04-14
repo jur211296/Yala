@@ -85,11 +85,12 @@ struct CashFlowMonthCapsule: View {
     // MARK: - Computed Text
 
     private var accumulatedText: String {
+        guard let balance = month.accumulatedBalance else { return "—" }
         if isSelected {
-            let amount = YalaFormatter.amountCompactTable(value: month.accumulatedBalance)
+            let amount = YalaFormatter.amountCompactTable(value: balance)
             return "\(L10n.CashFlowPlan.accumulatedShort): \(amount)"
         }
-        return YalaFormatter.amountCashFlowCell(value: month.accumulatedBalance, currencyCode: currencyCode)
+        return YalaFormatter.amountCashFlowCell(value: balance, currencyCode: currencyCode)
     }
 
     private var netFlowInfo: (text: String, color: Color) {

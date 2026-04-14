@@ -53,6 +53,7 @@ struct CashFlowProjectionCalculatorTests {
         method: EstimationMethod = .average6m,
         manualAmount: Double? = nil,
         category: YalaCategory? = nil,
+        subcategory: Subcategory? = nil,
         scheduledPayment: ScheduledPayment? = nil,
         sortOrder: Int = 0
     ) -> CashFlowLine {
@@ -63,8 +64,13 @@ struct CashFlowProjectionCalculatorTests {
             estimationMethod: method,
             manualAmount: manualAmount,
             category: category,
+            subcategory: subcategory,
             scheduledPayment: scheduledPayment
         )
+    }
+
+    private func makeSubcategory(name: String, category: YalaCategory) -> Subcategory {
+        Subcategory(name: name, colorHex: "#FF0000", category: category)
     }
 
     // NOTE: ScheduledPayment cannot be instantiated without ModelContext in tests
@@ -367,9 +373,9 @@ struct CashFlowProjectionCalculatorTests {
 
         // Net per month = 5000 - 2000 = 3000
         #expect(result.startingBalance == 1000)
-        #expect(abs(result.months[0].accumulatedBalance - 4000) < 0.01) // 1000 + 3000
-        #expect(abs(result.months[1].accumulatedBalance - 7000) < 0.01) // 4000 + 3000
-        #expect(abs(result.months[2].accumulatedBalance - 10000) < 0.01) // 7000 + 3000
+        #expect(abs(result.months[0].accumulatedBalance! - 4000) < 0.01) // 1000 + 3000
+        #expect(abs(result.months[1].accumulatedBalance! - 7000) < 0.01) // 4000 + 3000
+        #expect(abs(result.months[2].accumulatedBalance! - 10000) < 0.01) // 7000 + 3000
     }
 
     // MARK: - 15. Income line
@@ -729,14 +735,14 @@ struct CashFlowProjectionCalculatorTests {
         )
 
         // Net per month = 3000 - 1000 = 2000
-        // Month -1 (past): 0 + 2000 = 2000
-        #expect(abs(result.months[0].accumulatedBalance - 2000) < 0.01)
-        // Month 0 (current): 2000 + 2000 = 4000
-        #expect(abs(result.months[1].accumulatedBalance - 4000) < 0.01)
+        // Month -1 (past, before balance date): nil
+        #expect(result.months[0].accumulatedBalance == nil)
+        // Month 0 (current, before balance date): nil
+        #expect(result.months[1].accumulatedBalance == nil)
         // Month +1 (balance date): 5000 + 2000 = 7000
-        #expect(abs(result.months[2].accumulatedBalance - 7000) < 0.01)
+        #expect(abs(result.months[2].accumulatedBalance! - 7000) < 0.01)
         // Month +2: 7000 + 2000 = 9000
-        #expect(abs(result.months[3].accumulatedBalance - 9000) < 0.01)
+        #expect(abs(result.months[3].accumulatedBalance! - 9000) < 0.01)
     }
 
     // MARK: - 31. Starting balance date nil — applies at current month
@@ -756,11 +762,11 @@ struct CashFlowProjectionCalculatorTests {
         )
 
         // Month 0 (current, balance date): 1000 + 500 = 1500
-        #expect(abs(result.months[0].accumulatedBalance - 1500) < 0.01)
+        #expect(abs(result.months[0].accumulatedBalance! - 1500) < 0.01)
         // Month +1: 1500 + 500 = 2000
-        #expect(abs(result.months[1].accumulatedBalance - 2000) < 0.01)
+        #expect(abs(result.months[1].accumulatedBalance! - 2000) < 0.01)
         // Month +2: 2000 + 500 = 2500
-        #expect(abs(result.months[2].accumulatedBalance - 2500) < 0.01)
+        #expect(abs(result.months[2].accumulatedBalance! - 2500) < 0.01)
     }
 
     // MARK: - 32. Starting balance date nil with monthsBack — past months from zero
@@ -768,7 +774,7 @@ struct CashFlowProjectionCalculatorTests {
     @Test func startingBalanceDate_nil_withMonthsBack_appliesAtCurrentMonth() {
         let incomeCat = makeCategory(name: "Salary", isIncome: true)
         let plan = makePlan(startingBalance: 5000)
-        // nil → current month; past months should accumulate from 0
+        // nil → current month; past months should have nil balance
 
         let income = makeLine(name: "Salary", isIncome: true, method: .manual, manualAmount: 1000, category: incomeCat)
 
@@ -779,14 +785,14 @@ struct CashFlowProjectionCalculatorTests {
             currencyCode: "USD", converter: MockCurrencyConverter()
         )
 
-        // Month -2 (past): 0 + 1000 = 1000
-        #expect(abs(result.months[0].accumulatedBalance - 1000) < 0.01)
-        // Month -1 (past): 1000 + 1000 = 2000
-        #expect(abs(result.months[1].accumulatedBalance - 2000) < 0.01)
+        // Month -2 (past, before balance date): nil
+        #expect(result.months[0].accumulatedBalance == nil)
+        // Month -1 (past, before balance date): nil
+        #expect(result.months[1].accumulatedBalance == nil)
         // Month 0 (current, balance date): 5000 + 1000 = 6000
-        #expect(abs(result.months[2].accumulatedBalance - 6000) < 0.01)
+        #expect(abs(result.months[2].accumulatedBalance! - 6000) < 0.01)
         // Month +1: 6000 + 1000 = 7000
-        #expect(abs(result.months[3].accumulatedBalance - 7000) < 0.01)
+        #expect(abs(result.months[3].accumulatedBalance! - 7000) < 0.01)
     }
 
     // MARK: - 33. Starting balance date before range — seeds immediately
@@ -810,11 +816,11 @@ struct CashFlowProjectionCalculatorTests {
 
         // Balance date is before range → seed at first month (legacy behavior)
         // Month -1: 3000 + 500 = 3500
-        #expect(abs(result.months[0].accumulatedBalance - 3500) < 0.01)
+        #expect(abs(result.months[0].accumulatedBalance! - 3500) < 0.01)
         // Month 0: 3500 + 500 = 4000
-        #expect(abs(result.months[1].accumulatedBalance - 4000) < 0.01)
+        #expect(abs(result.months[1].accumulatedBalance! - 4000) < 0.01)
         // Month +1: 4000 + 500 = 4500
-        #expect(abs(result.months[2].accumulatedBalance - 4500) < 0.01)
+        #expect(abs(result.months[2].accumulatedBalance! - 4500) < 0.01)
     }
 
     // MARK: - 34. Starting balance date after range — all from zero
@@ -836,13 +842,170 @@ struct CashFlowProjectionCalculatorTests {
             currencyCode: "USD", converter: MockCurrencyConverter()
         )
 
-        // Balance date is beyond range → all months accumulate from 0
-        // Month 0: 0 + 1000 = 1000
-        #expect(abs(result.months[0].accumulatedBalance - 1000) < 0.01)
-        // Month +1: 1000 + 1000 = 2000
-        #expect(abs(result.months[1].accumulatedBalance - 2000) < 0.01)
-        // Month +2: 2000 + 1000 = 3000
-        #expect(abs(result.months[2].accumulatedBalance - 3000) < 0.01)
+        // Balance date is beyond range → all months have nil balance
+        #expect(result.months[0].accumulatedBalance == nil)
+        #expect(result.months[1].accumulatedBalance == nil)
+        #expect(result.months[2].accumulatedBalance == nil)
+    }
+
+    // MARK: - 35. Subcategory-level uncategorized: sibling subcategories in Others
+
+    @Test func otherExpenses_subcategoryLevel_leaveSiblingsInOthers() {
+        let housingCat = makeCategory(name: "Housing")
+        let electricitySub = makeSubcategory(name: "Electricity", category: housingCat)
+        let waterSub = makeSubcategory(name: "Water", category: housingCat)
+        let rentSub = makeSubcategory(name: "Rent", category: housingCat)
+        housingCat.subcategories = [electricitySub, waterSub, rentSub]
+
+        let plan = makePlan()
+        // Only Electricity is assigned to a line
+        let line = makeLine(name: "Electricity", method: .manual, manualAmount: 200,
+                            category: housingCat, subcategory: electricitySub)
+
+        let txDate = calendar.date(byAdding: .day, value: 2, to: currentMonthStart)!
+        let transactions: [TransactionItem] = [
+            makeTransaction(amount: -200, date: txDate, category: housingCat, subcategory: electricitySub),
+            makeTransaction(amount: -150, date: txDate, category: housingCat, subcategory: waterSub),
+            makeTransaction(amount: -300, date: txDate, category: housingCat, subcategory: rentSub),
+        ]
+
+        let result = CashFlowProjectionCalculator.calculate(
+            plan: plan, lines: [line], transactions: transactions,
+            allExpenseCategories: [housingCat], scheduledPayments: [],
+            monthsBack: 0, monthsAhead: 0,
+            currencyCode: "USD", converter: MockCurrencyConverter()
+        )
+
+        // Others = Water(150) + Rent(300) = 450
+        let other = result.months[0].otherExpenses
+        #expect(other != nil)
+        #expect(abs(other!.plannedAmount - 450) < 0.01)
+    }
+
+    // MARK: - 36. Multiple subcategory lines for same category
+
+    @Test func otherExpenses_multipleSubcategoryLines_onlyRemainingInOthers() {
+        let housingCat = makeCategory(name: "Housing")
+        let electricitySub = makeSubcategory(name: "Electricity", category: housingCat)
+        let waterSub = makeSubcategory(name: "Water", category: housingCat)
+        let rentSub = makeSubcategory(name: "Rent", category: housingCat)
+        housingCat.subcategories = [electricitySub, waterSub, rentSub]
+
+        let plan = makePlan()
+        let line1 = makeLine(name: "Electricity", method: .manual, manualAmount: 200,
+                             category: housingCat, subcategory: electricitySub)
+        let line2 = makeLine(name: "Water", method: .manual, manualAmount: 150,
+                             category: housingCat, subcategory: waterSub)
+
+        let txDate = calendar.date(byAdding: .day, value: 2, to: currentMonthStart)!
+        let transactions: [TransactionItem] = [
+            makeTransaction(amount: -200, date: txDate, category: housingCat, subcategory: electricitySub),
+            makeTransaction(amount: -150, date: txDate, category: housingCat, subcategory: waterSub),
+            makeTransaction(amount: -300, date: txDate, category: housingCat, subcategory: rentSub),
+        ]
+
+        let result = CashFlowProjectionCalculator.calculate(
+            plan: plan, lines: [line1, line2], transactions: transactions,
+            allExpenseCategories: [housingCat], scheduledPayments: [],
+            monthsBack: 0, monthsAhead: 0,
+            currencyCode: "USD", converter: MockCurrencyConverter()
+        )
+
+        // Others = only Rent(300)
+        let other = result.months[0].otherExpenses
+        #expect(other != nil)
+        #expect(abs(other!.plannedAmount - 300) < 0.01)
+    }
+
+    // MARK: - 37. Category-level line (backward compat) excludes entire category
+
+    @Test func otherExpenses_categoryLevelLine_excludesEntireCategory() {
+        let housingCat = makeCategory(name: "Housing")
+        let electricitySub = makeSubcategory(name: "Electricity", category: housingCat)
+        housingCat.subcategories = [electricitySub]
+
+        let plan = makePlan()
+        // Category-level line (no subcategory) — backward compat
+        let line = makeLine(name: "Housing", method: .manual, manualAmount: 500, category: housingCat)
+
+        let txDate = calendar.date(byAdding: .day, value: 2, to: currentMonthStart)!
+        let transactions: [TransactionItem] = [
+            makeTransaction(amount: -200, date: txDate, category: housingCat, subcategory: electricitySub),
+            makeTransaction(amount: -300, date: txDate, category: housingCat),
+        ]
+
+        let result = CashFlowProjectionCalculator.calculate(
+            plan: plan, lines: [line], transactions: transactions,
+            allExpenseCategories: [housingCat], scheduledPayments: [],
+            monthsBack: 0, monthsAhead: 0,
+            currencyCode: "USD", converter: MockCurrencyConverter()
+        )
+
+        // Entire Housing excluded from Others
+        let other = result.months[0].otherExpenses
+        #expect(other == nil || other!.plannedAmount == 0)
+    }
+
+    // MARK: - 38. All subcategories assigned → zero in Others
+
+    @Test func otherExpenses_allSubcategoriesAssigned_zeroInOthers() {
+        let housingCat = makeCategory(name: "Housing")
+        let electricitySub = makeSubcategory(name: "Electricity", category: housingCat)
+        let waterSub = makeSubcategory(name: "Water", category: housingCat)
+        housingCat.subcategories = [electricitySub, waterSub]
+
+        let plan = makePlan()
+        let line1 = makeLine(name: "Electricity", method: .manual, manualAmount: 200,
+                             category: housingCat, subcategory: electricitySub)
+        let line2 = makeLine(name: "Water", method: .manual, manualAmount: 150,
+                             category: housingCat, subcategory: waterSub)
+
+        let txDate = calendar.date(byAdding: .day, value: 2, to: currentMonthStart)!
+        let transactions: [TransactionItem] = [
+            makeTransaction(amount: -200, date: txDate, category: housingCat, subcategory: electricitySub),
+            makeTransaction(amount: -150, date: txDate, category: housingCat, subcategory: waterSub),
+        ]
+
+        let result = CashFlowProjectionCalculator.calculate(
+            plan: plan, lines: [line1, line2], transactions: transactions,
+            allExpenseCategories: [housingCat], scheduledPayments: [],
+            monthsBack: 0, monthsAhead: 0,
+            currencyCode: "USD", converter: MockCurrencyConverter()
+        )
+
+        // All subcategories assigned — nothing left for Others
+        let other = result.months[0].otherExpenses
+        #expect(other == nil || other!.plannedAmount == 0)
+    }
+
+    // MARK: - 39. Transactions without subcategory go to Others
+
+    @Test func otherExpenses_transactionsWithoutSubcategory_inOthers() {
+        let housingCat = makeCategory(name: "Housing")
+        let rentSub = makeSubcategory(name: "Rent", category: housingCat)
+        housingCat.subcategories = [rentSub]
+
+        let plan = makePlan()
+        let line = makeLine(name: "Rent", method: .manual, manualAmount: 300,
+                            category: housingCat, subcategory: rentSub)
+
+        let txDate = calendar.date(byAdding: .day, value: 2, to: currentMonthStart)!
+        let transactions: [TransactionItem] = [
+            makeTransaction(amount: -300, date: txDate, category: housingCat, subcategory: rentSub),
+            makeTransaction(amount: -100, date: txDate, category: housingCat), // no subcategory
+        ]
+
+        let result = CashFlowProjectionCalculator.calculate(
+            plan: plan, lines: [line], transactions: transactions,
+            allExpenseCategories: [housingCat], scheduledPayments: [],
+            monthsBack: 0, monthsAhead: 0,
+            currencyCode: "USD", converter: MockCurrencyConverter()
+        )
+
+        // Transaction without subcategory (100) should be in Others
+        let other = result.months[0].otherExpenses
+        #expect(other != nil)
+        #expect(abs(other!.plannedAmount - 100) < 0.01)
     }
 }
 
@@ -882,4 +1045,9 @@ Tests generated:
 32. startingBalanceDate_nil_withMonthsBack_appliesAtCurrentMonth - Nil + past months from zero
 33. startingBalanceDate_beforeRange_seedsImmediately - Old date seeds first month
 34. startingBalanceDate_afterRange_allFromZero - Future date = all from zero
+35. otherExpenses_subcategoryLevel_leaveSiblingsInOthers - Subcategory tracking
+36. otherExpenses_multipleSubcategoryLines_onlyRemainingInOthers - Multiple subcats
+37. otherExpenses_categoryLevelLine_excludesEntireCategory - Backward compat
+38. otherExpenses_allSubcategoriesAssigned_zeroInOthers - Full coverage
+39. otherExpenses_transactionsWithoutSubcategory_inOthers - No subcat → Others
 */

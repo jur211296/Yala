@@ -205,11 +205,17 @@ struct CashFlowMonthDetailView: View {
                         .buttonStyle(.plain)
                     }
                     Spacer()
-                    Text(YalaFormatter.currency(value: month.accumulatedBalance, currencyCode: currencyCode))
-                        .font(DS.Typography.amount)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.primary)
-                        .monospacedDigit()
+                    if let balance = month.accumulatedBalance {
+                        Text(YalaFormatter.currency(value: balance, currencyCode: currencyCode))
+                            .font(DS.Typography.amount)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.primary)
+                            .monospacedDigit()
+                    } else {
+                        Text("—")
+                            .font(DS.Typography.amount)
+                            .foregroundStyle(.tertiary)
+                    }
                 }
             }
         }

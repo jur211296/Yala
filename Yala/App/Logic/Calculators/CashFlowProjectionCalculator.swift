@@ -30,7 +30,7 @@ struct CashFlowMonth {
     let totalIncome: Double
     let totalExpense: Double                 // Positive magnitude
     let netFlow: Double                      // income - expense
-    let accumulatedBalance: Double
+    let accumulatedBalance: Double?           // nil for months before startingBalanceDate
 }
 
 struct CashFlowLineResult {
@@ -160,15 +160,9 @@ struct CashFlowProjectionCalculator {
             converter: converter, calendar: calendar
         )
 
-        // Assigned category IDs for "other" calculations
-        let assignedCategoryIDs = Set(
-            lines.filter { $0.isEnabled && !$0.isIncome && $0.category != nil }
-                .compactMap { $0.category?.persistentModelID }
-        )
-        let assignedIncomeCategoryIDs = Set(
-            lines.filter { $0.isEnabled && $0.isIncome && $0.category != nil }
-                .compactMap { $0.category?.persistentModelID }
-        )
+        // Assigned IDs for "other" calculations — subcategory-level tracking
+        let (assignedExpenseSubcategoryIDs, fullyAssignedExpenseCategoryIDs) = buildAssignedIDs(lines: lines, isIncome: false)
+        let (assignedIncomeSubcategoryIDs, fullyAssignedIncomeCategoryIDs) = buildAssignedIDs(lines: lines, isIncome: true)
 
         let currentMKey = Self.monthKey(for: currentMonthStart, calendar: calendar)
         let incomeLines = sortLinesByAmountGrouped(
@@ -223,12 +217,14 @@ struct CashFlowProjectionCalculator {
             if plan.showOtherExpenses && (isPast || isCurrent) {
                 otherExpenses = calculateUncategorizedTotal(
                     categories: allExpenseCategories,
-                    assignedIDs: assignedCategoryIDs,
+                    fullyAssignedCategoryIDs: fullyAssignedExpenseCategoryIDs,
+                    assignedSubcategoryIDs: assignedExpenseSubcategoryIDs,
                     monthKey: mKey, index: index
                 )
                 otherIncome = calculateUncategorizedTotal(
                     categories: allIncomeCategories,
-                    assignedIDs: assignedIncomeCategoryIDs,
+                    fullyAssignedCategoryIDs: fullyAssignedIncomeCategoryIDs,
+                    assignedSubcategoryIDs: assignedIncomeSubcategoryIDs,
                     monthKey: mKey, index: index
                 )
             } else {
@@ -242,11 +238,18 @@ struct CashFlowProjectionCalculator {
                 + (otherExpenses?.plannedAmount ?? 0)
             let netFlow = totalIncome - totalExpense
 
+            let monthBalance: Double?
             if !hasAppliedStartingBalance && mKey >= startingBalanceMonthKey {
                 accumulatedBalance = plan.startingBalance
                 hasAppliedStartingBalance = true
+                accumulatedBalance += netFlow
+                monthBalance = accumulatedBalance
+            } else if hasAppliedStartingBalance {
+                accumulatedBalance += netFlow
+                monthBalance = accumulatedBalance
+            } else {
+                monthBalance = nil
             }
-            accumulatedBalance += netFlow
             totalProjectedIncome += totalIncome
             totalProjectedExpense += totalExpense
 
@@ -255,7 +258,7 @@ struct CashFlowProjectionCalculator {
                 incomeLines: incomeResults, expenseLines: expenseResults,
                 otherExpenses: otherExpenses, otherIncome: otherIncome,
                 totalIncome: totalIncome, totalExpense: totalExpense,
-                netFlow: netFlow, accumulatedBalance: accumulatedBalance
+                netFlow: netFlow, accumulatedBalance: monthBalance
             ))
         }
 
@@ -527,11 +530,31 @@ struct CashFlowProjectionCalculator {
 
     // MARK: - Uncategorized Totals (Income / Expenses)
 
-    /// Sums real transaction amounts for categories not assigned to any plan line.
+    // MARK: - Assigned ID Sets
+
+    private static func buildAssignedIDs(
+        lines: [CashFlowLine], isIncome: Bool
+    ) -> (subcategoryIDs: Set<PersistentIdentifier>, categoryIDs: Set<PersistentIdentifier>) {
+        var subIDs = Set<PersistentIdentifier>()
+        var catIDs = Set<PersistentIdentifier>()
+        for line in lines where line.isEnabled && line.isIncome == isIncome {
+            if let subID = line.subcategory?.persistentModelID {
+                subIDs.insert(subID)
+            } else if let catID = line.category?.persistentModelID {
+                catIDs.insert(catID)
+            }
+        }
+        return (subIDs, catIDs)
+    }
+
+    /// Sums real transaction amounts not covered by any plan line (subcategory-level).
+    /// For each category: total minus assigned subcategory totals = uncovered.
+    /// Categories with a full category-level line are skipped entirely (backward compat).
     /// Called only for past/current months — future months skip this entirely.
     static func calculateUncategorizedTotal(
         categories: [Category],
-        assignedIDs: Set<PersistentIdentifier>,
+        fullyAssignedCategoryIDs: Set<PersistentIdentifier>,
+        assignedSubcategoryIDs: Set<PersistentIdentifier>,
         monthKey: String,
         index: TransactionIndex
     ) -> CashFlowOtherResult {
@@ -539,13 +562,19 @@ struct CashFlowProjectionCalculator {
         var totalReal: Double = 0
 
         for cat in categories {
-            guard !assignedIDs.contains(cat.persistentModelID) else { continue }
-            let real = index.total(for: cat.persistentModelID, monthKey: monthKey)
-            totalReal += real
-            if real > 0 {
+            guard !fullyAssignedCategoryIDs.contains(cat.persistentModelID) else { continue }
+
+            let catTotal = index.total(for: cat.persistentModelID, monthKey: monthKey)
+            let assignedSubTotal = (cat.subcategories ?? [])
+                .filter { assignedSubcategoryIDs.contains($0.persistentModelID) }
+                .reduce(0.0) { $0 + index.subcategoryTotal(for: $1.persistentModelID, monthKey: monthKey) }
+            let uncovered = catTotal - assignedSubTotal
+
+            if uncovered > 0 {
+                totalReal += uncovered
                 breakdown.append(OtherCategoryItem(
                     categoryName: cat.name, iconName: cat.iconName ?? "folder",
-                    colorHex: cat.colorHex, amount: real
+                    colorHex: cat.colorHex, amount: uncovered
                 ))
             }
         }

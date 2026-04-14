@@ -199,6 +199,13 @@ struct CashFlowAddFromExpensesView: View {
     @State private var name: String = ""
     @State private var selectedMethod: EstimationMethod = .average6m
 
+    private var isSaveDisabled: Bool {
+        if name.isEmpty { return true }
+        guard let cat = selectedCategory else { return false }
+        let hasVisibleSubs = !(cat.subcategories ?? []).filter(\.isVisible).isEmpty
+        return hasVisibleSubs && selectedSubcategory == nil
+    }
+
     var body: some View {
         ZStack {
             PanelBackgroundView().dismissKeyboardOnTap()
@@ -232,7 +239,7 @@ struct CashFlowAddFromExpensesView: View {
                 YalaSaveButton(action: {
                     createLine()
                     dismiss()
-                }, isDisabled: name.isEmpty)
+                }, isDisabled: isSaveDisabled)
             }
         }
     }
@@ -240,6 +247,7 @@ struct CashFlowAddFromExpensesView: View {
     private var categoryList: some View {
         VStack(spacing: DS.Spacing.none) {
             ForEach(categories, id: \.persistentModelID) { cat in
+                let hasVisibleSubs = !(cat.subcategories ?? []).filter(\.isVisible).isEmpty
                 VStack(spacing: DS.Spacing.none) {
                     // Category row
                     Button {
@@ -249,7 +257,7 @@ struct CashFlowAddFromExpensesView: View {
                         } else {
                             selectedCategory = cat
                             selectedSubcategory = nil
-                            if name.isEmpty { name = cat.name }
+                            if !hasVisibleSubs, name.isEmpty { name = cat.name }
                         }
                     } label: {
                         HStack(spacing: DS.Spacing.md) {
@@ -278,8 +286,15 @@ struct CashFlowAddFromExpensesView: View {
                                     .monospacedDigit()
                             }
 
-                            Image(systemName: selectedCategory?.persistentModelID == cat.persistentModelID ? "checkmark.circle.fill" : "circle")
-                                .foregroundStyle(selectedCategory?.persistentModelID == cat.persistentModelID ? theme.accent : .secondary)
+                            let isSelected = selectedCategory?.persistentModelID == cat.persistentModelID
+                            if hasVisibleSubs {
+                                Image(systemName: isSelected ? "chevron.down" : "chevron.right")
+                                    .foregroundStyle(.secondary)
+                                    .font(DS.Typography.caption)
+                            } else {
+                                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                    .foregroundStyle(isSelected ? theme.accent : .secondary)
+                            }
                         }
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.vertical, DS.Spacing.md)

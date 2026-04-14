@@ -661,8 +661,9 @@ final class InsightsLLMService {
     private static func buildCashFlowPayload(projection: CashFlowProjection, currencyCode: String) -> [String: Any] {
         let months = projection.months
         let currentMonth = months.first(where: { $0.isCurrent })
-        let lowestMonth = months.min(by: { $0.accumulatedBalance < $1.accumulatedBalance })
-        let monthsNegative = months.filter { $0.accumulatedBalance < 0 }.count
+        let monthsWithBalance = months.filter { $0.accumulatedBalance != nil }
+        let lowestMonth = monthsWithBalance.min(by: { ($0.accumulatedBalance ?? 0) < ($1.accumulatedBalance ?? 0) })
+        let monthsNegative = months.filter { ($0.accumulatedBalance ?? 0) < 0 }.count
         let avgNet = months.isEmpty ? 0 : months.map(\.netFlow).reduce(0, +) / Double(months.count)
 
         var payload: [String: Any] = [
@@ -680,21 +681,21 @@ final class InsightsLLMService {
                 "income": Int(current.totalIncome),
                 "expense": Int(current.totalExpense),
                 "net": Int(current.netFlow),
-                "accumulated": Int(current.accumulatedBalance),
+                "accumulated": Int(current.accumulatedBalance ?? 0),
             ]
         }
 
         if let last = months.last {
             payload["endMonth"] = [
                 "name": last.date.formatted(.dateTime.month(.abbreviated).year()).lowercased(),
-                "accumulated": Int(last.accumulatedBalance),
+                "accumulated": Int(last.accumulatedBalance ?? 0),
             ]
         }
 
         if let lowest = lowestMonth {
             payload["lowestAccumulated"] = [
                 "month": lowest.date.formatted(.dateTime.month(.abbreviated).year()).lowercased(),
-                "balance": Int(lowest.accumulatedBalance),
+                "balance": Int(lowest.accumulatedBalance ?? 0),
             ]
         }
 

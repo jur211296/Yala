@@ -360,16 +360,44 @@ final class CashFlowPlanViewModel {
     }
 
     func promoteFromOthers(_ category: Category) {
-        guard let plan else { return }
-        let maxOrder = (plan.lines ?? []).map(\.sortOrder).max() ?? 0
-        let line = CashFlowLine(
-            name: category.name,
-            isIncome: category.isIncome,
-            sortOrder: maxOrder + 1,
-            estimationMethod: .average6m,
-            category: category
+        guard let ctx = modelContext, let plan else { return }
+        let visibleSubs = (category.subcategories ?? [])
+            .filter(\.isVisible)
+            .sorted { $0.sortOrder < $1.sortOrder }
+        let existingSubIDs = Set(
+            (plan.lines ?? []).filter(\.isEnabled)
+                .compactMap { $0.subcategory?.persistentModelID }
         )
-        addLine(line)
+        var maxOrder = (plan.lines ?? []).map(\.sortOrder).max() ?? 0
+
+        if visibleSubs.isEmpty {
+            let line = CashFlowLine(
+                name: category.name, isIncome: category.isIncome,
+                sortOrder: maxOrder + 1, estimationMethod: .average6m,
+                category: category
+            )
+            ctx.insert(line)
+            line.plan = plan
+        } else {
+            for sub in visibleSubs where !existingSubIDs.contains(sub.persistentModelID) {
+                maxOrder += 1
+                let line = CashFlowLine(
+                    name: sub.name, isIncome: category.isIncome,
+                    sortOrder: maxOrder, estimationMethod: .average6m,
+                    category: category, subcategory: sub
+                )
+                ctx.insert(line)
+                line.plan = plan
+            }
+        }
+
+        do {
+            try ctx.save()
+        } catch {
+            #if DEBUG
+            print("CashFlowPlanViewModel: Error promoting lines: \(error)")
+            #endif
+        }
     }
 
     // MARK: - Overrides
@@ -585,7 +613,7 @@ final class CashFlowPlanViewModel {
         let months = projection.months
         guard !months.isEmpty else { return "" }
 
-        let negativeMonths = months.filter { $0.accumulatedBalance < 0 }
+        let negativeMonths = months.filter { ($0.accumulatedBalance ?? 0) < 0 }
         let currentMonth = months.first(where: { $0.isCurrent })
 
         // Check for months going negative
@@ -603,7 +631,7 @@ final class CashFlowPlanViewModel {
 
         // All positive — good health
         if negativeMonths.isEmpty, let lastMonth = months.last {
-            let endBalance = YalaFormatter.currency(value: lastMonth.accumulatedBalance, currencyCode: currencyCode)
+            let endBalance = YalaFormatter.currency(value: lastMonth.accumulatedBalance ?? 0, currencyCode: currencyCode)
             return L10n.CashFlowPlan.commentHealthy(endBalance)
         }
 
@@ -637,7 +665,7 @@ final class CashFlowPlanViewModel {
         let months = projection.months
         guard !months.isEmpty else { return "" }
 
-        let negativeMonths = months.filter { $0.accumulatedBalance < 0 }
+        let negativeMonths = months.filter { ($0.accumulatedBalance ?? 0) < 0 }
         let currentMonth = months.first(where: { $0.isCurrent })
         let hasSavings = !savings.isEmpty
         let avgActual = hasSavings ? savings.map(\.actual).reduce(0, +) / Double(savings.count) : 0
@@ -665,7 +693,7 @@ final class CashFlowPlanViewModel {
         // 4. Actual savings beat plan
         if hasSavings, avgActual >= avgPlanned, avgPlanned > 0, let lastMonth = months.last {
             let diff = YalaFormatter.currency(value: avgActual - avgPlanned, currencyCode: currencyCode)
-            let endBalance = YalaFormatter.currency(value: lastMonth.accumulatedBalance, currencyCode: currencyCode)
+            let endBalance = YalaFormatter.currency(value: lastMonth.accumulatedBalance ?? 0, currencyCode: currencyCode)
             return L10n.CashFlowPlan.commentSavingsAbove(diff, endBalance)
         }
 
@@ -673,10 +701,10 @@ final class CashFlowPlanViewModel {
         if negativeMonths.isEmpty, let lastMonth = months.last {
             if hasSavings {
                 let avgFormatted = YalaFormatter.currency(value: avgActual, currencyCode: currencyCode)
-                let endBalance = YalaFormatter.currency(value: lastMonth.accumulatedBalance, currencyCode: currencyCode)
+                let endBalance = YalaFormatter.currency(value: lastMonth.accumulatedBalance ?? 0, currencyCode: currencyCode)
                 return L10n.CashFlowPlan.commentHealthyWithSavings(avgFormatted, endBalance)
             }
-            let endBalance = YalaFormatter.currency(value: lastMonth.accumulatedBalance, currencyCode: currencyCode)
+            let endBalance = YalaFormatter.currency(value: lastMonth.accumulatedBalance ?? 0, currencyCode: currencyCode)
             return L10n.CashFlowPlan.commentHealthy(endBalance)
         }
 
