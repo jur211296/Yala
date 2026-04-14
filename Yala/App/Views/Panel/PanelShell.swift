@@ -14,19 +14,17 @@ import SwiftUI
 struct PanelShell: View {
     @State private var viewModel = PanelViewModel()
     @State private var sheets = PanelSheetState()
-    @State private var showFABMenu = false
     @Environment(SessionState.self) private var sessionState
 
     var body: some View {
-        PanelView(viewModel: viewModel, sheets: $sheets, showFABMenu: $showFABMenu)
+        PanelView(viewModel: viewModel, sheets: $sheets)
             .modifier(PanelSheetsModifier(
                 sheets: $sheets,
                 viewModel: viewModel
             ))
             .modifier(PanelDataObservers(
                 viewModel: viewModel,
-                sessionState: sessionState,
-                showFABMenu: $showFABMenu
+                sessionState: sessionState
             ))
             .modifier(PanelSheetTriggers(
                 sessionState: sessionState,

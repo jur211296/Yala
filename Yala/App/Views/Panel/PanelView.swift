@@ -24,7 +24,6 @@ struct PanelView: View {
 
     let viewModel: PanelViewModel
     @Binding var sheets: PanelSheetState
-    @Binding var showFABMenu: Bool
 
     /// Periodic banner visibility
     @State private var showPeriodicBanner = false
@@ -41,6 +40,9 @@ struct PanelView: View {
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
     @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
     @AppStorage("showSiriTip") private var showSiriTip: Bool = true
+    @AppStorage("aiChatConsentAccepted") private var chatConsentAccepted: Bool = false
+    @AppStorage("chatAssistantEnabled") private var chatEnabled: Bool = false
+    @AppStorage("chatFABVisible") private var chatFABVisible: Bool = true
 
     /// Coach mark: Pro tour (Phase 2)
     @State private var showProFabTour = false
@@ -372,176 +374,30 @@ struct PanelView: View {
                 }
             }
 
-            // Botón flotante de nuevo registro
+            // Botón flotante de nuevo registro + Chat FAB
             VStack {
                 Spacer()
                 HStack {
                     Spacer()
-                    newRecordFAB
+                    FABStackView(
+                        canUseVoiceInput: viewModel.canUseVoiceInput,
+                        isVoiceLocked: isVoiceLocked,
+                        isImageLocked: isImageLocked,
+                        isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
+                        chatConsentAccepted: chatConsentAccepted,
+                        chatEnabled: chatEnabled,
+                        chatFABVisible: chatFABVisible,
+                        onVoiceTap: { sheets.showVoiceRecording = true },
+                        onImageTap: { sheets.showImageSelection = true },
+                        onManualTap: { sheets.showNewTransaction = true },
+                        onUpgradeVoice: { sheets.showUpgradeForVoice = true },
+                        onUpgradeImage: { sheets.showUpgradeForImage = true },
+                        onChatTap: { sheets.showChatSheet = true },
+                        onUpgradeChat: { sheets.showUpgradeForChat = true },
+                        onChatConsentNeeded: { sheets.showChatConsentAlert = true }
+                    )
                 }
             }
-        }
-    }
-
-    // MARK: - New Record FAB
-
-    @ViewBuilder
-    private var newRecordFAB: some View {
-        let fabBackground = viewModel.canUseVoiceInput ? theme.accent : DS.Semantic.disabledForeground.opacity(0.5)
-
-        if viewModel.canUseVoiceInput {
-            // Custom FAB with popup menu above (always 3 options)
-            VStack(alignment: .trailing, spacing: DS.Spacing.md) {
-                // Menu options (shown when expanded)
-                if showFABMenu {
-                    VStack(spacing: DS.Spacing.sm) {
-                        // Voice option
-                        fabMenuButton(
-                            icon: "waveform",
-                            text: L10n.Panel.fabVoice,
-                            color: .hotPink,
-                            isLocked: isVoiceLocked
-                        ) {
-                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                showFABMenu = false
-                            }
-                            if isVoiceLocked {
-                                sheets.showUpgradeForVoice = true
-                            } else if !aiDataConsentAccepted {
-                                sheets.pendingAIInput = .voice
-                                sheets.showAIConsentAlert = true
-                            } else {
-                                if !voiceInputEnabled { voiceInputEnabled = true }
-                                sheets.showVoiceRecording = true
-                            }
-                        }
-
-                        // Image option
-                        fabMenuButton(
-                            icon: "photo",
-                            text: L10n.Panel.fabImage,
-                            color: .teal,
-                            isLocked: isImageLocked
-                        ) {
-                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                showFABMenu = false
-                            }
-                            if isImageLocked {
-                                sheets.showUpgradeForImage = true
-                            } else if !aiDataConsentAccepted {
-                                sheets.pendingAIInput = .image
-                                sheets.showAIConsentAlert = true
-                            } else {
-                                if !imageInputEnabled { imageInputEnabled = true }
-                                sheets.showImageSelection = true
-                            }
-                        }
-
-                        // Manual option (always shown)
-                        fabMenuButton(
-                            icon: "square.and.pencil",
-                            text: L10n.Panel.fabManual,
-                            color: .electricIndigo
-                        ) {
-                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                showFABMenu = false
-                            }
-                            sheets.showNewTransaction = true
-                        }
-                    }
-                    .transition(.asymmetric(
-                        insertion: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity),
-                        removal: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity)
-                    ))
-                }
-
-                // FAB button
-                Button {
-                    DS.Haptic.medium()
-                    dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                        showFABMenu.toggle()
-                    }
-                } label: {
-                    Image(systemName: showFABMenu ? "xmark" : "plus")
-                        .font(DS.Typography.title)
-                        .foregroundStyle(Color.contrastingText(for: theme.accent))
-                        .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                        .background(showFABMenu ? DS.Semantic.disabledForeground : fabBackground)
-                        .clipShape(Circle())
-                        .rotationEffect(.degrees(showFABMenu ? 90 : 0))
-                }
-                .buttonStyle(.plain)
-                .glassEffect(.regular.interactive())
-                .dsFloatingShadow()
-                .accessibilityLabel(showFABMenu ? L10n.Accessibility.closeMenu : L10n.Accessibility.newRecord)
-                .accessibilityIdentifier("fab_new_transaction")
-                .coachMarkAnchor("fab")
-            }
-            .padding(.trailing, DS.Spacing.xl)
-            .padding(.bottom, DS.Spacing.xxl)
-        } else {
-            // Simple FAB (no accounts/subcategories — disabled)
-            Button {
-                // No-op: disabled state
-            } label: {
-                Image(systemName: "plus")
-                    .font(DS.Typography.title)
-                    .foregroundStyle(Color.contrastingText(for: theme.accent))
-                    .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                    .background(fabBackground)
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .glassEffect(.regular.interactive())
-            .dsFloatingShadow()
-            .coachMarkAnchor("fab")
-            .padding(.trailing, DS.Spacing.xl)
-            .padding(.bottom, DS.Spacing.xxl)
-            .disabled(true)
-            .accessibilityLabel(L10n.Accessibility.newRecord)
-            .accessibilityHint(L10n.Accessibility.createAccountFirst)
-        }
-    }
-
-    private func fabMenuButton(
-        icon: String,
-        text: String,
-        color: Color,
-        isLocked: Bool = false,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button {
-            DS.Haptic.selection()
-            action()
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                Image(systemName: icon)
-                    .font(DS.Typography.headline)
-                    .frame(width: DS.Button.fabMenuIconSize)
-
-                Text(text)
-                    .font(DS.Typography.headline)
-
-                Spacer(minLength: 0)
-
-                if isLocked {
-                    ProBadge(size: .small)
-                }
-            }
-            .foregroundStyle(.white)
-            .frame(width: DS.Button.fabMenuWidth)
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.md)
-            .background(isLocked ? DS.Semantic.disabledForeground : color)
-            .clipShape(Capsule())
-            .shadow(color: (isLocked ? DS.Semantic.disabledForeground : color).opacity(0.3), radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
-        }
-        .buttonStyle(.plain)
-        .phaseAnimator(reduceMotion ? [false] : [false, true]) { content, phase in
-            content
-                .scaleEffect(phase ? 1.03 : 1.0)
-        } animation: { _ in
-            .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
         }
     }
 

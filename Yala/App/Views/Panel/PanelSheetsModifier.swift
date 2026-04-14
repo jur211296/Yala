@@ -21,6 +21,9 @@ struct PanelSheetsModifier: ViewModifier {
     /// Read lazily inside sheet closures — NOT during body evaluation.
     @Environment(SessionState.self) private var sessionState
 
+    @AppStorage("aiChatConsentAccepted") private var chatConsentAccepted: Bool = false
+    @AppStorage("chatAssistantEnabled") private var chatEnabled: Bool = false
+
     @State private var showPracticeAlert = false
 
     /// Deferred practice data — stored during callback, consumed in onDismiss.
@@ -153,6 +156,25 @@ struct PanelSheetsModifier: ViewModifier {
             }
             .sheet(isPresented: $sheets.showUpgradeForAccounts) {
                 UpgradePromptSheet(feature: .accounts, context: .limitReached)
+            }
+            .sheet(isPresented: $sheets.showChatSheet) {
+                ChatSheetView()
+            }
+            .sheet(isPresented: $sheets.showUpgradeForChat) {
+                UpgradePromptSheet(feature: .chatAssistant, context: .proFeature)
+            }
+            .alert(L10n.AIConsent.chatTitle, isPresented: $sheets.showChatConsentAlert) {
+                Button(L10n.AIConsent.accept) {
+                    chatConsentAccepted = true
+                    chatEnabled = true
+                    sheets.showChatSheet = true
+                }
+                Button(L10n.AIConsent.privacyPolicy) {
+                    UIApplication.shared.open(AppConstants.privacyURL)
+                }
+                Button(L10n.Action.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.AIConsent.chatMessage)
             }
             .aiConsentAlert(isPresented: $sheets.showAIConsentAlert, pendingInput: $sheets.pendingAIInput) { input in
                 switch input {

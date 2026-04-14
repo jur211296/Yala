@@ -36,6 +36,11 @@ struct PanelSheetState {
     var showSubscriptionFromBanner = false
     var subscriptionBannerSource = "direct"
 
+    // Chat assistant
+    var showChatSheet = false
+    var showUpgradeForChat = false
+    var showChatConsentAlert = false
+
     // AI consent
     var showAIConsentAlert = false
     var pendingAIInput: PendingAIInput = .voice

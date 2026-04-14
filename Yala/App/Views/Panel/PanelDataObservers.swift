@@ -10,11 +10,10 @@ import SwiftUI
 struct PanelDataObservers: ViewModifier {
     let viewModel: PanelViewModel
     let sessionState: SessionState
-    @Binding var showFABMenu: Bool
 
     func body(content: Content) -> some View {
         content
-            .modifier(PanelDataCountObservers(viewModel: viewModel, sessionState: sessionState, showFABMenu: $showFABMenu))
+            .modifier(PanelDataCountObservers(viewModel: viewModel, sessionState: sessionState))
             .modifier(PanelDataFilterObservers(viewModel: viewModel, sessionState: sessionState))
     }
 }
@@ -22,13 +21,9 @@ struct PanelDataObservers: ViewModifier {
 struct PanelDataCountObservers: ViewModifier {
     let viewModel: PanelViewModel
     let sessionState: SessionState
-    @Binding var showFABMenu: Bool
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: sessionState.selectedMainTab) { _, _ in
-                if showFABMenu { showFABMenu = false }
-            }
             .onChange(of: viewModel.accounts.count) { _, _ in
                 viewModel.recalculateData()
             }
