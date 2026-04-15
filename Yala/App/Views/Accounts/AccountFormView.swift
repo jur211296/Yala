@@ -40,7 +40,6 @@ struct AccountFormView: View {
         NavigationStack {
             ZStack {
                 PanelBackgroundView()
-                    .dismissKeyboardOnTap()
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
@@ -76,6 +75,7 @@ struct AccountFormView: View {
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
+                    .dismissKeyboardOnTap()
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
@@ -232,7 +232,6 @@ struct AccountFormView: View {
                     .padding()
                 }
                 .buttonStyle(.plain)
-                .simultaneousGesture(TapGesture().onEnded { _ in focusedField = nil })
 
                 SubsectionDivider()
 
@@ -275,7 +274,6 @@ struct AccountFormView: View {
                 .padding()
             }
             .buttonStyle(.plain)
-            .simultaneousGesture(TapGesture().onEnded { _ in focusedField = nil })
         }
     }
 
@@ -300,7 +298,6 @@ struct AccountFormView: View {
                     .padding()
                 }
                 .buttonStyle(.plain)
-                .simultaneousGesture(TapGesture().onEnded { _ in focusedField = nil })
 
                 SubsectionDivider()
 

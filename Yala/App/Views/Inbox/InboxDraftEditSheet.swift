@@ -247,7 +247,6 @@ struct InboxDraftEditSheet: View {
         ZStack {
             theme.background
                 .ignoresSafeArea()
-                .dismissKeyboardOnTap()
 
             VStack(spacing: DS.Spacing.none) {
                 // Transaction type selector (full width, at top)
@@ -265,6 +264,7 @@ struct InboxDraftEditSheet: View {
                     .padding(.horizontal, DS.Spacing.xl)
                     .padding(.bottom, DS.Spacing.xxl)
             }
+            .dismissKeyboardOnTap()
         }
     }
 

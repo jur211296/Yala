@@ -103,12 +103,10 @@ struct SaveAsFavoriteSheet: View {
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
+                .dismissKeyboardOnTap()
             }
             .scrollDismissesKeyboard(.interactively)
-            .background(
-                PanelBackgroundView()
-                    .dismissKeyboardOnTap()
-            )
+            .background(PanelBackgroundView())
             .navigationTitle(L10n.Action.saveAsFavorite)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

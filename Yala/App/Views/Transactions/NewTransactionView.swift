@@ -126,7 +126,6 @@ struct NewTransactionView: View {
             ZStack {
                 theme.background
                     .ignoresSafeArea()
-                    .dismissKeyboardOnTap()
 
                 VStack(spacing: DS.Spacing.none) {
                     // Transaction type selector
@@ -158,6 +157,7 @@ struct NewTransactionView: View {
                 }
                 .scaleEffect(duplicateAnimationVisible ? 1.0 : 0.92)
                 .opacity(duplicateAnimationVisible ? 1.0 : 0.0)
+                .dismissKeyboardOnTap()
             }
             .navigationTitle(
                 (transactionToEdit != nil && !isDuplicating)

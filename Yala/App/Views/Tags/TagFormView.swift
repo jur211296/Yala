@@ -44,7 +44,6 @@ struct TagFormView: View {
         NavigationStack {
             ZStack {
                 PanelBackgroundView()
-                    .dismissKeyboardOnTap()
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
@@ -59,6 +58,7 @@ struct TagFormView: View {
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
+                    .dismissKeyboardOnTap()
                 }
                 .scrollDismissesKeyboard(.interactively)
             }

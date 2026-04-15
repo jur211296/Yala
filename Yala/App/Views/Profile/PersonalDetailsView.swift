@@ -45,7 +45,6 @@ struct PersonalDetailsView: View {
         NavigationStack {
             ZStack {
                 PanelBackgroundView()
-                    .dismissKeyboardOnTap()
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
@@ -61,6 +60,7 @@ struct PersonalDetailsView: View {
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.top, DS.Spacing.xxl)
                     .padding(.bottom, DS.Spacing.xxxl)
+                    .dismissKeyboardOnTap()
                 }
                 .scrollDismissesKeyboard(.interactively)
             }

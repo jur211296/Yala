@@ -58,7 +58,6 @@ struct CategoryDetailView: View {
     var body: some View {
         ZStack {
             PanelBackgroundView()
-                .dismissKeyboardOnTap()
 
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
@@ -68,6 +67,7 @@ struct CategoryDetailView: View {
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
+                .dismissKeyboardOnTap()
             }
             .scrollDismissesKeyboard(.interactively)
         }

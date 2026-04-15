@@ -71,7 +71,6 @@ struct GroupExpenseFormView: View {
             ZStack {
                 theme.background
                     .ignoresSafeArea()
-                    .dismissKeyboardOnTap()
 
                 VStack(spacing: DS.Spacing.none) {
                     Spacer()
@@ -87,6 +86,7 @@ struct GroupExpenseFormView: View {
                         .padding(.horizontal, DS.Spacing.xl)
                         .padding(.bottom, DS.Spacing.xxl)
                 }
+                .dismissKeyboardOnTap()
             }
             .navigationTitle(viewModel.isEditMode ? L10n.Groups.Expense.editTitle : L10n.Groups.Expense.title)
             .navigationBarTitleDisplayMode(.inline)

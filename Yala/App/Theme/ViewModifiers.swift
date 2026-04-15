@@ -335,10 +335,13 @@ func dismissKeyboard() {
     )
 }
 
-/// Modifier that dismisses keyboard when tapping outside text fields
+/// Cierra el teclado al tocar áreas vacías del view.
+/// Aplicar al contenido del ScrollView (después de .padding), NO al background —
+/// el ScrollView absorbe taps al fondo del ZStack.
 struct DismissKeyboardOnTapModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
+            .contentShape(Rectangle())
             .onTapGesture {
                 dismissKeyboard()
             }

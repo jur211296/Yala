@@ -41,7 +41,7 @@ struct CashFlowLineConfigSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                PanelBackgroundView().dismissKeyboardOnTap()
+                PanelBackgroundView()
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xl) {
@@ -56,6 +56,7 @@ struct CashFlowLineConfigSheet: View {
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
                     .yalaSafeBottomPadding()
+                    .dismissKeyboardOnTap()
                 }
                 .scrollDismissesKeyboard(.interactively)
             }

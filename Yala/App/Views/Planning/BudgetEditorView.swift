@@ -97,12 +97,10 @@ struct BudgetEditorView: View {
                 }
                 .padding(.vertical, DS.Spacing.xxl)
                 .padding(.horizontal, DS.Spacing.lg)
+                .dismissKeyboardOnTap()
             }
             .scrollDismissesKeyboard(.interactively)
-            .background(
-                PanelBackgroundView()
-                    .dismissKeyboardOnTap()
-            )
+            .background(PanelBackgroundView())
             .alert(
                 NSLocalizedString("budgets.delete.confirm.title", comment: ""),
                 isPresented: $showDeleteConfirmation

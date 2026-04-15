@@ -73,7 +73,6 @@ struct NotificationEditorSheet: View {
         NavigationStack {
             ZStack {
                 PanelBackgroundView()
-                    .dismissKeyboardOnTap()
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
@@ -106,6 +105,7 @@ struct NotificationEditorSheet: View {
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
+                    .dismissKeyboardOnTap()
                 }
                 .scrollDismissesKeyboard(.interactively)
                 .sheet(isPresented: $showingIconPicker) {

@@ -65,7 +65,6 @@ struct FavoriteEditorView: View {
             ZStack {
                 theme.background
                     .ignoresSafeArea()
-                    .dismissKeyboardOnTap()
 
                 VStack(spacing: DS.Spacing.none) {
                     // Transaction type selector (without transfer)
@@ -83,6 +82,7 @@ struct FavoriteEditorView: View {
                     bottomChips
                         .padding(.bottom, DS.Spacing.lg)
                 }
+                .dismissKeyboardOnTap()
             }
             .navigationTitle(favorite != nil ? L10n.Favorites.editTitle : L10n.Favorites.newTitle)
             .navigationBarTitleDisplayMode(.inline)

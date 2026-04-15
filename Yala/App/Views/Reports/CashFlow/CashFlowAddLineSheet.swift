@@ -208,7 +208,7 @@ struct CashFlowAddFromExpensesView: View {
 
     var body: some View {
         ZStack {
-            PanelBackgroundView().dismissKeyboardOnTap()
+            PanelBackgroundView()
 
             ScrollView {
                 VStack(spacing: DS.Spacing.xl) {
@@ -229,6 +229,7 @@ struct CashFlowAddFromExpensesView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xl)
                 .yalaSafeBottomPadding()
+                .dismissKeyboardOnTap()
             }
             .scrollDismissesKeyboard(.interactively)
         }
@@ -635,7 +636,7 @@ struct CashFlowAddCustomLineView: View {
 
     var body: some View {
         ZStack {
-            PanelBackgroundView().dismissKeyboardOnTap()
+            PanelBackgroundView()
 
             VStack(spacing: DS.Spacing.xl) {
                 VStack(alignment: .leading, spacing: DS.Spacing.sm) {
@@ -671,6 +672,7 @@ struct CashFlowAddCustomLineView: View {
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.xl)
+            .dismissKeyboardOnTap()
         }
         .navigationTitle(L10n.CashFlowPlan.addCustomLine)
         .navigationBarTitleDisplayMode(.inline)

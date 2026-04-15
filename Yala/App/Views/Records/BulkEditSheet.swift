@@ -604,7 +604,6 @@ struct BulkNoteEditorSheet: View {
         NavigationStack {
             ZStack {
                 PanelBackgroundView()
-                    .dismissKeyboardOnTap()
 
                 VStack(spacing: DS.Spacing.xxl) {
                     SectionBox(title: "") {
@@ -619,6 +618,7 @@ struct BulkNoteEditorSheet: View {
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
+                .dismissKeyboardOnTap()
             }
             .navigationTitle(L10n.Transaction.note)
             .navigationBarTitleDisplayMode(.inline)
@@ -662,7 +662,6 @@ struct BulkAmountEditorSheet: View {
         NavigationStack {
             ZStack {
                 PanelBackgroundView()
-                    .dismissKeyboardOnTap()
 
                 VStack(spacing: DS.Spacing.xxl) {
                     SectionBox(title: "") {
@@ -692,6 +691,7 @@ struct BulkAmountEditorSheet: View {
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
+                .dismissKeyboardOnTap()
             }
             .navigationTitle(L10n.Transaction.amount)
             .navigationBarTitleDisplayMode(.inline)
