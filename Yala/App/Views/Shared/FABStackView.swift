@@ -46,6 +46,23 @@ struct FABStackView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
 
+    // MARK: - Animation Constants
+
+    private static let fabSpring: Animation = .spring(
+        response: DS.Animation.springResponse,
+        dampingFraction: DS.Animation.springDamping
+    )
+
+    private static let fabScaleTransition: AnyTransition = .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity)
+
+    private func toggleMenu() {
+        dsWithAnimation(reduceMotion, Self.fabSpring) { showFABMenu.toggle() }
+    }
+
+    private func dismissMenu() {
+        dsWithAnimation(reduceMotion, Self.fabSpring) { showFABMenu = false }
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -53,25 +70,21 @@ struct FABStackView: View {
 
         if canUseVoiceInput {
             VStack(alignment: .trailing, spacing: DS.Spacing.md) {
-                // Expanded menu: Voice, Image, Manual
                 if showFABMenu {
                     menuButtons
                 }
 
-                // AI FAB (sparkles) — hides when transaction menu is expanded or user toggled off
-                if chatFABVisible {
-                    aiFAB
-                        .opacity(showFABMenu ? 0 : 1)
-                        .animation(.easeOut(duration: 0.15), value: showFABMenu)
+                if chatFABVisible && !showFABMenu {
+                    aiFAB.transition(Self.fabScaleTransition)
                 }
 
-                // Transaction FAB (plus/xmark)
                 transactionFAB(background: fabBackground)
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
             .onChange(of: sessionState.selectedMainTab) { _, _ in
-                if showFABMenu { showFABMenu = false }
+                guard showFABMenu else { return }
+                dismissMenu()
             }
             .aiConsentAlert(isPresented: $showAIConsentAlert, pendingInput: $pendingAIInput) { input in
                 switch input {
@@ -138,9 +151,7 @@ struct FABStackView: View {
     private func transactionFAB(background: Color) -> some View {
         Button {
             DS.Haptic.medium()
-            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                showFABMenu.toggle()
-            }
+            toggleMenu()
         } label: {
             Image(systemName: showFABMenu ? "xmark" : "plus")
                 .font(DS.Typography.title)
@@ -163,7 +174,7 @@ struct FABStackView: View {
     private var menuButtons: some View {
         VStack(spacing: DS.Spacing.sm) {
             fabMenuButton(icon: "waveform", text: L10n.Panel.fabVoice, color: .hotPink, isLocked: isVoiceLocked) {
-                dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) { showFABMenu = false }
+                dismissMenu()
                 if isVoiceLocked {
                     onUpgradeVoice()
                 } else if !aiDataConsentAccepted {
@@ -176,7 +187,7 @@ struct FABStackView: View {
             }
 
             fabMenuButton(icon: "photo", text: L10n.Panel.fabImage, color: .teal, isLocked: isImageLocked) {
-                dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) { showFABMenu = false }
+                dismissMenu()
                 if isImageLocked {
                     onUpgradeImage()
                 } else if !aiDataConsentAccepted {
@@ -189,14 +200,11 @@ struct FABStackView: View {
             }
 
             fabMenuButton(icon: "square.and.pencil", text: L10n.Panel.fabManual, color: .electricIndigo) {
-                dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) { showFABMenu = false }
+                dismissMenu()
                 onManualTap()
             }
         }
-        .transition(.asymmetric(
-            insertion: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity),
-            removal: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity)
-        ))
+        .transition(Self.fabScaleTransition)
     }
 
     // MARK: - Disabled FAB
