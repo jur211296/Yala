@@ -283,10 +283,16 @@ struct TrendChartView: View {
             }
         }()
 
-        return SmartAxisHelper.calculateSmartAxisDates(
+        let rawDates = SmartAxisHelper.calculateSmartAxisDates(
             forDataDates: trendPoints.map(\.date),
             grouping: calendarUnit
         )
+
+        guard let firstDate = trendPoints.first?.date,
+              let lastDate = trendPoints.last?.date else { return rawDates }
+        return SmartAxisHelper.deduplicatedAxisDates(
+            rawDates, firstDate: firstDate, lastDate: lastDate,
+            forceGrouping: grouping.forceAxisGrouping)
     }
 
     /// Format axis label based on data span (include year if multiple years)

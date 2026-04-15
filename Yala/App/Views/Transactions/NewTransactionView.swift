@@ -1373,6 +1373,7 @@ struct NewTransactionView: View {
             // This turns the form into "create new" mode with prefilled data
             viewModel.editingTransaction = nil
             viewModel.editingTransferPair = nil
+            viewModel.transactionDate = Date.now
 
             // Mark as duplicating to update title
             isDuplicating = true

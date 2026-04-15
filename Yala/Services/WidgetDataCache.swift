@@ -22,6 +22,7 @@ struct WidgetTransaction: Codable {
     let categoryName: String?
     let categoryColor: String?
     let categoryIcon: String?
+    let subcategoryIcon: String?
     let subcategoryName: String?
     let isIncome: Bool
     let amountInPreferredCurrency: Double
@@ -297,6 +298,7 @@ enum WidgetDataCache {
                 categoryName: tx.category?.name,
                 categoryColor: tx.category?.colorHex,
                 categoryIcon: tx.category?.iconName,
+                subcategoryIcon: tx.subcategory?.iconName ?? tx.category?.iconName,
                 subcategoryName: tx.subcategory?.name,
                 isIncome: (tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount) > 0,
                 amountInPreferredCurrency: tx.amountInPreferredCurrency

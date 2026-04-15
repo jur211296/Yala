@@ -40,6 +40,7 @@ struct LatestRecordsEntry: TimelineEntry {
                     categoryName: "Alimentación",
                     categoryColor: "#FF6B6B",
                     categoryIcon: "fork.knife",
+                    subcategoryIcon: "fork.knife",
                     subcategoryName: "Restaurantes",
                     isIncome: false,
                     amountInPreferredCurrency: 45.50
@@ -53,6 +54,7 @@ struct LatestRecordsEntry: TimelineEntry {
                     categoryName: "Transporte",
                     categoryColor: "#4ECDC4",
                     categoryIcon: "car.fill",
+                    subcategoryIcon: "car.fill",
                     subcategoryName: "Taxi",
                     isIncome: false,
                     amountInPreferredCurrency: 150.00
@@ -66,6 +68,7 @@ struct LatestRecordsEntry: TimelineEntry {
                     categoryName: "Ingresos",
                     categoryColor: "#00C2CB",
                     categoryIcon: "banknote",
+                    subcategoryIcon: "banknote",
                     subcategoryName: "Salario",
                     isIncome: true,
                     amountInPreferredCurrency: 2500.00
@@ -174,7 +177,7 @@ struct TransactionRowView: View {
                     .frame(width: WDS.ListItem.iconSizeCompact,
                            height: WDS.ListItem.iconSizeCompact)
 
-                Image(systemName: transaction.categoryIcon ?? "questionmark")
+                Image(systemName: transaction.subcategoryIcon ?? transaction.categoryIcon ?? "questionmark")
                     .font(.system(size: WDS.Icon.sm)) // A11Y-DT: widget fixed layout
                     .foregroundStyle(categoryColor)
                     .widgetAccentable()

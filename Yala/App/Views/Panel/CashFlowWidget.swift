@@ -191,10 +191,16 @@ struct CashFlowWidget: View {
             }
         }()
 
-        return SmartAxisHelper.calculateSmartAxisDates(
+        let rawDates = SmartAxisHelper.calculateSmartAxisDates(
             forDataDates: activeChartData.map(\.date),
             grouping: calendarUnit
         )
+
+        guard let firstDate = activeChartData.first?.date,
+              let lastDate = activeChartData.last?.date else { return rawDates }
+        return SmartAxisHelper.deduplicatedAxisDates(
+            rawDates, firstDate: firstDate, lastDate: lastDate,
+            forceGrouping: grouping.forceAxisGrouping)
     }
 
     /// Format axis label based on data span and grouping

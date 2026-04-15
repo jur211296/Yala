@@ -178,6 +178,30 @@ enum SmartAxisHelper {
         }
     }
 
+    // MARK: - Axis Label Deduplication
+
+    /// Remove axis dates whose formatted label duplicates another, keeping first and last always.
+    /// Use after `calculateSmartAxisDates` to prevent repeated labels like "ene", "ene", "feb".
+    static func deduplicatedAxisDates(
+        _ rawDates: [Date],
+        firstDate: Date,
+        lastDate: Date,
+        forceGrouping: Calendar.Component?
+    ) -> [Date] {
+        guard rawDates.count > 1 else { return rawDates }
+
+        let formatLabel = { (date: Date) in
+            formatAxisLabel(for: date, startDate: firstDate, endDate: lastDate, forceGrouping: forceGrouping)
+        }
+        guard let firstRaw = rawDates.first, let lastRaw = rawDates.last else { return rawDates }
+        var seen: Set<String> = [formatLabel(firstRaw), formatLabel(lastRaw)]
+        return rawDates.enumerated().filter { i, date in
+            if i == 0 || i == rawDates.count - 1 { return true }
+            return seen.insert(formatLabel(date)).inserted
+        }
+        .map(\.1)
+    }
+
     // MARK: - Calendar Unit Centering
 
     /// Center a date within its calendar unit for axis alignment with BarMark(unit:)
