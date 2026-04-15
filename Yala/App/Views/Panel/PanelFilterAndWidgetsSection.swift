@@ -20,6 +20,9 @@ struct PanelFilterAndWidgetsSection: View {
     @Binding var showBudgetFavoritesSettings: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// Namespace para morphing de los filter chips (iOS 26 GlassEffectContainer + glassEffectID).
+    @Namespace private var chipNamespace
+
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
 
@@ -57,6 +60,7 @@ struct PanelFilterAndWidgetsSection: View {
 
                 if activeFilterCount > 0 {
                     ScrollView(.horizontal, showsIndicators: false) {
+                        GlassEffectContainer(spacing: DS.Spacing.sm) {
                         HStack(spacing: DS.Spacing.sm) {
                             // Exclude mode badge
                             if viewModel.isExcludeMode {
@@ -72,6 +76,7 @@ struct PanelFilterAndWidgetsSection: View {
                                 .padding(.horizontal, DS.Spacing.sm)
                                 .padding(.vertical, DS.Spacing.xs)
                                 .background(DS.Semantic.errorBackgroundSubtle, in: Capsule())
+                                .glassEffectID("chip.excludeMode", in: chipNamespace)
                             }
 
                             // Account Chip
@@ -83,7 +88,9 @@ struct PanelFilterAndWidgetsSection: View {
                                 FilterChipView(
                                     accountName: account.name,
                                     onClear: { viewModel.selectedAccountID = nil }
-                                ).excludeMode(viewModel.isExcludeMode)
+                                )
+                                .excludeMode(viewModel.isExcludeMode)
+                                .glassEffectID("chip.account", in: chipNamespace)
                             }
 
                             // Date Chip
@@ -96,6 +103,7 @@ struct PanelFilterAndWidgetsSection: View {
                                         }
                                     }
                                 )
+                                .glassEffectID("chip.date", in: chipNamespace)
                             }
 
                             // Category Chip
@@ -119,7 +127,9 @@ struct PanelFilterAndWidgetsSection: View {
                                         sessionState.selectedCategoryIDs.removeAll()
                                         sessionState.selectedSubcategoryIDs.removeAll()
                                     }
-                                ).excludeMode(viewModel.isExcludeMode)
+                                )
+                                .excludeMode(viewModel.isExcludeMode)
+                                .glassEffectID("chip.category", in: chipNamespace)
                             } else if !isAllSubsSelected && !selectedSubsByID.isEmpty {
                                 let parentCategories = Set(
                                     selectedSubsByID.compactMap { $0.category })
@@ -135,7 +145,9 @@ struct PanelFilterAndWidgetsSection: View {
                                             sessionState.selectedCategoryIDs.removeAll()
                                             sessionState.selectedSubcategoryIDs.removeAll()
                                         }
-                                    ).excludeMode(viewModel.isExcludeMode)
+                                    )
+                                    .excludeMode(viewModel.isExcludeMode)
+                                    .glassEffectID("chip.category", in: chipNamespace)
                                 }
                             }
 
@@ -155,7 +167,9 @@ struct PanelFilterAndWidgetsSection: View {
                                             viewModel.selectedSubcategoryIDs.removeAll()
                                             sessionState.selectedSubcategoryIDs.removeAll()
                                         }
-                                    ).excludeMode(viewModel.isExcludeMode)
+                                    )
+                                    .excludeMode(viewModel.isExcludeMode)
+                                    .glassEffectID("chip.subcategory", in: chipNamespace)
                                 }
                             }
 
@@ -166,7 +180,9 @@ struct PanelFilterAndWidgetsSection: View {
                                     onClear: {
                                         dsWithAnimation(reduceMotion) { viewModel.selectedNeed = nil }
                                     }
-                                ).excludeMode(viewModel.isExcludeMode)
+                                )
+                                .excludeMode(viewModel.isExcludeMode)
+                                .glassEffectID("chip.need", in: chipNamespace)
                             }
 
                             // Transaction Nature Chip
@@ -180,6 +196,7 @@ struct PanelFilterAndWidgetsSection: View {
                                         }
                                     }
                                 )
+                                .glassEffectID("chip.nature", in: chipNamespace)
                             }
 
                             // Tag Chips
@@ -195,7 +212,9 @@ struct PanelFilterAndWidgetsSection: View {
                                                 viewModel.syncToSessionState(sessionState)
                                             }
                                         }
-                                    ).excludeMode(viewModel.isExcludeMode)
+                                    )
+                                    .excludeMode(viewModel.isExcludeMode)
+                                    .glassEffectID("chip.tag.\(tagID.hashValue)", in: chipNamespace)
                                 }
                             }
 
@@ -209,7 +228,9 @@ struct PanelFilterAndWidgetsSection: View {
                                             viewModel.syncToSessionState(sessionState)
                                         }
                                     }
-                                ).excludeMode(viewModel.isExcludeMode)
+                                )
+                                .excludeMode(viewModel.isExcludeMode)
+                                .glassEffectID("chip.currency.\(currency.rawValue)", in: chipNamespace)
                             }
 
                             // Amount Chip
@@ -223,6 +244,7 @@ struct PanelFilterAndWidgetsSection: View {
                                         }
                                     }
                                 )
+                                .glassEffectID("chip.amount", in: chipNamespace)
                             }
 
                             // Note/Search Chip
@@ -236,6 +258,7 @@ struct PanelFilterAndWidgetsSection: View {
                                         }
                                     }
                                 )
+                                .glassEffectID("chip.note", in: chipNamespace)
                             }
 
                             // Clear All Button
@@ -250,9 +273,13 @@ struct PanelFilterAndWidgetsSection: View {
                                 }
                                 .accessibilityLabel(L10n.Accessibility.clearFilters)
                                 .buttonStyle(.plain)
+                                .glassEffectID("chip.clearAll", in: chipNamespace)
                             }
                         }
+                        } // GlassEffectContainer
                     }
+                    .contentMargins(.horizontal, DS.Spacing.md, for: .scrollContent)
+                    .scrollClipDisabled()
                 } else {
                     Spacer()
                 }
