@@ -23,6 +23,7 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 | MerchantMemoryService | App/Services/MerchantMemoryService.swift | Auto-categorización merchants |
 | iCloudSyncService | Services/iCloudSyncService.swift | Monitor estado sync iCloud |
 | PreferenceSyncService | App/Services/PreferenceSyncService.swift | Sync preferencias via iCloud KV |
+| AppPreferences | App/Services/AppPreferences.swift | Preferencias de usuario tipadas (@Environment) |
 | CategoryDeduplicationService | App/Services/CategoryDeduplicationService.swift | Merge categorías duplicadas post-sync |
 | InsightsLLMService | Services/InsightsLLMService.swift | AI insights via GPT-4.1 Mini |
 | TelemetryService | Services/TelemetryService.swift | Analytics privacy-first via TelemetryDeck |
@@ -229,6 +230,13 @@ Después de crear o modificar modelos, servicios o ViewModels:
 - Agregar gotchas descubiertos a la sección Code Rules
 - Mantener este archivo como fuente de verdad para cada sesión AI
 
+Después de añadir una preferencia nueva (UserDefaults persistente):
+1. Agregar la property tipada en `AppPreferences.swift` en la MARK-section correspondiente (Currency/Identity/Session/Widgets/AI/Budgets/Flags/Tours/Insights), con pattern `didSet` + guard + `persist*(...)`.
+2. Añadir la storage key en el `enum Keys` al final del archivo.
+3. Cargar el valor en `init(defaults:)` y en `refreshFromDefaults()` (simétricos).
+4. Si la preferencia debe sincronizarse cross-device via iCloud KV: añadir caso a `PreferenceSyncService.SyncKey` + pasar `synced: true` en el `persist*` call.
+5. Añadir test en `AppPreferencesTests.swift` (persistencia + round-trip).
+
 ## Code Rules
 
 ### Reglas de cambio
@@ -275,6 +283,7 @@ Después de crear o modificar modelos, servicios o ViewModels:
 - NUNCA `Binding(get:set:)` en body — usar `@Binding` + `.onChange()`
 - NUNCA `@AppStorage` dentro de `@Observable` (no triggerea updates)
 - Preferir `@Observable` + `@State`/`@Bindable` sobre `ObservableObject`/`@Published`/`@StateObject`
+- **Preferencias persistentes → `AppPreferences` inyectado via `@Environment`** — NUNCA `@AppStorage` directo en views nuevas. Ver `$VAULT/planning/UI-PATTERNS.md` sección "iOS 26 Glass" y sub-sección "Preferencias".
 
 ### Modern Swift Idioms
 - `Date.now` en vez de `Date()`

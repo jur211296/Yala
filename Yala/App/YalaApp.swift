@@ -61,6 +61,7 @@ struct YalaApp: App {
                 .environment(bootstrapper.draftService)
                 .environment(bootstrapper.entityDeletionService)
                 .environment(bootstrapper.transactionService)
+                .environment(bootstrapper.appPreferences)
                 .task {
                     try? Tips.configure([
                         .displayFrequency(.immediate)

@@ -33,6 +33,7 @@ final class AppBootstrapper {
     let entityDeletionService = EntityDeletionService.shared
     let transactionService = TransactionService.shared
     let budgetAlertService = BudgetAlertService.shared
+    let appPreferences = AppPreferences()
 
     // MARK: - Deferred Panel Action
 
