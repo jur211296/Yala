@@ -107,7 +107,7 @@ struct AccountCardView: View {
                         .font(DS.Typography.labelTiny)
                         .foregroundStyle(isHighlighted ? Color.white : theme.primaryText)
                         .padding(DS.Spacing.xs)
-                        .background(.ultraThinMaterial, in: Circle())
+                        .glassEffect(.regular.interactive(), in: Circle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(L10n.Accessibility.editAccount)

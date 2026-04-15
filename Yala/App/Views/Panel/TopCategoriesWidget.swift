@@ -80,15 +80,8 @@ struct TopCategoriesWidget: View {
                 contentForSize
             }
         }
-        .padding(size == .small ? DS.Spacing.lg : DS.Spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+        .glassCard(.regular, radius: DS.Radius.xl, padding: size == .small ? DS.Spacing.lg : DS.Spacing.xl)
     }
 
     // MARK: - Content Switcher

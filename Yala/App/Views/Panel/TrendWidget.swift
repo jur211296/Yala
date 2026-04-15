@@ -58,14 +58,7 @@ struct TrendWidget: View {
                 .padding(.top, DS.Spacing.sm)
             }
         }
-        .padding(DS.Card.padding)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Card.radius, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Card.radius, style: .continuous)
-                .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
-        )
-        .dsCardShadow()
+        .glassCard(.regular, radius: DS.Card.radius, padding: DS.Card.padding)
     }
 
     // MARK: - Components
