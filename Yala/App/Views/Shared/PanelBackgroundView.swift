@@ -41,6 +41,7 @@ struct PanelBackgroundView: View {
 
 struct AnimatedMeshBackground: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     let variant: TranslucentVariant
     let isLiquidGlass: Bool
 
@@ -53,7 +54,10 @@ struct AnimatedMeshBackground: View {
         if reduceMotion {
             staticMesh
         } else {
-            TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+            // Pausar el TimelineView cuando la app está en background/inactive:
+            // ahorra ~30 FPS de recomputación de meshGradient en main thread,
+            // reduce termal durante snapshots del app switcher.
+            TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: scenePhase != .active)) { timeline in
                 let time = timeline.date.timeIntervalSinceReferenceDate
                 meshGradient(time: time)
             }
