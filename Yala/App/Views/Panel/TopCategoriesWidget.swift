@@ -307,6 +307,9 @@ private struct CategoryRow: View {
     let currencyCode: String
     var showNAWhenNil: Bool = false
 
+    /// Ancho medido de la barra — reemplaza GeometryReader para soportar halfWidthPair.
+    @State private var barWidth: CGFloat = 0
+
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
             // Icon Circle
@@ -350,21 +353,20 @@ private struct CategoryRow: View {
                     }
 
                     // Bar
-                    GeometryReader { geo in
-                        let width =
-                            maxAmount > 0 ? (summary.amount / maxAmount) * geo.size.width : 0
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(DS.Semantic.neutralBackground)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 6)
 
-                        ZStack(alignment: .leading) {
-                            Capsule()
-                                .fill(DS.Semantic.neutralBackground)
-                                .frame(height: 6)
-
-                            Capsule()
-                                .fill(Color(hex: summary.category.colorHex))
-                                .frame(width: width, height: 6)
-                        }
+                        let width = maxAmount > 0 ? (summary.amount / maxAmount) * barWidth : 0
+                        Capsule()
+                            .fill(Color(hex: summary.category.colorHex))
+                            .frame(width: width, height: 6)
                     }
-                    .frame(height: 6)
+                    .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
+                        barWidth = newWidth
+                    }
                 }
             }
         }

@@ -54,6 +54,10 @@ struct TagsPieWidget: View {
     @State private var selectedAngle: Double?
     @State private var hoveredItem: PieChartData?
 
+    /// Ancho medido de la barra segmentada — observado con onGeometryChange (no causa reflow).
+    /// Reemplaza GeometryReader para permitir el widget tanto en fullWidth como halfWidthPair.
+    @State private var segmentedBarWidth: CGFloat = 0
+
     private let innerRadiusRatio: CGFloat = 0.50
 
     var body: some View {
@@ -361,24 +365,7 @@ struct TagsPieWidget: View {
                 }
             }
 
-            GeometryReader { geo in
-                let segmentSpacing: CGFloat = DS.Spacing.xxs
-                let totalSpacing = segmentSpacing * CGFloat(max(0, chartData.count - 1))
-                let availableWidth = geo.size.width - totalSpacing
-
-                HStack(spacing: segmentSpacing) {
-                    ForEach(chartData) { item in
-                        RoundedRectangle(cornerRadius: DS.Radius.xs)
-                            .fill(Color(hex: item.colorHex))
-                            .frame(width: availableWidth * CGFloat(item.percentage / 100))
-                            .opacity(isDimmed(item) ? 0.3 : 1.0)
-                            .onTapGesture {
-                                handleTap(item)
-                            }
-                    }
-                }
-            }
-            .frame(height: 28)
+            segmentedBar(chartData: chartData)
         }
         .padding(.top, DS.Spacing.lg)
     }
@@ -623,5 +610,30 @@ struct TagsPieWidget: View {
         }
 
         return result
+    }
+
+    /// Barra segmentada con ancho medido vía `onGeometryChange` — reemplaza `GeometryReader`
+    /// para evitar reflow loops durante scroll vertical y permitir el widget en halfWidthPair.
+    @ViewBuilder
+    private func segmentedBar(chartData: [PieChartData]) -> some View {
+        let segmentSpacing: CGFloat = DS.Spacing.xxs
+        let totalSpacing = segmentSpacing * CGFloat(max(0, chartData.count - 1))
+        let availableWidth = max(0, segmentedBarWidth - totalSpacing)
+
+        HStack(spacing: segmentSpacing) {
+            ForEach(chartData) { item in
+                RoundedRectangle(cornerRadius: DS.Radius.xs)
+                    .fill(Color(hex: item.colorHex))
+                    .frame(width: availableWidth * CGFloat(item.percentage / 100))
+                    .opacity(isDimmed(item) ? 0.3 : 1.0)
+                    .onTapGesture {
+                        handleTap(item)
+                    }
+            }
+        }
+        .frame(height: 28)
+        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
+            segmentedBarWidth = newWidth
+        }
     }
 }

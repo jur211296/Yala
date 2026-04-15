@@ -59,6 +59,9 @@ struct CategoriesPieWidget: View {
     // Hover State - For long-press tooltip
     @State private var hoveredItem: PieChartData?
 
+    /// Ancho medido de la barra segmentada — reemplaza GeometryReader para soportar halfWidthPair.
+    @State private var segmentedBarWidth: CGFloat = 0
+
     // Configuration Constants
     private let innerRadiusRatio: CGFloat = 0.50
     // Relative to the Chart's frame radius (half of smaller dimension)
@@ -406,25 +409,7 @@ struct CategoriesPieWidget: View {
             }
 
             // 2. Stacked Bar (with segment separation)
-            GeometryReader { geo in
-                let segmentSpacing: CGFloat = DS.Spacing.xxs
-                let totalSpacing = segmentSpacing * CGFloat(max(0, chartData.count - 1))
-                let availableWidth = geo.size.width - totalSpacing
-
-                HStack(spacing: segmentSpacing) {
-                    ForEach(chartData) { item in
-                        RoundedRectangle(cornerRadius: DS.Radius.xs)
-                            .fill(Color(hex: item.colorHex))
-                            .frame(width: availableWidth * CGFloat(item.percentage / 100))
-                            .opacity(isDimmed(item) ? 0.3 : 1.0)
-                            .dsAnimation(.easeInOut(duration: 0.2), value: selectedCategoryIDs, reduceMotion: reduceMotion)
-                            .onTapGesture {
-                                handleTap(item)
-                            }
-                    }
-                }
-            }
-            .frame(height: 28)
+            segmentedBar(chartData: chartData)
         }
         .padding(.top, DS.Spacing.lg)
     }
@@ -682,5 +667,31 @@ struct CategoriesPieWidget: View {
         }
 
         return result
+    }
+
+    /// Barra segmentada con ancho medido vía `onGeometryChange` — reemplaza `GeometryReader`
+    /// para evitar reflow loops durante scroll vertical y permitir el widget en halfWidthPair.
+    @ViewBuilder
+    private func segmentedBar(chartData: [PieChartData]) -> some View {
+        let segmentSpacing: CGFloat = DS.Spacing.xxs
+        let totalSpacing = segmentSpacing * CGFloat(max(0, chartData.count - 1))
+        let availableWidth = max(0, segmentedBarWidth - totalSpacing)
+
+        HStack(spacing: segmentSpacing) {
+            ForEach(chartData) { item in
+                RoundedRectangle(cornerRadius: DS.Radius.xs)
+                    .fill(Color(hex: item.colorHex))
+                    .frame(width: availableWidth * CGFloat(item.percentage / 100))
+                    .opacity(isDimmed(item) ? 0.3 : 1.0)
+                    .dsAnimation(.easeInOut(duration: 0.2), value: selectedCategoryIDs, reduceMotion: reduceMotion)
+                    .onTapGesture {
+                        handleTap(item)
+                    }
+            }
+        }
+        .frame(height: 28)
+        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
+            segmentedBarWidth = newWidth
+        }
     }
 }
