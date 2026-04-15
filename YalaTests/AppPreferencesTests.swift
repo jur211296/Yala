@@ -107,16 +107,29 @@ struct AppPreferencesTests {
         #expect(reloaded.secondaryCurrencies == ["USD", "EUR", "GBP"])
     }
 
-    @Test func set_accountsSortOrderNames_roundTripsArray() {
+    @Test func set_accountsSortOrderNames_roundTripsArrayViaPipeSeparation() {
         let defaults = Self.makeSuite()
         let prefs = AppPreferences(defaults: defaults)
 
         prefs.accountsSortOrderNames = ["Cash", "Bank", "Credit"]
 
-        #expect(defaults.string(forKey: AppPreferences.Keys.accountsSortOrderNames) == "Cash,Bank,Credit")
+        #expect(defaults.string(forKey: AppPreferences.Keys.accountsSortOrderNames) == "Cash|Bank|Credit")
 
         let reloaded = AppPreferences(defaults: defaults)
         #expect(reloaded.accountsSortOrderNames == ["Cash", "Bank", "Credit"])
+    }
+
+    /// Nombres con comas (p.ej. "Savings, USD") no se colisionan con el separador pipe.
+    @Test func set_accountsSortOrderNames_preservesNamesWithCommas() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+
+        prefs.accountsSortOrderNames = ["Savings, USD", "Main", "Credit, Visa"]
+
+        #expect(defaults.string(forKey: AppPreferences.Keys.accountsSortOrderNames) == "Savings, USD|Main|Credit, Visa")
+
+        let reloaded = AppPreferences(defaults: defaults)
+        #expect(reloaded.accountsSortOrderNames == ["Savings, USD", "Main", "Credit, Visa"])
     }
 
     @Test func set_currencyDisplayFormat_persistsRawValue() {

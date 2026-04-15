@@ -136,11 +136,14 @@ final class AppPreferences {
         }
     }
 
-    /// Comma-separated list of account names in sort order.
+    /// Pipe-separated list of account names in sort order.
+    /// NOTE: pipe (`|`) chosen to match legacy `@AppStorage("accountsSortOrderNames")` callsites
+    /// and `PanelViewModel.ensureAccountsSortOrderConsistency`. Account names may legitimately
+    /// contain commas but never pipes, so this separator is collision-safe.
     var accountsSortOrderNames: [String] = [] {
         didSet {
             guard oldValue != accountsSortOrderNames else { return }
-            persistString(accountsSortOrderNames.joined(separator: ","), forKey: Keys.accountsSortOrderNames, synced: true)
+            persistString(accountsSortOrderNames.joined(separator: "|"), forKey: Keys.accountsSortOrderNames, synced: true)
         }
     }
 
@@ -486,7 +489,7 @@ final class AppPreferences {
             firstWeekday = defaults.integer(forKey: Keys.firstWeekday)
         }
         if let raw = defaults.string(forKey: Keys.accountsSortOrderNames) {
-            accountsSortOrderNames = raw.isEmpty ? [] : raw.split(separator: ",").map { String($0) }
+            accountsSortOrderNames = raw.isEmpty ? [] : raw.split(separator: "|").map { String($0) }
         }
         if let raw = defaults.string(forKey: Keys.tagsSortOrderNames) {
             tagsSortOrderNames = raw.isEmpty ? [] : raw.split(separator: ",").map { String($0) }
