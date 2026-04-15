@@ -166,6 +166,7 @@ struct PanelView: View {
                 .yalaSkeleton(!viewModel.isReady)
                 .navigationTitle(L10n.Panel.title(userName))
                 .navigationBarTitleDisplayMode(.large)
+                .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         inboxToolbarButton
@@ -341,10 +342,10 @@ struct PanelView: View {
                             showBudgetFavoritesSettings: $sheets.showBudgetFavoritesSettings
                         )
                     }
-                    .padding(.horizontal, DS.Adaptive.horizontalPadding(sizeClass))
                     .padding(.top, DS.Spacing.lg)
                     .padding(.bottom, DS.Spacing.xxxl)
                 }
+                .scrollViewGlassEdges(horizontalMargin: DS.Adaptive.horizontalPadding(sizeClass))
                 .refreshable {
                     await refreshData()
                 }
