@@ -761,22 +761,22 @@ struct CashFlowWidget: View {
                                 .foregroundStyle(.thPrimaryText)
                             }
                             // Bar
-                            GeometryReader { geo in
-                                ZStack(alignment: .leading) {
-                                    // Track
-                                    Capsule()
-                                        .fill(.thPrimaryText.opacity(0.05))
-                                        .frame(height: 8)
+                            ZStack(alignment: .leading) {
+                                // Track
+                                Capsule()
+                                    .fill(.thPrimaryText.opacity(0.05))
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 8)
 
-                                    // Fill - teal color for income
-                                    let width =
-                                        maxVal > 0 ? (summary.totalIncome / maxVal) * geo.size.width : 0
-                                    Capsule()
-                                        .fill(Color.incomeGraph)
-                                        .frame(width: max(width, 6), height: 8)
-                                }
+                                // Fill - teal color for income
+                                Capsule()
+                                    .fill(Color.incomeGraph)
+                                    .frame(height: 8)
+                                    .containerRelativeFrame(.horizontal, alignment: .leading) { width, _ in
+                                        let ratio = maxVal > 0 ? (summary.totalIncome / maxVal) : 0
+                                        return max(width * ratio, 6)
+                                    }
                             }
-                            .frame(height: 8)
                         }
                         .opacity(isIncomeDimmed ? 0.4 : 1.0)
                     }
@@ -795,23 +795,22 @@ struct CashFlowWidget: View {
                             .font(DS.Typography.amountSmall)
                         }
                         // Bar
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                // Track
-                                Capsule()
-                                    .fill(.thPrimaryText.opacity(0.05))
-                                    .frame(height: 8)
+                        ZStack(alignment: .leading) {
+                            // Track
+                            Capsule()
+                                .fill(.thPrimaryText.opacity(0.05))
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 8)
 
-                                // Fill
-                                let width =
-                                    maxVal > 0
-                                    ? (summary.totalExpense / maxVal) * geo.size.width : 0
-                                Capsule()
-                                    .fill(Color.expenseGraph)
-                                    .frame(width: max(width, 6), height: 8)
-                            }
+                            // Fill
+                            Capsule()
+                                .fill(Color.expenseGraph)
+                                .frame(height: 8)
+                                .containerRelativeFrame(.horizontal, alignment: .leading) { width, _ in
+                                    let ratio = maxVal > 0 ? (summary.totalExpense / maxVal) : 0
+                                    return max(width * ratio, 6)
+                                }
                         }
-                        .frame(height: 8)
                     }
                     .opacity(isExpenseDimmed ? 0.4 : 1.0)
                 }

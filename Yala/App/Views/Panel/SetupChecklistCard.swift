@@ -196,19 +196,20 @@ struct SetupChecklistCard: View {
     // MARK: - Progress Bar
 
     private var progressBar: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: DS.Radius.xs)
-                    .fill(.thSecondaryText.opacity(DS.Opacity.subtle))
-                    .frame(height: 6)
+        ZStack(alignment: .leading) {
+            RoundedRectangle(cornerRadius: DS.Radius.xs)
+                .fill(.thSecondaryText.opacity(DS.Opacity.subtle))
+                .frame(maxWidth: .infinity)
+                .frame(height: 6)
 
-                RoundedRectangle(cornerRadius: DS.Radius.xs)
-                    .fill(theme.accent)
-                    .frame(width: geo.size.width * manager.progress, height: 6)
-                    .animation(.easeInOut(duration: 0.4), value: manager.progress)
-            }
+            RoundedRectangle(cornerRadius: DS.Radius.xs)
+                .fill(theme.accent)
+                .frame(height: 6)
+                .containerRelativeFrame(.horizontal, alignment: .leading) { width, _ in
+                    width * manager.progress
+                }
+                .animation(.easeInOut(duration: 0.4), value: manager.progress)
         }
-        .frame(height: 6)
     }
 }
 

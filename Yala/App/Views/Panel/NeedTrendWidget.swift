@@ -989,21 +989,22 @@ struct NeedCompactBar: View {
                 }
 
                 // Progress Bar
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        // Track
-                        Capsule()
-                            .fill(Color.primary.opacity(0.05))
-                            .frame(height: 8)
+                ZStack(alignment: .leading) {
+                    // Track
+                    Capsule()
+                        .fill(Color.primary.opacity(0.05))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 8)
 
-                        // Fill
-                        let width = maxAmount > 0 ? (amount / maxAmount) * geo.size.width : 0
-                        Capsule()
-                            .fill(need.color)
-                            .frame(width: max(width, 6), height: 8)
-                    }
+                    // Fill
+                    Capsule()
+                        .fill(need.color)
+                        .frame(height: 8)
+                        .containerRelativeFrame(.horizontal, alignment: .leading) { width, _ in
+                            let ratio = maxAmount > 0 ? (amount / maxAmount) : 0
+                            return max(width * ratio, 6)
+                        }
                 }
-                .frame(height: 8)
             }
             .opacity(isSelected ? 1.0 : 0.4)
         }
