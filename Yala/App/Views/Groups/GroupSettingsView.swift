@@ -70,7 +70,9 @@ struct GroupSettingsView: View {
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xl)
+                .dismissKeyboardOnTap()
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(.thBackground)
             .onDisappear { saveIdentity() }
             .task {

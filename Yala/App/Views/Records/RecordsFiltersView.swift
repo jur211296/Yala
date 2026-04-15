@@ -117,7 +117,9 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                     }
                     .padding(.vertical, DS.Spacing.xxl)
                     .padding(.horizontal, DS.Spacing.lg)
+                    .dismissKeyboardOnTap()
                 }
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle(L10n.Filters.title)
             .navigationBarTitleDisplayMode(.inline)

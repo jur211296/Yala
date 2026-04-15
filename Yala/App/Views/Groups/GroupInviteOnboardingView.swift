@@ -95,6 +95,7 @@ struct GroupInviteOnboardingView: View {
             }
             .padding(.bottom, DS.Spacing.xxl)
         }
+        .dismissKeyboardOnTap()
     }
 
     // MARK: - Step 2: Completion

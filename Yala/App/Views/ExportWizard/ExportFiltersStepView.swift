@@ -150,7 +150,9 @@ struct ExportFiltersStepView: View {
                     }
                     .padding(.vertical, DS.Spacing.xxl)
                     .padding(.horizontal, DS.Spacing.lg)
+                    .dismissKeyboardOnTap()
                 }
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle(L10n.Export.exportData)
             .navigationBarTitleDisplayMode(.inline)

@@ -300,6 +300,23 @@ final class MiViewModel {
 ```
 Vistas hijas simples reciben datos como `let` parameters del padre.
 
+### Forms con TextField (OBLIGATORIO)
+Cualquier vista nueva con `TextField`, `TextEditor` o `SecureField` (que no use `Form`) DEBE incluir `dismissKeyboardOnTap()` desde el primer commit. Sin esto el teclado queda atrapado. Detalles, anti-patterns y casos especiales en `$VAULT/planning/UI-PATTERNS.md` sección "Formularios con Campos de Texto".
+
+```swift
+// ✅ Patrón canónico (con ScrollView)
+ScrollView {
+    VStack { ... }.padding(...)
+        .dismissKeyboardOnTap()           // VStack interior, post-padding
+}
+.scrollDismissesKeyboard(.interactively)  // complementario, drag down
+
+// ✅ Sin ScrollView: modifier al VStack raíz post-padding
+// ✅ Componentes reutilizables: el modifier va en el padre, no en el componente
+// ❌ NO al PanelBackgroundView — el ScrollView absorbe los taps
+// ❌ NO antes del padding — hit area queda más chico que el contenido
+```
+
 ## Control de Ejecución
 
 **Después de implementar código:**

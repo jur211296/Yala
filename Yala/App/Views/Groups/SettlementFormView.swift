@@ -71,7 +71,9 @@ struct SettlementFormView: View {
                 }
                 .padding(.top, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.safeBottom)
+                .dismissKeyboardOnTap()
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(PanelBackgroundView())
             .navigationTitle(L10n.Groups.Settlement.title)
             .navigationBarTitleDisplayMode(.inline)

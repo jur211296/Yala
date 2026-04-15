@@ -212,6 +212,7 @@ private struct EditStartingBalanceSheet: View {
                 }
             }
             .padding(DS.Spacing.xl)
+            .dismissKeyboardOnTap()
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {

@@ -59,7 +59,9 @@ struct GroupFormView: View {
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xl)
+                .dismissKeyboardOnTap()
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(.thBackground)
             .navigationTitle(group == nil ? L10n.Groups.newGroup : L10n.Groups.editGroup)
             .navigationBarTitleDisplayMode(.inline)

@@ -83,8 +83,10 @@ struct CashFlowCellDetailSheet: View {
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.vertical, DS.Spacing.xl)
                         .yalaSafeBottomPadding()
+                        .dismissKeyboardOnTap()
                     }
                 }
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle(lineResult.name)
             .navigationBarTitleDisplayMode(.inline)

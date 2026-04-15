@@ -37,6 +37,7 @@ struct ChatSheetView: View {
 
                 chatInputBar
             }
+            .dismissKeyboardOnTap()
             .background(.thBackground.opacity(selectedDetent == .large ? 1 : 0))
             .navigationTitle(L10n.Chat.title)
             .navigationBarTitleDisplayMode(.inline)

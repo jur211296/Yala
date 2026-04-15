@@ -129,7 +129,9 @@ struct SupportFormSheet: View {
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.top, DS.Spacing.xxl)
+                    .dismissKeyboardOnTap()
                 }
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle(L10n.Support.title)
             .navigationBarTitleDisplayMode(.inline)

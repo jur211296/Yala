@@ -164,6 +164,7 @@ struct SplitCalculatorSheet: View {
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.lg)
+                .dismissKeyboardOnTap()
             }
             .background(.thBackground)
             .scrollDismissesKeyboard(.interactively)
