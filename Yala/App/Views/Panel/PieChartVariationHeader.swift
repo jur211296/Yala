@@ -15,7 +15,7 @@ struct PieChartVariationHeader: View {
 
     // MARK: - Settings
 
-    @AppStorage("showVariations") private var showVariations: Bool = true
+    @Environment(AppPreferences.self) private var appPreferences
 
     // MARK: - Properties
 
@@ -67,7 +67,7 @@ struct PieChartVariationHeader: View {
                         .minimumScaleFactor(0.7)
 
                     // Show previous period value for comparison (only when showVariations is ON)
-                    if showVariations, let prevAmount = previousAmount {
+                    if appPreferences.showVariations, let prevAmount = previousAmount {
                         Text("vs \(YalaFormatter.number(value: prevAmount))")
                             .font(DS.Typography.caption)
                             .foregroundStyle(.thSecondaryText)
@@ -80,7 +80,7 @@ struct PieChartVariationHeader: View {
             Spacer()
 
             // Right: Variation chip and comparison text (show when previousAmount exists and showVariations is ON)
-            if showVariations && previousAmount != nil {
+            if appPreferences.showVariations && previousAmount != nil {
                 VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
                     // Variation chip
                     VariationChip(

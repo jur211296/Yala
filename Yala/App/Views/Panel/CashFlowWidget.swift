@@ -10,7 +10,7 @@ import SwiftUI
 
 struct CashFlowWidget: View {
     @Environment(\.yalaTheme) private var theme
-    @AppStorage("averageLineMode") private var averageLineMode: Int = 1
+    @Environment(AppPreferences.self) private var appPreferences
     let summary: CashFlowSummary
     let size: WidgetSize
     let period: String
@@ -281,7 +281,7 @@ struct CashFlowWidget: View {
 
     /// Whether the total average line should be shown
     private var shouldShowTotalAverage: Bool {
-        averageLineMode == 1
+        appPreferences.averageLineMode == 1
             && activeChartData.count >= 2
             && !isWaterfallMode
             && (hasOnlyExpenses || hasOnlyIncome)
@@ -289,7 +289,7 @@ struct CashFlowWidget: View {
 
     /// Whether segmented average should be shown
     private var shouldShowSegmentedAverage: Bool {
-        averageLineMode == 2
+        appPreferences.averageLineMode == 2
             && !isWaterfallMode
             && (hasOnlyExpenses || hasOnlyIncome)
     }
@@ -851,7 +851,7 @@ struct CashFlowWidget: View {
                     averageSegmentLabel(segment: segment, index: index)
                 }
             }
-        } else if averageLineMode == 2 && !isWaterfallMode
+        } else if appPreferences.averageLineMode == 2 && !isWaterfallMode
             && (hasOnlyExpenses || hasOnlyIncome) && activeChartData.count >= 2
         {
             // Fallback to total when < 2 segments
@@ -893,7 +893,7 @@ struct CashFlowWidget: View {
             return averageSegments.first(where: { date >= $0.startDate && date < $0.endDate })?.average
         }
         // Fallback: segmented mode but < 2 segments → total
-        if averageLineMode == 2 && !isWaterfallMode
+        if appPreferences.averageLineMode == 2 && !isWaterfallMode
             && (hasOnlyExpenses || hasOnlyIncome) && activeChartData.count >= 2
         {
             return totalAverageValue

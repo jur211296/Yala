@@ -298,7 +298,7 @@ struct NeedTrendWidget: View {
 
 struct NeedTrendChartView: View {
     @Environment(\.yalaTheme) private var theme
-    @AppStorage("averageLineMode") private var averageLineMode: Int = 1
+    @Environment(AppPreferences.self) private var appPreferences
 
     let points: [NeedTrendPoint]
     let selectedNeed: SubcategoryNeed?
@@ -382,11 +382,11 @@ struct NeedTrendChartView: View {
     // MARK: - Average Line Logic
 
     private var shouldShowTotalAverage: Bool {
-        averageLineMode == 1 && points.count >= 2
+        appPreferences.averageLineMode == 1 && points.count >= 2
     }
 
     private var shouldShowSegmentedAverage: Bool {
-        averageLineMode == 2
+        appPreferences.averageLineMode == 2
     }
 
     private var totalAverageValue: Double {
@@ -610,7 +610,7 @@ struct NeedTrendChartView: View {
         if isSegmentedAverageActive {
             return averageSegments.first(where: { date >= $0.startDate && date < $0.endDate })?.average
         }
-        if averageLineMode == 2 && points.count >= 2 {
+        if appPreferences.averageLineMode == 2 && points.count >= 2 {
             return totalAverageValue
         }
         return nil
@@ -651,7 +651,7 @@ struct NeedTrendChartView: View {
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
                 }
             }
-        } else if averageLineMode == 2 && points.count >= 2 {
+        } else if appPreferences.averageLineMode == 2 && points.count >= 2 {
             RuleMark(y: .value("Avg", totalAverageValue))
                 .foregroundStyle(.thSecondaryText.opacity(0.5))
                 .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 4]))

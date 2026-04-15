@@ -31,18 +31,7 @@ struct PanelView: View {
     /// Nudge banner visibility (dormant/sporadic users)
     @State private var showNudgeBanner = false
 
-    @AppStorage("userName") private var userName: String = "Usuario"
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen.rawValue
-    @AppStorage("showVariations") private var showVariations: Bool = true
-    @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
-    @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
-    @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
-    @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
-    @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
-    @AppStorage("showSiriTip") private var showSiriTip: Bool = true
-    @AppStorage("aiChatConsentAccepted") private var chatConsentAccepted: Bool = false
-    @AppStorage("chatAssistantEnabled") private var chatEnabled: Bool = false
-    @AppStorage("chatFABVisible") private var chatFABVisible: Bool = true
+    @Environment(AppPreferences.self) private var appPreferences
 
     /// Coach mark: Pro tour (Phase 2)
     @State private var showProFabTour = false
@@ -94,12 +83,12 @@ struct PanelView: View {
         case .tryVoiceInput:
             FeatureGateService.shared.enableSetupTrial(for: .voiceInput)
             sheets.isVoiceSetupTrial = true
-            if !voiceInputEnabled { voiceInputEnabled = true }
+            if !appPreferences.voiceInputEnabled { appPreferences.voiceInputEnabled = true }
             sheets.showVoiceRecording = true
         case .tryImageInput:
             FeatureGateService.shared.enableSetupTrial(for: .imageInput)
             sheets.isImageSetupTrial = true
-            if !imageInputEnabled { imageInputEnabled = true }
+            if !appPreferences.imageInputEnabled { appPreferences.imageInputEnabled = true }
             sheets.setupTrialExampleImages = loadExampleImages()
             sheets.showImageSelection = true
         }
@@ -164,7 +153,7 @@ struct PanelView: View {
         NavigationStack {
             mainContent
                 .yalaSkeleton(!viewModel.isReady)
-                .navigationTitle(L10n.Panel.title(userName))
+                .navigationTitle(L10n.Panel.title(appPreferences.userName))
                 .navigationBarTitleDisplayMode(.large)
                 .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
                 .toolbar {
@@ -199,17 +188,18 @@ struct PanelView: View {
                 modelContext,
                 exchangeRateService: exchangeRateService,
                 currencyConverter: currencyConverter,
-                defaultCurrencyCode: defaultCurrencyCodeRaw,
+                defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 sessionState: sessionState
             )
             Task { TransferMigrationService.migratePositiveTransfersIfNeeded(in: modelContext) }
             viewModel.syncFromSessionState(sessionState)
+            let currentOrderRaw = appPreferences.accountsSortOrderNames.joined(separator: "|")
             let newOrder = viewModel.ensureAccountsSortOrderConsistency(
                 accounts: viewModel.accounts,
-                currentOrderRaw: accountsSortOrderNamesRaw
+                currentOrderRaw: currentOrderRaw
             )
-            if newOrder != accountsSortOrderNamesRaw {
-                accountsSortOrderNamesRaw = newOrder
+            if newOrder != currentOrderRaw {
+                appPreferences.accountsSortOrderNames = newOrder.split(separator: "|").map(String.init)
             }
             viewModel.reloadAndRecalculate()
         }
@@ -231,21 +221,22 @@ struct PanelView: View {
         .onChange(of: sizeClass) { _, newValue in
             viewModel.widgetConfig.columns = DS.Adaptive.columns(newValue)
         }
-        .onChange(of: defaultCurrencyCodeRaw) { _, newValue in
-            viewModel.updateDefaultCurrencyCode(newValue)
+        .onChange(of: appPreferences.defaultCurrencyCode) { _, newValue in
+            viewModel.updateDefaultCurrencyCode(newValue.rawValue)
             viewModel.recalculateData()
         }
     }
 
     private var mainContent: some View {
-        ZStack {
+        @Bindable var prefs = appPreferences
+        return ZStack {
             PanelBackgroundView()
 
             ScrollViewReader { scrollProxy in
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                        if showSiriTip, viewModel.transactions.count >= 5 {
-                            SiriTipCard(isVisible: $showSiriTip)
+                        if prefs.showSiriTip, viewModel.transactions.count >= 5 {
+                            SiriTipCard(isVisible: $prefs.showSiriTip)
                         }
 
                         // Update available banner (all users)
@@ -327,7 +318,7 @@ struct PanelView: View {
                         PanelAccountsSection(
                             viewModel: viewModel,
                             sessionState: sessionState,
-                            accountsSortOrderNames: accountsSortOrderNamesRaw.split(separator: "|").map(String.init),
+                            accountsSortOrderNames: appPreferences.accountsSortOrderNames,
                             accountFormSheet: $sheets.accountFormSheet,
                             showUpgradeForAccounts: $sheets.showUpgradeForAccounts
                         )
@@ -335,8 +326,8 @@ struct PanelView: View {
                         PanelFilterAndWidgetsSection(
                             viewModel: viewModel,
                             sessionState: sessionState,
-                            defaultCurrencyCodeRaw: defaultCurrencyCodeRaw,
-                            showVariations: showVariations,
+                            defaultCurrencyCodeRaw: appPreferences.defaultCurrencyCode.rawValue,
+                            showVariations: appPreferences.showVariations,
                             showWidgetPreferences: $sheets.showWidgetPreferences,
                             showCustomPeriodPicker: $sheets.showCustomPeriodPicker,
                             showBudgetFavoritesSettings: $sheets.showBudgetFavoritesSettings
@@ -385,9 +376,9 @@ struct PanelView: View {
                         isVoiceLocked: isVoiceLocked,
                         isImageLocked: isImageLocked,
                         isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
-                        chatConsentAccepted: chatConsentAccepted,
-                        chatEnabled: chatEnabled,
-                        chatFABVisible: chatFABVisible,
+                        chatConsentAccepted: appPreferences.aiChatConsentAccepted,
+                        chatEnabled: appPreferences.chatAssistantEnabled,
+                        chatFABVisible: appPreferences.chatFABVisible,
                         onVoiceTap: { sheets.showVoiceRecording = true },
                         onImageTap: { sheets.showImageSelection = true },
                         onManualTap: { sheets.showNewTransaction = true },

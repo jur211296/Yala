@@ -21,8 +21,7 @@ struct PanelSheetsModifier: ViewModifier {
     /// Read lazily inside sheet closures — NOT during body evaluation.
     @Environment(SessionState.self) private var sessionState
 
-    @AppStorage("aiChatConsentAccepted") private var chatConsentAccepted: Bool = false
-    @AppStorage("chatAssistantEnabled") private var chatEnabled: Bool = false
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var showPracticeAlert = false
 
@@ -165,8 +164,8 @@ struct PanelSheetsModifier: ViewModifier {
             }
             .alert(L10n.AIConsent.chatTitle, isPresented: $sheets.showChatConsentAlert) {
                 Button(L10n.AIConsent.accept) {
-                    chatConsentAccepted = true
-                    chatEnabled = true
+                    appPreferences.aiChatConsentAccepted = true
+                    appPreferences.chatAssistantEnabled = true
                     sheets.showChatSheet = true
                 }
                 Button(L10n.AIConsent.privacyPolicy) {

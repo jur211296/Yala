@@ -19,7 +19,7 @@ struct TrendChartView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @AppStorage("averageLineMode") private var averageLineMode: Int = 1
+    @Environment(AppPreferences.self) private var appPreferences
     @State private var draggingDate: Date?  // For transient drag state
 
     var body: some View {
@@ -409,7 +409,7 @@ struct TrendChartView: View {
 
     /// Total average of raw point values (nil when off or not balance)
     private var totalAverageValue: Double? {
-        guard trendType == .balance, averageLineMode >= 1, rawPoints.count >= 2 else { return nil }
+        guard trendType == .balance, appPreferences.averageLineMode >= 1, rawPoints.count >= 2 else { return nil }
         let sum = rawPoints.reduce(0.0) { $0 + $1.value }
         return sum / Double(rawPoints.count)
     }
