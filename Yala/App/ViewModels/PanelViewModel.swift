@@ -160,9 +160,6 @@ final class PanelViewModel {
     /// True after first loadData() completes. PanelView shows skeleton placeholder while false.
     private(set) var isReady: Bool = false
 
-    // UI State (not filters)
-    var leadingColumnIndex: Int? = 0
-
     // MARK: - Filter Properties (SSOT: Read/Write from SessionState)
 
     var selectedAccountID: PersistentIdentifier? {
