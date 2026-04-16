@@ -971,6 +971,8 @@ struct NeedCompactBar: View {
     var variation: Double? = nil
     var showNAWhenNil: Bool = false
 
+    @State private var barWidth: CGFloat = 0
+
     var body: some View {
         Button(action: onTap) {
             VStack(spacing: DS.Spacing.xs) {
@@ -993,18 +995,15 @@ struct NeedCompactBar: View {
                     // Track
                     Capsule()
                         .fill(Color.primary.opacity(0.05))
-                        .frame(maxWidth: .infinity)
                         .frame(height: 8)
 
                     // Fill
+                    let ratio = maxAmount > 0 ? (amount / maxAmount) : 0
                     Capsule()
                         .fill(need.color)
-                        .frame(height: 8)
-                        .containerRelativeFrame(.horizontal, alignment: .leading) { width, _ in
-                            let ratio = maxAmount > 0 ? (amount / maxAmount) : 0
-                            return max(width * ratio, 6)
-                        }
+                        .frame(width: max(barWidth * ratio, 6), height: 8)
                 }
+                .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { barWidth = $0 }
             }
             .opacity(isSelected ? 1.0 : 0.4)
         }

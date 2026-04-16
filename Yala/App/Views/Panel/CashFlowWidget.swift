@@ -27,6 +27,11 @@ struct CashFlowWidget: View {
     // Filter state for dimming non-selected bars
     let selectedTransactionNatures: Set<TransactionNature>
 
+    /// Ancho medido de las barras income/expense — reemplaza containerRelativeFrame que causaba
+    /// ciclo de medición con contentMargins del ScrollView padre, bloqueando el main thread.
+    @State private var incomeBarWidth: CGFloat = 0
+    @State private var expenseBarWidth: CGFloat = 0
+
     // Control whether to show InfoHintButton (false when shown in parent header)
     let showInfoHint: Bool
 
@@ -765,18 +770,15 @@ struct CashFlowWidget: View {
                                 // Track
                                 Capsule()
                                     .fill(.thPrimaryText.opacity(0.05))
-                                    .frame(maxWidth: .infinity)
                                     .frame(height: 8)
 
                                 // Fill - teal color for income
+                                let incomeRatio = maxVal > 0 ? (summary.totalIncome / maxVal) : 0
                                 Capsule()
                                     .fill(Color.incomeGraph)
-                                    .frame(height: 8)
-                                    .containerRelativeFrame(.horizontal, alignment: .leading) { width, _ in
-                                        let ratio = maxVal > 0 ? (summary.totalIncome / maxVal) : 0
-                                        return max(width * ratio, 6)
-                                    }
+                                    .frame(width: max(incomeBarWidth * incomeRatio, 6), height: 8)
                             }
+                            .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { incomeBarWidth = $0 }
                         }
                         .opacity(isIncomeDimmed ? 0.4 : 1.0)
                     }
@@ -799,18 +801,15 @@ struct CashFlowWidget: View {
                             // Track
                             Capsule()
                                 .fill(.thPrimaryText.opacity(0.05))
-                                .frame(maxWidth: .infinity)
                                 .frame(height: 8)
 
                             // Fill
+                            let expenseRatio = maxVal > 0 ? (summary.totalExpense / maxVal) : 0
                             Capsule()
                                 .fill(Color.expenseGraph)
-                                .frame(height: 8)
-                                .containerRelativeFrame(.horizontal, alignment: .leading) { width, _ in
-                                    let ratio = maxVal > 0 ? (summary.totalExpense / maxVal) : 0
-                                    return max(width * ratio, 6)
-                                }
+                                .frame(width: max(expenseBarWidth * expenseRatio, 6), height: 8)
                         }
+                        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { expenseBarWidth = $0 }
                     }
                     .opacity(isExpenseDimmed ? 0.4 : 1.0)
                 }

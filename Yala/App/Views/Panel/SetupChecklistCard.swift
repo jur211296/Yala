@@ -189,21 +189,21 @@ struct SetupChecklistCard: View {
 
     // MARK: - Progress Bar
 
+    @State private var progressBarWidth: CGFloat = 0
+
     private var progressBar: some View {
         ZStack(alignment: .leading) {
             RoundedRectangle(cornerRadius: DS.Radius.xs)
                 .fill(.thSecondaryText.opacity(DS.Opacity.subtle))
-                .frame(maxWidth: .infinity)
                 .frame(height: 6)
 
             RoundedRectangle(cornerRadius: DS.Radius.xs)
                 .fill(theme.accent)
-                .frame(height: 6)
-                .containerRelativeFrame(.horizontal, alignment: .leading) { width, _ in
-                    width * manager.progress
-                }
+                .frame(width: progressBarWidth * manager.progress, height: 6)
                 .animation(.easeInOut(duration: 0.4), value: manager.progress)
         }
+        .frame(height: 6)
+        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { progressBarWidth = $0 }
     }
 }
 
