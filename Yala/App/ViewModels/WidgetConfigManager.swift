@@ -175,6 +175,40 @@ final class WidgetConfigManager {
         .trend, .cashFlow, .expensesByNeed, .exchangeRate
     ]
 
+    /// Pure layout computation — usable from outside (Panel 2.0 section wrappers)
+    /// to render per-section rows without duplicating the pairing logic.
+    static func makeLayoutRows(for widgets: [WidgetConfig], columns: Int) -> [WidgetRow] {
+        var rows: [WidgetRow] = []
+        if columns >= 2 {
+            var pendingHalf: WidgetConfig?
+            for config in widgets {
+                let needsFullWidth = fullWidthOnlyTypes.contains(config.type)
+                if needsFullWidth {
+                    if let pending = pendingHalf {
+                        rows.append(WidgetRow(id: pending.id, type: .halfWidthPair(left: pending, right: nil)))
+                        pendingHalf = nil
+                    }
+                    rows.append(WidgetRow(id: config.id, type: .fullWidth(config)))
+                } else {
+                    if let pending = pendingHalf {
+                        rows.append(WidgetRow(id: pending.id, type: .halfWidthPair(left: pending, right: config)))
+                        pendingHalf = nil
+                    } else {
+                        pendingHalf = config
+                    }
+                }
+            }
+            if let pending = pendingHalf {
+                rows.append(WidgetRow(id: pending.id, type: .halfWidthPair(left: pending, right: nil)))
+            }
+        } else {
+            for config in widgets {
+                rows.append(WidgetRow(id: config.id, type: .fullWidth(config)))
+            }
+        }
+        return rows
+    }
+
     /// Computes layout rows based on current active widgets and column count
     private func computeLayoutRows() -> [WidgetRow] {
         let widgets = activeWidgets()

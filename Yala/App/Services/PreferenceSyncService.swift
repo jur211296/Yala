@@ -55,6 +55,14 @@ final class PreferenceSyncService {
         case insightsFocus
         case financialMindset
         case onboardingMode
+        // Panel 2.0 — per-section order/hidden + reserved sectionsHidden (P20-02)
+        case panelTendenciasOrder
+        case panelTendenciasHidden
+        case panelDistribucionOrder
+        case panelDistribucionHidden
+        case panelPlanificacionOrder
+        case panelPlanificacionHidden
+        case panelSectionsHidden
     }
 
     /// Keys for cross-device wipe coordination (iKV = remote, local = UserDefaults)
@@ -153,6 +161,18 @@ final class PreferenceSyncService {
                     if local.string(forKey: k) != remote {
                         local.set(remote, forKey: k)
                         if key == .currencyDisplayFormat { formattingChanged = true }
+                    }
+                }
+
+            case .panelTendenciasOrder, .panelTendenciasHidden,
+                 .panelDistribucionOrder, .panelDistribucionHidden,
+                 .panelPlanificacionOrder, .panelPlanificacionHidden,
+                 .panelSectionsHidden:
+                // Empty strings are a valid state (user hid every widget in a section).
+                if iKV.object(forKey: k) != nil {
+                    let remote = iKV.string(forKey: k) ?? ""
+                    if local.string(forKey: k) != remote {
+                        local.set(remote, forKey: k)
                     }
                 }
 

@@ -397,4 +397,58 @@ struct AppPreferencesTests {
         let reloaded = AppPreferences(defaults: defaults)
         #expect(reloaded.secondaryCurrencies == [])
     }
+
+    // MARK: - Panel 2.0 — per-section keys
+
+    @Test func init_loadsPanelSectionKeys_whenPresent() {
+        let defaults = Self.makeSuite()
+        // Pre-set the flag so migration doesn't clobber these values on init
+        defaults.set(true, forKey: AppPreferences.Keys.panelPrefsMigratedV2)
+        defaults.set("tendencia_saldo,flujo_efectivo", forKey: AppPreferences.Keys.panelTendenciasOrder)
+        defaults.set("flujo_efectivo", forKey: AppPreferences.Keys.panelTendenciasHidden)
+        defaults.set("categorias_torta,categorias_principales", forKey: AppPreferences.Keys.panelDistribucionOrder)
+        defaults.set("presupuestos", forKey: AppPreferences.Keys.panelPlanificacionHidden)
+        defaults.set("tools", forKey: AppPreferences.Keys.panelSectionsHidden)
+
+        let prefs = AppPreferences(defaults: defaults)
+
+        #expect(prefs.panelPrefsMigratedV2 == true)
+        #expect(prefs.panelTendenciasOrder == ["tendencia_saldo", "flujo_efectivo"])
+        #expect(prefs.panelTendenciasHidden == ["flujo_efectivo"])
+        #expect(prefs.panelDistribucionOrder == ["categorias_torta", "categorias_principales"])
+        #expect(prefs.panelPlanificacionHidden == ["presupuestos"])
+        #expect(prefs.panelSectionsHidden == ["tools"])
+    }
+
+    @Test func set_panelTendenciasOrder_persists_roundTrip() {
+        let defaults = Self.makeSuite()
+        // Mark migrated so init doesn't interfere
+        defaults.set(true, forKey: AppPreferences.Keys.panelPrefsMigratedV2)
+
+        let prefs = AppPreferences(defaults: defaults)
+        prefs.panelTendenciasOrder = ["flujo_efectivo", "tendencia_saldo", "gastos_por_naturaleza"]
+
+        #expect(defaults.string(forKey: AppPreferences.Keys.panelTendenciasOrder)
+                == "flujo_efectivo,tendencia_saldo,gastos_por_naturaleza")
+
+        // Empty round-trip (hiding everything is a legit state)
+        prefs.panelTendenciasOrder = []
+        #expect(defaults.string(forKey: AppPreferences.Keys.panelTendenciasOrder) == "")
+
+        let reloaded = AppPreferences(defaults: defaults)
+        #expect(reloaded.panelTendenciasOrder == [])
+    }
+
+    @Test func set_panelPrefsMigratedV2_persistsToUserDefaults() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+
+        // Migration already ran during init (no legacy data → writes flag).
+        #expect(prefs.panelPrefsMigratedV2 == true)
+        #expect(defaults.bool(forKey: AppPreferences.Keys.panelPrefsMigratedV2) == true)
+
+        // Manual toggle still works (e.g. for testing re-migration scenarios)
+        prefs.panelPrefsMigratedV2 = false
+        #expect(defaults.bool(forKey: AppPreferences.Keys.panelPrefsMigratedV2) == false)
+    }
 }

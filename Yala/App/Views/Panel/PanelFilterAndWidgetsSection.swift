@@ -286,79 +286,23 @@ struct PanelFilterAndWidgetsSection: View {
             }
             .padding(.bottom, DS.Spacing.sm)
 
-            // Widgets section header + first widget
-            VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                HStack {
-                    Text(L10n.Panel.widgets)
-                        .font(DS.Typography.title)
-
-                    Spacer()
-
-                    Button {
-                        showWidgetPreferences = true
-                    } label: {
-                        Image(systemName: "slider.horizontal.3")
-                            .font(DS.Typography.body).fontWeight(.medium)
-                            .foregroundStyle(Color.primary)
-                    }
-                    .accessibilityLabel(L10n.Accessibility.widgetPreferences)
-                }
-                .padding(.trailing, DS.Spacing.xxs)
-
-                // First widget row (included in "widgets" spotlight)
-                if let firstRow = viewModel.layoutRows.first {
-                    widgetRow(for: firstRow)
-                }
-            }
-
-            // Remaining widget rows
-            // Note: VStack (not Lazy) — LazyVStack caused crashes on tab switch
-            VStack(spacing: DS.Spacing.lg) {
-                ForEach(viewModel.layoutRows.dropFirst()) { row in
-                    widgetRow(for: row)
-                }
+            // Thematic sections. `onPreferences` is wired only on Tendencias for
+            // now; it opens the global widget preferences sheet (shared across all
+            // sections) until per-section sheets arrive.
+            ForEach(PanelSectionKind.allCases, id: \.self) { kind in
+                PanelThematicSection(
+                    kind: kind,
+                    viewModel: viewModel,
+                    sessionState: sessionState,
+                    defaultCurrencyCodeRaw: defaultCurrencyCodeRaw,
+                    showVariations: showVariations,
+                    showBudgetFavoritesSettings: $showBudgetFavoritesSettings,
+                    onPreferences: kind == .tendencias
+                        ? { showWidgetPreferences = true }
+                        : nil
+                )
             }
         }
-    }
-
-    // MARK: - Widget Helpers
-
-    @ViewBuilder
-    private func widgetRow(for row: WidgetConfigManager.WidgetRow) -> some View {
-        switch row.type {
-        case .fullWidth(let config):
-            widgetView(for: config)
-                .clipped()
-        case .halfWidthPair(let left, let right):
-            HStack(alignment: .top, spacing: DS.Spacing.lg) {
-                widgetView(for: left)
-                    .frame(maxWidth: .infinity)
-                    .clipped()
-
-                if let right = right {
-                    widgetView(for: right)
-                        .frame(maxWidth: .infinity)
-                        .clipped()
-                } else {
-                    Color.clear
-                        .frame(maxWidth: .infinity)
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func widgetView(for config: WidgetConfig) -> some View {
-        let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCodeRaw) ?? .pen
-        PanelWidgetRouter(
-            config: config,
-            viewModel: viewModel,
-            sessionState: sessionState,
-            currencyCode: preferredCurrency.rawValue,
-            showVariations: showVariations,
-            reduceMotion: reduceMotion,
-            showBudgetFavoritesSettings: $showBudgetFavoritesSettings
-        )
     }
 
     // MARK: - Helpers

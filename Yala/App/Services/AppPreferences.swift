@@ -401,6 +401,69 @@ final class AppPreferences {
         }
     }
 
+    // MARK: - Panel Sections
+    //
+    // Comma-separated [WidgetType.rawValue] for order/hidden per section.
+    // `panelSectionsHidden` holds PanelSectionKind rawValues. `panelPrefsMigratedV2`
+    // is a per-device flag; the other seven sync via iCloud KV.
+
+    var panelTendenciasOrder: [String] = [] {
+        didSet {
+            guard oldValue != panelTendenciasOrder else { return }
+            persistString(panelTendenciasOrder.joined(separator: ","), forKey: Keys.panelTendenciasOrder, synced: true)
+        }
+    }
+
+    var panelTendenciasHidden: [String] = [] {
+        didSet {
+            guard oldValue != panelTendenciasHidden else { return }
+            persistString(panelTendenciasHidden.joined(separator: ","), forKey: Keys.panelTendenciasHidden, synced: true)
+        }
+    }
+
+    var panelDistribucionOrder: [String] = [] {
+        didSet {
+            guard oldValue != panelDistribucionOrder else { return }
+            persistString(panelDistribucionOrder.joined(separator: ","), forKey: Keys.panelDistribucionOrder, synced: true)
+        }
+    }
+
+    var panelDistribucionHidden: [String] = [] {
+        didSet {
+            guard oldValue != panelDistribucionHidden else { return }
+            persistString(panelDistribucionHidden.joined(separator: ","), forKey: Keys.panelDistribucionHidden, synced: true)
+        }
+    }
+
+    var panelPlanificacionOrder: [String] = [] {
+        didSet {
+            guard oldValue != panelPlanificacionOrder else { return }
+            persistString(panelPlanificacionOrder.joined(separator: ","), forKey: Keys.panelPlanificacionOrder, synced: true)
+        }
+    }
+
+    var panelPlanificacionHidden: [String] = [] {
+        didSet {
+            guard oldValue != panelPlanificacionHidden else { return }
+            persistString(panelPlanificacionHidden.joined(separator: ","), forKey: Keys.panelPlanificacionHidden, synced: true)
+        }
+    }
+
+    var panelSectionsHidden: [String] = [] {
+        didSet {
+            guard oldValue != panelSectionsHidden else { return }
+            persistString(panelSectionsHidden.joined(separator: ","), forKey: Keys.panelSectionsHidden, synced: true)
+        }
+    }
+
+    /// One-shot migration sentinel. Per-device (NOT synced via iCloud KV).
+    var panelPrefsMigratedV2: Bool = false {
+        didSet {
+            guard oldValue != panelPrefsMigratedV2 else { return }
+            persistBool(panelPrefsMigratedV2, forKey: Keys.panelPrefsMigratedV2, synced: false)
+        }
+    }
+
     // MARK: - Init
 
     init(defaults: UserDefaults = .standard) {
@@ -410,6 +473,11 @@ final class AppPreferences {
         // tempranas durante bootstrap). Los `didSet` de cada property aplican el guard
         // diferencial; no se re-persisten valores que no cambiaron del default hardcoded.
         loadFromDefaults()
+
+        // Must run after loadFromDefaults (so the sentinel flag is read) and before
+        // registerObservers (so seeded writes don't bounce through the external observer).
+        PanelPreferencesMigration.runIfNeeded(appPreferences: self, defaults: defaults)
+
         registerObservers()
     }
 
@@ -571,6 +639,38 @@ final class AppPreferences {
         if defaults.object(forKey: Keys.insightsShowTexts) != nil {
             insightsShowTexts = defaults.bool(forKey: Keys.insightsShowTexts)
         }
+
+        // Panel Sections
+        if let value = parseList(defaults.string(forKey: Keys.panelTendenciasOrder)) {
+            panelTendenciasOrder = value
+        }
+        if let value = parseList(defaults.string(forKey: Keys.panelTendenciasHidden)) {
+            panelTendenciasHidden = value
+        }
+        if let value = parseList(defaults.string(forKey: Keys.panelDistribucionOrder)) {
+            panelDistribucionOrder = value
+        }
+        if let value = parseList(defaults.string(forKey: Keys.panelDistribucionHidden)) {
+            panelDistribucionHidden = value
+        }
+        if let value = parseList(defaults.string(forKey: Keys.panelPlanificacionOrder)) {
+            panelPlanificacionOrder = value
+        }
+        if let value = parseList(defaults.string(forKey: Keys.panelPlanificacionHidden)) {
+            panelPlanificacionHidden = value
+        }
+        if let value = parseList(defaults.string(forKey: Keys.panelSectionsHidden)) {
+            panelSectionsHidden = value
+        }
+        panelPrefsMigratedV2 = defaults.bool(forKey: Keys.panelPrefsMigratedV2)
+    }
+
+    /// Parses a comma-separated stored string into `[String]`. Returns `nil` when the
+    /// key is absent (so callers can keep the hardcoded default) and `[]` when the
+    /// stored value is an empty string (a valid state — e.g. user hid every entry).
+    private func parseList(_ stored: String?) -> [String]? {
+        guard let stored else { return nil }
+        return stored.isEmpty ? [] : stored.split(separator: ",").map { String($0) }
     }
 
     // MARK: - Persistence Helpers
@@ -663,5 +763,15 @@ final class AppPreferences {
         static let insightsShowWeekday = "insightsShowWeekday"
         static let insightsShowNature = "insightsShowNature"
         static let insightsShowTexts = "insightsShowTexts"
+
+        // Panel 2.0 Sections — per-section order/hidden (synced) + migration flag (not synced)
+        static let panelTendenciasOrder = "panelTendenciasOrder"
+        static let panelTendenciasHidden = "panelTendenciasHidden"
+        static let panelDistribucionOrder = "panelDistribucionOrder"
+        static let panelDistribucionHidden = "panelDistribucionHidden"
+        static let panelPlanificacionOrder = "panelPlanificacionOrder"
+        static let panelPlanificacionHidden = "panelPlanificacionHidden"
+        static let panelSectionsHidden = "panelSectionsHidden"
+        static let panelPrefsMigratedV2 = "panelPrefsMigratedV2"
     }
 }

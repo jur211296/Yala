@@ -579,6 +579,13 @@ final class PanelViewModel {
         return widgetConfig.activeWidgets()
     }
 
+    /// Visible widgets of a section, preserving the order stored in the legacy JSON.
+    /// New widget types added after install are picked up via `WidgetConfigManager.load`
+    /// (which appends defaults for any type missing from the stored blob).
+    func activeWidgets(in section: PanelSectionKind) -> [WidgetConfig] {
+        widgetConfigs.filter { $0.type.panelSection == section && $0.isVisible }
+    }
+
     func toggleWidgetVisibility(id: UUID) {
         widgetConfig.toggleVisibility(id: id)
     }

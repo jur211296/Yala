@@ -38,6 +38,7 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 | GroupPersonalPreferences | Services/Groups/GroupPersonalPreferences.swift | Prefs personales por grupo (UserDefaults) |
 | GroupTransactionBridge | Services/Groups/GroupTransactionBridge.swift | Puente grupo → TransactionItem/InboxDraft personal |
 | GroupNotificationService | Services/Groups/GroupNotificationService.swift | Notificaciones locales de eventos de grupo + rate limiting |
+| PanelPreferencesMigration | App/Services/PanelPreferencesMigration.swift | Migración one-shot legacy JSON → keys per-sección (Panel 2.0) |
 
 ### Key Calculators
 | Calculator | Path | Purpose |
@@ -403,3 +404,4 @@ ScrollView {
 [Formato: [FECHA] Decisión breve — se archiva en DECISIONS.md al cerrar fase]
 - [2026-02-18] Skip ocurrencias usa `skippedDatesRaw: String` (comma-separated ISO) en ScheduledPayment — consistente con selectedWeekdays, sin nueva entidad
 - [2026-04-16] NUNCA `containerRelativeFrame` en ScrollView vertical con `contentMargins` — deadlock de layout. Usar `onGeometryChange`. Descubierto en Panel iOS 26 modernization (binary search de 10 commits). Documentado en UI-PATTERNS.md sección GOTCHA.
+- [2026-04-16] Panel 2.0 foundation (P20-01): secciones temáticas + migración one-shot AppPreferences. Hasta P20-03 el render lee del JSON legacy `panel_widget_configs_v1` como SSOT; las nuevas keys per-sección (`panel{Tendencias,Distribucion,Planificacion}{Order,Hidden}` + `panelSectionsHidden`) se siembran vía `PanelPreferencesMigration` pero no son SSOT todavía. `panelPrefsMigratedV2` es flag per-device (NO synced).

@@ -15,6 +15,11 @@
 
 "panel.accounts" = "Konten";
 "panel.widgets" = "Widgets";
+"panel.section.tendencias" = "Trends";
+"panel.section.distribucion" = "Verteilung";
+"panel.section.planificacion" = "Planung";
+"panel.section.latestRecords" = "Letzte Einträge";
+"panel.section.tools" = "Werkzeuge";
 "panel.totalBalance" = "Gesamtsaldo";
 
 // MARK: - Trend Widget

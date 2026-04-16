@@ -82,6 +82,21 @@ enum L10n {
         static var widgets: String {
             ls("panel.widgets", comment: "Widgets section title")
         }
+        static var sectionTendencias: String {
+            ls("panel.section.tendencias", comment: "Panel 2.0 Tendencias section title")
+        }
+        static var sectionDistribucion: String {
+            ls("panel.section.distribucion", comment: "Panel 2.0 Distribución section title")
+        }
+        static var sectionPlanificacion: String {
+            ls("panel.section.planificacion", comment: "Panel 2.0 Planificación section title")
+        }
+        static var sectionLatestRecords: String {
+            ls("panel.section.latestRecords", comment: "Panel 2.0 Últimos registros section title")
+        }
+        static var sectionTools: String {
+            ls("panel.section.tools", comment: "Panel 2.0 Herramientas section title")
+        }
         static var totalBalance: String {
             ls("panel.totalBalance", comment: "Total balance label")
         }
