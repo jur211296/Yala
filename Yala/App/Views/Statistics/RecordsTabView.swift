@@ -34,7 +34,6 @@ struct RecordsTabView: View {
         ScrollView {
             VStack(spacing: DS.Spacing.none) {
                 controlBar
-                    .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.sm)
 
                 if viewModel.groupedRecords.isEmpty {
@@ -46,6 +45,7 @@ struct RecordsTabView: View {
                 }
             }
         }
+        .scrollViewGlassEdges()
         .sheet(isPresented: $showCustomPeriodPicker) {
             CustomPeriodPickerSheet(
                 minDate: transactionDateRange.start,
@@ -178,7 +178,6 @@ struct RecordsTabView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
     }
 
@@ -207,7 +206,6 @@ struct RecordsTabView: View {
                                 viewModel.toggleSelection(record.persistentModelID)
                             }
                         )
-                        .padding(.horizontal, DS.Spacing.lg)
                     }
                 } header: {
                     RecordDateSectionView(date: group.date)

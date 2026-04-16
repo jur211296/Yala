@@ -473,7 +473,7 @@ struct DetailContainerView: View {
             }
             .padding(.vertical, DS.Spacing.sm)
             .padding(.horizontal, DS.Spacing.lg)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+            .solidCard(radius: DS.Radius.lg)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.md)
         }

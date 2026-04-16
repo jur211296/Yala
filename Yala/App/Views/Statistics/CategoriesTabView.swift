@@ -20,11 +20,7 @@ struct CategoriesTabView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
-
-
-    // MARK: - Settings
-
-    @AppStorage("showVariations") private var showVariations: Bool = true
+    @Environment(AppPreferences.self) private var appPreferences
 
     // MARK: - Data (passed from parent)
 
@@ -133,10 +129,10 @@ struct CategoriesTabView: View {
                 categoriesListSection
                 recentRecordsSection
             }
-            .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.sm)
             .yalaSafeBottomPadding()
         }
+        .scrollViewGlassEdges()
         .onAppear {
             calculateData()
         }
@@ -258,9 +254,9 @@ struct CategoriesTabView: View {
         }
     }
 
-    /// Determines if comparison selector should be visible (only when showVariations is ON)
+    /// Determines if comparison selector should be visible (only when appPreferences.showVariations is ON)
     private var showComparisonSelector: Bool {
-        showVariations && PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod)
+        appPreferences.showVariations && PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod)
     }
 
     /// Comparison mode selector (M/A toggle)
@@ -316,38 +312,31 @@ struct CategoriesTabView: View {
         let isWide = DS.Adaptive.isWideScreen(sizeClass)
 
         VStack(spacing: DS.Spacing.sm) {
-            GeometryReader { geo in
-                let totalWidth = geo.size.width
-                let spacing: CGFloat = DS.Spacing.md
-                let cardWidth = isWide ? (totalWidth - spacing) / 2 : totalWidth
-
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: spacing) {
-                        // Categories Chart - hidden in income mode
-                        if !isIncomeMode {
-                            categoryChartCard
-                                .frame(width: cardWidth)
-                                .id("category")
-                        }
-
-                        // Subcategories Chart
-                        subcategoryChartCard
-                            .frame(width: cardWidth)
-                            .id("subcategory")
-
-                        // Tags Chart - on iPad, tags moves next to need
-                        if !isWide {
-                            tagChartCard
-                                .frame(width: cardWidth)
-                                .id("tags")
-                        }
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: DS.Spacing.md) {
+                    // Categories Chart - hidden in income mode
+                    if !isIncomeMode {
+                        categoryChartCard
+                            .containerRelativeFrame(.horizontal, count: isWide ? 2 : 1, spacing: isWide ? DS.Spacing.md : 0)
+                            .id("category")
                     }
-                    .scrollTargetLayout()
+
+                    // Subcategories Chart
+                    subcategoryChartCard
+                        .containerRelativeFrame(.horizontal, count: isWide ? 2 : 1, spacing: isWide ? DS.Spacing.md : 0)
+                        .id("subcategory")
+
+                    // Tags Chart - on iPad, tags moves next to need
+                    if !isWide {
+                        tagChartCard
+                            .containerRelativeFrame(.horizontal)
+                            .id("tags")
+                    }
                 }
-                .scrollTargetBehavior(.viewAligned)
-                .scrollPosition(id: $chartsCarouselPosition)
-                .frame(width: totalWidth)
+                .scrollTargetLayout()
             }
+            .scrollTargetBehavior(.viewAligned)
+            .scrollPosition(id: $chartsCarouselPosition)
             .frame(height: 340)
 
             // Page indicator - hide on iPad (multiple charts already visible)
@@ -410,17 +399,11 @@ struct CategoriesTabView: View {
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousCategoryTotal,
                     comparisonMode: sessionState.comparisonMode,
-                    showVariationHeader: showVariations && viewModel.detailPeriod != .allTime
+                    showVariationHeader: appPreferences.showVariations && viewModel.detailPeriod != .allTime
                 )
             }
         }
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+        .solidCard()
     }
 
     // MARK: - Subcategory Chart Card
@@ -455,17 +438,11 @@ struct CategoriesTabView: View {
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousSubcategoryTotal,
                     comparisonMode: sessionState.comparisonMode,
-                    showVariationHeader: showVariations && viewModel.detailPeriod != .allTime
+                    showVariationHeader: appPreferences.showVariations && viewModel.detailPeriod != .allTime
                 )
             }
         }
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+        .solidCard()
     }
 
     // MARK: - Tag Chart Card
@@ -497,17 +474,11 @@ struct CategoriesTabView: View {
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousTagTotal,
                     comparisonMode: sessionState.comparisonMode,
-                    showVariationHeader: showVariations && viewModel.detailPeriod != .allTime
+                    showVariationHeader: appPreferences.showVariations && viewModel.detailPeriod != .allTime
                 )
             }
         }
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+        .solidCard()
     }
 
     // MARK: - Need Carousel
@@ -556,26 +527,20 @@ struct CategoriesTabView: View {
         } else {
             // iPhone: carousel with large/compact need slides
             VStack(spacing: DS.Spacing.sm) {
-                GeometryReader { geo in
-                    let totalWidth = geo.size.width
-                    let spacing: CGFloat = DS.Spacing.md
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(alignment: .top, spacing: DS.Spacing.md) {
+                        needWidgetLarge
+                            .containerRelativeFrame(.horizontal)
+                            .id(0)
 
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        LazyHStack(alignment: .top, spacing: spacing) {
-                            needWidgetLarge
-                                .frame(width: totalWidth)
-                                .id(0)
-
-                            needWidgetCompact
-                                .frame(width: totalWidth)
-                                .id(1)
-                        }
-                        .scrollTargetLayout()
+                        needWidgetCompact
+                            .containerRelativeFrame(.horizontal)
+                            .id(1)
                     }
-                    .scrollTargetBehavior(.viewAligned)
-                    .scrollPosition(id: $needCarouselIndex)
-                    .frame(width: totalWidth)
+                    .scrollTargetLayout()
                 }
+                .scrollTargetBehavior(.viewAligned)
+                .scrollPosition(id: $needCarouselIndex)
                 .frame(height: needCarouselHeight)
                 .dsAnimation(.easeInOut(duration: 0.3), value: needCarouselIndex, reduceMotion: reduceMotion)
 
@@ -616,7 +581,7 @@ struct CategoriesTabView: View {
             period: viewModel.detailPeriod,
             previousTotalAmount: previousNeedTotal,
             previousAmountByNeed: previousNeedAmounts,
-            showVariationHeader: showVariations && viewModel.detailPeriod != .allTime,
+            showVariationHeader: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
             comparisonMode: sessionState.comparisonMode,
             isIncomeMode: viewModel.selectedTransactionNatures == [.income]
         )
@@ -643,7 +608,7 @@ struct CategoriesTabView: View {
             period: viewModel.detailPeriod,
             previousTotalAmount: previousNeedTotal,
             previousAmountByNeed: previousNeedAmounts,
-            showVariationHeader: showVariations && viewModel.detailPeriod != .allTime,
+            showVariationHeader: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
             comparisonMode: sessionState.comparisonMode,
             isIncomeMode: viewModel.selectedTransactionNatures == [.income]
         )
@@ -699,7 +664,7 @@ struct CategoriesTabView: View {
                         selectedCategoryIDs: effectiveCategoryIDsForDim,
                         isExcludeMode: viewModel.isExcludeMode,
                         isExpanded: isListExpanded,
-                        showVariation: showVariations && viewModel.detailPeriod != .allTime,
+                        showVariation: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
                         onToggleExpanded: { isListExpanded.toggle() },
                         onSelectCategory: { categoryID in
                             if viewModel.selectedCategories.contains(categoryID) {
@@ -729,7 +694,7 @@ struct CategoriesTabView: View {
                         selectedSubcategoryIDs: viewModel.selectedSubcategories,
                         isExcludeMode: viewModel.isExcludeMode,
                         isExpanded: isListExpanded,
-                        showVariation: showVariations && viewModel.detailPeriod != .allTime,
+                        showVariation: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
                         onToggleExpanded: { isListExpanded.toggle() },
                         onSelectSubcategory: { subcategoryID in
                             if viewModel.selectedSubcategories.contains(subcategoryID) {
@@ -744,13 +709,7 @@ struct CategoriesTabView: View {
                 }
             }
         }
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+        .solidCard()
     }
 
     private var listViewSelector: some View {
@@ -1224,14 +1183,7 @@ struct CategoriesTabView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(DS.Card.padding)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+        .solidCard(padding: DS.Card.padding)
     }
 
     private var emptyRecordsState: some View {

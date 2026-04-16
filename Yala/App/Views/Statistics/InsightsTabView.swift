@@ -17,6 +17,7 @@ struct InsightsTabView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.openURL) private var openURL
+    @Environment(AppPreferences.self) private var appPreferences
 
     // MARK: - Data (passed from parent)
 
@@ -33,22 +34,6 @@ struct InsightsTabView: View {
 
     @Bindable var viewModel: InsightsViewModel
     @Bindable var trendsViewModel: StatisticsViewModel
-
-    // MARK: - Settings
-
-    @AppStorage("showVariations") private var showVariations: Bool = true
-
-    @AppStorage("aiInsightsConsentAccepted") private var aiInsightsConsentAccepted = false
-
-    // MARK: - Section Visibility (from Settings)
-
-    @AppStorage("insightsShowQuickStats") private var showQuickStats = true
-    @AppStorage("insightsShowPendingPayments") private var showPendingPayments = true
-    @AppStorage("insightsShowSubscriptions") private var showSubscriptions = true
-    @AppStorage("insightsShowBudgetsAtRisk") private var showBudgetsAtRisk = true
-    @AppStorage("insightsShowWeekday") private var showWeekday = true
-    @AppStorage("insightsShowNature") private var showNeed = true
-    @AppStorage("insightsShowTexts") private var showTexts = true
 
     // MARK: - Pro State
 
@@ -80,7 +65,6 @@ struct InsightsTabView: View {
             if let data = viewModel.insightData {
                 // Control bar always visible (period selector + filter chips)
                 controlBar
-                    .padding(.horizontal, DS.Spacing.lg)
                     .padding(.top, DS.Spacing.sm)
 
                 if data.periodSummary.transactionCount == 0 {
@@ -108,7 +92,7 @@ struct InsightsTabView: View {
                         }
 
                         // Section 3: Quick Stats Grid
-                        if showQuickStats {
+                        if appPreferences.insightsShowQuickStats {
                             quickStatsSection(data.quickStats, summary: data.periodSummary)
                         }
 
@@ -120,17 +104,17 @@ struct InsightsTabView: View {
                         // Charts and texts only if >= 5 transactions
                         if data.periodSummary.transactionCount >= 5 {
                             // Section 5: Weekday Spending Chart
-                            if showWeekday, data.weekdaySpending.contains(where: { $0.average > 0 }) {
+                            if appPreferences.insightsShowWeekday, data.weekdaySpending.contains(where: { $0.average > 0 }) {
                                 weekdayChartSection(data.weekdaySpending)
                             }
 
                             // Section 6: Need Distribution
-                            if showNeed, data.needDistribution.total > 0 {
+                            if appPreferences.insightsShowNature, data.needDistribution.total > 0 {
                                 needSection(data.needDistribution)
                             }
 
                             // Section 7: Observations
-                            if showTexts {
+                            if appPreferences.insightsShowTexts {
                                 if isProUser {
                                     proObservationsSection(data)
                                 } else {
@@ -151,7 +135,6 @@ struct InsightsTabView: View {
                                 .padding(.vertical, DS.Spacing.lg)
                         }
                     }
-                    .padding(.horizontal, DS.Spacing.lg)
                     .yalaSafeBottomPadding()
                 }
             } else {
@@ -159,6 +142,7 @@ struct InsightsTabView: View {
                     .frame(maxWidth: .infinity, minHeight: 200)
             }
         }
+        .scrollViewGlassEdges()
         .sheet(isPresented: $showCustomPeriodPicker) {
             CustomPeriodPickerSheet(
                 minDate: transactionDateRange.start,
@@ -168,7 +152,7 @@ struct InsightsTabView: View {
         }
         .alert(L10n.AIConsent.insightsTitle, isPresented: $showInsightsConsentAlert) {
             Button(L10n.AIConsent.accept) {
-                aiInsightsConsentAccepted = true
+                appPreferences.aiInsightsConsentAccepted = true
                 Task { await viewModel.triggerAIGeneration() }
             }
             Button(L10n.AIConsent.privacyPolicy) {
@@ -222,7 +206,7 @@ struct InsightsTabView: View {
             tags: tags,
             animationValue: trendsViewModel.detailPeriod
         ) {
-            if showVariations && PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod) {
+            if appPreferences.showVariations && PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod) {
                 VStack(spacing: DS.Spacing.xxs) {
                     ComparisonModeSelector()
 
@@ -297,7 +281,7 @@ struct InsightsTabView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
 
-            if showVariations {
+            if appPreferences.showVariations {
                 VariationChip(
                     variation: variation,
                     size: .small,
@@ -357,7 +341,7 @@ struct InsightsTabView: View {
 
     private var generateAIButton: some View {
         Button {
-            if aiInsightsConsentAccepted {
+            if appPreferences.aiInsightsConsentAccepted {
                 Task { await viewModel.triggerAIGeneration() }
             } else {
                 showInsightsConsentAlert = true
@@ -545,7 +529,7 @@ struct InsightsTabView: View {
                 .minimumScaleFactor(0.7)
 
             Group {
-                if showVariations, let variation = summary.dailyAverageVariation {
+                if appPreferences.showVariations, let variation = summary.dailyAverageVariation {
                     VariationChip(variation: variation, size: .small, isExpenseContext: true)
                 } else {
                     Text(" ")
@@ -564,9 +548,9 @@ struct InsightsTabView: View {
     // MARK: - Section 4: Commitments
 
     private func hasCommitmentsData(_ c: Commitments) -> Bool {
-        (showPendingPayments && c.pendingPaymentsCount > 0) ||
-        (showSubscriptions && c.activeSubscriptionsCount > 0) ||
-        (showBudgetsAtRisk && !c.budgetsAtRisk.isEmpty)
+        (appPreferences.insightsShowPendingPayments && c.pendingPaymentsCount > 0) ||
+        (appPreferences.insightsShowSubscriptions && c.activeSubscriptionsCount > 0) ||
+        (appPreferences.insightsShowBudgetsAtRisk && !c.budgetsAtRisk.isEmpty)
     }
 
     @ViewBuilder
@@ -581,7 +565,7 @@ struct InsightsTabView: View {
             }
 
             VStack(spacing: DS.Spacing.md) {
-                if showPendingPayments, c.pendingPaymentsCount > 0 {
+                if appPreferences.insightsShowPendingPayments, c.pendingPaymentsCount > 0 {
                     commitmentRow(
                         icon: "clock",
                         label: L10n.Insights.pendingPayments,
@@ -590,7 +574,7 @@ struct InsightsTabView: View {
                     )
                 }
 
-                if showSubscriptions, c.activeSubscriptionsCount > 0 {
+                if appPreferences.insightsShowSubscriptions, c.activeSubscriptionsCount > 0 {
                     commitmentRow(
                         icon: "repeat",
                         label: L10n.Insights.activeSubscriptions,
@@ -599,7 +583,7 @@ struct InsightsTabView: View {
                     )
                 }
 
-                if showBudgetsAtRisk {
+                if appPreferences.insightsShowBudgetsAtRisk {
                     ForEach(c.budgetsAtRisk) { budget in
                         budgetRow(budget)
                     }

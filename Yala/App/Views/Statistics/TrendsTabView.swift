@@ -21,6 +21,7 @@ struct TrendsTabView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
 
     // MARK: - Data (passed from parent)
@@ -31,22 +32,9 @@ struct TrendsTabView: View {
     let tags: [Tag]
     let allTransactions: [TransactionItem]
 
-    // MARK: - Settings
-
-    @AppStorage("showVariations") private var showVariations: Bool = true
-
-    // MARK: - Persistent Sort Order (matches Profile/Accounts view)
-
-    @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
-
-    /// Account names in user-defined order (pipe-separated)
-    private var accountsSortOrderNames: [String] {
-        accountsSortOrderNamesRaw.split(separator: "|").map(String.init)
-    }
-
     /// Sort accounts by user-defined order (from AccountsSettingsListView)
     private func sortedAccountIDs(_ ids: [PersistentIdentifier]) -> [PersistentIdentifier] {
-        let order = accountsSortOrderNames
+        let order = appPreferences.accountsSortOrderNames
         let indexByName = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
 
         return ids.sorted { id1, id2 in
@@ -140,10 +128,10 @@ struct TrendsTabView: View {
                 cashFlowWidget
                 recentRecordsSection
             }
-            .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.sm)
             .yalaSafeBottomPadding()
         }
+        .scrollViewGlassEdges()
         .onAppear {
             calculateCashFlowData()
             calculatePeriodComparisonData()
@@ -259,8 +247,8 @@ struct TrendsTabView: View {
                 metricSelector
             }
 
-            // Comparison mode selector (hidden when showVariations is OFF or for periods where only one mode makes sense)
-            if showVariations && PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod) {
+            // Comparison mode selector (hidden when appPreferences.showVariations is OFF or for periods where only one mode makes sense)
+            if appPreferences.showVariations && PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod) {
                 ComparisonModeSelector()
             }
         }
@@ -271,7 +259,7 @@ struct TrendsTabView: View {
     @ViewBuilder
     private var trendChartsCarousel: some View {
         let isWide = DS.Adaptive.isWideScreen(sizeClass)
-        let hasTwoCharts = showVariations && trendsViewModel.detailPeriod != .allTime
+        let hasTwoCharts = appPreferences.showVariations && trendsViewModel.detailPeriod != .allTime
 
         VStack(spacing: DS.Spacing.md) {
             if isWide && hasTwoCharts {
@@ -336,8 +324,8 @@ struct TrendsTabView: View {
 
                     Spacer()
 
-                    // Variation chip with "vs period" text below (hidden for All Time or when showVariations is OFF)
-                    if showVariations && trendsViewModel.detailPeriod != .allTime {
+                    // Variation chip with "vs period" text below (hidden for All Time or when appPreferences.showVariations is OFF)
+                    if appPreferences.showVariations && trendsViewModel.detailPeriod != .allTime {
                         VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
                             VariationChip(
                                 currentAmount: currentPeriodTotal,
@@ -353,6 +341,7 @@ struct TrendsTabView: View {
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
                         }
+                        .accessibilityElement(children: .combine)
                     }
                 }
             } else {
@@ -380,14 +369,7 @@ struct TrendsTabView: View {
                 trendEmptyState
             }
         }
-        .padding(DS.Card.padding)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+        .solidCard(padding: DS.Card.padding)
     }
 
     private var trendEmptyState: some View {
@@ -463,6 +445,7 @@ struct TrendsTabView: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                     }
+                    .accessibilityElement(children: .combine)
                 }
             } else {
                 // Simple title when no data
@@ -495,14 +478,7 @@ struct TrendsTabView: View {
                 comparisonEmptyState
             }
         }
-        .padding(DS.Card.padding)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+        .solidCard(padding: DS.Card.padding)
     }
 
     /// Short comparison period text (e.g., "vs Nov 25") for display below chips
@@ -535,8 +511,8 @@ struct TrendsTabView: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
 
-                // Show previous period value for comparison (hidden for All Time or when showVariations is OFF)
-                if showVariations && trendsViewModel.detailPeriod != .allTime,
+                // Show previous period value for comparison (hidden for All Time or when appPreferences.showVariations is OFF)
+                if appPreferences.showVariations && trendsViewModel.detailPeriod != .allTime,
                    let prevTotal = previousPeriodTotal {
                     Text("vs \(YalaFormatter.number(value: prevTotal))")
                         .font(DS.Typography.caption)
@@ -682,13 +658,7 @@ struct TrendsTabView: View {
             title: L10n.Empty.noData
         )
         .frame(height: 200)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+        .solidCard()
     }
 
     private var cashFlowViewSelector: some View {
@@ -874,9 +844,9 @@ struct TrendsTabView: View {
         title: String,
         currencyCode: String
     ) -> some View {
-        // Calculate previous total based on selected metric (only when showVariations is ON)
+        // Calculate previous total based on selected metric (only when appPreferences.showVariations is ON)
         let previousTotal: Double? = {
-            guard showVariations else { return nil }
+            guard appPreferences.showVariations else { return nil }
             guard trendsViewModel.detailPeriod != .allTime else { return nil }
             guard let prev = previousSummary else { return nil }
             switch trendsViewModel.selectedMetric {
@@ -899,7 +869,7 @@ struct TrendsTabView: View {
             customTitle: title,
             displayMode: convertMetricToTrendType(trendsViewModel.selectedMetric),
             previousAmount: previousTotal,
-            comparisonPeriodText: showVariations && trendsViewModel.detailPeriod != .allTime ? comparisonPeriodText : nil,
+            comparisonPeriodText: appPreferences.showVariations && trendsViewModel.detailPeriod != .allTime ? comparisonPeriodText : nil,
             showInfoHint: false
         )
     }
@@ -961,9 +931,7 @@ struct TrendsTabView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(DS.Card.padding)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .solidCard(padding: DS.Card.padding)
     }
 
     private var emptyRecordsState: some View {
