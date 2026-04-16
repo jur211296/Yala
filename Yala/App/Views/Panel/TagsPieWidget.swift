@@ -72,7 +72,7 @@ struct TagsPieWidget: View {
             }
         }
         .frame(maxWidth: .infinity, minHeight: 320, maxHeight: .infinity, alignment: .topLeading)
-        .glassCard(.regular, radius: DS.Radius.xl, padding: 0)
+        .solidCard(radius: DS.Radius.xl)
     }
 
     // MARK: - Empty State

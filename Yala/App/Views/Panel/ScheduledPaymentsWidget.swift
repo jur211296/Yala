@@ -47,7 +47,7 @@ struct ScheduledPaymentsWidget: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .glassCard(.regular, radius: DS.Radius.xl, padding: DS.Spacing.xl)
+        .solidCard(padding: DS.Spacing.xl)
     }
 
     // MARK: - Header

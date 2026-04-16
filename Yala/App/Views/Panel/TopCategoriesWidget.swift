@@ -81,7 +81,7 @@ struct TopCategoriesWidget: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .glassCard(.regular, radius: DS.Radius.xl, padding: size == .small ? DS.Spacing.lg : DS.Spacing.xl)
+        .solidCard(padding: size == .small ? DS.Spacing.lg : DS.Spacing.xl)
     }
 
     // MARK: - Content Switcher

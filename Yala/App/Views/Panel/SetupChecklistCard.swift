@@ -149,7 +149,7 @@ struct SetupChecklistCard: View {
 
                 progressBar
             }
-            .glassCard(.regular, radius: DS.Radius.md, padding: DS.Spacing.md)
+            .solidCard(padding: DS.Spacing.md, radius: DS.Radius.md)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

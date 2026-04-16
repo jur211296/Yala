@@ -203,12 +203,7 @@ struct NeedTrendWidget: View {
                 chartView
             }
         }
-        .padding(DS.Card.paddingCompact)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.lg)
-                .fill(.thCard)
-                .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 4)
-        )
+        .solidCard(padding: DS.Card.paddingCompact, radius: DS.Radius.lg)
     }
 
     @ViewBuilder

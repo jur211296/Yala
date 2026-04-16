@@ -399,14 +399,7 @@ struct CashFlowWidget: View {
                 contentView
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.xl)
-                .fill(.thCard)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl)
-                .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
-        )
+        .solidCard(radius: DS.Radius.xl)
     }
 
     @State private var selectedDate: Date?

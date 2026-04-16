@@ -58,7 +58,7 @@ struct TrendWidget: View {
                 .padding(.top, DS.Spacing.sm)
             }
         }
-        .glassCard(.regular, radius: DS.Card.radius, padding: DS.Card.padding)
+        .solidCard(padding: DS.Card.padding)
     }
 
     // MARK: - Components

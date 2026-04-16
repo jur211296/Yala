@@ -85,7 +85,7 @@ struct TopSubcategoriesWidget: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .glassCard(.regular, radius: DS.Radius.xl, padding: size == .small ? DS.Spacing.lg : DS.Spacing.xl)
+        .solidCard(padding: size == .small ? DS.Spacing.lg : DS.Spacing.xl)
         .id(subcategories.isEmpty ? "empty" : "content-\(subcategories.count)")
         .onAppear {
             viewModel.setContext(modelContext)
