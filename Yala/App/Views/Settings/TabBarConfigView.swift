@@ -103,7 +103,7 @@ struct TabBarConfigView: View {
                 ForEach(Array(localConfig.activeTabs.enumerated()), id: \.element) { index, tab in
                     activeTabRow(tab, position: index + 1)
                         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                        .listRowBackground(theme.card)
+                        .listRowBackground(Color.clear)
                         .listRowSeparator(index == localConfig.activeTabs.count - 1 ? .hidden : .visible)
                 }
                 .onMove(perform: moveTab)
@@ -112,16 +112,7 @@ struct TabBarConfigView: View {
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
             .frame(height: CGFloat(localConfig.activeTabs.count) * 52)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
-            .dsSubtleShadow()
+            .solidCard()
             .environment(\.editMode, .constant(.active))
 
             // Validation message
@@ -194,16 +185,7 @@ struct TabBarConfigView: View {
                     }
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
-            .dsSubtleShadow()
+            .solidCard()
 
             // Max warning
             if !canActivate {
