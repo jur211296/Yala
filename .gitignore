@@ -19,6 +19,12 @@ fastlane/screenshots
 Secrets.xcconfig
 .claude/sessions/*.log
 .vercel
+# App Store Connect API keys (never commit private keys)
+AuthKey_*.p8
+AuthKey_*.p8.txt
+*.p8
+# Private asc/ directory (App Store Connect local state)
+.asc/
 
 # QA automation results (generated at runtime)
 qa/results/
