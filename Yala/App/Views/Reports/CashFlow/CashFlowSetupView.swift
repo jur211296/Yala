@@ -22,7 +22,7 @@ struct CashFlowSetupView: View {
     @State private var editingLine: SuggestedLine?
 
     // Tour
-    @AppStorage("hasSeenCashFlowSetupTour") private var hasSeenTour = false
+    @Environment(AppPreferences.self) private var appPreferences
     @State private var showTour = false
     @State private var tourIndex = 0
     @State private var setupScrollProxy: ScrollViewProxy?
@@ -122,11 +122,11 @@ struct CashFlowSetupView: View {
             currentIndex: $tourIndex,
             scrollProxy: setupScrollProxy
         ) {
-            hasSeenTour = true
+            appPreferences.hasSeenCashFlowSetupTour = true
         }
         .task {
             do { try await Task.sleep(for: .seconds(1)) } catch { return }
-            if !viewModel.suggestedLines.isEmpty && !hasSeenTour {
+            if !viewModel.suggestedLines.isEmpty && !appPreferences.hasSeenCashFlowSetupTour {
                 showTour = true
             }
         }

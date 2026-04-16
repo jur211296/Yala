@@ -14,7 +14,8 @@ struct NetFlowSummaryView: View {
     let variation: Double?
     let currencyCode: String
 
-    @AppStorage("showVariations") private var showVariations: Bool = true
+    @Environment(AppPreferences.self) private var appPreferences
+    private var showVariations: Bool { appPreferences.showVariations }
 
     var body: some View {
         HStack(spacing: DS.Spacing.sm) {

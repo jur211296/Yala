@@ -155,17 +155,15 @@ struct CashFlowDetailLineRow: View {
     // MARK: - Progress Bar
 
     private func progressBar(progress: Double) -> some View {
-        GeometryReader { geo in
-            let clamped = min(1.0, max(0, progress))
-            let barWidth = geo.size.width * clamped
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(DS.Semantic.neutralBackground)
-                    .frame(height: 4)
-                Capsule()
-                    .fill(progress > 1.0 ? Color.hotPink : theme.accent)
-                    .frame(width: max(4, barWidth), height: 4)
-            }
+        let clamped = min(1.0, max(0, progress))
+        return ZStack(alignment: .leading) {
+            Capsule()
+                .fill(DS.Semantic.neutralBackground)
+                .frame(height: 4)
+            Capsule()
+                .fill(progress > 1.0 ? Color.hotPink : theme.accent)
+                .frame(maxWidth: .infinity, maxHeight: 4)
+                .scaleEffect(x: max(0.05, clamped), anchor: .leading)
         }
         .frame(height: 4)
     }

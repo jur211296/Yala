@@ -6,6 +6,7 @@
 //  Works for current and past months. Hover tooltip on selection.
 //
 
+import Accessibility
 import Charts
 import SwiftUI
 
@@ -132,6 +133,9 @@ struct CashFlowCellMiniChart: View {
             }
             .chartXSelection(value: $selectedDay)
             .chartYScale(domain: yDomain)
+            .accessibilityChartDescriptor(CashFlowMiniChartDescriptor(
+                data: data, plannedAmount: plannedAmount, currencyCode: currencyCode
+            ))
             .frame(height: 160)
 
             // Legend
@@ -195,4 +199,47 @@ private struct CumulativePoint {
     let day: Int
     let daily: Double
     let cumulative: Double
+}
+
+// MARK: - Accessibility Chart Descriptor
+
+private struct CashFlowMiniChartDescriptor: AXChartDescriptorRepresentable {
+    let data: [CumulativePoint]
+    let plannedAmount: Double
+    let currencyCode: String
+
+    func makeChartDescriptor() -> AXChartDescriptor {
+        let minDay = Double(data.first?.day ?? 1)
+        let maxDay = Double(data.last?.day ?? 31)
+        let maxAmount = max(data.last?.cumulative ?? 0, plannedAmount) * 1.1 + 1
+
+        let xAxis = AXNumericDataAxisDescriptor(
+            title: "Day",
+            range: minDay...maxDay,
+            gridlinePositions: []
+        ) { value in "\(Int(value))" }
+
+        let yAxis = AXNumericDataAxisDescriptor(
+            title: "Amount",
+            range: 0...maxAmount,
+            gridlinePositions: []
+        ) { value in YalaFormatter.amountCompactTable(value: value) }
+
+        let series = AXDataSeriesDescriptor(
+            name: L10n.CashFlowPlan.cellDetailDailyProgress,
+            isContinuous: true,
+            dataPoints: data.map { point in
+                .init(x: Double(point.day), y: point.cumulative)
+            }
+        )
+
+        return AXChartDescriptor(
+            title: L10n.CashFlowPlan.cellDetailDailyProgress,
+            summary: nil,
+            xAxis: xAxis,
+            yAxis: yAxis,
+            additionalAxes: [],
+            series: [series]
+        )
+    }
 }

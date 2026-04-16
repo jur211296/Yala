@@ -13,7 +13,8 @@ struct PivotRowView: View {
     let level: Int
     let preferredCurrency: String
 
-    @AppStorage("showVariations") private var showVariations: Bool = true
+    @Environment(AppPreferences.self) private var appPreferences
+    private var showVariations: Bool { appPreferences.showVariations }
 
     /// Currency to use for formatting this node
     private var displayCurrency: String {

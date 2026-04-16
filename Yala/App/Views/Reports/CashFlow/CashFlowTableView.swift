@@ -20,7 +20,7 @@ struct CashFlowTableView: View {
     let currencyCode: String
 
     // Tour
-    @AppStorage("hasSeenCashFlowTableTour") private var hasSeenTour = false
+    @Environment(AppPreferences.self) private var appPreferences
     @State private var showTour = false
     @State private var tourIndex = 0
     @State private var scrollProxy: ScrollViewProxy?
@@ -77,7 +77,7 @@ struct CashFlowTableView: View {
             currentIndex: $tourIndex,
             scrollProxy: scrollProxy
         ) {
-            hasSeenTour = true
+            appPreferences.hasSeenCashFlowTableTour = true
         }
         .onAppear {
             recalculate()
@@ -88,7 +88,7 @@ struct CashFlowTableView: View {
             } catch {
                 return
             }
-            if viewModel.projection != nil && !hasSeenTour {
+            if viewModel.projection != nil && !appPreferences.hasSeenCashFlowTableTour {
                 showTour = true
             }
         }

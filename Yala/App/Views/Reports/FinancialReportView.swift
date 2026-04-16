@@ -40,10 +40,13 @@ struct FinancialReportView: View {
     @Query private var tags: [Tag]
     @Query private var scheduledPayments: [ScheduledPayment]
 
-    // MARK: - Settings
+    // MARK: - Preferences
 
-    @AppStorage("defaultCurrencyCode") private var preferredCurrencyCode: String = "PEN"
-    @AppStorage("showVariations") private var showVariations: Bool = true
+    @Environment(AppPreferences.self) private var appPreferences
+
+    /// Alias for `appPreferences.defaultCurrencyCode.rawValue` — minimizes diff across 7 callsites.
+    private var preferredCurrencyCode: String { appPreferences.defaultCurrencyCode.rawValue }
+    private var showVariations: Bool { appPreferences.showVariations }
 
     // MARK: - Body
 
@@ -129,7 +132,7 @@ struct FinancialReportView: View {
         .onChange(of: sessionState.dataVersion) { _, _ in scheduleRecalculate() }
         .onChange(of: viewModel.groupingState.activeDimensions) { _, _ in scheduleRecalculate() }
         .onChange(of: transactions.count) { _, _ in scheduleRecalculate() }
-        .onChange(of: preferredCurrencyCode) { _, _ in scheduleRecalculate() }
+        .onChange(of: appPreferences.defaultCurrencyCode) { _, _ in scheduleRecalculate() }
         .onChange(of: sessionState.formattingVersion) { _, _ in scheduleRecalculate() }
     }
 
@@ -144,7 +147,9 @@ struct FinancialReportView: View {
                     }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
+                .scrollTargetLayout()
             }
+            .scrollTargetBehavior(.viewAligned)
 
         }
     }
@@ -224,10 +229,10 @@ struct FinancialReportView: View {
                         .padding(.top, DS.Spacing.xxl)
                 }
             }
-            .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.sm)
             .yalaSafeBottomPadding()
         }
+        .scrollViewHardEdges()
     }
 
     private var pivotTable: some View {

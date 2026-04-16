@@ -48,17 +48,7 @@ struct CashFlowMonthCapsule: View {
         .frame(width: 78)
         .padding(.vertical, DS.Spacing.md)
         .padding(.horizontal, DS.Spacing.xxs)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                .fill(isSelected ? theme.accent.opacity(0.1) : Color.clear)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                .strokeBorder(
-                    isSelected ? theme.accent : Color.clear,
-                    lineWidth: isSelected ? 2 : 0
-                )
-        )
+        .glassEffect(isSelected ? .regular : .clear, in: .rect(cornerRadius: DS.Radius.lg))
         .opacity(month.isPast && !isSelected ? 0.6 : 1.0)
         .contentShape(Rectangle())
     }

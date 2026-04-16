@@ -25,8 +25,7 @@ struct CashFlowChartsSheet: View {
     @State private var draggingDate: Date?
     @State private var showInsightsConsentAlert = false
 
-    @AppStorage("aiInsightsConsentAccepted") private var aiInsightsConsent = false
-    @AppStorage("cashFlowAIEnabled") private var aiToggleEnabled = false
+    @Environment(AppPreferences.self) private var appPreferences
 
     // Cached computed data (computed once on appear)
     @State private var cachedPastMonths: [CashFlowMonth] = []
@@ -41,7 +40,7 @@ struct CashFlowChartsSheet: View {
     }
 
     private var isAIEnabled: Bool {
-        aiToggleEnabled && aiInsightsConsent
+        appPreferences.cashFlowAIEnabled && appPreferences.aiInsightsConsentAccepted
     }
 
     private let aiProTip = AIChartsProTip()
@@ -102,8 +101,8 @@ struct CashFlowChartsSheet: View {
         }
         .alert(L10n.AIConsent.insightsTitle, isPresented: $showInsightsConsentAlert) {
             Button(L10n.AIConsent.accept) {
-                aiInsightsConsent = true
-                aiToggleEnabled = true
+                appPreferences.aiInsightsConsentAccepted = true
+                appPreferences.cashFlowAIEnabled = true
             }
             Button(L10n.AIConsent.privacyPolicy) {
                 UIApplication.shared.open(AppConstants.privacyURL)
@@ -470,25 +469,25 @@ struct CashFlowChartsSheet: View {
                 .font(DS.Typography.labelSmall)
                 .fontWeight(.semibold)
         }
-        .foregroundStyle(aiToggleEnabled ? AnyShapeStyle(Color.white) : AnyShapeStyle(.thSecondaryText))
+        .foregroundStyle(appPreferences.cashFlowAIEnabled ? AnyShapeStyle(Color.white) : AnyShapeStyle(.thSecondaryText))
         .padding(.horizontal, DS.Chip.paddingH)
         .padding(.vertical, DS.Chip.paddingV)
         .background {
             Capsule()
-                .fill(aiToggleEnabled ? AnyShapeStyle(theme.accent) : AnyShapeStyle(.thSecondaryText.opacity(0.08)))
+                .fill(appPreferences.cashFlowAIEnabled ? AnyShapeStyle(theme.accent) : AnyShapeStyle(.thSecondaryText.opacity(0.08)))
         }
         .overlay(
             Capsule()
-                .stroke(aiToggleEnabled ? theme.accent.opacity(0.3) : .clear, lineWidth: 1)
+                .stroke(appPreferences.cashFlowAIEnabled ? theme.accent.opacity(0.3) : .clear, lineWidth: 1)
         )
     }
 
     private var aiChip: some View {
         Button {
             if isPro {
-                if aiInsightsConsent {
+                if appPreferences.aiInsightsConsentAccepted {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        aiToggleEnabled.toggle()
+                        appPreferences.cashFlowAIEnabled.toggle()
                     }
                 } else {
                     showInsightsConsentAlert = true
