@@ -30,13 +30,16 @@ struct ScheduledPaymentEditorView: View {
 
     @State private var viewModel = ScheduledPaymentEditorViewModel()
 
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
+    @Environment(AppPreferences.self) private var appPreferences
 
     let payment: ScheduledPayment?
     let defaultCategory: String?
     var onDelete: (() -> Void)?
     let prefill: ScheduledPaymentPrefill?
     let onSaved: ((UUID) -> Void)?
+
+    // Error state
+    @State private var showSaveError = false
 
     // Basic Info
     @State private var name: String = ""
@@ -46,6 +49,7 @@ struct ScheduledPaymentEditorView: View {
     // Type
     @State private var transactionType: String = "expense"
     @State private var paymentCategory: PaymentCategory = .recurring
+    @State private var isSubscription: Bool = false
 
     // Classification
     @State private var selectedAccount: Account?
@@ -131,6 +135,7 @@ struct ScheduledPaymentEditorView: View {
                 .onChange(of: yearlyDay) { _, _ in updatePreviewDates() }
                 .onChange(of: hasEndDate) { _, _ in updatePreviewDates() }
                 .onChange(of: endDate) { _, _ in updatePreviewDates() }
+                .onChange(of: isSubscription) { _, new in paymentCategory = new ? .subscription : .recurring }
                 .onChange(of: showCategoriesSheet) { _, isPresenting in
                     if isPresenting { dismissEditorKeyboard() }
                 }
@@ -142,14 +147,12 @@ struct ScheduledPaymentEditorView: View {
                 } message: {
                     Text(NSLocalizedString("scheduled.delete.confirm.message", comment: ""))
                 }
+                .onChange(of: viewModel.showSaveError) { _, new in if new { showSaveError = true } }
                 .alert(
                     L10n.Common.error,
-                    isPresented: Binding(
-                        get: { viewModel.showSaveError },
-                        set: { _ in viewModel.dismissSaveError() }
-                    ),
+                    isPresented: $showSaveError,
                     actions: {
-                        Button(L10n.Common.understood, role: .cancel) {}
+                        Button(L10n.Common.understood, role: .cancel) { viewModel.dismissSaveError() }
                     },
                     message: {
                         Text(L10n.Common.saveError)
@@ -173,6 +176,7 @@ struct ScheduledPaymentEditorView: View {
             editorContent
                 .dismissKeyboardOnTap()
         }
+        .scrollViewGlassEdges()
         .scrollDismissesKeyboard(.interactively)
         .background(PanelBackgroundView())
     }
@@ -227,7 +231,6 @@ struct ScheduledPaymentEditorView: View {
             }
         }
         .padding(.vertical, DS.Spacing.xxl)
-        .padding(.horizontal, DS.Spacing.lg)
     }
 
     // MARK: - Basic Information Section
@@ -358,7 +361,7 @@ struct ScheduledPaymentEditorView: View {
                 SubsectionDivider()
 
                 // Subscription Toggle
-                Toggle(isOn: isSubscriptionBinding) {
+                Toggle(isOn: $isSubscription) {
                     HStack(spacing: DS.Spacing.md) {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .foregroundStyle(.secondary)
@@ -371,13 +374,6 @@ struct ScheduledPaymentEditorView: View {
                 .padding()
             }
         }
-    }
-
-    private var isSubscriptionBinding: Binding<Bool> {
-        Binding(
-            get: { paymentCategory == .subscription },
-            set: { paymentCategory = $0 ? .subscription : .recurring }
-        )
     }
 
     // MARK: - Classification Section
@@ -608,9 +604,7 @@ struct ScheduledPaymentEditorView: View {
                     endDateSection
                 }
             }
-            .background(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous).fill(.thCard))
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous).stroke(Color.primary.opacity(0.05), lineWidth: 1))
-            .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+            .solidCard()
         }
     }
 
@@ -725,10 +719,13 @@ struct ScheduledPaymentEditorView: View {
                 .frame(width: 36, height: 36)
                 .background(
                     Circle()
-                        .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
+                        .fill(isSelected ? theme.accent : Color.clear)
                 )
+                .glassEffect(isSelected ? .clear : .regular.interactive(), in: .circle)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(weekday.short)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var dayOfMonthPicker: some View {
@@ -1058,6 +1055,7 @@ struct ScheduledPaymentEditorView: View {
         note = payment.note ?? ""
         transactionType = payment.transactionType
         paymentCategory = PaymentCategory(rawValue: payment.paymentCategory) ?? .recurring
+        isSubscription = paymentCategory == .subscription
         selectedAccount = payment.account
         selectedSubcategory = payment.subcategory
         selectedTags = Set((payment.tags ?? []).map { $0.persistentModelID })
@@ -1102,7 +1100,7 @@ struct ScheduledPaymentEditorView: View {
             name: name,
             amount: amountValue,
             note: note,
-            currencyCode: selectedAccount?.currencyCode ?? defaultCurrencyCode,
+            currencyCode: selectedAccount?.currencyCode ?? appPreferences.defaultCurrencyCode.rawValue,
             transactionType: transactionType,
             paymentCategory: paymentCategory,
             account: selectedAccount,

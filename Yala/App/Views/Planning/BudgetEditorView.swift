@@ -18,10 +18,12 @@ struct BudgetEditorView: View {
 
     @State private var viewModel = BudgetEditorViewModel()
 
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
-    @AppStorage("budgetAlertsEnabled") private var budgetAlertsGloballyEnabled: Bool = false
+    @Environment(AppPreferences.self) private var appPreferences
 
     let budget: Budget?
+
+    // Error state
+    @State private var showSaveError = false
 
     // Basic Info
     @State private var name: String = ""
@@ -96,9 +98,9 @@ struct BudgetEditorView: View {
                     }
                 }
                 .padding(.vertical, DS.Spacing.xxl)
-                .padding(.horizontal, DS.Spacing.lg)
                 .dismissKeyboardOnTap()
             }
+            .scrollViewGlassEdges()
             .scrollDismissesKeyboard(.interactively)
             .background(PanelBackgroundView())
             .alert(
@@ -149,14 +151,12 @@ struct BudgetEditorView: View {
             .onChange(of: selectedAccounts) { _, newAccounts in
                 updateCurrencyFromAccounts(newAccounts)
             }
+            .onChange(of: viewModel.showSaveError) { _, new in if new { showSaveError = true } }
             .alert(
                 L10n.Common.error,
-                isPresented: Binding(
-                    get: { viewModel.showSaveError },
-                    set: { _ in viewModel.dismissSaveError() }
-                ),
+                isPresented: $showSaveError,
                 actions: {
-                    Button(L10n.Common.understood, role: .cancel) {}
+                    Button(L10n.Common.understood, role: .cancel) { viewModel.dismissSaveError() }
                 },
                 message: {
                     Text(L10n.Common.saveError)
@@ -331,7 +331,7 @@ struct BudgetEditorView: View {
                 .padding()
 
                 // Hint when global notifications are disabled
-                if !budgetAlertsGloballyEnabled {
+                if !appPreferences.budgetAlertsEnabled {
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: "info.circle")
                             .font(DS.Typography.caption)
@@ -378,8 +378,9 @@ struct BudgetEditorView: View {
                                 .padding(.vertical, DS.Spacing.sm)
                                 .background(
                                     Capsule()
-                                        .fill(showCustomThreshold ? theme.accent : Color(.tertiarySystemFill))
+                                        .fill(showCustomThreshold ? theme.accent : Color.clear)
                                 )
+                                .glassEffect(showCustomThreshold ? .clear : .regular.interactive(), in: .capsule)
                             }
                             .buttonStyle(.plain)
                         }
@@ -449,8 +450,9 @@ struct BudgetEditorView: View {
                 .padding(.vertical, DS.Spacing.sm)
                 .background(
                     Capsule()
-                        .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
+                        .fill(isSelected ? theme.accent : Color.clear)
                 )
+                .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
     }
@@ -741,13 +743,13 @@ struct BudgetEditorView: View {
            let account = viewModel.activeAccounts.first(where: { $0.persistentModelID == accountId }) {
             currencyCode = account.currencyCode
         } else {
-            currencyCode = defaultCurrencyCode
+            currencyCode = appPreferences.defaultCurrencyCode.rawValue
         }
     }
 
     private func loadBudgetData() {
         // Initialize currency code
-        currencyCode = defaultCurrencyCode
+        currencyCode = appPreferences.defaultCurrencyCode.rawValue
 
         guard let budget = budget else { return }
 

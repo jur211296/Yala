@@ -13,7 +13,7 @@ struct ScheduledPaymentsView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
 
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
+    @Environment(AppPreferences.self) private var appPreferences
 
     // ViewModel
     @State private var viewModel = ScheduledPaymentsViewModel()
@@ -35,7 +35,7 @@ struct ScheduledPaymentsView: View {
                         viewModel: viewModel,
                         payments: filteredPaymentsForCurrentTab,
                         tab: viewModel.selectedTab,
-                        currencyCode: defaultCurrencyCode,
+                        currencyCode: appPreferences.defaultCurrencyCode.rawValue,
                         onRefresh: { refreshData() }
                     )
                 }

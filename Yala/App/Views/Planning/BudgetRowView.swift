@@ -80,18 +80,7 @@ struct BudgetRowView: View {
             }
             .padding(DS.Spacing.lg)
             .contentShape(Rectangle())
-            .background(cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                    .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
-            )
-            .shadow(
-                color: Color.black.opacity(theme.shadowOpacity),
-                radius: 6,
-                x: 0,
-                y: 3
-            )
+            .solidCard(radius: DS.Radius.md)
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
@@ -99,10 +88,6 @@ struct BudgetRowView: View {
     }
 
     // MARK: - Components
-
-    private var cardBackground: some View {
-        theme.card
-    }
 
     private var budgetIcon: some View {
         ZStack {

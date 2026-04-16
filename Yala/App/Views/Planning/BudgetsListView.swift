@@ -14,15 +14,13 @@ struct BudgetsListView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
-        .rawValue
+    @Environment(AppPreferences.self) private var appPreferences
 
     // ViewModel
     @State private var viewModel = BudgetsViewModel()
     @State private var selectedSegment: Int = 1  // 0=Weekly, 1=Monthly, 2=Yearly, 3=Unique
     @State private var showPeriodSelector = false
     @State private var showUpgradeSheet = false
-    @AppStorage("budgets.hideInactive") private var hideInactive: Bool = false
 
     private var activeBudgetsCount: Int {
         viewModel.activeBudgetsCount
@@ -46,7 +44,6 @@ struct BudgetsListView: View {
                         ) {
                             showUpgradeSheet = true
                         }
-                        .padding(.horizontal, DS.Spacing.lg)
                         .padding(.top, DS.Spacing.md)
                     }
 
@@ -55,6 +52,7 @@ struct BudgetsListView: View {
                     listContent
                 }
             }
+            .scrollViewGlassEdges()
 
             // FAB button for new budget
             newBudgetFAB
@@ -84,8 +82,8 @@ struct BudgetsListView: View {
         .onAppear {
             viewModel.setContext(modelContext)
             viewModel.refreshBudgetData(
-                hideInactive: hideInactive,
-                defaultCurrencyCode: defaultCurrencyCode
+                hideInactive: appPreferences.budgetsHideInactive,
+                defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
             )
 
             // Auto-open editor from setup checklist (step 3)
@@ -106,7 +104,6 @@ struct BudgetsListView: View {
         VStack(spacing: DS.Spacing.none) {
             // Period type segmented control
             periodTypeSegmentedControl
-                .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.md)
                 .padding(.bottom, DS.Spacing.sm)
 
@@ -120,7 +117,6 @@ struct BudgetsListView: View {
                     Spacer()
                     hideInactiveButton
                 }
-                .padding(.horizontal, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.md)
             }
         }
@@ -216,17 +212,16 @@ struct BudgetsListView: View {
             .buttonStyle(.plain)
         }
         .padding(.vertical, DS.Spacing.sm)
-        .padding(.horizontal, DS.Spacing.lg)
     }
 
     // MARK: - Hide Inactive Button
 
     private var hideInactiveButton: some View {
         Button {
-            hideInactive.toggle()
+            appPreferences.budgetsHideInactive.toggle()
             refreshData()
         } label: {
-            Image(systemName: hideInactive ? "eye" : "eye.slash")
+            Image(systemName: appPreferences.budgetsHideInactive ? "eye" : "eye.slash")
                 .font(DS.Typography.bodyBold)
                 .foregroundStyle(.secondary)
                 .frame(width: 32, height: 32)
@@ -258,7 +253,6 @@ struct BudgetsListView: View {
                     Text(section.status.localizedName)
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
-                        .padding(.horizontal, DS.Spacing.lg)
 
                     // Budget cards
                     ForEach(section.budgets) { summary in
@@ -266,7 +260,6 @@ struct BudgetsListView: View {
                             summary: summary,
                             currencyCode: summary.budget.currencyCode
                         )
-                        .padding(.horizontal, DS.Spacing.lg)
                     }
                 }
             }
@@ -314,8 +307,8 @@ struct BudgetsListView: View {
     private func refreshData() {
         viewModel.loadData()
         viewModel.refreshBudgetData(
-            hideInactive: hideInactive,
-            defaultCurrencyCode: defaultCurrencyCode
+            hideInactive: appPreferences.budgetsHideInactive,
+            defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
     }
 

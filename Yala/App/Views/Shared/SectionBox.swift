@@ -24,15 +24,7 @@ struct SectionBox<Content: View>: View {
             VStack(spacing: DS.Spacing.none) {
                 content()
             }
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(.thCardBorder, lineWidth: 1)
-            )
-            .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+            .solidCard()
         }
     }
 }

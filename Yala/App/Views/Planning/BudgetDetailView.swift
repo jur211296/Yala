@@ -12,7 +12,7 @@ import SwiftUI
 struct BudgetDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
+    @Environment(AppPreferences.self) private var appPreferences
     @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
 
     let budget: Budget
@@ -28,7 +28,7 @@ struct BudgetDetailView: View {
 
     private func refreshSummary() {
         guard isBudgetValid else { return }
-        summary = viewModel.buildSummary(for: budget, defaultCurrencyCode: defaultCurrencyCode)
+        summary = viewModel.buildSummary(for: budget, defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue)
     }
 
     var body: some View {
@@ -56,9 +56,9 @@ struct BudgetDetailView: View {
                             encouragementNote
                         }
                     }
-                    .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
                 }
+                .scrollViewGlassEdges()
             }
         }
         .navigationTitle(budget.name)
@@ -160,14 +160,7 @@ struct BudgetDetailView: View {
             .padding(.horizontal, DS.Spacing.sm)
         }
         .padding(DS.Spacing.xl)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .fill(.thCard)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-        )
+        .solidCard()
     }
 
     // MARK: - Info Section
@@ -239,14 +232,7 @@ struct BudgetDetailView: View {
                     )
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
+            .solidCard()
         }
     }
 
@@ -307,14 +293,7 @@ struct BudgetDetailView: View {
                     .padding(.vertical, DS.Spacing.md)
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
+            .solidCard()
         }
     }
 

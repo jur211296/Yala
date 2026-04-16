@@ -13,6 +13,8 @@ struct BudgetProgressBar: View {
     let isExceeded: Bool
     var simplified: Bool = false
 
+    @State private var barWidth: CGFloat = 0
+
     private var barColor: Color {
         if isExceeded { return Color.hotPink }
         if simplified { return Color.electricIndigo }
@@ -21,23 +23,19 @@ struct BudgetProgressBar: View {
     }
 
     var body: some View {
-        GeometryReader { geo in
-            let clampedPercentage = min(percentage, 100.0)
-            let width = (clampedPercentage / 100.0) * geo.size.width
+        ZStack(alignment: .leading) {
+            // Background capsule
+            Capsule()
+                .fill(DS.Semantic.neutralBackground)
+                .frame(height: 6)
 
-            ZStack(alignment: .leading) {
-                // Background capsule
-                Capsule()
-                    .fill(DS.Semantic.neutralBackground)
-                    .frame(height: 6)
-
-                // Foreground capsule (progress)
-                Capsule()
-                    .fill(barColor)
-                    .frame(width: max(0, width), height: 6)
-            }
+            // Foreground capsule (progress)
+            Capsule()
+                .fill(barColor)
+                .frame(width: max(0, barWidth * (min(percentage, 100.0) / 100.0)), height: 6)
         }
         .frame(height: 6)
+        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { barWidth = $0 }
         .accessibilityValue(isExceeded ? L10n.Accessibility.exceeded : "\(Int(percentage))%")
     }
 }

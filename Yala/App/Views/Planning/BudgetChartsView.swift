@@ -13,7 +13,7 @@ import SwiftUI
 struct BudgetChartsView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
+    @Environment(AppPreferences.self) private var appPreferences
 
     let budget: Budget
     @Bindable var viewModel: BudgetsViewModel
@@ -185,9 +185,9 @@ struct BudgetChartsView: View {
                     // 4. Category breakdown
                     categoryBreakdownSection
                 }
-                .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
             }
+            .scrollViewGlassEdges()
         }
         .navigationTitle(L10n.BudgetDetail.chartsTitle)
         .navigationBarTitleDisplayMode(.inline)
@@ -268,7 +268,7 @@ struct BudgetChartsView: View {
         let data = viewModel.getHistoricalSpending(
             budget: budget,
             periods: 6,
-            defaultCurrencyCode: defaultCurrencyCode
+            defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
 
         return chartCard(title: L10n.BudgetDetail.chartsCompliance) {
@@ -293,12 +293,14 @@ struct BudgetChartsView: View {
                         Text(YalaFormatter.currency(value: item.spent, currencyCode: budget.currencyCode))
                             .font(DS.Typography.labelTiny)
                             .foregroundStyle(.thSecondaryText)
+                            .accessibilityLabel("\(item.label): \(YalaFormatter.currency(value: item.spent, currencyCode: budget.currencyCode))")
                     }
 
                     if let first = data.first, first.limit > 0 {
                         RuleMark(y: .value("Limit", first.limit))
                             .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
                             .foregroundStyle(.secondary)
+                            .accessibilityLabel("Budget limit: \(YalaFormatter.currency(value: first.limit, currencyCode: budget.currencyCode))")
                     }
                 }
                 .chartXAxis {
@@ -565,20 +567,7 @@ struct BudgetChartsView: View {
                 }
 
                 // Bar
-                GeometryReader { geo in
-                    let width = maxAmount > 0 ? (amount / maxAmount) * geo.size.width : 0
-
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(DS.Semantic.neutralBackground)
-                            .frame(height: 6)
-
-                        Capsule()
-                            .fill(Color(hex: color))
-                            .frame(width: width, height: 6)
-                    }
-                }
-                .frame(height: 6)
+                BreakdownBarView(amount: amount, maxAmount: maxAmount, color: color)
             }
         }
     }
@@ -668,6 +657,30 @@ struct BudgetChartsView: View {
 
     private func dayMonthLabel(_ date: Date) -> String {
         Self.dayMonthFormatter.string(from: date)
+    }
+
+    // MARK: - Breakdown Bar (extracted for onGeometryChange — safe in vertical ScrollView with contentMargins)
+
+    private struct BreakdownBarView: View {
+        let amount: Double
+        let maxAmount: Double
+        let color: String
+
+        @State private var barWidth: CGFloat = 0
+
+        var body: some View {
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(DS.Semantic.neutralBackground)
+                    .frame(height: 6)
+
+                Capsule()
+                    .fill(Color(hex: color))
+                    .frame(width: maxAmount > 0 ? (amount / maxAmount) * barWidth : 0, height: 6)
+            }
+            .frame(height: 6)
+            .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { barWidth = $0 }
+        }
     }
 }
 

@@ -93,9 +93,9 @@ struct ScheduledPaymentDetailView: View {
                     // Info note
                     infoNote
                 }
-                .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
             }
+            .scrollViewGlassEdges()
         }
         .navigationTitle(payment.name)
         .navigationBarTitleDisplayMode(.inline)
