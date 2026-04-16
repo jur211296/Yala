@@ -49,19 +49,8 @@ struct GroupCardView: View {
                     }
                 }
             }
-            .padding(DS.Spacing.lg)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(.thCardBorder, lineWidth: 1)
-            )
-            .shadow(
-                color: Color.black.opacity(theme.shadowOpacity),
-                radius: 6, x: 0, y: 3
-            )
+            .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
+            .dsSubtleShadow()
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())

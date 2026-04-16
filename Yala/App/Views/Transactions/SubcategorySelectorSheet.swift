@@ -34,67 +34,67 @@ struct SubcategorySelectorSheet: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.xl) {
-                        if viewModel.isEmpty {
-                            YalaEmptyState(
-                                icon: "tag.slash",
-                                title: L10n.Empty.noSubcategories
-                            )
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, DS.Spacing.xxxl)
-                        } else {
-                            // Recientes section (if any)
-                            if !viewModel.recentSubcategories.isEmpty {
-                                VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                                    HStack(spacing: DS.Spacing.sm) {
-                                        Image(systemName: "clock.arrow.circlepath")
-                                            .font(DS.Typography.caption)
-                                            .foregroundStyle(.secondary)
-                                            .accessibilityHidden(true)
-                                        Text(L10n.Common.recent)
-                                            .font(DS.Typography.headline)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    .padding(.leading, DS.Spacing.xs)
+                    if viewModel.isEmpty {
+                        YalaEmptyState(
+                            icon: "tag.slash",
+                            title: L10n.Empty.noSubcategories
+                        )
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, DS.Spacing.xxxl)
+                    } else {
+                        // Recientes section (if any)
+                        if !viewModel.recentSubcategories.isEmpty {
+                            VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                                HStack(spacing: DS.Spacing.sm) {
+                                    Image(systemName: "clock.arrow.circlepath")
+                                        .font(DS.Typography.caption)
+                                        .foregroundStyle(.secondary)
+                                        .accessibilityHidden(true)
+                                    Text(L10n.Common.recent)
+                                        .font(DS.Typography.headline)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(.leading, DS.Spacing.xs)
 
-                                    LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
-                                        ForEach(viewModel.recentSubcategories, id: \.persistentModelID) {
-                                            subcategory in
-                                            SubcategoryGridItem(
-                                                subcategory: subcategory,
-                                                categoryColor: subcategory.safeCategory.colorHex,
-                                                isSelected: isSelected(subcategory),
-                                                action: {
-                                                    selectedSubcategory = subcategory
-                                                    dismiss()
-                                                }
-                                            )
-                                        }
+                                LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
+                                    ForEach(viewModel.recentSubcategories, id: \.persistentModelID) {
+                                        subcategory in
+                                        SubcategoryGridItem(
+                                            subcategory: subcategory,
+                                            categoryColor: subcategory.safeCategory.colorHex,
+                                            isSelected: isSelected(subcategory),
+                                            action: {
+                                                selectedSubcategory = subcategory
+                                                dismiss()
+                                            }
+                                        )
                                     }
                                 }
-
-                                Divider()
-                                    .padding(.vertical, DS.Spacing.xs)
                             }
 
-                            // All categories
-                            ForEach(viewModel.groupedSubcategories, id: \.category.persistentModelID) {
-                                group in
-                                SubcategoryGridSection(
-                                    category: group.category,
-                                    subcategories: group.subcategories,
-                                    columns: columns,
-                                    selectedSubcategory: $selectedSubcategory,
-                                    onSelect: { subcategory in
-                                        selectedSubcategory = subcategory
-                                        dismiss()
-                                    }
-                                )
-                            }
+                            Divider()
+                                .padding(.vertical, DS.Spacing.xs)
+                        }
+
+                        // All categories
+                        ForEach(viewModel.groupedSubcategories, id: \.category.persistentModelID) {
+                            group in
+                            SubcategoryGridSection(
+                                category: group.category,
+                                subcategories: group.subcategories,
+                                columns: columns,
+                                selectedSubcategory: $selectedSubcategory,
+                                onSelect: { subcategory in
+                                    selectedSubcategory = subcategory
+                                    dismiss()
+                                }
+                            )
                         }
                     }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.xl)
                 }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xl)
+            }
             }
             .navigationTitle(L10n.Transaction.subcategory)
             .navigationBarTitleDisplayMode(.inline)

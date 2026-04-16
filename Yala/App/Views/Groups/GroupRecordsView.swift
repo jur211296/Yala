@@ -66,9 +66,9 @@ struct GroupRecordsView: View {
                         }
                     }
                 }
-                .padding(.horizontal, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.safeBottom)
             }
+            .scrollViewGlassEdges()
             .confirmationDialog(
                 L10n.Action.delete,
                 isPresented: Binding(
@@ -119,15 +119,7 @@ struct GroupRecordsView: View {
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
         }
-        .padding(DS.Spacing.lg)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .fill(.thCard)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(.thCardBorder, lineWidth: 1)
-        )
+        .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
     }
 
     // MARK: - Split Type Badge

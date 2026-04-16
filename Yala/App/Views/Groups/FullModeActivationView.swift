@@ -73,9 +73,16 @@ struct FullModeActivationView: View {
         VStack(spacing: DS.Spacing.xl) {
             Spacer()
 
-            Image(systemName: "banknote.fill")
-                .font(.system(size: 48)) // A11Y-DT: decorative hero icon, fixed size
-                .foregroundStyle(theme.accent)
+            ZStack {
+                Circle()
+                    .fill(theme.accent.opacity(0.15))
+                    .frame(width: 80, height: 80) // A11Y-DT: decorative hero icon, fixed size
+
+                Image(systemName: "banknote.fill")
+                    .font(.system(size: 48)) // A11Y-DT: decorative icon inside circle
+                    .foregroundStyle(theme.accent)
+            }
+            .glassEffect(.regular, in: Circle())
 
             Text(L10n.Groups.Activate.accountStep)
                 .font(DS.Typography.title2)
@@ -116,9 +123,16 @@ struct FullModeActivationView: View {
         VStack(spacing: DS.Spacing.xl) {
             Spacer()
 
-            Image(systemName: "bell.fill")
-                .font(.system(size: 48)) // A11Y-DT: decorative hero icon, fixed size
-                .foregroundStyle(theme.accent)
+            ZStack {
+                Circle()
+                    .fill(theme.accent.opacity(0.15))
+                    .frame(width: 80, height: 80) // A11Y-DT: decorative hero icon, fixed size
+
+                Image(systemName: "bell.fill")
+                    .font(.system(size: 48)) // A11Y-DT: decorative icon inside circle
+                    .foregroundStyle(theme.accent)
+            }
+            .glassEffect(.regular, in: Circle())
 
             VStack(spacing: DS.Spacing.sm) {
                 Text(L10n.Groups.Activate.notificationStep)

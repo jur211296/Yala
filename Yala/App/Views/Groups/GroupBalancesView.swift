@@ -45,10 +45,10 @@ struct GroupBalancesView: View {
                         settlementsSection
                     }
                 }
-                .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.sm)
                 .padding(.bottom, DS.Spacing.safeBottom)
             }
+            .scrollViewGlassEdges()
         }
     }
 
@@ -70,14 +70,7 @@ struct GroupBalancesView: View {
                     }
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(.thCardBorder, lineWidth: 1)
-            )
+            .solidCard(radius: DS.Radius.xl)
         }
     }
 
@@ -115,14 +108,7 @@ struct GroupBalancesView: View {
                     }
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(.thCardBorder, lineWidth: 1)
-            )
+            .solidCard(radius: DS.Radius.xl)
         }
     }
 
@@ -188,14 +174,7 @@ struct GroupBalancesView: View {
                     }
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(.thCardBorder, lineWidth: 1)
-            )
+            .solidCard(radius: DS.Radius.xl)
         }
     }
 

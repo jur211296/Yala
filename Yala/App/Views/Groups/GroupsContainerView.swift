@@ -20,7 +20,7 @@ struct GroupsContainerView: View {
 
     @State private var viewModel = GroupsViewModel()
     @State private var isPresentingSettings = false
-    @AppStorage("hasSeenGroupsNotificationPrompt") private var hasSeenPrompt = false
+    @Environment(AppPreferences.self) private var appPreferences
     @State private var showNotificationPrompt = false
     @State private var showNudgeBanner = false
 
@@ -89,10 +89,10 @@ struct GroupsContainerView: View {
                                 archivedGroupsSection
                             }
                         }
-                        .padding(.horizontal, DS.Spacing.lg)
                         .padding(.top, DS.Spacing.sm)
                         .padding(.bottom, DS.Spacing.safeBottom)
                     }
+                    .scrollViewGlassEdges()
                     .searchable(
                         text: $viewModel.searchText,
                         placement: .navigationBarDrawer(displayMode: .automatic),
@@ -140,7 +140,7 @@ struct GroupsContainerView: View {
                 viewModel.loadData()
             }
             .onChange(of: viewModel.activeGroups.count) { _, newCount in
-                if !hasSeenPrompt && newCount > 0 {
+                if !appPreferences.hasSeenGroupsNotificationPrompt && newCount > 0 {
                     showNotificationPrompt = true
                 }
             }
@@ -154,11 +154,11 @@ struct GroupsContainerView: View {
             }
             .alert(L10n.Groups.Notifications.promptTitle, isPresented: $showNotificationPrompt) {
                 Button(L10n.Groups.Notifications.promptEnable) {
-                    hasSeenPrompt = true
+                    appPreferences.hasSeenGroupsNotificationPrompt = true
                     activateGroupsNotification()
                 }
                 Button(L10n.Action.cancel, role: .cancel) {
-                    hasSeenPrompt = true
+                    appPreferences.hasSeenGroupsNotificationPrompt = true
                 }
             } message: {
                 Text(L10n.Groups.Notifications.promptMessage)

@@ -40,7 +40,7 @@ struct GroupFormView: View {
 
     @FocusState private var isNameFocused: Bool
 
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
+    @Environment(AppPreferences.self) private var appPreferences
 
     // MARK: - Body
 
@@ -252,7 +252,7 @@ struct GroupFormView: View {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
         guard !trimmedName.isEmpty else { return }
 
-        let currencyCode = showDebtsInSingleCurrency ? selectedCurrency.rawValue : defaultCurrencyCode
+        let currencyCode = showDebtsInSingleCurrency ? selectedCurrency.rawValue : appPreferences.defaultCurrencyCode.rawValue
 
         do {
             if let group {
@@ -304,7 +304,7 @@ struct GroupFormView: View {
             defaultSplitType = SplitType(rawValue: group.defaultSplitType) ?? .equal
             membersCanInvite = group.membersCanInvite
         } else {
-            selectedCurrency = CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen
+            selectedCurrency = appPreferences.defaultCurrencyCode
         }
     }
 }

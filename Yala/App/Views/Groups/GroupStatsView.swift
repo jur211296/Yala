@@ -41,10 +41,10 @@ struct GroupStatsView: View {
                         monthlyTrendChart
                     }
                 }
-                .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.sm)
                 .padding(.bottom, DS.Spacing.safeBottom)
             }
+            .scrollViewGlassEdges()
             .onAppear { loadStats() }
             .onChange(of: viewModel.selectedPeriod) { _, _ in
                 viewModel.recalculate()
@@ -139,15 +139,7 @@ struct GroupStatsView: View {
                 }
             }
             .frame(height: CGFloat(max(viewModel.memberSpending.count, 1)) * 44)
-            .padding(DS.Spacing.lg)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(.thCardBorder, lineWidth: 1)
-            )
+            .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
         }
     }
 
@@ -173,15 +165,7 @@ struct GroupStatsView: View {
                 .chartLegend(position: .bottom, alignment: .leading, spacing: DS.Spacing.sm)
                 .frame(height: 200) // A11Y-DT: fixed chart height for consistent layout
             }
-            .padding(DS.Spacing.lg)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(.thCardBorder, lineWidth: 1)
-            )
+            .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
         }
     }
 
@@ -224,15 +208,7 @@ struct GroupStatsView: View {
                 }
             }
             .frame(height: 180) // A11Y-DT: fixed chart height for consistent layout
-            .padding(DS.Spacing.lg)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(.thCardBorder, lineWidth: 1)
-            )
+            .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
         }
     }
 

@@ -95,7 +95,7 @@ struct GroupSettingsView: View {
             .sheet(isPresented: $showShareSheet) {
                 if let url = shareURL {
                     ActivityView(activityItems: [url])
-                }
+                        }
             }
             .confirmationDialog(
                 L10n.Groups.Member.remove,
@@ -292,7 +292,9 @@ struct GroupSettingsView: View {
                 .padding(.horizontal, DS.FormRow.paddingH)
                 .padding(.vertical, DS.FormRow.paddingV)
                 .onChange(of: simplifyDebts) { _, newValue in
-                    updateGroupOption { $0.simplifyDebts = newValue }
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        updateGroupOption { $0.simplifyDebts = newValue }
+                    }
                 }
 
                 // Admin-only options
@@ -341,7 +343,9 @@ struct GroupSettingsView: View {
                     .padding(.horizontal, DS.FormRow.paddingH)
                     .padding(.vertical, DS.FormRow.paddingV)
                     .onChange(of: showDebtsInSingleCurrency) { _, newValue in
-                        updateGroupOption { $0.showDebtsInSingleCurrency = newValue }
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            updateGroupOption { $0.showDebtsInSingleCurrency = newValue }
+                        }
                     }
                     .onChange(of: selectedCurrency) { _, newValue in
                         updateGroupOption { $0.currencyCode = newValue.rawValue }

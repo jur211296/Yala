@@ -132,7 +132,7 @@ struct GroupDetailView: View {
             .sheet(isPresented: $showShareSheet) {
                 if let url = viewModel.shareURL {
                     ActivityView(activityItems: [url])
-                }
+                    }
             }
             .refreshable { viewModel.loadData() }
             .appliesPendingRemoteChanges(sessionState)
@@ -209,8 +209,11 @@ struct GroupDetailView: View {
                     navigationChipButton(for: tab)
                 }
             }
-            .padding(.horizontal, DS.Spacing.lg)
+            .scrollTargetLayout()
         }
+        .contentMargins(.horizontal, DS.Spacing.lg)
+        .scrollTargetBehavior(.viewAligned)
+        .scrollClipDisabled()
     }
 
     @ViewBuilder

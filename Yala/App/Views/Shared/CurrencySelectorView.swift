@@ -44,27 +44,27 @@ struct CurrencySelectorView: View {
 
             ScrollView {
                 LazyVStack(spacing: DS.Spacing.lg) {
-                    // Recommended section
-                    recommendedSection
+                // Recommended section
+                recommendedSection
 
-                    // Remaining currencies by continent
-                    ForEach(filteredContinentGroups, id: \.continent) { group in
-                        SectionBox(title: group.continent.localizedName) {
-                            VStack(spacing: DS.Spacing.none) {
-                                ForEach(Array(group.currencies.enumerated()), id: \.element) {
-                                    index, currency in
-                                    if index > 0 {
-                                        SubsectionDivider()
-                                    }
-                                    currencyRow(currency: currency)
+                // Remaining currencies by continent
+                ForEach(filteredContinentGroups, id: \.continent) { group in
+                    SectionBox(title: group.continent.localizedName) {
+                        VStack(spacing: DS.Spacing.none) {
+                            ForEach(Array(group.currencies.enumerated()), id: \.element) {
+                                index, currency in
+                                if index > 0 {
+                                    SubsectionDivider()
                                 }
+                                currencyRow(currency: currency)
                             }
                         }
                     }
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.lg)
             }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.lg)
+        }
         }
         .navigationTitle(L10n.Settings.preferredCurrency)
         .navigationBarTitleDisplayMode(.inline)

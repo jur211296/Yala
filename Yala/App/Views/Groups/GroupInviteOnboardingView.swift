@@ -55,6 +55,7 @@ struct GroupInviteOnboardingView: View {
                     .font(.system(size: 32)) // A11Y-DT: decorative icon inside circle
                     .foregroundStyle(.white)
             }
+            .glassEffect(.regular, in: Circle())
 
             VStack(spacing: DS.Spacing.sm) {
                 if let groupName = sessionState.pendingInviteGroupName {

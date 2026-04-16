@@ -285,6 +285,12 @@ Después de añadir una preferencia nueva (UserDefaults persistente):
 - Preferir `@Observable` + `@State`/`@Bindable` sobre `ObservableObject`/`@Published`/`@StateObject`
 - **Preferencias persistentes → `AppPreferences` inyectado via `@Environment`** — NUNCA `@AppStorage` directo en views nuevas. Ver `$VAULT/planning/UI-PATTERNS.md` sección "iOS 26 Glass" y sub-sección "Preferencias".
 
+### containerRelativeFrame (PELIGRO en ScrollView vertical)
+- **NUNCA** `containerRelativeFrame(.horizontal)` dentro de widgets en un `ScrollView(.vertical)` que use `.contentMargins` o `.scrollViewGlassEdges()` — causa **deadlock de layout** que congela la app sin crash log (el splash nunca se dismissea).
+- **SIEMPRE** `onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { width = $0 }` para medir ancho dentro del ScrollView vertical del Panel.
+- `containerRelativeFrame` ES safe dentro de `ScrollView(.horizontal)` anidado (p.ej. `AccountsCarouselView`).
+- Detalles completos con snippets en `$VAULT/planning/UI-PATTERNS.md` sección "GOTCHA: containerRelativeFrame + contentMargins".
+
 ### Modern Swift Idioms
 - `Date.now` en vez de `Date()`
 - `count(where:)` en vez de `filter().count`
@@ -396,3 +402,4 @@ ScrollView {
 ## Decisiones Recientes (TTL: hasta cierre de fase)
 [Formato: [FECHA] Decisión breve — se archiva en DECISIONS.md al cerrar fase]
 - [2026-02-18] Skip ocurrencias usa `skippedDatesRaw: String` (comma-separated ISO) en ScheduledPayment — consistente con selectedWeekdays, sin nueva entidad
+- [2026-04-16] NUNCA `containerRelativeFrame` en ScrollView vertical con `contentMargins` — deadlock de layout. Usar `onGeometryChange`. Descubierto en Panel iOS 26 modernization (binary search de 10 commits). Documentado en UI-PATTERNS.md sección GOTCHA.

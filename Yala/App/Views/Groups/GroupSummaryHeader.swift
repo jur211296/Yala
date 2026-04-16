@@ -12,7 +12,7 @@ struct GroupSummaryHeader: View {
     let summary: GroupGlobalSummary
 
     @Environment(\.yalaTheme) private var theme
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = "PEN"
+    @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
         HStack(alignment: .top, spacing: DS.Spacing.lg) {
@@ -56,22 +56,14 @@ struct GroupSummaryHeader: View {
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
         }
-        .padding(DS.Spacing.lg)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .fill(.thCard)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(.thCardBorder, lineWidth: 1)
-        )
+        .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
         .dsSubtleShadow()
     }
 
     // MARK: - Helpers
 
     private var defaultCurrency: String {
-        defaultCurrencyCode
+        appPreferences.defaultCurrencyCode.rawValue
     }
 
     private var sortedOwedToMe: [(key: String, value: Double)] {

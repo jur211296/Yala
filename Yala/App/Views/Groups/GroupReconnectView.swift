@@ -86,6 +86,7 @@ struct GroupReconnectView: View {
                 .font(.system(size: 28)) // A11Y-DT: decorative icon inside circle
                 .foregroundStyle(.white)
         }
+        .glassEffect(.regular, in: Circle())
     }
 
     private var groupColor: Color {

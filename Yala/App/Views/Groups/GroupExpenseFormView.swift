@@ -108,7 +108,7 @@ struct GroupExpenseFormView: View {
             .sheet(isPresented: $showDatePicker) {
                 DatePickerSheet(selectedDate: $viewModel.date)
                     .presentationDetents([.medium, .large])
-            }
+                }
             .sheet(isPresented: $showPaidByPicker) {
                 MemberPickerView(
                     members: members,
@@ -137,7 +137,7 @@ struct GroupExpenseFormView: View {
             }
             .sheet(isPresented: $showCurrencyPicker) {
                 CurrencySelectorView(selectedCurrency: currencyCodeBinding)
-            }
+                }
             .sheet(isPresented: $showSubcategorySelector) {
                 SubcategorySelectorSheet(
                     selectedSubcategory: $viewModel.selectedSubcategory,
@@ -146,7 +146,7 @@ struct GroupExpenseFormView: View {
             }
             .sheet(isPresented: $showSplitDetail) {
                 splitDetailSheet
-            }
+                }
         }
     }
 
