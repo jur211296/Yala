@@ -403,7 +403,6 @@ struct CategoriesTabView: View {
                 )
             }
         }
-        .solidCard()
     }
 
     // MARK: - Subcategory Chart Card
@@ -442,7 +441,6 @@ struct CategoriesTabView: View {
                 )
             }
         }
-        .solidCard()
     }
 
     // MARK: - Tag Chart Card
@@ -478,7 +476,6 @@ struct CategoriesTabView: View {
                 )
             }
         }
-        .solidCard()
     }
 
     // MARK: - Need Carousel

@@ -165,14 +165,7 @@ struct ScheduledPaymentsSettingsView: View {
                     .foregroundStyle(.tertiary)
             }
             .padding(DS.Spacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
+            .solidCard()
         }
         .buttonStyle(.plain)
     }

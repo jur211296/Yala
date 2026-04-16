@@ -242,16 +242,7 @@ struct BudgetsFavoritesSettingsView: View {
                     }
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
-            .dsSubtleShadow()
+            .solidCard()
         }
     }
 
@@ -351,7 +342,7 @@ struct BudgetsFavoritesSettingsView: View {
                 ForEach(Array(viewModel.favoriteBudgets.enumerated()), id: \.element.persistentModelID) { index, budget in
                     reorderRow(budget, position: index + 1)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
-                        .listRowBackground(theme.card)
+                        .listRowBackground(Color.clear)
                         .listRowSeparator(
                             index == 0 || index == viewModel.favoriteBudgets.count - 1 ? .hidden : .visible,
                             edges: index == 0 ? .top : .bottom
@@ -363,16 +354,7 @@ struct BudgetsFavoritesSettingsView: View {
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
             .frame(height: CGFloat(viewModel.favoriteBudgets.count) * 52)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
-            .dsSubtleShadow()
+            .solidCard()
             .environment(\.editMode, .constant(.active))
         }
     }
