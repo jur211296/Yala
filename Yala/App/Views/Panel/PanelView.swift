@@ -228,15 +228,17 @@ struct PanelView: View {
     }
 
     private var mainContent: some View {
-        @Bindable var prefs = appPreferences
-        return ZStack {
+        ZStack {
             PanelBackgroundView()
 
             ScrollViewReader { scrollProxy in
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                        if prefs.showSiriTip, viewModel.transactions.count >= 5 {
-                            SiriTipCard(isVisible: $prefs.showSiriTip)
+                        if appPreferences.showSiriTip, viewModel.transactions.count >= 5 {
+                            SiriTipCard(isVisible: Binding(
+                                get: { appPreferences.showSiriTip },
+                                set: { appPreferences.showSiriTip = $0 }
+                            ))
                         }
 
                         // Update available banner (all users)
