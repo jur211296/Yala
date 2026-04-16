@@ -201,6 +201,7 @@ struct RecordRowView: View {
                         Capsule()
                             .fill(Color(hex: tag.colorHex))
                     )
+                    .accessibilityHint(String(localized: "Tag"))
             }
 
             if (record.tags ?? []).count > 3 {

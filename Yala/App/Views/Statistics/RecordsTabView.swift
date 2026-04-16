@@ -18,6 +18,8 @@ struct RecordsTabView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
+
     @Bindable var viewModel: RecordsViewModel
     let accounts: [Account]
     let categories: [Category]
@@ -178,7 +180,7 @@ struct RecordsTabView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, DS.Spacing.md)
+        .padding(.vertical, summaryVerticalPadding)
     }
 
     /// Summary from ViewModel (cached, calculated once per filter change instead of per render)

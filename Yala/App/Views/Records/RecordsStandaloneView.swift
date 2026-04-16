@@ -18,6 +18,7 @@ struct RecordsStandaloneView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     // MARK: - ViewModels
 
@@ -43,9 +44,6 @@ struct RecordsStandaloneView: View {
     @State private var showChatSheet = false
     @State private var showUpgradeForChat = false
     @State private var showChatConsentAlert = false
-    @AppStorage("aiChatConsentAccepted") private var aiChatConsentAccepted: Bool = false
-    @AppStorage("chatAssistantEnabled") private var chatAssistantEnabled: Bool = false
-    @AppStorage("chatFABVisible") private var chatFABVisible: Bool = true
 
     // MARK: - Pro Feature Gates
 
@@ -57,12 +55,6 @@ struct RecordsStandaloneView: View {
         !FeatureGateService.shared.canAccess(.imageInput)
     }
 
-    // MARK: - AppStorage
-
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
-    @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
-    @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
-    @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
     @State private var showAIConsentAlert = false
     @State private var pendingAIInput: PendingAIInput = .voice
 
@@ -86,8 +78,6 @@ struct RecordsStandaloneView: View {
                 showChatSheet: $showChatSheet,
                 showUpgradeForChat: $showUpgradeForChat,
                 showChatConsentAlert: $showChatConsentAlert,
-                aiChatConsentAccepted: $aiChatConsentAccepted,
-                chatAssistantEnabled: $chatAssistantEnabled,
                 isPresentingSettings: $isPresentingSettings,
                 modelContext: modelContext,
                 recalculateData: recalculateData,
@@ -129,7 +119,7 @@ struct RecordsStandaloneView: View {
                     tags: dataViewModel.tags,
                     subcategories: dataViewModel.allSubcategories,
                     transactionDateRange: dataViewModel.computeTransactionDateRange(),
-                    defaultCurrencyCode: defaultCurrencyCode,
+                    defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                     onFilterChange: { recalculateData() }
                 )
 
@@ -144,9 +134,9 @@ struct RecordsStandaloneView: View {
                                 isVoiceLocked: isVoiceLocked,
                                 isImageLocked: isImageLocked,
                                 isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
-                                chatConsentAccepted: aiChatConsentAccepted,
-                                chatEnabled: chatAssistantEnabled,
-                                chatFABVisible: chatFABVisible,
+                                chatConsentAccepted: appPreferences.aiChatConsentAccepted,
+                                chatEnabled: appPreferences.chatAssistantEnabled,
+                                chatFABVisible: appPreferences.chatFABVisible,
                                 onVoiceTap: { showVoiceRecording = true },
                                 onImageTap: { showImageSelection = true },
                                 onManualTap: { recordsViewModel.showNewTransaction = true },
@@ -362,6 +352,7 @@ struct RecordsStandaloneView: View {
 // MARK: - Sheets Modifier
 
 private struct RecordsStandaloneSheets: ViewModifier {
+    @Environment(AppPreferences.self) private var appPreferences
     @Bindable var recordsViewModel: RecordsViewModel
     @Binding var showDeleteConfirmation: Bool
     @Binding var showBulkEditSheet: Bool
@@ -372,8 +363,6 @@ private struct RecordsStandaloneSheets: ViewModifier {
     @Binding var showChatSheet: Bool
     @Binding var showUpgradeForChat: Bool
     @Binding var showChatConsentAlert: Bool
-    @Binding var aiChatConsentAccepted: Bool
-    @Binding var chatAssistantEnabled: Bool
     @Binding var isPresentingSettings: Bool
     let modelContext: ModelContext
     let recalculateData: () -> Void
@@ -410,8 +399,8 @@ private struct RecordsStandaloneSheets: ViewModifier {
             }
             .alert(L10n.AIConsent.chatTitle, isPresented: $showChatConsentAlert) {
                 Button(L10n.AIConsent.accept) {
-                    aiChatConsentAccepted = true
-                    chatAssistantEnabled = true
+                    appPreferences.aiChatConsentAccepted = true
+                    appPreferences.chatAssistantEnabled = true
                     showChatSheet = true
                 }
                 Button(L10n.AIConsent.privacyPolicy) {
