@@ -14,7 +14,6 @@
 //      }
 //      .scrollViewGlassEdges()                              // soft .top, DS.Spacing.lg
 //      .scrollViewGlassEdges(horizontalMargin: DS.Spacing.xxl)
-//      .scrollViewHardEdges()                               // tablas Comparativa / Reports
 //
 //  Complemento: aplicar `.scrollClipDisabled()` manualmente DESPUÉS de este helper cuando
 //  el ScrollView contenga elementos glass que overflow del viewport (chips con morphing,
@@ -47,19 +46,5 @@ extension View {
             .contentMargins(.horizontal, horizontalMargin, for: .scrollContent)
             .contentMargins(.vertical, verticalMargin, for: .scrollContent)
             .scrollEdgeEffectStyle(style, for: edges)
-    }
-
-    /// Variante de `scrollViewGlassEdges` con borde nítido (`.hard`) — recomendado para
-    /// tablas de datos densas (Comparativa de FinancialReportView, tablas de CashFlow)
-    /// donde el soft gradient difumina números que deben ser precisos.
-    ///
-    /// - Parameter horizontalMargin: Margen horizontal del contenido. Default `DS.Spacing.lg`.
-    func scrollViewHardEdges(
-        horizontalMargin: CGFloat = DS.Spacing.lg
-    ) -> some View {
-        let edges: Edge.Set = .top
-        return self
-            .contentMargins(.horizontal, horizontalMargin, for: .scrollContent)
-            .scrollEdgeEffectStyle(.hard, for: edges)
     }
 }

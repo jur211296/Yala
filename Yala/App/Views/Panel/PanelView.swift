@@ -155,7 +155,6 @@ struct PanelView: View {
                 .yalaSkeleton(!viewModel.isReady)
                 .navigationTitle(L10n.Panel.title(appPreferences.userName))
                 .navigationBarTitleDisplayMode(.large)
-                .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         inboxToolbarButton

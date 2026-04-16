@@ -232,7 +232,7 @@ struct FinancialReportView: View {
             .padding(.top, DS.Spacing.sm)
             .yalaSafeBottomPadding()
         }
-        .scrollViewHardEdges()
+        .scrollViewGlassEdges()
     }
 
     private var pivotTable: some View {
