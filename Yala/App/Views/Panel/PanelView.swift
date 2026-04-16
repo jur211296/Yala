@@ -192,14 +192,7 @@ struct PanelView: View {
             )
             Task { TransferMigrationService.migratePositiveTransfersIfNeeded(in: modelContext) }
             viewModel.syncFromSessionState(sessionState)
-            let currentOrderRaw = appPreferences.accountsSortOrderNames.joined(separator: "|")
-            let newOrder = viewModel.ensureAccountsSortOrderConsistency(
-                accounts: viewModel.accounts,
-                currentOrderRaw: currentOrderRaw
-            )
-            if newOrder != currentOrderRaw {
-                appPreferences.accountsSortOrderNames = newOrder.split(separator: "|").map(String.init)
-            }
+            reconcileAccountsSortOrder()
             viewModel.reloadAndRecalculate()
         }
         .onDisappear {
@@ -223,6 +216,23 @@ struct PanelView: View {
         .onChange(of: appPreferences.defaultCurrencyCode) { _, newValue in
             viewModel.updateDefaultCurrencyCode(newValue.rawValue)
             viewModel.recalculateData()
+        }
+        .onChange(of: viewModel.accounts.count) { _, _ in
+            reconcileAccountsSortOrder()
+        }
+    }
+
+    /// Sincroniza `appPreferences.accountsSortOrderNames` con las cuentas activas:
+    /// agrega nombres nuevos al final y remueve los de cuentas eliminadas/archivadas.
+    /// El guard evita writes no-op (que dispararían didSet + observer async redundante).
+    private func reconcileAccountsSortOrder() {
+        let currentOrder = appPreferences.accountsSortOrderNames
+        let newOrder = viewModel.ensureAccountsSortOrderConsistency(
+            accounts: viewModel.accounts,
+            currentOrder: currentOrder
+        )
+        if newOrder != currentOrder {
+            appPreferences.accountsSortOrderNames = newOrder
         }
     }
 

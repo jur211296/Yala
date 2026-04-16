@@ -16,11 +16,10 @@ struct AccountsSettingsListView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var viewModel = AccountsSettingsListViewModel()
     @State private var showUpgradeSheet = false
-
-    @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
 
     private var activeAccountsCount: Int {
         viewModel.orderedActiveAccounts.count
@@ -111,10 +110,10 @@ struct AccountsSettingsListView: View {
         }
         .onAppear {
             viewModel.setContext(modelContext)
-            viewModel.accountsSortOrderNamesRaw = accountsSortOrderNamesRaw
+            viewModel.accountsSortOrderNames = appPreferences.accountsSortOrderNames
         }
-        .onChange(of: accountsSortOrderNamesRaw) { _, newValue in
-            viewModel.accountsSortOrderNamesRaw = newValue
+        .onChange(of: appPreferences.accountsSortOrderNames) { _, newValue in
+            viewModel.accountsSortOrderNames = newValue
         }
     }
 
@@ -259,9 +258,8 @@ struct AccountsSettingsListView: View {
     }
 
     private func moveAccountList(from source: IndexSet, to destination: Int) {
-        let newRaw = viewModel.moveAccount(from: source, to: destination)
-        accountsSortOrderNamesRaw = newRaw
-        PreferenceSyncService.shared.set(string: newRaw, forKey: "accountsSortOrderNames")
+        let newOrder = viewModel.moveAccount(from: source, to: destination)
+        appPreferences.accountsSortOrderNames = newOrder
     }
 
     // MARK: - Presentación de filas

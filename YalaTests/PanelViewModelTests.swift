@@ -91,9 +91,9 @@ struct PanelViewModelTests {
 
         let result = vm.ensureAccountsSortOrderConsistency(
             accounts: [a],
-            currentOrderRaw: "Checking|Savings"
+            currentOrder: ["Checking", "Savings"]
         )
-        #expect(result == "Checking")
+        #expect(result == ["Checking"])
     }
 
     @MainActor @Test func sortOrderConsistency_addsNew() {
@@ -103,9 +103,9 @@ struct PanelViewModelTests {
 
         let result = vm.ensureAccountsSortOrderConsistency(
             accounts: [a, b],
-            currentOrderRaw: "Checking"
+            currentOrder: ["Checking"]
         )
-        #expect(result == "Checking|NewAccount")
+        #expect(result == ["Checking", "NewAccount"])
     }
 
     @MainActor @Test func sortOrderConsistency_preservesExisting() {
@@ -116,9 +116,9 @@ struct PanelViewModelTests {
 
         let result = vm.ensureAccountsSortOrderConsistency(
             accounts: [a, b, c],
-            currentOrderRaw: "Charlie|Alpha|Beta"
+            currentOrder: ["Charlie", "Alpha", "Beta"]
         )
-        #expect(result == "Charlie|Alpha|Beta")
+        #expect(result == ["Charlie", "Alpha", "Beta"])
     }
 
     @MainActor @Test func sortOrderConsistency_emptyAccounts() {
@@ -126,9 +126,9 @@ struct PanelViewModelTests {
 
         let result = vm.ensureAccountsSortOrderConsistency(
             accounts: [],
-            currentOrderRaw: "Checking|Savings"
+            currentOrder: ["Checking", "Savings"]
         )
-        #expect(result == "")
+        #expect(result == [])
     }
 
     @MainActor @Test func sortOrderConsistency_emptyCurrentOrder() {
@@ -138,7 +138,7 @@ struct PanelViewModelTests {
 
         let result = vm.ensureAccountsSortOrderConsistency(
             accounts: [a, b],
-            currentOrderRaw: ""
+            currentOrder: []
         )
         // Both are new → appended in array order
         #expect(result.contains("Alpha"))
@@ -154,12 +154,11 @@ struct PanelViewModelTests {
         // First, get consistency output
         let consistent = vm.ensureAccountsSortOrderConsistency(
             accounts: [a, b, c],
-            currentOrderRaw: "Beta|Charlie|Alpha"
+            currentOrder: ["Beta", "Charlie", "Alpha"]
         )
 
         // Use that output as sortOrderNames for orderedActiveAccounts
-        let sortOrderNames = consistent.split(separator: "|").map(String.init)
-        let ordered = vm.orderedActiveAccounts(from: [a, b, c], sortOrderNames: sortOrderNames)
+        let ordered = vm.orderedActiveAccounts(from: [a, b, c], sortOrderNames: consistent)
 
         #expect(ordered[0].name == "Beta")
         #expect(ordered[1].name == "Charlie")

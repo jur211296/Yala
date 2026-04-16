@@ -736,23 +736,22 @@ final class PanelViewModel {
 
     func ensureAccountsSortOrderConsistency(
         accounts: [Account],
-        currentOrderRaw: String
-    ) -> String {
+        currentOrder: [String]
+    ) -> [String] {
         let activeAccounts = accounts.filter { !$0.isArchived }
         let activeNames = activeAccounts.map { $0.name }
 
         if activeNames.isEmpty {
-            return ""
+            return []
         }
 
-        let currentOrder = currentOrderRaw.split(separator: "|").map(String.init)
         var newOrder = currentOrder.filter { activeNames.contains($0) }
 
         for name in activeNames where !newOrder.contains(name) {
             newOrder.append(name)
         }
 
-        return newOrder.joined(separator: "|")
+        return newOrder
     }
 
     private func convertToPreferredCurrency(
@@ -1928,14 +1927,6 @@ final class PanelViewModel {
             pendingReload = false
             if shouldReload {
                 loadData()
-                let currentOrder = UserDefaults.standard.string(forKey: "accountsSortOrderNames") ?? ""
-                let newOrder = ensureAccountsSortOrderConsistency(
-                    accounts: accounts,
-                    currentOrderRaw: currentOrder
-                )
-                if newOrder != currentOrder {
-                    PreferenceSyncService.shared.set(string: newOrder, forKey: "accountsSortOrderNames")
-                }
             }
             performCalculation()
         }

@@ -29,9 +29,9 @@ final class AccountsSettingsListViewModel {
     var accountToEdit: Account?
     var isEditMode = false
 
-    // MARK: - Sort Order (synced from AppStorage via View)
+    // MARK: - Sort Order (synced from AppPreferences via View)
 
-    var accountsSortOrderNamesRaw: String = "" {
+    var accountsSortOrderNames: [String] = [] {
         didSet {
             accountSortIndexCache = nil
         }
@@ -40,10 +40,6 @@ final class AccountsSettingsListViewModel {
     // MARK: - Computed Properties
 
     private var accountSortIndexCache: [String: Int]?
-
-    private var accountsSortOrderNames: [String] {
-        accountsSortOrderNamesRaw.split(separator: "|").map(String.init)
-    }
 
     private var accountSortIndex: [String: Int] {
         if let cache = accountSortIndexCache {
@@ -158,12 +154,11 @@ final class AccountsSettingsListViewModel {
 
     // MARK: - Reorder Logic
 
-    func moveAccount(from source: IndexSet, to destination: Int) -> String {
+    func moveAccount(from source: IndexSet, to destination: Int) -> [String] {
         var currentOrder = orderedActiveAccounts.map { $0.name }
         currentOrder.move(fromOffsets: source, toOffset: destination)
-        let newRaw = currentOrder.joined(separator: "|")
-        accountsSortOrderNamesRaw = newRaw
-        return newRaw
+        accountsSortOrderNames = currentOrder
+        return currentOrder
     }
 
     // MARK: - Helper for Edit
