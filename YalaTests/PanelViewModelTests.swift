@@ -164,4 +164,54 @@ struct PanelViewModelTests {
         #expect(ordered[1].name == "Charlie")
         #expect(ordered[2].name == "Alpha")
     }
+
+    // MARK: - hiddenSections compute-skip (P20-02)
+
+    /// Default state: every toggleable section reports visible, which drives
+    /// the guards in `performCalculation` / `calculateTrendData`.
+    @MainActor @Test func visibilityGuard_defaultsToVisible() {
+        let vm = PanelViewModel()
+        for kind in PanelSectionKind.toggleableSections {
+            #expect(vm.isSectionVisible(kind), "\(kind) should default to visible")
+        }
+    }
+
+    /// Toggling a section into `hiddenSections` flips the guard so its compute
+    /// block is skipped in the calculation pipeline.
+    @MainActor @Test func visibilityGuard_respectsHiddenSet() {
+        let vm = PanelViewModel()
+        vm.hiddenSections = [.distribucion, .planificacion]
+
+        #expect(!vm.isSectionVisible(.distribucion))
+        #expect(!vm.isSectionVisible(.planificacion))
+        #expect(vm.isSectionVisible(.tendencias))
+        #expect(vm.isSectionVisible(.tools))
+    }
+
+    /// `latestRecords` is the Panel's primary CTA — the guard must treat it as
+    /// visible even if it slips into `hiddenSections`.
+    @MainActor @Test func visibilityGuard_latestRecordsAlwaysVisible() {
+        let vm = PanelViewModel()
+        vm.hiddenSections = [.latestRecords, .distribucion, .tendencias, .planificacion]
+        #expect(vm.isSectionVisible(.latestRecords))
+    }
+
+    /// `toggleableSections` must exclude non-toggleable sections — guarantees
+    /// the config sheet never lets users hide `latestRecords`.
+    @Test func toggleableSections_excludesNonToggleable() {
+        let toggleable = PanelSectionKind.toggleableSections
+        #expect(!toggleable.contains(.latestRecords))
+        for section in toggleable {
+            #expect(section.canBeHidden)
+        }
+    }
+
+    /// Every `PanelSectionKind` case must have a non-empty localized title and
+    /// icon so the sections-config sheet never shows a blank row.
+    @Test func everySectionHasTitleAndIcon() {
+        for kind in PanelSectionKind.allCases {
+            #expect(!kind.localizedTitle.isEmpty, "\(kind) missing title")
+            #expect(!kind.iconName.isEmpty, "\(kind) missing icon")
+        }
+    }
 }

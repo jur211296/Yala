@@ -286,10 +286,13 @@ struct PanelFilterAndWidgetsSection: View {
             }
             .padding(.bottom, DS.Spacing.sm)
 
-            // Thematic sections. `onPreferences` is wired only on Tendencias for
-            // now; it opens the global widget preferences sheet (shared across all
-            // sections) until per-section sheets arrive.
-            ForEach(PanelSectionKind.allCases, id: \.self) { kind in
+            // Thematic sections. Filtering here (not in `PanelThematicSection`)
+            // keeps hidden sections from mounting at all — no render, no
+            // observer subscriptions. `onPreferences` is wired only on
+            // Tendencias for now; it opens the global widget preferences sheet
+            // shared across all sections until P20-03's per-section sheets.
+            let visibleSections = PanelSectionKind.allCases.filter(viewModel.isSectionVisible)
+            ForEach(visibleSections, id: \.self) { kind in
                 PanelThematicSection(
                     kind: kind,
                     viewModel: viewModel,

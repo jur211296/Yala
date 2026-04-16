@@ -24,6 +24,7 @@ struct PanelSheetState {
     var isPresentingSettings = false
     var accountFormSheet: AccountFormSheet? = nil
     var showWidgetPreferences = false
+    var showSectionsConfig = false
     var showNewTransaction = false
     var showVoiceRecording = false
     var showImageSelection = false

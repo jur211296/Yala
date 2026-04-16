@@ -59,6 +59,11 @@ struct PanelSheetsModifier: ViewModifier {
             }) {
                 ProfileView(initialDestination: SessionState.shared.pendingProfileDestination)
             }
+            .sheet(isPresented: $sheets.showSectionsConfig) {
+                PanelSectionsConfigView()
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
+            }
             .sheet(isPresented: $sheets.showWidgetPreferences, onDismiss: {
                 viewModel.endWidgetPreferencesEditing()
                 viewModel.reloadAndRecalculate()

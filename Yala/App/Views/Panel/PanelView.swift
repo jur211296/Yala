@@ -121,6 +121,18 @@ struct PanelView: View {
 
     // MARK: - Toolbar Buttons
 
+    private var sectionsConfigButton: some View {
+        Button {
+            sheets.showSectionsConfig = true
+        } label: {
+            Image(systemName: "slider.horizontal.3")
+                .font(DS.Typography.body).fontWeight(.medium)
+                .foregroundStyle(.thToolbarIcon)
+        }
+        .accessibilityLabel(L10n.Accessibility.sectionsConfig)
+        .accessibilityIdentifier("panel_sections_config")
+    }
+
     private var inboxToolbarButton: some View {
         Button {
             sheets.showInbox = true
@@ -159,6 +171,9 @@ struct PanelView: View {
                     ToolbarItem(placement: .navigationBarLeading) {
                         inboxToolbarButton
                     }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        sectionsConfigButton
+                    }
                     ProfileToolbarItem {
                         sheets.isPresentingSettings = true
                     }
@@ -190,6 +205,9 @@ struct PanelView: View {
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 sessionState: sessionState
             )
+            // Seed BEFORE the first calculation so hidden sections don't do
+            // work on app launch.
+            viewModel.hiddenSections = Self.parseHiddenSections(appPreferences.panelSectionsHidden)
             Task { TransferMigrationService.migratePositiveTransfersIfNeeded(in: modelContext) }
             viewModel.syncFromSessionState(sessionState)
             reconcileAccountsSortOrder()
@@ -217,9 +235,26 @@ struct PanelView: View {
             viewModel.updateDefaultCurrencyCode(newValue.rawValue)
             viewModel.recalculateData()
         }
+        .onChange(of: appPreferences.panelSectionsHidden) { oldValue, newValue in
+            let next = Self.parseHiddenSections(newValue)
+            guard viewModel.hiddenSections != next else { return }
+            let previous = viewModel.hiddenSections
+            viewModel.hiddenSections = next
+            // Only recompute when a section became visible — hiding alone
+            // doesn't need fresh data (cached values simply stop rendering).
+            if !next.isSuperset(of: previous) {
+                viewModel.recalculateData()
+            }
+        }
         .onChange(of: viewModel.accounts.count) { _, _ in
             reconcileAccountsSortOrder()
         }
+    }
+
+    /// Drops unknown raw values so a legacy/future preference string doesn't
+    /// pollute the typed set.
+    private static func parseHiddenSections(_ raw: [String]) -> Set<PanelSectionKind> {
+        Set(raw.compactMap(PanelSectionKind.init(rawValue:)))
     }
 
     /// Sincroniza `appPreferences.accountsSortOrderNames` con las cuentas activas:

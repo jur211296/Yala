@@ -15,11 +15,15 @@
 
 "panel.accounts" = "Accounts";
 "panel.widgets" = "Widgets";
+"panel.section.health" = "Financial health";
 "panel.section.tendencias" = "Trends";
 "panel.section.distribucion" = "Distribution";
 "panel.section.planificacion" = "Planning";
+"panel.section.paraTi" = "For you";
 "panel.section.latestRecords" = "Latest records";
 "panel.section.tools" = "Tools";
+"panel.sectionsConfig.title" = "Configure Panel";
+"panel.sectionsConfig.footer" = "Hide the sections you don't need. You can turn them back on anytime.";
 "panel.totalBalance" = "Total Balance";
 
 // MARK: - Trend Widget
@@ -1577,6 +1581,8 @@
 "accessibility.exceeded" = "Exceeded";
 "accessibility.inbox" = "Inbox";
 "accessibility.widgetPreferences" = "Widget preferences";
+"accessibility.sectionsConfig" = "Configure Panel";
+"accessibility.toggleSection %@" = "Show %@";
 "accessibility.createAccountFirst" = "Create at least one account and one category";
 "accessibility.removeFilter" = "Remove filter";
 "balance.status.good" = "Good";

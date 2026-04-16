@@ -82,6 +82,9 @@ enum L10n {
         static var widgets: String {
             ls("panel.widgets", comment: "Widgets section title")
         }
+        static var sectionHealth: String {
+            ls("panel.section.health", comment: "Panel 2.0 Salud financiera section title")
+        }
         static var sectionTendencias: String {
             ls("panel.section.tendencias", comment: "Panel 2.0 Tendencias section title")
         }
@@ -91,11 +94,19 @@ enum L10n {
         static var sectionPlanificacion: String {
             ls("panel.section.planificacion", comment: "Panel 2.0 Planificación section title")
         }
+        static var sectionParaTi: String {
+            ls("panel.section.paraTi", comment: "Panel 2.0 Para ti section title")
+        }
         static var sectionLatestRecords: String {
             ls("panel.section.latestRecords", comment: "Panel 2.0 Últimos registros section title")
         }
         static var sectionTools: String {
             ls("panel.section.tools", comment: "Panel 2.0 Herramientas section title")
+        }
+
+        enum SectionsConfig {
+            static var title: String { ls("panel.sectionsConfig.title", comment: "Panel sections config sheet title") }
+            static var footer: String { ls("panel.sectionsConfig.footer", comment: "Footer hint in Panel sections config") }
         }
         static var totalBalance: String {
             ls("panel.totalBalance", comment: "Total balance label")
@@ -1193,6 +1204,8 @@ enum L10n {
         static var exceeded: String { ls("accessibility.exceeded", comment: "") }
         static var inbox: String { ls("accessibility.inbox", comment: "") }
         static var widgetPreferences: String { ls("accessibility.widgetPreferences", comment: "") }
+        static var sectionsConfig: String { ls("accessibility.sectionsConfig", comment: "Opens the Panel sections config sheet") }
+        static func toggleSection(_ name: String) -> String { String(format: ls("accessibility.toggleSection %@", comment: "Accessibility label for the per-section visibility toggle"), name) }
         static var createAccountFirst: String { ls("accessibility.createAccountFirst", comment: "") }
         static var removeFilter: String { ls("accessibility.removeFilter", comment: "") }
         static var viewDetails: String { ls("accessibility.viewDetails", comment: "") }

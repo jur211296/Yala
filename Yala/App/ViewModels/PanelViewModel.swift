@@ -160,6 +160,19 @@ final class PanelViewModel {
     /// True after first loadData() completes. PanelView shows skeleton placeholder while false.
     private(set) var isReady: Bool = false
 
+    /// Panel sections the user has hidden. Synced from
+    /// `AppPreferences.panelSectionsHidden` via `PanelView.onChange`. Hidden
+    /// sections skip their calculation and keep their cached output until the
+    /// section is re-shown.
+    var hiddenSections: Set<PanelSectionKind> = []
+
+    /// Whether a Panel section currently contributes to `performCalculation`.
+    /// Sections with `canBeHidden == false` always compute.
+    func isSectionVisible(_ kind: PanelSectionKind) -> Bool {
+        guard kind.canBeHidden else { return true }
+        return !hiddenSections.contains(kind)
+    }
+
     // MARK: - Filter Properties (SSOT: Read/Write from SessionState)
 
     var selectedAccountID: PersistentIdentifier? {
@@ -821,53 +834,67 @@ final class PanelViewModel {
             defaultCurrencyCode: defaultCurrencyCode
         )
 
-        // 2. Calculate ALL widget data (unconditionally to ensure data is ready when widgets are added)
+        let tendenciasVisible = isSectionVisible(.tendencias)
+        let distribucionVisible = isSectionVisible(.distribucion)
 
-        // Trend chart - use unified TrendDataProcessor
-        let newProcessedData:
-            (points: [BarPoint], rawPoints: [BarPoint], yDomain: ClosedRange<Double>)
+        // 2. Calculate widget data per visible section
+
+        // Trend chart — Tendencias
+        var newTrendPoints: (points: [BarPoint], rawPoints: [BarPoint], yDomain: ClosedRange<Double>)?
         var newTrendTotalIncome = trendTotalIncome
         var newTrendTotalExpense = trendTotalExpense
         var newTrendFinalBalance = trendFinalBalance
-        // For balance, use all transactions (no date filter) to calculate running balance
-        let transactionsForTrend = trendType == .balance
-            ? calcContext.balanceTransactions
-            : calcContext.filteredTransactions
-        let result = TrendDataProcessor.processTrendData(
-            transactions: transactionsForTrend,
-            accounts: calcContext.eligibleAccounts,
-            metric: trendType,
-            period: calcContext.period,
-            grouping: calcContext.trendGrouping,
-            interval: calcContext.effectiveInterval,
-            currencyCode: calcContext.defaultCurrencyCode
-        )
-        newProcessedData = (result.points, result.rawPoints, result.yDomain)
-        newTrendTotalIncome = result.totalIncome
-        newTrendTotalExpense = result.totalExpense
-        newTrendFinalBalance = result.finalBalance
+        if tendenciasVisible {
+            // For balance, use all transactions (no date filter) to calculate running balance
+            let transactionsForTrend = trendType == .balance
+                ? calcContext.balanceTransactions
+                : calcContext.filteredTransactions
+            let result = TrendDataProcessor.processTrendData(
+                transactions: transactionsForTrend,
+                accounts: calcContext.eligibleAccounts,
+                metric: trendType,
+                period: calcContext.period,
+                grouping: calcContext.trendGrouping,
+                interval: calcContext.effectiveInterval,
+                currencyCode: calcContext.defaultCurrencyCode
+            )
+            newTrendPoints = (result.points, result.rawPoints, result.yDomain)
+            newTrendTotalIncome = result.totalIncome
+            newTrendTotalExpense = result.totalExpense
+            newTrendFinalBalance = result.finalBalance
+        }
 
-        // Categories - used by both topSpending and categoriesPie widgets
-        let categoriesResult = calculateCategoriesWidget(context: calcContext)
-        let newTopSpendingCategories = categoriesResult.categories
-        let newPreviousCategoriesTotal = categoriesResult.previousTotal
+        // Categories + Subcategories — Distribución
+        var newTopSpendingCategories = topSpendingCategories
+        var newPreviousCategoriesTotal = categoriesWidget.previousTotalAmount
+        var newTopSubcategories = topSubcategories
+        var newPreviousSubcategoriesTotal = subcategoriesWidget.previousTotalAmount
+        if distribucionVisible {
+            let categoriesResult = calculateCategoriesWidget(context: calcContext)
+            newTopSpendingCategories = categoriesResult.categories
+            newPreviousCategoriesTotal = categoriesResult.previousTotal
 
-        // Subcategories - used by both topSubcategories and subcategoriesPie widgets
-        let subcategoriesResult = calculateSubcategoriesWidget(context: calcContext)
-        let newTopSubcategories = subcategoriesResult.subcategories
-        let newPreviousSubcategoriesTotal = subcategoriesResult.previousTotal
+            let subcategoriesResult = calculateSubcategoriesWidget(context: calcContext)
+            newTopSubcategories = subcategoriesResult.subcategories
+            newPreviousSubcategoriesTotal = subcategoriesResult.previousTotal
+        }
 
-        // Cash Flow
-        let newCashFlowSummary = calculateCashFlowWidget(context: calcContext)
+        // Cash Flow + Need Trend — Tendencias
+        var newCashFlowSummary = cashFlowWidget.cashFlowSummary
+        var newNeedTrendPoints = needWidget.needTrendPoints
+        var newPreviousNeedTotal = needWidget.previousTotalAmount
+        var newPreviousNeedAmounts = needWidget.previousAmounts
+        if tendenciasVisible {
+            newCashFlowSummary = calculateCashFlowWidget(context: calcContext)
 
-        // Latest Records
+            let needResult = calculateNeedWidget(context: calcContext)
+            newNeedTrendPoints = needResult.points
+            newPreviousNeedTotal = needResult.previousTotal
+            newPreviousNeedAmounts = needResult.previousAmounts
+        }
+
+        // Latest Records — always computes (non-toggleable section)
         let newLatestRecords = calculateLatestRecordsWidget(context: calcContext)
-
-        // Need Trend
-        let needResult = calculateNeedWidget(context: calcContext)
-        let newNeedTrendPoints = needResult.points
-        let newPreviousNeedTotal = needResult.previousTotal
-        let newPreviousNeedAmounts = needResult.previousAmounts
 
         // 3. BATCH STATE UPDATE — Atomic struct assignments collapse ~21 individual
         // @Observable notifications into ~6 struct-level comparisons.
@@ -878,46 +905,51 @@ final class PanelViewModel {
             transactions: transactions,
             defaultCurrencyCode: defaultCurrencyCode
         )
-        let newTrend = PanelTrendData(
-            processedTrendPoints: newProcessedData.points,
-            rawTrendPoints: newProcessedData.rawPoints,
-            processedYDomain: newProcessedData.yDomain,
-            currentInterval: calcContext.effectiveInterval,
-            currentPeriod: self.selectedPeriod,
-            trendTotalIncome: newTrendTotalIncome,
-            trendTotalExpense: newTrendTotalExpense,
-            trendFinalBalance: newTrendFinalBalance,
-            trendGrouping: calcContext.trendGrouping,
-            dataTrendType: self.trendType,
-            currentBalance: newBalance
-        )
-        if newTrend != trendChart { trendChart = newTrend }
 
-        let newCategories = PanelCategoriesData(
-            topSpendingCategories: newTopSpendingCategories,
-            previousTotalAmount: newPreviousCategoriesTotal
-        )
-        if newCategories != categoriesWidget { categoriesWidget = newCategories }
+        if tendenciasVisible, let trendPoints = newTrendPoints {
+            let newTrend = PanelTrendData(
+                processedTrendPoints: trendPoints.points,
+                rawTrendPoints: trendPoints.rawPoints,
+                processedYDomain: trendPoints.yDomain,
+                currentInterval: calcContext.effectiveInterval,
+                currentPeriod: self.selectedPeriod,
+                trendTotalIncome: newTrendTotalIncome,
+                trendTotalExpense: newTrendTotalExpense,
+                trendFinalBalance: newTrendFinalBalance,
+                trendGrouping: calcContext.trendGrouping,
+                dataTrendType: self.trendType,
+                currentBalance: newBalance
+            )
+            if newTrend != trendChart { trendChart = newTrend }
 
-        let newSubcategories = PanelSubcategoriesData(
-            topSubcategories: newTopSubcategories,
-            previousTotalAmount: newPreviousSubcategoriesTotal
-        )
-        if newSubcategories != subcategoriesWidget { subcategoriesWidget = newSubcategories }
+            let newNeed = PanelNeedData(
+                needTrendPoints: newNeedTrendPoints,
+                previousTotalAmount: newPreviousNeedTotal,
+                previousAmounts: newPreviousNeedAmounts,
+                needGrouping: calcContext.needGrouping
+            )
+            if newNeed != needWidget { needWidget = newNeed }
 
-        let newNeed = PanelNeedData(
-            needTrendPoints: newNeedTrendPoints,
-            previousTotalAmount: newPreviousNeedTotal,
-            previousAmounts: newPreviousNeedAmounts,
-            needGrouping: calcContext.needGrouping
-        )
-        if newNeed != needWidget { needWidget = newNeed }
+            let newCashFlow = PanelCashFlowData(
+                cashFlowSummary: newCashFlowSummary,
+                cashFlowGrouping: calcContext.cashFlowGrouping
+            )
+            if newCashFlow != cashFlowWidget { cashFlowWidget = newCashFlow }
+        }
 
-        let newCashFlow = PanelCashFlowData(
-            cashFlowSummary: newCashFlowSummary,
-            cashFlowGrouping: calcContext.cashFlowGrouping
-        )
-        if newCashFlow != cashFlowWidget { cashFlowWidget = newCashFlow }
+        if distribucionVisible {
+            let newCategories = PanelCategoriesData(
+                topSpendingCategories: newTopSpendingCategories,
+                previousTotalAmount: newPreviousCategoriesTotal
+            )
+            if newCategories != categoriesWidget { categoriesWidget = newCategories }
+
+            let newSubcategories = PanelSubcategoriesData(
+                topSubcategories: newTopSubcategories,
+                previousTotalAmount: newPreviousSubcategoriesTotal
+            )
+            if newSubcategories != subcategoriesWidget { subcategoriesWidget = newSubcategories }
+        }
 
         if newLatestRecords != _latestRecords { _latestRecords = newLatestRecords }
 
@@ -1949,15 +1981,17 @@ final class PanelViewModel {
             context: context,
             sessionState: sessionState
         )
-        calculateBudgetsWidget(
-            budgets: budgets,
-            transactions: transactions,
-            defaultCurrencyCode: defaultCurrencyCode,
-            excludedCategoryIDs: sessionState.isExcludeMode ? sessionState.selectedCategoryIDs : [],
-            excludedSubcategoryIDs: sessionState.isExcludeMode ? sessionState.selectedSubcategoryIDs : []
-        )
+        if isSectionVisible(.planificacion) {
+            calculateBudgetsWidget(
+                budgets: budgets,
+                transactions: transactions,
+                defaultCurrencyCode: defaultCurrencyCode,
+                excludedCategoryIDs: sessionState.isExcludeMode ? sessionState.selectedCategoryIDs : [],
+                excludedSubcategoryIDs: sessionState.isExcludeMode ? sessionState.selectedSubcategoryIDs : []
+            )
+            calculateScheduledPaymentsWidget()
+        }
         calculateAccountPeriodExpenses()
-        calculateScheduledPaymentsWidget()
     }
 
     /// Pre-computes total account balances (not period-dependent).

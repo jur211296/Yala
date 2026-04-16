@@ -15,11 +15,15 @@
 
 "panel.accounts" = "Comptes";
 "panel.widgets" = "Widgets";
+"panel.section.health" = "Santé financière";
 "panel.section.tendencias" = "Tendances";
 "panel.section.distribucion" = "Distribution";
 "panel.section.planificacion" = "Planification";
+"panel.section.paraTi" = "Pour toi";
 "panel.section.latestRecords" = "Derniers enregistrements";
 "panel.section.tools" = "Outils";
+"panel.sectionsConfig.title" = "Configurer le Panel";
+"panel.sectionsConfig.footer" = "Masque les sections dont tu n'as pas besoin. Tu peux les réactiver à tout moment.";
 "panel.totalBalance" = "Solde Total";
 
 // MARK: - Trend Widget
@@ -1579,6 +1583,8 @@
 "accessibility.exceeded" = "Dépassé";
 "accessibility.inbox" = "Boîte de réception";
 "accessibility.widgetPreferences" = "Préférences des widgets";
+"accessibility.sectionsConfig" = "Configurer le Panel";
+"accessibility.toggleSection %@" = "Afficher %@";
 "accessibility.createAccountFirst" = "Créez au moins un compte et une catégorie";
 "accessibility.removeFilter" = "Retirer le filtre";
 "balance.status.good" = "Bon";
