@@ -30,18 +30,52 @@
 "panel.totalBalance" = "Saldo Totale";
 
 // Salute finanziaria (P20-06)
+"panel.health.cardTitle" = "La tua salute finanziaria";
+"panel.health.emptyBadge" = "—";
 "panel.health.subScore.budget" = "Budget";
 "panel.health.subScore.activity" = "Attività";
 "panel.health.subScore.bills" = "Pagamenti";
-"panel.health.budget.emptyBadge" = "—";
+
+// Detail sheet — Totale
+"panel.health.total.sheet.title" = "La tua salute finanziaria";
+"panel.health.total.sheet.explanation" = "È la media delle tue tre metriche: budget (40%), attività (30%) e pagamenti (30%). Se ne manca una, calcoliamo con le altre.";
+"panel.health.total.headline.high" = "Stai spaccando!";
+"panel.health.total.headline.mid" = "Ottimo ritmo";
+"panel.health.total.headline.low" = "Piccoli passi, grandi cambiamenti";
+"panel.health.total.headline.empty" = "Inizia registrando la tua prima voce";
+
+// Detail sheet — Budget
 "panel.health.budget.sheet.title" = "Il tuo budget";
-"panel.health.budget.sheet.body" = "Guardiamo come stai andando con i tuoi budget del mese. Se uno sfora il limite, il punteggio cala un po'; se sei tranquillo nella seconda metà del mese, sale leggermente. Facciamo la media di tutto per arrivare a questo numero.";
-"panel.health.budget.sheet.emptyBody" = "Non hai ancora budget attivi. Appena ne crei uno, questa metrica prende vita e ti aiuta a seguire il tuo ritmo.";
+"panel.health.budget.sheet.explanation" = "Guardiamo come stai andando con i tuoi budget del mese. Margine disponibile? Punti in più. Sforamento? Un calo leggero. Niente di drammatico — solo una bussola.";
+"panel.health.budget.headline.high" = "I tuoi budget respirano tranquilli!";
+"panel.health.budget.headline.mid" = "Stai rispettando bene i limiti";
+"panel.health.budget.headline.low" = "Una piccola regolata e sei a posto";
+"panel.health.budget.headline.empty" = "I budget ti aiutano a restare sereno";
+"panel.health.budget.cta.view" = "Vedi i miei budget";
+"panel.health.budget.cta.create" = "Crea il mio primo budget";
+
+// Detail sheet — Attività
 "panel.health.activity.sheet.title" = "La tua attività";
-"panel.health.activity.sheet.body" = "Contiamo in quanti degli ultimi 7 giorni hai registrato spese. Più sei costante nel segnarle, meglio conosci i tuoi soldi — e più alto diventa questo punteggio.";
+"panel.health.activity.sheet.explanation" = "Contiamo in quanti degli ultimi 7 giorni hai registrato una spesa. Più sei costante, meglio ti conosci — e più cresce questo numero.";
+"panel.health.activity.headline.high" = "Che costanza!";
+"panel.health.activity.headline.mid" = "Ottimo ritmo";
+"panel.health.activity.headline.low" = "Qualche minuto al giorno fa miracoli";
+"panel.health.activity.headline.empty" = "Inizia registrando la tua prima spesa";
+"panel.health.activity.cta.view" = "Vedi i miei movimenti";
+"panel.health.activity.cta.create" = "Registra la mia prima spesa";
+
+// Detail sheet — Pagamenti
 "panel.health.bills.sheet.title" = "I tuoi pagamenti";
-"panel.health.bills.sheet.body" = "Controlliamo i tuoi pagamenti pianificati del mese. Se qualcuno è in ritardo nell'ultima settimana senza segnarlo, o cade nei prossimi 3 giorni, abbassiamo un pochino il punteggio per non farti scappare nulla.";
-"panel.health.voiceover.summary" = "Salute finanziaria: %1$d su 100. Budget %2$@. Attività %3$d su 100. Pagamenti %4$d su 100.";
+"panel.health.bills.sheet.explanation" = "Controlliamo i tuoi pagamenti pianificati del mese. Se uno è scaduto da poco senza segnarlo, o è dietro l'angolo, ti avvisiamo.";
+"panel.health.bills.headline.high" = "Tutto in ordine con i pagamenti!";
+"panel.health.bills.headline.mid" = "Pagamenti sotto controllo";
+"panel.health.bills.headline.low" = "Un'occhiata e sei aggiornato";
+"panel.health.bills.headline.empty" = "I pagamenti pianificati ti liberano la testa";
+"panel.health.bills.cta.view" = "Vedi i miei pagamenti";
+"panel.health.bills.cta.create" = "Crea il mio primo pagamento";
+
+// VoiceOver sintesi completa
+"panel.health.voiceover.summary" = "Salute finanziaria: %1$@. Budget %2$@. Attività %3$@. Pagamenti %4$@.";
 
 // MARK: - Trend Widget
 

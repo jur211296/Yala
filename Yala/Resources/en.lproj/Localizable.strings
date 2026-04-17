@@ -30,18 +30,52 @@
 "panel.totalBalance" = "Total Balance";
 
 // Financial Health (P20-06)
+"panel.health.cardTitle" = "Your financial health";
+"panel.health.emptyBadge" = "—";
 "panel.health.subScore.budget" = "Budget";
 "panel.health.subScore.activity" = "Activity";
 "panel.health.subScore.bills" = "Bills";
-"panel.health.budget.emptyBadge" = "—";
+
+// Detail sheet — Total
+"panel.health.total.sheet.title" = "Your financial health";
+"panel.health.total.sheet.explanation" = "It's the average of your three metrics: budget (40%), activity (30%) and bills (30%). If any is missing, the score is calculated with the others.";
+"panel.health.total.headline.high" = "You're crushing it!";
+"panel.health.total.headline.mid" = "Great rhythm going";
+"panel.health.total.headline.low" = "Small steps, big changes";
+"panel.health.total.headline.empty" = "Start by logging your first move";
+
+// Detail sheet — Budget
 "panel.health.budget.sheet.title" = "Your budget";
-"panel.health.budget.sheet.body" = "We check how you're doing against your budgets this month. If any went over, the score drops a bit; if you're coasting in the second half of the month, it ticks up. We average them all for this number.";
-"panel.health.budget.sheet.emptyBody" = "You don't have any active budgets yet. Once you create your first one, this metric will spring to life and help you track your progress.";
+"panel.health.budget.sheet.explanation" = "We check how you're doing against your budgets this month. Room to spare adds points; going over drops it a bit. Nothing dramatic — just a compass.";
+"panel.health.budget.headline.high" = "Your budgets are breathing easy!";
+"panel.health.budget.headline.mid" = "You're minding your limits";
+"panel.health.budget.headline.low" = "A small tweak and you're set";
+"panel.health.budget.headline.empty" = "Budgets help you stay relaxed";
+"panel.health.budget.cta.view" = "See my budgets";
+"panel.health.budget.cta.create" = "Create my first budget";
+
+// Detail sheet — Activity
 "panel.health.activity.sheet.title" = "Your activity";
-"panel.health.activity.sheet.body" = "We count how many of the last 7 days you logged expenses. The more consistent you are, the better you'll know your money — and the higher this score goes.";
+"panel.health.activity.sheet.explanation" = "We count how many of the last 7 days you logged an expense. The more consistent you are, the better you know yourself — and the higher this grows.";
+"panel.health.activity.headline.high" = "Such consistency!";
+"panel.health.activity.headline.mid" = "Great rhythm going";
+"panel.health.activity.headline.low" = "A few minutes a day works wonders";
+"panel.health.activity.headline.empty" = "Start by logging your first expense";
+"panel.health.activity.cta.view" = "See my records";
+"panel.health.activity.cta.create" = "Log my first expense";
+
+// Detail sheet — Bills
 "panel.health.bills.sheet.title" = "Your bills";
-"panel.health.bills.sheet.body" = "We look at your scheduled payments for the month. If one's overdue in the last week with no mark, or falls within the next 3 days, we nudge the score down so nothing slips through.";
-"panel.health.voiceover.summary" = "Financial health: %1$d out of 100. Budget %2$@. Activity %3$d out of 100. Bills %4$d out of 100.";
+"panel.health.bills.sheet.explanation" = "We check your scheduled payments for the month. If one's overdue recently with no mark, or just around the corner, we give you a heads-up.";
+"panel.health.bills.headline.high" = "All good with your bills!";
+"panel.health.bills.headline.mid" = "Bills under control";
+"panel.health.bills.headline.low" = "A glance and you're caught up";
+"panel.health.bills.headline.empty" = "Scheduled payments free your mind";
+"panel.health.bills.cta.view" = "See my bills";
+"panel.health.bills.cta.create" = "Create my first scheduled payment";
+
+// VoiceOver full card summary
+"panel.health.voiceover.summary" = "Financial health: %1$@. Budget %2$@. Activity %3$@. Bills %4$@.";
 
 // MARK: - Trend Widget
 

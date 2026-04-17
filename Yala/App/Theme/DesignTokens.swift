@@ -240,6 +240,31 @@ enum DS {
         static let subscription: [Color] = [.orange, .hotPink]
         static let success: [Color] = [.green, .green.opacity(0.85)]
         static let warning: [Color] = [.orange, .red]
+
+        // MARK: Hero gradients (Panel 2.0 — Salud Financiera, Hero IA)
+
+        /// Calm hero gradient — used when the Financial Score ≥ 80.
+        /// Reused by P20-04 (Hero base) and P20-05 (Hero IA).
+        static let heroCalm: [Color] = [.indigo, .purple]
+
+        /// Neutral hero gradient — used when the Financial Score is 60–79.
+        static let heroNeutral: [Color] = [.purple, .hotPink]
+
+        /// Intense hero gradient — used when the Financial Score < 60.
+        /// Paired to contrast clearly against `heroNeutral` (pink → deep indigo)
+        /// without relying on red/orange (reserved for `warning`).
+        static let heroIntense: [Color] = [.hotPink, .indigo]
+
+        /// Picks the hero gradient for a given 0–100 financial score. `nil`
+        /// uses `heroCalm` as a neutral fallback for placeholder/empty states.
+        /// Single source of truth for card + detail sheet so thresholds stay
+        /// in sync.
+        static func heroFor(score: Int?) -> [Color] {
+            guard let score else { return heroCalm }
+            if score >= 80 { return heroCalm }
+            if score >= 60 { return heroNeutral }
+            return heroIntense
+        }
     }
 
     // MARK: - Chip Dimensions

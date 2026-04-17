@@ -596,6 +596,19 @@ class SessionState {
         selectedMainTab = .planning
     }
 
+    /// Navigate to the standalone Records tab (`RecordsStandaloneView`). When
+    /// the tab isn't enabled in the configurable tab bar, we use the same
+    /// deep-link trick as `AppBootstrapper.setOrDeferDeepLink(.recordsStandalone)`:
+    /// set `temporaryTab = .records` so it renders, then switch to it on the
+    /// next runloop so SwiftUI picks up the change in the right order.
+    func navigateToRecordsStandalone() {
+        temporaryTab = .records
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(50))
+            selectedMainTab = .records
+        }
+    }
+
     /// Navigate to Groups tab
     func navigateToGroups() {
         selectedMainTab = .groups

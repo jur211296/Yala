@@ -2165,8 +2165,12 @@ final class PanelViewModel {
             && currentMonthStart != nil
             && currentMonthStart == planMonthStart
 
+        // Cache the filter once — used by both fetch branches below.
+        let activePayments: [ScheduledPayment] = (canShareFetch || healthVisible)
+            ? scheduledPayments.filter { $0.isActive }
+            : []
+
         if canShareFetch, let monthStart = currentMonthStart {
-            let activePayments = scheduledPayments.filter { $0.isActive }
             sharedPaidAmounts = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
                 for: activePayments, month: monthStart, context: context
             )
@@ -2181,7 +2185,6 @@ final class PanelViewModel {
             if let shared = sharedPaidAmounts {
                 paidForHealth = shared
             } else if let monthStart = currentMonthStart {
-                let activePayments = scheduledPayments.filter { $0.isActive }
                 paidForHealth = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
                     for: activePayments, month: monthStart, context: context
                 )

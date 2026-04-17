@@ -309,7 +309,7 @@ struct PanelFilterAndWidgetsSection: View {
     private func sectionView(for kind: PanelSectionKind) -> some View {
         switch kind {
         case .health:
-            PanelHealthSection(viewModel: viewModel)
+            PanelHealthSection(viewModel: viewModel, sessionState: sessionState)
         default:
             PanelThematicSection(
                 kind: kind,

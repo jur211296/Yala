@@ -30,18 +30,52 @@
 "panel.totalBalance" = "Balance Total";
 
 // Salud financiera (P20-06)
+"panel.health.cardTitle" = "Tu salud financiera";
+"panel.health.emptyBadge" = "—";
 "panel.health.subScore.budget" = "Presupuesto";
 "panel.health.subScore.activity" = "Actividad";
 "panel.health.subScore.bills" = "Pagos";
-"panel.health.budget.emptyBadge" = "—";
+
+// Detail sheet — Total (ring principal)
+"panel.health.total.sheet.title" = "Tu salud financiera";
+"panel.health.total.sheet.explanation" = "Es el promedio de tus tres métricas: presupuesto (40%), actividad (30%) y pagos (30%). Si te falta alguna, la nota se calcula con las demás.";
+"panel.health.total.headline.high" = "¡Vas increíble!";
+"panel.health.total.headline.mid" = "Vas con buen ritmo";
+"panel.health.total.headline.low" = "Pequeños pasos, grandes cambios";
+"panel.health.total.headline.empty" = "Empieza registrando tu primer movimiento";
+
+// Detail sheet — Presupuesto
 "panel.health.budget.sheet.title" = "Tu presupuesto";
-"panel.health.budget.sheet.body" = "Miramos cómo vas con tus presupuestos del mes. Si alguno se pasó del límite, la puntuación baja; si vas holgado en la segunda mitad del mes, suma un poquito. Todo se promedia para darte esta nota.";
-"panel.health.budget.sheet.emptyBody" = "Aún no tienes presupuestos activos. Cuando crees el primero, esta métrica cobrará vida y te ayudará a ver cómo vas.";
+"panel.health.budget.sheet.explanation" = "Miramos cómo vas con tus presupuestos del mes. Si vas holgado suma puntos; si alguno se te pasa, baja un poquito. Nada dramático, solo una brújula.";
+"panel.health.budget.headline.high" = "¡Tus presupuestos respiran tranquilos!";
+"panel.health.budget.headline.mid" = "Vas cuidando bien tus límites";
+"panel.health.budget.headline.low" = "Un ajustito y quedas redondo";
+"panel.health.budget.headline.empty" = "Los presupuestos te ayudan a ir tranquilo";
+"panel.health.budget.cta.view" = "Ver mis presupuestos";
+"panel.health.budget.cta.create" = "Crear mi primer presupuesto";
+
+// Detail sheet — Actividad
 "panel.health.activity.sheet.title" = "Tu actividad";
-"panel.health.activity.sheet.body" = "Contamos en cuántos de los últimos 7 días registraste gastos. Mientras más constante seas al anotar, mejor te conocerás y más alto será tu score.";
+"panel.health.activity.sheet.explanation" = "Contamos en cuántos de los últimos 7 días anotaste un gasto. Mientras más constante, mejor te conoces — y más crece tu score.";
+"panel.health.activity.headline.high" = "¡Qué constancia!";
+"panel.health.activity.headline.mid" = "Vas con buen ritmo";
+"panel.health.activity.headline.low" = "Unos minutitos al día hacen magia";
+"panel.health.activity.headline.empty" = "Empieza registrando tu primer gasto";
+"panel.health.activity.cta.view" = "Ver mis registros";
+"panel.health.activity.cta.create" = "Registrar mi primer gasto";
+
+// Detail sheet — Pagos
 "panel.health.bills.sheet.title" = "Tus pagos";
-"panel.health.bills.sheet.body" = "Revisamos tus pagos planificados del mes. Si tienes alguno vencido en la última semana sin marcar, o uno que cae en los próximos 3 días, bajamos un poco la nota para que no se te escape.";
-"panel.health.voiceover.summary" = "Salud financiera: %1$d de 100. Presupuesto %2$@. Actividad %3$d de 100. Pagos %4$d de 100.";
+"panel.health.bills.sheet.explanation" = "Revisamos tus pagos planificados del mes. Si tienes alguno vencido hace poco sin marcar, o uno a la vuelta de la esquina, te lo hacemos ver.";
+"panel.health.bills.headline.high" = "¡Todo en orden con tus pagos!";
+"panel.health.bills.headline.mid" = "Pagos bajo control";
+"panel.health.bills.headline.low" = "Un vistazo y los pones al día";
+"panel.health.bills.headline.empty" = "Los pagos planificados te liberan la cabeza";
+"panel.health.bills.cta.view" = "Ver mis pagos";
+"panel.health.bills.cta.create" = "Crear mi primer pago";
+
+// VoiceOver resumen completo de la card
+"panel.health.voiceover.summary" = "Salud financiera: %1$@. Presupuesto %2$@. Actividad %3$@. Pagos %4$@.";
 
 // MARK: - Trend Widget
 

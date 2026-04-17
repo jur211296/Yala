@@ -30,18 +30,52 @@
 "panel.totalBalance" = "Saldo Total";
 
 // Saúde financeira (P20-06)
+"panel.health.cardTitle" = "Sua saúde financeira";
+"panel.health.emptyBadge" = "—";
 "panel.health.subScore.budget" = "Orçamento";
 "panel.health.subScore.activity" = "Atividade";
 "panel.health.subScore.bills" = "Pagamentos";
-"panel.health.budget.emptyBadge" = "—";
+
+// Detail sheet — Total
+"panel.health.total.sheet.title" = "Sua saúde financeira";
+"panel.health.total.sheet.explanation" = "É a média das suas três métricas: orçamento (40%), atividade (30%) e pagamentos (30%). Se falta alguma, calculamos com as outras.";
+"panel.health.total.headline.high" = "Você está arrasando!";
+"panel.health.total.headline.mid" = "Ótimo ritmo";
+"panel.health.total.headline.low" = "Pequenos passos, grandes mudanças";
+"panel.health.total.headline.empty" = "Comece registrando seu primeiro movimento";
+
+// Detail sheet — Orçamento
 "panel.health.budget.sheet.title" = "Seu orçamento";
-"panel.health.budget.sheet.body" = "Olhamos como você está indo com seus orçamentos do mês. Se algum passou do limite, a nota cai um pouco; se está tranquilo na segunda metade do mês, ela sobe. Tiramos a média de tudo para chegar neste número.";
-"panel.health.budget.sheet.emptyBody" = "Você ainda não tem orçamentos ativos. Quando criar o primeiro, esta métrica ganha vida e te ajuda a acompanhar seu ritmo.";
+"panel.health.budget.sheet.explanation" = "Olhamos como você está indo com seus orçamentos do mês. Se sobra espaço, soma pontos; se passou do limite, cai um pouquinho. Nada dramático — só uma bússola.";
+"panel.health.budget.headline.high" = "Seus orçamentos estão tranquilos!";
+"panel.health.budget.headline.mid" = "Você está cuidando bem dos limites";
+"panel.health.budget.headline.low" = "Um ajustezinho e fica redondo";
+"panel.health.budget.headline.empty" = "Orçamentos te ajudam a ficar tranquilo";
+"panel.health.budget.cta.view" = "Ver meus orçamentos";
+"panel.health.budget.cta.create" = "Criar meu primeiro orçamento";
+
+// Detail sheet — Atividade
 "panel.health.activity.sheet.title" = "Sua atividade";
-"panel.health.activity.sheet.body" = "Contamos em quantos dos últimos 7 dias você registrou gastos. Quanto mais constante for ao anotar, mais se conhece — e mais alta fica esta nota.";
+"panel.health.activity.sheet.explanation" = "Contamos em quantos dos últimos 7 dias você anotou um gasto. Quanto mais constante, mais se conhece — e mais cresce este número.";
+"panel.health.activity.headline.high" = "Que constância!";
+"panel.health.activity.headline.mid" = "Ótimo ritmo";
+"panel.health.activity.headline.low" = "Uns minutinhos por dia fazem mágica";
+"panel.health.activity.headline.empty" = "Comece registrando seu primeiro gasto";
+"panel.health.activity.cta.view" = "Ver meus registros";
+"panel.health.activity.cta.create" = "Registrar meu primeiro gasto";
+
+// Detail sheet — Pagamentos
 "panel.health.bills.sheet.title" = "Seus pagamentos";
-"panel.health.bills.sheet.body" = "Verificamos seus pagamentos planejados do mês. Se algum venceu na última semana sem marcar, ou cai nos próximos 3 dias, baixamos um pouquinho para nada escapar.";
-"panel.health.voiceover.summary" = "Saúde financeira: %1$d de 100. Orçamento %2$@. Atividade %3$d de 100. Pagamentos %4$d de 100.";
+"panel.health.bills.sheet.explanation" = "Conferimos seus pagamentos planejados do mês. Se algum venceu há pouco sem marcar, ou está logo ali, te damos um alô.";
+"panel.health.bills.headline.high" = "Tudo em dia com seus pagamentos!";
+"panel.health.bills.headline.mid" = "Pagamentos sob controle";
+"panel.health.bills.headline.low" = "Uma olhada e já se acerta";
+"panel.health.bills.headline.empty" = "Pagamentos planejados liberam sua cabeça";
+"panel.health.bills.cta.view" = "Ver meus pagamentos";
+"panel.health.bills.cta.create" = "Criar meu primeiro pagamento";
+
+// VoiceOver resumo completo
+"panel.health.voiceover.summary" = "Saúde financeira: %1$@. Orçamento %2$@. Atividade %3$@. Pagamentos %4$@.";
 
 // MARK: - Trend Widget
 

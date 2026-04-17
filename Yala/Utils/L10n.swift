@@ -121,6 +121,16 @@ enum L10n {
 
         /// Salud financiera (P20-06 — Financial Score).
         enum Health {
+            // Section title inside the card header.
+            static var cardTitle: String {
+                ls("panel.health.cardTitle", comment: "Salud financiera card header title")
+            }
+
+            // Em-dash placeholder used whenever a sub-score is N/A.
+            static var emptyBadge: String {
+                ls("panel.health.emptyBadge", comment: "Em-dash placeholder for a mini-ring with no data")
+            }
+
             // Sub-score labels shown under each mini ring.
             static var subScoreBudget: String {
                 ls("panel.health.subScore.budget", comment: "Budget sub-score label")
@@ -131,43 +141,109 @@ enum L10n {
             static var subScoreBills: String {
                 ls("panel.health.subScore.bills", comment: "Bills sub-score label")
             }
-            /// Placeholder shown inside the Budget mini-ring when the user has
-            /// no active budgets yet.
-            static var budgetEmptyBadge: String {
-                ls("panel.health.budget.emptyBadge", comment: "Em-dash placeholder for budget mini-ring when no budgets exist")
+
+            // MARK: Detail sheet — Total (ring principal).
+            static var totalSheetTitle: String {
+                ls("panel.health.total.sheet.title", comment: "Total score detail sheet title")
+            }
+            static var totalSheetExplanation: String {
+                ls("panel.health.total.sheet.explanation", comment: "Total score explanation — how the composite is built")
+            }
+            static var totalHeadlineHigh: String {
+                ls("panel.health.total.headline.high", comment: "Encouraging headline for total score ≥ 90")
+            }
+            static var totalHeadlineMid: String {
+                ls("panel.health.total.headline.mid", comment: "Encouraging headline for total score 70-89")
+            }
+            static var totalHeadlineLow: String {
+                ls("panel.health.total.headline.low", comment: "Encouraging headline for total score < 70")
+            }
+            static var totalHeadlineEmpty: String {
+                ls("panel.health.total.headline.empty", comment: "Warm headline when there's no data yet")
             }
 
-            // Detail sheet — Budget.
+            // MARK: Detail sheet — Budget.
             static var budgetSheetTitle: String {
                 ls("panel.health.budget.sheet.title", comment: "Budget detail sheet title")
             }
-            static var budgetSheetBody: String {
-                ls("panel.health.budget.sheet.body", comment: "Budget detail sheet body — how it is calculated")
+            static var budgetSheetExplanation: String {
+                ls("panel.health.budget.sheet.explanation", comment: "Budget explanation — how it is calculated")
             }
-            static var budgetSheetEmptyBody: String {
-                ls("panel.health.budget.sheet.emptyBody", comment: "Budget detail sheet body when the user has no budgets yet")
+            static var budgetHeadlineHigh: String {
+                ls("panel.health.budget.headline.high", comment: "Encouraging headline for budget sub-score ≥ 90")
+            }
+            static var budgetHeadlineMid: String {
+                ls("panel.health.budget.headline.mid", comment: "Encouraging headline for budget sub-score 70-89")
+            }
+            static var budgetHeadlineLow: String {
+                ls("panel.health.budget.headline.low", comment: "Encouraging headline for budget sub-score < 70")
+            }
+            static var budgetHeadlineEmpty: String {
+                ls("panel.health.budget.headline.empty", comment: "Warm headline when the user has no budgets yet")
+            }
+            static var budgetCTAView: String {
+                ls("panel.health.budget.cta.view", comment: "CTA label: Go to budgets tab")
+            }
+            static var budgetCTACreate: String {
+                ls("panel.health.budget.cta.create", comment: "CTA label: Create first budget")
             }
 
-            // Detail sheet — Activity.
+            // MARK: Detail sheet — Activity.
             static var activitySheetTitle: String {
                 ls("panel.health.activity.sheet.title", comment: "Activity detail sheet title")
             }
-            static var activitySheetBody: String {
-                ls("panel.health.activity.sheet.body", comment: "Activity detail sheet body — how it is calculated")
+            static var activitySheetExplanation: String {
+                ls("panel.health.activity.sheet.explanation", comment: "Activity explanation — how it is calculated")
+            }
+            static var activityHeadlineHigh: String {
+                ls("panel.health.activity.headline.high", comment: "Encouraging headline for activity sub-score ≥ 90")
+            }
+            static var activityHeadlineMid: String {
+                ls("panel.health.activity.headline.mid", comment: "Encouraging headline for activity sub-score 70-89")
+            }
+            static var activityHeadlineLow: String {
+                ls("panel.health.activity.headline.low", comment: "Encouraging headline for activity sub-score < 70")
+            }
+            static var activityHeadlineEmpty: String {
+                ls("panel.health.activity.headline.empty", comment: "Warm headline when the user has no transactions yet")
+            }
+            static var activityCTAView: String {
+                ls("panel.health.activity.cta.view", comment: "CTA label: Go to records")
+            }
+            static var activityCTACreate: String {
+                ls("panel.health.activity.cta.create", comment: "CTA label: Register first transaction")
             }
 
-            // Detail sheet — Bills.
+            // MARK: Detail sheet — Bills.
             static var billsSheetTitle: String {
                 ls("panel.health.bills.sheet.title", comment: "Bills detail sheet title")
             }
-            static var billsSheetBody: String {
-                ls("panel.health.bills.sheet.body", comment: "Bills detail sheet body — how it is calculated")
+            static var billsSheetExplanation: String {
+                ls("panel.health.bills.sheet.explanation", comment: "Bills explanation — how it is calculated")
+            }
+            static var billsHeadlineHigh: String {
+                ls("panel.health.bills.headline.high", comment: "Encouraging headline for bills sub-score ≥ 90")
+            }
+            static var billsHeadlineMid: String {
+                ls("panel.health.bills.headline.mid", comment: "Encouraging headline for bills sub-score 70-89")
+            }
+            static var billsHeadlineLow: String {
+                ls("panel.health.bills.headline.low", comment: "Encouraging headline for bills sub-score < 70")
+            }
+            static var billsHeadlineEmpty: String {
+                ls("panel.health.bills.headline.empty", comment: "Warm headline when the user has no scheduled payments yet")
+            }
+            static var billsCTAView: String {
+                ls("panel.health.bills.cta.view", comment: "CTA label: Go to scheduled payments")
+            }
+            static var billsCTACreate: String {
+                ls("panel.health.bills.cta.create", comment: "CTA label: Create first scheduled payment")
             }
 
             /// VoiceOver summary for the whole Salud Financiera card.
-            /// Placeholders: total, budget (string — em-dash or formatted number), activity, bills.
+            /// Placeholders receive strings so they can carry em-dashes or numbers.
             static func voiceoverSummary(
-                total: Int, budget: String, activity: Int, bills: Int
+                total: String, budget: String, activity: String, bills: String
             ) -> String {
                 String(
                     format: ls("panel.health.voiceover.summary", comment: "VoiceOver summary for the Salud Financiera card"),
