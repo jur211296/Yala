@@ -320,6 +320,61 @@ enum L10n {
             static var pillDaysLeft: String {
                 ls("panel.hero.pill.daysLeft", comment: "Hero pill label — days left in the month")
             }
+
+            // MARK: KPI Preferences (P20-04b — sheet + new KPIs)
+            enum KpiPrefs {
+                // Sheet chrome
+                static var title: String {
+                    ls("panel.hero.kpiPrefs.title", comment: "Hero KPI preferences sheet title")
+                }
+                static var footer: String {
+                    ls("panel.hero.kpiPrefs.footer", comment: "Hero KPI sheet footer — explains the 3-visible cap")
+                }
+                static var editButton: String {
+                    ls("panel.hero.kpiPrefs.editButton", comment: "A11y label for the edit button on the hero card")
+                }
+                /// Subtitle under a toggle when disabling it would drop below the
+                /// 2-KPI minimum ("Mínimo 2 activas").
+                static var minimumActive: String {
+                    ls("panel.hero.kpiPrefs.minimumActive", comment: "Subtitle shown under a toggle when disabling it would leave only 1 active KPI")
+                }
+                /// Subtitle under an OFF toggle once 3 KPIs are already active
+                /// ("Ya tienes 3 activas").
+                static var maximumReached: String {
+                    ls("panel.hero.kpiPrefs.maximumReached", comment: "Subtitle shown under an OFF toggle when the user already has 3 KPIs active")
+                }
+
+                // Display names (full, shown in the sheet list)
+                static var nameIncome: String {
+                    ls("panel.hero.kpiPrefs.name.income", comment: "KPI display name — income")
+                }
+                static var nameSpent: String {
+                    ls("panel.hero.kpiPrefs.name.spent", comment: "KPI display name — spent")
+                }
+                static var nameDaysLeft: String {
+                    ls("panel.hero.kpiPrefs.name.daysLeft", comment: "KPI display name — days left")
+                }
+                static var nameAvailable: String {
+                    ls("panel.hero.kpiPrefs.name.available", comment: "KPI display name — available (income minus expense)")
+                }
+                static var nameDailyAverage: String {
+                    ls("panel.hero.kpiPrefs.name.dailyAverage", comment: "KPI display name — daily spending average")
+                }
+                static var nameProjection: String {
+                    ls("panel.hero.kpiPrefs.name.projection", comment: "KPI display name — end-of-month projection")
+                }
+
+                // Pill labels (short, shown in the hero pill)
+                static var pillAvailable: String {
+                    ls("panel.hero.kpiPrefs.pill.available", comment: "Hero pill label — available")
+                }
+                static var pillDailyAverage: String {
+                    ls("panel.hero.kpiPrefs.pill.dailyAverage", comment: "Hero pill label — daily average")
+                }
+                static var pillProjection: String {
+                    ls("panel.hero.kpiPrefs.pill.projection", comment: "Hero pill label — projection")
+                }
+            }
         }
         static var totalBalance: String {
             ls("panel.totalBalance", comment: "Total balance label")

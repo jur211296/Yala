@@ -464,6 +464,38 @@ final class AppPreferences {
         }
     }
 
+    // MARK: - Hero KPI Preferences (P20-04b)
+    //
+    // Single global set (not per-section) — shape mirrors the sections pattern
+    // but flatter: just two `[String]` arrays of `HeroKPI.rawValue` + a
+    // sentinel flag. While `panelHeroKPIsCustomized == false`, the VM ignores
+    // the arrays and renders `HeroKPI.defaultOrder`/`defaultHidden`. The flag
+    // flips on the first move/toggle and is reset by
+    // `PanelViewModel.resetHeroKPIPreferences()`. Without it we can't tell
+    // "user deliberately activated all 6" (hidden == []) from "never touched"
+    // (hidden == []).
+
+    var panelHeroKPIsOrder: [String] = [] {
+        didSet {
+            guard oldValue != panelHeroKPIsOrder else { return }
+            persistString(panelHeroKPIsOrder.joined(separator: ","), forKey: Keys.panelHeroKPIsOrder, synced: true)
+        }
+    }
+
+    var panelHeroKPIsHidden: [String] = [] {
+        didSet {
+            guard oldValue != panelHeroKPIsHidden else { return }
+            persistString(panelHeroKPIsHidden.joined(separator: ","), forKey: Keys.panelHeroKPIsHidden, synced: true)
+        }
+    }
+
+    var panelHeroKPIsCustomized: Bool = false {
+        didSet {
+            guard oldValue != panelHeroKPIsCustomized else { return }
+            persistBool(panelHeroKPIsCustomized, forKey: Keys.panelHeroKPIsCustomized, synced: true)
+        }
+    }
+
     // MARK: - Panel Section Helpers
     //
     // Tipados por `PanelSectionKind` — evitan switches duplicados en callers.
@@ -717,6 +749,15 @@ final class AppPreferences {
             panelSectionsHidden = value
         }
         panelPrefsMigratedV2 = defaults.bool(forKey: Keys.panelPrefsMigratedV2)
+
+        // Hero KPI Preferences (P20-04b)
+        if let value = parseList(defaults.string(forKey: Keys.panelHeroKPIsOrder)) {
+            panelHeroKPIsOrder = value
+        }
+        if let value = parseList(defaults.string(forKey: Keys.panelHeroKPIsHidden)) {
+            panelHeroKPIsHidden = value
+        }
+        panelHeroKPIsCustomized = defaults.bool(forKey: Keys.panelHeroKPIsCustomized)
     }
 
     /// Parses a comma-separated stored string into `[String]`. Returns `nil` when the
@@ -827,5 +868,10 @@ final class AppPreferences {
         static let panelPlanificacionHidden = "panelPlanificacionHidden"
         static let panelSectionsHidden = "panelSectionsHidden"
         static let panelPrefsMigratedV2 = "panelPrefsMigratedV2"
+
+        // Hero KPI Preferences (P20-04b)
+        static let panelHeroKPIsOrder = "panelHeroKPIsOrder"
+        static let panelHeroKPIsHidden = "panelHeroKPIsHidden"
+        static let panelHeroKPIsCustomized = "panelHeroKPIsCustomized"
     }
 }

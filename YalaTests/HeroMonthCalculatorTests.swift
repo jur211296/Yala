@@ -216,4 +216,48 @@ struct HeroMonthCalculatorTests {
         #expect(data.income == 3200.50)
         #expect(data.expense == 1875.25)
     }
+
+    // MARK: - Derived KPIs (P20-04b)
+
+    @Test func derived_available_equalsMaxZeroIncomeMinusExpense() {
+        // income > expense → income - expense
+        let positive = HeroMonthCalculator.calculate(
+            monthIncome: 3000, monthExpense: 1200, totalMonthlyBudget: 0,
+            now: date(2026, 4, 15), calendar: calendar
+        )
+        #expect(positive.available == 1800)
+
+        // income < expense → clamped to 0 (never negative on the hero)
+        let negative = HeroMonthCalculator.calculate(
+            monthIncome: 500, monthExpense: 2000, totalMonthlyBudget: 0,
+            now: date(2026, 4, 15), calendar: calendar
+        )
+        #expect(negative.available == 0)
+    }
+
+    @Test func derived_dailyAverage_dividesByElapsedClampedToOne() {
+        // April day 10 → daysElapsed = 10. 1500 / 10 = 150.
+        let data = HeroMonthCalculator.calculate(
+            monthIncome: 0, monthExpense: 1500, totalMonthlyBudget: 0,
+            now: date(2026, 4, 10), calendar: calendar
+        )
+        #expect(data.dailyAverage == 150)
+
+        // Day 1 with no expense yet → average is 0, never a div-by-zero crash.
+        let day1 = HeroMonthCalculator.calculate(
+            monthIncome: 0, monthExpense: 0, totalMonthlyBudget: 0,
+            now: date(2026, 4, 1), calendar: calendar
+        )
+        #expect(day1.dailyAverage == 0)
+    }
+
+    @Test func derived_projection_scalesDailyAverageToMonthTotal() {
+        // April has 30 days; day 10, spent 1500 → avg 150 → projection 4500.
+        let data = HeroMonthCalculator.calculate(
+            monthIncome: 0, monthExpense: 1500, totalMonthlyBudget: 0,
+            now: date(2026, 4, 10), calendar: calendar
+        )
+        #expect(data.daysTotal == 30)
+        #expect(data.projection == 4500)
+    }
 }

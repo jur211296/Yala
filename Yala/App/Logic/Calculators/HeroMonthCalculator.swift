@@ -35,6 +35,29 @@ struct HeroMonthData: Equatable {
     let expense: Double
     let daysRemaining: Int
     let daysElapsed: Int
+
+    // MARK: - Derived KPIs (P20-04b)
+    //
+    // Computed so the memberwise init stays unchanged — HeroMonthCalculator
+    // tests and HeroMonthView previews keep working without edits. Equatable
+    // is synthesised over stored vars only, which is what we want: two values
+    // with the same stored fields imply the same derived fields.
+
+    /// Total calendar days in the month. `daysElapsed + daysRemaining` holds
+    /// because the calculator keeps these two in sync (see `dayContext`).
+    var daysTotal: Int { daysElapsed + daysRemaining }
+
+    /// Cash the user has "left" for the month if they hold spending — floored
+    /// at 0 so a negative number never shows up on the hero.
+    var available: Double { max(0, income - expense) }
+
+    /// Running daily spending average. `max(1, daysElapsed)` avoids a div-by-0
+    /// on the theoretical first-second-of-month edge.
+    var dailyAverage: Double { expense / Double(max(1, daysElapsed)) }
+
+    /// Linear projection of end-of-month spending. Useful for "am I going to
+    /// overshoot?" but not adaptive to seasonality (flat extrapolation).
+    var projection: Double { dailyAverage * Double(daysTotal) }
 }
 
 // MARK: - Calculator

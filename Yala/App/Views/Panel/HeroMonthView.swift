@@ -28,6 +28,8 @@ import SwiftUI
 struct HeroMonthView: View {
     let data: HeroMonthData
     let currencyCode: String
+    let activeKPIs: [HeroKPI]
+    let onEditTapped: () -> Void
 
     /// `YalaFormatter.currency` reads `decimalPlaces` and
     /// `currencyDisplayFormat` straight from `UserDefaults`, which leaves
@@ -55,9 +57,34 @@ struct HeroMonthView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .solidCard(padding: DS.Card.padding)
-        .accessibilityElement(children: .ignore)
+        // Edit button floats OUTSIDE the solidCard padding — the card modifier
+        // already handles its own inner padding, so anchoring the overlay to
+        // the card's top-trailing edge avoids having to subtract anything.
+        // Pattern matches `AccountCardView`: glass-circle with a sliders icon.
+        .overlay(alignment: .topTrailing) { editButton }
+        .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)
         .accessibilityLabel(voiceoverLabel)
+    }
+
+    // MARK: - Edit button (P20-04b)
+
+    /// Anchored to `.topTrailing` of the card with padding symmetric to the
+    /// chip line inside the card: the chip sits at `DS.Card.padding` from
+    /// top-leading, so the button sits at `DS.Card.padding` from top-trailing.
+    /// Bumped from `labelTiny` / `xs` to `body` / `sm` for a more comfortable
+    /// tap target and visual weight.
+    private var editButton: some View {
+        Button(action: onEditTapped) {
+            Image(systemName: "slider.horizontal.3")
+                .font(DS.Typography.body)
+                .foregroundStyle(.primary)
+                .padding(DS.Spacing.sm)
+                .glassEffect(.regular.interactive(), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .padding(DS.Card.padding)
+        .accessibilityLabel(L10n.Panel.Hero.KpiPrefs.editButton)
     }
 
     // MARK: - Chip
@@ -96,22 +123,35 @@ struct HeroMonthView: View {
 
     // MARK: - Pills
 
+    @ViewBuilder
     private var pills: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            pill(
-                label: L10n.Panel.Hero.pillIncome,
-                value: formattedAmount(data.income)
-            )
-            pill(
-                label: L10n.Panel.Hero.pillSpent,
-                value: formattedAmount(data.expense)
-            )
-            pill(
-                label: L10n.Panel.Hero.pillDaysLeft,
-                value: "\(data.daysRemaining)"
-            )
+        if !activeKPIs.isEmpty {
+            HStack(spacing: DS.Spacing.sm) {
+                ForEach(activeKPIs, id: \.self) { kpi in
+                    pill(for: kpi)
+                }
+            }
+            .padding(.top, DS.Spacing.xs)
         }
-        .padding(.top, DS.Spacing.xs)
+    }
+
+    /// Renders a pill for a given KPI, pulling its value from `data` (the
+    /// calculator packages all 6 via stored + computed vars). `daysLeft` is
+    /// the only non-currency value — everything else goes through
+    /// `YalaFormatter.currency` and therefore respects Profile →
+    /// Personalización.
+    private func pill(for kpi: HeroKPI) -> some View {
+        let value: String = {
+            switch kpi {
+            case .income:        return formattedAmount(data.income)
+            case .spent:         return formattedAmount(data.expense)
+            case .daysLeft:      return "\(data.daysRemaining)"
+            case .available:     return formattedAmount(data.available)
+            case .dailyAverage:  return formattedAmount(data.dailyAverage)
+            case .projection:    return formattedAmount(data.projection)
+            }
+        }()
+        return pill(label: kpi.pillLabel, value: value)
     }
 
     private func pill(label: String, value: String) -> some View {
@@ -246,35 +286,45 @@ struct HeroMonthView: View {
                 state: .monthStart, income: 0, expense: 0,
                 daysRemaining: 28, daysElapsed: 2
             ),
-            currencyCode: "PEN"
+            currencyCode: "PEN",
+            activeKPIs: Array(HeroKPI.defaultOrder.prefix(3)),
+            onEditTapped: {}
         )
         HeroMonthView(
             data: HeroMonthData(
                 state: .onTrack, income: 4500, expense: 900,
                 daysRemaining: 20, daysElapsed: 10
             ),
-            currencyCode: "PEN"
+            currencyCode: "PEN",
+            activeKPIs: Array(HeroKPI.defaultOrder.prefix(3)),
+            onEditTapped: {}
         )
         HeroMonthView(
             data: HeroMonthData(
                 state: .neutral, income: 4500, expense: 1500,
                 daysRemaining: 20, daysElapsed: 10
             ),
-            currencyCode: "PEN"
+            currencyCode: "PEN",
+            activeKPIs: Array(HeroKPI.defaultOrder.prefix(3)),
+            onEditTapped: {}
         )
         HeroMonthView(
             data: HeroMonthData(
                 state: .tight, income: 4500, expense: 3700,
                 daysRemaining: 6, daysElapsed: 24
             ),
-            currencyCode: "PEN"
+            currencyCode: "PEN",
+            activeKPIs: Array(HeroKPI.defaultOrder.prefix(3)),
+            onEditTapped: {}
         )
         HeroMonthView(
             data: HeroMonthData(
                 state: .overBudget, income: 4500, expense: 4800,
                 daysRemaining: 3, daysElapsed: 27
             ),
-            currencyCode: "PEN"
+            currencyCode: "PEN",
+            activeKPIs: Array(HeroKPI.defaultOrder.prefix(3)),
+            onEditTapped: {}
         )
     }
     .padding()

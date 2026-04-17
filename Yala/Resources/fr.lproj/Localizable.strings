@@ -105,6 +105,22 @@
 "panel.hero.pill.spent" = "Dépensé";
 "panel.hero.pill.daysLeft" = "Jours restants";
 
+// KPI Preferences (P20-04b)
+"panel.hero.kpiPrefs.title" = "Personnaliser les indicateurs";
+"panel.hero.kpiPrefs.footer" = "Les 3 premiers actifs s'afficheront dans cet ordre.";
+"panel.hero.kpiPrefs.editButton" = "Personnaliser les indicateurs du Hero";
+"panel.hero.kpiPrefs.minimumActive" = "Au moins 2 actives";
+"panel.hero.kpiPrefs.maximumReached" = "Tu as déjà 3 actives";
+"panel.hero.kpiPrefs.name.income" = "Revenus du mois";
+"panel.hero.kpiPrefs.name.spent" = "Dépenses du mois";
+"panel.hero.kpiPrefs.name.daysLeft" = "Jours restants";
+"panel.hero.kpiPrefs.name.available" = "Disponible";
+"panel.hero.kpiPrefs.name.dailyAverage" = "Moyenne quotidienne";
+"panel.hero.kpiPrefs.name.projection" = "Projection du mois";
+"panel.hero.kpiPrefs.pill.available" = "Disponible";
+"panel.hero.kpiPrefs.pill.dailyAverage" = "Quotidien";
+"panel.hero.kpiPrefs.pill.projection" = "Projection";
+
 // MARK: - Trend Widget
 
 "trend.title" = "Tendances";
