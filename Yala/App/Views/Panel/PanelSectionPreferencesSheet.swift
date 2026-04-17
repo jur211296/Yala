@@ -2,15 +2,19 @@
 //  PanelSectionPreferencesSheet.swift
 //  Yala
 //
-//  Per-section preferences sheet for reordering and toggling widgets within
-//  one Panel section. Draft mutations persist to `AppPreferences` via
-//  `PanelViewModel`'s 200ms debounce; `.onDisappear` flushes pending writes.
+//  Per-section preferences sheet for toggling widget visibility within one
+//  Panel section. Reorder lives in a dedicated sub-sheet (tap the
+//  `arrow.up.arrow.down` toolbar button) so the main sheet can keep a clean
+//  auto-height layout without `List`'s fixed-frame requirement.
+//
+//  Draft mutations persist to `AppPreferences` via `PanelViewModel`'s 200ms
+//  debounce; `.onDisappear` flushes pending writes.
 //
 //  Chrome adapts to the current detent:
 //   - medium → `Form` plain (native iOS 26 glass material, matches
 //     `PanelSectionsConfigView`).
-//   - large  → `PanelBackgroundView` + `List.solidCard()` canonical pattern
-//     (UI-PATTERNS.md, mirrors `AccountsSettingsListView`).
+//   - large  → `PanelBackgroundView` + `VStack + Divider + solidCard`
+//     canonical pattern (UI-PATTERNS.md, mirrors `CategoriesSettingsListView`).
 //
 
 import SwiftUI
@@ -22,12 +26,9 @@ struct PanelSectionPreferencesSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedDetent: PresentationDetent = .medium
+    @State private var showingReorderSheet = false
 
     private var isLargeDetent: Bool { selectedDetent == .large }
-
-    /// Estimated row height for the large-detent List (icon + toggle + drag
-    /// handle + vertical paddings). Matches the fixed `listRowInsets`.
-    private static let rowHeight: CGFloat = 60
 
     var body: some View {
         NavigationStack {
@@ -38,7 +39,7 @@ struct PanelSectionPreferencesSheet: View {
                     mediumLayout
                 }
             }
-            .navigationTitle(L10n.Panel.SectionPrefs.title(kind.localizedTitle))
+            .navigationTitle(L10n.Panel.SectionPrefs.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -51,13 +52,26 @@ struct PanelSectionPreferencesSheet: View {
                     }
                     .accessibilityLabel(L10n.Widget.resetLayout)
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                        showingReorderSheet = true
+                    } label: {
+                        Image(systemName: "arrow.up.arrow.down")
+                            .font(DS.Typography.body).fontWeight(.medium)
+                            .foregroundStyle(.thToolbarIcon)
+                    }
+                    .accessibilityLabel(L10n.Action.reorder)
+                    .disabled(viewModel.orderedWidgetTypes(in: kind).count < 2)
+
                     YalaSaveButton(action: { dismiss() })
                 }
             }
         }
         .presentationDetents([.medium, .large], selection: $selectedDetent)
         .presentationDragIndicator(.visible)
+        .sheet(isPresented: $showingReorderSheet) {
+            reorderSheet
+        }
         .onDisappear {
             viewModel.flushPendingSectionWrites()
             viewModel.reloadAndRecalculate()
@@ -70,43 +84,34 @@ struct PanelSectionPreferencesSheet: View {
         Form {
             Section {
                 ForEach(viewModel.orderedWidgetTypes(in: kind), id: \.self) { type in
-                    row(for: type)
+                    toggleRow(for: type)
                 }
-                .onMove { source, destination in
-                    viewModel.moveWidgetInSection(kind, from: source, to: destination)
-                }
-                .deleteDisabled(true)
             }
         }
-        .environment(\.editMode, .constant(.active))
     }
 
-    // MARK: - Large Layout (solidCard — UI-PATTERNS.md pattern)
+    // MARK: - Large Layout (VStack + Divider + solidCard — altura automática)
 
     private var largeLayout: some View {
-        let types = viewModel.orderedWidgetTypes(in: kind)
-        return ZStack {
+        ZStack {
             PanelBackgroundView()
 
             ScrollView {
-                List {
-                    ForEach(types, id: \.self) { type in
-                        row(for: type)
-                            .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
+                let types = viewModel.orderedWidgetTypes(in: kind)
+                VStack(spacing: DS.Spacing.none) {
+                    ForEach(Array(types.enumerated()), id: \.element) { index, type in
+                        toggleRow(for: type)
+                            .padding(.horizontal, DS.Spacing.lg)
+                            .padding(.vertical, DS.Spacing.sm)
+
+                        if index < types.count - 1 {
+                            Divider()
+                                .padding(.leading, DS.Spacing.lg)
+                        }
                     }
-                    .onMove { source, destination in
-                        viewModel.moveWidgetInSection(kind, from: source, to: destination)
-                    }
-                    .deleteDisabled(true)
                 }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .scrollDisabled(true)
-                .frame(height: CGFloat(types.count) * Self.rowHeight)
+                .padding(.vertical, DS.Chip.paddingV)
                 .solidCard()
-                .environment(\.editMode, .constant(.active))
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
             }
@@ -114,10 +119,43 @@ struct PanelSectionPreferencesSheet: View {
         }
     }
 
-    // MARK: - Row (compartido entre ambos layouts)
+    // MARK: - Reorder Sub-Sheet (List + .onMove, medium detent)
+
+    private var reorderSheet: some View {
+        NavigationStack {
+            List {
+                ForEach(viewModel.orderedWidgetTypes(in: kind), id: \.self) { type in
+                    HStack(spacing: DS.Spacing.md) {
+                        Image(systemName: type.iconName)
+                            .font(DS.Typography.body)
+                            .foregroundStyle(.tint)
+                            .frame(width: 28)
+                        Text(type.displayName)
+                            .font(DS.Typography.body)
+                    }
+                }
+                .onMove { source, destination in
+                    viewModel.moveWidgetInSection(kind, from: source, to: destination)
+                }
+                .deleteDisabled(true)
+            }
+            .environment(\.editMode, .constant(.active))
+            .navigationTitle(L10n.Action.reorder)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    YalaSaveButton(action: { showingReorderSheet = false })
+                }
+            }
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+    }
+
+    // MARK: - Toggle Row (shared by medium + large)
 
     @ViewBuilder
-    private func row(for type: WidgetType) -> some View {
+    private func toggleRow(for type: WidgetType) -> some View {
         let isHidden = viewModel.isWidgetHidden(type)
         Toggle(
             isOn: Binding(

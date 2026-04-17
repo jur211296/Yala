@@ -26,8 +26,7 @@
 "panel.sectionsConfig.footer" = "Oculte as seções que você não precisa ver. Você pode reativá-las quando quiser.";
 "panel.sectionsConfig.emptySection" = "Todos os widgets ocultos";
 "panel.sectionsConfig.restoreWidgets %@" = "Restaurar widgets de %@";
-"panel.sectionPrefs.title %@" = "Preferências de %@";
-"panel.sectionPrefs.footer" = "Arraste para reordenar, ou oculte os gráficos que você não usa.";
+"panel.sectionPrefs.title" = "Preferências";
 "panel.totalBalance" = "Saldo Total";
 
 // Saúde financeira (P20-06)

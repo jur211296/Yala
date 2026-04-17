@@ -26,8 +26,7 @@
 "panel.sectionsConfig.footer" = "Hide the sections you don't need. You can turn them back on anytime.";
 "panel.sectionsConfig.emptySection" = "All widgets hidden";
 "panel.sectionsConfig.restoreWidgets %@" = "Restore %@ widgets";
-"panel.sectionPrefs.title %@" = "%@ preferences";
-"panel.sectionPrefs.footer" = "Drag to reorder, or hide the charts you don't use.";
+"panel.sectionPrefs.title" = "Preferences";
 "panel.totalBalance" = "Total Balance";
 
 // Financial Health (P20-06)

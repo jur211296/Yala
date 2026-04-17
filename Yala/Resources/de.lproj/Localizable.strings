@@ -26,8 +26,7 @@
 "panel.sectionsConfig.footer" = "Blende Bereiche aus, die du nicht brauchst. Du kannst sie jederzeit wieder aktivieren.";
 "panel.sectionsConfig.emptySection" = "Alle Widgets ausgeblendet";
 "panel.sectionsConfig.restoreWidgets %@" = "%@-Widgets wiederherstellen";
-"panel.sectionPrefs.title %@" = "Einstellungen für %@";
-"panel.sectionPrefs.footer" = "Ziehe zum Umsortieren, oder verstecke die Grafiken, die du nicht brauchst.";
+"panel.sectionPrefs.title" = "Einstellungen";
 "panel.totalBalance" = "Gesamtsaldo";
 
 // Finanzielle Gesundheit (P20-06)

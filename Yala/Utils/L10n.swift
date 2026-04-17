@@ -114,10 +114,9 @@ enum L10n {
         }
 
         enum SectionPrefs {
-            static func title(_ name: String) -> String {
-                String(format: ls("panel.sectionPrefs.title %@", comment: "Per-section preferences sheet title (P20-03)"), name)
+            static var title: String {
+                ls("panel.sectionPrefs.title", comment: "Per-section preferences sheet title (P20-03)")
             }
-            static var footer: String { ls("panel.sectionPrefs.footer", comment: "Header hint in per-section preferences sheet") }
         }
 
         /// Salud financiera (P20-06 — Financial Score).

@@ -26,8 +26,7 @@
 "panel.sectionsConfig.footer" = "Nascondi le sezioni che non ti servono. Puoi riattivarle in qualsiasi momento.";
 "panel.sectionsConfig.emptySection" = "Tutti i widget nascosti";
 "panel.sectionsConfig.restoreWidgets %@" = "Ripristina i widget di %@";
-"panel.sectionPrefs.title %@" = "Preferenze di %@";
-"panel.sectionPrefs.footer" = "Trascina per riordinare, o nascondi i grafici che non usi.";
+"panel.sectionPrefs.title" = "Preferenze";
 "panel.totalBalance" = "Saldo Totale";
 
 // Salute finanziaria (P20-06)

@@ -61,8 +61,6 @@ struct PanelSheetsModifier: ViewModifier {
             }
             .sheet(isPresented: $sheets.showSectionsConfig) {
                 PanelSectionsConfigView()
-                    .presentationDetents([.medium])
-                    .presentationDragIndicator(.visible)
             }
             .sheet(item: $sheets.sectionPrefsPresentation) { kind in
                 // Detents + drag indicator are declared inside the sheet so it

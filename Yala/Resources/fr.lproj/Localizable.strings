@@ -26,8 +26,7 @@
 "panel.sectionsConfig.footer" = "Masque les sections dont tu n'as pas besoin. Tu peux les réactiver à tout moment.";
 "panel.sectionsConfig.emptySection" = "Tous les widgets masqués";
 "panel.sectionsConfig.restoreWidgets %@" = "Restaurer les widgets de %@";
-"panel.sectionPrefs.title %@" = "Préférences de %@";
-"panel.sectionPrefs.footer" = "Glisse pour réordonner, ou masque les graphiques que tu n'utilises pas.";
+"panel.sectionPrefs.title" = "Préférences";
 "panel.totalBalance" = "Solde Total";
 
 // Santé financière (P20-06)
