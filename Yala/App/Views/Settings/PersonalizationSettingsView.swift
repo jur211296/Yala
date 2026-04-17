@@ -253,7 +253,7 @@ struct PersonalizationSettingsView: View {
                                 .padding(.horizontal, DS.Spacing.xxs)
                         }
 
-                        // Chat FAB visibility (Free users only — Pro users use WidgetPreferencesView)
+                        // Chat FAB visibility (Free users only — Pro users manage it via per-section Panel preferences)
                         if !isProUser {
                             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                                 HStack {

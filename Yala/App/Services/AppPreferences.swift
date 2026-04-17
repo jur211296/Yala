@@ -464,6 +464,60 @@ final class AppPreferences {
         }
     }
 
+    // MARK: - Panel Section Helpers
+    //
+    // Tipados por `PanelSectionKind` — evitan switches duplicados en callers.
+    // Secciones sin claves persistidas (`health`, `paraTi`, `latestRecords`, `tools`)
+    // retornan `[]` en getters y son no-op en setters. Cuando P20-10 introduzca
+    // multi-widget en `paraTi`, agregar keys `panelParaTiOrder/Hidden` y extender
+    // los switches de abajo.
+
+    func order(for kind: PanelSectionKind) -> [String] {
+        switch kind {
+        case .tendencias:    return panelTendenciasOrder
+        case .distribucion:  return panelDistribucionOrder
+        case .planificacion: return panelPlanificacionOrder
+        default:             return []
+        }
+    }
+
+    func hidden(for kind: PanelSectionKind) -> [String] {
+        switch kind {
+        case .tendencias:    return panelTendenciasHidden
+        case .distribucion:  return panelDistribucionHidden
+        case .planificacion: return panelPlanificacionHidden
+        default:             return []
+        }
+    }
+
+    func setOrder(_ value: [String], for kind: PanelSectionKind) {
+        switch kind {
+        case .tendencias:    panelTendenciasOrder    = value
+        case .distribucion:  panelDistribucionOrder  = value
+        case .planificacion: panelPlanificacionOrder = value
+        default:             break
+        }
+    }
+
+    func setHidden(_ value: [String], for kind: PanelSectionKind) {
+        switch kind {
+        case .tendencias:    panelTendenciasHidden    = value
+        case .distribucion:  panelDistribucionHidden  = value
+        case .planificacion: panelPlanificacionHidden = value
+        default:             break
+        }
+    }
+
+    /// True when a multi-widget section has every widget hidden individually.
+    /// Used by P20-02's `PanelSectionsConfigView` to surface a "restore" affordance
+    /// so the user can recover from the "oculté todos" edge case.
+    func isSectionEffectivelyEmpty(_ kind: PanelSectionKind) -> Bool {
+        guard kind.hasMultipleWidgets else { return false }
+        let hiddenCount = hidden(for: kind).count
+        let total = WidgetType.defaultWidgets(in: kind).count
+        return hiddenCount >= total
+    }
+
     // MARK: - Init
 
     init(defaults: UserDefaults = .standard) {

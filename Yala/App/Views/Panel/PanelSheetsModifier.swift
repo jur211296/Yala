@@ -64,21 +64,11 @@ struct PanelSheetsModifier: ViewModifier {
                     .presentationDetents([.medium])
                     .presentationDragIndicator(.visible)
             }
-            .sheet(isPresented: $sheets.showWidgetPreferences, onDismiss: {
-                viewModel.endWidgetPreferencesEditing()
-                viewModel.reloadAndRecalculate()
-            }) {
-                WidgetPreferencesView(viewModel: viewModel)
-                    .presentationDragIndicator(.visible)
-                    // Deferred: mutating @Observable in .onAppear during sheet transition
-                    // causes an infinite layoutBelowIfNeeded loop (watchdog 0x8BADF00D).
-                    // The delay lets the transition finish; .task auto-cancels on dismiss.
-                    .task {
-                        do {
-                            try await Task.sleep(for: .milliseconds(500))
-                            viewModel.beginWidgetPreferencesEditing()
-                        } catch {}
-                    }
+            .sheet(item: $sheets.sectionPrefsPresentation) { kind in
+                // Detents + drag indicator are declared inside the sheet so it
+                // can observe the current detent and adapt its background
+                // (glass material for medium, themed for large).
+                PanelSectionPreferencesSheet(kind: kind, viewModel: viewModel)
             }
             .sheet(isPresented: $sheets.showNewTransaction, onDismiss: {
                 viewModel.reloadAndRecalculate()

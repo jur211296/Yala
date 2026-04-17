@@ -107,6 +107,74 @@ enum L10n {
         enum SectionsConfig {
             static var title: String { ls("panel.sectionsConfig.title", comment: "Panel sections config sheet title") }
             static var footer: String { ls("panel.sectionsConfig.footer", comment: "Footer hint in Panel sections config") }
+            static var emptySection: String { ls("panel.sectionsConfig.emptySection", comment: "Subtitle shown when every widget in a section is individually hidden") }
+            static func restoreWidgets(_ name: String) -> String {
+                String(format: ls("panel.sectionsConfig.restoreWidgets %@", comment: "Button/accessibility label to restore all widgets of a section"), name)
+            }
+        }
+
+        enum SectionPrefs {
+            static func title(_ name: String) -> String {
+                String(format: ls("panel.sectionPrefs.title %@", comment: "Per-section preferences sheet title (P20-03)"), name)
+            }
+            static var footer: String { ls("panel.sectionPrefs.footer", comment: "Header hint in per-section preferences sheet") }
+        }
+
+        /// Salud financiera (P20-06 — Financial Score).
+        enum Health {
+            // Sub-score labels shown under each mini ring.
+            static var subScoreBudget: String {
+                ls("panel.health.subScore.budget", comment: "Budget sub-score label")
+            }
+            static var subScoreActivity: String {
+                ls("panel.health.subScore.activity", comment: "Activity sub-score label")
+            }
+            static var subScoreBills: String {
+                ls("panel.health.subScore.bills", comment: "Bills sub-score label")
+            }
+            /// Placeholder shown inside the Budget mini-ring when the user has
+            /// no active budgets yet.
+            static var budgetEmptyBadge: String {
+                ls("panel.health.budget.emptyBadge", comment: "Em-dash placeholder for budget mini-ring when no budgets exist")
+            }
+
+            // Detail sheet — Budget.
+            static var budgetSheetTitle: String {
+                ls("panel.health.budget.sheet.title", comment: "Budget detail sheet title")
+            }
+            static var budgetSheetBody: String {
+                ls("panel.health.budget.sheet.body", comment: "Budget detail sheet body — how it is calculated")
+            }
+            static var budgetSheetEmptyBody: String {
+                ls("panel.health.budget.sheet.emptyBody", comment: "Budget detail sheet body when the user has no budgets yet")
+            }
+
+            // Detail sheet — Activity.
+            static var activitySheetTitle: String {
+                ls("panel.health.activity.sheet.title", comment: "Activity detail sheet title")
+            }
+            static var activitySheetBody: String {
+                ls("panel.health.activity.sheet.body", comment: "Activity detail sheet body — how it is calculated")
+            }
+
+            // Detail sheet — Bills.
+            static var billsSheetTitle: String {
+                ls("panel.health.bills.sheet.title", comment: "Bills detail sheet title")
+            }
+            static var billsSheetBody: String {
+                ls("panel.health.bills.sheet.body", comment: "Bills detail sheet body — how it is calculated")
+            }
+
+            /// VoiceOver summary for the whole Salud Financiera card.
+            /// Placeholders: total, budget (string — em-dash or formatted number), activity, bills.
+            static func voiceoverSummary(
+                total: Int, budget: String, activity: Int, bills: Int
+            ) -> String {
+                String(
+                    format: ls("panel.health.voiceover.summary", comment: "VoiceOver summary for the Salud Financiera card"),
+                    total, budget, activity, bills
+                )
+            }
         }
         static var totalBalance: String {
             ls("panel.totalBalance", comment: "Total balance label")
@@ -1206,6 +1274,7 @@ enum L10n {
         static var widgetPreferences: String { ls("accessibility.widgetPreferences", comment: "") }
         static var sectionsConfig: String { ls("accessibility.sectionsConfig", comment: "Opens the Panel sections config sheet") }
         static func toggleSection(_ name: String) -> String { String(format: ls("accessibility.toggleSection %@", comment: "Accessibility label for the per-section visibility toggle"), name) }
+        static func sectionPrefsButton(_ name: String) -> String { String(format: ls("accessibility.sectionPrefsButton %@", comment: "Accessibility label for the per-section preferences gear button (P20-03)"), name) }
         static var createAccountFirst: String { ls("accessibility.createAccountFirst", comment: "") }
         static var removeFilter: String { ls("accessibility.removeFilter", comment: "") }
         static var viewDetails: String { ls("accessibility.viewDetails", comment: "") }

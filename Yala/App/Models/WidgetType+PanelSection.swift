@@ -56,10 +56,25 @@ enum PanelSectionKind: String, CaseIterable, Hashable {
         }
     }
 
+    /// True when the section has ≥2 widgets — only these show the per-section
+    /// preferences gear in the Panel header (P20-03). Single-widget sections
+    /// have nothing to reorder or toggle.
+    var hasMultipleWidgets: Bool {
+        WidgetType.defaultWidgets(in: self).count >= 2
+    }
+
     /// Toggleable sections shown in the config sheet, in display order.
     static var toggleableSections: [PanelSectionKind] {
         Self.allCases.filter(\.canBeHidden)
     }
+}
+
+// MARK: - Identifiable
+
+/// Enables `.sheet(item: $binding)` patterns where the section kind itself
+/// identifies which per-section preferences sheet to present (P20-03).
+extension PanelSectionKind: Identifiable {
+    var id: String { rawValue }
 }
 
 extension WidgetType {

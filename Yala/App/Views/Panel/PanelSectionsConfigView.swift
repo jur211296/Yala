@@ -5,8 +5,11 @@
 //  Sheet to toggle visibility of full Panel sections (macro-level config).
 //  Persists to AppPreferences.panelSectionsHidden — synced via iCloud KV.
 //
-//  Per-widget config inside a section lives in WidgetPreferencesView (P20-03
-//  will introduce per-section sheets for ordering within a section).
+//  Per-widget config inside a section lives in `PanelSectionPreferencesSheet`
+//  (P20-03). This sheet also surfaces a "Restore widgets" affordance for any
+//  multi-widget section whose widgets are all individually hidden — the only
+//  way the user can recover from that state once the section auto-disappears
+//  from the Panel.
 //
 
 import SwiftUI
@@ -48,14 +51,41 @@ struct PanelSectionsConfigView: View {
             }
         )
 
+        let isEmpty = appPreferences.isSectionEffectivelyEmpty(kind)
+
         Toggle(isOn: binding) {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: kind.iconName)
                     .font(DS.Typography.body)
                     .foregroundStyle(.tint)
                     .frame(width: 28)
-                Text(kind.localizedTitle)
-                    .font(DS.Typography.body)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(kind.localizedTitle)
+                        .font(DS.Typography.body)
+                    if isEmpty {
+                        Text(L10n.Panel.SectionsConfig.emptySection)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                if isEmpty {
+                    Spacer(minLength: 0)
+                    Button {
+                        // Clears per-section Order + Hidden so `activeWidgets(in:)`
+                        // falls back to the epic's default set (reappears in Panel).
+                        appPreferences.setOrder([], for: kind)
+                        appPreferences.setHidden([], for: kind)
+                    } label: {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(DS.Typography.body)
+                            .foregroundStyle(.tint)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(
+                        L10n.Panel.SectionsConfig.restoreWidgets(kind.localizedTitle)
+                    )
+                }
             }
         }
         .accessibilityLabel(L10n.Accessibility.toggleSection(kind.localizedTitle))

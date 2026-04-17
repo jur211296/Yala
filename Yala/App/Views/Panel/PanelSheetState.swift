@@ -23,7 +23,10 @@ struct PanelSheetState {
     // Sheet presentations
     var isPresentingSettings = false
     var accountFormSheet: AccountFormSheet? = nil
-    var showWidgetPreferences = false
+    /// Which section's preferences sheet is currently presented (P20-03).
+    /// `nil` means no per-section prefs sheet is open. Driven via `.sheet(item:)`
+    /// because `PanelSectionKind` conforms to `Identifiable`.
+    var sectionPrefsPresentation: PanelSectionKind? = nil
     var showSectionsConfig = false
     var showNewTransaction = false
     var showVoiceRecording = false

@@ -24,7 +24,25 @@
 "panel.section.tools" = "Tools";
 "panel.sectionsConfig.title" = "Configure Panel";
 "panel.sectionsConfig.footer" = "Hide the sections you don't need. You can turn them back on anytime.";
+"panel.sectionsConfig.emptySection" = "All widgets hidden";
+"panel.sectionsConfig.restoreWidgets %@" = "Restore %@ widgets";
+"panel.sectionPrefs.title %@" = "%@ preferences";
+"panel.sectionPrefs.footer" = "Drag to reorder, or hide the charts you don't use.";
 "panel.totalBalance" = "Total Balance";
+
+// Financial Health (P20-06)
+"panel.health.subScore.budget" = "Budget";
+"panel.health.subScore.activity" = "Activity";
+"panel.health.subScore.bills" = "Bills";
+"panel.health.budget.emptyBadge" = "—";
+"panel.health.budget.sheet.title" = "Your budget";
+"panel.health.budget.sheet.body" = "We check how you're doing against your budgets this month. If any went over, the score drops a bit; if you're coasting in the second half of the month, it ticks up. We average them all for this number.";
+"panel.health.budget.sheet.emptyBody" = "You don't have any active budgets yet. Once you create your first one, this metric will spring to life and help you track your progress.";
+"panel.health.activity.sheet.title" = "Your activity";
+"panel.health.activity.sheet.body" = "We count how many of the last 7 days you logged expenses. The more consistent you are, the better you'll know your money — and the higher this score goes.";
+"panel.health.bills.sheet.title" = "Your bills";
+"panel.health.bills.sheet.body" = "We look at your scheduled payments for the month. If one's overdue in the last week with no mark, or falls within the next 3 days, we nudge the score down so nothing slips through.";
+"panel.health.voiceover.summary" = "Financial health: %1$d out of 100. Budget %2$@. Activity %3$d out of 100. Bills %4$d out of 100.";
 
 // MARK: - Trend Widget
 
@@ -1583,6 +1601,7 @@
 "accessibility.widgetPreferences" = "Widget preferences";
 "accessibility.sectionsConfig" = "Configure Panel";
 "accessibility.toggleSection %@" = "Show %@";
+"accessibility.sectionPrefsButton %@" = "%@ preferences";
 "accessibility.createAccountFirst" = "Create at least one account and one category";
 "accessibility.removeFilter" = "Remove filter";
 "balance.status.good" = "Good";

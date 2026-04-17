@@ -1,0 +1,249 @@
+//
+//  PanelSectionPreferencesTests.swift
+//  YalaTests
+//
+//  Tests de la SSOT per-sección de orden/visibilidad de widgets (P20-03).
+//  Cubren:
+//    - `activeWidgets(in:)` self-healing (order, hidden, dedupe, foreign filter,
+//      append-at-tail de defaults faltantes, fallback bootstrap).
+//    - `isWidgetVisible(_:)` con guard de section-hidden + per-widget-hidden y
+//      fallback permisivo cuando AppPreferences aún no está inyectado.
+//    - Debounced mutators (`moveWidgetInSection`, `setWidgetHidden`,
+//      `resetSectionPreferences`) y `flushPendingSectionWrites()`.
+//    - Guards per-widget en `performCalculation` — widgets ocultos no
+//      sobrescriben su struct de salida.
+//
+
+import Foundation
+import Testing
+
+@testable import Yala
+
+@MainActor
+struct PanelSectionPreferencesTests {
+
+    // MARK: - Helpers
+
+    private static func makeSuite() -> UserDefaults {
+        let suiteName = "PanelSectionPreferencesTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        // Seed sentinel para evitar que corra la migration y toque UserDefaults.standard.
+        defaults.set(true, forKey: AppPreferences.Keys.panelPrefsMigratedV2)
+        return defaults
+    }
+
+    private static func makeVM(with prefs: AppPreferences) -> PanelViewModel {
+        let vm = PanelViewModel()
+        vm.setAppPreferences(prefs)
+        return vm
+    }
+
+    // MARK: - 1. activeWidgets respects stored order
+
+    @Test func activeWidgets_inSection_returnsOrderFromAppPreferences() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        prefs.panelTendenciasOrder = ["flujo_efectivo", "tendencia_saldo", "gastos_por_naturaleza"]
+
+        let vm = Self.makeVM(with: prefs)
+        let widgets = vm.activeWidgets(in: .tendencias)
+
+        #expect(widgets.map { $0.type.rawValue } == [
+            "flujo_efectivo", "tendencia_saldo", "gastos_por_naturaleza"
+        ])
+    }
+
+    // MARK: - 2. activeWidgets excludes hidden entries
+
+    @Test func activeWidgets_inSection_excludesHiddenEntries() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        prefs.panelTendenciasOrder = ["tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza"]
+        prefs.panelTendenciasHidden = ["flujo_efectivo"]
+
+        let vm = Self.makeVM(with: prefs)
+        let widgets = vm.activeWidgets(in: .tendencias)
+
+        #expect(widgets.map { $0.type.rawValue } == ["tendencia_saldo", "gastos_por_naturaleza"])
+    }
+
+    // MARK: - 3. activeWidgets appends unknown defaults at tail
+
+    @Test func activeWidgets_inSection_appendsUnknownDefaultsAtTail() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        // Order stores only 2 of the 3 tendencias widgets. Third (gastos_por_naturaleza)
+        // must appear at the tail automatically.
+        prefs.panelTendenciasOrder = ["flujo_efectivo", "tendencia_saldo"]
+
+        let vm = Self.makeVM(with: prefs)
+        let widgets = vm.activeWidgets(in: .tendencias)
+
+        #expect(widgets.map { $0.type.rawValue } == [
+            "flujo_efectivo", "tendencia_saldo", "gastos_por_naturaleza"
+        ])
+    }
+
+    // MARK: - 4. activeWidgets filters foreign raw values
+
+    @Test func activeWidgets_inSection_filtersForeignRawValues() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        // "categorias_torta" belongs to .distribucion, not .tendencias. It must be dropped.
+        prefs.panelTendenciasOrder = ["tendencia_saldo", "categorias_torta", "flujo_efectivo"]
+
+        let vm = Self.makeVM(with: prefs)
+        let widgets = vm.activeWidgets(in: .tendencias)
+
+        #expect(widgets.map { $0.type.rawValue } == [
+            "tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza"
+        ])
+    }
+
+    // MARK: - 5. activeWidgets dedupes corrupted order
+
+    @Test func activeWidgets_inSection_dedupsCorruptedOrder() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        // Duplicate entry. Only the first occurrence is preserved.
+        prefs.panelTendenciasOrder = [
+            "tendencia_saldo", "flujo_efectivo", "tendencia_saldo", "gastos_por_naturaleza"
+        ]
+
+        let vm = Self.makeVM(with: prefs)
+        let widgets = vm.activeWidgets(in: .tendencias)
+
+        #expect(widgets.map { $0.type.rawValue } == [
+            "tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza"
+        ])
+    }
+
+    // MARK: - 6. isWidgetVisible respects section + per-widget hidden
+
+    @Test func isWidgetVisible_respectsSectionHiddenAndPerWidgetHidden() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        let vm = Self.makeVM(with: prefs)
+
+        // Baseline: everything visible.
+        #expect(vm.isWidgetVisible(.trend) == true)
+
+        // Per-widget hidden.
+        prefs.panelTendenciasHidden = ["tendencia_saldo"]
+        #expect(vm.isWidgetVisible(.trend) == false)
+        #expect(vm.isWidgetVisible(.cashFlow) == true)
+
+        // Section hidden overrides everything.
+        prefs.panelTendenciasHidden = []
+        prefs.panelSectionsHidden = ["tendencias"]
+        #expect(vm.isWidgetVisible(.trend) == false)
+        #expect(vm.isWidgetVisible(.cashFlow) == false)
+        // Widgets from other sections are unaffected.
+        #expect(vm.isWidgetVisible(.categoriesPie) == true)
+    }
+
+    // MARK: - 7. isWidgetVisible permissive fallback during bootstrap
+
+    @Test func isWidgetVisible_permissiveFallbackWhenAppPreferencesNil() {
+        // VM without `setAppPreferences` called yet — simulates bootstrap race
+        // before PanelView injects the dependency.
+        let vm = PanelViewModel()
+        #expect(vm.isWidgetVisible(.trend) == true)
+        #expect(vm.isWidgetVisible(.categoriesPie) == true)
+        #expect(vm.isWidgetVisible(.budgets) == true)
+    }
+
+    // MARK: - 8. Debounced reorder: UI instant, persist after 200ms, batches into single write
+
+    @Test func moveWidgetInSection_debounces200ms_andPersistsOnce() async throws {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        prefs.panelTendenciasOrder = ["tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza"]
+        let vm = Self.makeVM(with: prefs)
+
+        // First move: swap positions 0 ↔ 1.
+        vm.moveWidgetInSection(.tendencias, from: IndexSet(integer: 0), to: 2)
+        // Draft is visible immediately via orderedWidgetTypes.
+        let draftOrder = vm.orderedWidgetTypes(in: .tendencias).map(\.rawValue)
+        #expect(draftOrder == ["flujo_efectivo", "tendencia_saldo", "gastos_por_naturaleza"])
+        // AppPreferences not yet committed.
+        #expect(prefs.panelTendenciasOrder == ["tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza"])
+
+        // Second move within the debounce window: swap last two. Only the final order
+        // must be persisted (single write coalesced).
+        vm.moveWidgetInSection(.tendencias, from: IndexSet(integer: 2), to: 0)
+        try await Task.sleep(for: .milliseconds(350))
+        #expect(prefs.panelTendenciasOrder == ["gastos_por_naturaleza", "flujo_efectivo", "tendencia_saldo"])
+    }
+
+    // MARK: - 9. flushPendingSectionWrites commits synchronously
+
+    @Test func setWidgetHidden_flushesOnFlushPendingWrites() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        let vm = Self.makeVM(with: prefs)
+
+        vm.setWidgetHidden(.trend, hidden: true)
+        // Draft visible, not yet persisted.
+        #expect(vm.isWidgetHidden(.trend) == true)
+        #expect(prefs.panelTendenciasHidden.contains("tendencia_saldo") == false)
+
+        // Flush replaces the debounce — commit happens now.
+        vm.flushPendingSectionWrites()
+        #expect(prefs.panelTendenciasHidden.contains("tendencia_saldo") == true)
+    }
+
+    // MARK: - 11. Hidden widget keeps its output struct frozen (compute skipped)
+
+    @Test func performCalculation_skipsHiddenWidgetsCompute() {
+        // Without a modelContext the full `performCalculation` can't run — instead
+        // we verify the gate via `isWidgetVisible` (the flag `performCalculation`
+        // consults before each compute). A hidden widget reports not visible so
+        // its `calculate*Widget` block is skipped and the struct stays frozen.
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        let vm = Self.makeVM(with: prefs)
+
+        // Baseline: visible.
+        #expect(vm.isWidgetVisible(.trend) == true)
+        #expect(vm.isWidgetVisible(.budgets) == true)
+
+        // Per-widget hide.
+        vm.setWidgetHidden(.trend, hidden: true)
+        vm.setWidgetHidden(.budgets, hidden: true)
+
+        // Draft consulted immediately (no debounce wait needed for the gate).
+        #expect(vm.isWidgetVisible(.trend) == false)
+        #expect(vm.isWidgetVisible(.budgets) == false)
+
+        // Other widgets in the same section remain visible.
+        #expect(vm.isWidgetVisible(.cashFlow) == true)
+        #expect(vm.isWidgetVisible(.scheduledPayments) == true)
+    }
+
+    // MARK: - 10. Reset cancels pending debounce and writes defaults synchronously
+
+    @Test func resetSectionPreferences_cancelsPendingAndWritesDefaults() async throws {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        prefs.panelTendenciasOrder = ["flujo_efectivo", "tendencia_saldo"]
+        prefs.panelTendenciasHidden = ["tendencia_saldo"]
+        let vm = Self.makeVM(with: prefs)
+
+        // Start a debounced hide that should NOT commit because reset will cancel it.
+        vm.setWidgetHidden(.cashFlow, hidden: true)
+        vm.resetSectionPreferences(.tendencias)
+
+        // Synchronously: order + hidden cleared.
+        #expect(prefs.panelTendenciasOrder == [])
+        #expect(prefs.panelTendenciasHidden == [])
+
+        // Wait past the debounce window to ensure the cancelled Task never fires.
+        try await Task.sleep(for: .milliseconds(350))
+        #expect(prefs.panelTendenciasHidden == [])
+
+        // activeWidgets falls back to section defaults.
+        let types = vm.activeWidgets(in: .tendencias).map(\.type.rawValue)
+        #expect(Set(types) == Set(["tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza"]))
+    }
+}

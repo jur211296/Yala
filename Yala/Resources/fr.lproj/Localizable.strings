@@ -24,7 +24,25 @@
 "panel.section.tools" = "Outils";
 "panel.sectionsConfig.title" = "Configurer le Panel";
 "panel.sectionsConfig.footer" = "Masque les sections dont tu n'as pas besoin. Tu peux les réactiver à tout moment.";
+"panel.sectionsConfig.emptySection" = "Tous les widgets masqués";
+"panel.sectionsConfig.restoreWidgets %@" = "Restaurer les widgets de %@";
+"panel.sectionPrefs.title %@" = "Préférences de %@";
+"panel.sectionPrefs.footer" = "Glisse pour réordonner, ou masque les graphiques que tu n'utilises pas.";
 "panel.totalBalance" = "Solde Total";
+
+// Santé financière (P20-06)
+"panel.health.subScore.budget" = "Budget";
+"panel.health.subScore.activity" = "Activité";
+"panel.health.subScore.bills" = "Paiements";
+"panel.health.budget.emptyBadge" = "—";
+"panel.health.budget.sheet.title" = "Ton budget";
+"panel.health.budget.sheet.body" = "On regarde comment tu avances avec tes budgets du mois. Si un dépasse la limite, la note baisse un peu ; si tu es à l'aise dans la seconde moitié, elle remonte. On fait la moyenne de tout pour arriver à ce chiffre.";
+"panel.health.budget.sheet.emptyBody" = "Tu n'as pas encore de budget actif. Dès que tu en crées un, cette mesure prendra vie et t'aidera à voir où tu en es.";
+"panel.health.activity.sheet.title" = "Ton activité";
+"panel.health.activity.sheet.body" = "On compte sur combien des 7 derniers jours tu as noté des dépenses. Plus tu es régulier, mieux tu connais ton argent — et plus cette note grimpe.";
+"panel.health.bills.sheet.title" = "Tes paiements";
+"panel.health.bills.sheet.body" = "On examine tes paiements planifiés du mois. Si l'un est en retard dans la dernière semaine sans être marqué, ou tombe dans les 3 prochains jours, on baisse un peu la note pour que rien ne t'échappe.";
+"panel.health.voiceover.summary" = "Santé financière : %1$d sur 100. Budget %2$@. Activité %3$d sur 100. Paiements %4$d sur 100.";
 
 // MARK: - Trend Widget
 
@@ -1585,6 +1603,7 @@
 "accessibility.widgetPreferences" = "Préférences des widgets";
 "accessibility.sectionsConfig" = "Configurer le Panel";
 "accessibility.toggleSection %@" = "Afficher %@";
+"accessibility.sectionPrefsButton %@" = "Préférences de %@";
 "accessibility.createAccountFirst" = "Créez au moins un compte et une catégorie";
 "accessibility.removeFilter" = "Retirer le filtre";
 "balance.status.good" = "Bon";

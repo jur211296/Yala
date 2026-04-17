@@ -15,7 +15,7 @@ struct PanelFilterAndWidgetsSection: View {
     let sessionState: SessionState
     let defaultCurrencyCodeRaw: String
     let showVariations: Bool
-    @Binding var showWidgetPreferences: Bool
+    @Binding var sectionPrefsPresentation: PanelSectionKind?
     @Binding var showCustomPeriodPicker: Bool
     @Binding var showBudgetFavoritesSettings: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -288,23 +288,40 @@ struct PanelFilterAndWidgetsSection: View {
 
             // Thematic sections. Filtering here (not in `PanelThematicSection`)
             // keeps hidden sections from mounting at all — no render, no
-            // observer subscriptions. `onPreferences` is wired only on
-            // Tendencias for now; it opens the global widget preferences sheet
-            // shared across all sections until P20-03's per-section sheets.
+            // observer subscriptions. Multi-widget sections expose a per-section
+            // gear (P20-03) that presents `PanelSectionPreferencesSheet`;
+            // single-widget sections skip it (nothing to reorder or toggle).
+            //
+            // `.health` (P20-06) is a widget-único section that does not share
+            // the thematic container — it renders its own `PanelHealthSection`.
+            // Future single-widget sections (`.paraTi` in P20-10) follow the
+            // same switch pattern.
             let visibleSections = PanelSectionKind.allCases.filter(viewModel.isSectionVisible)
             ForEach(visibleSections, id: \.self) { kind in
-                PanelThematicSection(
-                    kind: kind,
-                    viewModel: viewModel,
-                    sessionState: sessionState,
-                    defaultCurrencyCodeRaw: defaultCurrencyCodeRaw,
-                    showVariations: showVariations,
-                    showBudgetFavoritesSettings: $showBudgetFavoritesSettings,
-                    onPreferences: kind == .tendencias
-                        ? { showWidgetPreferences = true }
-                        : nil
-                )
+                sectionView(for: kind)
             }
+        }
+    }
+
+    // MARK: - Section Routing
+
+    @ViewBuilder
+    private func sectionView(for kind: PanelSectionKind) -> some View {
+        switch kind {
+        case .health:
+            PanelHealthSection(viewModel: viewModel)
+        default:
+            PanelThematicSection(
+                kind: kind,
+                viewModel: viewModel,
+                sessionState: sessionState,
+                defaultCurrencyCodeRaw: defaultCurrencyCodeRaw,
+                showVariations: showVariations,
+                showBudgetFavoritesSettings: $showBudgetFavoritesSettings,
+                onPreferences: kind.hasMultipleWidgets
+                    ? { sectionPrefsPresentation = kind }
+                    : nil
+            )
         }
     }
 

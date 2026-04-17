@@ -24,7 +24,25 @@
 "panel.section.tools" = "Werkzeuge";
 "panel.sectionsConfig.title" = "Panel einrichten";
 "panel.sectionsConfig.footer" = "Blende Bereiche aus, die du nicht brauchst. Du kannst sie jederzeit wieder aktivieren.";
+"panel.sectionsConfig.emptySection" = "Alle Widgets ausgeblendet";
+"panel.sectionsConfig.restoreWidgets %@" = "%@-Widgets wiederherstellen";
+"panel.sectionPrefs.title %@" = "Einstellungen für %@";
+"panel.sectionPrefs.footer" = "Ziehe zum Umsortieren, oder verstecke die Grafiken, die du nicht brauchst.";
 "panel.totalBalance" = "Gesamtsaldo";
+
+// Finanzielle Gesundheit (P20-06)
+"panel.health.subScore.budget" = "Budget";
+"panel.health.subScore.activity" = "Aktivität";
+"panel.health.subScore.bills" = "Zahlungen";
+"panel.health.budget.emptyBadge" = "—";
+"panel.health.budget.sheet.title" = "Dein Budget";
+"panel.health.budget.sheet.body" = "Wir schauen, wie du diesen Monat mit deinen Budgets läufst. Geht eins übers Limit, sinkt die Note etwas; hast du in der zweiten Monatshälfte noch Luft, steigt sie leicht. Am Ende mitteln wir alles zu dieser Zahl.";
+"panel.health.budget.sheet.emptyBody" = "Du hast noch keine aktiven Budgets. Sobald du das erste anlegst, wird diese Kennzahl lebendig und hilft dir, den Überblick zu behalten.";
+"panel.health.activity.sheet.title" = "Deine Aktivität";
+"panel.health.activity.sheet.body" = "Wir zählen, an wie vielen der letzten 7 Tage du Ausgaben erfasst hast. Je regelmäßiger du notierst, desto besser kennst du dein Geld — und desto höher wird dieser Wert.";
+"panel.health.bills.sheet.title" = "Deine Zahlungen";
+"panel.health.bills.sheet.body" = "Wir prüfen deine geplanten Zahlungen des Monats. Liegt eine in der letzten Woche überfällig ohne Markierung, oder fällt sie in die nächsten 3 Tage, senken wir die Note leicht, damit dir nichts entgeht.";
+"panel.health.voiceover.summary" = "Finanzielle Gesundheit: %1$d von 100. Budget %2$@. Aktivität %3$d von 100. Zahlungen %4$d von 100.";
 
 // MARK: - Trend Widget
 
@@ -1585,6 +1603,7 @@
 "accessibility.widgetPreferences" = "Widget-Einstellungen";
 "accessibility.sectionsConfig" = "Panel einrichten";
 "accessibility.toggleSection %@" = "%@ anzeigen";
+"accessibility.sectionPrefsButton %@" = "Einstellungen für %@";
 "accessibility.createAccountFirst" = "Erstelle mindestens ein Konto und eine Kategorie";
 "accessibility.removeFilter" = "Filter entfernen";
 "balance.status.good" = "Gut";

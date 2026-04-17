@@ -84,6 +84,12 @@ struct PanelScheduledPaymentsData: Equatable {
     var paymentsByDay: [Int: [ScheduledPaymentCalendarEntry]] = [:]
 }
 
+/// Pre-computed payload for the Panel 2.0 "Salud Financiera" section.
+/// `score` stays `nil` until the first successful calculation so the view knows to hide.
+struct PanelHealthData: Equatable {
+    var score: FinancialScore? = nil
+}
+
 @MainActor
 @Observable
 final class PanelViewModel {
@@ -126,6 +132,12 @@ final class PanelViewModel {
 
     /// Session state — weak to avoid retain cycle
     private weak var sessionState: SessionState?
+
+    /// AppPreferences SSOT for per-section widget order/hidden (P20-03).
+    /// Injected by `PanelView` via `setAppPreferences(_:)` on `.task`, BEFORE
+    /// `setContext(...)`. While nil (bootstrap), `isWidgetVisible(_:)` returns
+    /// `true` fallback and `activeWidgets(in:)` falls back to legacy filtering.
+    private var appPreferences: AppPreferences?
 
     // MARK: - Recalculation State
 
@@ -196,14 +208,11 @@ final class PanelViewModel {
     // Widget Configuration Manager (delegated)
     let widgetConfig = WidgetConfigManager()
 
-    // Computed properties for backward compatibility with views
+    // Computed property exposing the legacy JSON's widget configs (for `size` and
+    // `scheduledPaymentsMode` only — order and visibility are SSOT'd in AppPreferences).
     var widgetConfigs: [WidgetConfig] {
         get { widgetConfig.configs }
         set { widgetConfig.configs = newValue }
-    }
-
-    var layoutRows: [WidgetConfigManager.WidgetRow] {
-        widgetConfig.layoutRows
     }
 
     // MARK: - Constants
@@ -394,6 +403,7 @@ final class PanelViewModel {
     var budgetsWidget = PanelBudgetsData()
     var exchangeRateWidget = PanelExchangeRateData()
     var scheduledPaymentsWidget = PanelScheduledPaymentsData()
+    var healthWidget = PanelHealthData()
 
     // Pre-computed account data — eliminates passing [TransactionItem] to AccountsCarouselView
     private(set) var accountBalances: [PersistentIdentifier: Double] = [:]
@@ -574,53 +584,187 @@ final class PanelViewModel {
         loadExchangeRateCurrencySelection()
     }
 
-    // MARK: - Widget Logic (Delegated to WidgetConfigManager)
+    // MARK: - Widget Logic
 
-    func loadWidgetConfigs() {
-        widgetConfig.load()
-    }
-
-    func saveWidgetConfigs() {
-        widgetConfig.save()
-    }
-
-    func resetWidgetConfigs() {
-        widgetConfig.reset()
-    }
-
-    func activeWidgets() -> [WidgetConfig] {
-        return widgetConfig.activeWidgets()
-    }
-
-    /// Visible widgets of a section, preserving the order stored in the legacy JSON.
-    /// New widget types added after install are picked up via `WidgetConfigManager.load`
-    /// (which appends defaults for any type missing from the stored blob).
+    /// Visible widgets of a section, driven by `AppPreferences.panel<Section>Order/Hidden`
+    /// (SSOT since P20-03). The function is self-healing:
+    ///  - filters raw values that don't belong to this section (foreign / corrupt entries)
+    ///  - dedupes duplicates
+    ///  - appends known section defaults missing from stored order (widget types added in
+    ///    future versions appear at the tail automatically)
+    ///  - excludes entries listed in `panel<Section>Hidden`
+    /// Then maps each `WidgetType` to its `WidgetConfig` in `widgetConfigs` (preserving
+    /// legacy `size` and `scheduledPaymentsMode`) or synthesizes a default one if missing.
+    ///
+    /// Bootstrap fallback: when `appPreferences` is still nil (e.g. first frame before
+    /// `setAppPreferences` is called), returns the legacy filter so render is never
+    /// empty. The next frame, after injection, re-renders with the real state.
     func activeWidgets(in section: PanelSectionKind) -> [WidgetConfig] {
-        widgetConfigs.filter { $0.type.panelSection == section && $0.isVisible }
+        guard appPreferences != nil else {
+            // Bootstrap fallback — legacy filter.
+            return widgetConfigs.filter { $0.type.panelSection == section && $0.isVisible }
+        }
+        let hidden = Set(draftHidden[section] ?? appPreferences?.hidden(for: section) ?? [])
+        let visibleRaw = buildOrderedRawWidgets(for: section).filter { !hidden.contains($0) }
+
+        return visibleRaw.compactMap { raw -> WidgetConfig? in
+            guard let type = WidgetType(rawValue: raw) else { return nil }
+            if let existing = widgetConfigs.first(where: { $0.type == type }) {
+                // Legacy `isVisible` is overridden — per-section SSOT already filtered hidden.
+                var config = existing
+                config.isVisible = true
+                return config
+            }
+            return WidgetConfig(id: UUID(), type: type, isVisible: true, size: .medium)
+        }
     }
 
-    func toggleWidgetVisibility(id: UUID) {
-        widgetConfig.toggleVisibility(id: id)
+    /// Full ordered list of widget types in a section (visible + hidden), draft-or-persisted.
+    /// Used by `PanelSectionPreferencesSheet` to render every row (including hidden ones
+    /// with their toggle off).
+    func orderedWidgetTypes(in section: PanelSectionKind) -> [WidgetType] {
+        buildOrderedRawWidgets(for: section).compactMap { WidgetType(rawValue: $0) }
     }
 
-    func updateWidgetSize(id: UUID, newSize: WidgetSize) {
-        widgetConfig.updateSize(id: id, newSize: newSize)
+    /// Self-healing resolution of the per-section widget order:
+    /// 1. Pull stored order (draft-or-persisted); empty on fresh install.
+    /// 2. Drop raw values foreign to this section (corruption guard).
+    /// 3. Deduplicate.
+    /// 4. Append section defaults missing from stored order (widget types added in
+    ///    future app versions appear at the tail automatically).
+    private func buildOrderedRawWidgets(for section: PanelSectionKind) -> [String] {
+        let sectionTypes = WidgetType.defaultWidgets(in: section)
+        let sectionRawValues = Set(sectionTypes.map(\.rawValue))
+
+        let stored = draftOrder[section] ?? appPreferences?.order(for: section) ?? []
+        var seen: Set<String> = []
+        var orderedRaw: [String] = []
+        for raw in stored where sectionRawValues.contains(raw) && !seen.contains(raw) {
+            seen.insert(raw)
+            orderedRaw.append(raw)
+        }
+        for type in sectionTypes where !seen.contains(type.rawValue) {
+            orderedRaw.append(type.rawValue)
+        }
+        return orderedRaw
     }
 
-    func updateScheduledPaymentsMode(id: UUID, mode: ScheduledPaymentsWidgetMode) {
-        widgetConfig.updateScheduledPaymentsMode(id: id, mode: mode)
+    /// True when a widget is currently marked visible (draft-or-persisted).
+    func isWidgetHidden(_ type: WidgetType) -> Bool {
+        let section = type.panelSection
+        let hidden = draftHidden[section] ?? appPreferences?.hidden(for: section) ?? []
+        return hidden.contains(type.rawValue)
     }
 
-    func moveWidget(from source: IndexSet, to destination: Int) {
-        widgetConfig.move(from: source, to: destination)
+    /// True when a widget should render and compute. Checks both the section-level
+    /// hidden flag (P20-02) and the per-widget hidden flag (P20-03). Consults draft
+    /// so widgets stop computing immediately when toggled in the sheet, without
+    /// waiting for the 200ms debounce.
+    /// Permissive fallback during bootstrap: when `appPreferences` is nil, returns
+    /// `true` to avoid incorrectly gating compute on the first frame.
+    func isWidgetVisible(_ type: WidgetType) -> Bool {
+        guard let prefs = appPreferences else { return true }
+        let section = type.panelSection
+        if prefs.panelSectionsHidden.contains(section.rawValue) { return false }
+        let hidden = draftHidden[section] ?? prefs.hidden(for: section)
+        return !hidden.contains(type.rawValue)
     }
 
-    func beginWidgetPreferencesEditing() {
-        widgetConfig.deferLayoutUpdates = true
+    /// Inject AppPreferences. Called by `PanelView` in `.task` BEFORE `setContext(...)`
+    /// so the first `performCalculation()` sees the real per-widget visibility state.
+    func setAppPreferences(_ prefs: AppPreferences) {
+        self.appPreferences = prefs
     }
 
-    func endWidgetPreferencesEditing() {
-        widgetConfig.deferLayoutUpdates = false
+    // MARK: - Section Preferences Mutators (P20-03)
+    //
+    // Draft state + 200ms debounce batches rapid reorder/toggle operations from
+    // `PanelSectionPreferencesSheet`. Writes flush on sheet dismiss via
+    // `flushPendingSectionWrites()`. Reset writes synchronously and clears drafts.
+
+    private var draftOrder: [PanelSectionKind: [String]] = [:]
+    private var draftHidden: [PanelSectionKind: [String]] = [:]
+    private var pendingSectionWrites: [PanelSectionKind: Task<Void, Never>] = [:]
+
+    private static let sectionWriteDebounce: Duration = .milliseconds(200)
+
+    /// Reorder widgets within a section. Updates draft instantly (UI sees new order),
+    /// debounces the AppPreferences write by 200ms to batch rapid drags. No-op drags
+    /// (drop on same position) exit early — no draft mutation, no observer notification.
+    func moveWidgetInSection(_ kind: PanelSectionKind, from source: IndexSet, to destination: Int) {
+        let current = draftOrder[kind] ?? orderedWidgetTypes(in: kind).map(\.rawValue)
+        var updated = current
+        updated.move(fromOffsets: source, toOffset: destination)
+        guard updated != current else { return }
+        draftOrder[kind] = updated
+        scheduleSectionWrite(for: kind)
+    }
+
+    /// Toggle per-widget visibility. Mutation is instant; persistence is debounced.
+    /// Early-returns when the toggle is already in the requested state.
+    func setWidgetHidden(_ type: WidgetType, hidden: Bool) {
+        let kind = type.panelSection
+        let current = draftHidden[kind] ?? appPreferences?.hidden(for: kind) ?? []
+        let contains = current.contains(type.rawValue)
+        guard contains != hidden else { return }
+        var hiddenSet = Set(current)
+        if hidden {
+            hiddenSet.insert(type.rawValue)
+        } else {
+            hiddenSet.remove(type.rawValue)
+        }
+        draftHidden[kind] = Array(hiddenSet)
+        scheduleSectionWrite(for: kind)
+    }
+
+    /// Clears section's Order + Hidden so `activeWidgets(in:)` falls back to
+    /// `WidgetType.defaultWidgets(in:)`. Cancels any pending debounce, clears draft,
+    /// and writes synchronously — the user expects "Restablecer" to take effect now.
+    func resetSectionPreferences(_ kind: PanelSectionKind) {
+        pendingSectionWrites[kind]?.cancel()
+        pendingSectionWrites[kind] = nil
+        draftOrder[kind] = nil
+        draftHidden[kind] = nil
+        appPreferences?.setOrder([], for: kind)
+        appPreferences?.setHidden([], for: kind)
+    }
+
+    /// Flushes all pending debounced writes synchronously. Called from sheet
+    /// `.onDisappear` so drag-then-dismiss-quickly sequences never lose state.
+    func flushPendingSectionWrites() {
+        let pending = pendingSectionWrites
+        pendingSectionWrites.removeAll()
+        for (kind, task) in pending {
+            task.cancel()
+            commitDraft(for: kind)
+        }
+    }
+
+    private func scheduleSectionWrite(for kind: PanelSectionKind) {
+        pendingSectionWrites[kind]?.cancel()
+        pendingSectionWrites[kind] = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: Self.sectionWriteDebounce)
+            guard !Task.isCancelled else { return }
+            guard let self else { return }
+            self.commitDraft(for: kind)
+            self.pendingSectionWrites[kind] = nil
+        }
+    }
+
+    private func commitDraft(for kind: PanelSectionKind) {
+        guard let prefs = appPreferences else {
+            draftOrder[kind] = nil
+            draftHidden[kind] = nil
+            return
+        }
+        if let order = draftOrder[kind] {
+            prefs.setOrder(order, for: kind)
+            draftOrder[kind] = nil
+        }
+        if let hidden = draftHidden[kind] {
+            prefs.setHidden(hidden, for: kind)
+            draftHidden[kind] = nil
+        }
     }
 
     // We keep these as simple properties or computed ones based on what the View passes
@@ -834,17 +978,21 @@ final class PanelViewModel {
             defaultCurrencyCode: defaultCurrencyCode
         )
 
-        let tendenciasVisible = isSectionVisible(.tendencias)
-        let distribucionVisible = isSectionVisible(.distribucion)
+        // Per-widget visibility (P20-03 promoted guards from section- to widget-level).
+        let trendVisible = isWidgetVisible(.trend)
+        let cashFlowVisible = isWidgetVisible(.cashFlow)
+        let needVisible = isWidgetVisible(.expensesByNeed)
+        let categoriesVisible = isWidgetVisible(.categoriesPie)
+        let subcategoriesVisible = isWidgetVisible(.subcategoriesPie)
 
-        // 2. Calculate widget data per visible section
+        // 2. Calculate widget data per visible widget
 
-        // Trend chart — Tendencias
+        // Trend chart
         var newTrendPoints: (points: [BarPoint], rawPoints: [BarPoint], yDomain: ClosedRange<Double>)?
         var newTrendTotalIncome = trendTotalIncome
         var newTrendTotalExpense = trendTotalExpense
         var newTrendFinalBalance = trendFinalBalance
-        if tendenciasVisible {
+        if trendVisible {
             // For balance, use all transactions (no date filter) to calculate running balance
             let transactionsForTrend = trendType == .balance
                 ? calcContext.balanceTransactions
@@ -864,29 +1012,35 @@ final class PanelViewModel {
             newTrendFinalBalance = result.finalBalance
         }
 
-        // Categories + Subcategories — Distribución
+        // Categories — Distribución
         var newTopSpendingCategories = topSpendingCategories
         var newPreviousCategoriesTotal = categoriesWidget.previousTotalAmount
-        var newTopSubcategories = topSubcategories
-        var newPreviousSubcategoriesTotal = subcategoriesWidget.previousTotalAmount
-        if distribucionVisible {
+        if categoriesVisible {
             let categoriesResult = calculateCategoriesWidget(context: calcContext)
             newTopSpendingCategories = categoriesResult.categories
             newPreviousCategoriesTotal = categoriesResult.previousTotal
+        }
 
+        // Subcategories — Distribución
+        var newTopSubcategories = topSubcategories
+        var newPreviousSubcategoriesTotal = subcategoriesWidget.previousTotalAmount
+        if subcategoriesVisible {
             let subcategoriesResult = calculateSubcategoriesWidget(context: calcContext)
             newTopSubcategories = subcategoriesResult.subcategories
             newPreviousSubcategoriesTotal = subcategoriesResult.previousTotal
         }
 
-        // Cash Flow + Need Trend — Tendencias
+        // Cash Flow — Tendencias
         var newCashFlowSummary = cashFlowWidget.cashFlowSummary
+        if cashFlowVisible {
+            newCashFlowSummary = calculateCashFlowWidget(context: calcContext)
+        }
+
+        // Need Trend — Tendencias
         var newNeedTrendPoints = needWidget.needTrendPoints
         var newPreviousNeedTotal = needWidget.previousTotalAmount
         var newPreviousNeedAmounts = needWidget.previousAmounts
-        if tendenciasVisible {
-            newCashFlowSummary = calculateCashFlowWidget(context: calcContext)
-
+        if needVisible {
             let needResult = calculateNeedWidget(context: calcContext)
             newNeedTrendPoints = needResult.points
             newPreviousNeedTotal = needResult.previousTotal
@@ -906,7 +1060,7 @@ final class PanelViewModel {
             defaultCurrencyCode: defaultCurrencyCode
         )
 
-        if tendenciasVisible, let trendPoints = newTrendPoints {
+        if trendVisible, let trendPoints = newTrendPoints {
             let newTrend = PanelTrendData(
                 processedTrendPoints: trendPoints.points,
                 rawTrendPoints: trendPoints.rawPoints,
@@ -921,7 +1075,9 @@ final class PanelViewModel {
                 currentBalance: newBalance
             )
             if newTrend != trendChart { trendChart = newTrend }
+        }
 
+        if needVisible {
             let newNeed = PanelNeedData(
                 needTrendPoints: newNeedTrendPoints,
                 previousTotalAmount: newPreviousNeedTotal,
@@ -929,7 +1085,9 @@ final class PanelViewModel {
                 needGrouping: calcContext.needGrouping
             )
             if newNeed != needWidget { needWidget = newNeed }
+        }
 
+        if cashFlowVisible {
             let newCashFlow = PanelCashFlowData(
                 cashFlowSummary: newCashFlowSummary,
                 cashFlowGrouping: calcContext.cashFlowGrouping
@@ -937,13 +1095,15 @@ final class PanelViewModel {
             if newCashFlow != cashFlowWidget { cashFlowWidget = newCashFlow }
         }
 
-        if distribucionVisible {
+        if categoriesVisible {
             let newCategories = PanelCategoriesData(
                 topSpendingCategories: newTopSpendingCategories,
                 previousTotalAmount: newPreviousCategoriesTotal
             )
             if newCategories != categoriesWidget { categoriesWidget = newCategories }
+        }
 
+        if subcategoriesVisible {
             let newSubcategories = PanelSubcategoriesData(
                 topSubcategories: newTopSubcategories,
                 previousTotalAmount: newPreviousSubcategoriesTotal
@@ -1981,7 +2141,7 @@ final class PanelViewModel {
             context: context,
             sessionState: sessionState
         )
-        if isSectionVisible(.planificacion) {
+        if isWidgetVisible(.budgets) {
             calculateBudgetsWidget(
                 budgets: budgets,
                 transactions: transactions,
@@ -1989,9 +2149,62 @@ final class PanelViewModel {
                 excludedCategoryIDs: sessionState.isExcludeMode ? sessionState.selectedCategoryIDs : [],
                 excludedSubcategoryIDs: sessionState.isExcludeMode ? sessionState.selectedSubcategoryIDs : []
             )
-            calculateScheduledPaymentsWidget()
         }
+        // Shared paidAmounts fetch between the scheduled-payments widget and the
+        // Salud Financiera section when both target the current calendar month.
+        // If they target different months (e.g. user navigating planification to a
+        // past month), each section falls back to its own fetch.
+        let scheduledVisible = isWidgetVisible(.scheduledPayments)
+        let healthVisible = isSectionVisible(.health)
+        var sharedPaidAmounts: [String: [PaidOccurrenceInfo]]? = nil
+        let calendar = Calendar.current
+        let currentMonthStart = calendar.dateInterval(of: .month, for: .now)?.start
+        let planMonthStart = calendar.dateInterval(of: .month, for: scheduledPaymentsDisplayMonth)?.start
+        let canShareFetch = scheduledVisible
+            && healthVisible
+            && currentMonthStart != nil
+            && currentMonthStart == planMonthStart
+
+        if canShareFetch, let monthStart = currentMonthStart {
+            let activePayments = scheduledPayments.filter { $0.isActive }
+            sharedPaidAmounts = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
+                for: activePayments, month: monthStart, context: context
+            )
+        }
+
+        if scheduledVisible {
+            calculateScheduledPaymentsWidget(injectedPaidAmounts: sharedPaidAmounts)
+        }
+
+        if healthVisible {
+            let paidForHealth: [String: [PaidOccurrenceInfo]]
+            if let shared = sharedPaidAmounts {
+                paidForHealth = shared
+            } else if let monthStart = currentMonthStart {
+                let activePayments = scheduledPayments.filter { $0.isActive }
+                paidForHealth = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
+                    for: activePayments, month: monthStart, context: context
+                )
+            } else {
+                paidForHealth = [:]
+            }
+            calculateHealthWidget(paidAmounts: paidForHealth)
+        }
+
         calculateAccountPeriodExpenses()
+    }
+
+    /// Pre-computes the Financial Score for the Panel 2.0 "Salud Financiera" section.
+    /// Called from `performCalculation()` only when `.health` section is visible.
+    private func calculateHealthWidget(paidAmounts: [String: [PaidOccurrenceInfo]]) {
+        let newScore = FinancialScoreCalculator.calculate(
+            transactions: transactions,
+            budgets: budgets,
+            scheduledPayments: scheduledPayments,
+            paidAmounts: paidAmounts
+        )
+        let newData = PanelHealthData(score: newScore)
+        if newData != healthWidget { healthWidget = newData }
     }
 
     /// Pre-computes total account balances (not period-dependent).
@@ -2063,7 +2276,14 @@ final class PanelViewModel {
 
     /// Pre-computes all scheduled payments widget data from cached models.
     /// Called from performCalculation() — runs outside the SwiftUI render pass.
-    private func calculateScheduledPaymentsWidget() {
+    ///
+    /// - Parameter injectedPaidAmounts: Optional pre-computed paidAmounts map. When provided,
+    ///   skips the internal fetch and uses the injected value. Used by `performCalculation()`
+    ///   to share the fetch with `calculateHealthWidget()` when both sections are visible and
+    ///   they target the same month. Pass `nil` to preserve the original (self-fetch) behavior.
+    private func calculateScheduledPaymentsWidget(
+        injectedPaidAmounts: [String: [PaidOccurrenceInfo]]? = nil
+    ) {
         guard let context = modelContext else { return }
 
         let displayMonth = scheduledPaymentsDisplayMonth
@@ -2077,10 +2297,12 @@ final class PanelViewModel {
             filtered = scheduledPayments.filter { $0.isActive }
         }
 
-        // 2. Load paid amounts (moves from widget's .task(id:) to here)
-        let paidAmounts = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
-            for: filtered, month: displayMonth, context: context
-        )
+        // 2. Load paid amounts (use injected if provided to share with health section,
+        // else fetch — moves from widget's .task(id:) to here)
+        let paidAmounts: [String: [PaidOccurrenceInfo]] = injectedPaidAmounts
+            ?? ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
+                for: filtered, month: displayMonth, context: context
+            )
 
         // 3. Calculate monthly total (moves from widget's calculateMonthlyTotal())
         var monthlyTotal: Double = 0

@@ -24,7 +24,25 @@
 "panel.section.tools" = "Herramientas";
 "panel.sectionsConfig.title" = "Configurar Panel";
 "panel.sectionsConfig.footer" = "Oculta las secciones que no necesites ver. Puedes volver a activarlas cuando quieras.";
+"panel.sectionsConfig.emptySection" = "Todos los widgets ocultos";
+"panel.sectionsConfig.restoreWidgets %@" = "Restablecer widgets de %@";
+"panel.sectionPrefs.title %@" = "Preferencias de %@";
+"panel.sectionPrefs.footer" = "Reordena arrastrando, u oculta las gráficas que no uses.";
 "panel.totalBalance" = "Balance Total";
+
+// Salud financiera (P20-06)
+"panel.health.subScore.budget" = "Presupuesto";
+"panel.health.subScore.activity" = "Actividad";
+"panel.health.subScore.bills" = "Pagos";
+"panel.health.budget.emptyBadge" = "—";
+"panel.health.budget.sheet.title" = "Tu presupuesto";
+"panel.health.budget.sheet.body" = "Miramos cómo vas con tus presupuestos del mes. Si alguno se pasó del límite, la puntuación baja; si vas holgado en la segunda mitad del mes, suma un poquito. Todo se promedia para darte esta nota.";
+"panel.health.budget.sheet.emptyBody" = "Aún no tienes presupuestos activos. Cuando crees el primero, esta métrica cobrará vida y te ayudará a ver cómo vas.";
+"panel.health.activity.sheet.title" = "Tu actividad";
+"panel.health.activity.sheet.body" = "Contamos en cuántos de los últimos 7 días registraste gastos. Mientras más constante seas al anotar, mejor te conocerás y más alto será tu score.";
+"panel.health.bills.sheet.title" = "Tus pagos";
+"panel.health.bills.sheet.body" = "Revisamos tus pagos planificados del mes. Si tienes alguno vencido en la última semana sin marcar, o uno que cae en los próximos 3 días, bajamos un poco la nota para que no se te escape.";
+"panel.health.voiceover.summary" = "Salud financiera: %1$d de 100. Presupuesto %2$@. Actividad %3$d de 100. Pagos %4$d de 100.";
 
 // MARK: - Trend Widget
 
@@ -1583,6 +1601,7 @@
 "accessibility.widgetPreferences" = "Preferencias de widgets";
 "accessibility.sectionsConfig" = "Configurar Panel";
 "accessibility.toggleSection %@" = "Mostrar %@";
+"accessibility.sectionPrefsButton %@" = "Preferencias de %@";
 "accessibility.createAccountFirst" = "Crea al menos una cuenta y una categoría";
 "accessibility.removeFilter" = "Quitar filtro";
 "balance.status.good" = "Bueno";

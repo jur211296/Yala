@@ -197,7 +197,9 @@ struct PanelView: View {
         }
         .appliesPendingRemoteChanges(sessionState)
         .onAppear {
-            viewModel.widgetConfig.columns = DS.Adaptive.columns(sizeClass)
+            // Inject AppPreferences BEFORE setContext so the first performCalculation
+            // sees per-widget visibility state (P20-03 guards).
+            viewModel.setAppPreferences(appPreferences)
             viewModel.setContext(
                 modelContext,
                 exchangeRateService: exchangeRateService,
@@ -227,9 +229,6 @@ struct PanelView: View {
             @unknown default:
                 break
             }
-        }
-        .onChange(of: sizeClass) { _, newValue in
-            viewModel.widgetConfig.columns = DS.Adaptive.columns(newValue)
         }
         .onChange(of: appPreferences.defaultCurrencyCode) { _, newValue in
             viewModel.updateDefaultCurrencyCode(newValue.rawValue)
@@ -374,7 +373,7 @@ struct PanelView: View {
                             sessionState: sessionState,
                             defaultCurrencyCodeRaw: appPreferences.defaultCurrencyCode.rawValue,
                             showVariations: appPreferences.showVariations,
-                            showWidgetPreferences: $sheets.showWidgetPreferences,
+                            sectionPrefsPresentation: $sheets.sectionPrefsPresentation,
                             showCustomPeriodPicker: $sheets.showCustomPeriodPicker,
                             showBudgetFavoritesSettings: $sheets.showBudgetFavoritesSettings
                         )
