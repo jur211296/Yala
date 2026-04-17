@@ -77,6 +77,34 @@
 // VoiceOver résumé complet
 "panel.health.voiceover.summary" = "Santé financière : %1$@. Budget %2$@. Activité %3$@. Paiements %4$@.";
 
+// MARK: - Panel 2.0 Hero (P20-04)
+
+// Chip — salue par prénom ; l'emoji vit dans l'icône SF Symbol, pas ici
+"panel.hero.chip.monthStart %@ %@" = "Salut %1$@ — on démarre %2$@";
+"panel.hero.chip.onTrack %@" = "Salut %@";
+"panel.hero.chip.neutral %@" = "Salut %@";
+"panel.hero.chip.tight %@" = "Salut %@ — dernière ligne droite";
+"panel.hero.chip.overBudget %@" = "Salut %@ — nouveau chapitre";
+
+// KPI
+"panel.hero.kpi.monthStart" = "Allez, tu gères";
+"panel.hero.kpi.onTrack" = "Tu assures ce mois-ci";
+"panel.hero.kpi.neutral" = "Ton mois en marche";
+"panel.hero.kpi.tight" = "On ajuste le tir";
+"panel.hero.kpi.overBudget" = "On continue à construire l'habitude";
+
+// Subtext (monthStart/tight/overBudget — onTrack/neutral s'appuient sur les pills)
+"panel.hero.subtext.monthStart %d" = "Il te reste %d jours — enregistrons la première dépense";
+"panel.hero.subtext.onTrack %@ %d" = "Tu as dépensé %1$@ · encore %2$d jours";
+"panel.hero.subtext.neutral %@ %@" = "%1$@ dépensés · %2$@ disponibles";
+"panel.hero.subtext.tight" = "Le budget se resserre — de petits ajustements suffisent";
+"panel.hero.subtext.overBudget" = "On a dépassé le budget ce mois-ci — demain, on repart";
+
+// Pills
+"panel.hero.pill.income" = "Revenus";
+"panel.hero.pill.spent" = "Dépensé";
+"panel.hero.pill.daysLeft" = "Jours restants";
+
 // MARK: - Trend Widget
 
 "trend.title" = "Tendances";

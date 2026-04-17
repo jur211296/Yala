@@ -90,6 +90,13 @@ struct PanelHealthData: Equatable {
     var score: FinancialScore? = nil
 }
 
+/// Pre-computed payload for the Panel 2.0 Hero del mes (P20-04).
+/// `data` stays `nil` until the first `calculateHeroWidget()` pass so the
+/// view knows to skip rendering during the initial skeleton frame.
+struct PanelHeroData: Equatable {
+    var data: HeroMonthData? = nil
+}
+
 @MainActor
 @Observable
 final class PanelViewModel {
@@ -404,6 +411,7 @@ final class PanelViewModel {
     var exchangeRateWidget = PanelExchangeRateData()
     var scheduledPaymentsWidget = PanelScheduledPaymentsData()
     var healthWidget = PanelHealthData()
+    var heroWidget = PanelHeroData()
 
     // Pre-computed account data — eliminates passing [TransactionItem] to AccountsCarouselView
     private(set) var accountBalances: [PersistentIdentifier: Double] = [:]
@@ -2158,7 +2166,8 @@ final class PanelViewModel {
         let healthVisible = isSectionVisible(.health)
         var sharedPaidAmounts: [String: [PaidOccurrenceInfo]]? = nil
         let calendar = Calendar.current
-        let currentMonthStart = calendar.dateInterval(of: .month, for: .now)?.start
+        let currentMonthInterval = calendar.dateInterval(of: .month, for: .now)
+        let currentMonthStart = currentMonthInterval?.start
         let planMonthStart = calendar.dateInterval(of: .month, for: scheduledPaymentsDisplayMonth)?.start
         let canShareFetch = scheduledVisible
             && healthVisible
@@ -2195,6 +2204,11 @@ final class PanelViewModel {
         }
 
         calculateAccountPeriodExpenses()
+        // Hero always computes — it replaces the Panel title and cannot be
+        // hidden (see epic out-of-scope). Cheap O(n) pass over `transactions`;
+        // the equality guard in `calculateHeroWidget()` suppresses no-op
+        // @Observable notifications when the data hasn't changed.
+        calculateHeroWidget(monthInterval: currentMonthInterval)
     }
 
     /// Pre-computes the Financial Score for the Panel 2.0 "Salud Financiera" section.
@@ -2208,6 +2222,46 @@ final class PanelViewModel {
         )
         let newData = PanelHealthData(score: newScore)
         if newData != healthWidget { healthWidget = newData }
+    }
+
+    /// Pre-computes the Hero del mes payload (P20-04).
+    ///
+    /// Runs on every `performCalculation()` because the Hero replaces the
+    /// Panel title and is always visible. It stays cheap:
+    ///  - single O(n) pass over `transactions` restricted to the current
+    ///    calendar month,
+    ///  - zero new fetches (all models are already loaded),
+    ///  - uses `TransactionItem.amountInPreferredCurrency` — the snapshot
+    ///    conversion already persisted on each transaction, so there is no
+    ///    live call to `CurrencyConverter` here.
+    /// Only budgets with `periodType == "monthly"` feed the total; mixing
+    /// weekly/yearly would distort the ratio. Pro-rating other periodicities
+    /// is a future refinement tracked in the epic.
+    private func calculateHeroWidget(monthInterval: DateInterval?) {
+        guard let monthInterval else { return }
+
+        var monthIncome: Double = 0
+        var monthExpense: Double = 0
+        for tx in transactions where monthInterval.contains(tx.date) && tx.balanceAdjustmentType == nil {
+            let amount = abs(tx.amountInPreferredCurrency)
+            if tx.category?.isIncome == true {
+                monthIncome += amount
+            } else {
+                monthExpense += amount
+            }
+        }
+
+        let totalMonthlyBudget = budgets
+            .filter { $0.periodType == "monthly" }
+            .reduce(0.0) { $0 + $1.limitAmount }
+
+        let newData = HeroMonthCalculator.calculate(
+            monthIncome: monthIncome,
+            monthExpense: monthExpense,
+            totalMonthlyBudget: totalMonthlyBudget
+        )
+        let wrapped = PanelHeroData(data: newData)
+        if wrapped != heroWidget { heroWidget = wrapped }
     }
 
     /// Pre-computes total account balances (not period-dependent).

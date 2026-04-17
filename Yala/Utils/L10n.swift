@@ -251,6 +251,76 @@ enum L10n {
                 )
             }
         }
+
+        /// Hero del mes (P20-04). Copy rule-based; the state chosen by
+        /// `HeroMonthCalculator` drives the chip icon tint + message. All
+        /// strings tuned to Brand Voice §10: "tú", sin regaños, emojis
+        /// moderados. Chip greets the user by name; KPI carries the mood.
+        enum Hero {
+            // MARK: Chip (greeting line, tinted icon + text)
+            // Emoji lives in the SF Symbol icon (`sparkles`/`eyes`/
+            // `figure.strengthtraining.traditional`), NOT in these strings.
+            static func chipMonthStart(userName: String, month: String) -> String {
+                String(format: ls("panel.hero.chip.monthStart %@ %@", comment: "Hero chip — first week, greets user + empezamos <mes>"), userName, month)
+            }
+            static func chipOnTrack(userName: String) -> String {
+                String(format: ls("panel.hero.chip.onTrack %@", comment: "Hero chip — on track, greets user"), userName)
+            }
+            static func chipNeutral(userName: String) -> String {
+                String(format: ls("panel.hero.chip.neutral %@", comment: "Hero chip — neutral state, greets user"), userName)
+            }
+            static func chipTight(userName: String) -> String {
+                String(format: ls("panel.hero.chip.tight %@", comment: "Hero chip — tight state, greets user + recta final"), userName)
+            }
+            static func chipOverBudget(userName: String) -> String {
+                String(format: ls("panel.hero.chip.overBudget %@", comment: "Hero chip — over budget, greets user + nuevo capítulo"), userName)
+            }
+
+            // MARK: KPI (big empathic line)
+            static var kpiMonthStart: String {
+                ls("panel.hero.kpi.monthStart", comment: "Hero KPI — month just started")
+            }
+            static var kpiOnTrack: String {
+                ls("panel.hero.kpi.onTrack", comment: "Hero KPI — on track")
+            }
+            static var kpiNeutral: String {
+                ls("panel.hero.kpi.neutral", comment: "Hero KPI — neutral state")
+            }
+            static var kpiTight: String {
+                ls("panel.hero.kpi.tight", comment: "Hero KPI — tight state")
+            }
+            static var kpiOverBudget: String {
+                ls("panel.hero.kpi.overBudget", comment: "Hero KPI — over-budget state")
+            }
+
+            // MARK: Subtext (one-line descriptive)
+            static func subtextMonthStart(daysRemaining: Int) -> String {
+                String(format: ls("panel.hero.subtext.monthStart %d", comment: "Hero subtext — month just started"), daysRemaining)
+            }
+            static func subtextOnTrack(spent: String, daysRemaining: Int) -> String {
+                String(format: ls("panel.hero.subtext.onTrack %@ %d", comment: "Hero subtext — on track"), spent, daysRemaining)
+            }
+            static func subtextNeutral(spent: String, available: String) -> String {
+                String(format: ls("panel.hero.subtext.neutral %@ %@", comment: "Hero subtext — neutral"), spent, available)
+            }
+            static var subtextTight: String {
+                ls("panel.hero.subtext.tight", comment: "Hero subtext — tight state")
+            }
+            static var subtextOverBudget: String {
+                ls("panel.hero.subtext.overBudget", comment: "Hero subtext — over-budget")
+            }
+
+            // MARK: Pills (small stat tiles)
+            static var pillIncome: String {
+                ls("panel.hero.pill.income", comment: "Hero pill label — income")
+            }
+            static var pillSpent: String {
+                ls("panel.hero.pill.spent", comment: "Hero pill label — spent")
+            }
+            static var pillDaysLeft: String {
+                ls("panel.hero.pill.daysLeft", comment: "Hero pill label — days left in the month")
+            }
+        }
         static var totalBalance: String {
             ls("panel.totalBalance", comment: "Total balance label")
         }

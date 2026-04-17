@@ -165,8 +165,10 @@ struct PanelView: View {
         NavigationStack {
             mainContent
                 .yalaSkeleton(!viewModel.isReady)
+                // Inline title keeps identity visible once the hero scrolls
+                // off and covers the gap the `.large` mode used to fill.
                 .navigationTitle(L10n.Panel.title(appPreferences.userName))
-                .navigationBarTitleDisplayMode(.large)
+                .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         inboxToolbarButton
@@ -277,6 +279,11 @@ struct PanelView: View {
             ScrollViewReader { scrollProxy in
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                        // Gated on `heroWidget.data != nil` inside the section
+                        // itself so the skeleton doesn't flash an empty card
+                        // before the first `performCalculation()` lands.
+                        PanelHeroSection(viewModel: viewModel)
+
                         if appPreferences.showSiriTip, viewModel.transactions.count >= 5 {
                             SiriTipCard(isVisible: Binding(
                                 get: { appPreferences.showSiriTip },
