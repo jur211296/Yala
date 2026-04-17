@@ -256,6 +256,7 @@ final class DataWipeService {
 
         // --- Configuración de widgets ---
         defaults.removeObject(forKey: "panel_widget_configs_v1") // Key real usada por WidgetConfigManager
+        defaults.removeObject(forKey: "panelHeroAIMessage_v1")   // Cache 24h del mensaje IA del hero
 
         // --- Estado del servicio de tipos de cambio ---
         defaults.removeObject(forKey: "exchangeRate_lastHistoricalLoad")

@@ -250,6 +250,15 @@ struct PanelView: View {
         .onChange(of: viewModel.accounts.count) { _, _ in
             reconcileAccountsSortOrder()
         }
+        // El hero regenera el mensaje IA cuando cambia consent o estado Pro
+        // (incluido el toggle dev "Simular Pro"). Pro→Free resetea el
+        // subtitle IA al rule-based; Free→Pro lo regenera si hay consent.
+        .onChange(of: appPreferences.aiInsightsConsentAccepted) { _, _ in
+            viewModel.retriggerHeroAI()
+        }
+        .onChange(of: StoreKitManager.shared.isProUser) { _, _ in
+            viewModel.retriggerHeroAI()
+        }
     }
 
     /// Drops unknown raw values so a legacy/future preference string doesn't

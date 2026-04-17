@@ -321,6 +321,14 @@ enum L10n {
                 ls("panel.hero.pill.daysLeft", comment: "Hero pill label — days left in the month")
             }
 
+            // MARK: AI Hero (P20-05)
+            static var proBadge: String {
+                ls("panel.hero.proBadge", comment: "Hero Pro badge — shown when subtitle is AI-generated")
+            }
+            static var upsellCTA: String {
+                ls("panel.hero.upsellCTA", comment: "Hero CTA — Free: upgrade to unlock AI message")
+            }
+
             // MARK: KPI Preferences (P20-04b — sheet + new KPIs)
             enum KpiPrefs {
                 // Sheet chrome

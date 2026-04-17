@@ -17,6 +17,8 @@ struct PanelHeroSection: View {
     @Environment(AppPreferences.self) private var appPreferences
 
     @State private var showingKPIPrefs = false
+    /// Sheet del upsell cuando un usuario Free tapea el CTA "Personalízalo con IA".
+    @State private var showingUpgrade = false
 
     var body: some View {
         // Observation fix: the VM's `activeHeroKPIs()` reads from
@@ -34,10 +36,24 @@ struct PanelHeroSection: View {
                 data: data,
                 currencyCode: viewModel.defaultCurrencyCode,
                 activeKPIs: viewModel.activeHeroKPIs(),
-                onEditTapped: { showingKPIPrefs = true }
+                onEditTapped: { showingKPIPrefs = true },
+                aiSubtitle: viewModel.heroAISubtitle,
+                showProBadge: viewModel.heroAISubtitle != nil,
+                showUpsellCTA: !FeatureGateService.shared.isProUser,
+                onUpsellTap: {
+                    TelemetryService.track(.panelHeroCTATap)
+                    showingUpgrade = true
+                }
             )
             .sheet(isPresented: $showingKPIPrefs) {
                 HeroKPIPreferencesSheet(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showingUpgrade) {
+                UpgradePromptSheet(
+                    feature: .smartInsightsAI,
+                    context: .proFeature,
+                    source: "panelHero"
+                )
             }
         }
     }

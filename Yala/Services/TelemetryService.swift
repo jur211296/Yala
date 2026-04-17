@@ -67,6 +67,12 @@ enum AnalyticsEvent: String {
     case fullModeActivationStarted
     case fullModeActivationCompleted
     case groupInviteOnboardingCompleted
+
+    // Panel Hero IA
+    case panelHeroAIGenerated
+    case panelHeroAICacheHit
+    case panelHeroCTAImpression
+    case panelHeroCTATap
 }
 
 // MARK: - Telemetry Service

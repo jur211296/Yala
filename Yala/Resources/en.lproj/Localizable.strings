@@ -105,6 +105,10 @@
 "panel.hero.pill.spent" = "Spent";
 "panel.hero.pill.daysLeft" = "Days left";
 
+// AI Hero (P20-05)
+"panel.hero.proBadge" = "Pro";
+"panel.hero.upsellCTA" = "Make it yours with AI";
+
 // KPI Preferences (P20-04b)
 "panel.hero.kpiPrefs.title" = "Customize metrics";
 "panel.hero.kpiPrefs.footer" = "The first 3 active ones will be shown in this order.";

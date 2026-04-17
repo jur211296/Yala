@@ -31,6 +31,13 @@ struct HeroMonthView: View {
     let activeKPIs: [HeroKPI]
     let onEditTapped: () -> Void
 
+    /// Mensaje IA ya resuelto (cache hit o API success). Nil ⇒ fallback
+    /// rule-based inmediato, sin spinner ni flash-blank.
+    var aiSubtitle: String? = nil
+    var showProBadge: Bool = false
+    var showUpsellCTA: Bool = false
+    var onUpsellTap: () -> Void = {}
+
     /// `YalaFormatter.currency` reads `decimalPlaces` and
     /// `currencyDisplayFormat` straight from `UserDefaults`, which leaves
     /// SwiftUI blind to changes. Reading the @Observable props inside *this*
@@ -41,6 +48,12 @@ struct HeroMonthView: View {
     /// otherwise skip the rebuild. Also the source of truth for `userName`
     /// (used in chip greetings).
     @Environment(AppPreferences.self) private var appPreferences
+
+    /// Distingue el tema "light" (card blanca pura) del resto. En light el
+    /// 6% primary de los pills lee como gris sucio sobre la card blanca;
+    /// glass es la salida. En temas con card teñida/oscura ese 6% se ve
+    /// limpio, así que se conserva.
+    @Environment(\.yalaTheme) private var theme
 
     var body: some View {
         // Touch the formatter-related prefs so this view re-evaluates when
@@ -53,21 +66,80 @@ struct HeroMonthView: View {
             chip
             kpi
             subtext
+            if showUpsellCTA { upsellCTA }
             pills
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .solidCard(padding: DS.Card.padding)
-        // Edit button floats OUTSIDE the solidCard padding — the card modifier
-        // already handles its own inner padding, so anchoring the overlay to
-        // the card's top-trailing edge avoids having to subtract anything.
-        // Pattern matches `AccountCardView`: glass-circle with a sliders icon.
-        .overlay(alignment: .topTrailing) { editButton }
+        // Edit button + badge Pro en un único overlay topTrailing — evita
+        // chocar con el saludo del chip en topLeading.
+        .overlay(alignment: .topTrailing) {
+            HStack(spacing: DS.Spacing.xs) {
+                if showProBadge { proBadge }
+                editButton
+            }
+            .padding(DS.Card.padding)
+        }
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)
         .accessibilityLabel(voiceoverLabel)
     }
 
-    // MARK: - Edit button (P20-04b)
+    // MARK: - Pro badge
+
+    private var proBadge: some View {
+        HStack(spacing: DS.Spacing.xxs) {
+            Image(systemName: "sparkles")
+                .font(DS.Typography.captionSmall)
+            Text(L10n.Panel.Hero.proBadge)
+                .font(DS.Typography.captionSmall)
+        }
+        .foregroundStyle(.primary)
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.vertical, DS.Spacing.xxs)
+        .glassEffect(.regular, in: Capsule())
+        .accessibilityLabel(L10n.Panel.Hero.proBadge)
+    }
+
+    // MARK: - Upsell CTA (Free)
+
+    /// Chip con el gradient `proBadge` (yellow→orange) en el sparkle —
+    /// misma paleta Pro que `ProBadge`/`FABStackView`/`MilestoneUpgradeSheet`
+    /// para reforzar que el CTA lleva a upgrade. Texto `.primary` para
+    /// legibilidad.
+    private var upsellCTA: some View {
+        HStack {
+            Button(action: onUpsellTap) {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "sparkle")
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: DS.Gradients.proBadge,
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    Text(L10n.Panel.Hero.upsellCTA)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.primary)
+                }
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.sm)
+                .glassEffect(.regular.interactive(), in: Capsule())
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            Spacer(minLength: 0)
+        }
+        .onAppear {
+            TelemetryService.trackOnce(.panelHeroCTAImpression, key: Self.telemetryKey)
+        }
+    }
+
+    private static let telemetryKey = "panelHero"
+
+    // MARK: - Edit button
 
     /// Anchored to `.topTrailing` of the card with padding symmetric to the
     /// chip line inside the card: the chip sits at `DS.Card.padding` from
@@ -83,7 +155,6 @@ struct HeroMonthView: View {
                 .glassEffect(.regular.interactive(), in: Circle())
         }
         .buttonStyle(.plain)
-        .padding(DS.Card.padding)
         .accessibilityLabel(L10n.Panel.Hero.KpiPrefs.editButton)
     }
 
@@ -119,6 +190,9 @@ struct HeroMonthView: View {
             .foregroundStyle(.secondary)
             .lineLimit(3)
             .fixedSize(horizontal: false, vertical: true)
+            // Evita el flash rule-based → IA cuando el VM resuelve el
+            // mensaje tras ~1s.
+            .animation(.easeInOut(duration: 0.3), value: aiSubtitle)
     }
 
     // MARK: - Pills
@@ -170,10 +244,7 @@ struct HeroMonthView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, DS.Spacing.md)
         .padding(.vertical, DS.Spacing.sm)
-        .background(
-            Color.primary.opacity(0.06),
-            in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-        )
+        .modifier(HeroPillBackgroundModifier(useGlass: theme.baseColorScheme == .light))
     }
 
     // MARK: - State → color accent
@@ -237,12 +308,11 @@ struct HeroMonthView: View {
         }
     }
 
-    /// Contextual one-liner below the KPI. **This is the insertion point
-    /// for P20-05 (Hero IA, Pro)**: the IA service will replace this string
-    /// with a cached (24h) LLM message for Pro users, and fall back to this
-    /// rule-based version when the cache is empty or the user is Free.
-    /// Keep the 5 rule-based copies as a stable fallback contract.
+    /// Si `aiSubtitle` viene cargado (Pro + consent + cache hit o API
+    /// success), lo usamos. Si no, el `switch` rule-based es el fallback
+    /// — Free, Pro sin consent, offline o error de API.
     private var subtextText: String {
+        if let aiSubtitle, !aiSubtitle.isEmpty { return aiSubtitle }
         switch data.state {
         case .monthStart:
             return L10n.Panel.Hero.subtextMonthStart(daysRemaining: data.daysRemaining)
@@ -273,7 +343,38 @@ struct HeroMonthView: View {
     }
 
     private var voiceoverLabel: String {
-        "\(chipText). \(kpiText). \(subtextText)"
+        var parts: [String] = []
+        if showProBadge { parts.append(L10n.Panel.Hero.proBadge) }
+        parts.append(chipText)
+        parts.append(kpiText)
+        parts.append(subtextText)
+        if showUpsellCTA { parts.append(L10n.Panel.Hero.upsellCTA) }
+        return parts.joined(separator: ". ")
+    }
+}
+
+// MARK: - Pill background modifier
+
+/// Pill background tuned per-theme. El tema "light" tiene la card en
+/// blanco puro; ahí `Color.primary.opacity(0.06)` lee como gris sucio, y
+/// Liquid Glass resuelve la separación visual sin ensuciar. En temas con
+/// card teñida/oscura ese mismo 6% se ve limpio — mantener el look
+/// original evita que Glass introduzca un brillo fuera de lugar.
+private struct HeroPillBackgroundModifier: ViewModifier {
+    let useGlass: Bool
+
+    func body(content: Content) -> some View {
+        if useGlass {
+            content.glassEffect(
+                .regular,
+                in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+            )
+        } else {
+            content.background(
+                Color.primary.opacity(0.06),
+                in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+            )
+        }
     }
 }
 
@@ -325,6 +426,36 @@ struct HeroMonthView: View {
             currencyCode: "PEN",
             activeKPIs: Array(HeroKPI.defaultOrder.prefix(3)),
             onEditTapped: {}
+        )
+
+        // Pro + cache hit (badge visible)
+        HeroMonthView(
+            data: HeroMonthData(
+                state: .onTrack, income: 4500, expense: 900,
+                daysRemaining: 20, daysElapsed: 10
+            ),
+            currencyCode: "PEN",
+            activeKPIs: Array(HeroKPI.defaultOrder.prefix(3)),
+            onEditTapped: {},
+            aiSubtitle: "Abril te está yendo bien, Jur. Llevas un ritmo tranquilo — sigue así.",
+            showProBadge: true,
+            showUpsellCTA: false,
+            onUpsellTap: {}
+        )
+
+        // Free + CTA upsell
+        HeroMonthView(
+            data: HeroMonthData(
+                state: .neutral, income: 4500, expense: 1500,
+                daysRemaining: 20, daysElapsed: 10
+            ),
+            currencyCode: "PEN",
+            activeKPIs: Array(HeroKPI.defaultOrder.prefix(3)),
+            onEditTapped: {},
+            aiSubtitle: nil,
+            showProBadge: false,
+            showUpsellCTA: true,
+            onUpsellTap: {}
         )
     }
     .padding()

@@ -214,4 +214,40 @@ struct PanelViewModelTests {
             #expect(!kind.iconName.isEmpty, "\(kind) missing icon")
         }
     }
+
+    // MARK: - Hero IA (P20-05)
+    //
+    // Acotados a invariantes sin network: Free/no-consent reset del estado y
+    // guard de heroData. El flow Pro+consent+API no se testea aquí — eso vive
+    // en `HeroMessageCacheTests` (capa pura) y QA manual con `Yala Dev`.
+
+    /// Sin `heroWidget.data`, `retriggerHeroAI` no toca el estado IA —
+    /// precondición del VM antes de armar el contexto.
+    @MainActor @Test func retriggerHeroAI_withoutHeroData_isNoOp() {
+        let vm = PanelViewModel()
+        vm.heroAISubtitle = "texto preseteado"
+
+        vm.retriggerHeroAI()
+
+        #expect(vm.heroAISubtitle == "texto preseteado")
+    }
+
+    /// Si el user no tiene consent IA, el VM debe dejar `heroAISubtitle`
+    /// en nil (el view cae al fallback rule-based).
+    @MainActor @Test func retriggerHeroAI_noConsent_resetsHeroAIState() {
+        let vm = PanelViewModel()
+        let prefs = AppPreferences(defaults: UserDefaults(suiteName: "retriggerHeroAI.noConsent.\(UUID().uuidString)")!)
+        prefs.aiInsightsConsentAccepted = false
+        vm.setAppPreferences(prefs)
+
+        vm.heroWidget = PanelHeroData(data: HeroMonthData(
+            state: .neutral, income: 4500, expense: 1500,
+            daysRemaining: 20, daysElapsed: 10
+        ))
+        vm.heroAISubtitle = "mensaje viejo"
+
+        vm.retriggerHeroAI()
+
+        #expect(vm.heroAISubtitle == nil)
+    }
 }

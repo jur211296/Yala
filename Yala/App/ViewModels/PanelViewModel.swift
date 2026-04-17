@@ -413,6 +413,12 @@ final class PanelViewModel {
     var healthWidget = PanelHealthData()
     var heroWidget = PanelHeroData()
 
+    /// Reemplaza el rule-based `subtext` del hero cuando es Pro + consent y
+    /// hay cache hit o la API respondió. Nil ⇒ el view usa fallback
+    /// rule-based inmediato (también determina la visibilidad del badge
+    /// "Pro" en `PanelHeroSection`, derivado de `!= nil`).
+    var heroAISubtitle: String? = nil
+
     // Pre-computed account data — eliminates passing [TransactionItem] to AccountsCarouselView
     private(set) var accountBalances: [PersistentIdentifier: Double] = [:]
     private(set) var accountPeriodExpenses: [PersistentIdentifier: Double] = [:]
@@ -2408,14 +2414,23 @@ final class PanelViewModel {
     private func calculateHeroWidget(monthInterval: DateInterval?) {
         guard let monthInterval else { return }
 
+        // Mes anterior natural — independiente del selectedPeriod del Panel,
+        // el Hero siempre compara contra el mes calendario anterior.
+        let prevStart = Calendar.current.date(byAdding: .month, value: -1, to: monthInterval.start) ?? monthInterval.start
+        let prevInterval = DateInterval(start: prevStart, end: monthInterval.start)
+
         var monthIncome: Double = 0
         var monthExpense: Double = 0
-        for tx in transactions where monthInterval.contains(tx.date) && tx.balanceAdjustmentType == nil {
+        var prevExpense: Double = 0
+        var prevHasAnyTx = false
+        for tx in transactions where tx.balanceAdjustmentType == nil {
             let amount = abs(tx.amountInPreferredCurrency)
-            if tx.category?.isIncome == true {
-                monthIncome += amount
-            } else {
-                monthExpense += amount
+            let isIncome = tx.category?.isIncome == true
+            if monthInterval.contains(tx.date) {
+                if isIncome { monthIncome += amount } else { monthExpense += amount }
+            } else if prevInterval.contains(tx.date) {
+                prevHasAnyTx = true
+                if !isIncome { prevExpense += amount }
             }
         }
 
@@ -2429,8 +2444,127 @@ final class PanelViewModel {
             totalMonthlyBudget: totalMonthlyBudget
         )
         let wrapped = PanelHeroData(data: newData)
-        if wrapped != heroWidget { heroWidget = wrapped }
+        let dataChanged = wrapped != heroWidget
+        if dataChanged { heroWidget = wrapped }
+
+        lastHeroTrendContext = TrendContext(
+            prevExpense: prevExpense,
+            prevHasAnyTx: prevHasAnyTx,
+            totalMonthlyBudget: totalMonthlyBudget,
+            monthInterval: monthInterval
+        )
+
+        // Re-generar IA solo cuando la data del hero cambió — evita spam de
+        // telemetry cuando performCalculation corre múltiples veces.
+        if dataChanged {
+            generateHeroAIIfEligible(data: newData)
+        }
     }
+
+    // MARK: - Hero IA
+
+    /// Snapshot de los agregados del mes anterior + budget que necesita
+    /// `generateHeroAIIfEligible`. Recalculado en cada `calculateHeroWidget`
+    /// para que `retriggerHeroAI` (invocado por observadores de consent/Pro)
+    /// no tenga que re-iterar `transactions`.
+    private struct TrendContext {
+        let prevExpense: Double
+        let prevHasAnyTx: Bool
+        let totalMonthlyBudget: Double
+        let monthInterval: DateInterval
+    }
+
+    private var lastHeroTrendContext: TrendContext?
+
+    /// Cache-key único de telemetría; `trackOnce` dedupea por sesión.
+    private static let heroTelemetryKey = "panelHero"
+
+    /// Task en vuelo — permite cancelar la anterior si llega otro trigger
+    /// (evita last-writer-wins stale cuando Pro/consent togglean en rápido).
+    private var heroAITask: Task<Void, Never>?
+
+    /// Reintenta la generación del mensaje IA usando el último `heroWidget`
+    /// computado. Lo llaman los observers de `PanelView` cuando cambia
+    /// consent o estado Pro.
+    func retriggerHeroAI() {
+        guard let data = heroWidget.data else { return }
+        generateHeroAIIfEligible(data: data)
+    }
+
+    /// Genera el mensaje IA si el usuario es Pro + tiene consent. Free o Pro
+    /// sin consent quedan en rule-based silencioso (`heroAISubtitle = nil`).
+    private func generateHeroAIIfEligible(data: HeroMonthData) {
+        guard FeatureGateService.shared.canAccess(.smartInsightsAI),
+              appPreferences?.aiInsightsConsentAccepted == true,
+              let trend = lastHeroTrendContext else {
+            heroAITask?.cancel()
+            heroAITask = nil
+            heroAISubtitle = nil
+            return
+        }
+
+        let ctx = buildHeroContext(data: data, trend: trend)
+
+        if let cached = HeroMessageCache.read(),
+           cached.hash == HeroMessageCache.contextHash(ctx) {
+            heroAISubtitle = cached.text
+            TelemetryService.trackOnce(.panelHeroAICacheHit, key: Self.heroTelemetryKey)
+            return
+        }
+
+        heroAITask?.cancel()
+        heroAITask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let text = try await InsightsLLMService.shared.generateHeroMessage(context: ctx)
+                guard !Task.isCancelled else { return }
+                self.heroAISubtitle = text
+                TelemetryService.track(.panelHeroAIGenerated)
+            } catch {
+                guard !Task.isCancelled else { return }
+                self.heroAISubtitle = nil
+            }
+        }
+    }
+
+    /// Construye el `HeroContext` a partir de los agregados ya calculados en
+    /// `calculateHeroWidget`. Cero fetches y cero iteraciones extra.
+    private func buildHeroContext(data: HeroMonthData, trend: TrendContext) -> HeroContext {
+        let spendingTrend: HeroSpendingTrend?
+        if !trend.prevHasAnyTx || trend.prevExpense <= 0 {
+            spendingTrend = nil
+        } else {
+            let ratio = data.expense / trend.prevExpense
+            if ratio > 1.05 { spendingTrend = .up }
+            else if ratio < 0.95 { spendingTrend = .down }
+            else { spendingTrend = .flat }
+        }
+
+        let percentBudget: Double? = trend.totalMonthlyBudget > 0
+            ? data.expense / trend.totalMonthlyBudget
+            : nil
+
+        let rawName = appPreferences?.userName ?? ""
+        let userName: String? = rawName.isEmpty ? nil : rawName
+
+        return HeroContext(
+            state: data.state,
+            financialScore: healthWidget.score.flatMap(\.total),
+            percentBudgetUsed: percentBudget,
+            spendingTrend: spendingTrend,
+            monthName: Self.monthNameFormatter.string(from: trend.monthInterval.start).localizedCapitalized,
+            userName: userName,
+            daysRemaining: data.daysRemaining,
+            locale: AppLocale.current.identifier
+        )
+    }
+
+    private static let monthNameFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "MMMM"
+        return f
+    }()
 
     /// Pre-computes total account balances (not period-dependent).
     /// Called from loadData() — only when transactions actually change.

@@ -786,4 +786,150 @@ final class InsightsLLMService {
         }
     }
 
+    // MARK: - Hero Message
+
+    /// Genera el `subtitle` del Hero del mes para usuarios Pro + consent.
+    ///
+    /// Contrato:
+    ///  - Cache check previo (día + hash) — si hit, return sin tocar la API
+    ///    ni `lastCallTime`. El caller mide `panelHeroAICacheHit` aparte.
+    ///  - 1 call/día máx por usuario gracias al cache: mientras el día y el
+    ///    hash del contexto no cambien, `read()` siempre gana.
+    ///  - Timeout 5s. Si gana el sleep, lanzamos `.networkError(TimeoutError)`
+    ///    y cancelamos el subtask del chat. La request en vuelo puede
+    ///    completar en background (OpenAI client no cancela sockets), pero
+    ///    ya no escribe cache porque el group retornó.
+    ///  - Validación post-parse: texto vacío o <15 chars se tratan como
+    ///    `.parseFailed` (no contamina el cache durante 24h).
+    ///  - Prompt compacto: ≤350 tokens system + ≤80 user (solo agregados).
+    func generateHeroMessage(context ctx: HeroContext) async throws -> String {
+        // Cache check antes de cualquier network hop.
+        if let cached = HeroMessageCache.read(),
+           cached.hash == HeroMessageCache.contextHash(ctx) {
+            return cached.text
+        }
+
+        guard let client = openAI else {
+            throw InsightsLLMError.noAPIKey
+        }
+
+        let systemPrompt = Self.heroSystemPrompt(ctx: ctx)
+        let userMessage = "Contexto del mes:\n\(Self.heroUserPayload(ctx: ctx))"
+
+        let query = ChatQuery(
+            messages: try buildChatMessages(system: systemPrompt, user: userMessage),
+            model: .gpt4_1_mini,
+            responseFormat: .jsonObject,
+            temperature: 0.5
+        )
+
+        // Race: chat vs 5s sleep. `withThrowingTaskGroup` cancela children al
+        // salir — si gana el sleep, el chat subtask se cancela (la request
+        // network puede no honrar cancelación, pero el await nunca resume).
+        let text: String = try await withThrowingTaskGroup(of: String.self) { group in
+            group.addTask {
+                let result = try await client.chats(query: query)
+                guard let content = result.choices.first?.message.content else {
+                    throw InsightsLLMError.parseFailed
+                }
+                return content
+            }
+            group.addTask {
+                try await Task.sleep(for: .seconds(5))
+                throw InsightsLLMError.networkError(HeroTimeoutError())
+            }
+            defer { group.cancelAll() }
+            guard let first = try await group.next() else {
+                throw InsightsLLMError.parseFailed
+            }
+            return first
+        }
+
+        // Parse `{"text": "..."}` + validar longitud mínima.
+        guard let data = text.data(using: .utf8),
+              let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let raw = dict["text"] as? String else {
+            throw InsightsLLMError.parseFailed
+        }
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed.count >= 15 else {
+            throw InsightsLLMError.parseFailed
+        }
+
+        // Escribe al cache solo tras validación — evita servir placeholders
+        // durante 24h si el LLM devolvió algo degenerado.
+        let entry = HeroMessageCacheEntry(
+            day: HeroMessageCache.dayString(from: .now),
+            hash: HeroMessageCache.contextHash(ctx),
+            text: trimmed
+        )
+        HeroMessageCache.write(entry)
+
+        return trimmed
+    }
+
+    private static func heroSystemPrompt(ctx: HeroContext) -> String {
+        let nameClause = (ctx.userName?.isEmpty == false)
+            ? "Incluye el nombre del usuario (\(ctx.userName!)) de forma natural."
+            : "No uses nombre propio."
+        let trendClause: String
+        switch ctx.spendingTrend {
+        case .down: trendClause = "Gasta menos que el mes pasado — reconócelo sin cifras."
+        case .up:   trendClause = "Gasta más que el mes pasado — aliéntalo sin regañar ni usar cifras."
+        case .flat: trendClause = "Ritmo de gasto similar al mes pasado — normaliza sin alarmar."
+        case .none: trendClause = "No menciones comparaciones con meses anteriores."
+        }
+        let stateMood: String
+        switch ctx.state {
+        case .monthStart: stateMood = "El mes recién empieza. Tono de bienvenida, sin evaluar aún."
+        case .onTrack:    stateMood = "Va muy bien vs el presupuesto. Tono celebratorio y cálido."
+        case .neutral:    stateMood = "Va dentro de lo esperado. Tono tranquilo y afirmativo."
+        case .tight:      stateMood = "Le queda poco margen este mes. Tono alentador, nunca regañón."
+        case .overBudget: stateMood = "Pasó el presupuesto. Tono motivacional: mañana es otro día."
+        }
+
+        return """
+        Eres Yala, una compañera financiera cercana y empática. Escribes UN mensaje cálido y general para el "Hero del mes" del panel del usuario.
+
+        IDIOMA: Responde en \(ctx.locale). Nunca mezcles idiomas.
+
+        FORMATO:
+        - Máximo 2 oraciones. Ideal ~140 caracteres.
+        - NO uses números, porcentajes, cifras ni negritas.
+        - NO hagas preguntas.
+        - NO uses emojis (el hero ya tiene un icono propio).
+
+        TONO (Brand Voice Yala):
+        - Tutea ("tú"), como amiga que sabe de finanzas.
+        - Constructiva, nunca regaña ni juzga.
+        - Nunca uses: "Debes", "Tienes que", "Obviamente", "Es fácil".
+        - Usa "gasto" en vez de "transacción".
+
+        SITUACIÓN:
+        - Estado del mes: \(stateMood)
+        - Tendencia: \(trendClause)
+        - \(nameClause)
+
+        RESPUESTA (JSON estricto): {"text": "..."}
+        """
+    }
+
+    private static func heroUserPayload(ctx: HeroContext) -> String {
+        var payload: [String: Any] = [
+            "state": ctx.state.rawValue,
+            "month": ctx.monthName,
+            "daysRemaining": ctx.daysRemaining,
+            "locale": ctx.locale,
+        ]
+        if let score = ctx.financialScore { payload["financialScore"] = score }
+        if let percent = ctx.percentBudgetUsed { payload["percentBudgetUsed"] = Int((percent * 100).rounded()) }
+        if let trend = ctx.spendingTrend { payload["spendingTrend"] = trend.rawValue }
+        if let name = ctx.userName, !name.isEmpty { payload["userName"] = name }
+
+        let data = (try? JSONSerialization.data(withJSONObject: payload)) ?? Data()
+        return String(data: data, encoding: .utf8) ?? "{}"
+    }
+
 }
+
+private struct HeroTimeoutError: Error {}

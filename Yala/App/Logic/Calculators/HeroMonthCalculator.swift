@@ -21,7 +21,7 @@ import Foundation
 
 // MARK: - Public model
 
-enum HeroMonthState: Equatable {
+enum HeroMonthState: String, Equatable {
     case monthStart
     case onTrack
     case neutral
