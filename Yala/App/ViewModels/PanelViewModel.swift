@@ -90,6 +90,10 @@ struct PanelHealthData: Equatable {
     var score: FinancialScore? = nil
 }
 
+struct PanelWeekdayData: Equatable {
+    var weekdaySpending: [WeekdaySpending] = []
+}
+
 /// Pre-computed payload for the Panel 2.0 Hero del mes (P20-04).
 /// `data` stays `nil` until the first `calculateHeroWidget()` pass so the
 /// view knows to skip rendering during the initial skeleton frame.
@@ -412,6 +416,7 @@ final class PanelViewModel {
     var scheduledPaymentsWidget = PanelScheduledPaymentsData()
     var healthWidget = PanelHealthData()
     var heroWidget = PanelHeroData()
+    var weekdayWidget = PanelWeekdayData()
 
     /// Reemplaza el rule-based `subtext` del hero cuando es Pro + consent y
     /// hay cache hit o la API respondió. Nil ⇒ el view usa fallback
@@ -1166,6 +1171,7 @@ final class PanelViewModel {
         let needVisible = isWidgetVisible(.expensesByNeed)
         let categoriesVisible = isWidgetVisible(.categoriesPie)
         let subcategoriesVisible = isWidgetVisible(.subcategoriesPie)
+        let weekdayVisible = isWidgetVisible(.weekdayBar)
 
         // 2. Calculate widget data per visible widget
 
@@ -1227,6 +1233,10 @@ final class PanelViewModel {
             newNeedTrendPoints = needResult.points
             newPreviousNeedTotal = needResult.previousTotal
             newPreviousNeedAmounts = needResult.previousAmounts
+        }
+
+        if weekdayVisible {
+            calculateWeekdayWidget(context: calcContext)
         }
 
         // Latest Records — always computes (non-toggleable section)
@@ -2383,6 +2393,17 @@ final class PanelViewModel {
         // the equality guard in `calculateHeroWidget()` suppresses no-op
         // @Observable notifications when the data hasn't changed.
         calculateHeroWidget(monthInterval: currentMonthInterval)
+    }
+
+    private func calculateWeekdayWidget(context: PanelCalculationContext) {
+        let spending = WeekdaySpendingCalculator.calculate(
+            transactions: context.filteredTransactions,
+            interval: context.effectiveInterval,
+            currencyCode: context.defaultCurrencyCode,
+            converter: currencyConverter
+        )
+        let newData = PanelWeekdayData(weekdaySpending: spending)
+        if newData != weekdayWidget { weekdayWidget = newData }
     }
 
     /// Pre-computes the Financial Score for the Panel 2.0 "Salud Financiera" section.

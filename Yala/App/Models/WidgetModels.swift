@@ -20,6 +20,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
     case budgets = "presupuestos"
     case scheduledPayments = "pagos_planificados"
     case groupsSummary = "resumen_grupos"
+    case weekdayBar = "gasto_por_dia"
 
     var id: String { rawValue }
 
@@ -37,6 +38,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .budgets: return L10n.WidgetType.budgets
         case .scheduledPayments: return L10n.WidgetType.scheduledPayments
         case .groupsSummary: return L10n.WidgetType.groupsSummary
+        case .weekdayBar: return L10n.WidgetType.weekdayBar
         }
     }
 
@@ -54,6 +56,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .budgets: return "chart.pie.fill"
         case .scheduledPayments: return "calendar.badge.clock"
         case .groupsSummary: return "person.2.fill"
+        case .weekdayBar: return "calendar.day.timeline.left"
         }
     }
 
@@ -71,6 +74,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .budgets: return [.medium, .large]  // Top 3 / Top 5
         case .scheduledPayments: return [.medium]  // Single size, mode selected in preferences
         case .groupsSummary: return [.medium]
+        case .weekdayBar: return [.large]  // Tamaño único (full-width)
         }
     }
 
@@ -81,7 +85,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
             return size == .medium ? L10n.Widget.compact : L10n.Widget.expanded
         case .topSpending, .topSubcategories, .budgets:
             return size == .medium ? L10n.Widget.top3 : L10n.Widget.top5
-        case .trend, .categoriesPie, .subcategoriesPie, .latestRecords, .exchangeRate, .scheduledPayments, .groupsSummary:
+        case .trend, .categoriesPie, .subcategoriesPie, .latestRecords, .exchangeRate, .scheduledPayments, .groupsSummary, .weekdayBar:
             return nil  // Single size, no name needed
         }
     }
@@ -105,9 +109,6 @@ struct WidgetConfig: Identifiable, Codable, Equatable {
     /// Mode for scheduled payments widget (only used when type == .scheduledPayments)
     var scheduledPaymentsMode: ScheduledPaymentsWidgetMode = .summary
 
-    // Default configs generator
-    // Order: Tendencias, Flujo, Dist.Cat, Dist.Subcat, TopCat, TopSubcat, Naturaleza, Registros, Presupuestos, Pagos, Cambio
-    // Defaults visible: trend, cashFlow, categoriesPie, topSubcategories, latestRecords
     static func defaultConfigs() -> [WidgetConfig] {
         return [
             WidgetConfig(id: UUID(), type: .trend, isVisible: true, size: .medium),
@@ -122,6 +123,7 @@ struct WidgetConfig: Identifiable, Codable, Equatable {
             WidgetConfig(id: UUID(), type: .scheduledPayments, isVisible: false, size: .medium),
             WidgetConfig(id: UUID(), type: .exchangeRate, isVisible: false, size: .medium),
             WidgetConfig(id: UUID(), type: .groupsSummary, isVisible: false, size: .medium),
+            WidgetConfig(id: UUID(), type: .weekdayBar, isVisible: true, size: .large),
         ]
     }
 }

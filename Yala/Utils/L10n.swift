@@ -104,6 +104,10 @@ enum L10n {
             ls("panel.section.tools", comment: "Panel 2.0 Herramientas section title")
         }
 
+        static var weekdaySubtitle: String {
+            ls("panel.weekdaySubtitle", comment: "Panel weekday widget subtitle — follows selected period")
+        }
+
         enum SectionsConfig {
             static var title: String { ls("panel.sectionsConfig.title", comment: "Panel sections config sheet title") }
             static var footer: String { ls("panel.sectionsConfig.footer", comment: "Footer hint in Panel sections config") }
@@ -3179,6 +3183,9 @@ enum L10n {
         }
         static var scheduledPayments: String {
             ls("widgetType.scheduledPayments", comment: "")
+        }
+        static var weekdayBar: String {
+            ls("widgetType.weekdayBar", comment: "")
         }
         static var groupsSummary: String {
             ls("widgetType.groupsSummary", comment: "")

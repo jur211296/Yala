@@ -81,7 +81,7 @@ extension WidgetType {
 
     var panelSection: PanelSectionKind {
         switch self {
-        case .trend, .cashFlow, .expensesByNeed:
+        case .trend, .cashFlow, .expensesByNeed, .weekdayBar:
             return .tendencias
         case .categoriesPie, .subcategoriesPie, .topSpending, .topSubcategories:
             return .distribucion

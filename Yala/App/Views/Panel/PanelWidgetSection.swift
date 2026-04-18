@@ -51,6 +51,11 @@ struct PanelWidgetRouter: View {
             if let summary = viewModel.groupGlobalSummary {
                 GroupsSummaryWidget(summary: summary, currencyCode: currencyCode)
             }
+        case .weekdayBar:
+            WeekdayBarPanelWidget(
+                data: viewModel.weekdayWidget.weekdaySpending,
+                currencyCode: currencyCode
+            )
         }
     }
 }

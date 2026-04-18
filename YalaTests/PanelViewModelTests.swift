@@ -250,4 +250,48 @@ struct PanelViewModelTests {
 
         #expect(vm.heroAISubtitle == nil)
     }
+
+    // MARK: - Weekday Bar Widget (P20-07)
+    //
+    // Tests acotados a los guards que protegen el compute. El cálculo en sí
+    // vive en `WeekdaySpendingCalculator` y tiene su propia suite (11 tests).
+
+    /// `weekdayBar` debe pertenecer a la sección Tendencias — define dónde
+    /// aparece en el Panel y el sheet de preferencias.
+    @Test func weekdayBar_belongsToTendencias() {
+        #expect(WidgetType.weekdayBar.panelSection == .tendencias)
+        #expect(WidgetType.defaultWidgets(in: .tendencias).contains(.weekdayBar))
+    }
+
+    /// Bootstrap: antes de inyectar `AppPreferences`, `isWidgetVisible(.weekdayBar)`
+    /// devuelve `true` — fallback permisivo consistente con los demás widgets.
+    @MainActor @Test func weekdayBar_bootstrapVisibility_isPermissive() {
+        let vm = PanelViewModel()
+        #expect(vm.isWidgetVisible(.weekdayBar))
+    }
+
+    /// Ocultar el widget individualmente (via `panelTendenciasHidden`) debe
+    /// flipear el guard → el compute del widget se saltea.
+    @MainActor @Test func weekdayBar_skipsCompute_whenWidgetHidden() {
+        let vm = PanelViewModel()
+        let suite = "weekdayBar.widgetHidden.\(UUID().uuidString)"
+        let prefs = AppPreferences(defaults: UserDefaults(suiteName: suite)!)
+        prefs.panelTendenciasHidden = [WidgetType.weekdayBar.rawValue]
+        vm.setAppPreferences(prefs)
+
+        #expect(!vm.isWidgetVisible(.weekdayBar))
+    }
+
+    /// Ocultar la sección Tendencias entera (via `panelSectionsHidden`) también
+    /// debe flipear el guard — el widget no computa aunque no esté en
+    /// `panelTendenciasHidden`.
+    @MainActor @Test func weekdayBar_skipsCompute_whenSectionHidden() {
+        let vm = PanelViewModel()
+        let suite = "weekdayBar.sectionHidden.\(UUID().uuidString)"
+        let prefs = AppPreferences(defaults: UserDefaults(suiteName: suite)!)
+        prefs.panelSectionsHidden = [PanelSectionKind.tendencias.rawValue]
+        vm.setAppPreferences(prefs)
+
+        #expect(!vm.isWidgetVisible(.weekdayBar))
+    }
 }

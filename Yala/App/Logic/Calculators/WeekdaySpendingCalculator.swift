@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct WeekdaySpending: Identifiable {
+struct WeekdaySpending: Identifiable, Equatable {
     let weekday: Int        // 1=Sunday ... 7=Saturday (Calendar weekday)
     let total: Double
     let count: Int          // Number of transactions
