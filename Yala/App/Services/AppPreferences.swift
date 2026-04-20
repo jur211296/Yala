@@ -499,10 +499,8 @@ final class AppPreferences {
     // MARK: - Panel Section Helpers
     //
     // Tipados por `PanelSectionKind` — evitan switches duplicados en callers.
-    // Secciones sin claves persistidas (`health`, `paraTi`, `latestRecords`, `tools`)
-    // retornan `[]` en getters y son no-op en setters. Cuando P20-10 introduzca
-    // multi-widget en `paraTi`, agregar keys `panelParaTiOrder/Hidden` y extender
-    // los switches de abajo.
+    // Secciones sin claves persistidas (`health`, `latestRecords`, `tools`)
+    // retornan `[]` en getters y son no-op en setters.
 
     func order(for kind: PanelSectionKind) -> [String] {
         switch kind {

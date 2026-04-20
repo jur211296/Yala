@@ -94,9 +94,6 @@ enum L10n {
         static var sectionPlanificacion: String {
             ls("panel.section.planificacion", comment: "Panel 2.0 Planificación section title")
         }
-        static var sectionParaTi: String {
-            ls("panel.section.paraTi", comment: "Panel 2.0 Para ti section title")
-        }
         static var sectionLatestRecords: String {
             ls("panel.section.latestRecords", comment: "Panel 2.0 Últimos registros section title")
         }

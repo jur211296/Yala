@@ -14,6 +14,7 @@ import SwiftUI
 
 struct PanelHeroSection: View {
     @Bindable var viewModel: PanelViewModel
+    let sessionState: SessionState
     @Environment(AppPreferences.self) private var appPreferences
 
     @State private var showingKPIPrefs = false
@@ -45,6 +46,10 @@ struct PanelHeroSection: View {
                     showingUpgrade = true
                 }
             )
+            .contentShape(Rectangle())
+            .onTapGesture {
+                sessionState.navigateToDetail(.insights)
+            }
             .sheet(isPresented: $showingKPIPrefs) {
                 HeroKPIPreferencesSheet(viewModel: viewModel)
             }

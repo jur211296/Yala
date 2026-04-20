@@ -9,16 +9,14 @@ import Foundation
 
 /// Thematic sections of the Panel. Each widget belongs to exactly one.
 ///
-/// `health` and `paraTi` are reserved for P20-06 (Financial Score) and P20-10
-/// (Para ti). They already appear in the P20-02 config sheet so the user can
-/// toggle them; the corresponding render code arrives later in the epic and
-/// will pick up the persisted state without further changes.
+/// `health` is the P20-06 Salud Financiera section. It already appears in the
+/// P20-02 config sheet so the user can toggle it, and its render code picks up
+/// the persisted state from the sections-hidden list.
 enum PanelSectionKind: String, CaseIterable, Hashable {
     case health
     case tendencias
     case distribucion
     case planificacion
-    case paraTi
     case latestRecords
     case tools
 
@@ -28,7 +26,6 @@ enum PanelSectionKind: String, CaseIterable, Hashable {
         case .tendencias:    return L10n.Panel.sectionTendencias
         case .distribucion:  return L10n.Panel.sectionDistribucion
         case .planificacion: return L10n.Panel.sectionPlanificacion
-        case .paraTi:        return L10n.Panel.sectionParaTi
         case .latestRecords: return L10n.Panel.sectionLatestRecords
         case .tools:         return L10n.Panel.sectionTools
         }
@@ -41,7 +38,6 @@ enum PanelSectionKind: String, CaseIterable, Hashable {
         case .tendencias:    return "chart.line.uptrend.xyaxis"
         case .distribucion:  return "chart.pie"
         case .planificacion: return "calendar"
-        case .paraTi:        return "sparkles"
         case .latestRecords: return "list.bullet.rectangle"
         case .tools:         return "wrench.and.screwdriver"
         }
