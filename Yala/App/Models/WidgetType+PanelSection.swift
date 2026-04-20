@@ -83,7 +83,7 @@ extension WidgetType {
         switch self {
         case .trend, .cashFlow, .expensesByNeed, .weekdayBar:
             return .tendencias
-        case .categoriesPie, .subcategoriesPie, .topSpending, .topSubcategories:
+        case .categoriesPie, .subcategoriesPie, .topSpending, .topSubcategories, .tagsPie:
             return .distribucion
         case .budgets, .scheduledPayments, .groupsSummary:
             return .planificacion

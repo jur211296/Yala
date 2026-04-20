@@ -21,6 +21,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
     case scheduledPayments = "pagos_planificados"
     case groupsSummary = "resumen_grupos"
     case weekdayBar = "gasto_por_dia"
+    case tagsPie = "distribucion_por_etiquetas"
 
     var id: String { rawValue }
 
@@ -39,6 +40,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .scheduledPayments: return L10n.WidgetType.scheduledPayments
         case .groupsSummary: return L10n.WidgetType.groupsSummary
         case .weekdayBar: return L10n.WidgetType.weekdayBar
+        case .tagsPie: return L10n.WidgetType.expensesByTag
         }
     }
 
@@ -57,6 +59,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .scheduledPayments: return "calendar.badge.clock"
         case .groupsSummary: return "person.2.fill"
         case .weekdayBar: return "calendar.day.timeline.left"
+        case .tagsPie: return "tag.fill"
         }
     }
 
@@ -75,6 +78,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .scheduledPayments: return [.medium]  // Single size, mode selected in preferences
         case .groupsSummary: return [.medium]
         case .weekdayBar: return [.large]  // Tamaño único (full-width)
+        case .tagsPie: return [.large]  // Tamaño único (full-width)
         }
     }
 
@@ -85,7 +89,7 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
             return size == .medium ? L10n.Widget.compact : L10n.Widget.expanded
         case .topSpending, .topSubcategories, .budgets:
             return size == .medium ? L10n.Widget.top3 : L10n.Widget.top5
-        case .trend, .categoriesPie, .subcategoriesPie, .latestRecords, .exchangeRate, .scheduledPayments, .groupsSummary, .weekdayBar:
+        case .trend, .categoriesPie, .subcategoriesPie, .latestRecords, .exchangeRate, .scheduledPayments, .groupsSummary, .weekdayBar, .tagsPie:
             return nil  // Single size, no name needed
         }
     }
@@ -124,6 +128,7 @@ struct WidgetConfig: Identifiable, Codable, Equatable {
             WidgetConfig(id: UUID(), type: .exchangeRate, isVisible: false, size: .medium),
             WidgetConfig(id: UUID(), type: .groupsSummary, isVisible: false, size: .medium),
             WidgetConfig(id: UUID(), type: .weekdayBar, isVisible: true, size: .large),
+            WidgetConfig(id: UUID(), type: .tagsPie, isVisible: true, size: .large),
         ]
     }
 }

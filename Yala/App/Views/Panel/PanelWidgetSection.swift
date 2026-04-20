@@ -56,6 +56,14 @@ struct PanelWidgetRouter: View {
                 data: viewModel.weekdayWidget.weekdaySpending,
                 currencyCode: currencyCode
             )
+        case .tagsPie:
+            PanelTagsPieSection(
+                viewModel: viewModel,
+                sessionState: sessionState,
+                currencyCode: currencyCode,
+                showVariations: showVariations,
+                reduceMotion: reduceMotion
+            )
         }
     }
 }
@@ -191,6 +199,36 @@ private struct PanelSubcategoriesPieSection: View {
             size: size,
             period: viewModel.selectedPeriod,
             previousTotalAmount: viewModel.previousSubcategoriesTotalAmount,
+            showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
+        )
+    }
+}
+
+// MARK: - Tags Pie (P20-09)
+
+private struct PanelTagsPieSection: View {
+    let viewModel: PanelViewModel
+    let sessionState: SessionState
+    let currencyCode: String
+    let showVariations: Bool
+    let reduceMotion: Bool
+
+    var body: some View {
+        TagsPieWidget(
+            tags: viewModel.topTags,
+            currencyCode: currencyCode,
+            selectedTagIDs: viewModel.selectedTags,
+            onSelectTag: { id in
+                dsWithAnimation(reduceMotion) {
+                    viewModel.toggleTagFilter(id)
+                }
+            },
+            onShowDetail: { viewModel.navigateToStatistics(.categories) },
+            isExcludeMode: viewModel.isExcludeMode,
+            size: .large,
+            period: viewModel.selectedPeriod,
+            customRange: sessionState.customDateRange,
+            previousTotalAmount: viewModel.previousTagsTotalAmount,
             showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
         )
     }

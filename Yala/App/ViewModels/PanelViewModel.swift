@@ -94,6 +94,12 @@ struct PanelWeekdayData: Equatable {
     var weekdaySpending: [WeekdaySpending] = []
 }
 
+/// Pre-computed payload for the TagsPie widget in the Distribución section.
+struct PanelTagsData: Equatable {
+    var topTags: [TagSpendingSummary] = []
+    var previousTotalAmount: Double? = nil
+}
+
 /// Pre-computed payload for the period comparison page of the Trends carousel.
 /// Shape mirrors the inputs of `PeriodComparisonChartView`. When
 /// `supportsComparison` is false (period is `.allTime`) the view renders a
@@ -442,6 +448,7 @@ final class PanelViewModel {
     var heroWidget = PanelHeroData()
     var weekdayWidget = PanelWeekdayData()
     var periodComparisonWidget = PanelPeriodComparisonData()
+    var tagsWidget = PanelTagsData()
 
     /// Reemplaza el rule-based `subtext` del hero cuando es Pro + consent y
     /// hay cache hit o la API respondió. Nil ⇒ el view usa fallback
@@ -461,6 +468,8 @@ final class PanelViewModel {
     var previousCategoriesTotalAmount: Double? { categoriesWidget.previousTotalAmount }
     var topSubcategories: [SubcategorySpendingSummary] { subcategoriesWidget.topSubcategories }
     var previousSubcategoriesTotalAmount: Double? { subcategoriesWidget.previousTotalAmount }
+    var topTags: [TagSpendingSummary] { tagsWidget.topTags }
+    var previousTagsTotalAmount: Double? { tagsWidget.previousTotalAmount }
     var needTrendPoints: [NeedTrendPoint] { needWidget.needTrendPoints }
     var previousNeedTotalAmount: Double? { needWidget.previousTotalAmount }
     var previousNeedAmounts: [SubcategoryNeed: Double] { needWidget.previousAmounts }
@@ -1197,6 +1206,7 @@ final class PanelViewModel {
         let categoriesVisible = isWidgetVisible(.categoriesPie)
         let subcategoriesVisible = isWidgetVisible(.subcategoriesPie)
         let weekdayVisible = isWidgetVisible(.weekdayBar)
+        let tagsVisible = isWidgetVisible(.tagsPie)
 
         // 2. Calculate widget data per visible widget
 
@@ -1262,6 +1272,10 @@ final class PanelViewModel {
 
         if weekdayVisible {
             calculateWeekdayWidget(context: calcContext)
+        }
+
+        if tagsVisible {
+            calculateTagsWidget(context: calcContext)
         }
 
         // Second page of the Trends carousel — same visibility guard as the trend chart
@@ -1878,6 +1892,18 @@ final class PanelViewModel {
         }
     }
 
+    /// Multi-select toggle for the Panel's TagsPie widget. Reuses
+    /// `selectedTags` (backed by `SessionState.shared.selectedTags`); the
+    /// Panel's filter pipeline already propagates this selection to every
+    /// widget via `buildPanelCalculationContext` + `FilterCriteria.selectedTags`.
+    func toggleTagFilter(_ id: PersistentIdentifier) {
+        if selectedTags.contains(id) {
+            selectedTags.remove(id)
+        } else {
+            selectedTags.insert(id)
+        }
+    }
+
     // Helper to toggle subcategory (single-select behavior for widget interaction)
     // Changed from String (name) to PersistentIdentifier to handle duplicate names across categories
     func toggleSubcategoryFilter(
@@ -2434,6 +2460,52 @@ final class PanelViewModel {
         )
         let newData = PanelWeekdayData(weekdaySpending: spending)
         if newData != weekdayWidget { weekdayWidget = newData }
+    }
+
+    /// TagsPie widget (Distribución). Enriches each tag summary with its
+    /// previous-period amount (mirrors `calculateCategoriesWidget`/`calculateSubcategoriesWidget`)
+    /// so the pie shows per-tag variation — otherwise the second calculation
+    /// would be pure waste.
+    private func calculateTagsWidget(context: PanelCalculationContext) {
+        var currentData = TagSpendingCalculator.calculateTopSpending(
+            transactions: context.filteredTransactions,
+            interval: context.effectiveInterval,
+            currencyCode: context.defaultCurrencyCode
+        )
+
+        guard context.period != .allTime else {
+            let newData = PanelTagsData(topTags: currentData, previousTotalAmount: nil)
+            if newData != tagsWidget { tagsWidget = newData }
+            return
+        }
+
+        let previousInterval = PreviousPeriodHelper.previousInterval(
+            for: context.period,
+            mode: .month,
+            customRange: nil
+        )
+        let previousTransactions = context.transactionsWithoutDateFilter.filter {
+            previousInterval.contains($0.date)
+        }
+        let previousData = TagSpendingCalculator.calculateTopSpending(
+            transactions: previousTransactions,
+            interval: previousInterval,
+            currencyCode: context.defaultCurrencyCode
+        )
+
+        let previousTotal = previousData.reduce(0) { $0 + $1.amount }
+        let previousAmounts = Dictionary(
+            uniqueKeysWithValues: previousData.map { ($0.tag.persistentModelID, $0.amount) }
+        )
+        for index in currentData.indices {
+            currentData[index].previousAmount = previousAmounts[currentData[index].tag.persistentModelID]
+        }
+
+        let newData = PanelTagsData(
+            topTags: currentData,
+            previousTotalAmount: previousTotal > 0 ? previousTotal : nil
+        )
+        if newData != tagsWidget { tagsWidget = newData }
     }
 
     /// Mode is `.year` for `.thisYear`, `.month` otherwise. `.allTime` disables

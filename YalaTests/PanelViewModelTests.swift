@@ -295,4 +295,46 @@ struct PanelViewModelTests {
         #expect(!vm.isWidgetVisible(.weekdayBar))
     }
 
+    // MARK: - Tags Pie Widget (P20-09)
+    //
+    // Tests acotados a los guards de visibilidad del widget. El cálculo vive
+    // en `TagSpendingCalculator` y tiene su propia suite (15 tests).
+
+    /// `tagsPie` debe pertenecer a Distribución — define dónde aparece en el
+    /// Panel y el sheet de preferencias.
+    @Test func tagsPie_belongsToDistribucion() {
+        #expect(WidgetType.tagsPie.panelSection == .distribucion)
+        #expect(WidgetType.defaultWidgets(in: .distribucion).contains(.tagsPie))
+    }
+
+    /// Bootstrap: antes de inyectar `AppPreferences`, `isWidgetVisible(.tagsPie)`
+    /// devuelve `true` — fallback permisivo consistente con otros widgets.
+    @MainActor @Test func tagsPie_bootstrapVisibility_isPermissive() {
+        let vm = PanelViewModel()
+        #expect(vm.isWidgetVisible(.tagsPie))
+    }
+
+    /// Ocultar el widget individualmente (via `panelDistribucionHidden`) debe
+    /// flipear el guard → el compute del widget se saltea.
+    @MainActor @Test func tagsPie_skipsCompute_whenWidgetHidden() {
+        let vm = PanelViewModel()
+        let suite = "tagsPie.widgetHidden.\(UUID().uuidString)"
+        let prefs = AppPreferences(defaults: UserDefaults(suiteName: suite)!)
+        prefs.panelDistribucionHidden = [WidgetType.tagsPie.rawValue]
+        vm.setAppPreferences(prefs)
+
+        #expect(!vm.isWidgetVisible(.tagsPie))
+    }
+
+    /// Ocultar la sección Distribución entera también flipea el guard.
+    @MainActor @Test func tagsPie_skipsCompute_whenSectionHidden() {
+        let vm = PanelViewModel()
+        let suite = "tagsPie.sectionHidden.\(UUID().uuidString)"
+        let prefs = AppPreferences(defaults: UserDefaults(suiteName: suite)!)
+        prefs.panelSectionsHidden = [PanelSectionKind.distribucion.rawValue]
+        vm.setAppPreferences(prefs)
+
+        #expect(!vm.isWidgetVisible(.tagsPie))
+    }
+
 }
