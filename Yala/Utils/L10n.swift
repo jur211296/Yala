@@ -108,6 +108,18 @@ enum L10n {
             ls("panel.weekdaySubtitle", comment: "Panel weekday widget subtitle — follows selected period")
         }
 
+        enum PeriodComparison {
+            static func vs(_ month: String) -> String {
+                String(format: ls("panel.periodComparison.vs %@", comment: "Delta chip 'vs [month]' when current and previous share year"), month)
+            }
+            static func vsWithYear(_ month: String, _ year: String) -> String {
+                String(format: ls("panel.periodComparison.vsWithYear %@ %@", comment: "Delta chip 'vs [month] [yy]' when previous is from a different year"), month, year)
+            }
+            static var requiresPeriod: String {
+                ls("panel.periodComparison.requiresPeriod", comment: "Empty state shown when period is all-time — no bounded previous interval")
+            }
+        }
+
         enum SectionsConfig {
             static var title: String { ls("panel.sectionsConfig.title", comment: "Panel sections config sheet title") }
             static var footer: String { ls("panel.sectionsConfig.footer", comment: "Footer hint in Panel sections config") }

@@ -23,6 +23,9 @@
 "panel.section.latestRecords" = "Ultimi registri";
 "panel.section.tools" = "Strumenti";
 "panel.weekdaySubtitle" = "Media per giorno della settimana";
+"panel.periodComparison.vs %@" = "vs %@";
+"panel.periodComparison.vsWithYear %@ %@" = "vs %@ %@";
+"panel.periodComparison.requiresPeriod" = "Scegli un mese o un periodo da confrontare";
 "panel.sectionsConfig.title" = "Configura il Pannello";
 "panel.sectionsConfig.footer" = "Nascondi le sezioni che non ti servono. Puoi riattivarle in qualsiasi momento.";
 "panel.sectionsConfig.emptySection" = "Tutti i widget nascosti";
@@ -764,6 +767,7 @@
 "widgetType.scheduledPayments" = "Pagamenti pianificati";
 "widgetType.groupsSummary" = "Gruppi";
 "widgetType.weekdayBar" = "Spesa per giorno";
+"widgetType.periodComparison" = "Questo mese vs scorso";
 
 // MARK: - Scheduled Payments Widget
 "scheduled.widget.count" = "%d pagamenti attivi";

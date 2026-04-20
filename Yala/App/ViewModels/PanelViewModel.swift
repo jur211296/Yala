@@ -94,6 +94,30 @@ struct PanelWeekdayData: Equatable {
     var weekdaySpending: [WeekdaySpending] = []
 }
 
+/// Pre-computed payload for the period comparison page of the Trends carousel.
+/// Shape mirrors the inputs of `PeriodComparisonChartView`. When
+/// `supportsComparison` is false (period is `.allTime`) the view renders a
+/// custom empty state instead of the chart.
+struct PanelPeriodComparisonData: Equatable {
+    var currentPoints: [BarPoint] = []
+    var previousPoints: [BarPoint] = []
+    var yDomain: ClosedRange<Double> = 0...1
+    var currentInterval: DateInterval = DateInterval(start: .now, end: .now)
+    var previousInterval: DateInterval = DateInterval(start: .now, end: .now)
+    var grouping: TrendGrouping = .day
+    var comparisonMode: ComparisonMode = .month
+    var trendType: TrendType = .balance
+    var period: DetailPeriod = .thisMonth
+    var currentTotal: Double = 0
+    var previousTotal: Double? = nil
+    var supportsComparison: Bool = true
+
+    var deltaPercent: Double? {
+        guard supportsComparison, let prev = previousTotal, prev != 0 else { return nil }
+        return PreviousPeriodHelper.calculateVariation(currentAmount: currentTotal, previousAmount: prev)
+    }
+}
+
 /// Pre-computed payload for the Panel 2.0 Hero del mes (P20-04).
 /// `data` stays `nil` until the first `calculateHeroWidget()` pass so the
 /// view knows to skip rendering during the initial skeleton frame.
@@ -417,6 +441,7 @@ final class PanelViewModel {
     var healthWidget = PanelHealthData()
     var heroWidget = PanelHeroData()
     var weekdayWidget = PanelWeekdayData()
+    var periodComparisonWidget = PanelPeriodComparisonData()
 
     /// Reemplaza el rule-based `subtext` del hero cuando es Pro + consent y
     /// hay cache hit o la API respondió. Nil ⇒ el view usa fallback
@@ -1237,6 +1262,11 @@ final class PanelViewModel {
 
         if weekdayVisible {
             calculateWeekdayWidget(context: calcContext)
+        }
+
+        // Second page of the Trends carousel — same visibility guard as the trend chart
+        if trendVisible {
+            calculatePeriodComparisonWidget(context: calcContext)
         }
 
         // Latest Records — always computes (non-toggleable section)
@@ -2404,6 +2434,93 @@ final class PanelViewModel {
         )
         let newData = PanelWeekdayData(weekdaySpending: spending)
         if newData != weekdayWidget { weekdayWidget = newData }
+    }
+
+    /// Mode is `.year` for `.thisYear`, `.month` otherwise. `.allTime` disables
+    /// the comparison (no bounded previous interval). Metric mirrors the trend
+    /// chart via `SessionState.selectedTrendMetric`, forced to `.expense` when
+    /// `isExpensesOnlyMode` is active.
+    private func calculatePeriodComparisonWidget(context: PanelCalculationContext) {
+        guard context.period != .allTime else {
+            let newData = PanelPeriodComparisonData(supportsComparison: false)
+            if newData != periodComparisonWidget { periodComparisonWidget = newData }
+            return
+        }
+
+        let session = SessionState.shared
+        let metric: TrendMetric = session.isExpensesOnlyMode ? .expense : session.selectedTrendMetric
+        let trendType = convertMetricToTrendType(metric)
+        let isBalance = (trendType == .balance)
+        let mode: ComparisonMode = context.period == .thisYear ? .year : .month
+
+        let previousInterval = PreviousPeriodHelper.previousInterval(
+            for: context.period,
+            mode: mode,
+            customRange: session.customDateRange
+        )
+
+        let currentTxs: [TransactionItem]
+        let previousTxs: [TransactionItem]
+        if isBalance {
+            // Running balance requires all transactions without date filter
+            currentTxs = context.balanceTransactions
+            previousTxs = context.balanceTransactions
+        } else {
+            currentTxs = context.filteredTransactions
+            previousTxs = context.transactionsWithoutDateFilter.filter {
+                previousInterval.contains($0.date)
+            }
+        }
+
+        let currentResult = TrendDataProcessor.processTrendData(
+            transactions: currentTxs,
+            accounts: context.eligibleAccounts,
+            metric: trendType,
+            period: context.period,
+            grouping: .day,
+            interval: context.effectiveInterval,
+            currencyCode: context.defaultCurrencyCode
+        )
+
+        let previousResult = TrendDataProcessor.processTrendData(
+            transactions: previousTxs,
+            accounts: context.eligibleAccounts,
+            metric: trendType,
+            period: context.period,
+            grouping: .day,
+            interval: previousInterval,
+            currencyCode: context.defaultCurrencyCode
+        )
+
+        let allValues = currentResult.points.map(\.value) + previousResult.points.map(\.value)
+        let yDomain: ClosedRange<Double>
+        if let minV = allValues.min(), let maxV = allValues.max() {
+            let padding = (maxV - minV) * 0.1
+            yDomain = (minV - padding)...(maxV + padding)
+        } else {
+            yDomain = 0...1
+        }
+
+        let currentTotal = currentResult.points.last?.value ?? 0
+        let previousTotal: Double? = previousResult.points.isEmpty
+            ? nil
+            : (previousResult.points.last?.value ?? 0)
+
+        let newData = PanelPeriodComparisonData(
+            currentPoints: currentResult.points,
+            previousPoints: previousResult.points,
+            yDomain: yDomain,
+            currentInterval: context.effectiveInterval,
+            previousInterval: previousInterval,
+            grouping: .day,
+            comparisonMode: mode,
+            trendType: trendType,
+            period: context.period,
+            currentTotal: currentTotal,
+            previousTotal: previousTotal,
+            supportsComparison: true
+        )
+        if newData != periodComparisonWidget { periodComparisonWidget = newData }
     }
 
     /// Pre-computes the Financial Score for the Panel 2.0 "Salud Financiera" section.

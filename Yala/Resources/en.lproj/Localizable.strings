@@ -23,6 +23,9 @@
 "panel.section.latestRecords" = "Latest records";
 "panel.section.tools" = "Tools";
 "panel.weekdaySubtitle" = "Average by day of the week";
+"panel.periodComparison.vs %@" = "vs %@";
+"panel.periodComparison.vsWithYear %@ %@" = "vs %@ %@";
+"panel.periodComparison.requiresPeriod" = "Pick a month or period to compare";
 "panel.sectionsConfig.title" = "Configure Panel";
 "panel.sectionsConfig.footer" = "Hide the sections you don't need. You can turn them back on anytime.";
 "panel.sectionsConfig.emptySection" = "All widgets hidden";
@@ -766,6 +769,7 @@
 "widgetType.scheduledPayments" = "Scheduled Payments";
 "widgetType.groupsSummary" = "Groups";
 "widgetType.weekdayBar" = "Spending by day";
+"widgetType.periodComparison" = "This month vs last";
 
 // MARK: - Scheduled Payments Widget
 "scheduled.widget.count" = "%d active payments";

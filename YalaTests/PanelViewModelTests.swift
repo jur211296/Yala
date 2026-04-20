@@ -294,4 +294,5 @@ struct PanelViewModelTests {
 
         #expect(!vm.isWidgetVisible(.weekdayBar))
     }
+
 }

@@ -68,7 +68,7 @@ private struct PanelTrendSection: View {
     let currencyCode: String
 
     var body: some View {
-        TrendWidget(
+        TrendsCarouselWidget(
             viewModel: viewModel,
             sessionState: sessionState,
             currencyCode: currencyCode,
