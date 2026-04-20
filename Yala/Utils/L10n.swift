@@ -101,6 +101,65 @@ enum L10n {
             ls("panel.section.tools", comment: "Panel 2.0 Herramientas section title")
         }
 
+        // MARK: - P20-11 Section footer CTAs
+
+        static var seeMoreInTrends: String {
+            ls("panel.seeMoreInTrends", comment: "P20-11 CTA at the bottom of the Tendencias section — navigates to Statistics")
+        }
+        static var seeMoreInDistribution: String {
+            ls("panel.seeMoreInDistribution", comment: "P20-11 CTA at the bottom of the Distribución section — navigates to Statistics")
+        }
+        static var seeAllRecords: String {
+            ls("panel.seeAllRecords", comment: "P20-11 CTA at the bottom of the Últimos registros section — navigates to Records")
+        }
+        static var seeBudgets: String {
+            ls("panel.seeBudgets", comment: "P20-11 per-widget CTA below Budgets in Planificación — navigates to Budgets")
+        }
+        static var seeScheduledPayments: String {
+            ls("panel.seeScheduledPayments", comment: "P20-11 per-widget CTA below Scheduled Payments in Planificación")
+        }
+        static var seeMoreHintTrends: String {
+            ls("panel.seeMoreHint.trends", comment: "P20-11 VoiceOver hint for Tendencias CTA")
+        }
+        static var seeMoreHintDistribution: String {
+            ls("panel.seeMoreHint.distribution", comment: "P20-11 VoiceOver hint for Distribución CTA")
+        }
+        static var seeMoreHintRecords: String {
+            ls("panel.seeMoreHint.records", comment: "P20-11 VoiceOver hint for Últimos registros CTA")
+        }
+        static var seeMoreHintBudgets: String {
+            ls("panel.seeMoreHint.budgets", comment: "P20-11 VoiceOver hint for Budgets CTA")
+        }
+        static var seeMoreHintScheduled: String {
+            ls("panel.seeMoreHint.scheduled", comment: "P20-11 VoiceOver hint for Scheduled Payments CTA")
+        }
+
+        // MARK: - P20-11 Widget size picker
+
+        enum WidgetSize {
+            static var medium: String {
+                ls("panel.widgetSize.medium", comment: "P20-11 M/L size picker — medium label")
+            }
+            static var large: String {
+                ls("panel.widgetSize.large", comment: "P20-11 M/L size picker — large label")
+            }
+        }
+
+        // MARK: - P20-11 Accounts collapse
+
+        static var accountsExpand: String {
+            ls("panel.accounts.expand", comment: "P20-11 VoiceOver action — expand the Accounts section")
+        }
+        static var accountsCollapse: String {
+            ls("panel.accounts.collapse", comment: "P20-11 VoiceOver action — collapse the Accounts section")
+        }
+        static var accountsCollapsedValue: String {
+            ls("panel.accounts.collapsedValue", comment: "P20-11 accessibility value when Accounts is collapsed")
+        }
+        static var accountsExpandedValue: String {
+            ls("panel.accounts.expandedValue", comment: "P20-11 accessibility value when Accounts is expanded")
+        }
+
         static var weekdaySubtitle: String {
             ls("panel.weekdaySubtitle", comment: "Panel weekday widget subtitle — follows selected period")
         }
@@ -3195,9 +3254,6 @@ enum L10n {
         }
         static var weekdayBar: String {
             ls("widgetType.weekdayBar", comment: "")
-        }
-        static var groupsSummary: String {
-            ls("widgetType.groupsSummary", comment: "")
         }
     }
 

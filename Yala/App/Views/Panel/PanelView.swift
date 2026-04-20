@@ -125,7 +125,7 @@ struct PanelView: View {
         Button {
             sheets.showSectionsConfig = true
         } label: {
-            Image(systemName: "slider.horizontal.3")
+            Image(systemName: "slider.horizontal.2.square")
                 .font(DS.Typography.body).fontWeight(.medium)
                 .foregroundStyle(.thToolbarIcon)
         }
@@ -376,22 +376,29 @@ struct PanelView: View {
                         // Contextual guide for panel (first visit)
                         ContextualGuideBanner.panel()
 
-                        PanelAccountsSection(
+                        // P20-11: FilterControlBar extracted from the thematic
+                        // sections wrapper so it sits directly below the Hero
+                        // and above every section. Period selector + chips.
+                        PanelFilterControlBar(
                             viewModel: viewModel,
                             sessionState: sessionState,
-                            accountsSortOrderNames: appPreferences.accountsSortOrderNames,
-                            accountFormSheet: $sheets.accountFormSheet,
-                            showUpgradeForAccounts: $sheets.showUpgradeForAccounts
+                            showCustomPeriodPicker: $sheets.showCustomPeriodPicker
                         )
 
+                        // P20-11: thematic sections now include Accounts and
+                        // Latest Records in the switch. `PanelFilterAndWidgetsSection`
+                        // applies the auto-hide filter against
+                        // `viewModel.hasAnyVisibleWidget(in:)`.
                         PanelFilterAndWidgetsSection(
                             viewModel: viewModel,
                             sessionState: sessionState,
                             defaultCurrencyCodeRaw: appPreferences.defaultCurrencyCode.rawValue,
                             showVariations: appPreferences.showVariations,
+                            accountsSortOrderNames: appPreferences.accountsSortOrderNames,
                             sectionPrefsPresentation: $sheets.sectionPrefsPresentation,
-                            showCustomPeriodPicker: $sheets.showCustomPeriodPicker,
-                            showBudgetFavoritesSettings: $sheets.showBudgetFavoritesSettings
+                            showBudgetFavoritesSettings: $sheets.showBudgetFavoritesSettings,
+                            accountFormSheet: $sheets.accountFormSheet,
+                            showUpgradeForAccounts: $sheets.showUpgradeForAccounts
                         )
                     }
                     .padding(.top, DS.Spacing.lg)

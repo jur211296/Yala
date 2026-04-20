@@ -447,17 +447,6 @@ struct CategoriesPieWidget: View {
                             .minimumScaleFactor(0.7)
                     }
                     Spacer()
-                    if onShowDetail != nil {
-                        Button {
-                            onShowDetail?()
-                        } label: {
-                            Image(systemName: "chevron.right")
-                                .font(DS.Typography.headline)
-                                .foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(L10n.Accessibility.viewDetails)
-                    }
                 }
             }
         }

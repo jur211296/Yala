@@ -380,15 +380,6 @@ struct CashFlowWidget: View {
                     }
                 }
 
-                if onShowDetail != nil {
-                    Button(action: { onShowDetail?() }) {
-                        Image(systemName: "chevron.right")
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(L10n.Accessibility.viewDetails)
-                }
             }
             .padding([.horizontal, .top], DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.md)

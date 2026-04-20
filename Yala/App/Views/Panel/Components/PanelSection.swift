@@ -3,26 +3,35 @@
 //  Yala
 //
 //  Reusable container for thematic Panel sections.
-//  Header: title + optional subtitle, optional preferences/navigate buttons.
+//  Header: title + optional subtitle, optional preferences button.
 //  Body: arbitrary @ViewBuilder content.
+//  Footer: optional @ViewBuilder (P20-11 "Ver más en X" CTAs).
 //
 //  LazyVStack inside the Panel ScrollView crashes on tab switch — use plain VStack.
+//
+//  P20-11:
+//   - Replaced legacy `onNavigate` chevron with an optional `footer` slot — CTAs
+//     now live *after* the content, not in the header.
+//   - Modernized prefs icon to `slider.horizontal.2.square`.
+//   - Expanded title↔content spacing to `xl` and added vertical header padding
+//     for visual breathing room between sections.
 //
 
 import SwiftUI
 
-struct PanelSection<Content: View>: View {
+struct PanelSection<Content: View, Footer: View>: View {
     let title: String
     var subtitle: String? = nil
     var onPreferences: (() -> Void)? = nil
-    var onNavigate: (() -> Void)? = nil
 
     @ViewBuilder var content: () -> Content
+    @ViewBuilder var footer: () -> Footer
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+        VStack(alignment: .leading, spacing: DS.Spacing.xl) {
             header
             VStack(spacing: DS.Spacing.lg) { content() }
+            footer()
         }
     }
 
@@ -43,23 +52,33 @@ struct PanelSection<Content: View>: View {
 
             if let onPreferences {
                 Button(action: onPreferences) {
-                    Image(systemName: "slider.horizontal.3")
+                    Image(systemName: "slider.horizontal.2.square")
                         .font(DS.Typography.body)
                         .fontWeight(.medium)
                         .foregroundStyle(Color.primary)
                 }
                 .accessibilityLabel(L10n.Accessibility.widgetPreferences)
             }
-
-            if let onNavigate {
-                Button(action: onNavigate) {
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.secondary)
-                }
-            }
         }
         .padding(.trailing, DS.Spacing.xxs)
+        .padding(.vertical, DS.Spacing.xs)
+    }
+}
+
+// MARK: - Footer-less convenience initializer
+
+extension PanelSection where Footer == EmptyView {
+    init(
+        title: String,
+        subtitle: String? = nil,
+        onPreferences: (() -> Void)? = nil,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.onPreferences = onPreferences
+        self.content = content
+        self.footer = { EmptyView() }
     }
 }
 
@@ -87,12 +106,16 @@ struct PanelSection<Content: View>: View {
 
             PanelSection(
                 title: "Últimos registros",
-                onNavigate: {}
-            ) {
-                RoundedRectangle(cornerRadius: DS.Radius.md)
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(height: 80)
-            }
+                onPreferences: nil,
+                content: {
+                    RoundedRectangle(cornerRadius: DS.Radius.md)
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(height: 80)
+                },
+                footer: {
+                    Text("Footer CTA").foregroundStyle(.tint)
+                }
+            )
         }
         .padding()
     }

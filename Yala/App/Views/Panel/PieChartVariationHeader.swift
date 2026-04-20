@@ -102,19 +102,6 @@ struct PieChartVariationHeader: View {
                 }
             }
 
-            // Chevron for detail (if provided)
-            if onShowDetail != nil {
-                Button {
-                    onShowDetail?()
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.Accessibility.viewDetails)
-                .padding(.leading, DS.Spacing.sm)
-            }
         }
     }
 

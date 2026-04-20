@@ -451,4 +451,22 @@ struct AppPreferencesTests {
         prefs.panelPrefsMigratedV2 = false
         #expect(defaults.bool(forKey: AppPreferences.Keys.panelPrefsMigratedV2) == false)
     }
+
+    // MARK: - P20-11 panelAccountsCollapsed (synced)
+
+    @Test func set_panelAccountsCollapsed_persistsAndReloads() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+
+        // Default false (expanded on first open)
+        #expect(prefs.panelAccountsCollapsed == false)
+
+        // Toggle on: persists immediately to UserDefaults
+        prefs.panelAccountsCollapsed = true
+        #expect(defaults.bool(forKey: AppPreferences.Keys.panelAccountsCollapsed) == true)
+
+        // Round-trip through a fresh AppPreferences instance
+        let reloaded = AppPreferences(defaults: defaults)
+        #expect(reloaded.panelAccountsCollapsed == true)
+    }
 }

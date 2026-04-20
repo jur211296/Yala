@@ -21,6 +21,29 @@
 "panel.section.planificacion" = "Planning";
 "panel.section.latestRecords" = "Latest records";
 "panel.section.tools" = "Tools";
+
+// P20-11: Section footer CTAs
+"panel.seeMoreInTrends" = "See more in Trends";
+"panel.seeMoreInDistribution" = "See more in Distribution";
+"panel.seeAllRecords" = "See all";
+"panel.seeBudgets" = "See budgets";
+"panel.seeScheduledPayments" = "See scheduled payments";
+"panel.seeMoreHint.trends" = "Opens the Trends screen";
+"panel.seeMoreHint.distribution" = "Opens the Distribution screen";
+"panel.seeMoreHint.records" = "Opens all records";
+"panel.seeMoreHint.budgets" = "Opens the Budgets screen";
+"panel.seeMoreHint.scheduled" = "Opens the Scheduled Payments screen";
+
+// P20-11: Widget size picker
+"panel.widgetSize.medium" = "Compact";
+"panel.widgetSize.large" = "Expanded";
+
+// P20-11: Accounts collapse
+"panel.accounts.expand" = "Expand Accounts";
+"panel.accounts.collapse" = "Collapse Accounts";
+"panel.accounts.collapsedValue" = "Collapsed";
+"panel.accounts.expandedValue" = "Expanded";
+
 "panel.weekdaySubtitle" = "Average by day of the week";
 "panel.periodComparison.vs %@" = "vs %@";
 "panel.periodComparison.vsWithYear %@ %@" = "vs %@ %@";
@@ -766,7 +789,6 @@
 "widgetType.exchangeRate" = "Exchange Rate";
 "widgetType.budgets" = "Budgets";
 "widgetType.scheduledPayments" = "Scheduled Payments";
-"widgetType.groupsSummary" = "Groups";
 "widgetType.weekdayBar" = "Spending by day";
 "widgetType.periodComparison" = "This month vs last";
 
@@ -998,7 +1020,7 @@
 
 "statistics.title" = "Statistics";
 "statistics.trends" = "Trends";
-"statistics.categories" = "Categories";
+"statistics.categories" = "Distribution";
 "statistics.records" = "Records";
 
 

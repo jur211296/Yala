@@ -16,6 +16,10 @@
 //   - large  → `PanelBackgroundView` + `VStack + Divider + solidCard`
 //     canonical pattern (UI-PATTERNS.md, mirrors `CategoriesSettingsListView`).
 //
+//  P20-11:
+//   - Picker de tamaño (Compacta/Ampliada) por widget cuando `type.supportsSize`.
+//   - Botones de reset y reorder en la toolbar cambian a `Color.primary`.
+//
 
 import SwiftUI
 
@@ -48,7 +52,7 @@ struct PanelSectionPreferencesSheet: View {
                     } label: {
                         Image(systemName: "arrow.counterclockwise")
                             .font(DS.Typography.body).fontWeight(.medium)
-                            .foregroundStyle(.thToolbarIcon)
+                            .foregroundStyle(Color.primary)
                     }
                     .accessibilityLabel(L10n.Widget.resetLayout)
                 }
@@ -58,7 +62,7 @@ struct PanelSectionPreferencesSheet: View {
                     } label: {
                         Image(systemName: "arrow.up.arrow.down")
                             .font(DS.Typography.body).fontWeight(.medium)
-                            .foregroundStyle(.thToolbarIcon)
+                            .foregroundStyle(Color.primary)
                     }
                     .accessibilityLabel(L10n.Action.reorder)
                     .disabled(viewModel.orderedWidgetTypes(in: kind).count < 2)
@@ -84,7 +88,7 @@ struct PanelSectionPreferencesSheet: View {
         Form {
             Section {
                 ForEach(viewModel.orderedWidgetTypes(in: kind), id: \.self) { type in
-                    toggleRow(for: type)
+                    widgetRow(for: type)
                 }
             }
         }
@@ -100,7 +104,7 @@ struct PanelSectionPreferencesSheet: View {
                 let types = viewModel.orderedWidgetTypes(in: kind)
                 VStack(spacing: DS.Spacing.none) {
                     ForEach(Array(types.enumerated()), id: \.element) { index, type in
-                        toggleRow(for: type)
+                        widgetRow(for: type)
                             .padding(.horizontal, DS.Spacing.lg)
                             .padding(.vertical, DS.Spacing.sm)
 
@@ -152,32 +156,58 @@ struct PanelSectionPreferencesSheet: View {
         .presentationDragIndicator(.visible)
     }
 
-    // MARK: - Toggle Row (shared by medium + large)
+    // MARK: - Widget Row (Toggle + optional size picker)
 
     @ViewBuilder
-    private func toggleRow(for type: WidgetType) -> some View {
+    private func widgetRow(for type: WidgetType) -> some View {
         let isHidden = viewModel.isWidgetHidden(type)
-        Toggle(
-            isOn: Binding(
-                get: { !isHidden },
-                set: { viewModel.setWidgetHidden(type, hidden: !$0) }
-            )
-        ) {
-            HStack(spacing: DS.Spacing.md) {
-                Image(systemName: type.iconName)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.tint)
-                    .frame(width: 28)
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(type.displayName)
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Toggle(
+                isOn: Binding(
+                    get: { !isHidden },
+                    set: { viewModel.setWidgetHidden(type, hidden: !$0) }
+                )
+            ) {
+                HStack(spacing: DS.Spacing.md) {
+                    Image(systemName: type.iconName)
                         .font(DS.Typography.body)
-                    if isHidden {
-                        Text(L10n.Common.hidden)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
+                        .foregroundStyle(.tint)
+                        .frame(width: 28)
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                        Text(type.displayName)
+                            .font(DS.Typography.body)
+                        if isHidden {
+                            Text(L10n.Common.hidden)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
             }
+
+            if type.supportsSize {
+                sizePicker(for: type, disabled: isHidden)
+            }
         }
+    }
+
+    // MARK: - Size Picker (P20-11 — recover M/L variants)
+
+    @ViewBuilder
+    private func sizePicker(for type: WidgetType, disabled: Bool) -> some View {
+        Picker(
+            selection: Binding(
+                get: { viewModel.widgetSize(type) },
+                set: { viewModel.setWidgetSize(type, size: $0) }
+            )
+        ) {
+            Text(L10n.Panel.WidgetSize.medium).tag(WidgetSize.medium)
+            Text(L10n.Panel.WidgetSize.large).tag(WidgetSize.large)
+        } label: {
+            EmptyView()
+        }
+        .pickerStyle(.segmented)
+        .disabled(disabled)
+        .accessibilityLabel(type.displayName)
     }
 }

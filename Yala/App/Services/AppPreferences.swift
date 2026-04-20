@@ -464,6 +464,16 @@ final class AppPreferences {
         }
     }
 
+    /// P20-11: whether the Cuentas section is currently collapsed. Default
+    /// is `false` (expanded on first open). Synced via iCloud KV so the
+    /// collapse state follows the user across devices.
+    var panelAccountsCollapsed: Bool = false {
+        didSet {
+            guard oldValue != panelAccountsCollapsed else { return }
+            persistBool(panelAccountsCollapsed, forKey: Keys.panelAccountsCollapsed, synced: true)
+        }
+    }
+
     // MARK: - Hero KPI Preferences (P20-04b)
     //
     // Single global set (not per-section) — shape mirrors the sections pattern
@@ -546,6 +556,57 @@ final class AppPreferences {
         let hiddenCount = hidden(for: kind).count
         let total = WidgetType.defaultWidgets(in: kind).count
         return hiddenCount >= total
+    }
+
+    /// P20-11: opinionated first-launch defaults for Panel 2.0. Seeds the
+    /// per-section order/hidden preferences so an install fresh lands on a
+    /// "rich but not saturated" Panel.
+    ///
+    /// Invoked by `PanelPreferencesMigration.runIfNeeded` when it detects
+    /// the install is truly fresh (no legacy `panel_widget_configs_v1` blob
+    /// AND `panelPrefsMigratedV2 == false`). Not called during upgrades —
+    /// those preserve whatever the user had.
+    ///
+    /// Uses `WidgetType.rawValue` (Spanish identifiers like "tendencia_saldo")
+    /// — the persisted format the per-section lists serialize to.
+    func setupDefaultsForNewUser() {
+        // Tendencias: trend (L) + cashFlow (L) visible; weekdayBar + need hidden.
+        panelTendenciasOrder  = [
+            WidgetType.trend.rawValue,
+            WidgetType.cashFlow.rawValue,
+            WidgetType.weekdayBar.rawValue,
+            WidgetType.expensesByNeed.rawValue,
+        ]
+        panelTendenciasHidden = [
+            WidgetType.weekdayBar.rawValue,
+            WidgetType.expensesByNeed.rawValue,
+        ]
+
+        // Distribución: only categoriesPie (L) visible; rest hidden.
+        panelDistribucionOrder  = [
+            WidgetType.categoriesPie.rawValue,
+            WidgetType.topSubcategories.rawValue,
+            WidgetType.topSpending.rawValue,
+            WidgetType.subcategoriesPie.rawValue,
+            WidgetType.tagsPie.rawValue,
+        ]
+        panelDistribucionHidden = [
+            WidgetType.topSubcategories.rawValue,
+            WidgetType.topSpending.rawValue,
+            WidgetType.subcategoriesPie.rawValue,
+            WidgetType.tagsPie.rawValue,
+        ]
+
+        // Planificación: budgets + scheduledPayments visible (groupsSummary
+        // was removed entirely in P20-11).
+        panelPlanificacionOrder  = [
+            WidgetType.budgets.rawValue,
+            WidgetType.scheduledPayments.rawValue,
+        ]
+        panelPlanificacionHidden = []
+
+        // All sections visible by default.
+        panelSectionsHidden = []
     }
 
     // MARK: - Init
@@ -747,6 +808,7 @@ final class AppPreferences {
             panelSectionsHidden = value
         }
         panelPrefsMigratedV2 = defaults.bool(forKey: Keys.panelPrefsMigratedV2)
+        panelAccountsCollapsed = defaults.bool(forKey: Keys.panelAccountsCollapsed)
 
         // Hero KPI Preferences (P20-04b)
         if let value = parseList(defaults.string(forKey: Keys.panelHeroKPIsOrder)) {
@@ -866,6 +928,7 @@ final class AppPreferences {
         static let panelPlanificacionHidden = "panelPlanificacionHidden"
         static let panelSectionsHidden = "panelSectionsHidden"
         static let panelPrefsMigratedV2 = "panelPrefsMigratedV2"
+        static let panelAccountsCollapsed = "panelAccountsCollapsed"
 
         // Hero KPI Preferences (P20-04b)
         static let panelHeroKPIsOrder = "panelHeroKPIsOrder"

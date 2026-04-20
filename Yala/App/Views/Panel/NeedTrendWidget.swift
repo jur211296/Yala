@@ -166,18 +166,6 @@ struct NeedTrendWidget: View {
                     }
                 }
 
-                // Navigation / Detail
-                if onShowDetail != nil {
-                    Button {
-                        onShowDetail?()
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.top, DS.Spacing.xs)
-                }
             }
 
             // Content

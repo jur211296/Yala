@@ -139,7 +139,7 @@ struct PanelSectionsConfigView: View {
                     } label: {
                         Image(systemName: "arrow.counterclockwise")
                             .font(DS.Typography.body).fontWeight(.medium)
-                            .foregroundStyle(.thToolbarIcon)
+                            .foregroundStyle(Color.primary)
                     }
                     .accessibilityLabel(
                         L10n.Panel.SectionsConfig.restoreWidgets(kind.localizedTitle)

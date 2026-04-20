@@ -188,21 +188,28 @@ struct PanelViewModelTests {
         #expect(vm.isSectionVisible(.tools))
     }
 
-    /// `latestRecords` is the Panel's primary CTA — the guard must treat it as
-    /// visible even if it slips into `hiddenSections`.
-    @MainActor @Test func visibilityGuard_latestRecordsAlwaysVisible() {
+    /// P20-11: `latestRecords` is now toggleable. When the user hides it from
+    /// the config sheet, `isSectionVisible` must return false — this is the
+    /// contract driving the auto-hide behaviour.
+    @MainActor @Test func visibilityGuard_latestRecordsNowToggleable() {
         let vm = PanelViewModel()
-        vm.hiddenSections = [.latestRecords, .distribucion, .tendencias, .planificacion]
+        vm.hiddenSections = [.latestRecords]
+        #expect(vm.isSectionVisible(.latestRecords) == false)
+
+        // Existing users with empty hiddenSections still see the section.
+        vm.hiddenSections = []
         #expect(vm.isSectionVisible(.latestRecords))
     }
 
-    /// `toggleableSections` must exclude non-toggleable sections — guarantees
-    /// the config sheet never lets users hide `latestRecords`.
-    @Test func toggleableSections_excludesNonToggleable() {
+    /// P20-11: `toggleableSections` covers every kind — every section has a
+    /// row in `PanelSectionsConfigView`. The helper's `canBeHidden` always
+    /// returns true.
+    @Test func toggleableSections_coversAllSections() {
         let toggleable = PanelSectionKind.toggleableSections
-        #expect(!toggleable.contains(.latestRecords))
-        for section in toggleable {
+        #expect(toggleable.count == PanelSectionKind.allCases.count)
+        for section in PanelSectionKind.allCases {
             #expect(section.canBeHidden)
+            #expect(toggleable.contains(section))
         }
     }
 

@@ -156,19 +156,6 @@ struct TopSubcategoriesWidget: View {
                     }
                 }
 
-                // Chevron (conditionally shown)
-                if onShowMore != nil {
-                    Button {
-                        onShowMore?()
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.secondary)
-                            .padding(.leading, DS.Spacing.xs)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(L10n.Accessibility.showMoreSubcategories)
-                }
             }
 
             // Row 2: Selector (Only Medium/Large)

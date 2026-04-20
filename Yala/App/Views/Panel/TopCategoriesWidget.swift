@@ -153,19 +153,6 @@ struct TopCategoriesWidget: View {
                 }
             }
 
-            // Chevron for Detail View
-            if onShowMore != nil {
-                Button {
-                    onShowMore?()
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.secondary)
-                        .padding(.leading, DS.Spacing.xs)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.Accessibility.viewAllCategories)
-            }
         }
     }
 

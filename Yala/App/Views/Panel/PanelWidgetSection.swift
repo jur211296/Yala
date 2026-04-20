@@ -47,10 +47,6 @@ struct PanelWidgetRouter: View {
             PanelBudgetsSection(viewModel: viewModel, sessionState: sessionState, currencyCode: currencyCode, size: config.size, showBudgetFavoritesSettings: $showBudgetFavoritesSettings)
         case .scheduledPayments:
             PanelScheduledPaymentsSection(viewModel: viewModel, sessionState: sessionState, currencyCode: currencyCode, mode: config.scheduledPaymentsMode)
-        case .groupsSummary:
-            if let summary = viewModel.groupGlobalSummary {
-                GroupsSummaryWidget(summary: summary, currencyCode: currencyCode)
-            }
         case .weekdayBar:
             WeekdayBarPanelWidget(
                 data: viewModel.weekdayWidget.weekdaySpending,

@@ -117,21 +117,78 @@ struct PanelPreferencesMigrationTests {
         #expect(prefs.panelPrefsMigratedV2 == true)
     }
 
-    // MARK: - noLegacyData — fresh install
+    // MARK: - noLegacyData — fresh install (P20-11: seeds opinionated defaults)
 
-    @Test func migration_noLegacyData_writesEmpty() {
+    @Test func migration_noLegacyData_seedsP20_11Defaults() {
         let defaults = Self.makeSuite()
         // No `panel_widget_configs_v1` key — simulate fresh install
 
         let prefs = AppPreferences(defaults: defaults)
 
         #expect(prefs.panelPrefsMigratedV2 == true)
-        #expect(prefs.panelTendenciasOrder == [])
-        #expect(prefs.panelTendenciasHidden == [])
-        #expect(prefs.panelDistribucionOrder == [])
-        #expect(prefs.panelDistribucionHidden == [])
-        #expect(prefs.panelPlanificacionOrder == [])
+
+        // Tendencias: trend + cashFlow visible, weekdayBar + need hidden
+        #expect(prefs.panelTendenciasOrder == [
+            "tendencia_saldo", "flujo_efectivo", "gasto_por_dia", "gastos_por_naturaleza",
+        ])
+        #expect(prefs.panelTendenciasHidden == [
+            "gasto_por_dia", "gastos_por_naturaleza",
+        ])
+
+        // Distribución: only categoriesPie visible
+        #expect(prefs.panelDistribucionOrder == [
+            "categorias_torta", "subcategorias_principales", "categorias_principales",
+            "subcategorias_torta", "distribucion_por_etiquetas",
+        ])
+        #expect(prefs.panelDistribucionHidden == [
+            "subcategorias_principales", "categorias_principales",
+            "subcategorias_torta", "distribucion_por_etiquetas",
+        ])
+
+        // Planificación: budgets + scheduledPayments visible (groupsSummary
+        // removed entirely in P20-11).
+        #expect(prefs.panelPlanificacionOrder == [
+            "presupuestos", "pagos_planificados",
+        ])
         #expect(prefs.panelPlanificacionHidden == [])
+
+        #expect(prefs.panelSectionsHidden == [])
+    }
+
+    // MARK: - setupDefaultsForNewUser — idempotent across call sites
+
+    @Test func setupDefaultsForNewUser_overwritesWithOpinionatedDefaults() {
+        let defaults = Self.makeSuite()
+        defaults.set(true, forKey: AppPreferences.Keys.panelPrefsMigratedV2)
+        let prefs = AppPreferences(defaults: defaults)
+
+        // Seed some custom state first to confirm setupDefaults overwrites it.
+        prefs.panelTendenciasOrder = ["flujo_efectivo"]
+        prefs.panelTendenciasHidden = []
+
+        prefs.setupDefaultsForNewUser()
+
+        #expect(prefs.panelTendenciasOrder.first == "tendencia_saldo")
+        #expect(prefs.panelTendenciasHidden.contains("gasto_por_dia"))
+    }
+
+    // MARK: - upgrade path — does not trigger setupDefaults
+
+    @Test func migration_withLegacyData_doesNotCallSetupDefaults() {
+        let defaults = Self.makeSuite()
+        // Write legacy blob with only one widget — if migration seeded defaults
+        // the other two tendencias widgets would appear in order. They must not.
+        let legacy: [WidgetConfig] = [
+            WidgetConfig(id: UUID(), type: .trend, isVisible: true, size: .medium),
+        ]
+        Self.writeLegacyJSON(legacy, to: defaults)
+
+        let prefs = AppPreferences(defaults: defaults)
+
+        // Only trend is bucketized from legacy — defaults NOT applied.
+        #expect(prefs.panelTendenciasOrder == ["tendencia_saldo"])
+        // No hidden entries persisted from legacy (trend was visible).
+        #expect(prefs.panelTendenciasHidden == [])
     }
 
     // MARK: - invalidJSON — corrupt blob

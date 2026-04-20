@@ -21,6 +21,29 @@
 "panel.section.planificacion" = "Planejamento";
 "panel.section.latestRecords" = "Últimos registros";
 "panel.section.tools" = "Ferramentas";
+
+// P20-11: Section footer CTAs
+"panel.seeMoreInTrends" = "Ver mais em Tendências";
+"panel.seeMoreInDistribution" = "Ver mais em Distribuição";
+"panel.seeAllRecords" = "Ver todos";
+"panel.seeBudgets" = "Ver orçamentos";
+"panel.seeScheduledPayments" = "Ver pagamentos planejados";
+"panel.seeMoreHint.trends" = "Abre a tela de Tendências";
+"panel.seeMoreHint.distribution" = "Abre a tela de Distribuição";
+"panel.seeMoreHint.records" = "Abre todos os registros";
+"panel.seeMoreHint.budgets" = "Abre a tela de Orçamentos";
+"panel.seeMoreHint.scheduled" = "Abre a tela de Pagamentos Planejados";
+
+// P20-11: Widget size picker
+"panel.widgetSize.medium" = "Compacta";
+"panel.widgetSize.large" = "Ampliada";
+
+// P20-11: Accounts collapse
+"panel.accounts.expand" = "Expandir Contas";
+"panel.accounts.collapse" = "Recolher Contas";
+"panel.accounts.collapsedValue" = "Recolhido";
+"panel.accounts.expandedValue" = "Expandido";
+
 "panel.weekdaySubtitle" = "Média por dia da semana";
 "panel.periodComparison.vs %@" = "vs %@";
 "panel.periodComparison.vsWithYear %@ %@" = "vs %@ %@";
@@ -764,7 +787,6 @@
 "widgetType.exchangeRate" = "Taxa de cambio";
 "widgetType.budgets" = "Orcamentos";
 "widgetType.scheduledPayments" = "Pagamentos agendados";
-"widgetType.groupsSummary" = "Grupos";
 "widgetType.weekdayBar" = "Gasto por dia";
 "widgetType.periodComparison" = "Este mês vs anterior";
 
@@ -996,7 +1018,7 @@
 
 "statistics.title" = "Estatisticas";
 "statistics.trends" = "Tendencias";
-"statistics.categories" = "Categorias";
+"statistics.categories" = "Distribuição";
 "statistics.records" = "Registros";
 
 

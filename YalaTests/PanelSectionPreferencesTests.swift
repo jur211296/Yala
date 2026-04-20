@@ -43,13 +43,15 @@ struct PanelSectionPreferencesTests {
     @Test func activeWidgets_inSection_returnsOrderFromAppPreferences() {
         let defaults = Self.makeSuite()
         let prefs = AppPreferences(defaults: defaults)
+        // Order covers 3 of the 4 tendencias widgets — weekdayBar is appended
+        // at the tail by the self-healing `buildOrderedRawWidgets` pass.
         prefs.panelTendenciasOrder = ["flujo_efectivo", "tendencia_saldo", "gastos_por_naturaleza"]
 
         let vm = Self.makeVM(with: prefs)
         let widgets = vm.activeWidgets(in: .tendencias)
 
         #expect(widgets.map { $0.type.rawValue } == [
-            "flujo_efectivo", "tendencia_saldo", "gastos_por_naturaleza"
+            "flujo_efectivo", "tendencia_saldo", "gastos_por_naturaleza", "gasto_por_dia"
         ])
     }
 
@@ -64,7 +66,10 @@ struct PanelSectionPreferencesTests {
         let vm = Self.makeVM(with: prefs)
         let widgets = vm.activeWidgets(in: .tendencias)
 
-        #expect(widgets.map { $0.type.rawValue } == ["tendencia_saldo", "gastos_por_naturaleza"])
+        // `flujo_efectivo` hidden; `gasto_por_dia` appended at tail (self-healing).
+        #expect(widgets.map { $0.type.rawValue } == [
+            "tendencia_saldo", "gastos_por_naturaleza", "gasto_por_dia",
+        ])
     }
 
     // MARK: - 3. activeWidgets appends unknown defaults at tail
@@ -72,15 +77,16 @@ struct PanelSectionPreferencesTests {
     @Test func activeWidgets_inSection_appendsUnknownDefaultsAtTail() {
         let defaults = Self.makeSuite()
         let prefs = AppPreferences(defaults: defaults)
-        // Order stores only 2 of the 3 tendencias widgets. Third (gastos_por_naturaleza)
-        // must appear at the tail automatically.
+        // Order stores only 2 of the 4 tendencias widgets. The remaining two
+        // (`gastos_por_naturaleza`, `gasto_por_dia`) must appear at the tail
+        // automatically in declaration order of `WidgetType.defaultWidgets`.
         prefs.panelTendenciasOrder = ["flujo_efectivo", "tendencia_saldo"]
 
         let vm = Self.makeVM(with: prefs)
         let widgets = vm.activeWidgets(in: .tendencias)
 
         #expect(widgets.map { $0.type.rawValue } == [
-            "flujo_efectivo", "tendencia_saldo", "gastos_por_naturaleza"
+            "flujo_efectivo", "tendencia_saldo", "gastos_por_naturaleza", "gasto_por_dia",
         ])
     }
 
@@ -96,7 +102,7 @@ struct PanelSectionPreferencesTests {
         let widgets = vm.activeWidgets(in: .tendencias)
 
         #expect(widgets.map { $0.type.rawValue } == [
-            "tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza"
+            "tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza", "gasto_por_dia",
         ])
     }
 
@@ -114,7 +120,7 @@ struct PanelSectionPreferencesTests {
         let widgets = vm.activeWidgets(in: .tendencias)
 
         #expect(widgets.map { $0.type.rawValue } == [
-            "tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza"
+            "tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza", "gasto_por_dia",
         ])
     }
 
@@ -158,22 +164,31 @@ struct PanelSectionPreferencesTests {
     @Test func moveWidgetInSection_debounces200ms_andPersistsOnce() async throws {
         let defaults = Self.makeSuite()
         let prefs = AppPreferences(defaults: defaults)
-        prefs.panelTendenciasOrder = ["tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza"]
+        // Seed full 4-widget order so the draft operates on the complete set —
+        // otherwise `orderedWidgetTypes` self-heals and the move indices won't
+        // match what the user actually dragged in the sheet UI.
+        prefs.panelTendenciasOrder = [
+            "tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza", "gasto_por_dia",
+        ]
         let vm = Self.makeVM(with: prefs)
 
-        // First move: swap positions 0 ↔ 1.
+        // First move: position 0 → 2 (drops "tendencia_saldo" between the middle pair).
         vm.moveWidgetInSection(.tendencias, from: IndexSet(integer: 0), to: 2)
-        // Draft is visible immediately via orderedWidgetTypes.
         let draftOrder = vm.orderedWidgetTypes(in: .tendencias).map(\.rawValue)
-        #expect(draftOrder == ["flujo_efectivo", "tendencia_saldo", "gastos_por_naturaleza"])
+        #expect(draftOrder == [
+            "flujo_efectivo", "tendencia_saldo", "gastos_por_naturaleza", "gasto_por_dia",
+        ])
         // AppPreferences not yet committed.
-        #expect(prefs.panelTendenciasOrder == ["tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza"])
+        #expect(prefs.panelTendenciasOrder == [
+            "tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza", "gasto_por_dia",
+        ])
 
-        // Second move within the debounce window: swap last two. Only the final order
-        // must be persisted (single write coalesced).
+        // Second move within the debounce window. Only the final order persists.
         vm.moveWidgetInSection(.tendencias, from: IndexSet(integer: 2), to: 0)
         try await Task.sleep(for: .milliseconds(350))
-        #expect(prefs.panelTendenciasOrder == ["gastos_por_naturaleza", "flujo_efectivo", "tendencia_saldo"])
+        #expect(prefs.panelTendenciasOrder == [
+            "gastos_por_naturaleza", "flujo_efectivo", "tendencia_saldo", "gasto_por_dia",
+        ])
     }
 
     // MARK: - 9. flushPendingSectionWrites commits synchronously
@@ -244,6 +259,74 @@ struct PanelSectionPreferencesTests {
 
         // activeWidgets falls back to section defaults.
         let types = vm.activeWidgets(in: .tendencias).map(\.type.rawValue)
-        #expect(Set(types) == Set(["tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza"]))
+        #expect(Set(types) == Set([
+            "tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza", "gasto_por_dia",
+        ]))
+    }
+
+    // MARK: - P20-11: hasAnyVisibleWidget drives auto-hide
+
+    @Test func hasAnyVisibleWidget_returnsTrueForSingleWidgetSections() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        let vm = Self.makeVM(with: prefs)
+
+        // Single-widget sections: helper always reports true so their section
+        // stays on-screen as long as `isSectionVisible` allows it.
+        #expect(vm.hasAnyVisibleWidget(in: .health))
+        #expect(vm.hasAnyVisibleWidget(in: .accounts))
+        #expect(vm.hasAnyVisibleWidget(in: .latestRecords))
+        #expect(vm.hasAnyVisibleWidget(in: .tools))
+    }
+
+    @Test func hasAnyVisibleWidget_returnsFalseWhenAllHiddenInTendencias() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        prefs.panelTendenciasHidden = [
+            "tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza", "gasto_por_dia",
+        ]
+        let vm = Self.makeVM(with: prefs)
+
+        #expect(vm.hasAnyVisibleWidget(in: .tendencias) == false)
+        // Other multi-widget sections still report true (nothing hidden).
+        #expect(vm.hasAnyVisibleWidget(in: .distribucion))
+        #expect(vm.hasAnyVisibleWidget(in: .planificacion))
+    }
+
+    // MARK: - P20-11: widgetSize / setWidgetSize round-trip
+
+    @Test func widgetSize_defaultsMediumWhenUnknown() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        let vm = Self.makeVM(with: prefs)
+
+        // Fresh VM — widgetConfigs loads from .standard; absent types fallback to .medium.
+        // Verify the helper returns a value (not crash) for every WidgetType.
+        for type in WidgetType.allCases {
+            let _ = vm.widgetSize(type)
+        }
+    }
+
+    @Test func setWidgetSize_noOpForUnsupportedTypes() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        let vm = Self.makeVM(with: prefs)
+
+        // `trend` doesn't support size variants — setting .large must be silently ignored.
+        let before = vm.widgetSize(.trend)
+        vm.setWidgetSize(.trend, size: before == .medium ? .large : .medium)
+        #expect(vm.widgetSize(.trend) == before)
+    }
+
+    @Test func setWidgetSize_persistsForSupportedTypes() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        let vm = Self.makeVM(with: prefs)
+
+        // `cashFlow` supports M/L. Flip and verify the change sticks in widgetConfigs.
+        let before = vm.widgetSize(.cashFlow)
+        let target: WidgetSize = before == .medium ? .large : .medium
+        vm.setWidgetSize(.cashFlow, size: target)
+        #expect(vm.widgetSize(.cashFlow) == target)
     }
 }

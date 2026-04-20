@@ -85,19 +85,6 @@ struct ExchangeRateWidget: View {
 
             Spacer()
 
-            // Optional Detail Chevron
-            if onShowDetail != nil {
-                Button {
-                    onShowDetail?()
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.secondary)
-                        .padding(.leading, DS.Spacing.sm)
-                }
-                .accessibilityLabel(L10n.Accessibility.viewDetails)
-                .buttonStyle(.plain)
-            }
         }
     }
 

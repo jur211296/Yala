@@ -201,12 +201,6 @@ final class PanelViewModel {
     private(set) var budgets: [Budget] = []
     private(set) var scheduledPayments: [ScheduledPayment] = []
     private(set) var pendingDrafts: [InboxDraft] = []
-    private(set) var groupGlobalSummary: GroupGlobalSummary?
-
-    var hasGroupsWithPendingBalances: Bool {
-        guard let summary = groupGlobalSummary else { return false }
-        return !summary.totalOwedToMe.isEmpty || !summary.totalIOwe.isEmpty || summary.pendingSettlements > 0
-    }
 
     // MARK: - State
 
@@ -224,6 +218,27 @@ final class PanelViewModel {
     func isSectionVisible(_ kind: PanelSectionKind) -> Bool {
         guard kind.canBeHidden else { return true }
         return !hiddenSections.contains(kind)
+    }
+
+    /// Whether a section has at least one visible widget. Used by
+    /// `PanelFilterAndWidgetsSection.visibleSections` to auto-hide multi-widget
+    /// sections where the user has individually hidden every widget — the
+    /// "restore" affordance in `PanelSectionsConfigView` is the recovery path.
+    ///
+    /// Single-widget sections (health, accounts, latestRecords, tools) always
+    /// have content as long as `isSectionVisible` is true.
+    func hasAnyVisibleWidget(in section: PanelSectionKind) -> Bool {
+        switch section {
+        case .health, .accounts, .latestRecords, .tools:
+            return true
+        case .tendencias, .distribucion, .planificacion:
+            // Early-exit scan — avoids constructing the full WidgetConfig array
+            // on every Panel render (this method runs inside `visibleSections`
+            // filter, once per section per render).
+            let hidden = draftHidden[section] ?? appPreferences?.hidden(for: section) ?? []
+            let hiddenSet = Set(hidden)
+            return buildOrderedRawWidgets(for: section).contains(where: { !hiddenSet.contains($0) })
+        }
     }
 
     // MARK: - Filter Properties (SSOT: Read/Write from SessionState)
@@ -402,36 +417,7 @@ final class PanelViewModel {
         // Pre-compute account balances (not period-dependent — only changes when transactions change)
         calculateAccountBalances()
 
-        // Load group balance summary for widget
-        loadGroupSummary(context: context)
-
         if !isReady { isReady = true }
-    }
-
-    private func loadGroupSummary(context: ModelContext) {
-        do {
-            let allExpenses = try context.fetch(FetchDescriptor<SplitExpense>())
-            guard !allExpenses.isEmpty else {
-                groupGlobalSummary = nil
-                return
-            }
-            let allShares = try context.fetch(FetchDescriptor<SplitShare>())
-            let allSettlements = try context.fetch(FetchDescriptor<SplitSettlement>())
-            let allMembers = try context.fetch(FetchDescriptor<SplitMember>())
-            let currentUserMemberIDs = Set(allMembers.filter(\.isCurrentUser).map(\.id).map(\.uuidString))
-
-            groupGlobalSummary = GroupBalanceService.globalSummary(
-                allExpenses: allExpenses,
-                allShares: allShares,
-                allSettlements: allSettlements,
-                currentUserMemberIDs: currentUserMemberIDs
-            )
-        } catch {
-            #if DEBUG
-            print("PanelViewModel: Error loading group summary: \(error)")
-            #endif
-            groupGlobalSummary = nil
-        }
     }
 
     // MARK: - Widget Data (struct-backed — reduces observation surface)
@@ -727,6 +713,33 @@ final class PanelViewModel {
     /// so the first `performCalculation()` sees the real per-widget visibility state.
     func setAppPreferences(_ prefs: AppPreferences) {
         self.appPreferences = prefs
+    }
+
+    // MARK: - Widget Size (P20-11)
+
+    /// Current `.medium` / `.large` size for a widget type.
+    /// Falls back to `.medium` when the widget isn't yet stored (first launch
+    /// pre-injection, or widget type introduced after last save).
+    func widgetSize(_ type: WidgetType) -> WidgetSize {
+        widgetConfigs.first(where: { $0.type == type })?.size ?? .medium
+    }
+
+    /// Updates the `.medium` / `.large` size for a widget type. Persists via
+    /// `WidgetConfigManager.save()` (silent per-widget store — not the
+    /// per-section SSOT). Triggers a recalculation so the widget renders at
+    /// its new variant immediately.
+    ///
+    /// No-op when the widget type doesn't support size variants or when the
+    /// value is already the requested one (the Equatable guard on
+    /// `widgetConfigs = newValue` prevents spurious observer notifications).
+    func setWidgetSize(_ type: WidgetType, size: WidgetSize) {
+        guard type.supportsSize else { return }
+        guard let idx = widgetConfigs.firstIndex(where: { $0.type == type }) else { return }
+        guard widgetConfigs[idx].size != size else { return }
+        var updated = widgetConfigs
+        updated[idx].size = size
+        widgetConfigs = updated
+        widgetConfig.save()
     }
 
     // MARK: - Section Preferences Mutators (P20-03)

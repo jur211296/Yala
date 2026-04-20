@@ -63,6 +63,8 @@ final class PreferenceSyncService {
         case panelPlanificacionOrder
         case panelPlanificacionHidden
         case panelSectionsHidden
+        // P20-11 — Cuentas collapse state (synced so state follows across devices)
+        case panelAccountsCollapsed
     }
 
     /// Keys for cross-device wipe coordination (iKV = remote, local = UserDefaults)
@@ -186,7 +188,8 @@ final class PreferenceSyncService {
                     }
                 }
 
-            case .budgetAlertsEnabled, .expensesOnlyMode, .colorfulIcons, .showVariations:
+            case .budgetAlertsEnabled, .expensesOnlyMode, .colorfulIcons, .showVariations,
+                 .panelAccountsCollapsed:
                 if iKV.object(forKey: k) != nil {
                     local.set(iKV.bool(forKey: k), forKey: k)
                 }
