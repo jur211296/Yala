@@ -28,6 +28,7 @@ struct ContentView: View {
     @State private var remoteWipeTask: Task<Void, Never>?
     @State private var showRemoteWipeAlert: Bool = false
     @State private var showICloudRestartAlert: Bool = false
+    @State private var showSyncSettingsSheet: Bool = false
     @State private var showProTrialOffer: Bool = false
     @State private var showWhatsNew: Bool = false
     @State private var whatsNewData: (features: [WhatsNewFeature], version: String)?
@@ -71,7 +72,7 @@ struct ContentView: View {
 
             // Positive toast overlay — only for reactive events (remote onboarding,
             // remote restore). The noisy "Syncing…" banner was removed; failure states
-            // are surfaced by SyncStatusIndicator in each tab's top bar.
+            // are surfaced by SyncStatusBanner below when MainTabView is mounted.
             if let toast = positiveToast {
                 Text(toast)
                     .font(DS.Typography.caption)
@@ -82,6 +83,14 @@ struct ContentView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     .padding(.top, DS.Spacing.xxl)
+            }
+
+            // Sync status banner overlay — failure/stalled states from iCloudSyncService.
+            // Gated to match MainTabView timing: only shows once onboarding/splash/initial
+            // check are resolved, avoiding competition with splash, iCloudSyncWaitingView,
+            // onboarding, and biometric lock flows.
+            if hasCompletedOnboarding && isInitialCheckDone && !showSplash {
+                syncStatusBannerOverlay
             }
 
             // Splash screen overlay — waits for both minimum duration AND initial state check
@@ -201,6 +210,10 @@ struct ContentView: View {
                     showProTrialOffer = true
                 }
             }
+        }
+        .sheet(isPresented: $showSyncSettingsSheet) {
+            ProfileView(initialDestination: .iCloudSync)
+                .environment(SessionState.shared)
         }
         .sheet(isPresented: $showProTrialOffer, onDismiss: {
         }) {
@@ -536,6 +549,15 @@ struct ContentView: View {
             showOnboarding = true
         }
         isInitialCheckDone = true
+    }
+
+    /// Extracted from body so the overlay isn't recreated on every ContentView
+    /// body recompute (dataVersion changes, etc.).
+    private var syncStatusBannerOverlay: some View {
+        SyncStatusBannerHost { showSyncSettingsSheet = true }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            // Offset below the inline nav bar so the pill doesn't cover the title.
+            .padding(.top, 48)
     }
 
     /// Inline view shown while waiting for iCloud sync on a new device
@@ -941,12 +963,6 @@ struct MorePlaceholderView: View {
                 showFullModeActivation = false
             }
             .environment(SessionState.shared)
-        }
-        .onChange(of: SessionState.shared.shouldOpenProfile) { _, shouldOpen in
-            if shouldOpen {
-                showProfile = true
-                SessionState.shared.shouldOpenProfile = false
-            }
         }
         .onChange(of: SessionState.shared.shouldOpenFullModeActivation) { _, shouldOpen in
             if shouldOpen {

@@ -86,8 +86,6 @@ struct PlanningView: View {
                     ToolbarSpacer(.fixed, placement: .topBarTrailing)
                 }
 
-                SyncIndicatorToolbarItem()
-
                 // Profile button
                 ProfileToolbarItem {
                     isPresentingSettings = true
