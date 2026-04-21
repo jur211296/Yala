@@ -478,8 +478,7 @@ struct ScheduledPaymentDetailView: View {
     /// Refresh linked transactions and recalculate payment data after sheet dismissal
     private func refreshPaymentData() {
         linkedTransactions = viewModel.fetchLinkedTransactions(for: payment)
-        viewModel.loadPayments()
-        viewModel.calculatePaymentData(payments: viewModel.allPayments)
+        viewModel.reloadAndRecalculate()
     }
 
     /// Unlink transactions associated with this payment for a specific date

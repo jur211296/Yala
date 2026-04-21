@@ -38,6 +38,12 @@ final class BudgetsViewModel {
 
     private var modelContext: ModelContext?
 
+    // MARK: - Debounce state
+
+    private var recalculateTask: Task<Void, Never>?
+    private var pendingReload = false
+    private(set) var isInBackground = false
+
     // MARK: - Data
 
     private(set) var allBudgets: [Budget] = []
@@ -685,6 +691,52 @@ final class BudgetsViewModel {
         } else {
             // Multiple categories: use app icon + electric indigo
             return ("chart.pie.fill", AppConstants.defaultColorHex)
+        }
+    }
+
+    // MARK: - Debounced Recalculation
+
+    /// Suppresses recalculation when the app leaves active state — prevents 0x8BADF00D.
+    func setBackground(_ value: Bool) {
+        isInBackground = value
+        if value {
+            recalculateTask?.cancel()
+            recalculateTask = nil
+            pendingReload = false
+        }
+    }
+
+    /// Cancel any pending recalculation (call from `.onDisappear`).
+    func cancelRecalculation() {
+        recalculateTask?.cancel()
+    }
+
+    /// Compute-only debounced (150ms). Use when a filter/UI input changed
+    /// but the underlying DB hasn't mutated.
+    func recalculateData(hideInactive: Bool, defaultCurrencyCode: String) {
+        scheduleRecalculation(reload: false, hideInactive: hideInactive, currency: defaultCurrencyCode)
+    }
+
+    /// Reload + compute debounced (150ms). Use when DB mutations could have
+    /// occurred (e.g. after editor dismiss or `dataVersion` bump).
+    func reloadAndRecalculate(hideInactive: Bool, defaultCurrencyCode: String) {
+        scheduleRecalculation(reload: true, hideInactive: hideInactive, currency: defaultCurrencyCode)
+    }
+
+    /// Shared debounce (150ms). `pendingReload` ensures a reload request isn't lost
+    /// if a subsequent compute-only call arrives within the debounce window.
+    private func scheduleRecalculation(reload: Bool, hideInactive: Bool, currency: String) {
+        guard !isInBackground else { return }
+        guard UIApplication.shared.applicationState == .active else { return }
+        if reload { pendingReload = true }
+        recalculateTask?.cancel()
+        recalculateTask = Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+            guard !Task.isCancelled else { return }
+            let shouldReload = pendingReload
+            pendingReload = false
+            if shouldReload { loadData() }
+            refreshBudgetData(hideInactive: hideInactive, defaultCurrencyCode: currency)
         }
     }
 }

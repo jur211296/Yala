@@ -12,6 +12,7 @@ struct ScheduledPaymentsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.scenePhase) private var scenePhase
 
     @Environment(AppPreferences.self) private var appPreferences
 
@@ -73,11 +74,17 @@ struct ScheduledPaymentsView: View {
                 viewModel.showPaymentEditor = true
             }
         }
+        .onDisappear {
+            viewModel.cancelRecalculation()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            viewModel.setBackground(phase != .active)
+        }
         .onChange(of: viewModel.selectedTab) { _, _ in
-            viewModel.calculatePaymentData(payments: viewModel.allPayments)
+            viewModel.recalculateData()
         }
         .onChange(of: viewModel.selectedMonth) { _, _ in
-            viewModel.calculatePaymentData(payments: viewModel.allPayments)
+            viewModel.recalculateData()
         }
         .onChange(of: sessionState.dataVersion) { _, _ in
             refreshData()
@@ -144,8 +151,7 @@ struct ScheduledPaymentsView: View {
     // MARK: - Data Management
 
     private func refreshData() {
-        viewModel.loadPayments()
-        viewModel.calculatePaymentData(payments: viewModel.allPayments)
+        viewModel.reloadAndRecalculate()
     }
 }
 

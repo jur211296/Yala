@@ -15,6 +15,7 @@ struct BudgetsListView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.scenePhase) private var scenePhase
 
     // ViewModel
     @State private var viewModel = BudgetsViewModel()
@@ -93,6 +94,12 @@ struct BudgetsListView: View {
                 viewModel.showBudgetEditor = true
             }
         }
+        .onDisappear {
+            viewModel.cancelRecalculation()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            viewModel.setBackground(phase != .active)
+        }
         .onChange(of: sessionState.dataVersion) { _, _ in
             refreshData()
         }
@@ -156,7 +163,7 @@ struct BudgetsListView: View {
             default:
                 break
             }
-            refreshData()
+            recalculatePeriodFilters()
         }
     }
 
@@ -167,7 +174,7 @@ struct BudgetsListView: View {
             Button {
                 dsWithAnimation(reduceMotion) {
                     viewModel.previousPeriod()
-                    refreshData()
+                    recalculatePeriodFilters()
                 }
             } label: {
                 Image(systemName: "chevron.left")
@@ -201,7 +208,7 @@ struct BudgetsListView: View {
             Button {
                 dsWithAnimation(reduceMotion) {
                     viewModel.nextPeriod()
-                    refreshData()
+                    recalculatePeriodFilters()
                 }
             } label: {
                 Image(systemName: "chevron.right")
@@ -219,7 +226,7 @@ struct BudgetsListView: View {
     private var hideInactiveButton: some View {
         Button {
             appPreferences.budgetsHideInactive.toggle()
-            refreshData()
+            recalculatePeriodFilters()
         } label: {
             Image(systemName: appPreferences.budgetsHideInactive ? "eye" : "eye.slash")
                 .font(DS.Typography.bodyBold)
@@ -304,9 +311,19 @@ struct BudgetsListView: View {
 
     // MARK: - Data Management
 
+    /// Reload from DB + recompute. Use when DB mutations could have occurred
+    /// (editor dismiss, PeriodSelector, dataVersion bump).
     private func refreshData() {
-        viewModel.loadData()
-        viewModel.refreshBudgetData(
+        viewModel.reloadAndRecalculate(
+            hideInactive: appPreferences.budgetsHideInactive,
+            defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
+        )
+    }
+
+    /// Recompute only (no re-fetch). Use when a filter or period changed
+    /// but the DB is unchanged.
+    private func recalculatePeriodFilters() {
+        viewModel.recalculateData(
             hideInactive: appPreferences.budgetsHideInactive,
             defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
