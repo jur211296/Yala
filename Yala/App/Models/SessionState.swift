@@ -485,9 +485,6 @@ class SessionState {
     /// Pending milestone upgrade (transaction count milestone)
     var pendingMilestoneUpgrade: Int?
 
-    /// Flag to auto-open Profile from Insights banner redirect
-    var shouldOpenProfile: Bool = false
-
     /// Flag to present FullModeActivationView from any view (nudge CTA routing)
     var shouldOpenFullModeActivation: Bool = false
 

@@ -19,13 +19,16 @@ struct ContentView: View {
     @State private var splashOpacity: Double = 1
     @State private var showICloudDataFound: Bool = false
     @State private var isWaitingForSync: Bool = false
-    @State private var showSyncBanner: Bool = false
-    @State private var syncDismissTask: Task<Void, Never>?
+    /// Positive confirmation toast for reactive events (remote onboarding / restore).
+    /// Replaces the noisy "Syncing…" banner. Nil when hidden.
+    @State private var positiveToast: String?
+    @State private var toastDismissTask: Task<Void, Never>?
     @State private var deduplicationTask: Task<Void, Never>?
     @State private var wipeGraceTask: Task<Void, Never>?
     @State private var remoteWipeTask: Task<Void, Never>?
     @State private var showRemoteWipeAlert: Bool = false
     @State private var showICloudRestartAlert: Bool = false
+    @State private var showSyncSettingsSheet: Bool = false
     @State private var showProTrialOffer: Bool = false
     @State private var showWhatsNew: Bool = false
     @State private var whatsNewData: (features: [WhatsNewFeature], version: String)?
@@ -67,21 +70,27 @@ struct ContentView: View {
                     .ignoresSafeArea()
             }
 
-            // Sync banner overlay
-            if showSyncBanner {
-                HStack(spacing: DS.Spacing.sm) {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                    Text(L10n.iCloud.syncingBanner)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.sm)
-                .glassEffect()
-                .transition(.move(edge: .top).combined(with: .opacity))
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .padding(.top, DS.Spacing.xxl)
+            // Positive toast overlay — only for reactive events (remote onboarding,
+            // remote restore). The noisy "Syncing…" banner was removed; failure states
+            // are surfaced by SyncStatusBanner below when MainTabView is mounted.
+            if let toast = positiveToast {
+                Text(toast)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.sm)
+                    .glassEffect()
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .padding(.top, DS.Spacing.xxl)
+            }
+
+            // Sync status banner overlay — failure/stalled states from iCloudSyncService.
+            // Gated to match MainTabView timing: only shows once onboarding/splash/initial
+            // check are resolved, avoiding competition with splash, iCloudSyncWaitingView,
+            // onboarding, and biometric lock flows.
+            if hasCompletedOnboarding && isInitialCheckDone && !showSplash {
+                syncStatusBannerOverlay
             }
 
             // Splash screen overlay — waits for both minimum duration AND initial state check
@@ -110,10 +119,6 @@ struct ContentView: View {
             if isWaitingForSync && nowHasData {
                 showICloudDataFound = true
             }
-            if nowHasData && !SessionState.shared.isWipingData {
-                withAnimation(.easeInOut) { showSyncBanner = true }
-            }
-            scheduleSyncBannerDismiss()
         }
         .onChange(of: hasCompletedOnboarding) { _, newValue in
             // React to data wipe: show onboarding when flag is reset
@@ -205,6 +210,10 @@ struct ContentView: View {
                     showProTrialOffer = true
                 }
             }
+        }
+        .sheet(isPresented: $showSyncSettingsSheet) {
+            ProfileView(initialDestination: .iCloudSync)
+                .environment(SessionState.shared)
         }
         .sheet(isPresented: $showProTrialOffer, onDismiss: {
         }) {
@@ -361,16 +370,15 @@ struct ContentView: View {
         return accountCount > 0 || categoryCount > 0
     }
 
-    /// Schedule sync banner auto-dismiss after 5 seconds of no data changes
-    private func scheduleSyncBannerDismiss() {
-        syncDismissTask?.cancel()
-        syncDismissTask = Task {
-            do {
-                try await Task.sleep(for: .seconds(5))
-                withAnimation(.easeInOut) { showSyncBanner = false }
-            } catch {
-                // Task cancelled — a new change arrived, dismiss rescheduled
-            }
+    /// Show a positive confirmation toast for ~3s. Used for remote onboarding
+    /// completed and remote restore completed — the only events where a brief
+    /// "your data is here" reassurance is worth interrupting the silent sync rule.
+    private func showPositiveToast(_ text: String) {
+        withAnimation(.easeInOut) { positiveToast = text }
+        toastDismissTask?.cancel()
+        toastDismissTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            withAnimation(.easeInOut) { positiveToast = nil }
         }
     }
 
@@ -393,8 +401,7 @@ struct ContentView: View {
         guard showOnboarding else { return }
         hasCompletedOnboarding = true
         showOnboarding = false
-        withAnimation(.easeInOut) { showSyncBanner = true }
-        scheduleSyncBannerDismiss()
+        showPositiveToast(L10n.iCloud.remoteOnboardingCompleted)
     }
 
     private func performLocalWipeForRemoteSync(skipOnboarding: Bool) {
@@ -426,8 +433,7 @@ struct ContentView: View {
 
             if skipOnboarding {
                 hasCompletedOnboarding = true
-                withAnimation(.easeInOut) { showSyncBanner = true }
-                scheduleSyncBannerDismiss()
+                showPositiveToast(L10n.iCloud.remoteRestoreCompleted)
             } else {
                 hasCompletedOnboarding = false  // onChange triggers onboarding
             }
@@ -526,8 +532,7 @@ struct ContentView: View {
                     isInitialCheckDone = true
                     scheduleDeduplication()
                     if !SessionState.shared.isWipingData {
-                        withAnimation(.easeInOut) { showSyncBanner = true }
-                        scheduleSyncBannerDismiss()
+                        showPositiveToast(L10n.iCloud.remoteOnboardingCompleted)
                     }
                     return
                 }
@@ -544,6 +549,15 @@ struct ContentView: View {
             showOnboarding = true
         }
         isInitialCheckDone = true
+    }
+
+    /// Extracted from body so the overlay isn't recreated on every ContentView
+    /// body recompute (dataVersion changes, etc.).
+    private var syncStatusBannerOverlay: some View {
+        SyncStatusBannerHost { showSyncSettingsSheet = true }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            // Offset below the inline nav bar so the pill doesn't cover the title.
+            .padding(.top, 48)
     }
 
     /// Inline view shown while waiting for iCloud sync on a new device
@@ -949,12 +963,6 @@ struct MorePlaceholderView: View {
                 showFullModeActivation = false
             }
             .environment(SessionState.shared)
-        }
-        .onChange(of: SessionState.shared.shouldOpenProfile) { _, shouldOpen in
-            if shouldOpen {
-                showProfile = true
-                SessionState.shared.shouldOpenProfile = false
-            }
         }
         .onChange(of: SessionState.shared.shouldOpenFullModeActivation) { _, shouldOpen in
             if shouldOpen {
