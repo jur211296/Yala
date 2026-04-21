@@ -19,6 +19,7 @@ struct DetailContainerView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.scenePhase) private var scenePhase
 
     // MARK: - ViewModels
 
@@ -38,6 +39,7 @@ struct DetailContainerView: View {
     @State private var isPresentingSettings = false
     @State private var recalculateTask: Task<Void, Never>?
     @State private var pendingReload = false
+    @State private var isInBackground = false
     private let isFromSearch: Bool  // Skip session sync when coming from global search
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
@@ -152,8 +154,21 @@ struct DetailContainerView: View {
                 performRecalculation()
             }
             .onDisappear { recalculateTask?.cancel() }
-            .onChange(of: selectedTab) { _, _ in
-                calculateInsightsData()
+            .onChange(of: scenePhase) { _, newPhase in
+                switch newPhase {
+                case .background, .inactive:
+                    isInBackground = true
+                    recalculateTask?.cancel()
+                case .active:
+                    guard UIApplication.shared.applicationState == .active else { return }
+                    isInBackground = false
+                    reloadAndRecalculate()
+                @unknown default:
+                    break
+                }
+            }
+            .onChange(of: selectedTab) { _, newTab in
+                if newTab == .insights { scheduleRecalculation(reload: false) }
             }
             .onChange(of: sessionState.selectedMainTab) { _, newTab in
                 // Sync filters when navigating to Statistics tab (view may already be mounted)
@@ -167,11 +182,9 @@ struct DetailContainerView: View {
             .onChange(of: sessionState.dataVersion) { _, _ in
                 reloadAndRecalculate()
             }
-            .onChange(of: sessionState.comparisonMode) {
-                if selectedTab == .insights { calculateInsightsData() }
-            }
-            .onChange(of: toneSetting) { calculateInsightsData() }
-            .onChange(of: focusSetting) { calculateInsightsData() }
+            .onChange(of: sessionState.comparisonMode) { recalculateData() }
+            .onChange(of: toneSetting) { recalculateData() }
+            .onChange(of: focusSetting) { recalculateData() }
             .modifier(
                 DetailContainerObservers(
                     sessionState: sessionState,
@@ -493,8 +506,12 @@ struct DetailContainerView: View {
 
     /// Debounced recalculation (150ms). `pendingReload` ensures a reload request isn't lost
     /// if a subsequent calculate-only call arrives within the debounce window.
+    /// Background guard: skip scheduling while scenePhase is background/inactive — pendingReload
+    /// is preserved so the next foreground reloadAndRecalculate picks it up. The
+    /// `applicationState` check mirrors PanelView and prevents work during snapshot time.
     private func scheduleRecalculation(reload: Bool) {
         if reload { pendingReload = true }
+        guard !isInBackground, UIApplication.shared.applicationState == .active else { return }
         recalculateTask?.cancel()
         recalculateTask = Task { @MainActor in
             do { try await Task.sleep(for: .milliseconds(150)) } catch { return }

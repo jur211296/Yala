@@ -11,6 +11,9 @@ import Testing
 
 @testable import Yala
 
+// Serialized because the equality-guard tests mutate `SessionState.shared.dataVersion`
+// (a singleton); parallel execution produces flaky results when tests interleave reads.
+@Suite(.serialized)
 struct InsightsViewModelTests {
 
     // MARK: - Initial State
@@ -61,5 +64,80 @@ struct InsightsViewModelTests {
         #expect(vm.aiActivated == false)
         #expect(vm.isLoadingAI == false)
         #expect(vm.aiError == nil)
+    }
+
+    // MARK: - Equality Guard
+
+    // Empty input arrays avoid instantiating a ModelContainer: Swift Testing doesn't
+    // set XCTestConfigurationFilePath, so `SwiftDataConfiguration.isRunningTests` is
+    // false and `context.insert` attempts to open the real CloudKit container.
+
+    @MainActor @Test func equalityGuard_sameInputs_skipsRecalculation() {
+        let vm = InsightsViewModel()
+
+        vm.calculateInsightsData(
+            transactions: [], accounts: [], categories: [],
+            budgets: [], scheduledPayments: [],
+            period: .thisMonth, criteria: .empty, currencyCode: "PEN",
+            customRange: nil, comparisonMode: .month
+        )
+        let firstSig = vm.lastInputsSignature
+        #expect(firstSig != 0)
+
+        // Same inputs → signature unchanged → cache-hit (no recalculation).
+        vm.calculateInsightsData(
+            transactions: [], accounts: [], categories: [],
+            budgets: [], scheduledPayments: [],
+            period: .thisMonth, criteria: .empty, currencyCode: "PEN",
+            customRange: nil, comparisonMode: .month
+        )
+        #expect(vm.lastInputsSignature == firstSig)
+    }
+
+    @MainActor @Test func equalityGuard_dataVersionBump_recalculates() {
+        let vm = InsightsViewModel()
+        let initialDataVersion = SessionState.shared.dataVersion
+        defer { SessionState.shared.dataVersion = initialDataVersion }
+
+        vm.calculateInsightsData(
+            transactions: [], accounts: [], categories: [],
+            budgets: [], scheduledPayments: [],
+            period: .thisMonth, criteria: .empty, currencyCode: "PEN",
+            customRange: nil, comparisonMode: .month
+        )
+        let firstSig = vm.lastInputsSignature
+
+        // dataVersion bump simulates CRUD/CloudKit change → must invalidate cache.
+        SessionState.shared.dataVersion += 1
+        vm.calculateInsightsData(
+            transactions: [], accounts: [], categories: [],
+            budgets: [], scheduledPayments: [],
+            period: .thisMonth, criteria: .empty, currencyCode: "PEN",
+            customRange: nil, comparisonMode: .month
+        )
+        #expect(vm.lastInputsSignature != firstSig)
+    }
+
+    @MainActor @Test func invalidateCache_forcesRecalcOnNextCall() {
+        let vm = InsightsViewModel()
+
+        vm.calculateInsightsData(
+            transactions: [], accounts: [], categories: [],
+            budgets: [], scheduledPayments: [],
+            period: .thisMonth, criteria: .empty, currencyCode: "PEN",
+            customRange: nil, comparisonMode: .month
+        )
+        #expect(vm.lastInputsSignature != 0)
+
+        vm.invalidateCache()
+        #expect(vm.lastInputsSignature == 0)
+
+        vm.calculateInsightsData(
+            transactions: [], accounts: [], categories: [],
+            budgets: [], scheduledPayments: [],
+            period: .thisMonth, criteria: .empty, currencyCode: "PEN",
+            customRange: nil, comparisonMode: .month
+        )
+        #expect(vm.lastInputsSignature != 0)
     }
 }

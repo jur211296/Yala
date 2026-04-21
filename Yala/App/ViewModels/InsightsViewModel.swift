@@ -42,6 +42,13 @@ final class InsightsViewModel {
     var currentTone: InsightTone { .current }
     var currentFocus: InsightFocus { .current }
 
+    // MARK: - Equality Guard
+
+    private(set) var lastInputsSignature: Int = 0
+
+    /// Forces the next `calculateInsightsData` call to recompute even if inputs match.
+    func invalidateCache() { lastInputsSignature = 0 }
+
     // MARK: - Calculation
 
     /// Computes all insights data from filtered transactions.
@@ -57,6 +64,22 @@ final class InsightsViewModel {
         customRange: DateInterval?,
         comparisonMode: ComparisonMode = .month
     ) {
+        var hasher = Hasher()
+        hasher.combine(SessionState.shared.dataVersion)
+        hasher.combine(criteria.hashValue)
+        hasher.combine(period)
+        hasher.combine(currencyCode)
+        hasher.combine(comparisonMode)
+        hasher.combine(currentTone)
+        hasher.combine(currentFocus)
+        if let customRange {
+            hasher.combine(customRange.start)
+            hasher.combine(customRange.duration)
+        }
+        let signature = hasher.finalize()
+        guard signature != lastInputsSignature else { return }
+        lastInputsSignature = signature
+
         insightData = InsightsCalculator.calculate(
             transactions: transactions,
             accounts: accounts,

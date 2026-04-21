@@ -91,6 +91,10 @@ struct TrendsTabView: View {
     // Custom period picker state
     @State private var showCustomPeriodPicker: Bool = false
 
+    // Debounce task for cashflow + period comparison recalculation.
+    // Coalesces rapid onChange bursts (filter changes, bulk transaction inserts).
+    @State private var recalcTask: Task<Void, Never>?
+
     // MARK: - Cash Flow View Type
 
     enum CashFlowViewType: String, CaseIterable, Identifiable {
@@ -133,53 +137,24 @@ struct TrendsTabView: View {
         }
         .scrollViewGlassEdges()
         .onAppear {
+            // Initial computation must be synchronous so the first render shows real data
+            // rather than empty placeholders. Subsequent updates go through the debounce.
             calculateCashFlowData()
             calculatePeriodComparisonData()
         }
-        .onChange(of: trendsViewModel.detailPeriod) {
-            calculateCashFlowData()
-            calculatePeriodComparisonData()
-        }
-        .onChange(of: trendsViewModel.selectedAccounts) {
-            calculateCashFlowData()
-            calculatePeriodComparisonData()
-        }
-        .onChange(of: trendsViewModel.selectedCategories) {
-            calculateCashFlowData()
-            calculatePeriodComparisonData()
-        }
-        .onChange(of: trendsViewModel.selectedSubcategories) {
-            calculateCashFlowData()
-            calculatePeriodComparisonData()
-        }
-        .onChange(of: trendsViewModel.selectedTags) {
-            calculateCashFlowData()
-            calculatePeriodComparisonData()
-        }
-        .onChange(of: trendsViewModel.selectedNeeds) {
-            calculateCashFlowData()
-            calculatePeriodComparisonData()
-        }
-        .onChange(of: trendsViewModel.selectedMetric) {
-            calculatePeriodComparisonData()
-        }
-        .onChange(of: sessionState.comparisonMode) {
-            // Recalculate when comparison mode changes (P-1 vs A-1)
-            calculateCashFlowData()
-            calculatePeriodComparisonData()
-        }
-        .onChange(of: sessionState.selectedTransactionNatures) {
-            // SSOT: trendsViewModel.selectedTransactionNatures IS sessionState.selectedTransactionNatures
-            // Just recalculate when it changes
-            calculateCashFlowData()
-            calculatePeriodComparisonData()
-        }
-        // Use count instead of full array to avoid crashes during data wipe
-        // while still detecting when transactions are added/deleted
-        .onChange(of: allTransactions.count) {
-            calculateCashFlowData()
-            calculatePeriodComparisonData()
-        }
+        .onDisappear { recalcTask?.cancel() }
+        .onChange(of: trendsViewModel.detailPeriod)            { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.selectedAccounts)        { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.selectedCategories)      { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.selectedSubcategories)   { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.selectedTags)            { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.selectedNeeds)           { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.selectedMetric)          { scheduleTrendsRecalc() }
+        .onChange(of: sessionState.comparisonMode)             { scheduleTrendsRecalc() }
+        .onChange(of: sessionState.selectedTransactionNatures) { scheduleTrendsRecalc() }
+        // Use count instead of full array to avoid crashes during data wipe.
+        // Longer debounce (300ms) tolerates bulk inserts (import, draft dedup).
+        .onChange(of: allTransactions.count)                   { scheduleTrendsRecalc(debounceMs: 300) }
         .sheet(isPresented: $showCustomPeriodPicker) {
             CustomPeriodPickerSheet(
                 minDate: transactionDateRange.start,
@@ -993,6 +968,21 @@ struct TrendsTabView: View {
     }
 
     // MARK: - Chip Text Helpers
+
+    // MARK: - Debounced Recalculation
+
+    /// Debounces `calculateCashFlowData` + `calculatePeriodComparisonData` so rapid onChange
+    /// bursts (filter changes, bulk transaction inserts) collapse into a single pass.
+    /// Default 200ms for filter changes; use 300ms for `allTransactions.count` to tolerate imports.
+    private func scheduleTrendsRecalc(debounceMs: Int = 200) {
+        recalcTask?.cancel()
+        recalcTask = Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(debounceMs)) } catch { return }
+            guard !Task.isCancelled else { return }
+            calculateCashFlowData()
+            calculatePeriodComparisonData()
+        }
+    }
 
     // MARK: - Cash Flow Data Calculation
 
