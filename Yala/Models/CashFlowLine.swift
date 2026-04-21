@@ -67,7 +67,8 @@ final class CashFlowLine {
     @Relationship(deleteRule: .nullify, inverse: \ScheduledPayment.cashFlowLines)
     var scheduledPayment: ScheduledPayment?
 
-    var plan: CashFlowPlan?
+    @Relationship(deleteRule: .nullify)
+    var plan: CashFlowPlan?   // Explicit for CloudKit REFERENCE mapping
 
     @Relationship(deleteRule: .cascade, inverse: \CashFlowOverride.line)
     var overrides: [CashFlowOverride]?

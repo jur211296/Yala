@@ -17,7 +17,8 @@ final class CashFlowOverride {
     var amount: Double = 0
     var note: String = ""
 
-    var line: CashFlowLine?          // Inverse side
+    @Relationship(deleteRule: .nullify)
+    var line: CashFlowLine?          // Explicit for CloudKit REFERENCE mapping
 
     init(monthKey: String, amount: Double, note: String = "") {
         self.monthKey = monthKey

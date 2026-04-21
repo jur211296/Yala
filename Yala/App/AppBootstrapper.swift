@@ -77,6 +77,11 @@ final class AppBootstrapper {
 
         let context = container.mainContext
 
+        // 0.0. CRITICAL: One-shot wipe de Cash Flow (bug sync 1.2.6 — ver CashFlowWipeService)
+        //      Debe ir PRIMERO para minimizar ventana con outbox CloudKit corrupta en juego.
+        //      Pérdida acotada a config local de Cash Flow (feature Pro nueva que nunca sincronizó).
+        CashFlowWipeService.wipeCashFlowDataIfNeeded(in: context)
+
         // 0. Sync preferences from iCloud (must be FIRST — other services read these)
         PreferenceSyncService.shared.bootstrap()
 
