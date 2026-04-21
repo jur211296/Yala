@@ -25,6 +25,10 @@ AuthKey_*.p8.txt
 # ASC build artifacts
 .asc/artifacts/
 
+# Python caches
+__pycache__/
+*.pyc
+
 # QA automation results (generated at runtime)
 qa/results/
 
