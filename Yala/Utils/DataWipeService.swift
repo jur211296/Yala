@@ -176,8 +176,17 @@ final class DataWipeService {
         try context.save()
         context.processPendingChanges()
 
+        // 1.11 Eliminar todos los CashFlowPlans (cascade → Lines → Overrides)
+        let cashFlowPlanDescriptor = FetchDescriptor<CashFlowPlan>()
+        let allCashFlowPlans = try context.fetch(cashFlowPlanDescriptor)
+        for plan in allCashFlowPlans {
+            context.delete(plan)
+        }
+        try context.save()
+        context.processPendingChanges()
+
         // ============================================================
-        // PASO 1.11: Limpiar archivo de imagen de perfil
+        // PASO 1.12: Limpiar archivo de imagen de perfil
         // ============================================================
         ProfileImageStorage.shared.delete()
 
@@ -212,7 +221,8 @@ final class DataWipeService {
 
         // --- Personalización ---
         defaults.removeObject(forKey: "defaultPeriod")          // Default: DetailPeriod.allTime.rawValue
-        defaults.removeObject(forKey: "userTheme")              // Default: AppTheme.system.rawValue (0)
+        defaults.removeObject(forKey: "userTheme")              // Default: resolved by ThemeManager (liquidGlass for new users)
+        defaults.removeObject(forKey: "translucentVariant")     // Default: TranslucentVariant.indigo.rawValue (0)
         defaults.removeObject(forKey: "colorfulIcons")          // Default: true
         defaults.removeObject(forKey: "firstWeekday")           // Default: 2 (Monday)
         defaults.removeObject(forKey: "showWidgetHints")        // Default: true
@@ -235,6 +245,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "imageInputEnabled")      // Default: false
         defaults.removeObject(forKey: "aiDataConsentAccepted") // Default: false
         defaults.removeObject(forKey: "aiInsightsConsentAccepted") // Default: false
+        defaults.removeObject(forKey: "financialMindset")          // Default: "cashFlow"
 
         // --- Orden de listas ---
         defaults.removeObject(forKey: "accountsSortOrderNames") // Default: ""
@@ -262,11 +273,26 @@ final class DataWipeService {
         // --- What's New ---
         defaults.removeObject(forKey: "lastSeenAppVersion")       // Re-show What's New post-wipe
 
+        // --- App Update ---
+        defaults.removeObject(forKey: "appUpdate.latestVersion")  // Clear cached App Store version
+        defaults.removeObject(forKey: "appUpdate.lastChecked")    // Force re-check after wipe
+
         // --- Coach mark tours ---
-        defaults.removeObject(forKey: "hasSeenPanelTour")         // Re-show panel tour
-        defaults.removeObject(forKey: "hasSeenRegistroTour")      // Re-show registro tour
-        defaults.removeObject(forKey: "hasSeenInteractivityTour") // Re-show interactivity tour
         defaults.removeObject(forKey: "hasSeenSettingsTour")      // Re-show settings tour
+        defaults.removeObject(forKey: "hasSeenCashFlowSetupTour")  // Re-show cash flow setup tour
+        defaults.removeObject(forKey: "hasSeenCashFlowTableTour")  // Re-show cash flow table tour
+        ProTourManager.shared.reset()                                // Re-show pro tour
+
+        // --- Setup Checklist ---
+        SetupChecklistManager.shared.resetAll()
+
+        // --- Contextual Guides ---
+        let guideIDs = ["panel", "trends", "categories", "records", "budgets", "scheduled",
+                        "accounts", "transaction", "comparative", "cashflow", "insights", "inbox",
+                        "budgetEditor", "scheduledEditor"]
+        for guideID in guideIDs {
+            defaults.removeObject(forKey: "guide.\(guideID).dismissed")
+        }
 
         // --- Seed guards ---
         defaults.removeObject(forKey: "seedCategoriesExecuted") // Allow re-seed after wipe

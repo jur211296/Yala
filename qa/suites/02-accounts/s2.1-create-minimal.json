@@ -1,0 +1,13 @@
+[
+  { "command": "find", "positionals": ["profile_avatar", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Cuentas", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Añadir", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["account_name_field", "click"}, {"command": "type", "positionals": ["Mi Cuenta"], "flags": {} },
+  { "command": "find", "positionals": ["Guardar", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "is", "positionals": ["visible", "label=\"Mi Cuenta\""], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s2.1-created.png"], "flags": {} }
+]

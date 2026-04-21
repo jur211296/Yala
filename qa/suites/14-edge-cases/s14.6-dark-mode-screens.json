@@ -1,0 +1,15 @@
+[
+  { "command": "settings", "positionals": ["appearance", "dark"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Panel", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s14.6-dark-panel.png"], "flags": {} },
+  { "command": "find", "positionals": ["Estadísticas", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s14.6-dark-statistics.png"], "flags": {} },
+  { "command": "find", "positionals": ["Registros", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s14.6-dark-records.png"], "flags": {} },
+  { "command": "settings", "positionals": ["appearance", "light"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} }
+]

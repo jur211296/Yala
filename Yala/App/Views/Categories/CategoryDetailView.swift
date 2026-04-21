@@ -167,7 +167,8 @@ struct CategoryDetailView: View {
         .onAppear {
             viewModel.setContext(modelContext, deletionService: deletionService)
             if viewModel.isNewCategory {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(500))
                     isNameFieldFocused = true
                 }
             }
@@ -339,6 +340,7 @@ struct CategoryDetailView: View {
                                             Image(systemName: "chevron.right")
                                                 .font(DS.Typography.labelSmall)
                                                 .foregroundStyle(.tertiary)
+                                                .accessibilityHidden(true)
                                         }
                                     }
                                     .buttonStyle(.plain)
@@ -417,6 +419,7 @@ struct CategoryDetailView: View {
                                         Image(systemName: "chevron.right")
                                             .font(DS.Typography.labelSmall)
                                             .foregroundStyle(.tertiary)
+                                            .accessibilityHidden(true)
                                     }
                                 }
                                 .buttonStyle(.plain)

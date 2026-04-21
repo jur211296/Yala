@@ -1,0 +1,10 @@
+[
+  { "command": "find", "positionals": ["profile_avatar", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Etiquetas", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Añadir", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["account_name_field", "click"}, {"command": "type", "positionals": ["Trabajo"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s4.3-duplicate.png"], "flags": {} }
+]

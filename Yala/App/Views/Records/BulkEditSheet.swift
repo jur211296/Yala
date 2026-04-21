@@ -638,7 +638,8 @@ struct BulkNoteEditorSheet: View {
                 }
             }
             .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(100))
                     isFocused = true
                 }
             }
@@ -672,6 +673,18 @@ struct BulkAmountEditorSheet: View {
                                 .padding(.horizontal, DS.Spacing.lg)
                                 .padding(.vertical, DS.FormRow.paddingV)
                                 .focused($isFocused)
+                                .onChange(of: isFocused) { _, focused in
+                                    if !focused && !amountText.isEmpty {
+                                        let value = AmountInputHelper.parseDecimal(amountText)
+                                        amountText = AmountInputHelper.formatWithGrouping(value)
+                                    }
+                                }
+                                .onChange(of: amountText) { _, newValue in
+                                    let filtered = AmountInputHelper.filterAmountInput(newValue)
+                                    if filtered != newValue {
+                                        amountText = filtered
+                                    }
+                                }
                         }
                     }
 
@@ -691,7 +704,8 @@ struct BulkAmountEditorSheet: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaSaveButton {
-                        if let value = Double(amountText.replacing(",", with: ".")) {
+                        let value = AmountInputHelper.parseDecimal(amountText)
+                        if value > 0 {
                             amount = value
                             onSave()
                         }
@@ -702,7 +716,8 @@ struct BulkAmountEditorSheet: View {
                 }
             }
             .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(100))
                     isFocused = true
                 }
             }

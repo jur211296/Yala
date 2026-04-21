@@ -10,14 +10,27 @@ import Foundation
 import SwiftUI
 
 /// Helper for calculating smart axis dates and labels for charts
+@MainActor
 enum SmartAxisHelper {
 
+    private static var formatterCache: [String: DateFormatter] = [:]
+
+    private static func cachedFormatter(format: String) -> DateFormatter {
+        let key = "\(format)_\(AppLocale.current.identifier)"
+        if let f = formatterCache[key] { return f }
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = format
+        formatterCache[key] = f
+        return f
+    }
+
     /// Maximum number of axis labels to show (to avoid crowding)
-    static let maxAxisLabels = 5
+    nonisolated static let maxAxisLabels = 5
 
     /// Minimum visible bars for a reasonable chart appearance
     /// When data has fewer points, we extend the domain to simulate this many slots
-    static let minVisibleSlots = 5
+    nonisolated static let minVisibleSlots = 5
 
     /// Calculate smart axis dates aligned with actual data grouping
     /// Use this for BAR charts where labels must match data points (no duplicates)
@@ -128,57 +141,41 @@ enum SmartAxisHelper {
         let span = endDate.timeIntervalSince(startDate)
         let days = span / 86400
 
-        let formatter = DateFormatter()
-        formatter.locale = AppLocale.current
-
-        // Check if data spans multiple years
         let firstYear = calendar.component(.year, from: startDate)
         let lastYear = calendar.component(.year, from: endDate)
         let multipleYears = firstYear != lastYear
 
-        // If forceGrouping is specified, use that instead of span-based logic
+        let dateFormat: String
+
         if let grouping = forceGrouping {
             switch grouping {
             case .month:
-                // Always show month format for monthly grouping
-                if multipleYears {
-                    formatter.dateFormat = "MMM yy"  // "ene 25"
-                } else {
-                    formatter.dateFormat = "MMM"  // "ene"
-                }
-                return formatter.string(from: date).lowercased().replacing(".", with: "")
+                dateFormat = multipleYears ? "MMM yy" : "MMM"
             case .weekOfYear:
-                formatter.dateFormat = "d MMM"  // "15 dic"
-                return formatter.string(from: date).lowercased().replacing(".", with: "")
+                dateFormat = "d MMM"
             default:
-                break  // Fall through to span-based logic for day
+                dateFormat = spanBasedFormat(days: days, multipleYears: multipleYears, isSinglePoint: startDate == endDate)
             }
-        }
-
-        // Single data point: show full date
-        if startDate == endDate || days == 0 {
-            if multipleYears || days > 60 {
-                formatter.dateFormat = "d MMM yy"  // "15 ene 25"
-            } else {
-                formatter.dateFormat = "d MMM"  // "15 ene"
-            }
-        } else if days > 60 {
-            // Long period (> 2 months): Show month abbreviation
-            if multipleYears {
-                formatter.dateFormat = "MMM yy"  // "ene 25"
-            } else {
-                formatter.dateFormat = "MMM"  // "ene"
-            }
-        } else if days > 14 {
-            // Medium period (2 weeks - 2 months): Show day + month
-            formatter.dateFormat = "d MMM"  // "15 dic"
         } else {
-            // Short period (< 2 weeks): Just day number
-            formatter.dateFormat = "d"  // "15"
+            dateFormat = spanBasedFormat(days: days, multipleYears: multipleYears, isSinglePoint: startDate == endDate)
         }
 
-        // Remove trailing periods from abbreviations (e.g., "ene." -> "ene")
-        return formatter.string(from: date).lowercased().replacing(".", with: "")
+        return cachedFormatter(format: dateFormat)
+            .string(from: date)
+            .lowercased()
+            .replacing(".", with: "")
+    }
+
+    private static func spanBasedFormat(days: Double, multipleYears: Bool, isSinglePoint: Bool) -> String {
+        if isSinglePoint || days == 0 {
+            return multipleYears ? "d MMM yy" : "d MMM"
+        } else if days > 60 {
+            return multipleYears ? "MMM yy" : "MMM"
+        } else if days > 14 {
+            return "d MMM"
+        } else {
+            return "d"
+        }
     }
 
     // MARK: - Calendar Unit Centering

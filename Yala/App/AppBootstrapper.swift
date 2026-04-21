@@ -51,6 +51,7 @@ final class AppBootstrapper {
     private var subscriptionCheckTask: Task<Void, Never>?
     private var remoteChangeTask: Task<Void, Never>?
     private var lastNotificationCheckDate = Date.distantPast
+    private var lastProcessDuePaymentsDate = Date.distantPast
 
     /// Whether a fullScreenCover (splash, Face ID, or InboxAlertModal) is blocking sheet presentation
     private var isUIBlocked: Bool {
@@ -72,12 +73,20 @@ final class AppBootstrapper {
 
         let context = container.mainContext
 
+        // 0.0. CRITICAL: One-shot wipe de Cash Flow (bug sync 1.2.6 — ver CashFlowWipeService)
+        //      Debe ir PRIMERO para minimizar ventana con outbox CloudKit corrupta en juego.
+        //      Pérdida acotada a config local de Cash Flow (feature Pro nueva que nunca sincronizó).
+        CashFlowWipeService.wipeCashFlowDataIfNeeded(in: context)
+
         // 0. Sync preferences from iCloud (must be FIRST — other services read these)
         PreferenceSyncService.shared.bootstrap()
 
         // 0.5. Configure analytics (no-op if API key missing)
         TelemetryService.configure()
         TelemetryService.track(.appLaunched)
+
+        // 0.55. Track session for upsell frequency capping
+        ProUpsellService.shared.incrementSessionCount()
 
         // 0.6. Record first launch date for review prompt timing
         ReviewPromptService.recordFirstLaunchIfNeeded()
@@ -136,7 +145,41 @@ final class AppBootstrapper {
         // 13. Observe CloudKit remote changes to auto-refresh UI
         observeRemoteStoreChanges()
 
+        // 14. Observe iCloud account changes — detect mismatch if container was created without CloudKit
+        observeICloudAccountChanges()
+
         isInitialized = true
+    }
+
+    // MARK: - iCloud Mismatch Detection
+
+    private func observeICloudAccountChanges() {
+        NotificationCenter.default.addObserver(
+            forName: .NSUbiquityIdentityDidChange,
+            object: nil,
+            queue: .main
+        ) { _ in
+            MainActor.assumeIsolated {
+                AppBootstrapper.shared.checkForICloudMismatch()
+            }
+        }
+    }
+
+    private var iCloudMismatchAlreadyDetected = false
+
+    private func checkForICloudMismatch() {
+        guard !iCloudMismatchAlreadyDetected else { return }
+
+        let wasCreatedWithCloudKit = SwiftDataConfiguration.containerWasCreatedWithCloudKit
+        let isNowAvailable = SwiftDataConfiguration.isICloudAvailable()
+
+        if !wasCreatedWithCloudKit && isNowAvailable {
+            iCloudMismatchAlreadyDetected = true
+            #if DEBUG
+            print("AppBootstrapper: iCloud mismatch — container was local, iCloud now available")
+            #endif
+            NotificationCenter.default.post(name: .iCloudMismatchDetected, object: nil)
+        }
     }
 
     // MARK: - Remote Change Observation
@@ -154,10 +197,10 @@ final class AppBootstrapper {
                 bootstrapper.remoteChangeTask = Task { @MainActor in
                     try? await Task.sleep(for: .seconds(2))
                     guard !Task.isCancelled else { return }
-                    bootstrapper.sessionState.incrementDataVersion()
+                    bootstrapper.sessionState.markRemoteChangePending()
 
                     #if DEBUG
-                    print("AppBootstrapper: Remote CloudKit change — refreshing UI")
+                    print("AppBootstrapper: Remote CloudKit change — queued for next view navigation")
                     #endif
                 }
             }
@@ -168,6 +211,12 @@ final class AppBootstrapper {
 
     /// Llamar cuando la app se activa (scenePhase == .active)
     func handleBecameActive(context: ModelContext) {
+        // Apply any pending remote CloudKit changes on foreground resume
+        sessionState.applyPendingChangesIfNeeded()
+
+        // Check if iCloud became available after container was created without it
+        checkForICloudMismatch()
+
         // Re-verify subscription status on foreground resume
         subscriptionCheckTask?.cancel()
         subscriptionCheckTask = Task {
@@ -175,7 +224,11 @@ final class AppBootstrapper {
         }
 
         // Process due scheduled payments (creates inbox drafts for warm resume)
-        processDueScheduledPayments(context: context)
+        // Throttle: skip if bootstrap just ran (< 30 seconds ago) to prevent duplicate drafts
+        let shouldProcessPayments = Date.now.timeIntervalSince(lastProcessDuePaymentsDate) > 30.0
+        if shouldProcessPayments {
+            processDueScheduledPayments(context: context)
+        }
         checkForPendingInboxDrafts(context: context)
 
         // Delay control action check — inbox notification fires at 0.3s,
@@ -356,6 +409,9 @@ final class AppBootstrapper {
         case "budgets":
             setOrDeferDeepLink(.budgets)
 
+        case "records":
+            setOrDeferDeepLink(.recordsStandalone)
+
         default:
             #if DEBUG
             print("AppBootstrapper: Unknown deep link host: \(url.host ?? "nil")")
@@ -404,6 +460,16 @@ final class AppBootstrapper {
         }
 
         checkForDowngrade()
+
+        // Track trial status for upsell service
+        if store.isInTrial {
+            ProUpsellService.shared.recordTrialStarted()
+        }
+
+        // Check for trial expired (shows sheet once)
+        if ProUpsellService.shared.shouldShowTrialExpiredSheet() {
+            sessionState.shouldShowTrialExpired = true
+        }
     }
 
     /// Check if user has downgraded from Pro and needs to resolve excess items
@@ -416,12 +482,26 @@ final class AppBootstrapper {
         print("AppBootstrapper: Detected downgrade from Pro to Free")
         #endif
 
-        // Reset premium app icon if needed
+        // Reset premium app icon and theme if needed
         resetPremiumIconIfNeeded()
+        resetProThemeIfNeeded()
 
         // Mark that we need to show downgrade resolution
         // The actual resolution sheet is shown from ContentView which has access to data
         sessionState.shouldShowDowngradeResolution = true
+    }
+
+    /// Reset Pro theme to System if user downgraded from Pro
+    private func resetProThemeIfNeeded() {
+        guard !FeatureGateService.shared.isProUser else { return }
+
+        let currentTheme = AppTheme(rawValue: UserDefaults.standard.integer(forKey: "userTheme")) ?? .liquidGlass
+        if currentTheme.isPro {
+            UserDefaults.standard.set(AppTheme.liquidGlass.rawValue, forKey: "userTheme")
+            #if DEBUG
+            print("AppBootstrapper: Reset Pro theme '\(currentTheme.label)' to Liquid Glass")
+            #endif
+        }
     }
 
     /// Reset app icon to Original if user is Free and has premium icon
@@ -447,6 +527,7 @@ final class AppBootstrapper {
     private func processDueScheduledPayments(context: ModelContext) {
         // Only create drafts, notification is handled by checkForPendingInboxDrafts
         _ = ScheduledPaymentDraftService.processDuePayments(context: context)
+        lastProcessDuePaymentsDate = Date.now
     }
 
     private func checkForPendingInboxDrafts(context: ModelContext) {

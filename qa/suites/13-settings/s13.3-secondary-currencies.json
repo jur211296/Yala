@@ -1,0 +1,12 @@
+[
+  { "command": "find", "positionals": ["profile_avatar", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Divisa y cambio", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Divisas secundarias", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s13.3-currency-picker.png"], "flags": {} },
+  { "command": "find", "positionals": ["EUR", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s13.3-eur-selected.png"], "flags": {} }
+]

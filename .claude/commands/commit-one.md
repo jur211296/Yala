@@ -236,9 +236,86 @@ PASOS OBLIGATORIOS (usando outputs ya guardados):
       - Si se creó suite nueva, añadirla a la lista
       - Si se añadieron tests a suite existente, actualizar el conteo
 
-   d) ACTUALIZAR DOCUMENTOS DE TRABAJO CONSULTADOS:
+   d) ACTUALIZAR OBSIDIAN — DOCUMENTACIÓN + PREFIJO + STATUS:
 
-      Revisar TODOS los documentos .md en .planning/ que se leyeron durante
+      VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki"
+
+      Buscar el documento Obsidian correspondiente al trabajo realizado:
+      - Features: `$VAULT/Backlog/[prefijo_][nombre-feature].md`
+      - Bugs: `$VAULT/Bugs/[prefijo_][nombre-bug].md`
+      - Si no se encuentra documento exacto, buscar con glob en Backlog/ y Bugs/
+
+      ### d.1) RENOMBRAR ARCHIVO CON PREFIJO CORRECTO
+
+      **Backlog — prefijos según status:**
+      | Status | Prefijo | Ejemplo |
+      |--------|---------|---------|
+      | open | (ninguno) | `mi-feature.md` |
+      | reopened | (ninguno) | `mi-feature.md` |
+      | backlog | `next_` | `next_mi-feature.md` |
+      | in-progress | `now_` | `now_mi-feature.md` |
+      | in-progress + qa-status: needs-testing | `qa_` | `qa_mi-feature.md` |
+      | done | `ok_` | `ok_mi-feature.md` |
+      | discarded | `out_` | `out_mi-feature.md` |
+
+      **Bugs — prefijos según status:**
+      | Status | Prefijo | Ejemplo |
+      |--------|---------|---------|
+      | open | (ninguno) | `mi-bug.md` |
+      | reopened | (ninguno) | `mi-bug.md` |
+      | open + qa-status: needs-testing | `qa_` | `qa_mi-bug.md` |
+      | fixed | `ok_` | `ok_mi-bug.md` |
+      | discarded | `out_` | `out_mi-bug.md` |
+
+      Después de un commit, el flujo típico es:
+      - `now_feature.md` → `qa_feature.md` (renombrar + status: needs-testing + qa-status: needs-testing)
+      - `feature.md` (bug reopened) → `qa_feature.md` (renombrar + status: needs-testing)
+
+      Ejecutar el rename:
+      ```bash
+      mv "$VAULT/Backlog/[old_name].md" "$VAULT/Backlog/[new_prefix_name].md"
+      ```
+
+      ### d.2) ACTUALIZAR FRONTMATTER
+
+      En el documento renombrado, actualizar:
+      - `status: needs-testing` (ya que pasa a QA)
+      - `qa-status: needs-testing`
+      - `qa-date:` (vacío — lo llena el tester)
+      - `qa-notes:` descripción breve del fix/feature sin comillas, sin acentos, sin caracteres especiales
+      - `implementation_date: YYYY-MM-DD`
+      - `updated: YYYY-MM-DD`
+
+      **qa-status values:** needs-testing, passed, failed
+
+      ### d.3) AÑADIR SECCIÓN IMPLEMENTACIÓN
+
+      Añadir sección `## Implementación` (o actualizar si ya existe) con:
+      - **Fecha y commit:** `[$TODAY] $COMMIT_HASH`
+      - **Archivos modificados:** lista de archivos con descripción breve de cada cambio
+      - **Decisiones técnicas:** por qué se eligió este enfoque sobre alternativas
+      - **Cambios en modelo/servicios:** si aplica, detallar campos añadidos, APIs nuevas
+      - **Tests añadidos:** lista de tests con qué escenario cubren
+
+      Formato ejemplo:
+      ```markdown
+      ## Implementación
+      ### $TODAY — $COMMIT_HASH
+      **Resumen:** [descripción concisa de lo implementado]
+
+      **Archivos modificados:**
+      - `Path/Archivo.swift` — [qué cambió y por qué]
+
+      **Decisiones técnicas:**
+      - [Decisión 1]: [razón]
+      ```
+
+      Si el documento tiene checklists o items pendientes, TAMBIÉN marcarlos:
+      - Cambiar "[ ]" a "[x]" o "Pendiente" a "✅ Completado"
+
+   e) ACTUALIZAR DOCUMENTOS DE TRABAJO CONSULTADOS:
+
+      Revisar TODOS los documentos .md en el vault Obsidian que se leyeron durante
       esta sesión para implementar el trabajo. Ejemplos comunes:
 
       - REFINAMIENTO-*.md → Marcar items completados con ✅
@@ -252,16 +329,18 @@ PASOS OBLIGATORIOS (usando outputs ya guardados):
       - Cambiar "[ ]" a "[x]" o "Pendiente" a "✅ Completado"
       - Agregar fecha o hash del commit si el formato lo permite
 
-   e) VERIFICACIÓN FINAL:
+   g) VERIFICACIÓN FINAL:
       - Confirmar que STATE.md refleja el progreso real
+      - Confirmar que el documento Obsidian de la feature/bug tiene la implementación documentada
       - Confirmar que documentos de trabajo están sincronizados
       - Listar documentos actualizados al usuario
 
-   f) INFORMAR AL USUARIO:
+   h) INFORMAR AL USUARIO:
       ```
       ✓ Commit $COMMIT_HASH creado
       ✓ STATE.md actualizado (Recent Progress + Session Continuity)
       ✓ CLAUDE.md actualizado (test count: N → M)  ← solo si cambió
+      ✓ Obsidian [Backlog|Bugs]/[nombre].md — implementación documentada
       ✓ Documentos actualizados: [lista de archivos .md modificados]
       ```
 

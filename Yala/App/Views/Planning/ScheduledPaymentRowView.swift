@@ -177,6 +177,7 @@ struct ScheduledPaymentRowView: View {
 
     private var formattedAmount: String {
         let prefix = summary.payment.transactionType == "income" ? "+" : "-"
-        return prefix + YalaFormatter.currency(value: summary.payment.amount, currencyCode: currencyCode, forceFullPrecision: true)
+        let isEstimate = summary.paidAmount == nil && summary.payment.isVariableAmount
+        return prefix + YalaFormatter.currency(value: summary.displayAmount, currencyCode: summary.displayCurrencyCode, forceFullPrecision: true, isEstimate: isEstimate)
     }
 }

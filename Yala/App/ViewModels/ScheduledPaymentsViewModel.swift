@@ -82,6 +82,9 @@ final class ScheduledPaymentsViewModel {
     /// Paid count for each payment in the selected month (paymentID -> count)
     private(set) var paidStatusForMonth: [String: Int] = [:]
 
+    /// Cached paid amounts — pre-computed in calculatePaymentData(), consumed by calculateMonthlyTotal()
+    private(set) var cachedPaidAmounts: [String: [PaidOccurrenceInfo]] = [:]
+
     /// Payment status filter (all/paid/pending)
     var paymentStatusFilter: PaymentStatusFilter = .all
 
@@ -125,14 +128,15 @@ final class ScheduledPaymentsViewModel {
         let converter = CurrencyConverter.shared
         var total: Double = 0
         for summary in summaries {
-            let amount = summary.payment.amount
-            if summary.payment.currencyCode != preferredCurrencyCode, amount > 0 {
+            let amount = summary.displayAmount
+            let sourceCurrency = summary.displayCurrencyCode
+            if sourceCurrency != preferredCurrencyCode, amount > 0 {
                 let decimal = Decimal(amount)
                 let converted: Decimal
                 if let context = modelContext {
-                    converted = converter.convertWithLatestRate(decimal, from: summary.payment.currencyCode, to: preferredCurrencyCode, context: context)
+                    converted = converter.convertWithLatestRate(decimal, from: sourceCurrency, to: preferredCurrencyCode, context: context)
                 } else {
-                    converted = converter.convertWithFallback(decimal, from: summary.payment.currencyCode, to: preferredCurrencyCode)
+                    converted = converter.convertWithFallback(decimal, from: sourceCurrency, to: preferredCurrencyCode)
                 }
                 total += NSDecimalNumber(decimal: converted).doubleValue
             } else {
@@ -189,8 +193,9 @@ final class ScheduledPaymentsViewModel {
     // MARK: - Context Setup
 
     func setContext(_ context: ModelContext) {
+        let isNewContext = self.modelContext !== context
         self.modelContext = context
-        loadPayments()
+        if isNewContext { loadPayments() }
     }
 
     func loadPayments() {
@@ -201,10 +206,13 @@ final class ScheduledPaymentsViewModel {
         )
 
         do {
-            allPayments = try context.fetch(descriptor)
-            // Clean up skipped dates older than 1 year (prevents unbounded growth via iCloud sync)
-            for payment in allPayments {
-                payment.cleanupOldSkippedDates()
+            let fetched = try context.fetch(descriptor)
+            if fetched != allPayments {
+                allPayments = fetched
+                // Clean up skipped dates older than 1 year (prevents unbounded growth via iCloud sync)
+                for payment in allPayments {
+                    payment.cleanupOldSkippedDates()
+                }
             }
         } catch {
             #if DEBUG
@@ -304,9 +312,9 @@ final class ScheduledPaymentsViewModel {
         return filtered
     }
 
-    private func loadPaidStatus(for payments: [ScheduledPayment], month: Date) -> [String: Int] {
+    private func loadPaidAmounts(for payments: [ScheduledPayment], month: Date) -> [String: [PaidOccurrenceInfo]] {
         guard let context = modelContext else { return [:] }
-        return ScheduledPaymentPaidStatusHelper.loadPaidStatus(for: payments, month: month, context: context)
+        return ScheduledPaymentPaidStatusHelper.loadPaidAmounts(for: payments, month: month, context: context)
     }
 
     // MARK: - Data Calculation
@@ -344,16 +352,16 @@ final class ScheduledPaymentsViewModel {
             !getPaymentDatesInMonth(payment: payment, month: selectedMonth).isEmpty
         }
 
-        // Load paid status for all payments in this month (batch)
-        let paidStatus = loadPaidStatus(for: filtered, month: selectedMonth)
-        paidStatusForMonth = paidStatus
+        // Load paid amounts for ALL payments (not just filtered) so calculateMonthlyTotal() can use the cache
+        cachedPaidAmounts = loadPaidAmounts(for: payments, month: selectedMonth)
+        let paidAmounts = cachedPaidAmounts
+        paidStatusForMonth = paidAmounts.mapValues(\.count)
 
         // Calculate summaries with one entry per occurrence
         var summaries: [ScheduledPaymentSummary] = []
         for payment in filtered {
             let dates = getPaymentDatesInMonth(payment: payment, month: selectedMonth)
-            let paidCount = paidStatus[payment.id.uuidString] ?? 0
-            var remainingPaid = paidCount
+            var remainingInfos = paidAmounts[payment.id.uuidString] ?? []
 
             for date in dates.sorted() {
                 let dueStatus: DueStatus
@@ -372,8 +380,14 @@ final class ScheduledPaymentsViewModel {
                 let daysUntilDue = calendar.dateComponents([.day], from: today, to: date).day ?? 0
                 let (icon, color) = getPaymentDisplayProperties(payment: payment)
                 let isSkipped = payment.isDateSkipped(date)
-                let isPaid = remainingPaid > 0 && !isSkipped
-                if isPaid { remainingPaid -= 1 }
+                let isPaid = !remainingInfos.isEmpty && !isSkipped
+                var occurrencePaidAmount: Double? = nil
+                var occurrencePaidCurrency: String? = nil
+                if isPaid {
+                    let info = remainingInfos.removeFirst()
+                    occurrencePaidAmount = info.amount
+                    occurrencePaidCurrency = info.currencyCode
+                }
 
                 summaries.append(ScheduledPaymentSummary(
                     payment: payment,
@@ -383,7 +397,9 @@ final class ScheduledPaymentsViewModel {
                     icon: icon,
                     color: color,
                     isPaidForMonth: isPaid,
-                    isSkippedForMonth: isSkipped
+                    isSkippedForMonth: isSkipped,
+                    paidAmount: occurrencePaidAmount,
+                    paidCurrencyCode: occurrencePaidCurrency
                 ))
             }
         }
@@ -440,12 +456,6 @@ final class ScheduledPaymentsViewModel {
         showPaymentEditor = true
     }
 
-    /// Open editor for existing payment
-    func editPayment(_ payment: ScheduledPayment) {
-        editingPayment = payment
-        showPaymentEditor = true
-    }
-
     // MARK: - Transaction Association (M3)
 
     /// Fetch candidate transactions for manual association with a scheduled payment.
@@ -459,13 +469,14 @@ final class ScheduledPaymentsViewModel {
         let monthStart = monthInterval.start
         let monthEnd = monthInterval.end
         do {
-            let descriptor = FetchDescriptor<TransactionItem>(
+            var descriptor = FetchDescriptor<TransactionItem>(
                 predicate: #Predicate<TransactionItem> { tx in
                     tx.date >= monthStart && tx.date < monthEnd &&
                     tx.scheduledPaymentID == nil
                 },
                 sortBy: [SortDescriptor(\.date, order: .reverse)]
             )
+            descriptor.fetchLimit = 100 // Perf: candidate picker — month-bounded + unlinked
             var transactions = try context.fetch(descriptor)
 
             // Filter by transaction type (income matches income, expense matches expense)
@@ -523,6 +534,13 @@ final class ScheduledPaymentsViewModel {
     /// Associate a transaction with a scheduled payment
     func associateTransaction(_ transaction: TransactionItem, to payment: ScheduledPayment) {
         transaction.scheduledPaymentID = payment.id.uuidString
+
+        // Update paid date and advance to next occurrence (fixes duplicate draft bug)
+        payment.lastPaidDate = transaction.date
+        ScheduledPaymentDraftService.advanceToNextDueDate(payment: payment)
+
+        // Reject any pending draft for this payment
+        rejectPendingDraft(for: payment)
 
         guard let context = modelContext else { return }
         do {
@@ -585,6 +603,55 @@ final class ScheduledPaymentsViewModel {
         }
     }
 
+    // MARK: - Advance Occurrence
+
+    /// Advance (pay early) the next occurrence of a scheduled payment.
+    /// Creates a draft with today's date and advances nextDueDate.
+    @discardableResult
+    func advanceOccurrence(payment: ScheduledPayment) -> InboxDraft? {
+        guard let context = modelContext else { return nil }
+        guard let draft = ScheduledPaymentDraftService.createAdvancedDraft(from: payment, context: context) else { return nil }
+        do {
+            try context.save()
+            WidgetDataCache.updateCache(context: context)
+            SessionState.shared.incrementDataVersion()
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error saving advance: \(error)")
+            #endif
+            return nil
+        }
+        loadPayments()
+        return draft
+    }
+
+    // MARK: - Fetch Linked Transactions
+
+    /// Fetch transactions linked to a scheduled payment (for real history data).
+    func fetchLinkedTransactions(for payment: ScheduledPayment, months: Int = 4) -> [TransactionItem] {
+        guard let context = modelContext else { return [] }
+        let calendar = Calendar.current
+        let paymentIDString = payment.id.uuidString
+        guard let startDate = calendar.date(byAdding: .month, value: -months, to: Date.now) else { return [] }
+
+        do {
+            let predicate = #Predicate<TransactionItem> { tx in
+                tx.scheduledPaymentID == paymentIDString &&
+                tx.date >= startDate
+            }
+            let descriptor = FetchDescriptor<TransactionItem>(
+                predicate: predicate,
+                sortBy: [SortDescriptor(\.date, order: .reverse)]
+            )
+            return try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error fetching linked transactions: \(error)")
+            #endif
+            return []
+        }
+    }
+
     // MARK: - Subscriptions Calendar
 
     /// Get all subscriptions (filtered)
@@ -614,27 +681,40 @@ final class ScheduledPaymentsViewModel {
         // Only count expenses (exclude income payments)
         let expensePayments = subscriptions.filter { $0.isActive && $0.transactionType != "income" }
 
-        for subscription in expensePayments {
-            // Calculate how many times this subscription occurs in the month
-            let occurrences = getPaymentDatesInMonth(payment: subscription, month: month)
-            let rawAmount = subscription.amount * Double(occurrences.count)
+        let paidAmounts = cachedPaidAmounts
 
-            // Convert currency if needed
-            if let target = targetCurrency, subscription.currencyCode != target, rawAmount > 0 {
-                let decimalAmount = Decimal(rawAmount)
-                let converted: Decimal
-                if let context = modelContext {
-                    converted = converter.convertWithLatestRate(
-                        decimalAmount, from: subscription.currencyCode, to: target, context: context
-                    )
+        for payment in expensePayments {
+            let occurrences = getPaymentDatesInMonth(payment: payment, month: month)
+            var remainingInfos = paidAmounts[payment.id.uuidString] ?? []
+
+            for date in occurrences.sorted() {
+                let isSkipped = payment.isDateSkipped(date)
+                let amount: Double
+                let currency: String
+
+                if !remainingInfos.isEmpty && !isSkipped {
+                    let info = remainingInfos.removeFirst()
+                    amount = info.amount
+                    currency = info.currencyCode
+                } else if !isSkipped {
+                    amount = payment.amount
+                    currency = payment.currencyCode
                 } else {
-                    converted = converter.convertWithFallback(
-                        decimalAmount, from: subscription.currencyCode, to: target
-                    )
+                    continue
                 }
-                total += NSDecimalNumber(decimal: converted).doubleValue
-            } else {
-                total += rawAmount
+
+                if let target = targetCurrency, currency != target, amount > 0 {
+                    let decimalAmount = Decimal(amount)
+                    let converted: Decimal
+                    if let context = modelContext {
+                        converted = converter.convertWithLatestRate(decimalAmount, from: currency, to: target, context: context)
+                    } else {
+                        converted = converter.convertWithFallback(decimalAmount, from: currency, to: target)
+                    }
+                    total += NSDecimalNumber(decimal: converted).doubleValue
+                } else {
+                    total += amount
+                }
             }
         }
 

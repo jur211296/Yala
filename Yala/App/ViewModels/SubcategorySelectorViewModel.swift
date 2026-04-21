@@ -130,12 +130,13 @@ final class SubcategorySelectorViewModel {
 
     private func loadRecentTransactions() {
         guard let context = modelContext else { return }
-        let descriptor = FetchDescriptor<TransactionItem>(
+        var descriptor = FetchDescriptor<TransactionItem>(
             sortBy: [
                 SortDescriptor(\TransactionItem.date, order: .reverse),
                 SortDescriptor(\TransactionItem.createdAt, order: .reverse)
             ]
         )
+        descriptor.fetchLimit = 200 // Perf: only need ~8 unique subcategories from recent transactions
         do {
             recentTransactions = try context.fetch(descriptor)
         } catch {

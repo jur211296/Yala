@@ -35,7 +35,7 @@ final class DevSeedService {
         var rng = SeededRandom(seed: 42)
 
         // Step 1: Ensure categories exist, then build subcategory lookup
-        updateStep("Preparando categorías...", progress: 0.02)
+        updateStep(L10n.DevSeed.stepCategories, progress: 0.02)
         seedCategoriesIfNeeded(in: context)
         let subcategoryLookup = buildSubcategoryLookup(in: context)
 
@@ -46,21 +46,21 @@ final class DevSeedService {
         }
 
         // Step 2: Create accounts
-        updateStep("Creando cuentas...", progress: 0.05)
+        updateStep(L10n.DevSeed.stepAccounts, progress: 0.05)
         let accounts = DevSeedAccounts.create(in: context)
 
         // Step 3: Create tags
-        updateStep("Creando etiquetas...", progress: 0.08)
+        updateStep(L10n.DevSeed.stepTags, progress: 0.08)
         let tags = DevSeedTags.create(in: context)
 
         // Step 4: Create exchange rates
-        updateStep("Generando tipos de cambio...", progress: 0.10)
+        updateStep(L10n.DevSeed.stepExchangeRates, progress: 0.10)
         DevSeedExchangeRates.create(
             startDate: startDate, endDate: endDate, rng: &rng, in: context
         )
 
         // Step 5: Create budgets
-        updateStep("Creando presupuestos...", progress: 0.15)
+        updateStep(L10n.DevSeed.stepBudgets, progress: 0.15)
         DevSeedBudgets.create(
             account: accounts.cuentaPrincipal,
             subcategoryLookup: subcategoryLookup,
@@ -68,7 +68,7 @@ final class DevSeedService {
         )
 
         // Step 6: Create scheduled payments
-        updateStep("Creando pagos planificados...", progress: 0.18)
+        updateStep(L10n.DevSeed.stepScheduledPayments, progress: 0.18)
         let spResult = DevSeedScheduledPayments.create(
             account: accounts.cuentaPrincipal,
             subcategoryLookup: subcategoryLookup,
@@ -76,13 +76,13 @@ final class DevSeedService {
         )
 
         // Step 7: Flush before massive insert
-        updateStep("Guardando entidades base...", progress: 0.20)
+        updateStep(L10n.DevSeed.stepSavingBase, progress: 0.20)
         do { try context.save() } catch {
             print("DevSeedService: Pre-transaction save error: \(error)")
         }
 
         // Step 8: Create transactions
-        updateStep("Generando transacciones...", progress: 0.22)
+        updateStep(L10n.DevSeed.stepTransactions, progress: 0.22)
         await DevSeedTransactions.create(
             startDate: startDate,
             endDate: endDate,
@@ -100,7 +100,7 @@ final class DevSeedService {
         )
 
         // Step 9: Create initial balances
-        updateStep("Configurando saldos iniciales...", progress: 0.96)
+        updateStep(L10n.DevSeed.stepInitialBalances, progress: 0.96)
         DevSeedTransactions.createInitialBalances(
             startDate: startDate,
             accounts: accounts,
@@ -109,7 +109,7 @@ final class DevSeedService {
         )
 
         // Final save
-        updateStep("Guardando...", progress: 0.98)
+        updateStep(L10n.DevSeed.stepSaving, progress: 0.98)
         do { try context.save() } catch {
             print("DevSeedService: Final save error: \(error)")
         }
@@ -121,7 +121,7 @@ final class DevSeedService {
         // Notify UI to refresh all data-dependent views
         SessionState.shared.incrementDataVersion()
 
-        updateStep("¡Listo!", progress: 1.0)
+        updateStep(L10n.DevSeed.stepDone, progress: 1.0)
         try? await Task.sleep(for: .milliseconds(500))
         isSeeding = false
     }
@@ -131,7 +131,7 @@ final class DevSeedService {
     func reset(in context: ModelContext) async {
         guard !isSeeding else { return }
         isSeeding = true
-        updateStep("Eliminando datos existentes...", progress: 0.05)
+        updateStep(L10n.DevSeed.stepDeleting, progress: 0.05)
 
         // Delete in dependency order (transactions first, then entities)
         deleteAll(TransactionItem.self, in: context)
@@ -142,17 +142,23 @@ final class DevSeedService {
         deleteAll(Account.self, in: context)
         deleteAll(FavoritePayment.self, in: context)
         deleteAll(InboxDraft.self, in: context)
+        deleteAll(CashFlowOverride.self, in: context)
+        deleteAll(CashFlowLine.self, in: context)
+        deleteAll(CashFlowPlan.self, in: context)
+        deleteAll(Subcategory.self, in: context)
+        deleteAll(Category.self, in: context)
 
         do { try context.save() } catch {
             print("DevSeedService: Reset save error: \(error)")
         }
         SessionState.shared.incrementDataVersion()
 
-        // Clear flag
+        // Clear flags
         UserDefaults.standard.removeObject(forKey: "devSeedDataExecuted")
+        UserDefaults.standard.removeObject(forKey: "seedCategoriesExecuted")
         hasSeeded = false
 
-        updateStep("Recargando datos...", progress: 0.10)
+        updateStep(L10n.DevSeed.stepReloading, progress: 0.10)
         isSeeding = false
 
         // Re-seed

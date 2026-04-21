@@ -25,6 +25,8 @@ struct YalaApp: App {
     /// ModelContainer compartido para toda la app.
     var sharedModelContainer: ModelContainer = {
         do {
+            let iCloudWasAvailable = SwiftDataConfiguration.isICloudAvailable()
+            SwiftDataConfiguration.markContainerCloudKitState(iCloudWasAvailable)
             return try ModelContainer(
                 for: SwiftDataConfiguration.schema,
                 configurations: SwiftDataConfiguration.configuration
@@ -45,6 +47,7 @@ struct YalaApp: App {
                 .preferredColorScheme(themeManager.userChoice == .system ? nil : themeManager.resolved.baseColorScheme)
                 .tint(themeManager.resolved.accent)
                 .environment(\.yalaTheme, themeManager.resolved)
+                .saturation(themeManager.resolved.mapsColorsToGrayscale ? 0 : 1)
                 .environment(themeManager)
                 .environment(bootstrapper.sessionState)
                 .environment(bootstrapper.currencyConverter)

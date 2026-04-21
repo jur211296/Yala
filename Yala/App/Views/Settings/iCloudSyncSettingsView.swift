@@ -5,10 +5,13 @@
 //  Shows iCloud sync status. Sync is automatic when iCloud account is available.
 //
 
+import SwiftData
 import SwiftUI
 
 struct iCloudSyncSettingsView: View {
+    @Environment(\.modelContext) private var modelContext
     @State private var syncService = iCloudSyncService.shared
+    @State private var isForceSyncDisabled = false
 
     var body: some View {
         ZStack {
@@ -18,6 +21,11 @@ struct iCloudSyncSettingsView: View {
                 VStack(spacing: DS.Spacing.xl) {
                     // Status Card
                     statusCard
+
+                    // Force sync button (only when iCloud is available)
+                    if syncService.isAccountAvailable {
+                        forceSyncSection
+                    }
 
                     // Warning if no iCloud account
                     if !syncService.isAccountAvailable {
@@ -83,6 +91,36 @@ struct iCloudSyncSettingsView: View {
         .padding(DS.Spacing.lg)
         .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    // MARK: - Force Sync
+
+    private var forceSyncSection: some View {
+        VStack(spacing: DS.Spacing.md) {
+            YalaPrimaryButton(
+                L10n.iCloud.forceSyncButton,
+                icon: "arrow.triangle.2.circlepath",
+                isDisabled: isForceSyncDisabled || syncService.syncStatus == .syncing,
+                isLoading: syncService.syncStatus == .syncing
+            ) {
+                Task {
+                    await syncService.forceSync(modelContext: modelContext)
+                    isForceSyncDisabled = true
+                    do {
+                        try await Task.sleep(for: .seconds(30))
+                    } catch {
+                        // Task cancelled (user left view)
+                    }
+                    isForceSyncDisabled = false
+                }
+            }
+
+            Text(L10n.iCloud.forceSyncDescription)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+        }
         .padding(.horizontal, DS.Spacing.lg)
     }
 

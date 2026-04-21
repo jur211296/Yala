@@ -1,0 +1,10 @@
+[
+  { "command": "find", "positionals": ["profile_avatar", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Nombre", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["account_name_field", "click"}, {"command": "type", "positionals": ["Test User"], "flags": {} },
+  { "command": "find", "positionals": ["Guardar", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s13.2-name-changed.png"], "flags": {} }
+]

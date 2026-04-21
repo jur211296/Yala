@@ -100,9 +100,13 @@ struct DowngradeResolutionSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .interactiveDismissDisabled()  // Cannot dismiss without resolving
         }
-        .sheet(isPresented: $showSubscription) {
+        .sheet(isPresented: $showSubscription, onDismiss: {
+            if StoreKitManager.shared.isProUser {
+                onComplete()
+            }
+        }) {
             NavigationStack {
-                SubscriptionView()
+                SubscriptionView(source: "downgrade")
             }
         }
         .onAppear {

@@ -25,6 +25,7 @@ struct ContentView: View {
     @State private var wipeGraceTask: Task<Void, Never>?
     @State private var remoteWipeTask: Task<Void, Never>?
     @State private var showRemoteWipeAlert: Bool = false
+    @State private var showICloudRestartAlert: Bool = false
     @State private var showProTrialOffer: Bool = false
     @State private var showWhatsNew: Bool = false
     @State private var whatsNewData: (features: [WhatsNewFeature], version: String)?
@@ -35,9 +36,9 @@ struct ContentView: View {
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.yalaTheme) private var theme
 
-    /// Queries to detect existing data (for iCloud sync detection)
-    @Query private var accounts: [Account]
-    @Query private var categories: [Category]
+    /// Lightweight state for existing data detection (replaces @Query to prevent
+    /// synchronous SwiftData fetches during iOS snapshot capture — 0x8BADF00D fix).
+    @State private var hasExistingData: Bool = false
     @Environment(\.modelContext) private var modelContext
 
     private let authService = BiometricAuthService.shared
@@ -45,15 +46,16 @@ struct ContentView: View {
     /// Minimum splash duration (2.5 seconds to enjoy the animation)
     private let minimumSplashDuration: Double = 2.5
 
-    /// Check if there's existing data (accounts or categories synced from iCloud or local)
-    private var hasExistingData: Bool {
-        !accounts.isEmpty || !categories.isEmpty
-    }
-
     var body: some View {
         ZStack {
-            // Main content only when onboarding is done; static background otherwise
-            if hasCompletedOnboarding {
+            // Main content deferred until initial state check completes (~2s after launch).
+            // Creating MainTabView during the first commit triggers PanelView data loading
+            // synchronously on the main thread. Before the first frame renders, the system
+            // considers the app "Background" (WatchdogVisibility), with a 5-second timeout.
+            // The heavy SwiftData fetches + calculations exceed that, causing 0x8BADF00D.
+            // By waiting for isInitialCheckDone, the first frame (just the splash) renders
+            // instantly, promoting the app to Foreground (20s timeout).
+            if hasCompletedOnboarding && isInitialCheckDone {
                 MainTabView()
                     .environment(SessionState.shared)
             } else if isWaitingForSync {
@@ -98,18 +100,17 @@ struct ContentView: View {
         .task {
             await checkInitialSyncState()
         }
-        .onChange(of: accounts.count + categories.count) { _, newTotal in
-            // R3: Only show "data found" alert on sync-wait screen, NOT mid-onboarding.
-            // If user is mid-onboarding, their explicit choices (currency, period) are better
-            // than auto-detected defaults. CategoryDeduplicationService handles seed overlap.
-            if isWaitingForSync && newTotal > 0 {
+        .onChange(of: SessionState.shared.dataVersion) { _, _ in
+            // Replaces @Query-based observation. dataVersion increments on CRUD, CloudKit sync,
+            // and sheet dismissals — covers all cases where data may have arrived or changed.
+            let nowHasData = checkHasExistingData()
+            hasExistingData = nowHasData
+            if isWaitingForSync && nowHasData {
                 showICloudDataFound = true
             }
-            // Activate sync banner when data arrives (not during wipe)
-            if newTotal > 0 && !SessionState.shared.isWipingData {
+            if nowHasData && !SessionState.shared.isWipingData {
                 withAnimation(.easeInOut) { showSyncBanner = true }
             }
-            // Auto-dismiss: if no changes for 5 seconds, hide banner
             scheduleSyncBannerDismiss()
         }
         .onChange(of: hasCompletedOnboarding) { _, newValue in
@@ -157,6 +158,11 @@ struct ContentView: View {
         } message: {
             Text(L10n.iCloud.dataFoundMessage)
         }
+        .alert(L10n.iCloud.mismatchTitle, isPresented: $showICloudRestartAlert) {
+            Button(L10n.iCloud.mismatchAction) {}
+        } message: {
+            Text(L10n.iCloud.mismatchMessage)
+        }
         .fullScreenCover(isPresented: $showLanguageSelection) {
             LanguageSelectionView {
                 showLanguageSelection = false
@@ -167,36 +173,33 @@ struct ContentView: View {
             }
             .environment(SessionState.shared)
         }
-        .fullScreenCover(isPresented: $showOnboarding, onDismiss: {
-            if hasCompletedOnboarding && !FeatureGateService.shared.isProUser {
-                Task {
-                    // Wait for bootstrap to finish (products loaded in step 3)
-                    for _ in 0..<20 {
-                        if AppBootstrapper.shared.isInitialized { break }
-                        do {
-                            try await Task.sleep(for: .milliseconds(500))
-                        } catch {
-                            break
-                        }
-                    }
-                    #if DEBUG
-                    print("ContentView: Post-onboarding trial — products=\(StoreKitManager.shared.products.count), bootstrapped=\(AppBootstrapper.shared.isInitialized)")
-                    #endif
-                    // Always show — ProTrialOfferSheet handles loading/non-eligible gracefully
-                    showProTrialOffer = true
-                }
-            } else {
-                SessionState.shared.isReadyForTours = true
-            }
-        }) {
+        .fullScreenCover(isPresented: $showOnboarding) {
             OnboardingView {
+                // Set flag BEFORE dismiss — onChange picks it up reliably
+                if !FeatureGateService.shared.isProUser {
+                    SessionState.shared.needsPostOnboardingTrial = true
+                }
                 hasCompletedOnboarding = true
+                SetupChecklistManager.shared.markAsNewInstall()
                 showOnboarding = false
             }
             .environment(SessionState.shared)
         }
+        .onChange(of: showOnboarding) { oldValue, newValue in
+            // Replaces unreliable fullScreenCover onDismiss for post-onboarding flow.
+            // onChange(of:) fires synchronously on @State change — always reliable.
+            guard oldValue && !newValue && hasCompletedOnboarding else { return }
+            if SessionState.shared.needsPostOnboardingTrial && !FeatureGateService.shared.isProUser {
+                SessionState.shared.needsPostOnboardingTrial = false
+                Task {
+                    // Wait for fullScreenCover dismiss animation (~0.35s)
+                    try? await Task.sleep(for: .seconds(0.8))
+                    await waitForBootstrap()
+                    showProTrialOffer = true
+                }
+            }
+        }
         .sheet(isPresented: $showProTrialOffer, onDismiss: {
-            SessionState.shared.isReadyForTours = true
         }) {
             ProTrialOfferSheet {
                 showProTrialOffer = false
@@ -207,7 +210,6 @@ struct ContentView: View {
                 lastSeenAppVersion = data.version
             }
             whatsNewData = nil
-            SessionState.shared.isReadyForTours = true
         }) {
             if let data = whatsNewData {
                 WhatsNewSheet(features: data.features, version: data.version) {
@@ -285,6 +287,10 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .remoteOnboardingCompleted)) { _ in
             handleRemoteOnboardingCompleted()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .iCloudMismatchDetected)) { _ in
+            guard hasCompletedOnboarding else { return }
+            showICloudRestartAlert = true
+        }
     }
 
     private func dismissSplash() {
@@ -328,6 +334,24 @@ struct ContentView: View {
         }
     }
 
+    /// Wait for AppBootstrapper to finish (StoreKit products, exchange rates, etc.)
+    private func waitForBootstrap() async {
+        for _ in 0..<20 {
+            if AppBootstrapper.shared.isInitialized { break }
+            do { try await Task.sleep(for: .milliseconds(500)) } catch { break }
+        }
+        #if DEBUG
+        print("ContentView: Bootstrap wait done — products=\(StoreKitManager.shared.products.count), initialized=\(AppBootstrapper.shared.isInitialized)")
+        #endif
+    }
+
+    /// Lightweight check — fetchCount doesn't materialize objects or trigger observation.
+    private func checkHasExistingData() -> Bool {
+        let accountCount = (try? modelContext.fetchCount(FetchDescriptor<Account>())) ?? 0
+        let categoryCount = (try? modelContext.fetchCount(FetchDescriptor<Category>())) ?? 0
+        return accountCount > 0 || categoryCount > 0
+    }
+
     /// Schedule sync banner auto-dismiss after 5 seconds of no data changes
     private func scheduleSyncBannerDismiss() {
         syncDismissTask?.cancel()
@@ -368,7 +392,7 @@ struct ContentView: View {
         remoteWipeTask?.cancel()
         remoteWipeTask = Task {
             let sessionState = SessionState.shared
-            sessionState.isReadyForTours = false
+            sessionState.resetToDefaults()
             sessionState.isWipingData = true
 
             // Wait for MainTabView to dismount (prevents @Query crash)
@@ -379,6 +403,7 @@ struct ContentView: View {
                     in: modelContext,
                     broadcastSignal: false  // Reactive wipe — don't re-signal
                 )
+                themeManager.resetToDefaults()
             } catch {
                 #if DEBUG
                 print("ContentView: Remote wipe failed: \(error)")
@@ -425,21 +450,28 @@ struct ContentView: View {
             // Task cancelled, continue with state check
         }
 
-        if hasCompletedOnboarding || hasExistingData {
+        let existingData = checkHasExistingData()
+        hasExistingData = existingData
+        if hasCompletedOnboarding || existingData {
             // Returning user (data from iCloud or previous install)
             // R6 mitigation: hasCompletedOnboarding is per-device (not synced).
             // If iCloud data exists but flag is false (reinstall without backup),
             // auto-promote here. Late arrivals handled by dedup service + onChange.
-            if hasExistingData {
+            if existingData {
                 hasCompletedOnboarding = true
             }
-            // Returning user — check for What's New before enabling tours
-            if prepareWhatsNewIfNeeded() {
+            // Returning user — check for pending trial (app was killed before trial could show)
+            if SessionState.shared.needsPostOnboardingTrial && !FeatureGateService.shared.isProUser {
+                SessionState.shared.needsPostOnboardingTrial = false
+                Task {
+                    await waitForBootstrap()
+                    showProTrialOffer = true
+                }
+            } else if prepareWhatsNewIfNeeded() {
                 showWhatsNew = true
-                // isReadyForTours set in onDismiss
-            } else {
-                SessionState.shared.isReadyForTours = true
             }
+            // Check for app updates (non-blocking)
+            Task { await AppUpdateService.shared.checkForUpdate() }
             // Still check if language selection is needed (new feature, per-device)
             if needsLanguageSelection {
                 showLanguageSelection = true
@@ -467,7 +499,9 @@ struct ContentView: View {
                     #endif
                     txCount = 0
                 }
-                if hasExistingData || txCount > 0 {
+                let latestCheck = checkHasExistingData()
+                hasExistingData = latestCheck
+                if latestCheck || txCount > 0 {
                     hasCompletedOnboarding = true
                     isWaitingForSync = false
                     isInitialCheckDone = true
@@ -542,13 +576,16 @@ struct MainTabView: View {
     @Bindable private var sessionState: SessionState
     @Environment(\.requestReview) private var requestReview
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.modelContext) private var modelContext
     @State private var searchText: String = ""
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
 
-    // Queries for downgrade resolution
-    @Query private var allAccounts: [Account]
-    @Query private var allBudgets: [Budget]
+    // On-demand data for downgrade resolution (replaces @Query to prevent 0x8BADF00D)
+    @State private var downgradeAccounts: [Account] = []
+    @State private var downgradeBudgets: [Budget] = []
     @State private var showDowngradeResolution = false
+    @State private var showTrialExpired = false
+    @State private var showMilestoneUpgrade = false
 
     private var tabConfig: TabBarConfiguration {
         TabBarConfiguration.fromJSON(tabConfigJSON)
@@ -628,7 +665,8 @@ struct MainTabView: View {
                     sessionState.selectedMainTab = .planning
                 case .recordsStandalone:
                     sessionState.temporaryTab = .records
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(50))
                         sessionState.selectedMainTab = .records
                     }
                 }
@@ -650,12 +688,16 @@ struct MainTabView: View {
             }
             .onChange(of: sessionState.shouldShowDowngradeResolution) { _, shouldShow in
                 // Show downgrade resolution sheet when triggered by AppBootstrapper
+                // Fetches on-demand instead of @Query to prevent 0x8BADF00D during snapshot
                 if shouldShow {
-                    // Check if there's actual excess before showing
-                    let activeAccounts = allAccounts.filter { !$0.isArchived }
-                    let activeBudgets = allBudgets.filter { $0.isActive }
-
-                    if activeAccounts.count > 2 || activeBudgets.count > 3 {
+                    let accounts = (try? modelContext.fetch(FetchDescriptor<Account>())) ?? []
+                    let budgets = (try? modelContext.fetch(
+                        FetchDescriptor<Budget>(predicate: #Predicate { $0.isActive })
+                    )) ?? []
+                    let activeAccounts = accounts.filter { !$0.isArchived }
+                    if activeAccounts.count > 2 || budgets.count > 3 {
+                        downgradeAccounts = accounts
+                        downgradeBudgets = budgets
                         showDowngradeResolution = true
                     }
                     sessionState.shouldShowDowngradeResolution = false
@@ -663,10 +705,32 @@ struct MainTabView: View {
             }
             .sheet(isPresented: $showDowngradeResolution) {
                 DowngradeResolutionSheet(
-                    accounts: allAccounts,
-                    budgets: allBudgets
+                    accounts: downgradeAccounts,
+                    budgets: downgradeBudgets
                 ) {
                     showDowngradeResolution = false
+                }
+            }
+            .onChange(of: sessionState.shouldShowTrialExpired) { _, shouldShow in
+                if shouldShow {
+                    showTrialExpired = true
+                    sessionState.shouldShowTrialExpired = false
+                    ProUpsellService.shared.markTrialExpiredSheetShown()
+                }
+            }
+            .sheet(isPresented: $showTrialExpired) {
+                UpgradePromptSheet(feature: .voiceInput, context: .trialExpired, source: "trialExpired")
+            }
+            .onChange(of: sessionState.pendingMilestoneUpgrade) { _, milestone in
+                if milestone != nil {
+                    showMilestoneUpgrade = true
+                }
+            }
+            .sheet(isPresented: $showMilestoneUpgrade, onDismiss: {
+                sessionState.pendingMilestoneUpgrade = nil
+            }) {
+                if let milestone = sessionState.pendingMilestoneUpgrade {
+                    MilestoneUpgradeSheet(milestone: milestone)
                 }
             }
         }
@@ -676,13 +740,15 @@ struct MainTabView: View {
     private func viewForTab(_ tab: ConfigurableTab) -> some View {
         switch tab {
         case .panel:
-            PanelView()
+            PanelShell()
         case .statistics:
             StatisticsView()
         case .planning:
             PlanningView()
         case .records:
             RecordsStandaloneView()
+        case .reports:
+            FinancialReportView()
         }
     }
 
@@ -712,6 +778,7 @@ enum AppTab: Hashable {
     case more
     case search
     case records
+    case reports
 }
 
 // MARK: - More View
@@ -796,7 +863,8 @@ struct MorePlaceholderView: View {
             // Set temporary tab first, then navigate after SwiftUI adds the tab
             SessionState.shared.temporaryTab = tab
             // Small delay to let TabView add the new tab before selecting it
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            Task {
+                try? await Task.sleep(for: .milliseconds(50))
                 SessionState.shared.selectedMainTab = tab.appTab
             }
         } label: {
@@ -841,7 +909,7 @@ struct MorePlaceholderView: View {
                         .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
                         .background(
                             RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.gray) // A11Y-DM: gray badge on brand accent bg — visible both modes
+                                .fill(DS.Semantic.disabledForeground) // A11Y-DM: gray badge on brand accent bg — visible both modes
                         )
 
                     Text(L10n.Profile.title)
@@ -859,6 +927,7 @@ struct MorePlaceholderView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("profile_button")
         }
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)

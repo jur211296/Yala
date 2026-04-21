@@ -119,7 +119,15 @@ struct InboxAlertModal: View {
                 }
             }
             .padding(DS.Spacing.xxl)
-            .background(.thCard)
+            .background {
+                if theme.usesMaterial {
+                    RoundedRectangle(cornerRadius: DS.Radius.xl)
+                        .fill(.ultraThinMaterial)
+                } else {
+                    RoundedRectangle(cornerRadius: DS.Radius.xl)
+                        .fill(theme.card)
+                }
+            }
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
             .shadow(
                 color: Color.black.opacity(theme.baseColorScheme == .dark ? 0.5 : 0.15),
@@ -142,7 +150,8 @@ struct InboxAlertModal: View {
         dsWithAnimation(reduceMotion) {
             isVisible = false
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        Task {
+            try? await Task.sleep(for: .seconds(0.2))
             onDismiss()
             completion?()
         }

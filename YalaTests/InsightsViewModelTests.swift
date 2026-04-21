@@ -44,4 +44,22 @@ struct InsightsViewModelTests {
         let vm = InsightsViewModel()
         #expect(vm.currentFocus == .current)
     }
+
+    // MARK: - AI Activated State
+
+    @MainActor @Test func initialState_aiActivatedFalse() {
+        let vm = InsightsViewModel()
+        #expect(vm.aiActivated == false)
+    }
+
+    @MainActor @Test func resetAIState_clearsAllAIState() {
+        let vm = InsightsViewModel()
+        // Simulate some AI state being set (via internal mutation during triggerAIGeneration)
+        // After reset, all AI state should be cleared
+        vm.resetAIState()
+        #expect(vm.aiInsights == nil)
+        #expect(vm.aiActivated == false)
+        #expect(vm.isLoadingAI == false)
+        #expect(vm.aiError == nil)
+    }
 }

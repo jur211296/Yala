@@ -38,6 +38,7 @@ struct YalaToolbarButton: View {
 struct YalaSaveButton: View {
     let action: () -> Void
     var isDisabled: Bool = false
+    var disabledHint: String?
 
     var body: some View {
         Button(action: action) {
@@ -51,6 +52,8 @@ struct YalaSaveButton: View {
 
         .buttonBorderShape(.circle)
         .accessibilityLabel(L10n.Action.save)
+        .accessibilityIdentifier("toolbar_save_button")
+        .accessibilityHint(isDisabled ? (disabledHint ?? "") : "")
     }
 }
 
@@ -66,11 +69,14 @@ struct YalaPrimaryButton: View {
     var isDisabled: Bool = false
     var isLoading: Bool = false
 
-    init(_ title: String, icon: String? = nil, isDisabled: Bool = false, isLoading: Bool = false, action: @escaping () -> Void) {
+    var disabledHint: String?
+
+    init(_ title: String, icon: String? = nil, isDisabled: Bool = false, isLoading: Bool = false, disabledHint: String? = nil, action: @escaping () -> Void) {
         self.title = title
         self.icon = icon
         self.isDisabled = isDisabled
         self.isLoading = isLoading
+        self.disabledHint = disabledHint
         self.action = action
     }
 
@@ -96,6 +102,8 @@ struct YalaPrimaryButton: View {
         }
         .disabled(isDisabled || isLoading)
         .buttonStyle(.plain)
+        .accessibilityIdentifier("primary_button")
+        .accessibilityHint(isDisabled ? (disabledHint ?? "") : "")
     }
 }
 
@@ -110,11 +118,14 @@ struct YalaSecondaryButton: View {
     var isDisabled: Bool = false
     var destructive: Bool = false
 
-    init(_ title: String, icon: String? = nil, isDisabled: Bool = false, destructive: Bool = false, action: @escaping () -> Void) {
+    var disabledHint: String?
+
+    init(_ title: String, icon: String? = nil, isDisabled: Bool = false, destructive: Bool = false, disabledHint: String? = nil, action: @escaping () -> Void) {
         self.title = title
         self.icon = icon
         self.isDisabled = isDisabled
         self.destructive = destructive
+        self.disabledHint = disabledHint
         self.action = action
     }
 
@@ -145,40 +156,7 @@ struct YalaSecondaryButton: View {
             )
         }
         .disabled(isDisabled)
-    }
-}
-
-// MARK: - Text Button
-
-/// Botón de texto simple (sin fondo ni borde)
-/// Uso: Links, acciones terciarias, "Ver más"
-struct YalaTextButton: View {
-    @Environment(\.yalaTheme) private var theme
-    let title: String
-    let icon: String?
-    let action: () -> Void
-    var destructive: Bool = false
-
-    init(_ title: String, icon: String? = nil, destructive: Bool = false, action: @escaping () -> Void) {
-        self.title = title
-        self.icon = icon
-        self.destructive = destructive
-        self.action = action
-    }
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: DS.Spacing.xs) {
-                if let icon {
-                    Image(systemName: icon)
-                        .font(DS.Typography.labelSmall)
-                        .accessibilityHidden(true)
-                }
-                Text(title)
-                    .font(DS.Typography.label)
-            }
-            .foregroundStyle(destructive ? .red : theme.accent)
-        }
+        .accessibilityHint(isDisabled ? (disabledHint ?? "") : "")
     }
 }
 
@@ -212,13 +190,6 @@ struct YalaTextButton: View {
         }
         .padding(.horizontal)
 
-        Divider()
-
-        // Text buttons
-        HStack(spacing: DS.Spacing.xl) {
-            YalaTextButton("Ver más", icon: "chevron.right") {}
-            YalaTextButton("Eliminar", destructive: true) {}
-        }
     }
     .padding()
     .background(.thBackground)

@@ -1,0 +1,9 @@
+[
+  { "command": "find", "positionals": ["profile_avatar", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "scroll", "positionals": ["down"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "find", "positionals": ["Vaciar datos", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s13.6-wipe-confirm1.png"], "flags": {} }
+]

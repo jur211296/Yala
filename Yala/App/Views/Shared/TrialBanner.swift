@@ -21,7 +21,7 @@ struct TrialBanner: View {
     // MARK: - Computed
 
     private var isUrgent: Bool {
-        daysRemaining <= 2
+        daysRemaining <= 5
     }
 
     private var iconName: String {

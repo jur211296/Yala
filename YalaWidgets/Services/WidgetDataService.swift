@@ -50,6 +50,7 @@ struct WidgetScheduledPayment: Codable {
     let isIncome: Bool
     let iconName: String?   // Optional for backwards compatibility - fallback based on paymentCategory
     let colorHex: String?   // Optional for backwards compatibility - fallback: "#6366F1"
+    var isVariableAmount: Bool?  // Optional for backwards compatibility - fallback: false
 }
 
 /// Balance trend data point for widgets

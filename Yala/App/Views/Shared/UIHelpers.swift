@@ -13,6 +13,30 @@ import SwiftUI
     import UIKit
 #endif
 
+// MARK: - Filter Badge
+
+struct FilterBadgeModifier: ViewModifier {
+    let isActive: Bool
+
+    func body(content: Content) -> some View {
+        content.overlay(alignment: .topTrailing) {
+            if isActive {
+                Circle()
+                    .fill(Color.hotPink)
+                    .frame(width: 8, height: 8)
+                    .offset(x: 2, y: -2)
+                    .accessibilityHidden(true)
+            }
+        }
+    }
+}
+
+extension View {
+    func filterBadge(isActive: Bool) -> some View {
+        modifier(FilterBadgeModifier(isActive: isActive))
+    }
+}
+
 // MARK: - Design System
 // Note: Design tokens (Spacing, Radius, Opacity) are now unified in:
 // App/Theme/DesignTokens.swift → Use DS.Spacing, DS.Radius, DS.Opacity
@@ -36,6 +60,17 @@ enum AccountType: String, CaseIterable, Identifiable {
         case .checking: return L10n.Account.AccountType.current
         case .savings: return L10n.Account.AccountType.savings
         case .creditCard: return L10n.Account.AccountType.creditCard
+        }
+    }
+
+    /// Short description of what this account type is (for onboarding type picker)
+    var typeDescription: String {
+        switch self {
+        case .checking: return L10n.Onboarding.accountTypeCheckingHint
+        case .savings: return L10n.Onboarding.accountTypeSavingsHint
+        case .creditCard: return L10n.Onboarding.accountTypeCreditHint
+        case .cash: return L10n.Onboarding.accountTypeCashHint
+        case .general: return ""
         }
     }
 
@@ -84,6 +119,9 @@ enum AppTheme: Int, CaseIterable, Identifiable {
     case indigo = 3
     case rosa = 4
     case teal = 5
+    case minimalist = 6
+    case translucent = 7
+    case liquidGlass = 8
 
     var id: Int { rawValue }
 
@@ -95,6 +133,9 @@ enum AppTheme: Int, CaseIterable, Identifiable {
         case .indigo: return L10n.Settings.themeIndigo
         case .rosa: return L10n.Settings.themeRosa
         case .teal: return L10n.Settings.themeTeal
+        case .minimalist: return L10n.Settings.themeMinimalist
+        case .translucent: return L10n.Settings.themeTranslucent
+        case .liquidGlass: return L10n.Settings.themeLiquidGlass
         }
     }
 
@@ -102,7 +143,7 @@ enum AppTheme: Int, CaseIterable, Identifiable {
         switch self {
         case .system: return nil
         case .light: return .light
-        case .dark, .indigo, .rosa, .teal: return .dark
+        case .dark, .indigo, .rosa, .teal, .minimalist, .translucent, .liquidGlass: return .dark
         }
     }
 
@@ -114,14 +155,23 @@ enum AppTheme: Int, CaseIterable, Identifiable {
         case .indigo: return .indigo
         case .rosa: return .rosa
         case .teal: return .teal
+        case .minimalist: return .minimalist
+        case .translucent: return .translucent
+        case .liquidGlass: return .liquidGlass
         }
     }
+
+    /// Orden para la grilla de selección de tema.
+    /// liquidGlass primero como tema estrella; el rawValue no cambia.
+    static let displayOrder: [AppTheme] = [
+        .liquidGlass, .system, .light, .dark, .indigo, .rosa, .teal, .minimalist, .translucent
+    ]
 
     /// Whether this theme requires PRO subscription
     var isPro: Bool {
         switch self {
-        case .system, .light, .dark: return false
-        case .indigo, .rosa, .teal: return true
+        case .system, .light, .dark, .liquidGlass: return false
+        case .indigo, .rosa, .teal, .minimalist, .translucent: return true
         }
     }
 }
@@ -265,21 +315,10 @@ struct YalaFormatter {
         UserDefaults.standard.string(forKey: "currencyDisplayFormat") ?? "code"
     }
 
-    /// Map currency codes to their symbols
-    private static let currencySymbols: [String: String] = [
-        "PEN": "S/",
-        "USD": "$",
-        "EUR": "€",
-        "MXN": "$",
-        "COP": "$",
-        "BRL": "R$",
-        "GBP": "£",
-    ]
-
     /// Returns the currency identifier (code or symbol) based on user preference
     static func currencyIdentifier(for code: String) -> String {
-        if currencyDisplayFormat == "symbol", let symbol = currencySymbols[code] {
-            return symbol
+        if currencyDisplayFormat == "symbol" {
+            return CurrencyUtils.symbol(for: code)
         }
         return code
     }
@@ -292,7 +331,8 @@ struct YalaFormatter {
     ///   - forceFullPrecision: If true, always shows 2 decimals (use for individual records)
     /// - Returns: Formatted string like "PEN 20,000.00" or "S/ -20,000.00"
     static func currency(
-        value: Double, currencyCode: String, forceSign: Bool = false, forceFullPrecision: Bool = false
+        value: Double, currencyCode: String, forceSign: Bool = false, forceFullPrecision: Bool = false,
+        isEstimate: Bool = false
     ) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
@@ -315,11 +355,49 @@ struct YalaFormatter {
 
         // Format: "PEN 20,000.00" or "S/ -20,000.00" based on user preference
         let identifier = currencyIdentifier(for: currencyCode)
-        return "\(identifier) \(signedNumber)"
+        let estimatePrefix = isEstimate ? "≈ " : ""
+        return "\(estimatePrefix)\(identifier) \(signedNumber)"
     }
 
     static func compactCurrency(value: Double) -> String {
         value.formatted(.number.notation(.compactName).precision(.fractionLength(0...1)))
+    }
+
+    /// Compact currency for table cells: uses abbreviation (1.2k) for large values
+    static func currencyCompact(value: Double, currencyCode: String) -> String {
+        if abs(value) >= 10000 {
+            return String(format: "%.1fk", value / 1000)
+        }
+        return currency(value: value, currencyCode: currencyCode)
+    }
+
+    /// Compact table cell: no currency prefix, "9,999" / "10.5k" / "101k"
+    static func amountCompactTable(value: Double) -> String {
+        let absValue = abs(value)
+        let sign = value < 0 ? "-" : ""
+        if absValue >= 100_000 {
+            return String(format: "%@%.0fk", sign, absValue / 1000)
+        }
+        if absValue >= 10_000 {
+            let k = absValue / 1000
+            let formatted = k.truncatingRemainder(dividingBy: 1) == 0
+                ? String(format: "%@%.0fk", sign, k)
+                : String(format: "%@%.1fk", sign, k)
+            return formatted
+        }
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        let formattedNumber = formatter.string(from: NSNumber(value: absValue)) ?? "0"
+        return "\(sign)\(formattedNumber)"
+    }
+
+    /// Cash flow table cell: currency prefix (respects user preference) + compact. "S/ 9,999" / "PEN 10.5k"
+    static func amountCashFlowCell(value: Double, currencyCode: String) -> String {
+        let sym = currencyIdentifier(for: currencyCode)
+        let sign = value < 0 ? "-" : ""
+        let compact = amountCompactTable(value: abs(value))
+        return "\(sign)\(sym) \(compact)"
     }
 
     /// Compact axis label: 1500 → "2K", -40000 → "-40K", 500 → "500"

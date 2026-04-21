@@ -297,16 +297,8 @@ struct TrendChartView: View {
             return formatDayNumber(date)
         }
 
-        let forceGrouping: Calendar.Component? = {
-            switch grouping {
-            case .month: return .month
-            case .week: return .weekOfYear
-            case .day: return nil
-            }
-        }()
-
         return SmartAxisHelper.formatAxisLabel(
-            for: date, startDate: firstDate, endDate: lastDate, forceGrouping: forceGrouping)
+            for: date, startDate: firstDate, endDate: lastDate, forceGrouping: grouping.forceAxisGrouping)
     }
 
     private func formattedAmountShort(_ value: Double) -> String {

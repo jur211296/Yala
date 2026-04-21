@@ -40,6 +40,10 @@ final class Category {
     @Relationship(deleteRule: .nullify)
     var budgets: [Budget]?
 
+    /// Inverse relationship: cash flow lines linked to this category - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
+    var cashFlowLines: [CashFlowLine]?
+
     init(
         name: String,
         colorHex: String,

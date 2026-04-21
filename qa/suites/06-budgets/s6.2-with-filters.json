@@ -1,0 +1,18 @@
+[
+  { "command": "find", "positionals": ["Planificación", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Presupuestos", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Añadir", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["account_name_field", "click"}, {"command": "type", "positionals": ["Entretenimiento"], "flags": {} },
+  { "command": "find", "positionals": ["new_transaction_amount", "click"}, {"command": "type", "positionals": ["300"], "flags": {} },
+  { "command": "find", "positionals": ["Subcategorías", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s6.2-filter-selection.png"], "flags": {} },
+  { "command": "back", "positionals": [], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "find", "positionals": ["Guardar", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s6.2-budget-with-filters.png"], "flags": {} }
+]

@@ -10,63 +10,12 @@ import Foundation
 import SwiftData
 import WidgetKit
 
-// MARK: - DraftService Protocol
-
-/// Protocol for draft management operations
-@MainActor
-protocol DraftServiceProtocol {
-    /// Creates a new draft and inserts it into the context
-    func createDraft(_ draft: InboxDraft) throws
-
-    /// Creates multiple drafts (for bulk operations from voice/image)
-    func createDrafts(_ drafts: [InboxDraft]) throws
-
-    /// Approves a draft and creates the corresponding transaction
-    func approveDraft(
-        _ draft: InboxDraft,
-        currencyConverter: CurrencyConverter
-    ) throws -> TransactionItem
-
-    /// Bulk approves multiple drafts
-    func bulkApprove(
-        _ drafts: [InboxDraft],
-        currencyConverter: CurrencyConverter
-    ) throws -> [TransactionItem]
-
-    /// Rejects a draft (marks as rejected, caches display values)
-    func rejectDraft(_ draft: InboxDraft) throws
-
-    /// Bulk rejects multiple drafts
-    func bulkReject(_ drafts: [InboxDraft]) throws
-
-    /// Permanently deletes a draft
-    func deleteDraft(_ draft: InboxDraft) throws
-
-    /// Bulk deletes multiple drafts
-    func bulkDelete(_ drafts: [InboxDraft]) throws
-
-    /// Returns a draft from rejected/approved back to pending
-    func returnToPending(_ draft: InboxDraft) throws
-
-    /// Bulk returns drafts to pending
-    func bulkReturnToPending(_ drafts: [InboxDraft]) throws
-
-    /// Saves changes to a pending draft without approving
-    func saveDraft(_ draft: InboxDraft) throws
-
-    /// Updates account for multiple drafts
-    func bulkUpdateAccount(_ drafts: [InboxDraft], account: Account) throws
-
-    /// Updates subcategory for multiple drafts
-    func bulkUpdateSubcategory(_ drafts: [InboxDraft], subcategory: Subcategory) throws
-}
-
 // MARK: - DraftService Implementation
 
 /// Service for managing InboxDraft operations
 @MainActor
 @Observable
-final class DraftService: DraftServiceProtocol {
+final class DraftService {
 
     // MARK: - Singleton
 
@@ -222,6 +171,14 @@ final class DraftService: DraftServiceProtocol {
 
         if ReviewPromptService.shouldPrompt(transactionCount: txCount) {
             SessionState.shared.shouldRequestReview = true
+        }
+
+        // Check milestone upgrade for Free users
+        if !FeatureGateService.shared.isProUser,
+           ProUpsellService.shared.shouldShowMilestone(transactionCount: txCount),
+           let milestone = ProUpsellService.shared.nextMilestone(for: txCount) {
+            SessionState.shared.pendingMilestoneUpgrade = milestone
+            ProUpsellService.shared.markMilestoneShown(milestone)
         }
 
         // Update widgets

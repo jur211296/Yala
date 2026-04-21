@@ -1,0 +1,9 @@
+[
+  { "command": "wait", "positionals": ["2000"], "flags": {} },
+  { "command": "find", "positionals": ["onboarding_name_field", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s1.10-keyboard-visible.png"], "flags": {} },
+  { "command": "press", "positionals": ["200", "150"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s1.10-keyboard-dismissed.png"], "flags": {} }
+]

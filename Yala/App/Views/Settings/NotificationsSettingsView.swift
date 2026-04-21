@@ -278,7 +278,7 @@ struct NotificationCard: View {
                         Text(notification.localizedName)
                             .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
-                            .lineLimit(1)
+                            .lineLimit(2)
 
                         Spacer()
 

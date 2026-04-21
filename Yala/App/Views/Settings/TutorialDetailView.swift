@@ -17,6 +17,7 @@ struct TutorialDetailView: View {
     @ScaledMetric(relativeTo: .largeTitle) private var introIconSize: CGFloat = 60 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .largeTitle) private var placeholderIconSize: CGFloat = 40 // A11Y-DT: @ScaledMetric
     @State private var currentPage = 0
+    @State private var isVideoPlaying = false
 
     private var steps: [TutorialStep] { tutorial.steps }
     /// Total pages: intro (1) + video steps (N) + completion (1)
@@ -44,7 +45,7 @@ struct TutorialDetailView: View {
 
                     // Pages 1...N: Steps with video
                     ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
-                        stepView(step)
+                        stepView(step, stepNumber: index + 1)
                             .tag(index + 1)
                     }
 
@@ -64,6 +65,12 @@ struct TutorialDetailView: View {
                         .padding(.horizontal, DS.Spacing.xl)
                         .padding(.bottom, DS.Spacing.xxxl)
                 }
+            }
+        }
+        .onChange(of: currentPage) {
+            isVideoPlaying = false
+            if currentPage == totalPages - 1 {
+                UserDefaults.standard.set(true, forKey: tutorial.completionKey)
             }
         }
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
@@ -138,22 +145,29 @@ struct TutorialDetailView: View {
     // MARK: - Step View
 
     @ViewBuilder
-    private func stepView(_ step: TutorialStep) -> some View {
-        VStack(spacing: DS.Spacing.lg) {
-            // Text content
+    private func stepView(_ step: TutorialStep, stepNumber: Int) -> some View {
+        VStack(spacing: DS.Spacing.md) {
+            // Step number + instruction
             VStack(spacing: DS.Spacing.xs) {
+                Text(L10n.Tutorials.stepLabel(stepNumber))
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(theme.accent)
+
                 Text(step.title)
-                    .font(.title3.bold())
+                    .font(DS.Typography.bodyBold)
                     .foregroundStyle(.thPrimaryText)
                     .multilineTextAlignment(.center)
-
-                Text(step.description)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.thSecondaryText)
-                    .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
+
+                if let desc = step.description, !desc.isEmpty {
+                    Text(desc)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.thSecondaryText)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
-            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.horizontal, DS.Spacing.lg)
 
             // Video, screenshot, or placeholder
             mediaView(step)
@@ -168,18 +182,36 @@ struct TutorialDetailView: View {
     @ViewBuilder
     private func mediaView(_ step: TutorialStep) -> some View {
         if step.videoURL != nil {
-            LoopingVideoView(step: step)
-                .aspectRatio(3.0 / 4.0, contentMode: .fit)
+            LoopingVideoView(step: step, isPlaying: $isVideoPlaying, loopEnabled: !reduceMotion)
+                .aspectRatio(9.0 / 16.0, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                .overlay {
+                    if !isVideoPlaying {
+                        RoundedRectangle(cornerRadius: DS.Radius.lg)
+                            .fill(.black.opacity(0.15))
+                            .overlay {
+                                Image(systemName: "play.circle.fill")
+                                    .font(.system(size: 60))
+                                    .foregroundStyle(.white)
+                                    .shadow(color: .black.opacity(0.3), radius: 8, y: 2)
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                isVideoPlaying = true
+                            }
+                            .transition(.opacity)
+                    }
+                }
+                .dsAnimation(.easeInOut(duration: 0.2), value: isVideoPlaying, reduceMotion: reduceMotion)
                 .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
-                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.horizontal, DS.Spacing.md)
         } else if let name = step.screenshotName, let image = UIImage(named: name) {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFit()
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                 .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
-                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.horizontal, DS.Spacing.md)
         } else {
             RoundedRectangle(cornerRadius: DS.Radius.lg)
                 .fill(.thCard)
@@ -247,13 +279,28 @@ struct TutorialDetailView: View {
 
 private struct LoopingVideoView: UIViewRepresentable {
     let step: TutorialStep
+    @Binding var isPlaying: Bool
+    var loopEnabled: Bool = true
 
     func makeUIView(context: Context) -> LoopingPlayerUIView {
-        LoopingPlayerUIView(url: step.videoURL)
+        let view = LoopingPlayerUIView(url: step.videoURL)
+        view.loopEnabled = loopEnabled
+        return view
     }
 
     func updateUIView(_ uiView: LoopingPlayerUIView, context: Context) {
+        uiView.loopEnabled = loopEnabled
+        // Only reinit player if URL actually changed (prevents mid-play reset)
         uiView.updateURL(step.videoURL)
+        if isPlaying {
+            uiView.play()
+        } else {
+            uiView.pause()
+        }
+    }
+
+    static func dismantleUIView(_ uiView: LoopingPlayerUIView, coordinator: ()) {
+        uiView.stop()
     }
 }
 
@@ -262,7 +309,8 @@ private final class LoopingPlayerUIView: UIView {
     private var player: AVPlayer?
     private var currentURL: URL?
     private var endObserver: Any?
-    private var restartWork: DispatchWorkItem?
+    private var restartTask: Task<Void, Never>?
+    var loopEnabled: Bool = true
 
     /// Seconds to freeze on the last frame before restarting
     private let freezeDuration: TimeInterval = 2.0
@@ -311,22 +359,39 @@ private final class LoopingPlayerUIView: UIView {
             self?.scheduleRestart()
         }
 
-        avPlayer.play()
+        // Start paused — show true first frame as thumbnail
+        avPlayer.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero)
+    }
+
+    func play() {
+        player?.play()
+    }
+
+    func pause() {
+        restartTask?.cancel()
+        restartTask = nil
+        player?.pause()
+    }
+
+    func stop() {
+        cleanUp()
     }
 
     private func scheduleRestart() {
-        let work = DispatchWorkItem { [weak self] in
+        guard loopEnabled else { return }
+        let freeze = freezeDuration
+        restartTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(freeze))
+            guard !Task.isCancelled else { return }
             guard let self, let player = self.player else { return }
-            player.seek(to: .zero)
+            await player.seek(to: .zero)
             player.play()
         }
-        restartWork = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + freezeDuration, execute: work)
     }
 
     private func cleanUp() {
-        restartWork?.cancel()
-        restartWork = nil
+        restartTask?.cancel()
+        restartTask = nil
         if let endObserver {
             NotificationCenter.default.removeObserver(endObserver)
         }

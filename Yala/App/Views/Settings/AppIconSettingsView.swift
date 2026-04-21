@@ -191,7 +191,7 @@ struct AppIconSettingsView: View {
                             .font(DS.Typography.labelSmall)
                             .foregroundStyle(.white)
                             .padding(DS.Chip.paddingV)
-                            .background(Circle().fill(Color.gray)) // A11Y-DM: lock badge on app icon — white icon on gray
+                            .background(Circle().fill(DS.Semantic.disabledForeground)) // A11Y-DM: lock badge on app icon — white icon on gray
                             .offset(x: 4, y: -4)
                     }
                 }

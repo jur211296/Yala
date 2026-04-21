@@ -63,7 +63,7 @@ enum BudgetStatus: String, Identifiable {
 
 // MARK: - Budget Summary
 
-struct BudgetSummary: Identifiable {
+struct BudgetSummary: Identifiable, Equatable {
     let budget: Budget
     let spent: Double
     let percentage: Double
@@ -74,6 +74,16 @@ struct BudgetSummary: Identifiable {
 
     var id: PersistentIdentifier {
         budget.persistentModelID
+    }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.budget.persistentModelID == rhs.budget.persistentModelID
+            && lhs.spent == rhs.spent
+            && lhs.percentage == rhs.percentage
+            && lhs.daysRemaining == rhs.daysRemaining
+            && lhs.status == rhs.status
+            && lhs.icon == rhs.icon
+            && lhs.color == rhs.color
     }
 }
 

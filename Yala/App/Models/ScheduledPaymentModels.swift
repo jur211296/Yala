@@ -112,6 +112,20 @@ struct ScheduledPaymentSummary: Identifiable {
     var isPaidForMonth: Bool = false
     /// Whether this occurrence has been skipped by the user
     var isSkippedForMonth: Bool = false
+    /// Real paid amount from linked transaction (nil = use payment.amount)
+    var paidAmount: Double? = nil
+    /// Currency of the real paid amount (nil = use payment.currencyCode)
+    var paidCurrencyCode: String? = nil
+
+    /// Amount to display: real paid amount if available, otherwise scheduled amount
+    var displayAmount: Double {
+        paidAmount ?? payment.amount
+    }
+
+    /// Currency for display amount
+    var displayCurrencyCode: String {
+        paidCurrencyCode ?? payment.currencyCode
+    }
 
     var id: String {
         "\(payment.persistentModelID)-\(dueDate.timeIntervalSince1970)"

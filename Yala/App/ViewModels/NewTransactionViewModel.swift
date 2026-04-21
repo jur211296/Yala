@@ -98,6 +98,7 @@ final class NewTransactionViewModel {
     var showDeleteConfirmation: Bool = false
     var showSaveAsFavoriteSheet: Bool = false
     var showSaveAsRecurringSheet: Bool = false
+    var showSplitCalculator: Bool = false
 
     // Notification primer
     var showNotificationPrimer: Bool = false
@@ -113,10 +114,7 @@ final class NewTransactionViewModel {
 
     /// Monto como Double
     var amount: Double {
-        let normalized = amountString.replacing(
-            Locale.current.decimalSeparator ?? ".", with: "."
-        )
-        return Double(normalized) ?? 0.0
+        AmountInputHelper.parseDecimal(amountString)
     }
 
     /// Monto formateado para display
@@ -507,6 +505,14 @@ final class NewTransactionViewModel {
                 if ReviewPromptService.shouldPrompt(transactionCount: count) {
                     SessionState.shared.shouldRequestReview = true
                 }
+
+                // Check milestone upgrade for Free users
+                if !FeatureGateService.shared.isProUser,
+                   ProUpsellService.shared.shouldShowMilestone(transactionCount: count),
+                   let milestone = ProUpsellService.shared.nextMilestone(for: count) {
+                    SessionState.shared.pendingMilestoneUpgrade = milestone
+                    ProUpsellService.shared.markMilestoneShown(milestone)
+                }
             }
 
             // Analytics
@@ -587,6 +593,9 @@ final class NewTransactionViewModel {
             transaction.needOverride = selectedNeed?.rawValue
             context.insert(transaction)
         }
+
+        // Persist split data (same for both edit and new)
+        applySplitData(to: transaction)
 
         return transaction
     }
@@ -851,6 +860,75 @@ final class NewTransactionViewModel {
         }
     }
 
+    // MARK: - Split Calculator State
+
+    /// Split state (transient, loaded from/saved to TransactionItem)
+    var splitTotalAmount: Double?
+    var splitType: SplitType?
+    var splitMyValue: Double?
+    var splitDivisor: Double?
+    var isSplitStale: Bool = false
+
+    var hasSplitData: Bool {
+        splitTotalAmount != nil && splitType != nil
+    }
+
+    var splitDescription: String? {
+        guard let type = splitType, let total = splitTotalAmount else { return nil }
+        let formattedTotal = YalaFormatter.number(value: total, forceFullPrecision: true)
+        switch type {
+        case .percentage:
+            if let pct = splitMyValue {
+                let pctStr = pct == pct.rounded() ? String(Int(pct)) : String(format: "%.1f", pct)
+                return L10n.Split.descPercentage(pctStr, formattedTotal)
+            }
+        case .equal:
+            if let people = splitMyValue {
+                return L10n.Split.descEqual(Int(people))
+            }
+        case .shares:
+            if let my = splitMyValue, let totalShares = splitDivisor {
+                return L10n.Split.descShares(Int(my), Int(totalShares))
+            }
+        case .exact:
+            if let exact = splitMyValue {
+                return L10n.Split.descExact(YalaFormatter.number(value: exact, forceFullPrecision: true))
+            }
+        }
+        return nil
+    }
+
+    func applySplitResult(amount: Double, splitType: SplitType, totalAmount: Double, myValue: Double, divisor: Double?) {
+        self.splitTotalAmount = totalAmount
+        self.splitType = splitType
+        self.splitMyValue = myValue
+        self.splitDivisor = divisor
+        self.isSplitStale = false
+        // Update amount string — programmatic, not manual edit
+        self.amountString = AmountInputHelper.formatWithGrouping(amount)
+
+        // Save last used preferences
+        UserDefaults.standard.set(splitType.rawValue, forKey: "lastSplitType")
+        if splitType == .percentage {
+            UserDefaults.standard.set(myValue, forKey: "lastSplitPercentage")
+        }
+    }
+
+    private func applySplitData(to transaction: TransactionItem) {
+        transaction.splitTotalAmount = splitTotalAmount
+        transaction.splitType = splitType?.rawValue
+        transaction.splitMyValue = splitMyValue
+        transaction.splitDivisor = splitDivisor
+    }
+
+    func clearSplitData() {
+        splitTotalAmount = nil
+        splitType = nil
+        splitMyValue = nil
+        splitDivisor = nil
+        isSplitStale = false
+    }
+
     // MARK: - Reset
 
     /// Resetea el formulario a valores iniciales
@@ -869,6 +947,7 @@ final class NewTransactionViewModel {
         isExchangeRateManual = false
         showValidationErrors = false
         isSaving = false
+        clearSplitData()
     }
 }
 

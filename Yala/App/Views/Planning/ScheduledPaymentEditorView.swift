@@ -71,6 +71,9 @@ struct ScheduledPaymentEditorView: View {
     @State private var notifyOnDueDate: Bool = true
     @State private var notifyDaysBefore: Int = 3
 
+    // Amount type
+    @State private var isVariableAmount: Bool = false
+
     // Status
     @State private var isActive: Bool = true
 
@@ -194,7 +197,8 @@ struct ScheduledPaymentEditorView: View {
             transactionType = "expense"
         }
         if payment == nil && prefill == nil {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            Task {
+                try? await Task.sleep(for: .milliseconds(500))
                 isNameFieldFocused = true
             }
         }
@@ -205,6 +209,11 @@ struct ScheduledPaymentEditorView: View {
 
     private var editorContent: some View {
         VStack(spacing: DS.Spacing.xxl) {
+            // Contextual guide for new users creating first scheduled payment
+            if payment == nil {
+                ContextualGuideBanner.scheduledEditor()
+            }
+
             basicInfoSection
             togglesSection
             classificationSection
@@ -270,6 +279,42 @@ struct ScheduledPaymentEditorView: View {
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .foregroundStyle(transactionType == "income" ? Color.electricIndigo : .primary)
                             .focused($isAmountFieldFocused)
+                            .onChange(of: isAmountFieldFocused) { _, isFocused in
+                                if isFocused && (amount == "0" || amount == "0.00" || amount == "0,00") {
+                                    amount = ""
+                                }
+                                if !isFocused && !amount.isEmpty {
+                                    let value = AmountInputHelper.parseDecimal(amount)
+                                    amount = AmountInputHelper.formatWithGrouping(value)
+                                }
+                            }
+                            .onChange(of: amount) { _, newValue in
+                                let filtered = AmountInputHelper.filterAmountInput(newValue)
+                                if filtered != newValue {
+                                    amount = filtered
+                                }
+                            }
+                    }
+                }
+                .padding()
+
+                SubsectionDivider()
+
+                // Variable Amount Toggle
+                Toggle(isOn: $isVariableAmount) {
+                    HStack(spacing: DS.Spacing.md) {
+                        Image(systemName: "plusminus")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 24)
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                            Text(L10n.Scheduled.VariableAmount.toggle)
+                            if isVariableAmount {
+                                Text(L10n.Scheduled.VariableAmount.helper)
+                                    .font(DS.Typography.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
                 }
                 .padding()
@@ -975,7 +1020,7 @@ struct ScheduledPaymentEditorView: View {
     private var canSave: Bool {
         !name.isEmpty &&
         !amount.isEmpty &&
-        (Double(amount) ?? 0) > 0 &&
+        AmountInputHelper.parseDecimal(amount) > 0 &&
         selectedAccount != nil &&
         selectedSubcategory != nil
     }
@@ -991,7 +1036,7 @@ struct ScheduledPaymentEditorView: View {
         // Pre-fill from transaction data (when creating from "Save as Recurring")
         if payment == nil, let prefill = prefill {
             let calendar = Calendar.current
-            name = prefill.subcategory?.name ?? prefill.note
+            // Don't prefill name — let the user decide the payment name
             amount = prefill.amount
             note = prefill.note
             transactionType = prefill.transactionType
@@ -1009,7 +1054,7 @@ struct ScheduledPaymentEditorView: View {
         guard let payment = payment else { return }
 
         name = payment.name
-        amount = String(format: "%.2f", payment.amount)
+        amount = AmountInputHelper.formatWithGrouping(payment.amount)
         note = payment.note ?? ""
         transactionType = payment.transactionType
         paymentCategory = PaymentCategory(rawValue: payment.paymentCategory) ?? .recurring
@@ -1043,10 +1088,12 @@ struct ScheduledPaymentEditorView: View {
         notifyOnDueDate = payment.notifyOnDueDate
         notifyDaysBefore = payment.notifyDaysBefore
         isActive = payment.isActive
+        isVariableAmount = payment.isVariableAmount
     }
 
     private func savePayment() {
-        guard let amountValue = Double(amount) else { return }
+        let amountValue = AmountInputHelper.parseDecimal(amount)
+        guard amountValue > 0 else { return }
 
         let effectiveEndDate = hasEndDate ? endDate : nil
 
@@ -1073,11 +1120,37 @@ struct ScheduledPaymentEditorView: View {
             notifyOnDueDate: notifyOnDueDate,
             notifyDaysBefore: notifyDaysBefore,
             isActive: isActive,
-            needOverride: selectedNeed?.rawValue
+            needOverride: selectedNeed?.rawValue,
+            isVariableAmount: isVariableAmount
         )
 
         if let id = savedID {
             onSaved?(id)
+            if payment == nil, SetupChecklistManager.shared.stepCompleted[.scheduledPayment] != true {
+                // Find PersistentIdentifier from UUID
+                let descriptor = FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == id })
+                do {
+                    if let persistentID = try modelContext.fetch(descriptor).first?.persistentModelID {
+                        SetupChecklistManager.shared.markCompleted(
+                            .scheduledPayment,
+                            practiceItem: PracticeCleanupItem(
+                                stepID: .scheduledPayment,
+                                itemName: name,
+                                persistentID: persistentID
+                            )
+                        )
+                    } else {
+                        SetupChecklistManager.shared.markCompleted(.scheduledPayment)
+                    }
+                } catch {
+                    #if DEBUG
+                    print("ScheduledPaymentEditor: Error fetching saved payment: \(error)")
+                    #endif
+                    SetupChecklistManager.shared.markCompleted(.scheduledPayment)
+                }
+            } else {
+                SetupChecklistManager.shared.markCompleted(.scheduledPayment)
+            }
             dismiss()
         }
     }

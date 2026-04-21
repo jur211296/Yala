@@ -183,7 +183,7 @@ final class RecordsFiltersViewModel {
     func subcategorySelectionSummary(for category: Category, selectedSubcategories: Set<PersistentIdentifier>) -> String {
         let subs = subcategories(for: category)
         let total = subs.count
-        let selectedCount = subs.filter { selectedSubcategories.contains($0.persistentModelID) }.count
+        let selectedCount = subs.count(where: { selectedSubcategories.contains($0.persistentModelID) })
 
         if total == 0 {
             return L10n.Filters.noSubcategories

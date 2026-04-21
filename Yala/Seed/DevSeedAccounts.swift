@@ -19,7 +19,7 @@ struct DevSeedAccounts {
     @MainActor
     static func create(in context: ModelContext) -> Result {
         let principal = Account(
-            name: "Cuenta Principal",
+            name: L10n.DevSeed.accountMain,
             currencyCode: "PEN",
             colorHex: "#6366F1",
             iconName: "creditcard.fill",
@@ -28,7 +28,7 @@ struct DevSeedAccounts {
         context.insert(principal)
 
         let ahorros = Account(
-            name: "Ahorros USD",
+            name: L10n.DevSeed.accountSavings,
             currencyCode: "USD",
             colorHex: "#6366F1",
             iconName: "banknote.fill",

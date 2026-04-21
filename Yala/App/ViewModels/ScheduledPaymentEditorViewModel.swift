@@ -98,7 +98,8 @@ final class ScheduledPaymentEditorViewModel {
         notifyOnDueDate: Bool,
         notifyDaysBefore: Int,
         isActive: Bool,
-        needOverride: String? = nil
+        needOverride: String? = nil,
+        isVariableAmount: Bool = false
     ) -> UUID? {
         guard let context = modelContext else { return nil }
 
@@ -137,6 +138,7 @@ final class ScheduledPaymentEditorViewModel {
             existingPayment.notifyOnDueDate = notifyOnDueDate
             existingPayment.notifyDaysBefore = notifyDaysBefore
             existingPayment.isActive = isActive
+            existingPayment.isVariableAmount = isVariableAmount
 
             paymentID = existingPayment.id
         } else {
@@ -163,7 +165,8 @@ final class ScheduledPaymentEditorViewModel {
                 paymentCategory: paymentCategory.rawValue,
                 notifyOnDueDate: notifyOnDueDate,
                 notifyDaysBefore: notifyDaysBefore,
-                isActive: isActive
+                isActive: isActive,
+                isVariableAmount: isVariableAmount
             )
             context.insert(newPayment)
             paymentID = newPayment.id

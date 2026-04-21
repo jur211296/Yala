@@ -45,6 +45,7 @@ struct AccountFormView: View {
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
                         generalSection
+                        ContextualGuideBanner.accountForm(accountType: viewModel.selectedType)
                         currencySection
                         if viewModel.selectedType == .creditCard {
                             creditCardSection
@@ -121,10 +122,10 @@ struct AccountFormView: View {
                     onUseBalance: { amount in
                         if amount >= 0 {
                             viewModel.isPositive = true
-                            viewModel.balanceText = String(format: "%.2f", amount)
+                            viewModel.balanceText = AmountInputHelper.formatWithGrouping(amount)
                         } else {
                             viewModel.isPositive = false
-                            viewModel.balanceText = String(format: "%.2f", abs(amount))
+                            viewModel.balanceText = AmountInputHelper.formatWithGrouping(abs(amount))
                         }
                     },
                     onDismiss: { showBalanceCalculator = false }
@@ -140,7 +141,8 @@ struct AccountFormView: View {
                 viewModel.setContext(modelContext)
                 // Auto-focus name field for new accounts
                 if !viewModel.isEditing {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(500))
                         focusedField = .name
                     }
                 }
@@ -208,6 +210,7 @@ struct AccountFormView: View {
                     TextField(L10n.Account.accountName, text: $viewModel.name)
                         .textContentType(.name)
                         .focused($focusedField, equals: .name)
+                        .accessibilityIdentifier("account_name_field")
                 }
                 .padding()
 
@@ -390,7 +393,7 @@ struct AccountFormView: View {
                             if viewModel.balanceText.isEmpty {
                                 Text("0.00")
                                     .font(DS.Typography.largeTitle)
-                                    .foregroundStyle(.gray.opacity(0.4))
+                                    .foregroundStyle(DS.Semantic.disabledForeground.opacity(DS.Opacity.overlay))
                             }
 
                             TextField("", text: $viewModel.balanceText)
@@ -403,21 +406,18 @@ struct AccountFormView: View {
                             let isFocused = newField == .balance
                             // When field gains focus, clear placeholder values
                             if isFocused
-                                && (viewModel.balanceText == "0" || viewModel.balanceText == "0.00")
+                                && (viewModel.balanceText == "0" || viewModel.balanceText == "0.00" || viewModel.balanceText == "0,00")
                             {
                                 viewModel.balanceText = ""
                             }
                             // When field loses focus, format if has value
                             if !isFocused && !viewModel.balanceText.isEmpty {
-                                if let amount = Double(
-                                    viewModel.balanceText.replacing(",", with: "."))
-                                {
-                                    viewModel.balanceText = String(format: "%.2f", amount)
-                                }
+                                let amount = AmountInputHelper.parseDecimal(viewModel.balanceText)
+                                viewModel.balanceText = AmountInputHelper.formatWithGrouping(amount)
                             }
                         }
                         .onChange(of: viewModel.balanceText) { _, newValue in
-                            let filtered = filterBalanceInput(newValue)
+                            let filtered = AmountInputHelper.filterAmountInput(newValue)
                             if filtered != newValue {
                                 viewModel.balanceText = filtered
                             }
@@ -595,34 +595,6 @@ struct AccountFormView: View {
         Self.currencyFormatter.currencyCode = currency.rawValue
         let formatted = Self.currencyFormatter.string(from: NSNumber(value: amount)) ?? "0.00"
         return sign + formatted
-    }
-
-    /// Filters balance input to only allow numbers and one decimal with max 2 decimal places
-    private func filterBalanceInput(_ input: String) -> String {
-        let decimalSeparator = Locale.current.decimalSeparator ?? "."
-        var result = ""
-        var hasDecimal = false
-        var decimalCount = 0
-
-        for char in input {
-            if char.isNumber {
-                if hasDecimal {
-                    if decimalCount < 2 {
-                        result.append(char)
-                        decimalCount += 1
-                    }
-                } else {
-                    result.append(char)
-                }
-            } else if String(char) == decimalSeparator || char == "." || char == "," {
-                if !hasDecimal {
-                    result.append(decimalSeparator.first ?? ".")
-                    hasDecimal = true
-                }
-            }
-        }
-
-        return result
     }
 
     // MARK: Guardado

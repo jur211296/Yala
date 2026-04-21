@@ -89,9 +89,18 @@ struct RecordRowView: View {
                         .font(DS.Typography.headline)
                         .foregroundStyle(amountColor)
 
-                    // Nature indicator
-                    if let subcategory = record.subcategory {
-                        needIndicator(for: subcategory.need)
+                    // Nature indicator + split badge
+                    HStack(spacing: DS.Spacing.xs) {
+                        if record.splitType != nil {
+                            Image(systemName: "percent")
+                                .font(DS.Typography.chipIcon)
+                                .padding(.horizontal, DS.Chip.paddingV)
+                                .padding(.vertical, DS.Spacing.xxs)
+                                .background(Capsule().fill(Color.secondary.opacity(0.1)))
+                        }
+                        if let subcategory = record.subcategory {
+                            needIndicator(for: subcategory.need)
+                        }
                     }
                 }
             }
@@ -239,7 +248,7 @@ struct RecordRowView: View {
 
 #Preview {
     ZStack {
-        Color.gray.opacity(0.1)
+        DS.Semantic.neutralBackground
             .ignoresSafeArea()
 
         VStack(spacing: DS.Spacing.md) {

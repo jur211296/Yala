@@ -1,0 +1,18 @@
+[
+  { "command": "find", "positionals": ["profile_avatar", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["2000"], "flags": {} },
+  { "command": "find", "positionals": ["profile_accounts", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "find", "positionals": ["Añadir", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "find", "positionals": ["account_name_field", "click"], "flags": {} },
+  { "command": "type", "positionals": ["Banco BBVA"], "flags": {} },
+  { "command": "press", "positionals": ["200", "150"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "find", "positionals": ["Guardar", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["2000"], "flags": {} },
+  { "command": "find", "positionals": ["Atrás", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Cerrar", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} }
+]

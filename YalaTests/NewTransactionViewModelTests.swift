@@ -407,4 +407,97 @@ struct NewTransactionViewModelTests {
         // formattedAmount should include decimals
         #expect(vm.formattedAmount.contains(".") || vm.formattedAmount.contains(","))
     }
+
+    // MARK: - Split Calculator
+
+    @MainActor
+    @Test("applySplitResult sets all split fields correctly")
+    func applySplitResultSetsFields() async {
+        let vm = NewTransactionViewModel()
+        vm.applySplitResult(amount: 100, splitType: .percentage, totalAmount: 125, myValue: 80, divisor: 100)
+        #expect(vm.splitTotalAmount == 125)
+        #expect(vm.splitType == .percentage)
+        #expect(vm.splitMyValue == 80)
+        #expect(vm.splitDivisor == 100)
+        #expect(vm.isSplitStale == false)
+    }
+
+    @MainActor
+    @Test("applySplitResult updates amountString")
+    func applySplitResultUpdatesAmount() async {
+        let vm = NewTransactionViewModel()
+        vm.applySplitResult(amount: 100, splitType: .percentage, totalAmount: 125, myValue: 80, divisor: 100)
+        #expect(vm.amountString == "100.00")
+    }
+
+    @MainActor
+    @Test("clearSplitData clears all split fields")
+    func clearSplitDataClearsAll() async {
+        let vm = NewTransactionViewModel()
+        vm.applySplitResult(amount: 100, splitType: .percentage, totalAmount: 125, myValue: 80, divisor: 100)
+        vm.clearSplitData()
+        #expect(vm.splitTotalAmount == nil)
+        #expect(vm.splitType == nil)
+        #expect(vm.splitMyValue == nil)
+        #expect(vm.splitDivisor == nil)
+        #expect(vm.isSplitStale == false)
+    }
+
+    @MainActor
+    @Test("hasSplitData returns true when split is set")
+    func hasSplitDataTrue() async {
+        let vm = NewTransactionViewModel()
+        vm.applySplitResult(amount: 100, splitType: .equal, totalAmount: 300, myValue: 3, divisor: 3)
+        #expect(vm.hasSplitData == true)
+    }
+
+    @MainActor
+    @Test("hasSplitData returns false when no split")
+    func hasSplitDataFalse() async {
+        let vm = NewTransactionViewModel()
+        #expect(vm.hasSplitData == false)
+    }
+
+    @MainActor
+    @Test("splitDescription for percentage type")
+    func splitDescriptionPercentage() async {
+        let vm = NewTransactionViewModel()
+        vm.applySplitResult(amount: 100, splitType: .percentage, totalAmount: 125, myValue: 80, divisor: 100)
+        #expect(vm.splitDescription?.contains("80%") == true)
+    }
+
+    @MainActor
+    @Test("splitDescription for equal type")
+    func splitDescriptionEqual() async {
+        let vm = NewTransactionViewModel()
+        vm.applySplitResult(amount: 40, splitType: .equal, totalAmount: 120, myValue: 3, divisor: 3)
+        #expect(vm.splitDescription?.contains("3") == true)
+    }
+
+    @MainActor
+    @Test("splitDescription for shares type")
+    func splitDescriptionShares() async {
+        let vm = NewTransactionViewModel()
+        vm.applySplitResult(amount: 200, splitType: .shares, totalAmount: 500, myValue: 2, divisor: 5)
+        #expect(vm.splitDescription?.contains("2 de 5") == true)
+    }
+
+    @MainActor
+    @Test("reset clears split data")
+    func resetClearsSplitData() async {
+        let vm = NewTransactionViewModel()
+        vm.applySplitResult(amount: 100, splitType: .percentage, totalAmount: 125, myValue: 80, divisor: 100)
+        vm.reset()
+        #expect(vm.hasSplitData == false)
+        #expect(vm.isSplitStale == false)
+    }
+
+    @MainActor
+    @Test("isSplitStale can be set manually")
+    func splitStaleManualSet() async {
+        let vm = NewTransactionViewModel()
+        vm.applySplitResult(amount: 100, splitType: .percentage, totalAmount: 125, myValue: 80, divisor: 100)
+        vm.isSplitStale = true
+        #expect(vm.isSplitStale == true)
+    }
 }

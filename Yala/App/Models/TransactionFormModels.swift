@@ -55,6 +55,45 @@ enum TransactionType: String, CaseIterable, Identifiable {
     }
 }
 
+// MARK: - Split Type
+
+/// Tipo de división para el split calculator
+enum SplitType: String, CaseIterable, Identifiable {
+    case percentage  // Default — caso más común
+    case equal
+    case exact
+    case shares
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .percentage: return L10n.Split.typePercentage
+        case .equal: return L10n.Split.typeEqual
+        case .exact: return L10n.Split.typeExact
+        case .shares: return L10n.Split.typeShares
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .percentage: return "percent"
+        case .equal: return "person.2"
+        case .exact: return "number"
+        case .shares: return "chart.pie"
+        }
+    }
+
+    var hintText: String {
+        switch self {
+        case .percentage: return L10n.Split.tipPercentage
+        case .equal: return L10n.Split.tipEqual
+        case .exact: return L10n.Split.tipExact
+        case .shares: return L10n.Split.tipShares
+        }
+    }
+}
+
 // MARK: - Form Field Validation
 
 /// Estado de validación de un campo del formulario

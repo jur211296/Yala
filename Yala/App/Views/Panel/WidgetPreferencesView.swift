@@ -12,16 +12,6 @@ struct WidgetPreferencesView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage("panelShowAIInsight") private var showAIInsight: Bool = false
-
-    private var isProUser: Bool {
-        FeatureGateService.shared.canAccess(.smartInsightsAI)
-    }
-
-    private var hasAIConsent: Bool {
-        UserDefaults.standard.bool(forKey: "aiInsightsConsentAccepted")
-    }
-
     var body: some View {
         NavigationStack {
             List {
@@ -33,62 +23,18 @@ struct WidgetPreferencesView: View {
                         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 8, trailing: 0))
                 }
 
-                // AI Observations toggle
-                Section {
-                    HStack(spacing: DS.Spacing.md) {
-                        Image(systemName: "sparkles")
-                            .font(DS.Typography.title)
-                            .foregroundStyle(.thAccent)
-                            .frame(width: 32, height: 32)
-                            .background(Circle().fill(theme.accent.opacity(0.1)))
-                            .accessibilityHidden(true)
-
-                        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                            Text(L10n.Panel.aiInsightsTitle)
-                                .font(DS.Typography.bodyBold)
-                            if isProUser && !hasAIConsent {
-                                Text(L10n.Panel.aiConsentRequired)
-                                    .font(DS.Typography.captionSmall)
-                                    .foregroundStyle(.secondary)
-                            } else {
-                                Text(L10n.Panel.aiInsightsDescription)
-                                    .font(DS.Typography.captionSmall)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-
-                        Spacer()
-
-                        if isProUser {
-                            Toggle(L10n.Panel.aiInsightsTitle, isOn: $showAIInsight)
-                                .labelsHidden()
-                                .disabled(!hasAIConsent)
-                        } else {
-                            ProBadge(size: .small)
-                        }
-                    }
-                    .padding(.vertical, DS.Spacing.xs)
-                    .listRowBackground(theme.card)
-                }
-
                 Section {
                     ForEach(viewModel.widgetConfigs) { config in
                         WidgetRow(
                             config: config,
                             onToggle: {
-                                dsWithAnimation(reduceMotion) {
-                                    viewModel.toggleWidgetVisibility(id: config.id)
-                                }
+                                viewModel.toggleWidgetVisibility(id: config.id)
                             },
                             onSizeChange: { newSize in
-                                dsWithAnimation(reduceMotion) {
-                                    viewModel.updateWidgetSize(id: config.id, newSize: newSize)
-                                }
+                                viewModel.updateWidgetSize(id: config.id, newSize: newSize)
                             },
                             onScheduledPaymentsModeChange: { mode in
-                                dsWithAnimation(reduceMotion) {
-                                    viewModel.updateScheduledPaymentsMode(id: config.id, mode: mode)
-                                }
+                                viewModel.updateScheduledPaymentsMode(id: config.id, mode: mode)
                             }
                         )
                         .listRowSeparator(.hidden)
@@ -104,9 +50,7 @@ struct WidgetPreferencesView: View {
 
                 Section {
                     Button(role: .destructive) {
-                        dsWithAnimation(reduceMotion) {
-                            viewModel.resetWidgetConfigs()
-                        }
+                        viewModel.resetWidgetConfigs()
                     } label: {
                         Text(L10n.Widget.resetLayout)
                             .frame(maxWidth: .infinity, alignment: .center)
@@ -124,7 +68,7 @@ struct WidgetPreferencesView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(theme.background.ignoresSafeArea())  // Uses app's adaptive background
+            .background(theme.background.ignoresSafeArea())
         }
     }
 }
@@ -183,7 +127,9 @@ private struct WidgetRow: View {
                     config.type.displayName,
                     isOn: Binding(
                         get: { config.isVisible },
-                        set: { _ in onToggle() }
+                        set: { newValue in
+                            if newValue != config.isVisible { onToggle() }
+                        }
                     )
                 )
                 .labelsHidden()
@@ -199,7 +145,9 @@ private struct WidgetRow: View {
                     L10n.Widget.sizeLabel,
                     selection: Binding(
                         get: { config.scheduledPaymentsMode },
-                        set: { onScheduledPaymentsModeChange($0) }
+                        set: { newMode in
+                            if newMode != config.scheduledPaymentsMode { onScheduledPaymentsModeChange(newMode) }
+                        }
                     )
                 ) {
                     ForEach(ScheduledPaymentsWidgetMode.allCases) { mode in
@@ -216,7 +164,9 @@ private struct WidgetRow: View {
                     L10n.Widget.sizeLabel,
                     selection: Binding(
                         get: { config.size },
-                        set: { onSizeChange($0) }
+                        set: { newSize in
+                            if newSize != config.size { onSizeChange(newSize) }
+                        }
                     )
                 ) {
                     ForEach(availableSizes(for: config.type)) { size in

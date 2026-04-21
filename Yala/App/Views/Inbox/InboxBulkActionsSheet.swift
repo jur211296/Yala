@@ -97,7 +97,7 @@ struct InboxBulkActionsSheet: View {
     @State private var bulkApprovedCount = 0
 
     private var approveableCount: Int {
-        selectedDrafts.filter { $0.isReadyToApprove }.count
+        selectedDrafts.count(where: { $0.isReadyToApprove })
     }
 
     var body: some View {
@@ -251,6 +251,7 @@ struct InboxBulkActionsSheet: View {
         }
         .buttonStyle(.plain)
         .disabled(isDisabled)
+        .accessibilityHint(isDisabled ? L10n.Accessibility.noDraftsToApprove : "")
     }
 
     // MARK: - Applied Changes Summary

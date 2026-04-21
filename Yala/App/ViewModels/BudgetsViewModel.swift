@@ -76,7 +76,7 @@ final class BudgetsViewModel {
 
     /// Count of active budgets (for Pro tier limit checking)
     var activeBudgetsCount: Int {
-        allBudgets.filter { $0.isActive }.count
+        allBudgets.count(where: { $0.isActive })
     }
 
     // MARK: - Initialization
@@ -188,8 +188,9 @@ final class BudgetsViewModel {
     // MARK: - Context Injection
 
     func setContext(_ context: ModelContext) {
+        let isNewContext = self.modelContext !== context
         self.modelContext = context
-        loadData()
+        if isNewContext { loadData() }
     }
 
     // MARK: - Data Loading
@@ -200,7 +201,8 @@ final class BudgetsViewModel {
         // Load budgets
         let budgetDescriptor = FetchDescriptor<Budget>(sortBy: [SortDescriptor(\Budget.createdAt, order: .reverse)])
         do {
-            allBudgets = try context.fetch(budgetDescriptor)
+            let fetched = try context.fetch(budgetDescriptor)
+            if fetched != allBudgets { allBudgets = fetched }
         } catch {
             #if DEBUG
             print("BudgetsViewModel: Error loading budgets: \(error)")
@@ -219,7 +221,8 @@ final class BudgetsViewModel {
             sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse), SortDescriptor(\TransactionItem.createdAt, order: .reverse)]
         )
         do {
-            allTransactions = try context.fetch(transactionDescriptor)
+            let fetched = try context.fetch(transactionDescriptor)
+            if fetched != allTransactions { allTransactions = fetched }
         } catch {
             #if DEBUG
             print("BudgetsViewModel: Error loading transactions: \(error)")
@@ -230,7 +233,8 @@ final class BudgetsViewModel {
         // Load accounts
         let accountDescriptor = FetchDescriptor<Account>(sortBy: [SortDescriptor(\Account.name)])
         do {
-            accounts = try context.fetch(accountDescriptor)
+            let fetched = try context.fetch(accountDescriptor)
+            if fetched != accounts { accounts = fetched }
         } catch {
             #if DEBUG
             print("BudgetsViewModel: Error loading accounts: \(error)")

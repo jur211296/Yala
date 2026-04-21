@@ -113,6 +113,14 @@ enum WDS {
         static let barLabel = Font.system(size: 10, weight: .bold)
     }
 
+    // MARK: - Opacity
+
+    /// Opacity values for widget elements
+    enum Opacity {
+        /// 0.4 - Overlays, grid lines
+        static let overlay: Double = 0.4
+    }
+
     // MARK: - Icon Sizes
 
     /// Icon dimensions for widgets

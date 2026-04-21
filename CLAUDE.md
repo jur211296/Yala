@@ -2,8 +2,8 @@
 
 ## Quick Reference
 
-### SwiftData Models (12)
-Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, FavoritePayment, ScheduledPayment, InboxDraft, MerchantMemory, NotificationItem
+### SwiftData Models (15)
+Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, FavoritePayment, ScheduledPayment, InboxDraft, MerchantMemory, NotificationItem, CashFlowPlan, CashFlowLine, CashFlowOverride
 
 ### Key Services
 | Service | Path | Purpose |
@@ -26,17 +26,22 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 | CategoryDeduplicationService | App/Services/CategoryDeduplicationService.swift | Merge categorías duplicadas post-sync |
 | InsightsLLMService | Services/InsightsLLMService.swift | AI insights via GPT-4.1 Mini |
 | TelemetryService | Services/TelemetryService.swift | Analytics privacy-first via TelemetryDeck |
+| ProUpsellService | App/Services/ProUpsellService.swift | Upsells proactivos + frequency capping |
+| AppUpdateService | App/Services/AppUpdateService.swift | Detección versión nueva via iTunes Lookup API |
 
 ### Key Calculators
 | Calculator | Path | Purpose |
 |------------|------|---------|
 | InsightsCalculator | App/Logic/Calculators/InsightsCalculator.swift | KPIs, stats, rule-based insights |
 | WeekdaySpendingCalculator | App/Logic/Calculators/WeekdaySpendingCalculator.swift | Gasto por día de semana |
+| SplitCalculator | App/Logic/Calculators/SplitCalculator.swift | Cálculo de porción en gastos compartidos |
+| CashFlowProjectionCalculator | App/Logic/Calculators/CashFlowProjectionCalculator.swift | Proyección flujo de caja con 7 métodos |
 
-### Key ViewModels (35)
+### Key ViewModels (36)
 | ViewModel | Tests |
 |-----------|-------|
-| NewTransactionViewModel | 35 |
+| CashFlowPlanViewModel | 8 |
+| NewTransactionViewModel | 45 |
 | BudgetsViewModel | 11 |
 | InboxViewModel | 10 |
 | PanelViewModel | 10 |
@@ -57,18 +62,32 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 | SubcategoryTransferViewModel | 8 |
 | + 15 ViewModels más en App/ViewModels/ | — |
 
-### Test Suites (90 suites, 1005 tests)
-FilterServiceTests (22), CalculatorTests (3), TagTests (10), TrendProcessingTests (5), TrendGroupingTests (13), CurrencyCodeTests (4), CurrencyDefaultsTests (3), NewTransactionViewModelTests (35), BudgetsViewModelTests (11), InboxViewModelTests (10), MerchantCanonicalizerTests (12), AmountParserTests (15), DateParserTests (10), MoneyParsingTests (10), PreviousPeriodHelperTests (24), DateContextProviderTests (5), DraftDeduplicationServiceTests (15), AccountFormViewModelTests (22), TagFormViewModelTests (8), CategoryDetailViewModelTests (9), BudgetEditorViewModelTests (10), ViewModelFilterTests (6), CurrencyConverterTests (8), AccountBalanceCalculatorTests (6), FeatureGateTests (6), ExchangeRateWidgetHelperTests (4), RecordsFiltersViewModelTests (6), ScheduledPaymentDateCalculatorTests (17), YalaTests (1), TagSpendingCalculatorTests (15), BudgetAlertTrackerTests (12), BudgetAlertServiceTests (6), ScheduledPaymentsViewModelTests (10), InsightsRuleBasedTests (10), RecordsViewModelTests (12), PanelViewModelTests (10), CashFlowCalculatorTests (18), BalanceTrendCalculatorTests (8), WeekdaySpendingCalculatorTests (8), TopSpendingCategoriesCalculatorTests (10), TopSubcategoriesCalculatorTests (8), BalanceHelperTests (8), NeedTrendHelperTests (8), StatisticsViewModelTests (16), InitialBalanceServiceTests (9), InsightsViewModelTests (6), BulkEditViewModelTests (6), ScheduledPaymentEditorViewModelTests (15), SubcategoryTransferViewModelTests (8), TransactionServiceTests (6), EntityDeletionServiceTests (4), ExchangeRateServiceTests (7), CurrencyChangeServiceTests (6), TransactionUpdateServiceTests (5), MerchantMemoryServiceTests (14), TranscriptionParserServiceTests (12), DraftServiceTests (6), CategoryDeduplicationServiceTests (6), TransactionsExportServiceTests (26), VisionDraftFactoryTests (19), ScreenshotListExtractorTests (10), ScreenshotSingleExtractorTests (13), ReportNotificationServiceTests (17), + 27 more suites from previous batches
+### Test Suites (94 suites, 1126 tests)
+FilterServiceTests (22), CalculatorTests (3), TagTests (10), TrendProcessingTests (5), TrendGroupingTests (13), CurrencyCodeTests (4), CurrencyDefaultsTests (3), NewTransactionViewModelTests (45), SplitCalculatorTests (14), BudgetsViewModelTests (11), InboxViewModelTests (10), MerchantCanonicalizerTests (12), AmountParserTests (15), DateParserTests (10), MoneyParsingTests (10), PreviousPeriodHelperTests (24), DateContextProviderTests (5), DraftDeduplicationServiceTests (15), AccountFormViewModelTests (22), TagFormViewModelTests (8), CategoryDetailViewModelTests (9), BudgetEditorViewModelTests (15), ViewModelFilterTests (6), CurrencyConverterTests (8), AccountBalanceCalculatorTests (6), FeatureGateTests (9), ExchangeRateWidgetHelperTests (4), RecordsFiltersViewModelTests (6), ScheduledPaymentDateCalculatorTests (17), YalaTests (1), TagSpendingCalculatorTests (15), BudgetAlertTrackerTests (12), BudgetAlertServiceTests (6), ScheduledPaymentsViewModelTests (14), InsightsRuleBasedTests (10), RecordsViewModelTests (12), PanelViewModelTests (10), CashFlowCalculatorTests (18), CashFlowProjectionCalculatorTests (33), CashFlowPlanViewModelTests (8), BalanceTrendCalculatorTests (8), WeekdaySpendingCalculatorTests (11), TopSpendingCategoriesCalculatorTests (10), TopSubcategoriesCalculatorTests (10), BalanceHelperTests (8), NeedTrendHelperTests (8), StatisticsViewModelTests (17), InitialBalanceServiceTests (9), InsightsViewModelTests (8), BulkEditViewModelTests (6), ScheduledPaymentEditorViewModelTests (15), SubcategoryTransferViewModelTests (8), TransactionServiceTests (6), EntityDeletionServiceTests (4), ExchangeRateServiceTests (7), CurrencyChangeServiceTests (6), TransactionUpdateServiceTests (5), MerchantMemoryServiceTests (14), TranscriptionParserServiceTests (12), DraftServiceTests (6), CategoryDeduplicationServiceTests (6), TransactionsExportServiceTests (26), VisionDraftFactoryTests (19), ScreenshotListExtractorTests (10), ScreenshotSingleExtractorTests (13), ReportNotificationServiceTests (17), + 27 more suites from previous batches
 
 ## Product & Stack
 Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, presupuestos y reportes con claridad.
 
 - Swift, SwiftUI, SwiftData (.xcodeproj)
-- Scheme: Yala | Tests: YalaTests
+- Scheme: **Yala** (producción) | **Yala Dev** (pruebas con toggle Pro) | Tests: YalaTests
 - **Target iOS 26+** — SIEMPRE usar APIs nativas (Liquid Glass, ToolbarSpacer, etc.)
 - **Simulador: iPhone 17 Pro** (builds, tests, simulación)
 - ModelContainer via `SwiftDataConfiguration` (12 entidades arriba)
 - **Divisas SSOT:** `Yala/Utils/CurrencyUtils.swift` → enum `CurrencyCode` (48 divisas, 7 continentes)
+
+## Obsidian Vault (SSOT de planning)
+- **Vault:** `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/`
+- **Abreviatura en este doc:** `$VAULT` = ruta completa del vault
+- Claude lee/escribe **directo en el vault** — iCloud sincroniza entre Macs, iPhone y iPad
+- **Sin daemon ni sync scripts** — iCloud es el único mecanismo de sync
+- **Carpetas:**
+  - `$VAULT/Backlog/` — Features con spec (status: open → spec-ready → backlog → in-progress → done)
+  - `$VAULT/Ideas/` — Ideas sueltas
+  - `$VAULT/Bugs/` — Bug reports
+  - `$VAULT/Attachments/` — Imágenes y videos de bugs/features
+  - `$VAULT/planning/` — Docs técnicos (PROJECT, ROADMAP, STATE, etc.)
+- **Skills:** `/backlog` (listar), `/spec` (desarrollar plan), `/promote` (idea → feature)
+- **Flujo:** Usuario escribe en Obsidian → iCloud sync → Claude lee `$VAULT/Backlog/` → `/spec` → escribe plan → iCloud sync → aparece en Obsidian
 
 ## iOS 26 Liquid Glass (OBLIGATORIO)
 - `ToolbarSpacer(.fixed, placement: .topBarTrailing)` — placement es OBLIGATORIO
@@ -76,18 +95,18 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 - Si existe una API de iOS 26 que mejore la integración con el sistema, USARLA
 
 ## Workflow
-**Referencia completa:** `.planning/WORKFLOW.md`
+**Referencia completa:** `$VAULT/planning/WORKFLOW.md`
 
 ### Flujo estándar (feature)
 ```
 /clear → /next → Plan Mode (Shift+Tab) → /review-plan → Accept edits
-→ implementar → /verify-ios → /test-smart → /swift-audit
+→ implementar → /verify-ios → /test-smart → /device-qa → /swift-audit
 → /commit-one → /clear
 ```
 
 ### Flujo rápido (bug fix)
 ```
-/next → implementar → /verify-ios → /commit-one
+/next → implementar → /verify-ios → /device-qa → /commit-one
 ```
 
 ### Flujo autónomo (tarea mecánica con plan claro)
@@ -98,7 +117,7 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 ### Flujo complejo (modelo core, multi-archivo)
 ```
 /clear → /next → /analyze-impact → Plan Mode → /review-plan → Accept
-→ implementar → /verify-ios → /test-smart → /simplify → aplicar
+→ implementar → /verify-ios → /test-smart → /device-qa → /simplify → aplicar
 → /commit-one → /context-snapshot → /clear
 ```
 
@@ -108,7 +127,7 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 | Orientación | `/next` |
 | Planificación | Plan Mode (Shift+Tab), `/review-plan` |
 | Análisis | `/analyze-impact` |
-| Verificación | `/verify-ios`, `/verify-quick`, `/test-smart`, `/test-ios` |
+| Verificación | `/verify-ios`, `/verify-quick`, `/test-smart`, `/test-ios`, `/device-qa` |
 | Calidad Swift | `/swift-audit`, `/swiftdata-check`, `/swift-modernize`, `/simplify` |
 | Review | `/review-code`, `/diff-review` |
 | Auditoría periódica | `/deep-scan`, `/a11y-audit`, `/ds-compliance`, `/test-coverage`, `/pre-launch`, `/l10n-check`, `/perf-check` |
@@ -119,9 +138,10 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 | Release | `/release-notes` |
 | Contexto | `/context-snapshot`, `/compact`, `/clear` |
 | Captura | `/idea` |
+| Backlog (Obsidian) | `/backlog`, `/spec`, `/promote` |
 | Autónomo | `/yolo` |
 
-**Regla QA-SCENARIOS:** Cada funcionalidad nueva DEBE tener escenarios en `.planning/QA-SCENARIOS.md` ANTES del commit.
+**Regla QA-SCENARIOS:** Cada funcionalidad nueva DEBE tener escenarios en `$VAULT/planning/QA-SCENARIOS.md` ANTES del commit.
 
 ## Testing
 | Tipo de cambio | Comando |
@@ -130,6 +150,53 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 | Cambio en UI (Views) | Solo `/verify-ios` |
 | Antes de commit | `/test-smart` siempre |
 | Después de merge o refactor grande | `/test-ios` (todos los tests) |
+
+## Device QA (validación visual en simulador)
+
+**SIEMPRE usar scheme `Yala Dev`** para pruebas en simulador. Tiene toggle "Simular Pro" y flag `DEV_BUILD`.
+
+### Setup Yala Dev
+```bash
+# Build (usa DerivedData separado — config Debug-Dev genera bundle .dev)
+xcodebuild -scheme "Yala Dev" -project Yala.xcodeproj \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  -derivedDataPath /tmp/YalaDevBuild build
+
+# Install + Launch
+xcrun simctl install booted "/tmp/YalaDevBuild/Build/Products/Debug-Dev-iphonesimulator/Yala.app"
+xcrun simctl launch booted com.jurgenschmidt.yala.dev
+
+# Conectar agent-device
+agent-device open com.jurgenschmidt.yala.dev --platform ios
+```
+
+### Patrón de interacción con agent-device
+```bash
+# ✅ CORRECTO: find + click → type (los QA scripts usan este patrón)
+agent-device find "accessibility_id_or_text" click
+agent-device type "texto a escribir"
+
+# ❌ INCORRECTO: fill (escribe en campo equivocado, refs inválidos)
+agent-device fill @e10 "texto"
+
+# Cerrar teclado QWERTY antes de tocar campo cubierto
+agent-device press 200 150   # tap fuera del campo
+
+# Navegar entre campos de texto con teclado activo
+agent-device snapshot -i | grep "Teclado siguiente"
+agent-device press @eN   # botón "Teclado siguiente"
+```
+
+### Flujo device-qa para cada feature/fix
+1. **Build + install Yala Dev** (si hay cambios de código)
+2. **Activar Pro** si la feature lo requiere: Perfil → scroll a "Simular Pro" → toggle ON
+3. **Navegar a la pantalla afectada** y verificar visualmente
+4. **Tomar screenshot** como evidencia: `agent-device screenshot /tmp/yala-qa-[feature].png`
+5. **Actualizar QA-SCENARIOS.md** si la feature es nueva o cambió el flujo esperado
+
+### Onboarding (app fresca)
+Ejecutar fixture: `agent-device batch --steps-file qa/fixtures/onboarding-complete.json --json`
+O seguir pasos manuales con `find + click + type` (ver fixture para secuencia exacta).
 
 ## Self-Maintenance Rule
 Después de crear o modificar modelos, servicios o ViewModels:
@@ -219,8 +286,10 @@ Vistas hijas simples reciben datos como `let` parameters del padre.
 
 **Git:** Ejecutar cada comando de lectura UNA SOLA VEZ, secuencialmente, nunca en paralelo. No matar shells con git en curso.
 
+**Tags:** SIEMPRE formato semver con prefijo `v` → `v1.0.0`, `v1.0.1`, `v1.1.0`, `v1.1.1`. NUNCA sin prefijo o sin los 3 componentes.
+
 ## Design System (OBLIGATORIO para cambios UI)
-**Leer antes de modificar vistas:** `.planning/UI-PATTERNS.md`
+**Leer antes de modificar vistas:** `$VAULT/planning/UI-PATTERNS.md`
 - SIEMPRE `DS.Spacing`, `DS.Radius`, `DS.Typography` — NUNCA valores hardcodeados
 - SIEMPRE filas clicables con `Button` + `contentShape(Rectangle())`
 - SIEMPRE colores semánticos y componentes estándar (YalaPrimaryButton, YalaEmptyState, etc.)
@@ -249,7 +318,7 @@ Vistas hijas simples reciben datos como `let` parameters del padre.
 | `warning` | Advertencia [orange→red] |
 
 ## Brand Voice (OBLIGATORIO para textos)
-**Leer antes de escribir textos:** `.planning/BRAND-VOICE.md`
+**Leer antes de escribir textos:** `$VAULT/planning/BRAND-VOICE.md`
 - Tono cercano ("tú"), español neutro, nunca negativo
 - Términos simples: "gasto" no "transacción"
 - Proponer actualizaciones a BRAND-VOICE.md cuando se defina nuevo copy
@@ -258,13 +327,13 @@ Vistas hijas simples reciben datos como `let` parameters del padre.
 | Archivo | Propósito |
 |---------|-----------|
 | CLAUDE.md | Memoria operativa (este archivo) |
-| .planning/PROJECT.md | Definición de producto |
-| .planning/ROADMAP.md | Plan de entrega por fases |
-| .planning/STATE.md | Progreso y decisiones |
-| .planning/DECISIONS.md | Registro decisiones arquitectura |
-| .planning/UI-PATTERNS.md | Reglas Design System |
-| .planning/BRAND-VOICE.md | Tono y estilo de marca |
-| .planning/QA-SCENARIOS.md | Escenarios de prueba |
+| `$VAULT/planning/PROJECT.md` | Definición de producto |
+| `$VAULT/planning/ROADMAP.md` | Plan de entrega por fases |
+| `$VAULT/planning/STATE.md` | Progreso y decisiones |
+| `$VAULT/planning/DECISIONS.md` | Registro decisiones arquitectura |
+| `$VAULT/planning/UI-PATTERNS.md` | Reglas Design System |
+| `$VAULT/planning/BRAND-VOICE.md` | Tono y estilo de marca |
+| `$VAULT/planning/QA-SCENARIOS.md` | Escenarios de prueba |
 
 ## Decisiones Recientes (TTL: hasta cierre de fase)
 [Formato: [FECHA] Decisión breve — se archiva en DECISIONS.md al cerrar fase]

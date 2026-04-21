@@ -21,82 +21,6 @@ extension View {
     }
 }
 
-// MARK: - Coach Mark Steps (Groups A & B)
-
-enum PanelTourSteps {
-    static func steps(isProUser: Bool) -> [CoachMarkStep] {
-        [
-            CoachMarkStep(
-                id: "accounts",
-                title: L10n.TipKit.accounts,
-                message: L10n.TipKit.accountsMessage
-            ),
-            CoachMarkStep(
-                id: "widgets",
-                title: L10n.TipKit.widgets,
-                message: L10n.TipKit.widgetsMessage,
-                spotlightPadding: DS.Spacing.xs
-            ),
-            CoachMarkStep(
-                id: "widgetPreferences",
-                title: L10n.TipKit.widgetPreferences,
-                message: L10n.TipKit.widgetPreferencesMessage,
-                spotlightPadding: DS.Spacing.md
-            ),
-            CoachMarkStep(
-                id: "fab",
-                title: L10n.TipKit.fab,
-                message: isProUser ? L10n.TipKit.fabProMessage : L10n.TipKit.fabFreeMessage
-            ),
-            CoachMarkStep(
-                id: "profile",
-                title: L10n.TipKit.profile,
-                message: L10n.TipKit.profileMessage,
-                spotlightPadding: DS.Spacing.xs
-            )
-        ]
-    }
-}
-
-enum RegistroTourSteps {
-    static let steps: [CoachMarkStep] = [
-        CoachMarkStep(
-            id: "transactionTypes",
-            title: L10n.TipKit.transactionTypes,
-            message: L10n.TipKit.transactionTypesMessage
-        ),
-        CoachMarkStep(
-            id: "favoritePayments",
-            title: L10n.TipKit.favoritePayments,
-            message: L10n.TipKit.favoritePaymentsMessage,
-            spotlightPadding: DS.Spacing.xs
-        ),
-        CoachMarkStep(
-            id: "quickActions",
-            title: L10n.TipKit.quickActions,
-            message: L10n.TipKit.quickActionsMessage
-        )
-    ]
-}
-
-// MARK: - Grupo C: Interactivity Tour (coach marks)
-
-enum InteractivityTourSteps {
-    static let steps: [CoachMarkStep] = [
-        CoachMarkStep(
-            id: "filterAccount",
-            title: L10n.TipKit.filterAccount,
-            message: L10n.TipKit.filterAccountMessage
-        ),
-        CoachMarkStep(
-            id: "interactiveWidgets",
-            title: L10n.TipKit.interactiveWidgets,
-            message: L10n.TipKit.interactiveWidgetsMessage,
-            spotlightPadding: DS.Spacing.xs
-        )
-    ]
-}
-
 // MARK: - Grupo D: Tour de Settings
 
 enum SettingsTourSteps {
@@ -132,10 +56,131 @@ enum SettingsTourSteps {
             message: L10n.TipKit.settingsPersonalizationMessage
         ),
         CoachMarkStep(
+            id: "settingsAppIcon",
+            title: L10n.TipKit.settingsAppIcon,
+            message: L10n.TipKit.settingsAppIconMessage
+        ),
+        CoachMarkStep(
+            id: "settingsTheme",
+            title: L10n.TipKit.settingsTheme,
+            message: L10n.TipKit.settingsThemeMessage
+        ),
+        CoachMarkStep(
             id: "settingsTutorials",
             title: L10n.TipKit.settingsTutorials,
             message: L10n.TipKit.settingsTutorialsMessage
         )
+    ]
+}
+
+// MARK: - Grupo E: Cash Flow Setup Tour
+
+enum CashFlowSetupTourSteps {
+    static let steps: [CoachMarkStep] = [
+        CoachMarkStep(
+            id: "cfSetupBanner",
+            title: L10n.TipKit.cfSetupBanner,
+            message: L10n.TipKit.cfSetupBannerMessage
+        ),
+        CoachMarkStep(
+            id: "cfSetupLine",
+            title: L10n.TipKit.cfSetupLine,
+            message: L10n.TipKit.cfSetupLineMessage
+        ),
+        CoachMarkStep(
+            id: "cfSetupStarting",
+            title: L10n.TipKit.cfSetupStarting,
+            message: L10n.TipKit.cfSetupStartingMessage
+        ),
+        CoachMarkStep(
+            id: "cfSetupCreate",
+            title: L10n.TipKit.cfSetupCreate,
+            message: L10n.TipKit.cfSetupCreateMessage
+        )
+    ]
+}
+
+// MARK: - Grupo F: Cash Flow Table Tour
+
+enum CashFlowTableTourSteps {
+    static let steps: [CoachMarkStep] = [
+        CoachMarkStep(
+            id: "cfTableCell",
+            title: L10n.TipKit.cfTableCell,
+            message: L10n.TipKit.cfTableCellMessage
+        ),
+        CoachMarkStep(
+            id: "cfTableAvailable",
+            title: L10n.TipKit.cfTableAvailable,
+            message: L10n.TipKit.cfTableAvailableMessage
+        ),
+        CoachMarkStep(
+            id: "cfTableAdd",
+            title: L10n.TipKit.cfTableAdd,
+            message: L10n.TipKit.cfTableAddMessage
+        )
+    ]
+}
+
+// MARK: - Grupo G: Pro Tour (post-subscription)
+
+enum ProTourSteps {
+    /// Phase 1: ProfileView — toggles, export, icons, themes
+    static let profileSteps: [CoachMarkStep] = [
+        CoachMarkStep(
+            id: "proVoiceInput",
+            title: L10n.TipKit.proVoiceInputTitle,
+            message: L10n.TipKit.proVoiceInputMessage,
+            spotlightPadding: DS.Spacing.xs
+        ),
+        CoachMarkStep(
+            id: "proImageInput",
+            title: L10n.TipKit.proImageInputTitle,
+            message: L10n.TipKit.proImageInputMessage,
+            spotlightPadding: DS.Spacing.xs
+        ),
+        CoachMarkStep(
+            id: "proSmartInsights",
+            title: L10n.TipKit.proSmartInsightsTitle,
+            message: L10n.TipKit.proSmartInsightsMessage,
+            spotlightPadding: DS.Spacing.xs
+        ),
+        CoachMarkStep(
+            id: "proExportExtended",
+            title: L10n.TipKit.proExportExtendedTitle,
+            message: L10n.TipKit.proExportExtendedMessage,
+            spotlightPadding: DS.Spacing.xs
+        ),
+        CoachMarkStep(
+            id: "settingsAppIcon",
+            title: L10n.TipKit.proPremiumIconsTitle,
+            message: L10n.TipKit.proPremiumIconsMessage,
+            spotlightPadding: DS.Spacing.xs
+        ),
+        CoachMarkStep(
+            id: "settingsTheme",
+            title: L10n.TipKit.proProThemesTitle,
+            message: L10n.TipKit.proProThemesMessage,
+            spotlightPadding: DS.Spacing.xs
+        ),
+    ]
+
+    /// Phase 2: PanelView — FAB with voice/image options
+    static let panelSteps: [CoachMarkStep] = [
+        CoachMarkStep(
+            id: "fab",
+            title: L10n.TipKit.proFabTitle,
+            message: L10n.TipKit.proFabMessage
+        ),
+    ]
+
+    /// Phase 3: InsightsTabView — AI summary button
+    static let insightsSteps: [CoachMarkStep] = [
+        CoachMarkStep(
+            id: "proAiSummary",
+            title: L10n.TipKit.proAiSummaryTitle,
+            message: L10n.TipKit.proAiSummaryMessage
+        ),
     ]
 }
 

@@ -38,6 +38,9 @@ struct NewTransactionView: View {
 
     @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
 
+    // Split calculator state
+    @State private var splitFieldState = SplitCalculatorFieldState()
+
     // Quick action states
     @State private var showSavedToast = false
     @State private var savedToastMessage = ""
@@ -45,11 +48,6 @@ struct NewTransactionView: View {
 
     // Notification primer
     @State private var showingNotificationPrimer = false
-
-    /// Coach mark: Registro tour (B1-B3)
-    @AppStorage("hasSeenRegistroTour") private var hasSeenRegistroTour = false
-    @State private var showRegistroTour = false
-    @State private var registroTourIndex = 0
 
     // Prefill parameters
     let prefillAccountID: PersistentIdentifier?
@@ -135,6 +133,11 @@ struct NewTransactionView: View {
                     transactionTypeSelector
                         .padding(.top, DS.Spacing.sm)
 
+                    // Contextual guide for new users
+                    ContextualGuideBanner.transaction()
+                        .padding(.horizontal, DS.Spacing.md)
+                        .padding(.top, DS.Spacing.xs)
+
                     Spacer()
 
                     // Central content area
@@ -177,7 +180,6 @@ struct NewTransactionView: View {
                             .foregroundStyle(Color.primary)
                     }
                     .buttonStyle(.plain)
-                    .coachMarkAnchor("favoritePayments")
                     .accessibilityLabel(L10n.Accessibility.favoriteTemplates)
                     .tint(Color.primary)
                 }
@@ -326,6 +328,9 @@ struct NewTransactionView: View {
             .sheet(isPresented: $viewModel.showSaveAsRecurringSheet) {
                 recurringSheetContent
             }
+            .sheet(isPresented: $viewModel.showSplitCalculator) {
+                splitCalculatorSheetContent
+            }
             .overlay(alignment: .bottom) {
                 if showSavedToast {
                     Text(savedToastMessage)
@@ -349,7 +354,8 @@ struct NewTransactionView: View {
             }
             // Auto-focus field based on user preference (only for new transactions)
             if transactionToEdit == nil && autoFocusField != "none" {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(50))
                     if autoFocusField == "amount" {
                         isAmountFieldFocused = true
                     } else {
@@ -366,20 +372,6 @@ struct NewTransactionView: View {
         .onChange(of: viewModel.destinationAccount) { _, _ in
             Task {
                 await viewModel.loadExchangeRate(context: modelContext)
-            }
-        }
-        .coachMarkOverlay(
-            steps: RegistroTourSteps.steps,
-            isPresented: $showRegistroTour,
-            currentIndex: $registroTourIndex,
-            onComplete: { hasSeenRegistroTour = true }
-        )
-        .task {
-            if !hasSeenRegistroTour && transactionToEdit == nil {
-                try? await Task.sleep(for: .seconds(0.8))
-                if !hasSeenRegistroTour {
-                    showRegistroTour = true
-                }
             }
         }
     }
@@ -400,7 +392,6 @@ struct NewTransactionView: View {
                 }
             }
         )
-        .coachMarkAnchor("transactionTypes")
     }
 
     // MARK: - Central Content
@@ -477,6 +468,25 @@ struct NewTransactionView: View {
                 exchangeRateChip
             }
 
+            // Split indicator chip
+            if viewModel.hasSplitData, let desc = viewModel.splitDescription {
+                Button { viewModel.showSplitCalculator = true } label: {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "percent")
+                            .font(DS.Typography.labelTiny)
+                        Text(desc)
+                            .font(DS.Typography.labelSmall)
+                    }
+                    .foregroundStyle(.secondary)
+                    .opacity(viewModel.isSplitStale ? 0.5 : 1.0)
+                    .padding(.horizontal, DS.Spacing.md)
+                    .padding(.vertical, DS.Spacing.xs)
+                    .background(Capsule().fill(Color.secondary.opacity(0.1)))
+                }
+                .buttonStyle(.plain)
+                .padding(.top, DS.Spacing.sm)
+            }
+
             // Category chip + Nature chip (visible when subcategory is selected, not for transfers)
             if !viewModel.isTransfer, let subcategory = viewModel.selectedSubcategory {
                 HStack(spacing: DS.Spacing.sm) {
@@ -522,7 +532,6 @@ struct NewTransactionView: View {
             // Quick actions bar
             quickActionsBar
                 .padding(.top, DS.Spacing.lg)
-                .coachMarkAnchor("quickActions")
         }
         .onChange(of: viewModel.selectedSubcategory) { _, newSubcategory in
             // Sync nature when subcategory changes
@@ -563,11 +572,12 @@ struct NewTransactionView: View {
                 .multilineTextAlignment(.center)
                 .keyboardType(.decimalPad)
                 .focused($isAmountFieldFocused)
+                .accessibilityIdentifier("new_transaction_amount")
                 .fixedSize(horizontal: true, vertical: false)  // Dynamic width based on content
                 .onChange(of: isAmountFieldFocused) { _, isFocused in
                     // When field gets focus and value is just "0" or "0.00", clear it
                     if isFocused
-                        && (viewModel.amountString == "0" || viewModel.amountString == "0.00")
+                        && (viewModel.amountString == "0" || viewModel.amountString == "0.00" || viewModel.amountString == "0,00")
                     {
                         viewModel.amountString = ""
                     }
@@ -576,9 +586,7 @@ struct NewTransactionView: View {
                         if viewModel.amountString.isEmpty {
                             viewModel.amountString = "0.00"
                         } else {
-                            let sep = Locale.current.decimalSeparator ?? "."
-                            viewModel.amountString = String(format: "%.2f", viewModel.amount)
-                                .replacing(".", with: sep)
+                            viewModel.amountString = AmountInputHelper.formatWithGrouping(viewModel.amount)
                         }
                     }
                 }
@@ -587,6 +595,10 @@ struct NewTransactionView: View {
                     let filtered = filterAmountInput(newValue)
                     if filtered != newValue {
                         viewModel.amountString = filtered
+                    }
+                    // Mark split as stale only on manual edits
+                    if isAmountFieldFocused && viewModel.hasSplitData {
+                        viewModel.isSplitStale = true
                     }
                 }
         }
@@ -668,6 +680,16 @@ struct NewTransactionView: View {
                 }
             }
 
+            // Split calculator (only for expenses)
+            if viewModel.transactionType == .expense {
+                quickActionButton(
+                    icon: "percent",
+                    label: L10n.Action.calculate
+                ) {
+                    viewModel.showSplitCalculator = true
+                }
+            }
+
             // Save as favorite
             quickActionButton(
                 icon: "star",
@@ -738,7 +760,7 @@ struct NewTransactionView: View {
             payment: nil,
             prefill: ScheduledPaymentPrefill(
                 transactionType: viewModel.transactionType.rawValue,
-                amount: String(format: "%.2f", viewModel.amount),
+                amount: AmountInputHelper.formatWithGrouping(viewModel.amount),
                 note: viewModel.note,
                 account: viewModel.selectedAccount,
                 subcategory: viewModel.selectedSubcategory,
@@ -751,6 +773,56 @@ struct NewTransactionView: View {
                 handleRecurringSaved(paymentID: paymentID)
             }
         )
+    }
+
+    private var splitCalculatorSheetContent: some View {
+        SplitCalculatorSheet(
+            currencySymbol: viewModel.effectiveAccount != nil
+                ? CurrencyCode(rawValue: viewModel.effectiveCurrencyCode)?.symbol ?? viewModel.effectiveCurrencyCode
+                : nil,
+            fieldState: splitFieldState,
+            onUseSplit: { amount, splitType, totalAmount, myValue, divisor in
+                viewModel.applySplitResult(
+                    amount: amount,
+                    splitType: splitType,
+                    totalAmount: totalAmount,
+                    myValue: myValue,
+                    divisor: divisor
+                )
+            },
+            onDismiss: {
+                viewModel.showSplitCalculator = false
+            }
+        )
+        .onAppear {
+            // Prefill from existing split data if editing
+            if let total = viewModel.splitTotalAmount,
+               let type = viewModel.splitType,
+               let myValue = viewModel.splitMyValue {
+                splitFieldState.prefill(
+                    totalAmount: total,
+                    splitType: type,
+                    myValue: myValue,
+                    divisor: viewModel.splitDivisor
+                )
+            } else if viewModel.amount > 0 && !viewModel.hasSplitData {
+                // Prefill total from current amount for new splits
+                splitFieldState.prefillTotal(viewModel.amount)
+                // Apply last used defaults
+                if let lastType = UserDefaults.standard.string(forKey: "lastSplitType"),
+                   let type = SplitType(rawValue: lastType) {
+                    splitFieldState.splitType = type
+                    if type == .percentage {
+                        let lastPct = UserDefaults.standard.double(forKey: "lastSplitPercentage")
+                        if lastPct > 0 {
+                            splitFieldState.percentageText = lastPct == lastPct.rounded()
+                                ? String(Int(lastPct))
+                                : String(format: "%.1f", lastPct)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Bottom Chips
@@ -1083,6 +1155,7 @@ struct NewTransactionView: View {
         .controlSize(.large)
         .disabled(!viewModel.canSave || viewModel.isSaving)
         .accessibilityHint(!viewModel.canSave ? L10n.Accessibility.completeFormHint : "")
+        .accessibilityIdentifier("new_transaction_save")
         .dsAnimation(.easeInOut(duration: 0.2), value: viewModel.canSave, reduceMotion: reduceMotion)
     }
 
@@ -1095,7 +1168,20 @@ struct NewTransactionView: View {
     }
 
     private func saveTransaction() {
-        if viewModel.save(context: modelContext) != nil {
+        if let saved = viewModel.save(context: modelContext), let first = saved.first {
+            // Mark setup checklist step 2 with practice cleanup option
+            if SetupChecklistManager.shared.stepCompleted[.firstExpense] != true {
+                SetupChecklistManager.shared.markCompleted(
+                    .firstExpense,
+                    practiceItem: PracticeCleanupItem(
+                        stepID: .firstExpense,
+                        itemName: first.note ?? "",
+                        persistentID: first.persistentModelID
+                    )
+                )
+            } else {
+                SetupChecklistManager.shared.markCompleted(.firstExpense)
+            }
             showTransactionSuccess()
         }
     }
@@ -1113,7 +1199,7 @@ struct NewTransactionView: View {
             accountName: account?.name ?? L10n.Transaction.account,
             accountColorHex: account?.colorHex ?? AppConstants.defaultColorHex,
             note: viewModel.note,
-            amount: Decimal(string: viewModel.amountString.replacing(Locale.current.decimalSeparator ?? ".", with: ".")) ?? 0,
+            amount: Decimal(viewModel.amount),
             currencyCode: viewModel.effectiveCurrencyCode,
             subcategoryName: viewModel.selectedSubcategory?.name,
             subcategoryColorHex: viewModel.selectedSubcategory?.colorHex,
@@ -1129,16 +1215,16 @@ struct NewTransactionView: View {
         )
 
         // Delay animation to let keyboard dismiss
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+        Task {
+            try? await Task.sleep(for: .milliseconds(150))
             dsWithAnimation(reduceMotion) {
                 showSuccessScreen = true
             }
 
             // Check notification primer AFTER animation completes (~800ms)
-            Task {
-                try await Task.sleep(for: .milliseconds(800))
-                await viewModel.checkNotificationPrimer()
-            }
+            try? await Task.sleep(for: .milliseconds(800))
+            guard !Task.isCancelled else { return }
+            await viewModel.checkNotificationPrimer()
         }
     }
 
@@ -1169,7 +1255,7 @@ struct NewTransactionView: View {
             viewModel.editingTransaction = tx
 
             // Load amount (absolute value, since we store signed amounts)
-            viewModel.amountString = String(format: "%.2f", abs(tx.amount))
+            viewModel.amountString = AmountInputHelper.formatWithGrouping(abs(tx.amount))
 
             // Load account
             viewModel.selectedAccount = tx.account
@@ -1213,7 +1299,7 @@ struct NewTransactionView: View {
                         viewModel.destinationAccount = inTx.account
                         viewModel.editingTransferPair = (out: outTx, in: inTx)
                         // Use absolute amount from the outflow side
-                        viewModel.amountString = String(format: "%.2f", abs(outTx.amount))
+                        viewModel.amountString = AmountInputHelper.formatWithGrouping(abs(outTx.amount))
                     }
                 } catch {
                     #if DEBUG
@@ -1251,6 +1337,14 @@ struct NewTransactionView: View {
                 }
             }
 
+            // Load split data
+            if let splitTypeRaw = tx.splitType, let splitType = SplitType(rawValue: splitTypeRaw) {
+                viewModel.splitTotalAmount = tx.splitTotalAmount
+                viewModel.splitType = splitType
+                viewModel.splitMyValue = tx.splitMyValue
+                viewModel.splitDivisor = tx.splitDivisor
+            }
+
             return
         }
 
@@ -1273,7 +1367,8 @@ struct NewTransactionView: View {
         }
 
         // After animation out, update state and animate back in
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+        Task {
+            try? await Task.sleep(for: .milliseconds(150))
             // Keep all current form data but clear the editing reference
             // This turns the form into "create new" mode with prefilled data
             viewModel.editingTransaction = nil
@@ -1383,7 +1478,7 @@ struct NewTransactionView: View {
 
         // Set amount if available
         if let amount = favorite.amount, amount > 0 {
-            viewModel.amountString = String(format: "%.2f", amount)
+            viewModel.amountString = AmountInputHelper.formatWithGrouping(amount)
         }
 
         // Set account if available

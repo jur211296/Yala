@@ -80,9 +80,20 @@ struct BudgetsListView: View {
         .sheet(isPresented: $showUpgradeSheet) {
             UpgradePromptSheet(feature: .budgets, context: .limitReached)
         }
+        .appliesPendingRemoteChanges(sessionState)
         .onAppear {
             viewModel.setContext(modelContext)
-            refreshData()
+            viewModel.refreshBudgetData(
+                hideInactive: hideInactive,
+                defaultCurrencyCode: defaultCurrencyCode
+            )
+
+            // Auto-open editor from setup checklist (step 3)
+            if sessionState.shouldAutoOpenBudgetEditor {
+                sessionState.shouldAutoOpenBudgetEditor = false
+                viewModel.editingBudget = nil
+                viewModel.showBudgetEditor = true
+            }
         }
         .onChange(of: sessionState.dataVersion) { _, _ in
             refreshData()

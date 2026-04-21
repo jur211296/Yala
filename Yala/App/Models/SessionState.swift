@@ -361,6 +361,11 @@ class SessionState {
         customDateRange = nil
         clearFilters()
         globalFilters.dateInterval = selectedPeriod.dateInterval()
+
+        // Reset navigation to initial state (important after data wipe)
+        selectedMainTab = .panel
+        selectedDetailTab = .insights
+        selectedPlanningTab = .budgets
     }
 
     // MARK: - Subscription State
@@ -393,8 +398,23 @@ class SessionState {
     /// Version counter for data mutations — increment to trigger cross-view refresh
     var dataVersion: Int = 0
 
+    /// Flag for deferred remote CloudKit changes — applied on view navigation, not mid-scroll
+    private var hasPendingRemoteChanges: Bool = false
+
     func incrementDataVersion() {
         dataVersion += 1
+    }
+
+    /// Mark that remote data arrived — views will pick this up on onAppear
+    func markRemoteChangePending() {
+        hasPendingRemoteChanges = true
+    }
+
+    /// Apply pending remote changes (call from onAppear or handleBecameActive)
+    func applyPendingChangesIfNeeded() {
+        guard hasPendingRemoteChanges else { return }
+        hasPendingRemoteChanges = false
+        incrementDataVersion()
     }
 
     // MARK: - Share Extension State
@@ -439,15 +459,34 @@ class SessionState {
     /// Flag to show downgrade resolution sheet
     var shouldShowDowngradeResolution: Bool = false
 
+    /// Flag to show trial expired sheet
+    var shouldShowTrialExpired: Bool = false
+
+    /// Pending milestone upgrade (transaction count milestone)
+    var pendingMilestoneUpgrade: Int?
+
     /// Flag to auto-open Profile from Insights banner redirect
     var shouldOpenProfile: Bool = false
 
     /// Flag to trigger App Store review prompt
     var shouldRequestReview: Bool = false
 
-    /// Signals that post-onboarding flow is complete (trial sheet dismissed or skipped).
-    /// Coach mark tours wait for this before starting.
-    var isReadyForTours: Bool = false
+    // MARK: - Setup Checklist Navigation
+
+    /// When set, ProfileView navigates to this destination on appear (e.g. categories, accounts).
+    var pendingProfileDestination: ProfileDestination?
+
+    /// When true, BudgetsView auto-opens the budget editor on appear.
+    var shouldAutoOpenBudgetEditor: Bool = false
+
+    /// When true, ScheduledPaymentsView auto-opens the editor on appear.
+    var shouldAutoOpenScheduledEditor: Bool = false
+
+    /// Flag set by OnboardingView completion to trigger trial offer after fullScreenCover dismisses.
+    /// Persisted in UserDefaults so it survives app kill during the dismiss animation window.
+    var needsPostOnboardingTrial: Bool = UserDefaults.standard.bool(forKey: "needsPostOnboardingTrial") {
+        didSet { UserDefaults.standard.set(needsPostOnboardingTrial, forKey: "needsPostOnboardingTrial") }
+    }
 
     // MARK: - Splash State
 
@@ -562,5 +601,21 @@ class SessionState {
 
         // Set initial dateInterval on globalFilters
         self.globalFilters.dateInterval = selectedPeriod.dateInterval(customRange: customDateRange)
+    }
+}
+
+// MARK: - View Extension for Deferred Remote Changes
+
+extension View {
+    /// Applies pending remote CloudKit changes when this view appears.
+    /// Use on top-level navigation views that observe `sessionState.dataVersion`.
+    ///
+    /// - Warning: NEVER use on views presented as sheets. Mutating @Observable
+    ///   during sheet transition creates an infinite layoutBelowIfNeeded loop
+    ///   that triggers watchdog 0x8BADF00D. See: b583ea5e
+    func appliesPendingRemoteChanges(_ sessionState: SessionState) -> some View {
+        self.onAppear {
+            sessionState.applyPendingChangesIfNeeded()
+        }
     }
 }

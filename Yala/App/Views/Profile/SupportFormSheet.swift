@@ -33,6 +33,7 @@ enum SupportType: String, CaseIterable, Identifiable {
 struct SupportFormSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @Environment(ThemeManager.self) private var themeManager
 
     @State private var selectedType: SupportType = .error
     @State private var message: String = ""
@@ -149,7 +150,7 @@ struct SupportFormSheet: View {
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
         let systemVersion = UIDevice.current.systemVersion
         let modelName = UIDevice.current.model
-        let themeName = AppTheme(rawValue: UserDefaults.standard.integer(forKey: "userTheme"))?.label ?? "System"
+        let themeName = themeManager.userChoice.label
         let locale = Locale.preferredLanguages.first ?? "?"
 
         let subject = "Yala (\(type.filterCode)) - \(L10n.Support.title): \(type.label)"

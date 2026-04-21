@@ -55,6 +55,10 @@ final class Subcategory {
     @Relationship(deleteRule: .nullify)
     var merchantMemories: [MerchantMemory]?
 
+    /// Inverse relationship: cash flow lines linked to this subcategory - CloudKit: must be optional
+    @Relationship(deleteRule: .nullify)
+    var cashFlowLines: [CashFlowLine]?
+
     init(
         name: String,
         colorHex: String? = nil,

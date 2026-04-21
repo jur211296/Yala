@@ -1,0 +1,16 @@
+[
+  { "command": "find", "positionals": ["profile_avatar", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Cuentas", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Añadir", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["account_name_field", "click"}, {"command": "type", "positionals": ["Banco BBVA"], "flags": {} },
+  { "command": "find", "positionals": ["Cuenta Corriente", "click"], "flags": {} },
+  { "command": "find", "positionals": ["Número", "click"}, {"command": "type", "positionals": ["1234-5678-9012"], "flags": {} },
+  { "command": "find", "positionals": ["onboarding_balance", "click"}, {"command": "type", "positionals": ["1500.50"], "flags": {} },
+  { "command": "find", "positionals": ["Guardar", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "is", "positionals": ["visible", "label=\"Banco BBVA\""], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s2.2-complete.png"], "flags": {} }
+]

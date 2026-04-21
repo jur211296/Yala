@@ -153,6 +153,13 @@ struct FavoritesListView: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
+        .safeAreaInset(edge: .top) {
+            if mode == .manage {
+                ContextualGuideBanner.favoritesManage()
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.bottom, DS.Spacing.sm)
+            }
+        }
     }
 
     // MARK: - Actions

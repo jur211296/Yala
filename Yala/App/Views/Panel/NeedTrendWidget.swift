@@ -173,8 +173,9 @@ struct NeedTrendWidget: View {
                     } label: {
                         Image(systemName: "chevron.right")
                             .font(DS.Typography.headline)
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(.secondary)
                     }
+                    .buttonStyle(.plain)
                     .padding(.top, DS.Spacing.xs)
                 }
             }
@@ -342,20 +343,11 @@ struct NeedTrendChartView: View {
             let lastDate = points.last?.date
         else { return "" }
 
-        // Determine calendar unit for forceGrouping
-        let forceGrouping: Calendar.Component? = {
-            switch grouping {
-            case .month: return .month
-            case .week: return .weekOfYear
-            case .day: return nil  // Use span-based logic for days
-            }
-        }()
-
         return SmartAxisHelper.formatAxisLabel(
             for: date,
             startDate: firstDate,
             endDate: lastDate,
-            forceGrouping: forceGrouping
+            forceGrouping: grouping.forceAxisGrouping
         )
     }
 

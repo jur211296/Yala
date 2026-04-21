@@ -1,0 +1,17 @@
+[
+  { "command": "wait", "positionals": ["2000"], "flags": {} },
+  { "command": "find", "positionals": ["onboarding_name_field", "click"], "flags": {} },
+  { "command": "type", "positionals": ["Test"], "flags": {} },
+  { "command": "press", "positionals": ["200", "150"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["2500"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["2500"], "flags": {} },
+  { "command": "find", "positionals": ["Atrás", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s1.3-back-to-currency.png"], "flags": {} },
+  { "command": "find", "positionals": ["Atrás", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s1.3-back-to-name.png"], "flags": {} }
+]

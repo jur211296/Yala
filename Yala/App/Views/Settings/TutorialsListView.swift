@@ -117,6 +117,12 @@ struct TutorialsListView: View {
 
             Spacer()
 
+            if tutorial.isCompleted {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.thAccent)
+            }
+
             Image(systemName: "chevron.right")
                 .font(DS.Typography.labelSmall)
                 .foregroundStyle(.thSecondaryText)

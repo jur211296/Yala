@@ -52,40 +52,6 @@ struct YalaSectionHeader: View {
     }
 }
 
-// MARK: - Compact Variant
-
-/// Header compacto para secciones menores
-struct YalaSectionHeaderCompact: View {
-    let title: String
-    let count: Int?
-
-    init(_ title: String, count: Int? = nil) {
-        self.title = title
-        self.count = count
-    }
-
-    var body: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Text(title.uppercased())
-                .font(DS.Typography.labelSmall)
-                .foregroundStyle(.secondary)
-
-            if let count {
-                Text("\(count)")
-                    .font(DS.Typography.labelSmall)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, DS.Spacing.sm)
-                    .padding(.vertical, DS.Spacing.xxs)
-                    .background(Color.secondary.opacity(DS.Opacity.subtle))
-                    .clipShape(Capsule())
-            }
-
-            Spacer()
-        }
-        .accessibilityAddTraits(.isHeader)
-    }
-}
-
 #Preview {
     VStack(alignment: .leading, spacing: 30) { // DS: intentional non-token value
         // Standard header
@@ -100,12 +66,6 @@ struct YalaSectionHeaderCompact: View {
 
         // Without action
         YalaSectionHeader("Configuración")
-
-        Divider()
-
-        // Compact headers
-        YalaSectionHeaderCompact("Activas", count: 12)
-        YalaSectionHeaderCompact("Archivadas")
     }
     .padding()
     .background(.thBackground)

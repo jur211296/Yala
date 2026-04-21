@@ -31,49 +31,45 @@ struct WhatsNewSheet: View {
     @State private var headerOpacity: Double = 0
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: DS.Spacing.lg) {
-                // Header
-                VStack(spacing: DS.Spacing.sm) {
-                    Text(L10n.WhatsNew.title)
-                        .font(DS.Typography.largeTitle)
-                        .foregroundStyle(.thPrimaryText)
-                        .multilineTextAlignment(.center)
+        VStack(spacing: DS.Spacing.none) {
+            ScrollView {
+                VStack(spacing: DS.Spacing.xl) {
+                    // Header — generous top padding (Apple Pages style)
+                    VStack(spacing: DS.Spacing.sm) {
+                        Text(L10n.WhatsNew.title)
+                            .font(DS.Typography.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.thPrimaryText)
+                            .multilineTextAlignment(.center)
 
-                    Text(L10n.WhatsNew.subtitle(version))
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.thSecondaryText)
-                }
-                .padding(.top, DS.Spacing.xxl)
-                .padding(.horizontal, DS.Spacing.xl)
-                .opacity(headerOpacity)
-
-                // Features list
-                VStack(alignment: .leading, spacing: DS.Spacing.none) {
-                    ForEach(Array(features.enumerated()), id: \.element.id) { index, feature in
-                        featureRow(feature: feature, index: index)
+                        Text(L10n.WhatsNew.subtitle(version))
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.thSecondaryText)
+                            .multilineTextAlignment(.center)
                     }
-                }
-                .padding(.vertical, DS.Spacing.sm)
-                .background(.thCard)
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
-                .overlay(
-                    RoundedRectangle(cornerRadius: DS.Radius.xl)
-                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                )
-                .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, 72)
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .opacity(headerOpacity)
 
-                Spacer(minLength: DS.Spacing.xxl)
-
-                // CTA button
-                YalaPrimaryButton(L10n.WhatsNew.continueButton) {
-                    onDismiss()
+                    // Features — individual rows, no card wrapper
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxl) {
+                        ForEach(Array(features.enumerated()), id: \.element.id) { index, feature in
+                            featureRow(feature: feature, index: index)
+                        }
+                    }
+                    .padding(.horizontal, DS.Spacing.xl)
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.bottom, DS.Spacing.xl)
             }
+            .scrollBounceBehavior(.basedOnSize)
+
+            // CTA button — OUTSIDE ScrollView, always visible at bottom
+            YalaPrimaryButton(L10n.WhatsNew.continueButton) {
+                onDismiss()
+            }
+            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.xl)
+            .padding(.top, DS.Spacing.md)
         }
-        .scrollBounceBehavior(.basedOnSize)
         .background(theme.background.ignoresSafeArea())
         .presentationDetents([.large])
         .interactiveDismissDisabled()
@@ -85,9 +81,12 @@ struct WhatsNewSheet: View {
                 dsWithAnimation(reduceMotion) {
                     headerOpacity = 1.0
                 }
-                for i in features.indices {
-                    let delay = Double(i) * 0.1 + 0.2
-                    DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                Task {
+                    try? await Task.sleep(for: .seconds(0.2))
+                    for i in features.indices {
+                        if i > 0 {
+                            try? await Task.sleep(for: .seconds(0.1))
+                        }
                         dsWithAnimation(reduceMotion) {
                             animatedRows.insert(i)
                         }
@@ -101,30 +100,25 @@ struct WhatsNewSheet: View {
 
     private func featureRow(feature: WhatsNewFeature, index: Int) -> some View {
         let isVisible = animatedRows.contains(index)
-        return HStack(spacing: DS.Spacing.sm) {
+        return HStack(alignment: .top, spacing: DS.Spacing.lg) {
             Image(systemName: feature.icon)
-                .font(DS.Typography.caption.weight(.semibold))
+                .font(.system(size: 22, weight: .semibold))
                 .foregroundStyle(.white)
-                .frame(width: 26, height: 26)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(feature.iconColor)
-                )
+                .frame(width: 44, height: 44)
+                .background(Circle().fill(feature.iconColor))
 
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 Text(feature.title)
-                    .font(DS.Typography.subheadline.weight(.semibold))
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.thPrimaryText)
 
                 Text(feature.description)
-                    .font(DS.Typography.caption)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(.thSecondaryText)
             }
 
             Spacer()
         }
-        .padding(.horizontal, DS.Spacing.md)
-        .padding(.vertical, DS.Spacing.sm)
         .opacity(reduceMotion ? 1.0 : (isVisible ? 1.0 : 0.0))
         .offset(y: reduceMotion ? 0 : (isVisible ? 0 : 10))
     }

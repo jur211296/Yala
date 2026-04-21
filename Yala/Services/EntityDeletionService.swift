@@ -152,7 +152,31 @@ final class EntityDeletionService {
             #endif
         }
 
-        // 3. Delete payment
+        // 3. Clean linked transactions:
+        //    - Past (before current month): unlink (clear scheduledPaymentID)
+        //    - Current month + future: delete
+        let txDescriptor = FetchDescriptor<TransactionItem>(
+            predicate: #Predicate<TransactionItem> { $0.scheduledPaymentID == paymentID }
+        )
+        do {
+            let linkedTransactions = try context.fetch(txDescriptor)
+            if !linkedTransactions.isEmpty {
+                let currentMonthStart = Calendar.current.startOfMonth(for: Date.now)
+                for tx in linkedTransactions {
+                    if tx.date < currentMonthStart {
+                        tx.scheduledPaymentID = nil
+                    } else {
+                        context.delete(tx)
+                    }
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("EntityDeletionService: Error cleaning linked transactions: \(error)")
+            #endif
+        }
+
+        // 4. Delete payment
         try delete(payment)
     }
 

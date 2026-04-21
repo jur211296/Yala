@@ -35,7 +35,8 @@ final class StatisticsViewModel: Filterable {
 
     // Check if any category/subcategory/need filters are active
     var hasCategoryFilters: Bool {
-        !selectedCategories.isEmpty || !selectedSubcategories.isEmpty || !selectedNeeds.isEmpty
+        guard !isExcludeMode else { return false }
+        return !selectedCategories.isEmpty || !selectedSubcategories.isEmpty || !selectedNeeds.isEmpty
     }
 
     /// Enforce metric logic based on filters
@@ -316,11 +317,11 @@ final class StatisticsViewModel: Filterable {
                 interval: interval,
                 currencyCode: defaultCurrencyCode
             )
-            trendPoints = result.points
-            rawTrendPoints = result.rawPoints
+            if result.points != trendPoints { trendPoints = result.points }
+            if result.rawPoints != rawTrendPoints { rawTrendPoints = result.rawPoints }
             yDomain = result.yDomain
-            totalIncome = result.totalIncome
-            totalExpense = result.totalExpense
+            if result.totalIncome != totalIncome { totalIncome = result.totalIncome }
+            if result.totalExpense != totalExpense { totalExpense = result.totalExpense }
             dataMetric = selectedMetric
         } else {
             calculatePerAccountTrend(
@@ -374,23 +375,26 @@ final class StatisticsViewModel: Filterable {
         eligibleAccounts: [Account],
         allTransactions: [TransactionItem]
     ) {
-        totalIncome =
+        let newIncome =
             filtered
             .filter { $0.amountInPreferredCurrency > 0 && $0.balanceAdjustmentType == nil }
             .reduce(0) { $0 + $1.amountInPreferredCurrency }
+        if newIncome != totalIncome { totalIncome = newIncome }
 
-        totalExpense =
+        let newExpense =
             filtered
             .filter { $0.amountInPreferredCurrency < 0 && $0.balanceAdjustmentType == nil }
             .reduce(0) { $0 + abs($1.amountInPreferredCurrency) }
+        if newExpense != totalExpense { totalExpense = newExpense }
 
-        currentBalance = eligibleAccounts.reduce(0.0) { total, account in
+        let newBalance = eligibleAccounts.reduce(0.0) { total, account in
             let transactionSum =
                 allTransactions
                 .filter { $0.account?.persistentModelID == account.persistentModelID }
                 .reduce(0.0) { $0 + $1.amountInPreferredCurrency }
             return total + transactionSum
         }
+        if newBalance != currentBalance { currentBalance = newBalance }
     }
 
     /// Build recent records filtered by selected metric
@@ -408,11 +412,12 @@ final class StatisticsViewModel: Filterable {
                 $0.amountInPreferredCurrency < 0 && $0.balanceAdjustmentType == nil
             }
         }
-        recentRecords = Array(
+        let newRecent = Array(
             metricFiltered.sorted {
                 return $0.createdAt > $1.createdAt
             }.prefix(maxRecentRecords)
         )
+        if newRecent != recentRecords { recentRecords = newRecent }
     }
 
     /// Convert TrendMetric to TrendType for TrendDataProcessor
@@ -521,7 +526,7 @@ final class StatisticsViewModel: Filterable {
             )
         }
 
-        accountSeries = allSeries
+        if allSeries != accountSeries { accountSeries = allSeries }
 
         // Calculate Y domain from all series
         let allValues = allSeries.flatMap { $0.points.map { $0.value } }
@@ -569,9 +574,15 @@ final class StatisticsViewModel: Filterable {
 // MARK: - Account Trend Series
 
 /// Represents a trend series for a single account
-struct AccountTrendSeries: Identifiable {
+struct AccountTrendSeries: Identifiable, Equatable {
     let id: PersistentIdentifier
     let accountName: String
     let color: Color
     let points: [PanelViewModel.BarPoint]
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.id == rhs.id
+            && lhs.accountName == rhs.accountName
+            && lhs.points == rhs.points
+    }
 }

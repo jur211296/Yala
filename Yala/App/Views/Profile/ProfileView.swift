@@ -16,6 +16,9 @@ import SwiftUI
 
 /// Main profile screen acting as the Configuration Control Center
 struct ProfileView: View {
+    /// Optional destination to navigate to on appear (used by setup checklist).
+    var initialDestination: ProfileDestination?
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @Environment(\.requestReview) private var requestReview
@@ -29,6 +32,9 @@ struct ProfileView: View {
 
     @AppStorage("userName") private var userName: String = "Usuario"
     @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
+    private var effectiveColorfulIcons: Bool {
+        theme.forcesMonochromeIcons ? false : colorfulIcons
+    }
     private var profileStorage: ProfileImageStorage { .shared }
     @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
     @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
@@ -65,6 +71,10 @@ struct ProfileView: View {
     @State private var showSettingsTour = false
     @State private var settingsTourIndex = 0
     @State private var settingsScrollProxy: ScrollViewProxy?
+
+    // Coach mark: Pro tour (Phase 1)
+    @State private var showProTour = false
+    @State private var proTourIndex = 0
 
     #if DEBUG
     @State private var seedService = DevSeedService()
@@ -106,27 +116,7 @@ struct ProfileView: View {
         }
     }
 
-    // Destinations for NavigationStack
-    enum ProfileDestination: Hashable {
-        case accounts
-        case categories
-        case tags
-        case themes
-        case personalization
-        case currency
-        case appIcon
-        case notifications
-        case favorites
-        case budgetsFavorites
-        case planned
-        case userDataReset
-        case biometricSecurity
-        case subscription
-        case tips
-        case faq
-        case iCloudSync
-        case siriShortcuts
-    }
+    // ProfileDestination extracted to Yala/App/Models/ProfileDestination.swift
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -156,7 +146,7 @@ struct ProfileView: View {
                         }
                         .padding(.vertical, DS.Spacing.xxl)
                     }
-                    .scrollDisabled(showSettingsTour)
+                    .scrollDisabled(false)
                     .onAppear { settingsScrollProxy = scrollProxy }
                 }
             }
@@ -246,6 +236,13 @@ struct ProfileView: View {
             } message: {
                 Text(L10n.AIConsent.insightsMessage)
             }
+            .onAppear {
+                // Auto-navigate to destination from setup checklist
+                if let dest = initialDestination ?? SessionState.shared.pendingProfileDestination {
+                    SessionState.shared.pendingProfileDestination = nil
+                    navigationPath.append(dest)
+                }
+            }
             .navigationDestination(for: ProfileDestination.self) { destination in
                 switch destination {
                 case .accounts:
@@ -267,7 +264,7 @@ struct ProfileView: View {
                 case .biometricSecurity:
                     BiometricSecurityView()
                 case .subscription:
-                    SubscriptionView()
+                    SubscriptionView(source: "profile")
                 case .tips:
                     TutorialsListView()
                 case .faq:
@@ -276,7 +273,7 @@ struct ProfileView: View {
                     NotificationsSettingsView()
                 case .favorites:
                     FavoritesListView(mode: .manage)
-                case .budgetsFavorites:
+                case .budgets:
                     BudgetsFavoritesSettingsView()
                 case .planned:
                     ScheduledPaymentsSettingsView()
@@ -302,13 +299,32 @@ struct ProfileView: View {
             scrollProxy: settingsScrollProxy,
             onComplete: { hasSeenSettingsTour = true }
         )
+        .coachMarkOverlay(
+            steps: ProTourSteps.profileSteps,
+            isPresented: $showProTour,
+            currentIndex: $proTourIndex,
+            scrollProxy: settingsScrollProxy,
+            onComplete: {
+                ProTourManager.shared.advancePhase()
+            }
+        )
         .task {
             if !hasSeenSettingsTour {
-                try? await Task.sleep(for: .seconds(0.8))
+                do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
                 if !hasSeenSettingsTour {
                     showSettingsTour = true
                 }
             }
+        }
+        .task(id: hasSeenSettingsTour) {
+            guard hasSeenSettingsTour else { return }
+            // Re-check eligibility (covers race: subscribed before tours completed)
+            ProTourManager.shared.triggerIfEligible()
+            guard ProTourManager.shared.currentPhase == .profile else { return }
+            do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
+            guard ProTourManager.shared.currentPhase == .profile,
+                  !showSettingsTour else { return }
+            showProTour = true
         }
     }
 
@@ -446,22 +462,25 @@ struct ProfileView: View {
                 profileRow(
                     icon: "creditcard.fill", title: L10n.Settings.accounts, iconColor: DS.Semantic.successForeground,
                     destination: .accounts)
+                    .accessibilityIdentifier("profile_accounts")
                     .coachMarkAnchor("settingsAccounts")
                 SubsectionDivider()
                 profileRow(
                     icon: "tag.fill", title: L10n.Settings.categories, iconColor: .orange,
                     destination: .categories)
+                    .accessibilityIdentifier("profile_categories")
                     .coachMarkAnchor("settingsCategories")
                 SubsectionDivider()
                 profileRow(
                     icon: "number", title: L10n.Settings.tags, iconColor: .purple,
                     destination: .tags)
+                    .accessibilityIdentifier("profile_tags")
                     .coachMarkAnchor("settingsTags")
                 SubsectionDivider()
                 profileRow(
-                    icon: "chart.pie.fill", title: L10n.Settings.budgetsFavorites,
+                    icon: "chart.pie.fill", title: L10n.Settings.budgets,
                     iconColor: .mint,
-                    destination: .budgetsFavorites)
+                    destination: .budgets)
                     .coachMarkAnchor("settingsBudgets")
                 SubsectionDivider()
                 profileRow(
@@ -499,10 +518,12 @@ struct ProfileView: View {
                 profileRow(
                     icon: "app.fill", title: L10n.Settings.appIcon,
                     iconColor: .blue, destination: .appIcon)
+                .coachMarkAnchor("settingsAppIcon")
                 SubsectionDivider()
                 profileRow(
                     icon: "paintpalette.fill", title: L10n.Settings.theme, iconColor: .pink,
                     destination: .themes)
+                .coachMarkAnchor("settingsTheme")
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
@@ -512,10 +533,13 @@ struct ProfileView: View {
         SectionBox(title: L10n.Settings.aiFeatures) {
             VStack(spacing: DS.Spacing.none) {
                 voiceInputRow
+                    .coachMarkAnchor("proVoiceInput")
                 SubsectionDivider()
                 imageInputRow
+                    .coachMarkAnchor("proImageInput")
                 SubsectionDivider()
                 smartInsightsToggleRow
+                    .coachMarkAnchor("proSmartInsights")
 
                 let hasProcessing = aiDataConsentAccepted && (voiceInputEnabled || imageInputEnabled)
                 let hasInsights = aiInsightsConsentAccepted
@@ -542,7 +566,7 @@ struct ProfileView: View {
                 }
             } label: {
                 HStack(spacing: DS.Spacing.md) {
-                    if colorfulIcons {
+                    if effectiveColorfulIcons {
                         Image(systemName: "sparkles")
                             .font(DS.Typography.subheadline).fontWeight(.medium)
                             .foregroundStyle(.white)
@@ -688,7 +712,7 @@ struct ProfileView: View {
                 }
             } label: {
                 HStack(spacing: DS.Spacing.md) {
-                    if colorfulIcons {
+                    if effectiveColorfulIcons {
                         Image(systemName: "waveform.badge.mic")
                             .font(DS.Typography.subheadline).fontWeight(.medium)
                             .foregroundStyle(.white)
@@ -809,7 +833,7 @@ struct ProfileView: View {
             }
         } label: {
             HStack(spacing: DS.Spacing.md) {
-                if colorfulIcons {
+                if effectiveColorfulIcons {
                     Image(systemName: "photo.on.rectangle")
                         .font(DS.Typography.subheadline).fontWeight(.medium)
                         .foregroundStyle(.white)
@@ -907,6 +931,7 @@ struct ProfileView: View {
                 .accessibilityHint(!viewModel.hasTransactions ? L10n.Accessibility.noTransactionsToExport : "")
                 .disabled(!viewModel.hasTransactions)
                 .buttonStyle(.plain)
+                .coachMarkAnchor("proExportExtended")
 
                 SubsectionDivider()
 
@@ -1051,14 +1076,14 @@ struct ProfileView: View {
 
             Image(systemName: "cylinder.split.1x2.fill")
                 .font(.system(size: 48)) // A11Y-DT: debug-only seed progress view
-                .foregroundStyle(.teal)
+                .foregroundStyle(DS.Semantic.imageAccent)
 
             Text("Generando datos de prueba")
                 .font(DS.Typography.headline)
 
             VStack(spacing: DS.Spacing.sm) {
                 ProgressView(value: seedService.progress)
-                    .tint(.teal)
+                    .tint(DS.Semantic.imageAccent)
 
                 Text(seedService.stepLabel)
                     .font(DS.Typography.caption)
@@ -1155,7 +1180,7 @@ struct ProfileView: View {
     ) -> some View {
         HStack(spacing: DS.Spacing.md) {
             // Conditionally show colored or plain icons based on setting
-            if colorfulIcons {
+            if effectiveColorfulIcons {
                 // iOS-style colored icon with rounded square background
                 Image(systemName: icon)
                     .font(DS.Typography.subheadline).fontWeight(.medium)

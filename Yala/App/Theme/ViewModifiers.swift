@@ -30,7 +30,15 @@ struct YalaCardModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(padding)
-            .background(theme.card)
+            .background {
+                if theme.usesMaterial {
+                    RoundedRectangle(cornerRadius: radius)
+                        .fill(.ultraThinMaterial)
+                } else {
+                    RoundedRectangle(cornerRadius: radius)
+                        .fill(theme.card)
+                }
+            }
             .clipShape(RoundedRectangle(cornerRadius: radius))
             .overlay(
                 RoundedRectangle(cornerRadius: radius)
@@ -82,6 +90,29 @@ extension View {
         .padding(.vertical, DS.ListRow.paddingV)
         .padding(.horizontal, DS.ListRow.paddingH)
     }
+    /// Aplica estilo de card sólido (mismo fondo que widgets del Panel, sin material)
+    func solidCard(padding: CGFloat = 0, radius: CGFloat = DS.Card.radius) -> some View {
+        modifier(SolidCardModifier(padding: padding, radius: radius))
+    }
+}
+
+// MARK: - Solid Card Modifier (matches PanelView widget styling)
+
+struct SolidCardModifier: ViewModifier {
+    @Environment(\.yalaTheme) private var theme
+    var padding: CGFloat = 0
+    var radius: CGFloat = DS.Card.radius
+
+    func body(content: Content) -> some View {
+        content
+            .padding(padding)
+            .background(.thCard)
+            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .stroke(theme.cardBorder, lineWidth: 1)
+            )
+    }
 }
 
 // MARK: - Form Row Modifier
@@ -106,7 +137,15 @@ struct YalaFormRowModifier: ViewModifier {
         .padding(.horizontal, DS.FormRow.paddingH)
         .padding(.vertical, DS.FormRow.paddingV)
         .frame(minHeight: DS.FormRow.minHeight)
-        .background(hasBackground ? theme.card : Color.clear)
+        .background {
+            if hasBackground && theme.usesMaterial {
+                Rectangle().fill(.ultraThinMaterial)
+            } else if hasBackground {
+                Rectangle().fill(theme.card)
+            } else {
+                Color.clear
+            }
+        }
     }
 }
 
@@ -350,7 +389,7 @@ extension View {
                 }
                 Spacer()
                 Text("-S/ 150.00")
-                    .foregroundStyle(.red)
+                    .foregroundStyle(DS.Semantic.errorForeground)
             }
             .yalaListRow()
 

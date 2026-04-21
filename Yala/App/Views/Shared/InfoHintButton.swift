@@ -2,24 +2,24 @@
 //  InfoHintButton.swift
 //  Yala
 //
-//  Optional info button for widgets that displays a hint popover.
+//  Optional info button for widgets that displays a hint tooltip.
 //
 
 import SwiftUI
 
-/// A small info button that shows a popover with contextual help.
+/// A small info button that shows a tooltip overlay with contextual help.
 /// Visibility is controlled by the showWidgetHints AppStorage setting.
 struct InfoHintButton: View {
     let title: String
     let message: String
 
     @AppStorage("showWidgetHints") private var showWidgetHints: Bool = true
-    @State private var showPopover = false
+    @State private var showTooltip = false
 
     var body: some View {
         if showWidgetHints {
             Button {
-                showPopover = true
+                showTooltip.toggle()
             } label: {
                 Image(systemName: "info.circle")
                     .font(DS.Typography.labelSmall)
@@ -27,20 +27,13 @@ struct InfoHintButton: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(title)
-            .popover(isPresented: $showPopover, arrowEdge: .top) {
-                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                    Text(title)
-                        .font(DS.Typography.labelSmall)
-                        .foregroundStyle(.primary)
-
-                    Text(message)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.xl)
-                .frame(maxWidth: 280)
+            .popover(isPresented: $showTooltip, arrowEdge: .top) {
+                HintPopoverContent(
+                    iconName: "info.circle.fill",
+                    iconColor: Color.accentColor,
+                    title: title,
+                    message: message
+                )
                 .presentationCompactAdaptation(.popover)
             }
         }

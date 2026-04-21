@@ -51,9 +51,9 @@ struct ScheduledPaymentDraftService {
                 continue
             }
 
-            // Safety: skip if already paid for this date (prevents duplicates from sync/reactivation)
+            // Safety: skip if already paid for this date or later (prevents duplicates from stale nextDueDate)
             if let lastPaid = payment.lastPaidDate,
-               calendar.isDate(lastPaid, inSameDayAs: payment.nextDueDate) {
+               calendar.startOfDay(for: lastPaid) >= calendar.startOfDay(for: payment.nextDueDate) {
                 advanceToNextDueDate(payment: payment)
                 hasChanges = true
                 continue
@@ -120,17 +120,19 @@ struct ScheduledPaymentDraftService {
         }
     }
 
-    /// Check if a transaction already exists linked to this payment on the given date
+    /// Check if a transaction already exists linked to this payment within ±1 day of the given date.
+    /// The wider window covers timezone offsets or date adjustments during draft approval.
     private static func hasLinkedTransaction(for payment: ScheduledPayment, on date: Date, context: ModelContext) -> Bool {
         let paymentIDString = payment.id.uuidString
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
-        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else { return false }
+        guard let windowStart = calendar.date(byAdding: .day, value: -1, to: startOfDay),
+              let windowEnd = calendar.date(byAdding: .day, value: 2, to: startOfDay) else { return false }
 
         let predicate = #Predicate<TransactionItem> { tx in
             tx.scheduledPaymentID == paymentIDString &&
-            tx.date >= startOfDay &&
-            tx.date < endOfDay
+            tx.date >= windowStart &&
+            tx.date < windowEnd
         }
 
         var descriptor = FetchDescriptor<TransactionItem>(predicate: predicate)
@@ -290,6 +292,42 @@ struct ScheduledPaymentDraftService {
         if let endDate = payment.endDate, payment.nextDueDate > endDate {
             payment.isActive = false
         }
+    }
+
+    // MARK: - Advance Payment (create draft early)
+
+    /// Create a draft for the next occurrence with today's date (advance payment).
+    /// Returns the created draft, or nil if a pending draft already exists.
+    @discardableResult
+    static func createAdvancedDraft(from payment: ScheduledPayment, context: ModelContext) -> InboxDraft? {
+        // Guard: don't create if a pending draft already exists for this payment
+        let paymentID = payment.id.uuidString
+        do {
+            let predicate = #Predicate<InboxDraft> { draft in
+                draft.sourceScheduledPaymentID == paymentID &&
+                draft.statusRaw == "pending"
+            }
+            var descriptor = FetchDescriptor<InboxDraft>(predicate: predicate)
+            descriptor.fetchLimit = 1
+            let existing = try context.fetch(descriptor)
+            if !existing.isEmpty { return nil }
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error checking existing drafts for advance: \(error)")
+            #endif
+            return nil
+        }
+
+        // Create draft with today's date
+        let draft = createDraft(from: payment)
+        draft.date = Calendar.current.startOfDay(for: Date.now)
+        context.insert(draft)
+
+        // Update payment state (caller is responsible for saving)
+        payment.lastPaidDate = Date.now
+        advanceToNextDueDate(payment: payment)
+
+        return draft
     }
 
     // MARK: - Post-Approval Update

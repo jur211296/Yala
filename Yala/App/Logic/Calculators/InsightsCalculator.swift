@@ -71,6 +71,7 @@ struct Commitments {
 struct BudgetAtRisk: Identifiable {
     let id: PersistentIdentifier
     let name: String
+    let icon: String
     let usagePercent: Double
     let spent: Double
     let limit: Double
@@ -260,6 +261,7 @@ struct InsightsCalculator {
         // Weekday Spending (computed before Quick Stats for highestAvgWeekday)
         let weekdaySpending = WeekdaySpendingCalculator.calculate(
             transactions: periodTxns,
+            interval: interval,
             currencyCode: currencyCode,
             converter: converter
         )
@@ -535,6 +537,7 @@ struct InsightsCalculator {
                 budgetsAtRisk.append(BudgetAtRisk(
                     id: budget.persistentModelID,
                     name: budget.name,
+                    icon: budget.displayProperties.icon,
                     usagePercent: usage,
                     spent: spent,
                     limit: budget.limitAmount,

@@ -115,6 +115,21 @@ enum L10n {
         static var aiConsentRequired: String {
             ls("panel.aiConsentRequired", comment: "Hint when AI consent not accepted")
         }
+        static var preparingInsight: String {
+            ls("panel.preparingInsight", comment: "Loading state before LLM call")
+        }
+        static var insightMenuRegenerate: String {
+            ls("panel.insightMenuRegenerate", comment: "Regenerate insight menu option")
+        }
+        static var insightMenuDifferentAngle: String {
+            ls("panel.insightMenuDifferentAngle", comment: "Different angle menu option")
+        }
+        static var insightMenuHideHour: String {
+            ls("panel.insightMenuHideHour", comment: "Hide for one hour menu option")
+        }
+        static var insightMenuHideToday: String {
+            ls("panel.insightMenuHideToday", comment: "Hide for today menu option")
+        }
     }
 
     // MARK: - Balance Status
@@ -183,6 +198,184 @@ enum L10n {
         }
     }
 
+    // MARK: - Cash Flow Plan
+
+    enum CashFlowPlan {
+        // Setup
+        static var title: String { ls("cashFlowPlan.title", comment: "") }
+        static var description: String { ls("cashFlowPlan.description", comment: "") }
+        static var createButton: String { ls("cashFlowPlan.createButton", comment: "") }
+        static var startingBalance: String { ls("cashFlowPlan.startingBalance", comment: "") }
+        static var startingBalanceHelper: String { ls("cashFlowPlan.startingBalanceHelper", comment: "") }
+        static var incomeSection: String { ls("cashFlowPlan.incomeSection", comment: "") }
+        static var expenseSection: String { ls("cashFlowPlan.expenseSection", comment: "") }
+        static var recommendedBadge: String { ls("cashFlowPlan.recommendedBadge", comment: "") }
+        static var otherExpensesLabel: String { ls("cashFlowPlan.otherExpenses", comment: "") }
+        static var otherExpensesDesc: String { ls("cashFlowPlan.otherExpensesDesc", comment: "") }
+        static var otherIncomeLabel: String { ls("cashFlowPlan.otherIncome", comment: "") }
+        static var emptyState: String { ls("cashFlowPlan.emptyState", comment: "") }
+        static var emptyStateMessage: String { ls("cashFlowPlan.emptyStateMessage", comment: "") }
+        static var monthsActive: String { ls("cashFlowPlan.monthsActive", comment: "") }
+        static func suggestedSource(_ months: Int) -> String {
+            String(format: ls("cashFlowPlan.suggestedSource", comment: ""), months)
+        }
+        static var bannerTitle: String { ls("cashFlowPlan.bannerTitle", comment: "") }
+        static var bannerBody: String { ls("cashFlowPlan.bannerBody", comment: "") }
+        static var selectAll: String { ls("cashFlowPlan.selectAll", comment: "") }
+        static var total: String { ls("cashFlowPlan.total", comment: "") }
+        static var lineNameLabel: String { ls("cashFlowPlan.lineNameLabel", comment: "") }
+        static var lineNameHint: String { ls("cashFlowPlan.lineNameHint", comment: "") }
+
+        // Hints
+        static var availableHintTitle: String { ls("cashFlowPlan.availableHintTitle", comment: "") }
+        static var availableHintMessage: String { ls("cashFlowPlan.availableHintMessage", comment: "") }
+        static var accumulatedHintTitle: String { ls("cashFlowPlan.accumulatedHintTitle", comment: "") }
+        static var accumulatedHintMessage: String { ls("cashFlowPlan.accumulatedHintMessage", comment: "") }
+
+        // Edit starting balance
+        static var editStartingBalance: String { ls("cashFlowPlan.editStartingBalance", comment: "") }
+        static var editStartingBalanceSave: String { ls("cashFlowPlan.editStartingBalanceSave", comment: "") }
+        static var startingBalanceDateLabel: String { ls("cashFlowPlan.startingBalanceDateLabel", comment: "") }
+        static var startingBalanceDateHelper: String { ls("cashFlowPlan.startingBalanceDateHelper", comment: "") }
+
+        // Horizon config
+        static var configureHorizon: String { ls("cashFlowPlan.configureHorizon", comment: "") }
+        static var monthsAhead: String { ls("cashFlowPlan.monthsAhead", comment: "") }
+        static var monthsBack: String { ls("cashFlowPlan.monthsBack", comment: "") }
+
+        // Month summary
+        static func monthSummaryOnTrack(_ percent: Int) -> String {
+            String(format: ls("cashFlowPlan.monthSummaryOnTrack", comment: ""), percent)
+        }
+        static func monthSummaryOver(_ percent: Int) -> String {
+            String(format: ls("cashFlowPlan.monthSummaryOver", comment: ""), percent)
+        }
+        static func monthSummaryUnder(_ percent: Int) -> String {
+            String(format: ls("cashFlowPlan.monthSummaryUnder", comment: ""), percent)
+        }
+
+        // Table / Detail
+        static var available: String { ls("cashFlowPlan.available", comment: "") }
+        static var accumulated: String { ls("cashFlowPlan.accumulated", comment: "") }
+        static var accumulatedShort: String { ls("cashFlowPlan.accumulatedShort", comment: "") }
+        static var addLine: String { ls("cashFlowPlan.addLine", comment: "") }
+        static var thisMonth: String { ls("cashFlowPlan.thisMonth", comment: "") }
+        static var pastMonth: String { ls("cashFlowPlan.pastMonth", comment: "") }
+        static var futureMonth: String { ls("cashFlowPlan.futureMonth", comment: "") }
+        static func executionPercent(_ percent: Int) -> String {
+            String(format: ls("cashFlowPlan.executionPercent", comment: ""), percent)
+        }
+
+        // Config
+        static var estimationMethod: String { ls("cashFlowPlan.estimationMethod", comment: "") }
+        static var calculationMethodTitle: String { ls("cashFlowPlan.calculationMethodTitle", comment: "") }
+        static var average3m: String { ls("cashFlowPlan.average3m", comment: "") }
+        static var average6m: String { ls("cashFlowPlan.average6m", comment: "") }
+        static var average12m: String { ls("cashFlowPlan.average12m", comment: "") }
+        static var lastMonth: String { ls("cashFlowPlan.lastMonth", comment: "") }
+        static var manual: String { ls("cashFlowPlan.manual", comment: "") }
+        static var scheduled: String { ls("cashFlowPlan.scheduled", comment: "") }
+        static var trend: String { ls("cashFlowPlan.trend", comment: "") }
+        static var custom: String { ls("cashFlowPlan.custom", comment: "") }
+        static var contextLabel: String { ls("cashFlowPlan.context", comment: "") }
+
+        // Method descriptions
+        static var average3mDesc: String { ls("cashFlowPlan.average3mDesc", comment: "") }
+        static var average6mDesc: String { ls("cashFlowPlan.average6mDesc", comment: "") }
+        static var average12mDesc: String { ls("cashFlowPlan.average12mDesc", comment: "") }
+        static var lastMonthDesc: String { ls("cashFlowPlan.lastMonthDesc", comment: "") }
+        static var manualDesc: String { ls("cashFlowPlan.manualDesc", comment: "") }
+        static var scheduledDesc: String { ls("cashFlowPlan.scheduledDesc", comment: "") }
+        static var trendDesc: String { ls("cashFlowPlan.trendDesc", comment: "") }
+        static var customDesc: String { ls("cashFlowPlan.customDesc", comment: "") }
+        static var trendLabel: String { ls("cashFlowPlan.trendLabel", comment: "") }
+        static var rangeLabel: String { ls("cashFlowPlan.rangeLabel", comment: "") }
+
+        // Popover
+        static var plan: String { ls("cashFlowPlan.plan", comment: "") }
+        static var real: String { ls("cashFlowPlan.real", comment: "") }
+        static var realIncome: String { ls("cashFlowPlan.realIncome", comment: "") }
+        static var difference: String { ls("cashFlowPlan.difference", comment: "") }
+        static var adjustAmount: String { ls("cashFlowPlan.adjustAmount", comment: "") }
+
+        // Others
+        static var othersTitle: String { ls("cashFlowPlan.othersTitle", comment: "") }
+        static var othersDesc: String { ls("cashFlowPlan.othersDesc", comment: "") }
+        static var othersHint: String { ls("cashFlowPlan.othersHint", comment: "") }
+        static var othersIncomeTitle: String { ls("cashFlowPlan.othersIncomeTitle", comment: "") }
+        static var othersIncomeDesc: String { ls("cashFlowPlan.othersIncomeDesc", comment: "") }
+        static var othersIncomeHint: String { ls("cashFlowPlan.othersIncomeHint", comment: "") }
+        static var promoteCategory: String { ls("cashFlowPlan.promoteCategory", comment: "") }
+
+        // Actions
+        static var resetPlan: String { ls("cashFlowPlan.resetPlan", comment: "") }
+        static var resetConfirmation: String { ls("cashFlowPlan.resetConfirmation", comment: "") }
+        static var deleteLineConfirmation: String { ls("cashFlowPlan.deleteLineConfirmation", comment: "") }
+        static func suggestPayment(_ name: String) -> String {
+            String(format: ls("cashFlowPlan.suggestPayment", comment: ""), name)
+        }
+
+        // Charts
+        static var chartsTitle: String { ls("cashFlowPlan.chartsTitle", comment: "") }
+        static var accumulatedBalance: String { ls("cashFlowPlan.accumulatedBalance", comment: "") }
+        static var incomeVsExpense: String { ls("cashFlowPlan.incomeVsExpense", comment: "") }
+        static var composition: String { ls("cashFlowPlan.composition", comment: "") }
+        static var realVsPlan: String { ls("cashFlowPlan.realVsPlan", comment: "") }
+        static var trendByLine: String { ls("cashFlowPlan.trendByLine", comment: "") }
+
+        // Cell Detail (Inc 4)
+        static var cellDetailOf: String { ls("cashFlowPlan.cellDetailOf", comment: "") }
+        static func cellDetailRemaining(_ amount: String) -> String {
+            String(format: ls("cashFlowPlan.cellDetailRemaining", comment: ""), amount)
+        }
+        static var cellDetailRecentTransactions: String { ls("cashFlowPlan.cellDetailRecentTransactions", comment: "") }
+        static var cellDetailSpent: String { ls("cashFlowPlan.cellDetailSpent", comment: "") }
+        static var cellDetailEarned: String { ls("cashFlowPlan.cellDetailEarned", comment: "") }
+        static var cellDetailMore: String { ls("cashFlowPlan.cellDetailMore", comment: "") }
+        static var cellDetailLess: String { ls("cashFlowPlan.cellDetailLess", comment: "") }
+        static var cellDetailOverrideActive: String { ls("cashFlowPlan.cellDetailOverrideActive", comment: "") }
+        static var cellDetailNote: String { ls("cashFlowPlan.cellDetailNote", comment: "") }
+        static var cellDetailSaveAdjustment: String { ls("cashFlowPlan.cellDetailSaveAdjustment", comment: "") }
+        static var overrideScopeTitle: String { ls("cashFlowPlan.overrideScopeTitle", comment: "") }
+        static var overrideScopeMessage: String { ls("cashFlowPlan.overrideScopeMessage", comment: "") }
+        static var overrideScopeThisMonth: String { ls("cashFlowPlan.overrideScopeThisMonth", comment: "") }
+        static var overrideScopeThisAndFuture: String { ls("cashFlowPlan.overrideScopeThisAndFuture", comment: "") }
+        static var cellDetailDailyProgress: String { ls("cashFlowPlan.cellDetailDailyProgress", comment: "") }
+
+        // Config improvements (Inc 5)
+        static var contextHistory: String { ls("cashFlowPlan.contextHistory", comment: "") }
+        static func monthsWithActivity(_ count: Int) -> String {
+            String(format: ls("cashFlowPlan.monthsWithActivity", comment: ""), count)
+        }
+        static var addOverride: String { ls("cashFlowPlan.addOverride", comment: "") }
+        static var overrideMonth: String { ls("cashFlowPlan.overrideMonth", comment: "") }
+        static var overrideAmount: String { ls("cashFlowPlan.overrideAmount", comment: "") }
+        static var configLine: String { ls("cashFlowPlan.configLine", comment: "") }
+
+        // Add Line redesign (Inc 6)
+        static var addFromExpenses: String { ls("cashFlowPlan.addFromExpenses", comment: "") }
+        static var addFromExpensesDesc: String { ls("cashFlowPlan.addFromExpensesDesc", comment: "") }
+        static var addFromScheduled: String { ls("cashFlowPlan.addFromScheduled", comment: "") }
+        static var addFromScheduledDesc: String { ls("cashFlowPlan.addFromScheduledDesc", comment: "") }
+        static var addCustomLine: String { ls("cashFlowPlan.addCustomLine", comment: "") }
+        static var addCustomLineDesc: String { ls("cashFlowPlan.addCustomLineDesc", comment: "") }
+        static var monthlyAverage: String { ls("cashFlowPlan.monthlyAverage", comment: "") }
+        static var frequency: String { ls("cashFlowPlan.frequency", comment: "") }
+        static var noScheduledPayments: String { ls("cashFlowPlan.noScheduledPayments", comment: "") }
+        static var noCategories: String { ls("cashFlowPlan.noCategories", comment: "") }
+
+        // Charts redesign (Inc 7)
+        static var chartProjection: String { ls("cashFlowPlan.chartProjection", comment: "") }
+        static var chartDeviation: String { ls("cashFlowPlan.chartDeviation", comment: "") }
+        static var chartSavings: String { ls("cashFlowPlan.chartSavings", comment: "") }
+        static var chartAccuracy: String { ls("cashFlowPlan.chartAccuracy", comment: "") }
+        static var chartDeviationOver: String { ls("cashFlowPlan.chartDeviationOver", comment: "") }
+        static var chartDeviationUnder: String { ls("cashFlowPlan.chartDeviationUnder", comment: "") }
+        static var chartDangerZone: String { ls("cashFlowPlan.chartDangerZone", comment: "") }
+        static var chartRollingAvg: String { ls("cashFlowPlan.chartRollingAvg", comment: "") }
+        static var chartNeedMoreData: String { ls("cashFlowPlan.chartNeedMoreData", comment: "") }
+    }
+
     // MARK: - Groupings
 
     enum Groupings {
@@ -200,6 +393,7 @@ enum L10n {
         static var more: String { ls("tab.more", comment: "") }
         static var search: String { ls("tab.search", comment: "") }
         static var records: String { ls("tab.records", comment: "") }
+        static var reports: String { ls("tab.reports", comment: "") }
     }
 
     // MARK: - Period
@@ -264,8 +458,6 @@ enum L10n {
         }
         static var intelligentInsights: String { ls("insights.intelligentInsights", comment: "") }
         static var funFact: String { ls("insights.funFact", comment: "") }
-        static var firstTimeTitle: String { ls("insights.firstTimeTitle", comment: "") }
-        static var firstTimeBody: String { ls("insights.firstTimeBody", comment: "") }
         static var emptyTitle: String { ls("insights.emptyTitle", comment: "") }
         static var emptyBody: String { ls("insights.emptyBody", comment: "") }
         static var fewTransactions: String { ls("insights.fewTransactions", comment: "") }
@@ -337,6 +529,15 @@ enum L10n {
         // Settings labels
         static var toneLabel: String { ls("insights.toneLabel", comment: "") }
         static var focusLabel: String { ls("insights.focusLabel", comment: "") }
+
+        // AI teaser
+        static var aiTeaser: String { ls("insights.aiTeaser", comment: "") }
+        static var aiTeaserPlaceholder1: String { ls("insights.aiTeaserPlaceholder1", comment: "") }
+        static var aiTeaserPlaceholder2: String { ls("insights.aiTeaserPlaceholder2", comment: "") }
+
+        // AI on-demand
+        static var generateAI: String { ls("insights.generateAI", comment: "") }
+        static var generateAIHint: String { ls("insights.generateAIHint", comment: "") }
     }
 
     // MARK: - Statistics
@@ -398,6 +599,41 @@ enum L10n {
         }
         static var incomeAnalysis: String {
             ls("statistics.incomeAnalysis", comment: "")
+        }
+    }
+
+    // MARK: - Report
+
+    enum Report {
+        static var title: String { ls("report.title", comment: "") }
+
+        enum Tab {
+            static var comparative: String { ls("report.tab.comparative", comment: "") }
+            static var cashFlow: String { ls("report.tab.cashFlow", comment: "") }
+        }
+
+        static var income: String { ls("report.income", comment: "") }
+        static var expense: String { ls("report.expense", comment: "") }
+        static var netFlow: String { ls("report.netFlow", comment: "") }
+        static var noData: String { ls("report.noData", comment: "") }
+        static var noDataDescription: String { ls("report.noDataDescription", comment: "") }
+        static var uncategorized: String { ls("report.uncategorized", comment: "") }
+        static var noSubcategory: String { ls("report.noSubcategory", comment: "") }
+        static var noTag: String { ls("report.noTag", comment: "") }
+        static var noAccount: String { ls("report.noAccount", comment: "") }
+
+        enum Grouping {
+            static var type: String { ls("report.grouping.type", comment: "") }
+            static var category: String { ls("report.grouping.category", comment: "") }
+            static var subcategory: String { ls("report.grouping.subcategory", comment: "") }
+            static var tag: String { ls("report.grouping.tag", comment: "") }
+            static var account: String { ls("report.grouping.account", comment: "") }
+            static var currency: String { ls("report.grouping.currency", comment: "") }
+            static var nature: String { ls("report.grouping.nature", comment: "") }
+            static var drillDown: String { ls("report.grouping.drillDown", comment: "") }
+            static var hint: String { ls("report.grouping.hint", comment: "") }
+            static var active: String { ls("report.grouping.active", comment: "") }
+            static var available: String { ls("report.grouping.available", comment: "") }
         }
     }
 
@@ -544,6 +780,38 @@ enum L10n {
         static var close: String { ls("action.close", comment: "") }
         static var reorder: String { ls("action.reorder", comment: "") }
         static var clearAll: String { ls("action.clearAll", comment: "") }
+        static var calculate: String { ls("action.calculate", comment: "") }
+    }
+
+    // MARK: - Split Calculator
+
+    enum Split {
+        static var title: String { ls("split.title", comment: "") }
+        static var totalAmount: String { ls("split.totalAmount", comment: "") }
+        static var yourPortion: String { ls("split.yourPortion", comment: "") }
+        static var useAmount: String { ls("split.useAmount", comment: "") }
+        static var typePercentage: String { ls("split.typePercentage", comment: "") }
+        static var typeEqual: String { ls("split.typeEqual", comment: "") }
+        static var typeExact: String { ls("split.typeExact", comment: "") }
+        static var typeShares: String { ls("split.typeShares", comment: "") }
+        static var percentage: String { ls("split.percentage", comment: "") }
+        static var people: String { ls("split.people", comment: "") }
+        static var yourPart: String { ls("split.yourPart", comment: "") }
+        static var yourShares: String { ls("split.yourShares", comment: "") }
+        static var totalShares: String { ls("split.totalShares", comment: "") }
+        static var tipPercentage: String { ls("split.tipPercentage", comment: "") }
+        static var tipEqual: String { ls("split.tipEqual", comment: "") }
+        static var tipExact: String { ls("split.tipExact", comment: "") }
+        static var tipShares: String { ls("split.tipShares", comment: "") }
+        // Description templates for chip display
+        static func descPercentage(_ pct: String, _ total: String) -> String { String(format: ls("split.descPercentage %@ %@", comment: ""), pct, total) }
+        static func descEqual(_ people: Int) -> String { String(format: ls("split.descEqual %d", comment: ""), people) }
+        static func descShares(_ my: Int, _ total: Int) -> String { String(format: ls("split.descShares %d %d", comment: ""), my, total) }
+        static func descExact(_ amount: String) -> String { String(format: ls("split.descExact %@", comment: ""), amount) }
+        // Shares inline labels
+        static var sharesYouPay: String { ls("split.sharesYouPay", comment: "") }
+        static var sharesOf: String { ls("split.sharesOf", comment: "") }
+        static var sharesParts: String { ls("split.sharesParts", comment: "") }
     }
 
     // MARK: - AI Consent
@@ -620,6 +888,13 @@ enum L10n {
         static func accountRow(_ name: String, _ currency: String) -> String { String(format: ls("accessibility.accountRow %@ %@", comment: ""), name, currency) }
         static func budgetRow(_ name: String, _ percent: Int, _ spent: String, _ limit: String) -> String { String(format: ls("accessibility.budgetRow %@ %d %@ %@", comment: ""), name, percent, spent, limit) }
         static func searchResultRow(_ note: String, _ amount: String, _ category: String) -> String { String(format: ls("accessibility.searchResultRow %@ %@ %@", comment: ""), note, amount, category) }
+        static var regeneratingInsights: String { ls("accessibility.regeneratingInsights", comment: "") }
+        static var completeCalculation: String { ls("accessibility.completeCalculation", comment: "") }
+        static var noDraftsToApprove: String { ls("accessibility.noDraftsToApprove", comment: "") }
+        static var categoriesLocked: String { ls("accessibility.categoriesLocked", comment: "") }
+        static var systemMonochromeIcons: String { ls("accessibility.systemMonochromeIcons", comment: "") }
+        static var maxCurrenciesSelected: String { ls("accessibility.maxCurrenciesSelected", comment: "") }
+        static var invalidThreshold: String { ls("accessibility.invalidThreshold", comment: "") }
         static var filterScheduledAll: String { ls("accessibility.filterScheduledAll", comment: "") }
         static var filterScheduledRecurring: String { ls("accessibility.filterScheduledRecurring", comment: "") }
         static var filterScheduledSubscriptions: String { ls("accessibility.filterScheduledSubscriptions", comment: "") }
@@ -1501,6 +1776,8 @@ enum L10n {
         static var columnSubcategory: String { ls("export.column.subcategory", comment: "") }
         static var columnTags: String { ls("export.column.tags", comment: "") }
         static var columnNote: String { ls("export.column.note", comment: "") }
+        static var columnSplitTotal: String { ls("export.column.splitTotal", comment: "") }
+        static var columnSplitPortion: String { ls("export.column.splitPortion", comment: "") }
 
         // Column descriptions
         static var columnDateDesc: String { ls("export.column.date.description", comment: "") }
@@ -1511,6 +1788,8 @@ enum L10n {
         static var columnSubcategoryDesc: String { ls("export.column.subcategory.description", comment: "") }
         static var columnTagsDesc: String { ls("export.column.tags.description", comment: "") }
         static var columnNoteDesc: String { ls("export.column.note.description", comment: "") }
+        static var columnSplitTotalDesc: String { ls("export.column.splitTotal.description", comment: "") }
+        static var columnSplitPortionDesc: String { ls("export.column.splitPortion.description", comment: "") }
     }
 
     // MARK: - Favorites
@@ -1623,6 +1902,12 @@ enum L10n {
             static var candidatesHeader: String { ls("scheduled.associate.candidatesHeader", comment: "") }
         }
 
+        enum VariableAmount {
+            static var toggle: String { ls("scheduled.variableAmount.toggle", comment: "") }
+            static var helper: String { ls("scheduled.variableAmount.helper", comment: "") }
+            static var badge: String { ls("scheduled.variableAmount.badge", comment: "") }
+        }
+
         enum Editor {
             static var recurrence: String { ls("scheduled.editor.recurrence", comment: "") }
             static var dayOfMonth: String { ls("scheduled.editor.day.of.month", comment: "") }
@@ -1659,6 +1944,8 @@ enum L10n {
             static var nextThird: String { ls("scheduled.next.third", comment: "") }
             static var associateTitle: String { ls("scheduled.associate.title", comment: "") }
             static var unlink: String { ls("scheduled.unlink", comment: "") }
+            static var advance: String { ls("scheduled.advance", comment: "") }
+            static var viewRecord: String { ls("scheduled.view.record", comment: "") }
         }
     }
 
@@ -1692,6 +1979,7 @@ enum L10n {
             ls("settings.notifications", comment: "")
         }
         static var favorites: String { ls("settings.favorites", comment: "") }
+        static var budgets: String { ls("settings.budgets", comment: "") }
         static var budgetsFavorites: String {
             ls("settings.budgetsFavorites", comment: "")
         }
@@ -1757,6 +2045,9 @@ enum L10n {
         static var themeIndigo: String { ls("settings.theme.indigo", comment: "") }
         static var themeRosa: String { ls("settings.theme.rosa", comment: "") }
         static var themeTeal: String { ls("settings.theme.teal", comment: "") }
+        static var themeMinimalist: String { ls("settings.theme.minimalist", comment: "") }
+        static var themeTranslucent: String { ls("settings.theme.translucent", comment: "") }
+        static var themeLiquidGlass: String { ls("settings.theme.liquidGlass", comment: "") }
         static var defaultCurrency: String {
             ls("settings.defaultCurrency", comment: "")
         }
@@ -1828,6 +2119,9 @@ enum L10n {
         }
         static var colorfulIconsDescription: String {
             ls("settings.colorfulIconsDescription", comment: "")
+        }
+        static var colorfulIconsDisabledByTheme: String {
+            ls("settings.colorfulIconsDisabledByTheme", comment: "")
         }
         static var firstWeekday: String {
             ls("settings.firstWeekday", comment: "")
@@ -2576,6 +2870,8 @@ enum L10n {
         static var privacyNoTracking: String { ls("onboarding.privacyNoTracking", comment: "") }
         static var privacyIcloud: String { ls("onboarding.privacyIcloud", comment: "") }
         static var privacyNoSharing: String { ls("onboarding.privacyNoSharing", comment: "") }
+        static var categoriesDefault: String { ls("onboarding.categoriesDefault", comment: "") }
+        static var categoriesCustom: String { ls("onboarding.categoriesCustom", comment: "") }
         static var privacyTutorialsHint: String { ls("onboarding.privacyTutorialsHint", comment: "") }
         static var tutorialsTitle: String { ls("onboarding.tutorialsTitle", comment: "") }
         static var tutorialsSubtitle: String { ls("onboarding.tutorialsSubtitle", comment: "") }
@@ -2605,6 +2901,19 @@ enum L10n {
         static var accountBalanceGuideSavings: String { ls("onboarding.accountBalanceGuideSavings", comment: "") }
         static var accountBalanceGuideClosing: String { ls("onboarding.accountBalanceGuideClosing", comment: "") }
         static var accountBalanceHintCreditCard: String { ls("onboarding.accountBalanceHintCreditCard", comment: "") }
+        // Balance Calculator Sheet — instruction + mode toggle
+        static var calcInstruction: String { ls("onboarding.calc.instruction", comment: "") }
+        static var calcDirectSpending: String { ls("onboarding.calc.directSpending", comment: "") }
+        static var calcDirectSpendingHint: String { ls("onboarding.calc.directSpendingHint", comment: "") }
+        static var calcSwitchToDirect: String { ls("onboarding.calc.switchToDirect", comment: "") }
+        static var calcSwitchToDetailed: String { ls("onboarding.calc.switchToDetailed", comment: "") }
+        // Balance Calculator Sheet — field hints
+        static var calcBankAccountsHint: String { ls("onboarding.calc.bankAccountsHint", comment: "") }
+        static var calcSavingsHint: String { ls("onboarding.calc.savingsHint", comment: "") }
+        static var calcCashHint: String { ls("onboarding.calc.cashHint", comment: "") }
+        static var calcCreditCardSpendingHint: String { ls("onboarding.calc.creditCardSpendingHint", comment: "") }
+        static var calcCreditLineHint: String { ls("onboarding.calc.creditLineHint", comment: "") }
+        static var calcAvailableCreditHint: String { ls("onboarding.calc.availableCreditHint", comment: "") }
         // Balance Calculator Sheet
         static var calcTitle: String { ls("onboarding.calc.title", comment: "") }
         static var calcIntro: String { ls("onboarding.calc.intro", comment: "") }
@@ -2634,8 +2943,53 @@ enum L10n {
         static var calcCashExplanation: String { ls("onboarding.calc.cashExplanation", comment: "") }
         static var calcCheckingExplanation: String { ls("onboarding.calc.checkingExplanation", comment: "") }
         static var calcSavingsExplanation: String { ls("onboarding.calc.savingsExplanation", comment: "") }
+        static var calcBalanceLabelChecking: String { ls("onboarding.calc.balanceLabelChecking", comment: "") }
+        static var calcBalanceLabelSavings: String { ls("onboarding.calc.balanceLabelSavings", comment: "") }
+        static var calcBalanceLabelCash: String { ls("onboarding.calc.balanceLabelCash", comment: "") }
         static var accountImportTip: String { ls("onboarding.accountImportTip", comment: "") }
         static var accountMoreTip: String { ls("onboarding.accountMoreTip", comment: "") }
+
+        // Purpose step (binary: solo gastos vs control)
+        static var purposeTitle: String { ls("onboarding.purpose.title", comment: "") }
+        static var purposeExpenses: String { ls("onboarding.purpose.expenses", comment: "") }
+        static var purposeExpensesDesc: String { ls("onboarding.purpose.expensesDesc", comment: "") }
+        static var purposeControl: String { ls("onboarding.purpose.control", comment: "") }
+        static var purposeControlDesc: String { ls("onboarding.purpose.controlDesc", comment: "") }
+        // Accounts step (binary: una cuenta vs varias)
+        static var accountsTitle: String { ls("onboarding.accounts.title", comment: "") }
+        static var accountsSingle: String { ls("onboarding.accounts.single", comment: "") }
+        static var accountsSingleDesc: String { ls("onboarding.accounts.singleDesc", comment: "") }
+        static var accountsMultiple: String { ls("onboarding.accounts.multiple", comment: "") }
+        static var accountsMultipleDesc: String { ls("onboarding.accounts.multipleDesc", comment: "") }
+        // Account type step (fullControl only)
+        static var accountTypeTitle: String { ls("onboarding.accountType.title", comment: "") }
+        static var accountTypeSubtitle: String { ls("onboarding.accountType.subtitle", comment: "") }
+        static var accountTypeCheckingHint: String { ls("onboarding.accountType.checkingHint", comment: "") }
+        static var accountTypeSavingsHint: String { ls("onboarding.accountType.savingsHint", comment: "") }
+        static var accountTypeCreditHint: String { ls("onboarding.accountType.creditHint", comment: "") }
+        static var accountTypeCashHint: String { ls("onboarding.accountType.cashHint", comment: "") }
+        // Name hint
+        static var nameHint: String { ls("onboarding.nameHint", comment: "") }
+        // Categories subcategory view
+        static var categoriesViewSubs: String { ls("onboarding.categories.viewSubs", comment: "") }
+        // (v1 goal/style/accountGuided keys removed — unused in v2)
+        // Currency + Name step (adaptive by account organization)
+        static var currencyNameTitleSingle: String { ls("onboarding.currencyName.titleSingle", comment: "") }
+        static var currencyNameSubtitleSingle: String { ls("onboarding.currencyName.subtitleSingle", comment: "") }
+        static var currencyNameTitleSeparate: String { ls("onboarding.currencyName.titleSeparate", comment: "") }
+        static var currencyNameSubtitleSeparate: String { ls("onboarding.currencyName.subtitleSeparate", comment: "") }
+        // Balance step
+        static var balanceTitle: String { ls("onboarding.balance.title", comment: "") }
+        static var balanceSubtitle: String { ls("onboarding.balance.subtitle", comment: "") }
+        // Confirmation step
+        static var confirmTitle: String { ls("onboarding.confirm.title", comment: "") }
+        static var confirmAccountLabel: String { ls("onboarding.confirm.accountLabel", comment: "") }
+        static var confirmCurrencyLabel: String { ls("onboarding.confirm.currencyLabel", comment: "") }
+        static var confirmBalanceLabel: String { ls("onboarding.confirm.balanceLabel", comment: "") }
+        static var confirmModeLabel: String { ls("onboarding.confirm.modeLabel", comment: "") }
+        static var confirmMotivationExpenses: String { ls("onboarding.confirm.motivationExpenses", comment: "") }
+        static var confirmMotivationDayToDay: String { ls("onboarding.confirm.motivationDayToDay", comment: "") }
+        static var confirmMotivationFullControl: String { ls("onboarding.confirm.motivationFullControl", comment: "") }
 
         // Quick Budget step
         static var budgetTitle: String { ls("onboarding.budgetTitle", comment: "") }
@@ -3193,6 +3547,7 @@ enum L10n {
         static var start: String { ls("tutorials.start", comment: "") }
         static var understood: String { ls("tutorials.understood", comment: "") }
         static var nextTutorial: String { ls("tutorials.nextTutorial", comment: "") }
+        static func stepLabel(_ number: Int) -> String { String(format: ls("tutorials.stepLabel %d", comment: ""), number) }
 
         // Categories
         static var categoryGettingStarted: String { ls("tutorials.category.gettingStarted", comment: "") }
@@ -3206,11 +3561,8 @@ enum L10n {
         static var createAccountIntroTitle: String { ls("tutorials.createAccount.intro.title", comment: "") }
         static var createAccountIntroDesc: String { ls("tutorials.createAccount.intro.desc", comment: "") }
         static var createAccountStep0Title: String { ls("tutorials.createAccount.step0.title", comment: "") }
-        static var createAccountStep0Desc: String { ls("tutorials.createAccount.step0.desc", comment: "") }
         static var createAccountStep1Title: String { ls("tutorials.createAccount.step1.title", comment: "") }
-        static var createAccountStep1Desc: String { ls("tutorials.createAccount.step1.desc", comment: "") }
         static var createAccountStep2Title: String { ls("tutorials.createAccount.step2.title", comment: "") }
-        static var createAccountStep2Desc: String { ls("tutorials.createAccount.step2.desc", comment: "") }
         static var createAccountCompletionTitle: String { ls("tutorials.createAccount.completion.title", comment: "") }
         static var createAccountCompletionDesc: String { ls("tutorials.createAccount.completion.desc", comment: "") }
 
@@ -3219,13 +3571,9 @@ enum L10n {
         static var createCategoriesIntroTitle: String { ls("tutorials.createCategories.intro.title", comment: "") }
         static var createCategoriesIntroDesc: String { ls("tutorials.createCategories.intro.desc", comment: "") }
         static var createCategoriesStep0Title: String { ls("tutorials.createCategories.step0.title", comment: "") }
-        static var createCategoriesStep0Desc: String { ls("tutorials.createCategories.step0.desc", comment: "") }
         static var createCategoriesStep1Title: String { ls("tutorials.createCategories.step1.title", comment: "") }
-        static var createCategoriesStep1Desc: String { ls("tutorials.createCategories.step1.desc", comment: "") }
         static var createCategoriesStep2Title: String { ls("tutorials.createCategories.step2.title", comment: "") }
-        static var createCategoriesStep2Desc: String { ls("tutorials.createCategories.step2.desc", comment: "") }
         static var createCategoriesStep3Title: String { ls("tutorials.createCategories.step3.title", comment: "") }
-        static var createCategoriesStep3Desc: String { ls("tutorials.createCategories.step3.desc", comment: "") }
         static var createCategoriesCompletionTitle: String { ls("tutorials.createCategories.completion.title", comment: "") }
         static var createCategoriesCompletionDesc: String { ls("tutorials.createCategories.completion.desc", comment: "") }
 
@@ -3234,9 +3582,7 @@ enum L10n {
         static var createTagsIntroTitle: String { ls("tutorials.createTags.intro.title", comment: "") }
         static var createTagsIntroDesc: String { ls("tutorials.createTags.intro.desc", comment: "") }
         static var createTagsStep0Title: String { ls("tutorials.createTags.step0.title", comment: "") }
-        static var createTagsStep0Desc: String { ls("tutorials.createTags.step0.desc", comment: "") }
         static var createTagsStep1Title: String { ls("tutorials.createTags.step1.title", comment: "") }
-        static var createTagsStep1Desc: String { ls("tutorials.createTags.step1.desc", comment: "") }
         static var createTagsCompletionTitle: String { ls("tutorials.createTags.completion.title", comment: "") }
         static var createTagsCompletionDesc: String { ls("tutorials.createTags.completion.desc", comment: "") }
 
@@ -3245,13 +3591,9 @@ enum L10n {
         static var createRecordIntroTitle: String { ls("tutorials.createRecord.intro.title", comment: "") }
         static var createRecordIntroDesc: String { ls("tutorials.createRecord.intro.desc", comment: "") }
         static var createRecordStep0Title: String { ls("tutorials.createRecord.step0.title", comment: "") }
-        static var createRecordStep0Desc: String { ls("tutorials.createRecord.step0.desc", comment: "") }
         static var createRecordStep1Title: String { ls("tutorials.createRecord.step1.title", comment: "") }
-        static var createRecordStep1Desc: String { ls("tutorials.createRecord.step1.desc", comment: "") }
         static var createRecordStep2Title: String { ls("tutorials.createRecord.step2.title", comment: "") }
-        static var createRecordStep2Desc: String { ls("tutorials.createRecord.step2.desc", comment: "") }
         static var createRecordStep3Title: String { ls("tutorials.createRecord.step3.title", comment: "") }
-        static var createRecordStep3Desc: String { ls("tutorials.createRecord.step3.desc", comment: "") }
         static var createRecordCompletionTitle: String { ls("tutorials.createRecord.completion.title", comment: "") }
         static var createRecordCompletionDesc: String { ls("tutorials.createRecord.completion.desc", comment: "") }
 
@@ -3260,9 +3602,7 @@ enum L10n {
         static var importDataIntroTitle: String { ls("tutorials.importData.intro.title", comment: "") }
         static var importDataIntroDesc: String { ls("tutorials.importData.intro.desc", comment: "") }
         static var importDataStep0Title: String { ls("tutorials.importData.step0.title", comment: "") }
-        static var importDataStep0Desc: String { ls("tutorials.importData.step0.desc", comment: "") }
         static var importDataStep1Title: String { ls("tutorials.importData.step1.title", comment: "") }
-        static var importDataStep1Desc: String { ls("tutorials.importData.step1.desc", comment: "") }
         static var importDataCompletionTitle: String { ls("tutorials.importData.completion.title", comment: "") }
         static var importDataCompletionDesc: String { ls("tutorials.importData.completion.desc", comment: "") }
 
@@ -3271,13 +3611,9 @@ enum L10n {
         static var createBudgetsIntroTitle: String { ls("tutorials.createBudgets.intro.title", comment: "") }
         static var createBudgetsIntroDesc: String { ls("tutorials.createBudgets.intro.desc", comment: "") }
         static var createBudgetsStep0Title: String { ls("tutorials.createBudgets.step0.title", comment: "") }
-        static var createBudgetsStep0Desc: String { ls("tutorials.createBudgets.step0.desc", comment: "") }
         static var createBudgetsStep1Title: String { ls("tutorials.createBudgets.step1.title", comment: "") }
-        static var createBudgetsStep1Desc: String { ls("tutorials.createBudgets.step1.desc", comment: "") }
         static var createBudgetsStep2Title: String { ls("tutorials.createBudgets.step2.title", comment: "") }
-        static var createBudgetsStep2Desc: String { ls("tutorials.createBudgets.step2.desc", comment: "") }
         static var createBudgetsStep3Title: String { ls("tutorials.createBudgets.step3.title", comment: "") }
-        static var createBudgetsStep3Desc: String { ls("tutorials.createBudgets.step3.desc", comment: "") }
         static var createBudgetsCompletionTitle: String { ls("tutorials.createBudgets.completion.title", comment: "") }
         static var createBudgetsCompletionDesc: String { ls("tutorials.createBudgets.completion.desc", comment: "") }
 
@@ -3286,15 +3622,10 @@ enum L10n {
         static var createScheduledPaymentsIntroTitle: String { ls("tutorials.createScheduledPayments.intro.title", comment: "") }
         static var createScheduledPaymentsIntroDesc: String { ls("tutorials.createScheduledPayments.intro.desc", comment: "") }
         static var createScheduledPaymentsStep0Title: String { ls("tutorials.createScheduledPayments.step0.title", comment: "") }
-        static var createScheduledPaymentsStep0Desc: String { ls("tutorials.createScheduledPayments.step0.desc", comment: "") }
         static var createScheduledPaymentsStep1Title: String { ls("tutorials.createScheduledPayments.step1.title", comment: "") }
-        static var createScheduledPaymentsStep1Desc: String { ls("tutorials.createScheduledPayments.step1.desc", comment: "") }
         static var createScheduledPaymentsStep2Title: String { ls("tutorials.createScheduledPayments.step2.title", comment: "") }
-        static var createScheduledPaymentsStep2Desc: String { ls("tutorials.createScheduledPayments.step2.desc", comment: "") }
         static var createScheduledPaymentsStep3Title: String { ls("tutorials.createScheduledPayments.step3.title", comment: "") }
-        static var createScheduledPaymentsStep3Desc: String { ls("tutorials.createScheduledPayments.step3.desc", comment: "") }
         static var createScheduledPaymentsStep4Title: String { ls("tutorials.createScheduledPayments.step4.title", comment: "") }
-        static var createScheduledPaymentsStep4Desc: String { ls("tutorials.createScheduledPayments.step4.desc", comment: "") }
         static var createScheduledPaymentsCompletionTitle: String { ls("tutorials.createScheduledPayments.completion.title", comment: "") }
         static var createScheduledPaymentsCompletionDesc: String { ls("tutorials.createScheduledPayments.completion.desc", comment: "") }
 
@@ -3303,9 +3634,7 @@ enum L10n {
         static var createFavoritesIntroTitle: String { ls("tutorials.createFavorites.intro.title", comment: "") }
         static var createFavoritesIntroDesc: String { ls("tutorials.createFavorites.intro.desc", comment: "") }
         static var createFavoritesStep0Title: String { ls("tutorials.createFavorites.step0.title", comment: "") }
-        static var createFavoritesStep0Desc: String { ls("tutorials.createFavorites.step0.desc", comment: "") }
         static var createFavoritesStep1Title: String { ls("tutorials.createFavorites.step1.title", comment: "") }
-        static var createFavoritesStep1Desc: String { ls("tutorials.createFavorites.step1.desc", comment: "") }
         static var createFavoritesCompletionTitle: String { ls("tutorials.createFavorites.completion.title", comment: "") }
         static var createFavoritesCompletionDesc: String { ls("tutorials.createFavorites.completion.desc", comment: "") }
 
@@ -3314,11 +3643,8 @@ enum L10n {
         static var editPanelIntroTitle: String { ls("tutorials.editPanel.intro.title", comment: "") }
         static var editPanelIntroDesc: String { ls("tutorials.editPanel.intro.desc", comment: "") }
         static var editPanelStep0Title: String { ls("tutorials.editPanel.step0.title", comment: "") }
-        static var editPanelStep0Desc: String { ls("tutorials.editPanel.step0.desc", comment: "") }
         static var editPanelStep1Title: String { ls("tutorials.editPanel.step1.title", comment: "") }
-        static var editPanelStep1Desc: String { ls("tutorials.editPanel.step1.desc", comment: "") }
         static var editPanelStep2Title: String { ls("tutorials.editPanel.step2.title", comment: "") }
-        static var editPanelStep2Desc: String { ls("tutorials.editPanel.step2.desc", comment: "") }
         static var editPanelCompletionTitle: String { ls("tutorials.editPanel.completion.title", comment: "") }
         static var editPanelCompletionDesc: String { ls("tutorials.editPanel.completion.desc", comment: "") }
 
@@ -3327,15 +3653,10 @@ enum L10n {
         static var panelFilteringIntroTitle: String { ls("tutorials.panelFiltering.intro.title", comment: "") }
         static var panelFilteringIntroDesc: String { ls("tutorials.panelFiltering.intro.desc", comment: "") }
         static var panelFilteringStep0Title: String { ls("tutorials.panelFiltering.step0.title", comment: "") }
-        static var panelFilteringStep0Desc: String { ls("tutorials.panelFiltering.step0.desc", comment: "") }
         static var panelFilteringStep1Title: String { ls("tutorials.panelFiltering.step1.title", comment: "") }
-        static var panelFilteringStep1Desc: String { ls("tutorials.panelFiltering.step1.desc", comment: "") }
         static var panelFilteringStep2Title: String { ls("tutorials.panelFiltering.step2.title", comment: "") }
-        static var panelFilteringStep2Desc: String { ls("tutorials.panelFiltering.step2.desc", comment: "") }
         static var panelFilteringStep3Title: String { ls("tutorials.panelFiltering.step3.title", comment: "") }
-        static var panelFilteringStep3Desc: String { ls("tutorials.panelFiltering.step3.desc", comment: "") }
         static var panelFilteringStep4Title: String { ls("tutorials.panelFiltering.step4.title", comment: "") }
-        static var panelFilteringStep4Desc: String { ls("tutorials.panelFiltering.step4.desc", comment: "") }
         static var panelFilteringCompletionTitle: String { ls("tutorials.panelFiltering.completion.title", comment: "") }
         static var panelFilteringCompletionDesc: String { ls("tutorials.panelFiltering.completion.desc", comment: "") }
 
@@ -3344,13 +3665,9 @@ enum L10n {
         static var inboxApprovalIntroTitle: String { ls("tutorials.inboxApproval.intro.title", comment: "") }
         static var inboxApprovalIntroDesc: String { ls("tutorials.inboxApproval.intro.desc", comment: "") }
         static var inboxApprovalStep0Title: String { ls("tutorials.inboxApproval.step0.title", comment: "") }
-        static var inboxApprovalStep0Desc: String { ls("tutorials.inboxApproval.step0.desc", comment: "") }
         static var inboxApprovalStep1Title: String { ls("tutorials.inboxApproval.step1.title", comment: "") }
-        static var inboxApprovalStep1Desc: String { ls("tutorials.inboxApproval.step1.desc", comment: "") }
         static var inboxApprovalStep2Title: String { ls("tutorials.inboxApproval.step2.title", comment: "") }
-        static var inboxApprovalStep2Desc: String { ls("tutorials.inboxApproval.step2.desc", comment: "") }
         static var inboxApprovalStep3Title: String { ls("tutorials.inboxApproval.step3.title", comment: "") }
-        static var inboxApprovalStep3Desc: String { ls("tutorials.inboxApproval.step3.desc", comment: "") }
         static var inboxApprovalCompletionTitle: String { ls("tutorials.inboxApproval.completion.title", comment: "") }
         static var inboxApprovalCompletionDesc: String { ls("tutorials.inboxApproval.completion.desc", comment: "") }
 
@@ -3359,12 +3676,51 @@ enum L10n {
         static var applePayIntroTitle: String { ls("tutorials.applePay.intro.title", comment: "") }
         static var applePayIntroDesc: String { ls("tutorials.applePay.intro.desc", comment: "") }
         static var applePayStep0Title: String { ls("tutorials.applePay.step0.title", comment: "") }
-        static var applePayStep0Desc: String { ls("tutorials.applePay.step0.desc", comment: "") }
         static var applePayStep1Title: String { ls("tutorials.applePay.step1.title", comment: "") }
-        static var applePayStep1Desc: String { ls("tutorials.applePay.step1.desc", comment: "") }
         static var applePayStep2Title: String { ls("tutorials.applePay.step2.title", comment: "") }
-        static var applePayStep2Desc: String { ls("tutorials.applePay.step2.desc", comment: "") }
         static var applePayStep3Title: String { ls("tutorials.applePay.step3.title", comment: "") }
+        // Step Descriptions
+        static var createAccountStep0Desc: String { ls("tutorials.createAccount.step0.desc", comment: "") }
+        static var createAccountStep1Desc: String { ls("tutorials.createAccount.step1.desc", comment: "") }
+        static var createAccountStep2Desc: String { ls("tutorials.createAccount.step2.desc", comment: "") }
+        static var createCategoriesStep0Desc: String { ls("tutorials.createCategories.step0.desc", comment: "") }
+        static var createCategoriesStep1Desc: String { ls("tutorials.createCategories.step1.desc", comment: "") }
+        static var createCategoriesStep2Desc: String { ls("tutorials.createCategories.step2.desc", comment: "") }
+        static var createCategoriesStep3Desc: String { ls("tutorials.createCategories.step3.desc", comment: "") }
+        static var createTagsStep0Desc: String { ls("tutorials.createTags.step0.desc", comment: "") }
+        static var createTagsStep1Desc: String { ls("tutorials.createTags.step1.desc", comment: "") }
+        static var createRecordStep0Desc: String { ls("tutorials.createRecord.step0.desc", comment: "") }
+        static var createRecordStep1Desc: String { ls("tutorials.createRecord.step1.desc", comment: "") }
+        static var createRecordStep2Desc: String { ls("tutorials.createRecord.step2.desc", comment: "") }
+        static var createRecordStep3Desc: String { ls("tutorials.createRecord.step3.desc", comment: "") }
+        static var importDataStep0Desc: String { ls("tutorials.importData.step0.desc", comment: "") }
+        static var importDataStep1Desc: String { ls("tutorials.importData.step1.desc", comment: "") }
+        static var createBudgetsStep0Desc: String { ls("tutorials.createBudgets.step0.desc", comment: "") }
+        static var createBudgetsStep1Desc: String { ls("tutorials.createBudgets.step1.desc", comment: "") }
+        static var createBudgetsStep2Desc: String { ls("tutorials.createBudgets.step2.desc", comment: "") }
+        static var createBudgetsStep3Desc: String { ls("tutorials.createBudgets.step3.desc", comment: "") }
+        static var createScheduledPaymentsStep0Desc: String { ls("tutorials.createScheduledPayments.step0.desc", comment: "") }
+        static var createScheduledPaymentsStep1Desc: String { ls("tutorials.createScheduledPayments.step1.desc", comment: "") }
+        static var createScheduledPaymentsStep2Desc: String { ls("tutorials.createScheduledPayments.step2.desc", comment: "") }
+        static var createScheduledPaymentsStep3Desc: String { ls("tutorials.createScheduledPayments.step3.desc", comment: "") }
+        static var createScheduledPaymentsStep4Desc: String { ls("tutorials.createScheduledPayments.step4.desc", comment: "") }
+        static var createFavoritesStep0Desc: String { ls("tutorials.createFavorites.step0.desc", comment: "") }
+        static var createFavoritesStep1Desc: String { ls("tutorials.createFavorites.step1.desc", comment: "") }
+        static var editPanelStep0Desc: String { ls("tutorials.editPanel.step0.desc", comment: "") }
+        static var editPanelStep1Desc: String { ls("tutorials.editPanel.step1.desc", comment: "") }
+        static var editPanelStep2Desc: String { ls("tutorials.editPanel.step2.desc", comment: "") }
+        static var panelFilteringStep0Desc: String { ls("tutorials.panelFiltering.step0.desc", comment: "") }
+        static var panelFilteringStep1Desc: String { ls("tutorials.panelFiltering.step1.desc", comment: "") }
+        static var panelFilteringStep2Desc: String { ls("tutorials.panelFiltering.step2.desc", comment: "") }
+        static var panelFilteringStep3Desc: String { ls("tutorials.panelFiltering.step3.desc", comment: "") }
+        static var panelFilteringStep4Desc: String { ls("tutorials.panelFiltering.step4.desc", comment: "") }
+        static var inboxApprovalStep0Desc: String { ls("tutorials.inboxApproval.step0.desc", comment: "") }
+        static var inboxApprovalStep1Desc: String { ls("tutorials.inboxApproval.step1.desc", comment: "") }
+        static var inboxApprovalStep2Desc: String { ls("tutorials.inboxApproval.step2.desc", comment: "") }
+        static var inboxApprovalStep3Desc: String { ls("tutorials.inboxApproval.step3.desc", comment: "") }
+        static var applePayStep0Desc: String { ls("tutorials.applePay.step0.desc", comment: "") }
+        static var applePayStep1Desc: String { ls("tutorials.applePay.step1.desc", comment: "") }
+        static var applePayStep2Desc: String { ls("tutorials.applePay.step2.desc", comment: "") }
         static var applePayStep3Desc: String { ls("tutorials.applePay.step3.desc", comment: "") }
         static var applePayCompletionTitle: String { ls("tutorials.applePay.completion.title", comment: "") }
         static var applePayCompletionDesc: String { ls("tutorials.applePay.completion.desc", comment: "") }
@@ -3569,14 +3925,27 @@ enum L10n {
         static var v11ExcludeDescription: String { ls("whatsNew.v11.exclude.description", comment: "") }
 
         // v1.2 features
-        static var v12CoachMarksTitle: String { ls("whatsNew.v12.coachMarks.title", comment: "") }
-        static var v12CoachMarksDescription: String { ls("whatsNew.v12.coachMarks.description", comment: "") }
-        static var v12NotificationsTitle: String { ls("whatsNew.v12.notifications.title", comment: "") }
-        static var v12NotificationsDescription: String { ls("whatsNew.v12.notifications.description", comment: "") }
-        static var v12InsightsTitle: String { ls("whatsNew.v12.insights.title", comment: "") }
-        static var v12InsightsDescription: String { ls("whatsNew.v12.insights.description", comment: "") }
-        static var v12SharedBalancesTitle: String { ls("whatsNew.v12.sharedBalances.title", comment: "") }
-        static var v12SharedBalancesDescription: String { ls("whatsNew.v12.sharedBalances.description", comment: "") }
+        static var v12CashFlowTitle: String { ls("whatsNew.v12.cashFlow.title", comment: "") }
+        static var v12CashFlowDescription: String { ls("whatsNew.v12.cashFlow.description", comment: "") }
+        static var v12ComparativeTitle: String { ls("whatsNew.v12.comparative.title", comment: "") }
+        static var v12ComparativeDescription: String { ls("whatsNew.v12.comparative.description", comment: "") }
+        static var v12ThemesTitle: String { ls("whatsNew.v12.themes.title", comment: "") }
+        static var v12ThemesDescription: String { ls("whatsNew.v12.themes.description", comment: "") }
+        static var v12ScheduledTitle: String { ls("whatsNew.v12.scheduled.title", comment: "") }
+        static var v12ScheduledDescription: String { ls("whatsNew.v12.scheduled.description", comment: "") }
+        static var v12MoreForYouTitle: String { ls("whatsNew.v12.moreForYou.title", comment: "") }
+        static var v12MoreForYouDescription: String { ls("whatsNew.v12.moreForYou.description", comment: "") }
+    }
+
+    // MARK: - App Update
+
+    enum AppUpdate {
+        static var title: String { ls("appUpdate.title", comment: "") }
+        static func message(_ version: String) -> String {
+            String(format: ls("appUpdate.message", comment: ""), version)
+        }
+        static var updateButton: String { ls("appUpdate.updateButton", comment: "") }
+        static var dismissButton: String { ls("appUpdate.dismissButton", comment: "") }
     }
 
     // MARK: - Weekday
@@ -3616,6 +3985,11 @@ enum L10n {
         static var remoteWipeMessage: String { ls("icloud.remoteWipe.message", comment: "") }
         static var remoteWipeConfirm: String { ls("icloud.remoteWipe.confirm", comment: "") }
         static var remoteWipeCancel: String { ls("icloud.remoteWipe.cancel", comment: "") }
+        static var forceSyncButton: String { ls("icloud.forceSync.button", comment: "") }
+        static var forceSyncDescription: String { ls("icloud.forceSync.description", comment: "") }
+        static var mismatchTitle: String { ls("icloud.mismatch.title", comment: "") }
+        static var mismatchMessage: String { ls("icloud.mismatch.message", comment: "") }
+        static var mismatchAction: String { ls("icloud.mismatch.action", comment: "") }
     }
 
     // MARK: - Shortcut Notifications
@@ -3685,31 +4059,7 @@ enum L10n {
         static var skip: String { ls("tipkit.skip", comment: "") }
         static var next: String { ls("tipkit.next", comment: "") }
         static var done: String { ls("tipkit.done", comment: "") }
-        // Grupo A
-        static var accounts: String { ls("tipkit.accounts.title", comment: "") }
-        static var accountsMessage: String { ls("tipkit.accounts.message", comment: "") }
-        static var widgets: String { ls("tipkit.widgets.title", comment: "") }
-        static var widgetsMessage: String { ls("tipkit.widgets.message", comment: "") }
-        static var fab: String { ls("tipkit.fab.title", comment: "") }
-        static var fabFreeMessage: String { ls("tipkit.fab.free.message", comment: "") }
-        static var fabProMessage: String { ls("tipkit.fab.pro.message", comment: "") }
-        static var profile: String { ls("tipkit.profile.title", comment: "") }
-        static var profileMessage: String { ls("tipkit.profile.message", comment: "") }
-        // Grupo B
-        static var transactionTypes: String { ls("tipkit.transactionTypes.title", comment: "") }
-        static var transactionTypesMessage: String { ls("tipkit.transactionTypes.message", comment: "") }
-        static var favoritePayments: String { ls("tipkit.favoritePayments.title", comment: "") }
-        static var favoritePaymentsMessage: String { ls("tipkit.favoritePayments.message", comment: "") }
-        static var quickActions: String { ls("tipkit.quickActions.title", comment: "") }
-        static var quickActionsMessage: String { ls("tipkit.quickActions.message", comment: "") }
-        // Grupo A extra
-        static var widgetPreferences: String { ls("tipkit.widgetPreferences.title", comment: "") }
-        static var widgetPreferencesMessage: String { ls("tipkit.widgetPreferences.message", comment: "") }
-        // Grupo C
-        static var filterAccount: String { ls("tipkit.filterAccount.title", comment: "") }
-        static var filterAccountMessage: String { ls("tipkit.filterAccount.message", comment: "") }
-        static var interactiveWidgets: String { ls("tipkit.interactiveWidgets.title", comment: "") }
-        static var interactiveWidgetsMessage: String { ls("tipkit.interactiveWidgets.message", comment: "") }
+        // TipKit standalone tips
         static var comparison: String { ls("tipkit.comparison.title", comment: "") }
         static var comparisonMessage: String { ls("tipkit.comparison.message", comment: "") }
         // Grupo D: Settings
@@ -3725,8 +4075,140 @@ enum L10n {
         static var settingsPlannedMessage: String { ls("tipkit.settings.planned.message", comment: "") }
         static var settingsPersonalization: String { ls("tipkit.settings.personalization.title", comment: "") }
         static var settingsPersonalizationMessage: String { ls("tipkit.settings.personalization.message", comment: "") }
+        static var settingsAppIcon: String { ls("tipkit.settingsAppIcon.title", comment: "") }
+        static var settingsAppIconMessage: String { ls("tipkit.settingsAppIcon.message", comment: "") }
+        static var settingsTheme: String { ls("tipkit.settingsTheme.title", comment: "") }
+        static var settingsThemeMessage: String { ls("tipkit.settingsTheme.message", comment: "") }
         static var settingsTutorials: String { ls("tipkit.settings.tutorials.title", comment: "") }
         static var settingsTutorialsMessage: String { ls("tipkit.settings.tutorials.message", comment: "") }
+        // Cash Flow Setup Tour
+        static var cfSetupBanner: String { ls("tipkit.cfSetup.banner.title", comment: "") }
+        static var cfSetupBannerMessage: String { ls("tipkit.cfSetup.banner.message", comment: "") }
+        static var cfSetupLine: String { ls("tipkit.cfSetup.line.title", comment: "") }
+        static var cfSetupLineMessage: String { ls("tipkit.cfSetup.line.message", comment: "") }
+        static var cfSetupStarting: String { ls("tipkit.cfSetup.starting.title", comment: "") }
+        static var cfSetupStartingMessage: String { ls("tipkit.cfSetup.starting.message", comment: "") }
+        static var cfSetupCreate: String { ls("tipkit.cfSetup.create.title", comment: "") }
+        static var cfSetupCreateMessage: String { ls("tipkit.cfSetup.create.message", comment: "") }
+        // Cash Flow Table Tour
+        static var cfTableCell: String { ls("tipkit.cfTable.cell.title", comment: "") }
+        static var cfTableCellMessage: String { ls("tipkit.cfTable.cell.message", comment: "") }
+        static var cfTableAvailable: String { ls("tipkit.cfTable.available.title", comment: "") }
+        static var cfTableAvailableMessage: String { ls("tipkit.cfTable.available.message", comment: "") }
+        static var cfTableAdd: String { ls("tipkit.cfTable.add.title", comment: "") }
+        static var cfTableAddMessage: String { ls("tipkit.cfTable.add.message", comment: "") }
+
+        // Pro Tour (post-subscription)
+        static var proVoiceInputTitle: String { ls("tipkit.pro.voiceInput.title", comment: "") }
+        static var proVoiceInputMessage: String { ls("tipkit.pro.voiceInput.message", comment: "") }
+        static var proImageInputTitle: String { ls("tipkit.pro.imageInput.title", comment: "") }
+        static var proImageInputMessage: String { ls("tipkit.pro.imageInput.message", comment: "") }
+        static var proSmartInsightsTitle: String { ls("tipkit.pro.smartInsights.title", comment: "") }
+        static var proSmartInsightsMessage: String { ls("tipkit.pro.smartInsights.message", comment: "") }
+        static var proExportExtendedTitle: String { ls("tipkit.pro.exportExtended.title", comment: "") }
+        static var proExportExtendedMessage: String { ls("tipkit.pro.exportExtended.message", comment: "") }
+        static var proPremiumIconsTitle: String { ls("tipkit.pro.premiumIcons.title", comment: "") }
+        static var proPremiumIconsMessage: String { ls("tipkit.pro.premiumIcons.message", comment: "") }
+        static var proProThemesTitle: String { ls("tipkit.pro.proThemes.title", comment: "") }
+        static var proProThemesMessage: String { ls("tipkit.pro.proThemes.message", comment: "") }
+        static var proFabTitle: String { ls("tipkit.pro.fab.title", comment: "") }
+        static var proFabMessage: String { ls("tipkit.pro.fab.message", comment: "") }
+        static var proAiSummaryTitle: String { ls("tipkit.pro.aiSummary.title", comment: "") }
+        static var proAiSummaryMessage: String { ls("tipkit.pro.aiSummary.message", comment: "") }
+    }
+
+    // MARK: - Dev Seed (DEBUG only)
+
+    enum DevSeed {
+        // Accounts
+        static var accountMain: String { ls("devseed.accountMain", comment: "") }
+        static var accountSavings: String { ls("devseed.accountSavings", comment: "") }
+        // Tags
+        static var tagWork: String { ls("devseed.tagWork", comment: "") }
+        static var tagVacation: String { ls("devseed.tagVacation", comment: "") }
+        static var tagShared: String { ls("devseed.tagShared", comment: "") }
+        static var tagUrgent: String { ls("devseed.tagUrgent", comment: "") }
+        static var tagFixed: String { ls("devseed.tagFixed", comment: "") }
+        // Budgets
+        static var budgetEatingOut: String { ls("devseed.budgetEatingOut", comment: "") }
+        static var budgetMobility: String { ls("devseed.budgetMobility", comment: "") }
+        static var budgetFriendsOutings: String { ls("devseed.budgetFriendsOutings", comment: "") }
+        static var budgetPersonalCare: String { ls("devseed.budgetPersonalCare", comment: "") }
+        static var budgetHomeEssentials: String { ls("devseed.budgetHomeEssentials", comment: "") }
+        static var budgetPet: String { ls("devseed.budgetPet", comment: "") }
+        // Scheduled Payments
+        static var spGym: String { ls("devseed.spGym", comment: "") }
+        static var spRent: String { ls("devseed.spRent", comment: "") }
+        static var spPhone: String { ls("devseed.spPhone", comment: "") }
+        static var spInsurance: String { ls("devseed.spInsurance", comment: "") }
+        static var spInternet: String { ls("devseed.spInternet", comment: "") }
+        // Notes — Fixed monthly
+        static var noteSalary: String { ls("devseed.noteSalary", comment: "") }
+        static var noteGymMonthly: String { ls("devseed.noteGymMonthly", comment: "") }
+        static var noteRent: String { ls("devseed.noteRent", comment: "") }
+        static var notePhonePlan: String { ls("devseed.notePhonePlan", comment: "") }
+        static var noteElectricity: String { ls("devseed.noteElectricity", comment: "") }
+        static var noteWater: String { ls("devseed.noteWater", comment: "") }
+        static var noteElectricityWater: String { ls("devseed.noteElectricityWater", comment: "") }
+        static var noteInternetFiber: String { ls("devseed.noteInternetFiber", comment: "") }
+        static var noteInsuranceMonthly: String { ls("devseed.noteInsuranceMonthly", comment: "") }
+        // Notes — Supermarket
+        static var noteSupermarket1: String { ls("devseed.noteSupermarket1", comment: "") }
+        static var noteSupermarket2: String { ls("devseed.noteSupermarket2", comment: "") }
+        static var noteSupermarket3: String { ls("devseed.noteSupermarket3", comment: "") }
+        static var noteSupermarket4: String { ls("devseed.noteSupermarket4", comment: "") }
+        static var noteSupermarket5: String { ls("devseed.noteSupermarket5", comment: "") }
+        // Notes — Restaurant
+        static var noteLunch: String { ls("devseed.noteLunch", comment: "") }
+        static var noteDinner: String { ls("devseed.noteDinner", comment: "") }
+        static var noteBrunch: String { ls("devseed.noteBrunch", comment: "") }
+        static var noteMealWithFriends: String { ls("devseed.noteMealWithFriends", comment: "") }
+        // Notes — Delivery
+        static var noteDelivery1: String { ls("devseed.noteDelivery1", comment: "") }
+        static var noteDelivery2: String { ls("devseed.noteDelivery2", comment: "") }
+        static var noteDeliveryFood: String { ls("devseed.noteDeliveryFood", comment: "") }
+        // Notes — Transport
+        static var noteTaxi: String { ls("devseed.noteTaxi", comment: "") }
+        static var noteBus: String { ls("devseed.noteBus", comment: "") }
+        // Notes — Travel
+        static var noteHotel: String { ls("devseed.noteHotel", comment: "") }
+        static var noteFlight: String { ls("devseed.noteFlight", comment: "") }
+        static var noteTour: String { ls("devseed.noteTour", comment: "") }
+        static var noteExcursion: String { ls("devseed.noteExcursion", comment: "") }
+        // Notes — Fuel
+        static var noteGasStation: String { ls("devseed.noteGasStation", comment: "") }
+        static var noteGasoline: String { ls("devseed.noteGasoline", comment: "") }
+        static var noteFuel: String { ls("devseed.noteFuel", comment: "") }
+        // Notes — Maintenance
+        static var noteRepair: String { ls("devseed.noteRepair", comment: "") }
+        static var noteCleaning: String { ls("devseed.noteCleaning", comment: "") }
+        static var notePlumber: String { ls("devseed.notePlumber", comment: "") }
+        static var noteElectrician: String { ls("devseed.noteElectrician", comment: "") }
+        // Notes — Freelance
+        static var noteFreelance: String { ls("devseed.noteFreelance", comment: "") }
+        static var noteConsulting: String { ls("devseed.noteConsulting", comment: "") }
+        static var noteSideProject: String { ls("devseed.noteSideProject", comment: "") }
+        // Notes — Transfers
+        static func noteTransferTo(_ account: String) -> String {
+            String(format: ls("devseed.noteTransferTo", comment: ""), account)
+        }
+        static func noteTransferFrom(_ account: String) -> String {
+            String(format: ls("devseed.noteTransferFrom", comment: ""), account)
+        }
+        // Step labels
+        static var stepCategories: String { ls("devseed.stepCategories", comment: "") }
+        static var stepAccounts: String { ls("devseed.stepAccounts", comment: "") }
+        static var stepTags: String { ls("devseed.stepTags", comment: "") }
+        static var stepExchangeRates: String { ls("devseed.stepExchangeRates", comment: "") }
+        static var stepBudgets: String { ls("devseed.stepBudgets", comment: "") }
+        static var stepScheduledPayments: String { ls("devseed.stepScheduledPayments", comment: "") }
+        static var stepSavingBase: String { ls("devseed.stepSavingBase", comment: "") }
+        static var stepTransactions: String { ls("devseed.stepTransactions", comment: "") }
+        static var stepInitialBalances: String { ls("devseed.stepInitialBalances", comment: "") }
+        static var stepSaving: String { ls("devseed.stepSaving", comment: "") }
+        static var stepDone: String { ls("devseed.stepDone", comment: "") }
+        static var stepDeleting: String { ls("devseed.stepDeleting", comment: "") }
+        static var stepReloading: String { ls("devseed.stepReloading", comment: "") }
     }
 
 }

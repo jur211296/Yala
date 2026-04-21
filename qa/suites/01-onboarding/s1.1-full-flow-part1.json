@@ -1,0 +1,20 @@
+[
+  { "command": "wait", "positionals": ["2000"], "flags": {} },
+  { "command": "find", "positionals": ["onboarding_name_field", "click"], "flags": {} },
+  { "command": "type", "positionals": ["María"], "flags": {} },
+  { "command": "press", "positionals": ["200", "150"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["2500"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s1.1-currency.png"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["2500"], "flags": {} },
+  { "command": "is", "positionals": ["visible", "label=\"Día a día\""], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s1.1-mode.png"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["2500"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s1.1-categories.png"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["2500"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s1.1-account-setup.png"], "flags": {} }
+]

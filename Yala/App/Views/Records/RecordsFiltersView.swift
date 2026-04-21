@@ -8,7 +8,7 @@
 import SwiftData
 import SwiftUI
 
-struct RecordsFiltersView: View {
+struct RecordsFiltersView<VM: Filterable & Observable>: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
@@ -19,7 +19,7 @@ struct RecordsFiltersView: View {
 
     // MARK: - ViewModel Binding
 
-    @Bindable var recordsViewModel: RecordsViewModel
+    @Bindable var recordsViewModel: VM
 
     // MARK: - Sheet Presentation State
 

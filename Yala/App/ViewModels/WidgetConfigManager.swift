@@ -15,20 +15,31 @@ final class WidgetConfigManager {
 
     // MARK: - State
 
+    /// When true, layout row recomputation is deferred (e.g., while preferences sheet is open)
+    var deferLayoutUpdates: Bool = false {
+        didSet {
+            if !deferLayoutUpdates && oldValue {
+                layoutRows = computeLayoutRows()
+            }
+        }
+    }
+
     /// All widget configurations
     var configs: [WidgetConfig] = [] {
         didSet {
-            layoutRows = computeLayoutRows()
+            if !deferLayoutUpdates {
+                layoutRows = computeLayoutRows()
+            }
         }
     }
 
     /// Computed layout rows for the view
-    var layoutRows: [WidgetRow] = []
+    private(set) var layoutRows: [WidgetRow] = []
 
     /// Number of columns (1 = compact/iPhone, 2 = regular/iPad)
     var columns: Int = 1 {
         didSet {
-            if oldValue != columns {
+            if oldValue != columns && !deferLayoutUpdates {
                 layoutRows = computeLayoutRows()
             }
         }
@@ -116,11 +127,6 @@ final class WidgetConfigManager {
         return configs.filter { $0.isVisible }
     }
 
-    /// Returns the set of active widget types (for lazy evaluation)
-    func activeTypes() -> Set<WidgetType> {
-        return Set(activeWidgets().map { $0.type })
-    }
-
     // MARK: - Mutations
 
     /// Toggles visibility for a widget
@@ -184,14 +190,14 @@ final class WidgetConfigManager {
                 if needsFullWidth {
                     // Flush any pending half-width first
                     if let pending = pendingHalf {
-                        rows.append(WidgetRow(id: UUID(), type: .halfWidthPair(left: pending, right: nil)))
+                        rows.append(WidgetRow(id: pending.id, type: .halfWidthPair(left: pending, right: nil)))
                         pendingHalf = nil
                     }
-                    rows.append(WidgetRow(id: UUID(), type: .fullWidth(config)))
+                    rows.append(WidgetRow(id: config.id, type: .fullWidth(config)))
                 } else {
                     // Pairable widget
                     if let pending = pendingHalf {
-                        rows.append(WidgetRow(id: UUID(), type: .halfWidthPair(left: pending, right: config)))
+                        rows.append(WidgetRow(id: pending.id, type: .halfWidthPair(left: pending, right: config)))
                         pendingHalf = nil
                     } else {
                         pendingHalf = config
@@ -200,12 +206,12 @@ final class WidgetConfigManager {
             }
             // Flush remaining unpaired widget
             if let pending = pendingHalf {
-                rows.append(WidgetRow(id: UUID(), type: .halfWidthPair(left: pending, right: nil)))
+                rows.append(WidgetRow(id: pending.id, type: .halfWidthPair(left: pending, right: nil)))
             }
         } else {
             // iPhone: all full width
             for config in widgets {
-                rows.append(WidgetRow(id: UUID(), type: .fullWidth(config)))
+                rows.append(WidgetRow(id: config.id, type: .fullWidth(config)))
             }
         }
         return rows

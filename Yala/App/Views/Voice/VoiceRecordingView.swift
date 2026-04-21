@@ -46,6 +46,13 @@ struct VoiceRecordingView: View {
     /// Callback to switch to image input mode
     var onSwitchToImage: (() -> Void)?
 
+    /// Setup trial: called when step completes (draft created or approved).
+    /// Passes the item ID, name, and kind (.transaction if approved, .draft if saved to inbox).
+    var onSetupTrialCompleted: ((PersistentIdentifier, String, PracticeItemKind) -> Void)?
+
+    /// Setup trial: called when user taps "Ahora no" to skip
+    var onSetupTrialSkipped: (() -> Void)?
+
     /// Types of errors that need special handling
     private enum VoiceErrorType {
         case noApiKey
@@ -118,6 +125,16 @@ struct VoiceRecordingView: View {
             .toolbar {
                 // Only show X when idle (during recording/preview/processing, there's an X below)
                 if recorder.state == .idle && !isPreviewMode && !isProcessing {
+                    if onSetupTrialSkipped != nil {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button(L10n.SetupChecklist.skipStep) {
+                                onSetupTrialSkipped?()
+                                recorder.cancelRecording()
+                                dismiss()
+                            }
+                            .font(DS.Typography.label)
+                        }
+                    }
                     ToolbarItem(placement: .topBarTrailing) {
                         YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                             recorder.cancelRecording()
@@ -131,13 +148,22 @@ struct VoiceRecordingView: View {
                 InboxDraftEditSheet(draft: draft) {
                     // onApproved callback - mark as approved and dismiss voice view
                     draftWasApproved = true
+                    // Setup trial: capture approved transaction for practice cleanup
+                    if let callback = onSetupTrialCompleted,
+                       let transaction = draft.approvedTransaction {
+                        callback(transaction.persistentModelID, draft.note, .transaction)
+                    }
                     dismiss()
                 }
             }
             .onChange(of: createdDraft) { oldValue, newValue in
                 // Detect when EditSheet is dismissed (draft becomes nil)
                 if oldValue != nil && newValue == nil && !draftWasApproved {
-                    // Draft was not approved - just dismiss back to PanelView
+                    // Setup trial: draft created = step complete. Cleanup targets the draft.
+                    // Only fires for drafts — approved path handled above.
+                    if let oldDraft = oldValue {
+                        onSetupTrialCompleted?(oldDraft.persistentModelID, oldDraft.note, .draft)
+                    }
                     dismiss()
                 }
                 // Reset flag for next use
@@ -833,7 +859,10 @@ struct VoiceRecordingView: View {
             pendingAudioData = nil
 
             // Navigation based on number of drafts
-            if drafts.count == 1 {
+            if onSetupTrialCompleted != nil {
+                // Setup trial: always single draft, discard extras
+                createdDraft = drafts.first
+            } else if drafts.count == 1 {
                 // Single draft: open edit sheet directly
                 createdDraft = drafts.first
             } else {

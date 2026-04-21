@@ -1,0 +1,19 @@
+[
+  { "command": "wait", "positionals": ["2000"], "flags": {} },
+  { "command": "find", "positionals": ["onboarding_name_field", "click"], "flags": {} },
+  { "command": "type", "positionals": ["Test"], "flags": {} },
+  { "command": "press", "positionals": ["200", "150"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["2500"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["2500"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["2500"], "flags": {} },
+  { "command": "find", "positionals": ["Siguiente", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["2500"], "flags": {} },
+  { "command": "find", "positionals": ["Efectivo", "click"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s1.9-cash-type.png"], "flags": {} },
+  { "command": "find", "positionals": ["Ahorros", "click"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s1.9-savings-type.png"], "flags": {} }
+]

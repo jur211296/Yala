@@ -42,6 +42,9 @@ struct InboxView: View {
     // Pending next draft (for "Approve Next" flow)
     @State private var pendingNextDraftID: PersistentIdentifier?
 
+    // Auto-dismiss when last draft approved via edit sheet
+    @State private var shouldDismissAfterApproval = false
+
     // Archived account alert
     @State private var showArchivedAccountAlert = false
 
@@ -77,6 +80,10 @@ struct InboxView: View {
                         .foregroundStyle(.secondary)
                         .padding(.bottom, DS.Spacing.sm)
                     }
+
+                    // Contextual guide for new users
+                    ContextualGuideBanner.inbox()
+                        .padding(.horizontal, DS.Spacing.lg)
 
                     // Content
                     if filteredDrafts.isEmpty {
@@ -131,10 +138,17 @@ struct InboxView: View {
                 }
             }
             .tint(.primary)
-            .sheet(item: $selectedDraft, onDismiss: { viewModel.loadData() }) { draft in
+            .sheet(item: $selectedDraft, onDismiss: {
+                if shouldDismissAfterApproval {
+                    shouldDismissAfterApproval = false
+                    dismissIfNoPendingDrafts()
+                } else {
+                    viewModel.loadData()
+                }
+            }) { draft in
                 InboxDraftEditSheet(
                     draft: draft,
-                    onApproved: nil,
+                    onApproved: { shouldDismissAfterApproval = true },
                     onApproveNext: { nextDraft in
                         // Store the ID and close sheet - onChange will open the next
                         pendingNextDraftID = nextDraft.persistentModelID
@@ -196,6 +210,7 @@ struct InboxView: View {
                         },
                         onAccept: {
                             showSwipeSuccessView = false
+                            dismissIfNoPendingDrafts()
                         },
                         onApproveNext: {
                             showSwipeSuccessView = false
@@ -216,7 +231,10 @@ struct InboxView: View {
                     selectionBar
                 }
             }
-            .onAppear {
+            // Note: NO .appliesPendingRemoteChanges here — InboxView is always
+            // presented as a sheet, and mutating @Observable during sheet transition
+            // causes watchdog 0x8BADF00D. Reacts to remote changes via .onChange below.
+            .task {
                 viewModel.setContext(modelContext)
             }
             .onChange(of: sessionState.dataVersion) { _, _ in
@@ -505,6 +523,14 @@ struct InboxView: View {
         }
     }
 
+    /// Reload data and dismiss InboxView if no pending drafts remain.
+    private func dismissIfNoPendingDrafts() {
+        viewModel.loadData()
+        if !viewModel.hasPendingDrafts {
+            dismiss()
+        }
+    }
+
     /// Open a draft sheet after a delay, guarding against concurrent sheet presentations.
     private func openDraftAfterDelay(_ draft: InboxDraft) {
         Task {
@@ -530,15 +556,16 @@ struct InboxView: View {
         // Haptic feedback for positive action
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
 
-        dsWithAnimation(reduceMotion) {
-            draftService.setContext(modelContext)
-            do {
-                let transaction = try draftService.approveDraft(
-                    draft,
-                    currencyConverter: currencyConverter
-                )
+        // DB work OUTSIDE animation — only animate UI state changes
+        draftService.setContext(modelContext)
+        do {
+            let transaction = try draftService.approveDraft(
+                draft,
+                currencyConverter: currencyConverter
+            )
 
-                // Prepare and show success view
+            // Animate only the UI transition
+            dsWithAnimation(reduceMotion) {
                 swipeApprovedTransaction = transaction
                 swipeSuccessData = InboxApproveSuccessData(
                     date: draft.effectiveDate,
@@ -553,11 +580,11 @@ struct InboxView: View {
                     isExpense: amount < 0
                 )
                 showSwipeSuccessView = true
-            } catch {
-                #if DEBUG
-                print("InboxView: Error approving draft: \(error)")
-                #endif
             }
+        } catch {
+            #if DEBUG
+            print("InboxView: Error approving draft: \(error)")
+            #endif
         }
     }
 

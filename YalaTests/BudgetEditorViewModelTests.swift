@@ -62,7 +62,7 @@ struct BudgetEditorViewModelTests {
         #expect(vm.allTags.isEmpty)
     }
 
-    @MainActor @Test func saveBudget_withoutContext_returnsFalse() {
+    @MainActor @Test func saveBudget_withoutContext_returnsNil() {
         let vm = BudgetEditorViewModel()
         let result = vm.saveBudget(
             existing: nil,
@@ -80,7 +80,7 @@ struct BudgetEditorViewModelTests {
             alertEnabled: false,
             alertThresholds: []
         )
-        #expect(result == false)
+        #expect(result == nil)
     }
 
     @MainActor @Test func deleteBudget_withoutContext_returnsFalse() {
@@ -116,4 +116,87 @@ struct BudgetEditorViewModelTests {
         let result = vm.selectedCategoriesText(selectedSubcategories: fakeIDs)
         #expect(result == NSLocalizedString("filters.all", comment: ""))
     }
+
+    // MARK: - filterSummaryText
+
+    @MainActor @Test func filterSummaryText_allEmpty_returnsNil() {
+        let vm = BudgetEditorViewModel()
+        let result = vm.filterSummaryText(
+            selectedAccounts: [],
+            selectedSubcategories: [],
+            selectedTags: [],
+            selectedNeeds: []
+        )
+        #expect(result == nil)
+    }
+
+    @MainActor @Test func filterSummaryText_onlyOneNeed_naturalPhrase() {
+        let vm = BudgetEditorViewModel()
+        let result = vm.filterSummaryText(
+            selectedAccounts: [],
+            selectedSubcategories: [],
+            selectedTags: [],
+            selectedNeeds: [.essential]
+        )
+        #expect(result != nil)
+        // Should contain dimension label and need name
+        #expect(result!.contains(SubcategoryNeed.essential.displayName))
+        // Should start with prefix "Los gastos"
+        let prefix = NSLocalizedString("guide.budgetFilter.prefix", comment: "")
+        #expect(result!.hasPrefix(prefix))
+    }
+
+    @MainActor @Test func filterSummaryText_multipleNeeds_listsAllWithConjunction() {
+        let vm = BudgetEditorViewModel()
+        let result = vm.filterSummaryText(
+            selectedAccounts: [],
+            selectedSubcategories: [],
+            selectedTags: [],
+            selectedNeeds: [.essential, .priority, .optional]
+        )
+        #expect(result != nil)
+        // All 3 needs should be listed (≤4 rule: list all)
+        let sortedNeeds = [SubcategoryNeed.essential, .priority, .optional].sorted(by: { $0.rawValue < $1.rawValue })
+        for need in sortedNeeds {
+            #expect(result!.contains(need.displayName))
+        }
+        // Should use conjunction, not "+N"
+        let conj = NSLocalizedString("guide.budgetFilter.conjunction", comment: "")
+        #expect(result!.contains(conj))
+        #expect(!result!.contains("+"))
+    }
+
+    @MainActor @Test func filterSummaryText_selectedIDsNotInData_returnsNil() {
+        let vm = BudgetEditorViewModel()
+        let cat = Category(name: "Fake", colorHex: "#000000", isIncome: false)
+        let sub = Subcategory(name: "Fake", sortOrder: 0, category: cat)
+        let result = vm.filterSummaryText(
+            selectedAccounts: [],
+            selectedSubcategories: [sub.persistentModelID],
+            selectedTags: [],
+            selectedNeeds: []
+        )
+        // allSubcategories is empty, so no names resolve → nil
+        #expect(result == nil)
+    }
+
+    @MainActor @Test func filterSummaryText_needsAndUnresolvedIDs_onlyShowsNeeds() {
+        let vm = BudgetEditorViewModel()
+        let cat = Category(name: "Fake", colorHex: "#000000", isIncome: false)
+        let sub = Subcategory(name: "Fake", sortOrder: 0, category: cat)
+        let result = vm.filterSummaryText(
+            selectedAccounts: [],
+            selectedSubcategories: [sub.persistentModelID],
+            selectedTags: [],
+            selectedNeeds: [.essential]
+        )
+        // Subcategory IDs don't resolve (no data), but needs do
+        #expect(result != nil)
+        #expect(result!.contains(SubcategoryNeed.essential.displayName))
+    }
+
+    // NOTE: Tests resolving Account/Tag names from ModelContainer skipped
+    // due to CloudKit race condition in iOS 26 simulator (see line 25 comment).
+    // The name resolution logic uses the same filter+map pattern as
+    // selectedCategoriesText which is proven by existing tests.
 }

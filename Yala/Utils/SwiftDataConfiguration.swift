@@ -54,12 +54,29 @@ enum SwiftDataConfiguration {
             InboxDraft.self,
             MerchantMemory.self,
             NotificationItem.self,
+            CashFlowPlan.self,
+            CashFlowLine.self,
+            CashFlowOverride.self,
         ])
     }
 
     /// Detect if running inside a test host (XCTest sets this automatically)
     static var isRunningTests: Bool {
         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    }
+
+    // MARK: - Container CloudKit State
+
+    private static let containerCloudKitKey = "containerCreatedWithCloudKit"
+
+    static func markContainerCloudKitState(_ withCloudKit: Bool) {
+        UserDefaults.standard.set(withCloudKit, forKey: containerCloudKitKey)
+    }
+
+    static var containerWasCreatedWithCloudKit: Bool {
+        // Si la key nunca fue escrita, asumir true (usuario existente pre-update)
+        guard UserDefaults.standard.object(forKey: containerCloudKitKey) != nil else { return true }
+        return UserDefaults.standard.bool(forKey: containerCloudKitKey)
     }
 
     /// ModelConfiguration - CloudKit enabled automatically if iCloud account available

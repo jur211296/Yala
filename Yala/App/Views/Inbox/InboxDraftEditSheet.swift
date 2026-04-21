@@ -90,7 +90,8 @@ struct InboxDraftEditSheet: View {
     // MARK: - Computed
 
     private var amount: Double? {
-        Double(amountString.replacing(",", with: "."))
+        let value = AmountInputHelper.parseDecimal(amountString)
+        return value > 0 ? value : nil
     }
 
     private var isReadyToApprove: Bool {
@@ -470,14 +471,15 @@ struct InboxDraftEditSheet: View {
                 .focused($isAmountFieldFocused)
                 .fixedSize(horizontal: true, vertical: false)
                 .onChange(of: isAmountFieldFocused) { _, isFocused in
-                    if isFocused && (amountString == "0" || amountString == "0.00") {
+                    if isFocused && (amountString == "0" || amountString == "0.00" || amountString == "0,00") {
                         amountString = ""
                     }
                     if !isFocused {
                         if amountString.isEmpty {
                             amountString = "0.00"
-                        } else if let amt = Double(amountString.replacing(",", with: ".")) {
-                            amountString = String(format: "%.2f", abs(amt))
+                        } else {
+                            let amt = AmountInputHelper.parseDecimal(amountString)
+                            amountString = AmountInputHelper.formatWithGrouping(abs(amt))
                         }
                     }
                 }
@@ -753,7 +755,7 @@ struct InboxDraftEditSheet: View {
         selectedTags = draft.tags ?? []
 
         if let amt = draft.amount {
-            amountString = String(format: "%.2f", abs(amt))
+            amountString = AmountInputHelper.formatWithGrouping(abs(amt))
             isExpense = amt < 0
         } else {
             amountString = "0.00"

@@ -1,0 +1,8 @@
+[
+  { "command": "find", "positionals": ["fab_new_transaction", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "find", "positionals": ["Manual", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["new_transaction_amount", "click"}, {"command": "type", "positionals": ["999999999.99"], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s14.4-large-amount.png"], "flags": {} }
+]

@@ -18,11 +18,13 @@ enum ProFeature: String, CaseIterable {
     case premiumIcons
     case proThemes
     case smartInsightsAI
+    case cashFlowAdvanced    // Base feature is Free; advanced methods/horizon/charts are Pro
+    case exportExtendedPeriods // Free: week/month periods; Pro: year, all time, custom
 
     /// Free tier limit for countable features (nil = no limit in free tier)
     var freeLimit: Int? {
         switch self {
-        case .accounts: return 2
+        case .accounts: return 4
         case .budgets: return 3
         default: return nil
         }
@@ -31,7 +33,7 @@ enum ProFeature: String, CaseIterable {
     /// Whether this feature is completely unavailable in Free tier
     var isProOnly: Bool {
         switch self {
-        case .voiceInput, .imageInput, .premiumIcons, .proThemes, .smartInsightsAI: return true
+        case .voiceInput, .imageInput, .premiumIcons, .proThemes, .smartInsightsAI, .exportExtendedPeriods: return true
         default: return false
         }
     }
@@ -46,6 +48,8 @@ enum ProFeature: String, CaseIterable {
         case .premiumIcons: return L10n.FeatureGate.premiumIcons
         case .proThemes: return L10n.FeatureGate.proThemes
         case .smartInsightsAI: return L10n.FeatureGate.smartInsightsAI
+        case .cashFlowAdvanced: return L10n.FeatureGate.cashFlowAdvanced
+        case .exportExtendedPeriods: return L10n.FeatureGate.exportExtendedPeriods
         }
     }
 
@@ -59,6 +63,8 @@ enum ProFeature: String, CaseIterable {
         case .premiumIcons: return "app.fill"
         case .proThemes: return "paintpalette.fill"
         case .smartInsightsAI: return "sparkles"
+        case .cashFlowAdvanced: return "arrow.left.arrow.right"
+        case .exportExtendedPeriods: return "calendar.badge.clock"
         }
     }
 }
@@ -83,6 +89,21 @@ final class FeatureGateService {
         StoreKitManager.shared.isProUser
     }
 
+    // MARK: - Setup Trial Bypass
+
+    /// Features temporarily unlocked for setup checklist trial steps.
+    private(set) var setupTrialFeatures: Set<ProFeature> = []
+
+    /// Enable temporary access to a Pro feature during a setup trial step.
+    func enableSetupTrial(for feature: ProFeature) {
+        setupTrialFeatures.insert(feature)
+    }
+
+    /// Disable temporary access after the setup trial step completes or is dismissed.
+    func disableSetupTrial(for feature: ProFeature) {
+        setupTrialFeatures.remove(feature)
+    }
+
     // MARK: - Access Checks
 
     /// Check if user can access a Pro-only feature
@@ -90,8 +111,11 @@ final class FeatureGateService {
     /// - Returns: true if user has access (either Pro or feature isn't Pro-only)
     func canAccess(_ feature: ProFeature) -> Bool {
         if isProUser { return true }
+        if setupTrialFeatures.contains(feature) { return true }
         if feature.isProOnly {
-            TelemetryService.trackOnce(.featureGateHit, key: feature.rawValue, parameters: ["feature": feature.rawValue])
+            var params = TelemetryService.upsellParameters(source: "featureGate")
+            params["feature"] = feature.rawValue
+            TelemetryService.trackOnce(.featureGateHit, key: feature.rawValue, parameters: params)
         }
         return !feature.isProOnly
     }
@@ -162,6 +186,12 @@ extension L10n {
         }
         static var smartInsightsAI: String {
             NSLocalizedString("featureGate.smartInsightsAI", comment: "Smart Insights AI feature name")
+        }
+        static var cashFlowAdvanced: String {
+            NSLocalizedString("featureGate.cashFlowAdvanced", comment: "Cash flow advanced feature name")
+        }
+        static var exportExtendedPeriods: String {
+            NSLocalizedString("featureGate.exportExtendedPeriods", comment: "Export extended periods feature name")
         }
 
         // Titles

@@ -318,7 +318,7 @@ struct IconColorPickerSheet: View {
                 )
                 .overlay(
                     Circle()
-                        .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                        .stroke(Color.black.opacity(DS.Opacity.subtle), lineWidth: 1)
                 )
                 .shadow(
                     color: tempColorHex == hex ? Color(hex: hex).opacity(0.5) : .clear,

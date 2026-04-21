@@ -626,7 +626,7 @@ struct BidirectionalCashFlowChart: View {
             // Zero baseline (dashed line) - only for bidirectional chart
             if !expensesOnly {
                 RuleMark(y: .value("Zero", 0))
-                    .foregroundStyle(Color.gray.opacity(0.4))
+                    .foregroundStyle(Color.gray.opacity(WDS.Opacity.overlay))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
             }
 

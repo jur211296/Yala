@@ -1,0 +1,18 @@
+[
+  { "command": "find", "positionals": ["fab_new_transaction", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "find", "positionals": ["Manual", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["new_transaction_amount", "click"}, {"command": "type", "positionals": ["25"], "flags": {} },
+  { "command": "find", "positionals": ["Subcategoría", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Supermercado", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "find", "positionals": ["new_transaction_save", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "is", "positionals": ["visible", "label=\"Crear otra\""], "flags": {} },
+  { "command": "find", "positionals": ["Crear otra", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "is", "positionals": ["visible", "id=\"new_transaction_amount\""], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s5.8-create-another.png"], "flags": {} }
+]

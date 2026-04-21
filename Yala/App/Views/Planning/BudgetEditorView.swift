@@ -54,11 +54,17 @@ struct BudgetEditorView: View {
 
     // Focus state
     @FocusState private var isNameFieldFocused: Bool
+    @FocusState private var isAmountFieldFocused: Bool
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
+                    // Contextual guide for new users creating first budget
+                    if budget == nil {
+                        ContextualGuideBanner.budgetEditor()
+                    }
+
                     // Basic Information Section
                     basicInfoSection
 
@@ -76,7 +82,8 @@ struct BudgetEditorView: View {
                     // Alert Notifications Section
                     alertsSection
 
-                    // Filters Section
+                    // Filters Section with always-visible info banner
+                    budgetFilterBanner
                     filtersSection
 
                     // Delete Button (only for existing budgets)
@@ -131,7 +138,8 @@ struct BudgetEditorView: View {
                 loadBudgetData()
                 // Auto-focus name field for new budgets
                 if budget == nil {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(500))
                         isNameFieldFocused = true
                     }
                 }
@@ -188,6 +196,22 @@ struct BudgetEditorView: View {
                             .multilineTextAlignment(.trailing)
                             .font(.system(size: scaledAmountSize, weight: .bold))
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                            .focused($isAmountFieldFocused)
+                            .onChange(of: isAmountFieldFocused) { _, isFocused in
+                                if isFocused && (limitAmount == "0" || limitAmount == "0.00" || limitAmount == "0,00") {
+                                    limitAmount = ""
+                                }
+                                if !isFocused && !limitAmount.isEmpty {
+                                    let amount = AmountInputHelper.parseDecimal(limitAmount)
+                                    limitAmount = AmountInputHelper.formatWithGrouping(amount)
+                                }
+                            }
+                            .onChange(of: limitAmount) { _, newValue in
+                                let filtered = AmountInputHelper.filterAmountInput(newValue)
+                                if filtered != newValue {
+                                    limitAmount = filtered
+                                }
+                            }
                     }
                 }
                 .padding()
@@ -377,6 +401,7 @@ struct BudgetEditorView: View {
                                 }
                                 .buttonStyle(.plain)
                                 .disabled(!isValidCustomThreshold)
+                                .accessibilityHint(!isValidCustomThreshold ? L10n.Accessibility.invalidThreshold : "")
                             }
                             .padding(.horizontal, DS.Spacing.lg)
                         }
@@ -415,6 +440,18 @@ struct BudgetEditorView: View {
     }
 
     // MARK: - Filters Section
+
+    private var budgetFilterBanner: some View {
+        let summary = viewModel.filterSummaryText(
+            selectedAccounts: selectedAccounts,
+            selectedSubcategories: selectedSubcategories,
+            selectedTags: selectedTags,
+            selectedNeeds: selectedNeeds
+        )
+        return ContextualGuideBanner.budgetFilterInfo(
+            message: summary ?? L10n.ContextualGuide.BudgetFilter.allExpenses
+        )
+    }
 
     private var filtersSection: some View {
         SectionBox(title: NSLocalizedString("budgets.editor.filters", comment: "")) {
@@ -661,7 +698,8 @@ struct BudgetEditorView: View {
     // MARK: - Validation
 
     private var canSave: Bool {
-        guard !name.isEmpty, !limitAmount.isEmpty, let amount = Double(limitAmount), amount > 0 else {
+        let parsedAmount = AmountInputHelper.parseDecimal(limitAmount)
+        guard !name.isEmpty, !limitAmount.isEmpty, parsedAmount > 0 else {
             return false
         }
         // For unique budgets, validate date range
@@ -699,7 +737,7 @@ struct BudgetEditorView: View {
 
         name = budget.name
         currencyCode = budget.currencyCode
-        limitAmount = String(format: "%.2f", budget.limitAmount)
+        limitAmount = AmountInputHelper.formatWithGrouping(budget.limitAmount)
         selectedPeriodType = BudgetPeriodType(rawValue: budget.periodType) ?? .monthly
         isActive = budget.isActive
 
@@ -731,7 +769,8 @@ struct BudgetEditorView: View {
     }
 
     private func saveBudget() {
-        guard let amount = Double(limitAmount), amount > 0 else { return }
+        let amount = AmountInputHelper.parseDecimal(limitAmount)
+        guard amount > 0 else { return }
 
         let saved = viewModel.saveBudget(
             existing: budget,
@@ -750,8 +789,20 @@ struct BudgetEditorView: View {
             alertThresholds: selectedThresholds
         )
 
-        if saved {
+        if let savedID = saved {
             sessionState.needsBudgetsWidgetRefresh = true
+            if budget == nil, SetupChecklistManager.shared.stepCompleted[.firstBudget] != true {
+                SetupChecklistManager.shared.markCompleted(
+                    .firstBudget,
+                    practiceItem: PracticeCleanupItem(
+                        stepID: .firstBudget,
+                        itemName: name,
+                        persistentID: savedID
+                    )
+                )
+            } else {
+                SetupChecklistManager.shared.markCompleted(.firstBudget)
+            }
             dismiss()
         }
     }

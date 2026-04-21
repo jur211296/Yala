@@ -1,0 +1,6 @@
+[
+  { "command": "find", "positionals": ["Panel", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "is", "positionals": ["visible", "label=\"Balance\""], "flags": {} },
+  { "command": "screenshot", "positionals": ["{{SCREENSHOT_DIR}}/s9.2-balance.png"], "flags": {} }
+]

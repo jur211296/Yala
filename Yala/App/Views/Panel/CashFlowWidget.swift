@@ -203,20 +203,11 @@ struct CashFlowWidget: View {
             let lastDate = activeChartData.last?.date
         else { return "" }
 
-        // Determine calendar unit for forceGrouping
-        let forceGrouping: Calendar.Component? = {
-            switch grouping {
-            case .month: return .month
-            case .week: return .weekOfYear
-            case .day: return nil  // Use span-based logic for days
-            }
-        }()
-
         return SmartAxisHelper.formatAxisLabel(
             for: date,
             startDate: firstDate,
             endDate: lastDate,
-            forceGrouping: forceGrouping
+            forceGrouping: grouping.forceAxisGrouping
         )
     }
 
@@ -523,6 +514,22 @@ struct CashFlowWidget: View {
                                     }
                                 }
 
+                                // Net flow label above income bar (bidirectional only, not waterfall)
+                                if activeChartData.count <= Self.maxBarsForLabels {
+                                    let net = data.income - data.expense
+                                    PointMark(
+                                        x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                        y: .value("Net", data.income)
+                                    )
+                                    .symbolSize(0)
+                                    .annotation(position: .top, spacing: DS.Spacing.xs) {
+                                        Text(net >= 0 ? "+\(formatK(net))" : formatK(net))
+                                            .font(DS.Typography.labelTiny)
+                                            .fontWeight(.semibold)
+                                            .foregroundStyle(.primary)
+                                    }
+                                }
+
                                 BarMark(
                                     x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
                                     y: .value("Expense", -data.expense)
@@ -544,13 +551,13 @@ struct CashFlowWidget: View {
                                     }
                                 }
 
-                                // Net Flow Line - Purple line
+                                // Net Flow Line - always indigo regardless of theme
                                 if grouping == .month {
                                     LineMark(
                                         x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
                                         y: .value("Net", data.net)
                                     )
-                                    .foregroundStyle(theme.accent)
+                                    .foregroundStyle(Color.electricIndigo)
                                     .lineStyle(StrokeStyle(lineWidth: 2))
                                     .interpolationMethod(.monotone)
 
@@ -558,7 +565,7 @@ struct CashFlowWidget: View {
                                         x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
                                         y: .value("Net", data.net)
                                     )
-                                    .foregroundStyle(theme.accent)
+                                    .foregroundStyle(Color.electricIndigo)
                                     .symbolSize(20)
                                 }
                             }
@@ -669,7 +676,7 @@ struct CashFlowWidget: View {
                                         }
                                         Divider()
                                         HStack(spacing: DS.Spacing.xs) {
-                                            Circle().fill(theme.accent).frame(width: 6, height: 6)
+                                            Circle().fill(Color.electricIndigo).frame(width: 6, height: 6)
                                             Text(
                                                 YalaFormatter.currency(
                                                     value: selectedData.net,
@@ -972,7 +979,7 @@ struct CashFlowLegendView: View {
             if showNet {
                 HStack(spacing: DS.Spacing.xs) {
                     Circle()
-                        .fill(theme.accent)
+                        .fill(Color.electricIndigo)
                         .frame(width: 6, height: 6)
                     Text(L10n.CashFlow.netFlow)
                         .font(DS.Typography.captionSmall)

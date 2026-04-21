@@ -1,0 +1,22 @@
+[
+  { "command": "find", "positionals": ["fab_new_transaction", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "find", "positionals": ["Manual", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["new_transaction_amount", "click"}, {"command": "type", "positionals": ["150"], "flags": {} },
+  { "command": "find", "positionals": ["Subcategoría", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Supermercado", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "find", "positionals": ["new_transaction_save", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} },
+  { "command": "find", "positionals": ["Crear otra", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["new_transaction_amount", "click"}, {"command": "type", "positionals": ["45"], "flags": {} },
+  { "command": "find", "positionals": ["Subcategoría", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1000"], "flags": {} },
+  { "command": "find", "positionals": ["Restaurantes", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["500"], "flags": {} },
+  { "command": "find", "positionals": ["new_transaction_save", "click"], "flags": {} },
+  { "command": "wait", "positionals": ["1500"], "flags": {} }
+]

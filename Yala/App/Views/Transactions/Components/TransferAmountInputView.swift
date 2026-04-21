@@ -65,15 +65,16 @@ struct TransferAmountInputView: View {
                 .fixedSize(horizontal: true, vertical: false)
                 .onChange(of: isAmountFieldFocused) { _, isFocused in
                     if isFocused
-                        && (viewModel.amountString == "0" || viewModel.amountString == "0.00")
+                        && (viewModel.amountString == "0" || viewModel.amountString == "0.00" || viewModel.amountString == "0,00")
                     {
                         viewModel.amountString = ""
                     }
                     if !isFocused {
                         if viewModel.amountString.isEmpty {
                             viewModel.amountString = "0.00"
-                        } else if let amount = Double(viewModel.amountString.replacing(",", with: ".")) {
-                            viewModel.amountString = String(format: "%.2f", amount)
+                        } else {
+                            let amount = AmountInputHelper.parseDecimal(viewModel.amountString)
+                            viewModel.amountString = AmountInputHelper.formatWithGrouping(amount)
                         }
                     }
                 }
@@ -104,13 +105,13 @@ struct TransferAmountInputView: View {
                 .frame(minWidth: 100)
                 .fixedSize(horizontal: true, vertical: false)
                 .onAppear {
-                    destinationAmountString = String(
-                        format: "%.2f", viewModel.destinationAmount)
+                    destinationAmountString = AmountInputHelper.formatWithGrouping(
+                        viewModel.destinationAmount)
                 }
                 .onChange(of: isDestFieldFocused) { _, isFocused in
                     // Same clear-on-focus behavior as Source Amount
                     if isFocused
-                        && (destinationAmountString == "0.00" || destinationAmountString == "0")
+                        && (destinationAmountString == "0.00" || destinationAmountString == "0" || destinationAmountString == "0,00")
                     {
                         destinationAmountString = ""
                     }
@@ -118,17 +119,16 @@ struct TransferAmountInputView: View {
                     if !isFocused {
                         if destinationAmountString.isEmpty {
                             destinationAmountString = "0.00"
-                        } else if let amount = Double(
-                            destinationAmountString.replacing(",", with: "."))
-                        {
-                            destinationAmountString = String(format: "%.2f", amount)
+                        } else {
+                            let amount = AmountInputHelper.parseDecimal(destinationAmountString)
+                            destinationAmountString = AmountInputHelper.formatWithGrouping(amount)
                         }
                     }
                 }
                 .onChange(of: viewModel.destinationAmount) { _, newValue in
                     // Only update string if USER is NOT editing it
                     if !isDestFieldFocused {
-                        destinationAmountString = String(format: "%.2f", newValue)
+                        destinationAmountString = AmountInputHelper.formatWithGrouping(newValue)
                     }
                 }
                 .onChange(of: destinationAmountString) { _, newValue in
@@ -139,8 +139,8 @@ struct TransferAmountInputView: View {
                             destinationAmountString = filtered
                         }
 
-                        if let amount = Double(
-                            filtered.replacing(",", with: ".")), amount > 0
+                        let amount = AmountInputHelper.parseDecimal(filtered)
+                        if amount > 0
                         {
                             viewModel.destinationAmount = amount
                             viewModel.updateExchangeRateFromDestination()
@@ -185,8 +185,8 @@ struct TransferAmountInputView: View {
         .onChange(of: exchangeRateString) { _, newValue in
             // Only sync to model if USER IS editing it
             if isRateFieldFocused {
-                if let rateInput = Double(newValue.replacing(",", with: ".")),
-                    rateInput > 0
+                let rateInput = AmountInputHelper.parseDecimal(newValue)
+                if rateInput > 0
                 {
                     let internalRate = isRateInverted ? (1.0 / rateInput) : rateInput
                     viewModel.exchangeRate = internalRate

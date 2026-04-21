@@ -51,8 +51,9 @@ final class InboxViewModel {
     // MARK: - Setup
 
     func setContext(_ context: ModelContext) {
+        let isNewContext = self.modelContext !== context
         self.modelContext = context
-        loadData()
+        if isNewContext { loadData() }
     }
 
     func loadData() {
@@ -63,12 +64,14 @@ final class InboxViewModel {
     private func loadAllDrafts() {
         guard let context = modelContext else { return }
 
-        let descriptor = FetchDescriptor<InboxDraft>(
+        var descriptor = FetchDescriptor<InboxDraft>(
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
+        descriptor.fetchLimit = 500
 
         do {
-            allDrafts = try context.fetch(descriptor)
+            let fetched = try context.fetch(descriptor)
+            if fetched != allDrafts { allDrafts = fetched }
         } catch {
             #if DEBUG
             print("InboxViewModel: Error loading all drafts: \(error)")
@@ -79,13 +82,15 @@ final class InboxViewModel {
     private func loadPendingDrafts() {
         guard let context = modelContext else { return }
 
-        let descriptor = FetchDescriptor<InboxDraft>(
+        var descriptor = FetchDescriptor<InboxDraft>(
             predicate: #Predicate<InboxDraft> { $0.statusRaw == "pending" },
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
+        descriptor.fetchLimit = 200
 
         do {
-            pendingDrafts = try context.fetch(descriptor)
+            let fetched = try context.fetch(descriptor)
+            if fetched != pendingDrafts { pendingDrafts = fetched }
         } catch {
             #if DEBUG
             print("InboxViewModel: Error loading pending drafts: \(error)")
@@ -126,9 +131,9 @@ final class InboxViewModel {
     func countForFilter(_ filter: InboxFilter) -> Int {
         switch filter {
         case .pending:
-            return allDrafts.filter { $0.status == .pending }.count
+            return allDrafts.count(where: { $0.status == .pending })
         case .archived:
-            return allDrafts.filter { ($0.status == .approved || $0.status == .rejected) && $0.cachedAccountName != nil }.count
+            return allDrafts.count(where: { ($0.status == .approved || $0.status == .rejected) && $0.cachedAccountName != nil })
         }
     }
 
@@ -183,9 +188,9 @@ final class InboxViewModel {
     func countDrafts(statuses: [DraftStatus], for filter: InboxFilter) -> Int {
         switch filter {
         case .pending:
-            return statuses.filter { $0 == .pending }.count
+            return statuses.count(where: { $0 == .pending })
         case .archived:
-            return statuses.filter { $0 == .approved || $0 == .rejected }.count
+            return statuses.count(where: { $0 == .approved || $0 == .rejected })
         }
     }
 

@@ -83,12 +83,21 @@ struct ExportFiltersStepView: View {
         )
     }
 
+    private var isProUser: Bool {
+        FeatureGateService.shared.isProUser
+    }
+
     // MARK: - Body
 
     var body: some View {
         mainContent
             .onAppear {
                 viewModel.setContext(modelContext)
+                // Reset to free period if non-Pro user has a Pro period selected
+                if !isProUser && selectedPeriod.isProExportPeriod {
+                    selectedPeriod = .last30Days
+                    customDateRange = nil
+                }
             }
             .sheet(isPresented: $showCategoriesSheet) {
                 categoriesSheetView
@@ -456,20 +465,11 @@ struct ExportFiltersStepView: View {
         )
     }
 
-    // MARK: - Static Formatters
-
-    private static let periodShortFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "d MMM yy"
-        f.locale = AppLocale.current
-        return f
-    }()
-
     // MARK: - Period Row (inside SectionBox)
 
     private var periodDisplayText: String {
         if selectedPeriod == .custom, let range = customDateRange {
-            return "\(Self.periodShortFormatter.string(from: range.start)) - \(Self.periodShortFormatter.string(from: range.end))"
+            return ExportDateFormatting.formattedRange(range)
         }
         return selectedPeriod.displayName
     }
@@ -529,6 +529,11 @@ private struct ExportPeriodPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
     @State private var showCustomPicker = false
+    @State private var showUpgradePrompt = false
+
+    private var isProUser: Bool {
+        FeatureGateService.shared.isProUser
+    }
 
     /// Periods to show (exclude .custom, handled separately)
     private var standardPeriods: [DetailPeriod] {
@@ -577,24 +582,38 @@ private struct ExportPeriodPickerSheet: View {
                     }
                 )
             }
+            .sheet(isPresented: $showUpgradePrompt) {
+                UpgradePromptSheet(
+                    feature: .exportExtendedPeriods,
+                    context: .proFeature,
+                    source: "exportPeriod"
+                )
+            }
         }
     }
 
     @ViewBuilder
     private func periodRow(for period: DetailPeriod) -> some View {
         let isSelected = selectedPeriod == period
+        let isLocked = !isProUser && period.isProExportPeriod
 
         Button {
-            onSelect(period)
+            if isLocked {
+                showUpgradePrompt = true
+            } else {
+                onSelect(period)
+            }
         } label: {
             HStack {
                 Text(period.displayName)
                     .font(DS.Typography.body)
-                    .foregroundStyle(.thPrimaryText)
+                    .foregroundStyle(isLocked ? .thSecondaryText : .thPrimaryText)
 
                 Spacer()
 
-                if isSelected {
+                if isLocked {
+                    ProBadge(size: .small)
+                } else if isSelected {
                     Image(systemName: "checkmark")
                         .foregroundStyle(theme.accent)
                         .font(DS.Typography.headline)
@@ -608,16 +627,22 @@ private struct ExportPeriodPickerSheet: View {
     }
 
     private var customPeriodRow: some View {
-        Button {
-            showCustomPicker = true
+        let isLocked = !isProUser
+
+        return Button {
+            if isLocked {
+                showUpgradePrompt = true
+            } else {
+                showCustomPicker = true
+            }
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(L10n.Period.custom)
                         .font(DS.Typography.body)
-                        .foregroundStyle(.thPrimaryText)
+                        .foregroundStyle(isLocked ? .thSecondaryText : .thPrimaryText)
 
-                    if let range = customDateRange {
+                    if !isLocked, let range = customDateRange {
                         Text(formattedRange(range))
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
@@ -626,15 +651,19 @@ private struct ExportPeriodPickerSheet: View {
 
                 Spacer()
 
-                if selectedPeriod == .custom {
-                    Image(systemName: "checkmark")
-                        .foregroundStyle(theme.accent)
-                        .font(DS.Typography.headline)
-                }
+                if isLocked {
+                    ProBadge(size: .small)
+                } else {
+                    if selectedPeriod == .custom {
+                        Image(systemName: "checkmark")
+                            .foregroundStyle(theme.accent)
+                            .font(DS.Typography.headline)
+                    }
 
-                Image(systemName: "chevron.right")
-                    .font(DS.Typography.labelSmall)
-                    .foregroundStyle(.tertiary)
+                    Image(systemName: "chevron.right")
+                        .font(DS.Typography.labelSmall)
+                        .foregroundStyle(.tertiary)
+                }
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.FormRow.paddingV)
@@ -643,15 +672,23 @@ private struct ExportPeriodPickerSheet: View {
         .buttonStyle(.plain)
     }
 
-    private static let periodShortFormatter: DateFormatter = {
+    private func formattedRange(_ range: DateInterval) -> String {
+        ExportDateFormatting.formattedRange(range)
+    }
+}
+
+// MARK: - Export Date Formatting
+
+private enum ExportDateFormatting {
+    static let periodShortFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "d MMM yy"
         f.locale = AppLocale.current
         return f
     }()
 
-    private func formattedRange(_ range: DateInterval) -> String {
-        "\(Self.periodShortFormatter.string(from: range.start)) - \(Self.periodShortFormatter.string(from: range.end))"
+    static func formattedRange(_ range: DateInterval) -> String {
+        "\(periodShortFormatter.string(from: range.start)) - \(periodShortFormatter.string(from: range.end))"
     }
 }
 

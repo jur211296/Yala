@@ -163,6 +163,14 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Whether this period requires Pro for export
+    var isProExportPeriod: Bool {
+        switch self {
+        case .thisYear, .lastYear, .allTime, .custom: return true
+        default: return false
+        }
+    }
+
     /// Calendar icon for the selector
     var iconName: String { "calendar" }
 
@@ -284,6 +292,15 @@ enum TrendGrouping: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Returns the calendar component for axis label formatting (nil for day = span-based logic)
+    var forceAxisGrouping: Calendar.Component? {
+        switch self {
+        case .day: return nil
+        case .week: return .weekOfYear
+        case .month: return .month
+        }
+    }
+
     /// Returns the start date of the bucket containing the given date
     func dateKey(for date: Date, calendar: Calendar = .current) -> Date {
         switch self {
@@ -307,7 +324,7 @@ struct ChartTransaction: Identifiable {
     let balance: Double
 }
 
-struct CategorySpendingSummary: Identifiable {
+struct CategorySpendingSummary: Identifiable, Equatable {
     let category: Category
     let amount: Double
     let percentage: Double
@@ -319,9 +336,16 @@ struct CategorySpendingSummary: Identifiable {
     var variation: Double? {
         PreviousPeriodHelper.calculateVariation(currentAmount: amount, previousAmount: previousAmount ?? 0)
     }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.category.persistentModelID == rhs.category.persistentModelID
+            && lhs.amount == rhs.amount
+            && lhs.percentage == rhs.percentage
+            && lhs.previousAmount == rhs.previousAmount
+    }
 }
 
-struct TagSpendingSummary: Identifiable {
+struct TagSpendingSummary: Identifiable, Equatable {
     let tag: Tag
     let amount: Double
     let percentage: Double
@@ -333,9 +357,16 @@ struct TagSpendingSummary: Identifiable {
     var variation: Double? {
         PreviousPeriodHelper.calculateVariation(currentAmount: amount, previousAmount: previousAmount ?? 0)
     }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.tag.persistentModelID == rhs.tag.persistentModelID
+            && lhs.amount == rhs.amount
+            && lhs.percentage == rhs.percentage
+            && lhs.previousAmount == rhs.previousAmount
+    }
 }
 
-struct SubcategorySpendingSummary: Identifiable {
+struct SubcategorySpendingSummary: Identifiable, Equatable {
     let subcategoryName: String
     let colorHex: String?
     let amount: Double
@@ -359,9 +390,17 @@ struct SubcategorySpendingSummary: Identifiable {
     var variation: Double? {
         PreviousPeriodHelper.calculateVariation(currentAmount: amount, previousAmount: previousAmount ?? 0)
     }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.subcategoryName == rhs.subcategoryName
+            && lhs.amount == rhs.amount
+            && lhs.percentageOfTotal == rhs.percentageOfTotal
+            && lhs.percentageOfCategory == rhs.percentageOfCategory
+            && lhs.previousAmount == rhs.previousAmount
+    }
 }
 
-struct NeedTrendPoint: Identifiable {
+struct NeedTrendPoint: Identifiable, Equatable {
     let id: UUID = UUID()
     let date: Date  // X axis
     // Amounts per need
@@ -379,6 +418,14 @@ struct NeedTrendPoint: Identifiable {
         case .optional: return optional
         case .unclassified: return unclassified
         }
+    }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.date == rhs.date
+            && lhs.essential == rhs.essential
+            && lhs.priority == rhs.priority
+            && lhs.optional == rhs.optional
+            && lhs.unclassified == rhs.unclassified
     }
 }
 

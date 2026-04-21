@@ -23,6 +23,19 @@ final class InsightsViewModel {
     private(set) var aiInsights: LLMInsightResponse?
     private(set) var isLoadingAI = false
     private(set) var aiError: String?
+    private(set) var aiActivated = false
+
+    // MARK: - AI Generation Context (stored for on-demand button)
+
+    private var lastPeriod: DetailPeriod?
+    private var lastFilterHash: Int = 0
+    private var lastTxnCount: Int = 0
+    private var lastCurrencyCode: String = ""
+    private var lastComparisonMode: ComparisonMode = .month
+    private var lastCriteria: FilterCriteria = .empty
+    private var lastAccounts: [Account] = []
+    private var lastCategories: [Category] = []
+    private var lastTags: [Tag] = []
 
     // MARK: - Preferences
 
@@ -58,6 +71,56 @@ final class InsightsViewModel {
             tone: currentTone,
             focus: currentFocus
         )
+    }
+
+    // MARK: - AI Generation Context
+
+    /// Stores the current context so the on-demand button can trigger generation without passing params.
+    func storeGenerationContext(
+        period: DetailPeriod,
+        filterHash: Int,
+        txnCount: Int,
+        currencyCode: String,
+        comparisonMode: ComparisonMode,
+        criteria: FilterCriteria,
+        accounts: [Account],
+        categories: [Category],
+        tags: [Tag]
+    ) {
+        lastPeriod = period
+        lastFilterHash = filterHash
+        lastTxnCount = txnCount
+        lastCurrencyCode = currencyCode
+        lastComparisonMode = comparisonMode
+        lastCriteria = criteria
+        lastAccounts = accounts
+        lastCategories = categories
+        lastTags = tags
+    }
+
+    /// Called from the "Generate AI Insights" button. Uses stored context.
+    func triggerAIGeneration() async {
+        guard let period = lastPeriod else { return }
+        aiActivated = true
+        await generateAIInsights(
+            period: period,
+            filterHash: lastFilterHash,
+            txnCount: lastTxnCount,
+            currencyCode: lastCurrencyCode,
+            comparisonMode: lastComparisonMode,
+            criteria: lastCriteria,
+            accounts: lastAccounts,
+            categories: lastCategories,
+            tags: lastTags
+        )
+    }
+
+    /// Resets AI state when period/filters change so the button reappears.
+    func resetAIState() {
+        aiInsights = nil
+        aiActivated = false
+        isLoadingAI = false
+        aiError = nil
     }
 
     // MARK: - AI Insights

@@ -16,6 +16,7 @@ struct InsightsTabView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.openURL) private var openURL
 
     // MARK: - Data (passed from parent)
 
@@ -37,9 +38,7 @@ struct InsightsTabView: View {
 
     @AppStorage("showVariations") private var showVariations: Bool = true
 
-    @AppStorage("hasSeenInsightsIntro") private var hasSeenInsightsIntro = false
     @AppStorage("aiInsightsConsentAccepted") private var aiInsightsConsentAccepted = false
-    @AppStorage("dismissedAIInsightsBanner") private var dismissedAIInsightsBanner = false
 
     // MARK: - Section Visibility (from Settings)
 
@@ -55,9 +54,23 @@ struct InsightsTabView: View {
 
     @State private var showUpgradeSheet = false
     @State private var showCustomPeriodPicker = false
+    @State private var showInsightsConsentAlert = false
+
+    // Coach mark: Pro tour (Phase 3)
+    @State private var showProInsightsTour = false
+    @State private var proInsightsTourIndex = 0
 
     private var isProUser: Bool {
         FeatureGateService.shared.canAccess(.smartInsightsAI)
+    }
+
+    /// All conditions for Phase 3 tour: phase + anchor exists + tour not done.
+    private var insightsTourReady: Bool {
+        !ProTourManager.shared.hasCompleted
+        && ProTourManager.shared.currentPhase == .insights
+        && viewModel.insightData?.periodSummary.transactionCount ?? 0 > 0
+        && isProUser
+        && !viewModel.aiActivated
     }
 
     // MARK: - Body
@@ -84,29 +97,14 @@ struct InsightsTabView: View {
                         // Section 1: Period Summary (always visible)
                         periodSummarySection(data.periodSummary)
 
-                        // First-time tip (shown at top for new users)
-                        if !hasSeenInsightsIntro {
-                            firstTimeTip
-                        }
-
-                        // Pro AI consent banner
-                        if isProUser && !aiInsightsConsentAccepted && !dismissedAIInsightsBanner {
-                            proAIConsentBanner
-                        }
-
-                        // Section 2: Hero Insight
-                        if viewModel.isLoadingAI {
-                            aiLoadingPlaceholder
-                        } else if let aiHero = viewModel.aiInsights?.heroText {
-                            InsightCard(insight: InsightResult(
-                                id: "ai_hero",
-                                icon: "sparkles",
-                                text: markdownAttributed(aiHero),
-                                sentiment: .neutral,
-                                isProOnly: true
-                            ))
-                        } else if let hero = data.ruleBasedInsights.first {
-                            InsightCard(insight: hero)
+                        // Section 2: Hero Insight / AI Button (Pro) or Rule-based (Free)
+                        if isProUser {
+                            proHeroSection(data)
+                        } else {
+                            if let hero = data.ruleBasedInsights.first {
+                                InsightCard(insight: hero)
+                            }
+                            aiInsightsTeaser
                         }
 
                         // Section 3: Quick Stats Grid
@@ -121,36 +119,28 @@ struct InsightsTabView: View {
 
                         // Charts and texts only if >= 5 transactions
                         if data.periodSummary.transactionCount >= 5 {
-                            // Section 7: Weekday Spending Chart
+                            // Section 5: Weekday Spending Chart
                             if showWeekday, data.weekdaySpending.contains(where: { $0.average > 0 }) {
                                 weekdayChartSection(data.weekdaySpending)
                             }
 
-                            // Section 8: Nature Distribution
+                            // Section 6: Need Distribution
                             if showNeed, data.needDistribution.total > 0 {
                                 needSection(data.needDistribution)
                             }
 
-                            // Section 10: Text Insights
+                            // Section 7: Observations
                             if showTexts {
-                                if let aiCards = viewModel.aiInsights?.cards, !aiCards.isEmpty {
-                                    aiTextInsightsSection(aiCards)
-                                } else if data.ruleBasedInsights.count > 1 {
-                                    textInsightsSection(Array(data.ruleBasedInsights.dropFirst()))
+                                if isProUser {
+                                    proObservationsSection(data)
+                                } else {
+                                    freeObservationsSection(data)
                                 }
                             }
 
                             // Locked fun fact for Free users
                             if !isProUser {
                                 lockedFunFact
-                            } else if let funFact = viewModel.aiInsights?.funFact {
-                                InsightCard(insight: InsightResult(
-                                    id: "ai_fun_fact",
-                                    icon: "lightbulb",
-                                    text: markdownAttributed(funFact),
-                                    sentiment: .positive,
-                                    isProOnly: true
-                                ))
                             }
                         } else {
                             // Few transactions hint
@@ -175,6 +165,38 @@ struct InsightsTabView: View {
                 maxDate: transactionDateRange.end,
                 currentRange: sessionState.customDateRange
             )
+        }
+        .alert(L10n.AIConsent.insightsTitle, isPresented: $showInsightsConsentAlert) {
+            Button(L10n.AIConsent.accept) {
+                aiInsightsConsentAccepted = true
+                Task { await viewModel.triggerAIGeneration() }
+            }
+            Button(L10n.AIConsent.privacyPolicy) {
+                openURL(AppConstants.privacyURL)
+            }
+            Button(L10n.Action.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.AIConsent.insightsMessage)
+        }
+        .coachMarkOverlay(
+            steps: ProTourSteps.insightsSteps,
+            isPresented: $showProInsightsTour,
+            currentIndex: $proInsightsTourIndex,
+            onComplete: {
+                ProTourManager.shared.advancePhase()
+            }
+        )
+        .task(id: insightsTourReady) {
+            guard insightsTourReady else { return }
+            do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
+            guard insightsTourReady, !showProInsightsTour else { return }
+            showProInsightsTour = true
+        }
+        .onChange(of: insightsTourReady) { _, ready in
+            if !ready && showProInsightsTour {
+                showProInsightsTour = false
+                proInsightsTourIndex = 0
+            }
         }
     }
 
@@ -285,7 +307,7 @@ struct InsightsTabView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(DS.Spacing.lg)
-        .yalaCard(padding: 0, shadow: false)
+        .solidCard()
     }
 
     private func countCard(count: Int, dailyAverage: Double = 0) -> some View {
@@ -305,7 +327,137 @@ struct InsightsTabView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(DS.Spacing.lg)
-        .yalaCard(padding: 0, shadow: false)
+        .solidCard()
+    }
+
+    // MARK: - Pro Hero Section (AI button / loading / hero card)
+
+    @ViewBuilder
+    private func proHeroSection(_ data: InsightData) -> some View {
+        if viewModel.aiActivated {
+            if viewModel.isLoadingAI {
+                aiLoadingPlaceholder
+            } else if let aiHero = viewModel.aiInsights?.heroText {
+                InsightCard(insight: InsightResult(
+                    id: "ai_hero",
+                    icon: "sparkles",
+                    text: markdownAttributed(aiHero),
+                    sentiment: .neutral,
+                    isProOnly: true
+                ))
+            } else if let error = viewModel.aiError {
+                aiErrorCard(error)
+            }
+        } else {
+            generateAIButton
+        }
+    }
+
+    // MARK: - Generate AI Button
+
+    private var generateAIButton: some View {
+        Button {
+            if aiInsightsConsentAccepted {
+                Task { await viewModel.triggerAIGeneration() }
+            } else {
+                showInsightsConsentAlert = true
+            }
+        } label: {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "sparkles")
+                Text(L10n.Insights.generateAI)
+            }
+            .font(DS.Typography.label)
+            .fontWeight(.semibold)
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, DS.Spacing.md)
+            .background(theme.accent, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        }
+        .buttonStyle(.plain)
+        .coachMarkAnchor("proAiSummary")
+    }
+
+    // MARK: - AI Error Card
+
+    private func aiErrorCard(_ error: String) -> some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle")
+                .foregroundStyle(DS.Semantic.warningForeground)
+            Text(error)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Spacing.lg)
+        .solidCard()
+    }
+
+    // MARK: - Pro Observations Section
+
+    @ViewBuilder
+    private func proObservationsSection(_ data: InsightData) -> some View {
+        VStack(spacing: DS.Spacing.sm) {
+            YalaSectionHeader(L10n.Insights.intelligentInsights)
+
+            if viewModel.aiActivated {
+                if viewModel.isLoadingAI {
+                    aiLoadingPlaceholder
+                } else if let aiCards = viewModel.aiInsights?.cards, !aiCards.isEmpty {
+                    ForEach(Array(aiCards.enumerated()), id: \.offset) { _, card in
+                        let sentiment: Sentiment = switch card.sentiment {
+                        case "positive": .positive
+                        case "attention": .attention
+                        default: .neutral
+                        }
+                        InsightCard(insight: InsightResult(
+                            id: "ai_\(card.text.prefix(20))",
+                            icon: card.icon,
+                            text: markdownAttributed(card.text),
+                            sentiment: sentiment,
+                            isProOnly: true,
+                            tip: card.tip.map { markdownAttributed($0) }
+                        ))
+                    }
+
+                    // Fun fact after AI cards
+                    if let funFact = viewModel.aiInsights?.funFact {
+                        InsightCard(insight: InsightResult(
+                            id: "ai_fun_fact",
+                            icon: "lightbulb",
+                            text: markdownAttributed(funFact),
+                            sentiment: .positive,
+                            isProOnly: true
+                        ))
+                    }
+                } else if viewModel.aiError != nil {
+                    // Error already shown in hero section
+                    EmptyView()
+                }
+            } else {
+                // Hint to use the button
+                HStack(spacing: DS.Spacing.sm) {
+                    Image(systemName: "sparkles")
+                        .foregroundStyle(.tertiary)
+                    Text(L10n.Insights.generateAIHint)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.tertiary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(DS.Spacing.lg)
+                .solidCard()
+            }
+        }
+    }
+
+    // MARK: - Free Observations Section
+
+    @ViewBuilder
+    private func freeObservationsSection(_ data: InsightData) -> some View {
+        if data.ruleBasedInsights.count > 1 {
+            textInsightsSection(Array(data.ruleBasedInsights.dropFirst()))
+        }
     }
 
     // MARK: - Section 3: Quick Stats Grid
@@ -406,7 +558,7 @@ struct InsightsTabView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Spacing.md)
-        .yalaCard(padding: 0, radius: DS.Radius.md, shadow: false)
+        .solidCard(radius: DS.Radius.md)
     }
 
     // MARK: - Section 4: Commitments
@@ -449,44 +601,51 @@ struct InsightsTabView: View {
 
                 if showBudgetsAtRisk {
                     ForEach(c.budgetsAtRisk) { budget in
-                        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                            HStack {
-                                Image(systemName: budget.usagePercent >= 75 ? "exclamationmark.triangle" : "chart.bar")
-                                    .font(DS.Typography.captionSmall)
-                                    .foregroundStyle(budgetColor(budget.usagePercent))
-                                    .accessibilityHidden(true)
-
-                                Text(budget.name)
-                                    .font(DS.Typography.subheadline)
-                                    .foregroundStyle(.primary)
-
-                                Spacer()
-
-                                Text("\(Int(budget.usagePercent))%")
-                                    .font(DS.Typography.caption)
-                                    .fontWeight(.medium)
-                                    .foregroundStyle(budgetColor(budget.usagePercent))
-                            }
-
-                            BudgetProgressBar(
-                                percentage: budget.usagePercent,
-                                color: budget.colorHex ?? "4A90D9",
-                                isExceeded: budget.usagePercent >= 100
-                            )
-                            .frame(height: 6)
-                        }
-                        .padding(DS.Spacing.md)
-                        .yalaCard(padding: 0, radius: DS.Radius.md, shadow: false)
+                        budgetRow(budget)
                     }
                 }
             }
         }
     }
 
-    private func budgetColor(_ usage: Double) -> Color {
-        if usage >= 100 { return DS.Semantic.errorForeground }
-        if usage >= 75 { return DS.Semantic.warningForeground }
-        return .primary
+    // MARK: - Budget Row (with icon, no alert colors)
+
+    private func budgetRow(_ budget: BudgetAtRisk) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            HStack(spacing: DS.Spacing.md) {
+                // Budget icon (compact version of BudgetRowView)
+                ZStack {
+                    Circle()
+                        .fill(Color(hex: budget.colorHex ?? "4A90D9"))
+                        .frame(width: 28, height: 28)
+
+                    Image(systemName: budget.icon)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.white)
+                }
+
+                Text(budget.name)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.primary)
+
+                Spacer()
+
+                Text("\(Int(budget.usagePercent))%")
+                    .font(DS.Typography.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.secondary)
+            }
+
+            BudgetProgressBar(
+                percentage: budget.usagePercent,
+                color: budget.colorHex ?? "4A90D9",
+                isExceeded: budget.usagePercent >= 100,
+                simplified: true
+            )
+            .frame(height: 6)
+        }
+        .padding(DS.Spacing.md)
+        .solidCard(radius: DS.Radius.md)
     }
 
     private func commitmentRow(icon: String, label: String, value: String, secondary: String) -> some View {
@@ -513,10 +672,10 @@ struct InsightsTabView: View {
                 .foregroundStyle(.primary)
         }
         .padding(DS.Spacing.md)
-        .yalaCard(padding: 0, radius: DS.Radius.md, shadow: false)
+        .solidCard(radius: DS.Radius.md)
     }
 
-    // MARK: - Section 7: Weekday Spending Chart
+    // MARK: - Section 5: Weekday Spending Chart
 
     @ViewBuilder
     private func weekdayChartSection(_ data: [WeekdaySpending]) -> some View {
@@ -524,11 +683,11 @@ struct InsightsTabView: View {
             YalaSectionHeader(L10n.Insights.weekdayAverage)
 
             WeekdayBarChart(data: data, currencyCode: defaultCurrencyCode)
-                .yalaCard(padding: DS.Spacing.lg, shadow: false)
+                .solidCard(padding: DS.Spacing.lg)
         }
     }
 
-    // MARK: - Section 8: Nature Distribution
+    // MARK: - Section 6: Need Distribution
 
     @ViewBuilder
     private func needSection(_ distribution: NeedDistribution) -> some View {
@@ -536,11 +695,11 @@ struct InsightsTabView: View {
             YalaSectionHeader(L10n.Insights.needDistribution)
 
             NeedBar(distribution: distribution)
-                .yalaCard(padding: DS.Spacing.lg, shadow: false)
+                .solidCard(padding: DS.Spacing.lg)
         }
     }
 
-    // MARK: - Section 10: Text Insights
+    // MARK: - Section 7: Text Insights (Free users)
 
     @ViewBuilder
     private func textInsightsSection(_ insights: [InsightResult]) -> some View {
@@ -549,29 +708,6 @@ struct InsightsTabView: View {
 
             ForEach(insights) { insight in
                 InsightCard(insight: insight)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func aiTextInsightsSection(_ cards: [LLMInsightCard]) -> some View {
-        VStack(spacing: DS.Spacing.sm) {
-            YalaSectionHeader(L10n.Insights.intelligentInsights)
-
-            ForEach(Array(cards.enumerated()), id: \.offset) { _, card in
-                let sentiment: Sentiment = switch card.sentiment {
-                case "positive": .positive
-                case "attention": .attention
-                default: .neutral
-                }
-                InsightCard(insight: InsightResult(
-                    id: "ai_\(card.text.prefix(20))",
-                    icon: card.icon,
-                    text: markdownAttributed(card.text),
-                    sentiment: sentiment,
-                    isProOnly: true,
-                    tip: card.tip.map { markdownAttributed($0) }
-                ))
             }
         }
     }
@@ -589,7 +725,56 @@ struct InsightsTabView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(DS.Spacing.lg)
-        .yalaCard(padding: 0, shadow: false)
+        .solidCard()
+    }
+
+    // MARK: - AI Insights Teaser (Free users)
+
+    private var aiInsightsTeaser: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            HStack {
+                Label(L10n.Insights.aiTeaser, systemImage: "sparkles")
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.thPrimaryText)
+                Spacer()
+                ProBadge(size: .small)
+            }
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                Text(L10n.Insights.aiTeaserPlaceholder1)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .redacted(reason: .placeholder)
+                    .blur(radius: 3)
+
+                Text(L10n.Insights.aiTeaserPlaceholder2)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .redacted(reason: .placeholder)
+                    .blur(radius: 3)
+            }
+
+            Button {
+                TelemetryService.track(.proUpsellTapped, parameters: TelemetryService.upsellParameters(source: "insightsTeaser"))
+                showUpgradeSheet = true
+            } label: {
+                HStack(spacing: DS.Spacing.xs) {
+                    YalaSpark(size: .small, animated: false)
+                    Text(L10n.FeatureGate.upgradeToPro)
+                        .font(DS.Typography.labelSmall)
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DS.Spacing.sm)
+                .background(theme.accent)
+                .clipShape(Capsule())
+            }
+        }
+        .padding(DS.Spacing.lg)
+        .solidCard()
+        .onAppear {
+            TelemetryService.trackOnce(.proUpsellShown, key: "insightsTeaser", parameters: TelemetryService.upsellParameters(source: "insightsTeaser"))
+        }
     }
 
     // MARK: - Locked Fun Fact
@@ -619,94 +804,13 @@ struct InsightsTabView: View {
                 ProBadge(size: .small)
             }
             .padding(DS.Spacing.lg)
-            .yalaCard(padding: 0, shadow: false)
+            .solidCard()
             .opacity(0.7)
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $showUpgradeSheet) {
             UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature)
         }
-    }
-
-    // MARK: - Pro AI Consent Banner
-
-    private var proAIConsentBanner: some View {
-        VStack(spacing: DS.Spacing.md) {
-            HStack(spacing: DS.Spacing.md) {
-                Image(systemName: "sparkles")
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(theme.accent)
-                    .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.Insights.activateAITitle)
-                        .font(DS.Typography.subheadline)
-                        .fontWeight(.medium)
-                    Text(L10n.Insights.activateAIBody)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-            }
-
-            HStack(spacing: DS.Spacing.md) {
-                Button(L10n.Insights.goToSettings) {
-                    sessionState.selectedMainTab = .more
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                        sessionState.shouldOpenProfile = true
-                    }
-                }
-                .font(DS.Typography.label)
-                .foregroundStyle(.white)
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.sm)
-                .background(theme.accent, in: Capsule())
-
-                Button(L10n.Insights.notInterested) {
-                    dismissedAIInsightsBanner = true
-                }
-                .font(DS.Typography.label)
-                .foregroundStyle(.secondary)
-            }
-        }
-        .padding(DS.Spacing.lg)
-        .background(DS.Semantic.infoBackground, in: RoundedRectangle(cornerRadius: DS.Radius.xl))
-        .overlay(RoundedRectangle(cornerRadius: DS.Radius.xl).stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1))
-    }
-
-    // MARK: - First-Time Tip
-
-    private var firstTimeTip: some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: "lightbulb")
-                .font(DS.Typography.body)
-                .foregroundStyle(theme.accent)
-
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(L10n.Insights.firstTimeTitle)
-                    .font(DS.Typography.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.primary)
-                Text(L10n.Insights.firstTimeBody)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            Button {
-                withAnimation { hasSeenInsightsIntro = true }
-            } label: {
-                Image(systemName: "xmark")
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.tertiary)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.Accessibility.close)
-        }
-        .padding(DS.Spacing.lg)
-        .background(DS.Semantic.infoBackground, in: RoundedRectangle(cornerRadius: DS.Radius.xl))
-        .overlay(RoundedRectangle(cornerRadius: DS.Radius.xl).stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1))
     }
 
     // MARK: - Helpers

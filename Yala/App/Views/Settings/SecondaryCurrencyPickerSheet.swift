@@ -179,6 +179,7 @@ struct SecondaryCurrencyPickerSheet: View {
         .buttonStyle(.plain)
         .opacity(canSelect ? 1.0 : 0.5)
         .disabled(!canSelect)
+        .accessibilityHint(!canSelect ? L10n.Accessibility.maxCurrenciesSelected : "")
     }
 
     private func toggleCurrency(_ currency: CurrencyCode) {

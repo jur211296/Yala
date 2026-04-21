@@ -156,6 +156,7 @@ struct ProTrialOfferSheet: View {
             }
         }
         .fullScreenCover(isPresented: $showSuccess, onDismiss: {
+            ProTourManager.shared.triggerIfEligible()
             onDismiss()
         }) {
             SubscriptionSuccessView()

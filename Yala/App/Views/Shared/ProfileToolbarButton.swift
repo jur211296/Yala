@@ -51,8 +51,8 @@ struct ProfileToolbarButton: View {
                     .offset(x: 4, y: 4)
             }
         }
-        .coachMarkAnchor("profile")
         .accessibilityLabel(L10n.Accessibility.profile)
+        .accessibilityIdentifier("profile_avatar")
     }
 
     // MARK: - Avatar

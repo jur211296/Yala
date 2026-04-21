@@ -16,7 +16,7 @@ struct AmountInputHelperTests {
 
     @Test func filter_simpleInteger_returnsAsIs() {
         let result = AmountInputHelper.filterAmountInput("123")
-        #expect(result == "123")
+        #expect(result == "123") // Under 1000, no grouping needed
     }
 
     @Test func filter_decimalWithDot_returnsDecimal() {
@@ -85,7 +85,8 @@ struct AmountInputHelperTests {
 
     @Test func filter_lettersIgnored() {
         let result = AmountInputHelper.filterAmountInput("12abc34")
-        #expect(result == "1234")
+        let groupingSeparator = Locale.current.groupingSeparator ?? ","
+        #expect(result == "1\(groupingSeparator)234")
     }
 
     @Test func filter_symbolsIgnored() {
@@ -95,7 +96,8 @@ struct AmountInputHelperTests {
 
     @Test func filter_spacesIgnored() {
         let result = AmountInputHelper.filterAmountInput("1 000")
-        #expect(result == "1000")
+        let groupingSeparator = Locale.current.groupingSeparator ?? ","
+        #expect(result == "1\(groupingSeparator)000")
     }
 
     // MARK: - Edge cases
@@ -111,10 +113,37 @@ struct AmountInputHelperTests {
     }
 
     @Test func filter_commaAsDecimalSeparator_handled() {
-        // Comma should be accepted as decimal separator
-        let result = AmountInputHelper.filterAmountInput("100,50")
         let decimalSeparator = Locale.current.decimalSeparator ?? "."
-        #expect(result.contains(decimalSeparator))
+        let groupingSeparator = Locale.current.groupingSeparator ?? ","
+        let result = AmountInputHelper.filterAmountInput("100,50")
+        if decimalSeparator == "," {
+            // In comma-decimal locales, comma is kept as decimal separator
+            #expect(result.contains(","))
+        } else {
+            // In dot-decimal locales, comma is grouping → "10050" → "10,050"
+            #expect(result == "10\(groupingSeparator)050")
+        }
+    }
+
+    @Test func filter_groupingSeparator_addedToLargeNumbers() {
+        // filterAmountInput now adds grouping separators in real-time
+        let result = AmountInputHelper.filterAmountInput("12345")
+        let groupingSeparator = Locale.current.groupingSeparator ?? ","
+        #expect(result == "12\(groupingSeparator)345")
+    }
+
+    @Test func filter_groupingSeparator_pastedInputReformatted() {
+        // Pasted "1,234" (with existing grouping) should be re-formatted correctly
+        let result = AmountInputHelper.filterAmountInput("1,234")
+        let decimalSeparator = Locale.current.decimalSeparator ?? "."
+        let groupingSeparator = Locale.current.groupingSeparator ?? ","
+        if decimalSeparator == "." {
+            // Comma is grouping → stripped then re-added: "1234" → "1,234"
+            #expect(result == "1\(groupingSeparator)234")
+        } else {
+            // Comma is decimal → "1,234" has decimal
+            #expect(result.contains(decimalSeparator))
+        }
     }
 }
 

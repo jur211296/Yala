@@ -89,6 +89,7 @@ struct InsightsRuleBasedTests {
         return BudgetAtRisk(
             id: budget.persistentModelID,
             name: name,
+            icon: "dollarsign.circle",
             usagePercent: usagePercent,
             spent: usagePercent * 10,
             limit: 1000,
