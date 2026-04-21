@@ -32,6 +32,8 @@ struct RecordsStandaloneView: View {
     @State private var isPresentingSettings = false
     @State private var recalculateTask: Task<Void, Never>?
     @State private var pendingReload = false
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var isInBackground = false
 
     // MARK: - FAB State
 
@@ -96,6 +98,20 @@ struct RecordsStandaloneView: View {
             .onDisappear { recalculateTask?.cancel() }
             .onChange(of: sessionState.dataVersion) { _, _ in
                 reloadAndRecalculate()
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                switch newPhase {
+                case .background, .inactive:
+                    isInBackground = true
+                    recalculateTask?.cancel()
+                case .active:
+                    guard UIApplication.shared.applicationState == .active else { return }
+                    guard isInBackground else { return }
+                    isInBackground = false
+                    reloadAndRecalculate()
+                @unknown default:
+                    break
+                }
             }
             .aiConsentAlert(isPresented: $showAIConsentAlert, pendingInput: $pendingAIInput) { input in
                 switch input {
@@ -305,6 +321,7 @@ struct RecordsStandaloneView: View {
 
     private func scheduleRecalculation(reload: Bool) {
         if reload { pendingReload = true }
+        guard !isInBackground else { return }
         recalculateTask?.cancel()
         recalculateTask = Task { @MainActor in
             do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
@@ -317,9 +334,10 @@ struct RecordsStandaloneView: View {
         }
     }
 
-    /// Synchronous full reload — used only for the initial onAppear.
+    /// Initial onAppear calculation. `setContext` already fetched if the context was new,
+    /// so this only runs the synchronous calc pass. Subsequent reloads go through
+    /// `reloadAndRecalculate` (dataVersion / scene foreground).
     private func performRecalculation() {
-        dataViewModel.loadData()
         performCalculation()
     }
 

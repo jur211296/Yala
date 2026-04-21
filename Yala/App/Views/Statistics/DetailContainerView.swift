@@ -524,9 +524,10 @@ struct DetailContainerView: View {
         }
     }
 
-    /// Synchronous full reload — used only for the initial onAppear where data is needed immediately.
+    /// Initial onAppear calculation. `setContext` already fetched if the context was new,
+    /// so this only runs the synchronous calc pass. Subsequent reloads go through
+    /// `reloadAndRecalculate` (dataVersion / scene foreground).
     private func performRecalculation() {
-        dataViewModel.loadData()
         performCalculation()
     }
 
