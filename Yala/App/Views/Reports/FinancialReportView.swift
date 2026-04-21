@@ -331,6 +331,8 @@ struct FinancialReportView: View {
 
         ToolbarSpacer(.fixed, placement: .topBarTrailing)
 
+        SyncIndicatorToolbarItem()
+
         ProfileToolbarItem {
             isPresentingSettings = true
         }

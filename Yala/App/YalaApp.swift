@@ -21,6 +21,12 @@ struct YalaApp: App {
         // Clear default gray background for paged TabView
         UIView.appearance(whenContainedInInstancesOf: [UIPageViewController.self]).backgroundColor = .clear
         UIScrollView.appearance(whenContainedInInstancesOf: [UIPageViewController.self]).backgroundColor = .clear
+
+        // Start observing CloudKit container events before the ModelContainer
+        // fires its first .setup event. Idempotent — safe even if called again.
+        MainActor.assumeIsolated {
+            iCloudSyncService.shared.startObserving()
+        }
     }
 
     /// ModelContainer compartido para toda la app.

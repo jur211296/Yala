@@ -73,6 +73,12 @@ enum AnalyticsEvent: String {
     case panelHeroAICacheHit
     case panelHeroCTAImpression
     case panelHeroCTATap
+
+    // CloudKit observability
+    case cloudkitExportFailed
+    case cloudkitExportSucceeded
+    case cloudkitStalledDetected
+    case cloudkitIndicatorTapped
 }
 
 // MARK: - Telemetry Service
@@ -106,6 +112,11 @@ enum TelemetryService {
         var params = parameters
         params["isProUser"] = String(FeatureGateService.shared.isProUser)
         TelemetryDeck.signal(event.rawValue, parameters: params)
+        #if DEBUG
+        if event.rawValue.hasPrefix("cloudkit") {
+            print("TelemetryService: [CloudKit] \(event.rawValue) params=\(params)")
+        }
+        #endif
     }
 
     /// Builds common parameters for upsell/conversion tracking.

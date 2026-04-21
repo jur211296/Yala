@@ -4726,7 +4726,34 @@ enum L10n {
         static var dataFoundTitle: String { ls("icloud.dataFoundTitle", comment: "") }
         static var dataFoundMessage: String { ls("icloud.dataFoundMessage", comment: "") }
         static var dataFoundAction: String { ls("icloud.dataFoundAction", comment: "") }
-        static var syncingBanner: String { ls("icloud.syncingBanner", comment: "") }
+        static var remoteOnboardingCompleted: String { ls("icloud.remoteOnboardingCompleted", comment: "") }
+        static var remoteRestoreCompleted: String { ls("icloud.remoteRestoreCompleted", comment: "") }
+        enum SyncIndicator {
+            static var failed: String { ls("icloud.syncIndicator.failed", comment: "") }
+            static func stalled(_ days: Int) -> String {
+                String(format: ls("icloud.syncIndicator.stalled", comment: ""), days)
+            }
+            static var hint: String { ls("icloud.syncIndicator.hint", comment: "") }
+        }
+        enum Detail {
+            static func upToDate(_ relative: String) -> String {
+                String(format: ls("icloud.detail.upToDate", comment: ""), relative)
+            }
+            static var errorTitle: String { ls("icloud.detail.errorTitle", comment: "") }
+            static var errorMessage: String { ls("icloud.detail.errorMessage", comment: "") }
+            static func stalledTitle(_ days: Int) -> String {
+                String(format: ls("icloud.detail.stalledTitle", comment: ""), days)
+            }
+            static var stalledMessage: String { ls("icloud.detail.stalledMessage", comment: "") }
+            static func technicalCode(_ code: String) -> String {
+                String(format: ls("icloud.detail.technicalCode", comment: ""), code)
+            }
+            enum CTA {
+                static var retry: String { ls("icloud.detail.cta.retry", comment: "") }
+                static var diagnose: String { ls("icloud.detail.cta.diagnose", comment: "") }
+                static var viewTechnical: String { ls("icloud.detail.cta.viewTechnical", comment: "") }
+            }
+        }
         static var remoteWipeTitle: String { ls("icloud.remoteWipe.title", comment: "") }
         static var remoteWipeMessage: String { ls("icloud.remoteWipe.message", comment: "") }
         static var remoteWipeConfirm: String { ls("icloud.remoteWipe.confirm", comment: "") }

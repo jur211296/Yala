@@ -173,6 +173,7 @@ struct PanelView: View {
                     ToolbarItem(placement: .navigationBarLeading) {
                         inboxToolbarButton
                     }
+                    SyncIndicatorToolbarItem()
                     ToolbarItem(placement: .topBarTrailing) {
                         sectionsConfigButton
                     }
