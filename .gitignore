@@ -17,8 +17,13 @@ fastlane/screenshots
 
 # Secrets (API keys)
 Secrets.xcconfig
+AuthKey_*.p8
+AuthKey_*.p8.txt
 .claude/sessions/*.log
 .vercel
+
+# ASC build artifacts
+.asc/artifacts/
 
 # QA automation results (generated at runtime)
 qa/results/
