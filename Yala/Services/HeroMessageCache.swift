@@ -27,6 +27,11 @@ enum HeroSpendingTrend: String, Equatable {
 /// Snapshot agregado que alimenta al LLM. Sin transacciones individuales —
 /// solo contadores. Cambios en cualquier campo reemplazan el `contextHash` y
 /// fuerzan regeneración.
+///
+/// `income` / `expense` / `available` se pasan al LLM ya formateados
+/// (`"S/ 6,019"`) para que pueda citarlos de forma natural sin reformatear.
+/// El `contextHash` bucketea al centenar para no invalidar cache en cada
+/// micro-gasto del día.
 struct HeroContext: Equatable {
     let state: HeroMonthState
     let financialScore: Int?
@@ -35,7 +40,25 @@ struct HeroContext: Equatable {
     let monthName: String
     let userName: String?
     let daysRemaining: Int
+    let daysElapsed: Int
     let locale: String
+    let income: Double
+    let expense: Double
+    let available: Double
+    let formattedIncome: String
+    let formattedExpense: String
+    let formattedAvailable: String
+    /// Gasto del mes anterior — nil cuando no hay data suficiente (sin tx
+    /// en el período previo). Le permite al LLM citar la comparación
+    /// ("gastaste S/ 1,200 menos que en marzo") en vez de sólo describir la
+    /// tendencia sin cifras.
+    let previousExpense: Double?
+    let formattedPreviousExpense: String?
+    /// Delta absoluto firmado del gasto (`expense - previousExpense`) —
+    /// positivo = gasta más, negativo = gasta menos. Facilita al LLM usar
+    /// el monto de la diferencia directamente.
+    let expenseDelta: Double?
+    let formattedExpenseDelta: String?
 }
 
 // MARK: - Entry
@@ -78,6 +101,13 @@ enum HeroMessageCache {
         let trendToken = ctx.spendingTrend?.rawValue ?? "na"
         let daysBucket = String(ctx.daysRemaining / 7)
         let name = ctx.userName?.isEmpty == false ? ctx.userName! : "_"
+        // Bucket al centenar: evita invalidar el cache por micro-gastos
+        // intradía pero sí lo hace cuando el monto mueve ~100 de la moneda
+        // del user (lo suficiente para que un mensaje previo se sienta stale).
+        let incomeBucket = String(Int(ctx.income / 100))
+        let expenseBucket = String(Int(ctx.expense / 100))
+        let availableBucket = String(Int(ctx.available / 100))
+        let prevExpenseBucket = ctx.previousExpense.map { String(Int($0 / 100)) } ?? "na"
 
         return [
             ctx.state.rawValue,
@@ -87,6 +117,10 @@ enum HeroMessageCache {
             daysBucket,
             ctx.locale,
             name,
+            incomeBucket,
+            expenseBucket,
+            availableBucket,
+            prevExpenseBucket,
         ].joined(separator: "_")
     }
 

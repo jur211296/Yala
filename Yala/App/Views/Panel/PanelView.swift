@@ -291,7 +291,11 @@ struct PanelView: View {
                         // Gated on `heroWidget.data != nil` inside the section
                         // itself so the skeleton doesn't flash an empty card
                         // before the first `performCalculation()` lands.
-                        PanelHeroSection(viewModel: viewModel, sessionState: sessionState)
+                        PanelHeroSection(
+                            viewModel: viewModel,
+                            sessionState: sessionState,
+                            showCustomPeriodPicker: $sheets.showCustomPeriodPicker
+                        )
 
                         if appPreferences.showSiriTip, viewModel.transactions.count >= 5 {
                             SiriTipCard(isVisible: Binding(

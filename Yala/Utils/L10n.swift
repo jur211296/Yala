@@ -324,136 +324,46 @@ enum L10n {
             }
         }
 
-        /// Hero del mes (P20-04). Copy rule-based; the state chosen by
-        /// `HeroMonthCalculator` drives the chip icon tint + message. All
-        /// strings tuned to Brand Voice §10: "tú", sin regaños, emojis
-        /// moderados. Chip greets the user by name; KPI carries the mood.
+        /// Hero del Panel (PP2-01). El `aiSubtitle` LLM es el KPI protagonista
+        /// cuando está disponible (Pro + consent); si no, el fallback rule-based
+        /// con cifras concretas sube al protagonista. El chip conserva el sufijo
+        /// de mes sólo durante la primera semana.
         enum Hero {
-            // MARK: Chip (greeting line, tinted icon + text)
-            // Emoji lives in the SF Symbol icon (`sparkles`/`eyes`/
-            // `figure.strengthtraining.traditional`), NOT in these strings.
+            // MARK: Chip (greeting line)
             static func chipMonthStart(userName: String, month: String) -> String {
                 String(format: ls("panel.hero.chip.monthStart %@ %@", comment: "Hero chip — first week, greets user + empezamos <mes>"), userName, month)
             }
-            static func chipOnTrack(userName: String) -> String {
-                String(format: ls("panel.hero.chip.onTrack %@", comment: "Hero chip — on track, greets user"), userName)
-            }
-            static func chipNeutral(userName: String) -> String {
-                String(format: ls("panel.hero.chip.neutral %@", comment: "Hero chip — neutral state, greets user"), userName)
-            }
-            static func chipTight(userName: String) -> String {
-                String(format: ls("panel.hero.chip.tight %@", comment: "Hero chip — tight state, greets user + recta final"), userName)
-            }
-            static func chipOverBudget(userName: String) -> String {
-                String(format: ls("panel.hero.chip.overBudget %@", comment: "Hero chip — over budget, greets user + nuevo capítulo"), userName)
+            static func chipDefault(userName: String) -> String {
+                String(format: ls("panel.hero.chip.default %@", comment: "Hero chip — default greeting, greets user"), userName)
             }
 
-            // MARK: KPI (big empathic line)
-            static var kpiMonthStart: String {
-                ls("panel.hero.kpi.monthStart", comment: "Hero KPI — month just started")
+            // MARK: Rule-based KPI fallback (aiSubtitle nil — Free / sin consent / offline / cache miss).
+            // Los montos llegan con `**` para render bold via `AttributedString(markdown:)`.
+            static func kpiMonthStart(income: String, daysRemaining: Int) -> String {
+                String(format: ls("panel.hero.kpi.monthStart %@ %d", comment: "Hero KPI fallback — month just started, markdown bold"), income, daysRemaining)
             }
-            static var kpiOnTrack: String {
-                ls("panel.hero.kpi.onTrack", comment: "Hero KPI — on track")
+            static func kpiOnTrack(income: String, spent: String, available: String, daysRemaining: Int) -> String {
+                String(format: ls("panel.hero.kpi.onTrack %@ %@ %@ %d", comment: "Hero KPI fallback — on track, markdown bold"), income, spent, available, daysRemaining)
             }
-            static var kpiNeutral: String {
-                ls("panel.hero.kpi.neutral", comment: "Hero KPI — neutral state")
+            static func kpiNeutral(income: String, spent: String, available: String, daysRemaining: Int) -> String {
+                String(format: ls("panel.hero.kpi.neutral %@ %@ %@ %d", comment: "Hero KPI fallback — neutral, markdown bold"), income, spent, available, daysRemaining)
             }
-            static var kpiTight: String {
-                ls("panel.hero.kpi.tight", comment: "Hero KPI — tight state")
+            static func kpiTight(spent: String, available: String, daysRemaining: Int) -> String {
+                String(format: ls("panel.hero.kpi.tight %@ %@ %d", comment: "Hero KPI fallback — budget tight, markdown bold"), spent, available, daysRemaining)
             }
-            static var kpiOverBudget: String {
-                ls("panel.hero.kpi.overBudget", comment: "Hero KPI — over-budget state")
-            }
-
-            // MARK: Subtext (one-line descriptive)
-            static func subtextMonthStart(daysRemaining: Int) -> String {
-                String(format: ls("panel.hero.subtext.monthStart %d", comment: "Hero subtext — month just started"), daysRemaining)
-            }
-            static func subtextOnTrack(spent: String, daysRemaining: Int) -> String {
-                String(format: ls("panel.hero.subtext.onTrack %@ %d", comment: "Hero subtext — on track"), spent, daysRemaining)
-            }
-            static func subtextNeutral(spent: String, available: String) -> String {
-                String(format: ls("panel.hero.subtext.neutral %@ %@", comment: "Hero subtext — neutral"), spent, available)
-            }
-            static var subtextTight: String {
-                ls("panel.hero.subtext.tight", comment: "Hero subtext — tight state")
-            }
-            static var subtextOverBudget: String {
-                ls("panel.hero.subtext.overBudget", comment: "Hero subtext — over-budget")
+            static func kpiOverBudget(spent: String, income: String) -> String {
+                String(format: ls("panel.hero.kpi.overBudget %@ %@", comment: "Hero KPI fallback — over budget, markdown bold"), spent, income)
             }
 
-            // MARK: Pills (small stat tiles)
-            static var pillIncome: String {
-                ls("panel.hero.pill.income", comment: "Hero pill label — income")
-            }
-            static var pillSpent: String {
-                ls("panel.hero.pill.spent", comment: "Hero pill label — spent")
-            }
-            static var pillDaysLeft: String {
-                ls("panel.hero.pill.daysLeft", comment: "Hero pill label — days left in the month")
-            }
-
-            // MARK: AI Hero (P20-05)
+            // MARK: AI Hero
             static var proBadge: String {
                 ls("panel.hero.proBadge", comment: "Hero Pro badge — shown when subtitle is AI-generated")
             }
+            /// CTA inline visible cuando no hay aiSubtitle disponible y el user
+            /// aún puede "desbloquearlo" (Free → upgrade; Pro sin consent →
+            /// activar el toggle de Insights IA en Perfil).
             static var upsellCTA: String {
-                ls("panel.hero.upsellCTA", comment: "Hero CTA — Free: upgrade to unlock AI message")
-            }
-
-            // MARK: KPI Preferences (P20-04b — sheet + new KPIs)
-            enum KpiPrefs {
-                // Sheet chrome
-                static var title: String {
-                    ls("panel.hero.kpiPrefs.title", comment: "Hero KPI preferences sheet title")
-                }
-                static var footer: String {
-                    ls("panel.hero.kpiPrefs.footer", comment: "Hero KPI sheet footer — explains the 3-visible cap")
-                }
-                static var editButton: String {
-                    ls("panel.hero.kpiPrefs.editButton", comment: "A11y label for the edit button on the hero card")
-                }
-                /// Subtitle under a toggle when disabling it would drop below the
-                /// 2-KPI minimum ("Mínimo 2 activas").
-                static var minimumActive: String {
-                    ls("panel.hero.kpiPrefs.minimumActive", comment: "Subtitle shown under a toggle when disabling it would leave only 1 active KPI")
-                }
-                /// Subtitle under an OFF toggle once 3 KPIs are already active
-                /// ("Ya tienes 3 activas").
-                static var maximumReached: String {
-                    ls("panel.hero.kpiPrefs.maximumReached", comment: "Subtitle shown under an OFF toggle when the user already has 3 KPIs active")
-                }
-
-                // Display names (full, shown in the sheet list)
-                static var nameIncome: String {
-                    ls("panel.hero.kpiPrefs.name.income", comment: "KPI display name — income")
-                }
-                static var nameSpent: String {
-                    ls("panel.hero.kpiPrefs.name.spent", comment: "KPI display name — spent")
-                }
-                static var nameDaysLeft: String {
-                    ls("panel.hero.kpiPrefs.name.daysLeft", comment: "KPI display name — days left")
-                }
-                static var nameAvailable: String {
-                    ls("panel.hero.kpiPrefs.name.available", comment: "KPI display name — available (income minus expense)")
-                }
-                static var nameDailyAverage: String {
-                    ls("panel.hero.kpiPrefs.name.dailyAverage", comment: "KPI display name — daily spending average")
-                }
-                static var nameProjection: String {
-                    ls("panel.hero.kpiPrefs.name.projection", comment: "KPI display name — end-of-month projection")
-                }
-
-                // Pill labels (short, shown in the hero pill)
-                static var pillAvailable: String {
-                    ls("panel.hero.kpiPrefs.pill.available", comment: "Hero pill label — available")
-                }
-                static var pillDailyAverage: String {
-                    ls("panel.hero.kpiPrefs.pill.dailyAverage", comment: "Hero pill label — daily average")
-                }
-                static var pillProjection: String {
-                    ls("panel.hero.kpiPrefs.pill.projection", comment: "Hero pill label — projection")
-                }
+                ls("panel.hero.upsellCTA", comment: "Hero inline CTA — appears for Free and for Pro users without AI consent")
             }
         }
         static var totalBalance: String {

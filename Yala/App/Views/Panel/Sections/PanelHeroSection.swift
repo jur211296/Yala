@@ -4,7 +4,10 @@
 //
 //  Gating wrapper: renders `HeroMonthView` only once `PanelViewModel` has
 //  computed the hero payload (otherwise the skeleton flashes an empty card).
-//  Owns the presentation state for the KPI preferences sheet (P20-04b).
+//  Propaga el binding del period picker para que `PanelFilterControlBar`
+//  pueda quedarse en chips-only. Decide el destino del upsellCTA según
+//  el estado del user: Free → sheet de upgrade; Pro sin consent → alert
+//  que activa el consent IA (auto-toggle ON) y dispara la regeneración.
 //
 //  Intentionally NOT a `PanelSectionKind` — the hero is a permanent header
 //  of the Panel, not a thematic section the user can hide.
@@ -15,50 +18,73 @@ import SwiftUI
 struct PanelHeroSection: View {
     @Bindable var viewModel: PanelViewModel
     let sessionState: SessionState
+    @Binding var showCustomPeriodPicker: Bool
     @Environment(AppPreferences.self) private var appPreferences
 
-    @State private var showingKPIPrefs = false
-    /// Sheet del upsell cuando un usuario Free tapea el CTA "Personalízalo con IA".
-    @State private var showingUpgrade = false
+    /// Single source of truth para el destino del upsellCTA — elimina la
+    /// combinación imposible "ambos true" de dos booleanos separados.
+    private enum UpsellDestination: Identifiable {
+        case upgrade
+        case consent
+        var id: String { String(describing: self) }
+    }
+
+    @State private var upsellDestination: UpsellDestination?
 
     var body: some View {
-        // Observation fix: the VM's `activeHeroKPIs()` reads from
-        // `appPreferences.panelHeroKPIs*` but the VM itself is not an
-        // @Observable dependency of those. Touching them here registers this
-        // section as an observer so SwiftUI invalidates it after the KPI
-        // sheet flushes its drafts. Same pattern that `HeroMonthView` uses
-        // for the formatter prefs.
-        let _ = appPreferences.panelHeroKPIsOrder
-        let _ = appPreferences.panelHeroKPIsHidden
-        let _ = appPreferences.panelHeroKPIsCustomized
-
         if let data = viewModel.heroWidget.data {
+            // Touch consent so SwiftUI invalidates this section when the user
+            // toggles the AI insights consent in Profile — otherwise the
+            // upsellCTA stays stale until the next data refresh.
+            let _ = appPreferences.aiInsightsConsentAccepted
+
+            let isPro = FeatureGateService.shared.isProUser
+            let hasConsent = appPreferences.aiInsightsConsentAccepted
+            let showUpsellCTA = viewModel.heroAISubtitle == nil && (!isPro || !hasConsent)
+
             HeroMonthView(
                 data: data,
                 currencyCode: viewModel.defaultCurrencyCode,
-                activeKPIs: viewModel.activeHeroKPIs(),
-                onEditTapped: { showingKPIPrefs = true },
+                selectedPeriod: sessionState.selectedPeriod,
+                customDateRange: sessionState.customDateRange,
+                onSelectPeriod: { sessionState.selectedPeriod = $0 },
+                onCustomPeriodTapped: { showCustomPeriodPicker = true },
                 aiSubtitle: viewModel.heroAISubtitle,
                 showProBadge: viewModel.heroAISubtitle != nil,
-                showUpsellCTA: !FeatureGateService.shared.isProUser,
+                showUpsellCTA: showUpsellCTA,
                 onUpsellTap: {
                     TelemetryService.track(.panelHeroCTATap)
-                    showingUpgrade = true
+                    upsellDestination = isPro ? .consent : .upgrade
                 }
             )
             .contentShape(Rectangle())
             .onTapGesture {
                 sessionState.navigateToDetail(.insights)
             }
-            .sheet(isPresented: $showingKPIPrefs) {
-                HeroKPIPreferencesSheet(viewModel: viewModel)
-            }
-            .sheet(isPresented: $showingUpgrade) {
+            .sheet(isPresented: Binding(
+                get: { upsellDestination == .upgrade },
+                set: { if !$0 { upsellDestination = nil } }
+            )) {
                 UpgradePromptSheet(
                     feature: .smartInsightsAI,
                     context: .proFeature,
                     source: "panelHero"
                 )
+            }
+            .alert(
+                L10n.AIConsent.insightsTitle,
+                isPresented: Binding(
+                    get: { upsellDestination == .consent },
+                    set: { if !$0 { upsellDestination = nil } }
+                )
+            ) {
+                Button(L10n.AIConsent.accept) {
+                    appPreferences.aiInsightsConsentAccepted = true
+                    viewModel.retriggerHeroAI()
+                }
+                Button(L10n.Action.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.AIConsent.insightsMessage)
             }
         }
     }

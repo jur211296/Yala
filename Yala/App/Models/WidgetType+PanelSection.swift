@@ -14,8 +14,8 @@ import Foundation
 /// the persisted state from the sections-hidden list.
 enum PanelSectionKind: String, CaseIterable, Hashable {
     // Declaration order drives the Panel's visual order via `allCases`.
-    case health
     case accounts
+    case health
     case tendencias
     case distribucion
     case planificacion

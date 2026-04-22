@@ -870,15 +870,26 @@ final class InsightsLLMService {
 
     private static func heroSystemPrompt(ctx: HeroContext) -> String {
         let nameClause = (ctx.userName?.isEmpty == false)
-            ? "Incluye el nombre del usuario (\(ctx.userName!)) de forma natural."
+            ? "Incluye el nombre del usuario (\(ctx.userName!)) de forma natural — una sola vez, al principio o al final."
             : "No uses nombre propio."
-        let trendClause: String
-        switch ctx.spendingTrend {
-        case .down: trendClause = "Gasta menos que el mes pasado — reconócelo sin cifras."
-        case .up:   trendClause = "Gasta más que el mes pasado — aliéntalo sin regañar ni usar cifras."
-        case .flat: trendClause = "Ritmo de gasto similar al mes pasado — normaliza sin alarmar."
-        case .none: trendClause = "No menciones comparaciones con meses anteriores."
+
+        // Previous-period clause: solo cuando hay data real (previousExpense ≠ nil).
+        let previousClause: String
+        if let prev = ctx.formattedPreviousExpense,
+           let delta = ctx.formattedExpenseDelta,
+           let direction = ctx.spendingTrend {
+            switch direction {
+            case .down:
+                previousClause = "Tiene **sentido reconocer** que gasta menos que el mes pasado. Puedes citar `previousExpense` (\(prev)) o `expenseDelta` (\(delta)) — elige UNA comparación, no ambas."
+            case .up:
+                previousClause = "Gasta más que el mes pasado. Si lo mencionas, hazlo sin regañar: usa `previousExpense` (\(prev)) o `expenseDelta` (\(delta)) como contexto, nunca como reproche."
+            case .flat:
+                previousClause = "Ritmo similar al mes pasado. Puedes normalizar con `previousExpense` (\(prev)) si ayuda al mensaje, pero no es obligatorio."
+            }
+        } else {
+            previousClause = "No hay datos del mes anterior — no inventes comparaciones."
         }
+
         let stateMood: String
         switch ctx.state {
         case .monthStart: stateMood = "El mes recién empieza. Tono de bienvenida, sin evaluar aún."
@@ -889,25 +900,30 @@ final class InsightsLLMService {
         }
 
         return """
-        Eres Yala, una compañera financiera cercana y empática. Escribes UN mensaje cálido y general para el "Hero del mes" del panel del usuario.
+        Eres Yala, una compañera financiera cercana, empática y observadora. Escribes UN mensaje cálido, preciso y profundamente personal para el "Hero del mes" del panel del usuario.
 
         IDIOMA: Responde en \(ctx.locale). Nunca mezcles idiomas.
 
         FORMATO:
-        - Máximo 2 oraciones. Ideal ~140 caracteres.
-        - NO uses números, porcentajes, cifras ni negritas.
+        - 2 o 3 oraciones. Ideal 160–240 caracteres.
+        - Usa EXACTAMENTE entre 1 y 3 montos del contexto (`income`, `expense`, `available`, `previousExpense`, `expenseDelta`). Cópialos tal como vienen, sin cambiar el símbolo ni el número, sin redondear.
+        - Envuelve cada monto citado en **negritas markdown** (p.ej. **S/ 6,019**). Nada más va en negritas.
+        - Puedes mencionar los días restantes del mes (`daysRemaining`) como parte del contexto temporal ("para los últimos X días").
+        - NO inventes porcentajes ni cifras que no estén en el contexto.
         - NO hagas preguntas.
         - NO uses emojis (el hero ya tiene un icono propio).
 
         TONO (Brand Voice Yala):
-        - Tutea ("tú"), como amiga que sabe de finanzas.
+        - Tutea ("tú"), como amiga cercana que sabe de finanzas.
+        - Personal: conecta dos datos del contexto (p.ej. gasto vs disponible, o ritmo vs mes pasado) — que no suene genérico.
         - Constructiva, nunca regaña ni juzga.
         - Nunca uses: "Debes", "Tienes que", "Obviamente", "Es fácil".
         - Usa "gasto" en vez de "transacción".
+        - Cierra con un acento breve y motivador ("tú puedes", "vas muy bien", "sigue así", "todo en orden") solo si encaja naturalmente — no lo fuerces.
 
-        SITUACIÓN:
+        SITUACIÓN DEL USUARIO:
         - Estado del mes: \(stateMood)
-        - Tendencia: \(trendClause)
+        - Comparación vs mes anterior: \(previousClause)
         - \(nameClause)
 
         RESPUESTA (JSON estricto): {"text": "..."}
@@ -919,12 +935,18 @@ final class InsightsLLMService {
             "state": ctx.state.rawValue,
             "month": ctx.monthName,
             "daysRemaining": ctx.daysRemaining,
+            "daysElapsed": ctx.daysElapsed,
             "locale": ctx.locale,
+            "income": ctx.formattedIncome,
+            "expense": ctx.formattedExpense,
+            "available": ctx.formattedAvailable,
         ]
         if let score = ctx.financialScore { payload["financialScore"] = score }
         if let percent = ctx.percentBudgetUsed { payload["percentBudgetUsed"] = Int((percent * 100).rounded()) }
         if let trend = ctx.spendingTrend { payload["spendingTrend"] = trend.rawValue }
         if let name = ctx.userName, !name.isEmpty { payload["userName"] = name }
+        if let prev = ctx.formattedPreviousExpense { payload["previousExpense"] = prev }
+        if let delta = ctx.formattedExpenseDelta { payload["expenseDelta"] = delta }
 
         let data = (try? JSONSerialization.data(withJSONObject: payload)) ?? Data()
         return String(data: data, encoding: .utf8) ?? "{}"

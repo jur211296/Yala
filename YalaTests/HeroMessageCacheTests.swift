@@ -37,7 +37,13 @@ struct HeroMessageCacheTests {
         monthName: String = "Abril",
         userName: String? = "Jur",
         daysRemaining: Int = 15,
-        locale: String = "es"
+        daysElapsed: Int = 15,
+        locale: String = "es",
+        income: Double = 4500,
+        expense: Double = 900,
+        available: Double = 3600,
+        previousExpense: Double? = 800,
+        expenseDelta: Double? = 100
     ) -> HeroContext {
         HeroContext(
             state: state,
@@ -47,7 +53,18 @@ struct HeroMessageCacheTests {
             monthName: monthName,
             userName: userName,
             daysRemaining: daysRemaining,
-            locale: locale
+            daysElapsed: daysElapsed,
+            locale: locale,
+            income: income,
+            expense: expense,
+            available: available,
+            formattedIncome: "S/ \(Int(income))",
+            formattedExpense: "S/ \(Int(expense))",
+            formattedAvailable: "S/ \(Int(available))",
+            previousExpense: previousExpense,
+            formattedPreviousExpense: previousExpense.map { "S/ \(Int($0))" },
+            expenseDelta: expenseDelta,
+            formattedExpenseDelta: expenseDelta.map { "S/ \(Int(abs($0)))" }
         )
     }
 

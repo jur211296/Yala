@@ -103,53 +103,22 @@
 // VoiceOver komplette Karte
 "panel.health.voiceover.summary" = "Finanzielle Gesundheit: %1$@. Budget %2$@. Aktivität %3$@. Zahlungen %4$@.";
 
-// MARK: - Panel 2.0 Hero (P20-04)
+// MARK: - Panel Hero (PP2-01)
 
-// Chip — grüßt mit Namen; Emoji lebt im SF-Symbol-Icon, nicht hier
+// Chip — grüßt mit Namen; das goldene Emoji lebt im SF-Symbol-Icon
 "panel.hero.chip.monthStart %@ %@" = "Hallo %1$@ — %2$@ geht los";
-"panel.hero.chip.onTrack %@" = "Hallo %@";
-"panel.hero.chip.neutral %@" = "Hallo %@";
-"panel.hero.chip.tight %@" = "Hallo %@ — Endspurt";
-"panel.hero.chip.overBudget %@" = "Hallo %@ — neuer Anlauf";
+"panel.hero.chip.default %@" = "Hallo %@";
 
-// KPI
-"panel.hero.kpi.monthStart" = "Los geht's, du schaffst das";
-"panel.hero.kpi.onTrack" = "Du machst das super diesen Monat";
-"panel.hero.kpi.neutral" = "Dein Monat läuft";
-"panel.hero.kpi.tight" = "Den Monat fein abstimmen";
-"panel.hero.kpi.overBudget" = "Weiter neue Gewohnheiten aufbauen";
+// KPI fallback (aiSubtitle übernimmt den KPI-Slot, wenn verfügbar)
+// Markdown bold (**Betrag**) rendert via AttributedString(markdown:)
+"panel.hero.kpi.monthStart %@ %d" = "Wir starten den Monat mit **%1$@** Einnahmen und %2$d Tagen vor uns. Erfasse deinen ersten Beleg und los geht's.";
+"panel.hero.kpi.onTrack %@ %@ %@ %d" = "Diesen Monat hast du **%1$@** eingenommen und **%2$@** ausgegeben, also bleiben **%3$@** für die letzten %4$d Tage. Läuft super, du schaffst das.";
+"panel.hero.kpi.neutral %@ %@ %@ %d" = "Diesen Monat hast du **%1$@** eingenommen und **%2$@** ausgegeben — **%3$@** für die letzten %4$d Tage. Dein Monat läuft.";
+"panel.hero.kpi.tight %@ %@ %d" = "Du hast **%1$@** ausgegeben und hast **%2$@** für die letzten %3$d Tage. Kleine Anpassungen machen den Unterschied.";
+"panel.hero.kpi.overBudget %@ %@" = "Diesen Monat hast du **%1$@** über deine **%2$@** Einnahmen hinaus ausgegeben. Morgen starten wir frisch.";
 
-// Subtext (monthStart/tight/overBudget — onTrack/neutral nutzen die Pills)
-"panel.hero.subtext.monthStart %d" = "Noch %d Tage — lass uns den ersten Beleg erfassen";
-"panel.hero.subtext.onTrack %@ %d" = "Du hast %1$@ ausgegeben · noch %2$d Tage";
-"panel.hero.subtext.neutral %@ %@" = "%1$@ ausgegeben · %2$@ verfügbar";
-"panel.hero.subtext.tight" = "Das Budget wird knapp — kleine Anpassungen helfen";
-"panel.hero.subtext.overBudget" = "Das Budget ist diesen Monat überzogen — morgen starten wir frisch";
-
-// Pills
-"panel.hero.pill.income" = "Einnahmen";
-"panel.hero.pill.spent" = "Ausgegeben";
-"panel.hero.pill.daysLeft" = "Tage übrig";
-
-// AI Hero (P20-05)
 "panel.hero.proBadge" = "Pro";
 "panel.hero.upsellCTA" = "Mit KI personalisieren";
-
-// KPI Preferences (P20-04b)
-"panel.hero.kpiPrefs.title" = "Kennzahlen anpassen";
-"panel.hero.kpiPrefs.footer" = "Die ersten 3 aktiven werden in dieser Reihenfolge angezeigt.";
-"panel.hero.kpiPrefs.editButton" = "Hero-Kennzahlen anpassen";
-"panel.hero.kpiPrefs.minimumActive" = "Mindestens 2 aktiv";
-"panel.hero.kpiPrefs.maximumReached" = "Du hast bereits 3 aktiv";
-"panel.hero.kpiPrefs.name.income" = "Einnahmen des Monats";
-"panel.hero.kpiPrefs.name.spent" = "Ausgaben des Monats";
-"panel.hero.kpiPrefs.name.daysLeft" = "Tage übrig";
-"panel.hero.kpiPrefs.name.available" = "Verfügbar";
-"panel.hero.kpiPrefs.name.dailyAverage" = "Täglicher Durchschnitt";
-"panel.hero.kpiPrefs.name.projection" = "Monatsprognose";
-"panel.hero.kpiPrefs.pill.available" = "Verfügbar";
-"panel.hero.kpiPrefs.pill.dailyAverage" = "Tägl.";
-"panel.hero.kpiPrefs.pill.projection" = "Prognose";
 
 // MARK: - Trend Widget
 

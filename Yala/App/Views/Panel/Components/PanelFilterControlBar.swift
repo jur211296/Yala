@@ -24,39 +24,28 @@ struct PanelFilterControlBar: View {
     @Namespace private var chipNamespace
 
     var body: some View {
-        HStack(alignment: .center, spacing: DS.Spacing.md) {
-            TrendsPeriodMenu(
-                selectedPeriod: sessionState.selectedPeriod,
-                customDateRange: sessionState.customDateRange,
-                onSelect: { period in
-                    sessionState.selectedPeriod = period
-                },
-                onCustomTapped: {
-                    showCustomPeriodPicker = true
-                }
-            )
+        // Filter chips (Scrollable to the right) — period selector moved to
+        // the Hero in PP2-01; this bar is now chips-only.
+        let hasAccountFilter = viewModel.selectedAccountID != nil
+        let hasDateFilter = viewModel.focusedDate != nil
+        let hasCategoryFilter = viewModel.selectedCategoryID != nil
+        let hasNeedFilter = viewModel.selectedNeed != nil
+        let hasSubcategoryFilter = !viewModel.selectedSubcategoryIDs.isEmpty
+        let hasTagFilter = !viewModel.selectedTags.isEmpty
+        let hasCurrencyFilter = !viewModel.selectedCurrencies.isEmpty
+        let hasAmountFilter = viewModel.amountCondition.isActive
+        let hasNoteFilter = !viewModel.searchText.isEmpty
+        let hasTransactionNatureFilter = sessionState.selectedTransactionNatures.count == 1
 
-            // Filter chips (Scrollable to the right)
-            let hasAccountFilter = viewModel.selectedAccountID != nil
-            let hasDateFilter = viewModel.focusedDate != nil
-            let hasCategoryFilter = viewModel.selectedCategoryID != nil
-            let hasNeedFilter = viewModel.selectedNeed != nil
-            let hasSubcategoryFilter = !viewModel.selectedSubcategoryIDs.isEmpty
-            let hasTagFilter = !viewModel.selectedTags.isEmpty
-            let hasCurrencyFilter = !viewModel.selectedCurrencies.isEmpty
-            let hasAmountFilter = viewModel.amountCondition.isActive
-            let hasNoteFilter = !viewModel.searchText.isEmpty
-            let hasTransactionNatureFilter = sessionState.selectedTransactionNatures.count == 1
+        let activeFilterCount = [
+            hasAccountFilter, hasDateFilter, hasCategoryFilter,
+            hasNeedFilter, hasSubcategoryFilter, hasTagFilter,
+            hasCurrencyFilter, hasAmountFilter, hasNoteFilter,
+            hasTransactionNatureFilter,
+        ].count(where: { $0 })
 
-            let activeFilterCount = [
-                hasAccountFilter, hasDateFilter, hasCategoryFilter,
-                hasNeedFilter, hasSubcategoryFilter, hasTagFilter,
-                hasCurrencyFilter, hasAmountFilter, hasNoteFilter,
-                hasTransactionNatureFilter,
-            ].count(where: { $0 })
-
-            if activeFilterCount > 0 {
-                ScrollView(.horizontal, showsIndicators: false) {
+        if activeFilterCount > 0 {
+            ScrollView(.horizontal, showsIndicators: false) {
                     GlassEffectContainer(spacing: DS.Spacing.sm) {
                     HStack(spacing: DS.Spacing.sm) {
                         // Exclude mode badge
@@ -275,11 +264,8 @@ struct PanelFilterControlBar: View {
                     }
                     } // GlassEffectContainer
                 }
-                .contentMargins(.horizontal, DS.Spacing.md, for: .scrollContent)
-                .scrollClipDisabled()
-            } else {
-                Spacer()
-            }
+            .contentMargins(.horizontal, DS.Spacing.md, for: .scrollContent)
+            .scrollClipDisabled()
         }
     }
 

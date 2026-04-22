@@ -833,174 +833,6 @@ final class PanelViewModel {
         }
     }
 
-    // MARK: - Hero KPI Preferences Mutators (P20-04b)
-    //
-    // Mirrors the section mutators above but simpler: Hero KPIs are a single
-    // global set, not per-section. The `panelHeroKPIsCustomized` flag gates
-    // between "never touched" (return defaults) and "customised" (respect the
-    // stored arrays verbatim, even when empty). The flag flips on the first
-    // move/toggle; `resetHeroKPIPreferences()` flips it back to `false`.
-
-    private var draftHeroOrder: [String]?
-    private var draftHeroHidden: [String]?
-    private var pendingHeroWrite: Task<Void, Never>?
-
-    /// Resolves the full ordered list of KPIs, draft-or-persisted, self-healing
-    /// against corruption and future KPIs (missing entries are appended at the
-    /// tail of the resolved list).
-    func orderedHeroKPIs() -> [HeroKPI] {
-        let isCustomized = appPreferences?.panelHeroKPIsCustomized ?? false
-        // Defaults fast path — avoids self-heal work on every render for
-        // first-time users.
-        if !isCustomized, draftHeroOrder == nil {
-            return HeroKPI.defaultOrder
-        }
-
-        let stored = draftHeroOrder ?? appPreferences?.panelHeroKPIsOrder ?? []
-        var seen: Set<HeroKPI> = []
-        var resolved: [HeroKPI] = []
-        for raw in stored {
-            guard let kpi = HeroKPI(rawValue: raw), !seen.contains(kpi) else { continue }
-            seen.insert(kpi)
-            resolved.append(kpi)
-        }
-        for kpi in HeroKPI.defaultOrder where !seen.contains(kpi) {
-            resolved.append(kpi)
-        }
-        return resolved
-    }
-
-    /// True when the KPI should NOT render as a pill. Respects deliberate
-    /// empty arrays only after the user flipped the customised flag.
-    func isHeroKPIHidden(_ kpi: HeroKPI) -> Bool {
-        let isCustomized = appPreferences?.panelHeroKPIsCustomized ?? false
-        if !isCustomized, draftHeroHidden == nil {
-            return HeroKPI.defaultHidden.contains(kpi)
-        }
-        let hidden = draftHeroHidden ?? appPreferences?.panelHeroKPIsHidden ?? []
-        return hidden.contains(kpi.rawValue)
-    }
-
-    /// Returns the KPIs that should render, capped at `max` (default 3 — the
-    /// hero's layout). Callers pass `.max` when they need the total active
-    /// count (e.g. the sheet gating the last-active toggle).
-    func activeHeroKPIs(max: Int = 3) -> [HeroKPI] {
-        let active = orderedHeroKPIs().filter { !isHeroKPIHidden($0) }
-        return Array(active.prefix(max))
-    }
-
-    /// Reorder within the full Hero KPI list (actives + hidden together).
-    /// No-op when the drag lands on the same slot. Flips the customised flag
-    /// on the first non-default change, via `scheduleHeroKPIWrite`.
-    func moveHeroKPI(from source: IndexSet, to destination: Int) {
-        let current = draftHeroOrder ?? orderedHeroKPIs().map(\.rawValue)
-        var updated = current
-        updated.move(fromOffsets: source, toOffset: destination)
-        guard updated != current else { return }
-        draftHeroOrder = updated
-        scheduleHeroKPIWrite()
-    }
-
-    /// Reorder among ACTIVE KPIs only (the reorder sub-sheet's world). The
-    /// `source`/`destination` indices refer to the `activeHeroKPIs(max: .max)`
-    /// array. We rebuild the full order by walking `orderedHeroKPIs()` in
-    /// place: hidden KPIs keep their absolute slots; each active slot draws
-    /// the next element from the reordered active list. That way moving an
-    /// active pill never shuffles a hidden KPI.
-    func moveActiveHeroKPI(from source: IndexSet, to destination: Int) {
-        let ordered = orderedHeroKPIs()
-        let actives = ordered.filter { !isHeroKPIHidden($0) }
-        var reorderedActives = actives
-        reorderedActives.move(fromOffsets: source, toOffset: destination)
-        guard reorderedActives != actives else { return }
-
-        var iterator = reorderedActives.makeIterator()
-        let newOrder: [HeroKPI] = ordered.map { kpi in
-            isHeroKPIHidden(kpi) ? kpi : (iterator.next() ?? kpi)
-        }
-        draftHeroOrder = newOrder.map(\.rawValue)
-        scheduleHeroKPIWrite()
-    }
-
-    /// Toggle per-KPI visibility. Instant UI mutation; the write is debounced.
-    /// When flipping the first toggle on a fresh install, we materialise the
-    /// current effective state (`defaultHidden` via `isHeroKPIHidden`) into
-    /// the draft — otherwise `panelHeroKPIsHidden == []` would be treated as
-    /// "nothing hidden" and defaults would silently drop.
-    func setHeroKPIHidden(_ kpi: HeroKPI, hidden: Bool) {
-        let effectiveHidden: Set<String> = Set(
-            HeroKPI.allCases
-                .filter { isHeroKPIHidden($0) }
-                .map(\.rawValue)
-        )
-        let alreadyHidden = effectiveHidden.contains(kpi.rawValue)
-        guard alreadyHidden != hidden else { return }
-        var updated = effectiveHidden
-        if hidden { updated.insert(kpi.rawValue) } else { updated.remove(kpi.rawValue) }
-        draftHeroHidden = HeroKPI.allCases
-            .map(\.rawValue)
-            .filter { updated.contains($0) }
-        scheduleHeroKPIWrite()
-    }
-
-    /// Cancels any pending debounce, clears drafts, writes empty arrays and
-    /// flips `panelHeroKPIsCustomized` back to `false` — fully returns to the
-    /// "never touched" state. The user expects "Restablecer" to take effect
-    /// immediately, so this is synchronous.
-    func resetHeroKPIPreferences() {
-        pendingHeroWrite?.cancel()
-        pendingHeroWrite = nil
-        draftHeroOrder = nil
-        draftHeroHidden = nil
-        appPreferences?.panelHeroKPIsOrder = []
-        appPreferences?.panelHeroKPIsHidden = []
-        appPreferences?.panelHeroKPIsCustomized = false
-    }
-
-    /// Flushes pending write synchronously (called by the sheet's
-    /// `.onDisappear` so the data is committed before the VM reloads).
-    func flushPendingHeroKPIWrites() {
-        pendingHeroWrite?.cancel()
-        pendingHeroWrite = nil
-        commitHeroKPIDraft()
-    }
-
-    /// Debounces the Hero KPI write by 200ms — batches rapid reorder/toggle
-    /// operations into a single `AppPreferences` commit.
-    private func scheduleHeroKPIWrite() {
-        pendingHeroWrite?.cancel()
-        pendingHeroWrite = Task { @MainActor [weak self] in
-            try? await Task.sleep(for: Self.sectionWriteDebounce)
-            guard !Task.isCancelled else { return }
-            self?.commitHeroKPIDraft()
-        }
-    }
-
-    /// Writes drafts to `AppPreferences` and flips the customised flag on
-    /// first change. Called by the debounce timer or by
-    /// `flushPendingHeroKPIWrites()`.
-    private func commitHeroKPIDraft() {
-        guard let prefs = appPreferences else {
-            draftHeroOrder = nil
-            draftHeroHidden = nil
-            return
-        }
-        var mutated = false
-        if let order = draftHeroOrder {
-            prefs.panelHeroKPIsOrder = order
-            draftHeroOrder = nil
-            mutated = true
-        }
-        if let hidden = draftHeroHidden {
-            prefs.panelHeroKPIsHidden = hidden
-            draftHeroHidden = nil
-            mutated = true
-        }
-        if mutated, !prefs.panelHeroKPIsCustomized {
-            prefs.panelHeroKPIsCustomized = true
-        }
-    }
-
     // We keep these as simple properties or computed ones based on what the View passes
     // or we can load them if we want to move AppStorage here (requires a wrapper or passing values).
     // For simplicity in MVVM with SwiftUI, we can keep AppStorage in View and sync,
@@ -2677,9 +2509,13 @@ final class PanelViewModel {
             monthInterval: monthInterval
         )
 
-        // Re-generar IA solo cuando la data del hero cambió — evita spam de
-        // telemetry cuando performCalculation corre múltiples veces.
+        // Re-generar IA cuando cambien los montos. Limpiar el cache aquí
+        // garantiza que el mensaje cite los montos actuales aunque el cambio
+        // sea menor que el bucket del hash (p.ej. una tx de <100 del bucket).
+        // El guard `dataChanged` evita spam de telemetría cuando
+        // performCalculation corre múltiples veces sin cambios reales.
         if dataChanged {
+            HeroMessageCache.clear()
             generateHeroAIIfEligible(data: newData)
         }
     }
@@ -2770,6 +2606,22 @@ final class PanelViewModel {
         let rawName = appPreferences?.userName ?? ""
         let userName: String? = rawName.isEmpty ? nil : rawName
 
+        let currencyCode = defaultCurrencyCode
+        let formattedIncome = YalaFormatter.currency(value: data.income, currencyCode: currencyCode)
+        let formattedExpense = YalaFormatter.currency(value: data.expense, currencyCode: currencyCode)
+        let formattedAvailable = YalaFormatter.currency(value: data.available, currencyCode: currencyCode)
+
+        // Datos del mes anterior — solo cuando hay data real (prevHasAnyTx).
+        // Delta firmado: positivo gasta más, negativo gasta menos.
+        let previousExpense: Double? = trend.prevHasAnyTx ? trend.prevExpense : nil
+        let formattedPreviousExpense: String? = previousExpense.map {
+            YalaFormatter.currency(value: $0, currencyCode: currencyCode)
+        }
+        let expenseDelta: Double? = previousExpense.map { data.expense - $0 }
+        let formattedExpenseDelta: String? = expenseDelta.map {
+            YalaFormatter.currency(value: abs($0), currencyCode: currencyCode)
+        }
+
         return HeroContext(
             state: data.state,
             financialScore: healthWidget.score.flatMap(\.total),
@@ -2778,7 +2630,18 @@ final class PanelViewModel {
             monthName: Self.monthNameFormatter.string(from: trend.monthInterval.start).localizedCapitalized,
             userName: userName,
             daysRemaining: data.daysRemaining,
-            locale: AppLocale.current.identifier
+            daysElapsed: data.daysElapsed,
+            locale: AppLocale.current.identifier,
+            income: data.income,
+            expense: data.expense,
+            available: data.available,
+            formattedIncome: formattedIncome,
+            formattedExpense: formattedExpense,
+            formattedAvailable: formattedAvailable,
+            previousExpense: previousExpense,
+            formattedPreviousExpense: formattedPreviousExpense,
+            expenseDelta: expenseDelta,
+            formattedExpenseDelta: formattedExpenseDelta
         )
     }
 

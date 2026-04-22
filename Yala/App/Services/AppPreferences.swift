@@ -474,16 +474,13 @@ final class AppPreferences {
         }
     }
 
-    // MARK: - Hero KPI Preferences (P20-04b)
+    // MARK: - Hero KPI Preferences (DEPRECATED — PP2-01)
     //
-    // Single global set (not per-section) — shape mirrors the sections pattern
-    // but flatter: just two `[String]` arrays of `HeroKPI.rawValue` + a
-    // sentinel flag. While `panelHeroKPIsCustomized == false`, the VM ignores
-    // the arrays and renders `HeroKPI.defaultOrder`/`defaultHidden`. The flag
-    // flips on the first move/toggle and is reset by
-    // `PanelViewModel.resetHeroKPIPreferences()`. Without it we can't tell
-    // "user deliberately activated all 6" (hidden == []) from "never touched"
-    // (hidden == []).
+    // Introduced in P20-04b and removed in PP2-01 when the Hero compacto
+    // eliminated `HeroKPIPreferencesSheet`. Keys + properties persist so
+    // cross-device iCloud KV rows written by older builds stay inofensivas
+    // (nobody reads them anymore). Safe to remove in a housekeeping PR once
+    // all active devices have adopted PP2-01.
 
     var panelHeroKPIsOrder: [String] = [] {
         didSet {
