@@ -26,7 +26,7 @@ struct WeekdayBarPanelWidget: View {
                 )
             }
         }
-        .solidCard(padding: DS.Card.padding)
+        .solidCard(padding: DS.Card.paddingCompact)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(voiceoverLabel)
     }
@@ -34,7 +34,7 @@ struct WeekdayBarPanelWidget: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             Text(L10n.WidgetType.weekdayBar)
-                .font(DS.Typography.headline)
+                .font(DS.Typography.subheadlineEmphasized)
                 .foregroundStyle(.thPrimaryText)
             Text(L10n.Panel.weekdaySubtitle)
                 .font(DS.Typography.caption)

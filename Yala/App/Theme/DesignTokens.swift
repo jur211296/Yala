@@ -452,6 +452,8 @@ enum DS {
         static let body = Font.body
         /// Secondary body text
         static let subheadline = Font.subheadline
+        /// Widget titles, secondary emphasis
+        static let subheadlineEmphasized = Font.subheadline.weight(.semibold)
 
         // MARK: Labels
         /// UI labels, medium weight

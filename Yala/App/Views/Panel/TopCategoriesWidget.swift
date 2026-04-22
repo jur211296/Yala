@@ -71,7 +71,7 @@ struct TopCategoriesWidget: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: size == .small ? DS.Spacing.md : DS.Spacing.lg) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             headerSection
 
             if categories.isEmpty {
@@ -81,7 +81,7 @@ struct TopCategoriesWidget: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .solidCard(padding: size == .small ? DS.Spacing.lg : DS.Spacing.xl)
+        .solidCard(padding: DS.Card.paddingCompact)
     }
 
     // MARK: - Content Switcher
@@ -105,7 +105,7 @@ struct TopCategoriesWidget: View {
             // Left: Title and total amount
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(size == .small ? L10n.Widget.main : L10n.Widget.topCategories)
-                    .font(DS.Typography.headline)
+                    .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 

@@ -55,11 +55,11 @@ struct TrendsCarouselWidget: View {
         let _ = appPreferences.decimalPlaces
         let _ = appPreferences.currencyDisplayFormat
 
-        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             header
             carousel
         }
-        .solidCard(padding: DS.Card.padding)
+        .solidCard(padding: DS.Card.paddingCompact)
     }
 
     // MARK: - Header (shared across pages)
@@ -68,7 +68,7 @@ struct TrendsCarouselWidget: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 Text(pageTitle)
-                    .font(DS.Typography.headline)
+                    .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.thPrimaryText)
 
                 pageSubtitle

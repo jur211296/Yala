@@ -54,7 +54,7 @@ struct PieChartVariationHeader: View {
             // Left: Title and Amount
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(title)
-                    .font(DS.Typography.headline)
+                    .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
                     .padding(.bottom, DS.Spacing.xxs)
 

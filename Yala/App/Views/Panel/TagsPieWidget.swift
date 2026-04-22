@@ -81,7 +81,7 @@ struct TagsPieWidget: View {
         VStack(alignment: .leading, spacing: DS.Spacing.none) {
             HStack {
                 Text(L10n.Widget.distributionByTag)
-                    .font(DS.Typography.headline)
+                    .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
@@ -391,7 +391,7 @@ struct TagsPieWidget: View {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                         Text(L10n.Widget.distributionByTag)
-                            .font(DS.Typography.headline)
+                            .font(DS.Typography.subheadlineEmphasized)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .padding(.bottom, DS.Spacing.xxs)

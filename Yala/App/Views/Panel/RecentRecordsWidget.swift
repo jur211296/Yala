@@ -46,7 +46,7 @@ struct RecentRecordsWidget: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .solidCard(padding: DS.Spacing.xl)
+        .solidCard(padding: DS.Card.paddingCompact)
     }
 
     // MARK: - Header
@@ -54,7 +54,7 @@ struct RecentRecordsWidget: View {
     private var headerSection: some View {
         HStack(alignment: .top) {
             Text(L10n.Records.latest)
-                .font(DS.Typography.headline)
+                .font(DS.Typography.subheadlineEmphasized)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 

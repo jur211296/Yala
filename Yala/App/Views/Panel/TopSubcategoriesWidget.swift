@@ -75,7 +75,7 @@ struct TopSubcategoriesWidget: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: size == .small ? DS.Spacing.md : DS.Spacing.lg) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             headerSection
 
             if subcategories.isEmpty {
@@ -85,7 +85,7 @@ struct TopSubcategoriesWidget: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .solidCard(padding: size == .small ? DS.Spacing.lg : DS.Spacing.xl)
+        .solidCard(padding: DS.Card.paddingCompact)
         .id(subcategories.isEmpty ? "empty" : "content-\(subcategories.count)")
         .onAppear {
             viewModel.setContext(modelContext)
@@ -102,12 +102,12 @@ struct TopSubcategoriesWidget: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     if size == .small {
                         Text(L10n.Widget.subcategories)
-                            .font(DS.Typography.headline)
+                            .font(DS.Typography.subheadlineEmphasized)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                     } else {
                         Text(L10n.Widget.topSubcategories)
-                            .font(DS.Typography.headline)
+                            .font(DS.Typography.subheadlineEmphasized)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
 

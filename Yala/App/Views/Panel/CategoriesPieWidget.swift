@@ -90,7 +90,7 @@ struct CategoriesPieWidget: View {
             // Header (same as content)
             HStack {
                 Text(L10n.Widget.categories)
-                    .font(DS.Typography.headline)
+                    .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
@@ -429,7 +429,7 @@ struct CategoriesPieWidget: View {
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                         HStack(spacing: DS.Spacing.xxs) {
                             Text(L10n.Widget.distributionByCategory)
-                                .font(DS.Typography.headline)
+                                .font(DS.Typography.subheadlineEmphasized)
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
 

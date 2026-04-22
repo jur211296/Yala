@@ -26,7 +26,7 @@ struct ScheduledPaymentsWidget: View {
     @Namespace private var filterNamespace
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             headerSection
 
             switch mode {
@@ -47,7 +47,7 @@ struct ScheduledPaymentsWidget: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .solidCard(padding: DS.Spacing.xl)
+        .solidCard(padding: DS.Card.paddingCompact)
     }
 
     // MARK: - Header
@@ -57,7 +57,7 @@ struct ScheduledPaymentsWidget: View {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 HStack(spacing: DS.Spacing.xxs) {
                     Text(L10n.WidgetType.scheduledPayments)
-                        .font(DS.Typography.headline)
+                        .font(DS.Typography.subheadlineEmphasized)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 

@@ -62,7 +62,7 @@ struct ExchangeRateWidget: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.ExchangeRate.title)
-                    .font(DS.Typography.headline)
+                    .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
                     .padding(.bottom, DS.Spacing.xxs)
 

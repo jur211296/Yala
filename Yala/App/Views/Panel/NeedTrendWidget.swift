@@ -117,7 +117,7 @@ struct NeedTrendWidget: View {
                 // Left: Title and total amount (hide KPI in income mode or when no data)
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(L10n.Widget.distributionByNeed)
-                        .font(DS.Typography.headline)
+                        .font(DS.Typography.subheadlineEmphasized)
                         .foregroundStyle(.thPrimaryText)
 
                     // Total amount with "vs previous" comparison - only show when NOT in income mode AND has data

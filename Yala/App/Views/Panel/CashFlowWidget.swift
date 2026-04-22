@@ -323,7 +323,7 @@ struct CashFlowWidget: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(kpiLabel)
-                        .font(DS.Typography.headline)
+                        .font(DS.Typography.subheadlineEmphasized)
                         .foregroundStyle(.primary)
                         .padding(.bottom, DS.Spacing.xxs)
 

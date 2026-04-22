@@ -39,7 +39,7 @@ struct BudgetsWidget: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             headerSection
 
             if budgets.isEmpty {
@@ -49,7 +49,7 @@ struct BudgetsWidget: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .solidCard(padding: DS.Spacing.xl)
+        .solidCard(padding: DS.Card.paddingCompact)
     }
 
     // MARK: - Header
@@ -57,7 +57,7 @@ struct BudgetsWidget: View {
     private var headerSection: some View {
         HStack(alignment: .top) {
             Text(L10n.WidgetType.budgets)
-                .font(DS.Typography.headline)
+                .font(DS.Typography.subheadlineEmphasized)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 
