@@ -306,18 +306,10 @@ final class AppBootstrapper {
         }
         checkForPendingInboxDrafts(context: context)
 
-        // Delay control action check — inbox notification fires at 0.3s,
-        // so we wait 0.5s to know if UI will be blocked.
-        // Cancel previous task to avoid accumulation on rapid app switches.
-        controlActionTask?.cancel()
-        controlActionTask = Task {
-            do {
-                try await Task.sleep(for: .milliseconds(500))
-            } catch {
-                return
-            }
-            checkForPendingControlAction()
-        }
+        // F3: Control action is enqueued directly to AppRouter. Readiness
+        // gating replaces the old 500ms sleep — intents queued while splash
+        // is visible drain automatically when consumers become ready.
+        checkForPendingControlAction()
 
         // Skip notification checks if bootstrap just ran (< 5 seconds ago)
         let shouldCheckNotifications = Date.now.timeIntervalSince(lastNotificationCheckDate) > 5.0
@@ -381,36 +373,32 @@ final class AppBootstrapper {
         }
     }
 
-    /// Defers action if UI is blocked, otherwise executes immediately.
+    /// Dispatches a panel action via AppRouter. Router handles readiness
+    /// gating (no more isUIBlocked branching) — intents queued while
+    /// splash/lock/wipe active drain automatically when consumers become
+    /// ready.
     private func dispatchOrDefer(_ action: DeferredPanelAction) {
-        if isUIBlocked {
-            deferredPanelAction = action
-            #if DEBUG
-            print("AppBootstrapper: Deferring \(action) — UI blocked")
-            #endif
-        } else {
-            executeAction(action)
-        }
+        executeAction(action)
     }
 
-    /// Executes a panel action, respecting feature toggles and Pro gates.
+    /// Enqueues a panel-action intent, respecting feature toggles and Pro gates.
     private func executeAction(_ action: DeferredPanelAction) {
         switch action {
         case .newTransaction:
-            sessionState.shouldShowNewTransaction = true
+            AppRouter.shared.enqueue(.presentNewTransaction)
         case .voiceEntry:
             guard UserDefaults.standard.bool(forKey: "voiceInputEnabled") else { return }
             if FeatureGateService.shared.canAccess(.voiceInput) {
-                sessionState.shouldShowVoiceEntry = true
+                AppRouter.shared.enqueue(.presentVoiceEntry)
             } else {
-                sessionState.shouldShowUpgradeForVoice = true
+                AppRouter.shared.enqueue(.presentUpgradeSheet(.voice))
             }
         case .imageEntry:
             guard UserDefaults.standard.bool(forKey: "imageInputEnabled") else { return }
             if FeatureGateService.shared.canAccess(.imageInput) {
-                sessionState.shouldShowImageEntry = true
+                AppRouter.shared.enqueue(.presentImageEntry)
             } else {
-                sessionState.shouldShowUpgradeForImage = true
+                AppRouter.shared.enqueue(.presentUpgradeSheet(.image))
             }
         }
     }
@@ -445,22 +433,15 @@ final class AppBootstrapper {
 
         switch url.host {
         case "shared-image":
-            // Delay to ensure PanelView is mounted and observing before flags are set
-            // Covers cold launch from Share Extension where onOpenURL fires before first render
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(500))
-                let imageURLs = SharedContainerService.pendingImageURLs()
-                guard let firstImageURL = imageURLs.first else { return }
-
-                if self.isUIBlocked {
-                    self.deferredSharedImageURL = firstImageURL
-                    #if DEBUG
-                    print("AppBootstrapper: Deferring shared image — UI blocked")
-                    #endif
-                } else {
-                    self.sessionState.pendingSharedImageURL = firstImageURL
-                    self.sessionState.shouldShowSharedImage = true
-                }
+            // F3: No more Task.sleep(500ms). Router handles readiness —
+            // if Panel isn't mounted yet, intent stays queued until it is.
+            let imageURLs = SharedContainerService.pendingImageURLs()
+            if let firstImageURL = imageURLs.first {
+                // Also ensure Panel tab is active when the image presents.
+                AppRouter.shared.enqueue(.navigate(.panel))
+                AppRouter.shared.enqueue(.presentSharedImage(firstImageURL))
+                // Keep sessionState.pendingSharedImageURL for ImageSelectionView shim (F9 removes).
+                sessionState.pendingSharedImageURL = firstImageURL
             }
 
         case "voice-entry":
@@ -670,63 +651,83 @@ final class AppBootstrapper {
         lastProcessDuePaymentsDate = Date.now
     }
 
+    /// Signature key for processed inbox draft idempotency. Per-draft stable
+    /// across syncs: `createdAt.timeIntervalSince1970 + "-" + sourceTypeRaw`.
+    /// Capped at 500 entries (FIFO evict).
+    private static let processedSignaturesKey = "processedInboxDraftSignatures"
+    private static let processedSignaturesCap = 500
+
+    private func inboxDraftSignature(_ draft: InboxDraft) -> String {
+        "\(draft.createdAt.timeIntervalSince1970)-\(draft.sourceTypeRaw)"
+    }
+
+    private func loadProcessedInboxSignatures() -> [String] {
+        UserDefaults.standard.stringArray(forKey: Self.processedSignaturesKey) ?? []
+    }
+
+    private func saveProcessedInboxSignatures(_ signatures: [String]) {
+        var bounded = signatures
+        if bounded.count > Self.processedSignaturesCap {
+            bounded.removeFirst(bounded.count - Self.processedSignaturesCap)
+        }
+        UserDefaults.standard.set(bounded, forKey: Self.processedSignaturesKey)
+    }
+
     private func checkForPendingInboxDrafts(context: ModelContext) {
-        let lastCheck = UserDefaults.standard.object(forKey: "lastInboxDraftCheckDate") as? Date
-                        ?? Date.distantPast
+        // F3: Idempotency via per-draft signatures (createdAt + sourceType).
+        // Migration: the first post-upgrade check ignores `lastInboxDraftCheckDate`
+        // and emits an alert for ALL real pending drafts. No silent suppression.
+        // The legacy watermark is deleted on first run.
+        if UserDefaults.standard.object(forKey: "lastInboxDraftCheckDate") != nil {
+            UserDefaults.standard.removeObject(forKey: "lastInboxDraftCheckDate")
+        }
+
+        var processed = Set(loadProcessedInboxSignatures())
+
+        let pendingDescriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate<InboxDraft> { $0.statusRaw == "pending" }
+        )
 
         var notification = PendingInboxNotification()
-
-        // Query 1: Scheduled payments
-        let scheduledDescriptor = FetchDescriptor<InboxDraft>(
-            predicate: #Predicate<InboxDraft> { draft in
-                draft.sourceTypeRaw == "scheduledPayment" &&
-                draft.statusRaw == "pending" &&
-                draft.createdAt > lastCheck
-            }
-        )
-
-        // Query 2: Subscriptions
-        let subscriptionDescriptor = FetchDescriptor<InboxDraft>(
-            predicate: #Predicate<InboxDraft> { draft in
-                draft.sourceTypeRaw == "subscription" &&
-                draft.statusRaw == "pending" &&
-                draft.createdAt > lastCheck
-            }
-        )
-
-        // Query 3: Automations (applePay + automation)
-        let automationDescriptor = FetchDescriptor<InboxDraft>(
-            predicate: #Predicate<InboxDraft> { draft in
-                (draft.sourceTypeRaw == "applePay" || draft.sourceTypeRaw == "automation") &&
-                draft.statusRaw == "pending" &&
-                draft.createdAt > lastCheck
-            }
-        )
+        var newSignatures: [String] = []
 
         do {
-            notification.scheduledPayments = try context.fetchCount(scheduledDescriptor)
-            notification.subscriptions = try context.fetchCount(subscriptionDescriptor)
-            notification.automations = try context.fetchCount(automationDescriptor)
+            let drafts = try context.fetch(pendingDescriptor)
+            for draft in drafts {
+                let sig = inboxDraftSignature(draft)
+                guard !processed.contains(sig) else { continue }
+                processed.insert(sig)
+                newSignatures.append(sig)
+                switch draft.sourceTypeRaw {
+                case "scheduledPayment":
+                    notification.scheduledPayments += 1
+                case "subscription":
+                    notification.subscriptions += 1
+                case "applePay", "automation":
+                    notification.automations += 1
+                default:
+                    break
+                }
+            }
         } catch {
             #if DEBUG
             print("AppBootstrapper: Error checking inbox drafts: \(error)")
             #endif
         }
 
-        if !notification.isEmpty {
-            let delay: Double = 0.3
-            Task { [weak self] in
-                try? await Task.sleep(for: .seconds(delay))
-                guard let self else { return }
-                if self.isUIBlocked {
-                    self.deferredInboxNotification = notification
-                } else {
-                    self.sessionState.pendingInboxNotification = notification
-                }
-            }
+        if !newSignatures.isEmpty {
+            var all = loadProcessedInboxSignatures()
+            all.append(contentsOf: newSignatures)
+            saveProcessedInboxSignatures(all)
         }
 
-        UserDefaults.standard.set(Date.now, forKey: "lastInboxDraftCheckDate")
+        if !notification.isEmpty {
+            // F3: enqueue directly — readiness gating replaces Task.sleep(0.3s).
+            AppRouter.shared.enqueue(.showInboxAlert(notification))
+            // Shim until F9: keep SessionState.pendingInboxNotification as
+            // source of truth for InboxAlertModal binding.
+            sessionState.pendingInboxNotification = notification
+        }
     }
 
     private func seedDefaultNotifications(context: ModelContext) {
@@ -736,45 +737,26 @@ final class AppBootstrapper {
     }
 
     /// Only called from bootstrap() for cold launch without deep link.
+    /// F3: enqueues directly to router; readiness gating handles mount timing.
     private func checkForPendingSharedImage() {
         let imageURLs = SharedContainerService.pendingImageURLs()
         guard let firstImageURL = imageURLs.first else { return }
 
-        // On cold launch, always defer — splash is still showing
-        if isUIBlocked {
-            deferredSharedImageURL = firstImageURL
-            #if DEBUG
-            print("AppBootstrapper: Deferring shared image (cold launch) — UI blocked")
-            #endif
-        } else {
-            sessionState.pendingSharedImageURL = firstImageURL
-            sessionState.shouldShowSharedImage = true
-        }
+        AppRouter.shared.enqueue(.navigate(.panel))
+        AppRouter.shared.enqueue(.presentSharedImage(firstImageURL))
+        // Shim until F9: ImageSelectionView reads pendingSharedImageURL directly.
+        sessionState.pendingSharedImageURL = firstImageURL
     }
 
     // MARK: - Deferred Action Resolution
 
-    /// Resolves deferred actions after UI blockers (Face ID / InboxAlertModal) dismiss.
-    /// Called from ContentView on unlock and inbox dismiss, and from PanelView on image dismiss.
+    /// F3: deferred-action resolution is replaced by router readiness. This
+    /// method is kept as a no-op shim until all callers (ContentView
+    /// onUnlock, inbox dismiss onChange, PanelSheetsModifier image dismiss)
+    /// are purged in F9.
     func showDeferredActionsIfNeeded() {
-        // Shared image takes priority (explicit user action from Share Extension)
-        if let url = deferredSharedImageURL {
-            deferredSharedImageURL = nil
-            Task { @MainActor in
-                try? await Task.sleep(for: .seconds(0.3))
-                sessionState.pendingSharedImageURL = url
-                sessionState.shouldShowSharedImage = true
-            }
-            // deferredPanelAction will resolve on ImageSelectionView dismiss
-            return
-        }
-
-        guard let action = deferredPanelAction else { return }
-        deferredPanelAction = nil
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(0.3))
-            self.executeAction(action)
-        }
+        // Intentionally empty. Router drains queued intents as consumers
+        // become ready — no manual coordination needed.
     }
 
     // MARK: - Notification Management

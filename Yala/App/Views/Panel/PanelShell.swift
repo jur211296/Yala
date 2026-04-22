@@ -26,10 +26,9 @@ struct PanelShell: View {
                 viewModel: viewModel,
                 sessionState: sessionState
             ))
-            .modifier(PanelSheetTriggers(
-                sessionState: sessionState,
-                sheets: $sheets
-            ))
+            // PanelSheetTriggers removed in F3 — router drain in this view
+            // now owns the shouldShow* → sheets.show* translation. File kept
+            // temporarily until F9 deletion pass.
             .modifier(PanelSessionObservers(
                 viewModel: viewModel,
                 sessionState: sessionState
@@ -53,7 +52,37 @@ struct PanelShell: View {
 
     private func drainPanelIfActive() {
         guard sessionState.selectedMainTab == .panel else { return }
-        _ = AppRouter.shared.drainNext(for: .panel)
-        // F3 will switch on the intent and mutate `sheets`. F2 discards.
+        guard let intent = AppRouter.shared.drainNext(for: .panel) else { return }
+        handlePanelIntent(intent)
+    }
+
+    /// Drain handler for `.panel` intents (F3). Mutates `sheets` which drive
+    /// the existing `.sheet(isPresented:)` bindings in PanelSheetsModifier.
+    private func handlePanelIntent(_ intent: RouterIntent) {
+        switch intent {
+        case .presentInboxSheet:
+            sheets.showInbox = true
+        case .presentSharedImage:
+            sheets.showImageSelection = true
+        case .presentNewTransaction:
+            sheets.showNewTransaction = true
+        case .presentVoiceEntry:
+            sheets.showVoiceRecording = true
+        case .presentImageEntry:
+            sheets.showImageSelection = true
+        case .presentUpgradeSheet(let feature):
+            switch feature {
+            case .voice:
+                sheets.showUpgradeForVoice = true
+            case .image:
+                sheets.showUpgradeForImage = true
+            case .accounts:
+                sheets.showUpgradeForAccounts = true
+            case .chat:
+                sheets.showUpgradeForChat = true
+            }
+        default:
+            break  // Non-panel intents ignored (router shouldn't route them here).
+        }
     }
 }

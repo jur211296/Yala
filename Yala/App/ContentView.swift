@@ -249,7 +249,10 @@ struct ContentView: View {
             InboxAlertModal(
                 notification: SessionState.shared.pendingInboxNotification,
                 onViewInbox: {
-                    SessionState.shared.shouldShowInbox = true
+                    // F3: enqueue panel sheet intent. Router drains when Panel
+                    // is active + consumer ready. Matches legacy behavior
+                    // (shouldShowInbox was routed by PanelSheetTriggers).
+                    AppRouter.shared.enqueue(.presentInboxSheet)
                 },
                 onDismiss: {
                     SessionState.shared.pendingInboxNotification = .init()
@@ -370,10 +373,21 @@ struct ContentView: View {
 
     /// Drains one `.contentView` intent per revision bump. Single-intent
     /// drain — handler may enqueue new intents, they process next tick.
-    /// F3+ fills the switch; F2 is wiring only.
     @MainActor
     private func drainContentViewIntents() {
-        _ = AppRouter.shared.drainNext(for: .contentView)
+        guard let intent = AppRouter.shared.drainNext(for: .contentView) else { return }
+        switch intent {
+        case .showInboxAlert(let notif):
+            // Shim F3: legacy InboxAlertModal is driven by
+            // SessionState.pendingInboxNotification. Mirror the router
+            // payload into it so the fullScreenCover presents. F9 replaces
+            // the fullScreenCover with a local @State.
+            SessionState.shared.pendingInboxNotification = notif
+        default:
+            // F4-F8 wire remaining .contentView cases (trial offer,
+            // whatsNew, group invites, system alerts).
+            break
+        }
     }
 
     /// Schedule one-shot dedup after a delay (at most once per launch)
@@ -766,13 +780,10 @@ struct MainTabView: View {
             }
             .tint(theme.accent)
             .transaction { $0.animation = nil }
-            .onChange(of: sessionState.shouldShowSharedImage) { _, shouldShow in
-                // Navigate to Panel when shared image arrives (from Share Extension)
-                // GC-08: Skip if panel is not available (groupInvite mode)
-                if shouldShow && sessionState.selectedMainTab != .panel && !sessionState.isGroupInviteMode {
-                    sessionState.selectedMainTab = .panel
-                }
-            }
+            // F3: Pivot to Panel tab now handled by router — handleIncomingURL
+            // enqueues .navigate(.panel) alongside .presentSharedImage, which
+            // MainTabView drains and sets selectedMainTab. Legacy onChange
+            // removed.
             .onChange(of: sessionState.deepLinkDestination) { _, destination in
                 // Handle deep links from widgets
                 guard let destination = destination else { return }
@@ -806,7 +817,7 @@ struct MainTabView: View {
                     sessionState.selectedMainTab = .planning
                 case .inbox:
                     sessionState.selectedMainTab = .panel
-                    sessionState.shouldShowInbox = true
+                    AppRouter.shared.enqueue(.presentInboxSheet)
                 case .scheduledPayments:
                     sessionState.selectedPlanningTab = .scheduledPayments
                     sessionState.selectedMainTab = .planning
@@ -890,11 +901,26 @@ struct MainTabView: View {
                     MilestoneUpgradeSheet(milestone: milestone)
                 }
             }
-            // AppRouter consumer (F2). Drain switch lands in F4/F6 when
-            // monetization and tab-nav intents flow through the router.
+            // AppRouter consumer. F3 wires `.navigate` (forwards to legacy
+            // deepLinkDestination handler). F4/F6 migrate monetization and
+            // the rest of tab-nav.
             .routerConsumer(.mainTab) {
-                _ = AppRouter.shared.drainNext(for: .mainTab)
+                guard let intent = AppRouter.shared.drainNext(for: .mainTab) else { return }
+                handleMainTabIntent(intent)
             }
+        }
+    }
+
+    /// Handles drained `.mainTab` intents. F3: only `.navigate` — forwards
+    /// to legacy deepLinkDestination setter so the existing `onChange`
+    /// handler runs the same logic. F4 adds monetization cases. F6
+    /// eliminates the legacy `onChange(deepLinkDestination)` entirely.
+    private func handleMainTabIntent(_ intent: RouterIntent) {
+        switch intent {
+        case .navigate(let dest):
+            sessionState.deepLinkDestination = dest
+        default:
+            break  // F4/F6 fill remaining cases.
         }
     }
 

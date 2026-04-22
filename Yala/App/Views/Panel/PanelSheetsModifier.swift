@@ -255,7 +255,6 @@ struct PanelSheetsModifier: ViewModifier {
         }
 
         viewModel.reloadAndRecalculate()
-
-        AppBootstrapper.shared.showDeferredActionsIfNeeded()
+        // F3: router handles post-dismiss intent resolution automatically.
     }
 }
