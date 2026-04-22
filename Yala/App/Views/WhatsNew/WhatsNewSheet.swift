@@ -9,12 +9,17 @@ import SwiftUI
 
 // MARK: - Model
 
-struct WhatsNewFeature: Identifiable {
+struct WhatsNewFeature: Identifiable, Equatable {
     let id = UUID()
     let icon: String
     let iconColor: Color
     let title: String
     let description: String
+
+    // Identity for `.presentWhatsNew` intent dedup uses stable fields, not the UUID.
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.icon == rhs.icon && lhs.title == rhs.title && lhs.description == rhs.description
+    }
 }
 
 // MARK: - WhatsNewSheet
