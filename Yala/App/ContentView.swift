@@ -278,6 +278,7 @@ struct ContentView: View {
             }
         }
         .onChange(of: authService.isLocked) { _, isLocked in
+            updateContentViewReadiness()
             if !isLocked {
                 if let deferred = AppBootstrapper.shared.deferredInboxNotification {
                     AppBootstrapper.shared.deferredInboxNotification = nil
@@ -291,6 +292,12 @@ struct ContentView: View {
                     AppBootstrapper.shared.showDeferredActionsIfNeeded()
                 }
             }
+        }
+        .onChange(of: SessionState.shared.isWipingData) { _, _ in
+            updateContentViewReadiness()
+        }
+        .onChange(of: AppRouter.shared.revision) { _, _ in
+            drainContentViewIntents()
         }
         .onChange(of: SessionState.shared.pendingInboxNotification.isEmpty) { oldEmpty, newEmpty in
             if !oldEmpty && newEmpty {
@@ -320,6 +327,11 @@ struct ContentView: View {
             showSplash = false
             SessionState.shared.isSplashDismissed = true
 
+            // Update router readiness after splash dismiss (F2). The legacy
+            // deferred-resolution logic below stays in F2 — F3 eliminates it
+            // once producers enqueue to the router directly.
+            updateContentViewReadiness()
+
             // Resolve deferred deep link (navigation-only targets like panel, statistics, etc.)
             if let deferred = SessionState.shared.deferredDeepLink {
                 SessionState.shared.deferredDeepLink = nil
@@ -337,6 +349,31 @@ struct ContentView: View {
                 AppBootstrapper.shared.showDeferredActionsIfNeeded()
             }
         }
+    }
+
+    // MARK: - Router Consumer (F2)
+
+    /// Single source of truth for `.contentView` readiness. Called from
+    /// `dismissSplash`, `onChange(authService.isLocked)`, and
+    /// `onChange(SessionState.shared.isWipingData)`. Idempotent.
+    @MainActor
+    private func updateContentViewReadiness() {
+        let ready = SessionState.shared.isSplashDismissed
+                 && !authService.isLocked
+                 && !SessionState.shared.isWipingData
+        if ready {
+            AppRouter.shared.markReady(.contentView)
+        } else {
+            AppRouter.shared.markUnready(.contentView)
+        }
+    }
+
+    /// Drains one `.contentView` intent per revision bump. Single-intent
+    /// drain — handler may enqueue new intents, they process next tick.
+    /// F3+ fills the switch; F2 is wiring only.
+    @MainActor
+    private func drainContentViewIntents() {
+        _ = AppRouter.shared.drainNext(for: .contentView)
     }
 
     /// Schedule one-shot dedup after a delay (at most once per launch)
@@ -852,6 +889,11 @@ struct MainTabView: View {
                 if let milestone = sessionState.pendingMilestoneUpgrade {
                     MilestoneUpgradeSheet(milestone: milestone)
                 }
+            }
+            // AppRouter consumer (F2). Drain switch lands in F4/F6 when
+            // monetization and tab-nav intents flow through the router.
+            .routerConsumer(.mainTab) {
+                _ = AppRouter.shared.drainNext(for: .mainTab)
             }
         }
     }

@@ -39,5 +39,21 @@ struct PanelShell: View {
                     SubscriptionView(source: sheets.subscriptionBannerSource)
                 }
             }
+            // AppRouter consumer (F2). Drain handlers land in F3 when intents
+            // start flowing through the router. Consumer gate (K) — drain only
+            // when Panel is the active tab, so intents don't present in a
+            // hidden view.
+            .routerConsumer(.panel) {
+                drainPanelIfActive()
+            }
+            .onChange(of: sessionState.selectedMainTab) { _, _ in
+                drainPanelIfActive()
+            }
+    }
+
+    private func drainPanelIfActive() {
+        guard sessionState.selectedMainTab == .panel else { return }
+        _ = AppRouter.shared.drainNext(for: .panel)
+        // F3 will switch on the intent and mutate `sheets`. F2 discards.
     }
 }

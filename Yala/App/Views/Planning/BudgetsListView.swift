@@ -103,6 +103,10 @@ struct BudgetsListView: View {
         .onChange(of: sessionState.dataVersion) { _, _ in
             refreshData()
         }
+        // AppRouter consumer (F2). Drain switch for .autoOpenBudgetEditor lands in F7.
+        .routerConsumer(.planning) {
+            _ = AppRouter.shared.drainNext(for: .planning)
+        }
     }
 
     // MARK: - Controls Bar
