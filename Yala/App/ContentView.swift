@@ -204,10 +204,10 @@ struct ContentView: View {
             if SessionState.shared.needsPostOnboardingTrial && !FeatureGateService.shared.isProUser {
                 SessionState.shared.needsPostOnboardingTrial = false
                 Task {
-                    // Wait for fullScreenCover dismiss animation (~0.35s)
+                    // Wait for fullScreenCover dismiss animation (~0.35s, UX)
                     try? await Task.sleep(for: .seconds(0.8))
                     await waitForBootstrap()
-                    showProTrialOffer = true
+                    AppRouter.shared.enqueue(.presentTrialOffer)
                 }
             }
         }
@@ -378,14 +378,16 @@ struct ContentView: View {
         guard let intent = AppRouter.shared.drainNext(for: .contentView) else { return }
         switch intent {
         case .showInboxAlert(let notif):
-            // Shim F3: legacy InboxAlertModal is driven by
-            // SessionState.pendingInboxNotification. Mirror the router
-            // payload into it so the fullScreenCover presents. F9 replaces
-            // the fullScreenCover with a local @State.
+            // Shim: legacy InboxAlertModal reads SessionState.pendingInboxNotification.
+            // F9 replaces the fullScreenCover with a local @State.
             SessionState.shared.pendingInboxNotification = notif
+        case .presentTrialOffer:
+            showProTrialOffer = true
+        case .presentWhatsNew(let features, let version):
+            whatsNewData = (features: features, version: version)
+            showWhatsNew = true
         default:
-            // F4-F8 wire remaining .contentView cases (trial offer,
-            // whatsNew, group invites, system alerts).
+            // F5-F8 wire remaining .contentView cases (group invites, system alerts).
             break
         }
     }
@@ -496,14 +498,13 @@ struct ContentView: View {
         !LanguageManager.deviceLanguageIsSupported && LanguageManager.overrideLanguage == nil
     }
 
-    /// Prepares What's New data if version changed and features exist.
-    /// Returns true if there's something to show.
-    private func prepareWhatsNewIfNeeded() -> Bool {
+    /// Returns What's New data if version changed and features exist.
+    /// Nil otherwise. Used to enqueue `.presentWhatsNew` router intent.
+    private func whatsNewDataIfPending() -> (features: [WhatsNewFeature], version: String)? {
         let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
         guard !currentVersion.isEmpty, currentVersion != lastSeenAppVersion,
-              let features = WhatsNewConfig.features(for: currentVersion) else { return false }
-        whatsNewData = (features: features, version: currentVersion)
-        return true
+              let features = WhatsNewConfig.features(for: currentVersion) else { return nil }
+        return (features: features, version: currentVersion)
     }
 
     /// Check initial state and decide whether to show language selection, onboarding, or go straight to app.
@@ -540,10 +541,10 @@ struct ContentView: View {
                     SessionState.shared.needsPostOnboardingTrial = false
                     Task {
                         await waitForBootstrap()
-                        showProTrialOffer = true
+                        AppRouter.shared.enqueue(.presentTrialOffer)
                     }
-                } else if prepareWhatsNewIfNeeded() {
-                    showWhatsNew = true
+                } else if let data = whatsNewDataIfPending() {
+                    AppRouter.shared.enqueue(.presentWhatsNew(features: data.features, version: data.version))
                 }
             }
             // Check for app updates (non-blocking)
@@ -842,35 +843,8 @@ struct MainTabView: View {
                 // Clear after handling
                 sessionState.deepLinkDestination = nil
             }
-            .onChange(of: sessionState.shouldRequestReview) { _, shouldShow in
-                if shouldShow {
-                    sessionState.shouldRequestReview = false
-                    let action = requestReview
-                    Task {
-                        try? await Task.sleep(for: .seconds(1))
-                        action()
-                        ReviewPromptService.recordPromptShown()
-                        TelemetryService.track(.reviewPromptShown)
-                    }
-                }
-            }
-            .onChange(of: sessionState.shouldShowDowngradeResolution) { _, shouldShow in
-                // Show downgrade resolution sheet when triggered by AppBootstrapper
-                // Fetches on-demand instead of @Query to prevent 0x8BADF00D during snapshot
-                if shouldShow {
-                    let accounts = (try? modelContext.fetch(FetchDescriptor<Account>())) ?? []
-                    let budgets = (try? modelContext.fetch(
-                        FetchDescriptor<Budget>(predicate: #Predicate { $0.isActive })
-                    )) ?? []
-                    let activeAccounts = accounts.filter { !$0.isArchived }
-                    if activeAccounts.count > 2 || budgets.count > 3 {
-                        downgradeAccounts = accounts
-                        downgradeBudgets = budgets
-                        showDowngradeResolution = true
-                    }
-                    sessionState.shouldShowDowngradeResolution = false
-                }
-            }
+            // F4: shouldRequestReview + shouldShowDowngradeResolution now
+            // routed via AppRouter. Drain in handleMainTabIntent.
             .sheet(isPresented: $showDowngradeResolution) {
                 DowngradeResolutionSheet(
                     accounts: downgradeAccounts,
@@ -879,20 +853,9 @@ struct MainTabView: View {
                     showDowngradeResolution = false
                 }
             }
-            .onChange(of: sessionState.shouldShowTrialExpired) { _, shouldShow in
-                if shouldShow {
-                    showTrialExpired = true
-                    sessionState.shouldShowTrialExpired = false
-                    ProUpsellService.shared.markTrialExpiredSheetShown()
-                }
-            }
+            // F4: trial expired + milestone now routed via AppRouter.
             .sheet(isPresented: $showTrialExpired) {
                 UpgradePromptSheet(feature: .voiceInput, context: .trialExpired, source: "trialExpired")
-            }
-            .onChange(of: sessionState.pendingMilestoneUpgrade) { _, milestone in
-                if milestone != nil {
-                    showMilestoneUpgrade = true
-                }
             }
             .sheet(isPresented: $showMilestoneUpgrade, onDismiss: {
                 sessionState.pendingMilestoneUpgrade = nil
@@ -911,16 +874,39 @@ struct MainTabView: View {
         }
     }
 
-    /// Handles drained `.mainTab` intents. F3: only `.navigate` — forwards
-    /// to legacy deepLinkDestination setter so the existing `onChange`
-    /// handler runs the same logic. F4 adds monetization cases. F6
-    /// eliminates the legacy `onChange(deepLinkDestination)` entirely.
+    /// Handles drained `.mainTab` intents. F3: `.navigate`. F4: monetization.
+    /// F6 eliminates the legacy `onChange(deepLinkDestination)` entirely.
     private func handleMainTabIntent(_ intent: RouterIntent) {
         switch intent {
         case .navigate(let dest):
             sessionState.deepLinkDestination = dest
+        case .presentDowngradeResolution:
+            let accounts = (try? modelContext.fetch(FetchDescriptor<Account>())) ?? []
+            let budgets = (try? modelContext.fetch(
+                FetchDescriptor<Budget>(predicate: #Predicate { $0.isActive })
+            )) ?? []
+            let activeAccounts = accounts.filter { !$0.isArchived }
+            if activeAccounts.count > 2 || budgets.count > 3 {
+                downgradeAccounts = accounts
+                downgradeBudgets = budgets
+                showDowngradeResolution = true
+            }
+        case .presentTrialExpired:
+            showTrialExpired = true
+            ProUpsellService.shared.markTrialExpiredSheetShown()
+        case .presentMilestoneUpgrade(let milestone):
+            sessionState.pendingMilestoneUpgrade = milestone  // shim payload
+            showMilestoneUpgrade = true
+        case .requestAppStoreReview:
+            let action = requestReview
+            Task {
+                try? await Task.sleep(for: .seconds(1))  // UX delay, not sync
+                action()
+                ReviewPromptService.recordPromptShown()
+                TelemetryService.track(.reviewPromptShown)
+            }
         default:
-            break  // F4/F6 fill remaining cases.
+            break  // F5/F6 fill remaining cases.
         }
     }
 

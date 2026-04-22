@@ -170,14 +170,14 @@ final class DraftService {
         UserDefaults.standard.set(txCount, forKey: "transactionsSavedCount")
 
         if ReviewPromptService.shouldPrompt(transactionCount: txCount) {
-            SessionState.shared.shouldRequestReview = true
+            AppRouter.shared.enqueue(.requestAppStoreReview)
         }
 
         // Check milestone upgrade for Free users
         if !FeatureGateService.shared.isProUser,
            ProUpsellService.shared.shouldShowMilestone(transactionCount: txCount),
            let milestone = ProUpsellService.shared.nextMilestone(for: txCount) {
-            SessionState.shared.pendingMilestoneUpgrade = milestone
+            AppRouter.shared.enqueue(.presentMilestoneUpgrade(milestone))
             ProUpsellService.shared.markMilestoneShown(milestone)
         }
 
@@ -274,7 +274,7 @@ final class DraftService {
             UserDefaults.standard.set(txCount, forKey: "transactionsSavedCount")
 
             if ReviewPromptService.shouldPrompt(transactionCount: txCount) {
-                SessionState.shared.shouldRequestReview = true
+                AppRouter.shared.enqueue(.requestAppStoreReview)
             }
         }
 

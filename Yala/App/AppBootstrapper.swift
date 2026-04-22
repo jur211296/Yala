@@ -589,7 +589,7 @@ final class AppBootstrapper {
 
         // Check for trial expired (shows sheet once)
         if ProUpsellService.shared.shouldShowTrialExpiredSheet() {
-            sessionState.shouldShowTrialExpired = true
+            AppRouter.shared.enqueue(.presentTrialExpired)
         }
     }
 
@@ -609,7 +609,7 @@ final class AppBootstrapper {
 
         // Mark that we need to show downgrade resolution
         // The actual resolution sheet is shown from ContentView which has access to data
-        sessionState.shouldShowDowngradeResolution = true
+        AppRouter.shared.enqueue(.presentDowngradeResolution)
     }
 
     /// Reset Pro theme to System if user downgraded from Pro
