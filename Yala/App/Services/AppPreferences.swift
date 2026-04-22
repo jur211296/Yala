@@ -474,6 +474,16 @@ final class AppPreferences {
         }
     }
 
+    /// Label mode for the Sankey flow widget in Statistics → Distribution.
+    /// `.amount` shows currency-formatted amounts; `.percentage` shows % of base.
+    /// Synced via iCloud KV for cross-device consistency.
+    var sankeyLabelMode: SankeyLabelMode = .amount {
+        didSet {
+            guard oldValue != sankeyLabelMode else { return }
+            persistString(sankeyLabelMode.rawValue, forKey: Keys.sankeyLabelMode, synced: true)
+        }
+    }
+
     // MARK: - Hero KPI Preferences (DEPRECATED — PP2-01)
     //
     // Introduced in P20-04b and removed in PP2-01 when the Hero compacto
@@ -807,6 +817,11 @@ final class AppPreferences {
         panelPrefsMigratedV2 = defaults.bool(forKey: Keys.panelPrefsMigratedV2)
         panelAccountsCollapsed = defaults.bool(forKey: Keys.panelAccountsCollapsed)
 
+        if let stored = defaults.string(forKey: Keys.sankeyLabelMode),
+           let mode = SankeyLabelMode(rawValue: stored) {
+            sankeyLabelMode = mode
+        }
+
         // Hero KPI Preferences (P20-04b)
         if let value = parseList(defaults.string(forKey: Keys.panelHeroKPIsOrder)) {
             panelHeroKPIsOrder = value
@@ -926,6 +941,7 @@ final class AppPreferences {
         static let panelSectionsHidden = "panelSectionsHidden"
         static let panelPrefsMigratedV2 = "panelPrefsMigratedV2"
         static let panelAccountsCollapsed = "panelAccountsCollapsed"
+        static let sankeyLabelMode = "sankeyLabelMode"
 
         // Hero KPI Preferences (P20-04b)
         static let panelHeroKPIsOrder = "panelHeroKPIsOrder"

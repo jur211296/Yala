@@ -3556,3 +3556,10 @@
 "groups.nudge.sporadicTrendAlert.title" = "Upward trend";
 "groups.nudge.sporadicTrendAlert.message" = "Your shared expenses are up %d%% from last month.";
 "groups.nudge.sporadicTrendAlert.cta" = "Got it";
+
+"statistics.sankey.title" = "Money flow";
+"statistics.sankey.expenses" = "Expenses";
+"statistics.sankey.available" = "Available";
+"statistics.sankey.others" = "Others";
+"statistics.sankey.toggleAmount" = "Show amounts";
+"statistics.sankey.togglePercentage" = "Show percentages";

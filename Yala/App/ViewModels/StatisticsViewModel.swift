@@ -186,6 +186,11 @@ final class StatisticsViewModel: Filterable {
     /// Current actual balance (sum of accounts' current balance)
     var currentBalance: Double = 0
 
+    /// Sankey flow data for the Distribution tab widget.
+    /// Computed via `calculateSankeyData(...)`; recomputes only when the non-category
+    /// deps change (see `sankeyInputKey`). Tap-filtering does NOT invalidate this.
+    private(set) var sankeyData: SankeyData = .empty
+
     /// Maximum number of records to show
     let maxRecentRecords: Int = 10
 
@@ -272,6 +277,36 @@ final class StatisticsViewModel: Filterable {
         detailPeriod.dateInterval(customRange: customDateRange)
     }
 
+    // MARK: - Sankey Input Key
+
+    /// Snapshot of all filter/period deps that should trigger a Sankey recompute.
+    /// Deliberately excludes `selectedCategories`, `selectedSubcategories`, `selectedMetric`
+    /// and `selectedTransactionNatures` — tap-filtering and metric switches do NOT alter
+    /// the flow structure, only the dimming overlay in the view.
+    struct SankeyInputKey: Equatable {
+        let interval: DateInterval
+        let accounts: Set<PersistentIdentifier>
+        let tags: Set<PersistentIdentifier>
+        let currencies: Set<CurrencyCode>
+        let needs: Set<SubcategoryNeed>
+        let amountCondition: AmountFilterCondition
+        let searchText: String
+        let isExcludeMode: Bool
+    }
+
+    var sankeyInputKey: SankeyInputKey {
+        SankeyInputKey(
+            interval: panelDateInterval,
+            accounts: selectedAccounts,
+            tags: selectedTags,
+            currencies: selectedCurrencies,
+            needs: selectedNeeds,
+            amountCondition: amountCondition,
+            searchText: searchText,
+            isExcludeMode: isExcludeMode
+        )
+    }
+
     // MARK: - Data Calculation
 
     /// Calculate trend data based on current filters and metric
@@ -336,6 +371,52 @@ final class StatisticsViewModel: Filterable {
 
         // Calculate recent records
         buildRecentRecords(from: filtered)
+    }
+
+    // MARK: - Sankey Data
+
+    /// Recompute the Sankey flow data for the Distribution widget.
+    ///
+    /// Uses a dedicated `FilterCriteria` that **omits** `selectedCategories` /
+    /// `selectedSubcategories` so the flow structure remains stable when the user
+    /// taps a category or subcategory elsewhere (dimming happens in the view).
+    /// Always applies the current `panelDateInterval`, independent of `selectedMetric`.
+    func calculateSankeyData(
+        allTransactions: [TransactionItem],
+        accounts: [Account]
+    ) {
+        let interval = panelDateInterval
+        let criteria = buildSankeyFilterCriteria(interval: interval)
+        let filtered = FilterService.filterForTrends(
+            transactions: allTransactions,
+            accounts: accounts,
+            criteria: criteria
+        )
+        let newData = SankeyFlowCalculator.compute(
+            transactions: filtered,
+            interval: interval,
+            maxPerColumn: .max
+        )
+        if newData != sankeyData { sankeyData = newData }
+    }
+
+    /// Build a FilterCriteria dedicated to the Sankey widget:
+    /// - Excludes `selectedCategories`/`selectedSubcategories` (tap filters don't shrink the flow).
+    /// - Always sets `dateInterval: interval` (unlike `buildTrendFilterCriteria`, which sets nil for `.balance`).
+    private func buildSankeyFilterCriteria(interval: DateInterval) -> FilterCriteria {
+        FilterCriteria(
+            selectedAccounts: selectedAccounts,
+            selectedCategories: [],
+            selectedSubcategories: [],
+            selectedTags: selectedTags,
+            selectedNeeds: selectedNeeds,
+            selectedCurrencies: selectedCurrencies,
+            isExcludeMode: isExcludeMode,
+            transactionTypeFilter: .all,
+            amountCondition: amountCondition,
+            searchText: searchText,
+            dateInterval: interval
+        )
     }
 
     // MARK: - Calculation Helpers

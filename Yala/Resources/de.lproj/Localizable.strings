@@ -3553,3 +3553,10 @@
 "groups.nudge.sporadicTrendAlert.title" = "Aufwärtstrend";
 "groups.nudge.sporadicTrendAlert.message" = "Deine geteilten Ausgaben sind %d%% höher als letzten Monat.";
 "groups.nudge.sporadicTrendAlert.cta" = "Verstanden";
+
+"statistics.sankey.title" = "Geldfluss";
+"statistics.sankey.expenses" = "Ausgaben";
+"statistics.sankey.available" = "Verfügbar";
+"statistics.sankey.others" = "Andere";
+"statistics.sankey.toggleAmount" = "Beträge anzeigen";
+"statistics.sankey.togglePercentage" = "Prozentsätze anzeigen";

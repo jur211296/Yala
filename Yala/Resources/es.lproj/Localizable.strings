@@ -3559,3 +3559,10 @@
 "groups.nudge.sporadicTrendAlert.title" = "Tendencia al alza";
 "groups.nudge.sporadicTrendAlert.message" = "Tus gastos compartidos subieron %d%% respecto al mes pasado.";
 "groups.nudge.sporadicTrendAlert.cta" = "Entendido";
+
+"statistics.sankey.title" = "Flujo de dinero";
+"statistics.sankey.expenses" = "Gastos";
+"statistics.sankey.available" = "Disponible";
+"statistics.sankey.others" = "Otros";
+"statistics.sankey.toggleAmount" = "Mostrar montos";
+"statistics.sankey.togglePercentage" = "Mostrar porcentajes";

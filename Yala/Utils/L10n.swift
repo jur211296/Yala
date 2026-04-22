@@ -941,6 +941,15 @@ enum L10n {
         static var incomeAnalysis: String {
             ls("statistics.incomeAnalysis", comment: "")
         }
+
+        enum Sankey {
+            static var title: String { ls("statistics.sankey.title", comment: "") }
+            static var expenses: String { ls("statistics.sankey.expenses", comment: "") }
+            static var available: String { ls("statistics.sankey.available", comment: "") }
+            static var others: String { ls("statistics.sankey.others", comment: "") }
+            static var toggleAmount: String { ls("statistics.sankey.toggleAmount", comment: "") }
+            static var togglePercentage: String { ls("statistics.sankey.togglePercentage", comment: "") }
+        }
     }
 
     // MARK: - Report

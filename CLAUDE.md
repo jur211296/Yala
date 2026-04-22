@@ -49,6 +49,7 @@ Category, Subcategory, Tag, Account, TransactionItem, Budget, ExchangeRate, Favo
 | WeekdaySpendingCalculator | App/Logic/Calculators/WeekdaySpendingCalculator.swift | Gasto por día de semana |
 | SplitCalculator | App/Logic/Calculators/SplitCalculator.swift | Cálculo de porción en gastos compartidos |
 | CashFlowProjectionCalculator | App/Logic/Calculators/CashFlowProjectionCalculator.swift | Proyección flujo de caja con 7 métodos |
+| SankeyFlowCalculator | App/Logic/Calculators/SankeyFlowCalculator.swift | Widget Sankey (4 columnas: ingreso subcats → Gastos/Disponible → gasto cats → gasto subcats). Puro, O(N) |
 | DebtSimplificationService | Services/Groups/DebtSimplificationService.swift | Minimum cash flow — simplificación de deudas |
 | GroupBalanceService | Services/Groups/GroupBalanceService.swift | Balances por miembro, deudas, resumen global |
 | GroupSplitCalculator | App/Logic/Calculators/GroupSplitCalculator.swift | Split por participante para gastos de grupo |

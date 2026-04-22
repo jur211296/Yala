@@ -122,6 +122,7 @@ struct CategoriesTabView: View {
                 controlBar
                 spendingAnalysisHeader
                 chartsCarousel
+                sankeyWidget
                 // Need carousel only shows for expenses (need classification doesn't apply to income)
                 if !isIncomeMode {
                     needCarousel
@@ -135,6 +136,13 @@ struct CategoriesTabView: View {
         .scrollViewGlassEdges()
         .onAppear {
             calculateData()
+            viewModel.calculateSankeyData(allTransactions: allTransactions, accounts: accounts)
+        }
+        .onChange(of: viewModel.sankeyInputKey) {
+            viewModel.calculateSankeyData(allTransactions: allTransactions, accounts: accounts)
+        }
+        .onChange(of: allTransactions.count) {
+            viewModel.calculateSankeyData(allTransactions: allTransactions, accounts: accounts)
         }
         .onChange(of: viewModel.detailPeriod) {
             calculateData()
@@ -506,6 +514,73 @@ struct CategoriesTabView: View {
             let barHeight: CGFloat = 52
             let containerPadding: CGFloat = 56
             return CGFloat(visibleNeedCount) * barHeight + containerPadding
+        }
+    }
+
+    @ViewBuilder
+    private var sankeyWidget: some View {
+        if viewModel.sankeyData.hasFlow {
+            @Bindable var prefs = appPreferences
+            VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                sankeyHeader(prefs: $prefs.sankeyLabelMode)
+                SankeyChartView(
+                    data: viewModel.sankeyData,
+                    currencyCode: defaultCurrencyCode,
+                    labelMode: $prefs.sankeyLabelMode,
+                    selectedCategoryIDs: viewModel.selectedCategories,
+                    selectedSubcategoryIDs: viewModel.selectedSubcategories,
+                    onTapCategory: { catID in
+                        dsWithAnimation(reduceMotion) {
+                            toggleSankeyCategory(catID)
+                        }
+                    },
+                    onTapSubcategory: { subID in
+                        dsWithAnimation(reduceMotion) {
+                            toggleSankeySubcategory(subID)
+                        }
+                    }
+                )
+            }
+            .solidCard(padding: DS.Card.paddingCompact, radius: DS.Radius.lg)
+        }
+    }
+
+    private func sankeyHeader(prefs: Binding<SankeyLabelMode>) -> some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.Statistics.Sankey.title)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Text(YalaFormatter.currency(
+                    value: viewModel.sankeyData.totalExpense,
+                    currencyCode: defaultCurrencyCode
+                ))
+                .font(DS.Typography.headline)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            }
+            Spacer(minLength: DS.Spacing.sm)
+            SankeyLabelModeToggle(mode: prefs)
+        }
+    }
+
+    private func toggleSankeyCategory(_ catID: PersistentIdentifier) {
+        if viewModel.selectedCategories.contains(catID) {
+            viewModel.selectedCategories.remove(catID)
+        } else {
+            viewModel.selectedCategories = [catID]
+            viewModel.selectedSubcategories.removeAll()
+        }
+    }
+
+    private func toggleSankeySubcategory(_ subID: PersistentIdentifier) {
+        if viewModel.selectedSubcategories.contains(subID) {
+            viewModel.selectedSubcategories.remove(subID)
+        } else {
+            viewModel.selectedSubcategories = [subID]
+            viewModel.selectedCategories.removeAll()
         }
     }
 
