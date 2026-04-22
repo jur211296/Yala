@@ -30,15 +30,15 @@ struct AppRouterTests {
     @MainActor @Test func enqueue_empty_addsToQueue() {
         let router = freshRouter()
         router.enqueue(.presentInboxSheet)
-        #expect(router.queue.count == 1)
-        #expect(router.queue.first?.id == "inboxSheet")
+        #expect(router._testQueue.count == 1)
+        #expect(router._testQueue.first?.id == "inboxSheet")
     }
 
     @MainActor @Test func enqueue_duplicateID_isDropped() {
         let router = freshRouter()
         router.enqueue(.presentInboxSheet)
         router.enqueue(.presentInboxSheet)
-        #expect(router.queue.count == 1)
+        #expect(router._testQueue.count == 1)
     }
 
     @MainActor @Test func enqueue_priorityOrder_criticalBeforeHigh() {
@@ -47,9 +47,9 @@ struct AppRouterTests {
         router.enqueue(.iCloudMismatch)               // critical, .contentView
         router.enqueue(.presentSharedImage(URL(fileURLWithPath: "/tmp/a.jpg")))  // high, .panel
 
-        #expect(router.queue[0].id == "iCloudMismatch")     // critical first
-        #expect(router.queue[1].id == "sharedImage:a.jpg")  // high second
-        #expect(router.queue[2].id == "milestone:10")       // normal last
+        #expect(router._testQueue[0].id == "iCloudMismatch")     // critical first
+        #expect(router._testQueue[1].id == "sharedImage:a.jpg")  // high second
+        #expect(router._testQueue[2].id == "milestone:10")       // normal last
     }
 
     @MainActor @Test func enqueue_samePriority_fifoOrder() {
@@ -58,9 +58,9 @@ struct AppRouterTests {
         router.enqueue(.presentVoiceEntry)      // normal
         router.enqueue(.presentImageEntry)      // normal
 
-        #expect(router.queue[0].id == "newTransaction")
-        #expect(router.queue[1].id == "voiceEntry")
-        #expect(router.queue[2].id == "imageEntry")
+        #expect(router._testQueue[0].id == "newTransaction")
+        #expect(router._testQueue[1].id == "voiceEntry")
+        #expect(router._testQueue[2].id == "imageEntry")
     }
 
     @MainActor @Test func enqueue_bumpsRevision() {
@@ -85,7 +85,7 @@ struct AppRouterTests {
 
         let intent = router.drainNext(for: .panel)
         #expect(intent == .presentInboxSheet)
-        #expect(router.queue.isEmpty)
+        #expect(router._testQueue.isEmpty)
     }
 
     @MainActor @Test func drainNext_unreadyConsumer_returnsNil_leavesIntentQueued() {
@@ -94,7 +94,7 @@ struct AppRouterTests {
 
         // Consumer not ready
         #expect(router.drainNext(for: .panel) == nil)
-        #expect(router.queue.count == 1)
+        #expect(router._testQueue.count == 1)
     }
 
     @MainActor @Test func drainNext_skipsIntentsForOtherConsumers() {
@@ -105,8 +105,8 @@ struct AppRouterTests {
 
         let intent = router.drainNext(for: .mainTab)
         #expect(intent == .presentTrialExpired)
-        #expect(router.queue.count == 1)
-        #expect(router.queue.first?.id == "inboxSheet")
+        #expect(router._testQueue.count == 1)
+        #expect(router._testQueue.first?.id == "inboxSheet")
     }
 
     @MainActor @Test func drainNext_removesReturnedIntent() {
@@ -115,7 +115,7 @@ struct AppRouterTests {
         router.markReady(.panel)
 
         _ = router.drainNext(for: .panel)
-        #expect(router.queue.isEmpty)
+        #expect(router._testQueue.isEmpty)
     }
 
     // MARK: - readiness
@@ -134,7 +134,7 @@ struct AppRouterTests {
         router.markUnready(.panel)
 
         // Intent still queued, consumer just unable to drain
-        #expect(router.queue.count == 1)
+        #expect(router._testQueue.count == 1)
     }
 
     // MARK: - reset
@@ -147,9 +147,9 @@ struct AppRouterTests {
 
         router.resetTransients()
 
-        #expect(router.queue.count == 2)
-        #expect(router.queue.contains { $0.id == "iCloudMismatch" })
-        #expect(router.queue.contains { $0.id == "remoteWipe" })
+        #expect(router._testQueue.count == 2)
+        #expect(router._testQueue.contains { $0.id == "iCloudMismatch" })
+        #expect(router._testQueue.contains { $0.id == "remoteWipe" })
     }
 
     @MainActor @Test func resetAll_wipesEverything_resetsRevision() {
@@ -159,7 +159,7 @@ struct AppRouterTests {
 
         router.resetAll()
 
-        #expect(router.queue.isEmpty)
+        #expect(router._testQueue.isEmpty)
         #expect(router.readyConsumers.isEmpty)
         #expect(router.revision == 0)
     }
@@ -171,9 +171,9 @@ struct AppRouterTests {
         router.enqueue(.navigate(.groupDetail(groupID: "A")))
         router.enqueue(.navigate(.groupDetail(groupID: "B")))
 
-        #expect(router.queue.count == 1)
+        #expect(router._testQueue.count == 1)
         // Last payload wins (same id "navigate:groupDetail" for both)
-        if case .navigate(.groupDetail(let id)) = router.queue.first {
+        if case .navigate(.groupDetail(let id)) = router._testQueue.first {
             #expect(id == "B")
         } else {
             Issue.record("Expected navigate(groupDetail) intent")
@@ -190,7 +190,7 @@ struct AppRouterTests {
         router.enqueue(.showInboxAlert(notif2))  // same signature → dedup
         router.enqueue(.showInboxAlert(notif3))  // different signature → new entry
 
-        #expect(router.queue.count == 2)
+        #expect(router._testQueue.count == 2)
     }
 
     @MainActor @Test func sharedImage_dedupesByFilename() {
@@ -199,7 +199,7 @@ struct AppRouterTests {
         router.enqueue(.presentSharedImage(URL(fileURLWithPath: "/other/a.jpg")))  // same filename → dedup
         router.enqueue(.presentSharedImage(URL(fileURLWithPath: "/tmp/b.jpg")))    // different filename
 
-        #expect(router.queue.count == 2)
+        #expect(router._testQueue.count == 2)
     }
 
     @MainActor @Test func _testReset_clearsStateBetweenTests() {
@@ -208,7 +208,7 @@ struct AppRouterTests {
         router.markReady(.panel)
         router._testReset()
 
-        #expect(router.queue.isEmpty)
+        #expect(router._testQueue.isEmpty)
         #expect(router.readyConsumers.isEmpty)
         #expect(router.revision == 0)
     }
@@ -236,12 +236,12 @@ struct AppRouterTests {
 
         // The new intent MUST be queued, not already drained.
         // It drains on the NEXT tick — caller's responsibility not to loop.
-        #expect(router.queue.count == 1)
-        #expect(router.queue.first?.id == "newTransaction")
+        #expect(router._testQueue.count == 1)
+        #expect(router._testQueue.first?.id == "newTransaction")
 
         // Next tick drains it cleanly.
         let secondIntent = router.drainNext(for: .panel)
         #expect(secondIntent == .presentNewTransaction)
-        #expect(router.queue.isEmpty)
+        #expect(router._testQueue.isEmpty)
     }
 }

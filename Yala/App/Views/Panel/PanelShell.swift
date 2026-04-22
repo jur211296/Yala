@@ -26,9 +26,6 @@ struct PanelShell: View {
                 viewModel: viewModel,
                 sessionState: sessionState
             ))
-            // PanelSheetTriggers removed in F3 — router drain in this view
-            // now owns the shouldShow* → sheets.show* translation. File kept
-            // temporarily until F9 deletion pass.
             .modifier(PanelSessionObservers(
                 viewModel: viewModel,
                 sessionState: sessionState
@@ -38,10 +35,8 @@ struct PanelShell: View {
                     SubscriptionView(source: sheets.subscriptionBannerSource)
                 }
             }
-            // AppRouter consumer (F2). Drain handlers land in F3 when intents
-            // start flowing through the router. Consumer gate (K) — drain only
-            // when Panel is the active tab, so intents don't present in a
-            // hidden view.
+            // Consumer gate: drain only when Panel is the active tab, so
+            // intents don't present behind a hidden view.
             .routerConsumer(.panel) {
                 drainPanelIfActive()
             }
@@ -56,8 +51,8 @@ struct PanelShell: View {
         handlePanelIntent(intent)
     }
 
-    /// Drain handler for `.panel` intents (F3). Mutates `sheets` which drive
-    /// the existing `.sheet(isPresented:)` bindings in PanelSheetsModifier.
+    /// Drain handler for `.panel` intents. Mutates `sheets` which drive the
+    /// `.sheet(isPresented:)` bindings in PanelSheetsModifier.
     private func handlePanelIntent(_ intent: RouterIntent) {
         switch intent {
         case .presentInboxSheet:

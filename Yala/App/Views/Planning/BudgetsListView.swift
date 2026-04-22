@@ -99,9 +99,10 @@ struct BudgetsListView: View {
         .onChange(of: sessionState.dataVersion) { _, _ in
             refreshData()
         }
-        // AppRouter consumer (F7). Drain .autoOpenBudgetEditor.
+        // Peek first so we only drain intents this view handles —
+        // ScheduledPaymentsView shares the .planning consumer.
         .routerConsumer(.planning) {
-            if case .autoOpenBudgetEditor = AppRouter.shared.queue.first(where: { $0.handler == .planning }) {
+            if case .autoOpenBudgetEditor = AppRouter.shared.peekNext(for: .planning) {
                 _ = AppRouter.shared.drainNext(for: .planning)
                 viewModel.editingBudget = nil
                 viewModel.showBudgetEditor = true

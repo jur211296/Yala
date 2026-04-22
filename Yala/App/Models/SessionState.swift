@@ -437,7 +437,7 @@ class SessionState {
         incrementDataVersion()
     }
 
-    // MARK: - Router-migrated state (F9 cleanup)
+    // MARK: - Router-migrated state
     //
     // Previously this section held ~25 transient flags (shouldShow*,
     // pending*, deferred*) coordinated via Task.sleep / onChange observers.

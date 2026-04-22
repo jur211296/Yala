@@ -255,6 +255,5 @@ struct PanelSheetsModifier: ViewModifier {
         }
 
         viewModel.reloadAndRecalculate()
-        // F3: router handles post-dismiss intent resolution automatically.
     }
 }

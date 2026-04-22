@@ -250,7 +250,6 @@ struct ProfileView: View {
                     navigationPath.append(dest)
                 }
             }
-            // AppRouter consumer (F2). Drain switch for .profileNavigate lands in F7.
             .routerConsumer(.profile) {
                 _ = AppRouter.shared.drainNext(for: .profile)
             }

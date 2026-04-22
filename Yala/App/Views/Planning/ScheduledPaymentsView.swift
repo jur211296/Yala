@@ -87,9 +87,10 @@ struct ScheduledPaymentsView: View {
         .navigationDestination(for: PersistentIdentifier.self) { paymentID in
             ScheduledPaymentDetailDestination(paymentID: paymentID, viewModel: viewModel)
         }
-        // AppRouter consumer (F7). Drain .autoOpenScheduledEditor.
+        // Peek first so we only drain intents this view handles —
+        // BudgetsListView shares the .planning consumer.
         .routerConsumer(.planning) {
-            if case .autoOpenScheduledEditor = AppRouter.shared.queue.first(where: { $0.handler == .planning }) {
+            if case .autoOpenScheduledEditor = AppRouter.shared.peekNext(for: .planning) {
                 _ = AppRouter.shared.drainNext(for: .planning)
                 viewModel.editingPayment = nil
                 viewModel.showPaymentEditor = true

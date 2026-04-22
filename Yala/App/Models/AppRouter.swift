@@ -31,7 +31,10 @@ final class AppRouter {
     // MARK: - Observable state
 
     /// Pending intents, priority-then-FIFO ordered on enqueue.
-    private(set) var queue: [RouterIntent] = []
+    /// Consumers observe `revision` (not `queue`) to avoid spurious
+    /// renders on mutations they don't care about. Read with
+    /// `peekNext(for:)` / `drainNext(for:)`.
+    private var queue: [RouterIntent] = []
 
     /// Monotonic counter bumped on every state mutation. Consumers observe
     /// this via `.onChange(of: AppRouter.shared.revision)` — cheaper than
@@ -70,6 +73,14 @@ final class AppRouter {
         let intent = queue.remove(at: index)
         bumpRevision()
         return intent
+    }
+
+    /// Returns the next intent for `consumer` without removing it. Useful for
+    /// consumers that need to branch on the intent type before committing to
+    /// drain (e.g., views that only handle a subset of their consumer's
+    /// intents). Readiness is NOT required for peeking.
+    func peekNext(for consumer: ConsumerID) -> RouterIntent? {
+        queue.first(where: { $0.handler == consumer })
     }
 
     /// Marks a consumer ready. Idempotent.
@@ -120,5 +131,9 @@ final class AppRouter {
         readyConsumers.removeAll()
         revision = 0
     }
+
+    /// Test-only queue snapshot for assertions. Production code should use
+    /// `peekNext(for:)` / `drainNext(for:)`.
+    var _testQueue: [RouterIntent] { queue }
     #endif
 }

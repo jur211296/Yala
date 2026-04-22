@@ -304,8 +304,7 @@ struct ContentView: View {
             drainContentViewIntents()
         }
         .onReceive(NotificationCenter.default.publisher(for: .remoteWipeDetected)) { notification in
-            // F8: hop to main via Task, then enqueue. Handler drains with
-            // payload intact (skipOnboarding flag from userInfo).
+            // NotificationCenter delivers off the main actor — hop before enqueue.
             let onboardingAlreadyDone = notification.userInfo?[PreferenceSyncService.onboardingAlreadyDoneKey] as? Bool ?? false
             Task { @MainActor in
                 AppRouter.shared.enqueue(.remoteWipe(skipOnboarding: onboardingAlreadyDone))
@@ -334,7 +333,7 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - Router Consumer (F2)
+    // MARK: - Router Consumer
 
     /// Single source of truth for `.contentView` readiness. Called from
     /// `dismissSplash`, `onChange(authService.isLocked)`, and
@@ -718,8 +717,8 @@ struct MainTabView: View {
     @State private var downgradeBudgets: [Budget] = []
     @State private var showDowngradeResolution = false
     @State private var showTrialExpired = false
-    @State private var showMilestoneUpgrade = false
-    /// Milestone number for the upgrade sheet — carried by .presentMilestoneUpgrade intent.
+    /// Milestone number for the upgrade sheet — also drives sheet
+    /// presentation (non-nil → shown). Carried by .presentMilestoneUpgrade.
     @State private var activeMilestone: Int?
 
     private var tabConfig: TabBarConfiguration {
@@ -767,14 +766,6 @@ struct MainTabView: View {
             }
             .tint(theme.accent)
             .transaction { $0.animation = nil }
-            // F3: Pivot to Panel tab now handled by router — handleIncomingURL
-            // enqueues .navigate(.panel) alongside .presentSharedImage, which
-            // MainTabView drains and sets selectedMainTab. Legacy onChange
-            // removed.
-            // F6: onChange(deepLinkDestination) removed. Router drain
-            // (handleMainTabIntent case .navigate) owns routing.
-            // F4: shouldRequestReview + shouldShowDowngradeResolution now
-            // routed via AppRouter. Drain in handleMainTabIntent.
             .sheet(isPresented: $showDowngradeResolution) {
                 DowngradeResolutionSheet(
                     accounts: downgradeAccounts,
@@ -783,20 +774,15 @@ struct MainTabView: View {
                     showDowngradeResolution = false
                 }
             }
-            // F4: trial expired + milestone now routed via AppRouter.
             .sheet(isPresented: $showTrialExpired) {
                 UpgradePromptSheet(feature: .voiceInput, context: .trialExpired, source: "trialExpired")
             }
-            .sheet(isPresented: $showMilestoneUpgrade, onDismiss: {
-                activeMilestone = nil
-            }) {
-                if let milestone = activeMilestone {
-                    MilestoneUpgradeSheet(milestone: milestone)
-                }
+            .sheet(item: Binding(
+                get: { activeMilestone.map(MilestoneIdentifier.init) },
+                set: { activeMilestone = $0?.value }
+            )) { wrapper in
+                MilestoneUpgradeSheet(milestone: wrapper.value)
             }
-            // AppRouter consumer. F3 wires `.navigate` (forwards to legacy
-            // deepLinkDestination handler). F4/F6 migrate monetization and
-            // the rest of tab-nav.
             .routerConsumer(.mainTab) {
                 guard let intent = AppRouter.shared.drainNext(for: .mainTab) else { return }
                 handleMainTabIntent(intent)
@@ -804,8 +790,6 @@ struct MainTabView: View {
         }
     }
 
-    /// Handles drained `.mainTab` intents. F6 owns `.navigate` completely
-    /// (inlined routing logic, no more deepLinkDestination roundtrip).
     private func handleMainTabIntent(_ intent: RouterIntent) {
         switch intent {
         case .navigate(let dest):
@@ -875,7 +859,6 @@ struct MainTabView: View {
             ProUpsellService.shared.markTrialExpiredSheetShown()
         case .presentMilestoneUpgrade(let milestone):
             activeMilestone = milestone
-            showMilestoneUpgrade = true
         case .requestAppStoreReview:
             let action = requestReview
             Task {
@@ -922,6 +905,13 @@ struct MainTabView: View {
             }
         }
     }
+}
+
+/// `.sheet(item:)` requires Identifiable — this wraps Int so milestone
+/// presentation binds to `activeMilestone: Int?` directly.
+private struct MilestoneIdentifier: Identifiable {
+    let value: Int
+    var id: Int { value }
 }
 
 // MARK: - App Tab Enum
@@ -990,8 +980,6 @@ struct MorePlaceholderView: View {
             ProfileView()
                 .transaction { $0.animation = nil }
         }
-        // F9: FullModeActivationView moved to ContentView — drains
-        // .presentFullModeActivation from the .contentView consumer.
     }
 
     // MARK: - Hidden Tabs Section
@@ -1028,9 +1016,9 @@ struct MorePlaceholderView: View {
 
     private func hiddenTabRow(_ tab: ConfigurableTab) -> some View {
         Button {
-            // F6: enqueue navigate intent. MainTabView drain replicates the
-            // temporaryTab → selectedMainTab sequencing with the 50ms layout
-            // delay (not synchronization — SwiftUI needs two runloop ticks).
+            // Router handles the temporaryTab → selectedMainTab sequencing.
+            // Other tabs (not .records/.groups) don't route through widgets
+            // so we keep the direct flow.
             switch tab.appTab {
             case .records:
                 AppRouter.shared.enqueue(.navigate(.recordsStandalone))

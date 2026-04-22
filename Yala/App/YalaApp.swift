@@ -90,9 +90,8 @@ struct YalaApp: App {
             if newPhase == .active {
                 bootstrapper.handleBecameActive(context: sharedModelContainer.mainContext)
             } else if newPhase == .background {
-                // F2: drop transient router intents when app backgrounds.
-                // Persistence-backed intents re-emit on next .active via
-                // AppBootstrapper.handleBecameActive().
+                // Drop transient router intents. Persistence-backed intents
+                // re-emit on next .active via handleBecameActive().
                 AppRouter.shared.resetTransients()
             }
         }

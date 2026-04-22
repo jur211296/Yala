@@ -298,9 +298,6 @@ final class AppBootstrapper {
         }
         checkForPendingInboxDrafts(context: context)
 
-        // F3: Control action is enqueued directly to AppRouter. Readiness
-        // gating replaces the old 500ms sleep — intents queued while splash
-        // is visible drain automatically when consumers become ready.
         checkForPendingControlAction()
 
         // Skip notification checks if bootstrap just ran (< 5 seconds ago)
@@ -419,14 +416,8 @@ final class AppBootstrapper {
 
         switch url.host {
         case "shared-image":
-            // Router handles readiness — if Panel isn't mounted yet, intent
-            // stays queued until it is. Consumer gate (K) ensures the sheet
-            // only drains when Panel is the active tab.
-            let imageURLs = SharedContainerService.pendingImageURLs()
-            if let firstImageURL = imageURLs.first {
-                AppRouter.shared.enqueue(.navigate(.panel))
-                AppRouter.shared.enqueue(.presentSharedImage(firstImageURL))
-                sessionState.pendingSharedImageURL = firstImageURL
+            if let firstImageURL = SharedContainerService.pendingImageURLs().first {
+                enqueueSharedImage(firstImageURL)
             }
 
         case "voice-entry":
@@ -534,8 +525,6 @@ final class AppBootstrapper {
 
     // MARK: - Deep Link Deferral
 
-    /// F6: enqueues via router. Readiness gating handles splash — the
-    /// intent waits in the queue until `.mainTab` becomes ready.
     private func setOrDeferDeepLink(_ destination: DeepLinkDestination) {
         AppRouter.shared.enqueue(.navigate(destination))
     }
@@ -663,13 +652,11 @@ final class AppBootstrapper {
     }
 
     private func checkForPendingInboxDrafts(context: ModelContext) {
-        // F3: Idempotency via per-draft signatures (createdAt + sourceType).
-        // Migration: the first post-upgrade check ignores `lastInboxDraftCheckDate`
-        // and emits an alert for ALL real pending drafts. No silent suppression.
-        // The legacy watermark is deleted on first run.
-        if UserDefaults.standard.object(forKey: "lastInboxDraftCheckDate") != nil {
-            UserDefaults.standard.removeObject(forKey: "lastInboxDraftCheckDate")
-        }
+        // Idempotency via per-draft signatures (createdAt + sourceType).
+        // Legacy Date-based watermark is dropped on migration — the first
+        // post-upgrade check emits an alert for all real pending drafts
+        // (no silent suppression).
+        UserDefaults.standard.removeObject(forKey: "lastInboxDraftCheckDate")
 
         var processed = Set(loadProcessedInboxSignatures())
 
@@ -723,14 +710,20 @@ final class AppBootstrapper {
     }
 
     /// Only called from bootstrap() for cold launch without deep link.
-    /// Enqueues directly to router; readiness gating handles mount timing.
     private func checkForPendingSharedImage() {
-        let imageURLs = SharedContainerService.pendingImageURLs()
-        guard let firstImageURL = imageURLs.first else { return }
+        guard let firstImageURL = SharedContainerService.pendingImageURLs().first else { return }
+        enqueueSharedImage(firstImageURL)
+    }
 
+    /// Routes a shared-image URL through the router. Panel navigation and
+    /// sheet presentation are separate intents so the mainTab consumer can
+    /// switch tabs before the panel consumer presents the sheet (consumer
+    /// gate K prevents flicker). The URL also lands in SessionState because
+    /// ImageSelectionView reads it directly from there.
+    private func enqueueSharedImage(_ url: URL) {
         AppRouter.shared.enqueue(.navigate(.panel))
-        AppRouter.shared.enqueue(.presentSharedImage(firstImageURL))
-        sessionState.pendingSharedImageURL = firstImageURL
+        AppRouter.shared.enqueue(.presentSharedImage(url))
+        sessionState.pendingSharedImageURL = url
     }
 
     // MARK: - Notification Management

@@ -45,7 +45,6 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         if let destination = userInfo["deepLink"] as? String,
            let dest = Self.parseDestination(destination) {
             Task { @MainActor in
-                // F3: enqueue via router — readiness gating replaces splash check.
                 AppRouter.shared.enqueue(.navigate(dest))
             }
         }
