@@ -64,11 +64,11 @@ struct PanelView: View {
         case .firstExpense:
             sheets.showNewTransaction = true
         case .firstBudget:
-            sessionState.shouldAutoOpenBudgetEditor = true
-            sessionState.navigateToBudgets()
+            AppRouter.shared.enqueue(.navigate(.budgets))
+            AppRouter.shared.enqueue(.autoOpenBudgetEditor)
         case .scheduledPayment:
-            sessionState.shouldAutoOpenScheduledEditor = true
-            sessionState.navigateToScheduledPayments()
+            AppRouter.shared.enqueue(.navigate(.scheduledPayments))
+            AppRouter.shared.enqueue(.autoOpenScheduledEditor)
         case .exploreSettings:
             sheets.isPresentingSettings = true
             SetupChecklistManager.shared.markCompleted(.exploreSettings)

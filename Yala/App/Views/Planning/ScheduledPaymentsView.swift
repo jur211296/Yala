@@ -92,9 +92,13 @@ struct ScheduledPaymentsView: View {
         .navigationDestination(for: PersistentIdentifier.self) { paymentID in
             ScheduledPaymentDetailDestination(paymentID: paymentID, viewModel: viewModel)
         }
-        // AppRouter consumer (F2). Drain switch for .autoOpenScheduledEditor lands in F7.
+        // AppRouter consumer (F7). Drain .autoOpenScheduledEditor.
         .routerConsumer(.planning) {
-            _ = AppRouter.shared.drainNext(for: .planning)
+            if case .autoOpenScheduledEditor = AppRouter.shared.queue.first(where: { $0.handler == .planning }) {
+                _ = AppRouter.shared.drainNext(for: .planning)
+                viewModel.editingPayment = nil
+                viewModel.showPaymentEditor = true
+            }
         }
     }
 
