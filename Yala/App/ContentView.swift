@@ -309,15 +309,19 @@ struct ContentView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .remoteWipeDetected)) { notification in
+            // F8: hop to main via Task, then enqueue. Handler drains with
+            // payload intact (skipOnboarding flag from userInfo).
             let onboardingAlreadyDone = notification.userInfo?[PreferenceSyncService.onboardingAlreadyDoneKey] as? Bool ?? false
-            handleRemoteWipeSignal(onboardingAlreadyDone: onboardingAlreadyDone)
+            Task { @MainActor in
+                AppRouter.shared.enqueue(.remoteWipe(skipOnboarding: onboardingAlreadyDone))
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .remoteOnboardingCompleted)) { _ in
             handleRemoteOnboardingCompleted()
         }
         .onReceive(NotificationCenter.default.publisher(for: .iCloudMismatchDetected)) { _ in
             guard hasCompletedOnboarding else { return }
-            showICloudRestartAlert = true
+            AppRouter.shared.enqueue(.iCloudMismatch)
         }
     }
 
@@ -383,8 +387,11 @@ struct ContentView: View {
         case .showInviteError(let detail):
             SessionState.shared.inviteErrorDetail = detail  // shim (GroupInviteModifier reads it)
             SessionState.shared.showInviteError = true       // shim (onChange in modifier)
+        case .iCloudMismatch:
+            showICloudRestartAlert = true
+        case .remoteWipe(let skipOnboarding):
+            handleRemoteWipeSignal(onboardingAlreadyDone: skipOnboarding)
         default:
-            // F8 wires .iCloudMismatch + .remoteWipe.
             break
         }
     }
