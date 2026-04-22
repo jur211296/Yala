@@ -39,10 +39,12 @@
 "panel.widgetSize.large" = "Ampliada";
 
 // P20-11: Accounts collapse
-"panel.accounts.expand" = "Expandir Contas";
-"panel.accounts.collapse" = "Recolher Contas";
-"panel.accounts.collapsedValue" = "Recolhido";
-"panel.accounts.expandedValue" = "Expandido";
+// Grupo recolhível Contas + Saúde financeira
+"panel.panorama.title" = "Teu panorama";
+"panel.panorama.expand" = "Expandir teu panorama";
+"panel.panorama.collapse" = "Recolher teu panorama";
+"panel.panorama.collapsedValue" = "Recolhido";
+"panel.panorama.expandedValue" = "Expandido";
 
 "panel.weekdaySubtitle" = "Média por dia da semana";
 "panel.periodComparison.vs %@" = "vs %@";
@@ -58,7 +60,7 @@
 // Saúde financeira (P20-06)
 "panel.health.cardTitle" = "Sua saúde financeira";
 "panel.health.emptyBadge" = "—";
-"panel.health.subScore.budget" = "Orçamento";
+"panel.health.subScore.budget" = "Orçamentos";
 "panel.health.subScore.activity" = "Atividade";
 "panel.health.subScore.bills" = "Pagamentos";
 
@@ -102,6 +104,10 @@
 
 // VoiceOver resumo completo
 "panel.health.voiceover.summary" = "Saúde financeira: %1$@. Orçamento %2$@. Atividade %3$@. Pagamentos %4$@.";
+// VoiceOver — valor de um sub-score individual (PP2-02)
+"panel.health.voiceover.score" = "%d de 100";
+// VoiceOver — fallback quando um sub-score não tem dados
+"panel.health.voiceover.noData" = "sem dados";
 
 // MARK: - Panel Hero (PP2-01)
 

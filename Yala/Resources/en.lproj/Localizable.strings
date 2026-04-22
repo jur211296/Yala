@@ -39,10 +39,12 @@
 "panel.widgetSize.large" = "Expanded";
 
 // P20-11: Accounts collapse
-"panel.accounts.expand" = "Expand Accounts";
-"panel.accounts.collapse" = "Collapse Accounts";
-"panel.accounts.collapsedValue" = "Collapsed";
-"panel.accounts.expandedValue" = "Expanded";
+// Collapsible group Accounts + Financial Health
+"panel.panorama.title" = "Your overview";
+"panel.panorama.expand" = "Expand your overview";
+"panel.panorama.collapse" = "Collapse your overview";
+"panel.panorama.collapsedValue" = "Collapsed";
+"panel.panorama.expandedValue" = "Expanded";
 
 "panel.weekdaySubtitle" = "Average by day of the week";
 "panel.periodComparison.vs %@" = "vs %@";
@@ -58,7 +60,7 @@
 // Financial Health (P20-06)
 "panel.health.cardTitle" = "Your financial health";
 "panel.health.emptyBadge" = "—";
-"panel.health.subScore.budget" = "Budget";
+"panel.health.subScore.budget" = "Budgets";
 "panel.health.subScore.activity" = "Activity";
 "panel.health.subScore.bills" = "Bills";
 
@@ -102,6 +104,10 @@
 
 // VoiceOver full card summary
 "panel.health.voiceover.summary" = "Financial health: %1$@. Budget %2$@. Activity %3$@. Bills %4$@.";
+// VoiceOver — individual sub-score value (PP2-02)
+"panel.health.voiceover.score" = "%d out of 100";
+// VoiceOver — fallback when a sub-score has no data
+"panel.health.voiceover.noData" = "no data";
 
 // MARK: - Panel Hero (PP2-01)
 

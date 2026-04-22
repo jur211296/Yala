@@ -39,10 +39,12 @@
 "panel.widgetSize.large" = "Estesa";
 
 // P20-11: Accounts collapse
-"panel.accounts.expand" = "Espandi Conti";
-"panel.accounts.collapse" = "Comprimi Conti";
-"panel.accounts.collapsedValue" = "Compresso";
-"panel.accounts.expandedValue" = "Espanso";
+// Gruppo comprimibile Conti + Salute finanziaria
+"panel.panorama.title" = "La tua panoramica";
+"panel.panorama.expand" = "Espandi la tua panoramica";
+"panel.panorama.collapse" = "Comprimi la tua panoramica";
+"panel.panorama.collapsedValue" = "Compresso";
+"panel.panorama.expandedValue" = "Espanso";
 
 "panel.weekdaySubtitle" = "Media per giorno della settimana";
 "panel.periodComparison.vs %@" = "vs %@";
@@ -102,6 +104,10 @@
 
 // VoiceOver sintesi completa
 "panel.health.voiceover.summary" = "Salute finanziaria: %1$@. Budget %2$@. Attività %3$@. Pagamenti %4$@.";
+// VoiceOver — valore di un singolo sotto-punteggio (PP2-02)
+"panel.health.voiceover.score" = "%d su 100";
+// VoiceOver — fallback quando un sotto-punteggio non ha dati
+"panel.health.voiceover.noData" = "nessun dato";
 
 // MARK: - Panel Hero (PP2-01)
 

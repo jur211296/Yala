@@ -39,10 +39,12 @@
 "panel.widgetSize.large" = "Erweitert";
 
 // P20-11: Accounts collapse
-"panel.accounts.expand" = "Konten einblenden";
-"panel.accounts.collapse" = "Konten ausblenden";
-"panel.accounts.collapsedValue" = "Ausgeblendet";
-"panel.accounts.expandedValue" = "Eingeblendet";
+// Einklappbare Gruppe Konten + Finanzielle Gesundheit
+"panel.panorama.title" = "Dein Überblick";
+"panel.panorama.expand" = "Deinen Überblick einblenden";
+"panel.panorama.collapse" = "Deinen Überblick ausblenden";
+"panel.panorama.collapsedValue" = "Ausgeblendet";
+"panel.panorama.expandedValue" = "Eingeblendet";
 
 "panel.weekdaySubtitle" = "Durchschnitt pro Wochentag";
 "panel.periodComparison.vs %@" = "vs %@";
@@ -58,7 +60,7 @@
 // Finanzielle Gesundheit (P20-06)
 "panel.health.cardTitle" = "Deine finanzielle Gesundheit";
 "panel.health.emptyBadge" = "—";
-"panel.health.subScore.budget" = "Budget";
+"panel.health.subScore.budget" = "Budgets";
 "panel.health.subScore.activity" = "Aktivität";
 "panel.health.subScore.bills" = "Zahlungen";
 
@@ -102,6 +104,10 @@
 
 // VoiceOver komplette Karte
 "panel.health.voiceover.summary" = "Finanzielle Gesundheit: %1$@. Budget %2$@. Aktivität %3$@. Zahlungen %4$@.";
+// VoiceOver — Wert eines einzelnen Sub-Scores (PP2-02)
+"panel.health.voiceover.score" = "%d von 100";
+// VoiceOver — Fallback, wenn ein Sub-Score keine Daten hat
+"panel.health.voiceover.noData" = "keine Daten";
 
 // MARK: - Panel Hero (PP2-01)
 

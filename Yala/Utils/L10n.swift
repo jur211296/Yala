@@ -145,19 +145,22 @@ enum L10n {
             }
         }
 
-        // MARK: - P20-11 Accounts collapse
+        // MARK: - Panorama group (Cuentas + Salud financiera)
 
-        static var accountsExpand: String {
-            ls("panel.accounts.expand", comment: "P20-11 VoiceOver action — expand the Accounts section")
+        static var panoramaTitle: String {
+            ls("panel.panorama.title", comment: "Collapsible group title that wraps Accounts + Financial Health")
         }
-        static var accountsCollapse: String {
-            ls("panel.accounts.collapse", comment: "P20-11 VoiceOver action — collapse the Accounts section")
+        static var panoramaExpand: String {
+            ls("panel.panorama.expand", comment: "VoiceOver action — expand Tu panorama")
         }
-        static var accountsCollapsedValue: String {
-            ls("panel.accounts.collapsedValue", comment: "P20-11 accessibility value when Accounts is collapsed")
+        static var panoramaCollapse: String {
+            ls("panel.panorama.collapse", comment: "VoiceOver action — collapse Tu panorama")
         }
-        static var accountsExpandedValue: String {
-            ls("panel.accounts.expandedValue", comment: "P20-11 accessibility value when Accounts is expanded")
+        static var panoramaCollapsedValue: String {
+            ls("panel.panorama.collapsedValue", comment: "Accessibility value when Tu panorama is collapsed")
+        }
+        static var panoramaExpandedValue: String {
+            ls("panel.panorama.expandedValue", comment: "Accessibility value when Tu panorama is expanded")
         }
 
         static var weekdaySubtitle: String {
@@ -321,6 +324,19 @@ enum L10n {
                     format: ls("panel.health.voiceover.summary", comment: "VoiceOver summary for the Salud Financiera card"),
                     total, budget, activity, bills
                 )
+            }
+
+            /// VoiceOver snippet for a single sub-score bar ("94 out of 100").
+            static func scoreVoiceover(score: Int) -> String {
+                String(
+                    format: ls("panel.health.voiceover.score", comment: "VoiceOver — sub-score value + out of 100"),
+                    score
+                )
+            }
+
+            /// VoiceOver fallback read when a sub-score is nil (no data yet).
+            static var noData: String {
+                ls("panel.health.voiceover.noData", comment: "VoiceOver fallback when a sub-score has no data")
             }
         }
 

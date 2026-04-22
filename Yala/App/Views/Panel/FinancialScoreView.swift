@@ -2,12 +2,6 @@
 //  FinancialScoreView.swift
 //  Yala
 //
-//  Panel 2.0 "Salud Financiera" card. Lives inside a `.solidCard()` like every
-//  other Panel widget. Tap the big ring → opens the `.total` sheet. Tap a
-//  mini-ring → opens the matching sheet whose CTA navigates to Budgets,
-//  Records, or Scheduled Payments. Placeholder "—" states still open the
-//  sheet; the CTA just switches to "Create my first …".
-//
 
 import SwiftUI
 
@@ -16,22 +10,18 @@ struct FinancialScoreView: View {
     let viewModel: PanelViewModel
     let sessionState: SessionState
 
-    // A11Y-DT: ring diameters scale with Dynamic Type. Hardcoded defaults are
-    // the baseline at default text size.
-    @ScaledMetric(relativeTo: .largeTitle) private var mainRingSize: CGFloat = 110
-    @ScaledMetric(relativeTo: .body) private var miniRingSize: CGFloat = 44
+    // A11Y-DT: ring diameter scales with Dynamic Type.
+    @ScaledMetric(relativeTo: .largeTitle) private var mainRingSize: CGFloat = 88
 
     @State private var presentedSheet: FinancialScoreDetailKind? = nil
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             header
             bodyContent
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .solidCard(padding: DS.Spacing.xl)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(voiceoverLabel)
         .sheet(item: $presentedSheet) { kind in
             FinancialScoreDetailSheet(
                 kind: kind,
@@ -90,7 +80,7 @@ struct FinancialScoreView: View {
                     foreground: mainRingForeground
                 )
                 Text(score.total.map { "\($0)" } ?? L10n.Panel.Health.emptyBadge)
-                    .font(.system(size: 34, weight: .semibold, design: .rounded))
+                    .font(.system(size: 28, weight: .semibold, design: .rounded))
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)
                     .foregroundStyle(score.total == nil ? DS.Semantic.disabledForeground : Color.primary)
@@ -98,50 +88,28 @@ struct FinancialScoreView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(mainRingAccessibilityLabel)
     }
 
     @ViewBuilder
     private var subScoreStack: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            subScoreRow(kind: .budget,   value: score.budget,   label: L10n.Panel.Health.subScoreBudget)
-            subScoreRow(kind: .activity, value: score.activity, label: L10n.Panel.Health.subScoreActivity)
-            subScoreRow(kind: .bills,    value: score.bills,    label: L10n.Panel.Health.subScoreBills)
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            SubScoreBarRow(
+                value: score.budget,
+                label: L10n.Panel.Health.subScoreBudget
+            ) { presentedSheet = .budget }
+
+            SubScoreBarRow(
+                value: score.activity,
+                label: L10n.Panel.Health.subScoreActivity
+            ) { presentedSheet = .activity }
+
+            SubScoreBarRow(
+                value: score.bills,
+                label: L10n.Panel.Health.subScoreBills
+            ) { presentedSheet = .bills }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    @ViewBuilder
-    private func subScoreRow(
-        kind: FinancialScoreDetailKind,
-        value: Int?,
-        label: String
-    ) -> some View {
-        Button {
-            presentedSheet = kind
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                ZStack {
-                    ScoreRingView(
-                        progress: value.map { Double($0) / 100.0 } ?? 0,
-                        size: miniRingSize,
-                        lineWidth: miniRingSize * 0.14,
-                        foreground: value == nil
-                            ? AnyShapeStyle(DS.Semantic.disabledForeground.opacity(0.35))
-                            : AnyShapeStyle(kind.tint ?? .indigo)
-                    )
-                    Text(value.map { "\($0)" } ?? L10n.Panel.Health.emptyBadge)
-                        .font(DS.Typography.labelSmall)
-                        .foregroundStyle(value == nil ? DS.Semantic.disabledForeground : Color.primary)
-                }
-                Text(label)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Helpers
@@ -169,23 +137,103 @@ struct FinancialScoreView: View {
     }
 
     private var mainRingForeground: AnyShapeStyle {
-        if score.total == nil {
+        guard let total = score.total else {
             return AnyShapeStyle(DS.Semantic.disabledForeground.opacity(0.4))
         }
         return AnyShapeStyle(LinearGradient(
-            colors: DS.Gradients.heroFor(score: score.total),
+            colors: panoramaGradientColors(score: total),
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         ))
     }
 
-    private var voiceoverLabel: String {
-        let dash = L10n.Panel.Health.emptyBadge
-        return L10n.Panel.Health.voiceoverSummary(
-            total: score.total.map { "\($0)" } ?? dash,
-            budget: score.budget.map { "\($0)" } ?? dash,
-            activity: score.activity.map { "\($0)" } ?? dash,
-            bills: score.bills.map { "\($0)" } ?? dash
-        )
+    private var mainRingAccessibilityLabel: String {
+        let title = L10n.Panel.Health.totalSheetTitle
+        if let total = score.total {
+            return "\(title), \(L10n.Panel.Health.scoreVoiceover(score: total))"
+        }
+        return "\(title), \(L10n.Panel.Health.noData)"
     }
+}
+
+// MARK: - SubScoreBarRow
+
+private struct SubScoreBarRow: View {
+    let value: Int?
+    let label: String
+    let onTap: () -> Void
+
+    @State private var barWidth: CGFloat = 0
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                Text(label)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                HStack(spacing: DS.Spacing.sm) {
+                    barTrack
+
+                    Text(value.map { "\($0)" } ?? L10n.Panel.Health.emptyBadge)
+                        .font(DS.Typography.subheadline)
+                        .monospacedDigit()
+                        .foregroundStyle(
+                            value == nil ? DS.Semantic.disabledForeground : Color.primary
+                        )
+                        .frame(minWidth: 32, alignment: .trailing)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    // MARK: Bar
+
+    private var barTrack: some View {
+        Capsule()
+            .fill(Color.primary.opacity(0.05))
+            .frame(height: 8)
+            .overlay(alignment: .leading) {
+                if let value {
+                    Capsule()
+                        .fill(LinearGradient(
+                            colors: panoramaGradientColors(score: value),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ))
+                        .frame(width: fillWidth(for: value), height: 8)
+                }
+            }
+            .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { barWidth = $0 }
+            .frame(maxWidth: .infinity)
+    }
+
+    private func fillWidth(for value: Int) -> CGFloat {
+        let clamped = CGFloat(max(0, min(value, 100)))
+        return max(8, barWidth * clamped / 100)
+    }
+
+    // MARK: A11y
+
+    private var accessibilityLabel: String {
+        if let value {
+            return "\(label), \(L10n.Panel.Health.scoreVoiceover(score: value))"
+        }
+        return "\(label), \(L10n.Panel.Health.noData)"
+    }
+}
+
+// MARK: - Shared gradient
+
+/// End-color pivots on 50–100: 100 → indigo, 75 → 50/50 mix, ≤50 → pink.
+/// The composite score rarely dips below 50 thanks to its soft floor.
+private func panoramaGradientColors(score: Int) -> [Color] {
+    let clamped = max(50, min(100, score))
+    let t = Double(100 - clamped) / 50
+    let endColor = Color.indigo.mix(with: .pink, by: t)
+    return [.indigo, endColor]
 }

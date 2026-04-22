@@ -2,15 +2,8 @@
 //  PanelFilterAndWidgetsSection.swift
 //  Yala
 //
-//  P20-11: Simplificado a un loop de secciones con auto-hide. El period
-//  selector + chips se movió a `PanelFilterControlBar` (invocado desde
-//  PanelView). Routing por `PanelSectionKind` incluye todas las secciones
-//  de Panel 2.0 — Cuentas (P20-11), Últimos registros (toggleable ahora),
-//  Salud financiera, y los thematic sections multi-widget.
-//
-//  Auto-hide (P20-11): `viewModel.hasAnyVisibleWidget(in:)` oculta secciones
-//  multi-widget cuando el usuario ocultó todos sus widgets individualmente.
-//  Single-widget sections siempre retornan `true` para ese helper.
+//  Multi-widget sections auto-hide when every widget is individually hidden;
+//  single-widget sections only hide when the section itself is toggled off.
 //
 
 import SwiftData
@@ -29,15 +22,28 @@ struct PanelFilterAndWidgetsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            // Thematic sections. Filtering here (not in `PanelThematicSection`)
-            // keeps hidden sections from mounting at all — no render, no
-            // observer subscriptions. Multi-widget sections expose a per-section
-            // gear (P20-03) that presents `PanelSectionPreferencesSheet`;
-            // single-widget sections skip it (nothing to reorder or toggle).
             let visibleSections = PanelSectionKind.allCases.filter { kind in
                 viewModel.isSectionVisible(kind) && viewModel.hasAnyVisibleWidget(in: kind)
             }
-            ForEach(visibleSections, id: \.self) { kind in
+            let accountsVisible = visibleSections.contains(.accounts)
+            let healthVisible = visibleSections.contains(.health)
+
+            if accountsVisible || healthVisible {
+                PanelPanoramaSection(
+                    viewModel: viewModel,
+                    sessionState: sessionState,
+                    accountsSortOrderNames: accountsSortOrderNames,
+                    accountsVisible: accountsVisible,
+                    healthVisible: healthVisible,
+                    accountFormSheet: $accountFormSheet,
+                    showUpgradeForAccounts: $showUpgradeForAccounts
+                )
+            }
+
+            let thematicSections = visibleSections.filter {
+                $0 != .accounts && $0 != .health
+            }
+            ForEach(thematicSections, id: \.self) { kind in
                 sectionView(for: kind)
             }
         }
@@ -48,16 +54,9 @@ struct PanelFilterAndWidgetsSection: View {
     @ViewBuilder
     private func sectionView(for kind: PanelSectionKind) -> some View {
         switch kind {
-        case .health:
-            PanelHealthSection(viewModel: viewModel, sessionState: sessionState)
-        case .accounts:
-            PanelAccountsSection(
-                viewModel: viewModel,
-                sessionState: sessionState,
-                accountsSortOrderNames: accountsSortOrderNames,
-                accountFormSheet: $accountFormSheet,
-                showUpgradeForAccounts: $showUpgradeForAccounts
-            )
+        case .accounts, .health:
+            let _ = assertionFailure("\(kind) should be rendered inside PanelPanoramaSection")
+            EmptyView()
         case .tendencias, .distribucion, .planificacion, .latestRecords, .tools:
             PanelThematicSection(
                 kind: kind,
