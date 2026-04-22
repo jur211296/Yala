@@ -556,13 +556,10 @@ final class AppBootstrapper {
 
     // MARK: - Deep Link Deferral
 
-    /// Sets deep link immediately if splash is dismissed, otherwise defers until splash ends.
+    /// F6: enqueues via router. Readiness gating handles splash — the
+    /// intent waits in the queue until `.mainTab` becomes ready.
     private func setOrDeferDeepLink(_ destination: DeepLinkDestination) {
-        if sessionState.isSplashDismissed {
-            sessionState.deepLinkDestination = destination
-        } else {
-            sessionState.deferredDeepLink = destination
-        }
+        AppRouter.shared.enqueue(.navigate(destination))
     }
 
     // MARK: - Private Bootstrap Tasks

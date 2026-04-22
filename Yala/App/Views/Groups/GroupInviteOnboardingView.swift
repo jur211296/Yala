@@ -119,10 +119,10 @@ struct GroupInviteOnboardingView: View {
                 TelemetryService.track(.groupInviteOnboardingCompleted)
                 NudgeService.shared.recordGroupJoinIfNeeded()
                 onComplete()
-                // Navigate to groups after dismiss
+                // Navigate to groups after dismiss (UX delay for animation, not sync)
                 Task {
                     try? await Task.sleep(for: .milliseconds(300))
-                    SessionState.shared.deepLinkDestination = .groups
+                    AppRouter.shared.enqueue(.navigate(.groups))
                 }
             }
             .padding(.bottom, DS.Spacing.xxl)

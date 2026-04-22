@@ -596,11 +596,7 @@ class SessionState {
     /// set `temporaryTab = .records` so it renders, then switch to it on the
     /// next runloop so SwiftUI picks up the change in the right order.
     func navigateToRecordsStandalone() {
-        temporaryTab = .records
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(50))
-            selectedMainTab = .records
-        }
+        AppRouter.shared.enqueue(.navigate(.recordsStandalone))
     }
 
     /// Navigate to Groups tab

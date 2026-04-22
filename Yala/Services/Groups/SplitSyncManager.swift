@@ -224,7 +224,7 @@ final class SplitSyncManager {
 
             // Navigate to Groups tab (unless routing is handled by invite/reconnect flow)
             if !skipNavigation {
-                SessionState.shared.deepLinkDestination = .groups
+                await MainActor.run { AppRouter.shared.enqueue(.navigate(.groups)) }
             }
         } catch {
             #if DEBUG

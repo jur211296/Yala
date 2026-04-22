@@ -335,22 +335,9 @@ struct ContentView: View {
             // once producers enqueue to the router directly.
             updateContentViewReadiness()
 
-            // Resolve deferred deep link (navigation-only targets like panel, statistics, etc.)
-            if let deferred = SessionState.shared.deferredDeepLink {
-                SessionState.shared.deferredDeepLink = nil
-                try? await Task.sleep(for: .milliseconds(300))
-                SessionState.shared.deepLinkDestination = deferred
-            }
-
-            // Resolve deferred inbox notification (scheduled payments, subscriptions)
-            if let notification = AppBootstrapper.shared.deferredInboxNotification {
-                AppBootstrapper.shared.deferredInboxNotification = nil
-                try? await Task.sleep(for: .milliseconds(300))
-                SessionState.shared.pendingInboxNotification = notification
-            } else {
-                // No inbox to show — resolve sheet actions (shared image, voice, new transaction)
-                AppBootstrapper.shared.showDeferredActionsIfNeeded()
-            }
+            // F6: deferred deep link / inbox resolution removed. Router
+            // drains queued intents as consumers become ready (readiness
+            // was just updated above).
         }
     }
 
@@ -711,7 +698,7 @@ private struct GroupInviteModifier: ViewModifier {
                                 try? await Task.sleep(for: .seconds(2))
                                 SessionState.shared.incrementDataVersion()
                             }
-                            SessionState.shared.deepLinkDestination = .groups
+                            AppRouter.shared.enqueue(.navigate(.groups))
                         }
                     },
                     onDismiss: {
@@ -795,64 +782,8 @@ struct MainTabView: View {
             // enqueues .navigate(.panel) alongside .presentSharedImage, which
             // MainTabView drains and sets selectedMainTab. Legacy onChange
             // removed.
-            .onChange(of: sessionState.deepLinkDestination) { _, destination in
-                // Handle deep links from widgets
-                guard let destination = destination else { return }
-
-                // GC-08: For groupInvite mode, only handle .groups and .groupDetail deep links
-                if sessionState.isGroupInviteMode {
-                    switch destination {
-                    case .groups, .groupDetail:
-                        break // Handle below
-                    default:
-                        sessionState.deepLinkDestination = nil
-                        return
-                    }
-                }
-
-                switch destination {
-                case .panel:
-                    sessionState.selectedMainTab = .panel
-                case .statistics:
-                    sessionState.selectedMainTab = .statistics
-                case .records:
-                    sessionState.selectedDetailTab = .records
-                    sessionState.selectedMainTab = .statistics
-                case .categories:
-                    sessionState.selectedDetailTab = .categories
-                    sessionState.selectedMainTab = .statistics
-                case .planning:
-                    sessionState.selectedMainTab = .planning
-                case .budgets:
-                    sessionState.selectedPlanningTab = .budgets
-                    sessionState.selectedMainTab = .planning
-                case .inbox:
-                    sessionState.selectedMainTab = .panel
-                    AppRouter.shared.enqueue(.presentInboxSheet)
-                case .scheduledPayments:
-                    sessionState.selectedPlanningTab = .scheduledPayments
-                    sessionState.selectedMainTab = .planning
-                case .recordsStandalone:
-                    sessionState.temporaryTab = .records
-                    Task {
-                        try? await Task.sleep(for: .milliseconds(50))
-                        sessionState.selectedMainTab = .records
-                    }
-                case .groups, .groupDetail:
-                    sessionState.temporaryTab = .groups
-                    sessionState.enteredViaGroupNotification = true
-                    if case .groupDetail(let groupID) = destination {
-                        sessionState.pendingGroupID = groupID
-                    }
-                    Task {
-                        try? await Task.sleep(for: .milliseconds(50))
-                        sessionState.selectedMainTab = .groups
-                    }
-                }
-
-                // Clear after handling
-                sessionState.deepLinkDestination = nil
-            }
+            // F6: onChange(deepLinkDestination) removed. Router drain
+            // (handleMainTabIntent case .navigate) owns routing.
             // F4: shouldRequestReview + shouldShowDowngradeResolution now
             // routed via AppRouter. Drain in handleMainTabIntent.
             .sheet(isPresented: $showDowngradeResolution) {
@@ -884,12 +815,61 @@ struct MainTabView: View {
         }
     }
 
-    /// Handles drained `.mainTab` intents. F3: `.navigate`. F4: monetization.
-    /// F6 eliminates the legacy `onChange(deepLinkDestination)` entirely.
+    /// Handles drained `.mainTab` intents. F6 owns `.navigate` completely
+    /// (inlined routing logic, no more deepLinkDestination roundtrip).
     private func handleMainTabIntent(_ intent: RouterIntent) {
         switch intent {
         case .navigate(let dest):
-            sessionState.deepLinkDestination = dest
+            // GC-08: For groupInvite mode, only handle .groups and .groupDetail.
+            if sessionState.isGroupInviteMode {
+                switch dest {
+                case .groups, .groupDetail:
+                    break
+                default:
+                    return
+                }
+            }
+            switch dest {
+            case .panel:
+                sessionState.selectedMainTab = .panel
+            case .statistics:
+                sessionState.selectedMainTab = .statistics
+            case .records:
+                sessionState.selectedDetailTab = .records
+                sessionState.selectedMainTab = .statistics
+            case .categories:
+                sessionState.selectedDetailTab = .categories
+                sessionState.selectedMainTab = .statistics
+            case .planning:
+                sessionState.selectedMainTab = .planning
+            case .budgets:
+                sessionState.selectedPlanningTab = .budgets
+                sessionState.selectedMainTab = .planning
+            case .inbox:
+                sessionState.selectedMainTab = .panel
+                AppRouter.shared.enqueue(.presentInboxSheet)
+            case .scheduledPayments:
+                sessionState.selectedPlanningTab = .scheduledPayments
+                sessionState.selectedMainTab = .planning
+            case .recordsStandalone:
+                sessionState.temporaryTab = .records
+                // UI layout delay — SwiftUI needs a tick between adding
+                // the temporary tab and selecting it. Not a sync delay.
+                Task {
+                    try? await Task.sleep(for: .milliseconds(50))
+                    sessionState.selectedMainTab = .records
+                }
+            case .groups, .groupDetail:
+                sessionState.temporaryTab = .groups
+                sessionState.enteredViaGroupNotification = true
+                if case .groupDetail(let groupID) = dest {
+                    sessionState.pendingGroupID = groupID
+                }
+                Task {
+                    try? await Task.sleep(for: .milliseconds(50))
+                    sessionState.selectedMainTab = .groups
+                }
+            }
         case .presentDowngradeResolution:
             let accounts = (try? modelContext.fetch(FetchDescriptor<Account>())) ?? []
             let budgets = (try? modelContext.fetch(
@@ -1074,12 +1054,20 @@ struct MorePlaceholderView: View {
 
     private func hiddenTabRow(_ tab: ConfigurableTab) -> some View {
         Button {
-            // Set temporary tab first, then navigate after SwiftUI adds the tab
-            SessionState.shared.temporaryTab = tab
-            // Small delay to let TabView add the new tab before selecting it
-            Task {
-                try? await Task.sleep(for: .milliseconds(50))
-                SessionState.shared.selectedMainTab = tab.appTab
+            // F6: enqueue navigate intent. MainTabView drain replicates the
+            // temporaryTab → selectedMainTab sequencing with the 50ms layout
+            // delay (not synchronization — SwiftUI needs two runloop ticks).
+            switch tab.appTab {
+            case .records:
+                AppRouter.shared.enqueue(.navigate(.recordsStandalone))
+            case .groups:
+                AppRouter.shared.enqueue(.navigate(.groups))
+            default:
+                SessionState.shared.temporaryTab = tab
+                Task {
+                    try? await Task.sleep(for: .milliseconds(50))
+                    SessionState.shared.selectedMainTab = tab.appTab
+                }
             }
         } label: {
             HStack(spacing: DS.FormRow.iconSpacing) {
