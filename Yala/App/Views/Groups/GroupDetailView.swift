@@ -297,7 +297,7 @@ struct GroupDetailView: View {
     private func handleNudgeAction(_ nudge: NudgeType) {
         switch nudge.actionType {
         case .activateFullMode:
-            SessionState.shared.shouldOpenFullModeActivation = true
+            AppRouter.shared.enqueue(.presentFullModeActivation)
         case .openPanel:
             dismiss()
         case .openGroupDetail, .dismiss:

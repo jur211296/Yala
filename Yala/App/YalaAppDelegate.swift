@@ -53,12 +53,20 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
             if !hasCompletedOnboarding && sessionState.onboardingMode != .groupInvite {
                 // New user (or mid-onboarding): accept share eagerly, then show invite onboarding
                 await SplitSyncManager.shared.acceptShare(metadata: cloudKitShareMetadata, skipNavigation: true)
-                sessionState.shouldShowGroupInviteOnboarding = true
+                let invite = InviteMetadata(
+                    groupName: nil, groupIcon: nil, groupColor: nil, groupMembers: nil,
+                    shareMetadata: cloudKitShareMetadata
+                )
+                AppRouter.shared.enqueue(.presentGroupInviteOnboarding(invite))
             } else {
                 // All existing users: defer acceptance, show confirmation first
                 // Note: direct CKShare path has no branded URL metadata (name/icon/color)
                 sessionState.pendingShareMetadata = cloudKitShareMetadata
-                sessionState.shouldShowGroupReconnect = true
+                let invite = InviteMetadata(
+                    groupName: nil, groupIcon: nil, groupColor: nil, groupMembers: nil,
+                    shareMetadata: cloudKitShareMetadata
+                )
+                AppRouter.shared.enqueue(.presentGroupReconnect(invite))
             }
         }
     }

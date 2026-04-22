@@ -524,10 +524,25 @@ final class AppBootstrapper {
 
             if !hasCompletedOnboarding && sessionState.onboardingMode != .groupInvite {
                 await SplitSyncManager.shared.acceptShare(metadata: metadata, skipNavigation: true)
-                sessionState.shouldShowGroupInviteOnboarding = true
+                let invite = InviteMetadata(
+                    groupName: sessionState.pendingInviteGroupName,
+                    groupIcon: sessionState.pendingInviteGroupIcon,
+                    groupColor: sessionState.pendingInviteGroupColor,
+                    groupMembers: sessionState.pendingInviteGroupMembers,
+                    shareMetadata: metadata
+                )
+                AppRouter.shared.enqueue(.presentGroupInviteOnboarding(invite))
             } else if hasCompletedOnboarding && UserSegmentService.shared.currentSegment == .dormant {
                 await SplitSyncManager.shared.acceptShare(metadata: metadata, skipNavigation: true)
-                sessionState.shouldShowGroupReconnect = true
+                sessionState.pendingShareMetadata = metadata  // shim
+                let invite = InviteMetadata(
+                    groupName: sessionState.pendingInviteGroupName,
+                    groupIcon: sessionState.pendingInviteGroupIcon,
+                    groupColor: sessionState.pendingInviteGroupColor,
+                    groupMembers: sessionState.pendingInviteGroupMembers,
+                    shareMetadata: metadata
+                )
+                AppRouter.shared.enqueue(.presentGroupReconnect(invite))
             } else {
                 await SplitSyncManager.shared.acceptShare(metadata: metadata)
             }
@@ -535,8 +550,7 @@ final class AppBootstrapper {
             #if DEBUG
             print("AppBootstrapper: Failed to accept share from URL: \(error)")
             #endif
-            sessionState.inviteErrorDetail = "\(error)"
-            sessionState.showInviteError = true
+            AppRouter.shared.enqueue(.showInviteError("\(error)"))
         }
     }
 

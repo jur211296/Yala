@@ -386,8 +386,18 @@ struct ContentView: View {
         case .presentWhatsNew(let features, let version):
             whatsNewData = (features: features, version: version)
             showWhatsNew = true
+        case .presentGroupInviteOnboarding:
+            // Shim: GroupInviteModifier bindings read local @State. We
+            // set the same @State the legacy onChange used to — F9 reads
+            // payload from the intent directly.
+            showGroupInviteOnboarding = true
+        case .presentGroupReconnect:
+            showGroupReconnect = true
+        case .showInviteError(let detail):
+            SessionState.shared.inviteErrorDetail = detail  // shim (GroupInviteModifier reads it)
+            SessionState.shared.showInviteError = true       // shim (onChange in modifier)
         default:
-            // F5-F8 wire remaining .contentView cases (group invites, system alerts).
+            // F8 wires .iCloudMismatch + .remoteWipe.
             break
         }
     }
@@ -905,8 +915,12 @@ struct MainTabView: View {
                 ReviewPromptService.recordPromptShown()
                 TelemetryService.track(.reviewPromptShown)
             }
+        case .presentFullModeActivation:
+            // Shim: MorePlaceholderView.onChange reads shouldOpenFullModeActivation.
+            // Setting it here keeps legacy behavior until F9 consolidates.
+            sessionState.shouldOpenFullModeActivation = true
         default:
-            break  // F5/F6 fill remaining cases.
+            break  // F8 fills system alerts.
         }
     }
 
