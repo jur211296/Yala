@@ -33,10 +33,9 @@ struct PanelHeroSection: View {
 
     var body: some View {
         if let data = viewModel.heroWidget.data {
-            // Touch consent so SwiftUI invalidates this section when the user
-            // toggles the AI insights consent in Profile — otherwise the
-            // upsellCTA stays stale until the next data refresh.
+            // Dependencias para que SwiftUI invalide al togglear consent/feature en Profile.
             let _ = appPreferences.aiInsightsConsentAccepted
+            let _ = appPreferences.aiInsightsEnabled
 
             let isPro = FeatureGateService.shared.isProUser
             let hasConsent = appPreferences.aiInsightsConsentAccepted
@@ -79,7 +78,7 @@ struct PanelHeroSection: View {
                 )
             ) {
                 Button(L10n.AIConsent.accept) {
-                    appPreferences.aiInsightsConsentAccepted = true
+                    appPreferences.acceptAIInsightsConsent()
                     viewModel.retriggerHeroAI()
                 }
                 Button(L10n.Action.cancel, role: .cancel) {}

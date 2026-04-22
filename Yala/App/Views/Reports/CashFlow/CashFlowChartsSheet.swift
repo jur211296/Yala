@@ -40,7 +40,7 @@ struct CashFlowChartsSheet: View {
     }
 
     private var isAIEnabled: Bool {
-        appPreferences.cashFlowAIEnabled && appPreferences.aiInsightsConsentAccepted
+        appPreferences.cashFlowAIEnabled && appPreferences.aiInsightsEnabled
     }
 
     private let aiProTip = AIChartsProTip()
@@ -101,7 +101,7 @@ struct CashFlowChartsSheet: View {
         }
         .alert(L10n.AIConsent.insightsTitle, isPresented: $showInsightsConsentAlert) {
             Button(L10n.AIConsent.accept) {
-                appPreferences.aiInsightsConsentAccepted = true
+                appPreferences.acceptAIInsightsConsent()
                 appPreferences.cashFlowAIEnabled = true
             }
             Button(L10n.AIConsent.privacyPolicy) {
@@ -485,7 +485,7 @@ struct CashFlowChartsSheet: View {
     private var aiChip: some View {
         Button {
             if isPro {
-                if appPreferences.aiInsightsConsentAccepted {
+                if appPreferences.aiInsightsEnabled {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                         appPreferences.cashFlowAIEnabled.toggle()
                     }

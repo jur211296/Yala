@@ -190,6 +190,7 @@ struct AppPreferencesTests {
         prefs.imageInputEnabled = true
         prefs.aiDataConsentAccepted = true
         prefs.aiInsightsConsentAccepted = true
+        prefs.aiInsightsEnabled = true
         prefs.aiChatConsentAccepted = true
         prefs.chatAssistantEnabled = true
         prefs.chatFABVisible = false
@@ -220,6 +221,7 @@ struct AppPreferencesTests {
         #expect(reloaded.imageInputEnabled == true)
         #expect(reloaded.aiDataConsentAccepted == true)
         #expect(reloaded.aiInsightsConsentAccepted == true)
+        #expect(reloaded.aiInsightsEnabled == true)
         #expect(reloaded.aiChatConsentAccepted == true)
         #expect(reloaded.chatAssistantEnabled == true)
         #expect(reloaded.chatFABVisible == false)
@@ -380,6 +382,44 @@ struct AppPreferencesTests {
         // Simulate a legacy @AppStorage view reading via raw UserDefaults
         #expect(defaults.string(forKey: "defaultCurrencyCode") == "GBP")
         #expect(defaults.bool(forKey: "chatAssistantEnabled") == true)
+    }
+
+    // MARK: - AI Insights migration — consent/feature desacople
+
+    @Test func aiInsightsMigration_consentTrueWithoutSentinel_seedsEnabled() {
+        let defaults = Self.makeSuite()
+        defaults.set(true, forKey: AppPreferences.Keys.aiInsightsConsentAccepted)
+        // Sentinel NOT set → migración corre al init
+
+        let prefs = AppPreferences(defaults: defaults)
+
+        #expect(prefs.aiInsightsConsentAccepted == true)
+        #expect(prefs.aiInsightsEnabled == true, "usuario con consent preexistente debe quedar con feature activa")
+        #expect(defaults.bool(forKey: AppPreferences.Keys.aiInsightsMigratedV1) == true)
+    }
+
+    @Test func aiInsightsMigration_consentFalseWithoutSentinel_leavesEnabledFalseAndSetsSentinel() {
+        let defaults = Self.makeSuite()
+        // Ningún flag seteado → migración corre, no siembra
+
+        let prefs = AppPreferences(defaults: defaults)
+
+        #expect(prefs.aiInsightsConsentAccepted == false)
+        #expect(prefs.aiInsightsEnabled == false)
+        #expect(defaults.bool(forKey: AppPreferences.Keys.aiInsightsMigratedV1) == true, "sentinel debe setearse siempre tras primer check")
+    }
+
+    @Test func aiInsightsMigration_sentinelAlreadySet_doesNotOverwriteEnabled() {
+        let defaults = Self.makeSuite()
+        // Simula user que ya migró y luego apagó la feature manteniendo consent
+        defaults.set(true, forKey: AppPreferences.Keys.aiInsightsConsentAccepted)
+        defaults.set(false, forKey: AppPreferences.Keys.aiInsightsEnabled)
+        defaults.set(true, forKey: AppPreferences.Keys.aiInsightsMigratedV1)
+
+        let prefs = AppPreferences(defaults: defaults)
+
+        #expect(prefs.aiInsightsConsentAccepted == true)
+        #expect(prefs.aiInsightsEnabled == false, "migración no debe re-ejecutarse si el sentinel ya está seteado")
     }
 
     // MARK: - Empty arrays

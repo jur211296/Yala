@@ -258,6 +258,28 @@ struct PanelViewModelTests {
         #expect(vm.heroAISubtitle == nil)
     }
 
+    /// Desacople consent/feature: si el user tiene consent pero apagó la
+    /// feature (`aiInsightsEnabled = false`), el VM también debe resetear
+    /// el subtitle IA. Este caso sólo es expresable tras el refactor que
+    /// separó consent (sticky) del toggle de feature.
+    @MainActor @Test func retriggerHeroAI_consentButFeatureDisabled_resetsHeroAIState() {
+        let vm = PanelViewModel()
+        let prefs = AppPreferences(defaults: UserDefaults(suiteName: "retriggerHeroAI.disabled.\(UUID().uuidString)")!)
+        prefs.aiInsightsConsentAccepted = true
+        prefs.aiInsightsEnabled = false
+        vm.setAppPreferences(prefs)
+
+        vm.heroWidget = PanelHeroData(data: HeroMonthData(
+            state: .neutral, income: 4500, expense: 1500,
+            daysRemaining: 20, daysElapsed: 10
+        ))
+        vm.heroAISubtitle = "mensaje viejo"
+
+        vm.retriggerHeroAI()
+
+        #expect(vm.heroAISubtitle == nil)
+    }
+
     // MARK: - Weekday Bar Widget (P20-07)
     //
     // Tests acotados a los guards que protegen el compute. El cálculo en sí

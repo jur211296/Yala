@@ -2550,11 +2550,13 @@ final class PanelViewModel {
         generateHeroAIIfEligible(data: data)
     }
 
-    /// Genera el mensaje IA si el usuario es Pro + tiene consent. Free o Pro
-    /// sin consent quedan en rule-based silencioso (`heroAISubtitle = nil`).
+    /// Genera el mensaje IA si el usuario es Pro + tiene consent + feature activa.
+    /// Free, Pro sin consent, o Pro con feature apagada quedan en rule-based
+    /// silencioso (`heroAISubtitle = nil`).
     private func generateHeroAIIfEligible(data: HeroMonthData) {
         guard FeatureGateService.shared.canAccess(.smartInsightsAI),
               appPreferences?.aiInsightsConsentAccepted == true,
+              appPreferences?.aiInsightsEnabled == true,
               let trend = lastHeroTrendContext else {
             heroAITask?.cancel()
             heroAITask = nil

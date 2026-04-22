@@ -42,6 +42,7 @@ struct ProfileView: View {
     @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
     @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
     @AppStorage("aiInsightsConsentAccepted") private var aiInsightsConsentAccepted: Bool = false
+    @AppStorage("aiInsightsEnabled") private var aiInsightsEnabled: Bool = false
     @AppStorage(InsightTone.storageKey) private var insightsToneRaw: String = InsightTone.normal.rawValue
     @AppStorage(InsightFocus.storageKey) private var insightsFocusRaw: String = InsightFocus.balanced.rawValue
     @State private var showAIConsentAlert: Bool = false
@@ -236,6 +237,7 @@ struct ProfileView: View {
             .alert(L10n.AIConsent.insightsTitle, isPresented: $showInsightsConsentAlert) {
                 Button(L10n.AIConsent.accept) {
                     aiInsightsConsentAccepted = true
+                    aiInsightsEnabled = true
                 }
                 Button(L10n.AIConsent.privacyPolicy) {
                     openURL(AppConstants.privacyURL)
@@ -558,7 +560,7 @@ struct ProfileView: View {
                     .coachMarkAnchor("proSmartInsights")
 
                 let hasProcessing = aiDataConsentAccepted && (voiceInputEnabled || imageInputEnabled)
-                let hasInsights = aiInsightsConsentAccepted
+                let hasInsights = aiInsightsEnabled
                 let hasChat = aiChatConsentAccepted && chatAssistantEnabled
                 let activeCount = [hasProcessing, hasInsights, hasChat].count(where: { $0 })
                 if activeCount > 0 {
@@ -682,12 +684,12 @@ struct ProfileView: View {
                             .accessibilityHidden(true)
                     } else {
                         Toggle(L10n.Insights.aiToggle, isOn: Binding(
-                            get: { aiInsightsConsentAccepted },
+                            get: { aiInsightsEnabled },
                             set: { newValue in
                                 if newValue && !aiInsightsConsentAccepted {
                                     showInsightsConsentAlert = true
                                 } else {
-                                    aiInsightsConsentAccepted = newValue
+                                    aiInsightsEnabled = newValue
                                 }
                             }
                         ))
@@ -701,7 +703,7 @@ struct ProfileView: View {
             .buttonStyle(.plain)
 
             // Tone selector (visible when insights OR chatbot is active)
-            if (aiInsightsConsentAccepted && !isSmartInsightsLocked) || (aiChatConsentAccepted && chatAssistantEnabled) {
+            if (aiInsightsEnabled && !isSmartInsightsLocked) || (aiChatConsentAccepted && chatAssistantEnabled) {
                 HStack(spacing: DS.Spacing.md) {
                     Color.clear
                         .frame(width: 28, height: 28)

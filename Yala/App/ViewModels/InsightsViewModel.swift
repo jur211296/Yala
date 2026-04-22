@@ -164,10 +164,11 @@ final class InsightsViewModel {
 
         // Check prerequisites
         let isPro = FeatureGateService.shared.canAccess(.smartInsightsAI)
-        let hasConsent = UserDefaults.standard.bool(forKey: "aiInsightsConsentAccepted")
+        let hasConsent = UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiInsightsConsentAccepted)
+        let isEnabled = UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiInsightsEnabled)
         let isOnline = NetworkMonitor.shared.isConnected
 
-        guard isPro, hasConsent, isOnline else {
+        guard isPro, hasConsent, isEnabled, isOnline else {
             aiInsights = nil
             return
         }

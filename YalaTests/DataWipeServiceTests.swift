@@ -23,7 +23,7 @@ struct DataWipeServiceTests {
         "decimalPlaces", "currencyDisplayFormat", "userName", "userAlias",
         "userProfileImageData", "userProfileIcon", "voiceInputEnabled",
         "voiceLanguage", "imageInputEnabled", "aiDataConsentAccepted",
-        "aiInsightsConsentAccepted", "financialMindset",
+        "aiInsightsConsentAccepted", "aiInsightsEnabled", "aiInsightsMigratedV1", "financialMindset",
         "accountsSortOrderNames", "tagsSortOrderNames",
         "panel_widget_configs_v1", "exchangeRate_lastHistoricalLoad",
         "exchangeRate_lastTodayUpdate", "budgets.hideInactive", "budgetAlertsEnabled",

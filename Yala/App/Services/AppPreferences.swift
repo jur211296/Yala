@@ -223,6 +223,19 @@ final class AppPreferences {
         }
     }
 
+    var aiInsightsEnabled: Bool = false {
+        didSet {
+            guard oldValue != aiInsightsEnabled else { return }
+            persistBool(aiInsightsEnabled, forKey: Keys.aiInsightsEnabled, synced: false)
+        }
+    }
+
+    /// Centraliza la invariante "aceptar consent IA ⇒ prender feature".
+    func acceptAIInsightsConsent() {
+        aiInsightsConsentAccepted = true
+        aiInsightsEnabled = true
+    }
+
     var aiChatConsentAccepted: Bool = false {
         didSet {
             guard oldValue != aiChatConsentAccepted else { return }
@@ -626,6 +639,15 @@ final class AppPreferences {
         // diferencial; no se re-persisten valores que no cambiaron del default hardcoded.
         loadFromDefaults()
 
+        // Desacople consent/feature de AI Insights: usuarios con consent=true preexistente
+        // (pre-refactor, cuando el consent hacía doble papel) mantienen feature activa.
+        if !defaults.bool(forKey: Keys.aiInsightsMigratedV1) {
+            if defaults.bool(forKey: Keys.aiInsightsConsentAccepted) {
+                aiInsightsEnabled = true
+            }
+            defaults.set(true, forKey: Keys.aiInsightsMigratedV1)
+        }
+
         // Must run after loadFromDefaults (so the sentinel flag is read) and before
         // registerObservers (so seeded writes don't bounce through the external observer).
         PanelPreferencesMigration.runIfNeeded(appPreferences: self, defaults: defaults)
@@ -735,6 +757,7 @@ final class AppPreferences {
         imageInputEnabled = defaults.bool(forKey: Keys.imageInputEnabled)
         aiDataConsentAccepted = defaults.bool(forKey: Keys.aiDataConsentAccepted)
         aiInsightsConsentAccepted = defaults.bool(forKey: Keys.aiInsightsConsentAccepted)
+        aiInsightsEnabled = defaults.bool(forKey: Keys.aiInsightsEnabled)
         aiChatConsentAccepted = defaults.bool(forKey: Keys.aiChatConsentAccepted)
         chatAssistantEnabled = defaults.bool(forKey: Keys.chatAssistantEnabled)
         if defaults.object(forKey: Keys.chatFABVisible) != nil {
@@ -898,6 +921,8 @@ final class AppPreferences {
         static let imageInputEnabled = "imageInputEnabled"
         static let aiDataConsentAccepted = "aiDataConsentAccepted"
         static let aiInsightsConsentAccepted = "aiInsightsConsentAccepted"
+        static let aiInsightsEnabled = "aiInsightsEnabled"
+        static let aiInsightsMigratedV1 = "aiInsightsMigratedV1"
         static let aiChatConsentAccepted = "aiChatConsentAccepted"
         static let chatAssistantEnabled = "chatAssistantEnabled"
         static let chatFABVisible = "chatFABVisible"

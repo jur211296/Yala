@@ -152,7 +152,7 @@ struct InsightsTabView: View {
         }
         .alert(L10n.AIConsent.insightsTitle, isPresented: $showInsightsConsentAlert) {
             Button(L10n.AIConsent.accept) {
-                appPreferences.aiInsightsConsentAccepted = true
+                appPreferences.acceptAIInsightsConsent()
                 Task { await viewModel.triggerAIGeneration() }
             }
             Button(L10n.AIConsent.privacyPolicy) {
@@ -341,7 +341,7 @@ struct InsightsTabView: View {
 
     private var generateAIButton: some View {
         Button {
-            if appPreferences.aiInsightsConsentAccepted {
+            if appPreferences.aiInsightsEnabled {
                 Task { await viewModel.triggerAIGeneration() }
             } else {
                 showInsightsConsentAlert = true
