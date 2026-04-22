@@ -120,17 +120,23 @@ struct GroupNotificationServiceTests {
 
     // MARK: - E2E Deep Link Flow
 
-    @Test @MainActor func deepLink_groupDetail_setsSessionState() {
+    @Test @MainActor func deepLink_groupDetail_enqueuesRouterIntent() {
+        let router = AppRouter.shared
+        router._testReset()
+
         let groupID = UUID().uuidString
         let destination = NotificationService.parseDestination("groups/\(groupID)")
         #expect(destination == .groupDetail(groupID: groupID))
 
-        // Simulate assignment (as done in notification tap handler)
-        SessionState.shared.deepLinkDestination = destination
-        #expect(SessionState.shared.deepLinkDestination == .groupDetail(groupID: groupID))
+        // Simulate NotificationService.didReceive routing via AppRouter
+        router.enqueue(.navigate(destination!))
 
-        // Clear simulates consumption by the view
-        SessionState.shared.deepLinkDestination = nil
-        #expect(SessionState.shared.deepLinkDestination == nil)
+        router.markReady(.mainTab)
+        let intent = router.drainNext(for: .mainTab)
+        if case .navigate(.groupDetail(let id)) = intent {
+            #expect(id == groupID)
+        } else {
+            Issue.record("Expected .navigate(.groupDetail) intent")
+        }
     }
 }

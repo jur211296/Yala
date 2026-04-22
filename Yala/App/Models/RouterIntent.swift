@@ -87,7 +87,7 @@ extension RouterIntent {
         switch self {
         case .showInboxAlert, .presentTrialOffer, .presentWhatsNew,
              .presentGroupInviteOnboarding, .presentGroupReconnect, .showInviteError,
-             .iCloudMismatch, .remoteWipe:
+             .iCloudMismatch, .remoteWipe, .presentFullModeActivation:
             return .contentView
 
         case .presentInboxSheet, .presentSharedImage, .presentNewTransaction,
@@ -95,8 +95,7 @@ extension RouterIntent {
             return .panel
 
         case .presentDowngradeResolution, .presentTrialExpired,
-             .presentMilestoneUpgrade, .requestAppStoreReview,
-             .presentFullModeActivation, .navigate:
+             .presentMilestoneUpgrade, .requestAppStoreReview, .navigate:
             return .mainTab
 
         case .profileNavigate:

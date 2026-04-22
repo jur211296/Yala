@@ -67,12 +67,7 @@ struct ScheduledPaymentsView: View {
             viewModel.setContext(modelContext)
             viewModel.calculatePaymentData(payments: viewModel.allPayments)
 
-            // Auto-open editor from setup checklist (step 4)
-            if sessionState.shouldAutoOpenScheduledEditor {
-                sessionState.shouldAutoOpenScheduledEditor = false
-                viewModel.editingPayment = nil
-                viewModel.showPaymentEditor = true
-            }
+            // Auto-open editor from setup checklist — routed via AppRouter now.
         }
         .onDisappear {
             viewModel.cancelRecalculation()

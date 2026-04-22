@@ -35,9 +35,9 @@ final class AppBootstrapper {
     let budgetAlertService = BudgetAlertService.shared
     let appPreferences = AppPreferences()
 
-    // MARK: - Deferred Panel Action
+    // MARK: - Panel Action (Control Center / widgets)
 
-    enum DeferredPanelAction {
+    enum PanelAction {
         case newTransaction
         case voiceEntry
         case imageEntry
@@ -46,21 +46,13 @@ final class AppBootstrapper {
     // MARK: - State
 
     private(set) var isInitialized = false
-    var deferredInboxNotification: PendingInboxNotification?
-    var deferredSharedImageURL: URL?
-    var deferredPanelAction: DeferredPanelAction?
+    /// Invite share URL buffered before bootstrap completes. Drained inside bootstrap().
     var deferredInviteShareURL: URL?
-    private var controlActionTask: Task<Void, Never>?
     private var subscriptionCheckTask: Task<Void, Never>?
     private var remoteChangeTask: Task<Void, Never>?
     private var remoteChangeLeadingFired = false
     private var lastNotificationCheckDate = Date.distantPast
     private var lastProcessDuePaymentsDate = Date.distantPast
-
-    /// Whether a fullScreenCover (splash, Face ID, or InboxAlertModal) is blocking sheet presentation
-    private var isUIBlocked: Bool {
-        !sessionState.isSplashDismissed || BiometricAuthService.shared.isLocked || !sessionState.pendingInboxNotification.isEmpty
-    }
 
     // MARK: - Initialization
 
@@ -361,11 +353,11 @@ final class AppBootstrapper {
         case "panel":
             setOrDeferDeepLink(.panel)
         case "new-transaction":
-            dispatchOrDefer(.newTransaction)
+            executeAction(.newTransaction)
         case "voice-entry":
-            dispatchOrDefer(.voiceEntry)
+            executeAction(.voiceEntry)
         case "image-entry":
-            dispatchOrDefer(.imageEntry)
+            executeAction(.imageEntry)
         default:
             #if DEBUG
             print("AppBootstrapper: Unknown Control Center action: \(action)")
@@ -373,16 +365,10 @@ final class AppBootstrapper {
         }
     }
 
-    /// Dispatches a panel action via AppRouter. Router handles readiness
-    /// gating (no more isUIBlocked branching) — intents queued while
-    /// splash/lock/wipe active drain automatically when consumers become
-    /// ready.
-    private func dispatchOrDefer(_ action: DeferredPanelAction) {
-        executeAction(action)
-    }
-
     /// Enqueues a panel-action intent, respecting feature toggles and Pro gates.
-    private func executeAction(_ action: DeferredPanelAction) {
+    /// Router handles readiness gating — intents queued while splash/lock/wipe
+    /// active drain automatically when consumers become ready.
+    private func executeAction(_ action: PanelAction) {
         switch action {
         case .newTransaction:
             AppRouter.shared.enqueue(.presentNewTransaction)
@@ -433,25 +419,24 @@ final class AppBootstrapper {
 
         switch url.host {
         case "shared-image":
-            // F3: No more Task.sleep(500ms). Router handles readiness —
-            // if Panel isn't mounted yet, intent stays queued until it is.
+            // Router handles readiness — if Panel isn't mounted yet, intent
+            // stays queued until it is. Consumer gate (K) ensures the sheet
+            // only drains when Panel is the active tab.
             let imageURLs = SharedContainerService.pendingImageURLs()
             if let firstImageURL = imageURLs.first {
-                // Also ensure Panel tab is active when the image presents.
                 AppRouter.shared.enqueue(.navigate(.panel))
                 AppRouter.shared.enqueue(.presentSharedImage(firstImageURL))
-                // Keep sessionState.pendingSharedImageURL for ImageSelectionView shim (F9 removes).
                 sessionState.pendingSharedImageURL = firstImageURL
             }
 
         case "voice-entry":
-            dispatchOrDefer(.voiceEntry)
+            executeAction(.voiceEntry)
 
         case "image-entry":
-            dispatchOrDefer(.imageEntry)
+            executeAction(.imageEntry)
 
         case "new-transaction":
-            dispatchOrDefer(.newTransaction)
+            executeAction(.newTransaction)
 
         case "panel":
             setOrDeferDeepLink(.panel)
@@ -525,21 +510,14 @@ final class AppBootstrapper {
             if !hasCompletedOnboarding && sessionState.onboardingMode != .groupInvite {
                 await SplitSyncManager.shared.acceptShare(metadata: metadata, skipNavigation: true)
                 let invite = InviteMetadata(
-                    groupName: sessionState.pendingInviteGroupName,
-                    groupIcon: sessionState.pendingInviteGroupIcon,
-                    groupColor: sessionState.pendingInviteGroupColor,
-                    groupMembers: sessionState.pendingInviteGroupMembers,
+                    groupName: nil, groupIcon: nil, groupColor: nil, groupMembers: nil,
                     shareMetadata: metadata
                 )
                 AppRouter.shared.enqueue(.presentGroupInviteOnboarding(invite))
             } else if hasCompletedOnboarding && UserSegmentService.shared.currentSegment == .dormant {
                 await SplitSyncManager.shared.acceptShare(metadata: metadata, skipNavigation: true)
-                sessionState.pendingShareMetadata = metadata  // shim
                 let invite = InviteMetadata(
-                    groupName: sessionState.pendingInviteGroupName,
-                    groupIcon: sessionState.pendingInviteGroupIcon,
-                    groupColor: sessionState.pendingInviteGroupColor,
-                    groupMembers: sessionState.pendingInviteGroupMembers,
+                    groupName: nil, groupIcon: nil, groupColor: nil, groupMembers: nil,
                     shareMetadata: metadata
                 )
                 AppRouter.shared.enqueue(.presentGroupReconnect(invite))
@@ -733,11 +711,8 @@ final class AppBootstrapper {
         }
 
         if !notification.isEmpty {
-            // F3: enqueue directly — readiness gating replaces Task.sleep(0.3s).
+            // Enqueue — readiness gating handles splash/biometric timing.
             AppRouter.shared.enqueue(.showInboxAlert(notification))
-            // Shim until F9: keep SessionState.pendingInboxNotification as
-            // source of truth for InboxAlertModal binding.
-            sessionState.pendingInboxNotification = notification
         }
     }
 
@@ -748,26 +723,14 @@ final class AppBootstrapper {
     }
 
     /// Only called from bootstrap() for cold launch without deep link.
-    /// F3: enqueues directly to router; readiness gating handles mount timing.
+    /// Enqueues directly to router; readiness gating handles mount timing.
     private func checkForPendingSharedImage() {
         let imageURLs = SharedContainerService.pendingImageURLs()
         guard let firstImageURL = imageURLs.first else { return }
 
         AppRouter.shared.enqueue(.navigate(.panel))
         AppRouter.shared.enqueue(.presentSharedImage(firstImageURL))
-        // Shim until F9: ImageSelectionView reads pendingSharedImageURL directly.
         sessionState.pendingSharedImageURL = firstImageURL
-    }
-
-    // MARK: - Deferred Action Resolution
-
-    /// F3: deferred-action resolution is replaced by router readiness. This
-    /// method is kept as a no-op shim until all callers (ContentView
-    /// onUnlock, inbox dismiss onChange, PanelSheetsModifier image dismiss)
-    /// are purged in F9.
-    func showDeferredActionsIfNeeded() {
-        // Intentionally empty. Router drains queued intents as consumers
-        // become ready — no manual coordination needed.
     }
 
     // MARK: - Notification Management

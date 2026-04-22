@@ -437,119 +437,32 @@ class SessionState {
         incrementDataVersion()
     }
 
-    // MARK: - Share Extension State
-
-    /// Flag to trigger shared image processing (one-shot pattern)
-    /// When true, PanelView opens ImageSelectionView and immediately resets to false
-    var shouldShowSharedImage: Bool = false
-
-    /// URL of shared image to process (from Share Extension)
-    /// When set, PanelView will open ImageSelectionView with this image
-    var pendingSharedImageURL: URL?
-
-    /// Flag to trigger Inbox sheet from anywhere in the app
-    /// Set by SharedImageProcessor after creating drafts
-    var shouldShowInbox: Bool = false
-
-    /// Pending inbox drafts notification info
-    /// When not empty, shows an alert modal to notify the user
-    var pendingInboxNotification: PendingInboxNotification = .init()
-
-    /// Flag to trigger voice entry from App Shortcut
-    /// When true, PanelView will open VoiceRecordingSheet
-    var shouldShowVoiceEntry: Bool = false
-
-    /// Flag to trigger image entry from App Shortcut
-    /// When true, PanelView will open ImageSelectionView
-    var shouldShowImageEntry: Bool = false
-
-    /// Flag to trigger new transaction form from widget deep link
-    /// When true, PanelView will open NewTransactionView
-    var shouldShowNewTransaction: Bool = false
-
-    /// Flag to trigger upgrade sheet for voice feature from deep link
-    var shouldShowUpgradeForVoice: Bool = false
-
-    /// Flag to trigger upgrade sheet for image feature from deep link
-    var shouldShowUpgradeForImage: Bool = false
-
-    /// Flag to show downgrade resolution sheet
-    var shouldShowDowngradeResolution: Bool = false
-
-    /// Flag to show trial expired sheet
-    var shouldShowTrialExpired: Bool = false
-
-    /// Pending milestone upgrade (transaction count milestone)
-    var pendingMilestoneUpgrade: Int?
-
-    /// Flag to present FullModeActivationView from any view (nudge CTA routing)
-    var shouldOpenFullModeActivation: Bool = false
-
-    /// Flag to trigger App Store review prompt
-    var shouldRequestReview: Bool = false
-
-    // MARK: - Setup Checklist Navigation
-
-    /// When set, ProfileView navigates to this destination on appear (e.g. categories, accounts).
-    var pendingProfileDestination: ProfileDestination?
-
-    /// When true, BudgetsView auto-opens the budget editor on appear.
-    var shouldAutoOpenBudgetEditor: Bool = false
-
-    /// When true, ScheduledPaymentsView auto-opens the editor on appear.
-    var shouldAutoOpenScheduledEditor: Bool = false
+    // MARK: - Router-migrated state (F9 cleanup)
+    //
+    // Previously this section held ~25 transient flags (shouldShow*,
+    // pending*, deferred*) coordinated via Task.sleep / onChange observers.
+    // All UI routing now flows through AppRouter (see RouterIntent.swift).
 
     /// Flag set by OnboardingView completion to trigger trial offer after fullScreenCover dismisses.
     /// Persisted in UserDefaults so it survives app kill during the dismiss animation window.
+    /// Consumption routed via AppRouter.enqueue(.presentTrialOffer); the flag itself remains here.
     var needsPostOnboardingTrial: Bool = UserDefaults.standard.bool(forKey: "needsPostOnboardingTrial") {
         didSet { UserDefaults.standard.set(needsPostOnboardingTrial, forKey: "needsPostOnboardingTrial") }
     }
 
-    // MARK: - Group Invite Routing (GC-08)
-
-    /// When true, shows GroupInviteOnboardingView (2-step invite flow for new users)
-    var shouldShowGroupInviteOnboarding: Bool = false
-
-    /// When true, shows GroupReconnectView (sheet for dormant users accepting invite)
-    var shouldShowGroupReconnect: Bool = false
-
-    /// Metadata del grupo desde invite URL branded (params n, i, c, m)
-    var pendingInviteGroupName: String?
-    var pendingInviteGroupIcon: String?
-    var pendingInviteGroupColor: String?
-    var pendingInviteGroupMembers: [String]?
-
-    /// CKShare.Metadata pendiente — almacenada antes de que el usuario confirme unirse
-    var pendingShareMetadata: CKShare.Metadata?
-
-    /// Limpia toda la metadata pendiente de invitación de grupo
-    func clearPendingInviteMetadata() {
-        shouldShowGroupReconnect = false
-        pendingShareMetadata = nil
-        pendingInviteGroupName = nil
-        pendingInviteGroupIcon = nil
-        pendingInviteGroupColor = nil
-        pendingInviteGroupMembers = nil
-    }
-
     // MARK: - Splash State
 
-    /// Whether the splash screen has been dismissed (safe to navigate deep links)
+    /// Whether the splash screen has been dismissed (gate for router readiness).
     var isSplashDismissed: Bool = false
 
-    /// Deep link deferred until splash dismisses (avoids sheet-under-splash race condition)
-    var deferredDeepLink: DeepLinkDestination?
-
-    /// Deep link destination from widgets
-    /// When set, app navigates to specified destination and clears this
-    var deepLinkDestination: DeepLinkDestination?
-
-    /// Pending group ID for deep link navigation to specific group
+    /// Pending group ID for deep link navigation to specific group.
+    /// Set by AppRouter.navigate(.groupDetail) handler, read by GroupsContainerView.
     var pendingGroupID: String?
 
-    /// Show error alert when an invite link fails (expired, revoked, or invalid)
-    var showInviteError: Bool = false
-    var inviteErrorDetail: String = ""
+    /// URL of a shared image captured from the Share Extension. Not a flag —
+    /// it's the payload that ImageSelectionView consumes once opened. The
+    /// .presentSharedImage router intent sets this alongside the sheet.
+    var pendingSharedImageURL: URL?
 
     // MARK: - Navigation State
 

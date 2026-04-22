@@ -51,22 +51,16 @@ struct GroupInviteOnboardingView: View {
                     .fill(groupColor)
                     .frame(width: 72, height: 72) // A11Y-DT: decorative hero icon, fixed size
 
-                Image(systemName: sessionState.pendingInviteGroupIcon ?? "person.2.fill")
+                Image(systemName: "person.2.fill")
                     .font(.system(size: 32)) // A11Y-DT: decorative icon inside circle
                     .foregroundStyle(.white)
             }
             .glassEffect(.regular, in: Circle())
 
             VStack(spacing: DS.Spacing.sm) {
-                if let groupName = sessionState.pendingInviteGroupName {
-                    Text(L10n.Groups.Invite.welcomeWithGroup(groupName))
-                        .font(DS.Typography.title2)
-                        .multilineTextAlignment(.center)
-                } else {
-                    Text(L10n.Groups.Invite.welcome)
-                        .font(DS.Typography.title2)
-                        .multilineTextAlignment(.center)
-                }
+                Text(L10n.Groups.Invite.welcome)
+                    .font(DS.Typography.title2)
+                    .multilineTextAlignment(.center)
 
                 Text(L10n.Groups.Invite.subtitle)
                     .font(DS.Typography.subheadline)
@@ -204,9 +198,6 @@ struct GroupInviteOnboardingView: View {
     }
 
     private var groupColor: Color {
-        if let hex = sessionState.pendingInviteGroupColor {
-            return Color(hex: hex)
-        }
-        return theme.accent
+        theme.accent
     }
 }

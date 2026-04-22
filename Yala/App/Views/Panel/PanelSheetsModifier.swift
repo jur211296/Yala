@@ -57,7 +57,7 @@ struct PanelSheetsModifier: ViewModifier {
             .sheet(isPresented: $sheets.isPresentingSettings, onDismiss: {
                 viewModel.reloadAndRecalculate()
             }) {
-                ProfileView(initialDestination: SessionState.shared.pendingProfileDestination)
+                ProfileView()
             }
             .sheet(isPresented: $sheets.showSectionsConfig) {
                 PanelSectionsConfigView()

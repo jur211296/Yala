@@ -245,9 +245,8 @@ struct ProfileView: View {
                 Text(L10n.AIConsent.insightsMessage)
             }
             .onAppear {
-                // Auto-navigate to destination from setup checklist
-                if let dest = initialDestination ?? SessionState.shared.pendingProfileDestination {
-                    SessionState.shared.pendingProfileDestination = nil
+                // Auto-navigate to destination passed by caller (e.g. sync settings sheet).
+                if let dest = initialDestination {
                     navigationPath.append(dest)
                 }
             }

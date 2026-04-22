@@ -87,12 +87,8 @@ struct BudgetsListView: View {
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
             )
 
-            // Auto-open editor from setup checklist (step 3)
-            if sessionState.shouldAutoOpenBudgetEditor {
-                sessionState.shouldAutoOpenBudgetEditor = false
-                viewModel.editingBudget = nil
-                viewModel.showBudgetEditor = true
-            }
+            // Auto-open editor from setup checklist — routed via AppRouter now;
+            // drain handler below sets showBudgetEditor on .autoOpenBudgetEditor.
         }
         .onDisappear {
             viewModel.cancelRecalculation()

@@ -29,29 +29,14 @@ struct GroupReconnectView: View {
 
                     // Group info
                     VStack(spacing: DS.Spacing.sm) {
-                        if let groupName = sessionState.pendingInviteGroupName {
-                            Text(L10n.Groups.Reconnect.subtitleWithGroup(groupName))
-                                .font(DS.Typography.title2)
-                                .multilineTextAlignment(.center)
-                        } else {
-                            Text(L10n.Groups.Reconnect.title)
-                                .font(DS.Typography.title2)
-                                .multilineTextAlignment(.center)
-                        }
+                        Text(L10n.Groups.Reconnect.title)
+                            .font(DS.Typography.title2)
+                            .multilineTextAlignment(.center)
 
                         Text(L10n.Groups.Reconnect.subtitle)
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
-
-                        // Member names from invite URL
-                        if let members = sessionState.pendingInviteGroupMembers, !members.isEmpty {
-                            Text(members.joined(separator: ", "))
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.top, DS.Spacing.xs)
-                        }
                     }
 
                     Spacer()
@@ -82,7 +67,7 @@ struct GroupReconnectView: View {
                 .fill(groupColor)
                 .frame(width: 64, height: 64) // A11Y-DT: decorative hero icon, fixed size
 
-            Image(systemName: sessionState.pendingInviteGroupIcon ?? "person.2.fill")
+            Image(systemName: "person.2.fill")
                 .font(.system(size: 28)) // A11Y-DT: decorative icon inside circle
                 .foregroundStyle(.white)
         }
@@ -90,9 +75,6 @@ struct GroupReconnectView: View {
     }
 
     private var groupColor: Color {
-        if let hex = sessionState.pendingInviteGroupColor {
-            return Color(hex: hex)
-        }
-        return theme.accent
+        theme.accent
     }
 }

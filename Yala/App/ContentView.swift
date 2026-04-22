@@ -5,6 +5,7 @@
 //  Created by Yala Refactoring.
 //
 
+import CloudKit
 import StoreKit
 import SwiftData
 import SwiftUI
@@ -36,6 +37,13 @@ struct ContentView: View {
     @State private var isInitialCheckDone: Bool = false
     @State private var showGroupInviteOnboarding: Bool = false
     @State private var showGroupReconnect: Bool = false
+    @State private var showFullModeActivation: Bool = false
+    /// Inbox alert payload, driven by .contentView drain of .showInboxAlert.
+    @State private var activeInboxNotification: PendingInboxNotification = .init()
+    /// Group reconnect metadata, carried by .presentGroupReconnect intent.
+    @State private var pendingReconnectMetadata: CKShare.Metadata?
+    /// Invite error detail, carried by .showInviteError intent.
+    @State private var activeInviteError: String?
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ThemeManager.self) private var themeManager
@@ -195,7 +203,9 @@ struct ContentView: View {
         .modifier(GroupInviteModifier(
             showGroupInviteOnboarding: $showGroupInviteOnboarding,
             showGroupReconnect: $showGroupReconnect,
-            hasCompletedOnboarding: $hasCompletedOnboarding
+            hasCompletedOnboarding: $hasCompletedOnboarding,
+            pendingReconnectMetadata: $pendingReconnectMetadata,
+            activeInviteError: $activeInviteError
         ))
         .onChange(of: showOnboarding) { oldValue, newValue in
             // Replaces unreliable fullScreenCover onDismiss for post-onboarding flow.
@@ -233,6 +243,12 @@ struct ContentView: View {
                 }
             }
         }
+        .sheet(isPresented: $showFullModeActivation) {
+            FullModeActivationView {
+                showFullModeActivation = false
+            }
+            .environment(SessionState.shared)
+        }
         // Biometric lock as fullScreenCover (covers everything including sheets)
         .fullScreenCover(isPresented: Binding(
             get: { authService.isLocked && !showSplash },
@@ -241,21 +257,19 @@ struct ContentView: View {
             BiometricLockOverlay()
                 .environment(SessionState.shared)
         }
-        // Inbox alert as fullScreenCover (appears over any sheet)
+        // Inbox alert as fullScreenCover (appears over any sheet).
+        // Driven by @State set by the .contentView drain handler.
         .fullScreenCover(isPresented: Binding(
-            get: { !SessionState.shared.pendingInboxNotification.isEmpty },
+            get: { !activeInboxNotification.isEmpty },
             set: { _ in }
         )) {
             InboxAlertModal(
-                notification: SessionState.shared.pendingInboxNotification,
+                notification: activeInboxNotification,
                 onViewInbox: {
-                    // F3: enqueue panel sheet intent. Router drains when Panel
-                    // is active + consumer ready. Matches legacy behavior
-                    // (shouldShowInbox was routed by PanelSheetTriggers).
                     AppRouter.shared.enqueue(.presentInboxSheet)
                 },
                 onDismiss: {
-                    SessionState.shared.pendingInboxNotification = .init()
+                    activeInboxNotification = .init()
                 }
             )
             .presentationBackground(.clear)
@@ -280,33 +294,14 @@ struct ContentView: View {
                 break
             }
         }
-        .onChange(of: authService.isLocked) { _, isLocked in
+        .onChange(of: authService.isLocked) { _, _ in
             updateContentViewReadiness()
-            if !isLocked {
-                if let deferred = AppBootstrapper.shared.deferredInboxNotification {
-                    AppBootstrapper.shared.deferredInboxNotification = nil
-                    Task {
-                        try? await Task.sleep(for: .seconds(0.3))
-                        SessionState.shared.pendingInboxNotification = deferred
-                    }
-                    // Panel actions resolve when inbox modal dismisses (onChange below)
-                } else {
-                    // No inbox to show — resolve panel actions directly
-                    AppBootstrapper.shared.showDeferredActionsIfNeeded()
-                }
-            }
         }
         .onChange(of: SessionState.shared.isWipingData) { _, _ in
             updateContentViewReadiness()
         }
         .onChange(of: AppRouter.shared.revision) { _, _ in
             drainContentViewIntents()
-        }
-        .onChange(of: SessionState.shared.pendingInboxNotification.isEmpty) { oldEmpty, newEmpty in
-            if !oldEmpty && newEmpty {
-                // Inbox modal just dismissed — show any deferred panel actions
-                AppBootstrapper.shared.showDeferredActionsIfNeeded()
-            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .remoteWipeDetected)) { notification in
             // F8: hop to main via Task, then enqueue. Handler drains with
@@ -334,14 +329,8 @@ struct ContentView: View {
             showSplash = false
             SessionState.shared.isSplashDismissed = true
 
-            // Update router readiness after splash dismiss (F2). The legacy
-            // deferred-resolution logic below stays in F2 — F3 eliminates it
-            // once producers enqueue to the router directly.
+            // Router drains queued intents once readiness flips.
             updateContentViewReadiness()
-
-            // F6: deferred deep link / inbox resolution removed. Router
-            // drains queued intents as consumers become ready (readiness
-            // was just updated above).
         }
     }
 
@@ -369,28 +358,25 @@ struct ContentView: View {
         guard let intent = AppRouter.shared.drainNext(for: .contentView) else { return }
         switch intent {
         case .showInboxAlert(let notif):
-            // Shim: legacy InboxAlertModal reads SessionState.pendingInboxNotification.
-            // F9 replaces the fullScreenCover with a local @State.
-            SessionState.shared.pendingInboxNotification = notif
+            activeInboxNotification = notif
         case .presentTrialOffer:
             showProTrialOffer = true
         case .presentWhatsNew(let features, let version):
             whatsNewData = (features: features, version: version)
             showWhatsNew = true
         case .presentGroupInviteOnboarding:
-            // Shim: GroupInviteModifier bindings read local @State. We
-            // set the same @State the legacy onChange used to — F9 reads
-            // payload from the intent directly.
             showGroupInviteOnboarding = true
-        case .presentGroupReconnect:
+        case .presentGroupReconnect(let invite):
+            pendingReconnectMetadata = invite.shareMetadata
             showGroupReconnect = true
         case .showInviteError(let detail):
-            SessionState.shared.inviteErrorDetail = detail  // shim (GroupInviteModifier reads it)
-            SessionState.shared.showInviteError = true       // shim (onChange in modifier)
+            activeInviteError = detail
         case .iCloudMismatch:
             showICloudRestartAlert = true
         case .remoteWipe(let skipOnboarding):
             handleRemoteWipeSignal(onboardingAlreadyDone: skipOnboarding)
+        case .presentFullModeActivation:
+            showFullModeActivation = true
         default:
             break
         }
@@ -516,7 +502,7 @@ struct ContentView: View {
     private func checkInitialSyncState() async {
         // GC-08: If group invite onboarding is pending, skip normal flow entirely.
         // The CKShare was already accepted eagerly — just let the invite UI take over.
-        if SessionState.shared.shouldShowGroupInviteOnboarding {
+        if showGroupInviteOnboarding {
             isInitialCheckDone = true
             return
         }
@@ -666,42 +652,42 @@ private struct GroupInviteModifier: ViewModifier {
     @Binding var showGroupInviteOnboarding: Bool
     @Binding var showGroupReconnect: Bool
     @Binding var hasCompletedOnboarding: Bool
-    @State private var showInviteError: Bool = false
+    @Binding var pendingReconnectMetadata: CKShare.Metadata?
+    @Binding var activeInviteError: String?
 
     func body(content: Content) -> some View {
         content
-            .alert("Enlace no válido", isPresented: $showInviteError) {
+            .alert(
+                "Enlace no válido",
+                isPresented: Binding(
+                    get: { activeInviteError != nil },
+                    set: { if !$0 { activeInviteError = nil } }
+                )
+            ) {
                 Button("OK", role: .cancel) {}
             } message: {
-                // TODO: Revertir a mensaje genérico antes de release
-                Text(SessionState.shared.inviteErrorDetail.isEmpty
+                Text((activeInviteError?.isEmpty ?? true)
                      ? "El enlace de invitación ya no es válido o ha expirado."
-                     : SessionState.shared.inviteErrorDetail)
-            }
-            .onChange(of: SessionState.shared.showInviteError) { _, show in
-                if show {
-                    showInviteError = true
-                    SessionState.shared.showInviteError = false
-                }
+                     : (activeInviteError ?? ""))
             }
             .fullScreenCover(isPresented: $showGroupInviteOnboarding) {
                 GroupInviteOnboardingView {
                     hasCompletedOnboarding = true
                     showGroupInviteOnboarding = false
-                    SessionState.shared.shouldShowGroupInviteOnboarding = false
                 }
                 .environment(SessionState.shared)
             }
             .sheet(isPresented: $showGroupReconnect, onDismiss: {
-                SessionState.shared.clearPendingInviteMetadata()
+                pendingReconnectMetadata = nil
             }) {
                 GroupReconnectView(
                     onJoin: {
+                        let metadata = pendingReconnectMetadata
                         showGroupReconnect = false
                         Task {
-                            if let metadata = SessionState.shared.pendingShareMetadata {
+                            if let metadata {
                                 await SplitSyncManager.shared.acceptShare(metadata: metadata)
-                                // Give CKSyncEngine time to fetch group data before navigating
+                                // Give CKSyncEngine time to fetch group data before navigating (UX).
                                 try? await Task.sleep(for: .seconds(2))
                                 SessionState.shared.incrementDataVersion()
                             }
@@ -713,12 +699,6 @@ private struct GroupInviteModifier: ViewModifier {
                     }
                 )
                 .environment(SessionState.shared)
-            }
-            .onChange(of: SessionState.shared.shouldShowGroupInviteOnboarding) { _, shouldShow in
-                if shouldShow { showGroupInviteOnboarding = true }
-            }
-            .onChange(of: SessionState.shared.shouldShowGroupReconnect) { _, shouldShow in
-                if shouldShow { showGroupReconnect = true }
             }
     }
 }
@@ -739,6 +719,8 @@ struct MainTabView: View {
     @State private var showDowngradeResolution = false
     @State private var showTrialExpired = false
     @State private var showMilestoneUpgrade = false
+    /// Milestone number for the upgrade sheet — carried by .presentMilestoneUpgrade intent.
+    @State private var activeMilestone: Int?
 
     private var tabConfig: TabBarConfiguration {
         TabBarConfiguration.fromJSON(tabConfigJSON)
@@ -806,9 +788,9 @@ struct MainTabView: View {
                 UpgradePromptSheet(feature: .voiceInput, context: .trialExpired, source: "trialExpired")
             }
             .sheet(isPresented: $showMilestoneUpgrade, onDismiss: {
-                sessionState.pendingMilestoneUpgrade = nil
+                activeMilestone = nil
             }) {
-                if let milestone = sessionState.pendingMilestoneUpgrade {
+                if let milestone = activeMilestone {
                     MilestoneUpgradeSheet(milestone: milestone)
                 }
             }
@@ -892,7 +874,7 @@ struct MainTabView: View {
             showTrialExpired = true
             ProUpsellService.shared.markTrialExpiredSheetShown()
         case .presentMilestoneUpgrade(let milestone):
-            sessionState.pendingMilestoneUpgrade = milestone  // shim payload
+            activeMilestone = milestone
             showMilestoneUpgrade = true
         case .requestAppStoreReview:
             let action = requestReview
@@ -902,12 +884,8 @@ struct MainTabView: View {
                 ReviewPromptService.recordPromptShown()
                 TelemetryService.track(.reviewPromptShown)
             }
-        case .presentFullModeActivation:
-            // Shim: MorePlaceholderView.onChange reads shouldOpenFullModeActivation.
-            // Setting it here keeps legacy behavior until F9 consolidates.
-            sessionState.shouldOpenFullModeActivation = true
         default:
-            break  // F8 fills system alerts.
+            break
         }
     }
 
@@ -965,7 +943,6 @@ struct MorePlaceholderView: View {
     @Environment(\.yalaTheme) private var theme
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
     @State private var showProfile = false
-    @State private var showFullModeActivation = false
 
     private var tabConfig: TabBarConfiguration {
         TabBarConfiguration.fromJSON(tabConfigJSON)
@@ -1013,18 +990,8 @@ struct MorePlaceholderView: View {
             ProfileView()
                 .transaction { $0.animation = nil }
         }
-        .sheet(isPresented: $showFullModeActivation) {
-            FullModeActivationView {
-                showFullModeActivation = false
-            }
-            .environment(SessionState.shared)
-        }
-        .onChange(of: SessionState.shared.shouldOpenFullModeActivation) { _, shouldOpen in
-            if shouldOpen {
-                showFullModeActivation = true
-                SessionState.shared.shouldOpenFullModeActivation = false
-            }
-        }
+        // F9: FullModeActivationView moved to ContentView — drains
+        // .presentFullModeActivation from the .contentView consumer.
     }
 
     // MARK: - Hidden Tabs Section
@@ -1109,7 +1076,7 @@ struct MorePlaceholderView: View {
     private var activateFullYalaButton: some View {
         VStack(spacing: DS.Spacing.none) {
             Button {
-                showFullModeActivation = true
+                AppRouter.shared.enqueue(.presentFullModeActivation)
             } label: {
                 HStack(spacing: DS.FormRow.iconSpacing) {
                     Image(systemName: "sparkles")
