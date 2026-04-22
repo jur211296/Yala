@@ -167,7 +167,18 @@ struct DetailContainerView: View {
                     break
                 }
             }
+            .task {
+                if selectedTab != sessionState.selectedDetailTab {
+                    selectedTab = sessionState.selectedDetailTab
+                }
+            }
+            .onChange(of: sessionState.selectedDetailTab) { _, newValue in
+                if selectedTab != newValue { selectedTab = newValue }
+            }
             .onChange(of: selectedTab) { _, newTab in
+                if sessionState.selectedDetailTab != newTab {
+                    sessionState.selectedDetailTab = newTab
+                }
                 if newTab == .insights { scheduleRecalculation(reload: false) }
             }
             .onChange(of: sessionState.selectedMainTab) { _, newTab in

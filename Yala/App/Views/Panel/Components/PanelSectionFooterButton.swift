@@ -2,52 +2,78 @@
 //  PanelSectionFooterButton.swift
 //  Yala
 //
-//  P20-11: CTA footer reutilizable para secciones del Panel. Aparece bajo
-//  el último widget y redirige a la pantalla correspondiente (Statistics,
-//  Budgets, Scheduled Payments, Groups). Reemplaza los chevrones internos
-//  de cada widget — ahora la navegación vive a nivel de sección, no widget.
-//
-//  Estilo: centrado, color primary, icono chevron.right pequeño al final.
-//  Tap area full-width (44pt mínimo vertical).
+//  Capsule full-width con tint sutil del accent del theme. Rol: CTA de
+//  sección en el Panel ("Ver más en Tendencias / Distribución", "Ver todos",
+//  "Ver presupuestos"…). Solid sin glass — contraste intencional con
+//  YalaPrimaryButton (glass + fill) para no competir con los KPIs de widgets.
 //
 
 import SwiftUI
 
 struct PanelSectionFooterButton: View {
+    enum Style { case prominent, subtle }
+
+    @Environment(\.yalaTheme) private var theme
     let title: String
-    /// Accessibility hint que describe el destino ("Abre la pantalla de X").
     let hint: String
+    var style: Style = .prominent
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: DS.Spacing.xs) {
-                Text(title)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(Color.primary)
-                Image(systemName: "chevron.right")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(Color.primary)
-                    .accessibilityHidden(true)
-            }
-            .padding(.vertical, DS.Spacing.md)
-            .frame(maxWidth: .infinity)
-            .contentShape(Rectangle())
+            Text(title)
+                .font(DS.Typography.label)
+                .foregroundStyle(theme.accent)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 50)
+                .background(backgroundFill)
+                .clipShape(Capsule())
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityHint(hint)
     }
+
+    private var backgroundFill: some View {
+        switch style {
+        case .prominent:
+            Capsule().fill(theme.accent.opacity(0.12))
+        case .subtle:
+            Capsule().fill(Color.clear)
+        }
+    }
 }
 
 #if DEBUG
-#Preview {
+#Preview("Light") {
     VStack(spacing: 20) {
         PanelSectionFooterButton(
             title: "Ver más en Tendencias",
             hint: "Abre la pantalla de Tendencias",
             action: {}
         )
-        Divider()
+        PanelSectionFooterButton(
+            title: "Ver más en Distribución",
+            hint: "Abre la pantalla de Distribución",
+            action: {}
+        )
+        PanelSectionFooterButton(
+            title: "Ver todos",
+            hint: "Abre la pantalla de Registros",
+            style: .subtle,
+            action: {}
+        )
+    }
+    .padding()
+}
+
+#Preview("Dark") {
+    VStack(spacing: 20) {
+        PanelSectionFooterButton(
+            title: "Ver más en Tendencias",
+            hint: "Abre la pantalla de Tendencias",
+            action: {}
+        )
         PanelSectionFooterButton(
             title: "Ver todos",
             hint: "Abre la pantalla de Registros",
@@ -55,5 +81,6 @@ struct PanelSectionFooterButton: View {
         )
     }
     .padding()
+    .preferredColorScheme(.dark)
 }
 #endif
