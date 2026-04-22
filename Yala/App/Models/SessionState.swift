@@ -13,7 +13,7 @@ import WidgetKit
 // MARK: - Inbox Notification Types
 
 /// Types of drafts pending notification
-struct PendingInboxNotification {
+struct PendingInboxNotification: Equatable {
     var scheduledPayments: Int = 0
     var subscriptions: Int = 0
     var automations: Int = 0  // applePay + automation
@@ -58,7 +58,7 @@ enum InboxNotificationType {
 }
 
 /// Deep link destinations from widgets
-enum DeepLinkDestination: Equatable {
+enum DeepLinkDestination: Equatable, Hashable {
     case panel
     case statistics
     case records
@@ -472,9 +472,6 @@ class SessionState {
 
     /// Flag to trigger upgrade sheet for image feature from deep link
     var shouldShowUpgradeForImage: Bool = false
-
-    /// Flag to show subscription success celebration
-    var shouldShowSubscriptionSuccess: Bool = false
 
     /// Flag to show downgrade resolution sheet
     var shouldShowDowngradeResolution: Bool = false
