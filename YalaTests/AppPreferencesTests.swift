@@ -537,4 +537,32 @@ struct AppPreferencesTests {
         #expect(decoded.type == .topSpending)
         #expect(decoded.isVisible == true)
     }
+
+    // MARK: - PP2-06b WidgetConfig .small roundtrip
+
+    @Test func widgetConfig_budgetsSmall_roundTripsInJSON() throws {
+        let original = WidgetConfig(
+            id: UUID(),
+            type: .budgets,
+            isVisible: true,
+            size: .small
+        )
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(WidgetConfig.self, from: data)
+        #expect(decoded.size == .small)
+        #expect(decoded.type == .budgets)
+    }
+
+    @Test func widgetConfig_scheduledPaymentsSmall_roundTripsInJSON() throws {
+        let original = WidgetConfig(
+            id: UUID(),
+            type: .scheduledPayments,
+            isVisible: true,
+            size: .small
+        )
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(WidgetConfig.self, from: data)
+        #expect(decoded.size == .small)
+        #expect(decoded.type == .scheduledPayments)
+    }
 }

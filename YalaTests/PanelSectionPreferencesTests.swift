@@ -329,4 +329,19 @@ struct PanelSectionPreferencesTests {
         vm.setWidgetSize(.cashFlow, size: target)
         #expect(vm.widgetSize(.cashFlow) == target)
     }
+
+    // MARK: - PP2-06b: supportedSizes incluyen .small para Budgets + ScheduledPayments
+
+    @Test func budgets_supportedSizes_includesSmall() {
+        let sizes = WidgetType.budgets.supportedSizes
+        #expect(sizes.contains(.small))
+        #expect(sizes.contains(.medium))
+        #expect(sizes.contains(.large))
+    }
+
+    @Test func scheduledPayments_supportedSizes_includesSmall() {
+        let sizes = WidgetType.scheduledPayments.supportedSizes
+        #expect(sizes.contains(.small))
+        #expect(sizes.contains(.medium))
+    }
 }

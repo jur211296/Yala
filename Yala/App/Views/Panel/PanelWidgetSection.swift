@@ -46,7 +46,7 @@ struct PanelWidgetRouter: View {
         case .budgets:
             PanelBudgetsSection(viewModel: viewModel, sessionState: sessionState, currencyCode: currencyCode, size: config.size, showBudgetFavoritesSettings: $showBudgetFavoritesSettings)
         case .scheduledPayments:
-            PanelScheduledPaymentsSection(viewModel: viewModel, sessionState: sessionState, currencyCode: currencyCode, mode: config.scheduledPaymentsMode)
+            PanelScheduledPaymentsSection(viewModel: viewModel, sessionState: sessionState, currencyCode: currencyCode, mode: config.scheduledPaymentsMode, size: config.size)
         case .weekdayBar:
             WeekdayBarPanelWidget(
                 data: viewModel.weekdayWidget.weekdaySpending,
@@ -365,12 +365,14 @@ private struct PanelScheduledPaymentsSection: View {
     let sessionState: SessionState
     let currencyCode: String
     let mode: ScheduledPaymentsWidgetMode
+    let size: WidgetSize
 
     var body: some View {
         ScheduledPaymentsWidget(
             data: viewModel.scheduledPaymentsWidget,
             currencyCode: currencyCode,
             mode: mode,
+            size: size,
             filter: $viewModel.scheduledPaymentsWidgetFilter,
             onShowMore: { sessionState.navigateToScheduledPayments() }
         )
@@ -388,10 +390,10 @@ private func mapWidgetSize(_ size: WidgetSize) -> TopCategoriesWidget.CardSize {
 }
 
 private func mapBudgetsWidgetSize(_ size: WidgetSize) -> BudgetsWidget.CardSize {
-    // BudgetsWidget does not yet support `.small` (PP2-06 will add it).
-    // Falling back to `.medium` keeps layout predictable if a stale config asks for .small.
+    // PP2-06b: BudgetsWidget.CardSize now matches WidgetSize 1:1.
     switch size {
-    case .small, .medium: return .medium
+    case .small: return .small
+    case .medium: return .medium
     case .large: return .large
     }
 }

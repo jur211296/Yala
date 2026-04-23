@@ -17,6 +17,9 @@ struct ScheduledPaymentsWidget: View {
     let currencyCode: String
     let mode: ScheduledPaymentsWidgetMode
 
+    /// PP2-06b: tamaño del card. `.small` fuerza summary compacto y oculta el filter selector.
+    var size: WidgetSize = .medium
+
     /// Filter state (all/recurring/subscriptions)
     @Binding var filter: ScheduledPaymentsWidgetFilter
 
@@ -26,28 +29,186 @@ struct ScheduledPaymentsWidget: View {
     @Namespace private var filterNamespace
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            headerSection
+        Group {
+            if size == .small {
+                smallCardContent
+            } else {
+                VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                    headerSection
 
-            switch mode {
-            case .summary:
-                if data.activeCount == 0 {
-                    emptyListState
-                } else {
-                    summaryContent
-                }
-            case .list:
-                listContent
-            case .calendar:
-                if data.activeCount == 0 {
-                    emptyListState
-                } else {
-                    calendarContent
+                    switch mode {
+                    case .summary:
+                        if data.activeCount == 0 {
+                            emptyListState
+                        } else {
+                            summaryContent
+                        }
+                    case .list:
+                        listContent
+                    case .calendar:
+                        if data.activeCount == 0 {
+                            emptyListState
+                        } else {
+                            calendarContent
+                        }
+                    }
                 }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .solidCard(padding: DS.Card.paddingCompact)
+        .frame(height: size == .small ? WidgetSize.smallHeight : nil)
+    }
+
+    // MARK: - Small Layout (PP2-06b)
+
+    private var smallCardContent: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            PanelSmallWidgetHeader(
+                title: smallDynamicTitle,
+                accessibilityLabel: L10n.Panel.seeMoreHintScheduled,
+                action: onShowMore
+            )
+
+            if data.activeCount == 0 || data.monthlyTotal == 0 {
+                smallEmptyState
+            } else {
+                HStack(alignment: .center, spacing: DS.Spacing.sm) {
+                    smallKPIBlock
+                    Spacer(minLength: 0)
+                    smallRing
+                        .accessibilityLabel(ringAccessibilityLabel)
+                }
+
+                smallInfoText
+
+                Spacer(minLength: 0)
+
+                filterSelector
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
+        }
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+    }
+
+    private var smallKPIBlock: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(YalaFormatter.currency(value: smallToPayAmount, currencyCode: currencyCode))
+                .font(.system(.title3, design: .rounded).weight(.bold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+
+            Text(L10n.Scheduled.Widget.smallToPay)
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var smallRing: some View {
+        ZStack {
+            ScoreRingView(
+                progress: smallProgress,
+                size: 56,
+                lineWidth: 7,
+                foreground: smallRingColor
+            )
+            Text("\(smallPercentPaid)%")
+                .font(DS.Typography.captionSmall.bold())
+                .foregroundStyle(.primary)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
+        }
+        .frame(width: 56, height: 56)
+    }
+
+    /// % se omite: ya vive dentro del ring.
+    private var smallInfoText: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(String(
+                format: L10n.Scheduled.Widget.smallPaidAmount,
+                YalaFormatter.currency(value: data.paidAmount, currencyCode: currencyCode)
+            ))
+            .font(DS.Typography.captionSmall)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+
+            Text(String(
+                format: L10n.Scheduled.Widget.smallActivePending,
+                data.activeCount,
+                data.pendingCount
+            ))
+            .font(DS.Typography.captionSmall)
+            .foregroundStyle(.tertiary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+        }
+    }
+
+    // MARK: - Small derived values
+
+    private var smallToPayAmount: Double {
+        max(0, data.monthlyTotal - data.paidAmount)
+    }
+
+    private var smallProgress: Double {
+        guard data.monthlyTotal > 0 else { return 0 }
+        return max(0, min(1, data.paidAmount / data.monthlyTotal))
+    }
+
+    private var smallPercentPaid: Int {
+        Int((smallProgress * 100).rounded())
+    }
+
+    private var ringAccessibilityLabel: String {
+        "\(smallPercentPaid)%"
+    }
+
+    private var smallDynamicTitle: String {
+        switch filter {
+        case .all: return L10n.Scheduled.Widget.smallTitle
+        case .recurring: return L10n.Scheduled.Tab.recurring
+        case .subscriptions: return L10n.Scheduled.Tab.subscriptions
+        }
+    }
+
+    private static let ringFromRGB: (r: CGFloat, g: CGFloat, b: CGFloat) = {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        UIColor(Color.hotPink).getRed(&r, green: &g, blue: &b, alpha: &a)
+        return (r, g, b)
+    }()
+
+    private static let ringToRGB: (r: CGFloat, g: CGFloat, b: CGFloat) = {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        UIColor(Color.indigo).getRed(&r, green: &g, blue: &b, alpha: &a)
+        return (r, g, b)
+    }()
+
+    /// Color del ring interpolado entre hotPink (0%) e indigo (100%).
+    private var smallRingColor: Color {
+        let t = smallProgress
+        let from = Self.ringFromRGB
+        let to = Self.ringToRGB
+        return Color(
+            red: from.r + (to.r - from.r) * t,
+            green: from.g + (to.g - from.g) * t,
+            blue: from.b + (to.b - from.b) * t
+        )
+    }
+
+    private var smallEmptyState: some View {
+        VStack(spacing: DS.Spacing.xs) {
+            Image(systemName: "calendar.badge.clock")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+            Text(L10n.Scheduled.Widget.emptyTitle)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Header

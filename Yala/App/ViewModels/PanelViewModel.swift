@@ -76,8 +76,10 @@ struct ScheduledPaymentCalendarEntry: Equatable, Identifiable {
 }
 
 struct PanelScheduledPaymentsData: Equatable {
-    var monthlyTotal: Double = 0
-    var activeCount: Int = 0
+    var monthlyTotal: Double = 0                // Filtered por scheduledPaymentsWidgetFilter
+    var paidAmount: Double = 0                  // PP2-06b polish: monto ya pagado filtered (small ring)
+    var activeCount: Int = 0                    // Filtered count
+    var pendingCount: Int = 0                   // PP2-06b polish: definiciones con ≥1 ocurrencia no pagada/no skipped, filtered
     var displayMonth: Date = .now
     var periodLabel: String = ""
     var upcomingPayments: [ScheduledPaymentListItem] = []
@@ -2737,11 +2739,12 @@ final class PanelViewModel {
         let calendar = Calendar.current
 
         // 1. Filter payments (replaces widget's filteredPayments computed property)
+        let allActive = scheduledPayments.filter { $0.isActive }
         let filtered: [ScheduledPayment]
         if let categoryFilter = scheduledPaymentsWidgetFilter.paymentCategoryFilter {
-            filtered = scheduledPayments.filter { $0.isActive && $0.paymentCategory == categoryFilter }
+            filtered = allActive.filter { $0.paymentCategory == categoryFilter }
         } else {
-            filtered = scheduledPayments.filter { $0.isActive }
+            filtered = allActive
         }
 
         // 2. Load paid amounts (use injected if provided to share with health section,
@@ -2751,45 +2754,83 @@ final class PanelViewModel {
                 for: filtered, month: displayMonth, context: context
             )
 
-        // 3. Calculate monthly total (moves from widget's calculateMonthlyTotal())
+        // 3. Calculate monthly total + paid amount (filtered).
         var monthlyTotal: Double = 0
+        var paidAmount: Double = 0
         if calendar.dateInterval(of: .month, for: displayMonth) != nil {
             let converter = currencyConverter
-            let expensePayments = filtered.filter { $0.transactionType != "income" }
 
-            for payment in expensePayments {
-                let occurrences = ScheduledPaymentDateCalculator.paymentDatesInMonth(
-                    params: payment.dateCalculatorParams, month: displayMonth
-                )
-                var remainingInfos = paidAmounts[payment.id.uuidString] ?? []
+            /// Returns (total, paid). `total` sums expense occurrences (paid at real amount, pending at planned amount).
+            /// `paid` sums only the occurrences that have a `PaidOccurrenceInfo` associated.
+            func accumulateMonthlyTotal(
+                payments: [ScheduledPayment],
+                paid: [String: [PaidOccurrenceInfo]]
+            ) -> (total: Double, paid: Double) {
+                var total: Double = 0
+                var paidTotal: Double = 0
+                let expensePayments = payments.filter { $0.transactionType != "income" }
 
-                for date in occurrences.sorted() {
-                    let isSkipped = payment.isDateSkipped(date)
-                    let amount: Double
-                    let currency: String
-                    if !remainingInfos.isEmpty && !isSkipped {
-                        let info = remainingInfos.removeFirst()
-                        amount = info.amount
-                        currency = info.currencyCode
-                    } else if !isSkipped {
-                        amount = payment.amount
-                        currency = payment.currencyCode
-                    } else {
-                        continue
-                    }
+                for payment in expensePayments {
+                    let occurrences = ScheduledPaymentDateCalculator.paymentDatesInMonth(
+                        params: payment.dateCalculatorParams, month: displayMonth
+                    )
+                    var remainingInfos = paid[payment.id.uuidString] ?? []
 
-                    if currency != defaultCurrencyCode, amount > 0 {
-                        let converted = converter.convertWithLatestRate(
-                            Decimal(amount),
-                            from: currency,
-                            to: defaultCurrencyCode,
-                            context: context
-                        )
-                        monthlyTotal += NSDecimalNumber(decimal: converted).doubleValue
-                    } else {
-                        monthlyTotal += amount
+                    for date in occurrences.sorted() {
+                        let isSkipped = payment.isDateSkipped(date)
+                        let amount: Double
+                        let currency: String
+                        let isPaidOccurrence: Bool
+                        if !remainingInfos.isEmpty && !isSkipped {
+                            let info = remainingInfos.removeFirst()
+                            amount = info.amount
+                            currency = info.currencyCode
+                            isPaidOccurrence = true
+                        } else if !isSkipped {
+                            amount = payment.amount
+                            currency = payment.currencyCode
+                            isPaidOccurrence = false
+                        } else {
+                            continue
+                        }
+
+                        let convertedAmount: Double
+                        if currency != defaultCurrencyCode, amount > 0 {
+                            let converted = converter.convertWithLatestRate(
+                                Decimal(amount),
+                                from: currency,
+                                to: defaultCurrencyCode,
+                                context: context
+                            )
+                            convertedAmount = NSDecimalNumber(decimal: converted).doubleValue
+                        } else {
+                            convertedAmount = amount
+                        }
+
+                        total += convertedAmount
+                        if isPaidOccurrence { paidTotal += convertedAmount }
                     }
                 }
+                return (total, paidTotal)
+            }
+
+            let filteredResult = accumulateMonthlyTotal(payments: filtered, paid: paidAmounts)
+            monthlyTotal = filteredResult.total
+            paidAmount = filteredResult.paid
+        }
+
+        // 3c. PP2-06b polish: pending count filtered — definiciones con ≥1 ocurrencia
+        //     no pagada/no skipped en displayMonth. Income excluido (espeja accumulateMonthlyTotal).
+        var pendingCount = 0
+        for payment in filtered where payment.transactionType != "income" {
+            let dates = ScheduledPaymentDateCalculator.paymentDatesInMonth(
+                params: payment.dateCalculatorParams, month: displayMonth
+            )
+            guard !dates.isEmpty else { continue }
+            let paidOccurrences = paidAmounts[payment.id.uuidString]?.count ?? 0
+            let skippedCount = dates.count(where: { payment.isDateSkipped($0) })
+            if dates.count - paidOccurrences - skippedCount > 0 {
+                pendingCount += 1
             }
         }
 
@@ -2873,7 +2914,9 @@ final class PanelViewModel {
         // 6. Assemble and compare
         let newData = PanelScheduledPaymentsData(
             monthlyTotal: monthlyTotal,
+            paidAmount: paidAmount,
             activeCount: filtered.count,
+            pendingCount: pendingCount,
             displayMonth: displayMonth,
             periodLabel: Self.monthYearFormatter.string(from: displayMonth).capitalized,
             upcomingPayments: upcomingPayments,

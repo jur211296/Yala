@@ -150,4 +150,68 @@ struct WidgetConfigManagerTests {
         }
         #expect(third.id == trend2.id)
     }
+
+    // MARK: - PP2-06b: Budgets + ScheduledPayments .small
+
+    @Test func budgetsSmall_withTopCategoriesSmall_iPhone_paired() {
+        let budgets = Self.makeConfig(type: .budgets, size: .small)
+        let top = Self.makeConfig(type: .topSpending, size: .small)
+        let rows = WidgetConfigManager.makeLayoutRows(for: [budgets, top], columns: 1)
+
+        #expect(rows.count == 1)
+        guard case .halfWidthPair(let left, let right) = rows[0].type else {
+            Issue.record("Expected halfWidthPair, got \(rows[0].type)")
+            return
+        }
+        #expect(left.id == budgets.id)
+        #expect(right?.id == top.id)
+    }
+
+    @Test func scheduledPaymentsSmall_withBudgetsSmall_iPhone_paired() {
+        let scheduled = Self.makeConfig(type: .scheduledPayments, size: .small)
+        let budgets = Self.makeConfig(type: .budgets, size: .small)
+        let rows = WidgetConfigManager.makeLayoutRows(for: [scheduled, budgets], columns: 1)
+
+        #expect(rows.count == 1)
+        guard case .halfWidthPair(let left, let right) = rows[0].type else {
+            Issue.record("Expected halfWidthPair, got \(rows[0].type)")
+            return
+        }
+        #expect(left.id == scheduled.id)
+        #expect(right?.id == budgets.id)
+    }
+
+    @Test func budgetsSmall_pairs_iPad() {
+        let a = Self.makeConfig(type: .budgets, size: .small)
+        let b = Self.makeConfig(type: .scheduledPayments, size: .small)
+        let rows = WidgetConfigManager.makeLayoutRows(for: [a, b], columns: 2)
+
+        #expect(rows.count == 1)
+        guard case .halfWidthPair(let left, let right) = rows[0].type else {
+            Issue.record("Expected halfWidthPair, got \(rows[0].type)")
+            return
+        }
+        #expect(left.id == a.id)
+        #expect(right?.id == b.id)
+    }
+
+    @Test func scheduledPaymentsSmall_aloneWithMedium_iPhone_flushesToHalfAndMediumFull() {
+        let small = Self.makeConfig(type: .scheduledPayments, size: .small)
+        let medium = Self.makeConfig(type: .budgets, size: .medium)
+        let rows = WidgetConfigManager.makeLayoutRows(for: [small, medium], columns: 1)
+
+        #expect(rows.count == 2)
+        guard case .halfWidthPair(let left, let right) = rows[0].type else {
+            Issue.record("Row 0 expected halfWidthPair, got \(rows[0].type)")
+            return
+        }
+        #expect(left.id == small.id)
+        #expect(right == nil)
+
+        guard case .fullWidth(let config) = rows[1].type else {
+            Issue.record("Row 1 expected fullWidth, got \(rows[1].type)")
+            return
+        }
+        #expect(config.id == medium.id)
+    }
 }

@@ -24,6 +24,7 @@ struct PanelThematicSection: View {
     var onPreferences: (() -> Void)? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
         let widgets = viewModel.activeWidgets(in: kind)
@@ -42,22 +43,35 @@ struct PanelThematicSection: View {
     @ViewBuilder
     private func contentView(widgets: [WidgetConfig]) -> some View {
         if kind == .planificacion {
-            // Per-widget footer — each widget renders full-width followed by
-            // its dedicated CTA. Bypasses the half-width pair layout in iPad
-            // to keep the "footer belongs to the widget" semantics.
+            // Per-widget footer para Planificación. PP2-06b: usamos makeLayoutRows para
+            // habilitar el half-pair de widgets `.small`; en esos pares el footer se
+            // omite porque el chevron del `PanelSmallWidgetHeader` ya cumple el rol del
+            // CTA. Widgets full-width (M/L) conservan su footer dedicado.
+            let rows = WidgetConfigManager.makeLayoutRows(
+                for: widgets,
+                columns: DS.Adaptive.columns(sizeClass)
+            )
             VStack(spacing: DS.Spacing.lg) {
-                ForEach(widgets) { config in
-                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                        PanelWidgetRouter(
-                            config: config,
-                            viewModel: viewModel,
-                            sessionState: sessionState,
-                            currencyCode: defaultCurrencyCodeRaw,
-                            showVariations: showVariations,
-                            reduceMotion: reduceMotion,
-                            showBudgetFavoritesSettings: $showBudgetFavoritesSettings
-                        )
-                        planificacionFooter(for: config.type)
+                ForEach(rows) { row in
+                    switch row.type {
+                    case .fullWidth(let config):
+                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                            planificacionWidget(for: config)
+                            planificacionFooter(for: config.type)
+                        }
+                    case .halfWidthPair(let left, let right):
+                        HStack(alignment: .top, spacing: DS.Spacing.lg) {
+                            planificacionWidget(for: left)
+                                .frame(maxWidth: .infinity)
+                                .clipped()
+                            if let right {
+                                planificacionWidget(for: right)
+                                    .frame(maxWidth: .infinity)
+                                    .clipped()
+                            } else {
+                                Color.clear.frame(maxWidth: .infinity)
+                            }
+                        }
                     }
                 }
             }
@@ -71,6 +85,19 @@ struct PanelThematicSection: View {
                 showBudgetFavoritesSettings: $showBudgetFavoritesSettings
             )
         }
+    }
+
+    @ViewBuilder
+    private func planificacionWidget(for config: WidgetConfig) -> some View {
+        PanelWidgetRouter(
+            config: config,
+            viewModel: viewModel,
+            sessionState: sessionState,
+            currencyCode: defaultCurrencyCodeRaw,
+            showVariations: showVariations,
+            reduceMotion: reduceMotion,
+            showBudgetFavoritesSettings: $showBudgetFavoritesSettings
+        )
     }
 
     // MARK: - Planificación per-widget footer

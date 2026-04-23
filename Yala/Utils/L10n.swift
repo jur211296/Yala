@@ -137,6 +137,9 @@ enum L10n {
         // MARK: - P20-11 Widget size picker
 
         enum WidgetSize {
+            static var small: String {
+                ls("panel.widgetSize.small", comment: "Widget size picker — small label")
+            }
             static var medium: String {
                 ls("panel.widgetSize.medium", comment: "P20-11 M/L size picker — medium label")
             }
@@ -2531,6 +2534,11 @@ enum L10n {
             static var daysAgo: String { ls("scheduled.widget.daysAgo", comment: "") }
             static var tomorrow: String { ls("scheduled.widget.tomorrow", comment: "") }
             static var inDays: String { ls("scheduled.widget.inDays", comment: "") }
+            static var smallTitle: String { ls("scheduled.widget.smallTitle", comment: "") }
+            static var smallToPay: String { ls("scheduled.widget.smallToPay", comment: "") }
+            static var smallPaidAmount: String { ls("scheduled.widget.smallPaidAmount", comment: "") }
+            static var smallActivePending: String { ls("scheduled.widget.smallActivePending", comment: "") }
+            static var smallAllPaid: String { ls("scheduled.widget.smallAllPaid", comment: "") }
         }
 
         enum Help {

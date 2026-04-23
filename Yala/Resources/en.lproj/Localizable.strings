@@ -35,6 +35,7 @@
 "panel.seeMoreHint.scheduled" = "Opens the Scheduled Payments screen";
 
 // P20-11: Widget size picker
+"panel.widgetSize.small" = "Mini";
 "panel.widgetSize.medium" = "Compact";
 "panel.widgetSize.large" = "Expanded";
 
@@ -774,6 +775,11 @@
 "scheduled.widget.daysAgo" = "%d days ago";
 "scheduled.widget.tomorrow" = "Tomorrow";
 "scheduled.widget.inDays" = "In %d days";
+"scheduled.widget.smallTitle" = "Planned";
+"scheduled.widget.smallToPay" = "to pay";
+"scheduled.widget.smallPaidAmount" = "You paid %@";
+"scheduled.widget.smallActivePending" = "%1$d this month · %2$d left";
+"scheduled.widget.smallAllPaid" = "All caught up!";
 "scheduled.payments.count" = "%d active payments";
 "scheduled.calendar.show.all" = "Show all";
 "scheduled.calendar.day.empty" = "No payments this day";

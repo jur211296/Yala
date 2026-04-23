@@ -74,8 +74,8 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .latestRecords: return [.medium]  // Tamaño único
         case .expensesByNeed: return [.medium, .large]
         case .exchangeRate: return [.medium]  // Tamaño único
-        case .budgets: return [.medium, .large]  // Top 3 / Top 5
-        case .scheduledPayments: return [.medium]  // Single size, mode selected in preferences
+        case .budgets: return [.small, .medium, .large]  // PP2-06b
+        case .scheduledPayments: return [.small, .medium]  // PP2-06b
         case .weekdayBar: return [.large]  // Tamaño único (full-width)
         case .tagsPie: return [.small, .large]  // PP2-06
         }

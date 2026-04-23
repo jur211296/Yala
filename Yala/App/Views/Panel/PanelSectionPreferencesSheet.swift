@@ -201,6 +201,7 @@ struct PanelSectionPreferencesSheet: View {
                 set: { viewModel.setWidgetSize(type, size: $0) }
             )
         ) {
+            Text(L10n.Panel.WidgetSize.small).tag(WidgetSize.small)
             Text(L10n.Panel.WidgetSize.medium).tag(WidgetSize.medium)
             Text(L10n.Panel.WidgetSize.large).tag(WidgetSize.large)
         } label: {
