@@ -379,14 +379,17 @@ private struct PanelScheduledPaymentsSection: View {
 
 private func mapWidgetSize(_ size: WidgetSize) -> TopCategoriesWidget.CardSize {
     switch size {
+    case .small: return .small
     case .medium: return .medium
     case .large: return .large
     }
 }
 
 private func mapBudgetsWidgetSize(_ size: WidgetSize) -> BudgetsWidget.CardSize {
+    // BudgetsWidget does not yet support `.small` (PP2-06 will add it).
+    // Falling back to `.medium` keeps layout predictable if a stale config asks for .small.
     switch size {
-    case .medium: return .medium
+    case .small, .medium: return .medium
     case .large: return .large
     }
 }

@@ -113,8 +113,10 @@ struct SubcategoriesPieWidget: View {
 
     @ViewBuilder
     private func contentForSize(_ chartData: [PieChartData]) -> some View {
+        // SubcategoriesPie does not yet support `.small` (PP2-06 will add it).
+        // Falls back to medium if a stale config asks for .small.
         switch size {
-        case .medium:
+        case .small, .medium:
             mediumLayout(chartData)
         case .large:
             largeLayout(chartData)

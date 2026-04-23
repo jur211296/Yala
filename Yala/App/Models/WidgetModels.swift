@@ -67,9 +67,9 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .trend: return [.medium]  // Tamaño único (compacta)
         case .cashFlow: return [.medium, .large]
-        case .topSpending: return [.medium, .large]
+        case .topSpending: return [.small, .medium, .large]  // PP2-05 piloto
         case .topSubcategories: return [.medium, .large]
-        case .categoriesPie: return [.large]  // Tamaño único
+        case .categoriesPie: return [.small, .large]  // PP2-05 piloto
         case .subcategoriesPie: return [.large]  // Tamaño único
         case .latestRecords: return [.medium]  // Tamaño único
         case .expensesByNeed: return [.medium, .large]
@@ -87,7 +87,11 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         case .cashFlow, .expensesByNeed:
             return size == .medium ? L10n.Widget.compact : L10n.Widget.expanded
         case .topSpending, .topSubcategories, .budgets:
-            return size == .medium ? L10n.Widget.top3 : L10n.Widget.top5
+            switch size {
+            case .small:  return L10n.Widget.compact
+            case .medium: return L10n.Widget.top3
+            case .large:  return L10n.Widget.top5
+            }
         case .trend, .categoriesPie, .subcategoriesPie, .latestRecords, .exchangeRate, .scheduledPayments, .weekdayBar, .tagsPie:
             return nil  // Single size, no name needed
         }
@@ -95,10 +99,15 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
 }
 
 enum WidgetSize: String, Codable, CaseIterable, Identifiable {
+    case small = "S"
     case medium = "M"
     case large = "L"
 
     var id: String { rawValue }
+
+    /// PP2-05: altura TOTAL del card (incluyendo padding del `.solidCard`) para widgets `.small`.
+    /// Garantiza matching visual exacto en half-pair aunque los widgets usen distinto padding de card.
+    static let smallHeight: CGFloat = 192
 }
 
 struct WidgetConfig: Identifiable, Codable, Equatable {

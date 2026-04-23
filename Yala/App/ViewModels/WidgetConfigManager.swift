@@ -97,35 +97,32 @@ final class WidgetConfigManager {
     ]
 
     /// Pure layout computation — called by `PanelWidgetsGrid` to render per-section
-    /// rows (iPhone full-width / iPad side-by-side pairs).
+    /// rows. PP2-05: widgets with `size == .small` pair on both iPhone and iPad;
+    /// other sizes keep the prior behaviour (full-width on iPhone, pair on iPad).
     static func makeLayoutRows(for widgets: [WidgetConfig], columns: Int) -> [WidgetRow] {
         var rows: [WidgetRow] = []
-        if columns >= 2 {
-            var pendingHalf: WidgetConfig?
-            for config in widgets {
-                let needsFullWidth = fullWidthOnlyTypes.contains(config.type)
-                if needsFullWidth {
-                    if let pending = pendingHalf {
-                        rows.append(WidgetRow(id: pending.id, type: .halfWidthPair(left: pending, right: nil)))
-                        pendingHalf = nil
-                    }
-                    rows.append(WidgetRow(id: config.id, type: .fullWidth(config)))
+        var pendingHalf: WidgetConfig?
+        for config in widgets {
+            let isFullWidthOnly = fullWidthOnlyTypes.contains(config.type)
+            let isHalfCapable = config.size == .small || (columns >= 2 && !isFullWidthOnly)
+
+            if !isHalfCapable {
+                if let pending = pendingHalf {
+                    rows.append(WidgetRow(id: pending.id, type: .halfWidthPair(left: pending, right: nil)))
+                    pendingHalf = nil
+                }
+                rows.append(WidgetRow(id: config.id, type: .fullWidth(config)))
+            } else {
+                if let pending = pendingHalf {
+                    rows.append(WidgetRow(id: pending.id, type: .halfWidthPair(left: pending, right: config)))
+                    pendingHalf = nil
                 } else {
-                    if let pending = pendingHalf {
-                        rows.append(WidgetRow(id: pending.id, type: .halfWidthPair(left: pending, right: config)))
-                        pendingHalf = nil
-                    } else {
-                        pendingHalf = config
-                    }
+                    pendingHalf = config
                 }
             }
-            if let pending = pendingHalf {
-                rows.append(WidgetRow(id: pending.id, type: .halfWidthPair(left: pending, right: nil)))
-            }
-        } else {
-            for config in widgets {
-                rows.append(WidgetRow(id: config.id, type: .fullWidth(config)))
-            }
+        }
+        if let pending = pendingHalf {
+            rows.append(WidgetRow(id: pending.id, type: .halfWidthPair(left: pending, right: nil)))
         }
         return rows
     }

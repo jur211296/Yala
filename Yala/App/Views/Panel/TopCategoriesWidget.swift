@@ -71,17 +71,28 @@ struct TopCategoriesWidget: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            headerSection
-
-            if categories.isEmpty {
-                emptyState
+        Group {
+            if size == .small {
+                smallCardContent
             } else {
-                contentForSize
+                VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                    headerSection
+
+                    if categories.isEmpty {
+                        emptyState
+                    } else {
+                        contentForSize
+                    }
+                }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity,
+            alignment: .topLeading
+        )
         .solidCard(padding: DS.Card.paddingCompact)
+        .frame(height: size == .small ? WidgetSize.smallHeight : nil)
     }
 
     // MARK: - Content Switcher
@@ -205,53 +216,118 @@ struct TopCategoriesWidget: View {
     // MARK: - Small Card Content
 
     private var smallCardContent: some View {
-        // Show only the top 1 category in a focused way
         Group {
-            if let topCategory = categories.first {
-                VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                    // Large Icon
-                    ZStack {
-                        Circle()
-                            .fill(Color(hex: topCategory.category.colorHex))
-                            .frame(width: 48, height: 48)  // Slightly smaller for dense layout
-
-                        Image(systemName: topCategory.category.iconName ?? "tag.fill")
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.white)
-                            .accessibilityHidden(true)
+            if categories.isEmpty {
+                smallEmptyState
+            } else {
+                // En exclude mode, el item excluido se esconde (espejo del largeLayout);
+                // en modo normal todos son visibles y el dim se aplica por row.
+                let visibleCategories: [CategorySpendingSummary] = {
+                    if isExcludeMode, let excludedID = selectedCategoryID {
+                        return categories.filter { $0.category.persistentModelID != excludedID }
                     }
+                    return categories
+                }()
 
-                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                        Text(topCategory.category.name)
-                            .font(DS.Typography.label)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                    PanelSmallWidgetHeader(
+                        title: L10n.Widget.topCategories,
+                        accessibilityLabel: L10n.Panel.seeMoreInDistribution,
+                        action: onShowMore
+                    )
 
-                        Text(formattedAmount(topCategory.amount))
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.primary)
-                            .minimumScaleFactor(0.8)
-                            .lineLimit(1)
-
-                        Text(
-                            "\(formattedPercentage(topCategory.percentage)) \(L10n.Widget.ofTotal)"
-                        )
-                        .font(DS.Typography.labelTiny)
-                        .foregroundStyle(Color(hex: topCategory.category.colorHex))
-                        .padding(.horizontal, DS.Spacing.xs)
-                        .padding(.vertical, DS.Spacing.xxs)
-                        .background(Color(hex: topCategory.category.colorHex).opacity(0.1))
-                        .clipShape(Capsule())
+                    VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                        ForEach(Array(visibleCategories.prefix(2))) { summary in
+                            smallCategoryRow(for: summary)
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.bottom, DS.Spacing.sm)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    onSelectCategory?(topCategory.category.persistentModelID)
-                }
             }
         }
+    }
+
+    @ViewBuilder
+    private func smallCategoryRow(for summary: CategorySpendingSummary) -> some View {
+        let color = Color(hex: summary.category.colorHex)
+        let clampedPercentage = max(0, min(100, summary.percentage))
+        let isSelected = selectedCategoryID == summary.category.persistentModelID
+        let shouldDim = !isExcludeMode && selectedCategoryID != nil && !isSelected
+
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            // Línea 1: ícono + nombre (ocupa casi todo el ancho para nombres largos)
+            HStack(spacing: DS.Spacing.sm) {
+                ZStack {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 28, height: 28)
+
+                    Image(systemName: summary.category.iconName ?? "tag.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .accessibilityHidden(true)
+                }
+
+                Text(summary.category.name)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
+                Spacer(minLength: 0)
+            }
+
+            // Línea 2: barra de progreso + monto + % (datos compactos juntos)
+            HStack(spacing: DS.Spacing.sm) {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(color.opacity(0.15))
+
+                        Capsule()
+                            .fill(color)
+                            .frame(width: max(0, geo.size.width * CGFloat(clampedPercentage / 100.0)))
+                    }
+                }
+                .frame(height: 6)
+
+                Text(formattedAmount(summary.amount))
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+
+                Text(formattedPercentage(summary.percentage))
+                    .font(DS.Typography.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(color)
+                    .lineLimit(1)
+                    .frame(width: 40, alignment: .trailing)
+            }
+        }
+        .opacity(shouldDim ? 0.3 : 1.0)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onSelectCategory?(summary.category.persistentModelID)
+        }
+    }
+
+    /// Empty state compacto para el layout `.small` — evita `YalaEmptyState(style: .widget)`
+    /// que desborda el alto fijo del card.
+    private var smallEmptyState: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Spacer(minLength: 0)
+
+            Image(systemName: "folder.fill")
+                .font(.system(size: 24))
+                .foregroundStyle(.secondary)
+
+            Text("—")
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Empty State

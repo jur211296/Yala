@@ -509,4 +509,32 @@ struct AppPreferencesTests {
         let reloaded = AppPreferences(defaults: defaults)
         #expect(reloaded.panelAccountsCollapsed == true)
     }
+
+    // MARK: - PP2-05 WidgetSize.small Codable
+
+    @Test func widgetSize_small_encodesToS() throws {
+        let data = try JSONEncoder().encode(WidgetSize.small)
+        let raw = String(data: data, encoding: .utf8)
+        #expect(raw == "\"S\"")
+    }
+
+    @Test func widgetSize_small_roundTripThroughJSON() throws {
+        let encoded = try JSONEncoder().encode(WidgetSize.small)
+        let decoded = try JSONDecoder().decode(WidgetSize.self, from: encoded)
+        #expect(decoded == .small)
+    }
+
+    @Test func widgetConfig_withSmallSize_roundTripsInJSON() throws {
+        let original = WidgetConfig(
+            id: UUID(),
+            type: .topSpending,
+            isVisible: true,
+            size: .small
+        )
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(WidgetConfig.self, from: data)
+        #expect(decoded.size == .small)
+        #expect(decoded.type == .topSpending)
+        #expect(decoded.isVisible == true)
+    }
 }
