@@ -75,17 +75,28 @@ struct TopSubcategoriesWidget: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            headerSection
-
-            if subcategories.isEmpty {
-                emptyState
+        Group {
+            if size == .small {
+                smallCardContent
             } else {
-                contentForSize
+                VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                    headerSection
+
+                    if subcategories.isEmpty {
+                        emptyState
+                    } else {
+                        contentForSize
+                    }
+                }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity,
+            alignment: .topLeading
+        )
         .solidCard(padding: DS.Card.paddingCompact)
+        .frame(height: size == .small ? WidgetSize.smallHeight : nil)
         .id(subcategories.isEmpty ? "empty" : "content-\(subcategories.count)")
         .onAppear {
             viewModel.setContext(modelContext)
@@ -313,77 +324,145 @@ struct TopSubcategoriesWidget: View {
         }
     }
 
-    // MARK: - Small Content
+    // MARK: - Small Card Content (PP2-06)
 
     private var smallCardContent: some View {
         Group {
-            if let top = subcategories.first {
-                VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                    // Icon
-                    ZStack {
-                        Circle()
-                            .fill(Color(hex: top.colorHex ?? AppConstants.defaultSubcategoryColorHex))
-                            .frame(width: 48, height: 48)
+            if visibleSubcategoriesForSmall.isEmpty {
+                smallEmptyState
+            } else {
+                VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                    PanelSmallWidgetHeader(
+                        title: L10n.Widget.topSubcategories,
+                        accessibilityLabel: L10n.Panel.seeMoreInDistribution,
+                        action: onShowMore
+                    )
 
-                        Image(
-                            systemName: top.subcategory?.iconName ?? top.category?.iconName
-                                ?? "tag.fill"
-                        )
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.white)
-                        .accessibilityHidden(true)
-                    }
-
-                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                        Text(top.subcategoryName)
-                            .font(DS.Typography.label)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-
-                        Text(formattedAmount(top.amount))
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.primary)
-                            .minimumScaleFactor(0.8)
-                            .lineLimit(1)
-
-                        // % of Category (Most relevant context for subcats)
-                        HStack(spacing: DS.Spacing.xs) {
-                            Text(
-                                "\(formattedPercentage(top.percentageOfCategory)) \(String(format: L10n.Widget.of, top.category?.name ?? L10n.Widget.categoryAbbr))"
-                            )
-                            .font(DS.Typography.labelTiny)
-                            .foregroundStyle(Color(hex: top.colorHex ?? AppConstants.defaultSubcategoryColorHex))
+                    VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                        ForEach(Array(visibleSubcategoriesForSmall.prefix(2))) { summary in
+                            smallSubcategoryRow(for: summary)
                         }
-                        .padding(.horizontal, DS.Chip.paddingV)
-                        .padding(.vertical, DS.Spacing.xxs)
-                        .background(Color(hex: top.colorHex ?? AppConstants.defaultSubcategoryColorHex).opacity(0.1))
-                        .clipShape(Capsule())
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    if let persistentID = top.persistentID {
-                        onSelectSubcategory?(persistentID)
-                    }
-                }
             }
         }
+    }
+
+    /// PP2-06: aplica el filtro global de categoría (consistencia con medium/large)
+    /// y esconde los excluidos en exclude mode. No aplica `localCategoryFilterID`
+    /// porque el picker no está disponible en `.small`.
+    private var visibleSubcategoriesForSmall: [SubcategorySpendingSummary] {
+        let globallyFiltered: [SubcategorySpendingSummary] = {
+            if let globalID = globalCategoryFilterID {
+                return subcategories.filter { $0.category?.persistentModelID == globalID }
+            }
+            return subcategories
+        }()
+
+        if isExcludeMode, !selectedSubcategoryIDs.isEmpty {
+            return globallyFiltered.filter {
+                guard let id = $0.persistentID else { return true }
+                return !selectedSubcategoryIDs.contains(id)
+            }
+        }
+        return globallyFiltered
+    }
+
+    @ViewBuilder
+    private func smallSubcategoryRow(for summary: SubcategorySpendingSummary) -> some View {
+        let color = Color(hex: summary.colorHex ?? AppConstants.defaultSubcategoryColorHex)
+        let clampedPercentage = max(0, min(100, summary.percentageOfTotal))
+        let isSelected = summary.persistentID.map { selectedSubcategoryIDs.contains($0) } ?? false
+        let shouldDim = !isExcludeMode && !selectedSubcategoryIDs.isEmpty && !isSelected
+
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            // Línea 1: ícono + nombre
+            HStack(spacing: DS.Spacing.sm) {
+                ZStack {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 28, height: 28)
+
+                    Image(systemName: summary.subcategory?.iconName ?? summary.category?.iconName ?? "tag.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .accessibilityHidden(true)
+                }
+
+                Text(summary.subcategoryName)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
+                Spacer(minLength: 0)
+            }
+
+            // Línea 2: barra de progreso + monto + %
+            HStack(spacing: DS.Spacing.sm) {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(color.opacity(0.15))
+
+                        Capsule()
+                            .fill(color)
+                            .frame(width: max(0, geo.size.width * CGFloat(clampedPercentage / 100.0)))
+                    }
+                }
+                .frame(height: 6)
+
+                Text(formattedAmount(summary.amount))
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+
+                Text(formattedPercentage(summary.percentageOfTotal))
+                    .font(DS.Typography.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(color)
+                    .lineLimit(1)
+                    .frame(width: 40, alignment: .trailing)
+            }
+        }
+        .opacity(shouldDim ? 0.3 : 1.0)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if let persistentID = summary.persistentID {
+                onSelectSubcategory?(persistentID)
+            }
+        }
+    }
+
+    /// PP2-06: empty state compacto para `.small` — evita `YalaEmptyState(style:.widget)`
+    /// que desborda el alto fijo del card.
+    private var smallEmptyState: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Spacer(minLength: 0)
+
+            Image(systemName: "list.bullet.indent")
+                .font(.system(size: 24))
+                .foregroundStyle(.secondary)
+
+            Text("—")
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Empty State
 
     private var emptyState: some View {
-        if size == .small {
-            YalaEmptyState(icon: "list.bullet.indent", title: L10n.Empty.noExpenses, style: .widget)
-        } else {
-            YalaEmptyState(
-                icon: "list.bullet.indent",
-                title: L10n.Widget.noExpensesPeriod,
-                message: L10n.Widget.noExpensesDescriptionSubcategories,
-                style: .widget
-            )
-        }
+        YalaEmptyState(
+            icon: "list.bullet.indent",
+            title: L10n.Widget.noExpensesPeriod,
+            message: L10n.Widget.noExpensesDescriptionSubcategories,
+            style: .widget
+        )
     }
 
     // MARK: - Formatters

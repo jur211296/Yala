@@ -72,15 +72,25 @@ struct SubcategoriesPieWidget: View {
         VStack(alignment: .leading, spacing: DS.Spacing.none) {
             // Guard against empty chartData (Charts framework crashes on empty array)
             if chartData.isEmpty {
-                emptyState
+                if size == .small {
+                    smallEmptyState
+                } else {
+                    emptyState
+                }
             } else {
                 contentForSize(chartData)
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.bottom, DS.Spacing.xxl)
+                    .padding(.horizontal, size == .small ? DS.Spacing.md : DS.Spacing.lg)
+                    .padding(.bottom, size == .small ? DS.Spacing.md : DS.Spacing.xxl)
             }
         }
-        .frame(maxWidth: .infinity, minHeight: 320, maxHeight: .infinity, alignment: .topLeading)
+        .frame(
+            maxWidth: .infinity,
+            minHeight: size == .small ? 0 : 320,
+            maxHeight: .infinity,
+            alignment: .topLeading
+        )
         .solidCard(radius: DS.Radius.xl)
+        .frame(height: size == .small ? WidgetSize.smallHeight : nil)
     }
 
     // MARK: - Empty State
@@ -109,14 +119,43 @@ struct SubcategoriesPieWidget: View {
         }
     }
 
+    /// PP2-06: empty state compacto para `.small`. Evita `YalaEmptyState(style: .widget)`
+    /// que desborda el alto fijo del card.
+    private var smallEmptyState: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack(spacing: DS.Spacing.xs) {
+                Text(L10n.Widget.subcategories)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Spacer()
+            }
+
+            Spacer(minLength: 0)
+
+            HStack {
+                Spacer()
+                Image(systemName: "list.bullet.indent")
+                    .font(.system(size: 28))
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, DS.Spacing.md)
+        .padding(.vertical, DS.Spacing.md)
+    }
+
     // MARK: - Content Switcher
 
     @ViewBuilder
     private func contentForSize(_ chartData: [PieChartData]) -> some View {
-        // SubcategoriesPie does not yet support `.small` (PP2-06 will add it).
-        // Falls back to medium if a stale config asks for .small.
         switch size {
-        case .small, .medium:
+        case .small:
+            smallLayout(chartData)
+        case .medium:
             mediumLayout(chartData)
         case .large:
             largeLayout(chartData)
@@ -124,6 +163,42 @@ struct SubcategoriesPieWidget: View {
     }
 
     // MARK: - Layouts
+
+    /// PP2-06: layout compacto para el tamaño `.small`. Clon del piloto
+    /// `CategoriesPieWidget.smallLayout`. El donut central es decorativo
+    /// (`.allowsHitTesting(false)`); las bubbles conservan su tap y filtran
+    /// por subcategoría. Chevron → Estadísticas → Distribución.
+    private func smallLayout(_ chartData: [PieChartData]) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            PanelSmallWidgetHeader(
+                title: L10n.Widget.subcategories,
+                accessibilityLabel: L10n.Panel.seeMoreInDistribution,
+                action: onShowDetail
+            )
+
+            GeometryReader { geo in
+                let width = geo.size.width
+                let height = geo.size.height
+                let diameter = min(width, height)
+                let radius = diameter / 2
+                let center = CGPoint(x: width / 2, y: height / 2)
+                let chartRadius = radius * 0.55
+
+                ZStack {
+                    connectorLines(chartData, center: center, chartRadius: chartRadius)
+
+                    chartView(chartData, innerRadiusRatio: innerRadiusRatio)
+                        .frame(width: chartRadius * 2, height: chartRadius * 2)
+                        .position(center)
+                        .allowsHitTesting(false)
+
+                    bubblesLayer(chartData, center: center, chartRadius: chartRadius)
+                }
+            }
+        }
+        .padding(.top, DS.Spacing.lg)
+    }
+
 
     private func largeLayout(_ chartData: [PieChartData]) -> some View {
         VStack(spacing: DS.Spacing.sm) {

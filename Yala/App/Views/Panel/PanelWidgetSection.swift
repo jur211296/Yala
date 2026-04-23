@@ -57,6 +57,7 @@ struct PanelWidgetRouter: View {
                 viewModel: viewModel,
                 sessionState: sessionState,
                 currencyCode: currencyCode,
+                size: config.size,
                 showVariations: showVariations,
                 reduceMotion: reduceMotion
             )
@@ -206,6 +207,7 @@ private struct PanelTagsPieSection: View {
     let viewModel: PanelViewModel
     let sessionState: SessionState
     let currencyCode: String
+    let size: WidgetSize
     let showVariations: Bool
     let reduceMotion: Bool
 
@@ -221,7 +223,7 @@ private struct PanelTagsPieSection: View {
             },
             onShowDetail: { viewModel.navigateToStatistics(.categories) },
             isExcludeMode: viewModel.isExcludeMode,
-            size: .large,
+            size: size,
             period: viewModel.selectedPeriod,
             customRange: sessionState.customDateRange,
             previousTotalAmount: viewModel.previousTagsTotalAmount,
