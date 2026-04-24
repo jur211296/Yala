@@ -16,6 +16,9 @@ struct TrendChartView: View {
 
     let period: DetailPeriod
     var chartHeight: CGFloat = 220
+    /// PP2-06c: compact mode for `.small` widget — hides Y-axis, the "today" marker
+    /// and caps the X-axis to at most 2 labels (first + last data point).
+    var compact: Bool = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -67,6 +70,7 @@ struct TrendChartView: View {
             // Use .monotone to prevent overshoots at extreme points
             // (.catmullRom can cause visual distortion at first/last points)
             let interpolation: InterpolationMethod = .monotone
+            let solidLineWidth: CGFloat = compact ? 3 : 2
 
             // Past & Today: Solid Line & Area
             ForEach(pastPoints, id: \.date) { point in
@@ -83,7 +87,7 @@ struct TrendChartView: View {
                     y: .value(L10n.Common.amount, point.value)
                 )
                 .interpolationMethod(interpolation)
-                .lineStyle(StrokeStyle(lineWidth: 2))
+                .lineStyle(StrokeStyle(lineWidth: solidLineWidth))
                 .foregroundStyle(primaryLineColor.opacity(dimOpacity))
 
                 // DATA ANNOTATIONS FOR WEEK VIEW
@@ -108,7 +112,7 @@ struct TrendChartView: View {
                     y: .value(L10n.Common.amount, point.value)
                 )
                 .interpolationMethod(interpolation)
-                .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
+                .lineStyle(StrokeStyle(lineWidth: solidLineWidth, dash: [5, 5]))
                 .foregroundStyle(.thSecondaryText)  // Explicit Gray for distinction
             }
 
@@ -122,19 +126,8 @@ struct TrendChartView: View {
                 .symbolSize(64)
             }
 
-            // Marker for "Today"
-            RuleMark(x: .value(L10n.Widget.today, today))
-                .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))
-                .foregroundStyle(.thSecondaryText.opacity(0.5))
-                .annotation(position: .top, alignment: .center, spacing: DS.Spacing.sm) {
-                    Text(L10n.Widget.today)
-                        .font(DS.Typography.labelTiny)
-                        .foregroundStyle(.thPrimaryText)
-                        .padding(.horizontal, DS.Spacing.xs)
-                        .padding(.vertical, DS.Spacing.xs)
-                        .background(.thCard, in: RoundedRectangle(cornerRadius: DS.Radius.xs))
-                        .shadow(radius: 1)
-                }
+            // Marker for "Today" (omitted entirely in compact mode)
+            todayMarker(today: today)
 
             // Average line
             averageLineMarks
@@ -165,10 +158,13 @@ struct TrendChartView: View {
                 .symbolSize(100)
                 .foregroundStyle(.thCard)
 
-                // Invisible anchor point at top of chart for tooltip
+                // Invisible anchor point for tooltip — placed ~15% below the chart top
+                // so the bubble doesn't hover off-canvas on tall charts.
+                let tooltipAnchorY = yDomain.upperBound
+                    - (yDomain.upperBound - yDomain.lowerBound) * 0.15
                 PointMark(
                     x: .value(L10n.Common.selectedDate, activeDate),
-                    y: .value("Top", yDomain.upperBound)
+                    y: .value("TooltipAnchor", tooltipAnchorY)
                 )
                 .symbolSize(0)
                 .annotation(
@@ -207,16 +203,19 @@ struct TrendChartView: View {
                 }
             }
         }
-        // Y-Axis: Right (Trailing) only - minimal gridlines
+        // Y-Axis: Trailing with minimal gridlines; hidden via opacity in compact mode.
         .chartYAxis {
+            let gridOpacity: Double = compact ? 0 : 0.1
+            let labelOpacity: Double = compact ? 0 : 1
             AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                    .foregroundStyle(.thSecondaryText.opacity(0.1))
+                    .foregroundStyle(.thSecondaryText.opacity(gridOpacity))
                 AxisValueLabel {
                     if let doubleValue = value.as(Double.self) {
                         Text(formatK(doubleValue))
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.thSecondaryText)
+                            .opacity(labelOpacity)
                     }
                 }
             }
@@ -226,15 +225,16 @@ struct TrendChartView: View {
         // X-Axis Scale from Interval
         .chartXScale(domain: paddedXDomain)
         .chartXAxis {
-            // Smart dynamic X-axis labels
-            AxisMarks(values: smartAxisDates) { value in
+            // Compact mode caps the X-axis to first + last data labels only.
+            let axisValues = compact ? compactAxisDates : smartAxisDates
+            let gridOpacity: Double = compact ? 0 : 0.1
+            AxisMarks(values: axisValues) { value in
                 AxisGridLine()
-                    .foregroundStyle(.thSecondaryText.opacity(0.1))
+                    .foregroundStyle(.thSecondaryText.opacity(gridOpacity))
 
                 if let date = value.as(Date.self) {
-                    // Use trailing anchor for last label to prevent truncation
-                    let isLast = date == smartAxisDates.last
-                    let isFirst = date == smartAxisDates.first
+                    let isLast = date == axisValues.last
+                    let isFirst = date == axisValues.first
                     let anchor: UnitPoint = isLast ? .topTrailing : (isFirst ? .topLeading : .top)
 
                     AxisValueLabel(anchor: anchor) {
@@ -250,6 +250,7 @@ struct TrendChartView: View {
         .accessibilityLabel(L10n.Accessibility.trendChart(trendType.displayName))
         .accessibilityValue(trendPoints.isEmpty ? L10n.Accessibility.noData :
             L10n.Accessibility.dataPoints(trendPoints.count))
+        .compactChartAxes(compact: compact)
         .frame(height: chartHeight)
     }
 
@@ -272,6 +273,35 @@ struct TrendChartView: View {
     }
 
     // MARK: - Smart Axis Labels
+
+    /// Today marker — omitted when `compact` OR when `today` falls outside the
+    /// chart's X-axis range (no point rendering a marker the user can't see).
+    @ChartContentBuilder
+    private func todayMarker(today: Date) -> some ChartContent {
+        if !compact && paddedXDomain.contains(today) {
+            RuleMark(x: .value(L10n.Widget.today, today))
+                .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))
+                .foregroundStyle(.thSecondaryText.opacity(0.5))
+                .annotation(position: .top, alignment: .center, spacing: DS.Spacing.sm) {
+                    Text(L10n.Widget.today)
+                        .font(DS.Typography.labelTiny)
+                        .foregroundStyle(.thPrimaryText)
+                        .padding(.horizontal, DS.Spacing.xs)
+                        .padding(.vertical, DS.Spacing.xs)
+                        .background(.thCard, in: RoundedRectangle(cornerRadius: DS.Radius.xs))
+                        .shadow(radius: 1)
+                }
+        }
+    }
+
+    /// Axis dates for compact mode: first + last data point only (empty if <2 points).
+    private var compactAxisDates: [Date] {
+        guard let firstDate = trendPoints.first?.date,
+              let lastDate = trendPoints.last?.date,
+              firstDate != lastDate
+        else { return trendPoints.first.map { [$0.date] } ?? [] }
+        return [firstDate, lastDate]
+    }
 
     /// Calculate smart axis dates aligned with actual data points
     private var smartAxisDates: [Date] {
@@ -425,6 +455,21 @@ struct TrendChartView: View {
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.thSecondaryText)
                 }
+        }
+    }
+}
+
+// MARK: - Compact chart modifier
+
+private extension View {
+    /// Hides the Y axis when `compact` so the plot area fills the card edge-to-edge.
+    /// The X axis remains (first + last labels) — that's configured inside `TrendChartView`.
+    @ViewBuilder
+    func compactChartAxes(compact: Bool) -> some View {
+        if compact {
+            self.chartYAxis(.hidden)
+        } else {
+            self
         }
     }
 }

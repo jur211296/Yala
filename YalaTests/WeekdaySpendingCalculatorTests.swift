@@ -12,6 +12,44 @@ import Testing
 
 struct WeekdaySpendingCalculatorTests {
 
+    // MARK: - axisLabel + weekdayLongName (PP2-06c)
+
+    @Test("axisLabel is 2 letters capitalised")
+    func axisLabelIsTwoLetters() {
+        for weekday in 1...7 {
+            let entry = WeekdaySpending(weekday: weekday, total: 0, count: 0, dayOccurrences: 0)
+            let label = entry.axisLabel
+            #expect(label.count == 2)
+            #expect(label.first?.isUppercase == true)
+        }
+    }
+
+    @Test("weekdayLongName returns a non-empty capitalised string")
+    func weekdayLongNameCapitalised() {
+        for weekday in 1...7 {
+            let entry = WeekdaySpending(weekday: weekday, total: 0, count: 0, dayOccurrences: 0)
+            let name = entry.weekdayLongName
+            #expect(!name.isEmpty)
+            #expect(name.first?.isUppercase == true)
+        }
+    }
+
+    @Test("Weekday order rotates according to firstWeekday (sunday-first)")
+    func weekdayOrderSundayFirst() {
+        #expect(WeekdayBarChart.weekdayOrder(firstWeekday: 1) == [1, 2, 3, 4, 5, 6, 7])
+    }
+
+    @Test("Weekday order rotates according to firstWeekday (monday-first)")
+    func weekdayOrderMondayFirst() {
+        #expect(WeekdayBarChart.weekdayOrder(firstWeekday: 2) == [2, 3, 4, 5, 6, 7, 1])
+    }
+
+    @Test("Weekday order clamps out-of-range firstWeekday")
+    func weekdayOrderClampsInvalidInput() {
+        #expect(WeekdayBarChart.weekdayOrder(firstWeekday: 0).count == 7)
+        #expect(WeekdayBarChart.weekdayOrder(firstWeekday: 8).count == 7)
+    }
+
     // MARK: - Helpers
 
     private let calendar = Calendar.current

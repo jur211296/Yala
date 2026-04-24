@@ -40,6 +40,9 @@ struct PanelNeedData: Equatable {
 struct PanelCashFlowData: Equatable {
     var cashFlowSummary: CashFlowSummary? = nil
     var cashFlowGrouping: TrendGrouping = .day
+    /// Net flow from the previous period — drives the variation chip in `.small`.
+    /// `nil` when period == .allTime or when there's no data for the previous interval.
+    var previousNetFlow: Double? = nil
 }
 
 struct PanelBudgetsData: Equatable {
@@ -353,13 +356,15 @@ final class PanelViewModel {
             #endif
         }
 
-        var transactionsDesc = FetchDescriptor<TransactionItem>(
+        // Fetch ALL transactions — no fetchLimit. The previous 2000-row cap dropped the
+        // oldest records, which corrupted the running balance in the Trend widget
+        // (visible as a constant vertical offset vs. Statistics → Tendencias).
+        let transactionsDesc = FetchDescriptor<TransactionItem>(
             sortBy: [
                 SortDescriptor(\.date, order: .reverse),
                 SortDescriptor(\.createdAt, order: .reverse)
             ]
         )
-        transactionsDesc.fetchLimit = 2000
         do {
             let fetched = try context.fetch(transactionsDesc)
             if fetched != transactions { transactions = fetched }
@@ -462,6 +467,7 @@ final class PanelViewModel {
     var previousNeedTotalAmount: Double? { needWidget.previousTotalAmount }
     var previousNeedAmounts: [SubcategoryNeed: Double] { needWidget.previousAmounts }
     var cashFlowSummary: CashFlowSummary? { cashFlowWidget.cashFlowSummary }
+    var cashFlowPreviousNet: Double? { cashFlowWidget.previousNetFlow }
     var latestRecords: [TransactionItem] { _latestRecords }
     var topBudgetSummaries: [BudgetSummary] { budgetsWidget.topBudgetSummaries }
     var hasBudgetsButNoFavorites: Bool { budgetsWidget.hasBudgetsButNoFavorites }
@@ -1102,8 +1108,11 @@ final class PanelViewModel {
 
         // Cash Flow — Tendencias
         var newCashFlowSummary = cashFlowWidget.cashFlowSummary
+        var newCashFlowPreviousNet = cashFlowWidget.previousNetFlow
         if cashFlowVisible {
-            newCashFlowSummary = calculateCashFlowWidget(context: calcContext)
+            let cashFlowResult = calculateCashFlowWidget(context: calcContext)
+            newCashFlowSummary = cashFlowResult.summary
+            newCashFlowPreviousNet = cashFlowResult.previousNetFlow
         }
 
         // Need Trend — Tendencias
@@ -1173,7 +1182,8 @@ final class PanelViewModel {
         if cashFlowVisible {
             let newCashFlow = PanelCashFlowData(
                 cashFlowSummary: newCashFlowSummary,
-                cashFlowGrouping: calcContext.cashFlowGrouping
+                cashFlowGrouping: calcContext.cashFlowGrouping,
+                previousNetFlow: newCashFlowPreviousNet
             )
             if newCashFlow != cashFlowWidget { cashFlowWidget = newCashFlow }
         }
@@ -1638,14 +1648,39 @@ final class PanelViewModel {
     }
 
     /// Calculate cash flow summary (excludes adjustments/initial balances)
-    private func calculateCashFlowWidget(context: PanelCalculationContext) -> CashFlowSummary? {
-        return CashFlowCalculator.calculateCashFlow(
+    private func calculateCashFlowWidget(context: PanelCalculationContext) -> (summary: CashFlowSummary?, previousNetFlow: Double?) {
+        let summary = CashFlowCalculator.calculateCashFlow(
             transactions: context.expenseFilteredTransactions,
             interval: context.effectiveInterval,
             grouping: context.cashFlowGrouping,
             currencyCode: context.defaultCurrencyCode,
             converter: context.converter
         )
+
+        // Skip previous period for "All Time" (no meaningful comparison).
+        guard context.period != .allTime else {
+            return (summary, nil)
+        }
+
+        let previousInterval = PreviousPeriodHelper.previousInterval(
+            for: context.period,
+            mode: .month,
+            customRange: nil
+        )
+        let previousTransactions = context.transactionsWithoutDateFilter.filter {
+            previousInterval.contains($0.date)
+        }
+        let previousSummary = CashFlowCalculator.calculateCashFlow(
+            transactions: previousTransactions,
+            interval: previousInterval,
+            grouping: context.cashFlowGrouping,
+            currencyCode: context.defaultCurrencyCode,
+            converter: context.converter
+        )
+        let previousNet: Double? = (previousSummary.totalIncome == 0 && previousSummary.totalExpense == 0)
+            ? nil
+            : previousSummary.netFlow
+        return (summary, previousNet)
     }
 
     /// Calculate latest records (excludes adjustments/initial balances)

@@ -45,7 +45,8 @@ struct PanelFilterControlBar: View {
         ].count(where: { $0 })
 
         if activeFilterCount > 0 {
-            ScrollView(.horizontal, showsIndicators: false) {
+            PanelSection(title: L10n.Panel.FilterBar.sectionTitle) {
+                ScrollView(.horizontal, showsIndicators: false) {
                     GlassEffectContainer(spacing: DS.Spacing.sm) {
                     HStack(spacing: DS.Spacing.sm) {
                         // Exclude mode badge
@@ -264,8 +265,9 @@ struct PanelFilterControlBar: View {
                     }
                     } // GlassEffectContainer
                 }
-            .contentMargins(.horizontal, DS.Spacing.md, for: .scrollContent)
-            .scrollClipDisabled()
+                .contentMargins(.horizontal, DS.Spacing.md, for: .scrollContent)
+                .scrollClipDisabled()
+            } // PanelSection
         }
     }
 

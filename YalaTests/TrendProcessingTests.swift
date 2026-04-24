@@ -106,7 +106,24 @@ struct TrendProcessingTests {
         let domain = TrendProcessingHelper.calculateYDomain(for: points, isExpense: false)
 
         // Then
-        #expect(domain.lowerBound < -50)  // -50 - buffer
-        #expect(domain.upperBound > 100)  // 100 + buffer
+        #expect(domain.lowerBound < -50)  // -50 - padding
+        #expect(domain.upperBound > 100)  // 100 + padding
+    }
+
+    @Test("YDomain for Balance with only high positive values does not clamp to 0")
+    func yDomainBalancePositiveHighValues() {
+        // Given: all positive values far from zero (e.g. account balance)
+        let points = [
+            BarPoint(date: Date(), value: 5000),
+            BarPoint(date: Date(), value: 8000),
+        ]
+
+        // When
+        let domain = TrendProcessingHelper.calculateYDomain(for: points, isExpense: false)
+
+        // Then: domain should hug the real min/max, not start at 0
+        #expect(domain.lowerBound > 0)
+        #expect(domain.lowerBound < 5000)  // 5000 - padding
+        #expect(domain.upperBound > 8000)  // 8000 + padding
     }
 }

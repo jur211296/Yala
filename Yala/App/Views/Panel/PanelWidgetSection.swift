@@ -26,7 +26,7 @@ struct PanelWidgetRouter: View {
     var body: some View {
         switch config.type {
         case .trend:
-            PanelTrendSection(viewModel: viewModel, sessionState: sessionState, currencyCode: currencyCode)
+            PanelTrendSection(viewModel: viewModel, sessionState: sessionState, currencyCode: currencyCode, size: config.size)
         case .topSpending:
             PanelCategoriesSection(viewModel: viewModel, currencyCode: currencyCode, size: config.size, showVariations: showVariations, reduceMotion: reduceMotion)
         case .topSubcategories:
@@ -50,7 +50,9 @@ struct PanelWidgetRouter: View {
         case .weekdayBar:
             WeekdayBarPanelWidget(
                 data: viewModel.weekdayWidget.weekdaySpending,
-                currencyCode: currencyCode
+                currencyCode: currencyCode,
+                size: config.size,
+                onShowMore: { viewModel.navigateToStatistics(.insights) }
             )
         case .tagsPie:
             PanelTagsPieSection(
@@ -71,13 +73,16 @@ private struct PanelTrendSection: View {
     let viewModel: PanelViewModel
     let sessionState: SessionState
     let currencyCode: String
+    let size: WidgetSize
 
     var body: some View {
         TrendsCarouselWidget(
             viewModel: viewModel,
             sessionState: sessionState,
             currencyCode: currencyCode,
-            currentBalance: viewModel.currentBalance
+            currentBalance: viewModel.currentBalance,
+            size: size,
+            onShowMore: { viewModel.navigateToStatistics(.trends) }
         )
     }
 }
@@ -249,6 +254,7 @@ private struct PanelCashFlowSection: View {
                 interval: viewModel.currentInterval,
                 onShowDetail: { viewModel.navigateToStatistics(.trends) },
                 displayMode: viewModel.trendType,
+                previousAmount: viewModel.cashFlowPreviousNet,
                 selectedTransactionNatures: viewModel.selectedTransactionNatures,
                 isExpensesOnlyMode: sessionState.isExpensesOnlyMode
             )

@@ -312,10 +312,10 @@ struct PanelSectionPreferencesTests {
         let prefs = AppPreferences(defaults: defaults)
         let vm = Self.makeVM(with: prefs)
 
-        // `trend` doesn't support size variants — setting .large must be silently ignored.
-        let before = vm.widgetSize(.trend)
-        vm.setWidgetSize(.trend, size: before == .medium ? .large : .medium)
-        #expect(vm.widgetSize(.trend) == before)
+        // `exchangeRate` is a single-size widget — setting any other size must be silently ignored.
+        let before = vm.widgetSize(.exchangeRate)
+        vm.setWidgetSize(.exchangeRate, size: before == .medium ? .large : .medium)
+        #expect(vm.widgetSize(.exchangeRate) == before)
     }
 
     @Test func setWidgetSize_persistsForSupportedTypes() {

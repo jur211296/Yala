@@ -20,17 +20,13 @@ struct TrendsCarouselWidget: View {
     @Bindable var sessionState: SessionState
     var currencyCode: String
     var currentBalance: Double
+    var size: WidgetSize = .large
+    var onShowMore: (() -> Void)? = nil
 
     @Environment(AppPreferences.self) private var appPreferences
 
-    private enum Page: Hashable {
-        case trend
-        case comparison
-    }
-
     @Namespace private var animationNamespace
     @State private var showFilterBlockedMessage: Bool = false
-    @State private var selectedPage: Page = .trend
 
     // MARK: - Data
 
@@ -45,33 +41,119 @@ struct TrendsCarouselWidget: View {
         viewModel.processedTrendPoints.isEmpty
     }
 
-    private var comparisonData: PanelPeriodComparisonData {
-        viewModel.periodComparisonWidget
-    }
-
     // MARK: - Body
 
     var body: some View {
         let _ = appPreferences.decimalPlaces
         let _ = appPreferences.currencyDisplayFormat
 
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            header
-            carousel
+        if size == .small {
+            smallBody
+        } else {
+            VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                header
+                trendPage
+                    .frame(height: 170)
+            }
+            .solidCard(padding: DS.Card.paddingCompact)
         }
-        .solidCard(padding: DS.Card.paddingCompact)
     }
 
-    // MARK: - Header (shared across pages)
+    // MARK: - Small layout (PP2-06c)
+    // Forces .balance metric regardless of the user's global trend type selection:
+    // the `.small` variant is a sparkline of the saldo, not a metric-switcher.
+
+    private var smallBody: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            PanelSmallWidgetHeader(
+                title: L10n.TrendType.balance,
+                accessibilityLabel: L10n.TrendType.balance,
+                action: onShowMore
+            )
+
+            if hasNoTrendData {
+                YalaEmptyState(
+                    icon: "chart.line.uptrend.xyaxis",
+                    title: L10n.Empty.noData,
+                    style: .widget
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                    Text(
+                        YalaFormatter.currency(
+                            value: viewModel.trendFinalBalance,
+                            currencyCode: currencyCode,
+                            forceSign: true
+                        )
+                    )
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.thPrimaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
+                    // Variation chip — only when the global metric is balance,
+                    // otherwise the comparison data belongs to a different metric.
+                    if viewModel.trendType == .balance,
+                       let delta = viewModel.periodComparisonWidget.deltaPercent {
+                        VariationChip(
+                            variation: delta,
+                            size: .small,
+                            isExpenseContext: false
+                        )
+                    }
+                }
+
+                TrendChartView(
+                    trendPoints: viewModel.processedTrendPoints,
+                    rawPoints: viewModel.rawTrendPoints,
+                    yDomain: viewModel.processedYDomain,
+                    grouping: viewModel.trendGrouping,
+                    interval: viewModel.currentInterval,
+                    currencyCode: currencyCode,
+                    trendType: .balance,
+                    focusedDate: .constant(nil),   // scrubbing disabled in .small
+                    period: viewModel.currentPeriod,
+                    chartHeight: 90,
+                    compact: true
+                )
+                .allowsHitTesting(false)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .solidCard(padding: DS.Card.paddingCompact)
+        .frame(height: WidgetSize.smallHeight)
+    }
+
+    // MARK: - Header
 
     private var header: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                Text(pageTitle)
+                Text(trendTitle)
                     .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.thPrimaryText)
 
-                pageSubtitle
+                if !hasNoTrendData {
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                        Text(currentKPIValue)
+                            .font(DS.Typography.title)
+                            .foregroundStyle(.thPrimaryText)
+
+                        // "vs <previous total>" label — mirrors the CashFlow header pattern.
+                        if let prevTotal = previousKPIValue {
+                            Text("vs \(YalaFormatter.number(value: prevTotal))")
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.thSecondaryText)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                        }
+
+                        // Variation chip right of the "vs" label.
+                        variationChip
+                    }
+                    .padding(.top, DS.Spacing.xs)
+                }
             }
 
             Spacer()
@@ -82,48 +164,28 @@ struct TrendsCarouselWidget: View {
         }
     }
 
+    /// Previous-period total for the currently selected metric, used to render the
+    /// "vs …" label next to the KPI. Nil when comparison is unsupported (e.g. `.allTime`).
+    private var previousKPIValue: Double? {
+        let data = viewModel.periodComparisonWidget
+        guard data.supportsComparison else { return nil }
+        return data.previousTotal
+    }
+
+    /// Delta % chip rendered inline to the right of the "vs …" label.
     @ViewBuilder
-    private var pageSubtitle: some View {
-        switch selectedPage {
-        case .trend where !hasNoTrendData:
-            Text(currentKPIValue)
-                .font(DS.Typography.title)
-                .foregroundStyle(.thPrimaryText)
-                .padding(.top, DS.Spacing.xs)
-        case .comparison:
-            if let subtitle = comparisonSubtitle {
-                Text(subtitle)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.thSecondaryText)
-                    .padding(.top, DS.Spacing.xs)
-            }
-        default:
-            EmptyView()
+    private var variationChip: some View {
+        let data = viewModel.periodComparisonWidget
+        if data.supportsComparison, let delta = data.deltaPercent {
+            VariationChip(
+                variation: delta,
+                size: .small,
+                isExpenseContext: data.trendType == .expense
+            )
         }
     }
 
-    // MARK: - Carousel
-
-    private var carousel: some View {
-        TabView(selection: $selectedPage) {
-            VStack(spacing: 0) {
-                trendPage
-                Spacer(minLength: 0)
-            }
-            .tag(Page.trend)
-
-            VStack(spacing: 0) {
-                comparisonPage
-                Spacer(minLength: 0)
-            }
-            .tag(Page.comparison)
-        }
-        .tabViewStyle(.page(indexDisplayMode: .always))
-        .indexViewStyle(.page(backgroundDisplayMode: .never))
-        .frame(height: 260)
-    }
-
-    // MARK: - Page 1 — Trend chart
+    // MARK: - Trend chart page
 
     @ViewBuilder
     private var trendPage: some View {
@@ -145,49 +207,12 @@ struct TrendsCarouselWidget: View {
                 trendType: viewModel.dataTrendType,
                 focusedDate: $viewModel.focusedDate,
                 period: viewModel.currentPeriod,
-                chartHeight: 220  // Match PeriodComparisonChartView hardcoded height
+                chartHeight: 170
             )
         }
     }
 
-    // MARK: - Page 2 — Period comparison chart
-
-    @ViewBuilder
-    private var comparisonPage: some View {
-        let data = comparisonData
-        if !data.supportsComparison {
-            YalaEmptyState(
-                icon: "calendar",
-                title: L10n.Panel.PeriodComparison.requiresPeriod,
-                style: .widget
-            )
-            .frame(maxWidth: .infinity)
-        } else if data.currentPoints.isEmpty && data.previousPoints.isEmpty {
-            YalaEmptyState(
-                icon: "chart.xyaxis.line",
-                title: L10n.Widget.noExpensesPeriod,
-                style: .widget
-            )
-            .frame(maxWidth: .infinity)
-        } else {
-            PeriodComparisonChartView(
-                currentPeriodPoints: data.currentPoints,
-                previousPeriodPoints: data.previousPoints,
-                yDomain: data.yDomain,
-                grouping: data.grouping,
-                currentInterval: data.currentInterval,
-                previousInterval: data.previousInterval,
-                currencyCode: currencyCode,
-                trendType: data.trendType,
-                chartHeight: 160,
-                period: data.period,
-                comparisonMode: data.comparisonMode,
-                showPreviousPeriod: true
-            )
-        }
-    }
-
-    // MARK: - Metric selector (shared — writes to SessionState SSOT)
+    // MARK: - Metric selector (writes to SessionState SSOT)
 
     private var metricSelector: some View {
         HStack(spacing: DS.Spacing.sm) {
@@ -243,20 +268,13 @@ struct TrendsCarouselWidget: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Titles & subtitles
+    // MARK: - Title + KPI
 
-    private var pageTitle: String {
-        switch selectedPage {
-        case .comparison:
-            return comparisonData.comparisonMode == .year
-                ? L10n.Statistics.vsPreviousYear
-                : L10n.Statistics.vsPreviousPeriod
-        case .trend:
-            switch viewModel.trendType {
-            case .balance: return L10n.Trend.balanceTitle
-            case .income: return L10n.Trend.incomeTitle
-            case .expense: return L10n.Trend.expenseTitle
-            }
+    private var trendTitle: String {
+        switch viewModel.trendType {
+        case .balance: return L10n.Trend.balanceTitle
+        case .income: return L10n.Trend.incomeTitle
+        case .expense: return L10n.Trend.expenseTitle
         }
     }
 
@@ -277,61 +295,4 @@ struct TrendsCarouselWidget: View {
         return YalaFormatter.currency(value: value, currencyCode: currencyCode)
     }
 
-    /// "↑ 12% vs marzo" / "↓ 5% vs diciembre 26" / "= vs 2025" / nil if no data.
-    private var comparisonSubtitle: String? {
-        let data = comparisonData
-        guard data.supportsComparison, let delta = data.deltaPercent else { return nil }
-
-        let percent = formatPercent(delta)
-        let label = vsLabel(
-            previousStart: data.previousInterval.start,
-            currentStart: data.currentInterval.start,
-            mode: data.comparisonMode
-        )
-        return "\(percent) \(label)"
-    }
-
-    // MARK: - Formatting helpers
-
-    private func formatPercent(_ value: Double) -> String {
-        let absValue = Swift.abs(value)
-        let symbol: String
-        if value > 0.5 { symbol = "↑" }
-        else if value < -0.5 { symbol = "↓" }
-        else { symbol = "=" }
-        let pct = String(format: "%.0f%%", absValue)
-        return "\(symbol) \(pct)"
-    }
-
-    private func monthLongName(for date: Date) -> String {
-        let fmt = DateFormatter()
-        fmt.setLocalizedDateFormatFromTemplate("LLLL")
-        return fmt.string(from: date)
-    }
-
-    private func yearShort(for date: Date) -> String {
-        let fmt = DateFormatter()
-        fmt.setLocalizedDateFormatFromTemplate("yy")
-        return fmt.string(from: date)
-    }
-
-    private func yearFull(for date: Date) -> String {
-        let fmt = DateFormatter()
-        fmt.setLocalizedDateFormatFromTemplate("yyyy")
-        return fmt.string(from: date)
-    }
-
-    private func vsLabel(previousStart: Date, currentStart: Date, mode: ComparisonMode) -> String {
-        let cal = Calendar.current
-        if mode == .year {
-            return L10n.Panel.PeriodComparison.vs(yearFull(for: previousStart))
-        }
-        let previousYear = cal.component(.year, from: previousStart)
-        let currentYear = cal.component(.year, from: currentStart)
-        let monthName = monthLongName(for: previousStart)
-        if previousYear == currentYear {
-            return L10n.Panel.PeriodComparison.vs(monthName)
-        }
-        return L10n.Panel.PeriodComparison.vsWithYear(monthName, yearShort(for: previousStart))
-    }
 }

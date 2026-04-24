@@ -41,13 +41,19 @@
 
 // P20-11: Accounts collapse
 // Groupe repliable Comptes + Santé financière
-"panel.panorama.title" = "Ton panorama";
-"panel.panorama.expand" = "Développer ton panorama";
-"panel.panorama.collapse" = "Réduire ton panorama";
+"panel.panorama.title" = "Ton actualité";
+"panel.panorama.expand" = "Développer ton actualité";
+"panel.panorama.collapse" = "Réduire ton actualité";
 "panel.panorama.collapsedValue" = "Réduit";
 "panel.panorama.expandedValue" = "Développé";
 
 "panel.weekdaySubtitle" = "Moyenne par jour de la semaine";
+"panel.weekdayBar.smallTitle" = "Moyenne quotidienne";
+"panel.weekdayBar.largeTitle" = "Dépense moyenne par jour de la semaine";
+"panel.weekdayBar.perWeekSuffix" = "/semaine";
+"panel.filterBar.sectionTitle" = "Filtres appliqués";
+"panel.cashFlowSmall.availableFormat" = "Il te reste %d%% de tes revenus disponibles (%@)";
+"panel.cashFlowSmall.overspentFormat" = "Tu as dépensé %d%% de plus que tes revenus (%@)";
 "panel.periodComparison.vs %@" = "vs %@";
 "panel.periodComparison.vsWithYear %@ %@" = "vs %@ %@";
 "panel.periodComparison.requiresPeriod" = "Choisis un mois ou une période à comparer";

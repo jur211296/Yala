@@ -41,13 +41,19 @@
 
 // P20-11: Accounts collapse
 // Grupo recolhível Contas + Saúde financeira
-"panel.panorama.title" = "Teu panorama";
-"panel.panorama.expand" = "Expandir teu panorama";
-"panel.panorama.collapse" = "Recolher teu panorama";
+"panel.panorama.title" = "Tua atualidade";
+"panel.panorama.expand" = "Expandir tua atualidade";
+"panel.panorama.collapse" = "Recolher tua atualidade";
 "panel.panorama.collapsedValue" = "Recolhido";
 "panel.panorama.expandedValue" = "Expandido";
 
 "panel.weekdaySubtitle" = "Média por dia da semana";
+"panel.weekdayBar.smallTitle" = "Média diária";
+"panel.weekdayBar.largeTitle" = "Média de gastos por dia da semana";
+"panel.weekdayBar.perWeekSuffix" = "/semana";
+"panel.filterBar.sectionTitle" = "Filtros aplicados";
+"panel.cashFlowSmall.availableFormat" = "Tens %d%% da tua receita disponível (%@)";
+"panel.cashFlowSmall.overspentFormat" = "Gastaste %d%% mais do que ganhaste (%@)";
 "panel.periodComparison.vs %@" = "vs %@";
 "panel.periodComparison.vsWithYear %@ %@" = "vs %@ %@";
 "panel.periodComparison.requiresPeriod" = "Escolha um mês ou período para comparar";

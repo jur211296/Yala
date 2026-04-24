@@ -65,18 +65,18 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
 
     var supportedSizes: [WidgetSize] {
         switch self {
-        case .trend: return [.medium]  // Tamaño único (compacta)
-        case .cashFlow: return [.medium, .large]
+        case .trend: return [.small, .large]  // PP2-06c
+        case .cashFlow: return [.small, .medium, .large]  // PP2-06c
         case .topSpending: return [.small, .medium, .large]  // PP2-05 piloto
         case .topSubcategories: return [.small, .medium, .large]  // PP2-06
         case .categoriesPie: return [.small, .large]  // PP2-05 piloto
         case .subcategoriesPie: return [.small, .large]  // PP2-06
         case .latestRecords: return [.medium]  // Tamaño único
-        case .expensesByNeed: return [.medium, .large]
+        case .expensesByNeed: return [.small, .medium, .large]  // PP2-06c
         case .exchangeRate: return [.medium]  // Tamaño único
         case .budgets: return [.small, .medium, .large]  // PP2-06b
         case .scheduledPayments: return [.small, .medium]  // PP2-06b
-        case .weekdayBar: return [.large]  // Tamaño único (full-width)
+        case .weekdayBar: return [.small, .large]  // PP2-06c
         case .tagsPie: return [.small, .large]  // PP2-06
         }
     }

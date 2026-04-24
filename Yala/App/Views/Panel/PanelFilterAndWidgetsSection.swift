@@ -19,6 +19,7 @@ struct PanelFilterAndWidgetsSection: View {
     @Binding var showBudgetFavoritesSettings: Bool
     @Binding var accountFormSheet: AccountFormSheet?
     @Binding var showUpgradeForAccounts: Bool
+    @Binding var showCustomPeriodPicker: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
@@ -39,6 +40,14 @@ struct PanelFilterAndWidgetsSection: View {
                     showUpgradeForAccounts: $showUpgradeForAccounts
                 )
             }
+
+            // Filter bar sits between Tu panorama and the thematic sections —
+            // period + chips travel with the widgets they affect, not with the hero.
+            PanelFilterControlBar(
+                viewModel: viewModel,
+                sessionState: sessionState,
+                showCustomPeriodPicker: $showCustomPeriodPicker
+            )
 
             let thematicSections = visibleSections.filter {
                 $0 != .accounts && $0 != .health

@@ -201,14 +201,22 @@ struct PanelSectionPreferencesSheet: View {
                 set: { viewModel.setWidgetSize(type, size: $0) }
             )
         ) {
-            Text(L10n.Panel.WidgetSize.small).tag(WidgetSize.small)
-            Text(L10n.Panel.WidgetSize.medium).tag(WidgetSize.medium)
-            Text(L10n.Panel.WidgetSize.large).tag(WidgetSize.large)
+            ForEach(type.supportedSizes, id: \.self) { size in
+                Text(sizeLabel(size)).tag(size)
+            }
         } label: {
             EmptyView()
         }
         .pickerStyle(.segmented)
         .disabled(disabled)
         .accessibilityLabel(type.displayName)
+    }
+
+    private func sizeLabel(_ size: WidgetSize) -> String {
+        switch size {
+        case .small: return L10n.Panel.WidgetSize.small
+        case .medium: return L10n.Panel.WidgetSize.medium
+        case .large: return L10n.Panel.WidgetSize.large
+        }
     }
 }

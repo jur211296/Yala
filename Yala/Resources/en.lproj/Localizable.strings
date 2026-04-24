@@ -41,13 +41,19 @@
 
 // P20-11: Accounts collapse
 // Collapsible group Accounts + Financial Health
-"panel.panorama.title" = "Your overview";
-"panel.panorama.expand" = "Expand your overview";
-"panel.panorama.collapse" = "Collapse your overview";
+"panel.panorama.title" = "Your status";
+"panel.panorama.expand" = "Expand your status";
+"panel.panorama.collapse" = "Collapse your status";
 "panel.panorama.collapsedValue" = "Collapsed";
 "panel.panorama.expandedValue" = "Expanded";
 
 "panel.weekdaySubtitle" = "Average by day of the week";
+"panel.weekdayBar.smallTitle" = "Daily average";
+"panel.weekdayBar.largeTitle" = "Average spend by weekday";
+"panel.weekdayBar.perWeekSuffix" = "/week";
+"panel.filterBar.sectionTitle" = "Applied filters";
+"panel.cashFlowSmall.availableFormat" = "You have %d%% of your income available (%@)";
+"panel.cashFlowSmall.overspentFormat" = "You spent %d%% more than you earned (%@)";
 "panel.periodComparison.vs %@" = "vs %@";
 "panel.periodComparison.vsWithYear %@ %@" = "vs %@ %@";
 "panel.periodComparison.requiresPeriod" = "Pick a month or period to compare";

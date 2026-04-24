@@ -101,10 +101,10 @@ extension WidgetType {
     var supportsSize: Bool {
         switch self {
         case .cashFlow, .expensesByNeed, .topSpending, .topSubcategories,
-             .categoriesPie, .subcategoriesPie, .budgets, .scheduledPayments:
+             .categoriesPie, .subcategoriesPie, .budgets, .scheduledPayments,
+             .trend, .weekdayBar:
             return true
-        case .trend, .latestRecords, .exchangeRate, .tagsPie,
-             .weekdayBar:
+        case .latestRecords, .exchangeRate, .tagsPie:
             return false
         }
     }

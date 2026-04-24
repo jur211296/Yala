@@ -41,13 +41,19 @@
 
 // P20-11: Accounts collapse
 // Gruppo comprimibile Conti + Salute finanziaria
-"panel.panorama.title" = "La tua panoramica";
-"panel.panorama.expand" = "Espandi la tua panoramica";
-"panel.panorama.collapse" = "Comprimi la tua panoramica";
+"panel.panorama.title" = "La tua attualità";
+"panel.panorama.expand" = "Espandi la tua attualità";
+"panel.panorama.collapse" = "Comprimi la tua attualità";
 "panel.panorama.collapsedValue" = "Compresso";
 "panel.panorama.expandedValue" = "Espanso";
 
 "panel.weekdaySubtitle" = "Media per giorno della settimana";
+"panel.weekdayBar.smallTitle" = "Media giornaliera";
+"panel.weekdayBar.largeTitle" = "Spesa media per giorno della settimana";
+"panel.weekdayBar.perWeekSuffix" = "/settimana";
+"panel.filterBar.sectionTitle" = "Filtri applicati";
+"panel.cashFlowSmall.availableFormat" = "Hai il %d%% delle tue entrate disponibile (%@)";
+"panel.cashFlowSmall.overspentFormat" = "Hai speso il %d%% in più di quello che hai guadagnato (%@)";
 "panel.periodComparison.vs %@" = "vs %@";
 "panel.periodComparison.vsWithYear %@ %@" = "vs %@ %@";
 "panel.periodComparison.requiresPeriod" = "Scegli un mese o un periodo da confrontare";

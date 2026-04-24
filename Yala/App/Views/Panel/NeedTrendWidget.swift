@@ -61,6 +61,19 @@ struct NeedTrendWidget: View {
         PreviousPeriodHelper.previousInterval(for: period, mode: comparisonMode, customRange: nil)
     }
 
+    /// Totals per need across `trendPoints` — single-pass aggregation reused by the
+    /// `.small` and `.medium` layouts instead of 4 separate `.reduce(…)` calls.
+    private var needTotals: (essential: Double, priority: Double, optional: Double, unclassified: Double) {
+        var e = 0.0, p = 0.0, o = 0.0, u = 0.0
+        for point in trendPoints {
+            e += point.essential
+            p += point.priority
+            o += point.optional
+            u += point.unclassified
+        }
+        return (e, p, o, u)
+    }
+
     private var comparisonText: String {
         PreviousPeriodHelper.formatComparisonText(
             previousInterval: previousInterval,
@@ -111,6 +124,114 @@ struct NeedTrendWidget: View {
     }
 
     var body: some View {
+        if size == .small {
+            smallBody
+        } else {
+            regularBody
+        }
+    }
+
+    // MARK: - Small layout (PP2-06c)
+
+    private var smallBody: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            PanelSmallWidgetHeader(
+                title: L10n.Widget.distributionByNeed,
+                accessibilityLabel: L10n.Widget.distributionByNeed,
+                action: onShowDetail
+            )
+
+            if isIncomeMode {
+                Text(L10n.Need.incomeNotApplicable)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if trendPoints.isEmpty {
+                YalaEmptyState(icon: "chart.bar.fill", title: L10n.Empty.noExpenses, style: .widget)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                smallContent
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .solidCard(padding: DS.Card.paddingCompact, radius: DS.Radius.lg)
+        .frame(height: WidgetSize.smallHeight)
+    }
+
+    private var smallContent: some View {
+        let totals = needTotals
+
+        // Always show the 3 canonical needs; add unclassified only if it has a value.
+        var entries: [(need: SubcategoryNeed, amount: Double)] = [
+            (.essential, totals.essential),
+            (.priority, totals.priority),
+            (.optional, totals.optional),
+        ]
+        if totals.unclassified > 0 {
+            entries.append((.unclassified, totals.unclassified))
+        }
+
+        let total = entries.reduce(0) { $0 + $1.amount }
+
+        return VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                Text(YalaFormatter.currency(value: total, currencyCode: currencyCode))
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.thPrimaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
+                if showVariationHeader, let variation {
+                    VariationChip(
+                        variation: variation,
+                        size: .small,
+                        isExpenseContext: true
+                    )
+                }
+            }
+
+            VStack(spacing: DS.Spacing.md) {
+                ForEach(entries, id: \.need) { entry in
+                    smallNeedRow(
+                        need: entry.need,
+                        amount: entry.amount,
+                        ratio: total > 0 ? (entry.amount / total) : 0
+                    )
+                }
+            }
+        }
+    }
+
+    private func smallNeedRow(
+        need: SubcategoryNeed,
+        amount: Double,
+        ratio: Double
+    ) -> some View {
+        let percent = Int((ratio * 100).rounded())
+        let dimmed = selectedNeed != nil && selectedNeed != need
+        return PanelSmallBarRow(
+            label: "\(need.displayName) · \(percent)%",
+            amount: amount,
+            ratio: ratio,
+            color: color(for: need),
+            currencyCode: currencyCode,
+            dimmed: dimmed,
+            onTap: { onSelectNeed(need) }
+        )
+    }
+
+    private func color(for need: SubcategoryNeed) -> Color {
+        switch need {
+        case .essential:    return .essentialNeed
+        case .priority:     return .priorityNeed
+        case .optional:     return .optionalNeed
+        case .unclassified: return DS.Semantic.disabledForeground
+        }
+    }
+
+    // MARK: - Medium / Large (existing)
+
+    private var regularBody: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             // Header - simplified when in income mode or no data (no KPI makes sense)
             HStack(alignment: .top) {
@@ -214,11 +335,12 @@ struct NeedTrendWidget: View {
         } else {
             // Compact: Summary Bars Layout (like CashFlowWidget)
             VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                // Calculate totals and max for normalization
-                let essentialTotal = trendPoints.reduce(0) { $0 + $1.essential }
-                let priorityTotal = trendPoints.reduce(0) { $0 + $1.priority }
-                let optionalTotal = trendPoints.reduce(0) { $0 + $1.optional }
-                let unclassifiedTotal = trendPoints.reduce(0) { $0 + $1.unclassified }
+                // Single-pass totals — reused by Essential/Priority/Optional/Unclassified bars.
+                let totals = needTotals
+                let essentialTotal = totals.essential
+                let priorityTotal = totals.priority
+                let optionalTotal = totals.optional
+                let unclassifiedTotal = totals.unclassified
                 let maxVal = max(
                     essentialTotal, max(priorityTotal, max(optionalTotal, unclassifiedTotal)))
 

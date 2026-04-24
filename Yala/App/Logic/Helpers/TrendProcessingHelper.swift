@@ -68,12 +68,12 @@ struct TrendProcessingHelper {
             let safeMax = max(0, abs(maxVal))
             return 0...(safeMax + topBuffer)
         } else {
-            let safeMin = min(minVal, 0)
-            let safeMax = max(maxVal, 0)
-            let bottomBuffer = (safeMin < 0) ? abs(safeMin) * 0.05 : 0
-
-            let lowerBound = safeMin - bottomBuffer
-            let upperBound = max(lowerBound, safeMax + topBuffer)
+            // Adaptive domain around real min/max (balance/income).
+            // Replicates the comparison chart logic so the line is never
+            // flattened by a forced 0 baseline when all values are high positive.
+            let padding = max((maxVal - minVal) * 0.1, 100)
+            let lowerBound = minVal - padding
+            let upperBound = max(lowerBound + 1, maxVal + padding)
             return lowerBound...upperBound
         }
     }

@@ -41,13 +41,19 @@
 
 // P20-11: Accounts collapse
 // Grupo colapsable Cuentas + Salud financiera
-"panel.panorama.title" = "Tu panorama";
-"panel.panorama.expand" = "Expandir tu panorama";
-"panel.panorama.collapse" = "Colapsar tu panorama";
+"panel.panorama.title" = "Tu actualidad";
+"panel.panorama.expand" = "Expandir tu actualidad";
+"panel.panorama.collapse" = "Colapsar tu actualidad";
 "panel.panorama.collapsedValue" = "Colapsado";
 "panel.panorama.expandedValue" = "Expandido";
 
 "panel.weekdaySubtitle" = "Promedio por día de la semana";
+"panel.weekdayBar.smallTitle" = "Promedio diario";
+"panel.weekdayBar.largeTitle" = "Promedio de gasto por día de semana";
+"panel.weekdayBar.perWeekSuffix" = "/semana";
+"panel.filterBar.sectionTitle" = "Filtros aplicados";
+"panel.cashFlowSmall.availableFormat" = "Te queda disponible el %d%% de tus ingresos (%@)";
+"panel.cashFlowSmall.overspentFormat" = "Gastaste un %d%% más de lo que ingresaste (%@)";
 "panel.periodComparison.vs %@" = "vs %@";
 "panel.periodComparison.vsWithYear %@ %@" = "vs %@ %@";
 "panel.periodComparison.requiresPeriod" = "Elige un mes o periodo para comparar";

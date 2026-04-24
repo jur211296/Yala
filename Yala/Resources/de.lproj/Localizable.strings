@@ -41,13 +41,19 @@
 
 // P20-11: Accounts collapse
 // Einklappbare Gruppe Konten + Finanzielle Gesundheit
-"panel.panorama.title" = "Dein Überblick";
-"panel.panorama.expand" = "Deinen Überblick einblenden";
-"panel.panorama.collapse" = "Deinen Überblick ausblenden";
+"panel.panorama.title" = "Dein aktueller Stand";
+"panel.panorama.expand" = "Aktuellen Stand einblenden";
+"panel.panorama.collapse" = "Aktuellen Stand ausblenden";
 "panel.panorama.collapsedValue" = "Ausgeblendet";
 "panel.panorama.expandedValue" = "Eingeblendet";
 
 "panel.weekdaySubtitle" = "Durchschnitt pro Wochentag";
+"panel.weekdayBar.smallTitle" = "Täglicher Durchschnitt";
+"panel.weekdayBar.largeTitle" = "Durchschnittsausgabe pro Wochentag";
+"panel.weekdayBar.perWeekSuffix" = "/Woche";
+"panel.filterBar.sectionTitle" = "Angewendete Filter";
+"panel.cashFlowSmall.availableFormat" = "Dir bleiben %d%% deines Einkommens übrig (%@)";
+"panel.cashFlowSmall.overspentFormat" = "Du hast %d%% mehr ausgegeben als eingenommen (%@)";
 "panel.periodComparison.vs %@" = "vs %@";
 "panel.periodComparison.vsWithYear %@ %@" = "vs %@ %@";
 "panel.periodComparison.requiresPeriod" = "Wähle einen Monat oder Zeitraum für den Vergleich";

@@ -18,11 +18,27 @@ struct WeekdaySpending: Identifiable, Equatable {
     /// Average spending per calendar day (e.g., per Monday), not per transaction
     var average: Double { dayOccurrences > 0 ? total / Double(dayOccurrences) : 0 }
 
-    /// Localized short weekday name (Mon, Tue, etc.)
+    /// Localized short weekday name (Mon, Tue, etc.) — used by VoiceOver.
     var shortName: String {
         let symbols = Calendar.current.shortWeekdaySymbols
         guard weekday >= 1, weekday <= 7 else { return "" }
         return symbols[weekday - 1]
+    }
+
+    /// Two-letter axis label capitalised (Lu, Ma, Mi, Ju, Vi, Sá, Do) — disambiguates
+    /// martes/miércoles that collapse to "M" with the system's one-letter symbols.
+    var axisLabel: String {
+        let symbols = Calendar.current.shortWeekdaySymbols
+        guard weekday >= 1, weekday <= 7 else { return "" }
+        return String(symbols[weekday - 1].prefix(2)).capitalized
+    }
+
+    /// Full weekday name capitalised (Lunes, Martes, ...) — used by the `.small`
+    /// "priciest day" KPI.
+    var weekdayLongName: String {
+        let symbols = Calendar.current.weekdaySymbols
+        guard weekday >= 1, weekday <= 7 else { return "" }
+        return symbols[weekday - 1].capitalized
     }
 }
 

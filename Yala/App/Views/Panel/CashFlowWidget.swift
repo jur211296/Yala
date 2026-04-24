@@ -318,6 +318,124 @@ struct CashFlowWidget: View {
     }
 
     var body: some View {
+        if size == .small {
+            smallBody
+        } else {
+            regularBody
+        }
+    }
+
+    // MARK: - Small layout (PP2-06c)
+    //
+    // Simplified to mirror `.medium`: header + net KPI + two normalized horizontal bars
+    // (income / expense). No temporal chart — the `.small` card is too narrow to display
+    // bucketed bars legibly; the full chart lives in `.medium`/`.large`.
+
+    private var smallBody: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            PanelSmallWidgetHeader(
+                title: L10n.CashFlow.title,
+                accessibilityLabel: L10n.CashFlow.title,
+                action: onShowDetail
+            )
+
+            if hasNoData {
+                YalaEmptyState(
+                    icon: "chart.bar.xaxis",
+                    title: L10n.Widget.noExpensesPeriod,
+                    style: .widget
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                    Text(
+                        YalaFormatter.currency(
+                            value: summary.netFlow,
+                            currencyCode: summary.currencyCode,
+                            forceSign: true
+                        )
+                    )
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.thPrimaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
+                    if previousAmount != nil {
+                        VariationChip(
+                            currentAmount: summary.netFlow,
+                            previousAmount: previousAmount,
+                            size: .small,
+                            showNAWhenNil: false,
+                            isExpenseContext: false
+                        )
+                    }
+                }
+
+                smallSummaryBars
+
+                if let insight = smallCashFlowInsight {
+                    Text(insight)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.thSecondaryText)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.85)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .solidCard(padding: DS.Card.paddingCompact, radius: DS.Radius.lg)
+        .frame(height: WidgetSize.smallHeight)
+    }
+
+    /// Brand-voice insight text shown at the bottom of the `.small` card.
+    /// Only appears when there's income to compare against; otherwise `nil`.
+    private var smallCashFlowInsight: String? {
+        guard summary.totalIncome > 0 else { return nil }
+        let ratio = summary.netFlow / summary.totalIncome
+        let percent = Int((abs(ratio) * 100).rounded())
+        let amount = YalaFormatter.currency(
+            value: abs(summary.netFlow),
+            currencyCode: summary.currencyCode
+        )
+        if ratio >= 0 {
+            return String(format: L10n.Panel.CashFlowSmall.availableFormat, percent, amount)
+        } else {
+            return String(format: L10n.Panel.CashFlowSmall.overspentFormat, percent, amount)
+        }
+    }
+
+    /// Income + Expense horizontal bars normalized against the larger of the two totals.
+    /// Copies the visual pattern of the `.medium` layout but without the side labels,
+    /// so the compact card stays readable.
+    private var smallSummaryBars: some View {
+        let maxVal = max(summary.totalIncome, summary.totalExpense)
+
+        return VStack(spacing: DS.Spacing.sm) {
+            if !isExpensesOnlyMode {
+                PanelSmallBarRow(
+                    label: L10n.CashFlow.income,
+                    amount: summary.totalIncome,
+                    ratio: maxVal > 0 ? (summary.totalIncome / maxVal) : 0,
+                    color: .incomeGraph,
+                    currencyCode: summary.currencyCode,
+                    dimmed: isIncomeDimmed
+                )
+            }
+            PanelSmallBarRow(
+                label: L10n.CashFlow.expense,
+                amount: summary.totalExpense,
+                ratio: maxVal > 0 ? (summary.totalExpense / maxVal) : 0,
+                color: .expenseGraph,
+                currencyCode: summary.currencyCode,
+                dimmed: isExpenseDimmed
+            )
+        }
+    }
+
+    // MARK: - Regular (medium / large — existing)
+
+    private var regularBody: some View {
         VStack(spacing: DS.Spacing.none) {
             // Header with title, subtitle and value
             HStack(alignment: .top) {
@@ -770,7 +888,7 @@ struct CashFlowWidget: View {
                     // Expense Group
                     VStack(spacing: DS.Spacing.xs) {
                         HStack {
-                            Text(L10n.Transaction.expense)
+                            Text(L10n.CashFlow.expense)
                                 .font(DS.Typography.subheadline)
                                 .foregroundStyle(.thSecondaryText)
                             Spacer()

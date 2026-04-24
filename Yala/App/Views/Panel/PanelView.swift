@@ -378,18 +378,9 @@ struct PanelView: View {
                         // Contextual guide for panel (first visit)
                         ContextualGuideBanner.panel()
 
-                        // P20-11: FilterControlBar extracted from the thematic
-                        // sections wrapper so it sits directly below the Hero
-                        // and above every section. Period selector + chips.
-                        PanelFilterControlBar(
-                            viewModel: viewModel,
-                            sessionState: sessionState,
-                            showCustomPeriodPicker: $sheets.showCustomPeriodPicker
-                        )
-
-                        // P20-11: thematic sections now include Accounts and
-                        // Latest Records in the switch. `PanelFilterAndWidgetsSection`
-                        // applies the auto-hide filter against
+                        // Thematic sections wrapper renders: Tu panorama
+                        // (accounts + health), then the filter bar (period + chips),
+                        // then each thematic section. Auto-hide uses
                         // `viewModel.hasAnyVisibleWidget(in:)`.
                         PanelFilterAndWidgetsSection(
                             viewModel: viewModel,
@@ -400,7 +391,8 @@ struct PanelView: View {
                             sectionPrefsPresentation: $sheets.sectionPrefsPresentation,
                             showBudgetFavoritesSettings: $sheets.showBudgetFavoritesSettings,
                             accountFormSheet: $sheets.accountFormSheet,
-                            showUpgradeForAccounts: $sheets.showUpgradeForAccounts
+                            showUpgradeForAccounts: $sheets.showUpgradeForAccounts,
+                            showCustomPeriodPicker: $sheets.showCustomPeriodPicker
                         )
                     }
                     .padding(.top, DS.Spacing.lg)

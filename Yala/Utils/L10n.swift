@@ -170,6 +170,42 @@ enum L10n {
             ls("panel.weekdaySubtitle", comment: "Panel weekday widget subtitle — follows selected period")
         }
 
+        enum WeekdayBar {
+            /// Title shown in `.small` variant of the weekday bar widget.
+            static var smallTitle: String {
+                ls("panel.weekdayBar.smallTitle", comment: "Weekday bar widget title shown in the .small size — 'Day of the week'")
+            }
+            /// Title shown in `.large` / full-width variant of the weekday bar widget.
+            static var largeTitle: String {
+                ls("panel.weekdayBar.largeTitle", comment: "Weekday bar widget full-width title — 'Average spend by weekday'")
+            }
+            /// Inline suffix after the weekly KPI amount (e.g. "PEN 1,234 /semana").
+            static var perWeekSuffix: String {
+                ls("panel.weekdayBar.perWeekSuffix", comment: "Inline suffix after the weekly average amount in .small")
+            }
+        }
+
+        enum FilterBar {
+            /// Section title shown above the active-filter chips when at least
+            /// one filter is applied. Hidden entirely when there are no chips.
+            static var sectionTitle: String {
+                ls("panel.filterBar.sectionTitle", comment: "Section title for the Panel's active-filter chips strip — 'Applied filters'")
+            }
+        }
+
+        enum CashFlowSmall {
+            /// Positive net flow. Args: percent (Int), formatted amount (String).
+            /// Example (ES): "Te queda disponible el 47% de tus ingresos (PEN 2,888)".
+            static var availableFormat: String {
+                ls("panel.cashFlowSmall.availableFormat", comment: "Cash flow small widget insight — net positive relative to income")
+            }
+            /// Negative net flow. Args: percent (Int), formatted amount (String).
+            /// Example (ES): "Gastaste un 12% más de lo que ingresaste (PEN 682)".
+            static var overspentFormat: String {
+                ls("panel.cashFlowSmall.overspentFormat", comment: "Cash flow small widget insight — net negative vs income")
+            }
+        }
+
         enum PeriodComparison {
             static func vs(_ month: String) -> String {
                 String(format: ls("panel.periodComparison.vs %@", comment: "Delta chip 'vs [month]' when current and previous share year"), month)
