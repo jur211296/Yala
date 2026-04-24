@@ -60,14 +60,15 @@ struct TrendsCarouselWidget: View {
     }
 
     // MARK: - Small layout (PP2-06c)
-    // Forces .balance metric regardless of the user's global trend type selection:
-    // the `.small` variant is a sparkline of the saldo, not a metric-switcher.
+    // Refleja el filtro global (income/expense/balance) vía `viewModel.trendType`,
+    // sincronizado por `enforceTrendLock`. Sin metric-switcher propio — el selector
+    // vive en medium/large; aquí seguimos el SSOT de `selectedTransactionNatures`.
 
     private var smallBody: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             PanelSmallWidgetHeader(
-                title: L10n.TrendType.balance,
-                accessibilityLabel: L10n.TrendType.balance,
+                title: viewModel.trendType.displayName,
+                accessibilityLabel: viewModel.trendType.displayName,
                 action: onShowMore
             )
 
@@ -82,9 +83,9 @@ struct TrendsCarouselWidget: View {
                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                     Text(
                         YalaFormatter.currency(
-                            value: viewModel.trendFinalBalance,
+                            value: trendTotalForCurrentMetric,
                             currencyCode: currencyCode,
-                            forceSign: true
+                            forceSign: viewModel.trendType == .balance
                         )
                     )
                     .font(DS.Typography.headline)
@@ -92,14 +93,11 @@ struct TrendsCarouselWidget: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
 
-                    // Variation chip — only when the global metric is balance,
-                    // otherwise the comparison data belongs to a different metric.
-                    if viewModel.trendType == .balance,
-                       let delta = viewModel.periodComparisonWidget.deltaPercent {
+                    if let delta = viewModel.periodComparisonWidget.deltaPercent {
                         VariationChip(
                             variation: delta,
                             size: .small,
-                            isExpenseContext: false
+                            isExpenseContext: viewModel.trendType == .expense
                         )
                     }
                 }
@@ -111,7 +109,7 @@ struct TrendsCarouselWidget: View {
                     grouping: viewModel.trendGrouping,
                     interval: viewModel.currentInterval,
                     currencyCode: currencyCode,
-                    trendType: .balance,
+                    trendType: viewModel.trendType,
                     focusedDate: .constant(nil),   // scrubbing disabled in .small
                     period: viewModel.currentPeriod,
                     chartHeight: 90,
@@ -285,14 +283,15 @@ struct TrendsCarouselWidget: View {
            }) {
             return YalaFormatter.currency(value: point.value, currencyCode: currencyCode)
         }
+        return YalaFormatter.currency(value: trendTotalForCurrentMetric, currencyCode: currencyCode)
+    }
 
-        let value: Double
+    private var trendTotalForCurrentMetric: Double {
         switch viewModel.trendType {
-        case .balance: value = viewModel.trendFinalBalance
-        case .income:  value = viewModel.trendTotalIncome
-        case .expense: value = viewModel.trendTotalExpense
+        case .balance: return viewModel.trendFinalBalance
+        case .income:  return viewModel.trendTotalIncome
+        case .expense: return viewModel.trendTotalExpense
         }
-        return YalaFormatter.currency(value: value, currencyCode: currencyCode)
     }
 
 }
