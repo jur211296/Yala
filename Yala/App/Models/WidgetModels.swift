@@ -81,21 +81,6 @@ enum WidgetType: String, Codable, CaseIterable, Identifiable {
         }
     }
 
-    /// Returns custom size name for the widget, or nil if single size
-    func displaySizeName(for size: WidgetSize) -> String? {
-        switch self {
-        case .cashFlow, .expensesByNeed:
-            return size == .medium ? L10n.Widget.compact : L10n.Widget.expanded
-        case .topSpending, .topSubcategories, .budgets:
-            switch size {
-            case .small:  return L10n.Widget.compact
-            case .medium: return L10n.Widget.top3
-            case .large:  return L10n.Widget.top5
-            }
-        case .trend, .categoriesPie, .subcategoriesPie, .latestRecords, .exchangeRate, .scheduledPayments, .weekdayBar, .tagsPie:
-            return nil  // Single size, no name needed
-        }
-    }
 }
 
 enum WidgetSize: String, Codable, CaseIterable, Identifiable {
@@ -122,33 +107,30 @@ struct WidgetConfig: Identifiable, Codable, Equatable {
     var scheduledPaymentsMode: ScheduledPaymentsWidgetMode = .summary
 
     static func defaultConfigs() -> [WidgetConfig] {
-        // P20-11 defaults: trend and cashFlow ship in large mode so the new
-        // user lands on rich visuals; scheduledPayments defaults to .list
-        // (instead of .summary) because it carries more signal in the first
-        // open. Visibility is driven by `AppPreferences.panel<Section>Hidden`
-        // (P20-03 SSOT) — the `isVisible` flags here are silent fallbacks
-        // used only during bootstrap before `AppPreferences` is injected.
+        // Visibility real vive en `AppPreferences.panel<Section>Hidden`
+        // (P20-03 SSOT); los `isVisible` aquí son solo fallback silencioso
+        // durante bootstrap antes de inyectar AppPreferences.
         return [
-            WidgetConfig(id: UUID(), type: .trend, isVisible: true, size: .large),
-            WidgetConfig(id: UUID(), type: .cashFlow, isVisible: true, size: .large),
-            WidgetConfig(id: UUID(), type: .categoriesPie, isVisible: true, size: .large),
-            WidgetConfig(id: UUID(), type: .subcategoriesPie, isVisible: false, size: .large),
+            WidgetConfig(id: UUID(), type: .trend, isVisible: true, size: .small),
+            WidgetConfig(id: UUID(), type: .cashFlow, isVisible: true, size: .medium),
+            WidgetConfig(id: UUID(), type: .categoriesPie, isVisible: true, size: .small),
+            WidgetConfig(id: UUID(), type: .subcategoriesPie, isVisible: true, size: .small),
             WidgetConfig(id: UUID(), type: .topSpending, isVisible: false, size: .medium),
-            WidgetConfig(id: UUID(), type: .topSubcategories, isVisible: true, size: .medium),
-            WidgetConfig(id: UUID(), type: .expensesByNeed, isVisible: false, size: .medium),
+            WidgetConfig(id: UUID(), type: .topSubcategories, isVisible: false, size: .medium),
+            WidgetConfig(id: UUID(), type: .expensesByNeed, isVisible: true, size: .medium),
             WidgetConfig(id: UUID(), type: .latestRecords, isVisible: true, size: .medium),
-            WidgetConfig(id: UUID(), type: .budgets, isVisible: false, size: .medium),
+            WidgetConfig(id: UUID(), type: .budgets, isVisible: true, size: .small),
             WidgetConfig(
                 id: UUID(),
                 type: .scheduledPayments,
-                isVisible: false,
-                size: .medium,
+                isVisible: true,
+                size: .small,
                 isLocked: false,
                 scheduledPaymentsMode: .list
             ),
             WidgetConfig(id: UUID(), type: .exchangeRate, isVisible: false, size: .medium),
-            WidgetConfig(id: UUID(), type: .weekdayBar, isVisible: true, size: .large),
-            WidgetConfig(id: UUID(), type: .tagsPie, isVisible: true, size: .large),
+            WidgetConfig(id: UUID(), type: .weekdayBar, isVisible: true, size: .small),
+            WidgetConfig(id: UUID(), type: .tagsPie, isVisible: false, size: .small),
         ]
     }
 }

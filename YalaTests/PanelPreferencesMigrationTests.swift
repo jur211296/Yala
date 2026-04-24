@@ -86,12 +86,11 @@ struct PanelPreferencesMigrationTests {
 
         let prefs = AppPreferences(defaults: defaults)
 
-        #expect(prefs.panelTendenciasOrder == [
-            "tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza"
-        ])
-        #expect(prefs.panelTendenciasHidden == [
-            "tendencia_saldo", "gastos_por_naturaleza"
-        ])
+        // expensesByNeed pertenece a Distribución, no a Tendencias.
+        #expect(prefs.panelTendenciasOrder == ["tendencia_saldo", "flujo_efectivo"])
+        #expect(prefs.panelTendenciasHidden == ["tendencia_saldo"])
+        #expect(prefs.panelDistribucionOrder == ["gastos_por_naturaleza"])
+        #expect(prefs.panelDistribucionHidden == ["gastos_por_naturaleza"])
     }
 
     // MARK: - guardedBySentinel — second run is no-op
@@ -117,9 +116,9 @@ struct PanelPreferencesMigrationTests {
         #expect(prefs.panelPrefsMigratedV2 == true)
     }
 
-    // MARK: - noLegacyData — fresh install (P20-11: seeds opinionated defaults)
+    // MARK: - noLegacyData — fresh install (PP2-07: seeds opinionated defaults)
 
-    @Test func migration_noLegacyData_seedsP20_11Defaults() {
+    @Test func migration_noLegacyData_seedsPP2_07Defaults() {
         let defaults = Self.makeSuite()
         // No `panel_widget_configs_v1` key — simulate fresh install
 
@@ -127,28 +126,26 @@ struct PanelPreferencesMigrationTests {
 
         #expect(prefs.panelPrefsMigratedV2 == true)
 
-        // Tendencias: trend + cashFlow visible, weekdayBar + need hidden
+        // Tendencias: [trend | weekdayBar] paired small + cashFlow medium.
+        // Todos visibles.
         #expect(prefs.panelTendenciasOrder == [
-            "tendencia_saldo", "flujo_efectivo", "gasto_por_dia", "gastos_por_naturaleza",
+            "tendencia_saldo", "gasto_por_dia", "flujo_efectivo",
         ])
-        #expect(prefs.panelTendenciasHidden == [
-            "gasto_por_dia", "gastos_por_naturaleza",
-        ])
+        #expect(prefs.panelTendenciasHidden == [])
 
-        // Distribución: only categoriesPie visible
+        // Distribución: [categoriesPie | subcategoriesPie] paired small +
+        // expensesByNeed medium; top categorías/sub/etiquetas ocultos.
         #expect(prefs.panelDistribucionOrder == [
-            "categorias_torta", "subcategorias_principales", "categorias_principales",
-            "subcategorias_torta", "distribucion_por_etiquetas",
+            "categorias_torta", "subcategorias_torta", "gastos_por_naturaleza",
+            "categorias_principales", "subcategorias_principales", "distribucion_por_etiquetas",
         ])
         #expect(prefs.panelDistribucionHidden == [
-            "subcategorias_principales", "categorias_principales",
-            "subcategorias_torta", "distribucion_por_etiquetas",
+            "categorias_principales", "subcategorias_principales", "distribucion_por_etiquetas",
         ])
 
-        // Planificación: budgets + scheduledPayments visible (groupsSummary
-        // removed entirely in P20-11).
+        // Planificación: [scheduledPayments | budgets] paired small.
         #expect(prefs.panelPlanificacionOrder == [
-            "presupuestos", "pagos_planificados",
+            "pagos_planificados", "presupuestos",
         ])
         #expect(prefs.panelPlanificacionHidden == [])
 
@@ -169,7 +166,9 @@ struct PanelPreferencesMigrationTests {
         prefs.setupDefaultsForNewUser()
 
         #expect(prefs.panelTendenciasOrder.first == "tendencia_saldo")
-        #expect(prefs.panelTendenciasHidden.contains("gasto_por_dia"))
+        // weekdayBar visible por default → hidden lista vacía.
+        #expect(prefs.panelTendenciasHidden.isEmpty)
+        #expect(prefs.panelDistribucionHidden.contains("categorias_principales"))
     }
 
     // MARK: - upgrade path — does not trigger setupDefaults

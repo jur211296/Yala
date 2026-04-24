@@ -136,6 +136,16 @@ struct PanelHeroData: Equatable {
     var data: HeroMonthData? = nil
 }
 
+/// Income/expense aggregates restringidos al `panelDateInterval` actual —
+/// alimentan el card "Disponible · Período" del Hero. Independientes del
+/// `HeroMonthData` (que siempre clasifica el mes calendario) porque el card
+/// debe reflejar el filtro de período del usuario.
+struct PanelHeroPeriodData: Equatable {
+    var income: Double = 0
+    var expense: Double = 0
+    var available: Double { max(0, income - expense) }
+}
+
 @MainActor
 @Observable
 final class PanelViewModel {
@@ -439,6 +449,7 @@ final class PanelViewModel {
     var scheduledPaymentsWidget = PanelScheduledPaymentsData()
     var healthWidget = PanelHealthData()
     var heroWidget = PanelHeroData()
+    var heroPeriodWidget = PanelHeroPeriodData()
     var weekdayWidget = PanelWeekdayData()
     var periodComparisonWidget = PanelPeriodComparisonData()
     var tagsWidget = PanelTagsData()
@@ -740,6 +751,11 @@ final class PanelViewModel {
     /// No-op when the widget type doesn't support size variants or when the
     /// value is already the requested one (the Equatable guard on
     /// `widgetConfigs = newValue` prevents spurious observer notifications).
+    ///
+    /// Widgets de Planificación (`budgets` + `scheduledPayments`) se
+    /// sincronizan como par para garantizar un grid ordenado: si uno → `.small`,
+    /// el otro también; si uno sube desde `.small` a M/L, el otro sale de small
+    /// al tamaño más pequeño disponible que no sea small.
     func setWidgetSize(_ type: WidgetType, size: WidgetSize) {
         guard type.supportsSize else { return }
         guard let idx = widgetConfigs.firstIndex(where: { $0.type == type }) else { return }
@@ -748,6 +764,37 @@ final class PanelViewModel {
         updated[idx].size = size
         widgetConfigs = updated
         widgetConfig.save()
+
+        if type.panelSection == .planificacion, !isSyncingPair {
+            syncPlanificacionPair(changedType: type, newSize: size)
+        }
+    }
+
+    /// Flag privada — previene recursión infinita en el pair sync sin
+    /// exponer un parámetro `skipPairSync` en la API pública de `setWidgetSize`.
+    @ObservationIgnored private var isSyncingPair = false
+
+    /// Sincroniza el tamaño del otro widget de Planificación con el que acaba
+    /// de cambiar, manteniendo la invariante "ambos small" o "ambos no-small".
+    private func syncPlanificacionPair(changedType: WidgetType, newSize: WidgetSize) {
+        let otherType: WidgetType = (changedType == .budgets) ? .scheduledPayments : .budgets
+        let otherCurrent = widgetSize(otherType)
+
+        let targetSize: WidgetSize
+        if newSize == .small {
+            targetSize = .small
+        } else {
+            // Uno sube desde small → el otro sale de small al más pequeño
+            // tamaño disponible que NO sea small. Si el otro ya está fuera
+            // de small, no tocar (permite S↔M ↔ S↔L según preferencia).
+            guard otherCurrent == .small else { return }
+            targetSize = otherType.supportedSizes.first(where: { $0 != .small }) ?? .medium
+        }
+
+        guard otherCurrent != targetSize else { return }
+        isSyncingPair = true
+        setWidgetSize(otherType, size: targetSize)
+        isSyncingPair = false
     }
 
     // MARK: - Section Preferences Mutators (P20-03)
@@ -2330,7 +2377,7 @@ final class PanelViewModel {
         // hidden (see epic out-of-scope). Cheap O(n) pass over `transactions`;
         // the equality guard in `calculateHeroWidget()` suppresses no-op
         // @Observable notifications when the data hasn't changed.
-        calculateHeroWidget(monthInterval: currentMonthInterval)
+        calculateHeroWidget(monthInterval: currentMonthInterval, periodInterval: panelDateInterval)
     }
 
     private func calculateWeekdayWidget(context: PanelCalculationContext) {
@@ -2503,18 +2550,21 @@ final class PanelViewModel {
     /// Only budgets with `periodType == "monthly"` feed the total; mixing
     /// weekly/yearly would distort the ratio. Pro-rating other periodicities
     /// is a future refinement tracked in the epic.
-    private func calculateHeroWidget(monthInterval: DateInterval?) {
+    private func calculateHeroWidget(monthInterval: DateInterval?, periodInterval: DateInterval) {
         guard let monthInterval else { return }
 
         // Mes anterior natural — independiente del selectedPeriod del Panel,
         // el Hero siempre compara contra el mes calendario anterior.
         let prevStart = Calendar.current.date(byAdding: .month, value: -1, to: monthInterval.start) ?? monthInterval.start
         let prevInterval = DateInterval(start: prevStart, end: monthInterval.start)
+        let monthEqualsPeriod = monthInterval == periodInterval
 
         var monthIncome: Double = 0
         var monthExpense: Double = 0
         var prevExpense: Double = 0
         var prevHasAnyTx = false
+        var periodIncome: Double = 0
+        var periodExpense: Double = 0
         for tx in transactions where tx.balanceAdjustmentType == nil {
             let amount = abs(tx.amountInPreferredCurrency)
             let isIncome = tx.category?.isIncome == true
@@ -2524,7 +2574,19 @@ final class PanelViewModel {
                 prevHasAnyTx = true
                 if !isIncome { prevExpense += amount }
             }
+            // Period bucket — independiente del mes para que el Hero card
+            // refleje el filtro de período del usuario. Skip cuando coincide
+            // con el mes (los buckets mensuales sirven directo).
+            if !monthEqualsPeriod, periodInterval.contains(tx.date) {
+                if isIncome { periodIncome += amount } else { periodExpense += amount }
+            }
         }
+        if monthEqualsPeriod {
+            periodIncome = monthIncome
+            periodExpense = monthExpense
+        }
+        let newPeriod = PanelHeroPeriodData(income: periodIncome, expense: periodExpense)
+        if newPeriod != heroPeriodWidget { heroPeriodWidget = newPeriod }
 
         let totalMonthlyBudget = budgets
             .filter { $0.periodType == "monthly" }
@@ -2661,6 +2723,26 @@ final class PanelViewModel {
             YalaFormatter.currency(value: abs($0), currencyCode: currencyCode)
         }
 
+        // Enriquecimiento contextual — reusa computes ya realizados por los
+        // widgets de Distribución/Tendencias (zero overhead). Si el user
+        // oculta esos widgets los campos llegan nil y el prompt se adapta.
+        let topCat = topSpendingCategories.first
+        let topCategory: String? = topCat?.category.name
+        let formattedTopCategoryAmount: String? = topCat.map {
+            YalaFormatter.currency(value: $0.amount, currencyCode: currencyCode)
+        }
+        // Reusa el helper canónico de variación (`PreviousPeriodHelper`) que el
+        // resto del Panel usa para chips/headers — evita divergencia semántica.
+        let topCategoryDeltaPercent: Double? = topCat?.variation
+
+        let topDay = weekdayWidget.weekdaySpending.max(by: { $0.average < $1.average })
+        let topWeekday: String? = topDay?.weekdayLongName
+        let formattedTopWeekdayAmount: String? = topDay.map {
+            YalaFormatter.currency(value: $0.average, currencyCode: currencyCode)
+        }
+
+        let monthProgress = Double(data.daysElapsed) / Double(max(data.daysTotal, 1))
+
         return HeroContext(
             state: data.state,
             financialScore: healthWidget.score.flatMap(\.total),
@@ -2680,7 +2762,13 @@ final class PanelViewModel {
             previousExpense: previousExpense,
             formattedPreviousExpense: formattedPreviousExpense,
             expenseDelta: expenseDelta,
-            formattedExpenseDelta: formattedExpenseDelta
+            formattedExpenseDelta: formattedExpenseDelta,
+            topCategory: topCategory,
+            formattedTopCategoryAmount: formattedTopCategoryAmount,
+            topCategoryDeltaPercent: topCategoryDeltaPercent,
+            topWeekday: topWeekday,
+            formattedTopWeekdayAmount: formattedTopWeekdayAmount,
+            monthProgress: monthProgress
         )
     }
 

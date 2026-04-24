@@ -76,9 +76,9 @@ extension WidgetType {
 
     var panelSection: PanelSectionKind {
         switch self {
-        case .trend, .cashFlow, .expensesByNeed, .weekdayBar:
+        case .trend, .cashFlow, .weekdayBar:
             return .tendencias
-        case .categoriesPie, .subcategoriesPie, .topSpending, .topSubcategories, .tagsPie:
+        case .categoriesPie, .subcategoriesPie, .topSpending, .topSubcategories, .tagsPie, .expensesByNeed:
             return .distribucion
         case .budgets, .scheduledPayments:
             return .planificacion
@@ -102,9 +102,9 @@ extension WidgetType {
         switch self {
         case .cashFlow, .expensesByNeed, .topSpending, .topSubcategories,
              .categoriesPie, .subcategoriesPie, .budgets, .scheduledPayments,
-             .trend, .weekdayBar:
+             .trend, .weekdayBar, .tagsPie:
             return true
-        case .latestRecords, .exchangeRate, .tagsPie:
+        case .latestRecords, .exchangeRate:
             return false
         }
     }

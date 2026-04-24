@@ -407,6 +407,12 @@ enum L10n {
             static var upsellCTA: String {
                 ls("panel.hero.upsellCTA", comment: "Hero inline CTA — appears for Free and for Pro users without AI consent")
             }
+            /// Label inline arriba del monto disponible — desambigua qué
+            /// representa el monto. Se compone con el `displayName` del
+            /// período actual ("Disponible · Este mes", "Available · This year").
+            static var availableLabel: String {
+                ls("panel.hero.availableLabel", comment: "Hero — available amount label, composed with period display name")
+            }
         }
         static var totalBalance: String {
             ls("panel.totalBalance", comment: "Total balance label")
@@ -2562,6 +2568,7 @@ enum L10n {
             static var smallPaidAmount: String { ls("scheduled.widget.smallPaidAmount", comment: "") }
             static var smallActivePending: String { ls("scheduled.widget.smallActivePending", comment: "") }
             static var smallAllPaid: String { ls("scheduled.widget.smallAllPaid", comment: "") }
+            static var largeTitleRecurring: String { ls("scheduled.widget.largeTitle.recurring", comment: "PP2-07 large-mode dynamic title when filter = recurring") }
         }
 
         enum Help {
@@ -3063,10 +3070,6 @@ enum L10n {
         static var preferences: String { ls("widget.preferences", comment: "") }
         static var visible: String { ls("widget.visible", comment: "") }
         static var size: String { ls("widget.size", comment: "") }
-        static var compact: String { ls("widget.compact", comment: "") }
-        static var expanded: String { ls("widget.expanded", comment: "") }
-        static var top3: String { ls("widget.top3", comment: "") }
-        static var top5: String { ls("widget.top5", comment: "") }
         static var summary: String { ls("widget.summary", comment: "") }
         static var list: String { ls("widget.list", comment: "") }
         static var calendar: String { ls("widget.calendar", comment: "") }

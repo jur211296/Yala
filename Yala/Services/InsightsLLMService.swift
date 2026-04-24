@@ -820,7 +820,8 @@ final class InsightsLLMService {
             messages: try buildChatMessages(system: systemPrompt, user: userMessage),
             model: .gpt4_1_mini,
             responseFormat: .jsonObject,
-            temperature: 0.5
+            // 0.75 da más variedad sin perder coherencia de tono.
+            temperature: 0.75
         )
 
         // Race: chat vs 5s sleep. `withThrowingTaskGroup` cancela children al
@@ -869,62 +870,79 @@ final class InsightsLLMService {
     }
 
     private static func heroSystemPrompt(ctx: HeroContext) -> String {
-        let nameClause = (ctx.userName?.isEmpty == false)
-            ? "Incluye el nombre del usuario (\(ctx.userName!)) de forma natural — una sola vez, al principio o al final."
-            : "No uses nombre propio."
+        // El saludo del Hero ya muestra el nombre del usuario en otra fila
+        // ("Hola, Jür"). Repetirlo en el mensaje motivacional sobra.
+        let nameClause = "NO uses el nombre del usuario en el mensaje. El saludo del Hero ya lo muestra arriba — repetirlo se siente forzado."
 
-        // Previous-period clause: solo cuando hay data real (previousExpense ≠ nil).
-        let previousClause: String
-        if let prev = ctx.formattedPreviousExpense,
-           let delta = ctx.formattedExpenseDelta,
-           let direction = ctx.spendingTrend {
+        // Pista contextual sutil sin compartir números — el LLM solo recibe
+        // dirección de tendencia (mejoró/empeoró/estable) para inspirar tono.
+        var contextHints: [String] = []
+        if let direction = ctx.spendingTrend {
             switch direction {
-            case .down:
-                previousClause = "Tiene **sentido reconocer** que gasta menos que el mes pasado. Puedes citar `previousExpense` (\(prev)) o `expenseDelta` (\(delta)) — elige UNA comparación, no ambas."
-            case .up:
-                previousClause = "Gasta más que el mes pasado. Si lo mencionas, hazlo sin regañar: usa `previousExpense` (\(prev)) o `expenseDelta` (\(delta)) como contexto, nunca como reproche."
-            case .flat:
-                previousClause = "Ritmo similar al mes pasado. Puedes normalizar con `previousExpense` (\(prev)) si ayuda al mensaje, pero no es obligatorio."
+            case .down: contextHints.append("Gasta menos que el mes pasado (tendencia positiva).")
+            case .up:   contextHints.append("Gasta más que el mes pasado (sin regañar, solo observa).")
+            case .flat: contextHints.append("Ritmo similar al mes pasado.")
             }
-        } else {
-            previousClause = "No hay datos del mes anterior — no inventes comparaciones."
         }
+        if let topCat = ctx.topCategory,
+           let delta = ctx.topCategoryDeltaPercent, abs(delta) > 15 {
+            let direction = delta > 0 ? "subió" : "bajó"
+            contextHints.append("La categoría \(topCat) \(direction) bastante vs mes pasado (sin citar número).")
+        }
+        let contextBlock = contextHints.isEmpty
+            ? "Sin pistas extras — basa el mensaje solo en el estado del mes."
+            : "Pistas (NO menciones nada de esto literalmente, solo úsalo para afinar el tono):\n" + contextHints.map { "  • \($0)" }.joined(separator: "\n")
 
         let stateMood: String
         switch ctx.state {
-        case .monthStart: stateMood = "El mes recién empieza. Tono de bienvenida, sin evaluar aún."
-        case .onTrack:    stateMood = "Va muy bien vs el presupuesto. Tono celebratorio y cálido."
-        case .neutral:    stateMood = "Va dentro de lo esperado. Tono tranquilo y afirmativo."
-        case .tight:      stateMood = "Le queda poco margen este mes. Tono alentador, nunca regañón."
-        case .overBudget: stateMood = "Pasó el presupuesto. Tono motivacional: mañana es otro día."
+        case .monthStart: stateMood = "El mes arranca — tono de bienvenida, ilusión por lo que viene."
+        case .onTrack:    stateMood = "Va bien vs el presupuesto — tono cálido, celebratorio sin exagerar."
+        case .neutral:    stateMood = "Va dentro de lo esperado — tono tranquilo, afirmativo."
+        case .tight:      stateMood = "Queda poco margen — tono alentador, nunca regañón."
+        case .overBudget: stateMood = "Pasó el presupuesto — tono motivacional, mañana es otro día."
         }
 
         return """
-        Eres Yala, una compañera financiera cercana, empática y observadora. Escribes UN mensaje cálido, preciso y profundamente personal para el "Hero del mes" del panel del usuario.
+        Eres Yala. Escribes UNA frase motivacional cortísima para el "Hero del mes" del panel del usuario. Tono cercano y humano, como una compañera financiera observadora — natural, NO un reporte.
 
-        IDIOMA: Responde en \(ctx.locale). Nunca mezcles idiomas.
+        IDIOMA: \(ctx.locale). Nunca mezcles idiomas.
+
+        REGLA CRÍTICA — SIN MONTOS NI PORCENTAJES:
+        - NUNCA escribas montos, porcentajes ni cifras financieras (otra parte del Hero ya las muestra).
+        - SÍ puedes mencionar `daysRemaining` (días que quedan en el mes) en formato natural — "los últimos X días", "X días por delante", "X días para cerrar" — solo si aporta contexto temporal al mensaje motivacional. Si no aporta, no lo metas.
+        - NO uses negritas markdown. NO uses **bold**.
+
+        REGLA CRÍTICA — GÉNERO DEL USUARIO:
+        - NUNCA asumas el género del usuario. NUNCA uses adjetivos o participios con género (NO "tranquila/tranquilo", NO "atento/atenta", NO "listo/lista", etc.).
+        - Usa SIEMPRE formas neutras: "todo bien", "bien ahí", "qué buen ritmo", "se nota el esfuerzo", "buen movimiento", "tu mes en marcha", "sigue así".
+        - Ante la duda, omite el adjetivo.
+
+        ESTADO DEL MES: \(stateMood)
+        Días que quedan en el mes: \(ctx.daysRemaining). (Disponible para mencionar si aporta — opcional.)
+
+        \(contextBlock)
 
         FORMATO:
-        - 2 o 3 oraciones. Ideal 160–240 caracteres.
-        - Usa EXACTAMENTE entre 1 y 3 montos del contexto (`income`, `expense`, `available`, `previousExpense`, `expenseDelta`). Cópialos tal como vienen, sin cambiar el símbolo ni el número, sin redondear.
-        - Envuelve cada monto citado en **negritas markdown** (p.ej. **S/ 6,019**). Nada más va en negritas.
-        - Puedes mencionar los días restantes del mes (`daysRemaining`) como parte del contexto temporal ("para los últimos X días").
-        - NO inventes porcentajes ni cifras que no estén en el contexto.
-        - NO hagas preguntas.
-        - NO uses emojis (el hero ya tiene un icono propio).
+        - 1 sola frase motivacional, cálida y natural. Máximo 2 si la primera necesita un complemento corto.
+        - Entre 40 y 90 caracteres en total. Si es más larga, acorta.
+        - NO hagas preguntas. NO uses emojis.
 
         TONO (Brand Voice Yala):
-        - Tutea ("tú"), como amiga cercana que sabe de finanzas.
-        - Personal: conecta dos datos del contexto (p.ej. gasto vs disponible, o ritmo vs mes pasado) — que no suene genérico.
+        - Tutea. Cercano, humano, sin jerga financiera.
+        - Personal, no plantilla — que se sienta dicho a esta persona en este momento.
         - Constructiva, nunca regaña ni juzga.
-        - Nunca uses: "Debes", "Tienes que", "Obviamente", "Es fácil".
-        - Usa "gasto" en vez de "transacción".
-        - Cierra con un acento breve y motivador ("tú puedes", "vas muy bien", "sigue así", "todo en orden") solo si encaja naturalmente — no lo fuerces.
+        - Nunca: "Debes", "Tienes que", "Obviamente", "Es fácil", "tú puedes" cliché.
 
-        SITUACIÓN DEL USUARIO:
-        - Estado del mes: \(stateMood)
-        - Comparación vs mes anterior: \(previousClause)
-        - \(nameClause)
+        \(nameClause)
+
+        EJEMPLOS de tono y longitud correctos (sin montos ni porcentajes; los días son opcionales y solo cuando aportan; siempre forma neutra de género):
+        - "Vas con buen ritmo este mes, sigue así."
+        - "Quedan 6 días para cerrar el mes, qué buen movimiento."
+        - "Tu mes en marcha — se nota el esfuerzo."
+        - "8 días por delante y todo en orden."
+        - "Mes ajustado pero manejable, paso a paso."
+        - "Mañana arrancamos fresco, todo en orden."
+        - "Empieza tranquilo el mes, sin prisa."
 
         RESPUESTA (JSON estricto): {"text": "..."}
         """
@@ -936,6 +954,7 @@ final class InsightsLLMService {
             "month": ctx.monthName,
             "daysRemaining": ctx.daysRemaining,
             "daysElapsed": ctx.daysElapsed,
+            "monthProgress": Int((ctx.monthProgress * 100).rounded()),
             "locale": ctx.locale,
             "income": ctx.formattedIncome,
             "expense": ctx.formattedExpense,
@@ -947,6 +966,15 @@ final class InsightsLLMService {
         if let name = ctx.userName, !name.isEmpty { payload["userName"] = name }
         if let prev = ctx.formattedPreviousExpense { payload["previousExpense"] = prev }
         if let delta = ctx.formattedExpenseDelta { payload["expenseDelta"] = delta }
+
+        // PP2-07: enriquecimiento contextual (best-effort, reusa computes).
+        if let topCat = ctx.topCategory { payload["topCategory"] = topCat }
+        if let topCatAmt = ctx.formattedTopCategoryAmount { payload["topCategoryAmount"] = topCatAmt }
+        if let topCatDelta = ctx.topCategoryDeltaPercent {
+            payload["topCategoryDeltaPercent"] = Int(topCatDelta.rounded())
+        }
+        if let topDay = ctx.topWeekday { payload["topWeekday"] = topDay }
+        if let topDayAmt = ctx.formattedTopWeekdayAmount { payload["topWeekdayAmount"] = topDayAmt }
 
         let data = (try? JSONSerialization.data(withJSONObject: payload)) ?? Data()
         return String(data: data, encoding: .utf8) ?? "{}"

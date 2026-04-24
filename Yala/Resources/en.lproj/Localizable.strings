@@ -35,15 +35,15 @@
 "panel.seeMoreHint.scheduled" = "Opens the Scheduled Payments screen";
 
 // P20-11: Widget size picker
-"panel.widgetSize.small" = "Mini";
-"panel.widgetSize.medium" = "Compact";
-"panel.widgetSize.large" = "Expanded";
+"panel.widgetSize.small" = "Small";
+"panel.widgetSize.medium" = "Medium";
+"panel.widgetSize.large" = "Large";
 
 // P20-11: Accounts collapse
 // Collapsible group Accounts + Financial Health
-"panel.panorama.title" = "Your status";
-"panel.panorama.expand" = "Expand your status";
-"panel.panorama.collapse" = "Collapse your status";
+"panel.panorama.title" = "Your finances";
+"panel.panorama.expand" = "Expand your finances";
+"panel.panorama.collapse" = "Collapse your finances";
 "panel.panorama.collapsedValue" = "Collapsed";
 "panel.panorama.expandedValue" = "Expanded";
 
@@ -122,14 +122,15 @@
 
 // KPI fallback (aiSubtitle takes the KPI slot when available)
 // Markdown bold (**amount**) renders via AttributedString(markdown:)
-"panel.hero.kpi.monthStart %@ %d" = "Kicking off the month with **%1$@** in income and %2$d days ahead. Log your first expense and let's roll.";
-"panel.hero.kpi.onTrack %@ %@ %@ %d" = "This month you earned **%1$@** and spent **%2$@**, so you've got **%3$@** left for the last %4$d days. Looking great, you've got this.";
-"panel.hero.kpi.neutral %@ %@ %@ %d" = "This month you earned **%1$@** and spent **%2$@**, leaving **%3$@** for the last %4$d days. Your month in motion.";
-"panel.hero.kpi.tight %@ %@ %d" = "You've spent **%1$@** and have **%2$@** left for the last %3$d days. Small tweaks go a long way.";
-"panel.hero.kpi.overBudget %@ %@" = "This month you spent **%1$@** over your **%2$@** in income. Tomorrow we start fresh.";
+"panel.hero.kpi.monthStart %@ %d" = "Kicking off the month, step by step.";
+"panel.hero.kpi.onTrack %@ %@ %@ %d" = "You're on a good rhythm this month, keep going.";
+"panel.hero.kpi.neutral %@ %@ %@ %d" = "Your month in motion — all in order.";
+"panel.hero.kpi.tight %@ %@ %d" = "Tight month but manageable, step by step.";
+"panel.hero.kpi.overBudget %@ %@" = "Tomorrow we start fresh, all in order.";
 
 "panel.hero.proBadge" = "Pro";
 "panel.hero.upsellCTA" = "Make it yours with AI";
+"panel.hero.availableLabel" = "Available";
 
 // MARK: - Trend Widget
 
@@ -161,7 +162,7 @@
 
 "trendType.balance" = "Balance";
 "trendType.income" = "Income";
-"trendType.expense" = "Expense";
+"trendType.expense" = "Expenses";
 
 // MARK: - Groupings
 
@@ -307,7 +308,7 @@
 "transaction.select" = "Select";
 "transaction.total" = "Total";
 "transaction.income" = "Income";
-"transaction.expense" = "Expense";
+"transaction.expense" = "Expenses";
 "transaction.transfer" = "Transfer";
 "transaction.origin" = "Origin";
 "transaction.destination" = "Destination";
@@ -522,10 +523,6 @@
 "widget.preferences" = "Widget Preferences";
 "widget.visible" = "Visible";
 "widget.size" = "Size";
-"widget.compact" = "Compact";
-"widget.expanded" = "Expanded";
-"widget.top3" = "Top 3";
-"widget.top5" = "Top 5";
 
 // MARK: - Planning
 
@@ -748,10 +745,6 @@
 "widget.fixedPosition" = "Fixed position";
 "widget.visible" = "Visible";
 "widget.size" = "Size: %@";
-"widget.compact" = "Compact";
-"widget.expanded" = "Expanded";
-"widget.top3" = "Top 3";
-"widget.top5" = "Top 5";
 "widget.summary" = "Summary";
 "widget.list" = "List";
 "widget.calendar" = "Calendar";
@@ -761,15 +754,15 @@
 "widgetType.topSpending" = "Top Categories";
 "widgetType.topSubcategories" = "Top Subcategories";
 "widgetType.cashFlow" = "Cash Flow";
-"widgetType.categoriesPie" = "Category Distribution";
-"widgetType.subcategoriesPie" = "Subcategory Distribution";
+"widgetType.categoriesPie" = "Categories";
+"widgetType.subcategoriesPie" = "Subcategories";
 "widgetType.latestRecords" = "Latest Records";
-"widgetType.expensesByNeed" = "Expenses by Need";
-"widgetType.expensesByTag" = "Expenses by Tag";
+"widgetType.expensesByNeed" = "Needs";
+"widgetType.expensesByTag" = "Tags";
 "widgetType.exchangeRate" = "Exchange Rate";
 "widgetType.budgets" = "Budgets";
 "widgetType.scheduledPayments" = "Scheduled Payments";
-"widgetType.weekdayBar" = "Spending by day";
+"widgetType.weekdayBar" = "Daily average";
 "widgetType.periodComparison" = "This month vs last";
 
 // MARK: - Scheduled Payments Widget
@@ -780,6 +773,7 @@
 "scheduled.widget.tomorrow" = "Tomorrow";
 "scheduled.widget.inDays" = "In %d days";
 "scheduled.widget.smallTitle" = "Planned";
+"scheduled.widget.largeTitle.recurring" = "Recurring payments";
 "scheduled.widget.smallToPay" = "to pay";
 "scheduled.widget.smallPaidAmount" = "You paid %@";
 "scheduled.widget.smallActivePending" = "%1$d this month · %2$d left";
@@ -1029,7 +1023,7 @@
 
 "trendType.balance" = "Balance";
 "trendType.income" = "Income";
-"trendType.expense" = "Expense";
+"trendType.expense" = "Expenses";
 
 
 "cashFlowViewType.total" = "Total";

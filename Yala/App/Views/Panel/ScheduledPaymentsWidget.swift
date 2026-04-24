@@ -173,6 +173,17 @@ struct ScheduledPaymentsWidget: View {
         }
     }
 
+    /// Large mode title — mirror dynamic behavior of `smallDynamicTitle` but
+    /// uses the full-form labels ("Pagos planificados" / "Pagos recurrentes")
+    /// that read better in the wider layout.
+    private var largeDynamicTitle: String {
+        switch filter {
+        case .all: return L10n.WidgetType.scheduledPayments
+        case .recurring: return L10n.Scheduled.Widget.largeTitleRecurring
+        case .subscriptions: return L10n.Scheduled.Tab.subscriptions
+        }
+    }
+
     private static let ringFromRGB: (r: CGFloat, g: CGFloat, b: CGFloat) = {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         UIColor(Color.hotPink).getRed(&r, green: &g, blue: &b, alpha: &a)
@@ -217,13 +228,13 @@ struct ScheduledPaymentsWidget: View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 HStack(spacing: DS.Spacing.xxs) {
-                    Text(L10n.WidgetType.scheduledPayments)
+                    Text(largeDynamicTitle)
                         .font(DS.Typography.subheadlineEmphasized)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
                     InfoHintButton(
-                        title: L10n.WidgetType.scheduledPayments,
+                        title: largeDynamicTitle,
                         message: L10n.Widget.Hint.scheduledPayments
                     )
                 }

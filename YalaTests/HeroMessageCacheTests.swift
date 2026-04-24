@@ -43,7 +43,13 @@ struct HeroMessageCacheTests {
         expense: Double = 900,
         available: Double = 3600,
         previousExpense: Double? = 800,
-        expenseDelta: Double? = 100
+        expenseDelta: Double? = 100,
+        topCategory: String? = nil,
+        formattedTopCategoryAmount: String? = nil,
+        topCategoryDeltaPercent: Double? = nil,
+        topWeekday: String? = nil,
+        formattedTopWeekdayAmount: String? = nil,
+        monthProgress: Double = 0.5
     ) -> HeroContext {
         HeroContext(
             state: state,
@@ -64,7 +70,13 @@ struct HeroMessageCacheTests {
             previousExpense: previousExpense,
             formattedPreviousExpense: previousExpense.map { "S/ \(Int($0))" },
             expenseDelta: expenseDelta,
-            formattedExpenseDelta: expenseDelta.map { "S/ \(Int(abs($0)))" }
+            formattedExpenseDelta: expenseDelta.map { "S/ \(Int(abs($0)))" },
+            topCategory: topCategory,
+            formattedTopCategoryAmount: formattedTopCategoryAmount,
+            topCategoryDeltaPercent: topCategoryDeltaPercent,
+            topWeekday: topWeekday,
+            formattedTopWeekdayAmount: formattedTopWeekdayAmount,
+            monthProgress: monthProgress
         )
     }
 
@@ -167,6 +179,33 @@ struct HeroMessageCacheTests {
         let withBudget = HeroMessageCache.contextHash(makeContext(percentBudgetUsed: 0))
         let noBudget = HeroMessageCache.contextHash(makeContext(percentBudgetUsed: nil))
         #expect(withBudget != noBudget)
+    }
+
+    // MARK: - contextHash() — PP2-07 enriquecimiento contextual
+
+    @Test func contextHash_differs_onTopCategoryChange() {
+        let a = HeroMessageCache.contextHash(makeContext(topCategory: "Comida"))
+        let b = HeroMessageCache.contextHash(makeContext(topCategory: "Transporte"))
+        #expect(a != b)
+    }
+
+    /// El delta del topCategory se bucketea al 5%. Cambios dentro del mismo
+    /// bucket NO invalidan cache; cruzar el bucket SÍ.
+    @Test func contextHash_stableWithinDeltaBucket_differsAcross() {
+        // Mismo bucket (redondeo a 15% para ambos).
+        let inside1 = HeroMessageCache.contextHash(makeContext(topCategoryDeltaPercent: 14))
+        let inside2 = HeroMessageCache.contextHash(makeContext(topCategoryDeltaPercent: 16))
+        #expect(inside1 == inside2)
+
+        // Cruza bucket (15 → 25).
+        let across = HeroMessageCache.contextHash(makeContext(topCategoryDeltaPercent: 25))
+        #expect(inside1 != across)
+    }
+
+    @Test func contextHash_differs_onTopWeekdayChange() {
+        let a = HeroMessageCache.contextHash(makeContext(topWeekday: "Lunes"))
+        let b = HeroMessageCache.contextHash(makeContext(topWeekday: "Viernes"))
+        #expect(a != b)
     }
 
     // MARK: - clear()

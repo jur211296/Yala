@@ -324,6 +324,16 @@ struct PanelViewModelTests {
         #expect(!vm.isWidgetVisible(.weekdayBar))
     }
 
+    // MARK: - Needs widget membership (PP2-07)
+
+    /// `expensesByNeed` pertenece a Distribución (no a Tendencias) — se
+    /// agrupa con los widgets que miran la dimensión "a dónde va tu gasto".
+    @Test func expensesByNeed_belongsToDistribucion() {
+        #expect(WidgetType.expensesByNeed.panelSection == .distribucion)
+        #expect(WidgetType.defaultWidgets(in: .distribucion).contains(.expensesByNeed))
+        #expect(!WidgetType.defaultWidgets(in: .tendencias).contains(.expensesByNeed))
+    }
+
     // MARK: - Tags Pie Widget (P20-09)
     //
     // Tests acotados a los guards de visibilidad del widget. El cálculo vive
@@ -364,6 +374,104 @@ struct PanelViewModelTests {
         vm.setAppPreferences(prefs)
 
         #expect(!vm.isWidgetVisible(.tagsPie))
+    }
+
+    // MARK: - Pair sync S↔S en Planificación (PP2-07)
+    //
+    // Invariante: budgets y scheduledPayments deben estar siempre "ambos small"
+    // o "ambos no-small" para garantizar un grid ordenado en la sección
+    // Planificación (par half-width con small, full-width con M/L).
+
+    /// Bajar `budgets` a `.small` debe arrastrar `scheduledPayments` a `.small`.
+    @MainActor @Test func syncPlanificacionPair_budgetsToSmall_scheduledAlsoSmall() {
+        let vm = PanelViewModel()
+        // Estado inicial: ambos fuera de small.
+        vm.setWidgetSize(.budgets, size: .medium)
+        vm.setWidgetSize(.scheduledPayments, size: .medium)
+
+        vm.setWidgetSize(.budgets, size: .small)
+
+        #expect(vm.widgetSize(.budgets) == .small)
+        #expect(vm.widgetSize(.scheduledPayments) == .small)
+    }
+
+    /// Subir `scheduledPayments` desde small a `.medium` debe llevar `budgets`
+    /// a su primer tamaño no-small disponible (también `.medium`).
+    @MainActor @Test func syncPlanificacionPair_scheduledToMedium_fromSmall_budgetsAlsoMedium() {
+        let vm = PanelViewModel()
+        // Estado inicial: ambos small.
+        vm.setWidgetSize(.budgets, size: .small)
+        vm.setWidgetSize(.scheduledPayments, size: .small)
+
+        vm.setWidgetSize(.scheduledPayments, size: .medium)
+
+        #expect(vm.widgetSize(.scheduledPayments) == .medium)
+        #expect(vm.widgetSize(.budgets) == .medium)
+    }
+
+    /// Subir `budgets` a `.large` cuando `scheduledPayments` está en small
+    /// debe mover scheduledPayments a `.medium` (su máximo disponible fuera
+    /// de small; no soporta `.large`).
+    @MainActor @Test func syncPlanificacionPair_budgetsToLarge_scheduledRaisesToMediumMax() {
+        let vm = PanelViewModel()
+        vm.setWidgetSize(.budgets, size: .small)
+        vm.setWidgetSize(.scheduledPayments, size: .small)
+
+        vm.setWidgetSize(.budgets, size: .large)
+
+        #expect(vm.widgetSize(.budgets) == .large)
+        #expect(vm.widgetSize(.scheduledPayments) == .medium)
+    }
+
+    /// El sync corre independiente de visibility — si user oculta
+    /// `scheduledPayments` y luego cambia `budgets`, el tamaño del oculto
+    /// también se actualiza (consistencia al reactivar).
+    @MainActor @Test func syncPlanificacionPair_otherHidden_stillSyncs() {
+        let vm = PanelViewModel()
+        let suite = "pairSync.hidden.\(UUID().uuidString)"
+        let prefs = AppPreferences(defaults: UserDefaults(suiteName: suite)!)
+        prefs.panelPlanificacionHidden = [WidgetType.scheduledPayments.rawValue]
+        vm.setAppPreferences(prefs)
+
+        vm.setWidgetSize(.budgets, size: .medium)
+        vm.setWidgetSize(.scheduledPayments, size: .medium)
+
+        vm.setWidgetSize(.budgets, size: .small)
+
+        // Ambos en small aunque scheduledPayments esté oculto.
+        #expect(vm.widgetSize(.scheduledPayments) == .small)
+    }
+
+    /// Si el otro widget ya está fuera de small, subir uno a otro tamaño
+    /// no-small no debe moverlo (evita pisotear una elección previa entre
+    /// medium/large cuando ambos ya están paired full-width).
+    @MainActor @Test func syncPlanificacionPair_otherAlreadyNonSmall_noChange() {
+        let vm = PanelViewModel()
+        // Ambos ya en medium (fuera de small).
+        vm.setWidgetSize(.budgets, size: .medium)
+        vm.setWidgetSize(.scheduledPayments, size: .medium)
+
+        // Subir budgets a large. scheduled ya no está en small →
+        // el guard `otherCurrent == .small` hace que no se mueva.
+        vm.setWidgetSize(.budgets, size: .large)
+
+        #expect(vm.widgetSize(.budgets) == .large)
+        #expect(vm.widgetSize(.scheduledPayments) == .medium)
+    }
+
+    /// No recursión: cambiar el tamaño no debe disparar un loop infinito.
+    /// Si el test completa (no stack overflow), pasa.
+    @MainActor @Test func syncPlanificacionPair_noRecursion() {
+        let vm = PanelViewModel()
+        vm.setWidgetSize(.budgets, size: .medium)
+        vm.setWidgetSize(.scheduledPayments, size: .medium)
+
+        // Cambio que dispara el sync recíproco. Si el guard `isSyncingPair`
+        // falla, esto stackovverflow y el test crashea.
+        vm.setWidgetSize(.budgets, size: .small)
+
+        #expect(vm.widgetSize(.budgets) == .small)
+        #expect(vm.widgetSize(.scheduledPayments) == .small)
     }
 
 }

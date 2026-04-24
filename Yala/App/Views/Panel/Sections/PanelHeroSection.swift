@@ -48,6 +48,7 @@ struct PanelHeroSection: View {
                 customDateRange: sessionState.customDateRange,
                 onSelectPeriod: { sessionState.selectedPeriod = $0 },
                 onCustomPeriodTapped: { showCustomPeriodPicker = true },
+                periodSummary: viewModel.heroPeriodWidget,
                 aiSubtitle: viewModel.heroAISubtitle,
                 showProBadge: viewModel.heroAISubtitle != nil,
                 showUpsellCTA: showUpsellCTA,

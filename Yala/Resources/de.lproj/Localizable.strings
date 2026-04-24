@@ -35,15 +35,15 @@
 "panel.seeMoreHint.scheduled" = "Öffnet den Bildschirm für geplante Zahlungen";
 
 // P20-11: Widget size picker
-"panel.widgetSize.small" = "Mini";
-"panel.widgetSize.medium" = "Kompakt";
-"panel.widgetSize.large" = "Erweitert";
+"panel.widgetSize.small" = "Klein";
+"panel.widgetSize.medium" = "Mittel";
+"panel.widgetSize.large" = "Groß";
 
 // P20-11: Accounts collapse
 // Einklappbare Gruppe Konten + Finanzielle Gesundheit
-"panel.panorama.title" = "Dein aktueller Stand";
-"panel.panorama.expand" = "Aktuellen Stand einblenden";
-"panel.panorama.collapse" = "Aktuellen Stand ausblenden";
+"panel.panorama.title" = "Deine Finanzen";
+"panel.panorama.expand" = "Finanzen einblenden";
+"panel.panorama.collapse" = "Finanzen ausblenden";
 "panel.panorama.collapsedValue" = "Ausgeblendet";
 "panel.panorama.expandedValue" = "Eingeblendet";
 
@@ -122,14 +122,15 @@
 
 // KPI fallback (aiSubtitle übernimmt den KPI-Slot, wenn verfügbar)
 // Markdown bold (**Betrag**) rendert via AttributedString(markdown:)
-"panel.hero.kpi.monthStart %@ %d" = "Wir starten den Monat mit **%1$@** Einnahmen und %2$d Tagen vor uns. Erfasse deinen ersten Beleg und los geht's.";
-"panel.hero.kpi.onTrack %@ %@ %@ %d" = "Diesen Monat hast du **%1$@** eingenommen und **%2$@** ausgegeben, also bleiben **%3$@** für die letzten %4$d Tage. Läuft super, du schaffst das.";
-"panel.hero.kpi.neutral %@ %@ %@ %d" = "Diesen Monat hast du **%1$@** eingenommen und **%2$@** ausgegeben — **%3$@** für die letzten %4$d Tage. Dein Monat läuft.";
-"panel.hero.kpi.tight %@ %@ %d" = "Du hast **%1$@** ausgegeben und hast **%2$@** für die letzten %3$d Tage. Kleine Anpassungen machen den Unterschied.";
-"panel.hero.kpi.overBudget %@ %@" = "Diesen Monat hast du **%1$@** über deine **%2$@** Einnahmen hinaus ausgegeben. Morgen starten wir frisch.";
+"panel.hero.kpi.monthStart %@ %d" = "Wir starten den Monat, Schritt für Schritt.";
+"panel.hero.kpi.onTrack %@ %@ %@ %d" = "Du hast einen guten Rhythmus, weiter so.";
+"panel.hero.kpi.neutral %@ %@ %@ %d" = "Dein Monat läuft — alles im Lot.";
+"panel.hero.kpi.tight %@ %@ %d" = "Knapper Monat, aber machbar — Schritt für Schritt.";
+"panel.hero.kpi.overBudget %@ %@" = "Morgen starten wir frisch, alles im Lot.";
 
 "panel.hero.proBadge" = "Pro";
 "panel.hero.upsellCTA" = "Mit KI personalisieren";
+"panel.hero.availableLabel" = "Verfügbar";
 
 // MARK: - Trend Widget
 
@@ -304,8 +305,8 @@
 "transaction.subcategory" = "Unterkategorie";
 "transaction.select" = "Auswählen";
 "transaction.total" = "Gesamt";
-"transaction.income" = "Einnahme";
-"transaction.expense" = "Ausgabe";
+"transaction.income" = "Einnahmen";
+"transaction.expense" = "Ausgaben";
 "transaction.transfer" = "Überweisung";
 "transaction.origin" = "Quelle";
 "transaction.destination" = "Ziel";
@@ -520,10 +521,6 @@
 "widget.preferences" = "Widget-Einstellungen";
 "widget.visible" = "Sichtbar";
 "widget.size" = "Größe";
-"widget.compact" = "Kompakt";
-"widget.expanded" = "Erweitert";
-"widget.top3" = "Top 3";
-"widget.top5" = "Top 5";
 
 // MARK: - Planning
 
@@ -746,10 +743,6 @@
 "widget.fixedPosition" = "Feste Position";
 "widget.visible" = "Sichtbar";
 "widget.size" = "Größe: %@";
-"widget.compact" = "Kompakt";
-"widget.expanded" = "Erweitert";
-"widget.top3" = "Top 3";
-"widget.top5" = "Top 5";
 "widget.summary" = "Zusammenfassung";
 "widget.list" = "Liste";
 "widget.calendar" = "Kalender";
@@ -759,15 +752,15 @@
 "widgetType.topSpending" = "Top Kategorien";
 "widgetType.topSubcategories" = "Top Unterkategorien";
 "widgetType.cashFlow" = "Cashflow";
-"widgetType.categoriesPie" = "Kategorienverteilung";
-"widgetType.subcategoriesPie" = "Unterkategorienverteilung";
+"widgetType.categoriesPie" = "Kategorien";
+"widgetType.subcategoriesPie" = "Unterkategorien";
 "widgetType.latestRecords" = "Neueste Einträge";
-"widgetType.expensesByNeed" = "Ausgaben nach Bedarf";
-"widgetType.expensesByTag" = "Ausgaben nach Etikett";
+"widgetType.expensesByNeed" = "Bedürfnisse";
+"widgetType.expensesByTag" = "Etiketten";
 "widgetType.exchangeRate" = "Wechselkurs";
 "widgetType.budgets" = "Budgets";
 "widgetType.scheduledPayments" = "Geplante Zahlungen";
-"widgetType.weekdayBar" = "Ausgaben pro Tag";
+"widgetType.weekdayBar" = "Tagesdurchschnitt";
 "widgetType.periodComparison" = "Dieser Monat vs Vormonat";
 
 // MARK: - Scheduled Payments Widget
@@ -778,6 +771,7 @@
 "scheduled.widget.tomorrow" = "Morgen";
 "scheduled.widget.inDays" = "In %d Tagen";
 "scheduled.widget.smallTitle" = "Geplant";
+"scheduled.widget.largeTitle.recurring" = "Wiederkehrende Zahlungen";
 "scheduled.widget.smallToPay" = "zu zahlen";
 "scheduled.widget.smallPaidAmount" = "Du hast %@ bezahlt";
 "scheduled.widget.smallActivePending" = "%1$d diesen Monat · %2$d offen";

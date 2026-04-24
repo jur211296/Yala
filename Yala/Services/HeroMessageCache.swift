@@ -59,6 +59,28 @@ struct HeroContext: Equatable {
     /// el monto de la diferencia directamente.
     let expenseDelta: Double?
     let formattedExpenseDelta: String?
+
+    // Enriquecimiento contextual (best-effort, reusa computes existentes
+    // de los widgets de Distribución/Tendencias).
+
+    /// Nombre de la categoría #1 del mes (primer item de `categoriesWidget`
+    /// ya computado). `nil` cuando la sección Distribución está toda oculta
+    /// o no hay gasto categorizado.
+    let topCategory: String?
+    let formattedTopCategoryAmount: String?
+    /// Variación porcentual vs mes anterior (`+15.0` / `-8.3`). El LLM puede
+    /// citarlo cuando |delta| > 10% para justificar variaciones del expense.
+    let topCategoryDeltaPercent: Double?
+
+    /// Día de la semana con más gasto acumulado en el mes (`weekdayWidget`).
+    /// `nil` cuando no hay suficientes datos para destacar un día.
+    let topWeekday: String?
+    let formattedTopWeekdayAmount: String?
+
+    /// `daysElapsed / (daysElapsed + daysRemaining)` en [0.0, 1.0]. Le permite
+    /// al LLM calcular "% del mes transcurrido" sin pedirle aritmética de
+    /// fechas.
+    let monthProgress: Double
 }
 
 // MARK: - Entry
@@ -108,6 +130,13 @@ enum HeroMessageCache {
         let expenseBucket = String(Int(ctx.expense / 100))
         let availableBucket = String(Int(ctx.available / 100))
         let prevExpenseBucket = ctx.previousExpense.map { String(Int($0 / 100)) } ?? "na"
+        // Enriquecimiento contextual. `topCategory` cambia cuando el ranking
+        // del mes se mueve — vale la pena invalidar. El delta se bucketea
+        // al 5% para evitar regens por micro-cambios.
+        let topCategoryToken = ctx.topCategory ?? "na"
+        let topCategoryDeltaBucket = ctx.topCategoryDeltaPercent
+            .map { String(Int(($0 / 5.0).rounded()) * 5) } ?? "na"
+        let topWeekdayToken = ctx.topWeekday ?? "na"
 
         return [
             ctx.state.rawValue,
@@ -121,6 +150,9 @@ enum HeroMessageCache {
             expenseBucket,
             availableBucket,
             prevExpenseBucket,
+            topCategoryToken,
+            topCategoryDeltaBucket,
+            topWeekdayToken,
         ].joined(separator: "_")
     }
 

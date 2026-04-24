@@ -92,24 +92,11 @@ struct CashFlowWidget: View {
         }
     }
 
-    /// KPI label based on display mode
+    /// Header label. `customTitle` preserves call sites that need account/
+    /// currency-specific labels (e.g. Statistics CashFlow). In the Panel the
+    /// title is always "Flujo de efectivo" regardless of `displayMode`.
     private var kpiLabel: String {
-        // If customTitle is provided, use it (for account/currency specific views)
-        if let title = customTitle {
-            return title
-        }
-
-        // Otherwise, use display mode label
-        switch displayMode {
-        case .balance:
-            return L10n.CashFlow.netFlow
-        case .income:
-            return L10n.CashFlow.income
-        case .expense:
-            return L10n.CashFlow.expense
-        case .none:
-            return L10n.CashFlow.title
-        }
+        customTitle ?? L10n.CashFlow.title
     }
 
     // MARK: - Smart Axis Logic

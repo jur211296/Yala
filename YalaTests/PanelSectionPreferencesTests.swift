@@ -43,15 +43,16 @@ struct PanelSectionPreferencesTests {
     @Test func activeWidgets_inSection_returnsOrderFromAppPreferences() {
         let defaults = Self.makeSuite()
         let prefs = AppPreferences(defaults: defaults)
-        // Order covers 3 of the 4 tendencias widgets — weekdayBar is appended
+        // Order covers 2 of the 3 tendencias widgets — weekdayBar is appended
         // at the tail by the self-healing `buildOrderedRawWidgets` pass.
-        prefs.panelTendenciasOrder = ["flujo_efectivo", "tendencia_saldo", "gastos_por_naturaleza"]
+        // PP2-07: expensesByNeed moved to Distribución, Tendencias has 3 widgets now.
+        prefs.panelTendenciasOrder = ["flujo_efectivo", "tendencia_saldo"]
 
         let vm = Self.makeVM(with: prefs)
         let widgets = vm.activeWidgets(in: .tendencias)
 
         #expect(widgets.map { $0.type.rawValue } == [
-            "flujo_efectivo", "tendencia_saldo", "gastos_por_naturaleza", "gasto_por_dia"
+            "flujo_efectivo", "tendencia_saldo", "gasto_por_dia"
         ])
     }
 
@@ -60,7 +61,7 @@ struct PanelSectionPreferencesTests {
     @Test func activeWidgets_inSection_excludesHiddenEntries() {
         let defaults = Self.makeSuite()
         let prefs = AppPreferences(defaults: defaults)
-        prefs.panelTendenciasOrder = ["tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza"]
+        prefs.panelTendenciasOrder = ["tendencia_saldo", "flujo_efectivo"]
         prefs.panelTendenciasHidden = ["flujo_efectivo"]
 
         let vm = Self.makeVM(with: prefs)
@@ -68,7 +69,7 @@ struct PanelSectionPreferencesTests {
 
         // `flujo_efectivo` hidden; `gasto_por_dia` appended at tail (self-healing).
         #expect(widgets.map { $0.type.rawValue } == [
-            "tendencia_saldo", "gastos_por_naturaleza", "gasto_por_dia",
+            "tendencia_saldo", "gasto_por_dia",
         ])
     }
 
@@ -77,16 +78,16 @@ struct PanelSectionPreferencesTests {
     @Test func activeWidgets_inSection_appendsUnknownDefaultsAtTail() {
         let defaults = Self.makeSuite()
         let prefs = AppPreferences(defaults: defaults)
-        // Order stores only 2 of the 4 tendencias widgets. The remaining two
-        // (`gastos_por_naturaleza`, `gasto_por_dia`) must appear at the tail
-        // automatically in declaration order of `WidgetType.defaultWidgets`.
+        // Order stores only 2 of the 3 tendencias widgets. The remaining one
+        // (`gasto_por_dia`) must appear at the tail automatically in declaration
+        // order of `WidgetType.defaultWidgets`.
         prefs.panelTendenciasOrder = ["flujo_efectivo", "tendencia_saldo"]
 
         let vm = Self.makeVM(with: prefs)
         let widgets = vm.activeWidgets(in: .tendencias)
 
         #expect(widgets.map { $0.type.rawValue } == [
-            "flujo_efectivo", "tendencia_saldo", "gastos_por_naturaleza", "gasto_por_dia",
+            "flujo_efectivo", "tendencia_saldo", "gasto_por_dia",
         ])
     }
 
@@ -102,7 +103,7 @@ struct PanelSectionPreferencesTests {
         let widgets = vm.activeWidgets(in: .tendencias)
 
         #expect(widgets.map { $0.type.rawValue } == [
-            "tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza", "gasto_por_dia",
+            "tendencia_saldo", "flujo_efectivo", "gasto_por_dia",
         ])
     }
 
@@ -113,14 +114,14 @@ struct PanelSectionPreferencesTests {
         let prefs = AppPreferences(defaults: defaults)
         // Duplicate entry. Only the first occurrence is preserved.
         prefs.panelTendenciasOrder = [
-            "tendencia_saldo", "flujo_efectivo", "tendencia_saldo", "gastos_por_naturaleza"
+            "tendencia_saldo", "flujo_efectivo", "tendencia_saldo"
         ]
 
         let vm = Self.makeVM(with: prefs)
         let widgets = vm.activeWidgets(in: .tendencias)
 
         #expect(widgets.map { $0.type.rawValue } == [
-            "tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza", "gasto_por_dia",
+            "tendencia_saldo", "flujo_efectivo", "gasto_por_dia",
         ])
     }
 
@@ -164,30 +165,31 @@ struct PanelSectionPreferencesTests {
     @Test func moveWidgetInSection_debounces200ms_andPersistsOnce() async throws {
         let defaults = Self.makeSuite()
         let prefs = AppPreferences(defaults: defaults)
-        // Seed full 4-widget order so the draft operates on the complete set —
+        // Seed full 3-widget order so the draft operates on the complete set —
         // otherwise `orderedWidgetTypes` self-heals and the move indices won't
         // match what the user actually dragged in the sheet UI.
+        // Tendencias has 3 widgets (trend, cashFlow, weekdayBar).
         prefs.panelTendenciasOrder = [
-            "tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza", "gasto_por_dia",
+            "tendencia_saldo", "flujo_efectivo", "gasto_por_dia",
         ]
         let vm = Self.makeVM(with: prefs)
 
-        // First move: position 0 → 2 (drops "tendencia_saldo" between the middle pair).
+        // First move: position 0 → 2 (drops "tendencia_saldo" to the tail).
         vm.moveWidgetInSection(.tendencias, from: IndexSet(integer: 0), to: 2)
         let draftOrder = vm.orderedWidgetTypes(in: .tendencias).map(\.rawValue)
         #expect(draftOrder == [
-            "flujo_efectivo", "tendencia_saldo", "gastos_por_naturaleza", "gasto_por_dia",
+            "flujo_efectivo", "tendencia_saldo", "gasto_por_dia",
         ])
         // AppPreferences not yet committed.
         #expect(prefs.panelTendenciasOrder == [
-            "tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza", "gasto_por_dia",
+            "tendencia_saldo", "flujo_efectivo", "gasto_por_dia",
         ])
 
         // Second move within the debounce window. Only the final order persists.
         vm.moveWidgetInSection(.tendencias, from: IndexSet(integer: 2), to: 0)
         try await Task.sleep(for: .milliseconds(350))
         #expect(prefs.panelTendenciasOrder == [
-            "gastos_por_naturaleza", "flujo_efectivo", "tendencia_saldo", "gasto_por_dia",
+            "gasto_por_dia", "flujo_efectivo", "tendencia_saldo",
         ])
     }
 
@@ -260,7 +262,7 @@ struct PanelSectionPreferencesTests {
         // activeWidgets falls back to section defaults.
         let types = vm.activeWidgets(in: .tendencias).map(\.type.rawValue)
         #expect(Set(types) == Set([
-            "tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza", "gasto_por_dia",
+            "tendencia_saldo", "flujo_efectivo", "gasto_por_dia",
         ]))
     }
 
@@ -283,7 +285,7 @@ struct PanelSectionPreferencesTests {
         let defaults = Self.makeSuite()
         let prefs = AppPreferences(defaults: defaults)
         prefs.panelTendenciasHidden = [
-            "tendencia_saldo", "flujo_efectivo", "gastos_por_naturaleza", "gasto_por_dia",
+            "tendencia_saldo", "flujo_efectivo", "gasto_por_dia",
         ]
         let vm = Self.makeVM(with: prefs)
 

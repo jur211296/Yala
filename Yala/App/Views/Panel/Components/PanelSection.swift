@@ -28,7 +28,7 @@ struct PanelSection<Content: View, Footer: View>: View {
     @ViewBuilder var footer: () -> Footer
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             header
             VStack(spacing: DS.Spacing.lg) { content() }
             footer()

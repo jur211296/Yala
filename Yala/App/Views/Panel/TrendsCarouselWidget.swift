@@ -128,7 +128,7 @@ struct TrendsCarouselWidget: View {
     private var header: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                Text(trendTitle)
+                Text(viewModel.trendType.displayName)
                     .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.thPrimaryText)
 
@@ -266,15 +266,7 @@ struct TrendsCarouselWidget: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Title + KPI
-
-    private var trendTitle: String {
-        switch viewModel.trendType {
-        case .balance: return L10n.Trend.balanceTitle
-        case .income: return L10n.Trend.incomeTitle
-        case .expense: return L10n.Trend.expenseTitle
-        }
-    }
+    // MARK: - KPI
 
     private var currentKPIValue: String {
         if let focusedDate = viewModel.focusedDate,

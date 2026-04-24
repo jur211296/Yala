@@ -24,6 +24,11 @@ struct HeroMonthView: View {
     let onSelectPeriod: (DetailPeriod) -> Void
     let onCustomPeriodTapped: () -> Void
 
+    /// Income/expense del período actual del Panel — alimentan el card
+    /// "Disponible · Período". Independiente de `data.income/expense` (que
+    /// siempre son del mes calendario para anclar la frase motivacional).
+    var periodSummary: PanelHeroPeriodData = .init()
+
     /// Mensaje IA ya resuelto (cache hit o API success). Nil ⇒ fallback
     /// rule-based inmediato, sin spinner ni flash-blank.
     var aiSubtitle: String? = nil
@@ -37,6 +42,8 @@ struct HeroMonthView: View {
     /// view's body registers them as dependencies so the hero rebuilds the
     /// instant the user tweaks Profile → Personalización.
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(SessionState.self) private var sessionState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         // Touch the formatter-related prefs so this view re-evaluates when
@@ -48,6 +55,7 @@ struct HeroMonthView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             topRow
             kpi
+            summaryRow
             if showUpsellCTA { upsellCTA }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -101,20 +109,103 @@ struct HeroMonthView: View {
         .accessibilityLabel(L10n.Panel.Hero.proBadge)
     }
 
-    // MARK: - KPI (protagonista)
+    // MARK: - KPI (frase motivacional)
 
-    /// `subheadline` (ligeramente más grande que body) + `AttributedString
-    /// (markdown:)` para que los `**montos**` en los templates rule-based
-    /// se rendereen en bold. El aiSubtitle LLM puede venir sin markdown y
-    /// se renderiza normal.
+    /// Frase motivacional alineada a la izquierda, debajo del saludo. Funciona
+    /// como acento conversacional antes del bloque numérico. Si hay
+    /// `aiSubtitle` (Pro + consent), gana sobre el rule-based.
     private var kpi: some View {
         Text(kpiAttributedText)
-            .font(DS.Typography.subheadline)
+            .font(DS.Typography.body)
             .foregroundStyle(.primary)
             .minimumScaleFactor(0.85)
-            .lineLimit(6)
+            .lineLimit(3)
             .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, DS.Spacing.sm)
+            .padding(.bottom, DS.Spacing.xs)
             .animation(.easeInOut(duration: 0.3), value: aiSubtitle)
+    }
+
+    // MARK: - Summary row (card "Disponible · Período" + monto + chips)
+    //
+    // Card con título centrado arriba que desambigua el monto + monto
+    // protagonista + chips ingresos/gastos tap-to-filter (escriben a
+    // `sessionState.selectedTransactionNatures`, propagan al resto del Panel
+    // via SSOT). Opacity 0.3 cuando el otro filtro está activo.
+
+    private var summaryRow: some View {
+        @Bindable var sessionState = sessionState
+
+        let isIncomeFiltered = sessionState.selectedTransactionNatures == [.income]
+        let isExpenseFiltered = sessionState.selectedTransactionNatures == [.expense]
+        let hasNatureFilter = isIncomeFiltered || isExpenseFiltered
+
+        return VStack(alignment: .center, spacing: DS.Spacing.sm) {
+            // Título de card: "Disponible · Este mes" (primary).
+            Text("\(L10n.Panel.Hero.availableLabel) · \(selectedPeriod.displayName)")
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.primary)
+
+            // Disponible del período — protagonista.
+            Text(YalaFormatter.currency(value: periodSummary.available, currencyCode: currencyCode))
+                .font(DS.Typography.largeTitle)
+                .foregroundStyle(.primary)
+
+            HStack(spacing: DS.Spacing.md) {
+                // Income — oculto en expenses-only mode (mismo gating que RecordsTabView).
+                if !sessionState.isExpensesOnlyMode {
+                    Button {
+                        dsWithAnimation(reduceMotion) {
+                            if isIncomeFiltered {
+                                sessionState.selectedTransactionNatures.removeAll()
+                            } else {
+                                sessionState.selectedTransactionNatures = [.income]
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: DS.Spacing.xs) {
+                            Image(systemName: "arrow.up.right")
+                                .font(DS.Typography.labelSmall)
+                                .foregroundStyle(Color.incomeGraph)
+                                .accessibilityHidden(true)
+                            Text(YalaFormatter.currency(value: periodSummary.income, currencyCode: currencyCode))
+                                .font(DS.Typography.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .opacity(hasNatureFilter && !isIncomeFiltered ? 0.3 : 1.0)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                // Expense — siempre visible.
+                Button {
+                    dsWithAnimation(reduceMotion) {
+                        if isExpenseFiltered {
+                            // En expenses-only mode no se permite quitar el filtro.
+                            if !sessionState.isExpensesOnlyMode {
+                                sessionState.selectedTransactionNatures.removeAll()
+                            }
+                        } else {
+                            sessionState.selectedTransactionNatures = [.expense]
+                        }
+                    }
+                } label: {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "arrow.down.right")
+                            .font(DS.Typography.labelSmall)
+                            .foregroundStyle(Color.expenseGraph)
+                            .accessibilityHidden(true)
+                        Text(YalaFormatter.currency(value: periodSummary.expense, currencyCode: currencyCode))
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .opacity(hasNatureFilter && !isExpenseFiltered ? 0.3 : 1.0)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .solidCard(padding: DS.Card.paddingCompact)
     }
 
     /// Parsea markdown (`**bold**`) si aplica; cae al string plano cuando
@@ -285,4 +376,5 @@ struct HeroMonthView: View {
     }
     .padding(.vertical)
     .environment(AppPreferences(defaults: .standard))
+    .environment(SessionState.shared)
 }

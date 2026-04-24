@@ -590,38 +590,35 @@ final class AppPreferences {
     /// Uses `WidgetType.rawValue` (Spanish identifiers like "tendencia_saldo")
     /// — the persisted format the per-section lists serialize to.
     func setupDefaultsForNewUser() {
-        // Tendencias: trend (L) + cashFlow (L) visible; weekdayBar + need hidden.
-        panelTendenciasOrder  = [
+        // Tendencias: [trend | weekdayBar] paired small + cashFlow medium.
+        panelTendenciasOrder = [
             WidgetType.trend.rawValue,
+            WidgetType.weekdayBar.rawValue,
             WidgetType.cashFlow.rawValue,
-            WidgetType.weekdayBar.rawValue,
-            WidgetType.expensesByNeed.rawValue,
         ]
-        panelTendenciasHidden = [
-            WidgetType.weekdayBar.rawValue,
-            WidgetType.expensesByNeed.rawValue,
-        ]
+        panelTendenciasHidden = []
 
-        // Distribución: only categoriesPie (L) visible; rest hidden.
-        panelDistribucionOrder  = [
+        // Distribución: [categoriesPie | subcategoriesPie] paired small +
+        // expensesByNeed medium. Top categorías/Top subcategorías/Etiquetas
+        // ocultos por default.
+        panelDistribucionOrder = [
             WidgetType.categoriesPie.rawValue,
-            WidgetType.topSubcategories.rawValue,
-            WidgetType.topSpending.rawValue,
             WidgetType.subcategoriesPie.rawValue,
+            WidgetType.expensesByNeed.rawValue,
+            WidgetType.topSpending.rawValue,
+            WidgetType.topSubcategories.rawValue,
             WidgetType.tagsPie.rawValue,
         ]
         panelDistribucionHidden = [
-            WidgetType.topSubcategories.rawValue,
             WidgetType.topSpending.rawValue,
-            WidgetType.subcategoriesPie.rawValue,
+            WidgetType.topSubcategories.rawValue,
             WidgetType.tagsPie.rawValue,
         ]
 
-        // Planificación: budgets + scheduledPayments visible (groupsSummary
-        // was removed entirely in P20-11).
-        panelPlanificacionOrder  = [
-            WidgetType.budgets.rawValue,
+        // Planificación: [scheduledPayments | budgets] paired small.
+        panelPlanificacionOrder = [
             WidgetType.scheduledPayments.rawValue,
+            WidgetType.budgets.rawValue,
         ]
         panelPlanificacionHidden = []
 
