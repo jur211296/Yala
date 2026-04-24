@@ -52,8 +52,6 @@
 "panel.weekdayBar.largeTitle" = "Average spend by weekday";
 "panel.weekdayBar.perWeekSuffix" = "/week";
 "panel.filterBar.sectionTitle" = "Applied filters";
-"panel.cashFlowSmall.availableFormat" = "You have %d%% of your income available (%@)";
-"panel.cashFlowSmall.overspentFormat" = "You spent %d%% more than you earned (%@)";
 "panel.periodComparison.vs %@" = "vs %@";
 "panel.periodComparison.vsWithYear %@ %@" = "vs %@ %@";
 "panel.periodComparison.requiresPeriod" = "Pick a month or period to compare";

@@ -193,19 +193,6 @@ enum L10n {
             }
         }
 
-        enum CashFlowSmall {
-            /// Positive net flow. Args: percent (Int), formatted amount (String).
-            /// Example (ES): "Te queda disponible el 47% de tus ingresos (PEN 2,888)".
-            static var availableFormat: String {
-                ls("panel.cashFlowSmall.availableFormat", comment: "Cash flow small widget insight — net positive relative to income")
-            }
-            /// Negative net flow. Args: percent (Int), formatted amount (String).
-            /// Example (ES): "Gastaste un 12% más de lo que ingresaste (PEN 682)".
-            static var overspentFormat: String {
-                ls("panel.cashFlowSmall.overspentFormat", comment: "Cash flow small widget insight — net negative vs income")
-            }
-        }
-
         enum PeriodComparison {
             static func vs(_ month: String) -> String {
                 String(format: ls("panel.periodComparison.vs %@", comment: "Delta chip 'vs [month]' when current and previous share year"), month)

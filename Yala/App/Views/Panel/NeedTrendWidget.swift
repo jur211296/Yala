@@ -207,10 +207,9 @@ struct NeedTrendWidget: View {
         amount: Double,
         ratio: Double
     ) -> some View {
-        let percent = Int((ratio * 100).rounded())
         let dimmed = selectedNeed != nil && selectedNeed != need
         return PanelSmallBarRow(
-            label: "\(need.displayName) · \(percent)%",
+            label: need.displayName,
             amount: amount,
             ratio: ratio,
             color: color(for: need),

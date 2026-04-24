@@ -52,8 +52,6 @@
 "panel.weekdayBar.largeTitle" = "Média de gastos por dia da semana";
 "panel.weekdayBar.perWeekSuffix" = "/semana";
 "panel.filterBar.sectionTitle" = "Filtros aplicados";
-"panel.cashFlowSmall.availableFormat" = "Tens %d%% da tua receita disponível (%@)";
-"panel.cashFlowSmall.overspentFormat" = "Gastaste %d%% mais do que ganhaste (%@)";
 "panel.periodComparison.vs %@" = "vs %@";
 "panel.periodComparison.vsWithYear %@ %@" = "vs %@ %@";
 "panel.periodComparison.requiresPeriod" = "Escolha um mês ou período para comparar";

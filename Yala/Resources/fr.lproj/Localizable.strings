@@ -52,8 +52,6 @@
 "panel.weekdayBar.largeTitle" = "Dépense moyenne par jour de la semaine";
 "panel.weekdayBar.perWeekSuffix" = "/semaine";
 "panel.filterBar.sectionTitle" = "Filtres appliqués";
-"panel.cashFlowSmall.availableFormat" = "Il te reste %d%% de tes revenus disponibles (%@)";
-"panel.cashFlowSmall.overspentFormat" = "Tu as dépensé %d%% de plus que tes revenus (%@)";
 "panel.periodComparison.vs %@" = "vs %@";
 "panel.periodComparison.vsWithYear %@ %@" = "vs %@ %@";
 "panel.periodComparison.requiresPeriod" = "Choisis un mois ou une période à comparer";

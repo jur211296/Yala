@@ -52,8 +52,6 @@
 "panel.weekdayBar.largeTitle" = "Durchschnittsausgabe pro Wochentag";
 "panel.weekdayBar.perWeekSuffix" = "/Woche";
 "panel.filterBar.sectionTitle" = "Angewendete Filter";
-"panel.cashFlowSmall.availableFormat" = "Dir bleiben %d%% deines Einkommens übrig (%@)";
-"panel.cashFlowSmall.overspentFormat" = "Du hast %d%% mehr ausgegeben als eingenommen (%@)";
 "panel.periodComparison.vs %@" = "vs %@";
 "panel.periodComparison.vsWithYear %@ %@" = "vs %@ %@";
 "panel.periodComparison.requiresPeriod" = "Wähle einen Monat oder Zeitraum für den Vergleich";

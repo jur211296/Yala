@@ -372,37 +372,11 @@ struct CashFlowWidget: View {
                 }
 
                 smallSummaryBars
-
-                if let insight = smallCashFlowInsight {
-                    Text(insight)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.thSecondaryText)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.85)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .solidCard(padding: DS.Card.paddingCompact, radius: DS.Radius.lg)
         .frame(height: WidgetSize.smallHeight)
-    }
-
-    /// Brand-voice insight text shown at the bottom of the `.small` card.
-    /// Only appears when there's income to compare against; otherwise `nil`.
-    private var smallCashFlowInsight: String? {
-        guard summary.totalIncome > 0 else { return nil }
-        let ratio = summary.netFlow / summary.totalIncome
-        let percent = Int((abs(ratio) * 100).rounded())
-        let amount = YalaFormatter.currency(
-            value: abs(summary.netFlow),
-            currencyCode: summary.currencyCode
-        )
-        if ratio >= 0 {
-            return String(format: L10n.Panel.CashFlowSmall.availableFormat, percent, amount)
-        } else {
-            return String(format: L10n.Panel.CashFlowSmall.overspentFormat, percent, amount)
-        }
     }
 
     /// Income + Expense horizontal bars normalized against the larger of the two totals.
