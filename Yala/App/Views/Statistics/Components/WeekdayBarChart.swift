@@ -44,9 +44,9 @@ struct WeekdayBarChart: View {
     }
 
     /// Rotation helper shared with `WeekdayBarPanelWidget` (voiceover label order).
+    /// Wrapper around `Calendar.orderedWeekdays(firstWeekday:)` for backward compat.
     static func weekdayOrder(firstWeekday: Int) -> [Int] {
-        let clamped = max(1, min(7, firstWeekday))
-        return (0..<7).map { offset in ((clamped - 1 + offset) % 7) + 1 }
+        Calendar.orderedWeekdays(firstWeekday: firstWeekday)
     }
 
     var body: some View {
