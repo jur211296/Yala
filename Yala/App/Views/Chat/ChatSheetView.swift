@@ -14,6 +14,7 @@ struct ChatSheetView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = ChatAssistantViewModel()
     @State private var selectedDetent: PresentationDetent = .medium
+    @State private var showAISettingsSheet = false
 
     var body: some View {
         NavigationStack {
@@ -45,6 +46,14 @@ struct ChatSheetView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) { dismiss() }
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    YalaToolbarButton(systemName: "slider.horizontal.3", label: L10n.AISettings.title) {
+                        showAISettingsSheet = true
+                    }
+                }
+            }
+            .sheet(isPresented: $showAISettingsSheet) {
+                AIPersonalizationSheet()
             }
         }
         .presentationDetents([.medium, .large], selection: $selectedDetent)

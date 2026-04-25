@@ -1449,6 +1449,15 @@ enum L10n {
 
     // MARK: - AI Consent
 
+    // MARK: - AI Settings (Personalization Sheet from Chat)
+
+    enum AISettings {
+        static var title: String { ls("aiSettings.title", comment: "") }
+        static var toneSection: String { ls("aiSettings.toneSection", comment: "") }
+        static var styleSection: String { ls("aiSettings.styleSection", comment: "") }
+        static var appliesHint: String { ls("aiSettings.appliesHint", comment: "") }
+    }
+
     enum AIConsent {
         static var processingTitle: String { ls("aiConsent.processingTitle", comment: "") }
         static var processingMessage: String { ls("aiConsent.processingMessage", comment: "") }

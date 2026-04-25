@@ -415,18 +415,8 @@ private struct RecordsStandaloneSheets: ViewModifier {
             .sheet(isPresented: $showUpgradeForChat) {
                 UpgradePromptSheet(feature: .chatAssistant, context: .proFeature)
             }
-            .alert(L10n.AIConsent.chatTitle, isPresented: $showChatConsentAlert) {
-                Button(L10n.AIConsent.accept) {
-                    appPreferences.aiChatConsentAccepted = true
-                    appPreferences.chatAssistantEnabled = true
-                    showChatSheet = true
-                }
-                Button(L10n.AIConsent.privacyPolicy) {
-                    UIApplication.shared.open(AppConstants.privacyURL)
-                }
-                Button(L10n.Action.cancel, role: .cancel) {}
-            } message: {
-                Text(L10n.AIConsent.chatMessage)
+            .chatConsentAlert(isPresented: $showChatConsentAlert) {
+                showChatSheet = true
             }
             .sheet(isPresented: $recordsViewModel.showEditTransaction) {
                 if let transaction = recordsViewModel.editingTransaction {

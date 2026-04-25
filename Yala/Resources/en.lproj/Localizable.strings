@@ -2965,6 +2965,13 @@
 "siriShortcuts.faq.offlineQ" = "Does it work offline?";
 "siriShortcuts.faq.offlineA" = "Yes, shortcuts work in basic mode without an internet connection.";
 
+// MARK: - AI Settings (Personalization Sheet from Chat)
+
+"aiSettings.title" = "Customize AI";
+"aiSettings.toneSection" = "Tone";
+"aiSettings.styleSection" = "Style";
+"aiSettings.appliesHint" = "These settings apply to Insights, Assistant, and Panel Hero.";
+
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Voice & Image Processing";
 "aiConsent.processingMessage" = "These features use OpenAI to process your data:\n\n• Voice: your audio recording is transcribed\n• Images: the photo is analyzed to extract data\n\nYour individual transactions and personal information are never shared. OpenAI does not use this data for training.";

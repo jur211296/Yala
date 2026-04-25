@@ -43,8 +43,6 @@ struct ProfileView: View {
     @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
     @AppStorage("aiInsightsConsentAccepted") private var aiInsightsConsentAccepted: Bool = false
     @AppStorage("aiInsightsEnabled") private var aiInsightsEnabled: Bool = false
-    @AppStorage(InsightTone.storageKey) private var insightsToneRaw: String = InsightTone.normal.rawValue
-    @AppStorage(InsightFocus.storageKey) private var insightsFocusRaw: String = InsightFocus.balanced.rawValue
     @State private var showAIConsentAlert: Bool = false
     @State private var showInsightsConsentAlert: Bool = false
     @State private var showChatConsentAlert: Bool = false
@@ -105,14 +103,6 @@ struct ProfileView: View {
 
     private var isChatLocked: Bool {
         !FeatureGateService.shared.canAccess(.chatAssistant)
-    }
-
-    private var selectedTone: InsightTone {
-        InsightTone(rawValue: insightsToneRaw) ?? .normal
-    }
-
-    private var selectedFocus: InsightFocus {
-        InsightFocus(rawValue: insightsFocusRaw) ?? .balanced
     }
 
     enum ProfileSheet: Identifiable {
@@ -701,88 +691,6 @@ struct ProfileView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-
-            // Tone selector (visible when insights OR chatbot is active)
-            if (aiInsightsEnabled && !isSmartInsightsLocked) || (aiChatConsentAccepted && chatAssistantEnabled) {
-                HStack(spacing: DS.Spacing.md) {
-                    Color.clear
-                        .frame(width: 28, height: 28)
-
-                    Text(L10n.Insights.toneLabel)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    Menu {
-                        ForEach(InsightTone.allCases) { tone in
-                            Button {
-                                insightsToneRaw = tone.rawValue
-                                PreferenceSyncService.shared.set(string: tone.rawValue, forKey: InsightTone.storageKey)
-                                InsightsLLMService.shared.invalidateCache()
-                            } label: {
-                                HStack {
-                                    Text(tone.displayName)
-                                    if insightsToneRaw == tone.rawValue {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: DS.Spacing.xs) {
-                            Text(selectedTone.displayName)
-                                .font(DS.Typography.body)
-                                .foregroundStyle(.primary)
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(DS.Typography.captionSmall.weight(.medium))
-                                .foregroundStyle(.primary)
-                        }
-                    }
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.FormRow.paddingV)
-
-                // Focus selector
-                HStack(spacing: DS.Spacing.md) {
-                    Color.clear
-                        .frame(width: 28, height: 28)
-
-                    Text(L10n.Insights.focusLabel)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    Menu {
-                        ForEach(InsightFocus.allCases) { focus in
-                            Button {
-                                insightsFocusRaw = focus.rawValue
-                                PreferenceSyncService.shared.set(string: focus.rawValue, forKey: InsightFocus.storageKey)
-                                InsightsLLMService.shared.invalidateCache()
-                            } label: {
-                                HStack {
-                                    Text(focus.displayName)
-                                    if insightsFocusRaw == focus.rawValue {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: DS.Spacing.xs) {
-                            Text(selectedFocus.displayName)
-                                .font(DS.Typography.body)
-                                .foregroundStyle(.primary)
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(DS.Typography.captionSmall.weight(.medium))
-                                .foregroundStyle(.primary)
-                        }
-                    }
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.FormRow.paddingV)
-            }
         }
     }
 

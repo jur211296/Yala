@@ -155,18 +155,8 @@ struct PanelSheetsModifier: ViewModifier {
             .sheet(isPresented: $sheets.showUpgradeForChat) {
                 UpgradePromptSheet(feature: .chatAssistant, context: .proFeature)
             }
-            .alert(L10n.AIConsent.chatTitle, isPresented: $sheets.showChatConsentAlert) {
-                Button(L10n.AIConsent.accept) {
-                    appPreferences.aiChatConsentAccepted = true
-                    appPreferences.chatAssistantEnabled = true
-                    sheets.showChatSheet = true
-                }
-                Button(L10n.AIConsent.privacyPolicy) {
-                    UIApplication.shared.open(AppConstants.privacyURL)
-                }
-                Button(L10n.Action.cancel, role: .cancel) {}
-            } message: {
-                Text(L10n.AIConsent.chatMessage)
+            .chatConsentAlert(isPresented: $sheets.showChatConsentAlert) {
+                sheets.showChatSheet = true
             }
             .aiConsentAlert(isPresented: $sheets.showAIConsentAlert, pendingInput: $sheets.pendingAIInput) { input in
                 switch input {

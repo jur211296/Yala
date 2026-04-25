@@ -99,17 +99,8 @@ struct CashFlowChartsSheet: View {
             async let devTask: () = viewModel.loadDeviationComment(deviations: deviationData, currencyCode: currencyCode)
             _ = await (cfTask, devTask)
         }
-        .alert(L10n.AIConsent.insightsTitle, isPresented: $showInsightsConsentAlert) {
-            Button(L10n.AIConsent.accept) {
-                appPreferences.acceptAIInsightsConsent()
-                appPreferences.cashFlowAIEnabled = true
-            }
-            Button(L10n.AIConsent.privacyPolicy) {
-                UIApplication.shared.open(AppConstants.privacyURL)
-            }
-            Button(L10n.Action.cancel, role: .cancel) {}
-        } message: {
-            Text(L10n.AIConsent.insightsMessage)
+        .insightsConsentAlert(isPresented: $showInsightsConsentAlert) {
+            appPreferences.cashFlowAIEnabled = true
         }
         .sheet(isPresented: $showUpgradePrompt) {
             UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature, source: "cashFlowCharts")

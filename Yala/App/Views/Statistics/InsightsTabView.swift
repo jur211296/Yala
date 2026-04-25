@@ -150,17 +150,8 @@ struct InsightsTabView: View {
                 currentRange: sessionState.customDateRange
             )
         }
-        .alert(L10n.AIConsent.insightsTitle, isPresented: $showInsightsConsentAlert) {
-            Button(L10n.AIConsent.accept) {
-                appPreferences.acceptAIInsightsConsent()
-                Task { await viewModel.triggerAIGeneration() }
-            }
-            Button(L10n.AIConsent.privacyPolicy) {
-                openURL(AppConstants.privacyURL)
-            }
-            Button(L10n.Action.cancel, role: .cancel) {}
-        } message: {
-            Text(L10n.AIConsent.insightsMessage)
+        .insightsConsentAlert(isPresented: $showInsightsConsentAlert) {
+            Task { await viewModel.triggerAIGeneration() }
         }
         .coachMarkOverlay(
             steps: ProTourSteps.insightsSteps,

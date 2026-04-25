@@ -2962,6 +2962,13 @@
 "siriShortcuts.faq.offlineQ" = "¿Funciona sin internet?";
 "siriShortcuts.faq.offlineA" = "Sí, los atajos funcionan en modo básico sin conexión a internet.";
 
+// MARK: - AI Settings (Personalization Sheet from Chat)
+
+"aiSettings.title" = "Personalizar IA";
+"aiSettings.toneSection" = "Tono";
+"aiSettings.styleSection" = "Estilo";
+"aiSettings.appliesHint" = "Estos ajustes se aplican a Insights, Asistente y Hero del Panel.";
+
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Procesamiento de voz e imágenes";
 "aiConsent.processingMessage" = "Estas funciones usan OpenAI para procesar tus datos:\n\n• Voz: tu grabación de audio se transcribe\n• Imágenes: la foto se analiza para extraer datos\n\nNunca se comparten tus gastos individuales ni información personal. OpenAI no usa estos datos para entrenar sus modelos.";

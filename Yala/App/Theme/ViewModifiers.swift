@@ -323,6 +323,88 @@ extension View {
     }
 }
 
+// MARK: - Chat Consent Alert
+
+/// Shared consent alert for the Chat Assistant feature.
+/// Reused across PanelSheetsModifier, RecordsStandaloneView, and AIPrivacySettingsView.
+struct ChatConsentAlertModifier: ViewModifier {
+    @Binding var isPresented: Bool
+    @AppStorage(AppPreferences.Keys.aiChatConsentAccepted) private var aiChatConsentAccepted: Bool = false
+    @AppStorage(AppPreferences.Keys.chatAssistantEnabled) private var chatAssistantEnabled: Bool = false
+    @Environment(\.openURL) private var openURL
+
+    /// Called after consent is accepted (e.g. to present the chat sheet).
+    var onAccepted: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .alert(L10n.AIConsent.chatTitle, isPresented: $isPresented) {
+                Button(L10n.AIConsent.accept) {
+                    aiChatConsentAccepted = true
+                    chatAssistantEnabled = true
+                    onAccepted()
+                }
+                Button(L10n.AIConsent.privacyPolicy) {
+                    openURL(AppConstants.privacyURL)
+                }
+                Button(L10n.Action.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.AIConsent.chatMessage)
+            }
+    }
+}
+
+extension View {
+    /// Adds the chat assistant consent alert.
+    func chatConsentAlert(
+        isPresented: Binding<Bool>,
+        onAccepted: @escaping () -> Void = {}
+    ) -> some View {
+        modifier(ChatConsentAlertModifier(isPresented: isPresented, onAccepted: onAccepted))
+    }
+}
+
+// MARK: - Insights Consent Alert
+
+/// Shared consent alert for AI-powered insights generation.
+/// Reused across InsightsTabView, CashFlowChartsSheet, PanelHeroSection, and AIPrivacySettingsView.
+struct InsightsConsentAlertModifier: ViewModifier {
+    @Binding var isPresented: Bool
+    @AppStorage(AppPreferences.Keys.aiInsightsConsentAccepted) private var aiInsightsConsentAccepted: Bool = false
+    @AppStorage(AppPreferences.Keys.aiInsightsEnabled) private var aiInsightsEnabled: Bool = false
+    @Environment(\.openURL) private var openURL
+
+    /// Called after consent is accepted (e.g. to trigger AI generation).
+    var onAccepted: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .alert(L10n.AIConsent.insightsTitle, isPresented: $isPresented) {
+                Button(L10n.AIConsent.accept) {
+                    aiInsightsConsentAccepted = true
+                    aiInsightsEnabled = true
+                    onAccepted()
+                }
+                Button(L10n.AIConsent.privacyPolicy) {
+                    openURL(AppConstants.privacyURL)
+                }
+                Button(L10n.Action.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.AIConsent.insightsMessage)
+            }
+    }
+}
+
+extension View {
+    /// Adds the insights consent alert.
+    func insightsConsentAlert(
+        isPresented: Binding<Bool>,
+        onAccepted: @escaping () -> Void = {}
+    ) -> some View {
+        modifier(InsightsConsentAlertModifier(isPresented: isPresented, onAccepted: onAccepted))
+    }
+}
+
 // MARK: - Dismiss Keyboard on Tap
 
 /// Global function to dismiss keyboard from anywhere
