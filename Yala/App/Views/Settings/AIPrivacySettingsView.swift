@@ -30,37 +30,41 @@ struct AIPrivacySettingsView: View {
     @State private var showRevokeInsightsDialog = false
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: DS.Spacing.lg) {
-                SectionBox(title: L10n.AIPrivacy.title) {
-                    VStack(spacing: DS.Spacing.none) {
-                        toggleRow(title: L10n.AIPrivacy.processingRow, isOn: $dataToggle)
-                        SubsectionDivider()
-                        toggleRow(title: L10n.AIPrivacy.chatRow, isOn: $chatToggle)
-                        SubsectionDivider()
-                        toggleRow(title: L10n.AIPrivacy.insightsRow, isOn: $insightsToggle)
-                    }
-                }
+        ZStack {
+            PanelBackgroundView()
 
-                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                    Text(L10n.AIPrivacy.footerHint)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-
-                    Button {
-                        openURL(AppConstants.privacyURL)
-                    } label: {
-                        Text(L10n.AIPrivacy.policyLink)
-                            .font(DS.Typography.caption.weight(.medium))
-                            .foregroundStyle(.tint)
+            ScrollView {
+                VStack(spacing: DS.Spacing.lg) {
+                    SectionBox(title: L10n.AIPrivacy.title) {
+                        VStack(spacing: DS.Spacing.none) {
+                            toggleRow(title: L10n.AIPrivacy.processingRow, isOn: $dataToggle)
+                            SubsectionDivider()
+                            toggleRow(title: L10n.AIPrivacy.chatRow, isOn: $chatToggle)
+                            SubsectionDivider()
+                            toggleRow(title: L10n.AIPrivacy.insightsRow, isOn: $insightsToggle)
+                        }
                     }
-                    .buttonStyle(.plain)
+
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                        Text(L10n.AIPrivacy.footerHint)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+
+                        Button {
+                            openURL(AppConstants.privacyURL)
+                        } label: {
+                            Text(L10n.AIPrivacy.policyLink)
+                                .font(DS.Typography.caption.weight(.medium))
+                                .foregroundStyle(.tint)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.horizontal, DS.Spacing.lg)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, DS.Spacing.lg)
             }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.lg)
         }
         .navigationTitle(L10n.AIPrivacy.title)
         .navigationBarTitleDisplayMode(.inline)

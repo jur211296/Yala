@@ -551,7 +551,7 @@ struct ProfileView: View {
                 .buttonStyle(.plain)
                 SubsectionDivider()
                 profileRow(
-                    icon: "sparkles.shield", title: L10n.Settings.aiPrivacy,
+                    icon: "hand.raised.fill", title: L10n.Settings.aiPrivacy,
                     iconColor: .indigo, destination: .aiPrivacy)
                 SubsectionDivider()
                 profileRow(
