@@ -265,22 +265,82 @@ struct ChatSheetView: View {
     // MARK: - Input Bar (Claude-style: TextField arriba, fila botones abajo)
 
     private var chatInputBar: some View {
+        Group {
+            if viewModel.isRecording {
+                recordingInputBar
+            } else if viewModel.isTranscribing {
+                transcribingInputBar
+            } else {
+                idleInputBar
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: viewModel.isRecording)
+        .animation(.easeInOut(duration: 0.2), value: viewModel.isTranscribing)
+    }
+
+    private var idleInputBar: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             TextField(L10n.Chat.inputPlaceholder, text: $viewModel.inputText, axis: .vertical)
                 .font(DS.Typography.body)
                 .lineLimit(1...4)
                 .textFieldStyle(.plain)
-                .disabled(isVoiceActive)
 
             HStack(spacing: DS.Spacing.sm) {
                 topicsButton
-
                 Spacer()
-
                 micButton
-
                 sendButton
             }
+        }
+        .padding(DS.Spacing.md)
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.sm)
+    }
+
+    private var recordingInputBar: some View {
+        HStack(spacing: DS.Spacing.md) {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "waveform")
+                    .font(.system(size: 20)) // A11Y-DT: dictation indicator
+                    .foregroundStyle(DS.Semantic.errorForeground)
+                    .symbolEffect(.variableColor.iterative, isActive: true)
+
+                Text(L10n.Chat.listening)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button {
+                Task { await viewModel.stopVoiceInput() }
+            } label: {
+                Image(systemName: "stop.fill")
+                    .font(.system(size: 18, weight: .bold)) // A11Y-DT: stop icon
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44) // A11Y-DT: tap target grande
+                    .background(Circle().fill(DS.Semantic.errorForeground))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(DS.Spacing.md)
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.sm)
+    }
+
+    private var transcribingInputBar: some View {
+        HStack(spacing: DS.Spacing.md) {
+            HStack(spacing: DS.Spacing.sm) {
+                ProgressView()
+                    .controlSize(.small)
+                Text(L10n.Chat.transcribing)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(DS.Spacing.md)
         .background(.thCard)

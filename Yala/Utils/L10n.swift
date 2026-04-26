@@ -1517,6 +1517,8 @@ enum L10n {
         static var errorTranscription: String { ls("chat.errorTranscription", comment: "") }
         static var errorMicPermission: String { ls("chat.errorMicPermission", comment: "") }
         static var resetContext: String { ls("chat.resetContext", comment: "") }
+        static var listening: String { ls("chat.listening", comment: "") }
+        static var transcribing: String { ls("chat.transcribing", comment: "") }
         static func contextMemory(_ count: Int) -> String {
             String(format: ls("chat.contextMemory", comment: ""), count)
         }

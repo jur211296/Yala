@@ -3485,6 +3485,8 @@
 "chat.errorMicPermission" = "Ich benötige die Erlaubnis, das Mikrofon zu verwenden.";
 "chat.topics.title" = "Gesprächsthemen";
 "chat.resetContext" = "Gesprächskontext zurücksetzen";
+"chat.listening" = "Höre zu…";
+"chat.transcribing" = "Transkribiere…";
 "chat.contextMemory" = "Yala KI erinnert sich an %d Nachrichten";
 
 // MARK: - Chat Assistant Consent
