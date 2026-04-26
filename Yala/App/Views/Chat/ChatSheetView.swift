@@ -299,10 +299,6 @@ struct ChatSheetView: View {
             }
             .font(DS.Typography.label)
             .foregroundStyle(.thPrimaryText)
-            .padding(.horizontal, DS.Spacing.sm)
-            .padding(.vertical, DS.Spacing.xs)
-            .background(.thBackground.opacity(0.4))
-            .clipShape(Capsule())
         }
         .buttonStyle(.plain)
         .disabled(isVoiceActive)
@@ -312,9 +308,9 @@ struct ChatSheetView: View {
         Button {
             Task { await toggleVoiceInput() }
         } label: {
-            Image(systemName: viewModel.isRecording ? "mic.circle.fill" : "mic.fill")
+            Image(systemName: viewModel.isRecording ? "mic.circle.fill" : "mic")
                 .font(.system(size: 24)) // A11Y-DT: input bar control
-                .foregroundStyle(viewModel.isRecording ? AnyShapeStyle(DS.Semantic.errorForeground) : AnyShapeStyle(.secondary))
+                .foregroundStyle(viewModel.isRecording ? AnyShapeStyle(DS.Semantic.errorForeground) : AnyShapeStyle(.thPrimaryText))
                 .symbolEffect(.pulse, isActive: viewModel.isRecording)
         }
         .disabled(viewModel.isTranscribing || viewModel.isLoading)
