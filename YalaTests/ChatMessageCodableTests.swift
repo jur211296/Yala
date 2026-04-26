@@ -68,35 +68,68 @@ struct ChatMessageCodableTests {
 
     // MARK: - ChatPersistedSession
 
-    @Test func persistedSession_roundTrip_withPreviousQA() throws {
+    @Test func persistedSession_roundTrip_withTurns() throws {
         let messages = [
             ChatMessage(role: .user, text: "¿Mi presupuesto?", timestamp: Date.now),
             ChatMessage(role: .assistant, text: "Llevas 80% del presupuesto.", timestamp: Date.now)
         ]
-        let qa = QAPair(
-            question: "¿Mi presupuesto?",
-            toolName: "budget_status",
-            toolResultJSON: "{\"used\": 0.8}",
-            response: "Llevas 80% del presupuesto.",
-            timestamp: Date.now
-        )
-        let original = ChatPersistedSession(messages: messages, previousQA: qa)
+        let turns = [
+            QAPair(
+                question: "¿Mi presupuesto?",
+                toolName: "budget_status",
+                toolResultJSON: "{\"used\": 0.8}",
+                response: "Llevas 80% del presupuesto.",
+                timestamp: Date.now
+            ),
+            QAPair(
+                question: "¿Y restaurantes?",
+                toolName: "spending_summary",
+                toolResultJSON: "{\"total\": 320}",
+                response: "Llevas S/ 320 en restaurantes.",
+                timestamp: Date.now
+            )
+        ]
+        let original = ChatPersistedSession(messages: messages, allTurns: turns)
         let data = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(ChatPersistedSession.self, from: data)
 
         #expect(decoded.messages.count == 2)
-        #expect(decoded.messages[0].text == "¿Mi presupuesto?")
-        #expect(decoded.previousQA?.toolName == "budget_status")
-        #expect(decoded.previousQA?.toolResultJSON == "{\"used\": 0.8}")
+        #expect(decoded.allTurns.count == 2)
+        #expect(decoded.allTurns[0].toolName == "budget_status")
+        #expect(decoded.allTurns[1].response == "Llevas S/ 320 en restaurantes.")
     }
 
-    @Test func persistedSession_roundTrip_nilPreviousQA() throws {
+    @Test func persistedSession_roundTrip_emptyTurns() throws {
         let messages = [ChatMessage(role: .user, text: "hi", timestamp: Date.now)]
-        let original = ChatPersistedSession(messages: messages, previousQA: nil)
+        let original = ChatPersistedSession(messages: messages, allTurns: [])
         let data = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(ChatPersistedSession.self, from: data)
 
         #expect(decoded.messages.count == 1)
-        #expect(decoded.previousQA == nil)
+        #expect(decoded.allTurns.isEmpty)
+    }
+
+    /// Migración: blobs antiguos con `previousQA: QAPair` se hidratan como `allTurns: [previousQA]`.
+    @Test func persistedSession_legacyPreviousQA_migratesToAllTurns() throws {
+        let legacyJSON = """
+        {
+          "messages": [
+            {"id": "\(UUID().uuidString)", "role": "user", "text": "hola", "timestamp": \(Date.now.timeIntervalSinceReferenceDate)}
+          ],
+          "previousQA": {
+            "question": "¿Cuánto gasté?",
+            "toolName": "spending_summary",
+            "toolResultJSON": null,
+            "response": "Gastaste 100",
+            "timestamp": \(Date.now.timeIntervalSinceReferenceDate)
+          }
+        }
+        """
+
+        let data = legacyJSON.data(using: .utf8)!
+        let decoded = try JSONDecoder().decode(ChatPersistedSession.self, from: data)
+
+        #expect(decoded.allTurns.count == 1)
+        #expect(decoded.allTurns[0].response == "Gastaste 100")
     }
 }

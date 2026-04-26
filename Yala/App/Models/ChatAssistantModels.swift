@@ -298,8 +298,41 @@ nonisolated struct ChatSuggestion: Identifiable, Codable {
 // MARK: - Persisted Session (day-calendar storage blob)
 
 /// Blob JSON guardado en `UserDefaults` con clave `chat_session_<YYYY-MM-DD>`.
-/// Persiste mensajes + previousQA para preservar 1-turn memory cross-session.
+/// Persiste mensajes + todos los turnos del día (allTurns) para que el LLM reciba
+/// contexto multi-turno completo en cada nueva pregunta.
 nonisolated struct ChatPersistedSession: Codable {
     let messages: [ChatMessage]
-    let previousQA: QAPair?
+    let allTurns: [QAPair]
+
+    init(messages: [ChatMessage], allTurns: [QAPair]) {
+        self.messages = messages
+        self.allTurns = allTurns
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case messages
+        case allTurns
+        case previousQA
+    }
+
+    /// Decoder con migración: blobs antiguos guardaban `previousQA: QAPair?` (1-turn).
+    /// Se hidratan como `allTurns: [previousQA]` para no perder contexto.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.messages = try c.decodeIfPresent([ChatMessage].self, forKey: .messages) ?? []
+
+        if let turns = try c.decodeIfPresent([QAPair].self, forKey: .allTurns) {
+            self.allTurns = turns
+        } else if let legacy = try c.decodeIfPresent(QAPair.self, forKey: .previousQA) {
+            self.allTurns = [legacy]
+        } else {
+            self.allTurns = []
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(messages, forKey: .messages)
+        try c.encode(allTurns, forKey: .allTurns)
+    }
 }

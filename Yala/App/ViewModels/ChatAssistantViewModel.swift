@@ -23,9 +23,16 @@ final class ChatAssistantViewModel {
     private(set) var errorMessage: String?
     var inputText: String = ""
 
-    // MARK: - 1-Turn Memory
+    // MARK: - Multi-turn Memory (todos los turnos del día calendario)
 
-    private var previousQA: QAPair?
+    /// Hard cap defensivo. Daily limit es 75; este cap solo aplica si algún día
+    /// se sube ese limit. GPT-4.1-nano (128k context) maneja 50 turnos sin problema.
+    private static let maxTurns = 50
+
+    private(set) var allTurns: [QAPair] = []
+
+    /// Número de turnos que el LLM recuerda activamente. Para mostrar contador en la UI.
+    var turnCount: Int { allTurns.count }
 
     // MARK: - Dependencies
 
@@ -158,7 +165,7 @@ final class ChatAssistantViewModel {
             let currencyCode = CurrencyDefaults.currentPreferred
             let (responseText, toolName) = try await service.processQuestion(
                 question: trimmed,
-                previousQA: previousQA,
+                turns: allTurns,
                 modelContext: context,
                 currencyCode: currencyCode,
                 converter: CurrencyConverter.shared
@@ -167,14 +174,17 @@ final class ChatAssistantViewModel {
             let assistantMessage = ChatMessage(role: .assistant, text: responseText, timestamp: Date.now)
             messages.append(assistantMessage)
 
-            // Save for 1-turn memory
-            previousQA = QAPair(
+            // Append turn al historial completo del día. Hard trim defensivo a maxTurns.
+            allTurns.append(QAPair(
                 question: trimmed,
                 toolName: toolName,
                 toolResultJSON: nil,
                 response: responseText,
                 timestamp: Date.now
-            )
+            ))
+            if allTurns.count > Self.maxTurns {
+                allTurns.removeFirst(allTurns.count - Self.maxTurns)
+            }
 
             TelemetryService.track(.chatQuestionAsked, parameters: [
                 "source": "typed",
@@ -253,7 +263,7 @@ final class ChatAssistantViewModel {
     }
 
     var showQuestionCounter: Bool {
-        service.questionsToday >= ChatAssistantService.dailyLimit - 5
+        service.questionsToday >= ChatAssistantService.dailyLimit - 10
     }
 
     var canAskMore: Bool {
@@ -273,7 +283,7 @@ final class ChatAssistantViewModel {
             return
         }
 
-        let blob = ChatPersistedSession(messages: messages, previousQA: previousQA)
+        let blob = ChatPersistedSession(messages: messages, allTurns: allTurns)
         do {
             let data = try JSONEncoder().encode(blob)
             defaults.set(data, forKey: key)
@@ -300,12 +310,11 @@ final class ChatAssistantViewModel {
         do {
             let blob = try JSONDecoder().decode(ChatPersistedSession.self, from: data)
             messages = blob.messages
-            if let qa = blob.previousQA, !qa.isExpired {
-                previousQA = qa
-            }
+            allTurns = blob.allTurns
             if !messages.isEmpty {
                 TelemetryService.track(.chatPersistedSessionRehydrated, parameters: [
-                    "messageCount": String(messages.count)
+                    "messageCount": String(messages.count),
+                    "turnCount": String(allTurns.count)
                 ])
             }
         } catch {
@@ -384,11 +393,21 @@ final class ChatAssistantViewModel {
 
     func reset() {
         messages = []
-        previousQA = nil
+        allTurns = []
         errorMessage = nil
         inputText = ""
         isLoading = false
         clearPersistedSession()
         Task { await loadSuggestions() }
+    }
+
+    /// Reinicia el contexto de conversación sin afectar el listado de mensajes visible
+    /// — útil para "Reiniciar contexto": el user limpia memoria del LLM y empieza fresh
+    /// pero conserva la persistencia / sugerencias.
+    func resetConversationContext() {
+        messages = []
+        allTurns = []
+        errorMessage = nil
+        clearPersistedSession()
     }
 }

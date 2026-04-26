@@ -91,7 +91,7 @@ struct ChatAssistantViewModelTests {
             ChatMessage(role: .user, text: "test pregunta", timestamp: Date.now),
             ChatMessage(role: .assistant, text: "test respuesta", timestamp: Date.now)
         ]
-        let blob = ChatPersistedSession(messages: messages, previousQA: nil)
+        let blob = ChatPersistedSession(messages: messages, allTurns: [])
         let data = try JSONEncoder().encode(blob)
         let key = "chat_session_" + DayKeyFormatter.string(from: Date.now)
         UserDefaults.standard.set(data, forKey: key)

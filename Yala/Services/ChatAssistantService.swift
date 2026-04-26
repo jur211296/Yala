@@ -44,7 +44,7 @@ final class ChatAssistantService {
     private var lastCallTime: Date?
 
     private static let rateLimitInterval: TimeInterval = 5
-    static let dailyLimit = 30
+    static let dailyLimit = 75
     private static let maxQuestionLength = 500
     private static let timeoutSeconds: TimeInterval = 15
 
@@ -76,10 +76,12 @@ final class ChatAssistantService {
     // MARK: - Main Entry Point
 
     /// Process a user question through the 2-step LLM pipeline.
-    /// Returns (responseText, toolName) where toolName is nil if the LLM responded directly.
+    /// `turns` contiene todo el historial de la conversación del día (multi-turno) — el LLM
+    /// recibe contexto completo. Returns (responseText, toolName) where toolName is nil if
+    /// the LLM responded directly.
     func processQuestion(
         question: String,
-        previousQA: QAPair?,
+        turns: [QAPair],
         modelContext: ModelContext,
         currencyCode: String,
         converter: CurrencyConverting
@@ -101,7 +103,7 @@ final class ChatAssistantService {
 
         // Step 1: Classify intent
         let (toolCall, directResponse) = try await classifyIntent(
-            client: client, question: question, previousQA: previousQA, systemPrompt: systemPrompt
+            client: client, question: question, turns: turns, systemPrompt: systemPrompt
         )
 
         // If LLM responded directly (no tool call — e.g., non-financial question, greeting)
@@ -134,7 +136,7 @@ final class ChatAssistantService {
         // Step 3: Format response
         let responseText = try await formatResponse(
             client: client, question: question, toolName: call.name,
-            toolResultJSON: toolResultJSON, previousQA: previousQA, systemPrompt: systemPrompt
+            toolResultJSON: toolResultJSON, turns: turns, systemPrompt: systemPrompt
         )
 
         incrementDailyCounter()
@@ -151,10 +153,10 @@ final class ChatAssistantService {
     private func classifyIntent(
         client: OpenAI,
         question: String,
-        previousQA: QAPair?,
+        turns: [QAPair],
         systemPrompt: String
     ) async throws -> (toolCall: ToolCallInfo?, directResponse: String?) {
-        var messages = buildMessages(systemPrompt: systemPrompt, previousQA: previousQA)
+        var messages = buildMessages(systemPrompt: systemPrompt, turns: turns)
 
         if let userMsg = ChatQuery.ChatCompletionMessageParam(role: .user, content: question) {
             messages.append(userMsg)
@@ -196,10 +198,10 @@ final class ChatAssistantService {
         question: String,
         toolName: String,
         toolResultJSON: String,
-        previousQA: QAPair?,
+        turns: [QAPair],
         systemPrompt: String
     ) async throws -> String {
-        var messages = buildMessages(systemPrompt: systemPrompt, previousQA: previousQA)
+        var messages = buildMessages(systemPrompt: systemPrompt, turns: turns)
 
         let userContent = """
         Pregunta del usuario: \(question)
@@ -243,19 +245,22 @@ final class ChatAssistantService {
         }
     }
 
+    /// Construye los messages para OpenAI: system prompt + todos los turnos del día
+    /// + (la pregunta nueva la agrega el caller). Sin filtro por TTL — todo lo persistido
+    /// se incluye. El cap a `maxTurns` lo hace el ViewModel al hacer append.
     private func buildMessages(
         systemPrompt: String,
-        previousQA: QAPair?
+        turns: [QAPair]
     ) -> [ChatQuery.ChatCompletionMessageParam] {
         var messages: [ChatQuery.ChatCompletionMessageParam] = [
             .init(role: .system, content: systemPrompt)
         ].compactMap { $0 }
 
-        if let prev = previousQA, !prev.isExpired {
-            if let userMsg = ChatQuery.ChatCompletionMessageParam(role: .user, content: prev.question) {
+        for turn in turns {
+            if let userMsg = ChatQuery.ChatCompletionMessageParam(role: .user, content: turn.question) {
                 messages.append(userMsg)
             }
-            if let assistantMsg = ChatQuery.ChatCompletionMessageParam(role: .assistant, content: prev.response) {
+            if let assistantMsg = ChatQuery.ChatCompletionMessageParam(role: .assistant, content: turn.response) {
                 messages.append(assistantMsg)
             }
         }
@@ -337,6 +342,12 @@ final class ChatAssistantService {
         12. PRIORIDAD SUBCATEGORÍA: Si la pregunta es sobre una subcategoría (ej: "Bus", "Gasolina"), centra la respuesta en ESA subcategoría. Si los datos incluyen "matched_level": "subcategory", el foco DEBE ser la subcategoría.
         \(toneInstruction.isEmpty ? "" : "13. Tono: \(toneInstruction)")
         \(focusInstruction.isEmpty ? "" : "14. Enfoque: \(focusInstruction)")
+
+        MANEJO DE CONTEXTO MULTI-TURNO:
+        - El historial puede tener varios turnos sobre temas distintos. Si la pregunta NUEVA del user no se relaciona con turnos anteriores, IGNORA el contexto previo y responde fresh basándote solo en los datos del tool actual.
+        - Si la pregunta es ambigua (ej: "¿y eso?", "¿cuánto fue?", "¿el mayor?") y hay 3+ temas distintos en los últimos turnos, NO adivines: pide clarificación breve. Ejemplo: "¿Te refieres a [tema A], [tema B] o [tema C]?".
+        - NUNCA mezcles datos de turnos viejos con la pregunta actual a menos que sea claramente un follow-up.
+        - Si el user expresa confusión o desacuerdo con tu respuesta ("no entiendo", "te equivocaste", "no es eso") Y ya hay 5+ turnos previos, ofrece al final de tu respuesta: "Si quieres centrarte solo en este tema, puedes reiniciar la conversación con el botón de abajo." Hazlo MÁXIMO 1 vez por sesión, NO proactivamente.
 
         VOCABULARIO NATURAL → TOOL:
         - "gastos hormiga/chiquitos/gastitos/latte factor" → analyze_patterns(small_recurring)
