@@ -1516,6 +1516,10 @@ enum L10n {
         static var topicsButton: String { ls("chat.topicsButton", comment: "") }
         static var errorTranscription: String { ls("chat.errorTranscription", comment: "") }
         static var errorMicPermission: String { ls("chat.errorMicPermission", comment: "") }
+        static var resetContext: String { ls("chat.resetContext", comment: "") }
+        static func contextMemory(_ count: Int) -> String {
+            String(format: ls("chat.contextMemory", comment: ""), count)
+        }
 
         enum Topics {
             static var title: String { ls("chat.topics.title", comment: "") }

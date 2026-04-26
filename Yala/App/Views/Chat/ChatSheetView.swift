@@ -146,6 +146,32 @@ struct ChatSheetView: View {
             .padding(.bottom, DS.Spacing.xs)
     }
 
+    /// Bloque centrado al final del último mensaje del assistant — botón clicable
+    /// "Reiniciar contexto" + caption con contador de mensajes recordados.
+    private var resetContextRow: some View {
+        VStack(spacing: DS.Spacing.xs) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    viewModel.resetConversationContext()
+                }
+            } label: {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "arrow.counterclockwise")
+                    Text(L10n.Chat.resetContext)
+                }
+                .font(DS.Typography.caption)
+                .foregroundStyle(.thPrimaryText)
+            }
+            .buttonStyle(.plain)
+
+            Text(L10n.Chat.contextMemory(viewModel.messages.count))
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, DS.Spacing.md)
+    }
+
     @ViewBuilder
     private var chipsOrSkeleton: some View {
         VStack(spacing: DS.Spacing.sm) {
@@ -193,6 +219,15 @@ struct ChatSheetView: View {
                     if viewModel.isLoading {
                         ChatLoadingIndicator()
                             .id("loading")
+                    }
+
+                    // Reset contexto: aparece tras el último mensaje del assistant
+                    // cuando hay turnos guardados — da feedback de cuánto recuerda
+                    // y permite empezar fresh.
+                    if !viewModel.isLoading,
+                       viewModel.turnCount > 0,
+                       viewModel.messages.last?.role == .assistant {
+                        resetContextRow
                     }
                 }
                 .padding(.horizontal, DS.Spacing.lg)

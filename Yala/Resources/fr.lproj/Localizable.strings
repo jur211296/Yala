@@ -3485,6 +3485,8 @@
 "chat.errorTranscription" = "Je n'ai pas pu transcrire l'audio. Réessaie.";
 "chat.errorMicPermission" = "J'ai besoin de la permission pour utiliser le microphone.";
 "chat.topics.title" = "Sujets de conversation";
+"chat.resetContext" = "Réinitialiser le contexte de conversation";
+"chat.contextMemory" = "Yala IA se souvient de %d messages";
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Assistant financier";
