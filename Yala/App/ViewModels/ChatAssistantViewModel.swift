@@ -19,6 +19,11 @@ final class ChatAssistantViewModel {
     private(set) var suggestions: [ChatSuggestion] = []
     private(set) var suggestionsLoading: Bool = false
     private(set) var suggestionsFailed: Bool = false
+
+    /// El chat está disponible cuando el LLM responde correctamente. Si la primera carga
+    /// del día falla, el input bar y temas se deshabilitan globalmente hasta que el user
+    /// pulse "Reintentar".
+    var isAIAvailable: Bool { !suggestionsFailed }
     private(set) var isRecording = false
     private(set) var isTranscribing = false
     private(set) var errorMessage: String?

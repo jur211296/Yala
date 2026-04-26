@@ -318,6 +318,7 @@ struct ChatSheetView: View {
                 .font(DS.Typography.body)
                 .lineLimit(1...4)
                 .textFieldStyle(.plain)
+                .disabled(!viewModel.isAIAvailable)
 
             HStack(spacing: DS.Spacing.sm) {
                 topicsButton
@@ -329,6 +330,7 @@ struct ChatSheetView: View {
         .padding(DS.Spacing.md)
         .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .opacity(viewModel.isAIAvailable ? 1 : 0.5)
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.sm)
     }
@@ -395,7 +397,7 @@ struct ChatSheetView: View {
             .foregroundStyle(.thPrimaryText)
         }
         .buttonStyle(.plain)
-        .disabled(isVoiceActive)
+        .disabled(isVoiceActive || !viewModel.isAIAvailable)
     }
 
     private var micButton: some View {
@@ -407,7 +409,7 @@ struct ChatSheetView: View {
                 .foregroundStyle(viewModel.isRecording ? AnyShapeStyle(DS.Semantic.errorForeground) : AnyShapeStyle(.thPrimaryText))
                 .symbolEffect(.pulse, isActive: viewModel.isRecording)
         }
-        .disabled(viewModel.isTranscribing || viewModel.isLoading)
+        .disabled(viewModel.isTranscribing || viewModel.isLoading || !viewModel.isAIAvailable)
     }
 
     private var sendButton: some View {
@@ -426,6 +428,7 @@ struct ChatSheetView: View {
             || viewModel.isRecording
             || viewModel.isTranscribing
             || !viewModel.canAskMore
+            || !viewModel.isAIAvailable
         )
     }
 
