@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum DayKeyFormatter {
+nonisolated enum DayKeyFormatter {
 
     private static let formatter: DateFormatter = {
         let f = DateFormatter()

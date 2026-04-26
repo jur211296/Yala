@@ -37,10 +37,8 @@ final class ChatSuggestionsLLMService {
 
     // MARK: - Cache (UserDefaults, key chat_suggestions_<YYYY-MM-DD>)
 
-    private static let cacheKeyPrefix = "chat_suggestions_"
-
     nonisolated private static func cacheKey(for date: Date) -> String {
-        cacheKeyPrefix + DayKeyFormatter.string(from: date)
+        ChatSuggestionsConstants.cacheKeyPrefix + DayKeyFormatter.string(from: date)
     }
 
     nonisolated static func cachedSuggestions(for date: Date) -> [ChatSuggestion]? {
@@ -53,25 +51,12 @@ final class ChatSuggestionsLLMService {
         UserDefaults.standard.set(data, forKey: cacheKey(for: date))
     }
 
-    // MARK: - Constants
-
-    private static let timeoutSeconds: TimeInterval = 8
-    private static let maxItems = 10
-    private static let minItems = 3
-    private static let maxTextLength = 80
-
-    private static let allowedIcons: Set<String> = [
-        "chart.bar", "chart.pie", "chart.line.uptrend.xyaxis", "calendar",
-        "arrow.left.arrow.right", "creditcard", "storefront", "dollarsign.circle",
-        "percent", "banknote", "cart", "sparkles"
-    ]
-
     // MARK: - Public API
 
     /// Devuelve sugerencias del cache diario o las genera con LLM. Fallback a `[]` en cualquier error.
     func fetchOrGenerate(modelContext: ModelContext) async -> [ChatSuggestion] {
         // Cache hit
-        if let cached = Self.cachedSuggestions(for: Date.now), cached.count >= Self.minItems {
+        if let cached = Self.cachedSuggestions(for: Date.now), cached.count >= ChatSuggestionsConstants.minItems {
             return cached
         }
 
@@ -112,16 +97,16 @@ final class ChatSuggestionsLLMService {
         for item in array {
             guard let text = item["text"] as? String else { continue }
             let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty, trimmed.count <= maxTextLength else { continue }
+            guard !trimmed.isEmpty, trimmed.count <= ChatSuggestionsConstants.maxTextLength else { continue }
 
             let rawIcon = (item["icon"] as? String) ?? "sparkles"
-            let icon = allowedIcons.contains(rawIcon) ? rawIcon : "sparkles"
+            let icon = ChatSuggestionsConstants.allowedIcons.contains(rawIcon) ? rawIcon : "sparkles"
 
             result.append(ChatSuggestion(text: trimmed, icon: icon, type: .general))
         }
 
-        guard result.count >= minItems else { throw ChatSuggestionsParseError.tooFewItems }
-        return Array(result.prefix(maxItems))
+        guard result.count >= ChatSuggestionsConstants.minItems else { throw ChatSuggestionsParseError.tooFewItems }
+        return Array(result.prefix(ChatSuggestionsConstants.maxItems))
     }
 
     // MARK: - Generation
@@ -156,7 +141,7 @@ final class ChatSuggestionsLLMService {
         try await withThrowingTaskGroup(of: ChatResult.self) { group in
             group.addTask { try await client.chats(query: query) }
             group.addTask {
-                try await Task.sleep(for: .seconds(Self.timeoutSeconds))
+                try await Task.sleep(for: .seconds(ChatSuggestionsConstants.timeoutSeconds))
                 throw ChatSuggestionsLLMError.timeout
             }
             guard let first = try await group.next() else {
@@ -310,4 +295,20 @@ enum ChatSuggestionsParseError: Error {
     case malformedJSON
     case emptyArray
     case tooFewItems
+}
+
+// MARK: - Constants (nonisolated para uso desde parseSuggestions / cacheKey)
+
+nonisolated enum ChatSuggestionsConstants {
+    static let cacheKeyPrefix = "chat_suggestions_"
+    static let timeoutSeconds: TimeInterval = 8
+    static let maxItems = 10
+    static let minItems = 3
+    static let maxTextLength = 80
+
+    static let allowedIcons: Set<String> = [
+        "chart.bar", "chart.pie", "chart.line.uptrend.xyaxis", "calendar",
+        "arrow.left.arrow.right", "creditcard", "storefront", "dollarsign.circle",
+        "percent", "banknote", "cart", "sparkles"
+    ]
 }

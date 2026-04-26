@@ -43,7 +43,7 @@ enum ChatAssistantError: Error, LocalizedError {
 
 // MARK: - QA Pair (1-turn memory)
 
-struct QAPair: Codable {
+nonisolated struct QAPair: Codable {
     let question: String
     let toolName: String?
     let toolResultJSON: String?
@@ -252,7 +252,7 @@ struct SpendingProjectionParams: Codable {
 
 // MARK: - Chat Message
 
-struct ChatMessage: Identifiable, Codable {
+nonisolated struct ChatMessage: Identifiable, Codable {
     let id: UUID
     let role: MessageRole
     let text: String
@@ -273,7 +273,7 @@ struct ChatMessage: Identifiable, Codable {
 
 // MARK: - Chat Suggestion
 
-struct ChatSuggestion: Identifiable, Codable {
+nonisolated struct ChatSuggestion: Identifiable, Codable {
     let id: UUID
     let text: String
     let icon: String
@@ -299,7 +299,7 @@ struct ChatSuggestion: Identifiable, Codable {
 
 /// Blob JSON guardado en `UserDefaults` con clave `chat_session_<YYYY-MM-DD>`.
 /// Persiste mensajes + previousQA para preservar 1-turn memory cross-session.
-struct ChatPersistedSession: Codable {
+nonisolated struct ChatPersistedSession: Codable {
     let messages: [ChatMessage]
     let previousQA: QAPair?
 }
