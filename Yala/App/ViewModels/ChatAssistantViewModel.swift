@@ -311,6 +311,11 @@ final class ChatAssistantViewModel {
             if let qa = blob.previousQA, !qa.isExpired {
                 previousQA = qa
             }
+            if !messages.isEmpty {
+                TelemetryService.track(.chatPersistedSessionRehydrated, parameters: [
+                    "messageCount": String(messages.count)
+                ])
+            }
         } catch {
             #if DEBUG
             print("ChatAssistantViewModel: loadPersistedSession decode failed: \(error)")
