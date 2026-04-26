@@ -93,11 +93,7 @@ struct ChatAssistantViewModelTests {
         ]
         let blob = ChatPersistedSession(messages: messages, previousQA: nil)
         let data = try JSONEncoder().encode(blob)
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
-        formatter.dateFormat = "yyyy-MM-dd"
-        let key = "chat_session_" + formatter.string(from: Date.now)
+        let key = "chat_session_" + DayKeyFormatter.string(from: Date.now)
         UserDefaults.standard.set(data, forKey: key)
 
         // Nueva instancia del VM debe rehidratar la sesión
@@ -113,11 +109,7 @@ struct ChatAssistantViewModelTests {
         clearChatSessionKeys()
         defer { clearChatSessionKeys() }
 
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
-        formatter.dateFormat = "yyyy-MM-dd"
-        let key = "chat_session_" + formatter.string(from: Date.now)
+        let key = "chat_session_" + DayKeyFormatter.string(from: Date.now)
 
         // Sembrar data y verificar que existe
         UserDefaults.standard.set(Data([0x01]), forKey: key)

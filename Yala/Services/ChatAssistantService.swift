@@ -69,14 +69,8 @@ final class ChatAssistantService {
         }
     }
 
-    private static let dayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
-
     private static func todayString() -> String {
-        dayFormatter.string(from: Date.now)
+        DayKeyFormatter.string(from: Date.now)
     }
 
     // MARK: - Main Entry Point

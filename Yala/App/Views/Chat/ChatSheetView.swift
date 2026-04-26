@@ -124,11 +124,19 @@ struct ChatSheetView: View {
         }
     }
 
-    private var daySeparatorText: String {
+    private static let timeOfDayFormatter: DateFormatter = {
         let f = DateFormatter()
         f.timeStyle = .short
         f.dateStyle = .none
-        return "\(L10n.Chat.daySeparatorToday), \(f.string(from: Date.now))"
+        return f
+    }()
+
+    private var daySeparatorText: String {
+        "\(L10n.Chat.daySeparatorToday), \(Self.timeOfDayFormatter.string(from: Date.now))"
+    }
+
+    private var isVoiceActive: Bool {
+        viewModel.isRecording || viewModel.isTranscribing
     }
 
     private var disclaimerFooter: some View {
@@ -143,10 +151,7 @@ struct ChatSheetView: View {
         VStack(spacing: DS.Spacing.sm) {
             if viewModel.suggestions.isEmpty && viewModel.suggestionsLoading {
                 ForEach(0..<3, id: \.self) { _ in
-                    RoundedRectangle(cornerRadius: DS.Radius.md)
-                        .fill(.thCard)
-                        .frame(height: 44) // A11Y-DT: skeleton placeholder height
-                        .opacity(0.6)
+                    SkeletonPlaceholder(height: 44)
                 }
             } else {
                 ForEach(viewModel.suggestions.prefix(3)) { suggestion in
@@ -230,7 +235,7 @@ struct ChatSheetView: View {
                 .font(DS.Typography.body)
                 .lineLimit(1...4)
                 .textFieldStyle(.plain)
-                .disabled(viewModel.isRecording || viewModel.isTranscribing)
+                .disabled(isVoiceActive)
 
             HStack(spacing: DS.Spacing.sm) {
                 topicsButton
@@ -265,7 +270,7 @@ struct ChatSheetView: View {
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)
-        .disabled(viewModel.isRecording || viewModel.isTranscribing)
+        .disabled(isVoiceActive)
     }
 
     private var micButton: some View {

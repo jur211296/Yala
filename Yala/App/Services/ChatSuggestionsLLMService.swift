@@ -39,16 +39,8 @@ final class ChatSuggestionsLLMService {
 
     private static let cacheKeyPrefix = "chat_suggestions_"
 
-    nonisolated(unsafe) private static let dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.timeZone = .current
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
-
     nonisolated private static func cacheKey(for date: Date) -> String {
-        cacheKeyPrefix + dateFormatter.string(from: date)
+        cacheKeyPrefix + DayKeyFormatter.string(from: date)
     }
 
     nonisolated static func cachedSuggestions(for date: Date) -> [ChatSuggestion]? {

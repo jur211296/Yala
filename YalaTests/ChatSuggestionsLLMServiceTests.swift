@@ -174,11 +174,7 @@ struct ChatSuggestionsLLMServiceTests {
         defer { clearCacheKeys() }
 
         // Sembrar data corrupta
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
-        formatter.dateFormat = "yyyy-MM-dd"
-        let key = "chat_suggestions_" + formatter.string(from: Date.now)
+        let key = "chat_suggestions_" + DayKeyFormatter.string(from: Date.now)
         UserDefaults.standard.set(Data([0xFF, 0x00, 0xAA]), forKey: key)
 
         let result = ChatSuggestionsLLMService.cachedSuggestions(for: Date.now)

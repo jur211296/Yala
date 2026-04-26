@@ -36,16 +36,8 @@ final class ChatAssistantViewModel {
 
     private static let sessionKeyPrefix = "chat_session_"
 
-    private static let sessionDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.timeZone = .current
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
-
     private static func sessionKey(for date: Date) -> String {
-        sessionKeyPrefix + sessionDateFormatter.string(from: date)
+        sessionKeyPrefix + DayKeyFormatter.string(from: date)
     }
 
     // MARK: - Setup

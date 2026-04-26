@@ -22,7 +22,7 @@ struct ChatTopicsSheet: View {
                 LazyVStack(spacing: DS.Spacing.sm) {
                     if suggestions.isEmpty && isLoading {
                         ForEach(0..<5, id: \.self) { _ in
-                            skeletonChip
+                            SkeletonPlaceholder(height: 56)
                         }
                     } else {
                         ForEach(suggestions) { suggestion in
@@ -68,12 +68,5 @@ struct ChatTopicsSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-    }
-
-    private var skeletonChip: some View {
-        RoundedRectangle(cornerRadius: DS.Radius.md)
-            .fill(.thCard)
-            .frame(height: 56) // A11Y-DT: skeleton placeholder height
-            .opacity(0.6)
     }
 }
