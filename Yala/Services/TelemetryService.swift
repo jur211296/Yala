@@ -42,6 +42,11 @@ enum AnalyticsEvent: String {
     case chatSuggestionTapped
     case chatErrorOccurred
     case chatDailyLimitReached
+    case chatSuggestionsLLMSucceeded
+    case chatSuggestionsLLMFailed
+    case chatVoiceInputUsed
+    case chatTopicsSheetOpened
+    case chatPersistedSessionRehydrated
 
     // Group lifecycle
     case groupCreated

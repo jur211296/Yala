@@ -17,6 +17,7 @@ final class ChatAssistantViewModel {
     private(set) var messages: [ChatMessage] = []
     private(set) var isLoading = false
     private(set) var suggestions: [ChatSuggestion] = []
+    private(set) var suggestionsLoading: Bool = false
     private(set) var errorMessage: String?
     var inputText: String = ""
 
@@ -51,14 +52,32 @@ final class ChatAssistantViewModel {
         modelContext = ctx
         loadPersistedSession()
         if messages.isEmpty {
-            loadSuggestions()
+            Task { await loadSuggestions() }
         }
     }
 
-    // MARK: - Suggestions (generated locally, no API)
+    // MARK: - Suggestions (LLM-first con fallback rule-based)
 
-    func loadSuggestions() {
+    /// Carga sugerencias para el empty state. Intenta LLM (cache diario), cae a rule-based si falla.
+    /// `suggestions` puede tener hasta 10 items; la View limita a 3 chips visibles.
+    func loadSuggestions() async {
         guard let context = modelContext else { return }
+
+        suggestionsLoading = true
+        defer { suggestionsLoading = false }
+
+        // Intento 1: LLM (cache diario o generación)
+        let llmResults = await ChatSuggestionsLLMService.shared.fetchOrGenerate(modelContext: context)
+        if !llmResults.isEmpty {
+            suggestions = llmResults
+            return
+        }
+
+        // Fallback: rule-based local
+        suggestions = buildRuleBasedSuggestions(modelContext: context)
+    }
+
+    private func buildRuleBasedSuggestions(modelContext context: ModelContext) -> [ChatSuggestion] {
         var result: [ChatSuggestion] = []
 
         // Top merchant this month
@@ -114,7 +133,7 @@ final class ChatAssistantViewModel {
             #if DEBUG
             print("ChatAssistantViewModel: Error loading suggestions: \(error)")
             #endif
-            // Fallback suggestions
+            // Fallback hard-coded
             result = [
                 ChatSuggestion(text: L10n.Chat.Suggestion.biggestCategory, icon: "chart.pie", type: .biggestCategory),
                 ChatSuggestion(text: L10n.Chat.Suggestion.general, icon: "chart.bar", type: .general),
@@ -122,7 +141,7 @@ final class ChatAssistantViewModel {
             ]
         }
 
-        suggestions = Array(result.prefix(3))
+        return result
     }
 
     // MARK: - Send Question
@@ -312,6 +331,6 @@ final class ChatAssistantViewModel {
         inputText = ""
         isLoading = false
         clearPersistedSession()
-        loadSuggestions()
+        Task { await loadSuggestions() }
     }
 }
