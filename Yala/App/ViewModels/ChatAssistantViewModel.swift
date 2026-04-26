@@ -18,6 +18,8 @@ final class ChatAssistantViewModel {
     private(set) var isLoading = false
     private(set) var suggestions: [ChatSuggestion] = []
     private(set) var suggestionsLoading: Bool = false
+    private(set) var isRecording = false
+    private(set) var isTranscribing = false
     private(set) var errorMessage: String?
     var inputText: String = ""
 
@@ -320,6 +322,65 @@ final class ChatAssistantViewModel {
     /// Borra la sesión del día actual de UserDefaults.
     func clearPersistedSession() {
         UserDefaults.standard.removeObject(forKey: Self.sessionKey(for: Date.now))
+    }
+
+    // MARK: - Voice Input (Whisper)
+
+    /// Inicia grabación de audio. Errores tipados → `errorMessage`.
+    func startVoiceInput() async {
+        errorMessage = nil
+        do {
+            try await AudioRecorderService.shared.startRecording()
+            isRecording = true
+        } catch RecordingError.microphonePermissionDenied,
+                RecordingError.microphonePermissionRestricted {
+            errorMessage = L10n.Chat.errorMicPermission
+        } catch {
+            errorMessage = L10n.Chat.errorTranscription
+            #if DEBUG
+            print("ChatAssistantViewModel: startVoiceInput failed: \(error)")
+            #endif
+        }
+    }
+
+    /// Detiene grabación, transcribe con Whisper, inserta el texto en `inputText` (no envía).
+    /// Si ya hay texto tipeado, hace append con espacio (preserva lo escrito por el user).
+    func stopVoiceInput() async {
+        guard isRecording else { return }
+        isRecording = false
+        isTranscribing = true
+        defer { isTranscribing = false }
+
+        do {
+            let audioData = try await AudioRecorderService.shared.stopRecording()
+            let result = try await VoiceTranscriptionService.shared.transcribe(
+                audioData: audioData,
+                language: .system
+            )
+            let transcribed = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !transcribed.isEmpty else { return }
+
+            if inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                inputText = transcribed
+            } else {
+                inputText = inputText + " " + transcribed
+            }
+
+            TelemetryService.track(.chatVoiceInputUsed, parameters: [
+                "transcribedLength": String(transcribed.count)
+            ])
+        } catch {
+            errorMessage = L10n.Chat.errorTranscription
+            #if DEBUG
+            print("ChatAssistantViewModel: stopVoiceInput failed: \(error)")
+            #endif
+        }
+    }
+
+    func cancelVoiceInput() {
+        AudioRecorderService.shared.cancelRecording()
+        isRecording = false
+        isTranscribing = false
     }
 
     // MARK: - Reset

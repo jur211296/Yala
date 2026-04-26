@@ -12,9 +12,11 @@ struct ChatSheetView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.yalaTheme) private var theme
     @State private var viewModel = ChatAssistantViewModel()
     @State private var selectedDetent: PresentationDetent = .medium
     @State private var showAISettingsSheet = false
+    @State private var showTopicsSheet = false
 
     var body: some View {
         NavigationStack {
@@ -160,30 +162,88 @@ struct ChatSheetView: View {
             .padding(.horizontal, DS.Spacing.lg)
     }
 
-    // MARK: - Input Bar
+    // MARK: - Input Bar (Claude-style: TextField arriba, fila botones abajo)
 
     private var chatInputBar: some View {
-        HStack(spacing: DS.Spacing.sm) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             TextField(L10n.Chat.inputPlaceholder, text: $viewModel.inputText, axis: .vertical)
                 .font(DS.Typography.body)
                 .lineLimit(1...4)
                 .textFieldStyle(.plain)
+                .disabled(viewModel.isRecording || viewModel.isTranscribing)
 
-            Button {
-                Task { await viewModel.sendQuestion(viewModel.inputText) }
-            } label: {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 28)) // A11Y-DT: send button icon
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.thAccent)
+            HStack(spacing: DS.Spacing.sm) {
+                topicsButton
+
+                Spacer()
+
+                micButton
+
+                sendButton
             }
-            .disabled(viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isLoading || !viewModel.canAskMore)
         }
-        .padding(.horizontal, DS.Spacing.md)
-        .padding(.vertical, DS.Spacing.sm)
+        .padding(DS.Spacing.md)
         .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.sm)
+    }
+
+    private var topicsButton: some View {
+        Button {
+            showTopicsSheet = true
+        } label: {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: "plus")
+                Text(L10n.Chat.topicsButton)
+            }
+            .font(DS.Typography.label)
+            .foregroundStyle(.thPrimaryText)
+            .padding(.horizontal, DS.Spacing.sm)
+            .padding(.vertical, DS.Spacing.xs)
+            .background(.thBackground.opacity(0.4))
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(viewModel.isRecording || viewModel.isTranscribing)
+    }
+
+    private var micButton: some View {
+        Button {
+            Task { await toggleVoiceInput() }
+        } label: {
+            Image(systemName: viewModel.isRecording ? "mic.circle.fill" : "mic.fill")
+                .font(.system(size: 24)) // A11Y-DT: input bar control
+                .foregroundStyle(viewModel.isRecording ? AnyShapeStyle(DS.Semantic.errorForeground) : AnyShapeStyle(.secondary))
+                .symbolEffect(.pulse, isActive: viewModel.isRecording)
+        }
+        .disabled(viewModel.isTranscribing || viewModel.isLoading)
+    }
+
+    private var sendButton: some View {
+        Button {
+            Task { await viewModel.sendQuestion(viewModel.inputText) }
+        } label: {
+            Image(systemName: "arrow.up")
+                .font(.system(size: 16, weight: .bold)) // A11Y-DT: send icon
+                .foregroundStyle(Color.contrastingText(for: theme.accent))
+                .frame(width: 32, height: 32) // A11Y-DT: tap target circular
+                .background(Circle().fill(theme.accent))
+        }
+        .disabled(
+            viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || viewModel.isLoading
+            || viewModel.isRecording
+            || viewModel.isTranscribing
+            || !viewModel.canAskMore
+        )
+    }
+
+    private func toggleVoiceInput() async {
+        if viewModel.isRecording {
+            await viewModel.stopVoiceInput()
+        } else {
+            await viewModel.startVoiceInput()
+        }
     }
 }

@@ -1507,6 +1507,20 @@ enum L10n {
         static var questionTooLong: String { ls("chat.questionTooLong", comment: "") }
         static var contextHint: String { ls("chat.contextHint", comment: "") }
 
+        // MARK: - Yala IA Redesign (Fases 3 & 5)
+        static var assistantName: String { ls("chat.assistantName", comment: "") }
+        static var greeting: String { ls("chat.greeting", comment: "") }
+        static var dailyResetSubtitle: String { ls("chat.dailyResetSubtitle", comment: "") }
+        static var disclaimer: String { ls("chat.disclaimer", comment: "") }
+        static var daySeparatorToday: String { ls("chat.daySeparatorToday", comment: "") }
+        static var topicsButton: String { ls("chat.topicsButton", comment: "") }
+        static var errorTranscription: String { ls("chat.errorTranscription", comment: "") }
+        static var errorMicPermission: String { ls("chat.errorMicPermission", comment: "") }
+
+        enum Topics {
+            static var title: String { ls("chat.topics.title", comment: "") }
+        }
+
         enum Suggestion {
             static var topMerchant: String { ls("chat.suggestion.topMerchant", comment: "") }
             static func topMerchantWith(_ name: String) -> String {

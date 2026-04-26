@@ -3475,6 +3475,17 @@
 "chat.suggestion.general" = "Comment ça va ce mois-ci ?";
 "chat.contextHint" = "Je peux me souvenir de ta dernière question pour le suivi";
 
+/* Yala IA Redesign */
+"chat.assistantName" = "Yala IA";
+"chat.greeting" = "Bonjour, je suis Yala IA. Dis-moi, que veux-tu savoir sur tes finances ?";
+"chat.dailyResetSubtitle" = "Cette conversation est effacée au changement de jour.";
+"chat.disclaimer" = "Yala IA peut faire des erreurs.";
+"chat.daySeparatorToday" = "AUJOURD'HUI";
+"chat.topicsButton" = "Sujets";
+"chat.errorTranscription" = "Je n'ai pas pu transcrire l'audio. Réessaie.";
+"chat.errorMicPermission" = "J'ai besoin de la permission pour utiliser le microphone.";
+"chat.topics.title" = "Sujets de conversation";
+
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Assistant financier";
 "aiConsent.chatMessage" = "Cette fonction envoie des données spécifiques à ta requête à OpenAI pour répondre à tes questions : noms de commerces, montants et dates des transactions pertinentes, et état des budgets associés.\n\nTon historique complet, tes notes personnelles et noms de comptes ne sont jamais partagés. OpenAI n'utilise pas ces données pour entraîner ses modèles.";

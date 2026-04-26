@@ -10,6 +10,7 @@ import Testing
 import Foundation
 @testable import Yala
 
+@Suite(.serialized)
 struct ChatSuggestionsLLMServiceTests {
 
     // MARK: - Parse
