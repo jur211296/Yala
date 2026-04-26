@@ -39,10 +39,12 @@ struct ChatSheetView: View {
                 }
 
                 chatInputBar
+
+                disclaimerFooter
             }
             .dismissKeyboardOnTap()
             .background(.thBackground.opacity(selectedDetent == .large ? 1 : 0))
-            .navigationTitle(L10n.Chat.title)
+            .navigationTitle(L10n.Chat.assistantName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -89,22 +91,51 @@ struct ChatSheetView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.xl) {
-            Spacer()
+        VStack(spacing: DS.Spacing.lg) {
+            Spacer(minLength: 0)
 
-            Image(systemName: "bubble.left.and.text.bubble.right")
-                .font(.system(size: 48)) // A11Y-DT: decorative empty state icon
-                .foregroundStyle(.tertiary)
-
-            Text(L10n.Chat.emptySubtitle)
-                .font(DS.Typography.subheadline)
+            Text(daySeparatorText)
+                .font(DS.Typography.captionSmall)
                 .foregroundStyle(.secondary)
+
+            // Bubble del assistant con saludo (mismo styling que ChatMessageBubble)
+            HStack {
+                Text(L10n.Chat.greeting)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.thPrimaryText)
+                    .padding(.horizontal, DS.Spacing.md)
+                    .padding(.vertical, DS.Spacing.sm)
+                    .background(.thCard)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                Spacer(minLength: DS.Spacing.xxl)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+
+            Text(L10n.Chat.dailyResetSubtitle)
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, DS.Spacing.lg)
 
             chipsOrSkeleton
                 .padding(.horizontal, DS.Spacing.lg)
 
-            Spacer()
+            Spacer(minLength: 0)
         }
+    }
+
+    private var daySeparatorText: String {
+        let f = DateFormatter()
+        f.timeStyle = .short
+        f.dateStyle = .none
+        return "\(L10n.Chat.daySeparatorToday), \(f.string(from: Date.now))"
+    }
+
+    private var disclaimerFooter: some View {
+        Text(L10n.Chat.disclaimer)
+            .font(DS.Typography.captionSmall)
+            .foregroundStyle(.secondary)
+            .padding(.bottom, DS.Spacing.xs)
     }
 
     @ViewBuilder
@@ -133,6 +164,12 @@ struct ChatSheetView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: DS.Spacing.md) {
+                    Text(daySeparatorText)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.bottom, DS.Spacing.xs)
+
                     ForEach(viewModel.messages) { message in
                         ChatMessageBubble(message: message)
                             .id(message.id)
