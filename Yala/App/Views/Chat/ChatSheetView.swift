@@ -14,7 +14,6 @@ struct ChatSheetView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @State private var viewModel = ChatAssistantViewModel()
-    @State private var selectedDetent: PresentationDetent = .medium
     @State private var showAISettingsSheet = false
     @State private var showTopicsSheet = false
 
@@ -43,7 +42,7 @@ struct ChatSheetView: View {
                 disclaimerFooter
             }
             .dismissKeyboardOnTap()
-            .background(.thBackground.opacity(selectedDetent == .large ? 1 : 0))
+            .background(.thBackground)
             .navigationTitle(L10n.Chat.assistantName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -69,7 +68,7 @@ struct ChatSheetView: View {
                 )
             }
         }
-        .presentationDetents([.medium, .large], selection: $selectedDetent)
+        .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .onAppear {
             viewModel.setContext(modelContext)
@@ -80,11 +79,6 @@ struct ChatSheetView: View {
             TelemetryService.track(.chatSheetDismissed, parameters: [
                 "hadConversation": String(!viewModel.messages.isEmpty)
             ])
-        }
-        .onChange(of: viewModel.messages.count) { oldCount, newCount in
-            if oldCount == 0 && newCount > 0 {
-                selectedDetent = .large
-            }
         }
     }
 
