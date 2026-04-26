@@ -41,7 +41,7 @@ struct ChatTopicsSheet: View {
             }
             .onAppear { TelemetryService.track(.chatTopicsSheetOpened) }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.large])
         .presentationDragIndicator(.visible)
     }
 

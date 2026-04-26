@@ -85,36 +85,38 @@ struct ChatSheetView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            Spacer(minLength: 0)
+        ScrollView {
+            VStack(spacing: DS.Spacing.lg) {
+                Text(daySeparatorText)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, DS.Spacing.md)
 
-            Text(daySeparatorText)
-                .font(DS.Typography.captionSmall)
-                .foregroundStyle(.secondary)
+                // Bubble del assistant con saludo (mismo styling que ChatMessageBubble)
+                HStack {
+                    Text(L10n.Chat.greeting)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.thPrimaryText)
+                        .padding(.horizontal, DS.Spacing.md)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .background(.thCard)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                    Spacer(minLength: DS.Spacing.xxl)
+                }
+                .padding(.horizontal, DS.Spacing.lg)
 
-            // Bubble del assistant con saludo (mismo styling que ChatMessageBubble)
-            HStack {
-                Text(L10n.Chat.greeting)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.thPrimaryText)
-                    .padding(.horizontal, DS.Spacing.md)
-                    .padding(.vertical, DS.Spacing.sm)
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                Spacer(minLength: DS.Spacing.xxl)
+                Text(L10n.Chat.dailyResetSubtitle)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.lg)
+
+                chipsOrSkeleton
+                    .padding(.horizontal, DS.Spacing.lg)
+
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, DS.Spacing.lg)
-
-            Text(L10n.Chat.dailyResetSubtitle)
-                .font(DS.Typography.captionSmall)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DS.Spacing.lg)
-
-            chipsOrSkeleton
-                .padding(.horizontal, DS.Spacing.lg)
-
-            Spacer(minLength: 0)
+            .frame(maxWidth: .infinity)
         }
     }
 
