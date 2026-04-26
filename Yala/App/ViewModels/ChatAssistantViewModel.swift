@@ -128,7 +128,7 @@ final class ChatAssistantViewModel {
 
             TelemetryService.track(.chatQuestionAsked, parameters: [
                 "source": "typed",
-                "tool_used": toolName ?? "direct"
+                "turn_count": String(allTurns.count)
             ])
 
             // Autosave defensivo: persiste la sesión tras cada respuesta exitosa
@@ -254,10 +254,14 @@ final class ChatAssistantViewModel {
             // Si el blob legacy guardó messages pero no allTurns, reconstruimos los turnos
             // pareando user→assistant consecutivos. Sin esto, el LLM perdería el contexto
             // y el botón "Reiniciar contexto" no aparecería.
+            //
+            // Refactor context-rich: strippeamos `toolResultJSON` de los turnos rehidratados.
+            // Bajo el nuevo pipeline el LLM no consume tool data inter-turno (cada turno trae
+            // contexto fresh). Mantener payloads viejos solo gasta tokens.
             if blob.allTurns.isEmpty && !messages.isEmpty {
                 allTurns = Self.reconstructTurns(from: messages)
             } else {
-                allTurns = blob.allTurns
+                allTurns = blob.allTurns.map { Self.stripToolPayload($0) }
             }
 
             if !messages.isEmpty {
@@ -272,6 +276,18 @@ final class ChatAssistantViewModel {
             #endif
             defaults.removeObject(forKey: todayKey)
         }
+    }
+
+    /// Limpia el `toolResultJSON` de un QAPair rehidratado (siempre nil tras el refactor
+    /// context-rich). Conserva todos los demás campos.
+    static func stripToolPayload(_ pair: QAPair) -> QAPair {
+        QAPair(
+            question: pair.question,
+            toolName: nil,
+            toolResultJSON: nil,
+            response: pair.response,
+            timestamp: pair.timestamp
+        )
     }
 
     /// Reconstruye `[QAPair]` a partir de `messages` pareando user→assistant consecutivos.

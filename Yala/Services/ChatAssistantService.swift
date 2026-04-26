@@ -2,10 +2,10 @@
 //  ChatAssistantService.swift
 //  Yala
 //
-//  Pipeline LLM for Ask Yala chat assistant.
-//  Step 1: Classify intent via function calling (GPT-4.1-nano)
-//  Step 2: Execute tool locally (ChatToolExecutor)
-//  Step 3: Format response via LLM (GPT-4.1-nano)
+//  Pipeline LLM for Yala IA chat assistant — context-rich (Opción B).
+//  Single-step: build FullFinancialContext + 1 LLM call. No function calling.
+//  El system prompt incluye TODA la data financiera del user en JSON, así que
+//  el LLM no necesita clasificar intent ni llamar tools.
 //
 
 import Foundation
@@ -38,6 +38,11 @@ final class ChatAssistantService {
         return _openAI
     }
 
+    // MARK: - Context Builder (caché 60s vive aquí)
+
+    @ObservationIgnored
+    private let contextBuilder = FullFinancialContextBuilder()
+
     // MARK: - Rate Limiting
 
     @ObservationIgnored
@@ -46,7 +51,7 @@ final class ChatAssistantService {
     private static let rateLimitInterval: TimeInterval = 5
     static let dailyLimit = 75
     private static let maxQuestionLength = 500
-    private static let timeoutSeconds: TimeInterval = 15
+    private static let timeoutSeconds: TimeInterval = 20  // mini con context grande puede tardar más
 
     // MARK: - Daily Counter
 
@@ -75,10 +80,9 @@ final class ChatAssistantService {
 
     // MARK: - Main Entry Point
 
-    /// Process a user question through the 2-step LLM pipeline.
-    /// `turns` contiene todo el historial de la conversación del día (multi-turno) — el LLM
-    /// recibe contexto completo. Returns (responseText, toolName) where toolName is nil if
-    /// the LLM responded directly.
+    /// Process a user question through the context-rich pipeline.
+    /// `turns` contiene el historial multi-turno del día. Returns (text, toolName)
+    /// where toolName is ALWAYS nil (kept in the signature for API compat).
     func processQuestion(
         question: String,
         turns: [QAPair],
@@ -99,133 +103,50 @@ final class ChatAssistantService {
         }
         lastCallTime = Date.now
 
-        let systemPrompt = buildSystemPrompt(modelContext: modelContext)
+        // Detect anomaly request → include anomalies in context
+        let needsAnomalies = AnomalyKeywords.matches(question)
 
-        // Step 1: Classify intent
-        let (toolCall, directResponse) = try await classifyIntent(
-            client: client, question: question, turns: turns, systemPrompt: systemPrompt
-        )
+        // Build full context (caché 60s aplica)
+        let locale = Locale.current
+        let language = LanguageManager.overrideLanguage ?? locale.language.languageCode?.identifier ?? "es"
+        let country = locale.region?.identifier ?? "US"
+        let currencyDisplay = CurrencyCode(rawValue: currencyCode)?.symbol ?? currencyCode
 
-        // If LLM responded directly (no tool call — e.g., non-financial question, greeting)
-        if let direct = directResponse {
-            incrementDailyCounter()
-            return (text: direct, toolName: nil)
-        }
-
-        // Step 2: Execute tool locally
-        guard let call = toolCall else {
-            throw ChatAssistantError.parseFailed
-        }
-
-        let executor = ChatToolExecutor(
+        let context = contextBuilder.build(
             modelContext: modelContext,
             currencyCode: currencyCode,
-            converter: converter
-        )
-        let toolResult = try executor.execute(toolName: call.name, arguments: call.arguments)
-
-        // Serialize tool result to JSON
-        let toolResultJSON: String
-        do {
-            let jsonData = try JSONSerialization.data(withJSONObject: toolResult, options: [.sortedKeys])
-            toolResultJSON = String(data: jsonData, encoding: .utf8) ?? "{}"
-        } catch {
-            throw ChatAssistantError.toolExecutionFailed("JSON serialization failed")
-        }
-
-        // Step 3: Format response
-        let responseText = try await formatResponse(
-            client: client, question: question, toolName: call.name,
-            toolResultJSON: toolResultJSON, turns: turns, systemPrompt: systemPrompt
+            currencyDisplay: currencyDisplay,
+            converter: converter,
+            language: language,
+            country: country,
+            includeAnomalies: needsAnomalies
         )
 
-        incrementDailyCounter()
-        return (text: responseText, toolName: call.name)
-    }
+        let systemPrompt = buildSystemPrompt(
+            context: context,
+            modelContext: modelContext,
+            language: language,
+            country: country,
+            currencyCode: currencyCode,
+            currencyDisplay: currencyDisplay
+        )
 
-    // MARK: - Step 1: Classify Intent
-
-    private struct ToolCallInfo {
-        let name: String
-        let arguments: String
-    }
-
-    private func classifyIntent(
-        client: OpenAI,
-        question: String,
-        turns: [QAPair],
-        systemPrompt: String
-    ) async throws -> (toolCall: ToolCallInfo?, directResponse: String?) {
-        var messages = buildMessages(systemPrompt: systemPrompt, turns: turns)
-
-        if let userMsg = ChatQuery.ChatCompletionMessageParam(role: .user, content: question) {
-            messages.append(userMsg)
-        }
+        let messages = buildMessages(systemPrompt: systemPrompt, turns: turns, currentQuestion: question)
 
         let query = ChatQuery(
             messages: messages,
-            model: .gpt4_1_nano,
-            tools: ChatToolDefinitions.allTools,
-            stream: false
-        )
-
-        let result = try await callWithTimeout(query, client: client)
-
-        guard let choice = result.choices.first else {
-            throw ChatAssistantError.parseFailed
-        }
-
-        // Check for tool calls
-        if let toolCalls = choice.message.toolCalls, let firstCall = toolCalls.first {
-            return (
-                toolCall: ToolCallInfo(name: firstCall.function.name, arguments: firstCall.function.arguments),
-                directResponse: nil
-            )
-        }
-
-        // Direct text response (no tool call)
-        if let content = choice.message.content {
-            return (toolCall: nil, directResponse: content)
-        }
-
-        throw ChatAssistantError.parseFailed
-    }
-
-    // MARK: - Step 3: Format Response
-
-    private func formatResponse(
-        client: OpenAI,
-        question: String,
-        toolName: String,
-        toolResultJSON: String,
-        turns: [QAPair],
-        systemPrompt: String
-    ) async throws -> String {
-        var messages = buildMessages(systemPrompt: systemPrompt, turns: turns)
-
-        let userContent = """
-        Pregunta del usuario: \(question)
-
-        Resultado de \(toolName):
-        \(toolResultJSON)
-        """
-        if let userMsg = ChatQuery.ChatCompletionMessageParam(role: .user, content: userContent) {
-            messages.append(userMsg)
-        }
-
-        let query = ChatQuery(
-            messages: messages,
-            model: .gpt4_1_nano,
+            model: .gpt4_1_mini,
             temperature: 0.4,
             stream: false
         )
 
         let result = try await callWithTimeout(query, client: client)
-
         guard let content = result.choices.first?.message.content else {
             throw ChatAssistantError.parseFailed
         }
-        return content
+
+        incrementDailyCounter()
+        return (text: content, toolName: nil)
     }
 
     // MARK: - Helpers
@@ -246,11 +167,11 @@ final class ChatAssistantService {
     }
 
     /// Construye los messages para OpenAI: system prompt + todos los turnos del día
-    /// + (la pregunta nueva la agrega el caller). Sin filtro por TTL — todo lo persistido
-    /// se incluye. El cap a `maxTurns` lo hace el ViewModel al hacer append.
+    /// (Q+A only) + la pregunta nueva. NO se manda toolResultJSON (siempre nil tras refactor).
     private func buildMessages(
         systemPrompt: String,
-        turns: [QAPair]
+        turns: [QAPair],
+        currentQuestion: String
     ) -> [ChatQuery.ChatCompletionMessageParam] {
         var messages: [ChatQuery.ChatCompletionMessageParam] = [
             .init(role: .system, content: systemPrompt)
@@ -264,19 +185,42 @@ final class ChatAssistantService {
                 messages.append(assistantMsg)
             }
         }
+        if let userMsg = ChatQuery.ChatCompletionMessageParam(role: .user, content: currentQuestion) {
+            messages.append(userMsg)
+        }
         return messages
     }
 
-    // MARK: - System Prompt
+    // MARK: - System Prompt (split static + dynamic for prompt caching)
 
-    private func buildSystemPrompt(modelContext: ModelContext) -> String {
-        let locale = Locale.current
-        let language = LanguageManager.overrideLanguage ?? locale.language.languageCode?.identifier ?? "es"
-        let currencyCode = CurrencyDefaults.currentPreferred
-        let currencySymbol = CurrencyCode(rawValue: currencyCode)?.symbol ?? "$"
-        let country = locale.region?.identifier ?? "US"
-        let dateContext = DateContextProvider.buildDateContext()
+    private func buildSystemPrompt(
+        context: FullFinancialContext,
+        modelContext: ModelContext,
+        language: String,
+        country: String,
+        currencyCode: String,
+        currencyDisplay: String
+    ) -> String {
+        let staticPart = buildSystemPromptStatic(
+            language: language,
+            country: country,
+            currencyCode: currencyCode,
+            currencyDisplay: currencyDisplay
+        )
+        let dynamicPart = buildSystemPromptDynamic(context: context)
 
+        // STATIC primero para que OpenAI cache el prefix estable.
+        return staticPart + "\n\n" + dynamicPart
+    }
+
+    /// Bloque estable (cacheable): identidad, reglas, tono, focus, few-shot.
+    /// Cambia solo cuando el user cambia tono/focus/idioma.
+    private func buildSystemPromptStatic(
+        language: String,
+        country: String,
+        currencyCode: String,
+        currencyDisplay: String
+    ) -> String {
         // Tone (shared with Insights)
         let tone = InsightTone.current
         let toneInstruction: String
@@ -286,7 +230,6 @@ final class ChatAssistantService {
         case .sarcastic: toneInstruction = "Sé directo y con humor sutil, como un amigo cercano que tiene confianza."
         }
 
-        // Focus (shared with Insights)
         let focus = InsightFocus.current
         let focusInstruction: String
         switch focus {
@@ -295,7 +238,6 @@ final class ChatAssistantService {
         case .cautious: focusInstruction = "Prioriza alertas tempranas de riesgo: presupuestos cerca del límite, gastos inusuales, tendencias al alza."
         }
 
-        // Register (formality based on language)
         let register: String
         switch language {
         case "es": register = "tuteo (tú)"
@@ -306,82 +248,70 @@ final class ChatAssistantService {
         default: register = "informal you"
         }
 
-        // Category → Subcategory tree for resolution
-        let categories: [Category]
-        do {
-            categories = try modelContext.fetch(FetchDescriptor<Category>())
-        } catch {
-            categories = []
-        }
-        let categoryTree = categories.visibleCategoryTreeLabels().joined(separator: "; ")
-
-        // Account names for context
-        let accountNames: String
-        do {
-            let accounts = try modelContext.fetch(FetchDescriptor<Account>())
-            accountNames = accounts.map(\.name).joined(separator: ", ")
-        } catch {
-            accountNames = ""
-        }
-
         return """
         Eres el asistente financiero de Yala. Ayudas al usuario a entender sus finanzas respondiendo preguntas sobre gastos, ingresos, presupuestos, cuentas, patrones y proyecciones.
 
         REGLAS CRÍTICAS:
-        1. SOLO usa datos que las tools te devuelvan. NUNCA inventes cifras.
-        2. Si una tool no retorna datos suficientes, dilo honestamente.
+        1. SOLO usa los datos del JSON \"DATOS DEL USUARIO\" que recibes al final del system prompt. NUNCA inventes cifras ni nombres de categorías/budgets/merchants que no aparezcan en el JSON.
+        2. Si la pregunta requiere data que no está en el JSON, dilo honestamente.
         3. Responde en el idioma del usuario: \(language).
-        4. Usa el formato de moneda del usuario: \(currencySymbol) antes del monto.
-        5. Negritas para cifras importantes (**\(currencySymbol)45.50**).
+        4. Usa el formato de moneda del usuario: \(currencyDisplay) antes del monto.
+        5. Negritas para cifras importantes (**\(currencyDisplay)45.50**).
         6. Máximo 3-4 oraciones. Sé conciso pero informativo.
-        7. Si mencionas variaciones o comparaciones, SIEMPRE aclara: qué cantidad cambió, contra qué periodo, y si subió o bajó. Ejemplo: "Gastaste **\(currencySymbol)118** en Combustible, un **20% más** que el mes pasado (antes \(currencySymbol)98)". NUNCA digas solo un porcentaje sin explicar qué significa.
+        7. Si mencionas variaciones o comparaciones, SIEMPRE aclara: qué cantidad cambió, contra qué periodo, y si subió o bajó. Ejemplo: \"Gastaste **\(currencyDisplay)118** en Combustible, un **20% más** que el mes pasado (antes \(currencyDisplay)98)\". NUNCA digas solo un porcentaje sin explicar qué significa.
         8. NUNCA des consejos de inversión ni recomendaciones de productos financieros.
-        9. Registro: \(register)
-        10. Si la pregunta NO es sobre finanzas personales, responde amablemente que solo puedes ayudar con temas financieros. NO llames ninguna tool.
-        11. Usa los nombres exactos de categorías y subcategorías del usuario para buscar. Si el usuario dice un sinónimo (ej: "gasolina"), resuélvelo a la subcategoría correcta (ej: "Combustible" dentro de "Vehículo"). En tu respuesta, SIEMPRE usa los nombres reales de categorías/subcategorías, NUNCA sinónimos ni generalizaciones.
-        12. PRIORIDAD SUBCATEGORÍA: Si la pregunta es sobre una subcategoría (ej: "Bus", "Gasolina"), centra la respuesta en ESA subcategoría. Si los datos incluyen "matched_level": "subcategory", el foco DEBE ser la subcategoría.
-        \(toneInstruction.isEmpty ? "" : "13. Tono: \(toneInstruction)")
-        \(focusInstruction.isEmpty ? "" : "14. Enfoque: \(focusInstruction)")
+        9. Registro: \(register).
+        10. Si la pregunta NO es sobre finanzas personales, responde amablemente que solo puedes ayudar con temas financieros.
+        11. Usa los nombres EXACTOS de categorías, subcategorías, budgets, tags y merchants tal como aparecen en el JSON. Si el user dice un sinónimo (ej: \"gasolina\"), resuélvelo a la subcategoría/categoría correcta del JSON (ej: \"Combustible\"). En tu respuesta, SIEMPRE usa los nombres reales del JSON, NUNCA sinónimos ni generalizaciones inventadas.
+        12. PRIORIDAD SUBCATEGORÍA: Si la pregunta es sobre una subcategoría (ej: \"Bus\", \"Gasolina\"), centra la respuesta en ESA subcategoría usando los datos de `categories[].subcategories[]` del JSON. NUNCA respondas con datos de la categoría padre cuando el user pregunta por la subcategoría.
+        13. SAMPLE SIZE en patrones de día de semana: el campo `weekday_pattern_30_days[].sample_size` indica cuántas tx hay en ese weekday durante los 30 días. Si el sample_size es bajo (1-2 tx), advierte al user que el dato puede estar dominado por gastos puntuales y no reflejar un patrón real. NUNCA presentes un weekday total como \"patrón\" si solo se basa en 1-2 tx.
+        14. SUMA INCLUYE TODO: si te preguntan por \"gastos recurrentes pagados este mes\", usa `recurring.paid_this_month` (lista con fechas y montos). Para pendientes, usa `recurring.pending_next_30_days`.
+        \(toneInstruction.isEmpty ? "" : "15. Tono: \(toneInstruction)")
+        \(focusInstruction.isEmpty ? "" : "16. Enfoque: \(focusInstruction)")
 
         MANEJO DE CONTEXTO MULTI-TURNO:
-        - El historial puede tener varios turnos sobre temas distintos. Si la pregunta NUEVA del user no se relaciona con turnos anteriores, IGNORA el contexto previo y responde fresh basándote solo en los datos del tool actual.
-        - Si la pregunta es ambigua (ej: "¿y eso?", "¿cuánto fue?", "¿el mayor?") y hay 3+ temas distintos en los últimos turnos, NO adivines: pide clarificación breve. Ejemplo: "¿Te refieres a [tema A], [tema B] o [tema C]?".
+        - El historial puede tener varios turnos sobre temas distintos. Si la pregunta NUEVA del user no se relaciona con turnos anteriores, IGNORA el contexto previo y responde fresh basándote solo en los datos del JSON actual.
+        - Si la pregunta es ambigua (ej: \"¿y eso?\", \"¿cuánto fue?\", \"¿el mayor?\") y hay 3+ temas distintos en los últimos turnos, NO adivines: pide clarificación breve.
         - NUNCA mezcles datos de turnos viejos con la pregunta actual a menos que sea claramente un follow-up.
-        - Si el user expresa confusión o desacuerdo con tu respuesta ("no entiendo", "te equivocaste", "no es eso") Y ya hay 5+ turnos previos, ofrece al final de tu respuesta: "Si quieres centrarte solo en este tema, puedes reiniciar la conversación con el botón de abajo." Hazlo MÁXIMO 1 vez por sesión, NO proactivamente.
 
-        VOCABULARIO NATURAL → TOOL:
-        - "gastos hormiga/chiquitos/gastitos/latte factor" → analyze_patterns(small_recurring)
-        - "me excedí/me pasé/reventé presupuesto" → budget_status(date_range=last_month)
-        - "gastos fijos/suscripciones/pagos que se vienen" → upcoming_payments
-        - "cuánto tengo/mi plata/mi balance/mis cuentas" → account_balances
-        - "a este ritmo/me alcanza/cuánto puedo gastar por día" → spending_projection
-        - "algo raro/inusual/sospechoso en mis gastos" → analyze_patterns(unusual_spending)
-        - "qué día gasto más/fines de semana" → analyze_patterns(weekday_pattern)
-        - "gastos innecesarios/podría recortar/esenciales" → analyze_patterns(needs_breakdown)
-        - "mi gasto más grande/caro/top gastos" → search_transactions(sort_by=amount_desc, limit=N)
-        - "más repetido/frecuente/cuántas veces" → analyze_patterns(frequency_ranking)
-        - "estoy ahorrando/gasto más de lo que gano" → financial_overview (tiene savings_rate)
-        - "menores a X/mayores a X/entre X e Y" → search_transactions o spending_summary con amount_min/amount_max
+        EJEMPLOS DE INTERPRETACIÓN (few-shot):
 
-        GUÍA DE SELECCIÓN:
-        - BALANCE/CUENTAS ("cuánto tengo") → account_balances
-        - PRESUPUESTO ("me excedí", "presupuesto de X") → budget_status
-        - PAGOS FUTUROS ("qué se viene", "suscripciones") → upcoming_payments
-        - PROYECCIÓN ("a este ritmo", "me alcanza") → spending_projection
-        - PATRONES ("gastos hormiga", "qué día", "algo raro", "innecesarios") → analyze_patterns
-        - MERCHANT/CATEGORÍA específica ("cuánto en Starbucks") → search_transactions
-        - RANKING de categorías/merchants ("en qué más gasté") → spending_summary
-        - COMPARACIÓN entre periodos ("marzo vs febrero") → compare_periods
-        - RESUMEN general ("cómo me fue", "resumen del mes") → financial_overview
-        Si la pregunta combina temas, usa la tool más específica al tema principal.
+        EJEMPLO 1 — Patrón de día de semana con sample size bajo:
+        User: \"¿En qué días gasto más en transporte?\"
+        Datos relevantes: weekday_pattern_30_days incluye Sunday con total \(currencyDisplay)3400, sample_size=2, day_occurrences=4.
+        Respuesta esperada: \"Los domingos aparece tu mayor total (**\(currencyDisplay)3400**), pero ojo: solo hay 2 tx en domingos del último mes, así que puede estar dominado por un gasto puntual y no reflejar un patrón real.\"
 
-        CONTEXTO:
-        - Moneda principal: \(currencyCode)
-        - Idioma: \(language)
-        - País: \(country)
-        - Categorías y subcategorías: \(categoryTree)
-        - Cuentas: \(accountNames)
+        EJEMPLO 2 — Pregunta sobre subcategoría específica:
+        User: \"¿Cómo se comparan mis gastos en bus con meses anteriores?\"
+        Datos relevantes: categories incluye \"Transporte\" con subcategories[] que tiene \"Bus\" con total_current_month=120, total_last_month=180, total_two_months_ago=200.
+        Respuesta esperada: \"En **Bus** llevas **\(currencyDisplay)120** este mes, **33% menos** que el pasado (**\(currencyDisplay)180**) y bastante por debajo de los **\(currencyDisplay)200** de hace 2 meses.\" — NO mezcles con totales de \"Transporte\".
 
+        EJEMPLO 3 — Recurrentes pagados vs pendientes:
+        User: \"¿Cuánto pagué en gastos recurrentes este mes?\"
+        Datos relevantes: recurring.paid_this_month incluye 4 entries con amount sumando 280.
+        Respuesta esperada: \"Has pagado **\(currencyDisplay)280** en pagos recurrentes este mes, distribuidos en 4 cargos.\" Si pregunta por pendientes, usa pending_next_30_days.
+
+        EJEMPLO 4 — Pregunta no-financiera (redirección):
+        User: \"¿Cuál es la capital de Francia?\"
+        Respuesta esperada: \"Solo puedo ayudarte con tus finanzas personales — gastos, ingresos, presupuestos, patrones, etc. ¿Algo de eso?\"
+
+        BRAND VOICE:
+        - Tutea ("\(register)"). Cercano pero respetuoso.
+        - NUNCA regañar, juzgar o culpar al user por gastar.
+        - Lidera con el dato, opinión después.
+        - Usa "gasto"/"ingreso", NO "transacción" (excepto contexto técnico).
+        """
+    }
+
+    /// Bloque dinámico: JSON con TODA la data financiera + DateContext.
+    /// Cambia cada llamada (o cada 60s con caché del builder).
+    private func buildSystemPromptDynamic(context: FullFinancialContext) -> String {
+        let dateContext = DateContextProvider.buildDateContext()
+        return """
+        DATOS DEL USUARIO (JSON):
+        \(context.toJSONString())
+
+        CONTEXTO DE FECHA:
         \(dateContext)
         """
     }

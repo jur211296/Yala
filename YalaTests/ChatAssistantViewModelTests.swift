@@ -234,4 +234,55 @@ struct ChatAssistantViewModelTests {
         // Yesterday should be approximately 24 hours (86400 seconds)
         #expect(abs(duration - 86400) < 1)
     }
+
+    // MARK: - Strip tool payload (refactor context-rich)
+
+    @MainActor @Test func stripToolPayload_clearsToolResultJSON() {
+        let pair = QAPair(
+            question: "test",
+            toolName: "spending_summary",
+            toolResultJSON: #"{"total": 100}"#,
+            response: "answer",
+            timestamp: Date.now
+        )
+        let stripped = ChatAssistantViewModel.stripToolPayload(pair)
+        #expect(stripped.toolName == nil)
+        #expect(stripped.toolResultJSON == nil)
+        #expect(stripped.question == "test")
+        #expect(stripped.response == "answer")
+    }
+
+    @MainActor @Test func persistedSession_stripsLegacyToolPayload() throws {
+        clearChatSessionKeys()
+        defer { clearChatSessionKeys() }
+
+        let context = try makeTestContext()
+
+        // Persist blob with legacy QAPair carrying toolName + toolResultJSON
+        let messages = [
+            ChatMessage(role: .user, text: "Q1", timestamp: Date.now),
+            ChatMessage(role: .assistant, text: "A1", timestamp: Date.now)
+        ]
+        let legacyTurn = QAPair(
+            question: "Q1",
+            toolName: "spending_summary",
+            toolResultJSON: #"{"groups": []}"#,
+            response: "A1",
+            timestamp: Date.now
+        )
+        let blob = ChatPersistedSession(messages: messages, allTurns: [legacyTurn])
+        let data = try JSONEncoder().encode(blob)
+        let key = "chat_session_" + DayKeyFormatter.string(from: Date.now)
+        UserDefaults.standard.set(data, forKey: key)
+
+        let vm = ChatAssistantViewModel()
+        vm.setContext(context)
+
+        // Turn rehidratado debería tener toolPayload nil tras el refactor context-rich
+        #expect(vm.allTurns.count == 1)
+        #expect(vm.allTurns.first?.toolName == nil)
+        #expect(vm.allTurns.first?.toolResultJSON == nil)
+        #expect(vm.allTurns.first?.question == "Q1")
+        #expect(vm.allTurns.first?.response == "A1")
+    }
 }
