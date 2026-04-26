@@ -1115,6 +1115,7 @@
 "settings.wipeData" = "Limpar dados";
 "settings.faceId" = "Face ID";
 "settings.permissions" = "Permissoes";
+"settings.aiPrivacy" = "Privacidade e dados de IA";
 "settings.subscriptions" = "Gerenciar assinaturas";
 "settings.rateApp" = "Avaliar e recomendar";
 "settings.tutorials" = "Tutoriais";
@@ -2320,6 +2321,7 @@
 "shortcut.error.save" = "Não foi possível salvar o registro";
 "shortcut.error.voiceNotEnabled" = "A entrada por voz não está ativada. Ative em Configurações > Personalização.";
 "shortcut.error.imageNotEnabled" = "A entrada por imagem não está ativada. Ative em Configurações > Personalização.";
+"shortcut.error.consentRequired" = "Aceite o consentimento de IA no app antes de usar este atalho.";
 
 // Results
 "shortcut.result.noTag" = "Sem tag";
@@ -2961,6 +2963,25 @@
 "siriShortcuts.faq.inboxA" = "Os registos criados pelo Siri chegam à tua caixa de entrada como rascunhos para revisão.";
 "siriShortcuts.faq.offlineQ" = "Funciona sem internet?";
 "siriShortcuts.faq.offlineA" = "Sim, os atalhos funcionam em modo básico sem ligação à internet.";
+
+// MARK: - AI Settings (Personalization Sheet from Chat)
+
+"aiSettings.title" = "Personalizar IA";
+"aiSettings.toneSection" = "Tom";
+"aiSettings.styleSection" = "Estilo";
+"aiSettings.appliesHint" = "Estas configurações se aplicam a Insights, Assistente e Hero do Painel.";
+
+// MARK: - AI Privacy (sub-view from Profile > Security)
+
+"aiPrivacy.title" = "Privacidade e dados de IA";
+"aiPrivacy.processingRow" = "Processamento (voz e imagem)";
+"aiPrivacy.chatRow" = "Assistente Pro";
+"aiPrivacy.insightsRow" = "Insights inteligentes";
+"aiPrivacy.revokeConfirmTitle" = "Desativar esta função?";
+"aiPrivacy.revokeConfirmMessage" = "Pararemos de processar seus dados de IA para esta função. Você pode reativá-la quando quiser.";
+"aiPrivacy.revokeConfirmAction" = "Desativar";
+"aiPrivacy.footerHint" = "Seus dados só são processados ao usar Insights, Assistente ou registros com voz e imagem. Nunca compartilhamos suas informações pessoais.";
+"aiPrivacy.policyLink" = "Política de Privacidade";
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Processamento de voz e imagens";

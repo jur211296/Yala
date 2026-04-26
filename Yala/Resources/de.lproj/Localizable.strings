@@ -1115,6 +1115,7 @@
 "settings.wipeData" = "Daten löschen";
 "settings.faceId" = "Face ID";
 "settings.permissions" = "Berechtigungen";
+"settings.aiPrivacy" = "KI-Datenschutz und Daten";
 "settings.subscriptions" = "Abonnements verwalten";
 "settings.rateApp" = "Bewerten und empfehlen";
 "settings.tutorials" = "Tutorials";
@@ -2320,6 +2321,7 @@
 "shortcut.error.save" = "Eintrag konnte nicht gespeichert werden";
 "shortcut.error.voiceNotEnabled" = "Spracheingabe ist nicht aktiviert. Aktiviere sie unter Einstellungen > Personalisierung.";
 "shortcut.error.imageNotEnabled" = "Bildeingabe ist nicht aktiviert. Aktiviere sie unter Einstellungen > Personalisierung.";
+"shortcut.error.consentRequired" = "Akzeptiere die KI-Einwilligung in der App, bevor du dieses Shortcut nutzt.";
 
 // Results
 "shortcut.result.noTag" = "Kein Tag";
@@ -2961,6 +2963,25 @@
 "siriShortcuts.faq.inboxA" = "Von Siri erstellte Einträge erscheinen als Entwürfe in deinem Posteingang zur Überprüfung.";
 "siriShortcuts.faq.offlineQ" = "Funktioniert es offline?";
 "siriShortcuts.faq.offlineA" = "Ja, Kurzbefehle funktionieren im Basismodus ohne Internetverbindung.";
+
+// MARK: - AI Settings (Personalization Sheet from Chat)
+
+"aiSettings.title" = "KI personalisieren";
+"aiSettings.toneSection" = "Tonfall";
+"aiSettings.styleSection" = "Stil";
+"aiSettings.appliesHint" = "Diese Einstellungen gelten für Insights, Assistent und Panel-Hero.";
+
+// MARK: - AI Privacy (sub-view from Profile > Security)
+
+"aiPrivacy.title" = "KI-Datenschutz und Daten";
+"aiPrivacy.processingRow" = "Verarbeitung (Sprache & Bild)";
+"aiPrivacy.chatRow" = "Pro-Assistent";
+"aiPrivacy.insightsRow" = "Intelligente Insights";
+"aiPrivacy.revokeConfirmTitle" = "Diese Funktion deaktivieren?";
+"aiPrivacy.revokeConfirmMessage" = "Wir verarbeiten deine KI-Daten für diese Funktion nicht mehr. Du kannst sie jederzeit wieder aktivieren.";
+"aiPrivacy.revokeConfirmAction" = "Deaktivieren";
+"aiPrivacy.footerHint" = "Deine Daten werden nur verarbeitet, wenn du Insights, Assistent oder Sprach-/Bildeinträge nutzt. Wir teilen deine persönlichen Informationen nie.";
+"aiPrivacy.policyLink" = "Datenschutzrichtlinie";
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Sprach- und Bildverarbeitung";

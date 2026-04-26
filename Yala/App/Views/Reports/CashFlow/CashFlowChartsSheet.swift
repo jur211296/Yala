@@ -40,7 +40,7 @@ struct CashFlowChartsSheet: View {
     }
 
     private var isAIEnabled: Bool {
-        appPreferences.cashFlowAIEnabled && appPreferences.aiInsightsEnabled
+        appPreferences.cashFlowAIEnabled && appPreferences.aiInsightsConsentAccepted
     }
 
     private let aiProTip = AIChartsProTip()
@@ -476,7 +476,7 @@ struct CashFlowChartsSheet: View {
     private var aiChip: some View {
         Button {
             if isPro {
-                if appPreferences.aiInsightsEnabled {
+                if appPreferences.aiInsightsConsentAccepted {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                         appPreferences.cashFlowAIEnabled.toggle()
                     }

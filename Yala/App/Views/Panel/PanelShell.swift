@@ -76,6 +76,9 @@ struct PanelShell: View {
             case .chat:
                 sheets.showUpgradeForChat = true
             }
+        case .requestAIConsent(let input):
+            sheets.pendingAIInput = input
+            sheets.showAIConsentAlert = true
         default:
             break  // Non-panel intents ignored (router shouldn't route them here).
         }

@@ -263,7 +263,7 @@ extension View {
 // MARK: - AI Consent Alert
 
 /// Which AI input feature the user was trying to activate when consent was requested
-enum PendingAIInput {
+enum PendingAIInput: Equatable, Hashable {
     case voice
     case image
 }
@@ -273,9 +273,7 @@ enum PendingAIInput {
 struct AIConsentAlertModifier: ViewModifier {
     @Binding var isPresented: Bool
     @Binding var pendingInput: PendingAIInput
-    @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
-    @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
-    @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
+    @AppStorage(AppPreferences.Keys.aiDataConsentAccepted) private var aiDataConsentAccepted: Bool = false
     @Environment(\.openURL) private var openURL
 
     /// Called after consent is accepted and alert dismisses, to show the appropriate sheet
@@ -287,12 +285,6 @@ struct AIConsentAlertModifier: ViewModifier {
                 Button(L10n.AIConsent.accept) {
                     aiDataConsentAccepted = true
                     let input = pendingInput
-                    switch input {
-                    case .voice:
-                        voiceInputEnabled = true
-                    case .image:
-                        imageInputEnabled = true
-                    }
                     Task { @MainActor in
                         try? await Task.sleep(for: .milliseconds(500))
                         onAccepted(input)
@@ -330,7 +322,6 @@ extension View {
 struct ChatConsentAlertModifier: ViewModifier {
     @Binding var isPresented: Bool
     @AppStorage(AppPreferences.Keys.aiChatConsentAccepted) private var aiChatConsentAccepted: Bool = false
-    @AppStorage(AppPreferences.Keys.chatAssistantEnabled) private var chatAssistantEnabled: Bool = false
     @Environment(\.openURL) private var openURL
 
     /// Called after consent is accepted (e.g. to present the chat sheet).
@@ -341,7 +332,6 @@ struct ChatConsentAlertModifier: ViewModifier {
             .alert(L10n.AIConsent.chatTitle, isPresented: $isPresented) {
                 Button(L10n.AIConsent.accept) {
                     aiChatConsentAccepted = true
-                    chatAssistantEnabled = true
                     onAccepted()
                 }
                 Button(L10n.AIConsent.privacyPolicy) {
@@ -371,7 +361,6 @@ extension View {
 struct InsightsConsentAlertModifier: ViewModifier {
     @Binding var isPresented: Bool
     @AppStorage(AppPreferences.Keys.aiInsightsConsentAccepted) private var aiInsightsConsentAccepted: Bool = false
-    @AppStorage(AppPreferences.Keys.aiInsightsEnabled) private var aiInsightsEnabled: Bool = false
     @Environment(\.openURL) private var openURL
 
     /// Called after consent is accepted (e.g. to trigger AI generation).
@@ -382,7 +371,6 @@ struct InsightsConsentAlertModifier: ViewModifier {
             .alert(L10n.AIConsent.insightsTitle, isPresented: $isPresented) {
                 Button(L10n.AIConsent.accept) {
                     aiInsightsConsentAccepted = true
-                    aiInsightsEnabled = true
                     onAccepted()
                 }
                 Button(L10n.AIConsent.privacyPolicy) {

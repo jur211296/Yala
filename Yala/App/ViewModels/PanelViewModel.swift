@@ -2655,7 +2655,6 @@ final class PanelViewModel {
     private func generateHeroAIIfEligible(data: HeroMonthData) {
         guard FeatureGateService.shared.canAccess(.smartInsightsAI),
               appPreferences?.aiInsightsConsentAccepted == true,
-              appPreferences?.aiInsightsEnabled == true,
               let trend = lastHeroTrendContext else {
             heroAITask?.cancel()
             heroAITask = nil

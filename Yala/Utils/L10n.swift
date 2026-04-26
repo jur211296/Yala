@@ -1458,6 +1458,20 @@ enum L10n {
         static var appliesHint: String { ls("aiSettings.appliesHint", comment: "") }
     }
 
+    // MARK: - AI Privacy (sub-view from Profile > Security)
+
+    enum AIPrivacy {
+        static var title: String { ls("aiPrivacy.title", comment: "") }
+        static var processingRow: String { ls("aiPrivacy.processingRow", comment: "") }
+        static var chatRow: String { ls("aiPrivacy.chatRow", comment: "") }
+        static var insightsRow: String { ls("aiPrivacy.insightsRow", comment: "") }
+        static var revokeConfirmTitle: String { ls("aiPrivacy.revokeConfirmTitle", comment: "") }
+        static var revokeConfirmMessage: String { ls("aiPrivacy.revokeConfirmMessage", comment: "") }
+        static var revokeConfirmAction: String { ls("aiPrivacy.revokeConfirmAction", comment: "") }
+        static var footerHint: String { ls("aiPrivacy.footerHint", comment: "") }
+        static var policyLink: String { ls("aiPrivacy.policyLink", comment: "") }
+    }
+
     enum AIConsent {
         static var processingTitle: String { ls("aiConsent.processingTitle", comment: "") }
         static var processingMessage: String { ls("aiConsent.processingMessage", comment: "") }
@@ -2785,6 +2799,7 @@ enum L10n {
         static var wipeData: String { ls("settings.wipeData", comment: "") }
         static var faceId: String { ls("settings.faceId", comment: "") }
         static var permissions: String { ls("settings.permissions", comment: "") }
+        static var aiPrivacy: String { ls("settings.aiPrivacy", comment: "") }
         static var subscriptions: String {
             ls("settings.subscriptions", comment: "")
         }

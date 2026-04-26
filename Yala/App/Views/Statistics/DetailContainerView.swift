@@ -44,9 +44,7 @@ struct DetailContainerView: View {
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
         .rawValue
-    @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
-    @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
-    @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
+    @AppStorage(AppPreferences.Keys.aiDataConsentAccepted) private var aiDataConsentAccepted: Bool = false
     @AppStorage(InsightTone.storageKey) private var toneSetting: String = InsightTone.normal.rawValue
     @AppStorage(InsightFocus.storageKey) private var focusSetting: String = InsightFocus.balanced.rawValue
     @State private var showAIConsentAlert = false
@@ -66,8 +64,7 @@ struct DetailContainerView: View {
     @State private var showChatSheet = false
     @State private var showUpgradeForChat = false
     @State private var showChatConsentAlert = false
-    @AppStorage("aiChatConsentAccepted") private var aiChatConsentAccepted: Bool = false
-    @AppStorage("chatAssistantEnabled") private var chatAssistantEnabled: Bool = false
+    @AppStorage(AppPreferences.Keys.aiChatConsentAccepted) private var aiChatConsentAccepted: Bool = false
     @AppStorage("chatFABVisible") private var chatFABVisible: Bool = true
 
     // MARK: - Pro Feature Gates
@@ -142,7 +139,6 @@ struct DetailContainerView: View {
                     showUpgradeForChat: $showUpgradeForChat,
                     showChatConsentAlert: $showChatConsentAlert,
                     aiChatConsentAccepted: $aiChatConsentAccepted,
-                    chatAssistantEnabled: $chatAssistantEnabled,
                     modelContext: modelContext,
                     recalculateData: recalculateData,
                     reloadAndRecalculate: reloadAndRecalculate
@@ -242,7 +238,6 @@ struct DetailContainerView: View {
                             isImageLocked: isImageLocked,
                             isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
                             chatConsentAccepted: aiChatConsentAccepted,
-                            chatEnabled: chatAssistantEnabled,
                             chatFABVisible: chatFABVisible,
                             onVoiceTap: { showVoiceRecording = true },
                             onImageTap: { showImageSelection = true },
@@ -635,7 +630,6 @@ private struct DetailContainerSheets: ViewModifier {
     @Binding var showUpgradeForChat: Bool
     @Binding var showChatConsentAlert: Bool
     @Binding var aiChatConsentAccepted: Bool
-    @Binding var chatAssistantEnabled: Bool
     let modelContext: ModelContext
     let recalculateData: () -> Void
     let reloadAndRecalculate: () -> Void
@@ -669,18 +663,8 @@ private struct DetailContainerSheets: ViewModifier {
             .sheet(isPresented: $showUpgradeForChat) {
                 UpgradePromptSheet(feature: .chatAssistant, context: .proFeature)
             }
-            .alert(L10n.AIConsent.chatTitle, isPresented: $showChatConsentAlert) {
-                Button(L10n.AIConsent.accept) {
-                    aiChatConsentAccepted = true
-                    chatAssistantEnabled = true
-                    showChatSheet = true
-                }
-                Button(L10n.AIConsent.privacyPolicy) {
-                    UIApplication.shared.open(AppConstants.privacyURL)
-                }
-                Button(L10n.Action.cancel, role: .cancel) {}
-            } message: {
-                Text(L10n.AIConsent.chatMessage)
+            .chatConsentAlert(isPresented: $showChatConsentAlert) {
+                showChatSheet = true
             }
             .sheet(isPresented: $recordsViewModel.showEditTransaction) {
                 if let transaction = recordsViewModel.editingTransaction {

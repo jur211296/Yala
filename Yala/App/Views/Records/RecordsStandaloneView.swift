@@ -151,7 +151,6 @@ struct RecordsStandaloneView: View {
                                 isImageLocked: isImageLocked,
                                 isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
                                 chatConsentAccepted: appPreferences.aiChatConsentAccepted,
-                                chatEnabled: appPreferences.chatAssistantEnabled,
                                 chatFABVisible: appPreferences.chatFABVisible,
                                 onVoiceTap: { showVoiceRecording = true },
                                 onImageTap: { showImageSelection = true },

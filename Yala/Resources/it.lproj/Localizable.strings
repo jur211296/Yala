@@ -1115,6 +1115,7 @@
 "settings.wipeData" = "Cancella dati";
 "settings.faceId" = "Face ID";
 "settings.permissions" = "Permessi";
+"settings.aiPrivacy" = "Privacy e dati IA";
 "settings.subscriptions" = "Gestisci abbonamenti";
 "settings.rateApp" = "Valuta e consiglia";
 "settings.tutorials" = "Tutorial";
@@ -2322,6 +2323,7 @@
 "shortcut.error.save" = "Impossibile salvare la registrazione";
 "shortcut.error.voiceNotEnabled" = "L'inserimento vocale non è attivato. Attivalo in Impostazioni > Personalizzazione.";
 "shortcut.error.imageNotEnabled" = "L'inserimento da immagine non è attivato. Attivalo in Impostazioni > Personalizzazione.";
+"shortcut.error.consentRequired" = "Accetta il consenso IA nell'app prima di usare questo shortcut.";
 
 // Results
 "shortcut.result.noTag" = "Senza tag";
@@ -2963,6 +2965,25 @@
 "siriShortcuts.faq.inboxA" = "I registri creati da Siri arrivano nella tua posta in arrivo come bozze da verificare.";
 "siriShortcuts.faq.offlineQ" = "Funziona senza internet?";
 "siriShortcuts.faq.offlineA" = "Sì, le scorciatoie funzionano in modalità base senza connessione internet.";
+
+// MARK: - AI Settings (Personalization Sheet from Chat)
+
+"aiSettings.title" = "Personalizza IA";
+"aiSettings.toneSection" = "Tono";
+"aiSettings.styleSection" = "Stile";
+"aiSettings.appliesHint" = "Queste impostazioni si applicano a Insights, Assistente e Hero del Pannello.";
+
+// MARK: - AI Privacy (sub-view from Profile > Security)
+
+"aiPrivacy.title" = "Privacy e dati IA";
+"aiPrivacy.processingRow" = "Elaborazione (voce e immagine)";
+"aiPrivacy.chatRow" = "Assistente Pro";
+"aiPrivacy.insightsRow" = "Insights intelligenti";
+"aiPrivacy.revokeConfirmTitle" = "Disattivare questa funzione?";
+"aiPrivacy.revokeConfirmMessage" = "Smetteremo di elaborare i tuoi dati IA per questa funzione. Puoi riattivarla quando vuoi.";
+"aiPrivacy.revokeConfirmAction" = "Disattiva";
+"aiPrivacy.footerHint" = "I tuoi dati vengono elaborati solo quando usi Insights, Assistente o registrazioni con voce e immagine. Non condividiamo mai le tue informazioni personali.";
+"aiPrivacy.policyLink" = "Informativa sulla privacy";
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Elaborazione voce e immagini";

@@ -17,7 +17,6 @@ struct FABStackView: View {
     let isImageLocked: Bool
     let isChatLocked: Bool
     let chatConsentAccepted: Bool
-    let chatEnabled: Bool
     let chatFABVisible: Bool
 
     // MARK: - Callbacks
@@ -34,9 +33,7 @@ struct FABStackView: View {
     // MARK: - Internal State
 
     @State private var showFABMenu = false
-    @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
-    @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
-    @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
+    @AppStorage(AppPreferences.Keys.aiDataConsentAccepted) private var aiDataConsentAccepted: Bool = false
     @State private var showAIConsentAlert = false
     @State private var pendingAIInput: PendingAIInput = .voice
 
@@ -88,12 +85,8 @@ struct FABStackView: View {
             }
             .aiConsentAlert(isPresented: $showAIConsentAlert, pendingInput: $pendingAIInput) { input in
                 switch input {
-                case .voice:
-                    voiceInputEnabled = true
-                    onVoiceTap()
-                case .image:
-                    imageInputEnabled = true
-                    onImageTap()
+                case .voice: onVoiceTap()
+                case .image: onImageTap()
                 }
             }
         } else {
@@ -108,7 +101,7 @@ struct FABStackView: View {
             DS.Haptic.selection()
             if isChatLocked {
                 onUpgradeChat()
-            } else if !chatConsentAccepted || !chatEnabled {
+            } else if !chatConsentAccepted {
                 onChatConsentNeeded()
             } else {
                 onChatTap()
@@ -181,7 +174,6 @@ struct FABStackView: View {
                     pendingAIInput = .voice
                     showAIConsentAlert = true
                 } else {
-                    if !voiceInputEnabled { voiceInputEnabled = true }
                     onVoiceTap()
                 }
             }
@@ -194,7 +186,6 @@ struct FABStackView: View {
                     pendingAIInput = .image
                     showAIConsentAlert = true
                 } else {
-                    if !imageInputEnabled { imageInputEnabled = true }
                     onImageTap()
                 }
             }

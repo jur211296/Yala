@@ -83,14 +83,22 @@ struct PanelView: View {
         case .tryVoiceInput:
             FeatureGateService.shared.enableSetupTrial(for: .voiceInput)
             sheets.isVoiceSetupTrial = true
-            if !appPreferences.voiceInputEnabled { appPreferences.voiceInputEnabled = true }
-            sheets.showVoiceRecording = true
+            if appPreferences.aiDataConsentAccepted {
+                sheets.showVoiceRecording = true
+            } else {
+                sheets.pendingAIInput = .voice
+                sheets.showAIConsentAlert = true
+            }
         case .tryImageInput:
             FeatureGateService.shared.enableSetupTrial(for: .imageInput)
             sheets.isImageSetupTrial = true
-            if !appPreferences.imageInputEnabled { appPreferences.imageInputEnabled = true }
             sheets.setupTrialExampleImages = loadExampleImages()
-            sheets.showImageSelection = true
+            if appPreferences.aiDataConsentAccepted {
+                sheets.showImageSelection = true
+            } else {
+                sheets.pendingAIInput = .image
+                sheets.showAIConsentAlert = true
+            }
         }
     }
 
@@ -251,7 +259,7 @@ struct PanelView: View {
             reconcileAccountsSortOrder()
         }
         // Regenera mensaje IA al togglear feature o cambiar estado Pro.
-        .onChange(of: appPreferences.aiInsightsEnabled) { _, _ in
+        .onChange(of: appPreferences.aiInsightsConsentAccepted) { _, _ in
             viewModel.retriggerHeroAI()
         }
         .onChange(of: StoreKitManager.shared.isProUser) { _, _ in
@@ -439,7 +447,6 @@ struct PanelView: View {
                         isImageLocked: isImageLocked,
                         isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
                         chatConsentAccepted: appPreferences.aiChatConsentAccepted,
-                        chatEnabled: appPreferences.chatAssistantEnabled,
                         chatFABVisible: appPreferences.chatFABVisible,
                         onVoiceTap: { sheets.showVoiceRecording = true },
                         onImageTap: { sheets.showImageSelection = true },

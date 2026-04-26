@@ -33,9 +33,8 @@ struct PanelHeroSection: View {
 
     var body: some View {
         if let data = viewModel.heroWidget.data {
-            // Dependencias para que SwiftUI invalide al togglear consent/feature en Profile.
+            // Dependencia para que SwiftUI invalide al togglear consent en Privacidad y datos IA.
             let _ = appPreferences.aiInsightsConsentAccepted
-            let _ = appPreferences.aiInsightsEnabled
 
             let isPro = FeatureGateService.shared.isProUser
             let hasConsent = appPreferences.aiInsightsConsentAccepted

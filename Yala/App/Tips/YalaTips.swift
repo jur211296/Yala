@@ -125,26 +125,8 @@ enum CashFlowTableTourSteps {
 // MARK: - Grupo G: Pro Tour (post-subscription)
 
 enum ProTourSteps {
-    /// Phase 1: ProfileView — toggles, export, icons, themes
+    /// Phase 1: ProfileView — export, icons, themes.
     static let profileSteps: [CoachMarkStep] = [
-        CoachMarkStep(
-            id: "proVoiceInput",
-            title: L10n.TipKit.proVoiceInputTitle,
-            message: L10n.TipKit.proVoiceInputMessage,
-            spotlightPadding: DS.Spacing.xs
-        ),
-        CoachMarkStep(
-            id: "proImageInput",
-            title: L10n.TipKit.proImageInputTitle,
-            message: L10n.TipKit.proImageInputMessage,
-            spotlightPadding: DS.Spacing.xs
-        ),
-        CoachMarkStep(
-            id: "proSmartInsights",
-            title: L10n.TipKit.proSmartInsightsTitle,
-            message: L10n.TipKit.proSmartInsightsMessage,
-            spotlightPadding: DS.Spacing.xs
-        ),
         CoachMarkStep(
             id: "proExportExtended",
             title: L10n.TipKit.proExportExtendedTitle,

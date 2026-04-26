@@ -188,6 +188,8 @@ final class AppPreferences {
 
     // MARK: - Voice / Image / AI
 
+    // DEPRECATED v2.0.x — removed in remove-ai-toggles refactor. Storage retained
+    // for cross-device KV during transition; new code must not read these.
     var voiceInputEnabled: Bool = false {
         didSet {
             guard oldValue != voiceInputEnabled else { return }
@@ -202,6 +204,7 @@ final class AppPreferences {
         }
     }
 
+    // DEPRECATED v2.0.x — see voiceInputEnabled.
     var imageInputEnabled: Bool = false {
         didSet {
             guard oldValue != imageInputEnabled else { return }
@@ -223,6 +226,7 @@ final class AppPreferences {
         }
     }
 
+    // DEPRECATED v2.0.x — feature toggle se acopla al consent. Ver `acceptAIInsightsConsent()`.
     var aiInsightsEnabled: Bool = false {
         didSet {
             guard oldValue != aiInsightsEnabled else { return }
@@ -230,7 +234,8 @@ final class AppPreferences {
         }
     }
 
-    /// Centraliza la invariante "aceptar consent IA ⇒ prender feature".
+    /// Acepta el consent de Insights AI. Mantiene compat con callers legacy
+    /// que aún escriben `aiInsightsEnabled = true` durante la transición.
     func acceptAIInsightsConsent() {
         aiInsightsConsentAccepted = true
         aiInsightsEnabled = true
@@ -243,6 +248,7 @@ final class AppPreferences {
         }
     }
 
+    // DEPRECATED v2.0.x — feature toggle redundante con consent. Storage retained.
     var chatAssistantEnabled: Bool = false {
         didSet {
             guard oldValue != chatAssistantEnabled else { return }
@@ -645,6 +651,22 @@ final class AppPreferences {
             defaults.set(true, forKey: Keys.aiInsightsMigratedV1)
         }
 
+        // remove-ai-toggles refactor: si el usuario tenía `consent ON + toggle OFF`
+        // (decisión histórica de pausar la feature), revoca el consent también para
+        // forzar re-aceptación. Respeta intención previa post-upgrade.
+        if !defaults.bool(forKey: Keys.aiTogglesRemovedV2) {
+            if aiInsightsConsentAccepted && !aiInsightsEnabled {
+                aiInsightsConsentAccepted = false
+            }
+            if aiChatConsentAccepted && !chatAssistantEnabled {
+                aiChatConsentAccepted = false
+            }
+            if aiDataConsentAccepted && !(voiceInputEnabled || imageInputEnabled) {
+                aiDataConsentAccepted = false
+            }
+            defaults.set(true, forKey: Keys.aiTogglesRemovedV2)
+        }
+
         // Must run after loadFromDefaults (so the sentinel flag is read) and before
         // registerObservers (so seeded writes don't bounce through the external observer).
         PanelPreferencesMigration.runIfNeeded(appPreferences: self, defaults: defaults)
@@ -920,6 +942,7 @@ final class AppPreferences {
         static let aiInsightsConsentAccepted = "aiInsightsConsentAccepted"
         static let aiInsightsEnabled = "aiInsightsEnabled"
         static let aiInsightsMigratedV1 = "aiInsightsMigratedV1"
+        static let aiTogglesRemovedV2 = "aiTogglesRemovedV2"
         static let aiChatConsentAccepted = "aiChatConsentAccepted"
         static let chatAssistantEnabled = "chatAssistantEnabled"
         static let chatFABVisible = "chatFABVisible"

@@ -370,18 +370,24 @@ final class AppBootstrapper {
         case .newTransaction:
             AppRouter.shared.enqueue(.presentNewTransaction)
         case .voiceEntry:
-            guard UserDefaults.standard.bool(forKey: "voiceInputEnabled") else { return }
-            if FeatureGateService.shared.canAccess(.voiceInput) {
+            guard FeatureGateService.shared.canAccess(.voiceInput) else {
+                AppRouter.shared.enqueue(.presentUpgradeSheet(.voice))
+                return
+            }
+            if UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
                 AppRouter.shared.enqueue(.presentVoiceEntry)
             } else {
-                AppRouter.shared.enqueue(.presentUpgradeSheet(.voice))
+                AppRouter.shared.enqueue(.requestAIConsent(.voice))
             }
         case .imageEntry:
-            guard UserDefaults.standard.bool(forKey: "imageInputEnabled") else { return }
-            if FeatureGateService.shared.canAccess(.imageInput) {
+            guard FeatureGateService.shared.canAccess(.imageInput) else {
+                AppRouter.shared.enqueue(.presentUpgradeSheet(.image))
+                return
+            }
+            if UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
                 AppRouter.shared.enqueue(.presentImageEntry)
             } else {
-                AppRouter.shared.enqueue(.presentUpgradeSheet(.image))
+                AppRouter.shared.enqueue(.requestAIConsent(.image))
             }
         }
     }
@@ -719,11 +725,17 @@ final class AppBootstrapper {
     /// sheet presentation are separate intents so the mainTab consumer can
     /// switch tabs before the panel consumer presents the sheet (consumer
     /// gate K prevents flicker). The URL also lands in SessionState because
-    /// ImageSelectionView reads it directly from there.
+    /// ImageSelectionView reads it directly from there. If AI data consent is
+    /// not accepted, presentation is deferred until the user accepts via the
+    /// `aiConsentAlert` (whose callback opens the same image sheet).
     private func enqueueSharedImage(_ url: URL) {
-        AppRouter.shared.enqueue(.navigate(.panel))
-        AppRouter.shared.enqueue(.presentSharedImage(url))
         sessionState.pendingSharedImageURL = url
+        AppRouter.shared.enqueue(.navigate(.panel))
+        if UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
+            AppRouter.shared.enqueue(.presentSharedImage(url))
+        } else {
+            AppRouter.shared.enqueue(.requestAIConsent(.image))
+        }
     }
 
     // MARK: - Notification Management

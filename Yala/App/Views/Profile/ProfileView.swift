@@ -37,18 +37,6 @@ struct ProfileView: View {
     }
     private var profileStorage: ProfileImageStorage { .shared }
     @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
-    @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
-    @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
-    @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
-    @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
-    @AppStorage("aiInsightsConsentAccepted") private var aiInsightsConsentAccepted: Bool = false
-    @AppStorage("aiInsightsEnabled") private var aiInsightsEnabled: Bool = false
-    @State private var showAIConsentAlert: Bool = false
-    @State private var showInsightsConsentAlert: Bool = false
-    @State private var showChatConsentAlert: Bool = false
-    @State private var pendingConsentForVoice: Bool = true
-    @AppStorage("aiChatConsentAccepted") private var aiChatConsentAccepted: Bool = false
-    @AppStorage("chatAssistantEnabled") private var chatAssistantEnabled: Bool = false
 
     // Navigation & Sheets
     @State private var navigationPath = NavigationPath()
@@ -59,8 +47,6 @@ struct ProfileView: View {
     @State private var showImportResult: Bool = false
 
     // Permission denied alert
-    @State private var showPermissionDeniedAlert: Bool = false
-    @State private var permissionDeniedType: String = ""
 
     // Subscription state
     @State private var showUpgradeForVoice = false
@@ -131,7 +117,6 @@ struct ProfileView: View {
                             // Sections
                             organizacionSection
                             preferenciasSection
-                            aiFeaturesSection
                             datosSection
                             seguridadSection
                             ayudaSection
@@ -191,51 +176,6 @@ struct ProfileView: View {
             } message: { result in
                 Text(result.message)
             }
-            .alert(
-                permissionDeniedType,
-                isPresented: $showPermissionDeniedAlert
-            ) {
-                Button(L10n.Voice.openSettings) {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        openURL(url)
-                    }
-                }
-                Button(L10n.Action.cancel, role: .cancel) {}
-            } message: {
-                if permissionDeniedType == L10n.Settings.voiceInputEnabled {
-                    Text(L10n.Voice.errorMicPermission)
-                } else {
-                    Text(L10n.Image.errorPhotoPermission)
-                }
-            }
-            .alert(L10n.AIConsent.processingTitle, isPresented: $showAIConsentAlert) {
-                Button(L10n.AIConsent.accept) {
-                    aiDataConsentAccepted = true
-                    if pendingConsentForVoice {
-                        voiceInputEnabled = true
-                    } else {
-                        imageInputEnabled = true
-                    }
-                }
-                Button(L10n.AIConsent.privacyPolicy) {
-                    openURL(AppConstants.privacyURL)
-                }
-                Button(L10n.Action.cancel, role: .cancel) {}
-            } message: {
-                Text(L10n.AIConsent.processingMessage)
-            }
-            .alert(L10n.AIConsent.insightsTitle, isPresented: $showInsightsConsentAlert) {
-                Button(L10n.AIConsent.accept) {
-                    aiInsightsConsentAccepted = true
-                    aiInsightsEnabled = true
-                }
-                Button(L10n.AIConsent.privacyPolicy) {
-                    openURL(AppConstants.privacyURL)
-                }
-                Button(L10n.Action.cancel, role: .cancel) {}
-            } message: {
-                Text(L10n.AIConsent.insightsMessage)
-            }
             .onAppear {
                 // Auto-navigate to destination passed by caller (e.g. sync settings sheet).
                 if let dest = initialDestination {
@@ -287,6 +227,8 @@ struct ProfileView: View {
                     iCloudSyncSettingsView()
                 case .siriShortcuts:
                     SiriShortcutsView()
+                case .aiPrivacy:
+                    AIPrivacySettingsView()
                 }
             }
             .onAppear {
@@ -534,358 +476,6 @@ struct ProfileView: View {
         .padding(.horizontal, DS.Spacing.lg)
     }
 
-    private var aiFeaturesSection: some View {
-        SectionBox(title: L10n.Settings.aiFeatures) {
-            VStack(spacing: DS.Spacing.none) {
-                voiceInputRow
-                    .coachMarkAnchor("proVoiceInput")
-                SubsectionDivider()
-                imageInputRow
-                    .coachMarkAnchor("proImageInput")
-                SubsectionDivider()
-                chatAssistantRow
-                    .coachMarkAnchor("proChatAssistant")
-                SubsectionDivider()
-                smartInsightsToggleRow
-                    .coachMarkAnchor("proSmartInsights")
-
-                let hasProcessing = aiDataConsentAccepted && (voiceInputEnabled || imageInputEnabled)
-                let hasInsights = aiInsightsEnabled
-                let hasChat = aiChatConsentAccepted && chatAssistantEnabled
-                let activeCount = [hasProcessing, hasInsights, hasChat].count(where: { $0 })
-                if activeCount > 0 {
-                    Text(activeCount >= 2 ? L10n.AIConsent.inlineHintMultiple
-                         : hasProcessing ? L10n.AIConsent.inlineHintProcessing
-                         : hasInsights ? L10n.AIConsent.inlineHintInsights
-                         : L10n.AIConsent.inlineHintChat)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.vertical, DS.Spacing.sm)
-                }
-            }
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-    }
-
-    private var chatAssistantRow: some View {
-        Button {
-            if isChatLocked { showUpgradeForChat = true }
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                if effectiveColorfulIcons {
-                    Image(systemName: "bubble.left.and.text.bubble.right")
-                        .font(DS.Typography.subheadline).fontWeight(.medium)
-                        .foregroundStyle(.white)
-                        .frame(width: 28, height: 28)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(Color.electricIndigo))
-                        .opacity(isChatLocked ? 0.5 : 1)
-                } else {
-                    Image(systemName: "bubble.left.and.text.bubble.right")
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.primary)
-                        .frame(width: 28)
-                        .opacity(isChatLocked ? 0.5 : 1)
-                }
-
-                Text(L10n.Settings.chatAssistant)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(isChatLocked ? .secondary : .primary)
-
-                if isChatLocked { ProBadge(size: .small) }
-
-                Spacer()
-
-                if isChatLocked {
-                    Image(systemName: "lock.fill")
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
-                } else {
-                    Toggle(L10n.Settings.chatAssistant, isOn: $chatAssistantEnabled)
-                        .labelsHidden()
-                        .onChange(of: chatAssistantEnabled) { _, isEnabled in
-                            guard isEnabled, !aiChatConsentAccepted else { return }
-                            chatAssistantEnabled = false
-                            showChatConsentAlert = true
-                        }
-                }
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.FormRow.paddingV)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .alert(L10n.AIConsent.chatTitle, isPresented: $showChatConsentAlert) {
-            Button(L10n.AIConsent.accept) {
-                aiChatConsentAccepted = true
-                chatAssistantEnabled = true
-            }
-            Button(L10n.AIConsent.privacyPolicy) {
-                UIApplication.shared.open(AppConstants.privacyURL)
-            }
-            Button(L10n.Action.cancel, role: .cancel) {}
-        } message: {
-            Text(L10n.AIConsent.chatMessage)
-        }
-    }
-
-    private var smartInsightsToggleRow: some View {
-        VStack(spacing: DS.Spacing.none) {
-            // Toggle row
-            Button {
-                if isSmartInsightsLocked {
-                    showUpgradeForInsights = true
-                }
-            } label: {
-                HStack(spacing: DS.Spacing.md) {
-                    if effectiveColorfulIcons {
-                        Image(systemName: "sparkles")
-                            .font(DS.Typography.subheadline).fontWeight(.medium)
-                            .foregroundStyle(.white)
-                            .frame(width: 28, height: 28)
-                            .background(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(Color.purple) // DS-OK: decorative section accent
-                            )
-                            .opacity(isSmartInsightsLocked ? 0.5 : 1)
-                    } else {
-                        Image(systemName: "sparkles")
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.primary)
-                            .frame(width: 28)
-                            .opacity(isSmartInsightsLocked ? 0.5 : 1)
-                    }
-
-                    Text(L10n.Insights.aiToggle)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(isSmartInsightsLocked ? .secondary : .primary)
-
-                    if isSmartInsightsLocked {
-                        ProBadge(size: .small)
-                    }
-
-                    Spacer()
-
-                    if isSmartInsightsLocked {
-                        Image(systemName: "lock.fill")
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                            .accessibilityHidden(true)
-                    } else {
-                        Toggle(L10n.Insights.aiToggle, isOn: Binding(
-                            get: { aiInsightsEnabled },
-                            set: { newValue in
-                                if newValue && !aiInsightsConsentAccepted {
-                                    showInsightsConsentAlert = true
-                                } else {
-                                    aiInsightsEnabled = newValue
-                                }
-                            }
-                        ))
-                            .labelsHidden()
-                    }
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.FormRow.paddingV)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    private var voiceInputRow: some View {
-        VStack(spacing: DS.Spacing.none) {
-            // Toggle row
-            Button {
-                if isVoiceLocked {
-                    showUpgradeForVoice = true
-                }
-            } label: {
-                HStack(spacing: DS.Spacing.md) {
-                    if effectiveColorfulIcons {
-                        Image(systemName: "waveform.badge.mic")
-                            .font(DS.Typography.subheadline).fontWeight(.medium)
-                            .foregroundStyle(.white)
-                            .frame(width: 28, height: 28)
-                            .background(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(Color.hotPink) // DS-OK: decorative section accent
-                            )
-                            .opacity(isVoiceLocked ? 0.5 : 1)
-                    } else {
-                        Image(systemName: "waveform.badge.mic")
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.primary)
-                            .frame(width: 28)
-                            .opacity(isVoiceLocked ? 0.5 : 1)
-                    }
-
-                    Text(L10n.Settings.voiceInputEnabled)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(isVoiceLocked ? .secondary : .primary)
-
-                    if isVoiceLocked {
-                        ProBadge(size: .small)
-                    }
-
-                    Spacer()
-
-                    if isVoiceLocked {
-                        Image(systemName: "lock.fill")
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                            .accessibilityHidden(true)
-                    } else {
-                        Toggle(L10n.Settings.voiceInputEnabled, isOn: $voiceInputEnabled)
-                            .labelsHidden()
-
-                            .onChange(of: voiceInputEnabled) { _, isEnabled in
-                                guard isEnabled else { return }
-                                if !aiDataConsentAccepted {
-                                    voiceInputEnabled = false
-                                    pendingConsentForVoice = true
-                                    showAIConsentAlert = true
-                                    return
-                                }
-                                let status = AVAudioApplication.shared.recordPermission
-                                if status == .undetermined {
-                                    AVAudioApplication.requestRecordPermission { granted in
-                                        Task { @MainActor in
-                                            if !granted {
-                                                voiceInputEnabled = false
-                                                permissionDeniedType = L10n.Settings.voiceInputEnabled
-                                                showPermissionDeniedAlert = true
-                                            }
-                                        }
-                                    }
-                                } else if status == .denied {
-                                    voiceInputEnabled = false
-                                    permissionDeniedType = L10n.Settings.voiceInputEnabled
-                                    showPermissionDeniedAlert = true
-                                }
-                            }
-                    }
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.FormRow.paddingV)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-
-            // Language selector (only visible when enabled and not locked)
-            if voiceInputEnabled && !isVoiceLocked {
-                HStack(spacing: DS.Spacing.md) {
-                    // Empty space to align with icon
-                    Color.clear
-                        .frame(width: 28, height: 28)
-
-                    Text(L10n.Settings.voiceLanguage)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    Menu {
-                        ForEach(VoiceLanguage.allCases) { language in
-                            Button {
-                                voiceLanguageRaw = language.rawValue
-                                PreferenceSyncService.shared.set(string: language.rawValue, forKey: "voiceLanguage")
-                            } label: {
-                                HStack {
-                                    Text(language.displayName)
-                                    if voiceLanguageRaw == language.rawValue {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: DS.Spacing.xs) {
-                            Text(VoiceLanguage(rawValue: voiceLanguageRaw)?.displayName ?? L10n.VoiceLanguage.system)
-                                .font(DS.Typography.body)
-                                .foregroundStyle(.primary)
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(DS.Typography.captionSmall.weight(.medium))
-                                .foregroundStyle(.primary)
-                        }
-                    }
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.FormRow.paddingV)
-            }
-        }
-    }
-
-    private var imageInputRow: some View {
-        Button {
-            if isImageLocked {
-                showUpgradeForImage = true
-            }
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                if effectiveColorfulIcons {
-                    Image(systemName: "photo.on.rectangle")
-                        .font(DS.Typography.subheadline).fontWeight(.medium)
-                        .foregroundStyle(.white)
-                        .frame(width: 28, height: 28)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.teal) // DS-OK: decorative section accent
-                        )
-                        .opacity(isImageLocked ? 0.5 : 1)
-                } else {
-                    Image(systemName: "photo.on.rectangle")
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.primary)
-                        .frame(width: 28)
-                        .opacity(isImageLocked ? 0.5 : 1)
-                }
-
-                Text(L10n.Settings.imageInputEnabled)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(isImageLocked ? .secondary : .primary)
-
-                if isImageLocked {
-                    ProBadge(size: .small)
-                }
-
-                Spacer()
-
-                if isImageLocked {
-                    Image(systemName: "lock.fill")
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
-                } else {
-                    Toggle(L10n.Settings.imageInputEnabled, isOn: $imageInputEnabled)
-                        .labelsHidden()
-
-                        .onChange(of: imageInputEnabled) { _, isEnabled in
-                            guard isEnabled else { return }
-                            if !aiDataConsentAccepted {
-                                imageInputEnabled = false
-                                pendingConsentForVoice = false
-                                showAIConsentAlert = true
-                                return
-                            }
-                            let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
-                            if status == .notDetermined {
-                                PHPhotoLibrary.requestAuthorization(for: .readWrite) { _ in }
-                            } else if status == .denied || status == .restricted {
-                                imageInputEnabled = false
-                                permissionDeniedType = L10n.Settings.imageInputEnabled
-                                showPermissionDeniedAlert = true
-                            }
-                        }
-                }
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.FormRow.paddingV)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
 
     private var datosSection: some View {
         SectionBox(title: L10n.Settings.data) {
@@ -959,6 +549,10 @@ struct ProfileView: View {
                         iconColor: .blue)
                 }
                 .buttonStyle(.plain)
+                SubsectionDivider()
+                profileRow(
+                    icon: "sparkles.shield", title: L10n.Settings.aiPrivacy,
+                    iconColor: .indigo, destination: .aiPrivacy)
                 SubsectionDivider()
                 profileRow(
                     icon: "creditcard.fill", title: L10n.Settings.subscriptions,

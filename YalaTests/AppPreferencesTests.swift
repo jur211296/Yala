@@ -411,15 +411,83 @@ struct AppPreferencesTests {
 
     @Test func aiInsightsMigration_sentinelAlreadySet_doesNotOverwriteEnabled() {
         let defaults = Self.makeSuite()
-        // Simula user que ya migró y luego apagó la feature manteniendo consent
+        // Simula user que ya migró v1 y v2 y luego apagó la feature manteniendo consent.
+        // Pre-setear aiTogglesRemovedV2 para evitar que la migración v2 revoque el consent.
         defaults.set(true, forKey: AppPreferences.Keys.aiInsightsConsentAccepted)
         defaults.set(false, forKey: AppPreferences.Keys.aiInsightsEnabled)
         defaults.set(true, forKey: AppPreferences.Keys.aiInsightsMigratedV1)
+        defaults.set(true, forKey: AppPreferences.Keys.aiTogglesRemovedV2)
 
         let prefs = AppPreferences(defaults: defaults)
 
         #expect(prefs.aiInsightsConsentAccepted == true)
-        #expect(prefs.aiInsightsEnabled == false, "migración no debe re-ejecutarse si el sentinel ya está seteado")
+        #expect(prefs.aiInsightsEnabled == false, "migración no debe re-ejecutarse si los sentinels ya están seteados")
+    }
+
+    // MARK: - aiTogglesRemovedV2 — migración conservadora
+
+    @Test func aiTogglesRemovedV2_insightsConsentOnTogglesOff_revokesConsent() {
+        let defaults = Self.makeSuite()
+        defaults.set(true, forKey: AppPreferences.Keys.aiInsightsMigratedV1) // v1 ya corrió
+        defaults.set(true, forKey: AppPreferences.Keys.aiInsightsConsentAccepted)
+        defaults.set(false, forKey: AppPreferences.Keys.aiInsightsEnabled)
+        // aiTogglesRemovedV2 NOT set
+
+        let prefs = AppPreferences(defaults: defaults)
+
+        #expect(prefs.aiInsightsConsentAccepted == false, "consent revocado porque toggle estaba OFF (decisión histórica del user)")
+        #expect(defaults.bool(forKey: AppPreferences.Keys.aiTogglesRemovedV2) == true, "sentinel debe setearse")
+    }
+
+    @Test func aiTogglesRemovedV2_chatConsentOnToggleOff_revokesConsent() {
+        let defaults = Self.makeSuite()
+        defaults.set(true, forKey: AppPreferences.Keys.aiInsightsMigratedV1)
+        defaults.set(true, forKey: AppPreferences.Keys.aiChatConsentAccepted)
+        defaults.set(false, forKey: AppPreferences.Keys.chatAssistantEnabled)
+
+        let prefs = AppPreferences(defaults: defaults)
+
+        #expect(prefs.aiChatConsentAccepted == false)
+        #expect(defaults.bool(forKey: AppPreferences.Keys.aiTogglesRemovedV2) == true)
+    }
+
+    @Test func aiTogglesRemovedV2_dataConsentOnAllVoiceImageOff_revokesConsent() {
+        let defaults = Self.makeSuite()
+        defaults.set(true, forKey: AppPreferences.Keys.aiInsightsMigratedV1)
+        defaults.set(true, forKey: AppPreferences.Keys.aiDataConsentAccepted)
+        defaults.set(false, forKey: AppPreferences.Keys.voiceInputEnabled)
+        defaults.set(false, forKey: AppPreferences.Keys.imageInputEnabled)
+
+        let prefs = AppPreferences(defaults: defaults)
+
+        #expect(prefs.aiDataConsentAccepted == false)
+    }
+
+    @Test func aiTogglesRemovedV2_consentAndTogglesAligned_doesNotRevoke() {
+        let defaults = Self.makeSuite()
+        defaults.set(true, forKey: AppPreferences.Keys.aiInsightsMigratedV1)
+        // Caso: user con consent=true y feature=true (aligned) — no revocar
+        defaults.set(true, forKey: AppPreferences.Keys.aiInsightsConsentAccepted)
+        defaults.set(true, forKey: AppPreferences.Keys.aiInsightsEnabled)
+
+        let prefs = AppPreferences(defaults: defaults)
+
+        #expect(prefs.aiInsightsConsentAccepted == true)
+        #expect(prefs.aiInsightsEnabled == true)
+        #expect(defaults.bool(forKey: AppPreferences.Keys.aiTogglesRemovedV2) == true)
+    }
+
+    @Test func aiTogglesRemovedV2_idempotent_doesNotRevokeOnSecondInit() {
+        let defaults = Self.makeSuite()
+        defaults.set(true, forKey: AppPreferences.Keys.aiInsightsMigratedV1)
+        defaults.set(true, forKey: AppPreferences.Keys.aiTogglesRemovedV2) // ya migró
+        // Caso edge: alguien setea consent=true && toggle=false manualmente post-migración
+        defaults.set(true, forKey: AppPreferences.Keys.aiInsightsConsentAccepted)
+        defaults.set(false, forKey: AppPreferences.Keys.aiInsightsEnabled)
+
+        let prefs = AppPreferences(defaults: defaults)
+
+        #expect(prefs.aiInsightsConsentAccepted == true, "migración no se re-ejecuta si sentinel v2 ya seteado")
     }
 
     // MARK: - Empty arrays

@@ -38,6 +38,11 @@ struct PersonalizationSettingsView: View {
     @State private var showingExpensesOnlyConfirmation = false
     @State private var showingSmartInsightsSettings = false
     @AppStorage("chatFABVisible") private var chatFABVisible: Bool = true
+    @AppStorage(AppPreferences.Keys.voiceLanguage) private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
+
+    private var selectedVoiceLanguage: VoiceLanguage {
+        VoiceLanguage(rawValue: voiceLanguageRaw) ?? .system
+    }
 
     private var isProUser: Bool {
         FeatureGateService.shared.canAccess(.chatAssistant)
@@ -218,6 +223,50 @@ struct PersonalizationSettingsView: View {
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, DS.Spacing.xxs)
+                        }
+
+                        // Voice Language
+                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                            Menu {
+                                ForEach(VoiceLanguage.allCases) { language in
+                                    Button {
+                                        voiceLanguageRaw = language.rawValue
+                                        PreferenceSyncService.shared.set(string: language.rawValue, forKey: AppPreferences.Keys.voiceLanguage)
+                                    } label: {
+                                        HStack {
+                                            Text(language.displayName)
+                                            if voiceLanguageRaw == language.rawValue {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
+                                }
+                            } label: {
+                                HStack {
+                                    Text(L10n.Settings.voiceLanguage)
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.thPrimaryText)
+
+                                    Spacer()
+
+                                    Text(selectedVoiceLanguage.displayName)
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.secondary)
+
+                                    Image(systemName: "chevron.up.chevron.down")
+                                        .font(DS.Typography.labelSmall.weight(.medium))
+                                        .foregroundStyle(.tertiary)
+                                }
+                                .padding(.horizontal, DS.FormRow.paddingH)
+                                .padding(.vertical, DS.FormRow.paddingV)
+                                .background(.thCard)
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                                )
+                            }
+                            .buttonStyle(.plain)
                         }
 
                         // Customize AI Summary

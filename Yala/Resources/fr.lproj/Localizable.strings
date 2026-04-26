@@ -1115,6 +1115,7 @@
 "settings.wipeData" = "Effacer les donnees";
 "settings.faceId" = "Face ID";
 "settings.permissions" = "Autorisations";
+"settings.aiPrivacy" = "Confidentialite et donnees IA";
 "settings.subscriptions" = "Gerer les abonnements";
 "settings.rateApp" = "Noter et recommander";
 "settings.tutorials" = "Tutoriels";
@@ -2322,6 +2323,7 @@
 "shortcut.error.save" = "Impossible d'enregistrer l'entrée";
 "shortcut.error.voiceNotEnabled" = "La saisie vocale n'est pas activée. Activez-la dans Paramètres > Personnalisation.";
 "shortcut.error.imageNotEnabled" = "La saisie par image n'est pas activée. Activez-la dans Paramètres > Personnalisation.";
+"shortcut.error.consentRequired" = "Acceptez le consentement IA dans l'application avant d'utiliser ce raccourci.";
 
 // Results
 "shortcut.result.noTag" = "Sans tag";
@@ -2962,6 +2964,25 @@
 "siriShortcuts.faq.inboxA" = "Les enregistrements créés par Siri arrivent dans ta boîte de réception comme brouillons à vérifier.";
 "siriShortcuts.faq.offlineQ" = "Ça fonctionne hors ligne ?";
 "siriShortcuts.faq.offlineA" = "Oui, les raccourcis fonctionnent en mode basique sans connexion internet.";
+
+// MARK: - AI Settings (Personalization Sheet from Chat)
+
+"aiSettings.title" = "Personnaliser l'IA";
+"aiSettings.toneSection" = "Ton";
+"aiSettings.styleSection" = "Style";
+"aiSettings.appliesHint" = "Ces réglages s'appliquent aux Insights, à l'Assistant et au Hero du Panneau.";
+
+// MARK: - AI Privacy (sub-view from Profile > Security)
+
+"aiPrivacy.title" = "Confidentialité et données IA";
+"aiPrivacy.processingRow" = "Traitement (voix et image)";
+"aiPrivacy.chatRow" = "Assistant Pro";
+"aiPrivacy.insightsRow" = "Insights intelligents";
+"aiPrivacy.revokeConfirmTitle" = "Désactiver cette fonctionnalité ?";
+"aiPrivacy.revokeConfirmMessage" = "Nous arrêterons de traiter vos données IA pour cette fonctionnalité. Vous pouvez la réactiver à tout moment.";
+"aiPrivacy.revokeConfirmAction" = "Désactiver";
+"aiPrivacy.footerHint" = "Vos données ne sont traitées que lors de l'utilisation des Insights, de l'Assistant ou des entrées vocales et par image. Nous ne partageons jamais vos informations personnelles.";
+"aiPrivacy.policyLink" = "Politique de confidentialité";
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Traitement vocal et images";

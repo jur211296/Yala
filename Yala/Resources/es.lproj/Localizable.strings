@@ -1112,6 +1112,7 @@
 "settings.wipeData" = "Vaciar datos";
 "settings.faceId" = "Face ID";
 "settings.permissions" = "Permisos";
+"settings.aiPrivacy" = "Privacidad y datos IA";
 "settings.subscriptions" = "Administrar suscripciones";
 "settings.rateApp" = "Calificar y recomendar";
 "settings.tutorials" = "Tutoriales";
@@ -2510,6 +2511,7 @@
 "shortcut.error.save" = "No se pudo guardar el registro";
 "shortcut.error.voiceNotEnabled" = "No has activado la entrada por voz. Actívala en Ajustes > Personalización.";
 "shortcut.error.imageNotEnabled" = "No has activado la entrada por imagen. Actívala en Ajustes > Personalización.";
+"shortcut.error.consentRequired" = "Acepta el consentimiento de IA en la app antes de usar este atajo.";
 
 // Results
 "shortcut.result.noTag" = "Sin etiqueta";
@@ -2968,6 +2970,18 @@
 "aiSettings.toneSection" = "Tono";
 "aiSettings.styleSection" = "Estilo";
 "aiSettings.appliesHint" = "Estos ajustes se aplican a Insights, Asistente y Hero del Panel.";
+
+// MARK: - AI Privacy (sub-view from Profile > Security)
+
+"aiPrivacy.title" = "Privacidad y datos IA";
+"aiPrivacy.processingRow" = "Procesamiento (voz e imagen)";
+"aiPrivacy.chatRow" = "Asistente Pro";
+"aiPrivacy.insightsRow" = "Insights inteligentes";
+"aiPrivacy.revokeConfirmTitle" = "¿Desactivar esta función?";
+"aiPrivacy.revokeConfirmMessage" = "Dejaremos de procesar tus datos de IA para esta función. Puedes reactivarla cuando quieras.";
+"aiPrivacy.revokeConfirmAction" = "Desactivar";
+"aiPrivacy.footerHint" = "Tus datos solo se procesan al usar Insights, Asistente o registros con voz e imagen. Nunca compartimos tu información personal.";
+"aiPrivacy.policyLink" = "Política de Privacidad";
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Procesamiento de voz e imágenes";

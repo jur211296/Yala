@@ -45,6 +45,7 @@ enum RouterIntent: Identifiable, Equatable {
     case presentVoiceEntry
     case presentImageEntry
     case presentUpgradeSheet(UpgradeFeature)
+    case requestAIConsent(PendingAIInput)
 
     // B) Monetization (MainTabView consumer)
     case presentDowngradeResolution
@@ -91,7 +92,8 @@ extension RouterIntent {
             return .contentView
 
         case .presentInboxSheet, .presentSharedImage, .presentNewTransaction,
-             .presentVoiceEntry, .presentImageEntry, .presentUpgradeSheet:
+             .presentVoiceEntry, .presentImageEntry, .presentUpgradeSheet,
+             .requestAIConsent:
             return .panel
 
         case .presentDowngradeResolution, .presentTrialExpired,
@@ -114,7 +116,7 @@ extension RouterIntent {
         case .iCloudMismatch, .remoteWipe, .showInviteError:
             return .critical
         case .showInboxAlert, .presentSharedImage, .presentDowngradeResolution,
-             .presentTrialExpired:
+             .presentTrialExpired, .requestAIConsent:
             return .high
         case .presentInboxSheet, .presentNewTransaction, .presentVoiceEntry,
              .presentImageEntry, .presentUpgradeSheet, .presentMilestoneUpgrade,
@@ -146,6 +148,8 @@ extension RouterIntent {
             return "imageEntry"
         case .presentUpgradeSheet(let feature):
             return "upgrade:\(feature.rawValue)"
+        case .requestAIConsent(let input):
+            return "requestAIConsent:\(input)"
         case .presentDowngradeResolution:
             return "downgrade"
         case .presentTrialExpired:

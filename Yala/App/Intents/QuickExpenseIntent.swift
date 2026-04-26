@@ -617,13 +617,10 @@ struct VoiceEntryIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        let isEnabled = UserDefaults.standard.bool(forKey: "voiceInputEnabled")
-
-        guard isEnabled else {
-            throw VoiceImageIntentError.voiceNotEnabled
+        guard UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) else {
+            throw VoiceImageIntentError.consentRequired
         }
 
-        // Open the app with voice-entry URL (dynamic scheme for Yala vs Yala Dev)
         let urlScheme = Bundle.main.object(forInfoDictionaryKey: "URL_SCHEME") as? String ?? "yala"
         if let url = URL(string: "\(urlScheme)://voice-entry") {
             await UIApplication.shared.open(url)
@@ -644,13 +641,10 @@ struct ImageEntryIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        let isEnabled = UserDefaults.standard.bool(forKey: "imageInputEnabled")
-
-        guard isEnabled else {
-            throw VoiceImageIntentError.imageNotEnabled
+        guard UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) else {
+            throw VoiceImageIntentError.consentRequired
         }
 
-        // Open the app with image-entry URL (dynamic scheme for Yala vs Yala Dev)
         let urlScheme = Bundle.main.object(forInfoDictionaryKey: "URL_SCHEME") as? String ?? "yala"
         if let url = URL(string: "\(urlScheme)://image-entry") {
             await UIApplication.shared.open(url)
@@ -663,15 +657,12 @@ struct ImageEntryIntent: AppIntent {
 // MARK: - Voice/Image Intent Errors
 
 enum VoiceImageIntentError: Swift.Error, CustomLocalizedStringResourceConvertible {
-    case voiceNotEnabled
-    case imageNotEnabled
+    case consentRequired
 
     var localizedStringResource: LocalizedStringResource {
         switch self {
-        case .voiceNotEnabled:
-            return "shortcut.error.voiceNotEnabled"
-        case .imageNotEnabled:
-            return "shortcut.error.imageNotEnabled"
+        case .consentRequired:
+            return "shortcut.error.consentRequired"
         }
     }
 }

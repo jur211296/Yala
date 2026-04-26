@@ -332,7 +332,7 @@ struct InsightsTabView: View {
 
     private var generateAIButton: some View {
         Button {
-            if appPreferences.aiInsightsEnabled {
+            if appPreferences.aiInsightsConsentAccepted {
                 Task { await viewModel.triggerAIGeneration() }
             } else {
                 showInsightsConsentAlert = true

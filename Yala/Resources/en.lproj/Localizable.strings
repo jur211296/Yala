@@ -1112,6 +1112,7 @@
 "settings.wipeData" = "Clear Data";
 "settings.faceId" = "Face ID";
 "settings.permissions" = "Permissions";
+"settings.aiPrivacy" = "AI Privacy & Data";
 "settings.subscriptions" = "Manage Subscriptions";
 "settings.rateApp" = "Rate & Recommend";
 "settings.tutorials" = "Tutorials";
@@ -2323,6 +2324,7 @@
 "shortcut.error.save" = "Could not save the entry";
 "shortcut.error.voiceNotEnabled" = "Voice input is not enabled. Enable it in Settings > Personalization.";
 "shortcut.error.imageNotEnabled" = "Image input is not enabled. Enable it in Settings > Personalization.";
+"shortcut.error.consentRequired" = "Accept the AI consent in the app before using this shortcut.";
 
 // Results
 "shortcut.result.noTag" = "No tag";
@@ -2971,6 +2973,18 @@
 "aiSettings.toneSection" = "Tone";
 "aiSettings.styleSection" = "Style";
 "aiSettings.appliesHint" = "These settings apply to Insights, Assistant, and Panel Hero.";
+
+// MARK: - AI Privacy (sub-view from Profile > Security)
+
+"aiPrivacy.title" = "AI Privacy & Data";
+"aiPrivacy.processingRow" = "Processing (voice & image)";
+"aiPrivacy.chatRow" = "Pro Assistant";
+"aiPrivacy.insightsRow" = "Smart Insights";
+"aiPrivacy.revokeConfirmTitle" = "Disable this feature?";
+"aiPrivacy.revokeConfirmMessage" = "We'll stop processing your AI data for this feature. You can re-enable it anytime.";
+"aiPrivacy.revokeConfirmAction" = "Disable";
+"aiPrivacy.footerHint" = "Your data is only processed when using Insights, Assistant, or voice/image entries. We never share your personal information.";
+"aiPrivacy.policyLink" = "Privacy Policy";
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Voice & Image Processing";
