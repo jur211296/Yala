@@ -58,9 +58,9 @@ final class ChatAssistantViewModel {
     func setContext(_ ctx: ModelContext) {
         modelContext = ctx
         loadPersistedSession()
-        if messages.isEmpty {
-            Task { await loadSuggestions() }
-        }
+        // Cargamos sugerencias SIEMPRE — el botón [+ Temas] funciona aún con conversación previa.
+        // Si están en cache del día, no llama LLM.
+        Task { await loadSuggestions() }
     }
 
     // MARK: - Suggestions (LLM-only — sin fallback rule-based)
@@ -250,7 +250,16 @@ final class ChatAssistantViewModel {
         do {
             let blob = try JSONDecoder().decode(ChatPersistedSession.self, from: data)
             messages = blob.messages
-            allTurns = blob.allTurns
+
+            // Si el blob legacy guardó messages pero no allTurns, reconstruimos los turnos
+            // pareando user→assistant consecutivos. Sin esto, el LLM perdería el contexto
+            // y el botón "Reiniciar contexto" no aparecería.
+            if blob.allTurns.isEmpty && !messages.isEmpty {
+                allTurns = Self.reconstructTurns(from: messages)
+            } else {
+                allTurns = blob.allTurns
+            }
+
             if !messages.isEmpty {
                 TelemetryService.track(.chatPersistedSessionRehydrated, parameters: [
                     "messageCount": String(messages.count),
@@ -263,6 +272,31 @@ final class ChatAssistantViewModel {
             #endif
             defaults.removeObject(forKey: todayKey)
         }
+    }
+
+    /// Reconstruye `[QAPair]` a partir de `messages` pareando user→assistant consecutivos.
+    /// Usado para hidratar contexto del LLM desde blobs legacy que solo guardaban `messages`.
+    /// Mensajes huérfanos (sin par) se descartan.
+    static func reconstructTurns(from messages: [ChatMessage]) -> [QAPair] {
+        var turns: [QAPair] = []
+        var i = 0
+        while i < messages.count - 1 {
+            let m1 = messages[i]
+            let m2 = messages[i + 1]
+            if m1.role == .user && m2.role == .assistant {
+                turns.append(QAPair(
+                    question: m1.text,
+                    toolName: nil,
+                    toolResultJSON: nil,
+                    response: m2.text,
+                    timestamp: m2.timestamp
+                ))
+                i += 2
+            } else {
+                i += 1
+            }
+        }
+        return turns
     }
 
     /// Borra la sesión del día actual de UserDefaults.

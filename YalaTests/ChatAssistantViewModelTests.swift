@@ -105,6 +105,33 @@ struct ChatAssistantViewModelTests {
         #expect(vm.messages[1].role == .assistant)
     }
 
+    @MainActor @Test func reconstructTurns_pairsConsecutiveUserAssistant() {
+        let messages = [
+            ChatMessage(role: .user, text: "P1", timestamp: Date.now),
+            ChatMessage(role: .assistant, text: "R1", timestamp: Date.now),
+            ChatMessage(role: .user, text: "P2", timestamp: Date.now),
+            ChatMessage(role: .assistant, text: "R2", timestamp: Date.now)
+        ]
+        let turns = ChatAssistantViewModel.reconstructTurns(from: messages)
+        #expect(turns.count == 2)
+        #expect(turns[0].question == "P1")
+        #expect(turns[0].response == "R1")
+        #expect(turns[1].question == "P2")
+        #expect(turns[1].response == "R2")
+    }
+
+    @MainActor @Test func reconstructTurns_dropsOrphanLastUser() {
+        // User pregunta y nunca llega respuesta — el último user queda huérfano y se descarta.
+        let messages = [
+            ChatMessage(role: .user, text: "P1", timestamp: Date.now),
+            ChatMessage(role: .assistant, text: "R1", timestamp: Date.now),
+            ChatMessage(role: .user, text: "P2_orphan", timestamp: Date.now)
+        ]
+        let turns = ChatAssistantViewModel.reconstructTurns(from: messages)
+        #expect(turns.count == 1)
+        #expect(turns[0].question == "P1")
+    }
+
     @MainActor @Test func clearPersistedSession_removesUserDefaultsKey() throws {
         clearChatSessionKeys()
         defer { clearChatSessionKeys() }
