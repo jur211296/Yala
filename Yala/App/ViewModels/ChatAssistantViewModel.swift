@@ -29,18 +29,27 @@ final class ChatAssistantViewModel {
     private var modelContext: ModelContext?
     private let service = ChatAssistantService.shared
 
-    // MARK: - Cache (5 min persistence across sheet dismiss/reopen)
+    // MARK: - Persistence (day-calendar `chat_session_<YYYY-MM-DD>`)
 
-    private static let cacheTTL: TimeInterval = 300
-    private var cacheTimestamp: Date?
-    private var cachedMessages: [ChatMessage]?
-    private var cachedPreviousQA: QAPair?
+    private static let sessionKeyPrefix = "chat_session_"
+
+    private static let sessionDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = .current
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
+    private static func sessionKey(for date: Date) -> String {
+        sessionKeyPrefix + sessionDateFormatter.string(from: date)
+    }
 
     // MARK: - Setup
 
     func setContext(_ ctx: ModelContext) {
         modelContext = ctx
-        restoreFromCache()
+        loadPersistedSession()
         if messages.isEmpty {
             loadSuggestions()
         }
@@ -158,6 +167,9 @@ final class ChatAssistantViewModel {
                 "source": "typed",
                 "tool_used": toolName ?? "direct"
             ])
+
+            // Autosave defensivo: persiste la sesión tras cada respuesta exitosa
+            persistSession()
         } catch let error as ChatAssistantError {
             handleError(error)
         } catch {
@@ -235,29 +247,60 @@ final class ChatAssistantViewModel {
         service.questionsToday < ChatAssistantService.dailyLimit
     }
 
-    // MARK: - Cache (persist across sheet dismiss/reopen for 5 min)
+    // MARK: - Persistence (day-calendar via UserDefaults)
 
-    func saveToCache() {
-        cachedMessages = messages
-        cachedPreviousQA = previousQA
-        cacheTimestamp = Date.now
-    }
+    /// Persiste la sesión actual en `UserDefaults` bajo `chat_session_<today>`.
+    /// Llamado desde `onDisappear` y como autosave defensivo tras cada respuesta exitosa.
+    func persistSession() {
+        let key = Self.sessionKey(for: Date.now)
+        let defaults = UserDefaults.standard
 
-    private func restoreFromCache() {
-        guard let timestamp = cacheTimestamp,
-              Date.now.timeIntervalSince(timestamp) < Self.cacheTTL,
-              let cached = cachedMessages, !cached.isEmpty else {
-            clearCache()
+        guard !messages.isEmpty else {
+            defaults.removeObject(forKey: key)
             return
         }
-        messages = cached
-        previousQA = cachedPreviousQA
+
+        let blob = ChatPersistedSession(messages: messages, previousQA: previousQA)
+        do {
+            let data = try JSONEncoder().encode(blob)
+            defaults.set(data, forKey: key)
+        } catch {
+            #if DEBUG
+            print("ChatAssistantViewModel: persistSession failed: \(error)")
+            #endif
+        }
     }
 
-    func clearCache() {
-        cachedMessages = nil
-        cachedPreviousQA = nil
-        cacheTimestamp = nil
+    /// Hidrata sesión del día actual si existe; limpia claves de días anteriores.
+    private func loadPersistedSession() {
+        let defaults = UserDefaults.standard
+        let todayKey = Self.sessionKey(for: Date.now)
+
+        // Cleanup: borra todas las claves chat_session_* que NO sean del día actual
+        for key in defaults.dictionaryRepresentation().keys
+        where key.hasPrefix(Self.sessionKeyPrefix) && key != todayKey {
+            defaults.removeObject(forKey: key)
+        }
+
+        guard let data = defaults.data(forKey: todayKey) else { return }
+
+        do {
+            let blob = try JSONDecoder().decode(ChatPersistedSession.self, from: data)
+            messages = blob.messages
+            if let qa = blob.previousQA, !qa.isExpired {
+                previousQA = qa
+            }
+        } catch {
+            #if DEBUG
+            print("ChatAssistantViewModel: loadPersistedSession decode failed: \(error)")
+            #endif
+            defaults.removeObject(forKey: todayKey)
+        }
+    }
+
+    /// Borra la sesión del día actual de UserDefaults.
+    func clearPersistedSession() {
+        UserDefaults.standard.removeObject(forKey: Self.sessionKey(for: Date.now))
     }
 
     // MARK: - Reset
@@ -268,7 +311,7 @@ final class ChatAssistantViewModel {
         errorMessage = nil
         inputText = ""
         isLoading = false
-        clearCache()
+        clearPersistedSession()
         loadSuggestions()
     }
 }

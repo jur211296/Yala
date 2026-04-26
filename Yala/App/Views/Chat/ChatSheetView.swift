@@ -63,7 +63,7 @@ struct ChatSheetView: View {
             TelemetryService.track(.chatSheetOpened)
         }
         .onDisappear {
-            viewModel.saveToCache()
+            viewModel.persistSession()
             TelemetryService.track(.chatSheetDismissed, parameters: [
                 "hadConversation": String(!viewModel.messages.isEmpty)
             ])

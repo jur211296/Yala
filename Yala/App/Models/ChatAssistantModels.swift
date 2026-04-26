@@ -43,7 +43,7 @@ enum ChatAssistantError: Error, LocalizedError {
 
 // MARK: - QA Pair (1-turn memory)
 
-struct QAPair {
+struct QAPair: Codable {
     let question: String
     let toolName: String?
     let toolResultJSON: String?
@@ -252,13 +252,20 @@ struct SpendingProjectionParams: Codable {
 
 // MARK: - Chat Message
 
-struct ChatMessage: Identifiable {
-    let id = UUID()
+struct ChatMessage: Identifiable, Codable {
+    let id: UUID
     let role: MessageRole
     let text: String
     let timestamp: Date
 
-    enum MessageRole {
+    init(id: UUID = UUID(), role: MessageRole, text: String, timestamp: Date) {
+        self.id = id
+        self.role = role
+        self.text = text
+        self.timestamp = timestamp
+    }
+
+    enum MessageRole: String, Codable {
         case user
         case assistant
     }
@@ -266,17 +273,33 @@ struct ChatMessage: Identifiable {
 
 // MARK: - Chat Suggestion
 
-struct ChatSuggestion: Identifiable {
-    let id = UUID()
+struct ChatSuggestion: Identifiable, Codable {
+    let id: UUID
     let text: String
     let icon: String
+    let type: SuggestionType
 
-    enum SuggestionType {
+    init(id: UUID = UUID(), text: String, icon: String, type: SuggestionType) {
+        self.id = id
+        self.text = text
+        self.icon = icon
+        self.type = type
+    }
+
+    enum SuggestionType: String, Codable {
         case topMerchant
         case biggestCategory
         case activeBudget
         case comparison
         case general
     }
-    let type: SuggestionType
+}
+
+// MARK: - Persisted Session (day-calendar storage blob)
+
+/// Blob JSON guardado en `UserDefaults` con clave `chat_session_<YYYY-MM-DD>`.
+/// Persiste mensajes + previousQA para preservar 1-turn memory cross-session.
+struct ChatPersistedSession: Codable {
+    let messages: [ChatMessage]
+    let previousQA: QAPair?
 }

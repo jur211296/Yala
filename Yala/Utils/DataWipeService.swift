@@ -291,6 +291,13 @@ final class DataWipeService {
         defaults.removeObject(forKey: "hasSeenCashFlowSetupTour")  // Re-show cash flow setup tour
         defaults.removeObject(forKey: "hasSeenCashFlowTableTour")  // Re-show cash flow table tour
         defaults.removeObject(forKey: "hasSeenChatContextHint")     // Re-show chat context hint
+
+        // Persistencia día calendario del chat + cache diario de sugerencias LLM
+        for key in defaults.dictionaryRepresentation().keys
+        where key.hasPrefix("chat_session_") || key.hasPrefix("chat_suggestions_") {
+            defaults.removeObject(forKey: key)
+        }
+
         ProTourManager.shared.reset()                                // Re-show pro tour
 
         // --- Setup Checklist ---
