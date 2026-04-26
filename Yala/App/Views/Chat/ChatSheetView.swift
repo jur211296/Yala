@@ -57,6 +57,15 @@ struct ChatSheetView: View {
             .sheet(isPresented: $showAISettingsSheet) {
                 AIPersonalizationSheet()
             }
+            .sheet(isPresented: $showTopicsSheet) {
+                ChatTopicsSheet(
+                    suggestions: viewModel.suggestions,
+                    isLoading: viewModel.suggestionsLoading,
+                    onSelect: { suggestion in
+                        Task { await viewModel.sendSuggestion(suggestion) }
+                    }
+                )
+            }
         }
         .presentationDetents([.medium, .large], selection: $selectedDetent)
         .presentationDragIndicator(.visible)
@@ -91,16 +100,30 @@ struct ChatSheetView: View {
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
-            VStack(spacing: DS.Spacing.sm) {
-                ForEach(viewModel.suggestions) { suggestion in
+            chipsOrSkeleton
+                .padding(.horizontal, DS.Spacing.lg)
+
+            Spacer()
+        }
+    }
+
+    @ViewBuilder
+    private var chipsOrSkeleton: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            if viewModel.suggestions.isEmpty && viewModel.suggestionsLoading {
+                ForEach(0..<3, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: DS.Radius.md)
+                        .fill(.thCard)
+                        .frame(height: 44) // A11Y-DT: skeleton placeholder height
+                        .opacity(0.6)
+                }
+            } else {
+                ForEach(viewModel.suggestions.prefix(3)) { suggestion in
                     ChatSuggestionChip(suggestion: suggestion) {
                         Task { await viewModel.sendSuggestion(suggestion) }
                     }
                 }
             }
-            .padding(.horizontal, DS.Spacing.lg)
-
-            Spacer()
         }
     }
 
