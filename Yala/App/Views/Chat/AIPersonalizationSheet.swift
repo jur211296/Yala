@@ -25,7 +25,7 @@ struct AIPersonalizationSheet: View {
                         }
                     }
                     .labelsHidden()
-                    .pickerStyle(.inline)
+                    .pickerStyle(.menu)
                 } header: {
                     Text(L10n.AISettings.toneSection)
                 }
@@ -37,7 +37,7 @@ struct AIPersonalizationSheet: View {
                         }
                     }
                     .labelsHidden()
-                    .pickerStyle(.inline)
+                    .pickerStyle(.menu)
                 } header: {
                     Text(L10n.AISettings.styleSection)
                 } footer: {
