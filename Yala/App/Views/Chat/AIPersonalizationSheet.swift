@@ -23,9 +23,7 @@ struct AIPersonalizationSheet: View {
             Form {
                 Section {
                     selectionRow(
-                        label: L10n.AISettings.toneSection,
                         valueName: prefs.insightsTone.displayName,
-                        description: prefs.insightsTone.previewText,
                         action: { showToneDialog = true }
                     )
                 } header: {
@@ -34,9 +32,7 @@ struct AIPersonalizationSheet: View {
 
                 Section {
                     selectionRow(
-                        label: L10n.AISettings.styleSection,
                         valueName: prefs.insightsFocus.displayName,
-                        description: prefs.insightsFocus.descriptionText,
                         action: { showFocusDialog = true }
                     )
                 } header: {
@@ -75,28 +71,18 @@ struct AIPersonalizationSheet: View {
         }
     }
 
-    /// Custom row con valor + descripción inline a la derecha + chevron primary.
-    /// Reemplaza el Picker .menu (cuyo chevron heredaba el accent indigo del theme).
+    /// Row simple: solo valor seleccionado + chevron primary (no se duplica el label
+    /// del Section header ni se muestra descripción inline).
     private func selectionRow(
-        label: String,
         valueName: String,
-        description: String,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             HStack(spacing: DS.Spacing.md) {
-                Text(label)
-                    .foregroundStyle(.thPrimaryText)
-
-                Spacer(minLength: DS.Spacing.sm)
-
                 Text(valueName)
                     .foregroundStyle(.thPrimaryText)
 
-                Text(description)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                Spacer()
 
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.caption2) // A11Y-DT: chevron icon size

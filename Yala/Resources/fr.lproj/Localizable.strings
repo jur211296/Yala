@@ -3485,6 +3485,7 @@
 "chat.preparingAI" = "Préparation de l'IA…";
 "chat.unavailable" = "Yala IA n'est pas disponible. Réessaie dans quelques minutes.";
 "chat.retry" = "Réessayer";
+"chat.noVoiceDetected" = "Je n'ai pas détecté d'audio. Réessaie.";
 "chat.contextMemory" = "Yala IA se souvient de %d messages";
 
 // MARK: - Chat Assistant Consent

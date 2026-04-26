@@ -304,7 +304,13 @@ final class ChatAssistantViewModel {
                 language: .system
             )
             let transcribed = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !transcribed.isEmpty else { return }
+
+            // Whisper alucina con frases de relleno (créditos de subtítulos, "Thanks for
+            // watching", música) cuando el audio está vacío o sólo es silencio. Filtramos.
+            guard !transcribed.isEmpty, !Self.isWhisperHallucination(transcribed) else {
+                errorMessage = L10n.Chat.noVoiceDetected
+                return
+            }
 
             if inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 inputText = transcribed
@@ -315,12 +321,36 @@ final class ChatAssistantViewModel {
             TelemetryService.track(.chatVoiceInputUsed, parameters: [
                 "transcribedLength": String(transcribed.count)
             ])
+        } catch RecordingError.recordingTooShort {
+            errorMessage = L10n.Chat.noVoiceDetected
         } catch {
             errorMessage = L10n.Chat.errorTranscription
             #if DEBUG
             print("ChatAssistantViewModel: stopVoiceInput failed: \(error)")
             #endif
         }
+    }
+
+    /// Detecta transcripciones alucinadas comunes de Whisper sobre audio vacío/silencioso.
+    /// Lista basada en outputs reportados de whisper-1 en silencio: créditos de subtítulos
+    /// (Amara.org, etc.), "Thanks for watching", música.
+    private static func isWhisperHallucination(_ text: String) -> Bool {
+        let normalized = text.lowercased()
+        let patterns = [
+            "amara.org",
+            "subtítulos realizados por",
+            "subtítulos por",
+            "subtitles by",
+            "subtitulado por",
+            "thanks for watching",
+            "thank you for watching",
+            "gracias por ver",
+            "ご視聴ありがとうございました",
+            "[música]",
+            "[music]",
+            "[silence]"
+        ]
+        return patterns.contains { normalized.contains($0) }
     }
 
     func cancelVoiceInput() {

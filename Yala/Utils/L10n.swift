@@ -1520,6 +1520,7 @@ enum L10n {
         static var listening: String { ls("chat.listening", comment: "") }
         static var transcribing: String { ls("chat.transcribing", comment: "") }
         static var preparingAI: String { ls("chat.preparingAI", comment: "") }
+        static var noVoiceDetected: String { ls("chat.noVoiceDetected", comment: "") }
         static var unavailable: String { ls("chat.unavailable", comment: "") }
         static var retry: String { ls("chat.retry", comment: "") }
         static func contextMemory(_ count: Int) -> String {

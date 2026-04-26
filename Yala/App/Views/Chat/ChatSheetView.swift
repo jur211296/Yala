@@ -255,13 +255,11 @@ struct ChatSheetView: View {
                             .id("loading")
                     }
 
-                    // Reset contexto: aparece tras el último mensaje del assistant
-                    // cuando hay turnos guardados — da feedback de cuánto recuerda
-                    // y permite empezar fresh.
-                    if !viewModel.isLoading,
-                       viewModel.turnCount > 0,
-                       viewModel.messages.last?.role == .assistant {
+                    // Reset contexto: aparece cuando hay turnos guardados y no está cargando.
+                    // Tiene id propio para que el scrollTo lo deje visible bajo el último mensaje.
+                    if !viewModel.isLoading, viewModel.turnCount > 0 {
                         resetContextRow
+                            .id("resetContext")
                     }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
@@ -269,14 +267,26 @@ struct ChatSheetView: View {
             }
             .onChange(of: viewModel.messages.count) { _, _ in
                 withAnimation {
-                    if let lastID = viewModel.messages.last?.id {
-                        proxy.scrollTo(viewModel.isLoading ? "loading" as AnyHashable : lastID as AnyHashable, anchor: .bottom)
+                    // Si hay turnos completos, scroll hasta el botón de reset (último elemento del stack).
+                    // Si está cargando, al indicador. Sino, al último mensaje.
+                    let target: AnyHashable
+                    if viewModel.isLoading {
+                        target = "loading" as AnyHashable
+                    } else if viewModel.turnCount > 0 {
+                        target = "resetContext" as AnyHashable
+                    } else if let lastID = viewModel.messages.last?.id {
+                        target = lastID as AnyHashable
+                    } else {
+                        return
                     }
+                    proxy.scrollTo(target, anchor: .bottom)
                 }
             }
             .onChange(of: viewModel.isLoading) { _, isLoading in
                 if isLoading {
                     withAnimation { proxy.scrollTo("loading", anchor: .bottom) }
+                } else if viewModel.turnCount > 0 {
+                    withAnimation { proxy.scrollTo("resetContext", anchor: .bottom) }
                 }
             }
         }
