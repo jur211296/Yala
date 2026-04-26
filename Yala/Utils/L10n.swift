@@ -1519,25 +1519,15 @@ enum L10n {
         static var resetContext: String { ls("chat.resetContext", comment: "") }
         static var listening: String { ls("chat.listening", comment: "") }
         static var transcribing: String { ls("chat.transcribing", comment: "") }
+        static var preparingAI: String { ls("chat.preparingAI", comment: "") }
+        static var unavailable: String { ls("chat.unavailable", comment: "") }
+        static var retry: String { ls("chat.retry", comment: "") }
         static func contextMemory(_ count: Int) -> String {
             String(format: ls("chat.contextMemory", comment: ""), count)
         }
 
         enum Topics {
             static var title: String { ls("chat.topics.title", comment: "") }
-        }
-
-        enum Suggestion {
-            static var topMerchant: String { ls("chat.suggestion.topMerchant", comment: "") }
-            static func topMerchantWith(_ name: String) -> String {
-                String(format: ls("chat.suggestion.topMerchantWith", comment: ""), name)
-            }
-            static var biggestCategory: String { ls("chat.suggestion.biggestCategory", comment: "") }
-            static func activeBudget(_ name: String) -> String {
-                String(format: ls("chat.suggestion.activeBudget", comment: ""), name)
-            }
-            static var comparison: String { ls("chat.suggestion.comparison", comment: "") }
-            static var general: String { ls("chat.suggestion.general", comment: "") }
         }
     }
 

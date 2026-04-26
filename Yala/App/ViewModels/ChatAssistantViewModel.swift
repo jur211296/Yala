@@ -18,6 +18,7 @@ final class ChatAssistantViewModel {
     private(set) var isLoading = false
     private(set) var suggestions: [ChatSuggestion] = []
     private(set) var suggestionsLoading: Bool = false
+    private(set) var suggestionsFailed: Bool = false
     private(set) var isRecording = false
     private(set) var isTranscribing = false
     private(set) var errorMessage: String?
@@ -57,92 +58,26 @@ final class ChatAssistantViewModel {
         }
     }
 
-    // MARK: - Suggestions (LLM-first con fallback rule-based)
+    // MARK: - Suggestions (LLM-only — sin fallback rule-based)
 
-    /// Carga sugerencias para el empty state. Intenta LLM (cache diario), cae a rule-based si falla.
-    /// `suggestions` puede tener hasta 10 items; la View limita a 3 chips visibles.
+    /// Carga sugerencias para el empty state. Si el LLM falla, expone el error
+    /// vía `suggestionsFailed` para que la View muestre estado de no disponible.
+    /// La View se encarga de deshabilitar funciones y ofrecer "Reintentar".
     func loadSuggestions() async {
         guard let context = modelContext else { return }
 
         suggestionsLoading = true
+        suggestionsFailed = false
         defer { suggestionsLoading = false }
 
-        // Intento 1: LLM (cache diario o generación)
         let llmResults = await ChatSuggestionsLLMService.shared.fetchOrGenerate(modelContext: context)
-        if !llmResults.isEmpty {
+
+        if llmResults.isEmpty {
+            suggestionsFailed = true
+            suggestions = []
+        } else {
             suggestions = llmResults
-            return
         }
-
-        // Fallback: rule-based local
-        suggestions = buildRuleBasedSuggestions(modelContext: context)
-    }
-
-    private func buildRuleBasedSuggestions(modelContext context: ModelContext) -> [ChatSuggestion] {
-        var result: [ChatSuggestion] = []
-
-        // Top merchant this month
-        do {
-            let monthStart = Calendar.current.dateInterval(of: .month, for: Date.now)?.start ?? Date.now
-            let descriptor = FetchDescriptor<TransactionItem>(
-                predicate: #Predicate<TransactionItem> { $0.date >= monthStart },
-                sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse)]
-            )
-            let txns = try context.fetch(descriptor)
-            let monthTxns = txns.filter {
-                $0.balanceAdjustmentType == nil &&
-                $0.category?.isIncome == false && $0.account?.excludeFromStatistics != true
-            }
-
-            // Find top merchant
-            var merchantCounts: [String: Int] = [:]
-            for tx in monthTxns {
-                if let note = tx.note, !note.isEmpty {
-                    let canonical = MerchantCanonicalizer.canonicalize(note)
-                    if !canonical.isEmpty { merchantCounts[canonical, default: 0] += 1 }
-                }
-            }
-            if let topMerchant = merchantCounts.max(by: { $0.value < $1.value })?.key {
-                result.append(ChatSuggestion(
-                    text: L10n.Chat.Suggestion.topMerchantWith(topMerchant.capitalized),
-                    icon: "storefront", type: .topMerchant
-                ))
-            }
-
-            // Biggest category
-            result.append(ChatSuggestion(
-                text: L10n.Chat.Suggestion.biggestCategory,
-                icon: "chart.pie", type: .biggestCategory
-            ))
-
-            // Active budget at risk
-            let budgets = try context.fetch(FetchDescriptor<Budget>())
-            if let budget = budgets.first(where: { $0.isActive && $0.limitAmount > 0 }),
-               let catName = budget.category?.name {
-                result.append(ChatSuggestion(
-                    text: L10n.Chat.Suggestion.activeBudget(catName),
-                    icon: "chart.bar", type: .activeBudget
-                ))
-            } else {
-                result.append(ChatSuggestion(
-                    text: L10n.Chat.Suggestion.general,
-                    icon: "chart.bar", type: .general
-                ))
-            }
-
-        } catch {
-            #if DEBUG
-            print("ChatAssistantViewModel: Error loading suggestions: \(error)")
-            #endif
-            // Fallback hard-coded
-            result = [
-                ChatSuggestion(text: L10n.Chat.Suggestion.biggestCategory, icon: "chart.pie", type: .biggestCategory),
-                ChatSuggestion(text: L10n.Chat.Suggestion.general, icon: "chart.bar", type: .general),
-                ChatSuggestion(text: L10n.Chat.Suggestion.topMerchant, icon: "storefront", type: .topMerchant)
-            ]
-        }
-
-        return result
     }
 
     // MARK: - Send Question

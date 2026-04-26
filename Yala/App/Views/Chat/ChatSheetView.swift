@@ -168,12 +168,12 @@ struct ChatSheetView: View {
 
     @ViewBuilder
     private var chipsOrSkeleton: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            if viewModel.suggestions.isEmpty && viewModel.suggestionsLoading {
-                ForEach(0..<3, id: \.self) { _ in
-                    SkeletonPlaceholder(height: 44)
-                }
-            } else {
+        if viewModel.suggestionsFailed {
+            unavailableState
+        } else if viewModel.suggestions.isEmpty && viewModel.suggestionsLoading {
+            preparingAIState
+        } else {
+            VStack(spacing: DS.Spacing.sm) {
                 ForEach(viewModel.suggestions.prefix(3)) { suggestion in
                     ChatSuggestionChip(suggestion: suggestion) {
                         Task { await viewModel.sendSuggestion(suggestion) }
@@ -181,6 +181,46 @@ struct ChatSheetView: View {
                 }
             }
         }
+    }
+
+    private var preparingAIState: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            ProgressView()
+                .controlSize(.small)
+            Text(L10n.Chat.preparingAI)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, DS.Spacing.lg)
+    }
+
+    private var unavailableState: some View {
+        VStack(spacing: DS.Spacing.md) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 32)) // A11Y-DT: error icon
+                .foregroundStyle(.secondary)
+
+            Text(L10n.Chat.unavailable)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            Button {
+                Task { await viewModel.loadSuggestions() }
+            } label: {
+                Text(L10n.Chat.retry)
+                    .font(DS.Typography.body.weight(.semibold))
+                    .foregroundStyle(Color.contrastingText(for: theme.accent))
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.sm)
+                    .background(Capsule().fill(theme.accent))
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, DS.Spacing.lg)
+        .padding(.horizontal, DS.Spacing.lg)
     }
 
     // MARK: - Messages

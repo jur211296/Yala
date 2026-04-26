@@ -3469,12 +3469,6 @@
 "chat.questionsRemaining" = "You have %d questions left today";
 "chat.loading" = "Thinking...";
 "chat.questionTooLong" = "Your question is too long. Try to be more concise.";
-"chat.suggestion.topMerchant" = "Where do I spend most?";
-"chat.suggestion.topMerchantWith" = "How much have I spent at %@?";
-"chat.suggestion.biggestCategory" = "What did I spend most on this month?";
-"chat.suggestion.activeBudget" = "How is my %@ budget doing?";
-"chat.suggestion.comparison" = "Did I spend more or less than last month?";
-"chat.suggestion.general" = "How am I doing this month?";
 "chat.contextHint" = "I can remember your last question for follow-ups";
 
 /* Yala AI Redesign */
@@ -3490,6 +3484,9 @@
 "chat.resetContext" = "Reset conversation context";
 "chat.listening" = "Listening…";
 "chat.transcribing" = "Transcribing…";
+"chat.preparingAI" = "Preparing the AI…";
+"chat.unavailable" = "Yala AI isn't available right now. Try again in a few minutes.";
+"chat.retry" = "Retry";
 "chat.contextMemory" = "Yala AI remembers %d messages";
 
 // MARK: - Chat Assistant Consent
