@@ -125,6 +125,9 @@ final class AppBootstrapper {
         currencyConverter.setContext(context)
         budgetAlertService.setContext(context)
 
+        // 8.5. F4: persist shortcutIDs of legacy entities (one-shot per device)
+        persistAppEntityShortcutIDsIfNeeded(context: context)
+
         // 9. Update widget cache
         WidgetDataCache.updateCache(context: context)
 
@@ -393,6 +396,42 @@ final class AppBootstrapper {
         guard sessionState.needsExchangeRateReload else { return }
         await loadExchangeRates(context: container.mainContext)
         sessionState.needsExchangeRateReload = false
+    }
+
+    // MARK: - F4: AppEntity shortcutID Migration
+
+    /// One-shot pass to persist `shortcutID` UUIDs on legacy `Account` and `Subcategory`
+    /// entities created before F4. Without this, SwiftData generates a default UUID at load
+    /// time but it never persists until the entity is otherwise saved — which means each
+    /// cold launch regenerates a different UUID and atajos guardados con el UUID viejo
+    /// recurren al legacy fallback (busca por nombre).
+    /// Sentinel `appEntityShortcutIDsMigratedV1` evita re-ejecución.
+    private func persistAppEntityShortcutIDsIfNeeded(context: ModelContext) {
+        let key = AppPreferences.Keys.appEntityShortcutIDsMigratedV1
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+
+        do {
+            let accounts = try context.fetch(FetchDescriptor<Account>())
+            let subcategories = try context.fetch(FetchDescriptor<Subcategory>())
+
+            // Touch each entity to force SwiftData to mark it dirty and persist the default UUID.
+            // Reading shortcutID is enough to materialize it; assigning to itself ensures the change
+            // is tracked even if SwiftData would optimize away a pure read.
+            for account in accounts { account.shortcutID = account.shortcutID }
+            for subcategory in subcategories { subcategory.shortcutID = subcategory.shortcutID }
+
+            try context.save()
+            UserDefaults.standard.set(true, forKey: key)
+
+            #if DEBUG
+            print("AppBootstrapper: F4 persistAppEntityShortcutIDs — \(accounts.count) accounts + \(subcategories.count) subcategories migrated")
+            #endif
+        } catch {
+            #if DEBUG
+            print("AppBootstrapper: F4 persistAppEntityShortcutIDs error: \(error)")
+            #endif
+            // Do NOT mark sentinel — retry next launch.
+        }
     }
 
     // MARK: - Deep Link Handling

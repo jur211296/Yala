@@ -16,6 +16,11 @@ final class Subcategory {
     var name: String = ""
     var colorHex: String?
 
+    /// Stable identifier for App Intents (Siri/Shortcuts). Unaffected by name/category renames.
+    /// CloudKit: must have default value, no `@Attribute(.unique)`. Migration: legacy entities
+    /// receive a UUID at first save via AppBootstrapper.persistAppEntityShortcutIDs (F4).
+    var shortcutID: UUID = UUID()
+
     /// Indica si esta subcategoría proviene de la semilla inicial
     var isDefaultSeed: Bool = false
     /// Control de visibilidad dentro de la app

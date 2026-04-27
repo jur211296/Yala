@@ -985,6 +985,7 @@ final class AppPreferences {
         static let panelPlanificacionHidden = "panelPlanificacionHidden"
         static let panelSectionsHidden = "panelSectionsHidden"
         static let panelPrefsMigratedV2 = "panelPrefsMigratedV2"
+        static let appEntityShortcutIDsMigratedV1 = "appEntityShortcutIDsMigratedV1"
         static let panelAccountsCollapsed = "panelAccountsCollapsed"
         static let sankeyLabelMode = "sankeyLabelMode"
 

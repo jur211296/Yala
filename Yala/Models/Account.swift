@@ -24,6 +24,11 @@ final class Account {
     var excludeFromStatistics: Bool = false
     var isArchived: Bool = false
 
+    /// Stable identifier for App Intents (Siri/Shortcuts). Unaffected by `name` renames.
+    /// CloudKit: must have default value, no `@Attribute(.unique)`. Migration: legacy entities
+    /// receive a UUID at first save via AppBootstrapper.persistAppEntityShortcutIDs (F4).
+    var shortcutID: UUID = UUID()
+
     // Credit card specific
     var creditCardPaymentReminder: Bool = false
     var creditCardPaymentDay: Int = 1

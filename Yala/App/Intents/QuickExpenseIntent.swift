@@ -410,7 +410,14 @@ struct AccountQuery: EntityQuery {
     @MainActor
     func entities(for identifiers: [String]) async throws -> [AccountAppEntity] {
         let allEntities = try await suggestedEntities()
-        return allEntities.filter { identifiers.contains($0.id) }
+        return identifiers.compactMap { id in
+            // 1. UUID strict (formato nuevo desde F4)
+            if UUID(uuidString: id) != nil {
+                return allEntities.first { $0.id == id }
+            }
+            // 2. Legacy fallback: ID era account.name (atajos pre-F4)
+            return allEntities.first { $0.name == id }
+        }
     }
 
     @MainActor
@@ -446,7 +453,7 @@ struct AccountQuery: EntityQuery {
 
         return accounts.map { account in
             AccountAppEntity(
-                id: account.name,
+                id: account.shortcutID.uuidString,
                 name: account.name,
                 currencyCode: account.currencyCode
             )
@@ -475,7 +482,14 @@ struct ExpenseSubcategoryQuery: EntityQuery {
     @MainActor
     func entities(for identifiers: [String]) async throws -> [ExpenseSubcategoryAppEntity] {
         let allEntities = try await suggestedEntities()
-        return allEntities.filter { identifiers.contains($0.id) }
+        return identifiers.compactMap { id in
+            // 1. UUID strict (formato nuevo desde F4)
+            if UUID(uuidString: id) != nil {
+                return allEntities.first { $0.id == id }
+            }
+            // 2. Legacy fallback: ID era "categoryName:subcategoryName" (atajos pre-F4)
+            return allEntities.first { "\($0.categoryName):\($0.name)" == id }
+        }
     }
 
     @MainActor
@@ -521,7 +535,7 @@ struct ExpenseSubcategoryQuery: EntityQuery {
             }
             .map { subcategory in
                 ExpenseSubcategoryAppEntity(
-                    id: "\(subcategory.safeCategory.name):\(subcategory.name)",
+                    id: subcategory.shortcutID.uuidString,
                     name: subcategory.name,
                     categoryName: subcategory.safeCategory.name
                 )
@@ -550,7 +564,14 @@ struct IncomeSubcategoryQuery: EntityQuery {
     @MainActor
     func entities(for identifiers: [String]) async throws -> [IncomeSubcategoryAppEntity] {
         let allEntities = try await suggestedEntities()
-        return allEntities.filter { identifiers.contains($0.id) }
+        return identifiers.compactMap { id in
+            // 1. UUID strict (formato nuevo desde F4)
+            if UUID(uuidString: id) != nil {
+                return allEntities.first { $0.id == id }
+            }
+            // 2. Legacy fallback: ID era "categoryName:subcategoryName" (atajos pre-F4)
+            return allEntities.first { "\($0.categoryName):\($0.name)" == id }
+        }
     }
 
     @MainActor
@@ -596,7 +617,7 @@ struct IncomeSubcategoryQuery: EntityQuery {
             }
             .map { subcategory in
                 IncomeSubcategoryAppEntity(
-                    id: "\(subcategory.safeCategory.name):\(subcategory.name)",
+                    id: subcategory.shortcutID.uuidString,
                     name: subcategory.name,
                     categoryName: subcategory.safeCategory.name
                 )
