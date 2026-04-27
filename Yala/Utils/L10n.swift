@@ -1530,6 +1530,42 @@ enum L10n {
         enum Topics {
             static var title: String { ls("chat.topics.title", comment: "") }
         }
+
+        // Chat → Registrar transacciones (incremento Yala IA Registrar)
+        enum Draft {
+            static var chipExpense: String { ls("chat.draft.chipExpense", comment: "") }
+            static var chipIncome: String { ls("chat.draft.chipIncome", comment: "") }
+            static var amountPlaceholder: String { ls("chat.draft.amountPlaceholder", comment: "") }
+            static var accountLabel: String { ls("chat.draft.accountLabel", comment: "") }
+            static var subcategoryLabel: String { ls("chat.draft.subcategoryLabel", comment: "") }
+            static var dateLabel: String { ls("chat.draft.dateLabel", comment: "") }
+            static var noteLabel: String { ls("chat.draft.noteLabel", comment: "") }
+            static var tagsLabel: String { ls("chat.draft.tagsLabel", comment: "") }
+            static var tagsNone: String { ls("chat.draft.tagsNone", comment: "") }
+            static var savedBadge: String { ls("chat.draft.savedBadge", comment: "") }
+            static var discardedBadge: String { ls("chat.draft.discardedBadge", comment: "") }
+            static var discardButton: String { ls("chat.draft.discardButton", comment: "") }
+            static var saveFailedGeneric: String { ls("chat.draft.saveFailedGeneric", comment: "") }
+            static var saveFailedAccount: String { ls("chat.draft.saveFailedAccount", comment: "") }
+            static var saveFailedSubcategory: String { ls("chat.draft.saveFailedSubcategory", comment: "") }
+            static var saveFailedAmount: String { ls("chat.draft.saveFailedAmount", comment: "") }
+            static var viewRecordsButton: String { ls("chat.draft.viewRecordsButton", comment: "") }
+            static var selectAccount: String { ls("chat.draft.selectAccount", comment: "") }
+            static var selectSubcategory: String { ls("chat.draft.selectSubcategory", comment: "") }
+            static var saveButton: String { ls("chat.draft.saveButton", comment: "") }
+            static var editButton: String { ls("chat.draft.editButton", comment: "") }
+            static var failedSavingLine: String { ls("chat.draft.failedSavingLine", comment: "") }
+            static var retryButton: String { ls("chat.draft.retryButton", comment: "") }
+            static var noAccountsBlocking: String { ls("chat.draft.noAccountsBlocking", comment: "") }
+            static var ambiguousCanned: String { ls("chat.draft.ambiguousCanned", comment: "") }
+            static var ambiguousChipRegister: String { ls("chat.draft.ambiguousChipRegister", comment: "") }
+            static var ambiguousChipAsk: String { ls("chat.draft.ambiguousChipAsk", comment: "") }
+            static var confirmRegisterSingular: String { ls("chat.draft.confirmRegisterSingular", comment: "") }
+            static var confirmRegisterPlural: String { ls("chat.draft.confirmRegisterPlural", comment: "") }
+            static func overflowFormat(_ detected: Int, _ kept: Int) -> String {
+                String(format: ls("chat.draft.overflowFormat", comment: ""), detected, kept)
+            }
+        }
     }
 
     // MARK: - Accessibility

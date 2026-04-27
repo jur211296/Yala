@@ -356,6 +356,53 @@ final class NewTransactionViewModel {
         }
     }
 
+    /// Overload para prefill desde el chat (`Edit` en `ChatTransactionDraftCard`).
+    /// Acepta IDs directos (no busca por name), monto, fecha, nota, tags e isExpense.
+    /// Si los IDs están stale, los campos quedan vacíos y el user puede corregirlos.
+    func prefill(
+        fromChatDraft draft: ChatDraftPrefill,
+        accounts: [Account],
+        subcategories: [Subcategory]
+    ) {
+        if let accountID = draft.accountID,
+            let account = accounts.first(where: { $0.persistentModelID == accountID })
+        {
+            selectedAccount = account
+            sourceAccount = account
+            currencyCode = account.currencyCode
+        } else {
+            currencyCode = draft.currencyCode
+        }
+
+        if let subcategoryID = draft.subcategoryID,
+            let subcategory = subcategories.first(where: { $0.persistentModelID == subcategoryID })
+        {
+            selectedSubcategory = subcategory
+        }
+
+        transactionType = draft.isExpense ? .expense : .income
+
+        if let amount = draft.amount {
+            let amountDouble = NSDecimalNumber(decimal: amount).doubleValue
+            amountString = String(format: "%.2f", amountDouble)
+        }
+
+        transactionDate = draft.date
+
+        if !draft.note.isEmpty {
+            note = draft.note
+        }
+
+        // Tags: matchear por ID contra los tags fetcheados al setContext.
+        // Si los tagIDs están stale, simplemente se ignoran.
+        if !draft.tagIDs.isEmpty, !tags.isEmpty {
+            let matched = tags.filter { draft.tagIDs.contains($0.persistentModelID) }
+            if !matched.isEmpty {
+                selectedTags = matched
+            }
+        }
+    }
+
     // MARK: - Numeric Keypad
 
     /// Añade un dígito al monto

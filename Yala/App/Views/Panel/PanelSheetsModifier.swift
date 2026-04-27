@@ -81,6 +81,21 @@ struct PanelSheetsModifier: ViewModifier {
                 )
                 .presentationDetents([.large])
             }
+            .sheet(
+                isPresented: Binding(
+                    get: { sessionState.showNewTransactionFromChat },
+                    set: { newValue in
+                        sessionState.showNewTransactionFromChat = newValue
+                        if !newValue { sessionState.pendingChatDraftPrefill = nil }
+                    }
+                ),
+                onDismiss: { viewModel.reloadAndRecalculate() }
+            ) {
+                if let prefill = sessionState.pendingChatDraftPrefill {
+                    NewTransactionView(prefillFromChatDraft: prefill)
+                        .presentationDetents([.large])
+                }
+            }
             .sheet(isPresented: $sheets.showVoiceRecording, onDismiss: {
                 handleVoiceRecordingDismiss()
             }) {

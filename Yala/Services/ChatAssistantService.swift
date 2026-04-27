@@ -80,33 +80,82 @@ final class ChatAssistantService {
 
     // MARK: - Main Entry Point
 
-    /// Process a user question through the context-rich pipeline.
-    /// `turns` contiene el historial multi-turno del día. Returns (text, toolName)
-    /// where toolName is ALWAYS nil (kept in the signature for API compat).
+    /// Pipeline orquestador. Aplica guards comunes (daily limit, rate limit, validación
+    /// de texto), clasifica el intent y ramifica al sub-flow correspondiente.
+    ///
+    /// - `forceIntent`: si está presente, salta el classifier (usado por quick-reply
+    ///   chips de ambiguous para no reclasificar el mismo texto retórico).
+    ///
+    /// Retorna `ChatAssistantResponse` con `text` + `attachments` opcionales (drafts
+    /// para `register`, quick-replies para `ambiguous`).
     func processQuestion(
         question: String,
         turns: [QAPair],
         modelContext: ModelContext,
         currencyCode: String,
-        converter: CurrencyConverting
-    ) async throws -> (text: String, toolName: String?) {
-        // Validations
+        converter: CurrencyConverting,
+        forceIntent: ChatIntent? = nil
+    ) async throws -> ChatAssistantResponse {
+        // === Common guards (apply to all 3 paths) ===
         guard let client = openAI else { throw ChatAssistantError.noAPIKey }
         guard NetworkMonitor.shared.isConnected else { throw ChatAssistantError.offline }
         guard questionsToday < Self.dailyLimit else { throw ChatAssistantError.dailyLimitReached }
-        guard !question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw ChatAssistantError.emptyQuestion }
+        let trimmed = question.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw ChatAssistantError.emptyQuestion }
         guard question.count <= Self.maxQuestionLength else { throw ChatAssistantError.questionTooLong }
 
-        // Rate limiting
         if let last = lastCallTime, Date.now.timeIntervalSince(last) < Self.rateLimitInterval {
             throw ChatAssistantError.rateLimited
         }
         lastCallTime = Date.now
+        incrementDailyCounter()
 
-        // Detect anomaly request → include anomalies in context
+        // === Intent resolution ===
+        let intent: ChatIntent
+        if let forced = forceIntent {
+            intent = forced
+        } else {
+            let classification = await ChatIntentClassifierService.shared.classify(text: trimmed)
+            intent = classification.intent
+        }
+
+        // === Branch ===
+        switch intent {
+        case .ask:
+            let text = try await runAskFlow(
+                question: trimmed,
+                turns: turns,
+                modelContext: modelContext,
+                currencyCode: currencyCode,
+                converter: converter,
+                client: client
+            )
+            return ChatAssistantResponse(text: text, attachments: nil, intent: .ask)
+
+        case .register:
+            return try await runRegisterFlow(
+                question: trimmed,
+                modelContext: modelContext,
+                currencyCode: currencyCode
+            )
+
+        case .ambiguous:
+            return runAmbiguousFlow(question: trimmed)
+        }
+    }
+
+    // MARK: - Ask flow (existing context-rich pipeline)
+
+    private func runAskFlow(
+        question: String,
+        turns: [QAPair],
+        modelContext: ModelContext,
+        currencyCode: String,
+        converter: CurrencyConverting,
+        client: OpenAI
+    ) async throws -> String {
         let needsAnomalies = AnomalyKeywords.matches(question)
 
-        // Build full context (caché 60s aplica)
         let locale = Locale.current
         let language = LanguageManager.overrideLanguage ?? locale.language.languageCode?.identifier ?? "es"
         let country = locale.region?.identifier ?? "US"
@@ -144,10 +193,125 @@ final class ChatAssistantService {
         guard let content = result.choices.first?.message.content else {
             throw ChatAssistantError.parseFailed
         }
-
-        incrementDailyCounter()
-        return (text: content, toolName: nil)
+        return content
     }
+
+    // MARK: - Register flow
+
+    /// Multi-tx cap: si el parser devuelve >5 transacciones, tomamos las primeras 5
+    /// y avisamos al user inline en el `text` del response.
+    static let maxDraftsPerMessage = 5
+
+    private func runRegisterFlow(
+        question: String,
+        modelContext: ModelContext,
+        currencyCode: String
+    ) async throws -> ChatAssistantResponse {
+        // Verificar que hay al menos una cuenta — sin cuentas no se puede registrar
+        let accountDescriptor = FetchDescriptor<Account>(
+            predicate: #Predicate<Account> { !$0.isArchived }
+        )
+        let accounts = (try? modelContext.fetch(accountDescriptor)) ?? []
+        guard !accounts.isEmpty else {
+            return ChatAssistantResponse(
+                text: noAccountsText(),
+                attachments: nil,
+                intent: .register
+            )
+        }
+
+        let (expenseNames, incomeNames) = DraftBuilder.fetchVisibleSubcategoryNames(context: modelContext)
+
+        // Parse multi. Si falla por red/API/parse, propaga como error tipado en vez
+        // de caer a ambiguous (sería confuso: el user dijo claramente "registra X"
+        // y vería la repregunta de aclaración). Que el VM lo muestre como banner.
+        let parsed: [ParsedTransaction]
+        do {
+            parsed = try await TranscriptionParserService.shared.parseMultiple(
+                text: question,
+                expenseSubcategories: expenseNames,
+                incomeSubcategories: incomeNames
+            )
+        } catch let parserError as ParserError {
+            switch parserError {
+            case .noAPIKey: throw ChatAssistantError.noAPIKey
+            case .networkError(let err): throw ChatAssistantError.networkError(err)
+            case .invalidResponse, .parsingFailed: throw ChatAssistantError.parseFailed
+            case .emptyText: throw ChatAssistantError.emptyQuestion
+            }
+        } catch {
+            throw ChatAssistantError.networkError(error)
+        }
+
+        // Filtrar transacciones con monto válido (>0, finito)
+        let valid = parsed.filter {
+            guard let amount = $0.amount else { return false }
+            let dbl = NSDecimalNumber(decimal: amount).doubleValue
+            return dbl.isFinite && dbl > 0 && dbl < 1_000_000
+        }
+
+        guard !valid.isEmpty else {
+            return runAmbiguousFlow(question: question)
+        }
+
+        // Cap a 5
+        let cropped = Array(valid.prefix(Self.maxDraftsPerMessage))
+        let drafts = cropped.map {
+            DraftBuilder.build(parsed: $0, defaultCurrency: currencyCode, context: modelContext)
+        }
+
+        let exceededCap = valid.count > Self.maxDraftsPerMessage
+        let text = exceededCap
+            ? overflowText(detected: valid.count, kept: Self.maxDraftsPerMessage)
+            : registerConfirmText(count: drafts.count)
+
+        return ChatAssistantResponse(
+            text: text,
+            attachments: [.drafts(drafts)],
+            intent: .register
+        )
+    }
+
+    // MARK: - Ambiguous flow
+
+    private func runAmbiguousFlow(question: String) -> ChatAssistantResponse {
+        let canned = ambiguousCannedText()
+        let chips: [QuickReply] = [
+            QuickReply(
+                label: ambiguousChipRegisterLabel(),
+                triggerText: question,
+                forceIntent: .register
+            ),
+            QuickReply(
+                label: ambiguousChipAskLabel(),
+                triggerText: question,
+                forceIntent: .ask
+            ),
+        ]
+        return ChatAssistantResponse(
+            text: canned,
+            attachments: [.ambiguous(canned: canned, choices: chips)],
+            intent: .ambiguous
+        )
+    }
+
+    // MARK: - Localized text helpers
+
+    private func noAccountsText() -> String { L10n.Chat.Draft.noAccountsBlocking }
+
+    private func registerConfirmText(count: Int) -> String {
+        count == 1 ? L10n.Chat.Draft.confirmRegisterSingular : L10n.Chat.Draft.confirmRegisterPlural
+    }
+
+    private func overflowText(detected: Int, kept: Int) -> String {
+        L10n.Chat.Draft.overflowFormat(detected, kept)
+    }
+
+    private func ambiguousCannedText() -> String { L10n.Chat.Draft.ambiguousCanned }
+
+    private func ambiguousChipRegisterLabel() -> String { L10n.Chat.Draft.ambiguousChipRegister }
+
+    private func ambiguousChipAskLabel() -> String { L10n.Chat.Draft.ambiguousChipAsk }
 
     // MARK: - Helpers
 

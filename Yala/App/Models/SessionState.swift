@@ -464,6 +464,48 @@ class SessionState {
     /// .presentSharedImage router intent sets this alongside the sheet.
     var pendingSharedImageURL: URL?
 
+    /// Prefill payload del chat para abrir NewTransactionView con datos pre-llenados.
+    /// El `.presentNewTransactionFromChatDraft(...)` router intent setea este payload
+    /// junto con `showNewTransactionFromChat = true`.
+    var pendingChatDraftPrefill: ChatDraftPrefill?
+
+    /// Flag transient que el PanelShell observa para presentar NewTransactionView
+    /// con prefill desde chat. La vista lo limpia tras consumir el payload.
+    var showNewTransactionFromChat: Bool = false
+
+    /// Broadcast: cuando NewTransactionView persiste una transacción que vino de un
+    /// chat draft, setea esta tupla para que el ChatAssistantViewModel observe y
+    /// marque el card original como `.saved`. Si NTV se cancela, NO se setea.
+    /// El ChatVM lee, marca el card y limpia (también el espejo en UserDefaults).
+    struct ChatDraftSavedSignal: Codable, Equatable {
+        let messageID: UUID
+        let draftID: UUID
+        let transactionID: PersistentIdentifier
+    }
+    var chatDraftSavedSignal: ChatDraftSavedSignal? {
+        didSet {
+            // Espejo en UserDefaults para que sobreviva crash/kill de la app entre
+            // NTV-save y reapertura del chat (sin esto, el card queda .pending y un
+            // segundo tap [Save] crearía duplicado).
+            let key = "chat_draft_saved_signal"
+            if let signal = chatDraftSavedSignal,
+               let data = try? JSONEncoder().encode(signal) {
+                UserDefaults.standard.set(data, forKey: key)
+            } else {
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+        }
+    }
+
+    /// Restaura el signal desde UserDefaults si existe — llamado por ChatVM en setContext.
+    func restoreChatDraftSavedSignalIfNeeded() {
+        guard chatDraftSavedSignal == nil else { return }
+        guard let data = UserDefaults.standard.data(forKey: "chat_draft_saved_signal"),
+              let signal = try? JSONDecoder().decode(ChatDraftSavedSignal.self, from: data)
+        else { return }
+        chatDraftSavedSignal = signal  // re-publica → ChatSheetView observa via .onChange si está abierto
+    }
+
     // MARK: - Navigation State
 
     /// Currently selected main tab (Panel, Statistics, etc.)

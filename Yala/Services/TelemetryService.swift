@@ -47,6 +47,13 @@ enum AnalyticsEvent: String {
     case chatVoiceInputUsed
     case chatTopicsSheetOpened
     case chatPersistedSessionRehydrated
+    // Chat → Registrar transacciones
+    case chatIntentClassified           // params: intent, used_force_intent
+    case chatDraftProposed              // params: count
+    case chatDraftSaved
+    case chatDraftDismissed             // tap explícito en botón Descartar
+    case chatDraftEditedExternally
+    case chatAmbiguousRepregunta
 
     // Intent lifecycle (Siri / Atajos / Lock Screen / Control Center)
     case intentInvoked

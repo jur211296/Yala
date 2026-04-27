@@ -3440,6 +3440,38 @@
 "chat.noVoiceDetected" = "No detecté audio. Inténtalo de nuevo.";
 "chat.contextMemory" = "Yala IA recuerda %d mensajes";
 
+// MARK: - Chat Draft (Yala IA Registrar)
+"chat.draft.chipExpense" = "Gasto";
+"chat.draft.chipIncome" = "Ingreso";
+"chat.draft.amountPlaceholder" = "Monto";
+"chat.draft.accountLabel" = "Cuenta";
+"chat.draft.subcategoryLabel" = "Subcategoría";
+"chat.draft.dateLabel" = "Fecha";
+"chat.draft.noteLabel" = "Nota";
+"chat.draft.tagsLabel" = "Etiquetas";
+"chat.draft.tagsNone" = "Ninguna";
+"chat.draft.savedBadge" = "Registrado";
+"chat.draft.discardedBadge" = "Descartado";
+"chat.draft.saveFailedGeneric" = "No se pudo guardar. Inténtalo de nuevo.";
+"chat.draft.saveFailedAccount" = "No se pudo guardar: la cuenta ya no existe. Edita la transacción.";
+"chat.draft.saveFailedSubcategory" = "No se pudo guardar: la subcategoría ya no existe. Edita la transacción.";
+"chat.draft.saveFailedAmount" = "No se pudo guardar: el monto no es válido.";
+"chat.draft.viewRecordsButton" = "Ver registros creados";
+"chat.draft.discardButton" = "Descartar";
+"chat.draft.selectAccount" = "Selecciona cuenta";
+"chat.draft.selectSubcategory" = "Selecciona subcategoría";
+"chat.draft.saveButton" = "Guardar";
+"chat.draft.editButton" = "Editar";
+"chat.draft.failedSavingLine" = "No se pudo guardar.";
+"chat.draft.retryButton" = "Reintentar";
+"chat.draft.noAccountsBlocking" = "Antes de registrar, crea una cuenta desde el perfil.";
+"chat.draft.ambiguousCanned" = "¿Quieres registrar un gasto o estás preguntando sobre tus gastos?";
+"chat.draft.ambiguousChipRegister" = "Registrar";
+"chat.draft.ambiguousChipAsk" = "Solo preguntar";
+"chat.draft.confirmRegisterSingular" = "Confirma el registro:";
+"chat.draft.confirmRegisterPlural" = "Confirma los registros:";
+"chat.draft.overflowFormat" = "Detecté %d movimientos. Registro los primeros %d; manda el resto en otro mensaje.";
+
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Asistente financiero";
 "aiConsent.chatMessage" = "Esta función envía datos específicos de tu consulta a OpenAI para responder tus preguntas: nombres de comercios, montos y fechas de las transacciones relevantes, y estado de presupuestos relacionados.\n\nTu historial completo, notas personales y nombres de cuentas nunca se comparten. OpenAI no usa estos datos para entrenar sus modelos.";

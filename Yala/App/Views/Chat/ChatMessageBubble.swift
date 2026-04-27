@@ -10,6 +10,7 @@ import SwiftUI
 struct ChatMessageBubble: View {
 
     let message: ChatMessage
+    var viewModel: ChatAssistantViewModel?
 
     @Environment(\.yalaTheme) private var theme
 
@@ -17,13 +18,26 @@ struct ChatMessageBubble: View {
         HStack {
             if message.role == .user { Spacer(minLength: DS.Spacing.xxl) }
 
-            Text(LocalizedStringKey(message.text))
-                .font(DS.Typography.body)
-                .foregroundStyle(message.role == .user ? AnyShapeStyle(Color.contrastingText(for: theme.accent)) : AnyShapeStyle(.thPrimaryText))
-                .padding(.horizontal, DS.Spacing.md)
-                .padding(.vertical, DS.Spacing.sm)
-                .background(message.role == .user ? AnyShapeStyle(theme.accent) : AnyShapeStyle(.thCard))
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+            VStack(alignment: message.role == .user ? .trailing : .leading, spacing: DS.Spacing.sm) {
+                Text(LocalizedStringKey(message.text))
+                    .font(DS.Typography.body)
+                    .foregroundStyle(message.role == .user ? AnyShapeStyle(Color.contrastingText(for: theme.accent)) : AnyShapeStyle(.thPrimaryText))
+                    .padding(.horizontal, DS.Spacing.md)
+                    .padding(.vertical, DS.Spacing.sm)
+                    .background(message.role == .user ? AnyShapeStyle(theme.accent) : AnyShapeStyle(.thCard))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+
+                if let attachments = message.attachments,
+                   !attachments.isEmpty,
+                   let viewModel
+                {
+                    ChatAttachmentsView(
+                        messageID: message.id,
+                        attachments: attachments,
+                        viewModel: viewModel
+                    )
+                }
+            }
 
             if message.role == .assistant { Spacer(minLength: DS.Spacing.xxl) }
         }

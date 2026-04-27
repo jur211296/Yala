@@ -3438,6 +3438,38 @@
 "chat.noVoiceDetected" = "Je n'ai pas détecté d'audio. Réessaie.";
 "chat.contextMemory" = "Yala IA se souvient de %d messages";
 
+// MARK: - Chat Draft (Yala IA Registrar)
+"chat.draft.chipExpense" = "Dépense";
+"chat.draft.chipIncome" = "Revenu";
+"chat.draft.amountPlaceholder" = "Montant";
+"chat.draft.accountLabel" = "Compte";
+"chat.draft.subcategoryLabel" = "Sous-catégorie";
+"chat.draft.dateLabel" = "Date";
+"chat.draft.noteLabel" = "Note";
+"chat.draft.tagsLabel" = "Étiquettes";
+"chat.draft.tagsNone" = "Aucune";
+"chat.draft.savedBadge" = "Enregistré";
+"chat.draft.discardedBadge" = "Ignoré";
+"chat.draft.saveFailedGeneric" = "Impossible d'enregistrer. Réessaie.";
+"chat.draft.saveFailedAccount" = "Impossible d'enregistrer : le compte n'existe plus. Modifie l'entrée.";
+"chat.draft.saveFailedSubcategory" = "Impossible d'enregistrer : la sous-catégorie n'existe plus. Modifie l'entrée.";
+"chat.draft.saveFailedAmount" = "Impossible d'enregistrer : le montant n'est pas valide.";
+"chat.draft.viewRecordsButton" = "Voir les entrées enregistrées";
+"chat.draft.discardButton" = "Ignorer";
+"chat.draft.selectAccount" = "Sélectionner un compte";
+"chat.draft.selectSubcategory" = "Sélectionner une sous-catégorie";
+"chat.draft.saveButton" = "Enregistrer";
+"chat.draft.editButton" = "Modifier";
+"chat.draft.failedSavingLine" = "Échec de l'enregistrement.";
+"chat.draft.retryButton" = "Réessayer";
+"chat.draft.noAccountsBlocking" = "Crée d'abord un compte depuis le profil avant d'enregistrer.";
+"chat.draft.ambiguousCanned" = "Veux-tu enregistrer une dépense ou poser une question sur tes dépenses ?";
+"chat.draft.ambiguousChipRegister" = "Enregistrer";
+"chat.draft.ambiguousChipAsk" = "Juste demander";
+"chat.draft.confirmRegisterSingular" = "Confirme l'enregistrement :";
+"chat.draft.confirmRegisterPlural" = "Confirme les enregistrements :";
+"chat.draft.overflowFormat" = "J'ai détecté %d mouvements. J'enregistre les %d premiers ; envoie le reste dans un autre message.";
+
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Assistant financier";
 "aiConsent.chatMessage" = "Cette fonction envoie des données spécifiques à ta requête à OpenAI pour répondre à tes questions : noms de commerces, montants et dates des transactions pertinentes, et état des budgets associés.\n\nTon historique complet, tes notes personnelles et noms de comptes ne sont jamais partagés. OpenAI n'utilise pas ces données pour entraîner ses modèles.";

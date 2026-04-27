@@ -58,9 +58,21 @@ final class ChatAssistantViewModel {
     func setContext(_ ctx: ModelContext) {
         modelContext = ctx
         loadPersistedSession()
+        // Restaurar signal persistido si NTV guardó mientras el chat estaba cerrado
+        // (o la app fue matada entre NTV-save y reapertura).
+        SessionState.shared.restoreChatDraftSavedSignalIfNeeded()
+        consumePersistedDraftSavedSignal()
         // Cargamos sugerencias SIEMPRE — el botón [+ Temas] funciona aún con conversación previa.
         // Si están en cache del día, no llama LLM.
         Task { await loadSuggestions() }
+    }
+
+    /// Lee el signal persistido (si existe), marca el card y limpia.
+    /// Defensivo: corre tanto en setContext como vía .onChange en ChatSheetView.
+    private func consumePersistedDraftSavedSignal() {
+        guard let signal = SessionState.shared.chatDraftSavedSignal else { return }
+        markDraftSaved(messageID: signal.messageID, draftID: signal.draftID, transactionID: signal.transactionID)
+        SessionState.shared.chatDraftSavedSignal = nil
     }
 
     // MARK: - Suggestions (LLM-only — sin fallback rule-based)
@@ -87,7 +99,10 @@ final class ChatAssistantViewModel {
 
     // MARK: - Send Question
 
-    func sendQuestion(_ text: String) async {
+    /// Envía un texto al pipeline. Si `forceIntent` está presente, el classifier se salta
+    /// y el service usa directamente ese intent (usado por quick-reply chips de ambiguous
+    /// para no reclasificar el mismo texto retórico).
+    func sendQuestion(_ text: String, forceIntent: ChatIntent? = nil) async {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         guard let context = modelContext else { return }
@@ -103,32 +118,53 @@ final class ChatAssistantViewModel {
 
         do {
             let currencyCode = CurrencyDefaults.currentPreferred
-            let (responseText, toolName) = try await service.processQuestion(
+            let response = try await service.processQuestion(
                 question: trimmed,
                 turns: allTurns,
                 modelContext: context,
                 currencyCode: currencyCode,
-                converter: CurrencyConverter.shared
+                converter: CurrencyConverter.shared,
+                forceIntent: forceIntent
             )
 
-            let assistantMessage = ChatMessage(role: .assistant, text: responseText, timestamp: Date.now)
+            let assistantMessage = ChatMessage(
+                role: .assistant,
+                text: response.text,
+                timestamp: Date.now,
+                attachments: response.attachments
+            )
             messages.append(assistantMessage)
 
             // Append turn al historial completo del día. Hard trim defensivo a maxTurns.
+            // `messageID` permite a replaceDraft localizar el turno sin matchear texto
+            // (frágil con multi-tx donde varios turns tienen el mismo response prefix).
             allTurns.append(QAPair(
                 question: trimmed,
-                toolName: toolName,
-                toolResultJSON: nil,
-                response: responseText,
-                timestamp: Date.now
+                response: response.text,
+                timestamp: Date.now,
+                messageID: assistantMessage.id,
+                attachments: response.attachments
             ))
             if allTurns.count > Self.maxTurns {
                 allTurns.removeFirst(allTurns.count - Self.maxTurns)
             }
 
+            // Telemetry — intent clasificado + draft proposed + ambiguous repregunta
+            TelemetryService.track(.chatIntentClassified, parameters: [
+                "intent": response.intent.rawValue,
+                "used_force_intent": forceIntent != nil ? "true" : "false",
+            ])
+            if case .drafts(let drafts) = response.attachments?.first {
+                TelemetryService.track(.chatDraftProposed, parameters: [
+                    "count": String(drafts.count),
+                ])
+            }
+            if case .ambiguous = response.attachments?.first {
+                TelemetryService.track(.chatAmbiguousRepregunta)
+            }
             TelemetryService.track(.chatQuestionAsked, parameters: [
                 "source": "typed",
-                "turn_count": String(allTurns.count)
+                "turn_count": String(allTurns.count),
             ])
 
             // Autosave defensivo: persiste la sesión tras cada respuesta exitosa
@@ -286,7 +322,9 @@ final class ChatAssistantViewModel {
             toolName: nil,
             toolResultJSON: nil,
             response: pair.response,
-            timestamp: pair.timestamp
+            timestamp: pair.timestamp,
+            messageID: pair.messageID,
+            attachments: pair.attachments
         )
     }
 
@@ -305,7 +343,9 @@ final class ChatAssistantViewModel {
                     toolName: nil,
                     toolResultJSON: nil,
                     response: m2.text,
-                    timestamp: m2.timestamp
+                    timestamp: m2.timestamp,
+                    messageID: m2.id,
+                    attachments: m2.attachments
                 ))
                 i += 2
             } else {
@@ -430,4 +470,341 @@ final class ChatAssistantViewModel {
         errorMessage = nil
         clearPersistedSession()
     }
+
+    // MARK: - Draft Lifecycle (chat → register)
+
+    /// Save de un draft → crea TransactionItem real, mark `.saved`, persistSession.
+    /// Es bloqueante visualmente: durante `.saving` el card debe deshabilitar Save/Edit.
+    /// Permite retry desde `.failed` (resetea a `.saving`).
+    func saveDraft(messageID: UUID, draftID: UUID) async {
+        guard let context = modelContext else { return }
+        guard let location = locateDraft(messageID: messageID, draftID: draftID) else { return }
+        var draft = location.draft
+
+        guard draft.status == .pending || draft.status == .failed else { return }
+
+        // Validaciones mínimas previas a Save (defensivas — la UI bloquea Save
+        // cuando faltan campos, pero paths no-UI podrían intentarlo).
+        guard let amount = draft.amount,
+              draft.accountID != nil,
+              draft.subcategoryID != nil
+        else { return }
+        let dbl = NSDecimalNumber(decimal: amount).doubleValue
+        guard dbl.isFinite, dbl > 0, dbl < 1_000_000 else {
+            errorMessage = L10n.Chat.Draft.saveFailedAmount
+            draft.status = .failed
+            replaceDraft(draft, at: location)
+            return
+        }
+
+        // Resetea status si venía de .failed para que retry pase la guard.
+        draft.status = .saving
+        replaceDraft(draft, at: location)
+
+        let accountID = draft.accountID!
+        let subcategoryID = draft.subcategoryID!
+
+        guard let account = context.model(for: accountID) as? Account else {
+            #if DEBUG
+            print("ChatAssistantViewModel.saveDraft: account not found for ID \(accountID)")
+            #endif
+            errorMessage = L10n.Chat.Draft.saveFailedAccount
+            draft.status = .failed
+            replaceDraft(draft, at: location)
+            return
+        }
+        guard let subcategory = context.model(for: subcategoryID) as? Subcategory else {
+            #if DEBUG
+            print("ChatAssistantViewModel.saveDraft: subcategory not found for ID \(subcategoryID)")
+            #endif
+            errorMessage = L10n.Chat.Draft.saveFailedSubcategory
+            draft.status = .failed
+            replaceDraft(draft, at: location)
+            return
+        }
+
+        let tags: [Tag] = draft.tagIDs.compactMap { context.model(for: $0) as? Tag }
+
+        // Convertir Decimal → Double para TransactionItem (el modelo usa Double)
+        let amountDouble = NSDecimalNumber(decimal: amount).doubleValue
+        let preferredCurrency = CurrencyDefaults.currentPreferred
+        let convertedDecimal = CurrencyConverter.shared.convertWithLatestRate(
+            amount,
+            from: draft.currencyCode,
+            to: preferredCurrency,
+            context: context
+        )
+        let amountInPreferred = NSDecimalNumber(decimal: convertedDecimal).doubleValue
+
+        let transaction = TransactionItem(
+            date: draft.date,
+            amount: amountDouble,
+            currencyCode: draft.currencyCode,
+            note: draft.note.isEmpty ? nil : draft.note,
+            category: subcategory.safeCategory,
+            subcategory: subcategory,
+            account: account,
+            tags: tags,
+            exchangeRate: 1.0,
+            amountInPreferredCurrency: amountInPreferred,
+            preferredCurrencyCode: preferredCurrency
+        )
+
+        // Inyectar context defensivamente — TransactionService es singleton y otras
+        // vistas (NTV) usan `context.insert` directo, así que no podemos asumir que
+        // setContext fue llamado. Sin esto: throws `noContext` ("No ModelContext available").
+        TransactionService.shared.setContext(context)
+
+        do {
+            try TransactionService.shared.create(transaction)
+            draft.status = .saved
+            draft.savedTransactionID = transaction.persistentModelID
+            replaceDraft(draft, at: location)
+            TelemetryService.track(.chatDraftSaved)
+            persistSession()
+        } catch {
+            #if DEBUG
+            print("ChatAssistantViewModel.saveDraft: TransactionService.create failed: \(error)")
+            #endif
+            // Mensaje genérico al user — no exponer detalles técnicos del error.
+            errorMessage = L10n.Chat.Draft.saveFailedGeneric
+            draft.status = .failed
+            replaceDraft(draft, at: location)
+        }
+    }
+
+    /// Edit de un draft → enqueue intent para abrir NewTransactionView prefilled
+    /// y dismiss del ChatSheet (lo hace la View con `@Environment(\.dismiss)`).
+    /// Trackea draft+message en `pendingChatDraftEditOrigin` para que cuando NTV
+    /// persista la transacción, el VM pueda marcar el card como `.saved` con el ID.
+    /// Si el user CANCELA NTV, no se marca: card queda en `.pending`.
+    func editDraft(messageID: UUID, draftID: UUID) {
+        guard let location = locateDraft(messageID: messageID, draftID: draftID) else { return }
+        let draft = location.draft
+
+        let prefill = ChatDraftPrefill(
+            originMessageID: messageID,
+            originDraftID: draftID,
+            accountID: draft.accountID,
+            subcategoryID: draft.subcategoryID,
+            amount: draft.amount,
+            currencyCode: draft.currencyCode,
+            note: draft.note,
+            date: draft.date,
+            isExpense: draft.isExpense,
+            tagIDs: draft.tagIDs
+        )
+        AppRouter.shared.enqueue(.presentNewTransactionFromChatDraft(prefill))
+
+        TelemetryService.track(.chatDraftEditedExternally)
+    }
+
+    /// Update inline de un campo del draft (ej. user cambia monto en TextField, o
+    /// elige otra cuenta en el menu picker). Recalcula `needsUserInput`.
+    /// Permite update también desde `.failed` (el user puede ajustar antes de retry).
+    func updateDraft(
+        messageID: UUID,
+        draftID: UUID,
+        amount: Decimal? = nil,
+        accountID: PersistentIdentifier?? = nil,
+        subcategoryID: PersistentIdentifier?? = nil,
+        note: String? = nil,
+        date: Date? = nil,
+        tagIDs: [PersistentIdentifier]? = nil
+    ) {
+        guard let location = locateDraft(messageID: messageID, draftID: draftID) else { return }
+        var draft = location.draft
+        guard draft.status == .pending || draft.status == .failed else { return }
+
+        // Si user edita después de un fallo, resetear a pending para permitir retry.
+        if draft.status == .failed { draft.status = .pending }
+
+        if let amount {
+            // Validación: monto debe ser finito y > 0 (TransactionService.create no lo
+            // valida y crearía una transacción negativa). Si no cumple, se ignora.
+            let dbl = NSDecimalNumber(decimal: amount).doubleValue
+            if dbl.isFinite && dbl > 0 && dbl < 1_000_000 {
+                draft.amount = amount
+            } else {
+                draft.amount = nil
+            }
+        }
+        // Double-optional permite distinguir "no cambies" (nil-outer) de "set a nil" (.some(nil)).
+        if case .some(let value) = accountID { draft.accountID = value }
+        if case .some(let value) = subcategoryID {
+            // Validación: si la subcategoría no es nil, debe matchear el tipo del draft
+            // (income subcat para ingreso, expense subcat para gasto). La UI ya lo filtra,
+            // pero defensivo contra paths no-UI.
+            var typeMatches = true
+            if let id = value, let context = modelContext {
+                let allSubs = (try? context.fetch(FetchDescriptor<Subcategory>())) ?? []
+                if let sub = allSubs.first(where: { $0.persistentModelID == id }) {
+                    typeMatches = sub.safeCategory.isIncome == !draft.isExpense
+                }
+            }
+            if typeMatches { draft.subcategoryID = value }
+        }
+        if let note { draft.note = note }
+        if let date { draft.date = date }
+        if let tagIDs { draft.tagIDs = tagIDs }
+
+        draft.needsUserInput = DraftBuilder.computeNeedsUserInput(
+            hasAmount: draft.amount != nil,
+            hasAccount: draft.accountID != nil,
+            hasSubcategory: draft.subcategoryID != nil
+        )
+        replaceDraft(draft, at: location)
+        persistSession()
+    }
+
+    /// Marca un draft como `.saved` con el ID de la transacción real. Lo usa
+    /// el flujo Edit → NewTransactionView cuando NTV crea la transacción —
+    /// el card del chat refleja el resultado en lugar de quedarse en `.pending`.
+    /// Si el user CANCELA NTV, este método no se llama y el card sigue en `.pending`.
+    func markDraftSaved(messageID: UUID, draftID: UUID, transactionID: PersistentIdentifier) {
+        guard let location = locateDraft(messageID: messageID, draftID: draftID) else { return }
+        var draft = location.draft
+        guard draft.status != .saved else { return }
+        draft.status = .saved
+        draft.savedTransactionID = transactionID
+        replaceDraft(draft, at: location)
+        persistSession()
+    }
+
+    /// Descarta un draft `.pending` o `.failed`. Marca status `.discarded` (NO
+    /// remueve — el card persiste como historial visual, dimmed y no clickeable).
+    /// Si el draft ya está `.saved`, no hace nada (no se puede descartar lo
+    /// persistido — usar Records para eliminar).
+    func discardDraft(messageID: UUID, draftID: UUID) {
+        guard let location = locateDraft(messageID: messageID, draftID: draftID) else { return }
+        var draft = location.draft
+        guard draft.status != .saved && draft.status != .discarded else { return }
+        draft.status = .discarded
+        replaceDraft(draft, at: location)
+        TelemetryService.track(.chatDraftDismissed)
+        persistSession()
+    }
+
+    /// Tap en quick-reply chip de ambiguous → reenvía el texto con `forceIntent`
+    /// bypassando el classifier. NO añade un nuevo user message a la transcripción
+    /// (ya existe el original), y reemplaza el bubble ambiguous por el resultado
+    /// real (drafts o respuesta ask).
+    func dismissAmbiguous(triggerText: String, forceIntent: ChatIntent) async {
+        guard let context = modelContext, !isLoading else { return }
+
+        // Encontrar y remover el bubble ambiguous (assistant) más reciente para
+        // que no quede colgando junto al bubble de respuesta real.
+        if let lastAmbiguousIdx = messages.lastIndex(where: { msg in
+            guard msg.role == .assistant, let attachments = msg.attachments else { return false }
+            return attachments.contains { if case .ambiguous = $0 { return true } else { return false } }
+        }) {
+            let removedID = messages[lastAmbiguousIdx].id
+            messages.remove(at: lastAmbiguousIdx)
+            allTurns.removeAll { $0.messageID == removedID }
+        }
+
+        errorMessage = nil
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            let currencyCode = CurrencyDefaults.currentPreferred
+            let response = try await service.processQuestion(
+                question: triggerText,
+                turns: allTurns,
+                modelContext: context,
+                currencyCode: currencyCode,
+                converter: CurrencyConverter.shared,
+                forceIntent: forceIntent
+            )
+
+            let assistantMessage = ChatMessage(
+                role: .assistant,
+                text: response.text,
+                timestamp: Date.now,
+                attachments: response.attachments
+            )
+            messages.append(assistantMessage)
+            allTurns.append(QAPair(
+                question: triggerText,
+                response: response.text,
+                timestamp: Date.now,
+                messageID: assistantMessage.id,
+                attachments: response.attachments
+            ))
+            if allTurns.count > Self.maxTurns {
+                allTurns.removeFirst(allTurns.count - Self.maxTurns)
+            }
+
+            TelemetryService.track(.chatIntentClassified, parameters: [
+                "intent": response.intent.rawValue,
+                "used_force_intent": "true",
+            ])
+            if case .drafts(let drafts) = response.attachments?.first {
+                TelemetryService.track(.chatDraftProposed, parameters: ["count": String(drafts.count)])
+            }
+
+            persistSession()
+        } catch let error as ChatAssistantError {
+            handleError(error)
+        } catch {
+            handleError(.networkError(error))
+        }
+    }
+
+    // MARK: - Draft locator helpers
+
+    private struct DraftLocation {
+        let messageIndex: Int
+        let attachmentIndex: Int
+        let draftIndex: Int
+        let draft: ChatTransactionDraft
+    }
+
+    private func locateDraft(messageID: UUID, draftID: UUID) -> DraftLocation? {
+        guard let mIdx = messages.firstIndex(where: { $0.id == messageID }),
+              let attachments = messages[mIdx].attachments
+        else { return nil }
+
+        for (aIdx, attachment) in attachments.enumerated() {
+            if case .drafts(let drafts) = attachment,
+               let dIdx = drafts.firstIndex(where: { $0.id == draftID }) {
+                return DraftLocation(
+                    messageIndex: mIdx,
+                    attachmentIndex: aIdx,
+                    draftIndex: dIdx,
+                    draft: drafts[dIdx]
+                )
+            }
+        }
+        return nil
+    }
+
+    private func replaceDraft(_ updated: ChatTransactionDraft, at location: DraftLocation) {
+        let messageID = messages[location.messageIndex].id
+        var msg = messages[location.messageIndex]
+        guard var attachments = msg.attachments else { return }
+        if case .drafts(var drafts) = attachments[location.attachmentIndex] {
+            drafts[location.draftIndex] = updated
+            attachments[location.attachmentIndex] = .drafts(drafts)
+            msg.attachments = attachments
+            messages[location.messageIndex] = msg
+        }
+
+        // Update allTurns localizando por messageID (estable, no colisiona en multi-tx).
+        // Fallback a matching por response text para QAPairs legacy sin messageID.
+        let turnIdx = allTurns.firstIndex(where: { $0.messageID == messageID })
+            ?? allTurns.lastIndex(where: { $0.messageID == nil && $0.response == messages[location.messageIndex].text })
+        if let turnIdx {
+            var turn = allTurns[turnIdx]
+            if var turnAttachments = turn.attachments,
+               case .drafts(var drafts) = turnAttachments[location.attachmentIndex] {
+                drafts[location.draftIndex] = updated
+                turnAttachments[location.attachmentIndex] = .drafts(drafts)
+                turn.attachments = turnAttachments
+                allTurns[turnIdx] = turn
+            }
+        }
+    }
+
 }

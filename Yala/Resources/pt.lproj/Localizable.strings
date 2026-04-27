@@ -3437,6 +3437,38 @@
 "chat.noVoiceDetected" = "Não detetei áudio. Tenta novamente.";
 "chat.contextMemory" = "Yala IA lembra %d mensagens";
 
+// MARK: - Chat Draft (Yala IA Registrar)
+"chat.draft.chipExpense" = "Despesa";
+"chat.draft.chipIncome" = "Receita";
+"chat.draft.amountPlaceholder" = "Valor";
+"chat.draft.accountLabel" = "Conta";
+"chat.draft.subcategoryLabel" = "Subcategoria";
+"chat.draft.dateLabel" = "Data";
+"chat.draft.noteLabel" = "Nota";
+"chat.draft.tagsLabel" = "Etiquetas";
+"chat.draft.tagsNone" = "Nenhuma";
+"chat.draft.savedBadge" = "Registrado";
+"chat.draft.discardedBadge" = "Descartado";
+"chat.draft.saveFailedGeneric" = "Não foi possível salvar. Tente de novo.";
+"chat.draft.saveFailedAccount" = "Não foi possível salvar: a conta não existe mais. Edite o registro.";
+"chat.draft.saveFailedSubcategory" = "Não foi possível salvar: a subcategoria não existe mais. Edite o registro.";
+"chat.draft.saveFailedAmount" = "Não foi possível salvar: o valor não é válido.";
+"chat.draft.viewRecordsButton" = "Ver registros criados";
+"chat.draft.discardButton" = "Descartar";
+"chat.draft.selectAccount" = "Selecionar conta";
+"chat.draft.selectSubcategory" = "Selecionar subcategoria";
+"chat.draft.saveButton" = "Salvar";
+"chat.draft.editButton" = "Editar";
+"chat.draft.failedSavingLine" = "Não foi possível salvar.";
+"chat.draft.retryButton" = "Tentar de novo";
+"chat.draft.noAccountsBlocking" = "Crie uma conta no perfil antes de registrar.";
+"chat.draft.ambiguousCanned" = "Quer registrar uma despesa ou está perguntando sobre seus gastos?";
+"chat.draft.ambiguousChipRegister" = "Registrar";
+"chat.draft.ambiguousChipAsk" = "Só perguntar";
+"chat.draft.confirmRegisterSingular" = "Confirme o registro:";
+"chat.draft.confirmRegisterPlural" = "Confirme os registros:";
+"chat.draft.overflowFormat" = "Detectei %d movimentos. Registro os %d primeiros; envie o resto em outra mensagem.";
+
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Assistente financeiro";
 "aiConsent.chatMessage" = "Esta função envia dados específicos da sua consulta ao OpenAI para responder suas perguntas: nomes de comerciantes, valores e datas das transações relevantes, e status dos orçamentos relacionados.\n\nSeu histórico completo, notas pessoais e nomes de contas nunca são compartilhados. O OpenAI não usa esses dados para treinar seus modelos.";

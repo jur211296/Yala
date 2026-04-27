@@ -3437,6 +3437,38 @@
 "chat.noVoiceDetected" = "Kein Audio erkannt. Versuche es erneut.";
 "chat.contextMemory" = "Yala KI erinnert sich an %d Nachrichten";
 
+// MARK: - Chat Draft (Yala IA Registrar)
+"chat.draft.chipExpense" = "Ausgabe";
+"chat.draft.chipIncome" = "Einnahme";
+"chat.draft.amountPlaceholder" = "Betrag";
+"chat.draft.accountLabel" = "Konto";
+"chat.draft.subcategoryLabel" = "Unterkategorie";
+"chat.draft.dateLabel" = "Datum";
+"chat.draft.noteLabel" = "Notiz";
+"chat.draft.tagsLabel" = "Tags";
+"chat.draft.tagsNone" = "Keine";
+"chat.draft.savedBadge" = "Gespeichert";
+"chat.draft.discardedBadge" = "Verworfen";
+"chat.draft.saveFailedGeneric" = "Speichern fehlgeschlagen. Bitte erneut versuchen.";
+"chat.draft.saveFailedAccount" = "Speichern fehlgeschlagen: Das Konto existiert nicht mehr. Bearbeite den Eintrag.";
+"chat.draft.saveFailedSubcategory" = "Speichern fehlgeschlagen: Die Unterkategorie existiert nicht mehr. Bearbeite den Eintrag.";
+"chat.draft.saveFailedAmount" = "Speichern fehlgeschlagen: Der Betrag ist ungültig.";
+"chat.draft.viewRecordsButton" = "Gespeicherte Einträge anzeigen";
+"chat.draft.discardButton" = "Verwerfen";
+"chat.draft.selectAccount" = "Konto auswählen";
+"chat.draft.selectSubcategory" = "Unterkategorie auswählen";
+"chat.draft.saveButton" = "Speichern";
+"chat.draft.editButton" = "Bearbeiten";
+"chat.draft.failedSavingLine" = "Speichern fehlgeschlagen.";
+"chat.draft.retryButton" = "Erneut versuchen";
+"chat.draft.noAccountsBlocking" = "Erstelle zuerst ein Konto im Profil, bevor du Einträge hinzufügst.";
+"chat.draft.ambiguousCanned" = "Möchtest du eine Ausgabe erfassen oder fragst du nach deinen Ausgaben?";
+"chat.draft.ambiguousChipRegister" = "Erfassen";
+"chat.draft.ambiguousChipAsk" = "Nur fragen";
+"chat.draft.confirmRegisterSingular" = "Eintrag bestätigen:";
+"chat.draft.confirmRegisterPlural" = "Einträge bestätigen:";
+"chat.draft.overflowFormat" = "Ich habe %d Einträge erkannt. Ich erfasse die ersten %d; sende den Rest in einer weiteren Nachricht.";
+
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Finanzassistent";
 "aiConsent.chatMessage" = "Diese Funktion sendet abfragespezifische Daten an OpenAI, um deine Fragen zu beantworten: Händlernamen, Beträge und Daten relevanter Transaktionen sowie den Status zugehöriger Budgets.\n\nDein vollständiger Verlauf, persönliche Notizen und Kontonamen werden nie geteilt. OpenAI verwendet diese Daten nicht zum Trainieren seiner Modelle.";

@@ -69,34 +69,23 @@ import SwiftData
         // Build note from merchant and/or note
         let note = buildNote(merchant: transaction.merchant, note: transaction.note)
 
+        // Account inference (delegated to DraftBuilder for chat reuse)
+        let matchedAccount: Account? = transaction.currency.flatMap {
+            DraftBuilder.findAccount(byCurrency: $0, context: context)
+        }
+
+        // Subcategory inference via MerchantMemory (delegated to DraftBuilder)
+        let matchedSubcategory: Subcategory? = DraftBuilder.suggestSubcategory(
+            merchant: note,
+            context: context
+        )
+
         // Determine which fields need user input
-        var needsUserInput: [String] = ["account", "subcategory"]
-        if transaction.amount == nil {
-            needsUserInput.append("amount")
-        }
-
-        // Try to auto-assign account by currency
-        var matchedAccount: Account?
-        if let currency = transaction.currency {
-            matchedAccount = findAccount(byCurrency: currency, context: context)
-            if matchedAccount != nil {
-                needsUserInput.removeAll { $0 == "account" }
-            }
-        }
-
-        // Merchant Memory: suggest subcategory from note
-        var matchedSubcategory: Subcategory?
-        if !note.trimmingCharacters(in: .whitespaces).isEmpty {
-            let merchantService = MerchantMemoryService(modelContext: context)
-            let suggestion = merchantService.suggest(for: note)
-            switch suggestion {
-            case .suggest(let sub), .autoAssign(let sub):
-                matchedSubcategory = sub
-                needsUserInput.removeAll { $0 == "subcategory" }
-            case .none:
-                break
-            }
-        }
+        let needsUserInput = DraftBuilder.computeNeedsUserInput(
+            hasAmount: transaction.amount != nil,
+            hasAccount: matchedAccount != nil,
+            hasSubcategory: matchedSubcategory != nil
+        )
 
         // Create the draft
         let draft = InboxDraft(
@@ -120,38 +109,6 @@ import SwiftData
         }
 
         return draft
-    }
-
-    /// Finds an account matching the currency code
-    /// Returns nil if no match or multiple matches (ambiguous)
-    private static func findAccount(byCurrency currencyCode: String, context: ModelContext) -> Account? {
-        let normalizedCode = currencyCode.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
-
-        let descriptor = FetchDescriptor<Account>(
-            predicate: #Predicate<Account> { account in
-                account.isArchived == false
-            }
-        )
-
-        let accounts: [Account]
-        do {
-            accounts = try context.fetch(descriptor)
-        } catch {
-            #if DEBUG
-            print("VisionDraftFactory: Error fetching accounts by currency: \(error)")
-            #endif
-            return nil
-        }
-
-        // Find accounts with matching currency
-        let matches = accounts.filter { $0.currencyCode.uppercased() == normalizedCode }
-
-        // Return only if exactly one match
-        if matches.count == 1 {
-            return matches.first
-        }
-
-        return nil
     }
 
     static func mapImageTypeToSource(_ imageType: String) -> DraftSourceType {

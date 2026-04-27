@@ -61,6 +61,9 @@ struct PanelShell: View {
             sheets.showImageSelection = true
         case .presentNewTransaction:
             sheets.showNewTransaction = true
+        case .presentNewTransactionFromChatDraft(let prefill):
+            sessionState.pendingChatDraftPrefill = prefill
+            sessionState.showNewTransactionFromChat = true
         case .presentVoiceEntry:
             sheets.showVoiceRecording = true
         case .presentImageEntry:

@@ -13,6 +13,7 @@ struct ChatSheetView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    @Environment(SessionState.self) private var sessionState
     @State private var viewModel = ChatAssistantViewModel()
     @State private var showAISettingsSheet = false
     @State private var showTopicsSheet = false
@@ -73,6 +74,10 @@ struct ChatSheetView: View {
         .onAppear {
             viewModel.setContext(modelContext)
             TelemetryService.track(.chatSheetOpened)
+            // setContext ya consume el signal persistido en UserDefaults; aquí
+            // cubrimos el caso del signal in-memory llegado mientras el sheet
+            // estaba abierto pero antes del primer .onChange.
+            consumeChatDraftSavedSignal()
         }
         .onDisappear {
             viewModel.persistSession()
@@ -80,6 +85,19 @@ struct ChatSheetView: View {
                 "hadConversation": String(!viewModel.messages.isEmpty)
             ])
         }
+        .onChange(of: sessionState.chatDraftSavedSignal) { _, _ in
+            consumeChatDraftSavedSignal()
+        }
+    }
+
+    private func consumeChatDraftSavedSignal() {
+        guard let signal = sessionState.chatDraftSavedSignal else { return }
+        viewModel.markDraftSaved(
+            messageID: signal.messageID,
+            draftID: signal.draftID,
+            transactionID: signal.transactionID
+        )
+        sessionState.chatDraftSavedSignal = nil
     }
 
     // MARK: - Empty State
@@ -238,7 +256,7 @@ struct ChatSheetView: View {
                         .padding(.bottom, DS.Spacing.xs)
 
                     ForEach(viewModel.messages) { message in
-                        ChatMessageBubble(message: message)
+                        ChatMessageBubble(message: message, viewModel: viewModel)
                             .id(message.id)
                     }
 
@@ -267,6 +285,7 @@ struct ChatSheetView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.md)
             }
+            .scrollDismissesKeyboard(.interactively)
             .onChange(of: viewModel.messages.count) { _, _ in
                 withAnimation {
                     // Si hay turnos completos, scroll hasta el botón de reset (último elemento del stack).

@@ -3440,6 +3440,38 @@
 "chat.noVoiceDetected" = "I didn't detect any audio. Try again.";
 "chat.contextMemory" = "Yala AI remembers %d messages";
 
+// MARK: - Chat Draft (Yala AI Register)
+"chat.draft.chipExpense" = "Expense";
+"chat.draft.chipIncome" = "Income";
+"chat.draft.amountPlaceholder" = "Amount";
+"chat.draft.accountLabel" = "Account";
+"chat.draft.subcategoryLabel" = "Subcategory";
+"chat.draft.dateLabel" = "Date";
+"chat.draft.noteLabel" = "Note";
+"chat.draft.tagsLabel" = "Tags";
+"chat.draft.tagsNone" = "None";
+"chat.draft.savedBadge" = "Saved";
+"chat.draft.discardedBadge" = "Discarded";
+"chat.draft.saveFailedGeneric" = "Couldn't save. Please try again.";
+"chat.draft.saveFailedAccount" = "Couldn't save: the account no longer exists. Edit the entry.";
+"chat.draft.saveFailedSubcategory" = "Couldn't save: the subcategory no longer exists. Edit the entry.";
+"chat.draft.saveFailedAmount" = "Couldn't save: the amount isn't valid.";
+"chat.draft.viewRecordsButton" = "View saved entries";
+"chat.draft.discardButton" = "Discard";
+"chat.draft.selectAccount" = "Select account";
+"chat.draft.selectSubcategory" = "Select subcategory";
+"chat.draft.saveButton" = "Save";
+"chat.draft.editButton" = "Edit";
+"chat.draft.failedSavingLine" = "Couldn't save.";
+"chat.draft.retryButton" = "Retry";
+"chat.draft.noAccountsBlocking" = "Create an account from your profile before registering.";
+"chat.draft.ambiguousCanned" = "Do you want to register an expense or are you asking about your spending?";
+"chat.draft.ambiguousChipRegister" = "Register";
+"chat.draft.ambiguousChipAsk" = "Just ask";
+"chat.draft.confirmRegisterSingular" = "Confirm the entry:";
+"chat.draft.confirmRegisterPlural" = "Confirm the entries:";
+"chat.draft.overflowFormat" = "I detected %d entries. Saving the first %d; send the rest in another message.";
+
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Financial assistant";
 "aiConsent.chatMessage" = "This feature sends data specific to your query to OpenAI to answer your questions: merchant names, amounts and dates of relevant transactions, and related budget status.\n\nYour full history, personal notes, and account names are never shared. OpenAI does not use this data to train its models.";

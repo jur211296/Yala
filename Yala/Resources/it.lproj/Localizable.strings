@@ -3439,6 +3439,38 @@
 "chat.noVoiceDetected" = "Non ho rilevato audio. Riprova.";
 "chat.contextMemory" = "Yala IA ricorda %d messaggi";
 
+// MARK: - Chat Draft (Yala IA Registrar)
+"chat.draft.chipExpense" = "Spesa";
+"chat.draft.chipIncome" = "Entrata";
+"chat.draft.amountPlaceholder" = "Importo";
+"chat.draft.accountLabel" = "Conto";
+"chat.draft.subcategoryLabel" = "Sottocategoria";
+"chat.draft.dateLabel" = "Data";
+"chat.draft.noteLabel" = "Nota";
+"chat.draft.tagsLabel" = "Tag";
+"chat.draft.tagsNone" = "Nessuno";
+"chat.draft.savedBadge" = "Salvato";
+"chat.draft.discardedBadge" = "Scartato";
+"chat.draft.saveFailedGeneric" = "Salvataggio non riuscito. Riprova.";
+"chat.draft.saveFailedAccount" = "Salvataggio non riuscito: il conto non esiste più. Modifica la voce.";
+"chat.draft.saveFailedSubcategory" = "Salvataggio non riuscito: la sottocategoria non esiste più. Modifica la voce.";
+"chat.draft.saveFailedAmount" = "Salvataggio non riuscito: l'importo non è valido.";
+"chat.draft.viewRecordsButton" = "Vedi voci salvate";
+"chat.draft.discardButton" = "Scarta";
+"chat.draft.selectAccount" = "Seleziona conto";
+"chat.draft.selectSubcategory" = "Seleziona sottocategoria";
+"chat.draft.saveButton" = "Salva";
+"chat.draft.editButton" = "Modifica";
+"chat.draft.failedSavingLine" = "Salvataggio non riuscito.";
+"chat.draft.retryButton" = "Riprova";
+"chat.draft.noAccountsBlocking" = "Crea un conto dal profilo prima di registrare.";
+"chat.draft.ambiguousCanned" = "Vuoi registrare una spesa o stai chiedendo informazioni sulle tue spese?";
+"chat.draft.ambiguousChipRegister" = "Registra";
+"chat.draft.ambiguousChipAsk" = "Solo chiedere";
+"chat.draft.confirmRegisterSingular" = "Conferma la registrazione:";
+"chat.draft.confirmRegisterPlural" = "Conferma le registrazioni:";
+"chat.draft.overflowFormat" = "Ho rilevato %d movimenti. Registro i primi %d; invia il resto in un altro messaggio.";
+
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Assistente finanziario";
 "aiConsent.chatMessage" = "Questa funzione invia dati specifici della tua richiesta a OpenAI per rispondere alle tue domande: nomi dei commercianti, importi e date delle transazioni rilevanti e stato dei budget correlati.\n\nLa tua cronologia completa, le note personali e i nomi dei conti non vengono mai condivisi. OpenAI non utilizza questi dati per addestrare i suoi modelli.";

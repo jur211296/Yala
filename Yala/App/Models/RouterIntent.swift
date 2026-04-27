@@ -42,6 +42,7 @@ enum RouterIntent: Identifiable, Equatable {
     case presentInboxSheet
     case presentSharedImage(URL)
     case presentNewTransaction
+    case presentNewTransactionFromChatDraft(ChatDraftPrefill)
     case presentVoiceEntry
     case presentImageEntry
     case presentUpgradeSheet(UpgradeFeature)
@@ -92,6 +93,7 @@ extension RouterIntent {
             return .contentView
 
         case .presentInboxSheet, .presentSharedImage, .presentNewTransaction,
+             .presentNewTransactionFromChatDraft,
              .presentVoiceEntry, .presentImageEntry, .presentUpgradeSheet,
              .requestAIConsent:
             return .panel
@@ -118,8 +120,9 @@ extension RouterIntent {
         case .showInboxAlert, .presentSharedImage, .presentDowngradeResolution,
              .presentTrialExpired, .requestAIConsent:
             return .high
-        case .presentInboxSheet, .presentNewTransaction, .presentVoiceEntry,
-             .presentImageEntry, .presentUpgradeSheet, .presentMilestoneUpgrade,
+        case .presentInboxSheet, .presentNewTransaction, .presentNewTransactionFromChatDraft,
+             .presentVoiceEntry, .presentImageEntry, .presentUpgradeSheet,
+             .presentMilestoneUpgrade,
              .presentFullModeActivation, .navigate,
              .presentGroupInviteOnboarding, .presentGroupReconnect,
              .presentTrialOffer, .autoOpenBudgetEditor, .autoOpenScheduledEditor,
@@ -142,6 +145,8 @@ extension RouterIntent {
             return "sharedImage:\(url.lastPathComponent)"
         case .presentNewTransaction:
             return "newTransaction"
+        case .presentNewTransactionFromChatDraft:
+            return "newTransactionFromChatDraft"
         case .presentVoiceEntry:
             return "voiceEntry"
         case .presentImageEntry:

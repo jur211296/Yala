@@ -53,6 +53,7 @@ struct NewTransactionView: View {
     let prefillAccountID: PersistentIdentifier?
     let prefillCategoryID: PersistentIdentifier?
     let prefillSubcategoryName: String?
+    let prefillFromChatDraft: ChatDraftPrefill?
 
     // Transaction being edited (if any)
     let transactionToEdit: TransactionItem?
@@ -61,11 +62,13 @@ struct NewTransactionView: View {
         prefillAccountID: PersistentIdentifier? = nil,
         prefillCategoryID: PersistentIdentifier? = nil,
         prefillSubcategoryName: String? = nil,
+        prefillFromChatDraft: ChatDraftPrefill? = nil,
         transactionToEdit: TransactionItem? = nil
     ) {
         self.prefillAccountID = prefillAccountID
         self.prefillCategoryID = prefillCategoryID
         self.prefillSubcategoryName = prefillSubcategoryName
+        self.prefillFromChatDraft = prefillFromChatDraft
         self.transactionToEdit = transactionToEdit
     }
 
@@ -1182,6 +1185,18 @@ struct NewTransactionView: View {
             } else {
                 SetupChecklistManager.shared.markCompleted(.firstExpense)
             }
+
+            // Si la NTV se abrió desde un draft del chat, broadcastear el
+            // signal para que ChatAssistantViewModel marque el card como
+            // `.saved` con el ID de la transacción real.
+            if let chatDraft = prefillFromChatDraft, transactionToEdit == nil {
+                SessionState.shared.chatDraftSavedSignal = SessionState.ChatDraftSavedSignal(
+                    messageID: chatDraft.originMessageID,
+                    draftID: chatDraft.originDraftID,
+                    transactionID: first.persistentModelID
+                )
+            }
+
             showTransactionSuccess()
         }
     }
@@ -1345,6 +1360,16 @@ struct NewTransactionView: View {
                 viewModel.splitDivisor = tx.splitDivisor
             }
 
+            return
+        }
+
+        // Chat draft prefill takes precedence (carries amount, date, note, IDs)
+        if let chatDraft = prefillFromChatDraft {
+            viewModel.prefill(
+                fromChatDraft: chatDraft,
+                accounts: viewModel.accounts,
+                subcategories: allSubcategories
+            )
             return
         }
 
