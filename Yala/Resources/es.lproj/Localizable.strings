@@ -2187,8 +2187,8 @@
 "tips.export.detail" = "Descarga tus gastos en CSV o Excel desde Ajustes > Exportar. Ideal para análisis en hojas de cálculo o para tus archivos.";
 "tips.faceID.title" = "Protege con Face ID";
 "tips.faceID.detail" = "Activa el bloqueo biométrico en Ajustes > Seguridad. Puedes elegir activarlo al salir de la app o después de un tiempo.";
-"tips.siri.title" = "Nuevo: registro con Siri";
-"tips.siri.detail" = "Di: \"Crea un registro en Yala\"";
+"tips.siri.title" = "Anota gastos por voz";
+"tips.siri.detail" = "Di: \"Anota un gasto en Yala\" y dicta el detalle";
 "tips.siri.close" = "Cerrar sugerencia de Siri";
 
 // MARK: - TipKit (guías contextuales)
@@ -2471,9 +2471,9 @@
 "faq.cancelSub.a" = "Puedes administrar o cancelar tu suscripción en cualquier momento desde Ajustes > Suscripción > Administrar en App Store. Tu acceso Pro continúa hasta el final del periodo pagado.";
 
 // MARK: - Shortcuts (App Intents)
-"shortcut.quickExpense.title" = "Registro rápido";
+"shortcut.quickExpense.title" = "Nuevo registro";
 "shortcut.quickExpense.description" = "Crea un nuevo registro en Yala con monto, cuenta, categoría y etiqueta.";
-"shortcut.quickExpense.shortTitle" = "Registro rápido";
+"shortcut.quickExpense.shortTitle" = "Nuevo registro";
 
 // Parameters
 "shortcut.param.type" = "Tipo";
@@ -2516,22 +2516,22 @@
 "shortcut.success.expenseDetail %@ %@ %@ %@ %@" = "Registrado en %@: %@ - %@ - %@ - %@";
 
 // Voice Entry Shortcut
-"shortcut.voiceEntry.title" = "Entrada por voz";
+"shortcut.voiceEntry.title" = "Registrar por voz";
 "shortcut.voiceEntry.description" = "Abre la grabación de voz para registrar gastos dictando";
-"shortcut.voiceEntry.shortTitle" = "Registro por voz";
+"shortcut.voiceEntry.shortTitle" = "Registrar por voz";
 "shortcut.voiceEntry.opening" = "Abriendo registro por voz...";
 
 // Image Entry Shortcut
-"shortcut.imageEntry.title" = "Entrada por imagen";
+"shortcut.imageEntry.title" = "Registrar por imagen";
 "shortcut.imageEntry.description" = "Abre el selector de imágenes para registrar gastos desde fotos";
-"shortcut.imageEntry.shortTitle" = "Registro por imagen";
+"shortcut.imageEntry.shortTitle" = "Registrar por imagen";
 "shortcut.imageEntry.opening" = "Abriendo registro por imagen...";
 
 // MARK: - Apple Pay Intent
 
-"shortcut.applePay.title" = "Registro Apple Pay";
+"shortcut.applePay.title" = "Registrar pago de Apple Pay";
 "shortcut.applePay.description" = "Crea un borrador en la bandeja de entrada desde un pago con Apple Pay";
-"shortcut.applePay.shortTitle" = "Apple Pay";
+"shortcut.applePay.shortTitle" = "Registrar pago de Apple Pay";
 "shortcut.applePay.param.amount" = "Monto";
 "shortcut.applePay.param.amount.description" = "El monto de la transacción (de Wallet)";
 "shortcut.applePay.param.merchant" = "Comercio";
@@ -2545,9 +2545,9 @@
 // MARK: - Automation Entry Shortcut
 
 // MARK: - Siri Natural Language Entry
-"shortcut.siriNatural.title" = "Registro con Siri";
+"shortcut.siriNatural.title" = "Anotar con Siri";
 "shortcut.siriNatural.description" = "Registra gastos con lenguaje natural usando Siri";
-"shortcut.siriNatural.shortTitle" = "Registro con Siri";
+"shortcut.siriNatural.shortTitle" = "Anotar con Siri";
 "shortcut.siriNatural.param.text" = "Texto";
 "shortcut.siriNatural.dialog.askText" = "¿Qué quieres registrar?";
 "shortcut.siriNatural.error.noText" = "No se proporcionó texto para registrar.";

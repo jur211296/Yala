@@ -260,9 +260,7 @@ struct QuickExpenseIntent: AppIntent {
 
     private func getTransactionType() async throws -> TransactionTypeAppEnum {
         // In expenses-only mode, always use expense
-        let appGroupID = Bundle.main.object(forInfoDictionaryKey: "APP_GROUP_IDENTIFIER") as? String
-            ?? "group.com.jurgenschmidt.yala"
-        if UserDefaults(suiteName: appGroupID)?.bool(forKey: "expensesOnlyMode") == true {
+        if UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.bool(forKey: "expensesOnlyMode") == true {
             return .expense
         }
         if let existingType = transactionType {
@@ -617,15 +615,9 @@ struct VoiceEntryIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        guard UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) else {
-            throw VoiceImageIntentError.consentRequired
-        }
-
-        let urlScheme = Bundle.main.object(forInfoDictionaryKey: "URL_SCHEME") as? String ?? "yala"
-        if let url = URL(string: "\(urlScheme)://voice-entry") {
+        if let url = URL(string: "\(WidgetURLHelper.urlScheme)://voice-entry") {
             await UIApplication.shared.open(url)
         }
-
         return .result()
     }
 }
@@ -641,29 +633,10 @@ struct ImageEntryIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        guard UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) else {
-            throw VoiceImageIntentError.consentRequired
-        }
-
-        let urlScheme = Bundle.main.object(forInfoDictionaryKey: "URL_SCHEME") as? String ?? "yala"
-        if let url = URL(string: "\(urlScheme)://image-entry") {
+        if let url = URL(string: "\(WidgetURLHelper.urlScheme)://image-entry") {
             await UIApplication.shared.open(url)
         }
-
         return .result()
-    }
-}
-
-// MARK: - Voice/Image Intent Errors
-
-enum VoiceImageIntentError: Swift.Error, CustomLocalizedStringResourceConvertible {
-    case consentRequired
-
-    var localizedStringResource: LocalizedStringResource {
-        switch self {
-        case .consentRequired:
-            return "shortcut.error.consentRequired"
-        }
     }
 }
 

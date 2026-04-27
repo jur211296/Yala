@@ -2188,8 +2188,8 @@
 "tips.export.detail" = "Téléchargez vos dépenses en CSV ou Excel depuis Réglages > Exporter. Idéal pour l'analyse en tableur ou vos archives.";
 "tips.faceID.title" = "Protégez avec Face ID";
 "tips.faceID.detail" = "Activez le verrouillage biométrique dans Réglages > Sécurité. Vous pouvez choisir de l'activer en quittant l'app ou après un délai.";
-"tips.siri.title" = "Nouveau : enregistrer avec Siri";
-"tips.siri.detail" = "Dis : « Crée un enregistrement dans Yala »";
+"tips.siri.title" = "Notez vos dépenses par voix";
+"tips.siri.detail" = "Dites : \"Note une dépense dans Yala\" puis dictez le détail";
 "tips.siri.close" = "Fermer la suggestion Siri";
 
 // MARK: - TipKit (guides contextuels)
@@ -2283,9 +2283,9 @@
 "faq.cancelSub.a" = "Vous pouvez gérer ou annuler votre abonnement à tout moment depuis Réglages > Abonnement > Gérer dans l'App Store. Votre accès Pro continue jusqu'à la fin de la période payée.";
 
 // MARK: - Shortcuts (App Intents)
-"shortcut.quickExpense.title" = "Entrée rapide";
+"shortcut.quickExpense.title" = "Nouvelle entrée";
 "shortcut.quickExpense.description" = "Créez une nouvelle entrée dans Yala avec montant, compte, catégorie et tag.";
-"shortcut.quickExpense.shortTitle" = "Entrée rapide";
+"shortcut.quickExpense.shortTitle" = "Nouvelle entrée";
 
 // Parameters
 "shortcut.param.type" = "Type";
@@ -2328,22 +2328,22 @@
 "shortcut.success.expenseDetail %@ %@ %@ %@ %@" = "Enregistré dans %@ : %@ - %@ - %@ - %@";
 
 // Voice Entry Shortcut
-"shortcut.voiceEntry.title" = "Saisie vocale";
+"shortcut.voiceEntry.title" = "Enregistrer par voix";
 "shortcut.voiceEntry.description" = "Ouvre l'enregistrement vocal pour dicter des dépenses";
-"shortcut.voiceEntry.shortTitle" = "Saisie vocale";
+"shortcut.voiceEntry.shortTitle" = "Enregistrer par voix";
 "shortcut.voiceEntry.opening" = "Ouverture de la saisie vocale...";
 
 // Image Entry Shortcut
-"shortcut.imageEntry.title" = "Saisie par image";
+"shortcut.imageEntry.title" = "Enregistrer par image";
 "shortcut.imageEntry.description" = "Ouvre le sélecteur d'images pour enregistrer des dépenses depuis des photos";
-"shortcut.imageEntry.shortTitle" = "Saisie par image";
+"shortcut.imageEntry.shortTitle" = "Enregistrer par image";
 "shortcut.imageEntry.opening" = "Ouverture de la saisie par image...";
 
 // MARK: - Apple Pay Intent
 
-"shortcut.applePay.title" = "Saisie Apple Pay";
+"shortcut.applePay.title" = "Enregistrer un paiement Apple Pay";
 "shortcut.applePay.description" = "Crée un brouillon dans la boîte de réception à partir d'un paiement Apple Pay";
-"shortcut.applePay.shortTitle" = "Apple Pay";
+"shortcut.applePay.shortTitle" = "Enregistrer un paiement Apple Pay";
 "shortcut.applePay.param.amount" = "Montant";
 "shortcut.applePay.param.amount.description" = "Le montant de la transaction (de Wallet)";
 "shortcut.applePay.param.merchant" = "Commerçant";
@@ -2357,9 +2357,9 @@
 // Automation Shortcut
 
 // MARK: - Siri Natural Language Entry
-"shortcut.siriNatural.title" = "Saisie avec Siri";
+"shortcut.siriNatural.title" = "Noter avec Siri";
 "shortcut.siriNatural.description" = "Enregistre des dépenses en langage naturel avec Siri";
-"shortcut.siriNatural.shortTitle" = "Saisie avec Siri";
+"shortcut.siriNatural.shortTitle" = "Noter avec Siri";
 "shortcut.siriNatural.param.text" = "Texte";
 "shortcut.siriNatural.dialog.askText" = "Qu'est-ce que tu veux enregistrer ?";
 "shortcut.siriNatural.error.noText" = "Aucun texte fourni pour l'enregistrement.";

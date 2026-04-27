@@ -2189,8 +2189,8 @@
 "tips.export.detail" = "Download your expenses in CSV or Excel from Settings > Export. Great for spreadsheet analysis or for your records.";
 "tips.faceID.title" = "Protect with Face ID";
 "tips.faceID.detail" = "Enable biometric lock in Settings > Security. You can choose to activate it when leaving the app or after a set time.";
-"tips.siri.title" = "New: record with Siri";
-"tips.siri.detail" = "Say: \"Create a record in Yala\"";
+"tips.siri.title" = "Note expenses by voice";
+"tips.siri.detail" = "Say: \"Note an expense in Yala\" then dictate the detail";
 "tips.siri.close" = "Close Siri suggestion";
 
 // MARK: - TipKit (contextual guides)
@@ -2284,9 +2284,9 @@
 "faq.cancelSub.a" = "You can manage or cancel your subscription anytime from Settings > Subscription > Manage in App Store. Your Pro access continues until the end of the paid period.";
 
 // MARK: - Shortcuts (App Intents)
-"shortcut.quickExpense.title" = "Quick entry";
+"shortcut.quickExpense.title" = "New entry";
 "shortcut.quickExpense.description" = "Create a new entry in Yala with amount, account, category and tag.";
-"shortcut.quickExpense.shortTitle" = "Quick entry";
+"shortcut.quickExpense.shortTitle" = "New entry";
 
 // Parameters
 "shortcut.param.type" = "Type";
@@ -2329,22 +2329,22 @@
 "shortcut.success.expenseDetail %@ %@ %@ %@ %@" = "Recorded in %@: %@ - %@ - %@ - %@";
 
 // Voice Entry Shortcut
-"shortcut.voiceEntry.title" = "Voice Entry";
+"shortcut.voiceEntry.title" = "Record by voice";
 "shortcut.voiceEntry.description" = "Opens voice recording to record expenses by dictation";
-"shortcut.voiceEntry.shortTitle" = "Voice Entry";
+"shortcut.voiceEntry.shortTitle" = "Record by voice";
 "shortcut.voiceEntry.opening" = "Opening voice entry...";
 
 // Image Entry Shortcut
-"shortcut.imageEntry.title" = "Image Entry";
+"shortcut.imageEntry.title" = "Record by image";
 "shortcut.imageEntry.description" = "Opens image picker to record expenses from photos";
-"shortcut.imageEntry.shortTitle" = "Image Entry";
+"shortcut.imageEntry.shortTitle" = "Record by image";
 "shortcut.imageEntry.opening" = "Opening image entry...";
 
 // MARK: - Apple Pay Intent
 
-"shortcut.applePay.title" = "Apple Pay Entry";
+"shortcut.applePay.title" = "Record Apple Pay payment";
 "shortcut.applePay.description" = "Creates a draft in your inbox from an Apple Pay transaction";
-"shortcut.applePay.shortTitle" = "Apple Pay";
+"shortcut.applePay.shortTitle" = "Record Apple Pay payment";
 "shortcut.applePay.param.amount" = "Amount";
 "shortcut.applePay.param.amount.description" = "The transaction amount (from Wallet)";
 "shortcut.applePay.param.merchant" = "Merchant";
@@ -2358,9 +2358,9 @@
 // MARK: - Automation Entry Shortcut
 
 // MARK: - Siri Natural Language Entry
-"shortcut.siriNatural.title" = "Siri Entry";
+"shortcut.siriNatural.title" = "Note with Siri";
 "shortcut.siriNatural.description" = "Record expenses using natural language with Siri";
-"shortcut.siriNatural.shortTitle" = "Siri Entry";
+"shortcut.siriNatural.shortTitle" = "Note with Siri";
 "shortcut.siriNatural.param.text" = "Text";
 "shortcut.siriNatural.dialog.askText" = "What do you want to record?";
 "shortcut.siriNatural.error.noText" = "No text was provided to record.";

@@ -313,10 +313,8 @@ final class AppBootstrapper {
 
     // MARK: - Control Center Action Handling
 
-    /// App Group identifier from Info.plist
-    private var appGroupID: String {
-        Bundle.main.object(forInfoDictionaryKey: "APP_GROUP_IDENTIFIER") as? String ?? "group.com.jurgenschmidt.yala"
-    }
+    /// App Group identifier from shared helper.
+    private var appGroupID: String { WidgetURLHelper.appGroupIdentifier }
 
     /// Checks for and processes pending Control Center widget actions
     private func checkForPendingControlAction() {
@@ -399,10 +397,8 @@ final class AppBootstrapper {
 
     // MARK: - Deep Link Handling
 
-    /// URL Scheme read from Info.plist (set via Build Settings)
-    private var urlScheme: String {
-        Bundle.main.object(forInfoDictionaryKey: "URL_SCHEME") as? String ?? "yala"
-    }
+    /// URL Scheme from shared helper.
+    private var urlScheme: String { WidgetURLHelper.urlScheme }
 
     /// Procesa URLs entrantes (deep links y universal links)
     func handleIncomingURL(_ url: URL) {

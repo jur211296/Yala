@@ -76,17 +76,19 @@ struct YalaShortcuts: AppShortcutsProvider {
             systemImageName: "apple.logo"
         )
 
+        // NOTA: Apple App Intents NO permite parámetros String en phrases (solo AppEntity/AppEnum).
+        // Por eso las phrases son sin slot — siempre 2 turnos: frase de invocación, luego pregunta del texto.
         AppShortcut(
             intent: SiriNaturalEntryIntent(),
             phrases: [
                 // Spanish
-                "Crea un registro en \(.applicationName)",
                 "Anota un gasto en \(.applicationName)",
-                "Guarda un gasto en \(.applicationName)",
+                "Apunta un gasto en \(.applicationName)",
+                "Registra con Siri en \(.applicationName)",
                 // English
-                "Create an entry in \(.applicationName)",
+                "Note an expense in \(.applicationName)",
                 "Log an expense in \(.applicationName)",
-                "Save an expense in \(.applicationName)"
+                "Record with Siri in \(.applicationName)"
             ],
             shortTitle: "shortcut.siriNatural.shortTitle",
             systemImageName: "text.bubble.fill"
