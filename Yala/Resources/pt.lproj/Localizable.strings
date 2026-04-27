@@ -2316,7 +2316,7 @@
 "shortcut.applePay.success %@ %@" = "Rascunho criado: %@ em %@. Verifique sua caixa de entrada.";
 
 // Summary localizado: la key es el literal inglés del macro Summary("...") con \(\.$var) → ${var}.
-"Record an expense of ${amount} at ${merchant}" = "Registrar uma despesa de ${amount} em ${merchant}";
+"Record from Apple Pay the fields amount: ${amount} and merchant: ${merchant}" = "Registrar do Apple Pay os campos valor: ${amount} e comerciante: ${merchant}";
 
 // Automation Shortcut
 

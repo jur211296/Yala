@@ -85,7 +85,7 @@ struct ApplePayTransactionIntent: AppIntent {
     // MARK: - Parameter Summary (shows configurable fields in Shortcuts)
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Record an expense of \(\.$amount) at \(\.$merchant)")
+        Summary("Record from Apple Pay the fields amount: \(\.$amount) and merchant: \(\.$merchant)")
     }
 
     init() {}
