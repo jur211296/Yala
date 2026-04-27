@@ -85,22 +85,16 @@ struct ApplePayTransactionIntent: AppIntent {
     // MARK: - Parameter Summary (shows configurable fields in Shortcuts)
 
     static var parameterSummary: some ParameterSummary {
-        Summary("shortcut.applePay.summaryTitle \(\.$amount) \(\.$name)") {
-            \.$merchant
-        }
+        Summary("Record an expense of \(\.$amount) at \(\.$merchant)")
     }
 
     init() {}
 
-    init(amount: String?, merchant: String?, name: String? = nil) {
-        self.amount = amount
-        self.merchant = merchant
-        self.name = name
-    }
-
     // MARK: - Parameters
-    // Parameters match Wallet Transaction output fields
-    // Using inputConnectionBehavior to allow connection to Wallet transaction outputs
+    // Solo `amount` lleva inputConnectionBehavior — iOS auto-conecta el primer
+    // String? con ese trait al primer output del trigger Wallet. Aplicarlo a
+    // varios parameters hace que el matching falle silenciosamente, así que
+    // `merchant` se conecta manualmente desde el editor de Atajos.
 
     @Parameter(
         title: "shortcut.applePay.param.amount",
@@ -111,47 +105,21 @@ struct ApplePayTransactionIntent: AppIntent {
 
     @Parameter(
         title: "shortcut.applePay.param.merchant",
-        description: "shortcut.applePay.param.merchant.description",
-        inputConnectionBehavior: .connectToPreviousIntentResult
+        description: "shortcut.applePay.param.merchant.description"
     )
     var merchant: String?
-
-    @Parameter(
-        title: "shortcut.applePay.param.name",
-        description: "shortcut.applePay.param.name.description",
-        inputConnectionBehavior: .connectToPreviousIntentResult
-    )
-    var name: String?
 
     // MARK: - Perform
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
         TelemetryService.track(.intentInvoked, parameters: ["intent_type": "applePay"])
-        // Parse amount and currency from Wallet text (e.g., "$32.04", "S/ 25.90")
-        guard let amountString = amount,
-              let parsedResult = parseAmountAndCurrency(from: amountString) else {
+
+        guard let amountString = amount else {
             TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "no_amount"])
             return .result(dialog: "shortcut.applePay.error.noAmount", view: EmptyView())
         }
 
-        let finalAmount = parsedResult.amount
-        let detectedCurrency = parsedResult.currency
-
-        // Use "name" if available (cleaner), otherwise "merchant"
-        let finalNote: String
-        if let nameValue = name, !nameValue.trimmingCharacters(in: .whitespaces).isEmpty {
-            finalNote = nameValue
-        } else if let merchantValue = merchant, !merchantValue.trimmingCharacters(in: .whitespaces).isEmpty {
-            finalNote = merchantValue
-        } else {
-            finalNote = ""
-        }
-
-        // Use current date (when automation runs)
-        let effectiveDate = Date.now
-
-        // Create ModelContainer
         let container: ModelContainer
         do {
             container = try ModelContainer(
@@ -166,6 +134,16 @@ struct ApplePayTransactionIntent: AppIntent {
         }
 
         let context = container.mainContext
+
+        guard let parsedResult = parseAmountAndCurrency(from: amountString, context: context) else {
+            TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "no_amount"])
+            return .result(dialog: "shortcut.applePay.error.noAmount", view: EmptyView())
+        }
+
+        let finalAmount = parsedResult.amount
+        let detectedCurrency = parsedResult.currency
+        let finalNote = merchant?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let effectiveDate = Date.now
 
         // Guard: no accounts configured yet
         let accountCount: Int
@@ -223,8 +201,8 @@ struct ApplePayTransactionIntent: AppIntent {
             sourceType: .applePay,
             rawText: amount, // Store original amount string for reference
             evidence: finalNote.isEmpty ? nil : finalNote,
-            confidenceAmount: 1.0, // Amount from Apple Pay is always accurate
-            confidenceDate: 1.0, // Date is when automation runs
+            confidenceAmount: 1.0,
+            confidenceDate: 1.0,
             confidenceMerchant: finalNote.isEmpty ? nil : 1.0,
             confidenceSubcategory: subcategoryConfidence,
             needsUserInput: needsUserInput
@@ -275,7 +253,7 @@ struct ApplePayTransactionIntent: AppIntent {
     /// Símbolos ambiguos (`$` para USD/ARS/CLP/MXN, `kr` para NOK/SEK/DKK) se resuelven
     /// con la currency del lastUsedAccount cuando existe; sin él, fallback al símbolo default.
     @MainActor
-    private func parseAmountAndCurrency(from text: String) -> (amount: Double, currency: String?)? {
+    private func parseAmountAndCurrency(from text: String, context: ModelContext) -> (amount: Double, currency: String?)? {
         // Symbols ordered by priority (más específicos primero — "MX$" antes de "$")
         let prefixedSymbols: [(symbol: String, code: String)] = [
             ("MX$", "MXN"), ("COP$", "COP"), ("R$", "BRL"),
@@ -310,7 +288,7 @@ struct ApplePayTransactionIntent: AppIntent {
         // Ambiguous symbols ($ y kr): override con currency del lastUsedAccount si existe.
         if detectedSymbol == "$" || detectedSymbol == "kr" {
             if let lastUsedID = LastUsedAccountStore.read(),
-               let accountCurrency = Self.currencyOfAccount(shortcutID: lastUsedID) {
+               let accountCurrency = Self.currencyOfAccount(shortcutID: lastUsedID, context: context) {
                 detectedCurrency = accountCurrency
             }
         }
@@ -344,18 +322,8 @@ struct ApplePayTransactionIntent: AppIntent {
 
     /// Lookup de currencyCode por shortcutID. Usado para desambiguar `$` y `kr`.
     @MainActor
-    fileprivate static func currencyOfAccount(shortcutID: String) -> String? {
+    fileprivate static func currencyOfAccount(shortcutID: String, context: ModelContext) -> String? {
         guard UUID(uuidString: shortcutID) != nil else { return nil }
-        let container: ModelContainer
-        do {
-            container = try ModelContainer(
-                for: SwiftDataConfiguration.personalSchema,
-                configurations: SwiftDataConfiguration.personalConfiguration
-            )
-        } catch {
-            return nil
-        }
-        let context = container.mainContext
         let descriptor = FetchDescriptor<Account>()
         do {
             let all = try context.fetch(descriptor)

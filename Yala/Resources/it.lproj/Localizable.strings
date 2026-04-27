@@ -2308,17 +2308,17 @@
 // MARK: - Apple Pay Intent
 
 "shortcut.applePay.title" = "Registra pagamento Apple Pay";
-"shortcut.applePay.description" = "Crea una bozza nella posta in arrivo da un pagamento Apple Pay";
+"shortcut.applePay.description" = "Crea una bozza nella posta in arrivo da un pagamento Apple Pay. Dopo il trigger di Wallet, collega Importo → importo e Esercente → esercente.";
 "shortcut.applePay.shortTitle" = "Registra pagamento Apple Pay";
 "shortcut.applePay.param.amount" = "Importo";
 "shortcut.applePay.param.amount.description" = "L'importo della transazione (da Wallet)";
 "shortcut.applePay.param.merchant" = "Esercente";
 "shortcut.applePay.param.merchant.description" = "Il nome dell'esercente";
-"shortcut.applePay.param.name" = "Nome";
-"shortcut.applePay.param.name.description" = "Nome pulito dell'esercente (da Wallet)";
-"shortcut.applePay.summaryTitle" = "Registra %1$@ — %2$@";
 "shortcut.applePay.error.noAmount" = "L'importo è obbligatorio. Assegna l'importo della transazione da Wallet.";
 "shortcut.applePay.success %@ %@" = "Bozza creata: %@ presso %@. Controlla la posta in arrivo.";
+
+// Summary localizado: la key es el literal inglés del macro Summary("...") con \(\.$var) → ${var}.
+"Record an expense of ${amount} at ${merchant}" = "Registra una spesa di ${amount} presso ${merchant}";
 
 // Automation Shortcut
 

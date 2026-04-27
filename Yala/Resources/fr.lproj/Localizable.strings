@@ -2308,17 +2308,17 @@
 // MARK: - Apple Pay Intent
 
 "shortcut.applePay.title" = "Enregistrer un paiement Apple Pay";
-"shortcut.applePay.description" = "Crée un brouillon dans la boîte de réception à partir d'un paiement Apple Pay";
+"shortcut.applePay.description" = "Crée un brouillon dans la boîte de réception à partir d'un paiement Apple Pay. Après le déclencheur Wallet, connecte Montant → montant et Commerçant → commerçant.";
 "shortcut.applePay.shortTitle" = "Enregistrer un paiement Apple Pay";
 "shortcut.applePay.param.amount" = "Montant";
 "shortcut.applePay.param.amount.description" = "Le montant de la transaction (de Wallet)";
 "shortcut.applePay.param.merchant" = "Commerçant";
 "shortcut.applePay.param.merchant.description" = "Le nom du commerçant";
-"shortcut.applePay.param.name" = "Nom";
-"shortcut.applePay.param.name.description" = "Nom propre du commerçant (de Wallet)";
-"shortcut.applePay.summaryTitle" = "Enregistrer %1$@ — %2$@";
 "shortcut.applePay.error.noAmount" = "Le montant est requis. Assignez le montant de la transaction Wallet.";
 "shortcut.applePay.success %@ %@" = "Brouillon créé : %@ chez %@. Vérifiez dans votre boîte de réception.";
+
+// Summary localizado: la key es el literal inglés del macro Summary("...") con \(\.$var) → ${var}.
+"Record an expense of ${amount} at ${merchant}" = "Enregistrer une dépense de ${amount} chez ${merchant}";
 
 // Automation Shortcut
 
