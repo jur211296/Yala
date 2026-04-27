@@ -82,6 +82,20 @@
 			);
 			target = 96CFFF922EC3CF06002AC31C /* Yala */;
 		};
+		A1B2C3D4E5F60123456789AB /* Exceptions for "YalaWidgets" folder in "Yala" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Utils/WidgetURLHelper.swift,
+			);
+			target = 96CFFF922EC3CF06002AC31C /* Yala */;
+		};
+		A1B2C3D4E5F60123456789CD /* Exceptions for "YalaWidgets" folder in "YalaShare" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Utils/WidgetURLHelper.swift,
+			);
+			target = CFADC3B72F2A42810040D198 /* YalaShare */;
+		};
 		CFA3952D2F33BC1500ED1D89 /* Exceptions for "Yala" folder in "YalaWidgetsExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -102,20 +116,6 @@
 				Info.plist,
 			);
 			target = CFB1B6AB2F30EC930083BC08 /* YalaWidgetsExtension */;
-		};
-		A1B2C3D4E5F60123456789AB /* Exceptions for "YalaWidgets" folder in "Yala" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Utils/WidgetURLHelper.swift,
-			);
-			target = 96CFFF922EC3CF06002AC31C /* Yala */;
-		};
-		A1B2C3D4E5F60123456789CD /* Exceptions for "YalaWidgets" folder in "YalaShare" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Utils/WidgetURLHelper.swift,
-			);
-			target = CFADC3B72F2A42810040D198 /* YalaShare */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -150,9 +150,9 @@
 		CFB1B6B22F30EC930083BC08 /* YalaWidgets */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				CFB1B6C62F30EC940083BC08 /* Exceptions for "YalaWidgets" folder in "YalaWidgetsExtension" target */,
 				A1B2C3D4E5F60123456789AB /* Exceptions for "YalaWidgets" folder in "Yala" target */,
 				A1B2C3D4E5F60123456789CD /* Exceptions for "YalaWidgets" folder in "YalaShare" target */,
+				CFB1B6C62F30EC940083BC08 /* Exceptions for "YalaWidgets" folder in "YalaWidgetsExtension" target */,
 			);
 			path = YalaWidgets;
 			sourceTree = "<group>";
