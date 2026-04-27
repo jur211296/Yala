@@ -3596,3 +3596,5 @@
 "shortcut.snippet.draftBadge" = "Rascunho — Revise na sua caixa";
 "shortcut.quickExpense.summaryTitle" = "Registrar %1$@ em %2$@";
 "shortcut.success.short" = "Registrado %1$@ em %2$@";
+"shortcut.siriNatural.error.parsingFailedHelp" = "Não entendi. Tente: 'Anota 50 reais em café' ou 'Registra 25 reais em almoço'";
+"shortcut.siriNatural.success.partial" = "Registrei %1$lld de %2$lld (alguns não entendi). Verifique sua caixa.";

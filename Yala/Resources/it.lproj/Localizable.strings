@@ -3598,3 +3598,5 @@
 "shortcut.snippet.draftBadge" = "Bozza — Rivedi nella casella";
 "shortcut.quickExpense.summaryTitle" = "Registra %1$@ in %2$@";
 "shortcut.success.short" = "Registrato %1$@ in %2$@";
+"shortcut.siriNatural.error.parsingFailedHelp" = "Non ho capito. Prova: 'Annota 50 euro per il caffè' o 'Registra 25 euro per il pranzo'";
+"shortcut.siriNatural.success.partial" = "Registrati %1$lld su %2$lld (alcuni non capiti). Controlla la casella.";

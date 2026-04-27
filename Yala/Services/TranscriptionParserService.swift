@@ -182,6 +182,16 @@ final class TranscriptionParserService {
         - Si hay subcategoría sin merchant específico: note = "". Ej: "gasté en restaurantes" → subcategoryHint: "Restaurantes", note: ""
         - Ej: "gasté en almuerzo" → subcategoryHint: "Restaurantes", note: "almuerzo"
 
+        Ejemplos few-shot (F7):
+        Input: "Anota 50 soles en café"
+        Output: {"transactions":[{"amount":50,"date":"\(Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash)))","note":"café","isExpense":true,"subcategoryHint":"Cafetería","tagHints":[],"currencyHint":"PEN","confidence":{"amount":1.0,"date":0.0,"merchant":0.9,"subcategory":0.85,"tags":0.0}}]}
+
+        Input: "I spent 25 dollars on lunch"
+        Output: {"transactions":[{"amount":25,"date":"\(Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash)))","note":"lunch","isExpense":true,"subcategoryHint":"Restaurants","tagHints":[],"currencyHint":"USD","confidence":{"amount":1.0,"date":0.0,"merchant":0.9,"subcategory":0.85,"tags":0.0}}]}
+
+        Input: "30 en almuerzo y 15 en estacionamiento"
+        Output: {"transactions":[{"amount":30,"date":null,"note":"almuerzo","isExpense":true,"subcategoryHint":"Restaurantes","tagHints":[],"currencyHint":null,"confidence":{"amount":1.0,"date":0.0,"merchant":0.9,"subcategory":0.85,"tags":0.0}},{"amount":15,"date":null,"note":"estacionamiento","isExpense":true,"subcategoryHint":"Transporte","tagHints":[],"currencyHint":null,"confidence":{"amount":1.0,"date":0.0,"merchant":0.9,"subcategory":0.7,"tags":0.0}}]}
+
         Responde ÚNICAMENTE con este JSON (sin ```json ni nada más):
         {
           "transactions": [
@@ -262,7 +272,7 @@ final class TranscriptionParserService {
                 .system(.init(content: .textContent(prompt))),
                 .user(.init(content: .string(trimmedText)))
             ],
-            model: .gpt4_1_nano,
+            model: .gpt4_1_mini,  // F7: upgrade nano→mini para mejor parsing structured ES/EN
             temperature: 0.1  // Low temperature for consistent parsing
         )
 

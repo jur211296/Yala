@@ -3599,3 +3599,5 @@
 "shortcut.snippet.draftBadge" = "Draft — Review in your inbox";
 "shortcut.quickExpense.summaryTitle" = "Record %1$@ in %2$@";
 "shortcut.success.short" = "Recorded %1$@ in %2$@";
+"shortcut.siriNatural.error.parsingFailedHelp" = "I didn't understand. Try: 'Note 50 dollars on coffee' or 'Record 25 dollars on lunch'";
+"shortcut.siriNatural.success.partial" = "Recorded %1$lld of %2$lld (some I couldn't understand). Check your inbox.";

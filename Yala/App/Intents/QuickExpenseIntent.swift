@@ -1005,7 +1005,7 @@ struct SiriNaturalEntryIntent: AppIntent {
     // MARK: - Perform
 
     @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog {
+    func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
         // Step 1: Get text (request if not provided via Siri phrase)
         let finalText: String
         if let existingText = text, !existingText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -1013,16 +1013,16 @@ struct SiriNaturalEntryIntent: AppIntent {
         } else {
             let requested = try await $text.requestValue("shortcut.siriNatural.dialog.askText")
             guard !requested.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                return .result(dialog: "shortcut.siriNatural.error.noText")
+                return .result(dialog: "shortcut.siriNatural.error.noText", view: EmptyView())
             }
             finalText = requested.trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
         // Step 2: Pro gate — LLM parsing requires Pro subscription
-        let isProUser = UserDefaults(suiteName: SharedContainerService.appGroupIdentifier)?.bool(forKey: "isProUser") ?? false
+        let isProUser = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.bool(forKey: "isProUser") ?? false
 
         guard isProUser else {
-            return .result(dialog: "shortcut.siriNatural.error.proRequired")
+            return .result(dialog: "shortcut.siriNatural.error.proRequired", view: EmptyView())
         }
 
         // Step 3: Create ModelContainer
@@ -1036,7 +1036,7 @@ struct SiriNaturalEntryIntent: AppIntent {
             #if DEBUG
             print("SiriNaturalEntryIntent: Error creating ModelContainer: \(error)")
             #endif
-            return .result(dialog: "shortcut.error.database")
+            return .result(dialog: "shortcut.error.database", view: EmptyView())
         }
 
         let context = container.mainContext
@@ -1052,7 +1052,7 @@ struct SiriNaturalEntryIntent: AppIntent {
             accountCount = 0
         }
         guard accountCount > 0 else {
-            return .result(dialog: "shortcut.error.noAccount")
+            return .result(dialog: "shortcut.error.noAccount", view: EmptyView())
         }
 
         // Step 5: Fetch subcategory lists for LLM context
@@ -1115,10 +1115,15 @@ struct SiriNaturalEntryIntent: AppIntent {
             }
         }
 
-        // Guard: at least one parsed result
-        guard !parsedTransactions.isEmpty else {
-            return .result(dialog: "shortcut.siriNatural.error.parsingFailed")
+        // F7: Pre-flight quality gate — descarta transactions sin amount.
+        // Si TODAS fallan → error explicativo (mejor que crear drafts basura).
+        let validParsed = parsedTransactions.filter { $0.amount != nil }
+        guard !validParsed.isEmpty else {
+            return .result(dialog: "shortcut.siriNatural.error.parsingFailedHelp", view: EmptyView())
         }
+        // Si parcial: trabajamos con las válidas (informamos en speak-back final).
+        let partialFailures = parsedTransactions.count - validParsed.count
+        let workingParsed = validParsed
 
         // Step 7: Fetch existing pending drafts for deduplication
         let pendingDescriptor = FetchDescriptor<InboxDraft>(
@@ -1138,7 +1143,7 @@ struct SiriNaturalEntryIntent: AppIntent {
         let merchantService = MerchantMemoryService(modelContext: context)
         var newDrafts: [InboxDraft] = []
 
-        for parsed in parsedTransactions {
+        for parsed in workingParsed {
             var needsUserInput: [String] = []
 
             // Match account by currency hint
@@ -1211,7 +1216,7 @@ struct SiriNaturalEntryIntent: AppIntent {
         )
 
         guard !uniqueDrafts.isEmpty else {
-            return .result(dialog: "shortcut.siriNatural.error.parsingFailed")
+            return .result(dialog: "shortcut.siriNatural.error.parsingFailed", view: EmptyView())
         }
 
         // Step 10: Insert and save
@@ -1225,11 +1230,12 @@ struct SiriNaturalEntryIntent: AppIntent {
             #if DEBUG
             print("SiriNaturalEntryIntent: Error saving drafts: \(error)")
             #endif
-            return .result(dialog: "shortcut.error.save")
+            return .result(dialog: "shortcut.error.save", view: EmptyView())
         }
 
         // Step 11: Send notification
-        let firstNote = uniqueDrafts.first?.note ?? finalText
+        let firstDraft = uniqueDrafts.first
+        let firstNote = firstDraft?.note ?? finalText
         let notifTitle = String(localized: "shortcut.siriNatural.notification.title")
         let notifBody: String
         if isOfflineFallback {
@@ -1243,17 +1249,29 @@ struct SiriNaturalEntryIntent: AppIntent {
             deepLink: "inbox"
         )
 
-        // Step 12: Return confirmation dialog
+        // F7: speak-back rico (TTS-friendly) + snippet visual del primer draft
+        let dialogText: String
         if isOfflineFallback {
-            return .result(dialog: IntentDialog(stringLiteral:
-                String(localized: "shortcut.siriNatural.success.offline \(firstNote)")))
+            dialogText = String(localized: "shortcut.siriNatural.success.offline \(firstNote)")
+        } else if partialFailures > 0 {
+            dialogText = String(localized: "shortcut.siriNatural.success.partial \(uniqueDrafts.count) \(parsedTransactions.count)")
         } else if uniqueDrafts.count == 1 {
-            return .result(dialog: IntentDialog(stringLiteral:
-                String(localized: "shortcut.siriNatural.success.single \(firstNote)")))
+            dialogText = String(localized: "shortcut.siriNatural.success.single \(firstNote)")
         } else {
-            return .result(dialog: IntentDialog(stringLiteral:
-                String(localized: "shortcut.siriNatural.success.multiple \(uniqueDrafts.count)")))
+            dialogText = String(localized: "shortcut.siriNatural.success.multiple \(uniqueDrafts.count)")
         }
+
+        let snippet = TransactionSnippetView(
+            amount: abs(firstDraft?.amount ?? 0),
+            currencyCode: firstDraft?.account?.currencyCode ?? "USD",
+            accountName: firstDraft?.account?.name ?? "—",
+            subcategoryName: firstDraft?.subcategory?.name ?? firstNote,
+            subcategoryIcon: firstDraft?.subcategory?.safeCategory.iconName ?? "text.bubble",
+            date: firstDraft?.date ?? Date.now,
+            isExpense: (firstDraft?.amount ?? 0) < 0,
+            isDraft: true
+        )
+        return .result(dialog: IntentDialog(stringLiteral: dialogText), view: snippet)
     }
 }
 
