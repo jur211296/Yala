@@ -72,6 +72,8 @@
 "widget.intent.accessoryBudget.desc" = "Most used budget";
 "widget.intent.accessoryPayment.title" = "Next Payment";
 "widget.intent.accessoryPayment.desc" = "Next scheduled payment";
+"widget.intent.quickEntry.title" = "Quick Entry";
+"widget.intent.quickEntry.desc" = "Configure quick action widgets to add records";
 
 // MARK: - Selection Mode
 "widget.selection.mode.type" = "Show";
@@ -135,11 +137,7 @@
 "widget.paymentCategory.subscription" = "Subscriptions";
 
 // MARK: - Control Widgets
-"widget.control.newExpense" = "Quick Entry";
-"widget.control.newExpense.desc" = "Open Yala to quickly record";
 "widget.control.voiceExpense" = "Voice Entry";
 "widget.control.voiceExpense.desc" = "Dictate your entry to Yala";
 "widget.control.photoExpense" = "Image Entry";
 "widget.control.photoExpense.desc" = "Record with an image in Yala";
-"widget.control.voiceLabel" = "Voice Entry";
-"widget.control.photoLabel" = "Image Entry";

@@ -78,6 +78,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Resources/Info.plist,
+				Shared/ControlCenterIntents.swift,
 			);
 			target = 96CFFF922EC3CF06002AC31C /* Yala */;
 		};
@@ -101,6 +102,20 @@
 				Info.plist,
 			);
 			target = CFB1B6AB2F30EC930083BC08 /* YalaWidgetsExtension */;
+		};
+		A1B2C3D4E5F60123456789AB /* Exceptions for "YalaWidgets" folder in "Yala" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Utils/WidgetURLHelper.swift,
+			);
+			target = 96CFFF922EC3CF06002AC31C /* Yala */;
+		};
+		A1B2C3D4E5F60123456789CD /* Exceptions for "YalaWidgets" folder in "YalaShare" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Utils/WidgetURLHelper.swift,
+			);
+			target = CFADC3B72F2A42810040D198 /* YalaShare */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -136,6 +151,8 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				CFB1B6C62F30EC940083BC08 /* Exceptions for "YalaWidgets" folder in "YalaWidgetsExtension" target */,
+				A1B2C3D4E5F60123456789AB /* Exceptions for "YalaWidgets" folder in "Yala" target */,
+				A1B2C3D4E5F60123456789CD /* Exceptions for "YalaWidgets" folder in "YalaShare" target */,
 			);
 			path = YalaWidgets;
 			sourceTree = "<group>";

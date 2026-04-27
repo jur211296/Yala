@@ -72,6 +72,8 @@
 "widget.intent.accessoryBudget.desc" = "Orçamento mais utilizado";
 "widget.intent.accessoryPayment.title" = "Próximo pagamento";
 "widget.intent.accessoryPayment.desc" = "Próximo pagamento agendado";
+"widget.intent.quickEntry.title" = "Registro rápido";
+"widget.intent.quickEntry.desc" = "Configure widgets de ação rápida para adicionar registros";
 
 // MARK: - Selection Mode
 "widget.selection.mode.type" = "Mostrar";
@@ -135,11 +137,7 @@
 "widget.paymentCategory.subscription" = "Assinaturas";
 
 // MARK: - Control Widgets
-"widget.control.newExpense" = "Registro rápido";
-"widget.control.newExpense.desc" = "Abra o Yala para registrar rapidamente";
 "widget.control.voiceExpense" = "Registro por voz";
 "widget.control.voiceExpense.desc" = "Dite seu registro para o Yala";
 "widget.control.photoExpense" = "Registro por imagem";
 "widget.control.photoExpense.desc" = "Registre com uma imagem no Yala";
-"widget.control.voiceLabel" = "Registro por voz";
-"widget.control.photoLabel" = "Registro por imagem";

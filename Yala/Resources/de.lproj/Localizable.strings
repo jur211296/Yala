@@ -2319,8 +2319,6 @@
 "shortcut.error.noAccount" = "Keine Konten verfügbar. Erstelle zuerst ein Konto.";
 "shortcut.error.noSubcategory" = "Unterkategorie nicht gefunden";
 "shortcut.error.save" = "Eintrag konnte nicht gespeichert werden";
-"shortcut.error.voiceNotEnabled" = "Spracheingabe ist nicht aktiviert. Aktiviere sie unter Einstellungen > Personalisierung.";
-"shortcut.error.imageNotEnabled" = "Bildeingabe ist nicht aktiviert. Aktiviere sie unter Einstellungen > Personalisierung.";
 "shortcut.error.consentRequired" = "Akzeptiere die KI-Einwilligung in der App, bevor du dieses Shortcut nutzt.";
 
 // Results
@@ -2351,8 +2349,6 @@
 "shortcut.applePay.param.name" = "Name";
 "shortcut.applePay.param.name.description" = "Sauberer Händlername (aus Wallet)";
 "shortcut.applePay.summaryTitle" = "Wallet-Zahlung erfassen";
-"shortcut.applePay.dialog.amount" = "Wie hoch ist der Betrag?";
-"shortcut.applePay.dialog.merchant" = "Wie heißt der Händler?";
 "shortcut.applePay.error.noAmount" = "Betrag erforderlich. Weisen Sie den Transaktionsbetrag aus Wallet zu.";
 "shortcut.applePay.success %@ %@" = "Entwurf erstellt: %@ bei %@. Überprüfen Sie Ihren Posteingang.";
 

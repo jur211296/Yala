@@ -2321,8 +2321,6 @@
 "shortcut.error.noAccount" = "Aucun compte disponible. Créez d'abord un compte.";
 "shortcut.error.noSubcategory" = "Sous-catégorie non trouvée";
 "shortcut.error.save" = "Impossible d'enregistrer l'entrée";
-"shortcut.error.voiceNotEnabled" = "La saisie vocale n'est pas activée. Activez-la dans Paramètres > Personnalisation.";
-"shortcut.error.imageNotEnabled" = "La saisie par image n'est pas activée. Activez-la dans Paramètres > Personnalisation.";
 "shortcut.error.consentRequired" = "Acceptez le consentement IA dans l'application avant d'utiliser ce raccourci.";
 
 // Results
@@ -2353,8 +2351,6 @@
 "shortcut.applePay.param.name" = "Nom";
 "shortcut.applePay.param.name.description" = "Nom propre du commerçant (de Wallet)";
 "shortcut.applePay.summaryTitle" = "Enregistrer paiement Wallet";
-"shortcut.applePay.dialog.amount" = "Quel est le montant ?";
-"shortcut.applePay.dialog.merchant" = "Quel est le commerçant ?";
 "shortcut.applePay.error.noAmount" = "Le montant est requis. Assignez le montant de la transaction Wallet.";
 "shortcut.applePay.success %@ %@" = "Brouillon créé : %@ chez %@. Vérifiez dans votre boîte de réception.";
 

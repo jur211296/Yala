@@ -349,8 +349,6 @@ final class AppBootstrapper {
         switch action {
         case "panel":
             setOrDeferDeepLink(.panel)
-        case "new-transaction":
-            executeAction(.newTransaction)
         case "voice-entry":
             executeAction(.voiceEntry)
         case "image-entry":

@@ -2321,8 +2321,6 @@
 "shortcut.error.noAccount" = "Nessun conto disponibile. Crea prima un conto.";
 "shortcut.error.noSubcategory" = "Sottocategoria non trovata";
 "shortcut.error.save" = "Impossibile salvare la registrazione";
-"shortcut.error.voiceNotEnabled" = "L'inserimento vocale non è attivato. Attivalo in Impostazioni > Personalizzazione.";
-"shortcut.error.imageNotEnabled" = "L'inserimento da immagine non è attivato. Attivalo in Impostazioni > Personalizzazione.";
 "shortcut.error.consentRequired" = "Accetta il consenso IA nell'app prima di usare questo shortcut.";
 
 // Results
@@ -2353,8 +2351,6 @@
 "shortcut.applePay.param.name" = "Nome";
 "shortcut.applePay.param.name.description" = "Nome pulito dell'esercente (da Wallet)";
 "shortcut.applePay.summaryTitle" = "Registra pagamento Wallet";
-"shortcut.applePay.dialog.amount" = "Qual è l'importo?";
-"shortcut.applePay.dialog.merchant" = "Qual è l'esercente?";
 "shortcut.applePay.error.noAmount" = "L'importo è obbligatorio. Assegna l'importo della transazione da Wallet.";
 "shortcut.applePay.success %@ %@" = "Bozza creata: %@ presso %@. Controlla la posta in arrivo.";
 

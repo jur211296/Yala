@@ -2322,8 +2322,6 @@
 "shortcut.error.noAccount" = "No accounts available. Create an account first.";
 "shortcut.error.noSubcategory" = "Subcategory not found";
 "shortcut.error.save" = "Could not save the entry";
-"shortcut.error.voiceNotEnabled" = "Voice input is not enabled. Enable it in Settings > Personalization.";
-"shortcut.error.imageNotEnabled" = "Image input is not enabled. Enable it in Settings > Personalization.";
 "shortcut.error.consentRequired" = "Accept the AI consent in the app before using this shortcut.";
 
 // Results
@@ -2354,8 +2352,6 @@
 "shortcut.applePay.param.name" = "Name";
 "shortcut.applePay.param.name.description" = "Clean merchant name (from Wallet)";
 "shortcut.applePay.summaryTitle" = "Record Wallet payment";
-"shortcut.applePay.dialog.amount" = "What is the amount?";
-"shortcut.applePay.dialog.merchant" = "What is the merchant?";
 "shortcut.applePay.error.noAmount" = "Amount is required. Assign the transaction amount from Wallet.";
 "shortcut.applePay.success %@ %@" = "Draft created: %@ at %@. Check your inbox to review.";
 

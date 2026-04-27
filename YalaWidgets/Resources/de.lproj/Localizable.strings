@@ -72,6 +72,8 @@
 "widget.intent.accessoryBudget.desc" = "Meistgenutztes Budget";
 "widget.intent.accessoryPayment.title" = "Nächste Zahlung";
 "widget.intent.accessoryPayment.desc" = "Nächste geplante Zahlung";
+"widget.intent.quickEntry.title" = "Schneller Eintrag";
+"widget.intent.quickEntry.desc" = "Schnellzugriff-Widgets zum Hinzufügen von Einträgen konfigurieren";
 
 // MARK: - Selection Mode
 "widget.selection.mode.type" = "Anzeigen";
@@ -135,11 +137,7 @@
 "widget.paymentCategory.subscription" = "Abonnements";
 
 // MARK: - Control Widgets
-"widget.control.newExpense" = "Schnelleintrag";
-"widget.control.newExpense.desc" = "Öffnen Sie Yala, um schnell zu erfassen";
 "widget.control.voiceExpense" = "Spracheintrag";
 "widget.control.voiceExpense.desc" = "Diktieren Sie Ihren Eintrag an Yala";
 "widget.control.photoExpense" = "Bildeintrag";
 "widget.control.photoExpense.desc" = "Registrieren Sie mit einem Bild in Yala";
-"widget.control.voiceLabel" = "Spracheintrag";
-"widget.control.photoLabel" = "Bildeintrag";
