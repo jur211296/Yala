@@ -2348,7 +2348,7 @@
 "shortcut.applePay.param.merchant.description" = "Der Händlername";
 "shortcut.applePay.param.name" = "Name";
 "shortcut.applePay.param.name.description" = "Sauberer Händlername (aus Wallet)";
-"shortcut.applePay.summaryTitle" = "Wallet-Zahlung erfassen";
+"shortcut.applePay.summaryTitle" = "%1$@ erfassen — %2$@";
 "shortcut.applePay.error.noAmount" = "Betrag erforderlich. Weisen Sie den Transaktionsbetrag aus Wallet zu.";
 "shortcut.applePay.success %@ %@" = "Entwurf erstellt: %@ bei %@. Überprüfen Sie Ihren Posteingang.";
 

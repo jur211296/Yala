@@ -709,10 +709,9 @@ struct ApplePayTransactionIntent: AppIntent {
 
     // MARK: - Parameter Summary (shows configurable fields in Shortcuts)
 
+    // F6: parameterSummary visual con monto + nombre prominente + merchant secundario.
     static var parameterSummary: some ParameterSummary {
-        Summary("shortcut.applePay.summaryTitle") {
-            \.$amount
-            \.$name
+        Summary("shortcut.applePay.summaryTitle \(\.$amount) \(\.$name)") {
             \.$merchant
         }
     }
@@ -753,11 +752,11 @@ struct ApplePayTransactionIntent: AppIntent {
     // MARK: - Perform
 
     @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog {
+    func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
         // Parse amount and currency from Wallet text (e.g., "$32.04", "S/ 25.90")
         guard let amountString = amount,
               let parsedResult = parseAmountAndCurrency(from: amountString) else {
-            return .result(dialog: "shortcut.applePay.error.noAmount")
+            return .result(dialog: "shortcut.applePay.error.noAmount", view: EmptyView())
         }
 
         let finalAmount = parsedResult.amount
@@ -787,7 +786,7 @@ struct ApplePayTransactionIntent: AppIntent {
             #if DEBUG
             print("ApplePayTransactionIntent: Error creating ModelContainer: \(error)")
             #endif
-            return .result(dialog: "shortcut.error.database")
+            return .result(dialog: "shortcut.error.database", view: EmptyView())
         }
 
         let context = container.mainContext
@@ -803,7 +802,7 @@ struct ApplePayTransactionIntent: AppIntent {
             accountCount = 0
         }
         guard accountCount > 0 else {
-            return .result(dialog: "shortcut.error.noAccount")
+            return .result(dialog: "shortcut.error.noAccount", view: EmptyView())
         }
 
         // Try to find account by detected currency (if unique match)
@@ -818,27 +817,27 @@ struct ApplePayTransactionIntent: AppIntent {
             needsUserInput.insert("account", at: 0)
         }
 
-        // Try to auto-categorize using MerchantMemory
+        // F6: Confidence routing — autoAssign (≥5 aprobs, ≤10% error) → 0.95, suggest → 0.8
         var matchedSubcategory: Subcategory?
+        var subcategoryConfidence: Double?
         if !finalNote.isEmpty {
             let merchantService = MerchantMemoryService(modelContext: context)
             let suggestion = merchantService.suggest(for: finalNote)
 
             switch suggestion {
             case .autoAssign(let sub):
-                // High confidence - auto-assign
                 matchedSubcategory = sub
+                subcategoryConfidence = 0.95
                 needsUserInput.removeAll { $0 == "subcategory" }
             case .suggest(let sub):
-                // Medium confidence - suggest but still needs confirmation
                 matchedSubcategory = sub
-                // Keep subcategory in needsUserInput so user confirms
+                subcategoryConfidence = 0.8
             case .none:
                 break
             }
         }
 
-        // Create InboxDraft
+        // Create InboxDraft (Apple Pay siempre crea draft → user revisa en Inbox)
         let draft = InboxDraft(
             note: finalNote,
             amount: -abs(finalAmount), // Apple Pay is always expense (negative)
@@ -851,7 +850,7 @@ struct ApplePayTransactionIntent: AppIntent {
             confidenceAmount: 1.0, // Amount from Apple Pay is always accurate
             confidenceDate: 1.0, // Date is when automation runs
             confidenceMerchant: finalNote.isEmpty ? nil : 1.0,
-            confidenceSubcategory: matchedSubcategory != nil ? 0.8 : nil,
+            confidenceSubcategory: subcategoryConfidence,
             needsUserInput: needsUserInput
         )
 
@@ -860,7 +859,7 @@ struct ApplePayTransactionIntent: AppIntent {
         do {
             try context.save()
         } catch {
-            return .result(dialog: "shortcut.error.save")
+            return .result(dialog: "shortcut.error.save", view: EmptyView())
         }
 
         // Send push notification for automatic record (Apple Pay is always expense)
@@ -873,47 +872,70 @@ struct ApplePayTransactionIntent: AppIntent {
             deepLink: "inbox"
         )
 
-        // Format success message
+        // F6: snippet visual con badge "Borrador" — el user revisa en Inbox.
         let formattedAmount = formatIntentCurrency(amount: finalAmount, currencyCode: detectedCurrency ?? "USD")
         let noteDisplay = finalNote.isEmpty ? "Apple Pay" : finalNote
-        return .result(dialog: "shortcut.applePay.success \(formattedAmount) \(noteDisplay)")
+        let snippet = TransactionSnippetView(
+            amount: finalAmount,
+            currencyCode: detectedCurrency ?? "USD",
+            accountName: matchedAccount?.name ?? "—",
+            subcategoryName: matchedSubcategory?.name ?? noteDisplay,
+            subcategoryIcon: matchedSubcategory?.safeCategory.iconName ?? "creditcard",
+            date: effectiveDate,
+            isExpense: true,
+            isDraft: true
+        )
+        return .result(
+            dialog: "shortcut.applePay.success \(formattedAmount) \(noteDisplay)",
+            view: snippet
+        )
     }
 
     // MARK: - Helpers
 
     /// Parses amount and currency from Wallet text format
     /// Examples: "$32.04" -> (32.04, "USD"), "S/ 25.90" -> (25.90, "PEN"), "€25,50" -> (25.50, "EUR")
+    /// F6: Tabla expandida (Fr/CHF, kr/NOK ambiguo, A$/C$/NZ$/HK$). El `$` y `kr` ambiguos
+    /// se resuelven con la currency del lastUsedAccount cuando no hay match preciso.
+    @MainActor
     private func parseAmountAndCurrency(from text: String) -> (amount: Double, currency: String?)? {
-        // Currency symbol to code mapping
-        let currencyMap: [String: String] = [
-            "$": "USD",
-            "€": "EUR",
-            "£": "GBP",
-            "¥": "JPY",
-            "S/": "PEN",
-            "S/.": "PEN",
-            "R$": "BRL",
-            "MX$": "MXN",
-            "COP$": "COP",
-            "COP": "COP",
+        // Symbols ordered by priority (más específicos primero — "MX$" antes de "$")
+        let prefixedSymbols: [(symbol: String, code: String)] = [
+            ("MX$", "MXN"), ("COP$", "COP"), ("R$", "BRL"),
+            ("A$", "AUD"), ("C$", "CAD"), ("NZ$", "NZD"), ("HK$", "HKD"),
+            ("S/.", "PEN"), ("S/", "PEN"),
+            ("€", "EUR"), ("£", "GBP"), ("¥", "JPY"),
+            ("Fr", "CHF"), ("₣", "CHF"),
+            ("kr", "NOK"),  // Ambiguo (NOK/SEK/DKK) — resolver por account
+            ("$", "USD")     // Ambiguo (USD/ARS/CLP/MXN/etc) — resolver por account
         ]
 
         var detectedCurrency: String?
+        var detectedSymbol: String?
 
-        // Try to detect currency from symbol
-        for (symbol, code) in currencyMap {
-            if text.contains(symbol) {
-                detectedCurrency = code
+        for entry in prefixedSymbols {
+            if text.contains(entry.symbol) {
+                detectedCurrency = entry.code
+                detectedSymbol = entry.symbol
                 break
             }
         }
 
-        // Also check for currency code at end (e.g., "25.00 USD")
+        // Trailing currency code: "25.00 ARS" → ARS (override de símbolo ambiguo).
         let words = text.components(separatedBy: .whitespaces)
         if let lastWord = words.last,
            lastWord.count == 3,
            lastWord.uppercased() == lastWord {
             detectedCurrency = lastWord
+            detectedSymbol = nil
+        }
+
+        // F6: ambiguous symbols ($ y kr) → preferir currency del lastUsedAccount
+        if detectedSymbol == "$" || detectedSymbol == "kr" {
+            if let lastUsedID = LastUsedAccountStore.read(),
+               let accountCurrency = Self.currencyOfAccount(shortcutID: lastUsedID) {
+                detectedCurrency = accountCurrency
+            }
         }
 
         // Extract numeric value
@@ -943,6 +965,28 @@ struct ApplePayTransactionIntent: AppIntent {
         return (amount, detectedCurrency)
     }
 
+    /// F6: lookup de currencyCode por shortcutID. Usado para desambiguar `$` y `kr`.
+    @MainActor
+    fileprivate static func currencyOfAccount(shortcutID: String) -> String? {
+        guard UUID(uuidString: shortcutID) != nil else { return nil }
+        let container: ModelContainer
+        do {
+            container = try ModelContainer(
+                for: SwiftDataConfiguration.personalSchema,
+                configurations: SwiftDataConfiguration.personalConfiguration
+            )
+        } catch {
+            return nil
+        }
+        let context = container.mainContext
+        let descriptor = FetchDescriptor<Account>()
+        do {
+            let all = try context.fetch(descriptor)
+            return all.first { $0.shortcutID.uuidString == shortcutID }?.currencyCode
+        } catch {
+            return nil
+        }
+    }
 }
 
 // MARK: - Siri Natural Language Entry Intent

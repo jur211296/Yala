@@ -2350,7 +2350,7 @@
 "shortcut.applePay.param.merchant.description" = "Le nom du commerçant";
 "shortcut.applePay.param.name" = "Nom";
 "shortcut.applePay.param.name.description" = "Nom propre du commerçant (de Wallet)";
-"shortcut.applePay.summaryTitle" = "Enregistrer paiement Wallet";
+"shortcut.applePay.summaryTitle" = "Enregistrer %1$@ — %2$@";
 "shortcut.applePay.error.noAmount" = "Le montant est requis. Assignez le montant de la transaction Wallet.";
 "shortcut.applePay.success %@ %@" = "Brouillon créé : %@ chez %@. Vérifiez dans votre boîte de réception.";
 

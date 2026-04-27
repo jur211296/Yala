@@ -2351,7 +2351,7 @@
 "shortcut.applePay.param.merchant.description" = "The merchant name";
 "shortcut.applePay.param.name" = "Name";
 "shortcut.applePay.param.name.description" = "Clean merchant name (from Wallet)";
-"shortcut.applePay.summaryTitle" = "Record Wallet payment";
+"shortcut.applePay.summaryTitle" = "Record %1$@ — %2$@";
 "shortcut.applePay.error.noAmount" = "Amount is required. Assign the transaction amount from Wallet.";
 "shortcut.applePay.success %@ %@" = "Draft created: %@ at %@. Check your inbox to review.";
 

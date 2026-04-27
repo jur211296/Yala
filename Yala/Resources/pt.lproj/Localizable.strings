@@ -2348,7 +2348,7 @@
 "shortcut.applePay.param.merchant.description" = "O nome do comerciante";
 "shortcut.applePay.param.name" = "Nome";
 "shortcut.applePay.param.name.description" = "Nome limpo do comerciante (do Wallet)";
-"shortcut.applePay.summaryTitle" = "Registrar pagamento Wallet";
+"shortcut.applePay.summaryTitle" = "Registrar %1$@ — %2$@";
 "shortcut.applePay.error.noAmount" = "O valor é obrigatório. Atribua o valor da transação do Wallet.";
 "shortcut.applePay.success %@ %@" = "Rascunho criado: %@ em %@. Verifique sua caixa de entrada.";
 
