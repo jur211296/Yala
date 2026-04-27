@@ -491,6 +491,11 @@ final class NewTransactionViewModel {
             try context.save()
             SessionState.shared.incrementDataVersion()
 
+            // F5: memorizar última cuenta usada (per-device, para QuickExpenseIntent fallback)
+            if let savedAccount = result.first?.account {
+                LastUsedAccountStore.write(savedAccount.shortcutID.uuidString)
+            }
+
             // Update widget cache deferred — don't block save UI
             Task {
                 WidgetDataCache.updateCache(context: context)

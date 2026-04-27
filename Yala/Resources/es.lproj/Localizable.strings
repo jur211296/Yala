@@ -3594,3 +3594,11 @@
 "statistics.sankey.others" = "Otros";
 "statistics.sankey.toggleAmount" = "Mostrar montos";
 "statistics.sankey.togglePercentage" = "Mostrar porcentajes";
+
+// MARK: - Shortcut Snippet (F5/F6/F7)
+"shortcut.snippet.account" = "Cuenta";
+"shortcut.snippet.category" = "Categoría";
+"shortcut.snippet.date" = "Fecha";
+"shortcut.snippet.draftBadge" = "Borrador — Revisa en tu bandeja";
+"shortcut.quickExpense.summaryTitle" = "Registrar %1$@ en %2$@";
+"shortcut.success.short" = "Registré %1$@ en %2$@";

@@ -33,6 +33,16 @@ struct QuickExpenseIntent: AppIntent {
 
     static var openAppWhenRun: Bool = false
 
+    // F5: parameterSummary visual en el editor de Atajos.
+    static var parameterSummary: some ParameterSummary {
+        Summary("shortcut.quickExpense.summaryTitle \(\.$amount) \(\.$account)") {
+            \.$expenseSubcategory
+            \.$incomeSubcategory
+            \.$tagName
+            \.$note
+        }
+    }
+
     // MARK: - Parameters
 
     @Parameter(
@@ -87,21 +97,21 @@ struct QuickExpenseIntent: AppIntent {
     // MARK: - Perform
 
     @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog {
+    func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
         // Gather all user input
         let input = try await resolveInput()
 
         // Setup database
         guard let context = setupModelContext() else {
-            return .result(dialog: "shortcut.error.database")
+            return .result(dialog: "shortcut.error.database", view: EmptyView())
         }
 
         // Resolve entities from database
         guard let resolvedAccount = fetchAccount(name: input.accountName, context: context) else {
-            return .result(dialog: "shortcut.error.noAccount")
+            return .result(dialog: "shortcut.error.noAccount", view: EmptyView())
         }
         guard let resolvedSubcategory = fetchSubcategory(name: input.subcategoryName, categoryName: input.subcategoryCategoryName, context: context) else {
-            return .result(dialog: "shortcut.error.noSubcategory")
+            return .result(dialog: "shortcut.error.noSubcategory", view: EmptyView())
         }
         var resolvedTag: Tag?
         if let name = input.tagName, !name.isEmpty {
@@ -119,16 +129,27 @@ struct QuickExpenseIntent: AppIntent {
         )
 
         guard let transaction = result.transaction else {
-            return .result(dialog: "shortcut.error.save")
+            return .result(dialog: "shortcut.error.save", view: EmptyView())
         }
 
-        // Format success message
+        // Speak-back textual (TTS-friendly para Siri)
         let formattedAmount = formatIntentCurrency(amount: input.amount, currencyCode: transaction.currencyCode)
-        let noteText = (input.note?.isEmpty == false) ? (input.note ?? "-") : "-"
-        let tagText = resolvedTag?.name ?? String(localized: "shortcut.result.noTag")
-        let successMessage = String(localized: "shortcut.success.expenseDetail \(resolvedAccount.name) \(formattedAmount) \(noteText) \(resolvedSubcategory.name) \(tagText)")
+        let speakBack = String(localized: "shortcut.success.short \(formattedAmount) \(resolvedSubcategory.name)")
 
-        return .result(dialog: IntentDialog(stringLiteral: successMessage))
+        // F5: snippet visual rico (Lock Screen, Atajos, Siri visual response)
+        let isExpense = !resolvedSubcategory.safeCategory.isIncome
+        let snippet = TransactionSnippetView(
+            amount: input.amount,
+            currencyCode: transaction.currencyCode,
+            accountName: resolvedAccount.name,
+            subcategoryName: resolvedSubcategory.name,
+            subcategoryIcon: resolvedSubcategory.safeCategory.iconName ?? "tag",
+            date: transaction.date,
+            isExpense: isExpense,
+            isDraft: false
+        )
+
+        return .result(dialog: IntentDialog(stringLiteral: speakBack), view: snippet)
     }
 
     // MARK: - Input Resolution
@@ -143,10 +164,12 @@ struct QuickExpenseIntent: AppIntent {
     }
 
     private func resolveInput() async throws -> ResolvedInput {
+        // F5: type se infiere desde subcategory si está fijada (sin preguntar).
         let finalType = try await getTransactionType()
         let isIncome = (finalType == .income)
         let finalAmount = try await getAmount()
-        let finalNote = try await getNote()
+        // F5: note y tag YA NO se preguntan automáticamente — solo si pre-llenados.
+        let finalNote = note  // pre-llenado o nil
         let accountEntity = try await getAccount()
 
         let subcategoryName: String
@@ -161,7 +184,7 @@ struct QuickExpenseIntent: AppIntent {
             subcategoryCategoryName = entity.categoryName
         }
 
-        let finalTagName = try await getTagName()
+        let finalTagName = tagName  // pre-llenado o nil
 
         return ResolvedInput(
             amount: finalAmount,
@@ -248,6 +271,8 @@ struct QuickExpenseIntent: AppIntent {
 
         do {
             try context.save()
+            // F5: memorizar última cuenta usada (per-device, App Group)
+            LastUsedAccountStore.write(account.shortcutID.uuidString)
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
             return TransactionResult(transaction: transaction)
@@ -259,13 +284,18 @@ struct QuickExpenseIntent: AppIntent {
     // MARK: - Parameter Resolution
 
     private func getTransactionType() async throws -> TransactionTypeAppEnum {
-        // In expenses-only mode, always use expense
+        // 1. expensesOnlyMode → siempre expense
         if UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.bool(forKey: "expensesOnlyMode") == true {
             return .expense
         }
+        // 2. Slot explícito gana
         if let existingType = transactionType {
             return existingType
         }
+        // 3. F5: inferir desde subcategory pre-fijada (expense gana si ambas — orden de declaración)
+        if expenseSubcategory != nil { return .expense }
+        if incomeSubcategory != nil { return .income }
+        // 4. Fallback: preguntar
         let requestedType: TransactionTypeAppEnum = try await $transactionType.requestValue("shortcut.dialog.askType")
         return requestedType
     }
@@ -289,6 +319,13 @@ struct QuickExpenseIntent: AppIntent {
     private func getAccount() async throws -> AccountAppEntity {
         if let existingAccount = account {
             return existingAccount
+        }
+        // F5: fallback a lastUsedAccountID antes de preguntar.
+        if let lastUsed = LastUsedAccountStore.read() {
+            // Resolver el AppEntity desde la query — devuelve nil si la cuenta fue archivada.
+            if let entity = try? await AccountQuery().entities(for: [lastUsed]).first {
+                return entity
+            }
         }
         let requestedAccount: AccountAppEntity = try await $account.requestValue("shortcut.dialog.askAccount")
         return requestedAccount
@@ -1173,6 +1210,23 @@ struct SiriNaturalEntryIntent: AppIntent {
             return .result(dialog: IntentDialog(stringLiteral:
                 String(localized: "shortcut.siriNatural.success.multiple \(uniqueDrafts.count)")))
         }
+    }
+}
+
+// MARK: - Last Used Account Store (F5)
+
+/// Memoria per-device (App Group) de la última cuenta usada al registrar una transacción.
+/// Permite a QuickExpenseIntent saltarse la pregunta de cuenta cuando el atajo no la fija.
+/// NO se sincroniza vía iCloud KV — la "última cuenta usada" es contextual al device.
+enum LastUsedAccountStore {
+    /// Lee el UUID-string de la última cuenta usada (o nil si no existe).
+    nonisolated static func read() -> String? {
+        UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.string(forKey: "lastUsedAccountID")
+    }
+
+    /// Persiste el UUID-string de la cuenta.
+    nonisolated static func write(_ shortcutID: String) {
+        UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.set(shortcutID, forKey: "lastUsedAccountID")
     }
 }
 
