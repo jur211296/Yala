@@ -1192,11 +1192,15 @@ struct SiriNaturalEntryIntent: AppIntent {
                 needsUserInput.append("subcategory")
             }
 
-            // Calculate signed amount
+            // F9: respeta expensesOnlyMode — si activo, fuerza isExpense=true
+            // ignorando lo que el LLM haya inferido (consistente con QuickExpense).
+            let expensesOnlyMode = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.bool(forKey: "expensesOnlyMode") ?? false
+            let isExpense = expensesOnlyMode ? true : parsed.isExpense
+
             let signedAmount: Double?
             if let amount = parsed.amount {
                 let absValue = abs(NSDecimalNumber(decimal: amount).doubleValue)
-                signedAmount = parsed.isExpense ? -absValue : absValue
+                signedAmount = isExpense ? -absValue : absValue
             } else {
                 signedAmount = nil
                 needsUserInput.append("amount")
