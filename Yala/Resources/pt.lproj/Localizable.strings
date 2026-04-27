@@ -2285,45 +2285,11 @@
 "shortcut.quickExpense.description" = "Crie um novo registro no Yala com valor, conta, categoria e tag.";
 "shortcut.quickExpense.shortTitle" = "Novo registro";
 
-// Parameters
-"shortcut.param.type" = "Tipo";
-"shortcut.param.type.description" = "Despesa ou receita";
-"shortcut.param.amount" = "Valor";
-"shortcut.param.amount.description" = "O valor a registrar";
-"shortcut.param.note" = "Descrição";
-"shortcut.param.note.description" = "Uma nota ou descrição";
-"shortcut.param.account" = "Conta";
-"shortcut.param.account.description" = "A conta para registrar";
-"shortcut.param.subcategory" = "Subcategoria";
-"shortcut.param.subcategory.description" = "A subcategoria";
-"shortcut.param.tag" = "Tag";
-"shortcut.param.tag.description" = "Uma tag opcional";
-
-// Dialogs
-"shortcut.dialog.askType" = "Despesa ou receita?";
-"shortcut.dialog.askAmount" = "Quanto?";
-"shortcut.dialog.askNote" = "Descrição (opcional)";
-"shortcut.dialog.askAccount" = "Qual conta?";
-"shortcut.dialog.askSubcategory" = "Qual categoria?";
-"shortcut.dialog.askTag" = "Tag (opcional)";
-
-// Entities
-"shortcut.entity.transactionType" = "Tipo";
-"shortcut.type.expense" = "Despesa";
-"shortcut.type.income" = "Receita";
-"shortcut.entity.account" = "Conta";
-"shortcut.entity.subcategory" = "Subcategoria";
-
 // Errors
 "shortcut.error.database" = "Não foi possível acessar o banco de dados";
 "shortcut.error.noAccount" = "Nenhuma conta disponível. Crie uma conta primeiro.";
-"shortcut.error.noSubcategory" = "Subcategoria não encontrada";
 "shortcut.error.save" = "Não foi possível salvar o registro";
 "shortcut.error.consentRequired" = "Aceite o consentimento de IA no app antes de usar este atalho.";
-
-// Results
-"shortcut.result.noTag" = "Sem tag";
-"shortcut.success.expenseDetail %@ %@ %@ %@ %@" = "Registrado em %@: %@ - %@ - %@ - %@";
 
 // Voice Entry Shortcut
 "shortcut.voiceEntry.title" = "Registrar por voz";
@@ -3594,7 +3560,5 @@
 "shortcut.snippet.category" = "Categoria";
 "shortcut.snippet.date" = "Data";
 "shortcut.snippet.draftBadge" = "Rascunho — Revise na sua caixa";
-"shortcut.quickExpense.summaryTitle" = "Registrar %1$@ em %2$@";
-"shortcut.success.short" = "Registrado %1$@ em %2$@";
 "shortcut.siriNatural.error.parsingFailedHelp" = "Não entendi. Tente: 'Anota 50 reais em café' ou 'Registra 25 reais em almoço'";
 "shortcut.siriNatural.success.partial" = "Registrei %1$lld de %2$lld (alguns não entendi). Verifique sua caixa.";

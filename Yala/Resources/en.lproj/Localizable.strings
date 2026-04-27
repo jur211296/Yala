@@ -2288,45 +2288,11 @@
 "shortcut.quickExpense.description" = "Create a new entry in Yala with amount, account, category and tag.";
 "shortcut.quickExpense.shortTitle" = "New entry";
 
-// Parameters
-"shortcut.param.type" = "Type";
-"shortcut.param.type.description" = "Expense or income";
-"shortcut.param.amount" = "Amount";
-"shortcut.param.amount.description" = "The amount to record";
-"shortcut.param.note" = "Description";
-"shortcut.param.note.description" = "A note or description";
-"shortcut.param.account" = "Account";
-"shortcut.param.account.description" = "The account to record";
-"shortcut.param.subcategory" = "Subcategory";
-"shortcut.param.subcategory.description" = "The subcategory";
-"shortcut.param.tag" = "Tag";
-"shortcut.param.tag.description" = "An optional tag";
-
-// Dialogs
-"shortcut.dialog.askType" = "Expense or income?";
-"shortcut.dialog.askAmount" = "How much?";
-"shortcut.dialog.askNote" = "Description (optional)";
-"shortcut.dialog.askAccount" = "Which account?";
-"shortcut.dialog.askSubcategory" = "Which category?";
-"shortcut.dialog.askTag" = "Tag (optional)";
-
-// Entities
-"shortcut.entity.transactionType" = "Type";
-"shortcut.type.expense" = "Expense";
-"shortcut.type.income" = "Income";
-"shortcut.entity.account" = "Account";
-"shortcut.entity.subcategory" = "Subcategory";
-
 // Errors
 "shortcut.error.database" = "Could not access database";
 "shortcut.error.noAccount" = "No accounts available. Create an account first.";
-"shortcut.error.noSubcategory" = "Subcategory not found";
 "shortcut.error.save" = "Could not save the entry";
 "shortcut.error.consentRequired" = "Accept the AI consent in the app before using this shortcut.";
-
-// Results
-"shortcut.result.noTag" = "No tag";
-"shortcut.success.expenseDetail %@ %@ %@ %@ %@" = "Recorded in %@: %@ - %@ - %@ - %@";
 
 // Voice Entry Shortcut
 "shortcut.voiceEntry.title" = "Record by voice";
@@ -3597,7 +3563,5 @@
 "shortcut.snippet.category" = "Category";
 "shortcut.snippet.date" = "Date";
 "shortcut.snippet.draftBadge" = "Draft — Review in your inbox";
-"shortcut.quickExpense.summaryTitle" = "Record %1$@ in %2$@";
-"shortcut.success.short" = "Recorded %1$@ in %2$@";
 "shortcut.siriNatural.error.parsingFailedHelp" = "I didn't understand. Try: 'Note 50 dollars on coffee' or 'Record 25 dollars on lunch'";
 "shortcut.siriNatural.success.partial" = "Recorded %1$lld of %2$lld (some I couldn't understand). Check your inbox.";

@@ -2287,45 +2287,11 @@
 "shortcut.quickExpense.description" = "Créez une nouvelle entrée dans Yala avec montant, compte, catégorie et tag.";
 "shortcut.quickExpense.shortTitle" = "Nouvelle entrée";
 
-// Parameters
-"shortcut.param.type" = "Type";
-"shortcut.param.type.description" = "Dépense ou revenu";
-"shortcut.param.amount" = "Montant";
-"shortcut.param.amount.description" = "Le montant à enregistrer";
-"shortcut.param.note" = "Description";
-"shortcut.param.note.description" = "Une note ou description";
-"shortcut.param.account" = "Compte";
-"shortcut.param.account.description" = "Le compte pour enregistrer";
-"shortcut.param.subcategory" = "Sous-catégorie";
-"shortcut.param.subcategory.description" = "La sous-catégorie";
-"shortcut.param.tag" = "Tag";
-"shortcut.param.tag.description" = "Un tag optionnel";
-
-// Dialogs
-"shortcut.dialog.askType" = "Dépense ou revenu ?";
-"shortcut.dialog.askAmount" = "Combien ?";
-"shortcut.dialog.askNote" = "Description (optionnel)";
-"shortcut.dialog.askAccount" = "Quel compte ?";
-"shortcut.dialog.askSubcategory" = "Quelle catégorie ?";
-"shortcut.dialog.askTag" = "Tag (optionnel)";
-
-// Entities
-"shortcut.entity.transactionType" = "Type";
-"shortcut.type.expense" = "Dépense";
-"shortcut.type.income" = "Revenu";
-"shortcut.entity.account" = "Compte";
-"shortcut.entity.subcategory" = "Sous-catégorie";
-
 // Errors
 "shortcut.error.database" = "Impossible d'accéder à la base de données";
 "shortcut.error.noAccount" = "Aucun compte disponible. Créez d'abord un compte.";
-"shortcut.error.noSubcategory" = "Sous-catégorie non trouvée";
 "shortcut.error.save" = "Impossible d'enregistrer l'entrée";
 "shortcut.error.consentRequired" = "Acceptez le consentement IA dans l'application avant d'utiliser ce raccourci.";
-
-// Results
-"shortcut.result.noTag" = "Sans tag";
-"shortcut.success.expenseDetail %@ %@ %@ %@ %@" = "Enregistré dans %@ : %@ - %@ - %@ - %@";
 
 // Voice Entry Shortcut
 "shortcut.voiceEntry.title" = "Enregistrer par voix";
@@ -3595,7 +3561,5 @@
 "shortcut.snippet.category" = "Catégorie";
 "shortcut.snippet.date" = "Date";
 "shortcut.snippet.draftBadge" = "Brouillon — Vérifiez dans votre boîte";
-"shortcut.quickExpense.summaryTitle" = "Enregistrer %1$@ dans %2$@";
-"shortcut.success.short" = "Enregistré %1$@ dans %2$@";
 "shortcut.siriNatural.error.parsingFailedHelp" = "Je n'ai pas compris. Essayez : 'Note 50 euros sur café' ou 'Enregistre 25 euros pour le déjeuner'";
 "shortcut.siriNatural.success.partial" = "Enregistré %1$lld sur %2$lld (certains non compris). Vérifiez votre boîte.";
