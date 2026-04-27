@@ -48,6 +48,11 @@ enum AnalyticsEvent: String {
     case chatTopicsSheetOpened
     case chatPersistedSessionRehydrated
 
+    // F8b: Intent lifecycle (Siri/Atajos/Lock Screen/Control Center)
+    case intentInvoked
+    case intentSuccess
+    case intentFailed
+
     // Group lifecycle
     case groupCreated
     case groupJoined

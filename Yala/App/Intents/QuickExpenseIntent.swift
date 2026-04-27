@@ -98,6 +98,7 @@ struct QuickExpenseIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
+        TelemetryService.track(.intentInvoked, parameters: ["intent_type": "quickExpense"])
         // Gather all user input
         let input = try await resolveInput()
 
@@ -149,6 +150,7 @@ struct QuickExpenseIntent: AppIntent {
             isDraft: false
         )
 
+        TelemetryService.track(.intentSuccess, parameters: ["intent_type": "quickExpense", "outcome": "transaction_created"])
         return .result(dialog: IntentDialog(stringLiteral: speakBack), view: snippet)
     }
 
@@ -673,9 +675,11 @@ struct VoiceEntryIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        TelemetryService.track(.intentInvoked, parameters: ["intent_type": "voiceEntry"])
         if let url = URL(string: "\(WidgetURLHelper.urlScheme)://voice-entry") {
             await UIApplication.shared.open(url)
         }
+        TelemetryService.track(.intentSuccess, parameters: ["intent_type": "voiceEntry", "outcome": "app_opened"])
         return .result()
     }
 }
@@ -691,9 +695,11 @@ struct ImageEntryIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        TelemetryService.track(.intentInvoked, parameters: ["intent_type": "imageEntry"])
         if let url = URL(string: "\(WidgetURLHelper.urlScheme)://image-entry") {
             await UIApplication.shared.open(url)
         }
+        TelemetryService.track(.intentSuccess, parameters: ["intent_type": "imageEntry", "outcome": "app_opened"])
         return .result()
     }
 }
@@ -753,9 +759,11 @@ struct ApplePayTransactionIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
+        TelemetryService.track(.intentInvoked, parameters: ["intent_type": "applePay"])
         // Parse amount and currency from Wallet text (e.g., "$32.04", "S/ 25.90")
         guard let amountString = amount,
               let parsedResult = parseAmountAndCurrency(from: amountString) else {
+            TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "no_amount"])
             return .result(dialog: "shortcut.applePay.error.noAmount", view: EmptyView())
         }
 
@@ -885,6 +893,7 @@ struct ApplePayTransactionIntent: AppIntent {
             isExpense: true,
             isDraft: true
         )
+        TelemetryService.track(.intentSuccess, parameters: ["intent_type": "applePay", "outcome": "draft_created"])
         return .result(
             dialog: "shortcut.applePay.success \(formattedAmount) \(noteDisplay)",
             view: snippet
@@ -1006,6 +1015,7 @@ struct SiriNaturalEntryIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
+        TelemetryService.track(.intentInvoked, parameters: ["intent_type": "siriNatural"])
         // Step 1: Get text (request if not provided via Siri phrase)
         let finalText: String
         if let existingText = text, !existingText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -1022,6 +1032,7 @@ struct SiriNaturalEntryIntent: AppIntent {
         let isProUser = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.bool(forKey: "isProUser") ?? false
 
         guard isProUser else {
+            TelemetryService.track(.intentFailed, parameters: ["intent_type": "siriNatural", "error": "pro_required"])
             return .result(dialog: "shortcut.siriNatural.error.proRequired", view: EmptyView())
         }
 
@@ -1119,6 +1130,7 @@ struct SiriNaturalEntryIntent: AppIntent {
         // Si TODAS fallan → error explicativo (mejor que crear drafts basura).
         let validParsed = parsedTransactions.filter { $0.amount != nil }
         guard !validParsed.isEmpty else {
+            TelemetryService.track(.intentFailed, parameters: ["intent_type": "siriNatural", "error": "parsing_failed"])
             return .result(dialog: "shortcut.siriNatural.error.parsingFailedHelp", view: EmptyView())
         }
         // Si parcial: trabajamos con las válidas (informamos en speak-back final).
@@ -1271,6 +1283,8 @@ struct SiriNaturalEntryIntent: AppIntent {
             isExpense: (firstDraft?.amount ?? 0) < 0,
             isDraft: true
         )
+        let outcome = isOfflineFallback ? "draft_offline" : (partialFailures > 0 ? "draft_partial" : "draft_created")
+        TelemetryService.track(.intentSuccess, parameters: ["intent_type": "siriNatural", "outcome": outcome])
         return .result(dialog: IntentDialog(stringLiteral: dialogText), view: snippet)
     }
 }
