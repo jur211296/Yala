@@ -491,7 +491,7 @@ final class NewTransactionViewModel {
             try context.save()
             SessionState.shared.incrementDataVersion()
 
-            // F5: memorizar última cuenta usada (per-device, para QuickExpenseIntent fallback)
+            // Memoria per-device (App Group) para fallback de QuickExpenseIntent.
             if let savedAccount = result.first?.account {
                 LastUsedAccountStore.write(savedAccount.shortcutID.uuidString)
             }

@@ -33,7 +33,6 @@ struct QuickExpenseIntent: AppIntent {
 
     static var openAppWhenRun: Bool = false
 
-    // F5: parameterSummary visual en el editor de Atajos.
     static var parameterSummary: some ParameterSummary {
         Summary("shortcut.quickExpense.summaryTitle \(\.$amount) \(\.$account)") {
             \.$expenseSubcategory
@@ -137,7 +136,6 @@ struct QuickExpenseIntent: AppIntent {
         let formattedAmount = formatIntentCurrency(amount: input.amount, currencyCode: transaction.currencyCode)
         let speakBack = String(localized: "shortcut.success.short \(formattedAmount) \(resolvedSubcategory.name)")
 
-        // F5: snippet visual rico (Lock Screen, Atajos, Siri visual response)
         let isExpense = !resolvedSubcategory.safeCategory.isIncome
         let snippet = TransactionSnippetView(
             amount: input.amount,
@@ -166,12 +164,11 @@ struct QuickExpenseIntent: AppIntent {
     }
 
     private func resolveInput() async throws -> ResolvedInput {
-        // F5: type se infiere desde subcategory si está fijada (sin preguntar).
         let finalType = try await getTransactionType()
         let isIncome = (finalType == .income)
         let finalAmount = try await getAmount()
-        // F5: note y tag YA NO se preguntan automáticamente — solo si pre-llenados.
-        let finalNote = note  // pre-llenado o nil
+        // note y tag NO se preguntan automáticamente — solo viajan si están pre-llenados.
+        let finalNote = note
         let accountEntity = try await getAccount()
 
         let subcategoryName: String
@@ -273,7 +270,7 @@ struct QuickExpenseIntent: AppIntent {
 
         do {
             try context.save()
-            // F5: memorizar última cuenta usada (per-device, App Group)
+            // Memoria per-device (App Group, no synced) para fallback del intent.
             LastUsedAccountStore.write(account.shortcutID.uuidString)
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
@@ -287,7 +284,7 @@ struct QuickExpenseIntent: AppIntent {
 
     private func getTransactionType() async throws -> TransactionTypeAppEnum {
         // 1. expensesOnlyMode → siempre expense
-        if UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.bool(forKey: "expensesOnlyMode") == true {
+        if UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.bool(forKey: AppPreferences.Keys.expensesOnlyMode) == true {
             return .expense
         }
         // 2. Slot explícito gana
@@ -322,7 +319,7 @@ struct QuickExpenseIntent: AppIntent {
         if let existingAccount = account {
             return existingAccount
         }
-        // F5: fallback a lastUsedAccountID antes de preguntar.
+        // Fallback a lastUsedAccountID antes de preguntar al usuario.
         if let lastUsed = LastUsedAccountStore.read() {
             // Resolver el AppEntity desde la query — devuelve nil si la cuenta fue archivada.
             if let entity = try? await AccountQuery().entities(for: [lastUsed]).first {
@@ -715,7 +712,6 @@ struct ApplePayTransactionIntent: AppIntent {
 
     // MARK: - Parameter Summary (shows configurable fields in Shortcuts)
 
-    // F6: parameterSummary visual con monto + nombre prominente + merchant secundario.
     static var parameterSummary: some ParameterSummary {
         Summary("shortcut.applePay.summaryTitle \(\.$amount) \(\.$name)") {
             \.$merchant
@@ -825,7 +821,7 @@ struct ApplePayTransactionIntent: AppIntent {
             needsUserInput.insert("account", at: 0)
         }
 
-        // F6: Confidence routing — autoAssign (≥5 aprobs, ≤10% error) → 0.95, suggest → 0.8
+        // Confidence routing: autoAssign (≥5 aprobs, ≤10% error) → 0.95; suggest → 0.8.
         var matchedSubcategory: Subcategory?
         var subcategoryConfidence: Double?
         if !finalNote.isEmpty {
@@ -880,7 +876,7 @@ struct ApplePayTransactionIntent: AppIntent {
             deepLink: "inbox"
         )
 
-        // F6: snippet visual con badge "Borrador" — el user revisa en Inbox.
+        // Snippet con badge "Borrador" — el user revisa/aprueba en Inbox.
         let formattedAmount = formatIntentCurrency(amount: finalAmount, currencyCode: detectedCurrency ?? "USD")
         let noteDisplay = finalNote.isEmpty ? "Apple Pay" : finalNote
         let snippet = TransactionSnippetView(
@@ -904,8 +900,8 @@ struct ApplePayTransactionIntent: AppIntent {
 
     /// Parses amount and currency from Wallet text format
     /// Examples: "$32.04" -> (32.04, "USD"), "S/ 25.90" -> (25.90, "PEN"), "€25,50" -> (25.50, "EUR")
-    /// F6: Tabla expandida (Fr/CHF, kr/NOK ambiguo, A$/C$/NZ$/HK$). El `$` y `kr` ambiguos
-    /// se resuelven con la currency del lastUsedAccount cuando no hay match preciso.
+    /// Símbolos ambiguos (`$` para USD/ARS/CLP/MXN, `kr` para NOK/SEK/DKK) se resuelven
+    /// con la currency del lastUsedAccount cuando existe; sin él, fallback al símbolo default.
     @MainActor
     private func parseAmountAndCurrency(from text: String) -> (amount: Double, currency: String?)? {
         // Symbols ordered by priority (más específicos primero — "MX$" antes de "$")
@@ -939,7 +935,7 @@ struct ApplePayTransactionIntent: AppIntent {
             detectedSymbol = nil
         }
 
-        // F6: ambiguous symbols ($ y kr) → preferir currency del lastUsedAccount
+        // Ambiguous symbols ($ y kr): override con currency del lastUsedAccount si existe.
         if detectedSymbol == "$" || detectedSymbol == "kr" {
             if let lastUsedID = LastUsedAccountStore.read(),
                let accountCurrency = Self.currencyOfAccount(shortcutID: lastUsedID) {
@@ -974,7 +970,7 @@ struct ApplePayTransactionIntent: AppIntent {
         return (amount, detectedCurrency)
     }
 
-    /// F6: lookup de currencyCode por shortcutID. Usado para desambiguar `$` y `kr`.
+    /// Lookup de currencyCode por shortcutID. Usado para desambiguar `$` y `kr`.
     @MainActor
     fileprivate static func currencyOfAccount(shortcutID: String) -> String? {
         guard UUID(uuidString: shortcutID) != nil else { return nil }
@@ -1029,7 +1025,7 @@ struct SiriNaturalEntryIntent: AppIntent {
         }
 
         // Step 2: Pro gate — LLM parsing requires Pro subscription
-        let isProUser = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.bool(forKey: "isProUser") ?? false
+        let isProUser = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.bool(forKey: AppPreferences.Keys.isProUser) ?? false
 
         guard isProUser else {
             TelemetryService.track(.intentFailed, parameters: ["intent_type": "siriNatural", "error": "pro_required"])
@@ -1126,7 +1122,7 @@ struct SiriNaturalEntryIntent: AppIntent {
             }
         }
 
-        // F7: Pre-flight quality gate — descarta transactions sin amount.
+        // Pre-flight quality gate: descarta transactions sin amount.
         // Si TODAS fallan → error explicativo (mejor que crear drafts basura).
         let validParsed = parsedTransactions.filter { $0.amount != nil }
         guard !validParsed.isEmpty else {
@@ -1192,9 +1188,9 @@ struct SiriNaturalEntryIntent: AppIntent {
                 needsUserInput.append("subcategory")
             }
 
-            // F9: respeta expensesOnlyMode — si activo, fuerza isExpense=true
-            // ignorando lo que el LLM haya inferido (consistente con QuickExpense).
-            let expensesOnlyMode = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.bool(forKey: "expensesOnlyMode") ?? false
+            // Respeta expensesOnlyMode: si activo, fuerza isExpense=true ignorando
+            // lo que el LLM haya inferido (consistente con QuickExpense + ApplePay).
+            let expensesOnlyMode = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.bool(forKey: AppPreferences.Keys.expensesOnlyMode) ?? false
             let isExpense = expensesOnlyMode ? true : parsed.isExpense
 
             let signedAmount: Double?
@@ -1265,7 +1261,7 @@ struct SiriNaturalEntryIntent: AppIntent {
             deepLink: "inbox"
         )
 
-        // F7: speak-back rico (TTS-friendly) + snippet visual del primer draft
+        // Speak-back TTS-friendly + snippet visual del primer draft.
         let dialogText: String
         if isOfflineFallback {
             dialogText = String(localized: "shortcut.siriNatural.success.offline \(firstNote)")
@@ -1301,12 +1297,15 @@ struct SiriNaturalEntryIntent: AppIntent {
 enum LastUsedAccountStore {
     /// Lee el UUID-string de la última cuenta usada (o nil si no existe).
     nonisolated static func read() -> String? {
-        UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.string(forKey: "lastUsedAccountID")
+        UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?
+            .string(forKey: AppPreferences.Keys.lastUsedAccountID)
     }
 
-    /// Persiste el UUID-string de la cuenta.
+    /// Persiste el UUID-string de la cuenta. No-op si el valor ya está escrito (evita flush inútil de UserDefaults).
     nonisolated static func write(_ shortcutID: String) {
-        UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.set(shortcutID, forKey: "lastUsedAccountID")
+        guard read() != shortcutID else { return }
+        UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?
+            .set(shortcutID, forKey: AppPreferences.Keys.lastUsedAccountID)
     }
 }
 

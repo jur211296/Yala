@@ -272,7 +272,7 @@ final class TranscriptionParserService {
                 .system(.init(content: .textContent(prompt))),
                 .user(.init(content: .string(trimmedText)))
             ],
-            model: .gpt4_1_mini,  // F7: upgrade nano→mini para mejor parsing structured ES/EN
+            model: .gpt4_1_mini,  // Mejor parsing structured ES/EN para frases cortas dictadas (vs nano).
             temperature: 0.1  // Low temperature for consistent parsing
         )
 

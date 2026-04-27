@@ -18,7 +18,7 @@ final class Subcategory {
 
     /// Stable identifier for App Intents (Siri/Shortcuts). Unaffected by name/category renames.
     /// CloudKit: must have default value, no `@Attribute(.unique)`. Migration: legacy entities
-    /// receive a UUID at first save via AppBootstrapper.persistAppEntityShortcutIDs (F4).
+    /// receive a UUID at first save via AppBootstrapper.persistAppEntityShortcutIDsIfNeeded.
     var shortcutID: UUID = UUID()
 
     /// Indica si esta subcategoría proviene de la semilla inicial

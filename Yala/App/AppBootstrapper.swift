@@ -125,8 +125,13 @@ final class AppBootstrapper {
         currencyConverter.setContext(context)
         budgetAlertService.setContext(context)
 
-        // 8.5. F4: persist shortcutIDs of legacy entities (one-shot per device)
-        persistAppEntityShortcutIDsIfNeeded(context: context)
+        // 8.5. Persist shortcutIDs de legacy entities (one-shot por device).
+        // Diferido a Task no-blocking para no añadir latencia al cold launch — el
+        // único consumidor (AppEntities en Atajos) no se invoca en los primeros
+        // segundos del launch. Sentinel garantiza idempotencia.
+        Task { @MainActor in
+            persistAppEntityShortcutIDsIfNeeded(context: context)
+        }
 
         // 9. Update widget cache
         WidgetDataCache.updateCache(context: context)
@@ -398,13 +403,12 @@ final class AppBootstrapper {
         sessionState.needsExchangeRateReload = false
     }
 
-    // MARK: - F4: AppEntity shortcutID Migration
+    // MARK: - AppEntity shortcutID Migration
 
     /// One-shot pass to persist `shortcutID` UUIDs on legacy `Account` and `Subcategory`
-    /// entities created before F4. Without this, SwiftData generates a default UUID at load
-    /// time but it never persists until the entity is otherwise saved — which means each
-    /// cold launch regenerates a different UUID and atajos guardados con el UUID viejo
-    /// recurren al legacy fallback (busca por nombre).
+    /// entities. Without this, SwiftData genera el UUID default al cargar pero no persiste
+    /// hasta el siguiente save de la entity — cada cold launch regeneraría UUIDs distintos
+    /// y los atajos guardados con UUID viejo caerían al legacy fallback (lookup por name).
     /// Sentinel `appEntityShortcutIDsMigratedV1` evita re-ejecución.
     private func persistAppEntityShortcutIDsIfNeeded(context: ModelContext) {
         let key = AppPreferences.Keys.appEntityShortcutIDsMigratedV1

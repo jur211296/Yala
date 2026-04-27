@@ -224,10 +224,9 @@ final class StoreKitManager {
     /// Check current entitlements and update subscription state
     func updateSubscriptionStatus() async {
         #if DEBUG
-        // F8a: cada rama DEV early-return DEBE syncear a App Group para que el flag
-        // `isProUser` quede consistente cross-process (intents, widgets). Antes los
-        // 3 early-returns saltaban el sync → SiriNatural en Yala Dev nunca pasaba
-        // el gate Pro aunque el toggle "Simular Pro" estuviera ON.
+        // Cada rama DEV early-return DEBE syncear a App Group: el flag `isProUser`
+        // queda consistente cross-process (intents, widgets). Sin esto, SiriNatural
+        // en Yala Dev nunca pasa el gate Pro aunque "Simular Pro" esté ON.
         if devForceFreeTier {
             isProUser = false
             syncToAppGroup()

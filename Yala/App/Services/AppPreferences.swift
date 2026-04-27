@@ -959,7 +959,7 @@ final class AppPreferences {
         static let showSiriTip = "showSiriTip"
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
         static let lastSeenAppVersion = "lastSeenAppVersion"
-        static let expensesOnlyMode = "expensesOnlyMode"
+        nonisolated static let expensesOnlyMode = "expensesOnlyMode"  // accedida cross-process desde intents
 
         // One-Off Tours
         static let hasSeenSettingsTour = "hasSeenSettingsTour"
@@ -993,5 +993,11 @@ final class AppPreferences {
         static let panelHeroKPIsOrder = "panelHeroKPIsOrder"
         static let panelHeroKPIsHidden = "panelHeroKPIsHidden"
         static let panelHeroKPIsCustomized = "panelHeroKPIsCustomized"
+
+        // App Group keys cross-process (intents/widgets/share extension).
+        // `nonisolated` permite acceso desde contextos no @MainActor (e.g., LastUsedAccountStore
+        // en proceso separado del intent host). expensesOnlyMode ya declarada arriba.
+        nonisolated static let isProUser = "isProUser"
+        nonisolated static let lastUsedAccountID = "lastUsedAccountID"
     }
 }
