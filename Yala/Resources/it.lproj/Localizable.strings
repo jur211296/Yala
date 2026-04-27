@@ -2355,18 +2355,6 @@
 "shortcut.applePay.success %@ %@" = "Bozza creata: %@ presso %@. Controlla la posta in arrivo.";
 
 // Automation Shortcut
-"shortcut.automation.title" = "Voce di automazione";
-"shortcut.automation.description" = "Crea una bozza da dati JSON di automazione esterna";
-"shortcut.automation.shortTitle" = "Automazione";
-"shortcut.automation.summaryTitle" = "Registra da automazione";
-"shortcut.automation.param.json" = "Dati JSON";
-"shortcut.automation.param.json.description" = "JSON con amount, currency, merchant (opzionale), date (opzionale)";
-"shortcut.automation.error.invalidJSON" = "Formato JSON non valido. Previsto: {\"amount\": 100, \"currency\": \"USD\"}";
-"shortcut.automation.error.noAmount" = "È richiesto un importo maggiore di zero.";
-"shortcut.automation.error.noCurrency" = "È richiesta una valuta (es: USD, PEN, EUR).";
-"shortcut.automation.error.noJSON" = "Sono richiesti i dati JSON della transazione.";
-"shortcut.automation.success %@ %@" = "Bozza creata: %@ a %@. Controlla la tua posta in arrivo.";
-"shortcut.automation.defaultNote" = "Automazione";
 
 // MARK: - Siri Natural Language Entry
 "shortcut.siriNatural.title" = "Voce con Siri";

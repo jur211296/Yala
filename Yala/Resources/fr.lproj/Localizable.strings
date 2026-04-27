@@ -2355,18 +2355,6 @@
 "shortcut.applePay.success %@ %@" = "Brouillon créé : %@ chez %@. Vérifiez dans votre boîte de réception.";
 
 // Automation Shortcut
-"shortcut.automation.title" = "Entrée par automatisation";
-"shortcut.automation.description" = "Crée un brouillon à partir de données JSON d'automatisation externe";
-"shortcut.automation.shortTitle" = "Automatisation";
-"shortcut.automation.summaryTitle" = "Enregistrer depuis une automatisation";
-"shortcut.automation.param.json" = "Données JSON";
-"shortcut.automation.param.json.description" = "JSON avec amount, currency, merchant (optionnel), date (optionnel)";
-"shortcut.automation.error.invalidJSON" = "Format JSON invalide. Attendu : {\"amount\": 100, \"currency\": \"USD\"}";
-"shortcut.automation.error.noAmount" = "Un montant supérieur à zéro est requis.";
-"shortcut.automation.error.noCurrency" = "Une devise est requise (ex : USD, PEN, EUR).";
-"shortcut.automation.error.noJSON" = "Les données JSON de la transaction sont requises.";
-"shortcut.automation.success %@ %@" = "Brouillon créé : %@ à %@. Vérifie ta boîte de réception.";
-"shortcut.automation.defaultNote" = "Automatisation";
 
 // MARK: - Siri Natural Language Entry
 "shortcut.siriNatural.title" = "Saisie avec Siri";

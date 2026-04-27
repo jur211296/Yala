@@ -2543,18 +2543,6 @@
 "shortcut.applePay.success %@ %@" = "Borrador creado: %@ en %@. Revísalo en tu bandeja de entrada.";
 
 // MARK: - Automation Entry Shortcut
-"shortcut.automation.title" = "Registro por automatización";
-"shortcut.automation.description" = "Crea un borrador desde JSON de automatización externa";
-"shortcut.automation.shortTitle" = "Automatización";
-"shortcut.automation.summaryTitle" = "Registrar desde automatización";
-"shortcut.automation.param.json" = "Datos JSON";
-"shortcut.automation.param.json.description" = "JSON con amount, currency, merchant (opcional), date (opcional)";
-"shortcut.automation.error.noJSON" = "Se requieren datos JSON de la transacción.";
-"shortcut.automation.error.invalidJSON" = "El JSON no es válido. Formato: {\"amount\": 100, \"currency\": \"USD\"}";
-"shortcut.automation.error.noAmount" = "Se requiere un monto mayor a cero.";
-"shortcut.automation.error.noCurrency" = "Se requiere una divisa (ej: USD, PEN, EUR).";
-"shortcut.automation.success %@ %@" = "Borrador creado: %@ en %@. Revísalo en tu bandeja de entrada.";
-"shortcut.automation.defaultNote" = "Automatización";
 
 // MARK: - Siri Natural Language Entry
 "shortcut.siriNatural.title" = "Registro con Siri";

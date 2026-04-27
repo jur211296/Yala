@@ -2356,18 +2356,6 @@
 "shortcut.applePay.success %@ %@" = "Draft created: %@ at %@. Check your inbox to review.";
 
 // MARK: - Automation Entry Shortcut
-"shortcut.automation.title" = "Automation Entry";
-"shortcut.automation.description" = "Creates a draft from external automation JSON data";
-"shortcut.automation.shortTitle" = "Automation";
-"shortcut.automation.summaryTitle" = "Record from automation";
-"shortcut.automation.param.json" = "JSON Data";
-"shortcut.automation.param.json.description" = "JSON with amount, currency, merchant (optional), date (optional)";
-"shortcut.automation.error.noJSON" = "Transaction JSON data is required.";
-"shortcut.automation.error.invalidJSON" = "Invalid JSON format. Expected: {\"amount\": 100, \"currency\": \"USD\"}";
-"shortcut.automation.error.noAmount" = "An amount greater than zero is required.";
-"shortcut.automation.error.noCurrency" = "A currency is required (e.g., USD, PEN, EUR).";
-"shortcut.automation.success %@ %@" = "Draft created: %@ at %@. Check your inbox to review.";
-"shortcut.automation.defaultNote" = "Automation";
 
 // MARK: - Siri Natural Language Entry
 "shortcut.siriNatural.title" = "Siri Entry";

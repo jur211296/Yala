@@ -2353,18 +2353,6 @@
 "shortcut.applePay.success %@ %@" = "Entwurf erstellt: %@ bei %@. Überprüfen Sie Ihren Posteingang.";
 
 // Automation Shortcut
-"shortcut.automation.title" = "Automatisierungseintrag";
-"shortcut.automation.description" = "Erstellt einen Entwurf aus externen Automatisierungs-JSON-Daten";
-"shortcut.automation.shortTitle" = "Automatisierung";
-"shortcut.automation.summaryTitle" = "Aus Automatisierung erfassen";
-"shortcut.automation.param.json" = "JSON-Daten";
-"shortcut.automation.param.json.description" = "JSON mit amount, currency, merchant (optional), date (optional)";
-"shortcut.automation.error.invalidJSON" = "Ungültiges JSON-Format. Erwartet: {\"amount\": 100, \"currency\": \"USD\"}";
-"shortcut.automation.error.noAmount" = "Ein Betrag größer als Null ist erforderlich.";
-"shortcut.automation.error.noCurrency" = "Eine Währung ist erforderlich (z.B. USD, PEN, EUR).";
-"shortcut.automation.error.noJSON" = "Transaktions-JSON-Daten sind erforderlich.";
-"shortcut.automation.success %@ %@" = "Entwurf erstellt: %@ bei %@. Überprüfe deinen Posteingang.";
-"shortcut.automation.defaultNote" = "Automatisierung";
 
 // MARK: - Siri Natural Language Entry
 "shortcut.siriNatural.title" = "Siri-Eintrag";
