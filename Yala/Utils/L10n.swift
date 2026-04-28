@@ -15,6 +15,14 @@ extension Notification.Name {
     static let languageDidChange = Notification.Name("LanguageDidChange")
 }
 
+/// Single point of truth para bundle Y locale juntos. Evita divergencia entre
+/// formatters (que leen `AppLocale.current`) y strings (que leen `LanguageManager.bundle`).
+struct LocaleResolution {
+    let bundle: Bundle
+    let parentBundle: Bundle?
+    let locale: Locale
+}
+
 /// Manages in-app language override for users whose device language is not supported.
 /// Consume `SupportedLocale` como single source of truth — añadir un idioma se hace
 /// agregando case en `SupportedLocale.swift`, no aquí.
@@ -70,12 +78,41 @@ enum LanguageManager {
 
     /// Bundle for loading localized strings (override or main)
     static var bundle: Bundle {
-        guard let override = overrideLanguage,
-              let path = Bundle.main.path(forResource: override, ofType: "lproj"),
-              let bundle = Bundle(path: path) else {
-            return .main
+        resolved.bundle
+    }
+
+    /// Resolución completa de bundle + parentBundle + locale para el override actual.
+    /// `parentBundle` se usa en `ls()` para fallback variante→padre cuando una key
+    /// no existe en la variante (iOS NO hace este fallback automáticamente al cargar
+    /// `Bundle(path:)` directamente).
+    static var resolved: LocaleResolution {
+        // Caso 1: usuario tiene override explícito
+        if let override = overrideLanguage,
+           let overrideLocale = SupportedLocale(rawValue: override),
+           let overridePath = Bundle.main.path(forResource: overrideLocale.bundleResourceName, ofType: "lproj"),
+           let overrideBundle = Bundle(path: overridePath) {
+            // Bundle del padre (si la variante define parent y existe en el bundle)
+            var parentBundle: Bundle?
+            if let parent = overrideLocale.parent,
+               let parentPath = Bundle.main.path(forResource: parent.bundleResourceName, ofType: "lproj"),
+               let resolved = Bundle(path: parentPath) {
+                parentBundle = resolved
+            }
+            return LocaleResolution(
+                bundle: overrideBundle,
+                parentBundle: parentBundle,
+                locale: Locale(identifier: override)
+            )
         }
-        return bundle
+        // Caso 2: sin override → fallback al sistema (Bundle.main hace su lookup natural)
+        let systemLocale: Locale
+        if let preferred = Locale.preferredLanguages.first,
+           SupportedLocale.from(preferred) != nil {
+            systemLocale = Locale(identifier: preferred)
+        } else {
+            systemLocale = Locale(identifier: "en_US")
+        }
+        return LocaleResolution(bundle: .main, parentBundle: nil, locale: systemLocale)
     }
 
     // MARK: - Migration (one-shot)
@@ -107,9 +144,30 @@ enum LanguageManager {
     }
 }
 
-/// Shorthand for localized string with language override support
+/// Shorthand for localized string with language override support.
+/// Implementa fallback chain manual: variante → padre → main (en) → key.
+/// iOS NO hace este fallback automáticamente al cargar `Bundle(path:)` para una variante;
+/// si la key no existe en la variante, retorna la propia key. Necesitamos componer manualmente.
 private func ls(_ key: String, comment: String = "") -> String {
-    NSLocalizedString(key, bundle: LanguageManager.bundle, comment: comment)
+    let resolution = LanguageManager.resolved
+    let sentinel = "__YALA_MISSING__"
+
+    // 1. Bundle de la variante (o main si no hay override)
+    let variantValue = NSLocalizedString(key, bundle: resolution.bundle, value: sentinel, comment: comment)
+    if variantValue != sentinel { return variantValue }
+
+    // 2. Bundle del padre (solo si la variante declara parent)
+    if let parent = resolution.parentBundle {
+        let parentValue = NSLocalizedString(key, bundle: parent, value: sentinel, comment: comment)
+        if parentValue != sentinel { return parentValue }
+    }
+
+    // 3. Bundle.main como fallback final (en/Base)
+    let mainValue = NSLocalizedString(key, bundle: .main, value: sentinel, comment: comment)
+    if mainValue != sentinel { return mainValue }
+
+    // 4. Key como string (debug-visible: indica drift entre callsite y .strings)
+    return key
 }
 
 // MARK: - Localized Strings
@@ -5084,19 +5142,13 @@ enum L10n {
 // MARK: - App Locale
 
 /// Centralized locale configuration for date formatters and charts.
-/// Consume `SupportedLocale` como single source of truth (no hardcoded list).
+/// Lee de `LanguageManager.resolved.locale` para mantener un único punto de verdad
+/// — evita divergencia entre formatters y strings.
 enum AppLocale {
     /// The app's current locale for date formatting.
     /// Respects language override if set, otherwise uses system locale.
     static var current: Locale {
-        if let override = LanguageManager.overrideLanguage {
-            return Locale(identifier: override)
-        }
-        let preferredLanguage = Locale.preferredLanguages.first ?? "en"
-        if SupportedLocale.from(preferredLanguage) != nil {
-            return Locale(identifier: preferredLanguage)
-        }
-        return Locale(identifier: "en_US")
+        LanguageManager.resolved.locale
     }
 
     /// Short identifier for SwiftUI .locale() modifiers

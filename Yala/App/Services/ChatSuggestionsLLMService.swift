@@ -172,9 +172,14 @@ final class ChatSuggestionsLLMService {
     // MARK: - Context Builder
 
     private func buildContext(modelContext: ModelContext) -> ChatSuggestionsContext {
-        let language = LanguageManager.overrideLanguage
-            ?? Locale.current.language.languageCode?.identifier
-            ?? "es"
+        // BCP-47 completo (e.g. "es-AR", "pt-BR") — el LLM ajusta tono según variante regional.
+        let language: String
+        if let override = LanguageManager.overrideLanguage {
+            language = override
+        } else {
+            let id = Locale.current.identifier
+            language = id.isEmpty ? "es" : id
+        }
 
         let now = Date.now
         let calendar = Calendar.current

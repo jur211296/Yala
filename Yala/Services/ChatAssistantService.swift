@@ -157,7 +157,9 @@ final class ChatAssistantService {
         let needsAnomalies = AnomalyKeywords.matches(question)
 
         let locale = Locale.current
-        let language = LanguageManager.overrideLanguage ?? locale.language.languageCode?.identifier ?? "es"
+        // BCP-47 completo (e.g. "es-AR", "pt-BR") — el LLM entiende variantes regionales y
+        // ajusta tono (voseo argentino, registro coloquial brasileño, etc.) si se le pasa.
+        let language = LanguageManager.overrideLanguage ?? locale.identifier
         let country = locale.region?.identifier ?? "US"
         let currencyDisplay = CurrencyCode(rawValue: currencyCode)?.symbol ?? currencyCode
 
@@ -402,8 +404,12 @@ final class ChatAssistantService {
         case .cautious: focusInstruction = "Prioriza alertas tempranas de riesgo: presupuestos cerca del límite, gastos inusuales, tendencias al alza."
         }
 
+        // Extraer base 2-letter para el switch de registro. Variantes regionales caen al base
+        // (es-AR → es uses tuteo en system prompt; el voseo se maneja en el bundle de strings,
+        // no aquí). Si una variante necesita registro distinto en el futuro, añadir case explícito.
+        let baseLanguage = SupportedLocale.from(language)?.code ?? String(language.prefix(2))
         let register: String
-        switch language {
+        switch baseLanguage {
         case "es": register = "tuteo (tú)"
         case "de": register = "du"
         case "fr": register = "tu"
