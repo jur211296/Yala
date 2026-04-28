@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>records.deleteConfirmTitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Eliminare %d registrazione?</string>
+			<key>other</key>
+			<string>Eliminare %d registrazioni?</string>
+		</dict>
+	</dict>
+	<key>filters.subcategoriesSelectedCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d sottocategoria selezionata</string>
+			<key>other</key>
+			<string>%d sottocategorie selezionate</string>
+		</dict>
+	</dict>
+	<key>import.recordsImported</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d record importato con successo.</string>
+			<key>other</key>
+			<string>%d record importati con successo.</string>
+		</dict>
+	</dict>
+	<key>inbox.alert.message.automations</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d registrazione automatica è stata aggiunta alla tua casella.</string>
+			<key>other</key>
+			<string>%d registrazioni automatiche sono state aggiunte alla tua casella.</string>
+		</dict>
+	</dict>
+	<key>export.subcategoriesSelected</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d sottocategoria selezionata</string>
+			<key>other</key>
+			<string>%d sottocategorie selezionate</string>
+		</dict>
+	</dict>
+	<key>scheduled.widget.daysAgo</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d giorno fa</string>
+			<key>other</key>
+			<string>%d giorni fa</string>
+		</dict>
+	</dict>
+	<key>scheduled.widget.inDays</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Tra %d giorno</string>
+			<key>other</key>
+			<string>Tra %d giorni</string>
+		</dict>
+	</dict>
+	<key>scheduled.widget.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d pagamento attivo</string>
+			<key>other</key>
+			<string>%d pagamenti attivi</string>
+		</dict>
+	</dict>
+	<key>scheduled.due.days.ago</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d giorno fa</string>
+			<key>other</key>
+			<string>%d giorni fa</string>
+		</dict>
+	</dict>
+	<key>scheduled.due.in.days</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Tra %d giorno</string>
+			<key>other</key>
+			<string>Tra %d giorni</string>
+		</dict>
+	</dict>
+	<key>icloud.syncIndicator.stalled</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>È %d giorno che non salviamo su iCloud</string>
+			<key>other</key>
+			<string>Sono %d giorni che non salviamo su iCloud</string>
+		</dict>
+	</dict>
+	<key>icloud.detail.stalledTitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>È %d giorno senza sincronizzazione</string>
+			<key>other</key>
+			<string>Sono %d giorni senza sincronizzazione</string>
+		</dict>
+	</dict>
+	<key>subscription.trial.daysRemaining</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d giorno rimasto</string>
+			<key>other</key>
+			<string>%d giorni rimasti</string>
+		</dict>
+	</dict>
+	<key>subscription.downgrade.selectAccounts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Seleziona %d conto da mantenere</string>
+			<key>other</key>
+			<string>Seleziona %d conti da mantenere</string>
+		</dict>
+	</dict>
+	<key>subscription.downgrade.selectBudgets</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Seleziona %d budget da mantenere</string>
+			<key>other</key>
+			<string>Seleziona %d budget da mantenere</string>
+		</dict>
+	</dict>
+	<key>insights.ruleSharedFrequency.normal</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Hai %d spesa condivisa in questo periodo</string>
+			<key>other</key>
+			<string>Hai %d spese condivise in questo periodo</string>
+		</dict>
+	</dict>
+	<key>insights.ruleSharedFrequency.considerate</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d spesa condivisa — condividi con il gruppo</string>
+			<key>other</key>
+			<string>%d spese condivise — condividi parecchio</string>
+		</dict>
+	</dict>
+	<key>insights.ruleSharedFrequency.sarcastic</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d spesa condivisa. Fate TUTTO insieme?</string>
+			<key>other</key>
+			<string>%d spese condivise. Fate TUTTO insieme?</string>
+		</dict>
+	</dict>
+	<key>milestone.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d spesa registrata!</string>
+			<key>other</key>
+			<string>%d spese registrate!</string>
+		</dict>
+	</dict>
+	<key>groups.activate.importPrompt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Hai %d spesa condivisa. Aggiungerla ai tuoi registri?</string>
+			<key>other</key>
+			<string>Hai %d spese condivise. Aggiungerle ai tuoi registri?</string>
+		</dict>
+	</dict>
+	<key>groups.nudge.dormantNewExpenses.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Il tuo gruppo ha %d nuova spesa dalla tua ultima visita.</string>
+			<key>other</key>
+			<string>Il tuo gruppo ha %d nuove spese dalla tua ultima visita.</string>
+		</dict>
+	</dict>
+	<key>tutorials.stepsCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d passaggio</string>
+			<key>other</key>
+			<string>%d passaggi</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

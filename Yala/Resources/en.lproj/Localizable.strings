@@ -198,7 +198,6 @@
 "records.title" = "Records";
 "records.latest" = "Latest Records";
 "records.noRecords" = "No records in this period";
-"records.deleteConfirmTitle" = "Delete %d records?";
 
 // MARK: - Filters
 
@@ -223,7 +222,6 @@
 "filters.allCurrencies" = "All available";
 "filters.allNeeds" = "All needs";
 "filters.selectedCount" = "%d selected";
-"filters.subcategoriesSelectedCount" = "%d subcategories selected";
 "filters.categories" = "Categories";
 "filters.type" = "Type";
 "filters.need" = "Need";
@@ -390,7 +388,6 @@
 "import.assignAccountPerCurrency" = "Assign an account for each currency found in the file.";
 "import.selectAccountForCurrency" = "Select account";
 "import.currenciesDetected" = "%d currencies detected";
-"import.recordsImported" = "%d records imported successfully.";
 "import.recordsImportedMultiCurrency" = "%d records imported in %d currencies.";
 "import.noAccountsForCurrency" = "No accounts in %@. Create an account in this currency first.";
 "import.noCurrenciesDetected" = "No valid currencies detected in the file.";
@@ -447,7 +444,6 @@
 "inbox.alert.title.mixed" = "New records in your inbox!";
 "inbox.alert.message.scheduled" = "%d scheduled payments were added to your inbox.";
 "inbox.alert.message.subscriptions" = "%d subscriptions were added to your inbox.";
-"inbox.alert.message.automations" = "%d automatic records were added to your inbox.";
 "inbox.alert.message.mixed.scheduled" = "%d payments";
 "inbox.alert.message.mixed.subscriptions" = "%d subscriptions";
 "inbox.alert.message.mixed.automations" = "%d automatic records";
@@ -665,7 +661,6 @@
 "export.noneSelected" = "None";
 "export.accountsSelected" = "%d selected";
 "export.allCategories" = "All categories";
-"export.subcategoriesSelected" = "%d subcategories selected";
 "export.allTags" = "All tags";
 "export.allCurrencies" = "All";
 "export.column.date" = "Date";
@@ -766,12 +761,9 @@
 "widgetType.periodComparison" = "This month vs last";
 
 // MARK: - Scheduled Payments Widget
-"scheduled.widget.count" = "%d active payments";
 "scheduled.widget.empty.title" = "No upcoming payments";
 "scheduled.widget.empty.message" = "Your upcoming payments will appear here";
-"scheduled.widget.daysAgo" = "%d days ago";
 "scheduled.widget.tomorrow" = "Tomorrow";
-"scheduled.widget.inDays" = "In %d days";
 "scheduled.widget.smallTitle" = "Planned";
 "scheduled.widget.largeTitle.recurring" = "Recurring payments";
 "scheduled.widget.smallToPay" = "to pay";
@@ -1557,8 +1549,6 @@
 "scheduled.due.yesterday" = "Yesterday";
 "scheduled.due.today" = "Today";
 "scheduled.due.tomorrow" = "Tomorrow";
-"scheduled.due.days.ago" = "%d days ago";
-"scheduled.due.in.days" = "In %d days";
 
 // Actions
 "scheduled.new" = "New scheduled payment";
@@ -2498,12 +2488,10 @@
 "icloud.dataFoundMessage" = "We found your data in iCloud. No need to set up again.";
 "icloud.dataFoundAction" = "Continue";
 "icloud.syncIndicator.failed" = "Something's off with iCloud";
-"icloud.syncIndicator.stalled" = "It's been %d days since we saved to iCloud";
 "icloud.syncIndicator.hint" = "Tap to see what happened";
 "icloud.detail.upToDate" = "All up to date — last synced %@";
 "icloud.detail.errorTitle" = "Not saving to iCloud right now";
 "icloud.detail.errorMessage" = "You're offline or iCloud isn't available. Your data is safe on this device and will sync when we can.";
-"icloud.detail.stalledTitle" = "It's been %d days since we last synced";
 "icloud.detail.stalledMessage" = "Your recent changes are still on this device. Let's see what we can do to get them to iCloud.";
 "icloud.detail.technicalCode" = "Technical detail: %@";
 "icloud.detail.cta.retry" = "Retry now";
@@ -2568,15 +2556,12 @@
 "subscription.trial.title" = "Free trial";
 "subscription.trial.endsToday" = "Ends today";
 "subscription.trial.endsTomorrow" = "Ends tomorrow";
-"subscription.trial.daysRemaining" = "%d days remaining";
 "subscription.trial.subscribe" = "Subscribe";
 
 // MARK: - Downgrade Resolution
 
 "subscription.downgrade.title" = "Your subscription ended";
 "subscription.downgrade.subtitle" = "Choose which accounts and budgets to keep";
-"subscription.downgrade.selectAccounts" = "Select %d accounts to keep";
-"subscription.downgrade.selectBudgets" = "Select %d budgets to keep";
 "subscription.downgrade.confirm" = "Confirm selection";
 "subscription.downgrade.reactivate" = "Reactivate Pro";
 
@@ -2679,7 +2664,6 @@
 // MARK: - Tips & Tricks
 // MARK: - Tutorials
 "tutorials.subtitle" = "Learn how to get the most out of Yala";
-"tutorials.stepsCount" = "%d steps";
 "tutorials.next" = "Next";
 "tutorials.previous" = "Previous";
 "tutorials.done" = "Done";
@@ -2984,9 +2968,6 @@
 "insights.ruleMostExpensiveGroup.normal" = "%@ is your most expensive group with %d%% of shared spending";
 "insights.ruleMostExpensiveGroup.considerate" = "%@ accounts for %d%% of your shared spending — your main group";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ takes %d%% of your shared spending. Dominant.";
-"insights.ruleSharedFrequency.normal" = "You have %d shared expenses this period";
-"insights.ruleSharedFrequency.considerate" = "%d shared expenses — you share quite a lot with your group";
-"insights.ruleSharedFrequency.sarcastic" = "%d shared expenses. Do you do EVERYTHING together?";
 "insights.ruleHighDebt.normal" = "You have %@ pending in group debts";
 "insights.ruleHighDebt.considerate" = "There's %@ in pending debts — worth checking";
 "insights.ruleHighDebt.sarcastic" = "%@ in group debts. Time to collect.";
@@ -3187,7 +3168,6 @@
 
 // MARK: - Milestone Upgrade
 
-"milestone.title" = "%d expenses recorded!";
 "milestone.message10" = "You're building a great habit. With Yala Pro you can dictate expenses by voice.";
 "milestone.message50" = "Impressive! With AI Insights you can discover hidden patterns in your spending.";
 "milestone.message100" = "You're a finance pro. Unlock the full experience with Yala Pro.";
@@ -3544,7 +3524,6 @@
 "groups.activate.enableNotifications" = "Enable notifications";
 "groups.activate.skipNotifications" = "Not now";
 "groups.activate.done" = "Get started";
-"groups.activate.importPrompt" = "You have %d shared expenses. Add them to your records?";
 "groups.activate.importYes" = "Yes, add them";
 "groups.activate.importNo" = "No, thanks";
 
@@ -3565,7 +3544,6 @@
 "groups.nudge.dormantGroupsAsMain.message" = "You have pending shared expenses. Check how things are going.";
 "groups.nudge.dormantGroupsAsMain.cta" = "View groups";
 "groups.nudge.dormantNewExpenses.title" = "New activity";
-"groups.nudge.dormantNewExpenses.message" = "Your group has %d new expenses since your last visit.";
 "groups.nudge.dormantNewExpenses.cta" = "View expenses";
 "groups.nudge.dormantSpendingGap.title" = "Untracked spending";
 "groups.nudge.dormantSpendingGap.message" = "You have several shared expenses but your other spending isn't tracked.";

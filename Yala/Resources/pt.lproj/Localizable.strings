@@ -196,7 +196,6 @@
 "records.title" = "Registros";
 "records.latest" = "Ultimos registros";
 "records.noRecords" = "Sem registros";
-"records.deleteConfirmTitle" = "Eliminar %d registro(s)?";
 
 // MARK: - Filters
 
@@ -221,7 +220,6 @@
 "filters.allCurrencies" = "Todas disponiveis";
 "filters.allNeeds" = "Todas as necessidades";
 "filters.selectedCount" = "%d selecionadas";
-"filters.subcategoriesSelectedCount" = "%d subcategorias selecionadas";
 "filters.categories" = "Categorias";
 "filters.type" = "Tipo";
 "filters.need" = "Necessidade";
@@ -388,7 +386,6 @@
 "import.assignAccountPerCurrency" = "Atribua uma conta para cada moeda encontrada no arquivo.";
 "import.selectAccountForCurrency" = "Selecionar conta";
 "import.currenciesDetected" = "%d moedas detectadas";
-"import.recordsImported" = "%d registros importados com sucesso.";
 "import.recordsImportedMultiCurrency" = "%d registros importados em %d moedas.";
 "import.noAccountsForCurrency" = "Nenhuma conta em %@. Crie uma conta nesta moeda primeiro.";
 "import.noCurrenciesDetected" = "Nenhuma moeda valida detectada no arquivo.";
@@ -445,7 +442,6 @@
 "inbox.alert.title.mixed" = "Novos registros na sua caixa!";
 "inbox.alert.message.scheduled" = "%d pagamentos agendados foram adicionados à sua caixa.";
 "inbox.alert.message.subscriptions" = "%d assinaturas foram adicionadas à sua caixa.";
-"inbox.alert.message.automations" = "%d registros automáticos foram adicionados à sua caixa.";
 "inbox.alert.message.mixed.scheduled" = "%d pagamentos";
 "inbox.alert.message.mixed.subscriptions" = "%d assinaturas";
 "inbox.alert.message.mixed.automations" = "%d registros automáticos";
@@ -663,7 +659,6 @@
 "export.noneSelected" = "Nenhuma";
 "export.accountsSelected" = "%d selecionadas";
 "export.allCategories" = "Todas as categorias";
-"export.subcategoriesSelected" = "%d subcategorias selecionadas";
 "export.allTags" = "Todas as etiquetas";
 "export.allCurrencies" = "Todas";
 "export.column.date" = "Data";
@@ -764,12 +759,9 @@
 "widgetType.periodComparison" = "Este mês vs anterior";
 
 // MARK: - Scheduled Payments Widget
-"scheduled.widget.count" = "%d pagamentos ativos";
 "scheduled.widget.empty.title" = "Sem pagamentos";
 "scheduled.widget.empty.message" = "Adicione pagamentos agendados para ve-los aqui";
-"scheduled.widget.daysAgo" = "Ha %d dias";
 "scheduled.widget.tomorrow" = "Amanha";
-"scheduled.widget.inDays" = "Em %d dias";
 "scheduled.widget.smallTitle" = "Planejados";
 "scheduled.widget.largeTitle.recurring" = "Pagamentos recorrentes";
 "scheduled.widget.smallToPay" = "a pagar";
@@ -1559,8 +1551,6 @@
 "scheduled.due.yesterday" = "Ontem";
 "scheduled.due.today" = "Hoje";
 "scheduled.due.tomorrow" = "Amanha";
-"scheduled.due.days.ago" = "Ha %d dias";
-"scheduled.due.in.days" = "Em %d dias";
 
 // Actions
 "scheduled.new" = "Novo pagamento agendado";
@@ -2495,12 +2485,10 @@
 "icloud.dataFoundMessage" = "Encontramos seus dados no iCloud. Não é preciso configurar novamente.";
 "icloud.dataFoundAction" = "Continuar";
 "icloud.syncIndicator.failed" = "Tem um detalhe com o iCloud";
-"icloud.syncIndicator.stalled" = "Faz %d dias que não salvamos no iCloud";
 "icloud.syncIndicator.hint" = "Toque para ver o que aconteceu";
 "icloud.detail.upToDate" = "Tudo em dia — última sincronização %@";
 "icloud.detail.errorTitle" = "Por enquanto não estamos salvando no iCloud";
 "icloud.detail.errorMessage" = "Sem conexão ou o iCloud não está disponível. Seus dados seguem seguros neste dispositivo e serão sincronizados assim que possível.";
-"icloud.detail.stalledTitle" = "Faz %d dias que não sincronizamos";
 "icloud.detail.stalledMessage" = "Suas mudanças recentes seguem neste dispositivo. Vamos ver o que podemos fazer para colocá-las no iCloud.";
 "icloud.detail.technicalCode" = "Detalhe técnico: %@";
 "icloud.detail.cta.retry" = "Tentar de novo";
@@ -2565,15 +2553,12 @@
 "subscription.trial.title" = "Teste gratuito";
 "subscription.trial.endsToday" = "Termina hoje";
 "subscription.trial.endsTomorrow" = "Termina amanhã";
-"subscription.trial.daysRemaining" = "%d dias restantes";
 "subscription.trial.subscribe" = "Assinar";
 
 // MARK: - Downgrade Resolution
 
 "subscription.downgrade.title" = "Sua assinatura terminou";
 "subscription.downgrade.subtitle" = "Escolha quais contas e orçamentos manter";
-"subscription.downgrade.selectAccounts" = "Selecione %d contas para manter";
-"subscription.downgrade.selectBudgets" = "Selecione %d orçamentos para manter";
 "subscription.downgrade.confirm" = "Confirmar seleção";
 "subscription.downgrade.reactivate" = "Reativar Pro";
 
@@ -2661,7 +2646,6 @@
 // MARK: - Tips & Tricks
 // MARK: - Tutorials
 "tutorials.subtitle" = "Aprende a tirar o máximo proveito do Yala";
-"tutorials.stepsCount" = "%d passos";
 "tutorials.next" = "Seguinte";
 "tutorials.previous" = "Anterior";
 "tutorials.done" = "Concluído";
@@ -2981,9 +2965,6 @@
 "insights.ruleMostExpensiveGroup.normal" = "%@ e seu grupo mais caro com %d%% dos gastos compartilhados";
 "insights.ruleMostExpensiveGroup.considerate" = "%@ representa %d%% dos gastos compartilhados — seu grupo principal";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ leva %d%% dos gastos compartilhados. Dominante.";
-"insights.ruleSharedFrequency.normal" = "Voce tem %d gastos compartilhados neste periodo";
-"insights.ruleSharedFrequency.considerate" = "%d gastos compartilhados — voce compartilha bastante";
-"insights.ruleSharedFrequency.sarcastic" = "%d gastos compartilhados. Fazem TUDO juntos?";
 "insights.ruleHighDebt.normal" = "Voce tem %@ pendentes em dividas de grupo";
 "insights.ruleHighDebt.considerate" = "Ha %@ em dividas pendentes — vale conferir";
 "insights.ruleHighDebt.sarcastic" = "%@ em dividas de grupo. Hora de cobrar.";
@@ -3184,7 +3165,6 @@
 
 // MARK: - Milestone Upgrade
 
-"milestone.title" = "%d despesas registradas!";
 "milestone.message10" = "Você está criando um ótimo hábito. Com Yala Pro você pode ditar despesas por voz.";
 "milestone.message50" = "Impressionante! Com Insights IA você pode descobrir padrões ocultos nos seus gastos.";
 "milestone.message100" = "Você é um expert em finanças. Desbloqueie a experiência completa com Yala Pro.";
@@ -3541,7 +3521,6 @@
 "groups.activate.enableNotifications" = "Ativar notificações";
 "groups.activate.skipNotifications" = "Agora não";
 "groups.activate.done" = "Começar";
-"groups.activate.importPrompt" = "Você tem %d despesas compartilhadas. Adicionar aos seus registros?";
 "groups.activate.importYes" = "Sim, adicionar";
 "groups.activate.importNo" = "Não, obrigado";
 
@@ -3562,7 +3541,6 @@
 "groups.nudge.dormantGroupsAsMain.message" = "Você tem despesas compartilhadas pendentes. Confira como estão as coisas.";
 "groups.nudge.dormantGroupsAsMain.cta" = "Ver grupos";
 "groups.nudge.dormantNewExpenses.title" = "Novidades";
-"groups.nudge.dormantNewExpenses.message" = "Seu grupo tem %d novas despesas desde sua última visita.";
 "groups.nudge.dormantNewExpenses.cta" = "Ver despesas";
 "groups.nudge.dormantSpendingGap.title" = "Gastos não registrados";
 "groups.nudge.dormantSpendingGap.message" = "Você tem várias despesas compartilhadas, mas seus outros gastos não estão registrados.";
