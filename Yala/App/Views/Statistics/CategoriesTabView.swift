@@ -30,6 +30,26 @@ struct CategoriesTabView: View {
     let tags: [Tag]
     let allTransactions: [TransactionItem]
 
+    // MARK: - Scheduled Payments (for Sankey "Planificados" branch)
+
+    /// Loaded internally — the parent view doesn't pass these.
+    @Query private var scheduledPayments: [ScheduledPayment]
+
+    /// Compound signature that triggers Sankey recompute when any active SP changes
+    /// (create / delete / amount edit / nextDueDate edit / kind change / activation toggle / skip toggle).
+    private var scheduledPaymentsSignature: Int {
+        var hasher = Hasher()
+        for sp in scheduledPayments where sp.isActive {
+            hasher.combine(sp.id)
+            hasher.combine(sp.amount)
+            hasher.combine(sp.nextDueDate.timeIntervalSince1970)
+            hasher.combine(sp.paymentCategory)
+            hasher.combine(sp.transactionType)
+            hasher.combine(sp.skippedDatesRaw)
+        }
+        return hasher.finalize()
+    }
+
     // MARK: - External Dependencies
 
     @Bindable var viewModel: StatisticsViewModel
@@ -136,14 +156,11 @@ struct CategoriesTabView: View {
         .scrollViewGlassEdges()
         .onAppear {
             calculateData()
-            viewModel.calculateSankeyData(allTransactions: allTransactions, accounts: accounts)
+            recomputeSankey()
         }
-        .onChange(of: viewModel.sankeyInputKey) {
-            viewModel.calculateSankeyData(allTransactions: allTransactions, accounts: accounts)
-        }
-        .onChange(of: allTransactions.count) {
-            viewModel.calculateSankeyData(allTransactions: allTransactions, accounts: accounts)
-        }
+        .onChange(of: viewModel.sankeyInputKey) { recomputeSankey() }
+        .onChange(of: allTransactions.count) { recomputeSankey() }
+        .onChange(of: scheduledPaymentsSignature) { recomputeSankey() }
         .onChange(of: viewModel.detailPeriod) {
             calculateData()
         }
@@ -564,6 +581,15 @@ struct CategoriesTabView: View {
             Spacer(minLength: DS.Spacing.sm)
             SankeyLabelModeToggle(mode: prefs)
         }
+    }
+
+    private func recomputeSankey() {
+        viewModel.calculateSankeyData(
+            allTransactions: allTransactions,
+            accounts: accounts,
+            scheduledPayments: scheduledPayments,
+            defaultCurrencyCode: defaultCurrencyCode
+        )
     }
 
     private func toggleSankeyCategory(_ catID: PersistentIdentifier) {

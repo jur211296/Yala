@@ -3584,6 +3584,9 @@
 "statistics.sankey.expenses" = "Despesas";
 "statistics.sankey.available" = "Disponível";
 "statistics.sankey.others" = "Outros";
+"statistics.sankey.planned" = "Planejados"; // TODO l10n review
+"statistics.sankey.plannedRecurring" = "Recorrentes"; // TODO l10n review
+"statistics.sankey.plannedSubscription" = "Assinaturas"; // TODO l10n review
 "statistics.sankey.toggleAmount" = "Mostrar valores";
 "statistics.sankey.togglePercentage" = "Mostrar percentagens";
 

@@ -3586,6 +3586,9 @@
 "statistics.sankey.expenses" = "Spese";
 "statistics.sankey.available" = "Disponibile";
 "statistics.sankey.others" = "Altri";
+"statistics.sankey.planned" = "Pianificati";
+"statistics.sankey.plannedRecurring" = "Ricorrenti";
+"statistics.sankey.plannedSubscription" = "Abbonamenti";
 "statistics.sankey.toggleAmount" = "Mostra importi";
 "statistics.sankey.togglePercentage" = "Mostra percentuali";
 

@@ -381,9 +381,15 @@ final class StatisticsViewModel: Filterable {
     /// `selectedSubcategories` so the flow structure remains stable when the user
     /// taps a category or subcategory elsewhere (dimming happens in the view).
     /// Always applies the current `panelDateInterval`, independent of `selectedMetric`.
+    ///
+    /// The "Planificados" branch is computed via `PlannedOccurrenceBuilder` from the
+    /// pending occurrences of active expense scheduled payments within `interval`.
+    /// Pass `scheduledPayments: []` to disable the branch (rollback path).
     func calculateSankeyData(
         allTransactions: [TransactionItem],
-        accounts: [Account]
+        accounts: [Account],
+        scheduledPayments: [ScheduledPayment],
+        defaultCurrencyCode: String
     ) {
         let interval = panelDateInterval
         let criteria = buildSankeyFilterCriteria(interval: interval)
@@ -392,10 +398,21 @@ final class StatisticsViewModel: Filterable {
             accounts: accounts,
             criteria: criteria
         )
+        let plannedPending = PlannedOccurrenceBuilder.build(
+            scheduledPayments: scheduledPayments,
+            filteredTransactions: filtered,
+            interval: interval,
+            selectedAccounts: selectedAccounts,
+            defaultCurrencyCode: defaultCurrencyCode,
+            converter: CurrencyConverter.shared
+        )
         let newData = SankeyFlowCalculator.compute(
             transactions: filtered,
             interval: interval,
-            maxPerColumn: .max
+            maxPerColumn: .max,
+            plannedPending: plannedPending,
+            plannedSplit: .byKind,
+            propagatePlannedToCategories: true
         )
         if newData != sankeyData { sankeyData = newData }
     }

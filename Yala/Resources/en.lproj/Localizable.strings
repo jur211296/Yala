@@ -3587,6 +3587,9 @@
 "statistics.sankey.expenses" = "Expenses";
 "statistics.sankey.available" = "Available";
 "statistics.sankey.others" = "Others";
+"statistics.sankey.planned" = "Planned";
+"statistics.sankey.plannedRecurring" = "Recurring";
+"statistics.sankey.plannedSubscription" = "Subscriptions";
 "statistics.sankey.toggleAmount" = "Show amounts";
 "statistics.sankey.togglePercentage" = "Show percentages";
 

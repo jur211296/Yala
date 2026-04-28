@@ -505,4 +505,222 @@ struct SankeyFlowCalculatorTests {
         )
         #expect(result.totalExpense == 250)
     }
+
+    // MARK: - Planificados branch (unified)
+
+    @Test func compute_plannedDefault_emptyArrayMatchesBaseline() {
+        let salary = makeCategory(name: "Salary", isIncome: true)
+        let food = makeCategory(name: "Food")
+        let txs = [
+            makeTransaction(amount: 1000, category: salary),
+            makeTransaction(amount: -300, category: food)
+        ]
+        let baseline = SankeyFlowCalculator.compute(transactions: txs, interval: defaultInterval)
+        let withEmptyPlanned = SankeyFlowCalculator.compute(
+            transactions: txs,
+            interval: defaultInterval,
+            plannedPending: []
+        )
+        #expect(baseline == withEmptyPlanned)
+    }
+
+    @Test func compute_plannedSingle_underSurplus_addsPlannedNode() {
+        let salary = makeCategory(name: "Salary", isIncome: true)
+        let food = makeCategory(name: "Food")
+        let txs = [
+            makeTransaction(amount: 1000, category: salary),
+            makeTransaction(amount: -300, category: food)
+        ]
+        let planned = [PlannedOccurrence(amount: 200, kind: .recurring, categoryID: nil)]
+        let result = SankeyFlowCalculator.compute(
+            transactions: txs,
+            interval: defaultInterval,
+            plannedPending: planned
+        )
+        let pool = result.nodes(in: .pool)
+        let plannedNode = pool.first { $0.id == "pool_planned" }
+        let availableNode = pool.first { $0.id == "pool_available" }
+        #expect(plannedNode?.amount == 200)
+        // surplus was 700, planned took 200 → available 500
+        #expect(availableNode?.amount == 500)
+    }
+
+    @Test func compute_plannedExceedsSurplus_caps_disponibleZero() {
+        let salary = makeCategory(name: "Salary", isIncome: true)
+        let food = makeCategory(name: "Food")
+        let txs = [
+            makeTransaction(amount: 1000, category: salary),
+            makeTransaction(amount: -300, category: food)
+        ]
+        let planned = [PlannedOccurrence(amount: 1500, kind: .recurring, categoryID: nil)]
+        let result = SankeyFlowCalculator.compute(
+            transactions: txs,
+            interval: defaultInterval,
+            plannedPending: planned
+        )
+        let pool = result.nodes(in: .pool)
+        let plannedNode = pool.first { $0.id == "pool_planned" }
+        let availableNode = pool.first { $0.id == "pool_available" }
+        // Cap at surplus = 700
+        #expect(plannedNode?.amount == 700)
+        // Disponible = 0 → no node emitted (amount-zero nodes are filtered)
+        #expect(availableNode == nil)
+    }
+
+    @Test func compute_plannedEqualsSurplus_disponibleNotEmitted() {
+        let salary = makeCategory(name: "Salary", isIncome: true)
+        let food = makeCategory(name: "Food")
+        let txs = [
+            makeTransaction(amount: 1000, category: salary),
+            makeTransaction(amount: -300, category: food)
+        ]
+        let planned = [PlannedOccurrence(amount: 700, kind: .recurring, categoryID: nil)]
+        let result = SankeyFlowCalculator.compute(
+            transactions: txs,
+            interval: defaultInterval,
+            plannedPending: planned
+        )
+        let pool = result.nodes(in: .pool)
+        #expect(pool.first { $0.id == "pool_planned" }?.amount == 700)
+        #expect(pool.first { $0.id == "pool_available" } == nil)
+    }
+
+    @Test func compute_planned_noIncome_producesNoLinks() {
+        let food = makeCategory(name: "Food")
+        let txs = [makeTransaction(amount: -100, category: food)]
+        let planned = [PlannedOccurrence(amount: 50, kind: .recurring, categoryID: nil)]
+        let result = SankeyFlowCalculator.compute(
+            transactions: txs,
+            interval: defaultInterval,
+            plannedPending: planned
+        )
+        // No income → surplus=0 → plannedShown=0 → no planned node, no income→planned links
+        #expect(result.nodes(in: .pool).first { $0.id == "pool_planned" } == nil)
+        let plannedLinks = result.links.filter { $0.targetID == "pool_planned" }
+        #expect(plannedLinks.isEmpty)
+    }
+
+    // MARK: - Planificados branch (split by kind)
+
+    @Test func compute_plannedSplitByKind_producesTwoNodes() {
+        let salary = makeCategory(name: "Salary", isIncome: true)
+        let food = makeCategory(name: "Food")
+        let txs = [
+            makeTransaction(amount: 1000, category: salary),
+            makeTransaction(amount: -300, category: food)
+        ]
+        let planned = [
+            PlannedOccurrence(amount: 100, kind: .recurring, categoryID: nil),
+            PlannedOccurrence(amount: 50, kind: .subscription, categoryID: nil)
+        ]
+        let result = SankeyFlowCalculator.compute(
+            transactions: txs,
+            interval: defaultInterval,
+            plannedPending: planned,
+            plannedSplit: .byKind
+        )
+        let pool = result.nodes(in: .pool)
+        #expect(pool.first { $0.id == "pool_planned_recurring" }?.amount == 100)
+        #expect(pool.first { $0.id == "pool_planned_subscription" }?.amount == 50)
+        // Unified node should NOT exist when split is byKind.
+        #expect(pool.first { $0.id == "pool_planned" } == nil)
+    }
+
+    @Test func compute_plannedSplitByKind_singleKind_producesSingleNode() {
+        let salary = makeCategory(name: "Salary", isIncome: true)
+        let food = makeCategory(name: "Food")
+        let txs = [
+            makeTransaction(amount: 1000, category: salary),
+            makeTransaction(amount: -300, category: food)
+        ]
+        let planned = [PlannedOccurrence(amount: 100, kind: .recurring, categoryID: nil)]
+        let result = SankeyFlowCalculator.compute(
+            transactions: txs,
+            interval: defaultInterval,
+            plannedPending: planned,
+            plannedSplit: .byKind
+        )
+        let pool = result.nodes(in: .pool)
+        #expect(pool.first { $0.id == "pool_planned_recurring" }?.amount == 100)
+        #expect(pool.first { $0.id == "pool_planned_subscription" } == nil)
+    }
+
+    @Test func compute_plannedSplitByKind_capPreservesRatio() {
+        // surplus = 100, planned = 200 (recurring 150 + subscription 50)
+        // Expected: cap to 100, preserve ratio recurring:subscription = 3:1
+        // → recurringShown = 75, subscriptionShown = 25
+        let salary = makeCategory(name: "Salary", isIncome: true)
+        let food = makeCategory(name: "Food")
+        let txs = [
+            makeTransaction(amount: 1000, category: salary),
+            makeTransaction(amount: -900, category: food)
+        ]
+        let planned = [
+            PlannedOccurrence(amount: 150, kind: .recurring, categoryID: nil),
+            PlannedOccurrence(amount: 50, kind: .subscription, categoryID: nil)
+        ]
+        let result = SankeyFlowCalculator.compute(
+            transactions: txs,
+            interval: defaultInterval,
+            plannedPending: planned,
+            plannedSplit: .byKind
+        )
+        let pool = result.nodes(in: .pool)
+        let recurring = pool.first { $0.id == "pool_planned_recurring" }?.amount ?? 0
+        let subscription = pool.first { $0.id == "pool_planned_subscription" }?.amount ?? 0
+        #expect(abs(recurring - 75) < 0.01)
+        #expect(abs(subscription - 25) < 0.01)
+        #expect(abs((recurring + subscription) - 100) < 0.01)
+    }
+
+    // MARK: - Planificados branch (propagation to categories)
+
+    @Test func compute_plannedPropagation_createsLinkToExistingCat() {
+        let salary = makeCategory(name: "Salary", isIncome: true)
+        let food = makeCategory(name: "Food")
+        let txs = [
+            makeTransaction(amount: 1000, category: salary),
+            makeTransaction(amount: -300, category: food)
+        ]
+        let foodID = food.persistentModelID
+        let planned = [PlannedOccurrence(amount: 100, kind: .recurring, categoryID: foodID)]
+        let result = SankeyFlowCalculator.compute(
+            transactions: txs,
+            interval: defaultInterval,
+            plannedPending: planned,
+            propagatePlannedToCategories: true
+        )
+        let foodCatNode = result.nodes(in: .expenseCategory).first { $0.persistentID == foodID }
+        #expect(foodCatNode != nil)
+        let plannedToFood = result.links.first {
+            $0.sourceID == "pool_planned" && $0.targetID == foodCatNode?.id
+        }
+        #expect(plannedToFood?.amount == 100)
+    }
+
+    @Test func compute_plannedPropagation_categoryWithoutExpenses_doesNotCreateNode() {
+        let salary = makeCategory(name: "Salary", isIncome: true)
+        let food = makeCategory(name: "Food")
+        let entertainment = makeCategory(name: "Entertainment")
+        let txs = [
+            makeTransaction(amount: 1000, category: salary),
+            makeTransaction(amount: -300, category: food)
+        ]
+        // Planned points at "entertainment" which has no real expense → category node should NOT spawn.
+        let entertainmentID = entertainment.persistentModelID
+        let planned = [PlannedOccurrence(amount: 100, kind: .recurring, categoryID: entertainmentID)]
+        let result = SankeyFlowCalculator.compute(
+            transactions: txs,
+            interval: defaultInterval,
+            plannedPending: planned,
+            propagatePlannedToCategories: true
+        )
+        let entertainmentCatNode = result.nodes(in: .expenseCategory).first {
+            $0.persistentID == entertainmentID
+        }
+        #expect(entertainmentCatNode == nil)
+        // Branch terminates at column 1 (no link to expense cats from the planned node).
+        let danglingLinks = result.links.filter { $0.sourceID == "pool_planned" }
+        #expect(danglingLinks.isEmpty)
+    }
 }

@@ -24,6 +24,31 @@ enum SankeyLabelMode: String, CaseIterable, Equatable, Hashable {
     case percentage
 }
 
+// MARK: - Planned (scheduled payments branch)
+
+/// Kind of planned (scheduled) payment for the Sankey "Planificados" branch.
+/// Mirrors `ScheduledPayment.paymentCategory`.
+enum PlannedKind: String, Equatable, Hashable {
+    case recurring
+    case subscription
+}
+
+/// Single occurrence of a pending scheduled payment within the Sankey period.
+/// Amount is already converted to the user's preferred currency by the builder.
+struct PlannedOccurrence: Equatable, Hashable {
+    let amount: Double
+    let kind: PlannedKind
+    /// Parent category of the SP's subcategory. Nil if the SP has no subcategory.
+    /// Used by Fase 3 (propagation to expense categories).
+    let categoryID: PersistentIdentifier?
+}
+
+/// Whether to render Planificados as a single pool node or split by kind.
+enum PlannedSplit: Equatable, Hashable {
+    case unified
+    case byKind
+}
+
 // MARK: - Node
 
 struct SankeyNode: Identifiable, Equatable, Hashable {

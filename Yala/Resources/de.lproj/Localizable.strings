@@ -3584,6 +3584,9 @@
 "statistics.sankey.expenses" = "Ausgaben";
 "statistics.sankey.available" = "Verfügbar";
 "statistics.sankey.others" = "Andere";
+"statistics.sankey.planned" = "Geplant"; // TODO l10n review
+"statistics.sankey.plannedRecurring" = "Wiederkehrend"; // TODO l10n review
+"statistics.sankey.plannedSubscription" = "Abos"; // TODO l10n review
 "statistics.sankey.toggleAmount" = "Beträge anzeigen";
 "statistics.sankey.togglePercentage" = "Prozentsätze anzeigen";
 
