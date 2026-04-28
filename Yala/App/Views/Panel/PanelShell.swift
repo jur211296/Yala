@@ -43,10 +43,21 @@ struct PanelShell: View {
             .onChange(of: sessionState.selectedMainTab) { _, _ in
                 drainPanelIfActive()
             }
+            // Gate .panel intents while ChatSheet is open: prevents draining
+            // sheet-presenting intents before ChatSheet's dismiss animation completes.
+            .onChange(of: sheets.showChatSheet) { _, isOpen in
+                if isOpen {
+                    AppRouter.shared.markUnready(.panel)
+                } else {
+                    AppRouter.shared.markReady(.panel)
+                    drainPanelIfActive()
+                }
+            }
     }
 
     private func drainPanelIfActive() {
         guard sessionState.selectedMainTab == .panel else { return }
+        guard !sheets.showChatSheet else { return }
         guard let intent = AppRouter.shared.drainNext(for: .panel) else { return }
         handlePanelIntent(intent)
     }

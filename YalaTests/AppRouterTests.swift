@@ -137,6 +137,47 @@ struct AppRouterTests {
         #expect(router._testQueue.count == 1)
     }
 
+    /// Simula el gating del ChatSheet en PanelShell: mientras chat abierto,
+    /// `.panel` está unready y los intents (incluido el del Edit del draft)
+    /// permanecen en queue. Al cerrar el chat, markReady drena.
+    @MainActor @Test func chatSheetUnreadyBlocksDrain_thenDrainsOnReady() {
+        let router = freshRouter()
+        router.markReady(.panel)
+
+        // Chat abre → unready
+        router.markUnready(.panel)
+
+        // User tap Edit → enqueue
+        let prefill = ChatDraftPrefill(
+            originMessageID: UUID(),
+            originDraftID: UUID(),
+            accountID: nil,
+            subcategoryID: nil,
+            amount: 50,
+            currencyCode: "PEN",
+            note: "almuerzo",
+            date: Date.now,
+            isExpense: true,
+            tagIDs: []
+        )
+        router.enqueue(.presentNewTransactionFromChatDraft(prefill))
+
+        // Intent queueado, drain bloqueado
+        #expect(router.drainNext(for: .panel) == nil)
+        #expect(router._testQueue.count == 1)
+
+        // Chat cierra → ready → intent drenable
+        router.markReady(.panel)
+        let drained = router.drainNext(for: .panel)
+        #expect(drained != nil)
+        if case .presentNewTransactionFromChatDraft = drained {
+            // success
+        } else {
+            Issue.record("Expected presentNewTransactionFromChatDraft, got \(String(describing: drained))")
+        }
+        #expect(router._testQueue.isEmpty)
+    }
+
     // MARK: - reset
 
     @MainActor @Test func resetTransients_removesTransientIntents_keepsPersistenceBacked() {
