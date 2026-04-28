@@ -1,0 +1,143 @@
+/*
+  Localizable.strings (English)
+  YalaWidgets
+
+  English localization for widget texts.
+*/
+
+// MARK: - Gallery (widget gallery names and descriptions)
+"widget.gallery.scheduledPayments" = "Upcoming 支払い";
+"widget.gallery.scheduledPayments.desc" = "あなたの upcoming payments and subscriptions";
+"widget.gallery.quickManual" = "新しい Record";
+"widget.gallery.quickManual.desc" = "Record an expense or income manually";
+"widget.gallery.quickVoice" = "Voice Record";
+"widget.gallery.quickVoice.desc" = "Dictate あなたの expense or income";
+"widget.gallery.quickImage" = "Scan Receipt";
+"widget.gallery.quickImage.desc" = "Record from a photo or receipt";
+"widget.gallery.cashFlow" = "Cash Flow";
+"widget.gallery.cashFlow.desc" = "あなたの net cash flow";
+"widget.gallery.balance" = "残高";
+"widget.gallery.balance.desc" = "あなたの total balance with trend";
+"widget.gallery.budgets" = "予算";
+"widget.gallery.budgets.desc" = "あなたの budget progress";
+"widget.gallery.latestRecords" = "Latest Records";
+"widget.gallery.latestRecords.desc" = "あなたの most recent transactions";
+"widget.gallery.expense" = "支出";
+"widget.gallery.expense.desc" = "あなたの total expenses for the period";
+"widget.gallery.categoriesPie" = "Categories (Pie)";
+"widget.gallery.categoriesPie.desc" = "支出 distribution by category";
+"widget.gallery.subcategoriesPie" = "Subcategories (Pie)";
+"widget.gallery.subcategoriesPie.desc" = "支出 distribution by subcategory";
+"widget.gallery.topCategories" = "Top Categories";
+"widget.gallery.topCategories.desc" = "あなたの categories with most expenses";
+"widget.gallery.topSubcategories" = "Top Subcategories";
+"widget.gallery.topSubcategories.desc" = "あなたの subcategories with most expenses";
+
+// MARK: - Gallery (Lock Screen accessory widgets)
+"widget.gallery.accessoryBalance" = "残高";
+"widget.gallery.accessoryBalance.desc" = "あなたの balance on Lock Screen";
+"widget.gallery.accessoryExpense" = "支出";
+"widget.gallery.accessoryExpense.desc" = "あなたの expenses on Lock Screen";
+"widget.gallery.accessoryBudget" = "予算";
+"widget.gallery.accessoryBudget.desc" = "あなたの most used budget";
+"widget.gallery.accessoryPayment" = "Next Payment";
+"widget.gallery.accessoryPayment.desc" = "あなたの next scheduled payment";
+
+// MARK: - Intent titles and descriptions
+"widget.intent.cashFlow.title" = "Cash Flow";
+"widget.intent.cashFlow.desc" = "Shows あなたの net cash flow";
+"widget.intent.balance.title" = "残高";
+"widget.intent.balance.desc" = "Shows あなたの total balance";
+"widget.intent.expense.title" = "支出";
+"widget.intent.expense.desc" = "Shows あなたの total expenses";
+"widget.intent.categoriesPie.title" = "Categories (Pie)";
+"widget.intent.categoriesPie.desc" = "支出 distribution by category";
+"widget.intent.subcategoriesPie.title" = "Subcategories (Pie)";
+"widget.intent.subcategoriesPie.desc" = "支出 distribution by subcategory";
+"widget.intent.topCategories.title" = "Top Categories";
+"widget.intent.topCategories.desc" = "Shows あなたの categories with most expenses";
+"widget.intent.topSubcategories.title" = "Top Subcategories";
+"widget.intent.topSubcategories.desc" = "Shows あなたの subcategories with most expenses";
+"widget.intent.budgets.title" = "予算";
+"widget.intent.budgets.desc" = "Shows あなたの budget progress";
+"widget.intent.scheduledPayments.title" = "Upcoming 支払い";
+"widget.intent.scheduledPayments.desc" = "Shows あなたの upcoming scheduled payments";
+"widget.intent.latestRecords.title" = "Latest Records";
+"widget.intent.latestRecords.desc" = "Shows あなたの most recent transactions";
+"widget.intent.accessoryBalance.title" = "残高";
+"widget.intent.accessoryBalance.desc" = "Period balance";
+"widget.intent.accessoryExpense.title" = "支出";
+"widget.intent.accessoryExpense.desc" = "Period expenses";
+"widget.intent.accessoryBudget.title" = "予算";
+"widget.intent.accessoryBudget.desc" = "Most used budget";
+"widget.intent.accessoryPayment.title" = "Next Payment";
+"widget.intent.accessoryPayment.desc" = "Next scheduled payment";
+"widget.intent.quickEntry.title" = "Quick Entry";
+"widget.intent.quickEntry.desc" = "Configure quick action widgets to add records";
+
+// MARK: - Selection Mode
+"widget.selection.mode.type" = "Show";
+"widget.selection.automatic" = "Automatic";
+"widget.selection.custom" = "Custom";
+
+// MARK: - Selection Parameters
+"widget.select.budgets" = "予算";
+"widget.select.payments" = "支払い";
+
+// MARK: - Entities
+"widget.entity.budget" = "予算";
+"widget.entity.payment" = "予定 Payment";
+
+// MARK: - UI (texts in widget views)
+"widget.ui.noPayments" = "なし pending payments";
+"widget.ui.noBudgets" = "なし budgets";
+"widget.ui.noRecords" = "なし records";
+"widget.ui.noExpenses" = "なし expenses";
+"widget.ui.noData" = "なし data";
+"widget.ui.notEnoughData" = "Not enough data";
+"widget.ui.income" = "収入";
+"widget.ui.expenses" = "支出";
+"widget.ui.balance" = "残高";
+"widget.ui.netFlow" = "Net Flow";
+"widget.ui.cashFlow" = "Cash Flow";
+"widget.ui.total" = "合計";
+"widget.ui.ofLimit" = "of %@";
+"widget.ui.newRecord" = "Quick Entry";
+"widget.ui.voiceRecord" = "Voice Entry";
+"widget.ui.scanReceipt" = "Image Entry";
+"widget.ui.upcomingPayments" = "Upcoming 支払い";
+"widget.ui.budgets" = "予算";
+"widget.ui.latestRecords" = "Latest Records";
+"widget.ui.categories" = "Categories";
+"widget.ui.subcategories" = "Subcategories";
+"widget.ui.topCategories" = "Top Categories";
+"widget.ui.topSubcategories" = "Top Subcategories";
+"widget.ui.noNote" = "なし note";
+
+// MARK: - Date labels
+"widget.ui.overdue" = "Overdue";
+"widget.ui.today" = "今日";
+"widget.ui.tomorrow" = "Tomorrow";
+
+// MARK: - Period (period selector)
+"widget.period.type" = "Period";
+"widget.period.sameAsApp" = "Same as app";
+"widget.period.thisWeek" = "This Week";
+"widget.period.last7Days" = "Last 7 Days";
+"widget.period.last30Days" = "Last 30 Days";
+"widget.period.thisMonth" = "This Month";
+"widget.period.lastMonth" = "Last Month";
+"widget.period.thisYear" = "This Year";
+"widget.period.lastYear" = "Last Year";
+"widget.period.allTime" = "All Time";
+
+// MARK: - Payment Category
+"widget.paymentCategory.all" = "All";
+"widget.paymentCategory.recurring" = "Recurring";
+"widget.paymentCategory.subscription" = "Subscriptions";
+
+// MARK: - Control Widgets
+"widget.control.voiceExpense" = "Voice Entry";
+"widget.control.voiceExpense.desc" = "Dictate あなたの entry to Yala";
+"widget.control.photoExpense" = "Image Entry";
+"widget.control.photoExpense.desc" = "Record with an image in Yala";
