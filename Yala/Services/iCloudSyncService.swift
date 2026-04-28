@@ -66,6 +66,11 @@ final class iCloudSyncService {
     private(set) var lastImportError: CKError?
     private(set) var consecutiveExportFailures: Int = 0
 
+    /// Flag in-memory que indica si CloudKit completó al menos un importEvent
+    /// con endDate (sin error). Usado por servicios dependientes de data
+    /// remota (e.g. UserSegmentService) para decidir si su estado es confiable.
+    private(set) var hasCompletedFirstImport: Bool = false
+
     /// Whether iCloud account is available (sync is automatic when true).
     var isAccountAvailable: Bool {
         SwiftDataConfiguration.isICloudAvailable()
@@ -211,6 +216,13 @@ final class iCloudSyncService {
                 lastSuccessfulImportDate = endDate
                 pendingFailedTransition?.cancel()
                 promoteToIdleOrStalled()
+                if !hasCompletedFirstImport {
+                    hasCompletedFirstImport = true
+                    NotificationCenter.default.post(
+                        name: .iCloudFirstImportCompleted,
+                        object: nil
+                    )
+                }
             } else {
                 setStatus(.syncing(kind: .importing))
             }
@@ -361,6 +373,7 @@ final class iCloudSyncService {
         lastExportError = nil
         lastImportError = nil
         consecutiveExportFailures = 0
+        hasCompletedFirstImport = false
     }
 
     /// QA helper: force .failed immediately (skipping the 3s debounce) and
@@ -387,4 +400,12 @@ final class iCloudSyncService {
         }
     }
     #endif
+}
+
+// MARK: - Notifications
+
+extension Notification.Name {
+    /// Posted on the main queue tras el primer importEvent exitoso
+    /// (con endDate, sin error). Se emite una sola vez por proceso.
+    static let iCloudFirstImportCompleted = Notification.Name("iCloudFirstImportCompleted")
 }

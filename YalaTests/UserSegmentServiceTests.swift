@@ -6,10 +6,12 @@
 //
 
 import Foundation
+import SwiftData
 import Testing
 
 @testable import Yala
 
+@Suite(.serialized)
 struct UserSegmentServiceTests {
 
     // MARK: - Invited (groupInvite always wins)
@@ -195,5 +197,21 @@ struct UserSegmentServiceTests {
             usesAdvancedFeatures: false
         )
         #expect(result == .sporadic)
+    }
+
+    // MARK: - Observer del primer importEvent de CloudKit
+
+    /// Antes del primer importEvent, la flag está en false. El comportamiento
+    /// del observer (flip post-Notification + recalcular) se valida en device QA
+    /// por el costo de aislar SessionState.shared y CloudKit en tests parallel.
+    @MainActor @Test func setContext_preImport_flagFalse() throws {
+        let service = UserSegmentService.shared
+        service._testReset()
+        iCloudSyncService.shared._testReset()
+
+        let context = try makeTestContext()
+        service.setContext(context)
+
+        #expect(service.hasRecalculatedAfterFirstImport == false)
     }
 }

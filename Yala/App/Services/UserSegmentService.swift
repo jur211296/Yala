@@ -22,6 +22,12 @@ final class UserSegmentService {
     private(set) var currentSegment: UserSegment = .active
     private var modelContext: ModelContext?
 
+    /// Gate critical decisions on this flag to avoid reading a stale segment
+    /// during cold start before CloudKit's first import completes.
+    private(set) var hasRecalculatedAfterFirstImport = false
+
+    private var firstImportObserver: NSObjectProtocol?
+
     // MARK: - Init
 
     private init() {}
@@ -30,6 +36,33 @@ final class UserSegmentService {
 
     func setContext(_ context: ModelContext) {
         self.modelContext = context
+        registerFirstImportObserver()
+    }
+
+    private func registerFirstImportObserver() {
+        if let firstImportObserver {
+            NotificationCenter.default.removeObserver(firstImportObserver)
+        }
+        firstImportObserver = NotificationCenter.default.addObserver(
+            forName: .iCloudFirstImportCompleted,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.markRecalculatedAfterFirstImport()
+            }
+        }
+        // Cold-start race: CloudKit may have completed the first import before
+        // the observer was registered.
+        if iCloudSyncService.shared.hasCompletedFirstImport {
+            markRecalculatedAfterFirstImport()
+        }
+    }
+
+    private func markRecalculatedAfterFirstImport() {
+        guard !hasRecalculatedAfterFirstImport else { return }
+        hasRecalculatedAfterFirstImport = true
+        recalculate()
     }
 
     // MARK: - Recalculate
@@ -51,7 +84,8 @@ final class UserSegmentService {
         )
 
         #if DEBUG
-        print("UserSegmentService: segment=\(currentSegment.rawValue) (tx=\(totalTransactions), avgDays=\(avgDays), advanced=\(usesAdvanced))")
+        let suffix = hasRecalculatedAfterFirstImport ? "" : " (pre-import)"
+        print("UserSegmentService: segment=\(currentSegment.rawValue) (tx=\(totalTransactions), avgDays=\(avgDays), advanced=\(usesAdvanced))\(suffix)")
         #endif
     }
 
@@ -129,4 +163,19 @@ final class UserSegmentService {
 
         return false
     }
+
+    // MARK: - Testing Hooks
+
+    #if DEBUG
+    /// Reset state between tests. Not exposed in release.
+    func _testReset() {
+        if let firstImportObserver {
+            NotificationCenter.default.removeObserver(firstImportObserver)
+            self.firstImportObserver = nil
+        }
+        hasRecalculatedAfterFirstImport = false
+        currentSegment = .active
+        modelContext = nil
+    }
+    #endif
 }

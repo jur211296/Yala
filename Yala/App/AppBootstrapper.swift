@@ -552,7 +552,9 @@ final class AppBootstrapper {
                     shareMetadata: metadata
                 )
                 AppRouter.shared.enqueue(.presentGroupInviteOnboarding(invite))
-            } else if hasCompletedOnboarding && UserSegmentService.shared.currentSegment == .dormant {
+            } else if hasCompletedOnboarding
+                && UserSegmentService.shared.hasRecalculatedAfterFirstImport
+                && UserSegmentService.shared.currentSegment == .dormant {
                 await SplitSyncManager.shared.acceptShare(metadata: metadata, skipNavigation: true)
                 let invite = InviteMetadata(
                     groupName: nil, groupIcon: nil, groupColor: nil, groupMembers: nil,
