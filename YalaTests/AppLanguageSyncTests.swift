@@ -124,20 +124,22 @@ struct AppLanguageSyncTests {
         #expect(suite.string(forKey: LanguageManager.overrideKey) == "pt-BR")
     }
 
-    @Test func bootstrapMigration_alreadyMigrated_skips() {
+    @Test func bootstrapMigration_alreadyMigrated_skipsStandardCopy() {
+        // Usa un valor canónico (no alias) para verificar específicamente Step 1
+        // del bootstrap. El alias remap (Step 2) es idempotente y siempre corre
+        // — su comportamiento se cubre en bootstrapMigration_aliasRemap_idempotent.
         let suite = LanguageManager.sharedDefaults
         suite.set(true, forKey: "appLanguageOverrideMigratedV1")
-        suite.set("es", forKey: LanguageManager.overrideKey)
+        suite.set("de", forKey: LanguageManager.overrideKey)
         UserDefaults.standard.set("legacy_value_should_be_ignored", forKey: LanguageManager.overrideKey)
 
         LanguageManager.bootstrapMigrationIfNeeded()
 
-        // Suite intacto
-        #expect(suite.string(forKey: LanguageManager.overrideKey) == "es")
-        // Standard NO se borró porque la migración ya había corrido
+        // Suite intacto (de no es alias remappeable)
+        #expect(suite.string(forKey: LanguageManager.overrideKey) == "de")
+        // Standard NO se borró porque la migración Step 1 ya había corrido
         #expect(UserDefaults.standard.string(forKey: LanguageManager.overrideKey) == "legacy_value_should_be_ignored")
 
-        // Cleanup
         UserDefaults.standard.removeObject(forKey: LanguageManager.overrideKey)
     }
 

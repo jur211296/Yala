@@ -50,12 +50,12 @@ enum LanguageManager {
 
     /// User's language override (nil = use system language).
     /// Setter persiste en App Group + iCloud KV y emite `.languageDidChange`.
+    /// No-op si `newValue == oldValue` (evita iKV.synchronize() bloqueante + notif spam).
     static var overrideLanguage: String? {
         get { sharedDefaults.string(forKey: overrideKey) }
         set {
+            guard newValue != sharedDefaults.string(forKey: overrideKey) else { return }
             sharedDefaults.set(newValue, forKey: overrideKey)
-            // iCloud KV — last write wins. Normaliza nil a empty string para que iKV lo persista
-            // (NSUbiquitousKeyValueStore no acepta nil; remove para "no override")
             let iKV = NSUbiquitousKeyValueStore.default
             if let value = newValue {
                 iKV.set(value, forKey: overrideKey)
@@ -86,44 +86,49 @@ enum LanguageManager {
     /// no existe en la variante (iOS NO hace este fallback automáticamente al cargar
     /// `Bundle(path:)` directamente).
     static var resolved: LocaleResolution {
-        // Caso 1: usuario tiene override explícito
         if let override = overrideLanguage,
            let overrideLocale = SupportedLocale(rawValue: override),
-           let overridePath = Bundle.main.path(forResource: overrideLocale.bundleResourceName, ofType: "lproj"),
-           let overrideBundle = Bundle(path: overridePath) {
-            // Bundle del padre (si la variante define parent y existe en el bundle)
-            var parentBundle: Bundle?
-            if let parent = overrideLocale.parent,
-               let parentPath = Bundle.main.path(forResource: parent.bundleResourceName, ofType: "lproj"),
-               let resolved = Bundle(path: parentPath) {
-                parentBundle = resolved
-            }
+           let overrideBundle = bundleFor(overrideLocale) {
+            let parentBundle = overrideLocale.parent.flatMap { bundleFor($0) }
             return LocaleResolution(
                 bundle: overrideBundle,
                 parentBundle: parentBundle,
                 locale: Locale(identifier: override)
             )
         }
-        // Caso 2: sin override → fallback al sistema (Bundle.main hace su lookup natural)
-        let systemLocale: Locale
-        if let preferred = Locale.preferredLanguages.first,
-           SupportedLocale.from(preferred) != nil {
-            systemLocale = Locale(identifier: preferred)
-        } else {
-            systemLocale = Locale(identifier: "en_US")
-        }
+        let systemLocale: Locale = {
+            if let preferred = Locale.preferredLanguages.first,
+               SupportedLocale.from(preferred) != nil {
+                return Locale(identifier: preferred)
+            }
+            return Locale(identifier: "en_US")
+        }()
         return LocaleResolution(bundle: .main, parentBundle: nil, locale: systemLocale)
+    }
+
+    private static func bundleFor(_ locale: SupportedLocale) -> Bundle? {
+        guard let path = Bundle.main.path(forResource: locale.bundleResourceName, ofType: "lproj"),
+              let bundle = Bundle(path: path) else { return nil }
+        return bundle
     }
 
     // MARK: - Migration (one-shot)
 
-    /// Migra el override desde `UserDefaults.standard` (legacy storage hasta M1) al
-    /// App Group suite. Idempotente vía `migrationSentinelKey`.
-    /// Llamar al inicio del app launch (después de `PreferenceSyncService.bootstrap()`).
+    /// Aliases legacy a remappear a su variante canónica cuando ya existen.
+    /// Tipo enum-to-enum (no raw strings) para que un rename del case detecte el drift.
+    private static let aliasRemap: [SupportedLocale: SupportedLocale] = [
+        .pt: .ptBR,
+        .es: .es419
+    ]
+
+    /// Migra el override desde `UserDefaults.standard` al App Group suite y remappea
+    /// aliases legacy (`pt` → `pt-BR`, `es` → `es-419`) a su variante canónica.
+    /// Llamar al inicio del app launch, después de `PreferenceSyncService.bootstrap()`.
+    /// Idempotente vía `migrationSentinelKey`.
     static func bootstrapMigrationIfNeeded() {
         let suite = sharedDefaults
 
-        // Step 1 (V1): standard → App Group, idempotente.
+        // Step 1: standard → App Group (corre solo la primera vez).
         if !suite.bool(forKey: migrationSentinelKey) {
             let legacy = UserDefaults.standard.string(forKey: overrideKey)
             if let legacy {
@@ -133,58 +138,43 @@ enum LanguageManager {
             suite.set(true, forKey: migrationSentinelKey)
 
             #if DEBUG
-            if let legacy {
-                print("LanguageManager: Migrated legacy override '\(legacy)' from standard → App Group")
-            } else {
-                print("LanguageManager: No legacy override to migrate")
-            }
+            print("LanguageManager: Migrated legacy override '\(legacy ?? "nil")' from standard → App Group")
             #endif
         }
 
-        // Step 2: remap de aliases legacy a códigos canónicos cuando ya existen
-        // (M7 introduce pt-BR; M9 introduce es-419). Idempotente — si el valor ya
-        // es canónico, no hace nada.
-        if let current = suite.string(forKey: overrideKey) {
-            let aliasRemap: [String: String] = [
-                "pt": "pt-BR",
-                "es": "es-419"
-            ]
-            if let canonical = aliasRemap[current] {
-                suite.set(canonical, forKey: overrideKey)
-                NSUbiquitousKeyValueStore.default.set(canonical, forKey: overrideKey)
-                NSUbiquitousKeyValueStore.default.synchronize()
+        // Step 2: alias remap. Idempotente — si el valor ya es canónico, no hace nada.
+        if let current = suite.string(forKey: overrideKey),
+           let alias = SupportedLocale(rawValue: current),
+           let canonical = aliasRemap[alias] {
+            suite.set(canonical.code, forKey: overrideKey)
+            NSUbiquitousKeyValueStore.default.set(canonical.code, forKey: overrideKey)
+            NSUbiquitousKeyValueStore.default.synchronize()
 
-                #if DEBUG
-                print("LanguageManager: Remapped legacy alias '\(current)' → '\(canonical)'")
-                #endif
-            }
+            #if DEBUG
+            print("LanguageManager: Remapped legacy alias '\(current)' → '\(canonical.code)'")
+            #endif
         }
     }
 }
 
-/// Shorthand for localized string with language override support.
-/// Implementa fallback chain manual: variante → padre → main (en) → key.
-/// iOS NO hace este fallback automáticamente al cargar `Bundle(path:)` para una variante;
-/// si la key no existe en la variante, retorna la propia key. Necesitamos componer manualmente.
+/// Localized string lookup con fallback chain manual: variante → padre → main → key.
+/// iOS NO hace este fallback automáticamente cuando se carga `Bundle(path:)` para
+/// una variante regional, así que componemos cada nivel manualmente.
 private func ls(_ key: String, comment: String = "") -> String {
     let resolution = LanguageManager.resolved
     let sentinel = "__YALA_MISSING__"
 
-    // 1. Bundle de la variante (o main si no hay override)
     let variantValue = NSLocalizedString(key, bundle: resolution.bundle, value: sentinel, comment: comment)
     if variantValue != sentinel { return variantValue }
 
-    // 2. Bundle del padre (solo si la variante declara parent)
     if let parent = resolution.parentBundle {
         let parentValue = NSLocalizedString(key, bundle: parent, value: sentinel, comment: comment)
         if parentValue != sentinel { return parentValue }
     }
 
-    // 3. Bundle.main como fallback final (en/Base)
     let mainValue = NSLocalizedString(key, bundle: .main, value: sentinel, comment: comment)
     if mainValue != sentinel { return mainValue }
 
-    // 4. Key como string (debug-visible: indica drift entre callsite y .strings)
     return key
 }
 

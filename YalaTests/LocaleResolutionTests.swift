@@ -55,10 +55,9 @@ struct LocaleResolutionTests {
         let original = LanguageManager.overrideLanguage
         defer { LanguageManager.overrideLanguage = original }
 
-        // "ja" no está soportado en M3 → resolved cae a main + locale "en_US"
-        // (porque SupportedLocale(rawValue: "ja") == nil)
+        // "xx" no es un SupportedLocale válido → resolved cae a Bundle.main.
         UserDefaults(suiteName: "group.com.jurgenschmidt.yala")?
-            .set("ja", forKey: LanguageManager.overrideKey)
+            .set("xx", forKey: LanguageManager.overrideKey)
 
         let resolution = LanguageManager.resolved
         #expect(resolution.bundle === Bundle.main)
