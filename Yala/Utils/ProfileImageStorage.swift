@@ -23,15 +23,14 @@ final class ProfileImageStorage {
     }
 
     private init() {
-        // Load on init
-        if let url = fileURL {
-            do {
-                imageData = try Data(contentsOf: url)
-            } catch {
-                #if DEBUG
-                print("ProfileImageStorage: Error loading: \(error)")
-                #endif
-            }
+        guard let url = fileURL,
+              FileManager.default.fileExists(atPath: url.path) else { return }
+        do {
+            imageData = try Data(contentsOf: url)
+        } catch {
+            #if DEBUG
+            print("ProfileImageStorage: Error loading existing file: \(error)")
+            #endif
         }
     }
 
