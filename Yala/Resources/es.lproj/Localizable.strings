@@ -3581,3 +3581,4 @@
 "shortcut.snippet.draftBadge" = "Borrador — Revisa en tu bandeja";
 "shortcut.siriNatural.error.parsingFailedHelp" = "No entendí. Prueba con: 'Anota 50 soles en café' o 'Registra gasto de 25 dólares en almuerzo'";
 "shortcut.siriNatural.success.partial" = "Registré %1$lld de %2$lld (algunos no se entendieron). Revisa tu bandeja.";
+

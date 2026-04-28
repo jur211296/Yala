@@ -387,21 +387,80 @@ ScrollView {
 - Proponer actualizaciones a BRAND-VOICE.md cuando se defina nuevo copy
 
 ## Localization
-- Para cambios de localización: SIEMPRE leer el archivo `.lproj/Localizable.strings` destino antes de editar.
-- Verificar que se usan los assets del idioma correcto (no defaults en inglés para otros locales).
-- **SSOT de idiomas:** `Yala/Utils/SupportedLocale.swift` enum. Añadir un idioma se hace agregando un `case` ahí y creando la `.lproj` correspondiente — `LanguageManager` y `AppLocale` consumen el enum, no listas hardcoded.
-- **Override storage:** `UserDefaults(suiteName: SharedContainerService.appGroupIdentifier)` (App Group, compartido con widgets) + `NSUbiquitousKeyValueStore` (sync cross-device). NO usar `UserDefaults.standard` directamente para `appLanguageOverride` — la migración one-shot ya movió el valor legacy.
-- **Plurales:** keys con `%d` semántico van en `Localizable.stringsdict` (no `.strings`). 22 keys actuales en cada `.lproj` con reglas `one`/`other`. Para `pl` futuro: `one`/`few`/`many`/`other`.
-- **Variantes regionales** (es-AR, pt-PT, en-GB): NO crean `Localizable.stringsdict` salvo que sus reglas plurales difieran del padre. Apple `.stringsdict` es all-or-nothing por archivo.
+
+### Locales soportados (16)
+| Locale | Tipo | Padre | Plurales | Notas |
+|---|---|---|---|---|
+| `es` | Alias catch-all | (copia es-419) | one/other | Para usuarios es-CR/es-EC/etc. sin variante |
+| `es-419` | **Base hispana** | — | one/other | Reference locale para tests de paridad |
+| `es-ES` | Variante regional | es-419 | (hereda) | Solo overrides peninsulares (móvil, alquiler) |
+| `es-AR` | Variante regional | es-419 | (hereda) | Voseo gramatical (~149 overrides) |
+| `en` | Base | — | one/other | |
+| `en-GB` | Variante regional | en | (hereda) | Solo ortografía (colour, organise) |
+| `pt` | Alias catch-all | (copia pt-BR) | one/other | Para usuarios pt-MZ/pt-AO/etc. |
+| `pt-BR` | **Base lusófona** | — | one/other | |
+| `pt-PT` | Variante regional | pt-BR | (hereda) | Overrides peninsulares (telemóvel, comprovativo) |
+| `de`, `fr`, `it` | Base | — | one/other | |
+| `nl` | Base | — | one/other | |
+| `pl` | Base | — | **one/few/many/other** | Único locale con 4 reglas plurales |
+| `ja` | Base | — | only `other` | Sin distinción singular/plural |
+| `zh-Hans` | Base | — | only `other` | Sin distinción singular/plural |
+
+### Workflow obligatorio: añadir o modificar una key
+
+**TL;DR:** correr el script + completar el checklist + correr tests. Sin esto, los tests de paridad fallan en CI.
+
+```bash
+# 1. Añadir la key con valor en es-419 (locale de referencia):
+qa/scripts/add-l10n-key.sh \
+  "panel.newKey" \
+  "Texto en español neutro LatAm" \
+  "Comment for translators describing context"
+```
+
+El script propaga la key a los **9 locales base** (es, es-419, en, de, fr, it, pt, pt-BR, nl, pl, ja, zh-Hans) marcando los pendientes con `[NEEDS_TRANSLATION]`. Tu job: traducir cada uno antes de commit.
+
+**Checklist al añadir/modificar una key:**
+
+- [ ] Key añadida primero en `es-419.lproj/Localizable.strings` (referencia).
+- [ ] Propagada a los **9 locales base** con traducción real (no `[NEEDS_TRANSLATION]`):
+  - es, es-419, en, de, fr, it, pt, pt-BR, nl, pl, ja, zh-Hans (o usar el script).
+- [ ] **Decidir overrides en variantes regionales** (es-ES, es-AR, pt-PT, en-GB):
+  - **Sí override** si la palabra es marcadamente regional (ejemplos: "celular"/"móvil", "tienes"/"tenés", "color"/"colour", "recibo"/"comprovativo").
+  - **No override** si el copy es neutro (la variante hereda del padre vía fallback chain en `ls()`).
+- [ ] Si el copy menciona `%d` con conteo semántico (1 vs N) → mover a `Localizable.stringsdict` con reglas `one`/`other` (y `few`/`many` adicional para `pl`).
+- [ ] Para `ja`/`zh-Hans` el `stringsdict` solo tiene regla `other` (no diferencian singular/plural).
+- [ ] Si la key es para los widgets, replicarla también en `YalaWidgets/Resources/{locale}.lproj/`.
+- [ ] Correr `xcodebuild test ... -only-testing:YalaTests/LocalizationParityTests` — debe pasar verde.
+- [ ] Si tocas `InfoPlist.strings` (e.g. añades nueva permission), replica en los 16 `.lproj`.
+
+### Reglas técnicas
+
+- **SSOT de idiomas:** `Yala/Utils/SupportedLocale.swift` enum. Añadir un idioma nuevo:
+  1. Agregar `case` con flag/nativeName/parent
+  2. Crear `Yala/Resources/xx.lproj/Localizable.strings` con paridad completa al reference (es-419)
+  3. Crear `Yala/Resources/xx.lproj/Localizable.stringsdict` (matrix arriba)
+  4. Crear `Yala/Resources/xx.lproj/InfoPlist.strings` con las 3 NSUsageDescription
+  5. Crear `YalaWidgets/Resources/xx.lproj/Localizable.strings`
+  6. Si el idioma tiene reglas plurales distintas a one/other, ajustar el stringsdict
+  7. Tests CI deben pasar: `LocalizationParityTests`, `BundleLocaleDriftTests`, `StringsdictParityTests`
+- **Override storage:** `UserDefaults(suiteName: SharedContainerService.appGroupIdentifier)` (App Group, compartido con widgets) + `NSUbiquitousKeyValueStore` (sync cross-device). NO usar `UserDefaults.standard` directamente para `appLanguageOverride`.
+- **Variantes regionales** (es-AR, pt-PT, en-GB): NO crean `Localizable.stringsdict` salvo que sus reglas plurales difieran del padre (Apple `.stringsdict` es all-or-nothing por archivo).
+- **Fallback chain manual** en `ls()` (`L10n.swift`): si una key falta en variante, busca en el padre, luego en `Bundle.main` (en), finalmente retorna la key como debug-visible. iOS NO hace este fallback automáticamente al cargar `Bundle(path:)` directamente.
+- **Marcador de pendientes:** `[NEEDS_TRANSLATION]` (test CI `noNeedsTranslationMarker` falla si aparece).
 - **InfoPlist.strings:** existe en cada `.lproj` con las 3 NSUsageDescription (Microphone, PhotoLibrary, FaceID). Sin esto los prompts del sistema salen en inglés.
-- **Tests automáticos** (en `YalaTests/`):
-  - `LocalizationParityTests` — paridad de keys, placeholders, no empty values, no duplicados strings/stringsdict
-  - `BundleLocaleDriftTests` — bundle locales == SupportedLocale enum
-  - `StringsdictParityTests` — paridad de keys plurales
-  - `LocaleResolutionTests` + `LSFallbackTests` — fallback chain manual variante→padre→en
-  - `AppLanguageSyncTests` — App Group + iCloud KV + migración legacy
-  - `SupportedLocaleTests` — bestMatch, parent chain, props
-- Skill `/l10n-check` para auditoría manual periódica complementaria.
+
+### Tests automáticos (en `YalaTests/`)
+
+- `LocalizationParityTests` — paridad de keys, placeholders, no empty values, no duplicados strings/stringsdict, no marcador `[NEEDS_TRANSLATION]`
+- `BundleLocaleDriftTests` — bundle locales == SupportedLocale enum
+- `StringsdictParityTests` — paridad de keys plurales + variantes no crean stringsdict
+- `LocaleResolutionTests` + `LSFallbackTests` — fallback chain manual variante→padre→en
+- `AppLanguageSyncTests` — App Group + iCloud KV + migración legacy
+- `SupportedLocaleTests` — bestMatch, parent chain, props
+- `LocalizationContentRules` — reglas de copy (es sin peninsularismos, pt sin coloquialismos BR)
+
+Skill `/l10n-check` para auditoría manual periódica complementaria.
 
 ## Documentation & Copy
 - Al escribir documentación o release notes, describir features desde la perspectiva del USUARIO (qué ve/hace), no desde una perspectiva técnica/código.

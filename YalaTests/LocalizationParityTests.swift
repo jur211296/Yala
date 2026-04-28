@@ -99,6 +99,20 @@ struct LocalizationParityTests {
         }
     }
 
+    /// Falla si una key tiene el marcador `[NEEDS_TRANSLATION]` en cualquier locale.
+    /// El script `qa/scripts/add-l10n-key.sh` añade ese marcador como placeholder
+    /// cuando propaga una key nueva — el dev DEBE traducir cada locale antes de commit.
+    @Test func noNeedsTranslationMarker_anywhere() {
+        for locale in SupportedLocale.allCases {
+            let strings = StringsFileParser.parseStrings(forLocale: locale.code)
+            for (key, value) in strings {
+                if value.contains("[NEEDS_TRANSLATION]") {
+                    Issue.record("Locale '\(locale.code)' key '\(key)' tiene placeholder [NEEDS_TRANSLATION] — traduce antes de commit")
+                }
+            }
+        }
+    }
+
     // MARK: - duplicate stringsdict / strings keys
 
     @Test func noKeyDuplicatedBetweenStringsAndStringsdict() {

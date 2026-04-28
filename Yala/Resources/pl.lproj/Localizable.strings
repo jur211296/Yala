@@ -3578,3 +3578,4 @@
 "shortcut.snippet.draftBadge" = "Draft — Review w twoje inbox";
 "shortcut.siriNatural.error.parsingFailedHelp" = "I didn't understand. Try: 'Note 50 dollars on coffee' lub 'Wpis 25 dollars on lunch'";
 "shortcut.siriNatural.success.partial" = "Recorded %1$lld z %2$lld (some I couldn't understand). Check twoje inbox.";
+

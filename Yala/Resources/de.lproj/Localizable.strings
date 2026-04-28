@@ -3575,3 +3575,4 @@
 "shortcut.snippet.draftBadge" = "Entwurf — Überprüfe in deinem Posteingang";
 "shortcut.siriNatural.error.parsingFailedHelp" = "Ich habe nicht verstanden. Versuche: 'Notiere 50 Euro für Kaffee' oder 'Erfasse 25 Euro für Mittagessen'";
 "shortcut.siriNatural.success.partial" = "%1$lld von %2$lld erfasst (einige nicht verstanden). Überprüfe deinen Posteingang.";
+

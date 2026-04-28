@@ -3576,3 +3576,4 @@
 "shortcut.snippet.draftBadge" = "Brouillon — Vérifiez dans votre boîte";
 "shortcut.siriNatural.error.parsingFailedHelp" = "Je n'ai pas compris. Essayez : 'Note 50 euros sur café' ou 'Enregistre 25 euros pour le déjeuner'";
 "shortcut.siriNatural.success.partial" = "Enregistré %1$lld sur %2$lld (certains non compris). Vérifiez votre boîte.";
+
