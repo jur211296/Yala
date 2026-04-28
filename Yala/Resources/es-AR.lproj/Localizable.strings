@@ -1,0 +1,170 @@
+/*
+ * es-AR.lproj/Localizable.strings
+ *
+ * Variante Argentina: voseo gramatical (vos tenés/podés/sabés en lugar de tú
+ * tienes/puedes/sabes). Única variante país justificada por ruptura del
+ * BRAND-VOICE.md (que prefiere neutralidad regional) — el voseo argentino es
+ * un cambio gramatical, no léxico, y un argentino siente "tú tienes" como
+ * extranjero.
+ *
+ * NO incluye modismos coloquiales (guita, boludo, che) — mantenemos el
+ * tono cercano-formal de Yala. Solo conjugación verbal voseo + el pronombre
+ * "vos" en los pocos lugares donde aparece explícito en el copy.
+ *
+ * Ver BRAND-VOICE.md §9.4 (creada en M5) para criterio: solo voseo gramatical,
+ * no léxico coloquial.
+ *
+ * Tests `LocalizationVariantsTests.variant_doesNotDuplicateParentValue` y
+ * `variants_areSubsetOfParent` validan que cada key aquí tenga valor distinto
+ * al padre y exista en es-419.
+ */
+
+"panel.sectionsConfig.footer" = "Oculta las secciones que no necesites ver. Podés volver a activarlas cuando quieras.";
+"panel.health.bills.sheet.explanation" = "Revisamos tus pagos planificados del mes. Si tenés alguno vencido hace poco sin marcar, o uno a la vuelta de la esquina, te lo hacemos ver.";
+"exchangeRate.noSecondaryCurrenciesHint" = "Podés seleccionar divisas secundarias en";
+"empty.noFavorites" = "Aún no tenés favoritos";
+"empty.noTags" = "Aún no tenés etiquetas";
+"empty.noAccounts" = "Aún no tenés cuentas";
+"empty.noCategories" = "Aún no tenés categorías";
+"empty.noSubcategories" = "Aún no tenés subcategorías";
+"alert.unsavedChanges" = "Tenés cambios sin guardar";
+"import.templateGeneratedMessage" = "La plantilla se generó correctamente. Ahora podés editarla y volver a esta pantalla para importarla.";
+"favorites.noFavorites" = "Aún no tenés favoritos";
+"scheduled.skip.confirm.message" = "No se registrará como gasto. Podés revertirlo después.";
+"scheduled.draftCreatedTitle" = "¡Tenés pagos pendientes!";
+"inbox.alert.title.scheduled" = "¡Tenés pagos pendientes!";
+"budgets.empty.title" = "Aún no tenés presupuestos";
+"empty.noExpenses" = "Aún no tenés gastos registrados";
+"empty.noSubcategories" = "Aún no tenés subcategorías";
+"export.confirmExport" = "Confirmá tu exportación";
+"export.columnsDescription" = "Elige qué columnas querés incluir en el archivo exportado. Debes seleccionar al menos una.";
+"widget.preferences.description" = "Elige qué querés ver en tu panel principal y en qué orden.";
+"widget.noExpensesPeriod" = "Aún no tenés gastos en este periodo.";
+"cashFlowPlan.startingBalanceHelper" = "Si tenés dinero disponible hoy (en banco, billetera, etc.), ingrésalo aquí. Lo sumaremos a tus ingresos futuros.";
+"cashFlowPlan.othersDesc" = "Estos son gastos que encontramos en tus registros pero que no están en tu plan. Podés agregarlos tocando +.";
+"cashFlowPlan.othersIncomeDesc" = "Estos son ingresos que encontramos en tus registros pero que no están en tu plan. Podés agregarlos tocando +.";
+"cashFlowPlan.lineNameHint" = "Podés personalizarlo";
+"cashFlowPlan.manualDesc" = "Vos defines el monto exacto";
+"cashFlowPlan.overrideScopeMessage" = "¿Querés aplicar este monto solo a este mes, o también a los meses futuros?";
+"cashFlowPlan.noScheduledPayments" = "No tenés pagos programados disponibles";
+"cashFlowPlan.commentNegative" = "A partir de %@ tu acumulado entra en negativo — revisa si podés ajustar algo";
+"cashFlowPlan.commentSavingsBelow" = "Vas ahorrando %@ menos al mes de lo planeado — ¿podés recortar algún gasto?";
+"settings.themeDescription" = "Elige cómo querés que se vea Yala.";
+"settings.defaultPeriodDescription" = "Este período se aplicará por defecto cada vez que abras la app. Podés cambiarlo temporalmente desde el selector de período en cualquier momento.";
+"account.deleteBalanceError" = "No podés eliminar esta cuenta porque tiene saldo distinto de cero. Ajusta el saldo a 0 antes de eliminarla.";
+"account.existingInitialBalance" = "Ya tenés un saldo inicial de %@. ¿Deseas modificarlo?";
+"validation.futureDateMessage" = "No podés registrar transacciones con fecha futura. Usa Pagos Planificados para gastos recurrentes.";
+"scheduled.empty.title" = "Aún no tenés pagos planificados";
+"subscriptions.empty.title" = "Aún no tenés suscripciones";
+"settings.expensesOnlyActivateMessage" = "Se ocultarán los ingresos, transferencias y saldos en toda la app. Podés revertirlo en cualquier momento.";
+"onboarding.nameLabel" = "¿Cómo querés que te llamemos?";
+"onboarding.expensesOnlyTitle" = "¿Cómo querés usar Yala?";
+"onboarding.expensesOnlySubtitle" = "Elige cómo querés organizar tu dinero. Podés cambiar esto después en Ajustes.";
+"onboarding.privacySubtitle" = "Ya podés empezar a usar Yala";
+"onboarding.privacyIcloud" = "Solo vos tenés acceso a tus datos";
+"onboarding.tutorialsSettingsHint" = "Siempre podés encontrarlos en Ajustes";
+"onboarding.accountBalanceHint" = "Es tu saldo actual aproximado. En débito: dinero disponible. En ahorros: lo que tenés ahorrado.";
+"onboarding.accountBalanceSkipHint" = "Si no lo sabés, déjalo en 0 y ajústalo después en la cuenta.";
+"onboarding.accountBalanceHintGeneral" = "Piensa en cuánto dinero tenés disponible hoy sumando todos tus medios de pago. Un aproximado está bien.";
+"onboarding.accountBalanceHintCash" = "El dinero en efectivo que tenés ahora mismo. No necesita ser exacto, podés ajustarlo después.";
+"onboarding.accountBalanceHintChecking" = "El saldo disponible en tu cuenta bancaria hoy. No necesita ser exacto, podés ajustarlo después.";
+"onboarding.accountBalanceHintSavings" = "El total que tenés ahorrado en esta cuenta. No necesita ser exacto, podés ajustarlo después.";
+"onboarding.accountBalanceGuideGeneral" = "Si usas una cuenta general para agrupar todos tus medios de pago en una divisa, tu saldo refleja cuánto dinero tenés disponible.\n\nPara calcularlo, suma todo lo que tenés: cuentas de débito, ahorros, efectivo. Si tenés consumos pendientes en tarjetas de crédito, podés restarlos para una foto más precisa — o llevar cada tarjeta como cuenta aparte más adelante.\n\nEsa cifra final es tu saldo inicial.";
+"onboarding.accountBalanceGuideCash" = "Esta es la más directa: ¿cuánto dinero en efectivo tenés ahora mismo? Revisa tu billetera, algún cajón o donde guardes tu dinero físico.\n\nNo te preocupes por ser exacto — si crees que tenés \"como 200\", pon 200. Siempre podés ajustarlo después.";
+"onboarding.accountBalanceGuideChecking" = "Tu cuenta corriente (o de débito) tiene un saldo disponible que podés consultar en la app de tu banco o en un cajero automático.\n\nPon el saldo disponible que ves hoy. Si tenés varias cuentas corrientes, podés crear una cuenta en Yala para cada una, o agruparlas en una sola — como prefieras.";
+"onboarding.accountBalanceGuideSavings" = "¿Cuánto tenés acumulado en tus cuentas de ahorro? Si tenés varias, podés crear una cuenta en Yala para cada una o sumarlas todas en una sola.\n\nPon el total que tenés ahorrado. Si tu banco muestra intereses acumulados, inclúyelos en el total.";
+"onboarding.accountBalanceHintCreditCard" = "Lo que has consumido con esta tarjeta hasta hoy. No necesita ser exacto, podés ajustarlo después.";
+"onboarding.calc.bankAccountsHint" = "Todo lo que tenés en cuentas corrientes o de débito";
+"onboarding.calc.savingsHint" = "Lo que tenés en cuentas de ahorro o guardado";
+"onboarding.calc.cashHint" = "Billetes y monedas que tenés a la mano";
+"onboarding.calc.tipCashFlow" = "Si usas tarjetas de crédito, podés agregarlas como cuentas aparte cuando quieras.";
+"onboarding.calc.adjustLater" = "Siempre podés ajustarlo después.";
+"onboarding.calc.savingsExplanation" = "¿Cuánto tenés ahorrado? Si tenés varias cuentas de ahorro, podés sumar todas o crear una cuenta por cada una.";
+"onboarding.calc.balanceLabelCash" = "Efectivo que tenés";
+"onboarding.accountImportTip" = "En Perfil > Importar podés importar registros a cualquiera de tus cuentas.";
+"onboarding.accountMoreTip" = "Podés agregar más cuentas cuando quieras. Crea al menos una por divisa si manejas varias monedas.";
+"onboarding.budgetMoreTip" = "Podés crear más presupuestos o editar los existentes en Planificación > Presupuestos.";
+"onboarding.purpose.controlDesc" = "Gastos, ingresos y cuánto tenés";
+"onboarding.accounts.title" = "¿Cómo querés organizar tu dinero en Yala?";
+"onboarding.accounts.multipleDesc" = "Ahorros, débito, crédito... así sabés cuánto tenés en cada una";
+"onboarding.accountType.subtitle" = "Elige qué cuenta querés crear ahora. Luego podrás agregar más en tu perfil.";
+"onboarding.accountType.cashHint" = "Billetes y monedas que tenés a la mano";
+"onboarding.balance.title" = "¿Cuánto tenés en esta cuenta?";
+"onboarding.balance.subtitle" = "Un aproximado está bien. Siempre podés ajustarlo después.";
+"voice.youCanSay" = "Podés decir:";
+"inbox.discardChangesMessage" = "Tenés cambios sin guardar que se perderán.";
+"image.transactionsDetectedMessage" = "Hemos detectado %d transacciones. Podés revisarlas y aprobarlas en la bandeja de entrada.";
+"image.youCanUpload" = "Podés subir:";
+"subscription.activeTitle" = "Sos Yala Pro";
+"subscription.activeSubtitle" = "Tenés acceso a todas las funciones premium";
+"tips.budgets.detail" = "Define cuánto querés gastar por categoría cada mes. Yala te avisa cuando estés cerca del límite para no pasarte.";
+"tips.faceID.detail" = "Activa el bloqueo biométrico en Ajustes > Seguridad. Podés elegir activarlo al salir de la app o después de un tiempo.";
+"tipkit.pro.voiceInput.message" = "Ahora podés dictar tus gastos. Solo habla y Yala los registra por ti.";
+"tipkit.pro.fab.message" = "Toca aquí para registrar por voz, imagen o de forma manual. Ahora tenés las tres opciones.";
+"tutorials.createAccount.completion.desc" = "Mantener tus cuentas ordenadas y bien separadas es fundamental para organizar tus finanzas. Cada cuenta te permite filtrar tus datos y visualizar mejor tus tendencias. Podés editarlas cuando quieras y modificar su saldo inicial o hacer un ajuste del saldo actual.";
+"tutorials.createCategories.completion.desc" = "Unas buenas categorías hacen que tus reportes sean mucho más útiles. Podés editarlas o agregar más en cualquier momento.";
+"tutorials.createFavorites.completion.desc" = "Los favoritos te ahorran tiempo en gastos repetitivos. Podés tener tantos como quieras y editarlos cuando necesites.";
+"tutorials.editPanel.step2.title" = "Restablece si querés";
+"tutorials.editPanel.completion.desc" = "Tu panel ahora muestra exactamente lo que necesitas. Podés cambiarlo en cualquier momento para adaptarlo a tu forma de gestionar.";
+"tutorials.createAccount.step1.desc" = "Podés crear una cuenta directamente desde el Panel tocando la caja de Agregar nueva cuenta.";
+"tutorials.createCategories.step2.desc" = "Crear subcategorías es tan fácil como crear categorías: ponle nombre, selecciona su naturaleza y si querés modifica su icono.";
+"tutorials.createRecord.step0.desc" = "En el panel, toca el botón +. Si sos usuario Yala Pro, selecciona Manual.";
+"tutorials.createRecord.step1.desc" = "Podés registrar gastos, ingresos e inclusive transferencias entre cuentas. Los tipos de cambio se calculan automáticamente en tiempo real.";
+"tutorials.createRecord.step2.desc" = "Completa los campos obligatorios: monto, cuenta y subcategoría. También podés agregar una descripción y las etiquetas que quieras.";
+"tutorials.importData.step1.desc" = "Podés importar CSV o Excel cuantas veces quieras siguiendo la plantilla predeterminada, que podés descargar ahí mismo. Si hay datos en diversas divisas, te pedirá seleccionar las cuentas para cada una.";
+"tutorials.createBudgets.step1.desc" = "Ponle nombre, monto y define el periodo: diario, mensual, anual o único (para un viaje, evento, etc). Personaliza qué cuentas, categorías, etiquetas y naturalezas querés trackear. Activa las notificaciones si querés avisos en ciertos umbrales.";
+"tutorials.createBudgets.step2.desc" = "Podés añadir presupuestos a Favoritos para visualizarlos en el widget del Panel. Elige hasta 3 en el orden que prefieras.";
+"tutorials.createScheduledPayments.step2.desc" = "Selecciona el día del pago y la periodicidad. Elige cuándo será el primer pago y activa las notificaciones si querés que te avise el mismo día o días antes.";
+"tutorials.editPanel.step1.desc" = "Podés modificar qué widgets ver y en qué orden tocando el botón de personalización en el panel.";
+"tutorials.editPanel.step2.desc" = "Recuerda que siempre podés volver al orden predeterminado tocando \"Restablecer\" dentro de la personalización.";
+"tutorials.panelFiltering.step1.desc" = "Cuentas con una barra de filtros donde irás viendo todos los filtros aplicados. Podés removerlos individualmente o todos a la vez cuando quieras.";
+"tutorials.panelFiltering.step2.desc" = "En las distintas vistas de la aplicación verás que podés ir filtrando a tu gusto con los gráficos.";
+"tutorials.panelFiltering.step3.desc" = "Los filtros se propagan a todas las vistas por igual, así podés ver todo tipo de métricas para lo que sea que quieras filtrar.";
+"tutorials.inboxApproval.step0.desc" = "Si sos usuario Yala Pro, cuando hagas un registro por voz o imagen, automáticamente te llevará al borrador. Lo mismo si usaste el atajo de Registro Apple Pay.";
+"tutorials.inboxApproval.step2.desc" = "También podés hacer registros de voz o imagen con múltiples transacciones. Te dirá cuántos borradores se crearon y te guiará a la bandeja para revisarlos.";
+"faq.howToRecord.a" = "Toca el botón + en la pantalla principal. Podés escribir el monto manualmente, dictar por voz o escanear un recibo con la cámara. Yala completa los detalles por ti.";
+"faq.changeCategory.a" = "Abre el gasto y toca la categoría para cambiarla. Si querés cambiar varios a la vez, usa la edición masiva: mantén presionado un registro y selecciona los que quieras modificar.";
+"faq.exportData.a" = "Ve a Ajustes > Exportar y elige formato CSV o Excel. Podés descargar todos tus registros para analizarlos en una hoja de cálculo o guardarlos como respaldo.";
+"faq.deleteData.a" = "Sí. En Ajustes > Vaciar datos podés eliminar toda tu información. Esta acción no se puede deshacer, así que te recomendamos exportar un respaldo antes.";
+"faq.whatIsPro.a" = "Yala Pro desbloquea funciones premium como entrada por voz, escaneo de recibos con cámara, temas exclusivos y más. Podés ver todos los beneficios en Ajustes > Suscripción.";
+"faq.cancelSub.a" = "Podés administrar o cancelar tu suscripción en cualquier momento desde Ajustes > Suscripción > Administrar en App Store. Tu acceso Pro continúa hasta el final del periodo pagado.";
+"shortcut.siriNatural.dialog.askText" = "¿Qué querés registrar?";
+"notifications.deleteConfirm" = "¿Seguro que querés eliminar esta notificación?";
+"notifications.selectData" = "¿Qué querés ver?";
+"notifications.testReport.scheduledPayment" = "Tenés un pago en 3 días: \"Netflix\" por PEN 44.90";
+"icloud.remoteWipe.message" = "Tus datos fueron eliminados de iCloud. Podés empezar de cero o esperar a que vuelvan a sincronizarse.";
+"subscription.success.subtitle" = "Ahora tenés acceso a todas las funciones";
+"siriShortcuts.siri.alt1" = "También podés decir: \"Anota un gasto en Yala\"";
+"aiPrivacy.revokeConfirmMessage" = "Dejaremos de procesar tus datos de IA para esta función. Podés reactivarla cuando quieras.";
+"insights.ruleHighDebt.normal" = "Tenés %@ pendientes en deudas de grupo";
+"account.secondaryCurrency.message" = "Agregaste una cuenta en %@. ¿Querés ver el tipo de cambio %@ → %@? Podés cambiarlo en Perfil > Divisa.";
+"notificationPrimer.hint" = "Podés activarlas en Perfil > Notificaciones";
+"whatsNew.v11.exclude.description" = "Filtra excluyendo lo que no querés ver en lugar de seleccionar todo.";
+"groups.settings.regenerateLinkConfirm" = "El enlace actual dejará de funcionar. ¿Querés generar uno nuevo?";
+"groups.settings.leaveGroupConfirm" = "¿Seguro que querés salir? Tus gastos personales se mantendrán.";
+"groups.settings.archiveHint" = "Los gastos y balances se conservan. Podés desarchivar cuando quieras.";
+"milestone.message10" = "Estás creando un gran hábito. Con Yala Pro podés dictar tus gastos con la voz.";
+"milestone.message50" = "¡Impresionante! Con Insights AI podés descubrir patrones ocultos en tus gastos.";
+"milestone.message100" = "Sos un experto en finanzas. Desbloquea la experiencia completa con Yala Pro.";
+"setup.complete.title" = "¡Ya sos experto! 🎉";
+"setup.step1.title" = "Conoce todo lo que podés personalizar";
+"setup.practice.message" = "Si solo fue de prueba, podés eliminarlo sin problema.";
+"setup.discover.subtitleFree" = "Esto es lo que podés hacer — y lo que podrías desbloquear.";
+"setup.discover.youCanAlready" = "Ya podés";
+"guide.budgets.message" = "Un presupuesto es el máximo que querés gastar en algo. Ejemplo: No gastar más de 500 en comida este mes.";
+"guide.accounts.message" = "Cada cuenta representa dónde tenés tu dinero: efectivo, banco, tarjeta. Podés crear varias para llevar el control de cada una.";
+"guide.inbox.message" = "Cuando tenés pagos por confirmar o gastos automáticos, aparecen aquí para que los revises.";
+"guide.budgetEditor.message" = "Es un límite que vos defines para controlar cuánto gastas en algo. Ponle un nombre, un monto y elige a qué categorías aplica. Podrás editarlo o eliminarlo cuando quieras.";
+"guide.accountForm.messageSavings" = "Dinero que tenés guardado. Separarlo te ayuda a no gastarlo sin querer.";
+"guide.categoriesSettings.message" = "Las categorías agrupan tus gastos: alimentación, transporte, entretenimiento... Podés crear subcategorías para más detalle.";
+"guide.tagsSettings.message" = "Las etiquetas son transversales: podés marcar cualquier gasto como 'fijo', 'compartido' o lo que necesites. Un gasto puede tener varias etiquetas.";
+"guide.favoritesManage.message" = "Guarda aquí los gastos que hacés seguido. Al registrar, solo toca el favorito y se llena todo automáticamente.";
+"chat.errorNoData" = "No encontré datos para esa consulta. ¿Podés ser más específico?";
+"chat.greeting" = "Hola, soy Yala IA. Cuéntame, ¿qué querés saber de tus finanzas?";
+"chat.draft.ambiguousCanned" = "¿Querés registrar un gasto o estás preguntando sobre tus gastos?";
+"chat.draft.confirmRegisterSingular" = "Confirmá el registro:";
+"chat.draft.confirmRegisterPlural" = "Confirmá los registros:";
+"groups.activate.notificationStep" = "¿Querés que te avisemos?";
+"groups.nudge.invitedSpendingInsight.message" = "Llevas %@ en gastos compartidos. ¿Querés ver en qué más gastas?";
+"groups.nudge.invitedPostSettlement.message" = "Acabas de liquidar una deuda. ¿Querés registrar de dónde salió?";
+"groups.nudge.dormantGroupsAsMain.message" = "Tenés gastos compartidos pendientes. Revisa cómo van.";
