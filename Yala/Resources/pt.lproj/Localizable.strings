@@ -2211,7 +2211,7 @@
 "tipkit.cfSetup.line.title" = "Receitas & despesas";
 "tipkit.cfSetup.line.message" = "Cada linha é algo que você recebe ou paga todo mês. Toque ✓ para incluir.";
 "tipkit.cfSetup.starting.title" = "Saldo inicial";
-"tipkit.cfSetup.starting.message" = "Se você já tem uma grana guardada, coloque aqui para o plano ficar mais certinho.";
+"tipkit.cfSetup.starting.message" = "Se você já tem algum dinheiro guardado, coloque aqui para o plano ficar mais certinho.";
 "tipkit.cfSetup.create.title" = "Criar plano";
 "tipkit.cfSetup.create.message" = "Quando tudo parecer certo, toque aqui para ativar seu plano.";
 "tipkit.cfTable.cell.title" = "Toque para ver";
