@@ -1,0 +1,143 @@
+/*
+  Localizable.strings (English)
+  YalaWidgets
+
+  English localization for widget texts.
+*/
+
+// MARK: - Gallery (widget gallery names and descriptions)
+"widget.gallery.scheduledPayments" = "Upcoming 支付";
+"widget.gallery.scheduledPayments.desc" = "你的 upcoming payments and subscriptions";
+"widget.gallery.quickManual" = "新 Record";
+"widget.gallery.quickManual.desc" = "Record an expense or income manually";
+"widget.gallery.quickVoice" = "Voice Record";
+"widget.gallery.quickVoice.desc" = "Dictate 你的 expense or income";
+"widget.gallery.quickImage" = "Scan Receipt";
+"widget.gallery.quickImage.desc" = "Record from a photo or receipt";
+"widget.gallery.cashFlow" = "Cash Flow";
+"widget.gallery.cashFlow.desc" = "你的 net cash flow";
+"widget.gallery.balance" = "余额";
+"widget.gallery.balance.desc" = "你的 total balance with trend";
+"widget.gallery.budgets" = "预算";
+"widget.gallery.budgets.desc" = "你的 budget progress";
+"widget.gallery.latestRecords" = "Latest Records";
+"widget.gallery.latestRecords.desc" = "你的 most recent transactions";
+"widget.gallery.expense" = "支出";
+"widget.gallery.expense.desc" = "你的 total expenses for the period";
+"widget.gallery.categoriesPie" = "Categories (Pie)";
+"widget.gallery.categoriesPie.desc" = "支出 distribution by category";
+"widget.gallery.subcategoriesPie" = "Subcategories (Pie)";
+"widget.gallery.subcategoriesPie.desc" = "支出 distribution by subcategory";
+"widget.gallery.topCategories" = "Top Categories";
+"widget.gallery.topCategories.desc" = "你的 categories with most expenses";
+"widget.gallery.topSubcategories" = "Top Subcategories";
+"widget.gallery.topSubcategories.desc" = "你的 subcategories with most expenses";
+
+// MARK: - Gallery (Lock Screen accessory widgets)
+"widget.gallery.accessoryBalance" = "余额";
+"widget.gallery.accessoryBalance.desc" = "你的 balance on Lock Screen";
+"widget.gallery.accessoryExpense" = "支出";
+"widget.gallery.accessoryExpense.desc" = "你的 expenses on Lock Screen";
+"widget.gallery.accessoryBudget" = "预算";
+"widget.gallery.accessoryBudget.desc" = "你的 most used budget";
+"widget.gallery.accessoryPayment" = "Next Payment";
+"widget.gallery.accessoryPayment.desc" = "你的 next scheduled payment";
+
+// MARK: - Intent titles and descriptions
+"widget.intent.cashFlow.title" = "Cash Flow";
+"widget.intent.cashFlow.desc" = "Shows 你的 net cash flow";
+"widget.intent.balance.title" = "余额";
+"widget.intent.balance.desc" = "Shows 你的 total balance";
+"widget.intent.expense.title" = "支出";
+"widget.intent.expense.desc" = "Shows 你的 total expenses";
+"widget.intent.categoriesPie.title" = "Categories (Pie)";
+"widget.intent.categoriesPie.desc" = "支出 distribution by category";
+"widget.intent.subcategoriesPie.title" = "Subcategories (Pie)";
+"widget.intent.subcategoriesPie.desc" = "支出 distribution by subcategory";
+"widget.intent.topCategories.title" = "Top Categories";
+"widget.intent.topCategories.desc" = "Shows 你的 categories with most expenses";
+"widget.intent.topSubcategories.title" = "Top Subcategories";
+"widget.intent.topSubcategories.desc" = "Shows 你的 subcategories with most expenses";
+"widget.intent.budgets.title" = "预算";
+"widget.intent.budgets.desc" = "Shows 你的 budget progress";
+"widget.intent.scheduledPayments.title" = "Upcoming 支付";
+"widget.intent.scheduledPayments.desc" = "Shows 你的 upcoming scheduled payments";
+"widget.intent.latestRecords.title" = "Latest Records";
+"widget.intent.latestRecords.desc" = "Shows 你的 most recent transactions";
+"widget.intent.accessoryBalance.title" = "余额";
+"widget.intent.accessoryBalance.desc" = "Period balance";
+"widget.intent.accessoryExpense.title" = "支出";
+"widget.intent.accessoryExpense.desc" = "Period expenses";
+"widget.intent.accessoryBudget.title" = "预算";
+"widget.intent.accessoryBudget.desc" = "Most used budget";
+"widget.intent.accessoryPayment.title" = "Next Payment";
+"widget.intent.accessoryPayment.desc" = "Next scheduled payment";
+"widget.intent.quickEntry.title" = "Quick Entry";
+"widget.intent.quickEntry.desc" = "Configure quick action widgets to add records";
+
+// MARK: - Selection Mode
+"widget.selection.mode.type" = "Show";
+"widget.selection.automatic" = "Automatic";
+"widget.selection.custom" = "Custom";
+
+// MARK: - Selection Parameters
+"widget.select.budgets" = "预算";
+"widget.select.payments" = "支付";
+
+// MARK: - Entities
+"widget.entity.budget" = "预算";
+"widget.entity.payment" = "计划 Payment";
+
+// MARK: - UI (texts in widget views)
+"widget.ui.noPayments" = "无 pending payments";
+"widget.ui.noBudgets" = "无 budgets";
+"widget.ui.noRecords" = "无 records";
+"widget.ui.noExpenses" = "无 expenses";
+"widget.ui.noData" = "无 data";
+"widget.ui.notEnoughData" = "Not enough data";
+"widget.ui.income" = "收入";
+"widget.ui.expenses" = "支出";
+"widget.ui.balance" = "余额";
+"widget.ui.netFlow" = "Net Flow";
+"widget.ui.cashFlow" = "Cash Flow";
+"widget.ui.total" = "总计";
+"widget.ui.ofLimit" = "of %@";
+"widget.ui.newRecord" = "Quick Entry";
+"widget.ui.voiceRecord" = "Voice Entry";
+"widget.ui.scanReceipt" = "Image Entry";
+"widget.ui.upcomingPayments" = "Upcoming 支付";
+"widget.ui.budgets" = "预算";
+"widget.ui.latestRecords" = "Latest Records";
+"widget.ui.categories" = "Categories";
+"widget.ui.subcategories" = "Subcategories";
+"widget.ui.topCategories" = "Top Categories";
+"widget.ui.topSubcategories" = "Top Subcategories";
+"widget.ui.noNote" = "无 note";
+
+// MARK: - Date labels
+"widget.ui.overdue" = "Overdue";
+"widget.ui.today" = "今天";
+"widget.ui.tomorrow" = "Tomorrow";
+
+// MARK: - Period (period selector)
+"widget.period.type" = "Period";
+"widget.period.sameAsApp" = "Same as app";
+"widget.period.thisWeek" = "This Week";
+"widget.period.last7Days" = "Last 7 Days";
+"widget.period.last30Days" = "Last 30 Days";
+"widget.period.thisMonth" = "This Month";
+"widget.period.lastMonth" = "Last Month";
+"widget.period.thisYear" = "This Year";
+"widget.period.lastYear" = "Last Year";
+"widget.period.allTime" = "All Time";
+
+// MARK: - Payment Category
+"widget.paymentCategory.all" = "All";
+"widget.paymentCategory.recurring" = "Recurring";
+"widget.paymentCategory.subscription" = "Subscriptions";
+
+// MARK: - Control Widgets
+"widget.control.voiceExpense" = "Voice Entry";
+"widget.control.voiceExpense.desc" = "Dictate 你的 entry to Yala";
+"widget.control.photoExpense" = "Image Entry";
+"widget.control.photoExpense.desc" = "Record with an image in Yala";
