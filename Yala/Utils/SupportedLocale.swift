@@ -18,6 +18,7 @@ enum SupportedLocale: String, CaseIterable, Identifiable, Hashable {
     case esES = "es-ES"   // España (overrides peninsulares)
     case esAR = "es-AR"   // Argentina (voseo gramatical — única variante país justificada)
     case en = "en"
+    case enGB = "en-GB"   // Reino Unido / Australia / Irlanda (overrides ortográficos)
     case pt = "pt"        // Alias catch-all (copia idéntica de pt-BR)
     case ptBR = "pt-BR"   // Brasil (base lusófona neutra de Yala)
     case ptPT = "pt-PT"   // Portugal (overrides hacia portugués europeo)
@@ -40,6 +41,7 @@ enum SupportedLocale: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .ptPT: return .ptBR
         case .esES, .esAR: return .es419
+        case .enGB: return .en
         default: return nil
         }
     }
@@ -50,7 +52,8 @@ enum SupportedLocale: String, CaseIterable, Identifiable, Hashable {
         case .es419: return "Español (Latinoamérica)"
         case .esES: return "Español (España)"
         case .esAR: return "Español (Argentina)"
-        case .en: return "English"
+        case .en: return "English (US)"
+        case .enGB: return "English (UK)"
         case .pt: return "Português"
         case .ptBR: return "Português (Brasil)"
         case .ptPT: return "Português (Portugal)"
@@ -67,6 +70,7 @@ enum SupportedLocale: String, CaseIterable, Identifiable, Hashable {
         case .esES: return "🇪🇸"
         case .esAR: return "🇦🇷"
         case .en: return "🇺🇸"
+        case .enGB: return "🇬🇧"
         case .pt: return "🇧🇷"        // Alias catch-all — bandera BR
         case .ptBR: return "🇧🇷"
         case .ptPT: return "🇵🇹"
@@ -99,7 +103,8 @@ enum SupportedLocale: String, CaseIterable, Identifiable, Hashable {
             "BR": .ptBR,
             "PT": .ptPT, "AO": .ptPT, "MZ": .ptPT, "CV": .ptPT, "GW": .ptPT, "ST": .ptPT, "TL": .ptPT,
             "ES": .esES,
-            "AR": .esAR
+            "AR": .esAR,
+            "GB": .enGB, "AU": .enGB, "IE": .enGB, "NZ": .enGB
         ]
         if let region, let mapped = regionMap[region] { return mapped }
         // 3. Match por idioma base (e.g. "es-MX" → "es" → es-419, "pt-AO" → "pt" → pt-BR)

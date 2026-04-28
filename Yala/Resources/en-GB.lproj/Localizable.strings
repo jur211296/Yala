@@ -1,0 +1,109 @@
+/*
+ * en-GB.lproj/Localizable.strings
+ *
+ * Variante British English: solo overrides ortográficos. NO incluye cambios
+ * léxicos (e.g. "elevator"→"lift", "pants"→"trousers") porque la app no los usa.
+ *
+ * Reglas aplicadas (case-preservada):
+ *   color → colour
+ *   favorite → favourite
+ *   organize → organise
+ *   analyze → analyse
+ *   categorize → categorise
+ *   customize → customise
+ *   personalize → personalise
+ *   synchronize → synchronise
+ *   labeled → labelled
+ *   canceled → cancelled
+ *   center → centre
+ *   behavior → behaviour
+ *
+ * Region map en SupportedLocale.bestMatch cubre GB + AU + IE → en-GB.
+ *
+ * Tests `LocalizationVariantsTests.variant_doesNotDuplicateParentValue`
+ * validan que cada key aquí tenga valor distinto al padre en.
+ */
+
+"action.favorite" = "Favourite";
+"action.saveAsFavorite" = "Save as favourite";
+"action.savedAsFavorite" = "Saved as favourite";
+"empty.noFavorites" = "You don't have any favourites yet";
+"favorites.title" = "Favourite Payments";
+"favorites.new" = "New Favourite";
+"favorites.edit" = "Edit Favourite";
+"favorites.noFavorites" = "You don't have any favourites yet";
+"favorites.newTitle" = "New Favourite";
+"favorites.editTitle" = "Edit Favourite";
+"favorites.namePlaceholder" = "Favourite name";
+"favorites.saveDescription" = "Save this payment as a favourite to quickly record similar expenses in the future. You'll find it in the ⭐ at the top right when creating or editing any transaction. You can always edit it from Favourite Payments in your profile.";
+"settings.favorites" = "Favourite Payments";
+"settings.budgetsFavorites" = "Favourite Budgets";
+"settings.budgetsFavoritesInfo" = "Favourite budgets appear in the Budgets widget (3 in medium, 5 in large).";
+"settings.budgetsFavoritesReorder" = "Reorder favourites";
+"budgets.favorites.previewEmpty" = "Select favourites to see the preview";
+"settings.tabBarConfig" = "Customise Navigation";
+"common.color" = "Colour";
+"budgets.widget.noFavorites.title" = "No favourite budgets";
+"budgets.widget.noFavorites.message" = "Mark budgets as favourites in Settings > Budgets to see them here.";
+"budgets.widget.selectFavorites" = "Select favourites";
+"export.customizeFile" = "Customise your file";
+"cashFlowPlan.description" = "We analysed your last 6 months to build your plan. Review and adjust as needed.";
+"cashFlowPlan.lineNameHint" = "You can customise it";
+"insights.activateAIBody" = "Enable and customise it in Profile > AI Features.";
+"settings.customizeAISummary" = "Customise AI Summary";
+"empty.tagsDescription" = "Create tags to organise your transactions flexibly.";
+"empty.accountsDescription" = "Create accounts to organise your finances by bank, cash, or others.";
+"settings.colorfulIconsDescription" = "Show coloured icons in the profile section, iOS Settings style.";
+"tag.createFirstDescription" = "Create your first tag to organise your transactions";
+"tag.color" = "Colour";
+"common.selectColor" = "Select a Colour";
+"common.useThisColor" = "Use This Colour";
+"common.newColor" = "New Colour";
+"iconPicker.title" = "Customise";
+"accessibility.favoriteTemplates" = "Favourite templates";
+"accessibility.colorOption %@" = "Colour %@";
+"accessibility.selectColor" = "Select colour";
+"onboarding.welcomeTitle" = "Let's get your money organised";
+"onboarding.categoriesSubtitle" = "We've prepared common categories to help you organise your expenses from day one.";
+"onboarding.categoriesInfo" = "Each category includes more detailed subcategories. You can view and customise them in Profile > Categories.";
+"onboarding.expensesOnlySubtitle" = "Choose how you want to organise your money. You can change this later in Settings.";
+"onboarding.accounts.title" = "How do you want to organise your money in Yala?";
+"image.errorNoConnection" = "No internet connection. You need a connection to analyse images.";
+"tips.section.organize" = "Organise your money";
+"tips.favorites.detail" = "Pay the same thing often? Save an expense as a favourite and next time register it with a single tap from the + menu.";
+"tipkit.settings.accounts.message" = "Add and organise your bank accounts, cash, and more.";
+"tipkit.settings.categories.message" = "Customise categories to classify your expenses and income.";
+"tipkit.pro.premiumIcons.message" = "Choose from premium icons to personalise your app.";
+"tipkit.pro.proThemes.message" = "Discover exclusive colour themes that give Yala your personal touch.";
+"faq.whatIsYala.a" = "Yala is your personal finance app. It helps you track expenses and income, organise your money by categories and tags, create budgets, and see clear reports of how your finances are doing.";
+"faq.exportData.a" = "Go to Settings > Export and choose CSV or Excel format. You can download all your records to analyse in a spreadsheet or keep as a backup.";
+"tutorials.createAccount.completion.desc" = "Keeping your accounts organised and well separated is essential for managing your finances. Each account lets you filter your data and better visualize your trends. You can edit them anytime and modify their initial balance or adjust the current balance.";
+"tutorials.createCategories.intro.desc" = "Organise your expenses by type to see where your money goes.";
+"tutorials.createCategories.step3.title" = "Customise your category";
+"tutorials.createTags.step1.title" = "Customise your tag";
+"tutorials.createBudgets.step2.title" = "Add it to Favourites";
+"tutorials.createFavorites.title" = "Favourite payments";
+"tutorials.createFavorites.intro.title" = "What are favourites?";
+"tutorials.createFavorites.step0.title" = "Create a favourite";
+"tutorials.createFavorites.completion.title" = "Favourite saved!";
+"tutorials.createFavorites.completion.desc" = "Favourites save you time on repetitive expenses. You can have as many as you want and edit them whenever you need.";
+"tutorials.editPanel.title" = "Customise the panel";
+"tutorials.editPanel.intro.desc" = "Customise which widgets appear on your panel.";
+"tutorials.editPanel.step1.title" = "Customise the widgets";
+"tutorials.editPanel.completion.title" = "Panel customised!";
+"tutorials.createCategories.step3.desc" = "Customise your category's icon and colour to your liking whenever you want.";
+"tutorials.createTags.step1.desc" = "Customise your tag to your liking: give it a name, icon, and colour.";
+"tutorials.createBudgets.step1.desc" = "Give it a name, amount, and define the period: daily, monthly, annual, or one-time (for a trip, event, etc.). Customise which accounts, categories, tags, and natures you want to track. Turn on notifications if you want alerts at certain thresholds.";
+"tutorials.createBudgets.step2.desc" = "You can add budgets to Favourites to display them in the Panel widget. Choose up to 3 in your preferred order.";
+"tutorials.createFavorites.step0.desc" = "Go to the new transaction screen and tap the star at the top to create a new favourite.";
+"tutorials.createFavorites.step1.desc" = "Fill in the fields you want to be pre-filled. Next time, simply tap the favourite and watch all the fields fill in automatically.";
+"aiSettings.title" = "Customise AI";
+"aiConsent.processingMessage" = "These features use OpenAI to process your data:\n\n• Voice: your audio recording is transcribed\n• Images: the photo is analysed to extract data\n\nYour individual transactions and personal information are never shared. OpenAI does not use this data for training.";
+"insights.aiCaption" = "OpenAI analyzes your aggregated data to generate personalised analysis. No individual transactions are sent.";
+"whatsNew.v12.themes.description" = "Customise the app with new Minimalist and Translucent themes.";
+"setup.step1.title" = "Explore everything you can customise";
+"setup.personalize.navTitle" = "Personalise your Yala";
+"setup.personalize.personalizeAll" = "Personalise everything";
+"guide.accounts.title" = "Your money, organised";
+"guide.categoriesSettings.title" = "Organise your categories";
+"guide.favoritesManage.message" = "Save your frequent expenses here. When recording, just tap the favourite and everything fills in automatically.";
