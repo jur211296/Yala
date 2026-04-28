@@ -1,0 +1,3580 @@
+/* 
+  Localizable.strings (English)
+  Yala
+  
+  English translations for localization support.
+*/
+
+// MARK: - Date Formats
+
+"date.weekOf %@" = "Week van %@";
+"date.today" = "Vandaag";
+"date.yesterday" = "Gisteren";
+
+// MARK: - Panel
+
+"panel.accounts" = "Rekeningen";
+"panel.widgets" = "Widgets";
+"panel.section.health" = "Financial health";
+"panel.section.tendencias" = "Trends";
+"panel.section.distribucion" = "Distribution";
+"panel.section.planificacion" = "Planning";
+"panel.section.latestRecords" = "Latest boekingen";
+"panel.section.tools" = "Tools";
+
+// P20-11: Section footer CTAs
+"panel.seeMoreInTrends" = "See more in Trends";
+"panel.seeMoreInDistribution" = "See more in Distribution";
+"panel.seeAllRecords" = "See all";
+"panel.seeBudgets" = "See budgets";
+"panel.seeScheduledPayments" = "See geplande betalingen";
+"panel.seeMoreHint.trends" = "Opens de Trends screen";
+"panel.seeMoreHint.distribution" = "Opens de Distribution screen";
+"panel.seeMoreHint.records" = "Opens all boekingen";
+"panel.seeMoreHint.budgets" = "Opens de Budgets screen";
+"panel.seeMoreHint.scheduled" = "Opens de Geplande Betalingen screen";
+
+// P20-11: Widget size picker
+"panel.widgetSize.small" = "Small";
+"panel.widgetSize.medium" = "Medium";
+"panel.widgetSize.large" = "Large";
+
+// P20-11: Accounts collapse
+// Collapsible group Accounts + Financial Health
+"panel.panorama.title" = "Je finances";
+"panel.panorama.expand" = "Expand je finances";
+"panel.panorama.collapse" = "Collapse je finances";
+"panel.panorama.collapsedValue" = "Collapsed";
+"panel.panorama.expandedValue" = "Expanded";
+
+"panel.weekdaySubtitle" = "Average by dag van de week";
+"panel.weekdayBar.smallTitle" = "Dagelijks average";
+"panel.weekdayBar.largeTitle" = "Average spend by weekday";
+"panel.weekdayBar.perWeekSuffix" = "/week";
+"panel.filterBar.sectionTitle" = "Applied filters";
+"panel.periodComparison.vs %@" = "vs %@";
+"panel.periodComparison.vsWithYear %@ %@" = "vs %@ %@";
+"panel.periodComparison.requiresPeriod" = "Pick a maand van period naar compare";
+"panel.sectionsConfig.title" = "Configure Panel";
+"panel.sectionsConfig.footer" = "Hide de sections je don't need. Je can turn them back on anytime.";
+"panel.sectionsConfig.emptySection" = "Alle widgets hidden";
+"panel.sectionsConfig.restoreWidgets %@" = "Restore %@ widgets";
+"panel.sectionPrefs.title" = "Preferences";
+"panel.totalBalance" = "Totaal Saldo";
+
+// Financial Health (P20-06)
+"panel.health.cardTitle" = "Je financial health";
+"panel.health.emptyBadge" = "—";
+"panel.health.subScore.budget" = "Budgets";
+"panel.health.subScore.activity" = "Activity";
+"panel.health.subScore.bills" = "Bills";
+
+// Detail sheet — Total
+"panel.health.total.sheet.title" = "Je financial health";
+"panel.health.total.sheet.explanation" = "It's de average van je three metrics: budget (40%), activity (30%) en bills (30%). If any is missing, de score is calculated with de others.";
+"panel.health.total.headline.high" = "Je're crushing it!";
+"panel.health.total.headline.mid" = "Great rhythm going";
+"panel.health.total.headline.low" = "Small steps, big changes";
+"panel.health.total.headline.empty" = "Start by logging je first move";
+
+// Detail sheet — Budget
+"panel.health.budget.sheet.title" = "Je budget";
+"panel.health.budget.sheet.explanation" = "We check how je're doing against je budgets this maand. Room naar spare adds points; going over drops it a bit. Nothing dramatic — just a compass.";
+"panel.health.budget.headline.high" = "Je budgets zijn breathing easy!";
+"panel.health.budget.headline.mid" = "Je're minding je limits";
+"panel.health.budget.headline.low" = "A small tweak en je're set";
+"panel.health.budget.headline.empty" = "Budgets help je stay relaxed";
+"panel.health.budget.cta.view" = "See my budgets";
+"panel.health.budget.cta.create" = "Create my first budget";
+
+// Detail sheet — Activity
+"panel.health.activity.sheet.title" = "Je activity";
+"panel.health.activity.sheet.explanation" = "We count how many van de last 7 dagen je logged an uitgave. De more consistent je zijn, de better je know yourself — en de higher this grows.";
+"panel.health.activity.headline.high" = "Such consistency!";
+"panel.health.activity.headline.mid" = "Great rhythm going";
+"panel.health.activity.headline.low" = "A few minutes a dag works wonders";
+"panel.health.activity.headline.empty" = "Start by logging je first uitgave";
+"panel.health.activity.cta.view" = "See my boekingen";
+"panel.health.activity.cta.create" = "Log my first uitgave";
+
+// Detail sheet — Bills
+"panel.health.bills.sheet.title" = "Je bills";
+"panel.health.bills.sheet.explanation" = "We check je geplande betalingen voor de maand. If one's overdue recently with geen mark, van just around de corner, we give je a heads-up.";
+"panel.health.bills.headline.high" = "Alle good with je bills!";
+"panel.health.bills.headline.mid" = "Bills under control";
+"panel.health.bills.headline.low" = "A glance en je're caught up";
+"panel.health.bills.headline.empty" = "Geplande betalingen gratis je mind";
+"panel.health.bills.cta.view" = "See my bills";
+"panel.health.bills.cta.create" = "Create my first geplande betaling";
+
+// VoiceOver full card summary
+"panel.health.voiceover.summary" = "Financial health: %1$@. Budget %2$@. Activity %3$@. Bills %4$@.";
+// VoiceOver — individual sub-score value (PP2-02)
+"panel.health.voiceover.score" = "%d out van 100";
+// VoiceOver — fallback when a sub-score has no data
+"panel.health.voiceover.noData" = "geen data";
+
+// MARK: - Panel Hero (PP2-01)
+
+// Chip — greets by name; the golden emoji lives in the SF Symbol icon
+"panel.hero.chip.monthStart %@ %@" = "Hi %1$@ — %2$@ is on";
+"panel.hero.chip.default %@" = "Hi %@";
+
+// KPI fallback (aiSubtitle takes the KPI slot when available)
+// Markdown bold (**amount**) renders via AttributedString(markdown:)
+"panel.hero.kpi.monthStart %@ %d" = "Kicking off de maand, step by step.";
+"panel.hero.kpi.onTrack %@ %@ %@ %d" = "Je're on a good rhythm this maand, keep going.";
+"panel.hero.kpi.neutral %@ %@ %@ %d" = "Je maand in motion — all in order.";
+"panel.hero.kpi.tight %@ %@ %d" = "Tight maand but manageable, step by step.";
+"panel.hero.kpi.overBudget %@ %@" = "Tomorrow we start fresh, all in order.";
+
+"panel.hero.proBadge" = "Pro";
+"panel.hero.upsellCTA" = "Make it yours with AI";
+"panel.hero.availableLabel" = "Beschikbaar";
+
+// MARK: - Trend Widget
+
+"trend.title" = "Trends";
+"trend.balance.title" = "Saldo Trend";
+"trend.income.title" = "Inkomsten Trend";
+"trend.expense.title" = "Uitgave Trend";
+"trend.filterBlockedMessage" = "First verwijder categorie van nature filters";
+"trend.filterBlockedTitle" = "Option niet beschikbaar";
+
+// MARK: - Periods
+
+"period.thisWeek" = "This Week";
+"period.lastWeek" = "Last Week";
+"period.nextWeek" = "Volgende Week";
+"period.thisMonth" = "This Maand";
+"period.lastMonth" = "Last Maand";
+"period.nextMonth" = "Volgende Maand";
+"period.last30Days" = "Last 30 Dagen";
+"period.thisYear" = "This Jaar";
+"period.lastYear" = "Last Jaar";
+"period.nextYear" = "Volgende Jaar";
+"period.allTime" = "Alle Time";
+"period.custom" = "Custom";
+"period.startDate" = "Start datum";
+"period.endDate" = "End datum";
+
+// MARK: - Trend Types
+
+"trendType.balance" = "Saldo";
+"trendType.income" = "Inkomsten";
+"trendType.expense" = "Uitgaven";
+
+// MARK: - Groupings
+
+"grouping.day" = "Dag";
+"grouping.week" = "Week";
+"grouping.month" = "Maand";
+
+// MARK: - Cash Flow
+
+"cashFlow.title" = "Cash Flow";
+"cashFlow.income" = "Inkomsten";
+"cashFlow.expense" = "Uitgaven";
+"cashFlow.net" = "Net";
+
+// MARK: - Categories
+
+"categories.title" = "Categorieën";
+"categories.topSpending" = "Top Categorieën";
+"categories.others" = "Others";
+"categories.noCategory" = "Uncategorized";
+
+// MARK: - Subcategories
+
+"subcategories.title" = "Subcategorieën";
+"subcategories.noSubcategory" = "Geen subcategorie";
+
+// MARK: - Need
+
+"need.expensesByNeed" = "Uitgaven by Need";
+
+// MARK: - Records
+
+"records.title" = "Boekingen";
+"records.latest" = "Latest Boekingen";
+"records.noRecords" = "Geen boekingen in this period";
+
+// MARK: - Filters
+
+"filters.title" = "Filters";
+"filters.all" = "Alle";
+"filters.allAccounts" = "Alle Rekeningen";
+"filters.allCategories" = "Alle Categorieën";
+"filters.clearFilters" = "Clear Filters";
+"filters.selectCategories" = "Selecteer categorieën";
+"filters.selectAll" = "Selecteer all";
+"filters.deselectAll" = "Deselect all";
+"filters.noSubcategories" = "Geen subcategorieën";
+"filters.noneSelected" = "Geen selected";
+"filters.allSubcategories" = "Alle subcategorieën";
+"filters.filterOptions" = "Filter options";
+"filters.noteContains" = "Note contains...";
+"filters.selectAccounts" = "Selecteer rekeningen";
+"filters.selectTags" = "Selecteer labels";
+"filters.selectCurrencies" = "Selecteer currencies";
+"filters.allTags" = "Alle labels";
+"filters.noTags" = "Geen labels";
+"filters.allCurrencies" = "Alle beschikbaar";
+"filters.allNeeds" = "Alle needs";
+"filters.selectedCount" = "%d selected";
+"filters.categories" = "Categorieën";
+"filters.type" = "Type";
+"filters.need" = "Need";
+"filters.currency" = "Valuta";
+"filters.includeMode" = "Include";
+"filters.excludeMode" = "Exclude";
+"filters.nothingExcluded" = "Geen";
+"filters.datePrefix %@" = "Datum: %@";
+
+// MARK: - Actions
+
+"action.apply" = "Apply";
+"action.cancel" = "Annuleer";
+"action.done" = "Klaar";
+"action.save" = "Opslaan";
+"action.delete" = "Verwijder";
+"action.edit" = "Bewerk";
+"action.add" = "Voeg toe";
+"action.viewAll" = "View all";
+"action.viewLess" = "View less";
+"action.multipleEdit" = "Multiple bewerk";
+"action.back" = "Terug";
+"action.next" = "Volgende";
+"action.duplicate" = "Duplicate";
+"action.favorite" = "Favorite";
+"action.recurring" = "Recurring";
+"action.saveAsFavorite" = "Opslaan as favorite";
+"action.saveAsRecurring" = "Opslaan as recurring";
+"action.savedAsFavorite" = "Saved as favorite";
+"action.savedAsRecurring" = "Saved as recurring";
+"action.duplicated" = "Duplicated - opslaan naar create new";
+"action.select" = "Selecteer";
+"action.retry" = "Retry";
+"action.later" = "Later";
+"action.reorder" = "Reorder";
+"action.clearAll" = "Clear all filters";
+
+// MARK: - Search
+
+"search.noResults" = "We didn't find any results";
+"search.tryAnotherTerm" = "Try a different zoeken term";
+"search.resultsCount" = "%d results";
+"search.filter.all" = "Alle";
+"search.filter.note" = "Note";
+"search.filter.category" = "Categorie";
+"search.filter.subcategory" = "Subcategorie";
+"search.filter.account" = "Rekening";
+"search.filter.need" = "Need";
+"search.filter.tag" = "Label";
+
+// MARK: - Exchange Rate
+
+"exchangeRate.title" = "Exchange Rate";
+"exchangeRate.updated" = "Updated";
+"exchangeRate.loadError" = "We couldn't get de exchange rate. Try again in a moment.";
+"exchangeRate.noSecondaryCurrenciesHint" = "Je can selecteer secondary currencies in";
+"exchangeRate.noSecondaryCurrenciesPath" = "Profiel > Valuta & exchange";
+
+// MARK: - Empty States
+
+"empty.noData" = "Je data will appear here";
+"empty.noTransactions" = "Je transacties will appear here";
+"empty.noFavorites" = "Je don't have any favorites yet";
+"empty.noTags" = "Je don't have any labels yet";
+"empty.noAccounts" = "Je don't have any rekeningen yet";
+"empty.noCategories" = "Je don't have any categorieën yet";
+"empty.noSubcategories" = "Je don't have any subcategorieën yet";
+
+// MARK: - Transaction
+
+"transaction.new" = "New Transactie";
+"transaction.edit" = "Bewerk Transactie";
+"transaction.type" = "Type";
+"transaction.amount" = "Bedrag";
+"transaction.note" = "Note";
+"transaction.notePlaceholder" = "Write a note";
+"transaction.date" = "Datum";
+"transaction.tags" = "Labels";
+"transaction.addTags" = "Voeg toe labels";
+"transaction.category" = "Categorie";
+"transaction.subcategory" = "Subcategorie";
+"transaction.select" = "Selecteer";
+"transaction.total" = "Totaal";
+"transaction.income" = "Inkomsten";
+"transaction.expense" = "Uitgaven";
+"transaction.transfer" = "Transfer";
+"transaction.origin" = "Origin";
+"transaction.destination" = "Destination";
+"transaction.exchangeRate" = "Exchange rate";
+"transaction.willReceive" = "Will receive";
+"transaction.createAnother" = "Voeg toe another";
+"transaction.recents" = "Recents";
+"transaction.successTitle" = "Klaar!";
+"transaction.type.expense" = "Uitgave";
+"transaction.type.income" = "Inkomsten";
+"transaction.type.transfer" = "Transfer";
+
+// MARK: - Account
+
+"account.new" = "New Rekening";
+"account.edit" = "Bewerk Rekening";
+"account.name" = "Name";
+"account.type" = "Type";
+"account.currency" = "Valuta";
+"account.balance" = "Saldo";
+"account.initialBalance" = "Initial Saldo";
+"account.sign" = "Sign";
+"account.positive" = "Positive";
+"account.negative" = "Negative";
+"account.sign.inFavor" = "In je favor";
+"account.sign.consumed" = "Uitgegeven";
+"account.adjustment" = "Adjustment";
+"account.selected" = "Geselecteerd";
+"account.selectAccount" = "Selecteer rekening";
+"account.archived" = "Archived";
+"account.archive" = "Archive rekening";
+"account.unarchive" = "Unarchive";
+"account.excludeFromStats" = "Exclude from statistics";
+"account.delete" = "Verwijder rekening";
+
+// MARK: - Category
+
+"category.new" = "New Categorie";
+"category.edit" = "Bewerk Categorie";
+"category.name" = "Name";
+"category.need" = "Need";
+"category.show" = "Show";
+"category.addSubcategory" = "Voeg toe subcategorie";
+"category.subcategories" = "Subcategorieën";
+"category.noSubcategoriesYet" = "This categorie has geen subcategorieën yet.";
+"category.requiresSubcategory" = "To create a new categorie, je must add at least one subcategorie.";
+
+// MARK: - Alert
+
+"alert.unsavedChanges" = "Je have unsaved changes";
+"alert.discardChanges" = "Discard";
+"alert.keepEditing" = "Keep editing";
+"alert.confirmDelete" = "Confirm";
+"alert.deleteWarning" = "This action cannot be undone";
+
+// MARK: - Import
+
+"import.title" = "Importeer Transacties";
+"import.selectFile" = "Selecteer file";
+"import.importing" = "Importing...";
+"import.downloadTemplate" = "Download template";
+"import.createCategories" = "Create new categorieën";
+"import.continue" = "Continue";
+"import.noAccountsAvailable" = "Geen rekeningen beschikbaar";
+"import.createAccountFirst" = "Create at least one rekening before importing transacties.";
+"import.completed" = "Importeer completed";
+"import.error" = "There was a problem importing";
+"import.templateGenerated" = "Template generated";
+"import.templateGeneratedMessage" = "De template was generated successfully. Je can now bewerk it en come back naar this screen naar importeer it.";
+"import.introDescription" = "Voeg toe je financial transacties in bulk from a CSV van Excel file.";
+"import.templateDescription" = "Use our official template naar ensure de correct format.";
+"import.categoriesDescription" = "If de file includes categorieën that don't exist, they will be created automatically.";
+"import.selectAccount" = "Selecteer an rekening";
+"import.fileUrlError" = "We couldn't read that file. Try selecting it again.";
+"import.createAccountBeforeImport" = "Create at least one rekening before importing transacties.";
+
+// Multi-currency import
+"import.multiCurrencyDetected" = "Multiple currencies detected";
+"import.assignAccountPerCurrency" = "Assign an rekening voor each valuta found in de file.";
+"import.selectAccountForCurrency" = "Selecteer rekening";
+"import.currenciesDetected" = "%d currencies detected";
+"import.recordsImportedMultiCurrency" = "%d boekingen imported in %d currencies.";
+"import.noAccountsForCurrency" = "Geen rekeningen in %@. Create an rekening in this valuta first.";
+"import.noCurrenciesDetected" = "Geen valid currencies detected in de file.";
+"import.importAction" = "Importeer";
+
+// MARK: - Export
+
+"export.title" = "Exporteer";
+"export.filters" = "Filters";
+"export.columns" = "Columns";
+"export.summary" = "Summary";
+"export.format" = "Format";
+"export.period" = "Period";
+"export.selectAll" = "Selecteer all";
+"export.deselectAll" = "Deselect all";
+
+// MARK: - Favorites
+
+"favorites.title" = "Favorite Betalingen";
+"favorites.new" = "New Favorite";
+"favorites.edit" = "Bewerk Favorite";
+"favorites.noFavorites" = "Je don't have any favorites yet";
+"favorites.createTemplate" = "Create recurring betaling templates naar boeking them faster.";
+"favorites.newTitle" = "New Favorite";
+"favorites.editTitle" = "Bewerk Favorite";
+"favorites.namePlaceholder" = "Favorite name";
+"favorites.notConfigured" = "Niet configured";
+"favorites.descriptionPlaceholder" = "Description (optional)";
+"favorites.saveDescription" = "Opslaan this betaling as a favorite naar quickly boeking similar uitgaven in de future. Je'll find it in de ⭐ at de top right when creating van editing any transactie. Je can always bewerk it from Favorite Betalingen in je profile.";
+
+// MARK: - Scheduled
+
+"scheduled.saveDescription" = "Create a geplande betaling naar remind je van this recurring uitgave van inkomsten. Je'll find it in de Geplande Betalingen section in je profile, where je can bewerk, activate, van deactivate it anytime.";
+"scheduled.paid" = "Paid";
+"scheduled.overdue" = "Overdue";
+"scheduled.skip" = "Skip";
+"scheduled.skip.undo" = "Undo skip";
+"scheduled.skip.confirm.title" = "Skip this occurrence?";
+"scheduled.skip.confirm.message" = "It won't be recorded as an uitgave. Je can undo this later.";
+"scheduled.skip.overdue.title" = "Skip overdue occurrence";
+"scheduled.status.skipped" = "Skipped";
+"scheduled.status.paid" = "Paid";
+"scheduled.unlink" = "Unlink Transactie";
+"scheduled.status.overdue" = "Overdue";
+"scheduled.draftCreatedTitle" = "Je have pending betalingen!";
+"scheduled.draftCreatedMessage" = "%d geplande betalingen were added naar je inbox. Check them when je're ready.";
+"scheduled.viewInbox" = "View inbox";
+
+// MARK: - Inbox Alert Modal
+
+"inbox.alert.title.scheduled" = "Je have pending betalingen!";
+"inbox.alert.title.subscriptions" = "Subscriptions naar review!";
+"inbox.alert.title.automations" = "New automatic boekingen!";
+"inbox.alert.title.mixed" = "New boekingen in je inbox!";
+"inbox.alert.message.scheduled" = "%d geplande betalingen were added naar je inbox.";
+"inbox.alert.message.subscriptions" = "%d subscriptions were added naar je inbox.";
+"inbox.alert.message.mixed.scheduled" = "%d betalingen";
+"inbox.alert.message.mixed.subscriptions" = "%d subscriptions";
+"inbox.alert.message.mixed.automations" = "%d automatic boekingen";
+"inbox.alert.message.mixed.connector" = " en ";
+
+// MARK: - Settings
+
+"settings.title" = "Instellingen";
+"settings.theme" = "Theme";
+"settings.currency" = "Valuta";
+"settings.appIcon" = "App Icon";
+"settings.personalization" = "Personalization";
+"settings.accounts" = "Rekeningen";
+"settings.categories" = "Categorieën";
+"settings.tags" = "Labels";
+"settings.notifications" = "Notifications";
+"settings.favorites" = "Favorite Betalingen";
+"settings.budgets" = "Budgets";
+"settings.budgetsFavorites" = "Favorite Budgets";
+"settings.budgetsFavoritesInfo" = "Favorite budgets appear in de Budgets widget (3 in medium, 5 in large).";
+"settings.budgetsFavoritesEmptyHint" = "Create budgets in de Planning tab.";
+"settings.budgetsFavoritesReorder" = "Reorder favorites";
+"budgets.favorites.previewTitle" = "This is how je widget will look";
+"budgets.favorites.previewEmpty" = "Selecteer favorites naar see de preview";
+"settings.tabBarConfig" = "Customize Navigation";
+"settings.tabBarConfigInfo" = "Choose which sections naar show in de bottom bar. Minimum 1, maximum 3.";
+"settings.tabBarConfigActive" = "Active tabs";
+"settings.tabBarConfigAvailable" = "Beschikbaar";
+"settings.tabBarConfigReorderHint" = "Long press naar reorder";
+"settings.tabBarConfigMinWarning" = "Je must have at least one section";
+"settings.tabBarConfigMaxWarning" = "Maximum 3 sections";
+"settings.plannedPayments" = "Geplande Betalingen";
+"settings.voiceInputEnabled" = "Voice Input";
+"settings.voiceLanguage" = "Voice Language";
+"settings.appLanguage" = "App Language";
+"settings.appLanguageRestart" = "Restart de app naar apply de change.";
+"settings.imageInputEnabled" = "Image Input";
+"settings.resetData" = "Reset Data";
+"settings.version" = "Version";
+"settings.light" = "Light";
+"settings.dark" = "Dark";
+"settings.system" = "System";
+"settings.theme.indigo" = "Indigo";
+"settings.theme.rosa" = "Rose";
+"settings.theme.teal" = "Teal";
+"settings.theme.minimalist" = "Minimalist";
+"settings.theme.translucent" = "Translucent";
+"settings.theme.liquidGlass" = "Liquid Glass";
+"settings.defaultCurrency" = "Default Valuta";
+"settings.currentIcon" = "Current Icon";
+"settings.resetAllData" = "Reset all je data";
+"settings.deleteAllData" = "Verwijder all my data";
+
+// MARK: - Common
+
+"common.accept" = "Accept";
+"common.name" = "Name";
+"common.alias" = "Alias";
+"common.color" = "Color";
+"common.icon" = "Icon";
+"common.changeIcon" = "Change icon";
+"common.search" = "Zoeken";
+"common.loading" = "Loading...";
+"common.error" = "Error";
+"common.success" = "Success";
+"common.dataPrivacy" = "Je data never leaves je device";
+"common.active" = "Active";
+"common.hidden" = "Hidden";
+"common.inactive" = "Inactive";
+
+// MARK: - Widgets
+
+"widget.preferences" = "Widget Preferences";
+"widget.visible" = "Visible";
+"widget.size" = "Size";
+
+// MARK: - Planning
+
+"planning.title" = "Planning";
+"planning.budgets" = "Budgets";
+"planning.goals" = "Goals";
+"planning.comingSoon" = "Coming Soon";
+"planning.scheduledPayments" = "Geplande Betalingen";
+
+// MARK: - Budgets
+
+"budgets.title" = "Budgets";
+"budgets.empty.title" = "Je don't have any budgets yet";
+"budgets.empty.message" = "Create budgets naar better control je spending.";
+"budgets.includeSharedExpenses" = "Include shared uitgaven";
+"budgets.includeSharedExpensesHint" = "When off, only je personal uitgaven count";
+"budgets.widget.noFavorites.title" = "Geen favorite budgets";
+"budgets.widget.noFavorites.message" = "Mark budgets as favorites in Instellingen > Budgets naar see them here.";
+"budgets.widget.selectFavorites" = "Selecteer favorites";
+"budgets.alerts.title" = "Alerts";
+"budgets.alerts.enable" = "Notify when reaching limit";
+"budgets.alerts.thresholds" = "Notify at:";
+"budgets.alerts.message.50" = "Halfway through \"%1$@\" — %2$@ van %3$@ used";
+"budgets.alerts.message.75" = "75%% van \"%1$@\" used — %2$@ van %3$@";
+"budgets.alerts.message.90" = "\"%1$@\" is running low — %2$@ van %3$@ used";
+"budgets.alerts.message.100" = "Je've hit de limit on \"%1$@\" — %2$@ van %3$@";
+"budgets.alerts.globalDisabledHint" = "Enable budget alerts in Profiel > Notifications naar receive them";
+"budgets.alerts.custom" = "Custom";
+"budgets.alerts.addThreshold" = "Voeg toe";
+"budgets.new" = "New Budget";
+"budgets.edit" = "Bewerk Budget";
+"budgets.delete" = "Verwijder Budget";
+"budgets.delete.confirm.title" = "Verwijder budget?";
+"budgets.delete.confirm.message" = "This action cannot be undone.";
+
+// Budget Period Types
+"budgets.period.weekly" = "Wekelijks";
+"budgets.period.monthly" = "Maandelijks";
+"budgets.period.yearly" = "Jaarlijks";
+"budgets.period.unique" = "One-time";
+"budgets.period.all" = "Alle";
+
+// Budget Status
+"budgets.status.exceeded" = "Exceeded";
+"budgets.status.active" = "Active";
+"budgets.status.inactive" = "Inactive";
+"budget.noInactive" = "Geen inactive budgets";
+
+// Budget Details
+"budgets.spent.percent" = "%@ uitgegeven";
+"budgets.days.remaining" = "%@ dagen left";
+"budgets.period.past" = "Past";
+"budgets.amount.of" = "van %@";
+"budgets.exceeded.encouragement" = "Je went over budget — next period will be better!";
+
+// Budget Editor
+"budgets.editor.name.placeholder" = "Budget name";
+"budgets.editor.amount.placeholder" = "Bedrag";
+"budgets.editor.basic.info" = "Basic Information";
+"budgets.editor.filters" = "Filters";
+"budgets.editor.period.type" = "Period";
+"budgets.editor.date.range" = "Datum Range";
+"budgets.editor.start.date" = "Start Datum";
+"budgets.editor.end.date" = "End Datum";
+
+// Period Selector
+"budgets.period.selector.title.weekly" = "Choose a week";
+"budgets.period.selector.title.monthly" = "Choose a maand";
+"budgets.period.selector.title.yearly" = "Choose a jaar";
+"budgets.period.week.of" = "Week van %@";
+"budgets.period.current.week" = "This week";
+"budgets.period.current.month" = "This maand";
+"budgets.period.current.year" = "This jaar";
+"budgets.period.confirm" = "Klaar";
+"budgets.period.goToToday" = "Go naar vandaag";
+
+// Budget Detail
+"budgets.detail.info" = "Details";
+"budgets.detail.period" = "Period";
+"budgets.detail.accounts" = "Rekeningen";
+"budgets.detail.categories" = "Categorieën";
+"budgets.detail.tags" = "Labels";
+"budgets.detail.needs" = "Needs";
+"budgets.detail.alerts" = "Alerts";
+"budgets.detail.allAccounts" = "Alle rekeningen";
+"budgets.detail.allCategories" = "Alle categorieën";
+"budgets.detail.subcategories" = "Subcategorieën";
+"budgets.detail.allSubcategories" = "Alle subcategorieën";
+"budgets.detail.notFound" = "Budget niet found";
+"budgets.detail.status" = "Status";
+
+// Budget Charts
+"budgets.charts.title" = "Charts";
+"budgets.charts.compliance" = "Spending vs Limit";
+"budgets.charts.dailySpending" = "Cumulative Spending";
+"budgets.charts.categoryBreakdown" = "By Categorie";
+"budgets.charts.noData" = "Geen data voor this period";
+
+// MARK: - Profile
+
+"profile.title" = "Profiel";
+"profile.defaultName" = "User";
+"profile.personalDetails" = "Personal Details";
+"profile.dataManagement" = "Data Management";
+"profile.appearance" = "Appearance";
+"empty.noExpenses" = "Je don't have any uitgaven recorded yet";
+"empty.noSubcategories" = "Geen subcategorieën yet";
+"common.recent" = "Recent";
+"tag.new" = "New Label";
+"tag.edit" = "Bewerk Label";
+"tag.delete" = "Verwijder Label";
+"settings.currencyAndExchange" = "Valuta & Exchange";
+"common.updatingRecords" = "Updating boekingen...";
+"common.recalculatingConversions" = "Recalculating historical conversions";
+"export.customizeFile" = "Customize je file";
+"export.csvGeneratedSuccess" = "De file has been generated successfully.";
+"export.confirmExport" = "Confirm je exporteer";
+"export.selectColumns" = "Selecteer columns";
+"export.availableColumns" = "Beschikbaar columns";
+"export.columnsDescription" = "Choose which columns naar include in de exported file. Je must selecteer at least one.";
+"export.summaryAndExport" = "Summary en Exporteer";
+"export.summaryDescription" = "Review de selected filters en columns before generating de file.";
+"export.filtersSummary" = "Filters summary";
+"export.columnsToExport" = "Columns naar exporteer";
+"export.exportToCSV" = "Exporteer naar CSV";
+"export.exportBtn" = "Exporteer";
+"export.exportError" = "There was a problem exporting";
+"export.exportCompleted" = "Exporteer completed";
+"export.backToSettings" = "Terug naar instellingen";
+"export.exportData" = "Exporteer data";
+"export.greaterThan" = "Greater than";
+"export.lessThan" = "Less than";
+"export.selectSingleCurrency" = "Selecteer a single valuta naar filter by bedrag.";
+"export.allAvailable" = "Alle beschikbaar";
+"export.noTagsSelected" = "Geen labels";
+"export.noSubcategorySelected" = "Geen subcategorie selected";
+"export.any" = "Any";
+"export.between" = "Between";
+"export.condition" = "Condition";
+"export.noneSelected" = "Geen";
+"export.accountsSelected" = "%d selected";
+"export.allCategories" = "Alle categorieën";
+"export.allTags" = "Alle labels";
+"export.allCurrencies" = "Alle";
+"export.column.date" = "Datum";
+"export.column.amount" = "Bedrag";
+"export.column.currency" = "Valuta";
+"export.column.account" = "Rekening";
+"export.column.category" = "Categorie";
+"export.column.subcategory" = "Subcategorie";
+"export.column.tags" = "Labels";
+"export.column.note" = "Note";
+"export.column.date.description" = "Datum in yyyy-MM-dd format.";
+"export.column.amount.description" = "Transactie bedrag with 2 decimals.";
+"export.column.currency.description" = "Valuta code (PEN, USD, EUR).";
+"export.column.account.description" = "Associated rekening name.";
+"export.column.category.description" = "Main transactie categorie.";
+"export.column.subcategory.description" = "Specific subcategorie.";
+"export.column.tags.description" = "Associated labels, separated by ';'.";
+"export.column.note.description" = "Gratis-form note voor de transactie.";
+"common.next" = "Volgende";
+"settings.versionInfo" = "Version 1.0.0 (Build 1)";
+"tab.panel" = "Home";
+"tab.statistics" = "Statistics";
+"tab.planning" = "Planning";
+"tab.more" = "More";
+"tab.search" = "Zoeken";
+"tab.records" = "Boekingen";
+"tab.reports" = "Reports";
+"tab.groups" = "Groepen";
+"report.title" = "Financial Reports";
+"report.tab.comparative" = "Comparative";
+"report.tab.cashFlow" = "Cash Flow";
+"report.income" = "Inkomsten";
+"report.expense" = "Uitgaven";
+"report.netFlow" = "Net flow";
+"report.noData" = "Geen data";
+"report.noDataDescription" = "Geen boekingen in this period";
+"report.uncategorized" = "Uncategorized";
+"report.noSubcategory" = "Geen subcategorie";
+"report.noTag" = "Geen label";
+"report.noAccount" = "Geen rekening";
+"report.grouping.type" = "Type";
+"report.grouping.category" = "Categorie";
+"report.grouping.subcategory" = "Subcategorie";
+"report.grouping.tag" = "Label";
+"report.grouping.account" = "Rekening";
+"report.grouping.currency" = "Valuta";
+"report.grouping.nature" = "Nature";
+"report.grouping.drillDown" = "Drill down";
+"report.grouping.hint" = "Voeg toe levels naar see more detail. Drag naar reorder priority.";
+"report.grouping.active" = "Active";
+"report.grouping.available" = "Beschikbaar";
+"common.moreOptions" = "More options";
+"common.comingSoon" = "Coming soon";
+"panel.greeting" = "Hello, %@";
+"panel.title" = "%@'s Panel";
+"panel.fabVoice" = "Voice";
+"panel.fabImage" = "Image";
+"panel.fabManual" = "Manual";
+"panel.spent" = "Uitgegeven";
+"panel.aiInsightsTitle" = "AI Observations";
+"panel.aiInsightsDescription" = "Smart comments about je finances";
+"panel.dismissInsight" = "Dismiss observation";
+"panel.aiConsentRequired" = "Enable AI in Instellingen → AI Observations";
+"panel.preparingInsight" = "Preparing observation...";
+"panel.insightMenuRegenerate" = "Regenerate";
+"panel.insightMenuDifferentAngle" = "Different angle";
+"panel.insightMenuHideHour" = "Hide voor one hour";
+"panel.insightMenuHideToday" = "Hide voor vandaag";
+
+"widget.today" = "Vandaag";
+
+// Widget Preferences
+"widget.preferences" = "Dashboard Preferences";
+"widget.preferences.description" = "Choose what je want naar see on je dashboard en in what order.";
+"widget.resetLayout" = "Reset naar original layout";
+"widget.alwaysVisible" = "Always visible";
+"widget.fixedPosition" = "Fixed position";
+"widget.visible" = "Visible";
+"widget.size" = "Size: %@";
+"widget.summary" = "Summary";
+"widget.list" = "List";
+"widget.calendar" = "Calendar";
+
+// Widget Types
+"widgetType.trend" = "Trends";
+"widgetType.topSpending" = "Top Categorieën";
+"widgetType.topSubcategories" = "Top Subcategorieën";
+"widgetType.cashFlow" = "Cash Flow";
+"widgetType.categoriesPie" = "Categorieën";
+"widgetType.subcategoriesPie" = "Subcategorieën";
+"widgetType.latestRecords" = "Latest Boekingen";
+"widgetType.expensesByNeed" = "Needs";
+"widgetType.expensesByTag" = "Labels";
+"widgetType.exchangeRate" = "Exchange Rate";
+"widgetType.budgets" = "Budgets";
+"widgetType.scheduledPayments" = "Geplande Betalingen";
+"widgetType.weekdayBar" = "Dagelijks average";
+"widgetType.periodComparison" = "This maand vs last";
+
+// MARK: - Scheduled Payments Widget
+"scheduled.widget.empty.title" = "Geen upcoming betalingen";
+"scheduled.widget.empty.message" = "Je upcoming betalingen will appear here";
+"scheduled.widget.tomorrow" = "Tomorrow";
+"scheduled.widget.smallTitle" = "Planned";
+"scheduled.widget.largeTitle.recurring" = "Recurring betalingen";
+"scheduled.widget.smallToPay" = "naar pay";
+"scheduled.widget.smallPaidAmount" = "Je paid %@";
+"scheduled.widget.smallActivePending" = "%1$d this maand · %2$d left";
+"scheduled.widget.smallAllPaid" = "Alle caught up!";
+"scheduled.payments.count" = "%d active betalingen";
+"scheduled.calendar.show.all" = "Show all";
+"scheduled.calendar.day.empty" = "Geen betalingen this dag";
+"scheduled.calendar.month.empty" = "Geen betalingen this maand";
+
+"widget.sizeLabel" = "Size";
+"widget.chatFab.toggle" = "Ask Yala";
+"widget.chatFab.description" = "Show de AI financial assistant button.";
+"widget.chatFab.hint" = "Controls whether de chat button appears on de main screens.";
+"widget.aiCapabilities.header" = "AI Capabilities";
+
+"common.all" = "Alle";
+"widget.main" = "Main";
+"widget.topCategories" = "Top Categorieën";
+"widget.topSubcategories" = "Top Subcategorieën";
+"widget.subcategories" = "Subcategorieën";
+"widget.noExpensesPeriod" = "Geen uitgaven yet in this period.";
+"widget.noExpensesDescriptionCategories" = "Je top categorieën will appear here once je add transacties.";
+"widget.noExpensesDescriptionSubcategories" = "Je top subcategorieën will appear here once je add transacties.";
+"widget.of" = "van %@";
+"widget.ofTotal" = "van totaal";
+"widget.ofExpense" = "van uitgave";
+"widget.categoryAbbr" = "Cat.";
+
+
+"common.others" = "Others";
+"common.remaining" = "Resterend";
+"widget.categories" = "Categorieën";
+"widget.noExpensesSubcategoriesPeriod" = "Geen subcategorie uitgaven yet voor this period.";
+"widget.distributionByCategory" = "Categorieën";
+"widget.distributionBySubcategory" = "Subcategorieën";
+"widget.distributionByNeed" = "Needs";
+"widget.distributionByTag" = "Distribution by label";
+"widget.noDataForPeriod" = "Geen data yet voor this period";
+"widget.selectCurrencies" = "Selecteer up naar 2 currencies naar compare with %@";
+"widget.currenciesToCompare" = "Currencies naar compare";
+"widget.noRecordsForFilters" = "Geen boekingen voor this period en filters";
+"widget.recordsWillAppear" = "When je add transacties, they will appear here.";
+"widget.total" = "Totaal";
+"widget.average" = "Average";
+
+
+"common.uncategorized" = "Uncategorized";
+"cashFlow.netFlow" = "Net Flow";
+
+// Cash Flow Plan
+"cashFlowPlan.title" = "Je cash flow";
+"cashFlowPlan.description" = "We analyzed je last 6 months naar build je plan. Review en adjust as needed.";
+"cashFlowPlan.createButton" = "Create my plan";
+"cashFlowPlan.startingBalance" = "How much do je start with? (optional)";
+"cashFlowPlan.startingBalanceHelper" = "If je have money beschikbaar vandaag (in je bank, wallet, etc.), enter it here. We'll add it naar je future inkomsten.";
+"cashFlowPlan.incomeSection" = "Inkomsten";
+"cashFlowPlan.expenseSection" = "Uitgaven";
+"cashFlowPlan.recommendedBadge" = "Recommended";
+"cashFlowPlan.otherExpenses" = "Uncategorized uitgaven";
+"cashFlowPlan.otherExpensesDesc" = "Uitgaven from categorieën without a line in je plan";
+"cashFlowPlan.otherIncome" = "Uncategorized inkomsten";
+"cashFlowPlan.emptyState" = "Geen data yet";
+"cashFlowPlan.emptyStateMessage" = "Boeking je uitgaven en inkomsten voor at least one maand en we'll build je plan.";
+"cashFlowPlan.monthsActive" = "months";
+"cashFlowPlan.suggestedSource" = "Based on %d months van activity";
+"cashFlowPlan.bannerTitle" = "What is cash flow?";
+"cashFlowPlan.bannerBody" = "It's je maand-by-maand plan voor inkomsten en uitgaven. It shows je if je money will stretch van if je need naar adjust something.";
+"cashFlowPlan.available" = "Beschikbaar";
+"cashFlowPlan.accumulated" = "Accumulated";
+"cashFlowPlan.accumulatedShort" = "Accum";
+"cashFlowPlan.addLine" = "Voeg toe line";
+"cashFlowPlan.thisMonth" = "This maand";
+"cashFlowPlan.pastMonth" = "Past";
+"cashFlowPlan.futureMonth" = "Forecast";
+"cashFlowPlan.executionPercent" = "%d%% uitgegeven";
+"cashFlowPlan.densityFull" = "Full";
+"cashFlowPlan.densityIcons" = "Icons";
+"cashFlowPlan.estimationMethod" = "How do we calculate this bedrag?";
+"cashFlowPlan.calculationMethodTitle" = "Bedrag calculation";
+"cashFlowPlan.average3m" = "3-maand average";
+"cashFlowPlan.average6m" = "6-maand average";
+"cashFlowPlan.average12m" = "12-maand average";
+"cashFlowPlan.lastMonth" = "Last maand";
+"cashFlowPlan.manual" = "Fixed bedrag";
+"cashFlowPlan.scheduled" = "Geplande betaling";
+"cashFlowPlan.trend" = "Trend";
+"cashFlowPlan.custom" = "Custom";
+"cashFlowPlan.context" = "Context";
+"cashFlowPlan.trendLabel" = "Trend";
+"cashFlowPlan.rangeLabel" = "Range";
+"cashFlowPlan.plan" = "Estimated";
+"cashFlowPlan.real" = "Uitgegeven";
+"cashFlowPlan.realIncome" = "Received";
+"cashFlowPlan.difference" = "Difference";
+"cashFlowPlan.adjustAmount" = "Adjust bedrag";
+"cashFlowPlan.othersTitle" = "Uncategorized uitgaven";
+"cashFlowPlan.othersDesc" = "These zijn uitgaven we found in je boekingen that aren't in je plan. Je can add them by tapping +.";
+"cashFlowPlan.othersHint" = "Don't worry if some zijn sporadic — just add de ones that repeat every maand.";
+"cashFlowPlan.othersIncomeTitle" = "Uncategorized inkomsten";
+"cashFlowPlan.othersIncomeDesc" = "These zijn inkomsten entries we found in je boekingen that aren't in je plan. Je can add them by tapping +.";
+"cashFlowPlan.othersIncomeHint" = "Just add de ones that repeat every maand.";
+"cashFlowPlan.promoteCategory" = "Voeg toe naar plan";
+"cashFlowPlan.resetPlan" = "Reset plan";
+"cashFlowPlan.resetConfirmation" = "Reset je plan? Alle lines en adjustments will be deleted. This action cannot be undone.";
+"cashFlowPlan.deleteLineConfirmation" = "Verwijder this line from je plan? This action cannot be undone.";
+"cashFlowPlan.suggestPayment" = "New betaling: %@. Voeg toe naar plan?";
+"cashFlowPlan.chartsTitle" = "Charts";
+"cashFlowPlan.chartsSectionTitle" = "Je cash flow";
+"cashFlowPlan.accumulatedBalance" = "Accumulated saldo";
+"cashFlowPlan.incomeVsExpense" = "Inkomsten vs Uitgave";
+"cashFlowPlan.composition" = "Uitgave composition";
+"cashFlowPlan.realVsPlan" = "Actual vs Plan";
+"cashFlowPlan.trendByLine" = "Trend by line";
+"cashFlowPlan.selectAll" = "Selecteer all";
+"cashFlowPlan.total" = "Totaal";
+"cashFlowPlan.lineNameLabel" = "Line name";
+"cashFlowPlan.lineNameHint" = "Je can customize it";
+"cashFlowPlan.availableHintTitle" = "Beschikbaar";
+"cashFlowPlan.availableHintMessage" = "What je have left this maand: inkomsten minus uitgaven.";
+"cashFlowPlan.accumulatedHintTitle" = "Accumulated";
+"cashFlowPlan.accumulatedHintMessage" = "Je totaal saldo since de plan started. It adds up what's beschikbaar each maand.";
+"cashFlowPlan.editStartingBalance" = "Bewerk starting saldo";
+"cashFlowPlan.editStartingBalanceSave" = "Opslaan";
+"cashFlowPlan.average3mDesc" = "Average van what je uitgegeven in de last 3 months";
+"cashFlowPlan.average6mDesc" = "Average van de last 6 months";
+"cashFlowPlan.average12mDesc" = "Average van de last jaar";
+"cashFlowPlan.lastMonthDesc" = "What je uitgegeven last maand";
+"cashFlowPlan.manualDesc" = "Je set de exact bedrag";
+"cashFlowPlan.scheduledDesc" = "Uses de bedrag from je geplande betaling";
+"cashFlowPlan.trendDesc" = "Calculates de trend from je recent months";
+"cashFlowPlan.customDesc" = "Selecteer specific months naar average";
+"cashFlowPlan.monthSummaryOnTrack" = "Je've uitgegeven %d%% van je estimated uitgaven this maand";
+"cashFlowPlan.monthSummaryOver" = "Je're %d%% over je estimate this maand";
+"cashFlowPlan.monthSummaryUnder" = "Only %d%% uitgegeven — je're doing great this maand";
+"cashFlowPlan.configureHorizon" = "Configure horizon";
+"cashFlowPlan.monthsAhead" = "Months ahead";
+"cashFlowPlan.monthsBack" = "Months back";
+"cashFlowPlan.showAccumulatedBalance" = "Show accumulated";
+"cashFlowPlan.startingBalanceDateLabel" = "Saldo datum";
+"cashFlowPlan.startingBalanceDateHelper" = "When did je have this saldo? If geen datum selected, vandaag is assumed.";
+
+// Cell Detail Sheet (Inc 4)
+"cashFlowPlan.cellDetailOf" = "van";
+"cashFlowPlan.cellDetailRemaining" = "Je have %@ left";
+"cashFlowPlan.cellDetailRecentTransactions" = "Recent transacties";
+"cashFlowPlan.cellDetailSpent" = "Je uitgegeven";
+"cashFlowPlan.cellDetailEarned" = "Je earned";
+"cashFlowPlan.cellDetailMore" = "more";
+"cashFlowPlan.cellDetailLess" = "less";
+"cashFlowPlan.cellDetailOverrideActive" = "Bedrag manually adjusted";
+"cashFlowPlan.cellDetailNote" = "Note (optional)";
+"cashFlowPlan.cellDetailSaveAdjustment" = "Opslaan adjustment";
+"cashFlowPlan.overrideScopeTitle" = "Adjustment scope";
+"cashFlowPlan.overrideScopeMessage" = "Do je want naar apply this bedrag naar this maand only, van also naar future months?";
+"cashFlowPlan.overrideScopeThisMonth" = "This maand only";
+"cashFlowPlan.overrideScopeThisAndFuture" = "This en future months";
+"cashFlowPlan.cellDetailDailyProgress" = "Dagelijks progress";
+
+// Config improvements (Inc 5)
+"cashFlowPlan.contextHistory" = "Historical context";
+"cashFlowPlan.monthsWithActivity" = "%d van 12 months";
+"cashFlowPlan.addOverride" = "Voeg toe adjustment";
+"cashFlowPlan.overrideMonth" = "Maand";
+"cashFlowPlan.overrideAmount" = "Bedrag";
+"cashFlowPlan.configLine" = "Configure line";
+
+// Add Line redesign (Inc 6)
+"cashFlowPlan.addFromExpenses" = "From my uitgaven";
+"cashFlowPlan.addFromExpensesDesc" = "Pick a subcategorie with history";
+"cashFlowPlan.addFromScheduled" = "From geplande betaling";
+"cashFlowPlan.addFromScheduledDesc" = "Use an active betaling as a fixed line";
+"cashFlowPlan.addCustomLine" = "Custom line";
+"cashFlowPlan.addCustomLineDesc" = "Gratis name en bedrag";
+"cashFlowPlan.monthlyAverage" = "Maandelijks avg.";
+"cashFlowPlan.frequency" = "Frequency";
+"cashFlowPlan.noScheduledPayments" = "Geen geplande betalingen beschikbaar";
+"cashFlowPlan.noCategories" = "Geen categorieën with history";
+
+// Charts redesign (Inc 7)
+"cashFlowPlan.chartProjection" = "Saldo projection";
+"cashFlowPlan.chartDeviation" = "Uitgaven naar review";
+"cashFlowPlan.chartDeviationSubtitle" = "Subcategorieën where je uitgegeven more than planned";
+"cashFlowPlan.chartSavings" = "Maandelijks savings";
+"cashFlowPlan.chartProjectionSubtitle" = "Accumulated saldo over time";
+"cashFlowPlan.chartDeviationOver" = "Over budget";
+"cashFlowPlan.chartDeviationUnder" = "Saved";
+"cashFlowPlan.chartDangerZone" = "Danger zone";
+"cashFlowPlan.chartRollingAvg" = "Rolling average";
+"cashFlowPlan.chartNeedMoreData" = "Je need at least 2 months van data";
+"cashFlowPlan.analyzingProjection" = "Analyzing je projection...";
+"cashFlowPlan.enableAIObservations" = "Use AI voor observations";
+"cashFlowPlan.commentNegative" = "Starting in %@ je saldo goes negative — check if je can adjust something";
+"cashFlowPlan.commentTight" = "This maand is tight — je have %@ van margin left";
+"cashFlowPlan.commentHealthy" = "Je plan looks healthy — je'd end de period with %@ accumulated";
+"cashFlowPlan.commentDefault" = "Je projection covers %d months ahead";
+"cashFlowPlan.chartAllWithinPlan" = "Alle je uitgave lines zijn within de plan";
+"cashFlowPlan.deviationCommentSingle" = "In %@ je uitgegeven %@ more than planned";
+"cashFlowPlan.deviationCommentMultiple" = "%@ is where je went over de most, by %@ extra — je uitgegeven %@ over plan in totaal";
+"cashFlowPlan.chartSavingsSubtitle" = "How much je opslaan each maand vs je plan";
+"cashFlowPlan.chartPlanned" = "Planned";
+"cashFlowPlan.commentSavingsBelow" = "Je're saving %@ less per maand than planned — can je trim any uitgave?";
+"cashFlowPlan.commentSavingsAbove" = "Je're %@ above je maandelijks savings plan — je saldo would reach %@";
+"cashFlowPlan.commentHealthyWithSavings" = "Je plan looks good — je opslaan about %@/maand en would end with %@";
+
+"common.unknownError" = "Something went wrong";
+"common.saveError" = "Changes weren't saved. Try again.";
+"common.deleteError" = "Couldn't verwijder. Try once more.";
+"widget.noExpensesNeedPeriod" = "Geen uitgaven recorded by need voor this period.";
+
+
+"account.addAccount" = "Voeg toe Rekening";
+
+
+"common.date" = "Datum";
+"common.amount" = "Bedrag";
+"common.base" = "Base";
+"common.selectedDate" = "Geselecteerd Datum";
+"common.selectedValue" = "Geselecteerd Value";
+"common.selected" = "selected";
+"common.details" = "Details";
+"common.select" = "Selecteer";
+
+
+"statistics.title" = "Statistics";
+"statistics.trends" = "Trends";
+"statistics.categories" = "Distribution";
+"statistics.records" = "Boekingen";
+
+
+"period.thisWeek" = "This Week";
+"period.last7Days" = "Last 7 Dagen";
+"period.last30Days" = "Last 30 Dagen";
+"period.thisMonth" = "This Maand";
+"period.lastMonth" = "Last Maand";
+"period.thisYear" = "This Jaar";
+"period.lastYear" = "Last Jaar";
+"period.allTime" = "Alle Time";
+
+"need.essential" = "Essential";
+"need.priority" = "Priority";
+"need.optional" = "Optional";
+"need.unclassified" = "Unclassified";
+"need.essential.desc" = "Essential uitgaven, hard naar cut.";
+"need.priority.desc" = "Important but with some flexibility.";
+"need.optional.desc" = "Discretionary van leisure uitgaven.";
+"need.unclassified.desc" = "Geen specific nature label.";
+
+"trendType.balance" = "Saldo";
+"trendType.income" = "Inkomsten";
+"trendType.expense" = "Uitgaven";
+
+
+"cashFlowViewType.total" = "Totaal";
+"cashFlowViewType.byAccount" = "By Rekening";
+"cashFlowViewType.byCurrency" = "By Valuta";
+
+
+"listViewType.categories" = "Categorieën";
+"listViewType.subcategories" = "Subcategorieën";
+
+"comparison.month" = "Maand";
+"comparison.year" = "Jaar";
+"comparison.monthShort" = "P-1";
+"comparison.yearShort" = "Y-1";
+
+"statistics.noRecordsFiltered" = "Geen boekingen with these filters";
+"statistics.noRecordsDescription" = "When je add transacties, they will appear here.";
+"statistics.periodComparison" = "Comparison with previous period";
+"statistics.vsPreviousPeriod" = "vs Previous period";
+"statistics.vsPreviousYear" = "vs Previous jaar";
+"statistics.currentPeriod" = "Current period";
+"statistics.previousPeriod" = "Previous period";
+"statistics.latestRecords" = "Latest boekingen";
+"statistics.noCategoryData" = "Geen categorie data";
+"statistics.noSubcategoryData" = "Geen subcategorie data";
+"statistics.noExpensesInPeriod" = "Geen uitgaven in de selected period";
+"statistics.topCategories" = "Top categorieën";
+"statistics.topSubcategories" = "Top subcategorieën";
+"statistics.noDataToShow" = "Geen data naar show yet";
+"statistics.noRecords" = "Geen boekingen";
+"statistics.ofExpense" = "van uitgave";
+"statistics.spendingAnalysis" = "Spending Analysis";
+"statistics.incomeAnalysis" = "Inkomsten Analysis";
+
+// MARK: - Insights
+"insights.title" = "Overview";
+"insights.records" = "Boekingen";
+"insights.inThisPeriod" = "in this period";
+"insights.dailyAverage" = "Dagelijks average";
+"insights.topCategory" = "Top categorie";
+"insights.topSubcategory" = "Top subcategorie";
+"insights.highestExpense" = "Highest uitgave";
+"insights.highestAvgWeekday" = "Highest spending dag";
+"insights.subscriptions" = "Subscriptions";
+"insights.quickStats" = "Quick Stats";
+"insights.comparison" = "Period Comparison";
+"insights.weekdayAverage" = "Average spending by dag";
+"insights.needDistribution" = "Spending by Need";
+"insights.commitments" = "Commitments";
+"insights.commitmentsNote" = "Current period voor each budget";
+"insights.pendingPayments" = "Pending betalingen";
+"insights.activeSubscriptions" = "Active subscriptions";
+"insights.budgetsAtRisk" = "Budgets at risk";
+"insights.yearOverYear" = "Jaar over jaar";
+"insights.yearComparison" = "Last jaar: %@. This jaar: %@.";
+"insights.intelligentInsights" = "Observations";
+"insights.funFact" = "Fun fact";
+"insights.emptyTitle" = "Geen data yet";
+"insights.emptyBody" = "Boeking uitgaven naar see je insights";
+"insights.fewTransactions" = "Boeking more naar unlock all insights";
+"insights.monthly" = "maandelijks";
+"insights.perDay" = "per dag";
+"insights.ofTotal" = "van totaal";
+"insights.analyzingData" = "Analyzing je data...";
+"insights.activateAITitle" = "Smart Overview beschikbaar";
+"insights.activateAIBody" = "Enable en customize it in Profiel > AI Features.";
+"insights.activateAIDisclaimer" = "Only summarized data is sent naar OpenAI (totals, percentages, trends). Je individual transacties en personal data zijn never shared.";
+"insights.activate" = "Activate";
+"insights.goToSettings" = "Go naar instellingen";
+"insights.notInterested" = "Niet interested";
+"insights.offlineCached" = "Offline. Showing last analysis.";
+"insights.offlineNoCache" = "Offline. Personalized insights will be beschikbaar when connected.";
+
+"settings.organization" = "Organization";
+"settings.preferences" = "Preferences";
+"settings.aiFeatures" = "AI Features";
+"settings.customizeAISummary" = "Customize AI Summary";
+"settings.customizeAISummaryHint" = "Choose which metrics en charts appear in je smart overview.";
+"settings.data" = "Data";
+"settings.security" = "Security & Rekening";
+"settings.help" = "Need Help?";
+"settings.legal" = "Legal";
+
+"settings.importData" = "Importeer File";
+"settings.exportData" = "Exporteer Data";
+"settings.wipeData" = "Clear Data";
+"settings.faceId" = "Face ID";
+"settings.permissions" = "Permissions";
+"settings.aiPrivacy" = "AI Privacy & Data";
+"settings.subscriptions" = "Manage Subscriptions";
+"settings.rateApp" = "Rate & Recommend";
+"settings.tutorials" = "Tutorials";
+"settings.faq" = "FAQ";
+"settings.contact" = "Contact Us";
+"settings.privacy" = "Privacy Policy";
+"settings.terms" = "Terms van Use";
+
+// Support
+"support.title" = "Contact Us";
+"support.type" = "Type van inquiry";
+"support.typeError" = "Bug";
+"support.typeImprovement" = "Improvement";
+"support.typeIdea" = "Idea";
+"support.message" = "Describe je inquiry";
+"support.messagePlaceholder" = "Tell us in detail...";
+"support.send" = "Send";
+
+// Biometric
+"biometric.title" = "Biometric Security";
+"biometric.description" = "Protect je financial information with biometric authentication van device passcode.";
+"biometric.enableLock" = "Enable lock";
+"biometric.lockAfter" = "Lock after";
+"biometric.timeout.immediate" = "10 seconds";
+"biometric.timeout.oneMinute" = "1 minute";
+"biometric.timeout.fiveMinutes" = "5 minutes";
+"biometric.timeout.fifteenMinutes" = "15 minutes";
+"biometric.authReason" = "Unlock Yala naar access je finances";
+"biometric.enableReason" = "Verify je identity naar enable lock";
+"biometric.authFailed" = "Authentication failed";
+"biometric.authFailedMessage" = "Could niet verify je identity. Please try again.";
+"biometric.locked" = "Yala is locked";
+"biometric.unlockPrompt" = "Tap de button naar unlock";
+"biometric.unlock" = "Unlock";
+"biometric.passcode" = "Passcode";
+"biometric.enableLockHint" = "Je'll be asked naar verify je identity each time je open de app.";
+"biometric.lockAfterHint" = "Choose how long de app can stay in de background before locking.";
+
+"profile.title" = "Profiel";
+"profile.edit" = "Bewerk Profiel";
+"profile.importSuccess" = "Importeer Completed";
+"profile.importError" = "Importeer Error";
+
+
+"profile.personalDetails" = "Personal Details";
+"profile.changePhoto" = "Change Photo";
+"profile.addPhoto" = "Voeg toe Photo";
+"profile.yourName" = "Je Name";
+"profile.aliasPlaceholder" = "user_123";
+"profile.characters" = "characters";
+"profile.minChars" = "Minimum 3 characters";
+"profile.maxChars" = "Maximum 20 characters";
+"profile.allowedChars" = "Only letters, numbers, en underscores";
+"profile.aliasAvailable" = "Alias beschikbaar";
+"profile.aliasHelper" = "3-20 characters. Only letters, numbers, en underscores.";
+"profile.privacyTitle" = "Je data never leaves je device";
+"profile.privacyDesc" = "Yala stores je personal data solely on je device. AI features (voice, image, en insights) zijn optional en only process summarized data — never je individual transacties van personal information.";
+"profile.aliasFutureNote" = "Note: Alias uniqueness validation will be beschikbaar when shared uitgaven functionality is implemented.";
+"profile.proMember" = "PRO Lid";
+"profile.choosePhoto" = "Choose photo";
+"profile.chooseIcon" = "Choose icon";
+"profile.removeAvatar" = "Verwijder";
+"profile.editAvatar" = "Bewerk avatar";
+
+"settings.currencyDescription" = "Choose je main valuta en check updated exchange rates.";
+"settings.preferredCurrency" = "Preferred Valuta";
+"settings.exchangeRate" = "Exchange Rate";
+"settings.secondaryCurrencies" = "Secondary Currencies";
+"settings.secondaryCurrenciesHint" = "Selecteer up naar 2 currencies naar compare with je preferred valuta in de exchange rate widget.";
+"settings.showMoreCurrencies" = "Show more currencies";
+"settings.recommendedCurrencies" = "Recommended";
+"common.lastUpdate" = "Last update:";
+
+
+"common.inactive" = "Inactive";
+"common.hidden" = "Hidden";
+"common.archived" = "Archived";
+"empty.tagsDescription" = "Create labels naar organize je transacties flexibly.";
+"empty.categoriesDescription" = "Create categorieën naar classify je inkomsten en uitgaven.";
+"empty.accountsDescription" = "Create rekeningen naar organize je finances by bank, cash, van others.";
+
+
+"profile.appearance" = "Appearance";
+"settings.theme" = "Themes";
+"settings.themeDescription" = "Choose how Yala looks.";
+"settings.system" = "System";
+"settings.light" = "Light";
+"settings.dark" = "Dark";
+"settings.appIcon" = "App Icon";
+"settings.appIconDescription" = "Choose de icon that best fits je style.";
+"settings.personalization" = "Personalization";
+"settings.personalizationDescription" = "Adjust how Yala works according naar je preferences.";
+"settings.sectionInterface" = "Interface";
+"settings.sectionCalendar" = "Calendar";
+"settings.sectionIndicators" = "Indicators";
+"settings.sectionFormat" = "Number Format";
+"settings.defaultPeriod" = "Default Period";
+"settings.defaultPeriodDescription" = "This period will be applied by default every time je open de app. Je can temporarily change it from de period selector at any time.";
+"settings.colorfulIcons" = "Colorful Icons";
+"settings.colorfulIconsDescription" = "Show colored icons in de profile section, iOS Instellingen style.";
+"settings.colorfulIconsDisabledByTheme" = "Automatically disabled by de current theme.";
+"settings.firstWeekday" = "First dag van week";
+"settings.firstWeekdayDescription" = "Set which dag naar consider as start van week voor filters like 'This Week'.";
+"settings.sunday" = "Sunday";
+"settings.monday" = "Monday";
+"settings.resetData" = "Reset Data";
+"settings.resetDataDescription" = "This operation will permanently verwijder je rekeningen, transacties, budgets, exchange rates, categorieën, en any other data associated with je Yala profile. After deletion, de app will return naar a state similar naar initial setup.";
+"settings.deleteAllData" = "Verwijder Alle Data";
+"settings.deleteDataConfirmation" = "Verwijder all je data?";
+"settings.deleteDataWarning" = "This action is irreversible. Alle je rekeningen, transacties, budgets, exchange rates, en categorieën will be deleted. After this, Yala will reset naar a state similar naar initial setup en je cannot recover je data.";
+"settings.wipeICloudWarning" = "This will also verwijder je iCloud data. Other synced devices will lose this data.";
+"settings.delete" = "Verwijder";
+"settings.cancel" = "Annuleer";
+"settings.iconOriginal" = "Original";
+"settings.iconDark" = "Dark";
+"settings.iconLight" = "Light";
+"settings.iconNeon" = "Neon";
+"settings.deleteAllDataAction" = "Verwijder Definitely";
+"settings.deletingData" = "Deleting data...";
+"settings.appIconTitle" = "App Icon";
+"settings.iconNotSupported" = "This device does niet support alternate icons.";
+"settings.iconChangeFailed" = "Failed naar change icon: %@";
+"settings.deleteDataError" = "There was a problem deleting data";
+"settings.deleteDataUnknownError" = "Something went wrong while deleting data. Try again.";
+
+
+"transaction.newTransaction" = "New Transactie";
+"transaction.editTransaction" = "Bewerk Transactie";
+"transaction.description" = "Description";
+"transaction.descriptionHint" = "Use @ rekening, ! categorie, # label";
+"transaction.sourceAccount" = "Source Rekening";
+"transaction.destinationAccount" = "Destination Rekening";
+"transaction.account" = "Rekening";
+"tag.newTag" = "New Label";
+"tag.editTag" = "Bewerk Label";
+"tag.createFirstDescription" = "Create je first label naar organize je transacties";
+"tag.deleteConfirmation" = "Verwijder Label?";
+"tag.namePlaceholder" = "Name (max. 20)";
+"tag.color" = "Color";
+"tag.colorSelected" = "Geselecteerd: %@";
+
+// MARK: - Currency Names
+// Latin America
+"currency.pen" = "Peruvian sol";
+"currency.usd" = "US dollar";
+"currency.mxn" = "Mexican peso";
+"currency.cop" = "Colombian peso";
+"currency.brl" = "Brazilian real";
+"currency.ars" = "Argentine peso";
+"currency.clp" = "Chilean peso";
+"currency.uyu" = "Uruguayan peso";
+"currency.bob" = "Bolivian boliviano";
+"currency.pyg" = "Paraguayan guaraní";
+"currency.crc" = "Costa Rican colón";
+"currency.gtq" = "Guatemalan quetzal";
+"currency.hnl" = "Honduran lempira";
+"currency.nio" = "Nicaraguan córdoba";
+"currency.pab" = "Panamanian balboa";
+"currency.dop" = "Dominican peso";
+// Europe
+"currency.eur" = "Euro";
+"currency.gbp" = "British pound";
+"currency.chf" = "Swiss franc";
+"currency.sek" = "Swedish krona";
+"currency.nok" = "Norwegian krone";
+"currency.dkk" = "Danish krone";
+"currency.pln" = "Polish zloty";
+"currency.czk" = "Czech koruna";
+"currency.huf" = "Hungarian forint";
+"currency.ron" = "Romanian leu";
+"currency.rub" = "Russian ruble";
+"currency.uah" = "Ukrainian hryvnia";
+"currency.try" = "Turkish lira";
+// Asia
+"currency.jpy" = "Japanese yen";
+"currency.cny" = "Chinese yuan";
+"currency.krw" = "South Korean won";
+"currency.inr" = "Indian rupee";
+"currency.idr" = "Indonesian rupiah";
+"currency.php" = "Philippine peso";
+"currency.thb" = "Thai baht";
+"currency.myr" = "Malaysian ringgit";
+"currency.sgd" = "Singapore dollar";
+"currency.hkd" = "Hong Kong dollar";
+"currency.twd" = "New Taiwan dollar";
+"currency.vnd" = "Vietnamese dong";
+// Oceania
+"currency.aud" = "Australian dollar";
+"currency.nzd" = "New Zealand dollar";
+// Middle East
+"currency.aed" = "UAE dirham";
+"currency.sar" = "Saudi riyal";
+"currency.ils" = "Israeli new shekel";
+"currency.qar" = "Qatari riyal";
+"currency.kwd" = "Kuwaiti dinar";
+// Africa
+"currency.zar" = "South African rand";
+"currency.egp" = "Egyptian pound";
+"currency.ngn" = "Nigerian naira";
+"currency.kes" = "Kenyan shilling";
+"currency.mad" = "Moroccan dirham";
+// North America
+"currency.cad" = "Canadian dollar";
+
+// MARK: - Currency Plural Names (short, no country)
+// Latin America
+"currency.plural.pen" = "soles";
+"currency.plural.usd" = "dollars";
+"currency.plural.mxn" = "pesos";
+"currency.plural.cop" = "pesos";
+"currency.plural.brl" = "reais";
+"currency.plural.ars" = "pesos";
+"currency.plural.clp" = "pesos";
+"currency.plural.uyu" = "pesos";
+"currency.plural.bob" = "bolivianos";
+"currency.plural.pyg" = "guaraníes";
+"currency.plural.crc" = "colones";
+"currency.plural.gtq" = "quetzales";
+"currency.plural.hnl" = "lempiras";
+"currency.plural.nio" = "córdobas";
+"currency.plural.pab" = "balboas";
+"currency.plural.dop" = "pesos";
+// Europe
+"currency.plural.eur" = "euros";
+"currency.plural.gbp" = "pounds";
+"currency.plural.chf" = "francs";
+"currency.plural.sek" = "kronor";
+"currency.plural.nok" = "kroner";
+"currency.plural.dkk" = "kroner";
+"currency.plural.pln" = "zlotys";
+"currency.plural.czk" = "korunas";
+"currency.plural.huf" = "forints";
+"currency.plural.ron" = "lei";
+"currency.plural.rub" = "rubles";
+"currency.plural.uah" = "hryvnias";
+"currency.plural.try" = "liras";
+// Asia
+"currency.plural.jpy" = "yen";
+"currency.plural.cny" = "yuan";
+"currency.plural.krw" = "won";
+"currency.plural.inr" = "rupees";
+"currency.plural.idr" = "rupiahs";
+"currency.plural.php" = "pesos";
+"currency.plural.thb" = "baht";
+"currency.plural.myr" = "ringgits";
+"currency.plural.sgd" = "dollars";
+"currency.plural.hkd" = "dollars";
+"currency.plural.twd" = "dollars";
+"currency.plural.vnd" = "dong";
+// Oceania
+"currency.plural.aud" = "dollars";
+"currency.plural.nzd" = "dollars";
+// Middle East
+"currency.plural.aed" = "dirhams";
+"currency.plural.sar" = "riyals";
+"currency.plural.ils" = "shekels";
+"currency.plural.qar" = "riyals";
+"currency.plural.kwd" = "dinars";
+// Africa
+"currency.plural.zar" = "rand";
+"currency.plural.egp" = "pounds";
+"currency.plural.ngn" = "naira";
+"currency.plural.kes" = "shillings";
+"currency.plural.mad" = "dirhams";
+// North America
+"currency.plural.cad" = "dollars";
+
+// MARK: - Continents
+"continent.latinAmerica" = "Latin America";
+"continent.europe" = "Europe";
+"continent.asia" = "Asia";
+"continent.oceania" = "Oceania";
+"continent.middleEast" = "Middle East";
+"continent.africa" = "Africa";
+"continent.northAmerica" = "North America";
+
+"common.seeAll" = "See all";
+"common.none" = "Geen";
+"common.ok" = "OK";
+
+"common.selectColor" = "Selecteer a Color";
+"common.useThisColor" = "Use This Color";
+"common.newColor" = "New Color";
+"common.understood" = "Understood";
+"common.cannotUndo" = "This action cannot be undone";
+"common.general" = "General";
+"common.status" = "Status";
+"common.actions" = "Actions";
+"account.configure" = "Configure Rekening";
+"account.deleteError" = "This rekening can't be deleted";
+"account.accountName" = "Rekening Name";
+"account.accountNumber" = "Rekening Number";
+"category.editTitle" = "Bewerk Categorie";
+"category.hiddenTitle" = "Categorie Hidden";
+"category.hiddenDescription" = "De categorie en its subcategorieën will stop appearing in selectors, but historical data will niet be lost.";
+"category.addOneSubcategory" = "Voeg toe at least one subcategorie";
+"category.newCategory" = "New categorie";
+"category.namePlaceholder" = "Categorie name";
+"category.activeSubcategories" = "Active subcategorieën";
+"category.hiddenSubcategories" = "Hidden subcategorieën";
+"category.details" = "Details";
+"category.delete" = "Verwijder Categorie";
+"category.deleteConfirmTitle" = "Verwijder Categorie?";
+"category.deleteConfirmMessage" = "De categorie en all its subcategorieën will be deleted. This action cannot be undone.";
+"category.cannotDeleteTitle" = "Cannot Verwijder";
+"category.cannotDeleteMessage" = "This categorie has subcategorieën with %d transacties. To verwijder it, first verwijder van transfer de transacties from each subcategorie.";
+"subcategory.newTitle" = "New Subcategorie";
+"subcategory.editTitle" = "Bewerk Subcategorie";
+"subcategory.delete" = "Verwijder Subcategorie";
+"subcategory.deleteConfirmTitle" = "Verwijder Subcategorie?";
+"subcategory.deleteConfirmMessage" = "This action cannot be undone";
+"subcategory.cannotDeleteTitle" = "Cannot Verwijder";
+"subcategory.cannotDeleteMessage" = "This subcategorie has %d transacties. Transfer de transacties naar another subcategorie before deleting.";
+"subcategory.transferTitle" = "Transfer Transacties";
+"subcategory.transferHeader" = "This subcategorie has transacties";
+"subcategory.transferDescription" = "There zijn %d transacties in \"%@\". Choose what naar do with them before deleting.";
+"subcategory.transferToSpecific" = "Transfer naar another subcategorie";
+"subcategory.transferToSpecificDesc" = "Selecteer a destination subcategorie naar move de transacties";
+"subcategory.transferToUnassigned" = "Move naar Unassigned";
+"subcategory.transferToUnassignedDesc" = "Transacties will be moved naar de \"Unassigned\" subcategorie in Others";
+"subcategory.deleteTransactions" = "Verwijder transacties";
+"subcategory.deleteTransactionsDesc" = "Alle transacties will be permanently deleted";
+"subcategory.selectDestination" = "Selecteer destination";
+"subcategory.deleteTransactionsConfirmTitle" = "Verwijder transacties?";
+"subcategory.deleteTransactionsConfirm" = "Verwijder";
+"subcategory.details" = "Subcategorie details";
+"subcategory.namePlaceholder" = "Subcategorie name";
+"subcategory.unassigned" = "Unassigned";
+"subcategory.deleteTransactionsConfirmMessage" = "%d transacties will be permanently deleted. This action cannot be undone.";
+
+
+"account.deleteBalanceError" = "Je cannot verwijder this rekening because it has a non-zero saldo. Adjust de saldo naar 0 before deleting it.";
+"account.type.general" = "General";
+"account.type.cash" = "Cash";
+"account.type.current" = "Checking Rekening";
+"account.type.savings" = "Savings";
+"account.type.creditCard" = "Credit Card";
+"account.type.investment" = "Investment";
+"account.type.loan" = "Loan";
+"account.type.other" = "Other";
+
+
+
+"iconPicker.title" = "Customize";
+"iconPicker.preview" = "Preview";
+"iconPicker.shopping" = "Shopping";
+"iconPicker.food" = "Food";
+"iconPicker.transport" = "Transport";
+"iconPicker.finance" = "Finance";
+"iconPicker.home" = "Home";
+"iconPicker.services" = "Services";
+"iconPicker.entertainment" = "Entertainment";
+"iconPicker.sports" = "Sports";
+"iconPicker.health" = "Health";
+"iconPicker.personalCare" = "Personal Care";
+"iconPicker.education" = "Education";
+"iconPicker.work" = "Work";
+"iconPicker.pets" = "Pets";
+"iconPicker.need" = "Nature";
+"iconPicker.tech" = "Technology";
+"iconPicker.travel" = "Travel";
+"iconPicker.communication" = "Communication";
+"iconPicker.tools" = "Tools";
+"iconPicker.security" = "Security";
+"iconPicker.symbols" = "Symbols";
+"iconPicker.direction" = "Direction";
+"iconPicker.other" = "Other";
+
+
+"need.title" = "Spending need";
+"need.incomeNotApplicable" = "Need classification only applies naar uitgaven";
+
+// MARK: - Balance Adjustments
+
+"account.newBalance" = "New saldo";
+"account.currentBalance" = "Current saldo";
+"account.adjustmentPreview" = "An adjustment van %@ will be created";
+"account.initialBalanceNote" = "Initial saldo";
+"account.adjustmentNote" = "Saldo adjustment";
+"account.existingInitialBalance" = "Je already have an initial saldo van %@. Do je want naar modify it?";
+"account.modifyInitialBalance" = "Modify initial saldo";
+"account.adjustmentDate" = "Adjustment datum";
+"account.finalBalance" = "Final saldo";
+"account.adjustByEntry" = "Adjust by entry";
+"account.adjustByEntryDesc" = "Enter de correct saldo en we'll create a correction entry. Use this if je forgot naar boeking some uitgaven.";
+"account.changeInitialBalanceName" = "Change initial saldo";
+"account.changeInitialBalanceDesc" = "Enter de correct saldo en we'll change de initial saldo in je rekening. Use this if je haven't recorded in a long time.";
+"account.creditCard.sectionTitle" = "Credit card";
+"account.creditCard.paymentReminder" = "Remind on betaling datum";
+"account.creditCard.paymentDay" = "Betaling dag";
+"account.creditCard.paymentNotification" = "Time naar pay je credit card %@ 💳";
+"category.others" = "Others";
+"subcategory.balanceAdjustment" = "Saldo adjustments";
+
+// MARK: - Validation
+
+"validation.enterAmountGreaterThanZero" = "Enter an bedrag greater than 0";
+"validation.selectSourceAccount" = "Selecteer a source rekening";
+"validation.selectDestinationAccount" = "Selecteer a destination rekening";
+"validation.accountsMustBeDifferent" = "Rekeningen must be different";
+"validation.selectAccount" = "Selecteer an rekening";
+"validation.selectSubcategory" = "Selecteer a subcategorie";
+"validation.completeFieldsFirst" = "Fill in bedrag, rekening, en categorie first";
+"validation.futureDateTitle" = "Future datum niet allowed";
+"validation.futureDateMessage" = "Je can't boeking transacties with a future datum. Use Geplande Betalingen voor recurring uitgaven.";
+
+// MARK: - Transfer
+
+"transfer.transferTo" = "Transfer naar %@";
+"transfer.transferFrom" = "Transfer from %@";
+"transfer.categoryName" = "Transfer between rekeningen";
+
+// MARK: - More
+"more.sections" = "Sections";
+
+// MARK: - Scheduled Payments
+
+// Recurrence Types
+"scheduled.recurrence.weekly" = "Wekelijks";
+"scheduled.recurrence.monthly" = "Maandelijks";
+"scheduled.recurrence.yearly" = "Jaarlijks";
+
+// Payment Categories
+"scheduled.category.recurring" = "Recurring";
+"scheduled.category.subscription" = "Abonnement";
+
+// Due Status
+"scheduled.status.past" = "Overdue";
+"scheduled.status.today" = "Vandaag";
+"scheduled.status.upcoming" = "Upcoming";
+
+// Tabs
+"scheduled.tab.recurring" = "Recurring";
+"scheduled.tab.subscriptions" = "Subscriptions";
+"scheduled.tab.all" = "Alle";
+
+// Empty State
+"scheduled.empty.title" = "Je don't have any geplande betalingen yet";
+"scheduled.empty.message" = "Create reminders voor je recurring betalingen en subscriptions";
+
+// Due Text
+"scheduled.due.yesterday" = "Gisteren";
+"scheduled.due.today" = "Vandaag";
+"scheduled.due.tomorrow" = "Tomorrow";
+
+// Actions
+"scheduled.new" = "New geplande betaling";
+"scheduled.edit" = "Bewerk geplande betaling";
+"scheduled.delete" = "Verwijder betaling";
+"scheduled.delete.confirm.title" = "Verwijder geplande betaling?";
+"scheduled.delete.confirm.message" = "This action cannot be undone.";
+
+// Editor Sections
+"scheduled.editor.basic.info" = "Basic information";
+"scheduled.editor.options" = "Options";
+"scheduled.editor.name.placeholder" = "Betaling name";
+"scheduled.editor.note.placeholder" = "Uitgave description (optional)";
+"scheduled.editor.type" = "Transactie type";
+"scheduled.editor.payment.category" = "Betaling categorie";
+"scheduled.editor.classification" = "Classification";
+"scheduled.editor.account" = "Rekening";
+"scheduled.editor.subcategory" = "Subcategorie";
+"scheduled.editor.recurrence" = "Recurrence";
+"scheduled.help.title" = "What is a geplande betaling?";
+"scheduled.help.message" = "Track betalingen that repeat — like subscriptions, rent, van bills. Yala reminds je when they're due en keeps a history van what je've paid.";
+"scheduled.editor.next.due" = "Volgende due datum";
+"scheduled.editor.day.of.month" = "Dag van maand";
+"scheduled.editor.day.of.week" = "Dag van week";
+"scheduled.editor.notifications" = "Notifications";
+"scheduled.editor.preview" = "Upcoming Dates";
+"scheduled.notify.on.due" = "Notify on due datum";
+"scheduled.notify.days.before" = "Notify dagen before";
+"scheduled.select.subcategory" = "Selecteer subcategorie";
+"scheduled.is.subscription" = "Is this a abonnement?";
+
+// Variable amount
+"scheduled.variableAmount.toggle" = "Estimated bedrag";
+"scheduled.variableAmount.helper" = "Je can adjust de actual bedrag each time je approve it";
+"scheduled.variableAmount.badge" = "Estimated";
+
+// Recurrence - New logic
+"scheduled.recurrence.onetime" = "One-time";
+"scheduled.recurrence.recurring" = "Recurring";
+"scheduled.recurrence.daily" = "Dagelijks";
+"scheduled.recurrence.day" = "Dag";
+"scheduled.recurrence.week" = "Week";
+"scheduled.recurrence.month" = "Maand";
+"scheduled.recurrence.year" = "Jaar";
+"scheduled.recurrence.days" = "Dagen";
+"scheduled.recurrence.weeks" = "Weeks";
+"scheduled.recurrence.months" = "Months";
+"scheduled.recurrence.years" = "Years";
+"scheduled.every" = "Every";
+"scheduled.which.days" = "Which dagen?";
+"scheduled.payment.date" = "Betaling datum";
+"scheduled.start.date" = "Start datum";
+"scheduled.has.end.date" = "Has end datum";
+"scheduled.end.date" = "End datum";
+"scheduled.yearly.date" = "Annual datum";
+
+// Scheduled Payments - Settings & Detail
+"settings.scheduled.payments" = "Recurring betalingen";
+"scheduled.empty.settings.hint" = "Create recurring betalingen naar remember je regular uitgaven en inkomsten.";
+"scheduled.inactive" = "Inactive";
+"scheduled.status.inactive" = "Betaling inactive";
+"scheduled.detail.frequency" = "Frequency";
+"scheduled.detail.next.date" = "Volgende datum";
+"scheduled.detail.end.date" = "End datum";
+"scheduled.detail.upcoming" = "Upcoming";
+"scheduled.detail.history" = "History";
+"scheduled.detail.info.note" = "This history shows estimated betaling dates based on de recurrence instellingen.";
+"scheduled.detail.not.found" = "Betaling niet found";
+"scheduled.next.first" = "Volgende betaling";
+"scheduled.next.second" = "Second betaling";
+"scheduled.next.third" = "Third betaling";
+
+// Subscriptions View
+"subscriptions.title" = "Subscriptions";
+"subscriptions.count" = "%d active subscriptions";
+"subscriptions.empty.title" = "Je don't have any subscriptions yet";
+"subscriptions.empty.message" = "Voeg toe services like Netflix, Spotify, en more";
+"subscriptions.calendar.empty" = "Geen subscriptions this maand";
+"subscriptions.day.empty" = "Geen subscriptions on this dag";
+"subscriptions.show.all" = "Show all";
+
+// Weekdays
+"weekday.sunday" = "Sunday";
+"weekday.monday" = "Monday";
+"weekday.tuesday" = "Tuesday";
+"weekday.wednesday" = "Wednesday";
+"weekday.thursday" = "Thursday";
+"weekday.friday" = "Friday";
+"weekday.saturday" = "Saturday";
+
+// Weekdays - Short
+"weekday.short.sunday" = "S";
+"weekday.short.monday" = "M";
+"weekday.short.tuesday" = "T";
+"weekday.short.wednesday" = "W";
+"weekday.short.thursday" = "T";
+"weekday.short.friday" = "F";
+"weekday.short.saturday" = "S";
+
+// Common (if not already present)
+"common.select" = "Selecteer";
+"common.disabled" = "Disabled";
+"common.none" = "Geen";
+"filters.none" = "Geen";
+"filters.transaction.type" = "Transactie type";
+"filters.title" = "Filters";
+"filters.clear" = "Clear";
+"action.close" = "Sluiten";
+
+// MARK: - Accessibility
+"accessibility.closeMenu" = "Sluiten menu";
+"accessibility.newRecord" = "New boeking";
+"accessibility.filters" = "Filters";
+"accessibility.clearFilters" = "Clear filters";
+"accessibility.cancelRecording" = "Annuleer recording";
+"accessibility.stopRecording" = "Stop recording";
+"accessibility.startRecording" = "Start recording";
+"accessibility.cancelPreview" = "Annuleer preview";
+"accessibility.cancelProcessing" = "Annuleer processing";
+"accessibility.cashFlowChart" = "Cash flow chart";
+"accessibility.categoryPieChart" = "Uitgave pie chart by categorie";
+"accessibility.subcategoryPieChart" = "Uitgave pie chart by subcategorie";
+"accessibility.tagPieChart" = "Uitgave pie chart by label";
+"accessibility.widgetFixed" = "Fixed widget, always visible";
+"accessibility.favoriteTemplates" = "Favorite templates";
+"accessibility.exceeded" = "Exceeded";
+"accessibility.inbox" = "Inbox";
+"accessibility.widgetPreferences" = "Widget preferences";
+"accessibility.sectionsConfig" = "Configure Panel";
+"accessibility.toggleSection %@" = "Show %@";
+"accessibility.sectionPrefsButton %@" = "%@ preferences";
+"accessibility.createAccountFirst" = "Create at least one rekening en one categorie";
+"accessibility.removeFilter" = "Verwijder filter";
+"balance.status.good" = "Good";
+"balance.status.critical" = "Critical";
+"balance.status.normal" = "Normal";
+"accessibility.viewDetails" = "View details";
+"accessibility.viewAllRecords" = "View all boekingen";
+"accessibility.viewAllCategories" = "View all categorieën";
+"accessibility.deleteSubcategory" = "Verwijder subcategorie";
+"accessibility.deleteCategory" = "Verwijder categorie";
+"accessibility.deleteTag" = "Verwijder label";
+"accessibility.processAudio" = "Process audio";
+"accessibility.exchangeRateChart" = "Exchange rate chart";
+"accessibility.periodComparison" = "Period comparison chart";
+"accessibility.needTrend" = "Spending by need chart";
+"accessibility.noData" = "Geen data";
+"accessibility.completeFormHint" = "To opslaan, complete bedrag, rekening, en categorie";
+"accessibility.completeSelectionHint" = "Complete de required selection";
+"accessibility.periodComparisonValue %d" = "Current vs previous period, %d data points";
+"accessibility.trendChart %@" = "Trend chart voor %@";
+"accessibility.dataPoints %d" = "%d data points";
+"accessibility.categoriesCount %d %@" = "%d categorieën, totaal %@";
+"accessibility.subcategoriesCount %d %@" = "%d subcategorieën, totaal %@";
+"accessibility.tagsCount %d %@" = "%d labels, totaal %@";
+"accessibility.periodsCount %d" = "%d periods";
+"accessibility.currenciesCount %d" = "%d currencies";
+"accessibility.cashFlowSummary %@ %@" = "Inkomsten %@, Uitgaven %@";
+"accessibility.selectAtLeastOneDraft" = "Selecteer at least one draft";
+"accessibility.approveCompleteHint" = "To approve, complete rekening, bedrag, en categorie";
+"accessibility.updatingExchangeRates" = "Updating exchange rates";
+"accessibility.authenticating" = "Authenticating";
+"accessibility.showMoreSubcategories" = "Show more subcategorieën";
+"accessibility.subscriptionToggle" = "Mark as abonnement";
+"accessibility.skipSync" = "Skip waiting en continue setup";
+"accessibility.tabLimitReached" = "Tab limit reached";
+"accessibility.noTransactionsToExport" = "Geen transacties naar exporteer";
+"accessibility.accountCard %@ %@" = "Rekening %@, saldo %@";
+"accessibility.editAccount" = "Bewerk rekening";
+"accessibility.pageIndicator %d %d" = "Page %1$d van %2$d";
+"accessibility.accountRow %@ %@" = "Rekening %@, valuta %@";
+"accessibility.budgetRow %@ %d %@ %@" = "Budget %@, %d percent uitgegeven, %@ van %@";
+"accessibility.searchResultRow %@ %@ %@" = "%@, %@, %@";
+"accessibility.regeneratingInsights" = "Generating insights, please wait";
+"accessibility.completeCalculation" = "Complete de values naar calculate de result";
+"accessibility.noDraftsToApprove" = "Geen drafts zijn ready naar approve";
+"accessibility.categoriesLocked" = "Showing subcategorieën van de selected categorie";
+"accessibility.systemMonochromeIcons" = "System setting requires monochrome icons";
+"accessibility.maxCurrenciesSelected" = "Maximum number van currencies selected";
+"accessibility.invalidThreshold" = "Enter a valid threshold value";
+"accessibility.filterScheduledAll" = "Alle betalingen";
+"accessibility.filterScheduledRecurring" = "Filter: recurring";
+"accessibility.filterScheduledSubscriptions" = "Filter: subscriptions";
+"accessibility.calendarDay %d" = "Dag %d";
+"accessibility.recentRecord %@ %@ %@" = "%@, %@, %@";
+"accessibility.sourceAmount" = "Source bedrag";
+"accessibility.destinationAmount" = "Destination bedrag";
+"accessibility.exchangeRate" = "Exchange rate";
+"accessibility.draftRow %@ %@ %@" = "Draft: %@, %@, %@";
+"accessibility.metricBalance" = "Saldo";
+"accessibility.metricIncome" = "Inkomsten";
+"accessibility.metricExpense" = "Uitgave";
+"accessibility.colorOption %@" = "Color %@";
+"accessibility.close" = "Sluiten";
+"accessibility.dismiss" = "Dismiss";
+"accessibility.remove" = "Verwijder";
+"accessibility.clearSelection" = "Clear selection";
+"accessibility.selectColor" = "Selecteer color";
+"accessibility.newBudget" = "New budget";
+"accessibility.newPayment" = "New geplande betaling";
+"accessibility.importingHint" = "Importing in progress";
+"accessibility.fillRequiredFields" = "Fill in all required fields";
+"accessibility.noTransactions" = "Geen transacties beschikbaar";
+"accessibility.selectDraftsFirst" = "Selecteer at least one draft first";
+"accessibility.proFeature" = "Pro abonnement required";
+"accessibility.noActiveAccounts" = "Geen active rekeningen beschikbaar";
+"accessibility.noInactiveBudgets" = "Geen inactive budgets naar restore";
+"accessibility.profile" = "Profiel";
+
+// MARK: - Widget Hints
+
+"settings.widgetHints" = "Help hints";
+"settings.widgetHintsDescription" = "Show info buttons on widgets with explanations about each chart.";
+"settings.showVariations" = "Comparisons";
+"settings.showVariationsDescription" = "Show percentage variations en comparison charts vs de previous period.";
+"settings.averageLine" = "Average line";
+"settings.averageLineDescription" = "Show an average line on bar charts.";
+"settings.averageLine.off" = "Off";
+"settings.averageLine.total" = "Totaal";
+"settings.averageLine.segmented" = "Segmented";
+"settings.averageLine.offDescription" = "Geen average line on charts.";
+"settings.averageLine.totalDescription" = "A horizontal line showing de overall average.";
+"settings.averageLine.segmentedDescription" = "Segments by period with percentage variation.";
+"settings.decimalPlaces" = "Decimal places";
+"settings.decimalPlacesDescription" = "Applies only naar totals en charts. Individual boekingen always show 2 decimals.";
+"settings.decimalsNone" = "Geen decimals";
+"settings.decimalsOne" = "1 decimal";
+"settings.decimalsTwo" = "2 decimals";
+"settings.currencyFormat" = "Valuta format";
+"settings.currencyFormatDescription" = "Choose whether naar show de valuta code (USD) van symbol ($).";
+"settings.currencyCode" = "Code (PEN, USD)";
+"settings.currencySymbol" = "Symbol (S/, $)";
+"settings.autoFocusField" = "Auto-focus field";
+"settings.autoFocusFieldDescription" = "When creating a new manual boeking, de keyboard will automatically open on de selected field.";
+"settings.autoFocusAmount" = "Bedrag";
+"settings.autoFocusNote" = "Description";
+"settings.autoFocusNone" = "Geen";
+
+// Expenses Only Mode
+"settings.sectionUsageMode" = "Usage mode";
+"settings.expensesOnlyMode" = "Uitgaven only";
+"settings.expensesOnlyModeDescription" = "Hides inkomsten, transfers en balances. Je data is niet deleted, only hidden.";
+"settings.expensesOnlyActivateTitle" = "Enable uitgaven only mode?";
+"settings.expensesOnlyActivateMessage" = "Inkomsten, transfers en balances will be hidden throughout de app. Je can revert this at any time.";
+"settings.expensesOnlyActivateConfirm" = "Ja, enable";
+"settings.expensesOnlyDeactivateTitle" = "Disable uitgaven only mode?";
+"settings.expensesOnlyDeactivateMessage" = "Inkomsten, transfers en balances will be shown again.";
+"settings.expensesOnlyDeactivateConfirm" = "Ja, disable";
+"settings.expensesOnlyActive" = "Active";
+"settings.categoryHidden" = "(hidden)";
+
+"widget.hint.trend" = "Shows de evolution van je saldo, inkomsten, van uitgaven in de selected period.";
+"widget.hint.topCategories" = "De categorieën where je uitgegeven de most this period.";
+"widget.hint.topSubcategories" = "De subcategorieën with highest spending, filtered by categorie.";
+"widget.hint.categoriesPie" = "Percentage distribution van spending by categorie.";
+"widget.hint.subcategoriesPie" = "Percentage distribution van spending by subcategorie.";
+"widget.hint.tagsPie" = "Distribution van spending by assigned labels.";
+"widget.hint.needTrend" = "Classifies je uitgaven as essential, priority, van optional.";
+"widget.hint.cashFlow" = "Compare je inkomsten en uitgaven naar see de net flow.";
+"widget.hint.recentRecords" = "Je most recent transacties.";
+"widget.hint.budgets" = "Status van je active budgets.";
+"widget.hint.exchangeRate" = "Updated exchange rates voor je preferred valuta.";
+"widget.hint.scheduledPayments" = "Upcoming geplande betalingen en subscriptions.";
+"widget.hint.spendingAnalysis" = "Spending breakdown by categorieën, subcategorieën, labels en uitgave type.";
+"widget.hint.incomeAnalysis" = "Inkomsten breakdown by categorieën, subcategorieën en labels.";
+
+// MARK: - Onboarding
+
+"onboarding.welcomeTitle" = "Let's get je money organized";
+"onboarding.welcomeSubtitle" = "Just a few steps naar set up Yala voor je.";
+"onboarding.nameLabel" = "What should we call je?";
+"onboarding.namePlaceholder" = "Je name";
+"onboarding.currencyTitle" = "Je main valuta";
+"onboarding.currencySubtitle" = "Selecteer de valuta je use most frequently.";
+"onboarding.secondaryTitle" = "Secondary currencies";
+"onboarding.secondarySubtitle" = "Do je use other currencies? Selecteer up naar 2 naar see exchange rates.";
+"onboarding.secondaryHint" = "%d van %d selected";
+"onboarding.periodTitle" = "Default period";
+"onboarding.periodSubtitle" = "What time range do je prefer naar see when opening de app?";
+"onboarding.finish" = "Let's Go";
+"onboarding.categoriesTitle" = "Categorieën naar start";
+"onboarding.categoriesSubtitle" = "We've prepared common categorieën naar help je organize je uitgaven from dag one.";
+"onboarding.categoriesYes" = "Start with these categorieën";
+"onboarding.categoriesNo" = "Start from scratch";
+"onboarding.categoriesRecommended" = "Recommended";
+"onboarding.categoriesInfo" = "Each categorie includes more detailed subcategorieën. Je can view en customize them in Profiel > Categorieën.";
+"onboarding.notificationsTitle" = "Stay in de loop?";
+"onboarding.notificationsSubtitle" = "Turn on de reminders that help je. Je can change them anytime.";
+"onboarding.notificationsSkip" = "Niet now, thanks";
+"onboarding.notificationsSelectAll" = "Enable all";
+"onboarding.notificationsDeselectAll" = "Disable all";
+"onboarding.recommended" = "Recommended";
+"onboarding.languageTitle" = "Choose je language";
+"onboarding.languageSubtitle" = "We noticed je language isn't supported yet. Don't worry, pick one van these options!";
+
+// Expenses Only Mode - Onboarding
+"onboarding.expensesOnlyTitle" = "How do je want naar use Yala?";
+"onboarding.expensesOnlySubtitle" = "Choose how je want naar organize je money. Je can change this later in Instellingen.";
+"onboarding.expensesOnlyOptionAll" = "Full control";
+"onboarding.expensesOnlyOptionExpenses" = "Uitgaven only";
+"onboarding.expensesOnlyDescAll" = "Uitgaven, inkomsten, transfers en rekening balances";
+"onboarding.expensesOnlyDescExpenses" = "Track only what je spend, geen complications";
+// Usage Mode: 3 options
+"onboarding.usageMode.expensesOnly" = "Uitgaven only";
+"onboarding.usageMode.expensesOnly.quote" = "\"I just want naar know where my money goes\"";
+"onboarding.usageMode.expensesOnly.desc" = "Track je uitgaven en that's it. Geen balances, geen fuss.";
+"onboarding.usageMode.dayToDay" = "Dag naar dag";
+"onboarding.usageMode.dayToDay.quote" = "\"I want naar know how much I have beschikbaar naar spend\"";
+"onboarding.usageMode.dayToDay.desc" = "Uitgaven, inkomsten en je rekening balances. Quick en practical.";
+"onboarding.usageMode.fullControl" = "Real saldo";
+"onboarding.usageMode.fullControl.quote" = "\"I want a single number that counts everything: what I have, what I owe en what I'm owed\"";
+"onboarding.usageMode.fullControl.desc" = "Je include everything in je saldo — rekeningen, cards en what comes en goes with other people. De number je see is what's truly yours.";
+"onboarding.privacyTitle" = "Alle Set";
+"onboarding.privacySubtitle" = "Je're ready naar start using Yala";
+"onboarding.privacyLocal" = "Je financial data stays on je device";
+"onboarding.privacyNoTracking" = "Geen tracking van ads";
+"onboarding.privacyIcloud" = "Only je have access naar je data";
+"onboarding.privacyNoSharing" = "AI features don't share van store sensitive data";
+"onboarding.categoriesDefault" = "Default categorieën";
+"onboarding.categoriesCustom" = "Custom categorieën";
+"onboarding.privacyTutorialsHint" = "Discover Yala's tutorials en tips";
+"onboarding.tutorialsTitle" = "Learn naar use Yala";
+"onboarding.tutorialsSubtitle" = "Short guides naar get de most out van je finances";
+"onboarding.tutorialsExplore" = "Explore tutorials";
+"onboarding.tutorialsSettingsHint" = "Je can always find these in Instellingen";
+"onboarding.accountTitle" = "Je first rekening";
+"onboarding.accountSubtitle" = "An rekening represents where je keep je money. Each rekening has a single valuta.";
+"onboarding.accountTypeLabel" = "Rekening type";
+"onboarding.accountNameLabel" = "Rekening name";
+"onboarding.accountNamePlaceholder" = "E.g.: My main rekening";
+"onboarding.accountCurrencyLabel" = "Rekening valuta";
+"onboarding.accountBalanceLabel" = "Initial saldo";
+"onboarding.accountBalanceHint" = "Je approximate current saldo. Checking: beschikbaar funds. Savings: what je have saved.";
+"onboarding.accountBalanceSkipHint" = "If je don't know, leave it at 0 en adjust later in de rekening.";
+"onboarding.accountBalanceHintGeneral" = "Think about how much money je have beschikbaar vandaag across all je betaling methods. A rough estimate is fine.";
+"onboarding.accountBalanceHintCash" = "De cash je have on hand right now. It doesn't need naar be exact — je can adjust it later.";
+"onboarding.accountBalanceHintChecking" = "Je beschikbaar bank saldo vandaag. It doesn't need naar be exact — je can adjust it later.";
+"onboarding.accountBalanceHintSavings" = "De totaal je have saved in this rekening. It doesn't need naar be exact — je can adjust it later.";
+"onboarding.accountBalanceLearnMore" = "Let's figure out je saldo together";
+"onboarding.accountBalanceGuideTitle" = "How do I calculate my saldo?";
+"onboarding.accountBalanceGuideIntro" = "Je initial saldo tells Yala how much money je're starting with. It doesn't need naar be exact naar de penny — a rough estimate works great. Here's how naar think about it depending on de type van rekening je chose.";
+"onboarding.accountBalanceGuideGeneral" = "If je're using a general rekening naar groep all je betaling methods in one valuta, je saldo reflects how much money je have beschikbaar.\n\nTo calculate it, add up everything: checking rekeningen, savings, cash. If je have pending credit card charges, je can subtract them voor a more precise picture — van track each card as a separate rekening later.\n\nThat final number is je initial saldo.";
+"onboarding.accountBalanceGuideCash" = "This one's de most straightforward: how much cash do je have right now? Check je wallet, that drawer, van wherever je keep je physical money.\n\nDon't worry about being exact — if je think je have \"around 50\", go with 50. Je can always adjust it later.";
+"onboarding.accountBalanceGuideChecking" = "Je checking (van debit) rekening has an beschikbaar saldo je can look up in je banking app van at an ATM.\n\nEnter de beschikbaar saldo je see vandaag. If je have several checking rekeningen, je can create one rekening in Yala voor each, van groep them together — whatever works voor je.";
+"onboarding.accountBalanceGuideSavings" = "How much do je have saved up in je savings rekeningen? If je have several, je can create one rekening in Yala voor each van combine them into one.\n\nEnter de totaal je have saved. If je bank shows accrued interest, include it in de totaal.";
+"onboarding.accountBalanceGuideClosing" = "Don't worry if it's niet perfect — de important thing is naar get started.";
+"onboarding.accountBalanceHintCreditCard" = "What je've uitgegeven with this card so far. It doesn't need naar be exact — je can adjust it later.";
+// Balance Calculator Sheet
+// Calculator field hints
+"onboarding.calc.bankAccountsHint" = "Everything je have in checking van debit rekeningen";
+"onboarding.calc.savingsHint" = "What je have in savings rekeningen van set aside";
+"onboarding.calc.cashHint" = "Bills en coins je have on hand";
+"onboarding.calc.creditCardSpendingHint" = "What je've uitgegeven on je cards this maand";
+"onboarding.calc.creditLineHint" = "De totaal limit je bank gave je";
+"onboarding.calc.availableCreditHint" = "How much je have left on je card";
+"onboarding.calc.title" = "We'll help je calculate je saldo";
+"onboarding.calc.intro" = "Je don't need naar be exact — a rough estimate is fine.";
+"onboarding.calc.bankAccounts" = "Bank rekeningen";
+"onboarding.calc.savings" = "Savings";
+"onboarding.calc.cash" = "Cash";
+"onboarding.calc.creditCardSpending" = "Credit card spending";
+"onboarding.calc.optional" = "(optional)";
+"onboarding.calc.available" = "Je beschikbaar →";
+"onboarding.calc.balance" = "Je saldo →";
+"onboarding.calc.tipCashFlow" = "If je use credit cards, je can add them as separate rekeningen whenever je want.";
+"onboarding.calc.tipPatrimonial" = "If je share uitgaven with others, include what they owe je en what je owe voor a more precise saldo.";
+"onboarding.calc.useBalance" = "Use this saldo";
+"onboarding.calc.adjustLater" = "Je can always adjust it later.";
+"onboarding.calc.instruction" = "Fill in only where je have money. We'll calculate de rest.";
+"onboarding.calc.directSpending" = "How much have je uitgegeven?";
+"onboarding.calc.directSpendingHint" = "De totaal uitgegeven with this card in this valuta. If je spend in other currencies, only enter this one.";
+"onboarding.calc.switchToDirect" = "I'd rather enter how much I've uitgegeven";
+"onboarding.calc.switchToDetailed" = "I'd rather use credit line en beschikbaar";
+// Shared expenses (patrimonial only)
+"onboarding.calc.sharedExpenses" = "Shared uitgaven";
+"onboarding.calc.othersOweMe" = "Others owe je";
+"onboarding.calc.iOwe" = "Je owe";
+// Credit card calculator
+"onboarding.calc.creditCard.title" = "Je credit card";
+"onboarding.calc.creditLine" = "Credit line";
+"onboarding.calc.availableCredit" = "Beschikbaar";
+"onboarding.calc.currentSpending" = "Current spending →";
+"onboarding.calc.yourBalance" = "Je saldo →";
+"onboarding.calc.creditCard.tip" = "Je saldo reflects what je've uitgegeven en haven't paid yet.";
+// Simple account explanations
+"onboarding.calc.cashExplanation" = "Check je wallet en anywhere je keep cash. Voeg toe it all up — a rough estimate is fine.";
+"onboarding.calc.checkingExplanation" = "Check de beschikbaar saldo in je banking app van ATM. Enter de number je see vandaag.";
+"onboarding.calc.savingsExplanation" = "How much do je have saved? If je have several savings rekeningen, je can add them all up van create one rekening voor each.";
+"onboarding.calc.balanceLabelChecking" = "Money in je rekening";
+"onboarding.calc.balanceLabelSavings" = "Bedrag saved";
+"onboarding.calc.balanceLabelCash" = "Cash je have";
+"onboarding.accountImportTip" = "In Profiel > Importeer je can importeer boekingen naar any van je rekeningen.";
+"onboarding.accountMoreTip" = "Je can add more rekeningen anytime. Create at least one per valuta if je use multiple.";
+"onboarding.budgetTitle" = "How much do je expect naar spend?";
+"onboarding.budgetSubtitle" = "A budget lets je know when je're getting close naar de bedrag je set. Pick a categorie en a maandelijks reference bedrag.";
+"onboarding.budgetYes" = "I want naar track my spending";
+"onboarding.budgetNo" = "Niet now, thanks";
+"onboarding.budgetCategoryLabel" = "Which categorie?";
+"onboarding.budgetAmountLabel" = "Maandelijks bedrag";
+"onboarding.budgetAmountPlaceholder" = "E.g.: 500";
+"onboarding.budgetMoreTip" = "Je can create more budgets van bewerk existing ones in Planning > Budgets.";
+"onboarding.budgetPreviewLabel" = "This is how je budget will look";
+
+// Purpose step (binary)
+"onboarding.purpose.title" = "What would je like naar do with Yala?";
+"onboarding.purpose.expenses" = "Just track my uitgaven";
+"onboarding.purpose.expensesDesc" = "Boeking what je spend en that's it";
+"onboarding.purpose.control" = "Manage my money";
+"onboarding.purpose.controlDesc" = "Uitgaven, inkomsten, en how much je have";
+// Accounts step (binary)
+"onboarding.accounts.title" = "How do je want naar organize je money in Yala?";
+"onboarding.accounts.single" = "Everything together in one rekening";
+"onboarding.accounts.singleDesc" = "One main rekening per valuta where je include all je money";
+"onboarding.accounts.multiple" = "Each rekening separately";
+"onboarding.accounts.multipleDesc" = "Savings, debit, credit... so je know how much je have in each";
+// Account type step
+"onboarding.accountType.title" = "Let's create je first rekening";
+"onboarding.accountType.subtitle" = "Choose which rekening naar create now. Je can add more in je profile later.";
+"onboarding.accountType.checkingHint" = "Je everyday bank rekening";
+"onboarding.accountType.savingsHint" = "Where je keep je savings";
+"onboarding.accountType.creditHint" = "Je credit card";
+"onboarding.accountType.cashHint" = "Bills en coins je have on hand";
+// Name hint
+"onboarding.nameHint" = "It can be je name, nickname, van whatever je prefer";
+"onboarding.categories.viewSubs" = "View subcategorieën";
+// Currency + Name step (adaptive)
+"onboarding.currencyName.titleSingle" = "Let's create je main rekening";
+"onboarding.currencyName.subtitleSingle" = "Let's focus on je most important valuta. This will be de rekening where je track je money.";
+"onboarding.currencyName.titleSeparate" = "Give je rekening an identity";
+"onboarding.currencyName.subtitleSeparate" = "Give it a name en choose de valuta it uses.";
+// Balance step
+"onboarding.balance.title" = "How much do je have in this rekening?";
+"onboarding.balance.subtitle" = "An approximation is fine. Je can always adjust it later.";
+// Confirmation step
+"onboarding.confirm.title" = "Here's je Yala setup";
+"onboarding.confirm.accountLabel" = "Rekening";
+"onboarding.confirm.currencyLabel" = "Valuta";
+"onboarding.confirm.balanceLabel" = "Saldo";
+"onboarding.confirm.modeLabel" = "Mode";
+"onboarding.confirm.motivationExpenses" = "Ready naar understand je spending!";
+"onboarding.confirm.motivationDayToDay" = "Je financial plan starts now!";
+"onboarding.confirm.motivationFullControl" = "Everything under control from vandaag!";
+
+// MARK: - Bulk Edit
+"bulkEdit.currencyWarning" = "Changing de rekening will update de valuta van selected transacties.";
+"bulkEdit.editCount" = "Bewerk %d transacties";
+"bulkEdit.successMessage" = "Transacties updated successfully";
+"bulkEdit.commonTags" = "In all selected";
+"bulkEdit.partialTags" = "In some selected";
+"bulkEdit.availableTags" = "Beschikbaar naar add";
+
+// MARK: - Voice Language
+"voiceLanguage.system" = "System";
+"voiceLanguage.spanish" = "Spanish";
+"voiceLanguage.english" = "English";
+
+// MARK: - Voice Input
+"voice.title" = "Voice Note";
+"voice.recording" = "Recording...";
+"voice.recorded" = "Recorded";
+"voice.pleaseWait" = "Please wait";
+"voice.tapToRecord" = "Tap naar boeking";
+"voice.youCanSay" = "Je can say:";
+"voice.hintTypeExample" = "Uitgave/Inkomsten/Transfer";
+"voice.hintAmountExample" = "50 %@";
+"voice.hintSubcategoryExample" = "Restaurants";
+"voice.hintMerchantExample" = "Starbucks";
+"voice.hintTagExample" = "Work";
+"voice.hintDateExample" = "Vandaag/Gisteren";
+"voice.exampleLabel" = "Examples";
+"voice.example1" = "Uitgegeven 50 %@ at Starbucks voor coffee";
+"voice.example2" = "Inkomsten van 1000 %@ from freelance work";
+"voice.example3" = "Transfer van 200 %@ naar savings rekening";
+"voice.processingAudio" = "Processing audio...";
+"voice.analyzing" = "Analyzing...";
+"voice.parsing" = "Extracting data...";
+"voice.saving" = "Saving...";
+"voice.errorNoAmount" = "Could niet detect bedrag. Try again.";
+"voice.errorNoApiKey" = "Could niet connect naar voice service. Try again later.";
+"voice.errorNoConnection" = "Geen internet connection. Je need a connection naar use this feature.";
+"voice.errorMicPermission" = "Microphone permission denied. Enable it in Instellingen.";
+"voice.errorSaveFailed" = "Could niet opslaan draft. Try again.";
+"voice.openSettings" = "Open Instellingen";
+"voice.tryImage" = "Use image";
+
+// MARK: - Inbox
+"inbox.title" = "Inbox";
+"inbox.pending" = "Pending";
+"inbox.archived" = "Archived";
+"inbox.noDescription" = "Geen description";
+"inbox.noAmount" = "Geen bedrag";
+"inbox.missingLabel" = "Missing data";
+"inbox.needsAccount" = "Selecteer rekening";
+"inbox.needsSubcategory" = "Selecteer subcategorie";
+"inbox.approve" = "Approve";
+"inbox.delete" = "Verwijder";
+"inbox.noPending" = "Geen pending drafts";
+"inbox.noPendingDescription" = "New voice en image drafts will appear here.";
+"inbox.bulkHint" = "Tap Selecteer voor bulk actions";
+"inbox.newTag" = "New";
+"inbox.noArchived" = "Geen archived drafts";
+"inbox.noArchivedDescription" = "Approved van rejected drafts will appear here.";
+"inbox.selectedCount" = "%d selected";
+"inbox.editDraft" = "Bewerk draft";
+"inbox.cannotApprove" = "Cannot approve";
+"inbox.sourceVoice" = "Voice";
+"inbox.sourceEmail" = "Email";
+"inbox.sourceScreenshot" = "Screenshot";
+"inbox.sourceScreenshotList" = "List";
+"inbox.sourceReceipt" = "Receipt";
+"inbox.sourceScheduledPayment" = "Geplande betaling";
+"inbox.sourceSubscription" = "Abonnement";
+"inbox.sourceApplePay" = "Apple Pay";
+"inbox.sourceAutomation" = "Automation";
+"inbox.sourceSiri" = "Siri";
+"inbox.errorNoAccount" = "Je must selecteer an rekening";
+"inbox.errorNoAmount" = "Je must specify an bedrag";
+"inbox.errorNoSubcategory" = "Je must selecteer a subcategorie";
+"inbox.errorArchivedAccount" = "This rekening is archived. Bewerk de draft en change de rekening naar approve.";
+"inbox.errorFutureDate" = "Transacties with a future datum cannot be approved";
+"inbox.duplicateWarningTitle" = "Possible duplicate";
+"inbox.duplicateWarningMessage" = "A similar transactie already exists. Create anyway?";
+"inbox.createAnyway" = "Create anyway";
+"inbox.deleteConfirmMessage" = "Are je sure je want naar verwijder %d draft(s)?";
+"inbox.approveableCount" = "%d van %d ready naar approve";
+"inbox.saveLater" = "Approve later";
+"inbox.deleteTitle" = "Verwijder draft";
+"inbox.deleteMessage" = "This action cannot be undone.";
+"inbox.reject" = "Reject";
+"inbox.approveAll" = "Approve all";
+"inbox.returnToPending" = "Return naar pending";
+"inbox.discardChangesTitle" = "Discard changes?";
+"inbox.discardChanges" = "Discard";
+"inbox.keepEditing" = "Keep editing";
+"inbox.discardChangesMessage" = "Je have unsaved changes that will be lost.";
+"inbox.approveSuccess" = "Transactie created";
+"inbox.approveNext" = "Approve next";
+"inbox.transactionCreated" = "transactie created";
+"inbox.transactionsCreated" = "transacties created";
+"inbox.viewInRecords" = "View in boekingen";
+"inbox.backToInbox" = "Terug naar inbox";
+
+// MARK: - Image Input
+"image.title" = "Image";
+"image.selectTitle" = "Selecteer an image";
+"image.selectSubtitle" = "Scan bank screenshots van receipts naar create transacties automatically.";
+"image.selectButton" = "Selecteer image";
+"image.processing" = "Processing...";
+"image.processingSubtitle" = "Extracting data from image";
+"image.errorTitle" = "Error";
+"image.errorLoad" = "Could niet load image";
+"image.errorNoData" = "Geen transacties detected in image";
+"image.errorUnrecognized" = "Unrecognized image type";
+"image.errorGeneric" = "Error processing image";
+"image.errorPhotoPermission" = "Photo permission denied. Enable it in Instellingen.";
+"image.errorCorrupted" = "Could niet process image. Try another image.";
+"image.errorSaveFailed" = "Could niet opslaan draft. Try again.";
+"image.errorNoApiKey" = "Could niet connect naar image service. Try again later.";
+"image.errorNoConnection" = "Geen internet connection. Je need a connection naar analyze images.";
+"image.openSettings" = "Open Instellingen";
+"image.transactionDetected" = "transactie detected";
+"image.transactionsDetectedCount" = "transacties detected";
+"image.reviewDraft" = "Review";
+"image.transactionsDetected" = "Transacties detected";
+"image.goToInbox" = "Go naar Inbox";
+"image.transactionsDetectedMessage" = "We detected %d transacties. Je can review en approve them in de inbox.";
+"image.analyzingIn" = "Analyzing in %d...";
+"image.imagesSelected" = "%d images selected";
+"image.youCanUpload" = "Je can upload:";
+"image.hintReceipts" = "Purchase receipts";
+"image.hintBankScreenshots" = "Bank screenshots";
+"image.hintRestaurantTickets" = "Restaurant tickets";
+"image.hintStatements" = "Rekening statements";
+"image.hintPaymentProofs" = "Betaling proofs";
+"image.hintMultiple" = "Multiple at once";
+"image.exampleLabel" = "Examples";
+"image.example1" = "Photo van a grocery receipt";
+"image.example2" = "Screenshot van a bank transfer";
+"image.example3" = "Photo van several tickets from a trip";
+
+// MARK: - Subscription
+"subscription.title" = "Yala Pro";
+"subscription.paywallTitle" = "Unlock de full power van Yala";
+"subscription.paywallSubtitle" = "Take je finances naar de next level with advanced tools";
+"subscription.subscribe" = "Subscribe";
+"subscription.processing" = "Processing...";
+"subscription.restore" = "Restore purchases";
+"subscription.planMonthly" = "Maandelijks";
+"subscription.planYearly" = "Jaarlijks";
+"subscription.perYear" = "/ jaar";
+"subscription.perMonth" = "%@ / maand";
+"subscription.saveBadge" = "Opslaan %d%%";
+"subscription.feature.voice" = "Unlimited voice input";
+"subscription.feature.image" = "Receipt en image scanning";
+"subscription.feature.reports" = "Advanced reports en charts";
+"subscription.feature.currencies" = "Alle currencies en exchange rates";
+"subscription.feature.themes" = "Custom themes";
+"subscription.feature.export" = "Exporteer naar Excel en CSV";
+"subscription.legalFooter" = "Betaling is charged naar je Apple rekening. Abonnement auto-renews unless cancelled at least 24 hours before de end van de current period.";
+"subscription.termsLink" = "Terms van Use & Privacy Policy";
+"subscription.termsOfUseLink" = "Terms van Use";
+"subscription.privacyPolicyLink" = "Privacy Policy";
+"subscription.errorTitle" = "Purchase error";
+"subscription.activeTitle" = "Je're Yala Pro";
+"subscription.activeSubtitle" = "Je have access naar all premium features";
+"subscription.currentPlan" = "Current plan";
+"subscription.renewsOn" = "Renews on";
+"subscription.manageInAppStore" = "Manage in App Store";
+
+// MARK: - Tips & Tricks
+"tips.subtitle" = "Get de most out van Yala";
+"tips.section.quickEntry" = "Quick entry";
+"tips.section.organize" = "Organize je money";
+"tips.section.advanced" = "Advanced tricks";
+"tips.voice.title" = "Dictate je uitgaven";
+"tips.voice.detail" = "Enable voice input en say something like \"Lunch 35 dollars\". Yala understands amounts, dates, en notes naturally.";
+"tips.camera.title" = "Scan receipts en screenshots";
+"tips.camera.detail" = "Take a photo van je receipt van bank screenshot. Yala extracts de amounts en creates drafts automatically.";
+"tips.favorites.title" = "Opslaan frequent betalingen";
+"tips.favorites.detail" = "Pay de same thing often? Opslaan an uitgave as a favorite en next time register it with a single tap from de + menu.";
+"tips.budgets.title" = "Create budgets";
+"tips.budgets.detail" = "Set how much je want naar spend per categorie each maand. Yala alerts je when je're close naar de limit so je don't go over.";
+"tips.tags.title" = "Label special uitgaven";
+"tips.tags.detail" = "Use labels like \"Vacation\" van \"Home project\" naar groep uitgaven from different categorieën en see how much je've uitgegeven.";
+"tips.filters.title" = "Filter en compare periods";
+"tips.filters.detail" = "Use filters naar see only what matters: by categorie, label, rekening, van period. Compare maand naar maand naar spot changes.";
+"tips.export.title" = "Exporteer je data";
+"tips.export.detail" = "Download je uitgaven in CSV van Excel from Instellingen > Exporteer. Great voor spreadsheet analysis van voor je boekingen.";
+"tips.faceID.title" = "Protect with Face ID";
+"tips.faceID.detail" = "Enable biometric lock in Instellingen > Security. Je can choose naar activate it when leaving de app van after a set time.";
+"tips.siri.title" = "Note uitgaven by voice";
+"tips.siri.detail" = "Say: \"Note an uitgave in Yala\" then dictate de detail";
+"tips.siri.close" = "Sluiten Siri suggestion";
+
+// MARK: - TipKit (contextual guides)
+"tipkit.skip" = "Skip guide";
+"tipkit.next" = "Volgende";
+"tipkit.done" = "Klaar";
+"tipkit.comparison.title" = "Compare en learn";
+"tipkit.comparison.message" = "Compare against de previous period van last jaar naar see how je're doing.";
+
+// Group D: Settings Tour
+"tipkit.settingsAppIcon.title" = "Je icon";
+"tipkit.settingsAppIcon.message" = "Change de app icon naar give it je personal touch.";
+"tipkit.settingsTheme.title" = "Je theme";
+"tipkit.settingsTheme.message" = "Choose between classic, minimalist, van translucent voor je style.";
+"tipkit.settings.accounts.title" = "Je rekeningen";
+"tipkit.settings.accounts.message" = "Voeg toe en organize je bank rekeningen, cash, en more.";
+"tipkit.settings.categories.title" = "Categorieën";
+"tipkit.settings.categories.message" = "Customize categorieën naar classify je uitgaven en inkomsten.";
+"tipkit.settings.tags.title" = "Labels";
+"tipkit.settings.tags.message" = "Create labels naar groep uitgaven by project, trip, van whatever je need.";
+"tipkit.settings.budgets.title" = "Budgets";
+"tipkit.settings.budgets.message" = "Set spending limits en get alerts when je're close.";
+"tipkit.settings.planned.title" = "Geplande betalingen";
+"tipkit.settings.planned.message" = "Schedule recurring betalingen so Yala reminds je on time.";
+"tipkit.settings.personalization.title" = "Personalization";
+"tipkit.settings.personalization.message" = "Adjust language, valuta, en appearance naar make Yala feel yours.";
+"tipkit.settings.tutorials.title" = "Tutorials";
+"tipkit.settings.tutorials.message" = "Step-by-step guides naar get de most out van Yala.";
+"tipkit.cfSetup.banner.title" = "Made voor je";
+"tipkit.cfSetup.banner.message" = "We looked at je recent months en built a plan. Tweak anything je like.";
+"tipkit.cfSetup.line.title" = "Je inkomsten & uitgaven";
+"tipkit.cfSetup.line.message" = "Each line is something je earn van pay maandelijks. Tap ✓ naar include it in je plan.";
+"tipkit.cfSetup.starting.title" = "Starting saldo";
+"tipkit.cfSetup.starting.message" = "If je already have some savings, enter them here so de plan is more accurate.";
+"tipkit.cfSetup.create.title" = "Create plan";
+"tipkit.cfSetup.create.message" = "When everything looks good, tap here naar activate je plan.";
+"tipkit.cfTable.cell.title" = "Tap voor details";
+"tipkit.cfTable.cell.message" = "Tap any bedrag naar see where it comes from en how it was calculated.";
+"tipkit.cfTable.available.title" = "What's left";
+"tipkit.cfTable.available.message" = "Here je see how much money je have left (van short) each maand.";
+"tipkit.cfTable.add.title" = "Voeg toe lines";
+"tipkit.cfTable.add.message" = "If je're missing an inkomsten van uitgave, add it here.";
+
+
+// Pro Tour
+"tipkit.pro.voiceInput.title" = "Voice input";
+"tipkit.pro.voiceInput.message" = "Now je can dictate je uitgaven. Just speak en Yala boekingen them voor je.";
+"tipkit.pro.imageInput.title" = "Image input";
+"tipkit.pro.imageInput.message" = "Attach a photo van any receipt van invoice en Yala extracts one van more transacties voor je.";
+"tipkit.pro.smartInsights.title" = "Smart insights";
+"tipkit.pro.smartInsights.message" = "Turn this on so Yala generates AI-powered observations about je finances.";
+"tipkit.pro.exportExtended.title" = "Unlimited exporteer";
+"tipkit.pro.exportExtended.message" = "Exporteer je data by full jaar, all history, van a custom range.";
+"tipkit.pro.premiumIcons.title" = "Exclusive icons";
+"tipkit.pro.premiumIcons.message" = "Choose from premium icons naar personalize je app.";
+"tipkit.pro.proThemes.title" = "Premium themes";
+"tipkit.pro.proThemes.message" = "Discover exclusive color themes that give Yala je personal touch.";
+"tipkit.pro.fab.title" = "New ways naar boeking";
+"tipkit.pro.fab.message" = "Tap here naar boeking by voice, image, van manually. Now je have all three options.";
+"tipkit.pro.chatFab.title" = "Je financial assistant";
+"tipkit.pro.chatFab.message" = "Ask Yala about je spending, budgets, en more.";
+"tipkit.pro.aiSummary.title" = "Je AI summary";
+"tipkit.pro.aiSummary.message" = "Generate a smart summary van je finances with one tap. Useful observations, instantly.";
+"tipkit.aiCharts.pro.title" = "AI observations";
+"tipkit.aiCharts.pro.message" = "Tap here naar get smart observations about je cash flow.";
+"tipkit.aiCharts.free.title" = "Smart observations";
+"tipkit.aiCharts.free.message" = "Go Pro naar get AI-powered insights about je finances.";
+
+// MARK: - FAQ
+"faq.subtitle" = "Answers naar de most common questions";
+"faq.section.general" = "General";
+"faq.section.data" = "Je data";
+"faq.section.pro" = "Yala Pro";
+"faq.whatIsYala.q" = "What is Yala?";
+"faq.whatIsYala.a" = "Yala is je personal finance app. It helps je track uitgaven en inkomsten, organize je money by categorieën en labels, create budgets, en see clear reports van how je finances zijn doing.";
+"faq.howToRecord.q" = "How do I boeking an uitgave?";
+"faq.howToRecord.a" = "Tap de + button on de main screen. Je can type de bedrag manually, dictate by voice, van scan a receipt with de camera. Yala fills in de details voor je.";
+"faq.multiCurrency.q" = "Can I use multiple currencies?";
+"faq.multiCurrency.a" = "Ja. Yala supports 7 currencies (PEN, USD, EUR, MXN, COP, BRL, GBP). Set je main valuta en add secondary currencies in Instellingen > Valuta.";
+"faq.changeCategory.q" = "How do I change an uitgave's categorie?";
+"faq.changeCategory.a" = "Open de uitgave en tap de categorie naar change it. To change multiple at once, use bulk bewerk: long-press a boeking en selecteer de ones je want naar modify.";
+"faq.importData.q" = "Can I importeer my data?";
+"faq.importData.a" = "Ja. Go naar Instellingen > Importeer en upload a CSV van Excel file. Yala detects de columns automatically en lets je assign rekeningen by valuta.";
+"faq.exportData.q" = "How do I exporteer my data?";
+"faq.exportData.a" = "Go naar Instellingen > Exporteer en choose CSV van Excel format. Je can download all je boekingen naar analyze in a spreadsheet van keep as a backup.";
+"faq.deleteData.q" = "Can I verwijder all my data?";
+"faq.deleteData.a" = "Ja. In Instellingen > Wipe Data je can verwijder all je information. This action cannot be undone, so we recommend exporting a backup first.";
+"faq.whatIsPro.q" = "What does Yala Pro include?";
+"faq.whatIsPro.a" = "Yala Pro unlocks premium features like voice input, receipt scanning with camera, exclusive themes, en more. Je can see all benefits in Instellingen > Abonnement.";
+"faq.cancelSub.q" = "How do I annuleer my abonnement?";
+"faq.cancelSub.a" = "Je can manage van annuleer je abonnement anytime from Instellingen > Abonnement > Manage in App Store. Je Pro access continues until de end van de paid period.";
+
+// MARK: - Shortcuts (App Intents)
+"shortcut.quickExpense.title" = "New entry";
+"shortcut.quickExpense.description" = "Create a new entry in Yala with bedrag, rekening, categorie en label.";
+"shortcut.quickExpense.shortTitle" = "New entry";
+
+// Errors
+"shortcut.error.database" = "Could niet access database";
+"shortcut.error.noAccount" = "Geen rekeningen beschikbaar. Create an rekening first.";
+"shortcut.error.save" = "Could niet opslaan de entry";
+"shortcut.error.consentRequired" = "Accept de AI consent in de app before using this shortcut.";
+
+// Voice Entry Shortcut
+"shortcut.voiceEntry.title" = "Boeking by voice";
+"shortcut.voiceEntry.description" = "Opens voice recording naar boeking uitgaven by dictation";
+"shortcut.voiceEntry.shortTitle" = "Boeking by voice";
+"shortcut.voiceEntry.opening" = "Opening voice entry...";
+
+// Image Entry Shortcut
+"shortcut.imageEntry.title" = "Boeking by image";
+"shortcut.imageEntry.description" = "Opens image picker naar boeking uitgaven from photos";
+"shortcut.imageEntry.shortTitle" = "Boeking by image";
+"shortcut.imageEntry.opening" = "Opening image entry...";
+
+// MARK: - Apple Pay Intent
+
+"shortcut.applePay.title" = "Boeking Apple Pay betaling";
+"shortcut.applePay.description" = "Creates a draft in je inbox from an Apple Pay transactie. Use after de 'When I tap a card' Wallet trigger en connect Bedrag → bedrag, Merchant → merchant.";
+"shortcut.applePay.shortTitle" = "Boeking Apple Pay betaling";
+"shortcut.applePay.param.amount" = "Bedrag";
+"shortcut.applePay.param.amount.description" = "De transactie bedrag (from Wallet)";
+"shortcut.applePay.param.merchant" = "Merchant";
+"shortcut.applePay.param.merchant.description" = "De merchant name";
+"shortcut.applePay.error.noAmount" = "Bedrag is required. Assign de transactie bedrag from Wallet.";
+"shortcut.applePay.success %@ %@" = "Draft created: %@ at %@. Check je inbox naar review.";
+
+// Summary localizado: la key es el literal inglés del macro Summary("...") con \(\.$var) → ${var}.
+"Record from Apple Pay the fields amount: ${amount} and merchant: ${merchant}" = "Boeking from Apple Pay de fields bedrag: ${bedrag} en merchant: ${merchant}";
+
+// MARK: - Automation Entry Shortcut
+
+// MARK: - Siri Natural Language Entry
+"shortcut.siriNatural.title" = "Note with Siri";
+"shortcut.siriNatural.description" = "Boeking uitgaven using natural language with Siri";
+"shortcut.siriNatural.shortTitle" = "Note with Siri";
+"shortcut.siriNatural.param.text" = "Text";
+"shortcut.siriNatural.dialog.askText" = "What do je want naar boeking?";
+"shortcut.siriNatural.error.noText" = "Geen text was provided naar boeking.";
+"shortcut.siriNatural.error.parsingFailed" = "I couldn't understand de text. Try something like: 50 voor coffee.";
+"shortcut.siriNatural.error.proRequired" = "Activate Yala Pro naar use Siri entry.";
+"shortcut.siriNatural.success.single %@" = "Draft created: %@. Check je inbox naar review.";
+"shortcut.siriNatural.success.multiple %lld" = "%lld drafts created. Check je inbox naar review.";
+"shortcut.siriNatural.success.offline %@" = "Basic draft created: %@. Complete de details in je inbox.";
+"shortcut.siriNatural.notification.title" = "New draft from Siri";
+"shortcut.siriNatural.notification.body %@" = "A draft was created voor: %@. Check je inbox naar review.";
+"shortcut.siriNatural.notification.bodyOffline" = "A basic draft was created (offline). Complete de details.";
+
+// MARK: - Control Center (iOS 18+)
+// Labels shown in Control Center (keep short - limited space)
+"control.quickExpense.label" = "Quick uitgave";
+"control.quickExpense.displayName" = "Quick uitgave";
+"control.quickExpense.description" = "Boeking an uitgave quickly";
+"control.quickExpense.intentTitle" = "Open Yala";
+"control.quickExpense.intentDescription" = "Opens Yala naar boeking an uitgave";
+
+"control.voiceEntry.label" = "Voice Entry";
+"control.voiceEntry.displayName" = "Voice Entry";
+"control.voiceEntry.description" = "Dictate je entry";
+"control.voiceEntry.intentTitle" = "Open voice entry";
+"control.voiceEntry.intentDescription" = "Opens Yala in voice recording mode";
+
+"control.imageEntry.label" = "Image Entry";
+"control.imageEntry.displayName" = "Image Entry";
+"control.imageEntry.description" = "Boeking with an image van photo";
+"control.imageEntry.intentTitle" = "Open image entry";
+"control.imageEntry.intentDescription" = "Opens Yala in camera mode naar boeking";
+
+// MARK: - Notifications
+"notifications.title" = "Notifications";
+"notifications.addNew" = "New notification";
+"notifications.edit" = "Bewerk";
+"notifications.delete" = "Verwijder";
+"notifications.deleteConfirm" = "Are je sure je want naar verwijder this notification?";
+"notifications.permissionRequired" = "Enable notifications";
+"notifications.permissionMessage" = "To send je reminders, we need je naar enable notifications in Instellingen.";
+"notifications.openSettings" = "Go naar Instellingen";
+
+// Form fields
+"notifications.name" = "Name";
+"notifications.namePlaceholder" = "E.g.: My reminder";
+"notifications.text" = "Message";
+"notifications.textPlaceholder" = "E.g.: Time naar check je uitgaven!";
+"notifications.time" = "Time";
+"notifications.active" = "Active";
+
+// Report data types
+"notifications.data.balance" = "saldo";
+"notifications.data.expenses" = "uitgaven";
+"notifications.data.income" = "inkomsten";
+"notifications.data.topCategory" = "top spending categorie";
+"notifications.selectData" = "What do je want naar see?";
+
+// Day preferences
+"notifications.day.sunday" = "Sunday";
+"notifications.day.monday" = "Monday";
+"notifications.day.lastOfMonth" = "last dag van maand";
+"notifications.day.firstOfMonth" = "first dag van maand";
+"notifications.selectDay" = "When naar receive it?";
+"notifications.allDays" = "Every dag";
+"notifications.selectWeekdays" = "Which dagen?";
+
+// Reminders (Brand Voice)
+"notifications.endOfDay.name" = "End van dag";
+"notifications.endOfDay.text" = "How was je dag? 👋 Log je uitgaven before je forget";
+"notifications.lunchTime.name" = "Meal time";
+"notifications.lunchTime.text" = "What did je have? 🍽️ Log it while it's fresh";
+
+// Reports
+"notifications.dailyReport.name" = "Dagelijks summary";
+"notifications.dailyReport.hint" = "At %@ je'll see je %@ voor de dag";
+"notifications.weeklyReport.name" = "Wekelijks summary";
+"notifications.weeklyReport.hint" = "Every %2$@ je'll get je %1$@ voor de week";
+"notifications.monthlyReport.name" = "Maandelijks summary";
+"notifications.monthlyReport.hint" = "On de %2$@ je'll see je %1$@ voor de maand";
+
+// System notifications
+"notifications.scheduledPayments.name" = "Geplande betalingen";
+"notifications.scheduledPayments.hint" = "We'll let je know when je have upcoming betalingen";
+
+// Groups
+"notifications.groups.name" = "Groepen";
+"notifications.groups.hint" = "Alerts when other leden add uitgaven van pay je";
+"notifications.groups.newExpense" = "%@ added an uitgave van %@: %@";
+"notifications.groups.newExpenseNoDesc" = "%@ added an uitgave van %@";
+"notifications.groups.modifiedExpense" = "%@ modified '%@'";
+"notifications.groups.settlement" = "%@ paid je %@";
+"notifications.groups.newMember" = "%@ joined de groep";
+"notifications.groups.multipleChanges" = "%d new changes";
+"notifications.groups.fallbackGroup" = "Groep";
+"notifications.groups.fallbackMember" = "Someone";
+
+// Empty state
+"notifications.empty.title" = "Geen notifications";
+"notifications.empty.message" = "Set up reminders naar keep je finances on track";
+
+// Test
+"notifications.testNotification" = "Test reminder";
+"notifications.testReport.balance.daily" = "Je saldo naar close de dag: $1,250.00 💰";
+"notifications.testReport.balance.weekly" = "Je saldo after this week: $1,250.00 💰";
+"notifications.testReport.balance.monthly" = "Je saldo after this maand: $1,250.00 💰";
+"notifications.testReport.expenses.daily" = "Je uitgegeven $85.00 vandaag 📊";
+"notifications.testReport.expenses.weekly" = "Je uitgegeven $350.00 this week 📊";
+"notifications.testReport.expenses.monthly" = "Je uitgegeven $1,200.00 this maand 📊";
+"notifications.testReport.income.daily" = "Je received $500.00 vandaag 🎉";
+"notifications.testReport.income.weekly" = "Je received $2,500.00 this week 🎉";
+"notifications.testReport.income.monthly" = "Je received $8,500.00 this maand 🎉";
+"notifications.testReport.topCategory.daily" = "Je top uitgave vandaag: Food ($45.00) 👀";
+"notifications.testReport.topCategory.weekly" = "Je top uitgave this week: Food ($180.00) 👀";
+"notifications.testReport.topCategory.monthly" = "Je top uitgave this maand: Food ($650.00) 👀";
+"notifications.testReport.scheduledPayment" = "Je have a betaling in 3 dagen: \"Netflix\" voor USD 14.99";
+
+// Section headers
+"notifications.section.reminders" = "Reminders";
+"notifications.section.reports" = "Reports";
+"notifications.section.system" = "System";
+"notifications.section.custom" = "Custom";
+"notifications.budgetAlerts.title" = "Budget alerts";
+"notifications.budgetAlerts.hint" = "Get notified when approaching je budget limits";
+
+// Scheduled Payment Notifications (personalized)
+"notifications.scheduledPayment.dueToday" = "Time naar pay %1$@ voor %2$@ 💰";
+"notifications.scheduledPayment.dueSoon" = "%2$@ is due in %1$d dagen voor %3$@ 📅";
+"notifications.scheduledPayment.overdue" = "%1$@ voor %2$@ was due — did je cover it? 👀";
+"notifications.scheduledPayment.dueToday.income" = "%1$@ from %2$@ arrives vandaag! 🎉";
+"notifications.scheduledPayment.dueSoon.income" = "%2$@ from %3$@ arrives in %1$d dagen 📅";
+"notifications.scheduledPayment.overdue.income" = "Je expected %1$@ from %2$@ — has it arrived? 👀";
+
+// Report Notifications (with real data)
+"notifications.report.balance.daily" = "Je saldo naar close de dag: %@ 💰";
+"notifications.report.balance.weekly" = "Je saldo after this week: %@ 💰";
+"notifications.report.balance.monthly" = "Je saldo after this maand: %@ 💰";
+"notifications.report.expenses.daily" = "Je uitgegeven %@ vandaag 📊";
+"notifications.report.expenses.weekly" = "Je uitgegeven %@ this week 📊";
+"notifications.report.expenses.monthly" = "Je uitgegeven %@ this maand 📊";
+"notifications.report.income.daily" = "Je received %@ vandaag 🎉";
+"notifications.report.income.weekly" = "Je received %@ this week 🎉";
+"notifications.report.income.monthly" = "Je received %@ this maand 🎉";
+"notifications.report.topCategory.daily" = "Je top uitgave vandaag: %@ 👀";
+"notifications.report.topCategory.weekly" = "Je top uitgave this week: %@ 👀";
+"notifications.report.topCategory.monthly" = "Je top uitgave this maand: %@ 👀";
+
+// Report Notifications (empty state)
+"notifications.report.empty.expenses.daily" = "Quiet dag! Geen uitgaven ✨";
+"notifications.report.empty.expenses.weekly" = "Quiet week! Geen uitgaven recorded ✨";
+"notifications.report.empty.expenses.monthly" = "Quiet maand! Geen uitgaven recorded ✨";
+"notifications.report.empty.income" = "Geen inkomsten this time — all good ✨";
+"notifications.report.empty.topCategory" = "Geen uitgaven! Je wallet rested 😊";
+
+// MARK: - iCloud Sync
+
+"icloud.title" = "iCloud Sync";
+"icloud.description" = "Je data syncs automatically with iCloud en is beschikbaar on all je Apple devices signed in with de same rekening.";
+"icloud.privacyNote" = "Je data is stored privately in je personal iCloud rekening. Yala does niet have access naar it.";
+"icloud.statusSynced" = "Synced";
+"icloud.statusSyncing" = "Syncing...";
+"icloud.statusNoAccount" = "Geen iCloud Rekening";
+"icloud.statusError" = "Sync Error";
+"icloud.lastSync" = "Last sync: %@";
+"icloud.noAccountWarning" = "Sign in naar iCloud in Instellingen naar enable sync.";
+"icloud.syncingData" = "Syncing je data...";
+"icloud.syncingDescription" = "We're retrieving je information from iCloud.";
+"icloud.syncing.skip" = "Set up as new";
+"icloud.dataFoundTitle" = "Data found!";
+"icloud.dataFoundMessage" = "We found je data in iCloud. Geen need naar set up again.";
+"icloud.dataFoundAction" = "Continue";
+"icloud.syncIndicator.failed" = "Something's off with iCloud";
+"icloud.syncIndicator.hint" = "Tap naar see what happened";
+"icloud.detail.upToDate" = "Alle up naar datum — last synced %@";
+"icloud.detail.errorTitle" = "Niet saving naar iCloud right now";
+"icloud.detail.errorMessage" = "Je're offline van iCloud isn't beschikbaar. Je data is safe on this device en will sync when we can.";
+"icloud.detail.stalledMessage" = "Je recent changes zijn still on this device. Let's see what we can do naar get them naar iCloud.";
+"icloud.detail.technicalCode" = "Technical detail: %@";
+"icloud.detail.cta.retry" = "Retry now";
+"icloud.detail.cta.diagnose" = "Check en repair";
+"icloud.detail.cta.viewTechnical" = "View technical detail";
+"icloud.remoteOnboardingCompleted" = "✓ Je're all set, je data is here";
+"icloud.remoteRestoreCompleted" = "✓ Data restored";
+"icloud.remoteWipe.title" = "Data geen longer beschikbaar";
+"icloud.remoteWipe.message" = "Je data was removed from iCloud. Je can start fresh van wait voor it naar sync back.";
+"icloud.remoteWipe.confirm" = "Start Fresh";
+"icloud.remoteWipe.cancel" = "Keep Waiting";
+"icloud.forceSync.button" = "Force Sync";
+"icloud.forceSync.description" = "Checks voor pending data from iCloud. Use if je data isn't appearing on this device.";
+"icloud.mismatch.title" = "iCloud Now Beschikbaar";
+"icloud.mismatch.message" = "Yala opened before iCloud was ready. Sluiten en reopen de app naar sync je data.";
+"icloud.mismatch.action" = "Got It";
+
+// MARK: - Feature Gate
+
+// Feature names
+"featureGate.accounts" = "Rekeningen";
+"featureGate.budgets" = "Budgets";
+"featureGate.voiceInput" = "Voice input";
+"featureGate.imageInput" = "Image input";
+"featureGate.premiumIcons" = "Premium icons";
+"featureGate.proThemes" = "Pro Themes";
+"featureGate.smartInsightsAI" = "Smart Insights AI";
+"featureGate.cashFlowAdvanced" = "Advanced Cash Flow";
+"featureGate.exportExtendedPeriods" = "Extended exporteer periods";
+
+// Titles
+"featureGate.limitReachedTitle" = "Limit reached";
+"featureGate.proFeatureTitle" = "Pro feature";
+"featureGate.trialExpiredTitle" = "Trial ended";
+
+// Messages
+"featureGate.limitReachedMessage" = "Je've reached de %@ limit on de gratis plan. Upgrade naar Pro naar create more.";
+"featureGate.proFeatureMessage" = "%@ is an exclusive Yala Pro feature.";
+"featureGate.trialExpiredMessage" = "Je trial has ended. Subscribe naar keep enjoying all features.";
+
+// Actions
+"featureGate.upgradeToPro" = "Upgrade naar Pro";
+"featureGate.upgrade" = "Upgrade";
+"featureGate.upgradeForMore" = "Upgrade naar Pro voor more";
+
+// Limit info
+"featureGate.limitInfo" = "%d van %d";
+
+// MARK: - Subscription Success
+
+"subscription.success.title" = "Welkom naar Yala Pro!";
+"subscription.success.subtitle" = "Je now have access naar all features";
+"subscription.success.continue" = "Get started";
+
+// Additional features for success view
+"subscription.feature.unlimitedAccounts" = "Unlimited rekeningen";
+"subscription.feature.unlimitedBudgets" = "Unlimited budgets";
+"subscription.feature.premiumIcons" = "Premium app icons";
+
+// MARK: - Trial Banner
+
+"subscription.trial.title" = "Gratis trial";
+"subscription.trial.endsToday" = "Ends vandaag";
+"subscription.trial.endsTomorrow" = "Ends tomorrow";
+"subscription.trial.subscribe" = "Subscribe";
+
+// MARK: - Downgrade Resolution
+
+"subscription.downgrade.title" = "Je abonnement ended";
+"subscription.downgrade.subtitle" = "Choose which rekeningen en budgets naar keep";
+"subscription.downgrade.confirm" = "Confirm selection";
+"subscription.downgrade.reactivate" = "Reactivate Pro";
+
+// Trial paywall
+"subscription.startFreeTrial" = "Start je gratis trial";
+"subscription.trialThenPrice" = "Gratis %@ dagen, then %@";
+
+// ProTrialOfferSheet
+"subscription.trialOffer.title" = "Try Yala Pro voor gratis";
+"subscription.trialOffer.subtitle" = "30 dagen with all features. Geen commitment, annuleer anytime.";
+"subscription.trialOffer.startTrial" = "Start gratis trial";
+"subscription.trialOffer.maybeLater" = "Maybe later";
+
+// MARK: - Shortcut Notifications
+
+"shortcut.notification.title" = "New automatic boeking";
+"shortcut.notification.expense" = "uitgave";
+"shortcut.notification.income" = "inkomsten";
+"shortcut.notification.body" = "A %@ van %@%@ has been recorded. Open de app naar approve it.";
+
+// MARK: - Category Seeds
+
+"category.food" = "Food";
+"category.shopping" = "Shopping";
+"category.transport" = "Transport";
+"category.finance" = "Finance";
+"category.housing" = "Housing";
+"category.entertainment" = "Entertainment";
+"category.personal" = "Personal";
+"category.pets" = "Pets";
+"category.vehicle" = "Vehicle";
+"category.income" = "Inkomsten";
+"category.other" = "Other";
+
+// MARK: - Subcategory Seeds
+
+"subcategory.delivery" = "Delivery";
+"subcategory.restaurants" = "Restaurants";
+"subcategory.supplements" = "Dietary supplements";
+"subcategory.supermarkets" = "Supermarkets & groceries";
+"subcategory.personalCare" = "Personal care & beauty";
+"subcategory.pharmacy" = "Pharmacy & first aid";
+"subcategory.homeDecor" = "Home & decor";
+"subcategory.otherShopping" = "Other";
+"subcategory.gifts" = "Gifts";
+"subcategory.clothing" = "Clothing & footwear";
+"subcategory.tech" = "Tech & accessories";
+"subcategory.occasionalMobility" = "Occasional mobility";
+"subcategory.rideshare" = "Taxis & rideshare";
+"subcategory.publicTransport" = "Public transport";
+"subcategory.fees" = "Fees & charges";
+"subcategory.taxes" = "Taxes";
+"subcategory.pensions" = "Pensions & contributions";
+"subcategory.loans" = "Loans & credit";
+"subcategory.insurance" = "Insurance";
+"subcategory.rent" = "Rent van mortgage";
+"subcategory.maintenance" = "Maintenance & repairs";
+"subcategory.otherHousing" = "Other";
+"subcategory.supportStaff" = "Support staff";
+"subcategory.homeInsurance" = "Home insurance";
+"subcategory.utilities" = "Utilities";
+"subcategory.bars" = "Bars & social outings";
+"subcategory.sports" = "Sports & recreation";
+"subcategory.shows" = "Shows & events";
+"subcategory.nightlife" = "Nightlife & parties";
+"subcategory.hobbies" = "Hobbies & gaming";
+"subcategory.coupleDates" = "Datum nights";
+"subcategory.streaming" = "Streaming & platforms";
+"subcategory.travel" = "Travel & vacations";
+"subcategory.consulting" = "Consulting & paperwork";
+"subcategory.beauty" = "Beauty & aesthetics";
+"subcategory.education" = "Education & development";
+"subcategory.fitness" = "Fitness & exercise";
+"subcategory.health" = "Health & medical care";
+"subcategory.leisureSubs" = "Leisure subscriptions";
+"subcategory.utilitySubs" = "Utility subscriptions";
+"subcategory.phone" = "Phone & communications";
+"subcategory.petAccessories" = "Accessories & toys";
+"subcategory.petFood" = "Pet food";
+"subcategory.vet" = "Veterinary care";
+"subcategory.petServices" = "Pet services & grooming";
+"subcategory.fuel" = "Fuel";
+"subcategory.parking" = "Parking";
+"subcategory.leasing" = "Leasing";
+"subcategory.vehicleMaintenance" = "Vehicle maintenance";
+"subcategory.vehicleLoan" = "Vehicle loan";
+"subcategory.vehicleInsurance" = "Vehicle insurance";
+"subcategory.rentalIncome" = "Rental inkomsten";
+"subcategory.subsidies" = "Grants & subsidies";
+"subcategory.freelance" = "Freelance & invoicing";
+"subcategory.dividends" = "Interest & dividends";
+"subcategory.refunds" = "Refunds";
+"subcategory.giftIncome" = "Gifts & other inkomsten";
+"subcategory.salary" = "Salary";
+"subcategory.sales" = "Sales";
+"subcategory.accountTransfer" = "Rekening transfer";
+"subcategory.balanceAdjustment" = "Saldo adjustment";
+"subcategory.accountTransferOther" = "Rekening transfer";
+
+// MARK: - Tips & Tricks
+// MARK: - Tutorials
+"tutorials.subtitle" = "Learn how naar get de most out van Yala";
+"tutorials.next" = "Volgende";
+"tutorials.previous" = "Previous";
+"tutorials.done" = "Klaar";
+"tutorials.start" = "Get started";
+"tutorials.understood" = "Got it";
+"tutorials.nextTutorial" = "Volgende tutorial";
+"tutorials.stepLabel %d" = "Step %d";
+
+// Categories
+"tutorials.category.gettingStarted" = "Getting started";
+"tutorials.category.dailyUse" = "Dagelijks use";
+"tutorials.category.personalization" = "Personalization";
+"tutorials.category.advanced" = "Advanced";
+"tutorials.category.powerUser" = "Power user";
+
+// 1. createAccount (3 steps)
+"tutorials.createAccount.title" = "Create an rekening";
+"tutorials.createAccount.intro.title" = "What is an rekening?";
+"tutorials.createAccount.intro.desc" = "Set up je bank, wallet, van card naar track where je money lives.";
+"tutorials.createAccount.step0.title" = "Create a new rekening";
+"tutorials.createAccount.step1.title" = "Van create from de Panel";
+"tutorials.createAccount.step2.title" = "Fill in de details";
+"tutorials.createAccount.completion.title" = "Je rekening is ready!";
+"tutorials.createAccount.completion.desc" = "Keeping je rekeningen organized en well separated is essential voor managing je finances. Each rekening lets je filter je data en better visualize je trends. Je can bewerk them anytime en modify their initial saldo van adjust de current saldo.";
+
+// 2. createCategories (4 steps)
+"tutorials.createCategories.title" = "Create categorieën";
+"tutorials.createCategories.intro.title" = "What zijn categorieën?";
+"tutorials.createCategories.intro.desc" = "Organize je uitgaven by type naar see where je money goes.";
+"tutorials.createCategories.step0.title" = "Go naar Categorieën";
+"tutorials.createCategories.step1.title" = "Voeg toe subcategorieën";
+"tutorials.createCategories.step2.title" = "Create subcategorieën";
+"tutorials.createCategories.step3.title" = "Customize je categorie";
+"tutorials.createCategories.completion.title" = "Categorie created!";
+"tutorials.createCategories.completion.desc" = "Good categorieën make je reports much more useful. Je can bewerk them van add more at any time.";
+
+// 3. createTags (2 steps)
+"tutorials.createTags.title" = "Create labels";
+"tutorials.createTags.intro.title" = "What zijn labels?";
+"tutorials.createTags.intro.desc" = "Groep uitgaven across categorieën — like \"Vacation\" voor food, transport, en hotel.";
+"tutorials.createTags.step0.title" = "Go naar Labels";
+"tutorials.createTags.step1.title" = "Customize je label";
+"tutorials.createTags.completion.title" = "Label created!";
+"tutorials.createTags.completion.desc" = "Use labels naar groep uitgaven voor projects, trips, van events. They're perfect voor analysis that goes beyond categorieën.";
+
+// 4. createRecord (4 steps)
+"tutorials.createRecord.title" = "Boeking an uitgave";
+"tutorials.createRecord.intro.title" = "Manual recording";
+"tutorials.createRecord.intro.desc" = "Every uitgave je boeking helps je understand je finances better.";
+"tutorials.createRecord.step0.title" = "Tap de + button";
+"tutorials.createRecord.step1.title" = "Choose de boeking type";
+"tutorials.createRecord.step2.title" = "Fill in de fields";
+"tutorials.createRecord.step3.title" = "Use quick shortcuts";
+"tutorials.createRecord.completion.title" = "Uitgave recorded!";
+"tutorials.createRecord.completion.desc" = "Recording uitgaven in de moment is key. De more je boeking, de better je analysis en reports will be voor understanding je finances.";
+
+// 5. importData (2 steps)
+"tutorials.importData.title" = "Importeer data";
+"tutorials.importData.intro.title" = "Importeer je data";
+"tutorials.importData.intro.desc" = "Bring je uitgaven from a spreadsheet van another app in seconds.";
+"tutorials.importData.step0.title" = "Selecteer Importeer data";
+"tutorials.importData.step1.title" = "Importeer je file";
+"tutorials.importData.completion.title" = "Data imported!";
+"tutorials.importData.completion.desc" = "Je history is now in Yala. If there were errors, je'll receive a clear message with details; otherwise, je'll see de success message. Review je boekingen naar confirm everything imported correctly.";
+
+// 6. createBudgets (4 steps)
+"tutorials.createBudgets.title" = "Create budgets";
+"tutorials.createBudgets.intro.title" = "What is a budget?";
+"tutorials.createBudgets.intro.desc" = "Set spending limits en get notified when je're close.";
+"tutorials.createBudgets.step0.title" = "Open Planning";
+"tutorials.createBudgets.step1.title" = "Configure je budget";
+"tutorials.createBudgets.step2.title" = "Voeg toe it naar Favorites";
+"tutorials.createBudgets.step3.title" = "Bewerk it whenever";
+"tutorials.createBudgets.completion.title" = "Budget is active!";
+"tutorials.createBudgets.completion.desc" = "Now je'll see in real time how je spending is going en je can make better decisions about whether naar continue making those uitgaven van niet. Check it often naar stay in control.";
+
+// 7. createScheduledPayments (5 steps)
+"tutorials.createScheduledPayments.title" = "Geplande betalingen";
+"tutorials.createScheduledPayments.intro.title" = "What zijn geplande betalingen?";
+"tutorials.createScheduledPayments.intro.desc" = "Automate rent, utilities, en subscriptions — Yala boekingen them voor je.";
+"tutorials.createScheduledPayments.step0.title" = "Open Planning";
+"tutorials.createScheduledPayments.step1.title" = "Fill in de details";
+"tutorials.createScheduledPayments.step2.title" = "Define de recurrence";
+"tutorials.createScheduledPayments.step3.title" = "Mark if it's a abonnement";
+"tutorials.createScheduledPayments.step4.title" = "Manage je betalingen";
+"tutorials.createScheduledPayments.completion.title" = "Betaling geplande!";
+"tutorials.createScheduledPayments.completion.desc" = "Je recurring betalingen now boeking themselves. Je'll receive a notification each time one runs.";
+
+// 8. createFavorites (2 steps)
+"tutorials.createFavorites.title" = "Favorite betalingen";
+"tutorials.createFavorites.intro.title" = "What zijn favorites?";
+"tutorials.createFavorites.intro.desc" = "Opslaan frequent uitgaven as shortcuts en boeking them with one tap.";
+"tutorials.createFavorites.step0.title" = "Create a favorite";
+"tutorials.createFavorites.step1.title" = "Use it quickly";
+"tutorials.createFavorites.completion.title" = "Favorite saved!";
+"tutorials.createFavorites.completion.desc" = "Favorites opslaan je time on repetitive uitgaven. Je can have as many as je want en bewerk them whenever je need.";
+
+// 9. editPanel (3 steps)
+"tutorials.editPanel.title" = "Customize de panel";
+"tutorials.editPanel.intro.title" = "Je panel, je way";
+"tutorials.editPanel.intro.desc" = "Customize which widgets appear on je panel.";
+"tutorials.editPanel.step0.title" = "Open de panel";
+"tutorials.editPanel.step1.title" = "Customize de widgets";
+"tutorials.editPanel.step2.title" = "Reset if je want";
+"tutorials.editPanel.completion.title" = "Panel customized!";
+"tutorials.editPanel.completion.desc" = "Je panel now shows exactly what je need. Je can change it anytime naar adapt it naar je way van managing.";
+
+// 10. panelFiltering (5 steps)
+"tutorials.panelFiltering.title" = "Panel filters";
+"tutorials.panelFiltering.intro.title" = "Filter naar find";
+"tutorials.panelFiltering.intro.desc" = "Filter by rekening, categorie, label, van period voor detailed analysis.";
+"tutorials.panelFiltering.step0.title" = "Tap charts naar filter";
+"tutorials.panelFiltering.step1.title" = "Check de filter bar";
+"tutorials.panelFiltering.step2.title" = "Filter in each view";
+"tutorials.panelFiltering.step3.title" = "See filters across views";
+"tutorials.panelFiltering.step4.title" = "Use quick filter buttons";
+"tutorials.panelFiltering.completion.title" = "Filters mastered!";
+"tutorials.panelFiltering.completion.desc" = "Filters zijn je best tool voor understanding je finances in depth. Combine them naar get increasingly precise analysis.";
+
+// 11. inboxApproval (4 steps)
+"tutorials.inboxApproval.title" = "Inbox";
+"tutorials.inboxApproval.intro.title" = "Je smart inbox";
+"tutorials.inboxApproval.intro.desc" = "Review en approve automatic uitgaven from Apple Pay, voice, van camera.";
+"tutorials.inboxApproval.step0.title" = "Boeking by voice van image";
+"tutorials.inboxApproval.step1.title" = "Complete en approve";
+"tutorials.inboxApproval.step2.title" = "Boeking multiple at once";
+"tutorials.inboxApproval.step3.title" = "Manage je inbox";
+"tutorials.inboxApproval.completion.title" = "Inbox mastered!";
+"tutorials.inboxApproval.completion.desc" = "Je transacties in de inbox don't have an expiration datum, je can approve van reject them whenever je want. Drafts don't affect je totals until je approve them.";
+
+// 12. applePay (4 steps)
+"tutorials.applePay.title" = "Boeking with Apple Pay";
+"tutorials.applePay.intro.title" = "Apple Pay + Yala";
+"tutorials.applePay.intro.desc" = "Set up automatic uitgave recording every time je pay with Apple Pay.";
+"tutorials.applePay.step0.title" = "Open Shortcuts";
+"tutorials.applePay.step1.title" = "Create de automation";
+"tutorials.applePay.step2.title" = "Selecteer de Yala shortcut";
+"tutorials.applePay.step3.title" = "Configure de parameters";
+
+// Tutorial step descriptions (re-expanded)
+"tutorials.createAccount.step0.desc" = "In je profile, selecteer de Rekeningen section en tap naar create a new rekening.";
+"tutorials.createAccount.step1.desc" = "Je can create an rekening directly from de Panel by tapping de Voeg toe new rekening card.";
+"tutorials.createAccount.step2.desc" = "Fill in de details voor je new rekening en tap Opslaan.";
+"tutorials.createCategories.step0.desc" = "In je profile, selecteer de Categorieën section en create a new categorie.";
+"tutorials.createCategories.step1.desc" = "Remember that there must always be subcategorieën associated with a categorie naar be able naar create it.";
+"tutorials.createCategories.step2.desc" = "Creating subcategorieën is as easy as creating categorieën: give it a name, selecteer its nature, en optionally modify its icon.";
+"tutorials.createCategories.step3.desc" = "Customize je categorie's icon en color naar je liking whenever je want.";
+"tutorials.createTags.step0.desc" = "In je profile, selecteer de Labels section en create a new label.";
+"tutorials.createTags.step1.desc" = "Customize je label naar je liking: give it a name, icon, en color.";
+"tutorials.createRecord.step0.desc" = "On de panel, tap de + button. If je're a Yala Pro user, selecteer Manual.";
+"tutorials.createRecord.step1.desc" = "Je can boeking uitgaven, inkomsten, en even transfers between rekeningen. Exchange rates zijn calculated automatically in real time.";
+"tutorials.createRecord.step2.desc" = "Fill in de required fields: bedrag, rekening, en subcategorie. Je can also add a description en any labels je want.";
+"tutorials.createRecord.step3.desc" = "Use quick shortcuts: @ voor rekening, ! voor categorie, en # voor label. Start typing naar refine je zoeken within each shortcut.";
+"tutorials.importData.step0.desc" = "In je profile, selecteer de Importeer data section.";
+"tutorials.importData.step1.desc" = "Je can importeer CSV van Excel as many times as je want following de default template, which je can download right there. If there's data in various currencies, it will ask je naar selecteer de rekeningen voor each one.";
+"tutorials.createBudgets.step0.desc" = "In de menu selecteer Planning en make sure je're on de Budgets tab. Use de + button naar create a new one.";
+"tutorials.createBudgets.step1.desc" = "Give it a name, bedrag, en define de period: dagelijks, maandelijks, annual, van one-time (voor a trip, event, etc.). Customize which rekeningen, categorieën, labels, en natures je want naar track. Turn on notifications if je want alerts at certain thresholds.";
+"tutorials.createBudgets.step2.desc" = "Je can add budgets naar Favorites naar display them in de Panel widget. Choose up naar 3 in je preferred order.";
+"tutorials.createBudgets.step3.desc" = "Remember je can always come back naar bewerk je budget by tapping it.";
+"tutorials.createScheduledPayments.step0.desc" = "In de menu selecteer Planning en make sure je're on de Geplande Betalingen tab. Use de + button naar create a new one.";
+"tutorials.createScheduledPayments.step1.desc" = "Fill in je betaling name, bedrag, note (optional), rekening, subcategorie, en labels (optional).";
+"tutorials.createScheduledPayments.step2.desc" = "Selecteer de betaling dag en frequency. Choose when de first betaling will be en turn on notifications if je want naar be notified on de same dag van dagen before.";
+"tutorials.createScheduledPayments.step3.desc" = "Don't forget naar turn on de abonnement toggle if it's a recurring abonnement.";
+"tutorials.createScheduledPayments.step4.desc" = "By tapping a geplande betaling je can see upcoming betalingen, those already made, en bewerk it whenever je want.";
+"tutorials.createFavorites.step0.desc" = "Go naar de new transactie screen en tap de star at de top naar create a new favorite.";
+"tutorials.createFavorites.step1.desc" = "Fill in de fields je want naar be pre-filled. Volgende time, simply tap de favorite en watch all de fields fill in automatically.";
+"tutorials.editPanel.step0.desc" = "Go naar de main screen where je see je uitgave summary with all beschikbaar widgets.";
+"tutorials.editPanel.step1.desc" = "Je can modify which widgets naar see en in what order by tapping de customization button on de panel.";
+"tutorials.editPanel.step2.desc" = "Remember je can always return naar de default order by tapping \"Reset\" within customization.";
+"tutorials.panelFiltering.step0.desc" = "Get de most out van Yala's interactive charts. Almost all panels zijn filterable by categorie, nature, among others. Play with them en find what works best voor je.";
+"tutorials.panelFiltering.step1.desc" = "Je have a filter bar where je'll see all de applied filters. Je can verwijder them individually van all at once whenever je want.";
+"tutorials.panelFiltering.step2.desc" = "In de different views van de app je'll see je can filter naar je liking with de charts.";
+"tutorials.panelFiltering.step3.desc" = "Filters propagate naar all views equally, so je can see all kinds van metrics voor whatever je want naar filter.";
+"tutorials.panelFiltering.step4.desc" = "In some views je'll also have a filters section at de top so je can filter naar je liking van verwijder all with a single button.";
+"tutorials.inboxApproval.step0.desc" = "If je're a Yala Pro user, when je make a boeking by voice van image, it will automatically take je naar de draft. De same if je used de Apple Pay Boeking shortcut.";
+"tutorials.inboxApproval.step1.desc" = "Simply fill in de required fields en approve. De transactie will be created normally.";
+"tutorials.inboxApproval.step2.desc" = "Je can also make voice van image boekingen with multiple transacties. It will tell je how many drafts were created en guide je naar de inbox naar review them.";
+"tutorials.inboxApproval.step3.desc" = "In je inbox je can approve transacties, selecteer Approve later naar see them later, van reject them directly.";
+"tutorials.applePay.step0.desc" = "Open de Shortcuts app en go naar de Automations section.";
+"tutorials.applePay.step1.desc" = "Tap New automation, selecteer de Wallet option, choose de cards je want naar use, en selecteer Run Immediately.";
+"tutorials.applePay.step2.desc" = "Selecteer Create new shortcut en zoeken voor Yala at de very bottom. In Yala selecteer de Apple Pay Boeking shortcut.";
+"tutorials.applePay.step3.desc" = "Voor Bedrag selecteer Shortcut Input en then Bedrag. Do de same voor Merchant en Name respectively. Turn off de \"Show When Run\" toggle.";
+
+"tutorials.applePay.completion.title" = "Apple Pay connected!";
+"tutorials.applePay.completion.desc" = "With this je'll now have automatic boekingen every time je use Apple Pay with de selected cards. Each betaling will create a draft in je inbox.";
+
+// MARK: - Scheduled Payments UX (M1-M7)
+"scheduled.period.selector.title" = "Selecteer maand";
+"scheduled.summary.paid" = "Paid";
+"scheduled.summary.pending" = "Pending";
+"scheduled.filter.all" = "Alle";
+"scheduled.filter.paid" = "Paid";
+"scheduled.filter.pending" = "Pending";
+"scheduled.associate.title" = "Link uitgave";
+"scheduled.associate.confirm" = "Link this uitgave naar de geplande betaling?";
+"scheduled.associate.success" = "Uitgave linked";
+"scheduled.associate.empty" = "Geen similar uitgaven found this maand";
+"scheduled.associate.paymentHeader" = "Geplande betaling";
+"scheduled.associate.candidatesHeader" = "Uitgaven this maand";
+"scheduled.associate.already" = "This uitgave is already linked";
+"scheduled.advance" = "Advance betaling";
+"scheduled.view.record" = "View boeking";
+
+// MARK: - Siri Shortcuts
+"settings.siriShortcuts" = "Siri & Shortcuts";
+"siriShortcuts.title" = "Siri & Shortcuts";
+"siriShortcuts.subtitle" = "Use je voice van quick shortcuts naar boeking uitgaven instantly.";
+"siriShortcuts.siri.title" = "Boeking with Siri";
+"siriShortcuts.siri.description" = "Dictate je uitgave en a draft will be created in je inbox.";
+"siriShortcuts.siri.proNote" = "Requires Yala Pro";
+"siriShortcuts.siri.phrase" = "Create a boeking in Yala";
+"siriShortcuts.siri.alt1" = "Je can also say: \"Log an uitgave in Yala\"";
+"siriShortcuts.siri.alt2" = "Van: \"Opslaan an uitgave in Yala\"";
+"siriShortcuts.all.title" = "Other shortcuts";
+"siriShortcuts.shortcut.quick" = "Quick boeking";
+"siriShortcuts.shortcut.voice" = "Voice input";
+"siriShortcuts.shortcut.image" = "Image input";
+"siriShortcuts.shortcut.applePay" = "Apple Pay";
+"siriShortcuts.shortcut.automation" = "Automation";
+"siriShortcuts.desc.quick" = "Opens de boeking form with a single tap.";
+"siriShortcuts.desc.voice" = "Dictate de bedrag en description with je voice.";
+"siriShortcuts.desc.image" = "Scan a receipt van ticket with je camera.";
+"siriShortcuts.desc.applePay" = "Log a betaling made with Apple Pay.";
+"siriShortcuts.desc.automation" = "Create automatic boekingen with system shortcuts.";
+"siriShortcuts.phrase.quick" = "Boeking in Yala";
+"siriShortcuts.phrase.voice" = "Boeking with voice in Yala";
+"siriShortcuts.phrase.image" = "Boeking with image in Yala";
+"siriShortcuts.phrase.applePay" = "Boeking Apple Pay in Yala";
+"siriShortcuts.phrase.automation" = "Boeking from automation in Yala";
+"siriShortcuts.faq.title" = "FAQ";
+"siriShortcuts.faq.activateQ" = "How do I activate Siri?";
+"siriShortcuts.faq.activateA" = "It's automatic. Just say de phrase naar Siri en Yala will process je request.";
+"siriShortcuts.faq.inboxQ" = "Where do my Siri boekingen go?";
+"siriShortcuts.faq.inboxA" = "Boekingen created by Siri arrive in je inbox as drafts voor je naar review.";
+"siriShortcuts.faq.offlineQ" = "Does it work offline?";
+"siriShortcuts.faq.offlineA" = "Ja, shortcuts work in basic mode without an internet connection.";
+
+// MARK: - AI Settings (Personalization Sheet from Chat)
+
+"aiSettings.title" = "Customize AI";
+"aiSettings.toneSection" = "Tone";
+"aiSettings.styleSection" = "Style";
+"aiSettings.appliesHint" = "These instellingen apply naar Insights, Assistant, en Panel Hero.";
+
+// MARK: - AI Privacy (sub-view from Profile > Security)
+
+"aiPrivacy.title" = "AI Privacy & Data";
+"aiPrivacy.processingRow" = "Processing (voice & image)";
+"aiPrivacy.chatRow" = "Pro Assistant";
+"aiPrivacy.insightsRow" = "Smart Insights";
+"aiPrivacy.revokeConfirmTitle" = "Disable this feature?";
+"aiPrivacy.revokeConfirmMessage" = "We'll stop processing je AI data voor this feature. Je can re-enable it anytime.";
+"aiPrivacy.revokeConfirmAction" = "Disable";
+"aiPrivacy.footerHint" = "Je data is only processed when using Insights, Assistant, van voice/image entries. We never share je personal information.";
+"aiPrivacy.policyLink" = "Privacy Policy";
+
+// MARK: - AI Consent
+"aiConsent.processingTitle" = "Voice & Image Processing";
+"aiConsent.processingMessage" = "These features use OpenAI naar process je data:\n\n• Voice: je audio recording is transcribed\n• Images: de photo is analyzed naar extract data\n\nYour individual transacties en personal information zijn never shared. OpenAI does niet use this data voor training.";
+"aiConsent.insightsTitle" = "Smart Overview";
+"aiConsent.insightsMessage" = "This feature sends totals, percentages, en trends naar OpenAI naar generate a summary van je finances.\n\nYour individual transacties, transactie history, en personal information zijn never shared. OpenAI does niet use this data voor training.";
+"aiConsent.accept" = "Accept en Enable";
+"aiConsent.privacyPolicy" = "Privacy Policy";
+"aiConsent.inlineHintProcessing" = "Je voice en image data is processed with OpenAI. It is niet stored permanently.";
+"aiConsent.inlineHintInsights" = "Only totals en trends zijn sent naar OpenAI voor de overview. They zijn niet stored permanently.";
+"aiConsent.inlineHintBoth" = "Je voice, image, en summary data is processed with OpenAI. It is niet stored permanently.";
+
+// MARK: - Insights Settings
+"insights.aiSectionTitle" = "Artificial Intelligence";
+"insights.aiToggle" = "Smart overview";
+"insights.aiCaption" = "OpenAI analyzes je aggregated data naar generate personalized analysis. Geen individual transacties zijn sent.";
+"insights.metricsSection" = "Metrics";
+"insights.chartsSection" = "Charts";
+"insights.analysisSection" = "Analysis";
+"insights.restoreDefaults" = "Restore defaults";
+
+// MARK: - Insights Rule-Based Templates
+// Rule-based insights — tone variants
+"insights.ruleTopCategory.normal" = "%@ rekeningen voor %d%% van je spending this period.";
+"insights.ruleTopCategory.considerate" = "%@ rekeningen voor %d%% van je spending, though technically that could be expected based on je priorities.";
+"insights.ruleTopCategory.sarcastic" = "%@ is taking %d%% van je spending. Keep an eye on that.";
+"insights.ruleExpenseUp.normal" = "Je spending went up %@ compared naar de previous period.";
+"insights.ruleExpenseUp.considerate" = "Je spending went up %@ — worth considering if there was an unusual uitgave this period.";
+"insights.ruleExpenseUp.sarcastic" = "Spending up %@ vs last period. Worth checking what changed.";
+"insights.ruleExpenseDown.normal" = "Nice pace: je spending dropped %@ compared naar de previous period.";
+"insights.ruleExpenseDown.considerate" = "De data shows a %@ reduction in spending — a positive result.";
+"insights.ruleExpenseDown.sarcastic" = "Nice, spending down %@. Niet bad at all.";
+"insights.ruleBudgetRisk.normal" = "%@ is at %d%% van its limit.";
+"insights.ruleBudgetRisk.considerate" = "%@ is at %d%% van its limit, though there's still room if je adjust de pace.";
+"insights.ruleBudgetRisk.sarcastic" = "%@ is at %d%% van de limit. Chill, but heads up.";
+"insights.ruleOptionalHigh.normal" = "Optional spending rekeningen voor %d%% van je totaal.";
+"insights.ruleOptionalHigh.considerate" = "Optional spending is at %d%% van de totaal — niet necessarily an issue, but worth noting.";
+"insights.ruleOptionalHigh.sarcastic" = "Optional stuff is at %d%% van de totaal. Geen biggie, but there's de number.";
+// Tips
+"insights.tipTopCategory" = "Check if any %@ uitgaven were one-time van part van a pattern";
+"insights.tipExpenseUp" = "Compare with je lowest-spending maand naar see what changed";
+"insights.tipBudgetRisk" = "There zijn still dagen left — try naar hold back on %@ voor de rest";
+"insights.tipOptionalHigh" = "Review je optional uitgaven en see which ones je could postpone";
+"insights.ruleSharedRatio.normal" = "%d%% van je uitgaven this period zijn shared";
+"insights.ruleSharedRatio.considerate" = "%d%% van je spending was shared — sharing is caring";
+"insights.ruleSharedRatio.sarcastic" = "%d%% van je spending is shared. Who pays next?";
+"insights.ruleMostExpensiveGroup.normal" = "%@ is je most expensive groep with %d%% van shared spending";
+"insights.ruleMostExpensiveGroup.considerate" = "%@ rekeningen voor %d%% van je shared spending — je main groep";
+"insights.ruleMostExpensiveGroup.sarcastic" = "%@ takes %d%% van je shared spending. Dominant.";
+"insights.ruleHighDebt.normal" = "Je have %@ pending in groep debts";
+"insights.ruleHighDebt.considerate" = "There's %@ in pending debts — worth checking";
+"insights.ruleHighDebt.sarcastic" = "%@ in groep debts. Time naar collect.";
+"insights.ruleDominantSharedCategory.normal" = "%@ dominates je shared uitgaven (%d%%)";
+"insights.ruleDominantSharedCategory.considerate" = "Most van je shared uitgaven (%d%%) zijn in %@";
+"insights.ruleDominantSharedCategory.sarcastic" = "%@ is %d%% van je shared spending. Only eat together?";
+"insights.ruleSharedMoM.normal" = "Je shared spending went up %@ vs de previous period";
+"insights.ruleSharedMoM.considerate" = "Shared spending up %@ — check if there were extra uitgaven";
+"insights.ruleSharedMoM.sarcastic" = "Shared spending +%@. What were je celebrating?";
+"insights.tipHighDebt" = "Check je groep balances en send reminders";
+// Tone & Focus settings
+"insights.tone.normal" = "Normal";
+"insights.tone.considerate" = "Careful";
+"insights.tone.sarcastic" = "Direct";
+"insights.tone.normal.preview" = "Restaurants went up 32% vs last maand";
+"insights.tone.considerate.preview" = "Restaurants went up 32%, though that could be expected if there were events this maand";
+"insights.tone.sarcastic.preview" = "Restaurants up 32%, that went a bit over this maand";
+"insights.focus.balanced" = "Balanced";
+"insights.focus.saver" = "Saver";
+"insights.focus.cautious" = "Cautious";
+"insights.focus.balanced.desc" = "Overall view van je finances";
+"insights.focus.saver.desc" = "Prioritize saving opportunities";
+"insights.focus.cautious.desc" = "Early warnings en budgets at risk";
+"insights.toneLabel" = "Tone";
+"insights.focusLabel" = "Focus";
+"insights.aiTeaser" = "AI Insights";
+"insights.aiTeaserPlaceholder1" = "Analyzing je spending patterns...";
+"insights.aiTeaserPlaceholder2" = "Identifying saving opportunities...";
+"insights.generateAI" = "Generate smart observations";
+"insights.generateAIHint" = "Tap de button above naar generate AI-powered observations";
+
+// Secondary Currency Suggestion
+"account.secondaryCurrency.title" = "Secondary Valuta";
+"account.secondaryCurrency.message" = "Je added an rekening in %@. Want naar see de %@ → %@ exchange rate? Je can change it in Profiel > Valuta.";
+"account.secondaryCurrency.accept" = "Voeg toe";
+"account.secondaryCurrency.reject" = "Geen, thanks";
+
+// Notification Primer
+"notificationPrimer.title" = "Enable notifications?";
+"notificationPrimer.benefit1" = "Dagelijks financial reports";
+"notificationPrimer.benefit2" = "Geplande betaling reminders";
+"notificationPrimer.benefit3" = "Alerts when approaching budget limits";
+"notificationPrimer.accept" = "Enable notifications";
+"notificationPrimer.reject" = "Niet now";
+"notificationPrimer.hint" = "Je can enable them in Profiel > Notifications";
+
+// MARK: - What's New
+"whatsNew.title" = "What's new in Yala";
+"whatsNew.subtitle" = "Version %@";
+"whatsNew.continue" = "Continue";
+"whatsNew.v11.resumen.title" = "Overview";
+"whatsNew.v11.resumen.description" = "A quick look at je finances: averages, trends, en spending distribution.";
+"whatsNew.v11.budgetDetail.title" = "Budget breakdown";
+"whatsNew.v11.budgetDetail.description" = "Explore how each budget is distributed across subcategorieën.";
+"whatsNew.v11.exclude.title" = "Exclude mode in filters";
+"whatsNew.v11.exclude.description" = "Filter by excluding what je don't want naar see instead van selecting everything.";
+"whatsNew.v12.cashFlow.title" = "Cash flow";
+"whatsNew.v12.cashFlow.description" = "Project je future saldo with an interactive table en 7 estimation methods.";
+"whatsNew.v12.comparative.title" = "Comparative report";
+"whatsNew.v12.comparative.description" = "Compare inkomsten en uitgaven across periods with pivot tables en advanced filters.";
+"whatsNew.v12.themes.title" = "PRO themes";
+"whatsNew.v12.themes.description" = "Customize de app with new Minimalist en Translucent themes.";
+"whatsNew.v12.scheduled.title" = "Geplande betalingen";
+"whatsNew.v12.scheduled.description" = "Now with variable amounts en de option naar skip occurrences.";
+"whatsNew.v12.moreForYou.title" = "More voor je";
+"whatsNew.v12.moreForYou.description" = "Now with 4 gratis rekeningen en a 30-dag gratis trial.";
+
+// MARK: - App Update
+"appUpdate.title" = "New version beschikbaar";
+"appUpdate.message" = "Version %@ is ready naar download";
+"appUpdate.updateButton" = "Update";
+"appUpdate.dismissButton" = "Niet now";
+
+// MARK: - Split Calculator
+"action.calculate" = "Calculate";
+"split.title" = "Calculate my share";
+"split.totalAmount" = "Totaal bedrag";
+"split.yourPortion" = "Je portion";
+"split.useAmount" = "Use bedrag";
+"split.typePercentage" = "Percentage";
+"split.typeEqual" = "Equal split";
+"split.typeExact" = "Exact bedrag";
+"split.typeShares" = "By shares";
+"split.percentage" = "Je percentage";
+"split.people" = "People";
+"split.yourPart" = "Je part";
+"split.yourShares" = "Je shares";
+"split.totalShares" = "Totaal shares";
+"split.tipPercentage" = "Enter je percentage van de totaal. Great voor shared household uitgaven.";
+"split.tipEqual" = "Split de totaal equally among de number van people. Everyone pays de same.";
+"split.tipExact" = "Enter de exact bedrag that corresponds naar je.";
+"split.tipShares" = "Split by proportions. Voor example, if je pay 2 out van 5 shares van de totaal.";
+"split.descPercentage %@ %@" = "%@%% van %@";
+"split.descEqual %d" = "÷ %d people";
+"split.descShares %d %d" = "%d van %d shares";
+"split.descExact %@" = "%@ exact";
+"split.sharesYouPay" = "Je pay";
+"split.sharesOf" = "van";
+"split.sharesParts" = "shares";
+
+// MARK: - Groups
+"groups.title" = "Groepen";
+"groups.new" = "New groep";
+"groups.edit" = "Bewerk groep";
+"groups.empty.title" = "Geen groepen";
+"groups.empty.message" = "Create a groep naar split uitgaven with others";
+"groups.empty.action" = "Create groep";
+"groups.summary.owedToMe" = "Owed naar je";
+"groups.summary.iOwe" = "Je owe";
+"groups.summary.pendingSettlements" = "%d pending settlements";
+"groups.summary.allSettled" = "Alle settled up!";
+"groups.detail.records" = "Uitgaven";
+"groups.detail.balances" = "Balances";
+"groups.detail.stats" = "Statistics";
+"groups.detail.comingSoon" = "Coming soon";
+"groups.stats.totalSpent" = "Totaal uitgegeven";
+"groups.stats.myPortion" = "My share";
+"groups.stats.whoPaysMost" = "Who pays most";
+"groups.stats.categories" = "Categorieën";
+"groups.stats.monthlyTrend" = "Maandelijks trend";
+"groups.stats.noExpenses" = "Geen uitgaven yet";
+"groups.stats.uncategorized" = "Uncategorized";
+"groups.stats.thisMonth" = "This maand";
+"groups.stats.last3Months" = "3 months";
+"groups.stats.last6Months" = "6 months";
+"groups.stats.thisYear" = "This jaar";
+"groups.stats.allTime" = "Alle time";
+"groups.form.name" = "Name";
+"groups.form.namePlaceholder" = "Groep name";
+"groups.form.currency" = "Valuta";
+"groups.form.icon" = "Icon";
+"groups.form.simplifyDebts" = "Simplify debts";
+"groups.form.simplifyDebtsHint" = "Reduces de number van betalingen needed between leden";
+"groups.form.defaultAccount" = "Rekening voor boekingen";
+"groups.form.defaultAccountHint" = "Rekening where groep uitgaven zijn recorded";
+"groups.form.defaultAccountPickerHint" = "Choose an rekening per valuta voor je boekingen";
+"groups.form.autoCreate" = "Voeg toe naar my boekingen";
+"groups.form.autoCreateHint" = "Automatically creates a personal uitgave when registering a shared uitgave";
+"groups.form.none" = "Geen";
+"groups.form.showDebtsInSingleCurrency" = "Single valuta voor debts";
+"groups.form.showDebtsInSingleCurrencyHint" = "Convert all balances naar a preferred valuta";
+"groups.form.defaultSplitType" = "Default split";
+"groups.form.membersCanInvite" = "Leden can invite";
+"groups.form.membersCanInviteHint" = "Allow any lid naar add people naar de groep";
+"groups.settings.title" = "Groep instellingen";
+"groups.settings.members" = "Leden";
+"groups.settings.addMember" = "Voeg toe lid";
+"groups.settings.addMemberPrompt" = "Lid name";
+"groups.settings.invite" = "Invite by link";
+"groups.settings.regenerateLink" = "Regenerate link";
+"groups.settings.regenerateLinkConfirm" = "De current link will stop working. Generate a new one?";
+"groups.settings.leaveGroup" = "Leave groep";
+"groups.settings.leaveGroupConfirm" = "Are je sure? Je personal uitgaven will be kept.";
+"groups.settings.deleteGroup" = "Verwijder groep";
+"groups.settings.deleteGroupConfirm" = "This action is permanent en will verwijder all groep data.";
+"groups.settings.deleteGroupFinalConfirm" = "De groep en all its data will be permanently deleted voor all leden. This action cannot be undone.";
+"groups.settings.deleteGroupDisabledHint" = "To verwijder de groep, first verwijder all uitgaven van all other leden.";
+"groups.settings.archive" = "Archive groep";
+"groups.settings.unarchive" = "Unarchive groep";
+"groups.settings.archiveHint" = "Uitgaven en balances zijn preserved. Je can unarchive anytime.";
+"groups.settings.showArchived" = "Show archived";
+"groups.settings.showArchivedCount" = "Show archived (%d)";
+"groups.settings.hideArchived" = "Hide archived";
+"groups.settings.options" = "Options";
+"groups.settings.info" = "Info";
+"groups.settings.dangerZone" = "Danger zone";
+"groups.settings.mySettings" = "My instellingen";
+"groups.settings.mySettingsHint" = "These instellingen only apply naar je";
+"groups.member.admin" = "Admin";
+"groups.member.member" = "Lid";
+"groups.member.you" = "(Je)";
+"groups.member.changeRole" = "Change role";
+"groups.member.remove" = "Verwijder lid";
+"groups.member.removeConfirm" = "Verwijder this lid from de groep?";
+"groups.member.actions" = "Lid actions";
+"groups.member.people %d" = "%d people";
+"groups.balance.title" = "Balances";
+"groups.balance.owes" = "owes";
+"groups.balance.isOwed" = "is owed";
+"groups.balance.noDebts" = "Alle settled up!";
+"groups.balance.pendingDebts" = "Pending debts";
+"groups.balance.settlements" = "Settlements";
+"groups.balance.confirmed" = "Confirmed";
+"groups.balance.pending" = "Pending";
+"groups.expense.noExpenses" = "Geen uitgaven";
+"groups.expense.paidBy" = "Paid by";
+"groups.expense.newExpense" = "New uitgave";
+
+"export.column.splitTotal" = "Original totaal";
+"export.column.splitPortion" = "Portion";
+"export.column.splitTotal.description" = "Totaal bedrag before splitting";
+"export.column.splitPortion.description" = "Portion description";
+
+// MARK: - Pro Upgrade Banner
+
+"proBanner.title" = "Take je finances naar de next level";
+"proBanner.subtitle" = "Unlock voice input, AI insights, en unlimited rekeningen.";
+
+// MARK: - Milestone Upgrade
+
+"milestone.message10" = "Je're building a great habit. With Yala Pro je can dictate uitgaven by voice.";
+"milestone.message50" = "Impressive! With AI Insights je can discover hidden patterns in je spending.";
+"milestone.message100" = "Je're a finance pro. Unlock de full experience with Yala Pro.";
+"milestone.notNow" = "Niet now";
+"milestone.unlimitedAccounts" = "Unlimited rekeningen";
+
+// MARK: - Dev Seed
+
+// Accounts
+"devseed.accountMain" = "Main Rekening";
+"devseed.accountSavings" = "Savings USD";
+// Tags
+"devseed.tagWork" = "Work";
+"devseed.tagVacation" = "Vacation";
+"devseed.tagShared" = "Shared";
+"devseed.tagUrgent" = "Urgent";
+"devseed.tagFixed" = "Fixed";
+// Budgets
+"devseed.budgetEatingOut" = "Eating Out";
+"devseed.budgetMobility" = "Mobility";
+"devseed.budgetFriendsOutings" = "Friends Outings";
+"devseed.budgetPersonalCare" = "Personal Care";
+"devseed.budgetHomeEssentials" = "Home Essentials";
+"devseed.budgetPet" = "Maia 🐶";
+// Scheduled Payments
+"devseed.spGym" = "Gym";
+"devseed.spRent" = "Rent";
+"devseed.spPhone" = "Phone";
+"devseed.spInsurance" = "Insurance";
+"devseed.spInternet" = "Internet";
+// Notes — Fixed monthly
+"devseed.noteSalary" = "Maandelijks salary";
+"devseed.noteGymMonthly" = "Maandelijks gym";
+"devseed.noteRent" = "Rent";
+"devseed.notePhonePlan" = "Phone plan";
+"devseed.noteElectricity" = "Electricity";
+"devseed.noteWater" = "Water";
+"devseed.noteElectricityWater" = "Electricity & water";
+"devseed.noteInternetFiber" = "Fiber internet";
+"devseed.noteInsuranceMonthly" = "Maandelijks insurance";
+// Notes — Supermarket
+"devseed.noteSupermarket1" = "Supermarket";
+"devseed.noteSupermarket2" = "Grocery store";
+"devseed.noteSupermarket3" = "Wekelijks groceries";
+"devseed.noteSupermarket4" = "Pantry supplies";
+"devseed.noteSupermarket5" = "Fruits & vegetables";
+// Notes — Restaurant
+"devseed.noteLunch" = "Lunch";
+"devseed.noteDinner" = "Dinner";
+"devseed.noteBrunch" = "Brunch";
+"devseed.noteMealWithFriends" = "Meal with friends";
+// Notes — Delivery
+"devseed.noteDelivery1" = "Delivery app";
+"devseed.noteDelivery2" = "Home delivery";
+"devseed.noteDeliveryFood" = "Food delivery";
+// Notes — Transport
+"devseed.noteTaxi" = "Taxi";
+"devseed.noteBus" = "Bus";
+// Notes — Travel
+"devseed.noteHotel" = "Hotel";
+"devseed.noteFlight" = "Flight";
+"devseed.noteTour" = "Tour";
+"devseed.noteExcursion" = "Dag trip";
+// Notes — Fuel
+"devseed.noteGasStation" = "Gas station";
+"devseed.noteGasoline" = "Gasoline";
+"devseed.noteFuel" = "Fuel";
+// Notes — Maintenance
+"devseed.noteRepair" = "Repair";
+"devseed.noteCleaning" = "Cleaning";
+"devseed.notePlumber" = "Plumber";
+"devseed.noteElectrician" = "Electrician";
+// Notes — Freelance
+"devseed.noteFreelance" = "Freelance project";
+"devseed.noteConsulting" = "Consulting";
+"devseed.noteSideProject" = "Side project";
+// Notes — Transfers
+"devseed.noteTransferTo" = "Transfer naar %@";
+"devseed.noteTransferFrom" = "Transfer from %@";
+// Step labels
+"devseed.stepCategories" = "Setting up categorieën...";
+"devseed.stepAccounts" = "Creating rekeningen...";
+"devseed.stepTags" = "Creating labels...";
+"devseed.stepExchangeRates" = "Generating exchange rates...";
+"devseed.stepBudgets" = "Creating budgets...";
+"devseed.stepScheduledPayments" = "Creating geplande betalingen...";
+"devseed.stepSavingBase" = "Saving base entities...";
+"devseed.stepTransactions" = "Generating transacties...";
+"devseed.stepInitialBalances" = "Setting initial balances...";
+"devseed.stepSaving" = "Saving...";
+"devseed.stepDone" = "Klaar!";
+"devseed.stepDeleting" = "Deleting data...";
+"devseed.stepReloading" = "Reloading data...";
+
+// MARK: - Setup Checklist
+
+"setup.title" = "Getting started";
+"setup.subtitle" = "Set up Yala step by step";
+"setup.progress" = "%d van %d completed";
+"setup.collapse" = "Minimize";
+"setup.continue" = "Continue";
+"setup.complete.title" = "Je're all set! 🎉";
+"setup.complete.subtitle" = "Je completed all steps. Yala is ready voor je.";
+"setup.step.completed" = "Completed";
+"setup.step.tapToStart" = "Tap naar start";
+"setup.step.locked" = "Locked step. Complete earlier steps first.";
+"setup.nextStep" = "Volgende step: %@";
+
+"setup.step1.title" = "Explore everything je can customize";
+"setup.step2.title" = "Log je first uitgave";
+"setup.step3.title" = "Set je first budget";
+"setup.step4.title" = "Voeg toe a recurring betaling";
+"setup.step5.title" = "Discover what else Yala can do";
+
+"setup.practice.title" = "Klaar! Je created je first %@";
+"setup.practice.message" = "If it was just practice, je can verwijder it without any problem.";
+"setup.practice.keep" = "Keep it";
+"setup.practice.delete" = "It was practice";
+"setup.practice.type.expense" = "uitgave";
+"setup.practice.type.budget" = "budget";
+"setup.practice.type.scheduled" = "geplande betaling";
+"setup.practice.type.voiceTrial" = "voice uitgave";
+"setup.practice.type.imageTrial" = "photo uitgave";
+"setup.step6.title" = "Try voice recording";
+"setup.step7.title" = "Try photo recording";
+"setup.skipStep" = "Niet now";
+"setup.imageTrial.pickExample" = "Pick an example image";
+"setup.imageTrial.orPickOwn" = "van pick je own";
+"setup.imageTrial.exampleReceipt" = "Receipt";
+"setup.imageTrial.exampleBank" = "Bank alert";
+"setup.imageTrial.exampleList" = "Transacties";
+"setup.imageTrial.useThisImage" = "Use this image";
+
+"setup.personalize.navTitle" = "Personalize je Yala";
+"setup.personalize.title" = "Make it yours";
+"setup.personalize.subtitle" = "Voeg toe je personal touch. Change de theme, icon, van how je widgets look.";
+"setup.personalize.personalizeAll" = "Personalize everything";
+"setup.personalize.personalizeAllSubtitle" = "Name, photo, valuta format, en more";
+"setup.personalize.appIcon" = "Change je icon";
+"setup.personalize.appIconSubtitle" = "Pick from several app designs";
+"setup.personalize.theme" = "Change je theme";
+"setup.personalize.themeSubtitle" = "Classic, minimalist, van translucent";
+
+"setup.discover.navTitle" = "Discover Yala";
+"setup.discover.title" = "Yala can do much more";
+"setup.discover.subtitleFree" = "Here's what je can do — en what je could unlock.";
+"setup.discover.subtitlePro" = "Make de most van je Pro plan.";
+"setup.discover.youCanAlready" = "Je can already";
+"setup.discover.proFeatures" = "Take advantage van Pro";
+"setup.discover.withPro" = "With Yala Pro";
+"setup.discover.tryFree" = "Try gratis voor 30 dagen";
+"setup.discover.done" = "Got it!";
+"setup.discover.feature.manualEntry" = "Log uitgaven en inkomsten";
+"setup.discover.feature.statistics" = "See je statistics en trends";
+"setup.discover.feature.budgets" = "Create budgets by categorie";
+"setup.discover.feature.scheduledPayments" = "Schedule recurring betalingen";
+"setup.discover.feature.notifications" = "Get alerts en reminders";
+"setup.discover.feature.aiInsights" = "Smart AI analysis";
+"setup.discover.feature.voice" = "Log uitgaven with je voice";
+"setup.discover.feature.imageCapture" = "Scan receipts with je camera";
+"setup.discover.feature.unlimitedBudgets" = "Unlimited budgets en rekeningen";
+
+// MARK: - Contextual Guides
+
+"contextualGuide.dismiss" = "Got it";
+"guide.panel.title" = "This is je overview";
+"guide.panel.message" = "See at a glance how much je've uitgegeven en how much je have left. Tap + naar add an uitgave.";
+"guide.trends.title" = "How zijn je uitgaven doing?";
+"guide.trends.message" = "This chart shows if je're spending more van less than before. If de line goes up, je're spending more.";
+"guide.categories.title" = "Where does je money go?";
+"guide.categories.message" = "See how much je spend on each thing: food, transport, etc. De biggest slice is where je spend de most.";
+"guide.records.title" = "Alle je uitgaven";
+"guide.records.message" = "Here zijn all de uitgaven je've logged, sorted by datum. Tap one naar see details.";
+"guide.budgets.title" = "Set spending limits";
+"guide.budgets.message" = "A budget is de maximum je want naar spend on something. Example: Don't spend more than $500 on food this maand.";
+"guide.scheduled.title" = "Recurring uitgaven";
+"guide.scheduled.message" = "Do je pay Netflix every maand? Rent? Voeg toe them here en Yala will remind je before they're due.";
+"guide.accounts.title" = "Je money, organized";
+"guide.accounts.message" = "Each rekening represents where je keep je money: cash, bank, card. Je can create several naar track each one.";
+"guide.transaction.title" = "Log an uitgave van inkomsten";
+"guide.transaction.message" = "Just enter de bedrag en a categorie. Everything else is optional. De more je log, de better je'll understand je spending.";
+"guide.comparative.title" = "Compare periods";
+"guide.comparative.message" = "See if je uitgegeven more van less this maand compared naar last. Red = uitgegeven more, green = uitgegeven less.";
+"guide.cashflow.title" = "Will je make it?";
+"guide.cashflow.message" = "Yala calculates if je money will last until de end van de maand based on je inkomsten en uitgaven.";
+"guide.insights.title" = "Yala analyzes voor je";
+"guide.insights.message" = "Based on je spending, Yala tells je useful things: je most expensive dag, if je're spending more than usual, etc.";
+"guide.inbox.title" = "Pending voor review";
+"guide.inbox.message" = "When je have betalingen naar confirm van automatic uitgaven, they appear here voor je naar review.";
+"guide.budgetEditor.title" = "What's a budget?";
+"guide.budgetEditor.message" = "It's a limit je set naar control how much je spend on something. Give it a name, an bedrag, en choose which categorieën it applies naar. Je can bewerk van verwijder it anytime.";
+"guide.scheduledEditor.title" = "What's a geplande betaling?";
+"guide.scheduledEditor.message" = "It's an uitgave that repeats: rent, Netflix, internet... Yala reminds je before each betaling. Je can bewerk van verwijder it anytime.";
+"guide.budgetFilter.title" = "What does this budget cover?";
+"guide.budgetFilter.allExpenses" = "Alle je uitgaven";
+"guide.budgetFilter.prefix" = "Uitgaven";
+"guide.budgetFilter.account" = "from rekening %@";
+"guide.budgetFilter.accounts" = "from rekeningen %@";
+"guide.budgetFilter.subcategory" = "in subcategorie %@";
+"guide.budgetFilter.subcategories" = "in subcategorieën %@";
+"guide.budgetFilter.tag" = "tagged %@";
+"guide.budgetFilter.tags" = "tagged %@";
+"guide.budgetFilter.needs" = "van %@ nature";
+"guide.budgetFilter.andMore" = "%lld more";
+"guide.budgetFilter.conjunction" = "en";
+"guide.accountForm.title" = "About this rekening";
+"guide.accountForm.messageGeneral" = "Je main rekening where je track all uitgaven. It can be je card, wallet, van whatever je prefer.";
+"guide.accountForm.messageCash" = "De money je carry as cash. It helps je know how much je have left without checking je wallet.";
+"guide.accountForm.messageChecking" = "Je everyday bank rekening. De saldo should match what je see in je banking app.";
+"guide.accountForm.messageSavings" = "Money je've set aside. Separating it helps je avoid spending it by accident.";
+"guide.accountForm.messageCreditCard" = "What je owe on je card. Yala subtracts this bedrag from je totaal net worth.";
+"guide.categoriesSettings.title" = "Organize je categorieën";
+"guide.categoriesSettings.message" = "Categorieën groep je uitgaven: food, transport, entertainment... Je can create subcategorieën voor more detail.";
+"guide.tagsSettings.title" = "Labels voor everything";
+"guide.tagsSettings.message" = "Labels zijn cross-cutting: je can mark any uitgave as 'fixed', 'shared', van whatever je need. An uitgave can have multiple labels.";
+"guide.favoritesManage.title" = "Je most frequent betalingen";
+"guide.favoritesManage.message" = "Opslaan je frequent uitgaven here. When recording, just tap de favorite en everything fills in automatically.";
+
+// MARK: - Chat Assistant
+"chat.title" = "Ask Yala";
+"chat.inputPlaceholder" = "Type je question...";
+"chat.send" = "Send";
+"chat.emptySubtitle" = "Explore je finances with questions";
+"chat.errorTimeout" = "Response took too long. Try again.";
+"chat.errorOffline" = "Je need an internet connection naar use de assistant.";
+"chat.errorGeneric" = "Something went wrong. Try again.";
+"chat.errorNoData" = "Geen data found voor that query. Can je be more specific?";
+"chat.dailyLimitReached" = "Je've used je questions voor vandaag. Come back tomorrow!";
+"chat.questionsRemaining" = "Je have %d questions left vandaag";
+"chat.loading" = "Thinking...";
+"chat.questionTooLong" = "Je question is too long. Try naar be more concise.";
+"chat.contextHint" = "I can remember je last question voor follow-ups";
+
+/* Yala AI Redesign */
+"chat.assistantName" = "Yala AI";
+"chat.greeting" = "Hi, I'm Yala AI. Tell me, what do je want naar know about je finances?";
+"chat.dailyResetSubtitle" = "This conversation clears when de dag changes.";
+"chat.disclaimer" = "Yala AI can make mistakes.";
+"chat.daySeparatorToday" = "TODAY";
+"chat.topicsButton" = "Topics";
+"chat.errorTranscription" = "I couldn't transcribe de audio. Try again.";
+"chat.errorMicPermission" = "I need permission naar use de microphone.";
+"chat.topics.title" = "Conversation topics";
+"chat.resetContext" = "Reset conversation context";
+"chat.listening" = "Listening…";
+"chat.transcribing" = "Transcribing…";
+"chat.preparingAI" = "Preparing de AI…";
+"chat.unavailable" = "Yala AI isn't beschikbaar right now. Try again in a few minutes.";
+"chat.retry" = "Retry";
+"chat.noVoiceDetected" = "I didn't detect any audio. Try again.";
+"chat.contextMemory" = "Yala AI remembers %d messages";
+
+// MARK: - Chat Draft (Yala AI Register)
+"chat.draft.chipExpense" = "Uitgave";
+"chat.draft.chipIncome" = "Inkomsten";
+"chat.draft.amountPlaceholder" = "Bedrag";
+"chat.draft.accountLabel" = "Rekening";
+"chat.draft.subcategoryLabel" = "Subcategorie";
+"chat.draft.dateLabel" = "Datum";
+"chat.draft.noteLabel" = "Note";
+"chat.draft.tagsLabel" = "Labels";
+"chat.draft.tagsNone" = "Geen";
+"chat.draft.savedBadge" = "Saved";
+"chat.draft.discardedBadge" = "Discarded";
+"chat.draft.saveFailedGeneric" = "Couldn't opslaan. Please try again.";
+"chat.draft.saveFailedAccount" = "Couldn't opslaan: de rekening geen longer exists. Bewerk de entry.";
+"chat.draft.saveFailedSubcategory" = "Couldn't opslaan: de subcategorie geen longer exists. Bewerk de entry.";
+"chat.draft.saveFailedAmount" = "Couldn't opslaan: de bedrag isn't valid.";
+"chat.draft.viewRecordsButton" = "View saved entries";
+"chat.draft.discardButton" = "Discard";
+"chat.draft.selectAccount" = "Selecteer rekening";
+"chat.draft.selectSubcategory" = "Selecteer subcategorie";
+"chat.draft.saveButton" = "Opslaan";
+"chat.draft.editButton" = "Bewerk";
+"chat.draft.failedSavingLine" = "Couldn't opslaan.";
+"chat.draft.retryButton" = "Retry";
+"chat.draft.noAccountsBlocking" = "Create an rekening from je profile before registering.";
+"chat.draft.ambiguousCanned" = "Do je want naar register an uitgave van zijn je asking about je spending?";
+"chat.draft.ambiguousChipRegister" = "Register";
+"chat.draft.ambiguousChipAsk" = "Just ask";
+"chat.draft.confirmRegisterSingular" = "Confirm de entry:";
+"chat.draft.confirmRegisterPlural" = "Confirm de entries:";
+"chat.draft.overflowFormat" = "I detected %d entries. Saving de first %d; send de rest in another message.";
+
+// MARK: - Chat Assistant Consent
+"aiConsent.chatTitle" = "Financial assistant";
+"aiConsent.chatMessage" = "This feature sends data specific naar je query naar OpenAI naar answer je questions: merchant names, amounts en dates van relevant transacties, en related budget status.\n\nYour full history, personal notes, en rekening names zijn never shared. OpenAI does niet use this data naar train its models.";
+"aiConsent.inlineHintChat" = "Je query data is processed by OpenAI. It is niet stored permanently.";
+"aiConsent.inlineHintMultiple" = "Multiple AI features use OpenAI naar process je data. It is niet stored permanently.";
+
+// MARK: - Chat Assistant Feature Gate & Settings
+"featureGate.chatAssistant" = "Chat assistant";
+"settings.chatAssistant" = "Ask Yala";
+"subscription.feature.aiAssistant" = "AI financial assistant";
+
+// GC-05: Expense Form
+"groups.expense.paidByTitle" = "Paid by";
+"groups.expense.divideBetween" = "Divide between";
+"groups.expense.selectAll" = "Selecteer all";
+"groups.expense.deselectAll" = "Geen";
+"groups.expense.membersSelected %d %d" = "%d van %d selected";
+"groups.expense.title" = "New uitgave";
+"groups.expense.editTitle" = "Bewerk uitgave";
+"groups.expense.description" = "Description";
+"groups.expense.descriptionPlaceholder" = "What was it voor?";
+"groups.expense.note" = "Note";
+"groups.expense.notePlaceholder" = "Voeg toe a note...";
+"groups.expense.category" = "Categorie";
+"groups.expense.currency" = "Valuta";
+"groups.expense.date" = "Datum";
+"groups.expense.splitType" = "Split type";
+"groups.expense.remaining" = "Resterend";
+"groups.expense.remainingAmount" = "Resterend: %@";
+"groups.expense.balanced" = "Balanced";
+"groups.expense.eachPays" = "Each pays";
+
+// GC-05: Settlements
+"groups.settlement.title" = "Boeking betaling";
+"groups.settlement.payTo" = "pays naar";
+"groups.settlement.registerPayment" = "Boeking betaling";
+"groups.settlement.confirm" = "Confirm";
+"groups.settlement.reject" = "Reject";
+"groups.settlement.settle" = "Settle";
+"groups.settlement.settleHint" = "Opens de form naar register this betaling";
+"groups.settlement.confirmQuestion" = "Mark this betaling as confirmed?";
+"groups.settlement.rejectQuestion" = "Reject this betaling?";
+
+// Groups Notifications
+"groups.notifications.prompt.title" = "Groep notifications";
+"groups.notifications.prompt.message" = "Get alerts when someone adds an uitgave van pays je";
+"groups.notifications.prompt.enable" = "Enable";
+
+// Groups — Invite Onboarding (GC-08)
+"groups.invite.welcome" = "Je've been invited naar a groep";
+"groups.invite.welcomeWithGroup" = "Je've been invited naar %@";
+"groups.invite.subtitle" = "Yala helps je split uitgaven en know who owes what";
+"groups.invite.namePlaceholder" = "Je name";
+"groups.invite.joinButton" = "Join groep";
+"groups.invite.ready" = "Alle set!";
+"groups.invite.goToGroup" = "Go naar groep";
+
+// Groups — Reconnect (GC-08)
+"groups.reconnect.title" = "Join groep";
+"groups.reconnect.subtitle" = "Je've been invited naar a shared groep";
+"groups.reconnect.subtitleWithGroup" = "Je've been invited naar %@";
+
+// Groups — Activate Full Mode (GC-08)
+"groups.activate.title" = "Activate full Yala";
+"groups.activate.subtitle" = "Track uitgaven, budgets, en more";
+"groups.activate.accountStep" = "What's je main rekening?";
+"groups.activate.accountName" = "Rekening name";
+"groups.activate.notificationStep" = "Want us naar notify je?";
+"groups.activate.notificationMessage" = "Get spending reminders en budget alerts";
+"groups.activate.enableNotifications" = "Enable notifications";
+"groups.activate.skipNotifications" = "Niet now";
+"groups.activate.done" = "Get started";
+"groups.activate.importYes" = "Ja, add them";
+"groups.activate.importNo" = "Geen, thanks";
+
+// Groups — Nudges (GC-09)
+"groups.nudge.invitedSpendingInsight.title" = "Je shared uitgaven zijn growing";
+"groups.nudge.invitedSpendingInsight.message" = "Je've uitgegeven %@ in shared uitgaven. Want naar see where else je money goes?";
+"groups.nudge.invitedSpendingInsight.cta" = "Explore Yala";
+"groups.nudge.invitedPostSettlement.title" = "Betaling registered";
+"groups.nudge.invitedPostSettlement.message" = "Je just settled a debt. Want naar track where de money came from?";
+"groups.nudge.invitedPostSettlement.cta" = "Activate full Yala";
+"groups.nudge.invitedMonthTwo.title" = "Je're only seeing part van it";
+"groups.nudge.invitedMonthTwo.message" = "Je groepen represent %d%% van je spending. De rest isn't tracked.";
+"groups.nudge.invitedMonthTwo.cta" = "See everything";
+"groups.nudge.invitedSocialProof.title" = "Je friends already use Yala";
+"groups.nudge.invitedSocialProof.message" = "%d people in je groep already use full Yala.";
+"groups.nudge.invitedSocialProof.cta" = "Activate full Yala";
+"groups.nudge.dormantGroupsAsMain.title" = "Je groepen zijn waiting";
+"groups.nudge.dormantGroupsAsMain.message" = "Je have pending shared uitgaven. Check how things zijn going.";
+"groups.nudge.dormantGroupsAsMain.cta" = "View groepen";
+"groups.nudge.dormantNewExpenses.title" = "New activity";
+"groups.nudge.dormantNewExpenses.cta" = "View uitgaven";
+"groups.nudge.dormantSpendingGap.title" = "Untracked spending";
+"groups.nudge.dormantSpendingGap.message" = "Je have several shared uitgaven but je other spending isn't tracked.";
+"groups.nudge.dormantSpendingGap.cta" = "Log an uitgave";
+"groups.nudge.dormantQuickEntry.title" = "Quick entry";
+"groups.nudge.dormantQuickEntry.message" = "Log a personal uitgave in 5 seconds.";
+"groups.nudge.dormantQuickEntry.cta" = "Log";
+"groups.nudge.sporadicImbalance.title" = "Imbalance detected";
+"groups.nudge.sporadicImbalance.message" = "Je logged %d shared uitgaven but only %d personal ones this week.";
+"groups.nudge.sporadicImbalance.cta" = "Got it";
+"groups.nudge.sporadicBudgetSuggestion.title" = "Budget voor shared uitgaven?";
+"groups.nudge.sporadicBudgetSuggestion.message" = "Je have lots van shared uitgaven this maand. A budget could help je stay on track.";
+"groups.nudge.sporadicBudgetSuggestion.cta" = "Got it";
+"groups.nudge.sporadicTrendAlert.title" = "Upward trend";
+"groups.nudge.sporadicTrendAlert.message" = "Je shared uitgaven zijn up %d%% from last maand.";
+"groups.nudge.sporadicTrendAlert.cta" = "Got it";
+
+"statistics.sankey.title" = "Money flow";
+"statistics.sankey.expenses" = "Uitgaven";
+"statistics.sankey.available" = "Beschikbaar";
+"statistics.sankey.others" = "Others";
+"statistics.sankey.planned" = "Planned";
+"statistics.sankey.plannedRecurring" = "Recurring";
+"statistics.sankey.plannedSubscription" = "Subscriptions";
+"statistics.sankey.toggleAmount" = "Show amounts";
+"statistics.sankey.togglePercentage" = "Show percentages";
+
+// MARK: - Shortcut Snippet (F5/F6/F7)
+"shortcut.snippet.account" = "Rekening";
+"shortcut.snippet.category" = "Categorie";
+"shortcut.snippet.date" = "Datum";
+"shortcut.snippet.draftBadge" = "Draft — Review in je inbox";
+"shortcut.siriNatural.error.parsingFailedHelp" = "I didn't understand. Try: 'Note 50 dollars on coffee' van 'Boeking 25 dollars on lunch'";
+"shortcut.siriNatural.success.partial" = "Recorded %1$lld van %2$lld (some I couldn't understand). Check je inbox.";

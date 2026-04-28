@@ -25,6 +25,7 @@ enum SupportedLocale: String, CaseIterable, Identifiable, Hashable {
     case de = "de"
     case fr = "fr"
     case it = "it"
+    case nl = "nl"        // Países Bajos
 
     var id: String { rawValue }
     var code: String { rawValue }
@@ -60,6 +61,7 @@ enum SupportedLocale: String, CaseIterable, Identifiable, Hashable {
         case .de: return "Deutsch"
         case .fr: return "Français"
         case .it: return "Italiano"
+        case .nl: return "Nederlands"
         }
     }
 
@@ -77,6 +79,7 @@ enum SupportedLocale: String, CaseIterable, Identifiable, Hashable {
         case .de: return "🇩🇪"
         case .fr: return "🇫🇷"
         case .it: return "🇮🇹"
+        case .nl: return "🇳🇱"
         }
     }
 
