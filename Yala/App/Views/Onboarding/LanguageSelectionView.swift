@@ -42,7 +42,7 @@ struct LanguageSelectionView: View {
 
             // Language list
             VStack(spacing: DS.Spacing.sm) {
-                ForEach(LanguageManager.supportedLanguages, id: \.code) { lang in
+                ForEach(LanguageManager.supportedLanguages) { lang in
                     languageRow(code: lang.code, name: lang.nativeName, flag: lang.flag)
                 }
             }

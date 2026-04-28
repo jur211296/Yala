@@ -89,6 +89,7 @@ struct PersonalizationSettingsView: View {
         return LanguageManager.supportedLanguages.first { $0.code == code }?.nativeName ?? code
     }
 
+
     var body: some View {
         ZStack {
             PanelBackgroundView()
@@ -1138,7 +1139,7 @@ private struct LanguagePickerSheet: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.none) {
-                        ForEach(LanguageManager.supportedLanguages, id: \.code) { lang in
+                        ForEach(LanguageManager.supportedLanguages) { lang in
                             languageRow(lang: lang)
                         }
                     }
@@ -1161,7 +1162,7 @@ private struct LanguagePickerSheet: View {
         }
     }
 
-    private func languageRow(lang: (code: String, nativeName: String, flag: String)) -> some View {
+    private func languageRow(lang: SupportedLocale) -> some View {
         let isSelected = selectedLanguage == lang.code
 
         return VStack(spacing: DS.Spacing.none) {

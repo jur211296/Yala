@@ -10,23 +10,18 @@ import Foundation
 // MARK: - Language Manager
 
 /// Manages in-app language override for users whose device language is not supported.
+/// Consume `SupportedLocale` como single source of truth — añadir un idioma se hace
+/// agregando case en `SupportedLocale.swift`, no aquí.
 enum LanguageManager {
     private static let overrideKey = "appLanguageOverride"
 
-    /// Supported languages with native names and flags
-    static let supportedLanguages: [(code: String, nativeName: String, flag: String)] = [
-        ("es", "Español", "🇪🇸"),
-        ("en", "English", "🇺🇸"),
-        ("de", "Deutsch", "🇩🇪"),
-        ("fr", "Français", "🇫🇷"),
-        ("it", "Italiano", "🇮🇹"),
-        ("pt", "Português", "🇧🇷")
-    ]
+    /// Supported locales as the typed enum. Use `.code/.nativeName/.flag` properties.
+    static var supportedLanguages: [SupportedLocale] { SupportedLocale.selectableCases }
 
-    /// Whether the device's preferred language is one of our supported languages
+    /// Whether the device's preferred language is one of our supported locales.
     static var deviceLanguageIsSupported: Bool {
-        let deviceLang = String(Locale.preferredLanguages.first?.prefix(2) ?? "en")
-        return supportedLanguages.contains { $0.code == deviceLang }
+        let preferred = Locale.preferredLanguages.first ?? "en"
+        return SupportedLocale.from(preferred) != nil
     }
 
     /// User's language override (nil = use system language)
@@ -38,17 +33,10 @@ enum LanguageManager {
     /// Best guess for pre-selecting a language when the device language is not supported.
     /// Falls back to English if no match found.
     static var closestSupportedLanguage: String {
-        let deviceLang = String(Locale.preferredLanguages.first?.prefix(2) ?? "en")
-        // Check if the device language base matches any supported language
-        if supportedLanguages.contains(where: { $0.code == deviceLang }) {
-            return deviceLang
-        }
-        // Check region-based hints (e.g. pt-BR user → Portuguese, Latin American → Spanish)
-        let region = Locale.current.region?.identifier ?? ""
-        let latinAmericanCountries = ["MX", "AR", "CO", "CL", "PE", "VE", "EC", "GT", "CU", "BO", "DO", "HN", "PY", "SV", "NI", "CR", "PA", "UY"]
-        if latinAmericanCountries.contains(region) { return "es" }
-        if region == "BR" { return "pt" }
-        return "en"
+        SupportedLocale.bestMatch(
+            forPreferredLanguages: Locale.preferredLanguages,
+            region: Locale.current.region?.identifier
+        ).code
     }
 
     /// Bundle for loading localized strings (override or main)
@@ -5039,26 +5027,19 @@ enum L10n {
 // MARK: - App Locale
 
 /// Centralized locale configuration for date formatters and charts.
-/// This makes it easy to change the app's locale in one place.
+/// Consume `SupportedLocale` como single source of truth (no hardcoded list).
 enum AppLocale {
-    /// Supported language codes (must match available .lproj localizations)
-    private static let supportedLanguages = ["es", "en", "de", "fr", "it", "pt"]
-
     /// The app's current locale for date formatting.
     /// Respects language override if set, otherwise uses system locale.
     static var current: Locale {
-        // User override takes priority
         if let override = LanguageManager.overrideLanguage {
             return Locale(identifier: override)
         }
-        // System locale
         let preferredLanguage = Locale.preferredLanguages.first ?? "en"
-        let languageCode = String(preferredLanguage.prefix(2))
-
-        if supportedLanguages.contains(languageCode) {
+        if SupportedLocale.from(preferredLanguage) != nil {
             return Locale(identifier: preferredLanguage)
         }
-        return Locale(identifier: "en_US")  // Default fallback
+        return Locale(identifier: "en_US")
     }
 
     /// Short identifier for SwiftUI .locale() modifiers
