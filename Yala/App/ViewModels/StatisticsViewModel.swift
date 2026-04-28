@@ -409,7 +409,7 @@ final class StatisticsViewModel: Filterable {
         let newData = SankeyFlowCalculator.compute(
             transactions: filtered,
             interval: interval,
-            maxPerColumn: .max,
+            maxPerColumn: 15,
             plannedPending: plannedPending,
             plannedSplit: .byKind,
             propagatePlannedToCategories: true

@@ -27,6 +27,9 @@ struct SankeyChartView: View {
     // MARK: - Layout constants
 
     private let columnWidth: CGFloat = 140
+    /// Subcategory column gets extra width: names like "Belleza y estética" or
+    /// "Servicios del hogar" need the room to avoid mid-word truncation.
+    private let subcategoryColumnWidth: CGFloat = 220
     private let columnGap: CGFloat = 56
     private let nodeWidth: CGFloat = 8
     private let nodeGap: CGFloat = 6
@@ -35,9 +38,22 @@ struct SankeyChartView: View {
     private let rowHeightEstimate: CGFloat = 24
     private let dimmedOpacity: Double = 0.25
 
+    private func width(for column: SankeyColumn) -> CGFloat {
+        column == .expenseSubcategory ? subcategoryColumnWidth : columnWidth
+    }
+
+    /// Cumulative origin X of the given column — sums prior column widths and gaps.
+    private func originX(for column: SankeyColumn) -> CGFloat {
+        var x: CGFloat = 0
+        for c in SankeyColumn.allCases where c.rawValue < column.rawValue {
+            x += width(for: c) + columnGap
+        }
+        return x
+    }
+
     private var totalWidth: CGFloat {
-        CGFloat(SankeyColumn.allCases.count) * columnWidth
-            + CGFloat(SankeyColumn.allCases.count - 1) * columnGap
+        let sumWidths = SankeyColumn.allCases.reduce(0.0) { $0 + width(for: $1) }
+        return sumWidths + CGFloat(SankeyColumn.allCases.count - 1) * columnGap
     }
 
     /// Adaptive height based on the tallest column's node count.
@@ -108,7 +124,7 @@ struct SankeyChartView: View {
                     if let layout {
                         ForEach(layout.nodes, id: \.node.id) { placed in
                             nodeLabel(for: placed)
-                                .frame(width: columnWidth - nodeWidth - DS.Spacing.sm)
+                                .frame(width: width(for: placed.node.column) - nodeWidth - DS.Spacing.sm)
                                 .position(x: placed.labelOrigin.x, y: placed.labelOrigin.y)
                         }
                     }
@@ -308,7 +324,8 @@ struct SankeyChartView: View {
         var dimByID: [String: Double] = [:]
 
         for (column, nodes) in columnBuckets {
-            let colX = CGFloat(column.rawValue) * (columnWidth + columnGap)
+            let colX = originX(for: column)
+            let colW = width(for: column)
             // Top-align columns: each column starts at verticalPadding and grows
             // downward. Avoids the empty space a centered layout creates when one
             // column has many thin nodes (tallest) and another has few fat ones.
@@ -318,7 +335,7 @@ struct SankeyChartView: View {
                 let height = max(scale * node.amount, minNodeHeight)
                 let rect = CGRect(x: colX, y: y, width: nodeWidth, height: height)
                 let labelOrigin = CGPoint(
-                    x: colX + nodeWidth + DS.Spacing.sm + (columnWidth - nodeWidth - DS.Spacing.sm) / 2,
+                    x: colX + nodeWidth + DS.Spacing.sm + (colW - nodeWidth - DS.Spacing.sm) / 2,
                     y: y + height / 2
                 )
                 let dim = dimOpacity(for: node)
