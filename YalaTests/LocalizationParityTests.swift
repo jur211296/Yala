@@ -143,6 +143,30 @@ struct StringsdictParityTests {
         }
     }
 
+    @Test func pluralRule_pl_hasOneFewManyOther() {
+        // Polonia es el único locale con 4 reglas plurales (one/few/many/other).
+        // Verifica que el .stringsdict de pl declare las 4 formas en al menos
+        // una de las keys plurales (e.g. records.deleteConfirmTitle).
+        guard let path = Bundle.main.path(forResource: "pl", ofType: "lproj"),
+              let bundle = Bundle(path: path),
+              let url = bundle.url(forResource: "Localizable", withExtension: "stringsdict"),
+              let dict = NSDictionary(contentsOf: url) as? [String: Any] else {
+            Issue.record("pl.lproj/Localizable.stringsdict not found")
+            return
+        }
+
+        guard let entry = dict["records.deleteConfirmTitle"] as? [String: Any],
+              let countDict = entry["count"] as? [String: Any] else {
+            Issue.record("records.deleteConfirmTitle missing in pl stringsdict")
+            return
+        }
+
+        #expect(countDict["one"] != nil, "pl plural rule 'one' missing")
+        #expect(countDict["few"] != nil, "pl plural rule 'few' missing (2-4)")
+        #expect(countDict["many"] != nil, "pl plural rule 'many' missing (5+, special endings)")
+        #expect(countDict["other"] != nil, "pl plural rule 'other' missing (decimals)")
+    }
+
     @Test func variants_doNotCreateOwnStringsdict() {
         // Trade-off documentado en M4: stringsdict es all-or-nothing por archivo.
         // Variantes regionales NO crean stringsdict propio salvo que las reglas

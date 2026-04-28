@@ -398,6 +398,7 @@
 				"es-AR",
 				"en-GB",
 				nl,
+				pl,
 			);
 			mainGroup = 96CFFF8A2EC3CF06002AC31C;
 			minimizedProjectReferenceProxies = 1;

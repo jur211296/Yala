@@ -26,6 +26,7 @@ enum SupportedLocale: String, CaseIterable, Identifiable, Hashable {
     case fr = "fr"
     case it = "it"
     case nl = "nl"        // Países Bajos
+    case pl = "pl"        // Polonia (4 reglas plurales: one/few/many/other)
 
     var id: String { rawValue }
     var code: String { rawValue }
@@ -62,6 +63,7 @@ enum SupportedLocale: String, CaseIterable, Identifiable, Hashable {
         case .fr: return "Français"
         case .it: return "Italiano"
         case .nl: return "Nederlands"
+        case .pl: return "Polski"
         }
     }
 
@@ -80,6 +82,7 @@ enum SupportedLocale: String, CaseIterable, Identifiable, Hashable {
         case .fr: return "🇫🇷"
         case .it: return "🇮🇹"
         case .nl: return "🇳🇱"
+        case .pl: return "🇵🇱"
         }
     }
 
