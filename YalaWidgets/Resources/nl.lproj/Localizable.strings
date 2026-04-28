@@ -1,84 +1,84 @@
 /*
-  Localizable.strings (English)
+  Localizable.strings (Dutch)
   YalaWidgets
 
-  English localization for widget texts.
+  Dutch localization for widget texts.
 */
 
 // MARK: - Gallery (widget gallery names and descriptions)
-"widget.gallery.scheduledPayments" = "Upcoming Betalingen";
-"widget.gallery.scheduledPayments.desc" = "Je upcoming payments and subscriptions";
-"widget.gallery.quickManual" = "Nieuw Record";
-"widget.gallery.quickManual.desc" = "Record an uitgave or income manually";
-"widget.gallery.quickVoice" = "Voice Record";
-"widget.gallery.quickVoice.desc" = "Dictate je uitgave or income";
-"widget.gallery.quickImage" = "Scan Receipt";
-"widget.gallery.quickImage.desc" = "Record from a photo or receipt";
-"widget.gallery.cashFlow" = "Cash Flow";
-"widget.gallery.cashFlow.desc" = "Je net cash flow";
+"widget.gallery.scheduledPayments" = "Aankomende betalingen";
+"widget.gallery.scheduledPayments.desc" = "Je aankomende betalingen en abonnementen";
+"widget.gallery.quickManual" = "Nieuwe boeking";
+"widget.gallery.quickManual.desc" = "Boek handmatig een uitgave of inkomst";
+"widget.gallery.quickVoice" = "Boeking via spraak";
+"widget.gallery.quickVoice.desc" = "Dicteer je uitgave of inkomst";
+"widget.gallery.quickImage" = "Bonnetje scannen";
+"widget.gallery.quickImage.desc" = "Boek vanaf een foto of bonnetje";
+"widget.gallery.cashFlow" = "Cashflow";
+"widget.gallery.cashFlow.desc" = "Je netto cashflow";
 "widget.gallery.balance" = "Saldo";
-"widget.gallery.balance.desc" = "Je total balance with trend";
+"widget.gallery.balance.desc" = "Je totale saldo met trend";
 "widget.gallery.budgets" = "Budgetten";
-"widget.gallery.budgets.desc" = "Je budget progress";
-"widget.gallery.latestRecords" = "Latest Records";
-"widget.gallery.latestRecords.desc" = "Je most recent transactions";
+"widget.gallery.budgets.desc" = "De voortgang van je budgetten";
+"widget.gallery.latestRecords" = "Recente boekingen";
+"widget.gallery.latestRecords.desc" = "Je meest recente boekingen";
 "widget.gallery.expense" = "Uitgaven";
-"widget.gallery.expense.desc" = "Je total uitgaven for the period";
-"widget.gallery.categoriesPie" = "Categories (Pie)";
-"widget.gallery.categoriesPie.desc" = "Uitgave distribution by category";
-"widget.gallery.subcategoriesPie" = "Subcategories (Pie)";
-"widget.gallery.subcategoriesPie.desc" = "Uitgave distribution by subcategory";
-"widget.gallery.topCategories" = "Top Categories";
-"widget.gallery.topCategories.desc" = "Je categories with most uitgaven";
-"widget.gallery.topSubcategories" = "Top Subcategories";
-"widget.gallery.topSubcategories.desc" = "Je subcategories with most uitgaven";
+"widget.gallery.expense.desc" = "Je totale uitgaven over de periode";
+"widget.gallery.categoriesPie" = "Categorieën (taart)";
+"widget.gallery.categoriesPie.desc" = "Verdeling van uitgaven per categorie";
+"widget.gallery.subcategoriesPie" = "Subcategorieën (taart)";
+"widget.gallery.subcategoriesPie.desc" = "Verdeling van uitgaven per subcategorie";
+"widget.gallery.topCategories" = "Topcategorieën";
+"widget.gallery.topCategories.desc" = "Je categorieën met de meeste uitgaven";
+"widget.gallery.topSubcategories" = "Topsubcategorieën";
+"widget.gallery.topSubcategories.desc" = "Je subcategorieën met de meeste uitgaven";
 
 // MARK: - Gallery (Lock Screen accessory widgets)
 "widget.gallery.accessoryBalance" = "Saldo";
-"widget.gallery.accessoryBalance.desc" = "Je balance on Lock Screen";
+"widget.gallery.accessoryBalance.desc" = "Je saldo op het toegangsscherm";
 "widget.gallery.accessoryExpense" = "Uitgaven";
-"widget.gallery.accessoryExpense.desc" = "Je uitgaven on Lock Screen";
+"widget.gallery.accessoryExpense.desc" = "Je uitgaven op het toegangsscherm";
 "widget.gallery.accessoryBudget" = "Budget";
-"widget.gallery.accessoryBudget.desc" = "Je most used budget";
-"widget.gallery.accessoryPayment" = "Next Payment";
-"widget.gallery.accessoryPayment.desc" = "Je next scheduled payment";
+"widget.gallery.accessoryBudget.desc" = "Je meest gebruikte budget";
+"widget.gallery.accessoryPayment" = "Volgende betaling";
+"widget.gallery.accessoryPayment.desc" = "Je volgende geplande betaling";
 
 // MARK: - Intent titles and descriptions
-"widget.intent.cashFlow.title" = "Cash Flow";
-"widget.intent.cashFlow.desc" = "Shows je net cash flow";
+"widget.intent.cashFlow.title" = "Cashflow";
+"widget.intent.cashFlow.desc" = "Toont je netto cashflow";
 "widget.intent.balance.title" = "Saldo";
-"widget.intent.balance.desc" = "Shows je total balance";
+"widget.intent.balance.desc" = "Toont je totale saldo";
 "widget.intent.expense.title" = "Uitgaven";
-"widget.intent.expense.desc" = "Shows je total uitgaven";
-"widget.intent.categoriesPie.title" = "Categories (Pie)";
-"widget.intent.categoriesPie.desc" = "Uitgave distribution by category";
-"widget.intent.subcategoriesPie.title" = "Subcategories (Pie)";
-"widget.intent.subcategoriesPie.desc" = "Uitgave distribution by subcategory";
-"widget.intent.topCategories.title" = "Top Categories";
-"widget.intent.topCategories.desc" = "Shows je categories with most uitgaven";
-"widget.intent.topSubcategories.title" = "Top Subcategories";
-"widget.intent.topSubcategories.desc" = "Shows je subcategories with most uitgaven";
+"widget.intent.expense.desc" = "Toont je totale uitgaven";
+"widget.intent.categoriesPie.title" = "Categorieën (taart)";
+"widget.intent.categoriesPie.desc" = "Verdeling van uitgaven per categorie";
+"widget.intent.subcategoriesPie.title" = "Subcategorieën (taart)";
+"widget.intent.subcategoriesPie.desc" = "Verdeling van uitgaven per subcategorie";
+"widget.intent.topCategories.title" = "Topcategorieën";
+"widget.intent.topCategories.desc" = "Toont je categorieën met de meeste uitgaven";
+"widget.intent.topSubcategories.title" = "Topsubcategorieën";
+"widget.intent.topSubcategories.desc" = "Toont je subcategorieën met de meeste uitgaven";
 "widget.intent.budgets.title" = "Budgetten";
-"widget.intent.budgets.desc" = "Shows je budget progress";
-"widget.intent.scheduledPayments.title" = "Upcoming Betalingen";
-"widget.intent.scheduledPayments.desc" = "Shows je upcoming scheduled payments";
-"widget.intent.latestRecords.title" = "Latest Records";
-"widget.intent.latestRecords.desc" = "Shows je most recent transactions";
+"widget.intent.budgets.desc" = "Toont de voortgang van je budgetten";
+"widget.intent.scheduledPayments.title" = "Aankomende betalingen";
+"widget.intent.scheduledPayments.desc" = "Toont je aankomende geplande betalingen";
+"widget.intent.latestRecords.title" = "Recente boekingen";
+"widget.intent.latestRecords.desc" = "Toont je meest recente boekingen";
 "widget.intent.accessoryBalance.title" = "Saldo";
-"widget.intent.accessoryBalance.desc" = "Period balance";
+"widget.intent.accessoryBalance.desc" = "Saldo van de periode";
 "widget.intent.accessoryExpense.title" = "Uitgaven";
-"widget.intent.accessoryExpense.desc" = "Period uitgaven";
+"widget.intent.accessoryExpense.desc" = "Uitgaven van de periode";
 "widget.intent.accessoryBudget.title" = "Budget";
-"widget.intent.accessoryBudget.desc" = "Most used budget";
-"widget.intent.accessoryPayment.title" = "Next Payment";
-"widget.intent.accessoryPayment.desc" = "Next scheduled payment";
-"widget.intent.quickEntry.title" = "Quick Entry";
-"widget.intent.quickEntry.desc" = "Configure quick action widgets to add records";
+"widget.intent.accessoryBudget.desc" = "Meest gebruikte budget";
+"widget.intent.accessoryPayment.title" = "Volgende betaling";
+"widget.intent.accessoryPayment.desc" = "Volgende geplande betaling";
+"widget.intent.quickEntry.title" = "Snelle invoer";
+"widget.intent.quickEntry.desc" = "Stel widgets in voor snelle acties om boekingen toe te voegen";
 
 // MARK: - Selection Mode
-"widget.selection.mode.type" = "Show";
-"widget.selection.automatic" = "Automatic";
-"widget.selection.custom" = "Custom";
+"widget.selection.mode.type" = "Tonen";
+"widget.selection.automatic" = "Automatisch";
+"widget.selection.custom" = "Aangepast";
 
 // MARK: - Selection Parameters
 "widget.select.budgets" = "Budgetten";
@@ -86,58 +86,58 @@
 
 // MARK: - Entities
 "widget.entity.budget" = "Budget";
-"widget.entity.payment" = "Geplande Payment";
+"widget.entity.payment" = "Geplande betaling";
 
 // MARK: - UI (texts in widget views)
-"widget.ui.noPayments" = "Geen pending payments";
-"widget.ui.noBudgets" = "Geen budgets";
-"widget.ui.noRecords" = "Geen records";
+"widget.ui.noPayments" = "Geen openstaande betalingen";
+"widget.ui.noBudgets" = "Geen budgetten";
+"widget.ui.noRecords" = "Geen boekingen";
 "widget.ui.noExpenses" = "Geen uitgaven";
-"widget.ui.noData" = "Geen data";
-"widget.ui.notEnoughData" = "Not enough data";
+"widget.ui.noData" = "Geen gegevens";
+"widget.ui.notEnoughData" = "Niet genoeg gegevens";
 "widget.ui.income" = "Inkomsten";
 "widget.ui.expenses" = "Uitgaven";
 "widget.ui.balance" = "Saldo";
-"widget.ui.netFlow" = "Net Flow";
-"widget.ui.cashFlow" = "Cash Flow";
+"widget.ui.netFlow" = "Nettostroom";
+"widget.ui.cashFlow" = "Cashflow";
 "widget.ui.total" = "Totaal";
-"widget.ui.ofLimit" = "of %@";
-"widget.ui.newRecord" = "Quick Entry";
-"widget.ui.voiceRecord" = "Voice Entry";
-"widget.ui.scanReceipt" = "Image Entry";
-"widget.ui.upcomingPayments" = "Upcoming Betalingen";
+"widget.ui.ofLimit" = "van %@";
+"widget.ui.newRecord" = "Snelle invoer";
+"widget.ui.voiceRecord" = "Spraakinvoer";
+"widget.ui.scanReceipt" = "Beeldinvoer";
+"widget.ui.upcomingPayments" = "Aankomende betalingen";
 "widget.ui.budgets" = "Budgetten";
-"widget.ui.latestRecords" = "Latest Records";
-"widget.ui.categories" = "Categories";
-"widget.ui.subcategories" = "Subcategories";
-"widget.ui.topCategories" = "Top Categories";
-"widget.ui.topSubcategories" = "Top Subcategories";
-"widget.ui.noNote" = "Geen note";
+"widget.ui.latestRecords" = "Recente boekingen";
+"widget.ui.categories" = "Categorieën";
+"widget.ui.subcategories" = "Subcategorieën";
+"widget.ui.topCategories" = "Topcategorieën";
+"widget.ui.topSubcategories" = "Topsubcategorieën";
+"widget.ui.noNote" = "Geen notitie";
 
 // MARK: - Date labels
-"widget.ui.overdue" = "Overdue";
+"widget.ui.overdue" = "Te laat";
 "widget.ui.today" = "Vandaag";
-"widget.ui.tomorrow" = "Tomorrow";
+"widget.ui.tomorrow" = "Morgen";
 
 // MARK: - Period (period selector)
-"widget.period.type" = "Period";
-"widget.period.sameAsApp" = "Same as app";
-"widget.period.thisWeek" = "This Week";
-"widget.period.last7Days" = "Last 7 Days";
-"widget.period.last30Days" = "Last 30 Days";
-"widget.period.thisMonth" = "This Month";
-"widget.period.lastMonth" = "Last Month";
-"widget.period.thisYear" = "This Year";
-"widget.period.lastYear" = "Last Year";
-"widget.period.allTime" = "All Time";
+"widget.period.type" = "Periode";
+"widget.period.sameAsApp" = "Zelfde als app";
+"widget.period.thisWeek" = "Deze week";
+"widget.period.last7Days" = "Laatste 7 dagen";
+"widget.period.last30Days" = "Laatste 30 dagen";
+"widget.period.thisMonth" = "Deze maand";
+"widget.period.lastMonth" = "Vorige maand";
+"widget.period.thisYear" = "Dit jaar";
+"widget.period.lastYear" = "Vorig jaar";
+"widget.period.allTime" = "Altijd";
 
 // MARK: - Payment Category
-"widget.paymentCategory.all" = "All";
-"widget.paymentCategory.recurring" = "Recurring";
-"widget.paymentCategory.subscription" = "Subscriptions";
+"widget.paymentCategory.all" = "Alle";
+"widget.paymentCategory.recurring" = "Terugkerend";
+"widget.paymentCategory.subscription" = "Abonnementen";
 
 // MARK: - Control Widgets
-"widget.control.voiceExpense" = "Voice Entry";
-"widget.control.voiceExpense.desc" = "Dictate je entry to Yala";
-"widget.control.photoExpense" = "Image Entry";
-"widget.control.photoExpense.desc" = "Record with an image in Yala";
+"widget.control.voiceExpense" = "Spraakinvoer";
+"widget.control.voiceExpense.desc" = "Dicteer je boeking aan Yala";
+"widget.control.photoExpense" = "Beeldinvoer";
+"widget.control.photoExpense.desc" = "Boek met een afbeelding in Yala";
