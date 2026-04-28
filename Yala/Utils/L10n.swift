@@ -9,11 +9,27 @@ import Foundation
 
 // MARK: - Language Manager
 
+extension Notification.Name {
+    /// Fired when the user's language override changes (locally or via iCloud KV sync).
+    /// Observers should invalidate cached strings/locale and force re-render.
+    static let languageDidChange = Notification.Name("LanguageDidChange")
+}
+
 /// Manages in-app language override for users whose device language is not supported.
 /// Consume `SupportedLocale` como single source of truth — añadir un idioma se hace
 /// agregando case en `SupportedLocale.swift`, no aquí.
+///
+/// **Storage:** App Group suite (compartido con widgets) + iCloud KV (sync cross-device).
+/// Migración one-shot desde `UserDefaults.standard` ejecutada en `bootstrapMigrationIfNeeded`.
 enum LanguageManager {
-    private static let overrideKey = "appLanguageOverride"
+    static let overrideKey = "appLanguageOverride"
+    private static let migrationSentinelKey = "appLanguageOverrideMigratedV1"
+
+    /// App Group suite — compartido con widgets, share extension y procesos hermanos.
+    /// Si por alguna razón el suite no está disponible, fallback a `UserDefaults.standard`.
+    static var sharedDefaults: UserDefaults {
+        UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) ?? .standard
+    }
 
     /// Supported locales as the typed enum. Use `.code/.nativeName/.flag` properties.
     static var supportedLanguages: [SupportedLocale] { SupportedLocale.selectableCases }
@@ -24,10 +40,23 @@ enum LanguageManager {
         return SupportedLocale.from(preferred) != nil
     }
 
-    /// User's language override (nil = use system language)
+    /// User's language override (nil = use system language).
+    /// Setter persiste en App Group + iCloud KV y emite `.languageDidChange`.
     static var overrideLanguage: String? {
-        get { UserDefaults.standard.string(forKey: overrideKey) }
-        set { UserDefaults.standard.set(newValue, forKey: overrideKey) }
+        get { sharedDefaults.string(forKey: overrideKey) }
+        set {
+            sharedDefaults.set(newValue, forKey: overrideKey)
+            // iCloud KV — last write wins. Normaliza nil a empty string para que iKV lo persista
+            // (NSUbiquitousKeyValueStore no acepta nil; remove para "no override")
+            let iKV = NSUbiquitousKeyValueStore.default
+            if let value = newValue {
+                iKV.set(value, forKey: overrideKey)
+            } else {
+                iKV.removeObject(forKey: overrideKey)
+            }
+            iKV.synchronize()
+            NotificationCenter.default.post(name: .languageDidChange, object: nil)
+        }
     }
 
     /// Best guess for pre-selecting a language when the device language is not supported.
@@ -47,6 +76,34 @@ enum LanguageManager {
             return .main
         }
         return bundle
+    }
+
+    // MARK: - Migration (one-shot)
+
+    /// Migra el override desde `UserDefaults.standard` (legacy storage hasta M1) al
+    /// App Group suite. Idempotente vía `migrationSentinelKey`.
+    /// Llamar al inicio del app launch (después de `PreferenceSyncService.bootstrap()`).
+    static func bootstrapMigrationIfNeeded() {
+        let suite = sharedDefaults
+        guard !suite.bool(forKey: migrationSentinelKey) else { return }
+
+        // Copia el valor legacy si existe (no remappea — el remapping se aplica en
+        // M7/M9 cuando los locales canónicos pt-BR/es-419 ya existen).
+        let legacy = UserDefaults.standard.string(forKey: overrideKey)
+        if let legacy {
+            suite.set(legacy, forKey: overrideKey)
+            UserDefaults.standard.removeObject(forKey: overrideKey)
+        }
+
+        suite.set(true, forKey: migrationSentinelKey)
+
+        #if DEBUG
+        if let legacy {
+            print("LanguageManager: Migrated legacy override '\(legacy)' from standard → App Group")
+        } else {
+            print("LanguageManager: No legacy override to migrate")
+        }
+        #endif
     }
 }
 

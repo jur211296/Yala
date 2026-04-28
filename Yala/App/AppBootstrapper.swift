@@ -77,6 +77,10 @@ final class AppBootstrapper {
         // 0. Sync preferences from iCloud (must be FIRST — other services read these)
         PreferenceSyncService.shared.bootstrap()
 
+        // 0.1. Migración one-shot del override de idioma (UserDefaults.standard → App Group)
+        //      Idempotente vía sentinel; sólo corre la primera vez post-update.
+        LanguageManager.bootstrapMigrationIfNeeded()
+
         // 0.5. Configure analytics (no-op if API key missing)
         TelemetryService.configure()
         TelemetryService.track(.appLaunched)

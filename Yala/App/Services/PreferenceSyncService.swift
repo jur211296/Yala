@@ -65,6 +65,8 @@ final class PreferenceSyncService {
         case panelSectionsHidden
         // P20-11 — Cuentas collapse state (synced so state follows across devices)
         case panelAccountsCollapsed
+        // M2 (localización) — override de idioma elegido por el usuario, sincronizado cross-device
+        case appLanguageOverride
     }
 
     /// Keys for cross-device wipe coordination (iKV = remote, local = UserDefaults)
@@ -163,6 +165,23 @@ final class PreferenceSyncService {
                     if local.string(forKey: k) != remote {
                         local.set(remote, forKey: k)
                         if key == .currencyDisplayFormat { formattingChanged = true }
+                    }
+                }
+
+            case .appLanguageOverride:
+                // Storage es App Group suite (compartido con widgets), NO standard.
+                let suite = LanguageManager.sharedDefaults
+                if iKV.object(forKey: k) != nil {
+                    let remote = iKV.string(forKey: k) ?? ""
+                    let current = suite.string(forKey: k) ?? ""
+                    if current != remote {
+                        if remote.isEmpty {
+                            suite.removeObject(forKey: k)
+                        } else {
+                            suite.set(remote, forKey: k)
+                        }
+                        // Notificar cambio de idioma en caliente para que la UI re-renderice
+                        NotificationCenter.default.post(name: .languageDidChange, object: nil)
                     }
                 }
 

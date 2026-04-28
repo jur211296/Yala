@@ -52,6 +52,10 @@ struct ContentView: View {
     /// Lightweight state for existing data detection (replaces @Query to prevent
     /// synchronous SwiftData fetches during iOS snapshot capture — 0x8BADF00D fix).
     @State private var hasExistingData: Bool = false
+
+    /// Increments cuando el idioma cambia (local o sync iCloud). Usado como `.id()`
+    /// del root para forzar re-render de strings y formatters localizados.
+    @State private var languageVersion: Int = 0
     @Environment(\.modelContext) private var modelContext
 
     private let authService = BiometricAuthService.shared
@@ -71,6 +75,7 @@ struct ContentView: View {
             if hasCompletedOnboarding && isInitialCheckDone {
                 MainTabView()
                     .environment(SessionState.shared)
+                    .id(languageVersion) // re-render on .languageDidChange
             } else if isWaitingForSync {
                 iCloudSyncWaitingView
             } else {
@@ -118,6 +123,9 @@ struct ContentView: View {
         }
         .task {
             await checkInitialSyncState()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .languageDidChange)) { _ in
+            languageVersion &+= 1
         }
         .onChange(of: SessionState.shared.dataVersion) { _, _ in
             // Replaces @Query-based observation. dataVersion increments on CRUD, CloudKit sync,
