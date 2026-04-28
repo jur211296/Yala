@@ -89,13 +89,39 @@ struct AppLanguageSyncTests {
         let suite = LanguageManager.sharedDefaults
         suite.removeObject(forKey: "appLanguageOverrideMigratedV1")
         suite.removeObject(forKey: LanguageManager.overrideKey)
+        // Usar "fr" (no se remappea — es código canónico ya).
+        UserDefaults.standard.set("fr", forKey: LanguageManager.overrideKey)
+
+        LanguageManager.bootstrapMigrationIfNeeded()
+
+        #expect(suite.string(forKey: LanguageManager.overrideKey) == "fr")
+        #expect(UserDefaults.standard.string(forKey: LanguageManager.overrideKey) == nil)
+        #expect(suite.bool(forKey: "appLanguageOverrideMigratedV1") == true)
+    }
+
+    @Test func bootstrapMigration_legacyPt_isRemappedToPtBR() {
+        let suite = LanguageManager.sharedDefaults
+        suite.removeObject(forKey: "appLanguageOverrideMigratedV1")
+        suite.removeObject(forKey: LanguageManager.overrideKey)
         UserDefaults.standard.set("pt", forKey: LanguageManager.overrideKey)
 
         LanguageManager.bootstrapMigrationIfNeeded()
 
-        #expect(suite.string(forKey: LanguageManager.overrideKey) == "pt")
+        // Step 1 copia "pt" → suite. Step 2 lo remappea a "pt-BR".
+        #expect(suite.string(forKey: LanguageManager.overrideKey) == "pt-BR")
         #expect(UserDefaults.standard.string(forKey: LanguageManager.overrideKey) == nil)
-        #expect(suite.bool(forKey: "appLanguageOverrideMigratedV1") == true)
+    }
+
+    @Test func bootstrapMigration_aliasRemap_idempotent() {
+        // Si el remap ya se aplicó (sentinel set + valor canónico), correr de nuevo
+        // no cambia nada.
+        let suite = LanguageManager.sharedDefaults
+        suite.set(true, forKey: "appLanguageOverrideMigratedV1")
+        suite.set("pt-BR", forKey: LanguageManager.overrideKey)
+
+        LanguageManager.bootstrapMigrationIfNeeded()
+
+        #expect(suite.string(forKey: LanguageManager.overrideKey) == "pt-BR")
     }
 
     @Test func bootstrapMigration_alreadyMigrated_skips() {

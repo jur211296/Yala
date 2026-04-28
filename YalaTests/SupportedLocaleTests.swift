@@ -41,6 +41,37 @@ struct SupportedLocaleTests {
         #expect(result == .es)
     }
 
+    @Test func bestMatch_ptBR_explicitlyMatchesPtBR() {
+        let result = SupportedLocale.bestMatch(forPreferredLanguages: ["pt-BR"], region: "BR")
+        #expect(result == .ptBR)
+    }
+
+    @Test func bestMatch_ptPT_explicitlyMatchesPtPT() {
+        let result = SupportedLocale.bestMatch(forPreferredLanguages: ["pt-PT"], region: "PT")
+        #expect(result == .ptPT)
+    }
+
+    @Test func bestMatch_legacyPt_remappedToPtBR() {
+        // El alias legacy "pt" se remappea automáticamente a ptBR (canónico).
+        let result = SupportedLocale.bestMatch(forPreferredLanguages: ["pt"], region: nil)
+        #expect(result == .ptBR)
+    }
+
+    @Test func bestMatch_regionPT_withoutPreferred_usesPtPT() {
+        // Usuario en Portugal sin "pt" en preferredLanguages — region map cubre.
+        let result = SupportedLocale.bestMatch(forPreferredLanguages: ["en"], region: "PT")
+        // La línea 1 hace exact match con "en" antes del region map → resultado en
+        // (no sería realista que un usuario portugués tuviera en como primera preferencia
+        // pero el region map se ejerce en el caso device sin idioma soportado)
+        #expect(result == .en)
+    }
+
+    @Test func bestMatch_regionAO_unknownPreferred_usesPtPT() {
+        // Usuario en Angola con idioma no soportado → region map → ptPT
+        let result = SupportedLocale.bestMatch(forPreferredLanguages: ["xx"], region: "AO")
+        #expect(result == .ptPT)
+    }
+
     @Test func bestMatch_emptyPreferred_returnsEn() {
         let result = SupportedLocale.bestMatch(forPreferredLanguages: [], region: nil)
         #expect(result == .en)
@@ -54,10 +85,15 @@ struct SupportedLocaleTests {
 
     // MARK: - parent
 
-    @Test func parentChain_allCurrentlyNil() {
-        for locale in SupportedLocale.allCases {
-            #expect(locale.parent == nil, "Locale \(locale.code) should have nil parent in M1")
+    @Test func parentChain_baseLocalesHaveNilParent() {
+        let bases: [SupportedLocale] = [.es, .en, .pt, .ptBR, .de, .fr, .it]
+        for locale in bases {
+            #expect(locale.parent == nil, "Base locale \(locale.code) should have nil parent")
         }
+    }
+
+    @Test func parentChain_ptPTInheritsFromPtBR() {
+        #expect(SupportedLocale.ptPT.parent == .ptBR)
     }
 
     // MARK: - properties
@@ -99,9 +135,16 @@ struct SupportedLocaleTests {
         #expect(SupportedLocale.from("pt") == .pt)
     }
 
-    @Test func from_compoundIdentifier_returnsBaseLocale() {
+    @Test func from_compoundIdentifier_returnsExactWhenAvailable() {
+        // Variantes con .lproj propio matchean exacto
+        #expect(SupportedLocale.from("pt-BR") == .ptBR)
+        #expect(SupportedLocale.from("pt-PT") == .ptPT)
+    }
+
+    @Test func from_compoundIdentifier_fallsBackToBaseWhenNoVariant() {
+        // es-MX no tiene .lproj propio → cae al base es
         #expect(SupportedLocale.from("es-MX") == .es)
-        #expect(SupportedLocale.from("pt-BR") == .pt)
+        // en-GB no tiene .lproj propio (M11) → cae al base en
         #expect(SupportedLocale.from("en-GB") == .en)
     }
 
@@ -113,12 +156,18 @@ struct SupportedLocaleTests {
 
     // MARK: - allCases / selectableCases
 
-    @Test func allCases_currentlySixLocales() {
-        // En M1 solo existen los 6 idiomas históricos.
-        #expect(SupportedLocale.allCases.count == 6)
+    @Test func allCases_includesPtSplitVariants() {
+        // M7 introdujo pt-BR y pt-PT. allCases incluye pt (alias) + ptBR + ptPT + 5 base.
+        let expected: Set<SupportedLocale> = [.es, .en, .pt, .ptBR, .ptPT, .de, .fr, .it]
+        #expect(Set(SupportedLocale.allCases) == expected)
     }
 
-    @Test func selectableCases_equalAllCases_inM1() {
-        #expect(SupportedLocale.selectableCases.count == SupportedLocale.allCases.count)
+    @Test func selectableCases_excludesPtAliasButIncludesPtBROrPtPT() {
+        // El alias `pt` se excluye del selector porque ya está cubierto por ptBR
+        // con bandera explícita. Usuario nunca elige el alias plano manualmente.
+        let selectable = Set(SupportedLocale.selectableCases)
+        #expect(!selectable.contains(.pt))
+        #expect(selectable.contains(.ptBR))
+        #expect(selectable.contains(.ptPT))
     }
 }

@@ -122,25 +122,43 @@ enum LanguageManager {
     /// Llamar al inicio del app launch (después de `PreferenceSyncService.bootstrap()`).
     static func bootstrapMigrationIfNeeded() {
         let suite = sharedDefaults
-        guard !suite.bool(forKey: migrationSentinelKey) else { return }
 
-        // Copia el valor legacy si existe (no remappea — el remapping se aplica en
-        // M7/M9 cuando los locales canónicos pt-BR/es-419 ya existen).
-        let legacy = UserDefaults.standard.string(forKey: overrideKey)
-        if let legacy {
-            suite.set(legacy, forKey: overrideKey)
-            UserDefaults.standard.removeObject(forKey: overrideKey)
+        // Step 1 (V1): standard → App Group, idempotente.
+        if !suite.bool(forKey: migrationSentinelKey) {
+            let legacy = UserDefaults.standard.string(forKey: overrideKey)
+            if let legacy {
+                suite.set(legacy, forKey: overrideKey)
+                UserDefaults.standard.removeObject(forKey: overrideKey)
+            }
+            suite.set(true, forKey: migrationSentinelKey)
+
+            #if DEBUG
+            if let legacy {
+                print("LanguageManager: Migrated legacy override '\(legacy)' from standard → App Group")
+            } else {
+                print("LanguageManager: No legacy override to migrate")
+            }
+            #endif
         }
 
-        suite.set(true, forKey: migrationSentinelKey)
+        // Step 2: remap de aliases legacy a códigos canónicos cuando ya existen
+        // (M7 introduce pt-BR; M9 introducirá es-419). Idempotente — si el valor ya
+        // es canónico, no hace nada.
+        if let current = suite.string(forKey: overrideKey) {
+            let aliasRemap: [String: String] = [
+                "pt": "pt-BR"
+                // En M9 se añadirá: "es": "es-419"
+            ]
+            if let canonical = aliasRemap[current] {
+                suite.set(canonical, forKey: overrideKey)
+                NSUbiquitousKeyValueStore.default.set(canonical, forKey: overrideKey)
+                NSUbiquitousKeyValueStore.default.synchronize()
 
-        #if DEBUG
-        if let legacy {
-            print("LanguageManager: Migrated legacy override '\(legacy)' from standard → App Group")
-        } else {
-            print("LanguageManager: No legacy override to migrate")
+                #if DEBUG
+                print("LanguageManager: Remapped legacy alias '\(current)' → '\(canonical)'")
+                #endif
+            }
         }
-        #endif
     }
 }
 

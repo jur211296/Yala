@@ -13,9 +13,11 @@
 import Foundation
 
 enum SupportedLocale: String, CaseIterable, Identifiable, Hashable {
-    case es = "es"   // Español neutro LatAm — se renombrará a es-419 en M9
+    case es = "es"      // Español neutro LatAm — se renombrará a es-419 en M9
     case en = "en"
-    case pt = "pt"   // Portugués genérico — se renombrará a pt-BR en M7
+    case pt = "pt"      // Alias catch-all (copia idéntica de pt-BR para usuarios pt-MZ/pt-AO)
+    case ptBR = "pt-BR" // Brasil (base lusófona neutra de Yala)
+    case ptPT = "pt-PT" // Portugal (overrides hacia portugués europeo)
     case de = "de"
     case fr = "fr"
     case it = "it"
@@ -29,14 +31,22 @@ enum SupportedLocale: String, CaseIterable, Identifiable, Hashable {
     var bundleResourceName: String { rawValue }
 
     /// Padre para fallback chain. nil = locale base (no hereda de otro).
-    /// Las variantes regionales (es-AR, pt-PT, en-GB) declararán parent en milestones futuros.
-    var parent: SupportedLocale? { nil }
+    /// Las variantes regionales declaran parent: cuando una key falta en la variante,
+    /// `ls()` busca en el padre antes de caer a `Bundle.main` (en).
+    var parent: SupportedLocale? {
+        switch self {
+        case .ptPT: return .ptBR
+        default: return nil
+        }
+    }
 
     var nativeName: String {
         switch self {
         case .es: return "Español"
         case .en: return "English"
         case .pt: return "Português"
+        case .ptBR: return "Português (Brasil)"
+        case .ptPT: return "Português (Portugal)"
         case .de: return "Deutsch"
         case .fr: return "Français"
         case .it: return "Italiano"
@@ -47,7 +57,9 @@ enum SupportedLocale: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .es: return "🇪🇸"
         case .en: return "🇺🇸"
-        case .pt: return "🇧🇷"  // Bandera legacy BR — se ajustará en M7 al splitear pt-BR/pt-PT
+        case .pt: return "🇧🇷"      // Alias catch-all — bandera BR (mercado mayoritario)
+        case .ptBR: return "🇧🇷"
+        case .ptPT: return "🇵🇹"
         case .de: return "🇩🇪"
         case .fr: return "🇫🇷"
         case .it: return "🇮🇹"
@@ -55,24 +67,34 @@ enum SupportedLocale: String, CaseIterable, Identifiable, Hashable {
     }
 
     /// Cases que aparecen en el selector de idioma del usuario.
-    /// Hoy retorna `allCases`; en el futuro puede excluir aliases de retrocompatibilidad.
-    static var selectableCases: [SupportedLocale] { allCases }
+    /// `pt` (alias catch-all) se excluye porque ya está cubierto por `ptBR` con bandera explícita.
+    static var selectableCases: [SupportedLocale] {
+        allCases.filter { $0 != .pt }
+    }
 
     /// Resolver el código preferido del usuario contra los soportados.
     /// Implementa chain: exact → region map → idioma base → en.
-    /// Region map se va llenando en milestones futuros (M7: BR/PT/AO/MZ, M9: ES, M10: AR, M11: GB/AU/IE).
+    /// Region map se va llenando en milestones futuros (M9: ES, M10: AR, M11: GB/AU/IE).
     static func bestMatch(forPreferredLanguages preferred: [String], region: String?) -> SupportedLocale {
-        // 1. Match exacto (e.g. "es", "pt")
+        // 1. Match exacto (e.g. "pt-BR", "pt-PT", "es")
         for code in preferred {
-            if let exact = SupportedLocale(rawValue: code) { return exact }
+            if let exact = SupportedLocale(rawValue: code) {
+                // Resolver `pt` legacy directamente al canónico ptBR
+                return exact == .pt ? .ptBR : exact
+            }
         }
-        // 2. Region map (vacío hoy — se completa en milestones futuros)
-        let regionMap: [String: SupportedLocale] = [:]
+        // 2. Region map para usuarios sin variante explícita en preferredLanguages
+        let regionMap: [String: SupportedLocale] = [
+            "BR": .ptBR,
+            "PT": .ptPT, "AO": .ptPT, "MZ": .ptPT, "CV": .ptPT, "GW": .ptPT, "ST": .ptPT, "TL": .ptPT
+        ]
         if let region, let mapped = regionMap[region] { return mapped }
-        // 3. Match por idioma base (e.g. "es-MX" → "es", "pt-BR" → "pt")
+        // 3. Match por idioma base (e.g. "es-MX" → "es", "pt-AO" → "pt" → ptBR)
         for code in preferred {
             let base = String(code.prefix(2))
-            if let baseMatch = SupportedLocale(rawValue: base) { return baseMatch }
+            if let baseMatch = SupportedLocale(rawValue: base) {
+                return baseMatch == .pt ? .ptBR : baseMatch
+            }
         }
         return .en
     }

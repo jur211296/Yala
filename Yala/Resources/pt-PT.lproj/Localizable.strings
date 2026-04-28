@@ -1,0 +1,39 @@
+/*
+ * pt-PT.lproj/Localizable.strings
+ *
+ * Overrides hacia portugués europeo (Portugal). Solo declaramos las keys que
+ * difieren del padre pt-BR. iOS NO hace fallback automático al cargar
+ * Bundle(path:) directamente — el fallback variante→padre lo implementa
+ * `ls()` en L10n.swift manualmente.
+ *
+ * Diferencias léxicas/gramaticales clave vs pt-BR:
+ *   pt-BR              pt-PT
+ *   ------             -------
+ *   celular            telemóvel
+ *   recibo             comprovativo
+ *   tela               ecrã
+ *   gerenciar          gerir
+ *   Você + 3ª pers.    Tu + 2ª pers. (en frases conversacionales)
+ *   "certinho"         "certo" (registro más formal)
+ *   "Escaneie"         "Digitaliza"
+ *
+ * Solo overrides donde ambos lados realmente difieren — tests
+ * `LocalizationVariantsTests.variant_doesNotDuplicateParentValue` validan
+ * que cada key aquí tenga valor distinto al padre.
+ */
+
+// === Telemóvel ===
+"devseed.notePhonePlan" = "Plano de telemóvel";
+
+// === TipKit (gramática tu/tens en lugar de você/tem) ===
+"tipkit.cfSetup.starting.message" = "Se já tens algum dinheiro guardado, coloca aqui para o plano ficar mais certo.";
+
+// === Comprovativo / Ecrã / Digitaliza ===
+"tips.camera.title" = "Digitaliza comprovativos e capturas";
+"tips.camera.detail" = "Tira uma foto do teu comprovativo ou captura do ecrã do banco. O Yala extrai os valores e cria rascunhos automaticamente.";
+"image.selectSubtitle" = "Digitaliza capturas do ecrã bancárias ou comprovativos para criar transações automaticamente.";
+"image.example1" = "Foto de um comprovativo do supermercado";
+"subscription.feature.image" = "Digitalização de comprovativos e imagens";
+
+// === Gerir ===
+"faq.cancelSub.a" = "Podes gerir ou cancelar a tua subscrição a qualquer momento em Ajustes > Subscrição > Gerir na App Store. O teu acesso Pro continua até ao final do período pago.";
