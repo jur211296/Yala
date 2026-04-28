@@ -142,12 +142,12 @@ enum LanguageManager {
         }
 
         // Step 2: remap de aliases legacy a códigos canónicos cuando ya existen
-        // (M7 introduce pt-BR; M9 introducirá es-419). Idempotente — si el valor ya
+        // (M7 introduce pt-BR; M9 introduce es-419). Idempotente — si el valor ya
         // es canónico, no hace nada.
         if let current = suite.string(forKey: overrideKey) {
             let aliasRemap: [String: String] = [
-                "pt": "pt-BR"
-                // En M9 se añadirá: "es": "es-419"
+                "pt": "pt-BR",
+                "es": "es-419"
             ]
             if let canonical = aliasRemap[current] {
                 suite.set(canonical, forKey: overrideKey)

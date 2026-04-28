@@ -1,0 +1,33 @@
+/*
+ * es-ES.lproj/Localizable.strings
+ *
+ * Overrides hacia español peninsular (España). Solo declaramos las keys que
+ * difieren del padre es-419 (LatAm neutro). iOS NO hace fallback automático
+ * al cargar Bundle(path:) directamente — el fallback variante→padre lo
+ * implementa `ls()` en L10n.swift manualmente.
+ *
+ * Diferencias léxicas/gramaticales clave vs es-419:
+ *   es-419            es-ES
+ *   ------            -------
+ *   celular           móvil
+ *   renta             alquiler
+ *   "Toma foto"       "Haz una foto"
+ *
+ * El archivo es-419 ya está bastante neutro (BRAND-VOICE.md §9.1 lo dice
+ * explícitamente). El brand voice prohíbe modismos coloquiales en copy
+ * principal, así que los overrides son mínimos y enfocados solo en
+ * términos donde la diferencia regional es marcada.
+ *
+ * Solo overrides donde ambos lados realmente difieren — tests
+ * `LocalizationVariantsTests.variant_doesNotDuplicateParentValue` validan
+ * que cada key aquí tenga valor distinto al padre.
+ */
+
+// === Móvil (España) vs celular (LatAm) ===
+"devseed.notePhonePlan" = "Plan móvil";
+
+// === Alquiler (España) vs renta (LatAm) ===
+"tutorials.createScheduledPayments.intro.desc" = "Automatiza alquiler, servicios y suscripciones — Yala los registra por ti.";
+
+// === "Haz una foto" suena natural en España; "Toma foto" suena LatAm ===
+"tips.camera.detail" = "Haz una foto de tu recibo o captura del banco. Yala extrae los importes y crea borradores automáticamente.";

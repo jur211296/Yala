@@ -1,0 +1,4 @@
+/* es-ES.lproj/Localizable.strings — YalaWidgets
+ * Overrides peninsulares para keys de widgets. Por defecto los widgets son
+ * agnósticos al léxico, pero si surgen diferencias claves se añaden aquí.
+ */
