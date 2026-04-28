@@ -389,6 +389,19 @@ ScrollView {
 ## Localization
 - Para cambios de localización: SIEMPRE leer el archivo `.lproj/Localizable.strings` destino antes de editar.
 - Verificar que se usan los assets del idioma correcto (no defaults en inglés para otros locales).
+- **SSOT de idiomas:** `Yala/Utils/SupportedLocale.swift` enum. Añadir un idioma se hace agregando un `case` ahí y creando la `.lproj` correspondiente — `LanguageManager` y `AppLocale` consumen el enum, no listas hardcoded.
+- **Override storage:** `UserDefaults(suiteName: SharedContainerService.appGroupIdentifier)` (App Group, compartido con widgets) + `NSUbiquitousKeyValueStore` (sync cross-device). NO usar `UserDefaults.standard` directamente para `appLanguageOverride` — la migración one-shot ya movió el valor legacy.
+- **Plurales:** keys con `%d` semántico van en `Localizable.stringsdict` (no `.strings`). 22 keys actuales en cada `.lproj` con reglas `one`/`other`. Para `pl` futuro: `one`/`few`/`many`/`other`.
+- **Variantes regionales** (es-AR, pt-PT, en-GB): NO crean `Localizable.stringsdict` salvo que sus reglas plurales difieran del padre. Apple `.stringsdict` es all-or-nothing por archivo.
+- **InfoPlist.strings:** existe en cada `.lproj` con las 3 NSUsageDescription (Microphone, PhotoLibrary, FaceID). Sin esto los prompts del sistema salen en inglés.
+- **Tests automáticos** (en `YalaTests/`):
+  - `LocalizationParityTests` — paridad de keys, placeholders, no empty values, no duplicados strings/stringsdict
+  - `BundleLocaleDriftTests` — bundle locales == SupportedLocale enum
+  - `StringsdictParityTests` — paridad de keys plurales
+  - `LocaleResolutionTests` + `LSFallbackTests` — fallback chain manual variante→padre→en
+  - `AppLanguageSyncTests` — App Group + iCloud KV + migración legacy
+  - `SupportedLocaleTests` — bestMatch, parent chain, props
+- Skill `/l10n-check` para auditoría manual periódica complementaria.
 
 ## Documentation & Copy
 - Al escribir documentación o release notes, describir features desde la perspectiva del USUARIO (qué ve/hace), no desde una perspectiva técnica/código.

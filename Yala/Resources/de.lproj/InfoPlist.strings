@@ -1,0 +1,3 @@
+"NSMicrophoneUsageDescription" = "Yala nutzt das Mikrofon, um Spracheingaben für deine Ausgaben aufzunehmen. Die Audiodatei wird zur Transkription an OpenAI gesendet.";
+"NSPhotoLibraryUsageDescription" = "Yala nutzt deine Fotos, um Ausgabendetails aus Screenshots und Belegen zu extrahieren. Ausgewählte Bilder werden an OpenAI gesendet.";
+"NSFaceIDUsageDescription" = "Yala nutzt Face ID, um deine Finanzdaten zu schützen.";
