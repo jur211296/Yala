@@ -79,8 +79,7 @@ struct TrendsCarouselWidget: View {
             } else {
                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                     Text(
-                        YalaFormatter.currency(
-                            value: trendTotalForCurrentMetric,
+                        appPreferences.currency(trendTotalForCurrentMetric,
                             currencyCode: currencyCode,
                             forceSign: viewModel.trendType == .balance
                         )

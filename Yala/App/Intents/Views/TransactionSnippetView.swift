@@ -26,8 +26,8 @@ struct TransactionSnippetView: View {
     private var formattedAmount: String {
         let signed = isExpense ? -abs(amount) : abs(amount)
         // Snippet de AppIntent — corre fuera de @MainActor (AppPreferences inaccesible).
-        // YalaFormatter deprecated permitido. forceFullPrecision: true ignora decimalPlaces.
-        return YalaFormatter.currency(value: signed, currencyCode: currencyCode, forceFullPrecision: true)
+        // YalaFormatterStatic lee UserDefaults raw (output idéntico a appPreferences.currency).
+        return YalaFormatterStatic.currency(value: signed, currencyCode: currencyCode, forceFullPrecision: true)
     }
 
     private var dateFormatted: String {

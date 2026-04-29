@@ -17,6 +17,7 @@ struct RecordsTabView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppPreferences.self) private var appPreferences
 
     @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
 
@@ -108,8 +109,7 @@ struct RecordsTabView: View {
             // Balance (Saldo) - Large and centered (hidden in expenses-only mode)
             if !sessionState.isExpensesOnlyMode {
                 Text(
-                    YalaFormatter.currency(
-                        value: recordsSummary.balance, currencyCode: defaultCurrencyCode)
+                    appPreferences.currency(recordsSummary.balance, currencyCode: defaultCurrencyCode)
                 )
                 .font(DS.Typography.largeTitle)
                 .foregroundStyle(.primary)
@@ -136,8 +136,7 @@ struct RecordsTabView: View {
                                 .foregroundStyle(Color.incomeGraph)
                                 .accessibilityHidden(true)
                             Text(
-                                YalaFormatter.currency(
-                                    value: recordsSummary.income, currencyCode: defaultCurrencyCode)
+                                appPreferences.currency(recordsSummary.income, currencyCode: defaultCurrencyCode)
                             )
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
@@ -168,8 +167,7 @@ struct RecordsTabView: View {
                             .foregroundStyle(Color.expenseGraph)
                             .accessibilityHidden(true)
                         Text(
-                            YalaFormatter.currency(
-                                value: recordsSummary.expense, currencyCode: defaultCurrencyCode)
+                            appPreferences.currency(recordsSummary.expense, currencyCode: defaultCurrencyCode)
                         )
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)

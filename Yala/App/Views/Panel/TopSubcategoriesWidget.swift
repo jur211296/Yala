@@ -517,8 +517,7 @@ private struct SubcategoryRow: View {
                                 .foregroundStyle(.primary)
                             Spacer()
                             Text(
-                                YalaFormatter.currency(
-                                    value: summary.amount, currencyCode: currencyCode)
+                                appPreferences.currency(summary.amount, currencyCode: currencyCode)
                             )
                             .font(DS.Typography.headline)
                             .foregroundStyle(.primary)

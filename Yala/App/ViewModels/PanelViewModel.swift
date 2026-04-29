@@ -2713,7 +2713,7 @@ final class PanelViewModel {
         let prefs = appPreferences
         let snapshotCurrency: (Double) -> String = { val in
             if let prefs { return prefs.currency(val, currencyCode: currencyCode) }
-            return YalaFormatter.currency(value: val, currencyCode: currencyCode)
+            return YalaFormatterStatic.currency(value: val, currencyCode: currencyCode)
         }
 
         let formattedIncome = snapshotCurrency(data.income)

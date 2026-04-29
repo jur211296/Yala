@@ -336,8 +336,7 @@ struct CashFlowWidget: View {
             } else {
                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
                     Text(
-                        YalaFormatter.currency(
-                            value: summary.netFlow,
+                        appPreferences.currency(summary.netFlow,
                             currencyCode: summary.currencyCode,
                             forceSign: true
                         )
@@ -410,8 +409,7 @@ struct CashFlowWidget: View {
                     if !hasNoData {
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                             Text(
-                                YalaFormatter.currency(
-                                    value: kpiValue, currencyCode: summary.currencyCode,
+                                appPreferences.currency(kpiValue, currencyCode: summary.currencyCode,
                                     forceSign: displayMode == .balance || displayMode == .none)
                             )
                             .font(DS.Typography.headline)
@@ -719,8 +717,7 @@ struct CashFlowWidget: View {
                                             .fill(selectedData.net >= 0 ? Color.incomeGraph : Color.expenseGraph)
                                             .frame(width: 6, height: 6)
                                         Text(
-                                            YalaFormatter.currency(
-                                                value: selectedData.net,
+                                            appPreferences.currency(selectedData.net,
                                                 currencyCode: summary.currencyCode, forceSign: true)
                                         )
                                         .font(DS.Typography.labelTiny)
@@ -731,8 +728,7 @@ struct CashFlowWidget: View {
                                         HStack(spacing: DS.Spacing.xs) {
                                             Circle().fill(Color.incomeGraph).frame(width: 6, height: 6)
                                             Text(
-                                                YalaFormatter.currency(
-                                                    value: selectedData.income,
+                                                appPreferences.currency(selectedData.income,
                                                     currencyCode: summary.currencyCode, forceSign: true)
                                             )
                                             .font(DS.Typography.labelTiny)
@@ -741,8 +737,7 @@ struct CashFlowWidget: View {
                                         HStack(spacing: DS.Spacing.xs) {
                                             Circle().fill(Color.expenseGraph).frame(width: 6, height: 6)
                                             Text(
-                                                YalaFormatter.currency(
-                                                    value: -selectedData.expense,
+                                                appPreferences.currency(-selectedData.expense,
                                                     currencyCode: summary.currencyCode)
                                             )
                                             .font(DS.Typography.labelTiny)
@@ -752,8 +747,7 @@ struct CashFlowWidget: View {
                                         HStack(spacing: DS.Spacing.xs) {
                                             Circle().fill(Color.electricIndigo).frame(width: 6, height: 6)
                                             Text(
-                                                YalaFormatter.currency(
-                                                    value: selectedData.net,
+                                                appPreferences.currency(selectedData.net,
                                                     currencyCode: summary.currencyCode, forceSign: true)
                                             )
                                             .font(DS.Typography.labelTiny)
@@ -771,8 +765,7 @@ struct CashFlowWidget: View {
                                             .foregroundStyle(.thSecondaryText)
                                             .frame(width: 6)
                                         Text(
-                                            YalaFormatter.currency(
-                                                value: avg,
+                                            appPreferences.currency(avg,
                                                 currencyCode: summary.currencyCode)
                                         )
                                         .font(DS.Typography.labelTiny)
@@ -822,8 +815,7 @@ struct CashFlowWidget: View {
                                     .foregroundStyle(.thSecondaryText)
                                 Spacer()
                                 Text(
-                                    YalaFormatter.currency(
-                                        value: summary.totalIncome, currencyCode: summary.currencyCode)
+                                    appPreferences.currency(summary.totalIncome, currencyCode: summary.currencyCode)
                                 )
                                 .font(DS.Typography.amountSmall)
                                 .foregroundStyle(.thPrimaryText)
@@ -854,8 +846,7 @@ struct CashFlowWidget: View {
                                 .foregroundStyle(.thSecondaryText)
                             Spacer()
                             Text(
-                                YalaFormatter.currency(
-                                    value: summary.totalExpense, currencyCode: summary.currencyCode)
+                                appPreferences.currency(summary.totalExpense, currencyCode: summary.currencyCode)
                             )
                             .font(DS.Typography.amountSmall)
                         }

@@ -245,8 +245,7 @@ struct NeedTrendWidget: View {
                     if !isIncomeMode && !trendPoints.isEmpty {
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                             Text(
-                                YalaFormatter.currency(
-                                    value: totalAmount, currencyCode: currencyCode)
+                                appPreferences.currency(totalAmount, currencyCode: currencyCode)
                             )
                             .font(DS.Typography.headline)
                             .foregroundStyle(.thPrimaryText)
@@ -659,8 +658,7 @@ struct NeedTrendChartView: View {
                                     .foregroundStyle(Color.secondary)
                                 Spacer()
                                 Text(
-                                    YalaFormatter.currency(
-                                        value: selectedData.total, currencyCode: currencyCode)
+                                    appPreferences.currency(selectedData.total, currencyCode: currencyCode)
                                 )
                                 .font(DS.Typography.labelTiny)
                                 .foregroundStyle(Color.primary)
@@ -675,8 +673,7 @@ struct NeedTrendChartView: View {
                                         .foregroundStyle(Color.secondary)
                                     Spacer()
                                     Text(
-                                        YalaFormatter.currency(
-                                            value: avg, currencyCode: currencyCode)
+                                        appPreferences.currency(avg, currencyCode: currencyCode)
                                     )
                                     .font(DS.Typography.labelTiny)
                                     .foregroundStyle(Color.primary)

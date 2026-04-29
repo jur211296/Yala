@@ -10,8 +10,8 @@
 //  rule-based con cifras concretas en markdown bold) en `subheadline`;
 //  upsellCTA opcional para usuarios Free o Pro sin consent IA.
 //
-//  Amounts use `YalaFormatter.currency(...)`, which respects the user's
-//  profile preferences for decimal places and symbol vs. code.
+//  Amounts use `appPreferences.currency(...)`, which is reactive: any change
+//  to decimalPlaces or currencyDisplayFormat invalidates the view immediately.
 //
 
 import SwiftUI

@@ -569,8 +569,7 @@ struct CategoriesTabView: View {
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                Text(YalaFormatter.currency(
-                    value: viewModel.sankeyData.totalExpense,
+                Text(appPreferences.currency(viewModel.sankeyData.totalExpense,
                     currencyCode: defaultCurrencyCode
                 ))
                 .font(DS.Typography.headline)

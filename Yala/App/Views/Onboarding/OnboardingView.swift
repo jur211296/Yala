@@ -17,6 +17,7 @@ struct OnboardingView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .largeTitle) private var completionIconSize: CGFloat = 56
@@ -778,8 +779,7 @@ struct OnboardingView: View {
                         if !expensesOnlyMode {
                             let amount = AmountInputHelper.parseDecimal(initialBalanceText)
                             let displayAmount = amount > 0 ? (balanceIsPositive ? amount : -amount) : 0.0
-                            let formattedBalance = YalaFormatter.currency(
-                                value: displayAmount,
+                            let formattedBalance = appPreferences.currency(displayAmount,
                                 currencyCode: accountCurrency.rawValue
                             )
 

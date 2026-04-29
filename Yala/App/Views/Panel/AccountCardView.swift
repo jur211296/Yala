@@ -11,6 +11,7 @@ import SwiftUI
 
 struct AccountCardView: View {
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     let account: Account
     /// Saldo actual de la cuenta en su moneda nativa, ya calculado externamente.
@@ -133,8 +134,7 @@ struct AccountCardView: View {
     }
 
     private func formattedAmount(_ value: Double) -> String {
-        YalaFormatter.currency(
-            value: value, currencyCode: normalizeCurrencyCode(account.currencyCode))
+        appPreferences.currency(value, currencyCode: normalizeCurrencyCode(account.currencyCode))
     }
 
 }

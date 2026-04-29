@@ -238,7 +238,7 @@ final class InsightsViewModel {
         var result: [String: Any] = [
             "currency": currencyCode,
             // Snapshot al payload IA — no reactivo. YalaFormatter deprecated permitido.
-            "currency_display": YalaFormatter.currencyIdentifier(for: currencyCode),
+            "currency_display": YalaFormatterStatic.currencyIdentifier(for: currencyCode),
             "locale": Locale.current.language.languageCode?.identifier ?? "es",
             "country": Locale.current.region?.identifier ?? "",
             "comparison_ref": comparisonLabel,

@@ -153,13 +153,11 @@ struct TransactionSuccessView: View {
                        destCurrency != data.currencyCode
                     {
                         Text(
-                            YalaFormatter.currency(
-                                value: Double(truncating: data.amount as NSDecimalNumber),
+                            appPreferences.currency(Double(truncating: data.amount as NSDecimalNumber),
                                 currencyCode: data.currencyCode,
                                 forceFullPrecision: true)
                             + " → "
-                            + YalaFormatter.currency(
-                                value: Double(truncating: destAmount as NSDecimalNumber),
+                            + appPreferences.currency(Double(truncating: destAmount as NSDecimalNumber),
                                 currencyCode: destCurrency,
                                 forceFullPrecision: true)
                         )
@@ -169,8 +167,7 @@ struct TransactionSuccessView: View {
                         .opacity(showAmount ? 1.0 : 0.0)
                     } else {
                         Text(
-                            YalaFormatter.currency(
-                                value: Double(truncating: data.amount as NSDecimalNumber),
+                            appPreferences.currency(Double(truncating: data.amount as NSDecimalNumber),
                                 currencyCode: data.currencyCode,
                                 forceFullPrecision: true)
                         )

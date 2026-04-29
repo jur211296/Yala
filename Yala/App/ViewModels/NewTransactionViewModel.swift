@@ -929,7 +929,7 @@ final class NewTransactionViewModel {
     /// así que este callsite es inmune al bug de reactividad. YalaFormatter deprecated permitido.
     var splitDescription: String? {
         guard let type = splitType, let total = splitTotalAmount else { return nil }
-        let formattedTotal = YalaFormatter.number(value: total, forceFullPrecision: true)
+        let formattedTotal = YalaFormatterStatic.number(value: total, forceFullPrecision: true)
         switch type {
         case .percentage:
             if let pct = splitMyValue {
@@ -946,7 +946,7 @@ final class NewTransactionViewModel {
             }
         case .exact:
             if let exact = splitMyValue {
-                return L10n.Split.descExact(YalaFormatter.number(value: exact, forceFullPrecision: true))
+                return L10n.Split.descExact(YalaFormatterStatic.number(value: exact, forceFullPrecision: true))
             }
         }
         return nil

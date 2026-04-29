@@ -849,7 +849,7 @@ struct InsightsCalculator {
             if ctx.pendingDebtTotal > debtThreshold {
                 // Snapshot intencional: insights se regeneran al recompute del calc, no al cambiar
                 // prefs en runtime. YalaFormatter deprecated permitido aquí.
-                let formatted = YalaFormatter.currency(value: ctx.pendingDebtTotal, currencyCode: currencyCode)
+                let formatted = YalaFormatterStatic.currency(value: ctx.pendingDebtTotal, currencyCode: currencyCode)
                 let text = AttributedString(L10n.Insights.ruleHighDebt(formatted, tone: tone))
                 let tip = AttributedString(L10n.Insights.tipHighDebt)
                 insights.append(InsightResult(

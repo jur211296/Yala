@@ -637,7 +637,7 @@ struct AppPreferencesTests {
     // MARK: - Formatting parity (regression-guards migration to appPreferences.X)
 
     /// `appPreferences.currency(...)` must produce byte-identical strings to
-    /// `YalaFormatter.currency(value:currencyCode:)` for every combination of prefs.
+    /// `YalaFormatterStatic.currency(value:currencyCode:)` for every combination of prefs.
     /// Any divergence introduced by the migration would fail these tests.
     @Test func currency_parity_acrossDecimalsAndFormat() {
         let defaults = Self.makeSuite()
@@ -658,7 +658,7 @@ struct AppPreferencesTests {
                 for value in values {
                     for code in codes {
                         let viaPrefs = prefs.currency(value, currencyCode: code)
-                        let viaFormatter = YalaFormatter.currency(value: value, currencyCode: code)
+                        let viaFormatter = YalaFormatterStatic.currency(value: value, currencyCode: code)
                         #expect(
                             viaPrefs == viaFormatter,
                             "decimals=\(decimals) format=\(format) value=\(value) code=\(code) → prefs=\(viaPrefs) vs formatter=\(viaFormatter)"
@@ -678,7 +678,7 @@ struct AppPreferencesTests {
             UserDefaults.standard.set(format.rawValue, forKey: "currencyDisplayFormat")
             for code in ["PEN", "USD", "EUR", "JPY"] {
                 #expect(
-                    prefs.currencyIdentifier(for: code) == YalaFormatter.currencyIdentifier(for: code),
+                    prefs.currencyIdentifier(for: code) == YalaFormatterStatic.currencyIdentifier(for: code),
                     "format=\(format) code=\(code)"
                 )
             }
@@ -695,7 +695,7 @@ struct AppPreferencesTests {
             UserDefaults.standard.set(decimals, forKey: "decimalPlaces")
             for value in values {
                 #expect(
-                    prefs.number(value) == YalaFormatter.number(value: value),
+                    prefs.number(value) == YalaFormatterStatic.number(value: value),
                     "decimals=\(decimals) value=\(value)"
                 )
             }
@@ -710,7 +710,7 @@ struct AppPreferencesTests {
 
         for value in [0.0, 500, 5_000, 12_345.67, -50_000] {
             #expect(
-                prefs.currencyCompact(value, currencyCode: "PEN") == YalaFormatter.currencyCompact(value: value, currencyCode: "PEN"),
+                prefs.currencyCompact(value, currencyCode: "PEN") == YalaFormatterStatic.currencyCompact(value: value, currencyCode: "PEN"),
                 "value=\(value)"
             )
         }
@@ -724,7 +724,7 @@ struct AppPreferencesTests {
 
         for value in [0.0, 9_999, 10_500, -25_000] {
             #expect(
-                prefs.amountCashFlowCell(value, currencyCode: "PEN") == YalaFormatter.amountCashFlowCell(value: value, currencyCode: "PEN"),
+                prefs.amountCashFlowCell(value, currencyCode: "PEN") == YalaFormatterStatic.amountCashFlowCell(value: value, currencyCode: "PEN"),
                 "value=\(value)"
             )
         }

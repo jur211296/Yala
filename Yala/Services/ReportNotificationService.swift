@@ -239,7 +239,7 @@ final class ReportNotificationService {
         // (UNNotificationContent), así que no es UI viva. YalaFormatter deprecated permitido aquí.
         switch config.dataType {
         case .balance:
-            let formatted = YalaFormatter.currency(value: data.balance, currencyCode: currencyCode, forceFullPrecision: true)
+            let formatted = YalaFormatterStatic.currency(value: data.balance, currencyCode: currencyCode, forceFullPrecision: true)
             return L10n.Notifications.reportData(.balance, period: period, value: formatted)
         case .expenses:
             if data.totalExpense == 0 {
@@ -250,13 +250,13 @@ final class ReportNotificationService {
                 default: return L10n.Notifications.emptyExpensesDaily
                 }
             }
-            let formatted = YalaFormatter.currency(value: data.totalExpense, currencyCode: currencyCode, forceFullPrecision: true)
+            let formatted = YalaFormatterStatic.currency(value: data.totalExpense, currencyCode: currencyCode, forceFullPrecision: true)
             return L10n.Notifications.reportData(.expenses, period: period, value: formatted)
         case .income:
             if data.totalIncome == 0 {
                 return L10n.Notifications.emptyIncome
             }
-            let formatted = YalaFormatter.currency(value: data.totalIncome, currencyCode: currencyCode, forceFullPrecision: true)
+            let formatted = YalaFormatterStatic.currency(value: data.totalIncome, currencyCode: currencyCode, forceFullPrecision: true)
             return L10n.Notifications.reportData(.income, period: period, value: formatted)
         case .topCategory:
             guard let topCategory = data.topCategory else {
