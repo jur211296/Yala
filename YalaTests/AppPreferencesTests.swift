@@ -16,6 +16,7 @@ import Testing
 @testable import Yala
 
 @MainActor
+@Suite(.serialized)
 struct AppPreferencesTests {
 
     // MARK: - Helpers

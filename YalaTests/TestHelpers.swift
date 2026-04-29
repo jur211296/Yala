@@ -15,6 +15,24 @@ import SwiftData
 typealias YalaCategory = Yala.Category
 typealias YalaTag = Yala.Tag
 
+// MARK: - Isolated UserDefaults
+
+/// Crea un `UserDefaults` con suite name único por test (UUID), totalmente aislado
+/// de `UserDefaults.standard` y de otros tests corriendo en el mismo proceso.
+///
+/// Úsalo cuando el SUT acepta `UserDefaults` inyectable. Si el SUT toca
+/// `UserDefaults.standard` directamente, este helper no aísla — usa
+/// `@Suite(.serialized)` y limpia con `defer { remove }`.
+///
+/// Ver TESTING-STRATEGY.md (sección "Anti-patrones detectados") para detalles.
+func makeIsolatedDefaults(prefix: String = "test") -> UserDefaults {
+    let suiteName = "\(prefix).\(UUID().uuidString)"
+    guard let defaults = UserDefaults(suiteName: suiteName) else {
+        fatalError("Failed to create isolated UserDefaults suite: \(suiteName)")
+    }
+    return defaults
+}
+
 // MARK: - In-Memory SwiftData Context
 
 /// Creates an in-memory ModelContext for testing with dual config (mirrors production).

@@ -10,6 +10,7 @@ import Foundation
 import SwiftData
 @testable import Yala
 
+@Suite(.serialized)
 struct ChatAssistantViewModelTests {
 
     // MARK: - Initial State

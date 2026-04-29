@@ -12,6 +12,7 @@ import Testing
 @testable import Yala
 
 @MainActor
+@Suite(.serialized)
 struct DataWipeServiceTests {
 
     // MARK: - Preference Keys Coverage
