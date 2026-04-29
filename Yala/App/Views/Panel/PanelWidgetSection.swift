@@ -327,8 +327,7 @@ private struct PanelExchangeRateSection: View {
             data: viewModel.exchangeRateWidgetData,
             preferredCurrency: currencyCode,
             selectedCurrencies: $viewModel.selectedComparisonCurrencies,
-            grouping: viewModel.exchangeRateGrouping,
-            onShowDetail: nil
+            grouping: viewModel.exchangeRateGrouping
         )
     }
 }

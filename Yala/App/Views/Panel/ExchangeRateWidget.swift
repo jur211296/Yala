@@ -14,20 +14,17 @@ struct ExchangeRateWidget: View {
     let preferredCurrency: String
     @Binding var selectedCurrencies: [CurrencyCode]
     let grouping: TrendGrouping
-    let onShowDetail: (() -> Void)?
 
     init(
         data: ExchangeRateWidgetData?,
         preferredCurrency: String,
         selectedCurrencies: Binding<[CurrencyCode]>,
-        grouping: TrendGrouping,
-        onShowDetail: (() -> Void)? = nil
+        grouping: TrendGrouping
     ) {
         self.data = data
         self.preferredCurrency = preferredCurrency
         self._selectedCurrencies = selectedCurrencies
         self.grouping = grouping
-        self.onShowDetail = onShowDetail
     }
 
     @Environment(\.colorScheme) var colorScheme
