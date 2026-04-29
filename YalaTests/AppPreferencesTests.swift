@@ -44,7 +44,8 @@ struct AppPreferencesTests {
         #expect(prefs.hasCompletedOnboarding == false)
         #expect(prefs.secondaryCurrencies == [])
         #expect(prefs.accountsSortOrderNames == [])
-        #expect(prefs.currencyDisplayFormat == .code)
+        #expect(prefs.currencyDisplayFormat == .symbol)
+        #expect(prefs.decimalPlaces == 2)
     }
 
     @Test func init_loadsFromUserDefaults_whenKeyPresent() {
@@ -136,9 +137,10 @@ struct AppPreferencesTests {
         let defaults = Self.makeSuite()
         let prefs = AppPreferences(defaults: defaults)
 
-        prefs.currencyDisplayFormat = .symbol
+        // Default es .symbol — asignar .code dispara el didSet (oldValue != newValue).
+        prefs.currencyDisplayFormat = .code
 
-        #expect(defaults.string(forKey: AppPreferences.Keys.currencyDisplayFormat) == "symbol")
+        #expect(defaults.string(forKey: AppPreferences.Keys.currencyDisplayFormat) == "code")
     }
 
     @Test func set_voiceLanguage_persistsRawValue() {
@@ -353,7 +355,7 @@ struct AppPreferencesTests {
         #expect(prefs.defaultCurrencyCode == .pen)         // fallback
         #expect(prefs.insightsTone == .normal)             // fallback
         #expect(prefs.voiceLanguage == .system)            // fallback
-        #expect(prefs.currencyDisplayFormat == .code)      // fallback
+        #expect(prefs.currencyDisplayFormat == .symbol)    // fallback al default
     }
 
     // MARK: - Backwards compat — @AppStorage legacy writes are seen by AppPreferences
@@ -705,6 +707,9 @@ struct AppPreferencesTests {
     @Test func currencyCompact_parity() {
         let defaults = Self.makeSuite()
         let prefs = AppPreferences(defaults: defaults)
+        // Sincronizar prefs ↔ UserDefaults.standard (lo que YalaFormatterStatic lee).
+        prefs.decimalPlaces = 0
+        prefs.currencyDisplayFormat = .code
         UserDefaults.standard.set(0, forKey: "decimalPlaces")
         UserDefaults.standard.set("code", forKey: "currencyDisplayFormat")
 

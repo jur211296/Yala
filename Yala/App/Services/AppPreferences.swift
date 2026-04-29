@@ -76,14 +76,14 @@ final class AppPreferences {
         }
     }
 
-    var currencyDisplayFormat: CurrencyDisplayFormat = .code {
+    var currencyDisplayFormat: CurrencyDisplayFormat = .symbol {
         didSet {
             guard oldValue != currencyDisplayFormat else { return }
             persistString(currencyDisplayFormat.rawValue, forKey: Keys.currencyDisplayFormat, synced: true)
         }
     }
 
-    var decimalPlaces: Int = 0 {
+    var decimalPlaces: Int = 2 {
         didSet {
             guard oldValue != decimalPlaces else { return }
             persistInt(decimalPlaces, forKey: Keys.decimalPlaces, synced: true)

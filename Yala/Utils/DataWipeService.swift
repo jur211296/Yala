@@ -230,8 +230,8 @@ final class DataWipeService {
 
         // --- Visualización ---
         defaults.removeObject(forKey: "showVariations")         // Default: true
-        defaults.removeObject(forKey: "decimalPlaces")          // Default: 0
-        defaults.removeObject(forKey: "currencyDisplayFormat")  // Default: "code"
+        defaults.removeObject(forKey: "decimalPlaces")          // Default: 2
+        defaults.removeObject(forKey: "currencyDisplayFormat")  // Default: "symbol"
 
         // --- Perfil de usuario ---
         defaults.removeObject(forKey: "userName")               // Default: "Usuario"
