@@ -55,13 +55,14 @@ final class ScheduledPaymentNotificationTracker {
 
     // MARK: - Cleanup
 
-    /// Clean up old entries (> 30 days)
-    func cleanupOldEntries() {
+    /// Clean up old entries (> 30 days). `now` se inyecta opcionalmente en tests
+    /// para que el cutoff sea determinístico (sin depender de `Date.now`).
+    func cleanupOldEntries(now: Date = .now) {
         let allKeys = defaults.dictionaryRepresentation().keys
         let trackerKeys = allKeys.filter { $0.hasPrefix(keyPrefix) }
 
         let calendar = Calendar.current
-        let cutoffDate = calendar.date(byAdding: .day, value: -30, to: Date.now) ?? Date.now
+        let cutoffDate = calendar.date(byAdding: .day, value: -30, to: now) ?? now
 
         for key in trackerKeys {
             // Key format: scheduledPaymentNotif_UUID_YYYYMMDD_type

@@ -38,6 +38,15 @@ final class GroupExpenseService {
         return context
     }
 
+    #if DEBUG
+    /// Resetea el contexto inyectado para tests que validan comportamiento sin contexto.
+    /// `AppBootstrapper.setContext` lo poblá durante boot del test runner; los tests que
+    /// verifican el branch `noContext` deben llamar este helper antes de ejercer el SUT.
+    func _testResetContext() {
+        self.modelContext = nil
+    }
+    #endif
+
     // MARK: - Expense CRUD
 
     /// Create an expense with its shares, enqueue sync, and bridge to personal transaction.

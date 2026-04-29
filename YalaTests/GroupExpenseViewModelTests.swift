@@ -11,6 +11,7 @@ import Testing
 @testable import Yala
 
 @MainActor
+@Suite(.serialized)
 struct GroupExpenseViewModelTests {
 
     // MARK: - Helpers
@@ -226,6 +227,11 @@ struct GroupExpenseViewModelTests {
     // MARK: - Save Without Context
 
     @Test func saveFailsWithoutContext() {
+        // El singleton GroupExpenseService.shared puede tener contexto inyectado por
+        // AppBootstrapper durante boot del test runner. Limpiarlo para verificar
+        // el branch `noContext`.
+        GroupExpenseService.shared._testResetContext()
+
         let (vm, _) = makeViewModel()
         vm.amountString = "100"
         vm.expenseDescription = "Test"

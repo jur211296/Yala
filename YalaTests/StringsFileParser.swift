@@ -48,7 +48,10 @@ enum StringsFileParser {
                 var endIdx = value.index(after: idx)
                 while endIdx < value.endIndex {
                     let c = value[endIdx]
-                    if c.isLetter || c == "%" {
+                    // Format specifiers Swift son siempre ASCII (e.g. %@, %d, %lld, %1$@).
+                    // Los kanji y otros caracteres Unicode con `isLetter == true` (como `%増`
+                    // en japonés "32%増") son falsos positivos del parser.
+                    if (c.isASCII && c.isLetter) || c == "%" {
                         endIdx = value.index(after: endIdx)
                         result.append(String(value[idx..<endIdx]))
                         break

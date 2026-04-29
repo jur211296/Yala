@@ -127,16 +127,23 @@ struct ScheduledPaymentNotificationTrackerTests {
 
     // MARK: - cleanupOldEntries
 
+    /// Fecha fija para tests determinísticos: 2026-04-15 12:00 UTC.
+    private static let testNow: Date = {
+        var components = DateComponents(year: 2026, month: 4, day: 15, hour: 12)
+        components.timeZone = TimeZone(identifier: "UTC")
+        return Calendar(identifier: .gregorian).date(from: components)!
+    }()
+
     @Test func cleanupOldEntries_removesOlderThan30Days() {
         cleanupTrackerKeys()
         let tracker = ScheduledPaymentNotificationTracker.shared
         let paymentID = UUID()
-        let oldDate = calendar.date(byAdding: .day, value: -45, to: Date())!
+        let oldDate = calendar.date(byAdding: .day, value: -45, to: Self.testNow)!
 
         tracker.markNotified(paymentID: paymentID, date: oldDate, type: .dueDate)
         #expect(tracker.hasNotifiedForDate(paymentID: paymentID, date: oldDate, type: .dueDate) == true)
 
-        tracker.cleanupOldEntries()
+        tracker.cleanupOldEntries(now: Self.testNow)
 
         #expect(tracker.hasNotifiedForDate(paymentID: paymentID, date: oldDate, type: .dueDate) == false)
     }
@@ -145,11 +152,11 @@ struct ScheduledPaymentNotificationTrackerTests {
         cleanupTrackerKeys()
         let tracker = ScheduledPaymentNotificationTracker.shared
         let paymentID = UUID()
-        let recentDate = calendar.date(byAdding: .day, value: -5, to: Date())!
+        let recentDate = calendar.date(byAdding: .day, value: -5, to: Self.testNow)!
 
         tracker.markNotified(paymentID: paymentID, date: recentDate, type: .dueDate)
 
-        tracker.cleanupOldEntries()
+        tracker.cleanupOldEntries(now: Self.testNow)
 
         #expect(tracker.hasNotifiedForDate(paymentID: paymentID, date: recentDate, type: .dueDate) == true)
         cleanupTrackerKeys()
@@ -159,11 +166,11 @@ struct ScheduledPaymentNotificationTrackerTests {
         cleanupTrackerKeys()
         let tracker = ScheduledPaymentNotificationTracker.shared
         let paymentID = UUID()
-        let twentyNineDaysAgo = calendar.date(byAdding: .day, value: -29, to: Date())!
+        let twentyNineDaysAgo = calendar.date(byAdding: .day, value: -29, to: Self.testNow)!
 
         tracker.markNotified(paymentID: paymentID, date: twentyNineDaysAgo, type: .dueDate)
 
-        tracker.cleanupOldEntries()
+        tracker.cleanupOldEntries(now: Self.testNow)
 
         // 29 days ago is safely within the 30-day window
         #expect(tracker.hasNotifiedForDate(paymentID: paymentID, date: twentyNineDaysAgo, type: .dueDate) == true)
@@ -174,11 +181,11 @@ struct ScheduledPaymentNotificationTrackerTests {
         cleanupTrackerKeys()
         let tracker = ScheduledPaymentNotificationTracker.shared
         let paymentID = UUID()
-        let thirtyOneDaysAgo = calendar.date(byAdding: .day, value: -31, to: Date())!
+        let thirtyOneDaysAgo = calendar.date(byAdding: .day, value: -31, to: Self.testNow)!
 
         tracker.markNotified(paymentID: paymentID, date: thirtyOneDaysAgo, type: .dueDate)
 
-        tracker.cleanupOldEntries()
+        tracker.cleanupOldEntries(now: Self.testNow)
 
         // 31 days ago is past the 30-day window
         #expect(tracker.hasNotifiedForDate(paymentID: paymentID, date: thirtyOneDaysAgo, type: .dueDate) == false)
