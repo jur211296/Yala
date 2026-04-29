@@ -270,8 +270,14 @@ enum L10n {
                 static var title: String {
                     ls("panel.widgetInfo.cashFlow.title", comment: "Panel Polish #2 — Title sheet pedagógico CashFlow")
                 }
-                static var explanation: String {
-                    ls("panel.widgetInfo.cashFlow.explanation", comment: "Panel Polish #2 — Explanation sheet CashFlow (3 párrafos brand voice)")
+                static var explanationSmall: String {
+                    ls("panel.widgetInfo.cashFlow.explanationSmall", comment: "Panel Polish #2 — Explanation sheet CashFlow tamaño S (KPI compacto)")
+                }
+                static var explanationMedium: String {
+                    ls("panel.widgetInfo.cashFlow.explanationMedium", comment: "Panel Polish #2 — Explanation sheet CashFlow tamaño M (gráfica con barras)")
+                }
+                static var explanationLarge: String {
+                    ls("panel.widgetInfo.cashFlow.explanationLarge", comment: "Panel Polish #2 — Explanation sheet CashFlow tamaño L (gráfica completa interactiva)")
                 }
                 static var chip1: String {
                     ls("panel.widgetInfo.cashFlow.chip1", comment: "Panel Polish #2 — Chip 1 CashFlow")
@@ -288,8 +294,11 @@ enum L10n {
                 static var title: String {
                     ls("panel.widgetInfo.trend.title", comment: "Panel Polish #2 — Title sheet pedagógico Trend")
                 }
-                static var explanation: String {
-                    ls("panel.widgetInfo.trend.explanation", comment: "Panel Polish #2 — Explanation sheet Trend (3 párrafos brand voice)")
+                static var explanationSmall: String {
+                    ls("panel.widgetInfo.trend.explanationSmall", comment: "Panel Polish #2 — Explanation sheet Trend tamaño S (KPI compacto)")
+                }
+                static var explanationLarge: String {
+                    ls("panel.widgetInfo.trend.explanationLarge", comment: "Panel Polish #2 — Explanation sheet Trend tamaño L (gráfica con scrubbing)")
                 }
                 static var chip1: String {
                     ls("panel.widgetInfo.trend.chip1", comment: "Panel Polish #2 — Chip 1 Trend")

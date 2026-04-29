@@ -3583,9 +3583,6 @@
 /* Panel Polish #2 — Title sheet pedagógico CashFlow */
 "panel.widgetInfo.cashFlow.title" = "Fluxo de caixa";
 
-/* Panel Polish #2 — Explanation sheet CashFlow (3 párrafos brand voice) */
-"panel.widgetInfo.cashFlow.explanation" = "Veja num olhar como o dinheiro entra e sai no período que você escolher. Receitas e despesas aparecem lado a lado, com o fluxo líquido ao final.\n\nToque numa barra para ver o detalhe do dia: as verdes são receitas, as vermelhas são despesas.\n\nÚtil para identificar semanas em que você gastou mais do que entrou.";
-
 /* Panel Polish #2 — Chip 1 CashFlow */
 "panel.widgetInfo.cashFlow.chip1" = "Receitas";
 
@@ -3598,11 +3595,23 @@
 /* Panel Polish #2 — Title sheet pedagógico Trend */
 "panel.widgetInfo.trend.title" = "Evolução do saldo";
 
-/* Panel Polish #2 — Explanation sheet Trend (3 párrafos brand voice) */
-"panel.widgetInfo.trend.explanation" = "Veja como seu saldo evolui ao longo do tempo. Cada ponto na linha representa um dia e a curva mostra o equilíbrio entre receitas e despesas.\n\nDeslize o dedo pela linha para ver o saldo de qualquer dia. A linha pontilhada ao fundo mostra como foi o período anterior, para que você possa comparar.\n\nÚtil para entender se você está melhorando ou se precisa ajustar.";
-
 /* Panel Polish #2 — Chip 1 Trend */
 "panel.widgetInfo.trend.chip1" = "Interativa";
 
 /* Panel Polish #2 — Chip 2 Trend */
 "panel.widgetInfo.trend.chip2" = "Por período";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño S (KPI compacto) */
+"panel.widgetInfo.cashFlow.explanationSmall" = "Veja num olhar quanto entrou e quanto saiu no período. Você verá os totais de receitas, despesas e o fluxo líquido.\n\nSe quiser explorar dia a dia, experimente o tamanho Médio ou Grande.";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño M (gráfica con barras) */
+"panel.widgetInfo.cashFlow.explanationMedium" = "Compare suas receitas e despesas dia a dia. As barras verdes são receitas, as vermelhas são despesas.\n\nÚtil para identificar semanas em que você gastou mais do que entrou.";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño L (gráfica completa interactiva) */
+"panel.widgetInfo.cashFlow.explanationLarge" = "Explore como o dinheiro entra e sai ao longo do período. Toque numa barra para ver o detalhe do dia.\n\nAs barras verdes são receitas, as vermelhas são despesas. Compare com o período anterior para ver se está melhorando.";
+
+/* Panel Polish #2 — Explanation sheet Trend tamaño S (KPI compacto) */
+"panel.widgetInfo.trend.explanationSmall" = "Veja seu saldo total do período e como ele se compara ao anterior.\n\nPara explorar dia a dia, experimente o tamanho Grande.";
+
+/* Panel Polish #2 — Explanation sheet Trend tamaño L (gráfica con scrubbing) */
+"panel.widgetInfo.trend.explanationLarge" = "Veja como seu saldo evolui ao longo do tempo. Cada ponto representa um dia e a curva mostra o equilíbrio entre suas receitas e despesas.\n\nDeslize o dedo pela linha para ver o saldo de qualquer dia. A linha da média te ajuda a perceber se seu saldo está subindo ou descendo.";

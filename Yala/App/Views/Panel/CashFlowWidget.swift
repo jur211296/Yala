@@ -38,6 +38,12 @@ struct CashFlowWidget: View {
     // When true, hides income bars and KPIs in compact layout
     let isExpensesOnlyMode: Bool
 
+    /// Optional override del botón info en el header. Cuando se pasa, sustituye
+    /// al `InfoHintButton` legacy (popover compacto) por el `WidgetInfoButton`
+    /// pedagógico del Panel. El callsite no-Panel lo deja nil → conserva
+    /// el comportamiento legacy.
+    let headerInfoButton: AnyView?
+
     /// Max data points before hiding bar labels to avoid overlap
     private static let maxBarsForLabels = 10
 
@@ -54,7 +60,8 @@ struct CashFlowWidget: View {
         comparisonPeriodText: String? = nil,
         selectedTransactionNatures: Set<TransactionNature> = [],
         showInfoHint: Bool = true,
-        isExpensesOnlyMode: Bool = false
+        isExpensesOnlyMode: Bool = false,
+        headerInfoButton: AnyView? = nil
     ) {
         self.summary = summary
         self.size = size
@@ -69,6 +76,7 @@ struct CashFlowWidget: View {
         self.selectedTransactionNatures = selectedTransactionNatures
         self.showInfoHint = showInfoHint
         self.isExpensesOnlyMode = isExpensesOnlyMode
+        self.headerInfoButton = headerInfoButton
     }
 
     /// Check if we have no data to display
@@ -430,10 +438,14 @@ struct CashFlowWidget: View {
                 }
 
                 if showInfoHint {
-                    InfoHintButton(
-                        title: L10n.WidgetType.cashFlow,
-                        message: L10n.Widget.Hint.cashFlow
-                    )
+                    if let headerInfoButton {
+                        headerInfoButton
+                    } else {
+                        InfoHintButton(
+                            title: L10n.WidgetType.cashFlow,
+                            message: L10n.Widget.Hint.cashFlow
+                        )
+                    }
                 }
 
                 Spacer()

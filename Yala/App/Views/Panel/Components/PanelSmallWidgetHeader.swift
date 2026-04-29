@@ -14,6 +14,10 @@ struct PanelSmallWidgetHeader: View {
     let title: String
     let accessibilityLabel: String
     let action: (() -> Void)?
+    /// Botón pedagógico opcional renderizado entre el título y el chevron.
+    /// Lo inyecta el wrapper Panel cuando el widget está dentro de la
+    /// jerarquía del Panel (acceso a `WidgetInfoButton`).
+    var headerInfoButton: AnyView? = nil
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
@@ -21,6 +25,10 @@ struct PanelSmallWidgetHeader: View {
                 .font(DS.Typography.subheadlineEmphasized)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
+
+            if let headerInfoButton {
+                headerInfoButton
+            }
 
             Spacer(minLength: 0)
 

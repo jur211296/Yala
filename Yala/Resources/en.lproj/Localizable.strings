@@ -3586,9 +3586,6 @@
 /* Panel Polish #2 — Title sheet pedagógico CashFlow */
 "panel.widgetInfo.cashFlow.title" = "Cash flow";
 
-/* Panel Polish #2 — Explanation sheet CashFlow (3 párrafos brand voice) */
-"panel.widgetInfo.cashFlow.explanation" = "See at a glance how money comes in and goes out during the period you choose. Income and expenses appear side by side, with the net flow at the end.\n\nTap a bar to see the day's detail: green ones are income, red ones are expenses.\n\nUseful for spotting weeks when you spent more than came in.";
-
 /* Panel Polish #2 — Chip 1 CashFlow */
 "panel.widgetInfo.cashFlow.chip1" = "Income";
 
@@ -3601,11 +3598,23 @@
 /* Panel Polish #2 — Title sheet pedagógico Trend */
 "panel.widgetInfo.trend.title" = "Balance trend";
 
-/* Panel Polish #2 — Explanation sheet Trend (3 párrafos brand voice) */
-"panel.widgetInfo.trend.explanation" = "See how your balance evolves over time. Each point on the line represents a day, and the curve shows the balance between your income and expenses.\n\nDrag your finger along the line to see your balance on any day. The dotted line in the background shows the previous period, so you can compare.\n\nUseful for understanding whether you're improving or need to adjust.";
-
 /* Panel Polish #2 — Chip 1 Trend */
 "panel.widgetInfo.trend.chip1" = "Interactive";
 
 /* Panel Polish #2 — Chip 2 Trend */
 "panel.widgetInfo.trend.chip2" = "By period";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño S (KPI compacto) */
+"panel.widgetInfo.cashFlow.explanationSmall" = "See at a glance how much came in and went out during the period. You'll see income, expense and net flow totals.\n\nIf you want to explore day by day, try the Medium or Large size.";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño M (gráfica con barras) */
+"panel.widgetInfo.cashFlow.explanationMedium" = "Compare your income and expenses day by day. Green bars are income, red bars are expenses.\n\nUseful for spotting weeks when you spent more than came in.";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño L (gráfica completa interactiva) */
+"panel.widgetInfo.cashFlow.explanationLarge" = "Explore how money comes in and goes out over the period. Tap a bar to see the day's detail.\n\nGreen bars are income, red bars are expenses. Compare with the previous period to see whether you're improving.";
+
+/* Panel Polish #2 — Explanation sheet Trend tamaño S (KPI compacto) */
+"panel.widgetInfo.trend.explanationSmall" = "See your total balance for the period and how it compares to the previous one.\n\nTo explore day by day, try the Large size.";
+
+/* Panel Polish #2 — Explanation sheet Trend tamaño L (gráfica con scrubbing) */
+"panel.widgetInfo.trend.explanationLarge" = "See how your balance evolves over time. Each point represents a day, and the curve shows the balance between your income and expenses.\n\nDrag your finger along the line to see your balance on any day. The average line helps you see whether your balance is rising or falling.";

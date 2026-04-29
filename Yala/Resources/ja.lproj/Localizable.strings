@@ -3586,9 +3586,6 @@
 /* Panel Polish #2 — Title sheet pedagógico CashFlow */
 "panel.widgetInfo.cashFlow.title" = "キャッシュフロー";
 
-/* Panel Polish #2 — Explanation sheet CashFlow (3 párrafos brand voice) */
-"panel.widgetInfo.cashFlow.explanation" = "選んだ期間のお金の出入りをひと目で確認できます。収入と支出が並んで表示され、最後にネットフローが表示されます。\n\nバーをタップするとその日の詳細を確認できます。緑は収入、赤は支出です。\n\n収入よりも支出が多かった週を見つけるのに役立ちます。";
-
 /* Panel Polish #2 — Chip 1 CashFlow */
 "panel.widgetInfo.cashFlow.chip1" = "収入";
 
@@ -3601,11 +3598,23 @@
 /* Panel Polish #2 — Title sheet pedagógico Trend */
 "panel.widgetInfo.trend.title" = "残高の推移";
 
-/* Panel Polish #2 — Explanation sheet Trend (3 párrafos brand voice) */
-"panel.widgetInfo.trend.explanation" = "残高が時間とともにどう変化するかを確認できます。線の各点は1日を表し、曲線は収入と支出のバランスを示します。\n\n線の上を指でなぞると、任意の日の残高を確認できます。背景の点線は前の期間の推移を示し、比較に使えます。\n\n上向きに進んでいるか、調整が必要かを把握するのに役立ちます。";
-
 /* Panel Polish #2 — Chip 1 Trend */
 "panel.widgetInfo.trend.chip1" = "インタラクティブ";
 
 /* Panel Polish #2 — Chip 2 Trend */
 "panel.widgetInfo.trend.chip2" = "期間別";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño S (KPI compacto) */
+"panel.widgetInfo.cashFlow.explanationSmall" = "選んだ期間にどれだけお金が入って出たかをひと目で確認できます。収入、支出、ネットフローの合計が表示されます。\n\n日ごとの詳細を確認したい場合は、中サイズか大サイズをお試しください。";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño M (gráfica con barras) */
+"panel.widgetInfo.cashFlow.explanationMedium" = "収入と支出を日ごとに比較できます。緑のバーは収入、赤のバーは支出です。\n\n収入よりも支出が多かった週を見つけるのに役立ちます。";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño L (gráfica completa interactiva) */
+"panel.widgetInfo.cashFlow.explanationLarge" = "期間中のお金の出入りを詳しく確認できます。バーをタップするとその日の詳細を確認できます。\n\n緑のバーは収入、赤のバーは支出です。前の期間と比較して上向きかを確認できます。";
+
+/* Panel Polish #2 — Explanation sheet Trend tamaño S (KPI compacto) */
+"panel.widgetInfo.trend.explanationSmall" = "選んだ期間の合計残高と、前の期間との比較を確認できます。\n\n日ごとに詳しく確認したい場合は、大サイズをお試しください。";
+
+/* Panel Polish #2 — Explanation sheet Trend tamaño L (gráfica con scrubbing) */
+"panel.widgetInfo.trend.explanationLarge" = "残高が時間とともにどう変化するかを確認できます。各点は1日を表し、曲線は収入と支出のバランスを示します。\n\n線の上を指でなぞると、任意の日の残高を確認できます。平均線で残高が上昇しているか下降しているかを判断できます。";

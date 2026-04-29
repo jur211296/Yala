@@ -4,8 +4,12 @@
 //
 //  Modelo del payload pedagógico para las sheets informativas de widgets del
 //  Panel. Cada `WidgetInfoKind` mapea a su `WidgetType` (para size/visibility
-//  prefs) y a su contenido (title + chips + explanation) vía
+//  prefs) y a su contenido (title + chips + explanation por tamaño) vía
 //  `WidgetInfoContent.content(for:)`.
+//
+//  La explicación varía según el tamaño porque cada layout de widget muestra
+//  cosas distintas (small = KPI compacto sin interacción; medium/large =
+//  chart completo con scrubbing).
 //
 //  Sub-épica: solo los pilotos `cashFlow` y `trend` están implementados en
 //  Fase B. El resto de los cases lanzan `fatalError` y se resuelven en el
@@ -71,7 +75,10 @@ struct InfoChip: Identifiable {
 struct WidgetInfoContent {
     let title: String
     let chips: [InfoChip]
-    let explanation: String
+    /// Resuelve la explicación pedagógica para un `WidgetSize`. Cada widget
+    /// puede tener copy distinto según el layout que se muestra (small es
+    /// más compacto que medium/large).
+    let explanation: (WidgetSize) -> String
 
     static func content(for kind: WidgetInfoKind) -> WidgetInfoContent {
         switch kind {
@@ -86,7 +93,13 @@ struct WidgetInfoContent {
                              tintKey: .neutral,
                              systemImage: "calendar"),
                 ],
-                explanation: L10n.Panel.WidgetInfo.Trend.explanation
+                explanation: { size in
+                    switch size {
+                    case .small:  return L10n.Panel.WidgetInfo.Trend.explanationSmall
+                    case .medium: return L10n.Panel.WidgetInfo.Trend.explanationLarge
+                    case .large:  return L10n.Panel.WidgetInfo.Trend.explanationLarge
+                    }
+                }
             )
 
         case .cashFlow:
@@ -103,7 +116,13 @@ struct WidgetInfoContent {
                              tintKey: .neutral,
                              systemImage: "calendar"),
                 ],
-                explanation: L10n.Panel.WidgetInfo.CashFlow.explanation
+                explanation: { size in
+                    switch size {
+                    case .small:  return L10n.Panel.WidgetInfo.CashFlow.explanationSmall
+                    case .medium: return L10n.Panel.WidgetInfo.CashFlow.explanationMedium
+                    case .large:  return L10n.Panel.WidgetInfo.CashFlow.explanationLarge
+                    }
+                }
             )
 
         case .categoriesPie, .subcategoriesPie, .tagsPie,

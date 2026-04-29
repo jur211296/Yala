@@ -4,11 +4,11 @@
 //
 //  Sheet pedagógica interactiva para widgets del Panel. Muestra una preview
 //  reactiva de la gráfica (con sample data o real), chips descriptores,
-//  explicación brand-voice, segmented S/M/L sincronizado con la preferencia
-//  real, y CTA "Añadir al Panel" cuando el widget está oculto.
+//  segmented S/M/L (que muta `@State` local y aplica al VM al cerrar) y
+//  explicación brand-voice que varía según el tamaño seleccionado.
 //
 //  Patrón derivado de `FinancialScoreDetailSheet`: NavigationStack + xmark
-//  toolbar + medium/large detents + ScrollView con secciones apiladas.
+//  toolbar + large detent + ScrollView con secciones apiladas.
 //
 
 import SwiftUI
@@ -20,11 +20,11 @@ struct WidgetInfoSheet<Preview: View>: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(AppPreferences.self) private var appPreferences
-    @State private var selectedSize: WidgetSize = .small
+    @State private var draftSize: WidgetSize = .small
+    @State private var didLoadInitialSize = false
 
     private var content: WidgetInfoContent { .content(for: kind) }
     private var widgetType: WidgetType { kind.widgetType }
-    private var isAdded: Bool { viewModel.isWidgetVisible(widgetType) }
 
     var body: some View {
         NavigationStack {
@@ -32,9 +32,8 @@ struct WidgetInfoSheet<Preview: View>: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xl) {
                     previewBox
                     chipsRow
-                    explanationBlock
                     sizeSegmented
-                    if !isAdded { addToPanelCTA }
+                    explanationBlock
                 }
                 .padding(.horizontal, DS.Spacing.xl)
                 .padding(.vertical, DS.Spacing.lg)
@@ -48,30 +47,36 @@ struct WidgetInfoSheet<Preview: View>: View {
                         systemName: "xmark",
                         label: L10n.Accessibility.close
                     ) {
-                        dismiss()
+                        applyDraftAndDismiss()
                     }
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.large])
         .presentationDragIndicator(.visible)
-        .task { selectedSize = viewModel.widgetSize(widgetType) }
-        .onChange(of: selectedSize) { _, new in
-            viewModel.setWidgetSize(widgetType, size: new)
+        .task {
+            // Solo capturar el tamaño actual del VM en el primer mount; los
+            // cambios subsecuentes del segmented mutan `draftSize` localmente
+            // y se persisten en el VM al cerrar la sheet.
+            if !didLoadInitialSize {
+                draftSize = viewModel.widgetSize(widgetType)
+                didLoadInitialSize = true
+            }
+        }
+        .onDisappear {
+            // Safety net: si la sheet se dismissa por gesto/swipe (no botón),
+            // igual aplicamos el draft al VM real. Idempotente — si ya se aplicó
+            // vía `applyDraftAndDismiss`, el guard de `setWidgetSize` lo no-opa.
+            persistDraftToViewModel()
         }
     }
 
     @ViewBuilder
     private var previewBox: some View {
-        previewContent(selectedSize)
+        previewContent(draftSize)
             .environment(\.isWidgetPreviewMode, true)
             .environment(appPreferences)
-            .padding(DS.Spacing.md)
             .frame(maxWidth: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                    .fill(.regularMaterial)
-            )
     }
 
     @ViewBuilder
@@ -85,7 +90,7 @@ struct WidgetInfoSheet<Preview: View>: View {
 
     @ViewBuilder
     private var explanationBlock: some View {
-        Text(content.explanation)
+        Text(explanationFor(draftSize))
             .font(DS.Typography.subheadline)
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
@@ -96,7 +101,7 @@ struct WidgetInfoSheet<Preview: View>: View {
     private var sizeSegmented: some View {
         let supported = widgetType.supportedSizes
         if supported.count > 1 {
-            Picker(selection: $selectedSize) {
+            Picker(selection: $draftSize) {
                 ForEach(supported, id: \.self) { size in
                     Text(sizeLabel(size)).tag(size)
                 }
@@ -107,19 +112,28 @@ struct WidgetInfoSheet<Preview: View>: View {
         }
     }
 
-    @ViewBuilder
-    private var addToPanelCTA: some View {
-        YalaPrimaryButton(L10n.Panel.WidgetInfo.addToPanel, icon: "plus") {
-            viewModel.addWidgetToPanel(widgetType)
-            dismiss()
-        }
-    }
-
     private func sizeLabel(_ size: WidgetSize) -> String {
         switch size {
         case .small:  return L10n.Panel.WidgetSize.small
         case .medium: return L10n.Panel.WidgetSize.medium
         case .large:  return L10n.Panel.WidgetSize.large
         }
+    }
+
+    /// Resuelve la explicación pedagógica para el tamaño actual. Cada tamaño
+    /// tiene un layout distinto (small = compacto KPI; medium/large = chart
+    /// completo con interacciones), por eso la copy varía.
+    private func explanationFor(_ size: WidgetSize) -> String {
+        content.explanation(size)
+    }
+
+    private func applyDraftAndDismiss() {
+        persistDraftToViewModel()
+        dismiss()
+    }
+
+    private func persistDraftToViewModel() {
+        guard didLoadInitialSize else { return }
+        viewModel.setWidgetSize(widgetType, size: draftSize)
     }
 }

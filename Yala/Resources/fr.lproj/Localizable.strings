@@ -3584,9 +3584,6 @@
 /* Panel Polish #2 — Title sheet pedagógico CashFlow */
 "panel.widgetInfo.cashFlow.title" = "Flux de trésorerie";
 
-/* Panel Polish #2 — Explanation sheet CashFlow (3 párrafos brand voice) */
-"panel.widgetInfo.cashFlow.explanation" = "Vois en un coup d'œil comment ton argent entre et sort sur la période choisie. Les revenus et les dépenses apparaissent côte à côte, avec le flux net à la fin.\n\nTouche une barre pour voir le détail du jour : en vert les revenus, en rouge les dépenses.\n\nUtile pour repérer les semaines où tu as dépensé plus que ce qui est entré.";
-
 /* Panel Polish #2 — Chip 1 CashFlow */
 "panel.widgetInfo.cashFlow.chip1" = "Revenus";
 
@@ -3599,11 +3596,23 @@
 /* Panel Polish #2 — Title sheet pedagógico Trend */
 "panel.widgetInfo.trend.title" = "Évolution du solde";
 
-/* Panel Polish #2 — Explanation sheet Trend (3 párrafos brand voice) */
-"panel.widgetInfo.trend.explanation" = "Vois comment ton solde évolue dans le temps. Chaque point représente un jour et la courbe montre l'équilibre entre tes revenus et tes dépenses.\n\nFais glisser ton doigt sur la ligne pour voir le solde n'importe quel jour. La ligne pointillée en arrière-plan montre la période précédente, pour comparer.\n\nUtile pour comprendre si tu progresses ou s'il faut ajuster.";
-
 /* Panel Polish #2 — Chip 1 Trend */
 "panel.widgetInfo.trend.chip1" = "Interactive";
 
 /* Panel Polish #2 — Chip 2 Trend */
 "panel.widgetInfo.trend.chip2" = "Par période";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño S (KPI compacto) */
+"panel.widgetInfo.cashFlow.explanationSmall" = "Vois en un coup d'œil combien est entré et sorti pendant la période. Tu verras les totaux de revenus, dépenses et flux net.\n\nSi tu veux explorer jour par jour, essaie la taille Moyenne ou Grande.";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño M (gráfica con barras) */
+"panel.widgetInfo.cashFlow.explanationMedium" = "Compare tes revenus et tes dépenses jour par jour. Les barres vertes sont les revenus, les rouges sont les dépenses.\n\nUtile pour repérer les semaines où tu as dépensé plus que ce qui est entré.";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño L (gráfica completa interactiva) */
+"panel.widgetInfo.cashFlow.explanationLarge" = "Explore comment ton argent entre et sort sur la période. Touche une barre pour voir le détail du jour.\n\nLes barres vertes sont les revenus, les rouges sont les dépenses. Compare avec la période précédente pour voir si tu progresses.";
+
+/* Panel Polish #2 — Explanation sheet Trend tamaño S (KPI compacto) */
+"panel.widgetInfo.trend.explanationSmall" = "Vois ton solde total de la période et sa comparaison avec la précédente.\n\nPour explorer jour par jour, essaie la taille Grande.";
+
+/* Panel Polish #2 — Explanation sheet Trend tamaño L (gráfica con scrubbing) */
+"panel.widgetInfo.trend.explanationLarge" = "Vois comment ton solde évolue dans le temps. Chaque point représente un jour, et la courbe montre l'équilibre entre tes revenus et tes dépenses.\n\nFais glisser ton doigt sur la ligne pour voir le solde n'importe quel jour. La ligne de moyenne t'aide à voir si ton solde augmente ou baisse.";

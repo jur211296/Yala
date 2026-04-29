@@ -75,41 +75,37 @@ private struct PanelTrendSection: View {
     let currencyCode: String
     let size: WidgetSize
 
-    /// VM con sample data para el preview de la sheet pedagógica. Se inicializa
-    /// vía `.task` para no instanciar el VM en cada body re-render.
-    @State private var sampleVM: PanelViewModel?
-
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            TrendsCarouselWidget(
-                viewModel: viewModel,
-                sessionState: sessionState,
-                currencyCode: currencyCode,
-                currentBalance: viewModel.currentBalance,
-                size: size,
-                onShowMore: { viewModel.navigateToStatistics(.trends) }
-            )
+        TrendsCarouselWidget(
+            viewModel: viewModel,
+            sessionState: sessionState,
+            currencyCode: currencyCode,
+            currentBalance: viewModel.currentBalance,
+            size: size,
+            onShowMore: { viewModel.navigateToStatistics(.trends) },
+            headerInfoButton: trendInfoButton
+        )
+    }
 
-            if let sampleVM {
-                WidgetInfoButton(kind: .trend, viewModel: viewModel) { previewSize in
-                    TrendsCarouselWidget(
-                        viewModel: sampleVM,
-                        sessionState: SessionState.shared,
-                        currencyCode: currencyCode,
-                        currentBalance: 1500,
-                        size: previewSize,
-                        onShowMore: nil
-                    )
-                    .allowsHitTesting(false)
-                }
-                .padding(DS.Spacing.md)
+    /// Botón info pedagógico inyectado en el header del Trend. El preview
+    /// reusa el VM real (con sus datos actuales) — la gráfica de Trend está
+    /// fuertemente acoplada a múltiples propiedades del VM (processedTrendPoints,
+    /// rawTrendPoints, processedYDomain, trendType) que no se cargan en un VM
+    /// sample minimal sin re-correr el pipeline completo de cálculo.
+    private var trendInfoButton: AnyView? {
+        AnyView(
+            WidgetInfoButton(kind: .trend, viewModel: viewModel) { previewSize in
+                TrendsCarouselWidget(
+                    viewModel: viewModel,
+                    sessionState: sessionState,
+                    currencyCode: currencyCode,
+                    currentBalance: viewModel.currentBalance,
+                    size: previewSize,
+                    onShowMore: nil
+                )
+                .allowsHitTesting(false)
             }
-        }
-        .task {
-            if sampleVM == nil {
-                sampleVM = PanelViewModel.previewWithSampleTrend()
-            }
-        }
+        )
     }
 }
 
@@ -271,32 +267,37 @@ private struct PanelCashFlowSection: View {
     let size: WidgetSize
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            if let summary = viewModel.cashFlowSummary {
-                CashFlowWidget(
-                    summary: summary,
-                    size: size,
-                    period: viewModel.selectedPeriod.rawValue,
-                    grouping: viewModel.cashFlowGrouping,
-                    interval: viewModel.currentInterval,
-                    onShowDetail: { viewModel.navigateToStatistics(.trends) },
-                    displayMode: viewModel.trendType,
-                    previousAmount: viewModel.cashFlowPreviousNet,
-                    selectedTransactionNatures: viewModel.selectedTransactionNatures,
-                    isExpensesOnlyMode: sessionState.isExpensesOnlyMode
-                )
-            } else {
-                YalaEmptyState(
-                    icon: "chart.bar.fill",
-                    title: L10n.Empty.noData,
-                    message: L10n.Statistics.noRecordsDescription
-                )
-                .frame(height: 200)
-            }
+        if let summary = viewModel.cashFlowSummary {
+            CashFlowWidget(
+                summary: summary,
+                size: size,
+                period: viewModel.selectedPeriod.rawValue,
+                grouping: viewModel.cashFlowGrouping,
+                interval: viewModel.currentInterval,
+                onShowDetail: { viewModel.navigateToStatistics(.trends) },
+                displayMode: viewModel.trendType,
+                previousAmount: viewModel.cashFlowPreviousNet,
+                selectedTransactionNatures: viewModel.selectedTransactionNatures,
+                isExpensesOnlyMode: sessionState.isExpensesOnlyMode,
+                headerInfoButton: cashFlowInfoButton(realSummary: summary)
+            )
+        } else {
+            YalaEmptyState(
+                icon: "chart.bar.fill",
+                title: L10n.Empty.noData,
+                message: L10n.Statistics.noRecordsDescription
+            )
+            .frame(height: 200)
+        }
+    }
 
+    /// Botón info pedagógico inyectado en el header del CashFlow. El preview
+    /// reusa el summary real cuando hay datos; sino el `previewSample`.
+    private func cashFlowInfoButton(realSummary: CashFlowSummary) -> AnyView {
+        AnyView(
             WidgetInfoButton(kind: .cashFlow, viewModel: viewModel) { previewSize in
                 CashFlowWidget(
-                    summary: viewModel.cashFlowSummary ?? .previewSample,
+                    summary: realSummary.chartData.isEmpty ? .previewSample : realSummary,
                     size: previewSize,
                     period: viewModel.selectedPeriod.rawValue,
                     grouping: viewModel.cashFlowGrouping,
@@ -310,8 +311,7 @@ private struct PanelCashFlowSection: View {
                 )
                 .allowsHitTesting(false)
             }
-            .padding(DS.Spacing.md)
-        }
+        )
     }
 }
 

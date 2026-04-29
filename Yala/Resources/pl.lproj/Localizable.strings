@@ -3586,9 +3586,6 @@
 /* Panel Polish #2 — Title sheet pedagógico CashFlow */
 "panel.widgetInfo.cashFlow.title" = "Przepływ pieniędzy";
 
-/* Panel Polish #2 — Explanation sheet CashFlow (3 párrafos brand voice) */
-"panel.widgetInfo.cashFlow.explanation" = "Zobacz na pierwszy rzut oka, jak pieniądze wpływają i wypływają w wybranym okresie. Wpływy i wydatki obok siebie, z saldem końcowym.\n\nDotknij słupka, aby zobaczyć szczegóły dnia: zielone to wpływy, czerwone to wydatki.\n\nPrzydatne do wychwytywania tygodni, w których wydałeś więcej, niż zarobiłeś.";
-
 /* Panel Polish #2 — Chip 1 CashFlow */
 "panel.widgetInfo.cashFlow.chip1" = "Wpływy";
 
@@ -3601,11 +3598,23 @@
 /* Panel Polish #2 — Title sheet pedagógico Trend */
 "panel.widgetInfo.trend.title" = "Trend salda";
 
-/* Panel Polish #2 — Explanation sheet Trend (3 párrafos brand voice) */
-"panel.widgetInfo.trend.explanation" = "Zobacz, jak Twoje saldo zmienia się w czasie. Każdy punkt na linii to jeden dzień, a krzywa pokazuje równowagę między wpływami i wydatkami.\n\nPrzeciągnij palcem po linii, aby zobaczyć saldo dowolnego dnia. Przerywana linia w tle pokazuje poprzedni okres, abyś mógł porównać.\n\nPrzydatne, aby sprawdzić, czy idziesz do przodu, czy trzeba coś zmienić.";
-
 /* Panel Polish #2 — Chip 1 Trend */
 "panel.widgetInfo.trend.chip1" = "Interaktywny";
 
 /* Panel Polish #2 — Chip 2 Trend */
 "panel.widgetInfo.trend.chip2" = "Według okresu";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño S (KPI compacto) */
+"panel.widgetInfo.cashFlow.explanationSmall" = "Zobacz na pierwszy rzut oka, ile wpłynęło i wypłynęło w wybranym okresie. Zobaczysz łączne wpływy, wydatki i saldo netto.\n\nJeśli chcesz przeanalizować dzień po dniu, spróbuj rozmiaru Średni lub Duży.";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño M (gráfica con barras) */
+"panel.widgetInfo.cashFlow.explanationMedium" = "Porównaj wpływy i wydatki dzień po dniu. Zielone słupki to wpływy, czerwone to wydatki.\n\nPrzydatne do wyłapywania tygodni, w których wydałeś więcej, niż wpłynęło.";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño L (gráfica completa interactiva) */
+"panel.widgetInfo.cashFlow.explanationLarge" = "Zobacz, jak pieniądze wpływają i wypływają w wybranym okresie. Dotknij słupka, aby zobaczyć szczegóły dnia.\n\nZielone słupki to wpływy, czerwone to wydatki. Porównaj z poprzednim okresem, aby sprawdzić, czy idziesz do przodu.";
+
+/* Panel Polish #2 — Explanation sheet Trend tamaño S (KPI compacto) */
+"panel.widgetInfo.trend.explanationSmall" = "Zobacz łączne saldo okresu i jak wypada w porównaniu do poprzedniego.\n\nAby przeanalizować dzień po dniu, spróbuj rozmiaru Duży.";
+
+/* Panel Polish #2 — Explanation sheet Trend tamaño L (gráfica con scrubbing) */
+"panel.widgetInfo.trend.explanationLarge" = "Zobacz, jak Twoje saldo zmienia się w czasie. Każdy punkt to jeden dzień, a krzywa pokazuje równowagę między wpływami a wydatkami.\n\nPrzeciągnij palcem po linii, aby zobaczyć saldo dowolnego dnia. Linia średniej pomaga sprawdzić, czy saldo rośnie czy spada.";

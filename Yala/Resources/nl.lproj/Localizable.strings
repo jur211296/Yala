@@ -3586,9 +3586,6 @@
 /* Panel Polish #2 — Title sheet pedagógico CashFlow */
 "panel.widgetInfo.cashFlow.title" = "Cashflow";
 
-/* Panel Polish #2 — Explanation sheet CashFlow (3 párrafos brand voice) */
-"panel.widgetInfo.cashFlow.explanation" = "Zie in één oogopslag hoe je geld binnenkomt en uitgaat in de gekozen periode. Inkomsten en uitgaven naast elkaar, met de netto stroom aan het einde.\n\nTik op een balk om het detail van de dag te zien: groen zijn inkomsten, rood zijn uitgaven.\n\nHandig om weken te herkennen waarin je meer hebt uitgegeven dan binnenkwam.";
-
 /* Panel Polish #2 — Chip 1 CashFlow */
 "panel.widgetInfo.cashFlow.chip1" = "Inkomsten";
 
@@ -3601,11 +3598,23 @@
 /* Panel Polish #2 — Title sheet pedagógico Trend */
 "panel.widgetInfo.trend.title" = "Saldo-ontwikkeling";
 
-/* Panel Polish #2 — Explanation sheet Trend (3 párrafos brand voice) */
-"panel.widgetInfo.trend.explanation" = "Zie hoe je saldo zich in de tijd ontwikkelt. Elk punt op de lijn is een dag en de curve toont het evenwicht tussen je inkomsten en uitgaven.\n\nVeeg met je vinger over de lijn om het saldo van een willekeurige dag te bekijken. De stippellijn op de achtergrond toont de vorige periode, zodat je kunt vergelijken.\n\nHandig om te zien of je vooruitgaat of moet bijsturen.";
-
 /* Panel Polish #2 — Chip 1 Trend */
 "panel.widgetInfo.trend.chip1" = "Interactief";
 
 /* Panel Polish #2 — Chip 2 Trend */
 "panel.widgetInfo.trend.chip2" = "Per periode";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño S (KPI compacto) */
+"panel.widgetInfo.cashFlow.explanationSmall" = "Zie in één oogopslag hoeveel er in de periode binnenkwam en uitging. Je ziet de totalen voor inkomsten, uitgaven en de netto stroom.\n\nWil je dag voor dag verkennen? Probeer dan formaat Middel of Groot.";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño M (gráfica con barras) */
+"panel.widgetInfo.cashFlow.explanationMedium" = "Vergelijk je inkomsten en uitgaven dag voor dag. Groene balken zijn inkomsten, rode balken zijn uitgaven.\n\nHandig om weken te ontdekken waarin je meer hebt uitgegeven dan binnenkwam.";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño L (gráfica completa interactiva) */
+"panel.widgetInfo.cashFlow.explanationLarge" = "Bekijk hoe je geld in de periode binnenkomt en uitgaat. Tik op een balk om het detail van de dag te zien.\n\nGroene balken zijn inkomsten, rode balken zijn uitgaven. Vergelijk met de vorige periode om te zien of je vooruitgaat.";
+
+/* Panel Polish #2 — Explanation sheet Trend tamaño S (KPI compacto) */
+"panel.widgetInfo.trend.explanationSmall" = "Zie je totale saldo voor de periode en hoe het zich verhoudt tot de vorige.\n\nOm dag voor dag te verkennen, probeer formaat Groot.";
+
+/* Panel Polish #2 — Explanation sheet Trend tamaño L (gráfica con scrubbing) */
+"panel.widgetInfo.trend.explanationLarge" = "Zie hoe je saldo zich in de tijd ontwikkelt. Elk punt is een dag en de curve toont het evenwicht tussen je inkomsten en uitgaven.\n\nVeeg met je vinger over de lijn om het saldo van een willekeurige dag te zien. De gemiddeldelijn helpt je te zien of je saldo stijgt of daalt.";

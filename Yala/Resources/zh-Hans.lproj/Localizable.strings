@@ -3586,9 +3586,6 @@
 /* Panel Polish #2 — Title sheet pedagógico CashFlow */
 "panel.widgetInfo.cashFlow.title" = "现金流";
 
-/* Panel Polish #2 — Explanation sheet CashFlow (3 párrafos brand voice) */
-"panel.widgetInfo.cashFlow.explanation" = "一眼查看你选择期间的资金进出情况。收入和支出并排显示，末尾显示净流量。\n\n点击柱状条查看当天的详情：绿色是收入，红色是支出。\n\n有助于发现支出超过收入的周。";
-
 /* Panel Polish #2 — Chip 1 CashFlow */
 "panel.widgetInfo.cashFlow.chip1" = "收入";
 
@@ -3601,11 +3598,23 @@
 /* Panel Polish #2 — Title sheet pedagógico Trend */
 "panel.widgetInfo.trend.title" = "余额趋势";
 
-/* Panel Polish #2 — Explanation sheet Trend (3 párrafos brand voice) */
-"panel.widgetInfo.trend.explanation" = "查看你的余额随时间的变化。线上的每个点代表一天，曲线显示收入与支出之间的平衡。\n\n用手指在曲线上滑动可以查看任意一天的余额。背景的虚线显示了上一周期的情况，便于对比。\n\n有助于了解你是在进步还是需要调整。";
-
 /* Panel Polish #2 — Chip 1 Trend */
 "panel.widgetInfo.trend.chip1" = "交互";
 
 /* Panel Polish #2 — Chip 2 Trend */
 "panel.widgetInfo.trend.chip2" = "按期间";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño S (KPI compacto) */
+"panel.widgetInfo.cashFlow.explanationSmall" = "一眼查看所选期间的资金进出情况。你将看到收入、支出和净流量的总额。\n\n如果想逐日查看详情，可以试试中或大尺寸。";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño M (gráfica con barras) */
+"panel.widgetInfo.cashFlow.explanationMedium" = "逐日比较你的收入和支出。绿色柱表示收入，红色柱表示支出。\n\n有助于发现支出超过收入的周。";
+
+/* Panel Polish #2 — Explanation sheet CashFlow tamaño L (gráfica completa interactiva) */
+"panel.widgetInfo.cashFlow.explanationLarge" = "查看期间内资金进出的详细情况。点击柱状条查看当日的详情。\n\n绿色柱是收入，红色柱是支出。与上一周期对比，看看是否在进步。";
+
+/* Panel Polish #2 — Explanation sheet Trend tamaño S (KPI compacto) */
+"panel.widgetInfo.trend.explanationSmall" = "查看本期的总余额，以及与上一周期的对比。\n\n如要逐日查看详情，请尝试大尺寸。";
+
+/* Panel Polish #2 — Explanation sheet Trend tamaño L (gráfica con scrubbing) */
+"panel.widgetInfo.trend.explanationLarge" = "查看你的余额随时间的变化。每个点代表一天，曲线显示收入与支出之间的平衡。\n\n用手指在曲线上滑动可查看任意一天的余额。平均线帮助你判断余额是上升还是下降。";

@@ -23,6 +23,11 @@ struct TrendsCarouselWidget: View {
     var size: WidgetSize = .large
     var onShowMore: (() -> Void)? = nil
 
+    /// Botón pedagógico opcional renderizado al lado del título del header.
+    /// Cuando `nil` (callsites legacy), no se muestra nada. El wrapper Panel
+    /// inyecta un `WidgetInfoButton` aquí para abrir la sheet pedagógica.
+    var headerInfoButton: AnyView? = nil
+
     @Environment(AppPreferences.self) private var appPreferences
 
     @Namespace private var animationNamespace
@@ -66,7 +71,8 @@ struct TrendsCarouselWidget: View {
             PanelSmallWidgetHeader(
                 title: viewModel.trendType.displayName,
                 accessibilityLabel: viewModel.trendType.displayName,
-                action: onShowMore
+                action: onShowMore,
+                headerInfoButton: headerInfoButton
             )
 
             if hasNoTrendData {
@@ -124,9 +130,14 @@ struct TrendsCarouselWidget: View {
     private var header: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                Text(viewModel.trendType.displayName)
-                    .font(DS.Typography.subheadlineEmphasized)
-                    .foregroundStyle(.thPrimaryText)
+                HStack(spacing: DS.Spacing.xs) {
+                    Text(viewModel.trendType.displayName)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.thPrimaryText)
+                    if let headerInfoButton {
+                        headerInfoButton
+                    }
+                }
 
                 if !hasNoTrendData {
                     HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
