@@ -217,8 +217,6 @@ struct ApplePayTransactionIntent: AppIntent {
         }
 
         // Send push notification for automatic record (Apple Pay is always expense).
-        // AppIntent.perform corre fuera de @MainActor — AppPreferences inaccesible.
-        // YalaFormatterStatic lee UserDefaults raw (output idéntico a appPreferences.currency).
         let notifAmount = YalaFormatterStatic.currency(value: finalAmount, currencyCode: detectedCurrency ?? "USD", forceFullPrecision: true)
         let noteText = finalNote.isEmpty ? "" : " — \(finalNote)"
         let notifBody = L10n.Shortcut.Notification.body(L10n.Shortcut.Notification.expense, notifAmount, noteText)
