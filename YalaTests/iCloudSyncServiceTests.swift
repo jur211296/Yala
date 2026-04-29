@@ -117,11 +117,11 @@ struct iCloudSyncServiceTests {
         let service = freshService()
 
         service.apply(eventType: .exportEvent, error: ckError(.networkUnavailable), endDate: nil)
-        try? await Task.sleep(for: .milliseconds(500))
         service.apply(eventType: .exportEvent, error: nil, endDate: Date.now)
 
-        // Wait past the 3s debounce window to confirm .failed never surfaced.
-        try? await Task.sleep(for: .seconds(3))
+        // Await the cancelled debounce Task to settle (returns ~immediately
+        // because cancel() interrupts Task.sleep). Avoids sleeping the full 3s.
+        await service._testAwaitPendingTransition()
         #expect(service.status.isIdle)
     }
 

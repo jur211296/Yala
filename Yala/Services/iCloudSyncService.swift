@@ -376,6 +376,13 @@ final class iCloudSyncService {
         hasCompletedFirstImport = false
     }
 
+    /// Await the pending failed-transition Task so tests can assert post-debounce
+    /// state without sleeping the full window. If the Task was cancelled
+    /// (success arrived before window elapsed), this returns immediately.
+    func _testAwaitPendingTransition() async {
+        _ = await pendingFailedTransition?.value
+    }
+
     /// QA helper: force .failed immediately (skipping the 3s debounce) and
     /// auto-reset to .idle after `visibleFor` seconds so the indicator can be
     /// verified across all tabs without waiting for a real failure.

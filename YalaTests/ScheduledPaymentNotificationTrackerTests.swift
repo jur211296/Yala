@@ -7,6 +7,7 @@ import Testing
 @testable import Yala
 
 @MainActor
+@Suite(.serialized)
 struct ScheduledPaymentNotificationTrackerTests {
 
     // MARK: - Helpers

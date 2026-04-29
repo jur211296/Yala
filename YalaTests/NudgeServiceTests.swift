@@ -11,6 +11,7 @@ import Testing
 
 @testable import Yala
 
+@Suite(.serialized)
 struct NudgeServiceTests {
 
     // MARK: - Helpers

@@ -10,6 +10,7 @@ import Testing
 
 @testable import Yala
 
+@Suite(.serialized)
 struct SetupChecklistManagerTests {
 
     // MARK: - Helpers
