@@ -633,4 +633,112 @@ struct AppPreferencesTests {
         #expect(decoded.size == .small)
         #expect(decoded.type == .scheduledPayments)
     }
+
+    // MARK: - Formatting parity (regression-guards migration to appPreferences.X)
+
+    /// `appPreferences.currency(...)` must produce byte-identical strings to
+    /// `YalaFormatter.currency(value:currencyCode:)` for every combination of prefs.
+    /// Any divergence introduced by the migration would fail these tests.
+    @Test func currency_parity_acrossDecimalsAndFormat() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        let values: [Double] = [0, 1000, -1000, 1234.567, -0.5]
+        let codes = ["PEN", "USD", "EUR"]
+
+        for decimals in [0, 1, 2] {
+            for format in [CurrencyDisplayFormat.code, .symbol] {
+                prefs.decimalPlaces = decimals
+                prefs.currencyDisplayFormat = format
+
+                // Match the underlying UserDefaults so YalaFormatter (which reads
+                // UserDefaults.standard) can read the same prefs from the test process.
+                UserDefaults.standard.set(decimals, forKey: "decimalPlaces")
+                UserDefaults.standard.set(format.rawValue, forKey: "currencyDisplayFormat")
+
+                for value in values {
+                    for code in codes {
+                        let viaPrefs = prefs.currency(value, currencyCode: code)
+                        let viaFormatter = YalaFormatter.currency(value: value, currencyCode: code)
+                        #expect(
+                            viaPrefs == viaFormatter,
+                            "decimals=\(decimals) format=\(format) value=\(value) code=\(code) → prefs=\(viaPrefs) vs formatter=\(viaFormatter)"
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    @Test func currencyIdentifier_parity_acrossFormat() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+
+        for format in [CurrencyDisplayFormat.code, .symbol] {
+            prefs.currencyDisplayFormat = format
+            UserDefaults.standard.set(format.rawValue, forKey: "currencyDisplayFormat")
+            for code in ["PEN", "USD", "EUR", "JPY"] {
+                #expect(
+                    prefs.currencyIdentifier(for: code) == YalaFormatter.currencyIdentifier(for: code),
+                    "format=\(format) code=\(code)"
+                )
+            }
+        }
+    }
+
+    @Test func number_parity_acrossDecimals() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        let values: [Double] = [0, 1234.5, -987.6, 100_000]
+
+        for decimals in [0, 1, 2] {
+            prefs.decimalPlaces = decimals
+            UserDefaults.standard.set(decimals, forKey: "decimalPlaces")
+            for value in values {
+                #expect(
+                    prefs.number(value) == YalaFormatter.number(value: value),
+                    "decimals=\(decimals) value=\(value)"
+                )
+            }
+        }
+    }
+
+    @Test func currencyCompact_parity() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        UserDefaults.standard.set(0, forKey: "decimalPlaces")
+        UserDefaults.standard.set("code", forKey: "currencyDisplayFormat")
+
+        for value in [0.0, 500, 5_000, 12_345.67, -50_000] {
+            #expect(
+                prefs.currencyCompact(value, currencyCode: "PEN") == YalaFormatter.currencyCompact(value: value, currencyCode: "PEN"),
+                "value=\(value)"
+            )
+        }
+    }
+
+    @Test func amountCashFlowCell_parity() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+        UserDefaults.standard.set("symbol", forKey: "currencyDisplayFormat")
+        prefs.currencyDisplayFormat = .symbol
+
+        for value in [0.0, 9_999, 10_500, -25_000] {
+            #expect(
+                prefs.amountCashFlowCell(value, currencyCode: "PEN") == YalaFormatter.amountCashFlowCell(value: value, currencyCode: "PEN"),
+                "value=\(value)"
+            )
+        }
+    }
+
+    @Test func currency_changingDecimalsLiveYieldsDifferentString() {
+        let defaults = Self.makeSuite()
+        let prefs = AppPreferences(defaults: defaults)
+
+        prefs.decimalPlaces = 0
+        let zero = prefs.currency(1234.56, currencyCode: "PEN")
+        prefs.decimalPlaces = 2
+        let two = prefs.currency(1234.56, currencyCode: "PEN")
+        #expect(zero != two)
+        #expect(two.contains(".56"))
+    }
 }

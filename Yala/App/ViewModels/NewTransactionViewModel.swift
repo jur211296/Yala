@@ -925,6 +925,8 @@ final class NewTransactionViewModel {
         splitTotalAmount != nil && splitType != nil
     }
 
+    /// Snapshot intencional: `forceFullPrecision: true` ignora `decimalPlaces` (siempre 2),
+    /// así que este callsite es inmune al bug de reactividad. YalaFormatter deprecated permitido.
     var splitDescription: String? {
         guard let type = splitType, let total = splitTotalAmount else { return nil }
         let formattedTotal = YalaFormatter.number(value: total, forceFullPrecision: true)

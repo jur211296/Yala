@@ -2707,38 +2707,39 @@ final class PanelViewModel {
         let userName: String? = rawName.isEmpty ? nil : rawName
 
         let currencyCode = defaultCurrencyCode
-        let formattedIncome = YalaFormatter.currency(value: data.income, currencyCode: currencyCode)
-        let formattedExpense = YalaFormatter.currency(value: data.expense, currencyCode: currencyCode)
-        let formattedAvailable = YalaFormatter.currency(value: data.available, currencyCode: currencyCode)
+        // Snapshot intencional para el payload IA — no necesita reactividad. Cuando
+        // appPreferences está inyectado usa los métodos reactivos; en bootstrap
+        // (nil) cae al estático por compatibilidad.
+        let prefs = appPreferences
+        let snapshotCurrency: (Double) -> String = { val in
+            if let prefs { return prefs.currency(val, currencyCode: currencyCode) }
+            return YalaFormatter.currency(value: val, currencyCode: currencyCode)
+        }
+
+        let formattedIncome = snapshotCurrency(data.income)
+        let formattedExpense = snapshotCurrency(data.expense)
+        let formattedAvailable = snapshotCurrency(data.available)
 
         // Datos del mes anterior — solo cuando hay data real (prevHasAnyTx).
         // Delta firmado: positivo gasta más, negativo gasta menos.
         let previousExpense: Double? = trend.prevHasAnyTx ? trend.prevExpense : nil
-        let formattedPreviousExpense: String? = previousExpense.map {
-            YalaFormatter.currency(value: $0, currencyCode: currencyCode)
-        }
+        let formattedPreviousExpense: String? = previousExpense.map(snapshotCurrency)
         let expenseDelta: Double? = previousExpense.map { data.expense - $0 }
-        let formattedExpenseDelta: String? = expenseDelta.map {
-            YalaFormatter.currency(value: abs($0), currencyCode: currencyCode)
-        }
+        let formattedExpenseDelta: String? = expenseDelta.map { snapshotCurrency(abs($0)) }
 
         // Enriquecimiento contextual — reusa computes ya realizados por los
         // widgets de Distribución/Tendencias (zero overhead). Si el user
         // oculta esos widgets los campos llegan nil y el prompt se adapta.
         let topCat = topSpendingCategories.first
         let topCategory: String? = topCat?.category.name
-        let formattedTopCategoryAmount: String? = topCat.map {
-            YalaFormatter.currency(value: $0.amount, currencyCode: currencyCode)
-        }
+        let formattedTopCategoryAmount: String? = topCat.map { snapshotCurrency($0.amount) }
         // Reusa el helper canónico de variación (`PreviousPeriodHelper`) que el
         // resto del Panel usa para chips/headers — evita divergencia semántica.
         let topCategoryDeltaPercent: Double? = topCat?.variation
 
         let topDay = weekdayWidget.weekdaySpending.max(by: { $0.average < $1.average })
         let topWeekday: String? = topDay?.weekdayLongName
-        let formattedTopWeekdayAmount: String? = topDay.map {
-            YalaFormatter.currency(value: $0.average, currencyCode: currencyCode)
-        }
+        let formattedTopWeekdayAmount: String? = topDay.map { snapshotCurrency($0.average) }
 
         let monthProgress = Double(data.daysElapsed) / Double(max(data.daysTotal, 1))
 

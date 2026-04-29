@@ -235,6 +235,8 @@ final class ReportNotificationService {
 
         let period = reportType.periodKeySuffix
 
+        // Snapshot al programar la notificación: el body se queda fijo en el sistema
+        // (UNNotificationContent), así que no es UI viva. YalaFormatter deprecated permitido aquí.
         switch config.dataType {
         case .balance:
             let formatted = YalaFormatter.currency(value: data.balance, currencyCode: currencyCode, forceFullPrecision: true)

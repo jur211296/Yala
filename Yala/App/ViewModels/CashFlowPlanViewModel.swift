@@ -29,6 +29,7 @@ struct SuggestedLine: Identifiable {
 @MainActor @Observable
 final class CashFlowPlanViewModel {
     private var modelContext: ModelContext?
+    private var appPreferences: AppPreferences?
 
     // State
     private(set) var plan: CashFlowPlan?
@@ -72,6 +73,13 @@ final class CashFlowPlanViewModel {
     func setContext(_ ctx: ModelContext) {
         modelContext = ctx
         loadPlan()
+    }
+
+    /// Inject AppPreferences for reactive currency formatting in deviation/comment strings.
+    /// Optional because cashflow comments are snapshots (not reactive); when nil, falls back
+    /// to YalaFormatter static methods.
+    func setAppPreferences(_ prefs: AppPreferences) {
+        appPreferences = prefs
     }
 
     func loadPlan() {
@@ -609,6 +617,10 @@ final class CashFlowPlanViewModel {
         lastDeviationKey = key
     }
 
+    // Snapshot intencional: estos comments se almacenan en `cashFlowComment` /
+    // `deviationComment` del VM y se regeneran al recompute del plan, no al cambiar
+    // prefs en runtime. YalaFormatter deprecated permitido aquí — el string queda
+    // stale hasta el próximo recompute (UX aceptable: comment del sheet, no UI viva).
     static func generateRuleBasedComment(_ projection: CashFlowProjection, currencyCode: String) -> String {
         let months = projection.months
         guard !months.isEmpty else { return "" }
