@@ -80,6 +80,14 @@ struct ChatAssistantViewModelTests {
         }
     }
 
+    /// Helper para limpiar las keys de cache de sugerencias `chat_suggestions_*`.
+    @MainActor private func clearChatSuggestionsCache() {
+        let defaults = UserDefaults.standard
+        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("chat_suggestions_") {
+            defaults.removeObject(forKey: key)
+        }
+    }
+
     @MainActor @Test func persistedSession_rehydratesAcrossInstances() throws {
         clearChatSessionKeys()
         defer { clearChatSessionKeys() }
@@ -150,27 +158,32 @@ struct ChatAssistantViewModelTests {
 
     // MARK: - Suggestions
 
-    // Deshabilitado en Fase 1: el test crashea con signal trap solo en suite mode (state pollution
-    // acumulado de tests previos). Aislado pasa. Fase 2 reescribe `loadSuggestions` a `async` y este
-    // test cambia de forma; se reactiva entonces.
-    @MainActor @Test(.disabled("Reescritura pendiente para loadSuggestions async en Fase 2 — crash en suite mode"))
-    func loadSuggestions_returnsBetween1And10() throws {
+    @MainActor @Test func loadSuggestions_returnsBetween1And10() async throws {
         clearChatSessionKeys()
-        defer { clearChatSessionKeys() }
+        clearChatSuggestionsCache()
+        defer {
+            clearChatSessionKeys()
+            clearChatSuggestionsCache()
+        }
+
+        // Sembrar el cache para evitar la llamada al LLM (no determinística sin red).
+        // El servicio devuelve cache si tiene al menos `minItems = 3`.
+        let mockSuggestions = [
+            ChatSuggestion(text: "Top merchant esta semana", icon: "cart.fill", type: .topMerchant),
+            ChatSuggestion(text: "Categoría con más gasto", icon: "chart.bar.fill", type: .biggestCategory),
+            ChatSuggestion(text: "Estado de tu presupuesto", icon: "dollarsign.circle.fill", type: .activeBudget),
+        ]
+        ChatSuggestionsLLMService.setCached(mockSuggestions, for: Date.now)
 
         let vm = ChatAssistantViewModel()
         let context = try makeTestContext()
-
-        // Insert some transactions for suggestions
-        let cat = YalaCategory(name: "Food", colorHex: "#000", isIncome: false)
-        context.insert(cat)
-        let tx = TransactionItem(date: Date.now, amount: -50, currencyCode: "USD", note: "Starbucks", category: cat, amountInPreferredCurrency: -50)
-        tx.preferredCurrencyCode = "USD"
-        context.insert(tx)
-        try context.save()
-
         vm.setContext(context)
-        // Tras Fase 2 el VM puede guardar hasta 10 sugerencias (cap a 3 vive en la View).
+
+        // setContext dispara loadSuggestions vía Task { } — llamamos explícitamente
+        // con await para esperar de forma determinística.
+        await vm.loadSuggestions()
+
+        // El servicio puede devolver entre `minItems` (3) y `maxItems` (10).
         #expect(vm.suggestions.count <= 10)
         #expect(vm.suggestions.count >= 1)
     }
