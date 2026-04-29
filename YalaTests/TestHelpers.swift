@@ -37,12 +37,28 @@ func makeIsolatedDefaults(prefix: String = "test") -> UserDefaults {
 
 /// Creates an in-memory ModelContext for testing with dual config (mirrors production).
 /// Each test should call this to get a fresh, isolated context.
+///
+/// **Importante:** usa un suffix UUID en `databaseName` para que el container del test
+/// no comparta nombre con el container del host (Yala.app inicializa su propio
+/// `ModelContainer` durante boot del test runner). Sin este aislamiento, dos containers
+/// con el mismo `databaseName` causan race en metadata SwiftData → `EXC_BREAKPOINT`
+/// en suite mode (4 restarts del proceso de test observados en `/test-ios`).
 @MainActor
 func makeTestContext() throws -> ModelContext {
+    let suffix = UUID().uuidString.prefix(8)
+    let personalConfig = ModelConfiguration(
+        "YalaPersonal_test_\(suffix)",
+        schema: SwiftDataConfiguration.personalSchema,
+        isStoredInMemoryOnly: true
+    )
+    let groupsConfig = ModelConfiguration(
+        "YalaGroups_test_\(suffix)",
+        schema: SwiftDataConfiguration.groupsSchema,
+        isStoredInMemoryOnly: true
+    )
     let container = try ModelContainer(
         for: SwiftDataConfiguration.schema,
-        configurations: SwiftDataConfiguration.personalConfiguration,
-                       SwiftDataConfiguration.groupsConfiguration
+        configurations: personalConfig, groupsConfig
     )
     return container.mainContext
 }

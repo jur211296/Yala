@@ -71,7 +71,7 @@ Carpetas del vault: `Backlog/` · `Ideas/` · `Bugs/` · `Attachments/` · `plan
 
 ### Tests (OBLIGATORIO)
 Detalles completos en `$VAULT/planning/TESTING-STRATEGY.md`. Reglas mínimas:
-- NUNCA `makeTestContext()` — crashea por race CloudKit. Crear `@Model` directos sin contexto.
+- `makeTestContext()` es seguro desde Fase 5 (2026-04-29) — usa UUID suffix + `isRunningTests` detecta Swift Testing. Aún así prefiere `@Model` directos sin contexto cuando la lógica lo permite (más rápido).
 - NUNCA `UserDefaults.standard` directo en tests → `UserDefaults(suiteName: "test.\(UUID().uuidString)")!` (helper `makeIsolatedDefaults()`).
 - NUNCA tocar singletons `.shared` sin `@Suite(.serialized)` + `defer { restore }` o `_testReset()`.
 - NUNCA `Task.sleep(.seconds(N))` con N>0.5 — usar señales determinísticas. Excepción: `≤50ms` para forzar dealloc.

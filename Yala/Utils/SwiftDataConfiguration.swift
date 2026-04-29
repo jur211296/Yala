@@ -111,10 +111,34 @@ enum SwiftDataConfiguration {
 
     // MARK: - Configurations
 
-    /// Detect if running inside a test host (XCTest sets this automatically)
-    static var isRunningTests: Bool {
-        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-    }
+    /// Detect if running inside a test host. Cubre XCTest legacy y Swift Testing.
+    /// Sin esta detección, el host (Yala.app) bootea con CloudKit durante el test
+    /// runner y crashea repetidamente con `CKAccountStatusNoAccount` → process
+    /// restarts en `/test-ios` completos.
+    ///
+    /// Cacheado en `let` para que sea estable durante el ciclo del proceso (evita
+    /// que la decisión cambie entre boot temprano y boot tardío del host).
+    static let isRunningTests: Bool = {
+        // XCTest legacy — variable de entorno que setea el runner
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+            return true
+        }
+        // Swift Testing y XCTest cargan el framework XCTest.framework en el process.
+        // `XCTestObservationCenter` es la clase pública del framework — si está
+        // disponible, estamos en un test runner.
+        if NSClassFromString("XCTestObservationCenter") != nil {
+            return true
+        }
+        // Swift Testing puro (sin XCTest) — detectar la clase del framework Testing.
+        if NSClassFromString("Testing.Test") != nil {
+            return true
+        }
+        // Fallback: scan loaded bundles
+        if Bundle.allBundles.contains(where: { $0.bundlePath.hasSuffix(".xctest") }) {
+            return true
+        }
+        return false
+    }()
 
     // MARK: - Container CloudKit State
 

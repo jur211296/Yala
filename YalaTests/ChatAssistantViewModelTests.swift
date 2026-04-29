@@ -105,9 +105,11 @@ struct ChatAssistantViewModelTests {
         let key = "chat_session_" + DayKeyFormatter.string(from: Date.now)
         UserDefaults.standard.set(data, forKey: key)
 
-        // Nueva instancia del VM debe rehidratar la sesión
+        // Nueva instancia del VM debe rehidratar la sesión.
+        // `autoLoadSuggestions: false` evita el `Task { loadSuggestions }` que sobrevive
+        // al test y crashea durante cleanup.
         let vm = ChatAssistantViewModel()
-        vm.setContext(context)
+        vm.setContext(context, autoLoadSuggestions: false)
 
         #expect(vm.messages.count == 2)
         #expect(vm.messages[0].text == "test pregunta")
@@ -178,10 +180,9 @@ struct ChatAssistantViewModelTests {
 
         let vm = ChatAssistantViewModel()
         let context = try makeTestContext()
-        vm.setContext(context)
-
-        // setContext dispara loadSuggestions vía Task { } — llamamos explícitamente
-        // con await para esperar de forma determinística.
+        // `autoLoadSuggestions: false` — disparamos la carga manualmente con `await`
+        // para que sea determinística (sin Tasks en background sobreviviendo al test).
+        vm.setContext(context, autoLoadSuggestions: false)
         await vm.loadSuggestions()
 
         // El servicio puede devolver entre `minItems` (3) y `maxItems` (10).
@@ -290,7 +291,7 @@ struct ChatAssistantViewModelTests {
         UserDefaults.standard.set(data, forKey: key)
 
         let vm = ChatAssistantViewModel()
-        vm.setContext(context)
+        vm.setContext(context, autoLoadSuggestions: false)
 
         // Turn rehidratado debería tener toolPayload nil tras el refactor context-rich
         #expect(vm.allTurns.count == 1)

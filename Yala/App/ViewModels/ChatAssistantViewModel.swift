@@ -55,7 +55,7 @@ final class ChatAssistantViewModel {
 
     // MARK: - Setup
 
-    func setContext(_ ctx: ModelContext) {
+    func setContext(_ ctx: ModelContext, autoLoadSuggestions: Bool = true) {
         modelContext = ctx
         loadPersistedSession()
         // Restaurar signal persistido si NTV guardó mientras el chat estaba cerrado
@@ -64,7 +64,11 @@ final class ChatAssistantViewModel {
         consumePersistedDraftSavedSignal()
         // Cargamos sugerencias SIEMPRE — el botón [+ Temas] funciona aún con conversación previa.
         // Si están en cache del día, no llama LLM.
-        Task { await loadSuggestions() }
+        // `autoLoadSuggestions: false` se usa en tests para evitar Tasks en background
+        // que sobreviven al test y crashean en cleanup.
+        if autoLoadSuggestions {
+            Task { await loadSuggestions() }
+        }
     }
 
     /// Lee el signal persistido (si existe), marca el card y limpia.
