@@ -3582,3 +3582,33 @@
 "shortcut.siriNatural.error.parsingFailedHelp" = "No entendí. Prueba con: 'Anota 50 soles en café' o 'Registra gasto de 25 dólares en almuerzo'";
 "shortcut.siriNatural.success.partial" = "Registré %1$lld de %2$lld (algunos no se entendieron). Revisa tu bandeja.";
 
+
+/* Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto */
+"panel.widgetInfo.addToPanel" = "Añadir al Panel";
+
+/* Panel Polish #2 — Title sheet pedagógico CashFlow */
+"panel.widgetInfo.cashFlow.title" = "Flujo de caja";
+
+/* Panel Polish #2 — Explanation sheet CashFlow (3 párrafos brand voice) */
+"panel.widgetInfo.cashFlow.explanation" = "Mira de un vistazo cómo entra y sale tu dinero en el período que elijas. Verás tus ingresos y gastos uno al lado del otro, y el flujo neto al final.\n\nToca una barra para ver el detalle del día: las verdes son ingresos, las rojas son gastos.\n\nÚtil para detectar semanas donde gastaste más de lo que entró.";
+
+/* Panel Polish #2 — Chip 1 CashFlow */
+"panel.widgetInfo.cashFlow.chip1" = "Ingresos";
+
+/* Panel Polish #2 — Chip 2 CashFlow */
+"panel.widgetInfo.cashFlow.chip2" = "Gastos";
+
+/* Panel Polish #2 — Chip 3 CashFlow */
+"panel.widgetInfo.cashFlow.chip3" = "Por período";
+
+/* Panel Polish #2 — Title sheet pedagógico Trend */
+"panel.widgetInfo.trend.title" = "Tendencia de saldo";
+
+/* Panel Polish #2 — Explanation sheet Trend (3 párrafos brand voice) */
+"panel.widgetInfo.trend.explanation" = "Mira cómo evoluciona tu saldo a lo largo del tiempo. Cada punto en la línea representa un día y la curva muestra el balance entre tus ingresos y gastos.\n\nDesliza el dedo sobre la línea para ver el saldo de cualquier día. La línea punteada del fondo te muestra cómo te fue en el período anterior, para que puedas comparar.\n\nÚtil para entender si vas mejorando o necesitas ajustar.";
+
+/* Panel Polish #2 — Chip 1 Trend */
+"panel.widgetInfo.trend.chip1" = "Interactiva";
+
+/* Panel Polish #2 — Chip 2 Trend */
+"panel.widgetInfo.trend.chip2" = "Por período";

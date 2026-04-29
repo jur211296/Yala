@@ -3578,3 +3578,33 @@
 "shortcut.siriNatural.error.parsingFailedHelp" = "Non ho capito. Prova: 'Annota 50 euro per il caffè' o 'Registra 25 euro per il pranzo'";
 "shortcut.siriNatural.success.partial" = "Registrati %1$lld su %2$lld (alcuni non capiti). Controlla la casella.";
 
+
+/* Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto */
+"panel.widgetInfo.addToPanel" = "Aggiungi al Pannello";
+
+/* Panel Polish #2 — Title sheet pedagógico CashFlow */
+"panel.widgetInfo.cashFlow.title" = "Flusso di cassa";
+
+/* Panel Polish #2 — Explanation sheet CashFlow (3 párrafos brand voice) */
+"panel.widgetInfo.cashFlow.explanation" = "Guarda a colpo d'occhio come entra ed esce il denaro nel periodo che scegli. Entrate e uscite affiancate, con il flusso netto alla fine.\n\nTocca una barra per vedere il dettaglio del giorno: verdi le entrate, rosse le uscite.\n\nUtile per individuare le settimane in cui hai speso più di quanto è entrato.";
+
+/* Panel Polish #2 — Chip 1 CashFlow */
+"panel.widgetInfo.cashFlow.chip1" = "Entrate";
+
+/* Panel Polish #2 — Chip 2 CashFlow */
+"panel.widgetInfo.cashFlow.chip2" = "Uscite";
+
+/* Panel Polish #2 — Chip 3 CashFlow */
+"panel.widgetInfo.cashFlow.chip3" = "Per periodo";
+
+/* Panel Polish #2 — Title sheet pedagógico Trend */
+"panel.widgetInfo.trend.title" = "Andamento del saldo";
+
+/* Panel Polish #2 — Explanation sheet Trend (3 párrafos brand voice) */
+"panel.widgetInfo.trend.explanation" = "Guarda come evolve il tuo saldo nel tempo. Ogni punto sulla linea è un giorno e la curva mostra l'equilibrio tra entrate e uscite.\n\nFai scorrere il dito sulla linea per vedere il saldo di qualunque giorno. La linea tratteggiata sullo sfondo mostra il periodo precedente, per confrontare.\n\nUtile per capire se stai migliorando o se devi aggiustare.";
+
+/* Panel Polish #2 — Chip 1 Trend */
+"panel.widgetInfo.trend.chip1" = "Interattiva";
+
+/* Panel Polish #2 — Chip 2 Trend */
+"panel.widgetInfo.trend.chip2" = "Per periodo";

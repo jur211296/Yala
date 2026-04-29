@@ -787,6 +787,21 @@ final class PanelViewModel {
     /// exponer un parámetro `skipPairSync` en la API pública de `setWidgetSize`.
     @ObservationIgnored private var isSyncingPair = false
 
+    /// Restaura un widget al Panel eliminándolo del array `*Hidden` de su
+    /// sección. No-op si ya está visible. Usa la SSOT de prefs (P20-03) — no
+    /// muta `widgetConfigs.isVisible`, que es solo fallback de bootstrap.
+    /// Inverso de la lógica que esconde widgets en `PanelSectionsConfigView`.
+    func addWidgetToPanel(_ type: WidgetType) {
+        guard let prefs = appPreferences else { return }
+        let raw = type.rawValue
+        let section = type.panelSection
+
+        var hidden = prefs.hidden(for: section)
+        guard let idx = hidden.firstIndex(of: raw) else { return }
+        hidden.remove(at: idx)
+        prefs.setHidden(hidden, for: section)
+    }
+
     /// Sincroniza el tamaño del otro widget de Planificación con el que acaba
     /// de cambiar, manteniendo la invariante "ambos small" o "ambos no-small".
     private func syncPlanificacionPair(changedType: WidgetType, newSize: WidgetSize) {

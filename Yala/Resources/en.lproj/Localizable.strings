@@ -3579,3 +3579,33 @@
 "shortcut.siriNatural.error.parsingFailedHelp" = "I didn't understand. Try: 'Note 50 dollars on coffee' or 'Record 25 dollars on lunch'";
 "shortcut.siriNatural.success.partial" = "Recorded %1$lld of %2$lld (some I couldn't understand). Check your inbox.";
 
+
+/* Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto */
+"panel.widgetInfo.addToPanel" = "Add to Panel";
+
+/* Panel Polish #2 — Title sheet pedagógico CashFlow */
+"panel.widgetInfo.cashFlow.title" = "Cash flow";
+
+/* Panel Polish #2 — Explanation sheet CashFlow (3 párrafos brand voice) */
+"panel.widgetInfo.cashFlow.explanation" = "See at a glance how money comes in and goes out during the period you choose. Income and expenses appear side by side, with the net flow at the end.\n\nTap a bar to see the day's detail: green ones are income, red ones are expenses.\n\nUseful for spotting weeks when you spent more than came in.";
+
+/* Panel Polish #2 — Chip 1 CashFlow */
+"panel.widgetInfo.cashFlow.chip1" = "Income";
+
+/* Panel Polish #2 — Chip 2 CashFlow */
+"panel.widgetInfo.cashFlow.chip2" = "Expenses";
+
+/* Panel Polish #2 — Chip 3 CashFlow */
+"panel.widgetInfo.cashFlow.chip3" = "By period";
+
+/* Panel Polish #2 — Title sheet pedagógico Trend */
+"panel.widgetInfo.trend.title" = "Balance trend";
+
+/* Panel Polish #2 — Explanation sheet Trend (3 párrafos brand voice) */
+"panel.widgetInfo.trend.explanation" = "See how your balance evolves over time. Each point on the line represents a day, and the curve shows the balance between your income and expenses.\n\nDrag your finger along the line to see your balance on any day. The dotted line in the background shows the previous period, so you can compare.\n\nUseful for understanding whether you're improving or need to adjust.";
+
+/* Panel Polish #2 — Chip 1 Trend */
+"panel.widgetInfo.trend.chip1" = "Interactive";
+
+/* Panel Polish #2 — Chip 2 Trend */
+"panel.widgetInfo.trend.chip2" = "By period";

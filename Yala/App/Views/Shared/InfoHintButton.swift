@@ -9,15 +9,20 @@ import SwiftUI
 
 /// A small info button that shows a tooltip overlay with contextual help.
 /// Visibility is controlled by the showWidgetHints AppStorage setting.
+///
+/// Cuando se renderiza dentro del recuadro de preview de `WidgetInfoSheet`
+/// (`Environment(\.isWidgetPreviewMode) == true`), el botón se oculta para
+/// evitar recursión visual de info-circles anidados.
 struct InfoHintButton: View {
     let title: String
     let message: String
 
     @AppStorage("showWidgetHints") private var showWidgetHints: Bool = true
+    @Environment(\.isWidgetPreviewMode) private var isPreviewMode
     @State private var showTooltip = false
 
     var body: some View {
-        if showWidgetHints {
+        if showWidgetHints && !isPreviewMode {
             Button {
                 showTooltip.toggle()
             } label: {

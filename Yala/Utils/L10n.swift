@@ -259,6 +259,47 @@ enum L10n {
             }
         }
 
+        // MARK: - Panel Polish #2 — Widget Info Sheets (sheet pedagógica)
+
+        enum WidgetInfo {
+            static var addToPanel: String {
+                ls("panel.widgetInfo.addToPanel", comment: "Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto")
+            }
+
+            enum CashFlow {
+                static var title: String {
+                    ls("panel.widgetInfo.cashFlow.title", comment: "Panel Polish #2 — Title sheet pedagógico CashFlow")
+                }
+                static var explanation: String {
+                    ls("panel.widgetInfo.cashFlow.explanation", comment: "Panel Polish #2 — Explanation sheet CashFlow (3 párrafos brand voice)")
+                }
+                static var chip1: String {
+                    ls("panel.widgetInfo.cashFlow.chip1", comment: "Panel Polish #2 — Chip 1 CashFlow")
+                }
+                static var chip2: String {
+                    ls("panel.widgetInfo.cashFlow.chip2", comment: "Panel Polish #2 — Chip 2 CashFlow")
+                }
+                static var chip3: String {
+                    ls("panel.widgetInfo.cashFlow.chip3", comment: "Panel Polish #2 — Chip 3 CashFlow")
+                }
+            }
+
+            enum Trend {
+                static var title: String {
+                    ls("panel.widgetInfo.trend.title", comment: "Panel Polish #2 — Title sheet pedagógico Trend")
+                }
+                static var explanation: String {
+                    ls("panel.widgetInfo.trend.explanation", comment: "Panel Polish #2 — Explanation sheet Trend (3 párrafos brand voice)")
+                }
+                static var chip1: String {
+                    ls("panel.widgetInfo.trend.chip1", comment: "Panel Polish #2 — Chip 1 Trend")
+                }
+                static var chip2: String {
+                    ls("panel.widgetInfo.trend.chip2", comment: "Panel Polish #2 — Chip 2 Trend")
+                }
+            }
+        }
+
         // MARK: - Panorama group (Cuentas + Salud financiera)
 
         static var panoramaTitle: String {

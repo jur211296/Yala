@@ -304,6 +304,34 @@ struct PanelViewModelTests {
         #expect(prefs.panelSectionsOrder.isEmpty)
     }
 
+    // MARK: - addWidgetToPanel (Panel Polish #2 — sheet pedagógica CTA)
+
+    /// `addWidgetToPanel` restaura un widget oculto eliminando su rawValue
+    /// del array `panel<Section>Hidden` correspondiente a su sección.
+    @MainActor @Test func addWidgetToPanel_makesHiddenWidgetVisible() {
+        let vm = PanelViewModel()
+        let prefs = AppPreferences(defaults: UserDefaults(suiteName: "addWidget.hidden.\(UUID().uuidString)")!)
+        prefs.panelTendenciasHidden = [WidgetType.trend.rawValue]
+        vm.setAppPreferences(prefs)
+
+        #expect(vm.isWidgetVisible(.trend) == false)
+        vm.addWidgetToPanel(.trend)
+        #expect(vm.isWidgetVisible(.trend) == true)
+        #expect(prefs.panelTendenciasHidden.contains(WidgetType.trend.rawValue) == false)
+    }
+
+    /// No-op si el widget ya está visible (no presente en el array hidden).
+    /// El array no debe mutar.
+    @MainActor @Test func addWidgetToPanel_isNoOpForAlreadyVisible() {
+        let vm = PanelViewModel()
+        let prefs = AppPreferences(defaults: UserDefaults(suiteName: "addWidget.visible.\(UUID().uuidString)")!)
+        vm.setAppPreferences(prefs)
+
+        let before = prefs.panelTendenciasHidden
+        vm.addWidgetToPanel(.trend)
+        #expect(prefs.panelTendenciasHidden == before)
+    }
+
     // MARK: - Hero IA (P20-05)
     //
     // Acotados a invariantes sin network: Free/no-consent reset del estado y

@@ -3576,3 +3576,33 @@
 "shortcut.siriNatural.error.parsingFailedHelp" = "Ich habe nicht verstanden. Versuche: 'Notiere 50 Euro für Kaffee' oder 'Erfasse 25 Euro für Mittagessen'";
 "shortcut.siriNatural.success.partial" = "%1$lld von %2$lld erfasst (einige nicht verstanden). Überprüfe deinen Posteingang.";
 
+
+/* Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto */
+"panel.widgetInfo.addToPanel" = "Zum Panel hinzufügen";
+
+/* Panel Polish #2 — Title sheet pedagógico CashFlow */
+"panel.widgetInfo.cashFlow.title" = "Cashflow";
+
+/* Panel Polish #2 — Explanation sheet CashFlow (3 párrafos brand voice) */
+"panel.widgetInfo.cashFlow.explanation" = "Sieh auf einen Blick, wie das Geld in dem von dir gewählten Zeitraum hereinkommt und ausgegeben wird. Einnahmen und Ausgaben stehen nebeneinander, und am Ende siehst du den Nettofluss.\n\nTippe auf einen Balken, um die Details des Tages zu sehen: Grüne sind Einnahmen, rote sind Ausgaben.\n\nNützlich, um Wochen zu erkennen, in denen du mehr ausgegeben als eingenommen hast.";
+
+/* Panel Polish #2 — Chip 1 CashFlow */
+"panel.widgetInfo.cashFlow.chip1" = "Einnahmen";
+
+/* Panel Polish #2 — Chip 2 CashFlow */
+"panel.widgetInfo.cashFlow.chip2" = "Ausgaben";
+
+/* Panel Polish #2 — Chip 3 CashFlow */
+"panel.widgetInfo.cashFlow.chip3" = "Pro Zeitraum";
+
+/* Panel Polish #2 — Title sheet pedagógico Trend */
+"panel.widgetInfo.trend.title" = "Saldoentwicklung";
+
+/* Panel Polish #2 — Explanation sheet Trend (3 párrafos brand voice) */
+"panel.widgetInfo.trend.explanation" = "Sieh, wie sich dein Saldo im Laufe der Zeit entwickelt. Jeder Punkt der Linie steht für einen Tag, und die Kurve zeigt das Verhältnis zwischen Einnahmen und Ausgaben.\n\nFahre mit dem Finger über die Linie, um den Saldo eines beliebigen Tages anzuzeigen. Die gestrichelte Linie im Hintergrund zeigt den vorherigen Zeitraum zum Vergleich.\n\nNützlich, um zu verstehen, ob du auf Kurs bist oder nachjustieren musst.";
+
+/* Panel Polish #2 — Chip 1 Trend */
+"panel.widgetInfo.trend.chip1" = "Interaktiv";
+
+/* Panel Polish #2 — Chip 2 Trend */
+"panel.widgetInfo.trend.chip2" = "Pro Zeitraum";

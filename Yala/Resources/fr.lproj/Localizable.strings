@@ -3577,3 +3577,33 @@
 "shortcut.siriNatural.error.parsingFailedHelp" = "Je n'ai pas compris. Essayez : 'Note 50 euros sur café' ou 'Enregistre 25 euros pour le déjeuner'";
 "shortcut.siriNatural.success.partial" = "Enregistré %1$lld sur %2$lld (certains non compris). Vérifiez votre boîte.";
 
+
+/* Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto */
+"panel.widgetInfo.addToPanel" = "Ajouter au tableau";
+
+/* Panel Polish #2 — Title sheet pedagógico CashFlow */
+"panel.widgetInfo.cashFlow.title" = "Flux de trésorerie";
+
+/* Panel Polish #2 — Explanation sheet CashFlow (3 párrafos brand voice) */
+"panel.widgetInfo.cashFlow.explanation" = "Vois en un coup d'œil comment ton argent entre et sort sur la période choisie. Les revenus et les dépenses apparaissent côte à côte, avec le flux net à la fin.\n\nTouche une barre pour voir le détail du jour : en vert les revenus, en rouge les dépenses.\n\nUtile pour repérer les semaines où tu as dépensé plus que ce qui est entré.";
+
+/* Panel Polish #2 — Chip 1 CashFlow */
+"panel.widgetInfo.cashFlow.chip1" = "Revenus";
+
+/* Panel Polish #2 — Chip 2 CashFlow */
+"panel.widgetInfo.cashFlow.chip2" = "Dépenses";
+
+/* Panel Polish #2 — Chip 3 CashFlow */
+"panel.widgetInfo.cashFlow.chip3" = "Par période";
+
+/* Panel Polish #2 — Title sheet pedagógico Trend */
+"panel.widgetInfo.trend.title" = "Évolution du solde";
+
+/* Panel Polish #2 — Explanation sheet Trend (3 párrafos brand voice) */
+"panel.widgetInfo.trend.explanation" = "Vois comment ton solde évolue dans le temps. Chaque point représente un jour et la courbe montre l'équilibre entre tes revenus et tes dépenses.\n\nFais glisser ton doigt sur la ligne pour voir le solde n'importe quel jour. La ligne pointillée en arrière-plan montre la période précédente, pour comparer.\n\nUtile pour comprendre si tu progresses ou s'il faut ajuster.";
+
+/* Panel Polish #2 — Chip 1 Trend */
+"panel.widgetInfo.trend.chip1" = "Interactive";
+
+/* Panel Polish #2 — Chip 2 Trend */
+"panel.widgetInfo.trend.chip2" = "Par période";

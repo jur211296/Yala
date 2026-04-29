@@ -3579,3 +3579,33 @@
 "shortcut.siriNatural.error.parsingFailedHelp" = "我没听懂。试试:「咖啡 50」或「午餐 25」";
 "shortcut.siriNatural.success.partial" = "已记录 %1$lld / %2$lld(有些我没听懂)。请到收件箱查看。";
 
+
+/* Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto */
+"panel.widgetInfo.addToPanel" = "添加到面板";
+
+/* Panel Polish #2 — Title sheet pedagógico CashFlow */
+"panel.widgetInfo.cashFlow.title" = "现金流";
+
+/* Panel Polish #2 — Explanation sheet CashFlow (3 párrafos brand voice) */
+"panel.widgetInfo.cashFlow.explanation" = "一眼查看你选择期间的资金进出情况。收入和支出并排显示，末尾显示净流量。\n\n点击柱状条查看当天的详情：绿色是收入，红色是支出。\n\n有助于发现支出超过收入的周。";
+
+/* Panel Polish #2 — Chip 1 CashFlow */
+"panel.widgetInfo.cashFlow.chip1" = "收入";
+
+/* Panel Polish #2 — Chip 2 CashFlow */
+"panel.widgetInfo.cashFlow.chip2" = "支出";
+
+/* Panel Polish #2 — Chip 3 CashFlow */
+"panel.widgetInfo.cashFlow.chip3" = "按期间";
+
+/* Panel Polish #2 — Title sheet pedagógico Trend */
+"panel.widgetInfo.trend.title" = "余额趋势";
+
+/* Panel Polish #2 — Explanation sheet Trend (3 párrafos brand voice) */
+"panel.widgetInfo.trend.explanation" = "查看你的余额随时间的变化。线上的每个点代表一天，曲线显示收入与支出之间的平衡。\n\n用手指在曲线上滑动可以查看任意一天的余额。背景的虚线显示了上一周期的情况，便于对比。\n\n有助于了解你是在进步还是需要调整。";
+
+/* Panel Polish #2 — Chip 1 Trend */
+"panel.widgetInfo.trend.chip1" = "交互";
+
+/* Panel Polish #2 — Chip 2 Trend */
+"panel.widgetInfo.trend.chip2" = "按期间";

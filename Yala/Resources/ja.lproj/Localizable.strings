@@ -3579,3 +3579,33 @@
 "shortcut.siriNatural.error.parsingFailedHelp" = "理解できませんでした。例: 「コーヒーに50ドル」「ランチに25ドル記録」のようにお試しください";
 "shortcut.siriNatural.success.partial" = "%2$lld件中%1$lld件を記録しました(理解できなかったものがあります)。受信箱を確認してください。";
 
+
+/* Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto */
+"panel.widgetInfo.addToPanel" = "パネルに追加";
+
+/* Panel Polish #2 — Title sheet pedagógico CashFlow */
+"panel.widgetInfo.cashFlow.title" = "キャッシュフロー";
+
+/* Panel Polish #2 — Explanation sheet CashFlow (3 párrafos brand voice) */
+"panel.widgetInfo.cashFlow.explanation" = "選んだ期間のお金の出入りをひと目で確認できます。収入と支出が並んで表示され、最後にネットフローが表示されます。\n\nバーをタップするとその日の詳細を確認できます。緑は収入、赤は支出です。\n\n収入よりも支出が多かった週を見つけるのに役立ちます。";
+
+/* Panel Polish #2 — Chip 1 CashFlow */
+"panel.widgetInfo.cashFlow.chip1" = "収入";
+
+/* Panel Polish #2 — Chip 2 CashFlow */
+"panel.widgetInfo.cashFlow.chip2" = "支出";
+
+/* Panel Polish #2 — Chip 3 CashFlow */
+"panel.widgetInfo.cashFlow.chip3" = "期間別";
+
+/* Panel Polish #2 — Title sheet pedagógico Trend */
+"panel.widgetInfo.trend.title" = "残高の推移";
+
+/* Panel Polish #2 — Explanation sheet Trend (3 párrafos brand voice) */
+"panel.widgetInfo.trend.explanation" = "残高が時間とともにどう変化するかを確認できます。線の各点は1日を表し、曲線は収入と支出のバランスを示します。\n\n線の上を指でなぞると、任意の日の残高を確認できます。背景の点線は前の期間の推移を示し、比較に使えます。\n\n上向きに進んでいるか、調整が必要かを把握するのに役立ちます。";
+
+/* Panel Polish #2 — Chip 1 Trend */
+"panel.widgetInfo.trend.chip1" = "インタラクティブ";
+
+/* Panel Polish #2 — Chip 2 Trend */
+"panel.widgetInfo.trend.chip2" = "期間別";

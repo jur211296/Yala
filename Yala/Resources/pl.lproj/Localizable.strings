@@ -3579,3 +3579,33 @@
 "shortcut.siriNatural.error.parsingFailedHelp" = "Nie zrozumiałem. Spróbuj: „Zapisz 50 zł na kawę” lub „Zarejestruj 25 zł na obiad”";
 "shortcut.siriNatural.success.partial" = "Zapisano %1$lld z %2$lld (niektóre nie zostały zrozumiane). Sprawdź skrzynkę.";
 
+
+/* Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto */
+"panel.widgetInfo.addToPanel" = "Dodaj do panelu";
+
+/* Panel Polish #2 — Title sheet pedagógico CashFlow */
+"panel.widgetInfo.cashFlow.title" = "Przepływ pieniędzy";
+
+/* Panel Polish #2 — Explanation sheet CashFlow (3 párrafos brand voice) */
+"panel.widgetInfo.cashFlow.explanation" = "Zobacz na pierwszy rzut oka, jak pieniądze wpływają i wypływają w wybranym okresie. Wpływy i wydatki obok siebie, z saldem końcowym.\n\nDotknij słupka, aby zobaczyć szczegóły dnia: zielone to wpływy, czerwone to wydatki.\n\nPrzydatne do wychwytywania tygodni, w których wydałeś więcej, niż zarobiłeś.";
+
+/* Panel Polish #2 — Chip 1 CashFlow */
+"panel.widgetInfo.cashFlow.chip1" = "Wpływy";
+
+/* Panel Polish #2 — Chip 2 CashFlow */
+"panel.widgetInfo.cashFlow.chip2" = "Wydatki";
+
+/* Panel Polish #2 — Chip 3 CashFlow */
+"panel.widgetInfo.cashFlow.chip3" = "Według okresu";
+
+/* Panel Polish #2 — Title sheet pedagógico Trend */
+"panel.widgetInfo.trend.title" = "Trend salda";
+
+/* Panel Polish #2 — Explanation sheet Trend (3 párrafos brand voice) */
+"panel.widgetInfo.trend.explanation" = "Zobacz, jak Twoje saldo zmienia się w czasie. Każdy punkt na linii to jeden dzień, a krzywa pokazuje równowagę między wpływami i wydatkami.\n\nPrzeciągnij palcem po linii, aby zobaczyć saldo dowolnego dnia. Przerywana linia w tle pokazuje poprzedni okres, abyś mógł porównać.\n\nPrzydatne, aby sprawdzić, czy idziesz do przodu, czy trzeba coś zmienić.";
+
+/* Panel Polish #2 — Chip 1 Trend */
+"panel.widgetInfo.trend.chip1" = "Interaktywny";
+
+/* Panel Polish #2 — Chip 2 Trend */
+"panel.widgetInfo.trend.chip2" = "Według okresu";

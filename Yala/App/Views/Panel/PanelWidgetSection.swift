@@ -75,15 +75,41 @@ private struct PanelTrendSection: View {
     let currencyCode: String
     let size: WidgetSize
 
+    /// VM con sample data para el preview de la sheet pedagógica. Se inicializa
+    /// vía `.task` para no instanciar el VM en cada body re-render.
+    @State private var sampleVM: PanelViewModel?
+
     var body: some View {
-        TrendsCarouselWidget(
-            viewModel: viewModel,
-            sessionState: sessionState,
-            currencyCode: currencyCode,
-            currentBalance: viewModel.currentBalance,
-            size: size,
-            onShowMore: { viewModel.navigateToStatistics(.trends) }
-        )
+        ZStack(alignment: .topTrailing) {
+            TrendsCarouselWidget(
+                viewModel: viewModel,
+                sessionState: sessionState,
+                currencyCode: currencyCode,
+                currentBalance: viewModel.currentBalance,
+                size: size,
+                onShowMore: { viewModel.navigateToStatistics(.trends) }
+            )
+
+            if let sampleVM {
+                WidgetInfoButton(kind: .trend, viewModel: viewModel) { previewSize in
+                    TrendsCarouselWidget(
+                        viewModel: sampleVM,
+                        sessionState: SessionState.shared,
+                        currencyCode: currencyCode,
+                        currentBalance: 1500,
+                        size: previewSize,
+                        onShowMore: nil
+                    )
+                    .allowsHitTesting(false)
+                }
+                .padding(DS.Spacing.md)
+            }
+        }
+        .task {
+            if sampleVM == nil {
+                sampleVM = PanelViewModel.previewWithSampleTrend()
+            }
+        }
     }
 }
 
@@ -245,26 +271,46 @@ private struct PanelCashFlowSection: View {
     let size: WidgetSize
 
     var body: some View {
-        if let summary = viewModel.cashFlowSummary {
-            CashFlowWidget(
-                summary: summary,
-                size: size,
-                period: viewModel.selectedPeriod.rawValue,
-                grouping: viewModel.cashFlowGrouping,
-                interval: viewModel.currentInterval,
-                onShowDetail: { viewModel.navigateToStatistics(.trends) },
-                displayMode: viewModel.trendType,
-                previousAmount: viewModel.cashFlowPreviousNet,
-                selectedTransactionNatures: viewModel.selectedTransactionNatures,
-                isExpensesOnlyMode: sessionState.isExpensesOnlyMode
-            )
-        } else {
-            YalaEmptyState(
-                icon: "chart.bar.fill",
-                title: L10n.Empty.noData,
-                message: L10n.Statistics.noRecordsDescription
-            )
-            .frame(height: 200)
+        ZStack(alignment: .topTrailing) {
+            if let summary = viewModel.cashFlowSummary {
+                CashFlowWidget(
+                    summary: summary,
+                    size: size,
+                    period: viewModel.selectedPeriod.rawValue,
+                    grouping: viewModel.cashFlowGrouping,
+                    interval: viewModel.currentInterval,
+                    onShowDetail: { viewModel.navigateToStatistics(.trends) },
+                    displayMode: viewModel.trendType,
+                    previousAmount: viewModel.cashFlowPreviousNet,
+                    selectedTransactionNatures: viewModel.selectedTransactionNatures,
+                    isExpensesOnlyMode: sessionState.isExpensesOnlyMode
+                )
+            } else {
+                YalaEmptyState(
+                    icon: "chart.bar.fill",
+                    title: L10n.Empty.noData,
+                    message: L10n.Statistics.noRecordsDescription
+                )
+                .frame(height: 200)
+            }
+
+            WidgetInfoButton(kind: .cashFlow, viewModel: viewModel) { previewSize in
+                CashFlowWidget(
+                    summary: viewModel.cashFlowSummary ?? .previewSample,
+                    size: previewSize,
+                    period: viewModel.selectedPeriod.rawValue,
+                    grouping: viewModel.cashFlowGrouping,
+                    interval: viewModel.currentInterval,
+                    onShowDetail: nil,
+                    displayMode: viewModel.trendType,
+                    previousAmount: nil,
+                    selectedTransactionNatures: [],
+                    showInfoHint: false,
+                    isExpensesOnlyMode: false
+                )
+                .allowsHitTesting(false)
+            }
+            .padding(DS.Spacing.md)
         }
     }
 }
