@@ -13,6 +13,7 @@ struct ScheduledPaymentRowView: View {
     let currencyCode: String
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
         NavigationLink(value: summary.payment.persistentModelID) {
@@ -178,6 +179,6 @@ struct ScheduledPaymentRowView: View {
     private var formattedAmount: String {
         let prefix = summary.payment.transactionType == "income" ? "+" : "-"
         let isEstimate = summary.paidAmount == nil && summary.payment.isVariableAmount
-        return prefix + YalaFormatter.currency(value: summary.displayAmount, currencyCode: summary.displayCurrencyCode, forceFullPrecision: true, isEstimate: isEstimate)
+        return prefix + appPreferences.currency(summary.displayAmount, currencyCode: summary.displayCurrencyCode, forceFullPrecision: true, isEstimate: isEstimate)
     }
 }

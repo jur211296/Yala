@@ -18,6 +18,7 @@ private let sharedPercentFormatter: NumberFormatter = {
 struct TopSubcategoriesWidget: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var viewModel = TopSubcategoriesWidgetViewModel()
 
@@ -125,14 +126,14 @@ struct TopSubcategoriesWidget: View {
                         // Total amount with vs comparison (only with variation header)
                         if showVariationHeader && !subcategories.isEmpty {
                             HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                                Text(YalaFormatter.currency(value: totalAmount, currencyCode: currencyCode))
+                                Text(appPreferences.currency(totalAmount, currencyCode: currencyCode))
                                     .font(DS.Typography.headline)
                                     .foregroundStyle(.primary)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.7)
 
                                 if let prevAmount = previousTotalAmount {
-                                    Text("vs \(YalaFormatter.number(value: prevAmount))")
+                                    Text("vs \(appPreferences.number(prevAmount))")
                                         .font(DS.Typography.caption)
                                         .foregroundStyle(.thSecondaryText)
                                         .lineLimit(1)
@@ -468,7 +469,7 @@ struct TopSubcategoriesWidget: View {
     // MARK: - Formatters
 
     private func formattedAmount(_ value: Double) -> String {
-        YalaFormatter.currency(value: value, currencyCode: currencyCode)
+        appPreferences.currency(value, currencyCode: currencyCode)
     }
 
     private func formattedPercentage(_ value: Double) -> String {
@@ -479,6 +480,7 @@ struct TopSubcategoriesWidget: View {
 // MARK: - Subcategory Row
 
 private struct SubcategoryRow: View {
+    @Environment(AppPreferences.self) private var appPreferences
     let summary: SubcategorySpendingSummary
     let maxAmount: Double
     let currencyCode: String

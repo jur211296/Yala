@@ -75,7 +75,7 @@ struct ScheduledPaymentsListView: View {
 
         return VStack(spacing: DS.Spacing.md) {
             // Total amount
-            Text(YalaFormatter.currency(value: monthlyTotal, currencyCode: currencyCode))
+            Text(appPreferences.currency(monthlyTotal, currencyCode: currencyCode))
                 .font(.system(size: scaledAmountSize, weight: .bold, design: .rounded))
                 .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.primary)
@@ -94,7 +94,7 @@ struct ScheduledPaymentsListView: View {
                         Text(NSLocalizedString("scheduled.summary.paid", comment: ""))
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.secondary)
-                        Text(YalaFormatter.currency(value: viewModel.monthlyTotalPaid(preferredCurrencyCode: currencyCode), currencyCode: currencyCode))
+                        Text(appPreferences.currency(viewModel.monthlyTotalPaid(preferredCurrencyCode: currencyCode), currencyCode: currencyCode))
                             .font(DS.Typography.label)
                             .foregroundStyle(theme.accent)
                     }
@@ -118,7 +118,7 @@ struct ScheduledPaymentsListView: View {
                         Text(NSLocalizedString("scheduled.summary.pending", comment: ""))
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.secondary)
-                        Text(YalaFormatter.currency(value: viewModel.monthlyTotalPending(preferredCurrencyCode: currencyCode), currencyCode: currencyCode))
+                        Text(appPreferences.currency(viewModel.monthlyTotalPending(preferredCurrencyCode: currencyCode), currencyCode: currencyCode))
                             .font(DS.Typography.label)
                             .foregroundStyle(Color.hotPink)
                     }

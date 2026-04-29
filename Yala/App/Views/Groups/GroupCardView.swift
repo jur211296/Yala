@@ -15,6 +15,7 @@ struct GroupCardView: View {
     let action: () -> Void
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
         Button(action: action) {
@@ -39,7 +40,7 @@ struct GroupCardView: View {
                 // Net balance
                 if let balance {
                     VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                        Text(YalaFormatter.currency(value: abs(balance.netBalance), currencyCode: balance.currencyCode))
+                        Text(appPreferences.currency(abs(balance.netBalance), currencyCode: balance.currencyCode))
                             .font(DS.Typography.headline)
                             .foregroundStyle(Color.groupBalance(balance.netBalance))
 
@@ -60,7 +61,7 @@ struct GroupCardView: View {
     private var accessibilityText: String {
         var parts = [group.name, L10n.Groups.Member.people(memberCount)]
         if let balance {
-            let amount = YalaFormatter.currency(value: abs(balance.netBalance), currencyCode: balance.currencyCode)
+            let amount = appPreferences.currency(abs(balance.netBalance), currencyCode: balance.currencyCode)
             let label = balanceLabel(balance.netBalance)
             if !label.isEmpty { parts.append("\(amount) \(label)") }
         }

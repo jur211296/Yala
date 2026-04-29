@@ -9,6 +9,7 @@ import SwiftData
 import SwiftUI
 
 struct RecentRecordsWidget: View {
+    @Environment(AppPreferences.self) private var appPreferences
     let records: [TransactionItem]
     let currencyCode: String
 
@@ -210,7 +211,7 @@ struct RecentRecordsWidget: View {
     }
 
     private func formattedAmount(_ value: Double, currencyCode: String) -> String {
-        YalaFormatter.currency(value: value, currencyCode: currencyCode, forceFullPrecision: true)
+        appPreferences.currency(value, currencyCode: currencyCode, forceFullPrecision: true)
     }
 
     // MARK: - Empty State

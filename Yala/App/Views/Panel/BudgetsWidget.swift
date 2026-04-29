@@ -10,6 +10,7 @@ import SwiftUI
 
 struct BudgetsWidget: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppPreferences.self) private var appPreferences
 
     let budgets: [BudgetSummary]
     let currencyCode: String
@@ -218,7 +219,7 @@ struct BudgetsWidget: View {
                 }
                 .frame(width: 28, height: 6)
 
-                Text(YalaFormatter.currency(value: summary.spent, currencyCode: currencyCode))
+                Text(appPreferences.currency(summary.spent, currencyCode: currencyCode))
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

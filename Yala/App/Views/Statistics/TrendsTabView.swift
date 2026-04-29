@@ -392,7 +392,7 @@ struct TrendsTabView: View {
                                 .minimumScaleFactor(0.7)
 
                             if let prevTotal = previousPeriodTotal {
-                                Text("vs \(YalaFormatter.number(value: prevTotal))")
+                                Text("vs \(appPreferences.number(prevTotal))")
                                     .font(DS.Typography.caption)
                                     .foregroundStyle(.thSecondaryText)
                                     .lineLimit(1)
@@ -489,7 +489,7 @@ struct TrendsTabView: View {
                 // Show previous period value for comparison (hidden for All Time or when appPreferences.showVariations is OFF)
                 if appPreferences.showVariations && trendsViewModel.detailPeriod != .allTime,
                    let prevTotal = previousPeriodTotal {
-                    Text("vs \(YalaFormatter.number(value: prevTotal))")
+                    Text("vs \(appPreferences.number(prevTotal))")
                         .font(DS.Typography.caption)
                         .foregroundStyle(.thSecondaryText)
                         .lineLimit(1)
@@ -932,7 +932,7 @@ struct TrendsTabView: View {
                 Calendar.current.isDate($0.date, inSameDayAs: focusedDate)
             })
         {
-            return YalaFormatter.currency(value: point.value, currencyCode: defaultCurrencyCode)
+            return appPreferences.currency(point.value, currencyCode: defaultCurrencyCode)
         }
 
         // Otherwise, show metric-specific KPI
@@ -948,7 +948,7 @@ struct TrendsTabView: View {
             // Expense: show TOTAL expense for the period
             value = trendsViewModel.totalExpense
         }
-        return YalaFormatter.currency(value: value, currencyCode: defaultCurrencyCode)
+        return appPreferences.currency(value, currencyCode: defaultCurrencyCode)
     }
 
     private var chartTitle: String {
@@ -1294,6 +1294,8 @@ struct TrendsTabView: View {
 
 /// Compact record row matching RecentRecordsWidget layout exactly
 struct CompactRecordRow: View {
+    @Environment(AppPreferences.self) private var appPreferences
+
     let record: TransactionItem
     let currencyCode: String
 
@@ -1427,6 +1429,6 @@ struct CompactRecordRow: View {
     }
 
     private var formattedAmount: String {
-        YalaFormatter.currency(value: record.amount, currencyCode: record.currencyCode, forceFullPrecision: true)
+        appPreferences.currency(record.amount, currencyCode: record.currencyCode, forceFullPrecision: true)
     }
 }

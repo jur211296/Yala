@@ -16,6 +16,7 @@ struct GroupExpenseFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - Input
@@ -228,7 +229,7 @@ struct GroupExpenseFormView: View {
                 dismissKeyboard()
                 showCurrencyPicker = true
             } label: {
-                Text(YalaFormatter.currencyIdentifier(for: viewModel.currencyCode))
+                Text(appPreferences.currencyIdentifier(for: viewModel.currencyCode))
                     .font(.system(size: amountFontSize * 0.44, weight: .medium, design: .rounded))
                     .foregroundStyle(theme.accent.opacity(0.7))
                     .contentTransition(.numericText())

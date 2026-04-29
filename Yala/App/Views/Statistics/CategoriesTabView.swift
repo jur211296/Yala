@@ -1486,6 +1486,8 @@ private struct CategoryRowView: View {
         return f
     }()
 
+    @Environment(AppPreferences.self) private var appPreferences
+
     let summary: CategorySpendingSummary
     let maxAmount: Double
     let currencyCode: String
@@ -1514,7 +1516,7 @@ private struct CategoryRowView: View {
 
                     Spacer()
 
-                    Text(YalaFormatter.currency(value: summary.amount, currencyCode: currencyCode))
+                    Text(appPreferences.currency(summary.amount, currencyCode: currencyCode))
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                 }
@@ -1571,6 +1573,8 @@ private struct SubcategoryRowView: View {
         return f
     }()
 
+    @Environment(AppPreferences.self) private var appPreferences
+
     let summary: SubcategorySpendingSummary
     let maxAmount: Double
     let currencyCode: String
@@ -1606,7 +1610,7 @@ private struct SubcategoryRowView: View {
 
                     Spacer()
 
-                    Text(YalaFormatter.currency(value: summary.amount, currencyCode: currencyCode))
+                    Text(appPreferences.currency(summary.amount, currencyCode: currencyCode))
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                 }

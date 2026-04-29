@@ -12,6 +12,7 @@ import SwiftUI
 struct ScheduledPaymentsSettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var viewModel = ScheduledPaymentsSettingsViewModel()
 
@@ -130,7 +131,7 @@ struct ScheduledPaymentsSettingsView: View {
 
                     HStack(spacing: DS.Spacing.sm) {
                         // Amount
-                        Text(YalaFormatter.currency(value: payment.amount, currencyCode: payment.currencyCode, isEstimate: payment.isVariableAmount))
+                        Text(appPreferences.currency(payment.amount, currencyCode: payment.currencyCode, isEstimate: payment.isVariableAmount))
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
 

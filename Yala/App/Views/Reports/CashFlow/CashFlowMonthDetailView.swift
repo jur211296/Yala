@@ -20,6 +20,7 @@ struct CashFlowMonthDetailView: View {
     @State private var selectedCellLineID: UUID?
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
         VStack(spacing: DS.Spacing.md) {
@@ -174,7 +175,7 @@ struct CashFlowMonthDetailView: View {
                     )
                 }
                 Spacer()
-                Text(YalaFormatter.currency(value: month.netFlow, currencyCode: currencyCode))
+                Text(appPreferences.currency(month.netFlow, currencyCode: currencyCode))
                     .font(DS.Typography.amount)
                     .fontWeight(.bold)
                     .foregroundStyle(.primary)
@@ -206,7 +207,7 @@ struct CashFlowMonthDetailView: View {
                     }
                     Spacer()
                     if let balance = month.accumulatedBalance {
-                        Text(YalaFormatter.currency(value: balance, currencyCode: currencyCode))
+                        Text(appPreferences.currency(balance, currencyCode: currencyCode))
                             .font(DS.Typography.amount)
                             .fontWeight(.bold)
                             .foregroundStyle(.primary)
@@ -262,7 +263,7 @@ struct CashFlowMonthDetailView: View {
                         .foregroundStyle(.secondary)
                     Spacer()
                     let displayAmount = result.realAmount ?? result.plannedAmount
-                    Text(YalaFormatter.currency(value: displayAmount, currencyCode: currencyCode))
+                    Text(appPreferences.currency(displayAmount, currencyCode: currencyCode))
                         .font(DS.Typography.amountSmall)
                         .foregroundStyle(.tertiary)
                         .monospacedDigit()
@@ -300,7 +301,7 @@ struct CashFlowMonthDetailView: View {
 
                 Spacer()
 
-                Text(YalaFormatter.currency(value: total, currencyCode: currencyCode))
+                Text(appPreferences.currency(total, currencyCode: currencyCode))
                     .font(DS.Typography.amountSmall)
                     .fontWeight(.bold)
                     .foregroundStyle(isIncome ? Color.electricIndigo : Color.hotPink)

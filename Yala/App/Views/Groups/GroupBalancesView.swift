@@ -20,6 +20,7 @@ struct GroupBalancesView: View {
     var onRejectSettlement: ((SplitSettlement) -> Void)?
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
         if balances.isEmpty && debts.isEmpty {
@@ -82,7 +83,7 @@ struct GroupBalancesView: View {
 
             Spacer()
 
-            Text(YalaFormatter.currency(value: abs(balance.netBalance), currencyCode: balance.currencyCode))
+            Text(appPreferences.currency(abs(balance.netBalance), currencyCode: balance.currencyCode))
                 .font(DS.Typography.headline)
                 .foregroundStyle(balanceColor(balance.netBalance))
         }
@@ -132,7 +133,7 @@ struct GroupBalancesView: View {
 
             Spacer()
 
-            Text(YalaFormatter.currency(value: debt.amount, currencyCode: debt.currencyCode))
+            Text(appPreferences.currency(debt.amount, currencyCode: debt.currencyCode))
                 .font(DS.Typography.headline)
                 .foregroundStyle(Color.hotPink)
 
@@ -200,7 +201,7 @@ struct GroupBalancesView: View {
 
             Spacer()
 
-            Text(YalaFormatter.currency(value: settlement.amount, currencyCode: settlement.currencyCode))
+            Text(appPreferences.currency(settlement.amount, currencyCode: settlement.currencyCode))
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
 

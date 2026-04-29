@@ -17,6 +17,7 @@ struct InboxDraftRowView: View {
     let onTap: () -> Void
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
         Button(action: onTap) {
@@ -58,7 +59,7 @@ struct InboxDraftRowView: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(L10n.Accessibility.draftRow(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note, draft.amount.map { YalaFormatter.currency(value: $0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, draft.status.rawValue))
+        .accessibilityLabel(L10n.Accessibility.draftRow(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note, draft.amount.map { appPreferences.currency($0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, draft.status.rawValue))
     }
 
     // MARK: - Complete Content View (like RecordRowView)
@@ -129,7 +130,7 @@ struct InboxDraftRowView: View {
     private var amountColumn: some View {
         VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
             if let amount = draft.amount {
-                Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode, forceFullPrecision: true))
+                Text(appPreferences.currency(amount, currencyCode: currencyCode, forceFullPrecision: true))
                     .font(DS.Typography.headline)
                     .foregroundStyle(amount >= 0 ? Color.electricIndigo : Color.hotPink)
             } else {

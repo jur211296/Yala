@@ -9,6 +9,7 @@ import SwiftData
 import SwiftUI
 
 struct TopCategoriesWidget: View {
+    @Environment(AppPreferences.self) private var appPreferences
     let categories: [CategorySpendingSummary]
     let currencyCode: String
 
@@ -123,14 +124,14 @@ struct TopCategoriesWidget: View {
                 // Total amount with vs comparison (only for medium/large with variation header)
                 if showVariationHeader && size != .small && !categories.isEmpty {
                     HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                        Text(YalaFormatter.currency(value: totalAmount, currencyCode: currencyCode))
+                        Text(appPreferences.currency(totalAmount, currencyCode: currencyCode))
                             .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
 
                         if let prevAmount = previousTotalAmount {
-                            Text("vs \(YalaFormatter.number(value: prevAmount))")
+                            Text("vs \(appPreferences.number(prevAmount))")
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.thSecondaryText)
                                 .lineLimit(1)
@@ -347,7 +348,7 @@ struct TopCategoriesWidget: View {
 
     // Helpers (moved inside View to be accessible)
     private func formattedAmount(_ value: Double) -> String {
-        YalaFormatter.currency(value: value, currencyCode: currencyCode)
+        appPreferences.currency(value, currencyCode: currencyCode)
     }
 
     private func formattedPercentage(_ value: Double) -> String {
@@ -358,6 +359,7 @@ struct TopCategoriesWidget: View {
 // MARK: - Category Row Component
 
 private struct CategoryRow: View {
+    @Environment(AppPreferences.self) private var appPreferences
     let summary: CategorySpendingSummary
     let maxAmount: Double
     let currencyCode: String
@@ -389,7 +391,7 @@ private struct CategoryRow: View {
 
                     Spacer()
 
-                    Text(YalaFormatter.currency(value: summary.amount, currencyCode: currencyCode))
+                    Text(appPreferences.currency(summary.amount, currencyCode: currencyCode))
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                 }

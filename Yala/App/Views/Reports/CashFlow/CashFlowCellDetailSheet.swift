@@ -21,6 +21,7 @@ struct CashFlowCellDetailSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     // Local navigation state (resets on dismiss)
     @State private var activeMonthKey: String = ""
@@ -195,14 +196,14 @@ struct CashFlowCellDetailSheet: View {
             Divider()
 
             HStack(alignment: .firstTextBaseline) {
-                Text(YalaFormatter.currency(value: lr.realAmount ?? 0, currencyCode: currencyCode))
+                Text(appPreferences.currency(lr.realAmount ?? 0, currencyCode: currencyCode))
                     .font(DS.Typography.title)
                     .fontWeight(.bold)
                     .monospacedDigit()
                 Text(L10n.CashFlowPlan.cellDetailOf)
                     .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
-                Text(YalaFormatter.currency(value: lr.plannedAmount, currencyCode: currencyCode))
+                Text(appPreferences.currency(lr.plannedAmount, currencyCode: currencyCode))
                     .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
@@ -232,7 +233,7 @@ struct CashFlowCellDetailSheet: View {
                         Spacer()
                         let remaining = lr.plannedAmount - (lr.realAmount ?? 0)
                         if remaining > 0 {
-                            Text(L10n.CashFlowPlan.cellDetailRemaining(YalaFormatter.currency(value: remaining, currencyCode: currencyCode)))
+                            Text(L10n.CashFlowPlan.cellDetailRemaining(appPreferences.currency(remaining, currencyCode: currencyCode)))
                                 .font(DS.Typography.captionSmall)
                                 .foregroundStyle(.secondary)
                         }
@@ -270,14 +271,14 @@ struct CashFlowCellDetailSheet: View {
                     let percent = lr.differencePercent.map { abs($0) } ?? 0
 
                     VStack(spacing: DS.Spacing.sm) {
-                        Text("\(verb) \(YalaFormatter.currency(value: real, currencyCode: currencyCode)) vs \(L10n.CashFlowPlan.plan.lowercased()) \(YalaFormatter.currency(value: lr.plannedAmount, currencyCode: currencyCode))")
+                        Text("\(verb) \(appPreferences.currency(real, currencyCode: currencyCode)) vs \(L10n.CashFlowPlan.plan.lowercased()) \(appPreferences.currency(lr.plannedAmount, currencyCode: currencyCode))")
                             .font(DS.Typography.body)
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         HStack(spacing: DS.Spacing.xs) {
                             Image(systemName: isGood ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
                                 .foregroundStyle(isGood ? Color.electricIndigo : Color.hotPink)
-                            Text("\(YalaFormatter.currency(value: diffAbs, currencyCode: currencyCode)) \(diff > 0 ? L10n.CashFlowPlan.cellDetailMore : L10n.CashFlowPlan.cellDetailLess) (\(String(format: "%.1f", percent))%)")
+                            Text("\(appPreferences.currency(diffAbs, currencyCode: currencyCode)) \(diff > 0 ? L10n.CashFlowPlan.cellDetailMore : L10n.CashFlowPlan.cellDetailLess) (\(String(format: "%.1f", percent))%)")
                                 .font(DS.Typography.subheadline)
                                 .foregroundStyle(isGood ? Color.electricIndigo : Color.hotPink)
                             Spacer()
@@ -340,7 +341,7 @@ struct CashFlowCellDetailSheet: View {
                         .font(DS.Typography.label)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Text(YalaFormatter.currency(value: lr.plannedAmount, currencyCode: currencyCode))
+                    Text(appPreferences.currency(lr.plannedAmount, currencyCode: currencyCode))
                         .font(DS.Typography.title)
                         .fontWeight(.bold)
                         .monospacedDigit()
@@ -411,7 +412,7 @@ struct CashFlowCellDetailSheet: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                            Text(YalaFormatter.currency(value: abs(tx.amount), currencyCode: tx.currencyCode, forceFullPrecision: true))
+                            Text(appPreferences.currency(abs(tx.amount), currencyCode: tx.currencyCode, forceFullPrecision: true))
                                 .font(DS.Typography.amountSmall)
                                 .monospacedDigit()
                             Text(tx.date.formatted(.dateTime.day().month(.abbreviated)))
@@ -602,7 +603,7 @@ struct CashFlowCellDetailSheet: View {
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
             Spacer()
-            Text(YalaFormatter.currency(value: value, currencyCode: currencyCode))
+            Text(appPreferences.currency(value, currencyCode: currencyCode))
                 .font(DS.Typography.amountSmall)
                 .fontWeight(.semibold)
                 .foregroundStyle(color ?? .primary)

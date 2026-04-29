@@ -36,22 +36,11 @@ struct HeroMonthView: View {
     var showUpsellCTA: Bool = false
     var onUpsellTap: () -> Void = {}
 
-    /// `YalaFormatter.currency` reads `decimalPlaces` and
-    /// `currencyDisplayFormat` straight from `UserDefaults`, which leaves
-    /// SwiftUI blind to changes. Reading the @Observable props inside *this*
-    /// view's body registers them as dependencies so the hero rebuilds the
-    /// instant the user tweaks Profile → Personalización.
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        // Touch the formatter-related prefs so this view re-evaluates when
-        // they change. Keep `let _ = …` form — a plain `_ = …` returns
-        // `Void` and breaks `@ViewBuilder`.
-        let _ = appPreferences.decimalPlaces
-        let _ = appPreferences.currencyDisplayFormat
-
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             topRow
             kpi
@@ -147,7 +136,7 @@ struct HeroMonthView: View {
                 .foregroundStyle(.primary)
 
             // Disponible del período — protagonista.
-            Text(YalaFormatter.currency(value: periodSummary.available, currencyCode: currencyCode))
+            Text(appPreferences.currency(periodSummary.available, currencyCode: currencyCode))
                 .font(DS.Typography.largeTitle)
                 .foregroundStyle(.primary)
 
@@ -168,7 +157,7 @@ struct HeroMonthView: View {
                                 .font(DS.Typography.labelSmall)
                                 .foregroundStyle(Color.incomeGraph)
                                 .accessibilityHidden(true)
-                            Text(YalaFormatter.currency(value: periodSummary.income, currencyCode: currencyCode))
+                            Text(appPreferences.currency(periodSummary.income, currencyCode: currencyCode))
                                 .font(DS.Typography.subheadline)
                                 .foregroundStyle(.secondary)
                         }
@@ -195,7 +184,7 @@ struct HeroMonthView: View {
                             .font(DS.Typography.labelSmall)
                             .foregroundStyle(Color.expenseGraph)
                             .accessibilityHidden(true)
-                        Text(YalaFormatter.currency(value: periodSummary.expense, currencyCode: currencyCode))
+                        Text(appPreferences.currency(periodSummary.expense, currencyCode: currencyCode))
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -306,7 +295,7 @@ struct HeroMonthView: View {
     // MARK: - Formatting
 
     private func formattedAmount(_ value: Double) -> String {
-        YalaFormatter.currency(value: value, currencyCode: currencyCode)
+        appPreferences.currency(value, currencyCode: currencyCode)
     }
 
     private var voiceoverLabel: String {

@@ -69,6 +69,7 @@ struct SplitCalculatorSheet: View {
     let onDismiss: () -> Void
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @FocusState private var focusedField: CalcField?
 
@@ -385,7 +386,7 @@ struct SplitCalculatorSheet: View {
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
             Spacer()
-            Text("\(currencySymbol.map { "\($0) " } ?? "")\(YalaFormatter.number(value: amount, forceFullPrecision: true))")
+            Text("\(currencySymbol.map { "\($0) " } ?? "")\(appPreferences.number(amount, forceFullPrecision: true))")
                 .font(DS.Typography.title2)
                 .foregroundStyle(Color.hotPink)
         }

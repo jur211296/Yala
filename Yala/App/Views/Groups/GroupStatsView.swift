@@ -19,6 +19,7 @@ struct GroupStatsView: View {
 
     @State private var viewModel = GroupStatsViewModel()
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
         if expenses.isEmpty {
@@ -83,13 +84,13 @@ struct GroupStatsView: View {
         HStack(spacing: DS.Spacing.md) {
             summaryCard(
                 title: L10n.Groups.Stats.totalSpent,
-                value: YalaFormatter.currency(value: viewModel.totalSpent, currencyCode: currencyCode),
+                value: appPreferences.currency(viewModel.totalSpent, currencyCode: currencyCode),
                 color: .primary
             )
 
             summaryCard(
                 title: L10n.Groups.Stats.myPortion,
-                value: YalaFormatter.currency(value: viewModel.myPortion, currencyCode: currencyCode),
+                value: appPreferences.currency(viewModel.myPortion, currencyCode: currencyCode),
                 color: theme.accent
             )
         }
@@ -125,11 +126,11 @@ struct GroupStatsView: View {
                 .foregroundStyle(theme.accent.gradient)
                 .cornerRadius(DS.Radius.xs)
                 .annotation(position: .trailing) {
-                    Text(YalaFormatter.currency(value: member.totalPaid, currencyCode: currencyCode))
+                    Text(appPreferences.currency(member.totalPaid, currencyCode: currencyCode))
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
                 }
-                .accessibilityLabel("\(member.displayName): \(YalaFormatter.currency(value: member.totalPaid, currencyCode: currencyCode))")
+                .accessibilityLabel("\(member.displayName): \(appPreferences.currency(member.totalPaid, currencyCode: currencyCode))")
             }
             .chartXAxis(.hidden)
             .chartYAxis {
@@ -160,7 +161,7 @@ struct GroupStatsView: View {
                     )
                     .foregroundStyle(by: .value("category", cat.subcategoryName))
                     .cornerRadius(DS.Radius.xs)
-                    .accessibilityLabel("\(cat.subcategoryName): \(YalaFormatter.currency(value: cat.amount, currencyCode: currencyCode))")
+                    .accessibilityLabel("\(cat.subcategoryName): \(appPreferences.currency(cat.amount, currencyCode: currencyCode))")
                 }
                 .chartLegend(position: .bottom, alignment: .leading, spacing: DS.Spacing.sm)
                 .frame(height: 200) // A11Y-DT: fixed chart height for consistent layout

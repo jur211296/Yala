@@ -290,17 +290,17 @@ struct BudgetChartsView: View {
                     )
                     .symbolSize(0)
                     .annotation(position: .top, spacing: DS.Spacing.xs) {
-                        Text(YalaFormatter.currency(value: item.spent, currencyCode: budget.currencyCode))
+                        Text(appPreferences.currency(item.spent, currencyCode: budget.currencyCode))
                             .font(DS.Typography.labelTiny)
                             .foregroundStyle(.thSecondaryText)
-                            .accessibilityLabel("\(item.label): \(YalaFormatter.currency(value: item.spent, currencyCode: budget.currencyCode))")
+                            .accessibilityLabel("\(item.label): \(appPreferences.currency(item.spent, currencyCode: budget.currencyCode))")
                     }
 
                     if let first = data.first, first.limit > 0 {
                         RuleMark(y: .value("Limit", first.limit))
                             .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
                             .foregroundStyle(.secondary)
-                            .accessibilityLabel("Budget limit: \(YalaFormatter.currency(value: first.limit, currencyCode: budget.currencyCode))")
+                            .accessibilityLabel("Budget limit: \(appPreferences.currency(first.limit, currencyCode: budget.currencyCode))")
                     }
                 }
                 .chartXAxis {
@@ -418,7 +418,7 @@ struct BudgetChartsView: View {
                                 Text(dayMonthLabel(point.date))
                                     .font(DS.Typography.captionSmall)
                                     .foregroundStyle(.thSecondaryText)
-                                Text(YalaFormatter.currency(value: point.cumulative, currencyCode: budget.currencyCode))
+                                Text(appPreferences.currency(point.cumulative, currencyCode: budget.currencyCode))
                                     .font(DS.Typography.labelSmall)
                                     .foregroundStyle(.thPrimaryText)
                             }
@@ -561,7 +561,7 @@ struct BudgetChartsView: View {
 
                     Spacer()
 
-                    Text(YalaFormatter.currency(value: amount, currencyCode: budget.currencyCode))
+                    Text(appPreferences.currency(amount, currencyCode: budget.currencyCode))
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                 }

@@ -265,7 +265,7 @@ struct InsightsTabView: View {
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
 
-            Text(YalaFormatter.currency(value: value, currencyCode: defaultCurrencyCode))
+            Text(appPreferences.currency(value, currencyCode: defaultCurrencyCode))
                 .font(DS.Typography.title2)
                 .fontWeight(.semibold)
                 .foregroundStyle(.primary)
@@ -455,7 +455,7 @@ struct InsightsTabView: View {
                         icon: "folder.fill",
                         label: L10n.Insights.topCategory,
                         value: top.category.name,
-                        secondary: "\(YalaFormatter.currency(value: top.amount, currencyCode: defaultCurrencyCode)) · \(Int(top.percentage))%"
+                        secondary: "\(appPreferences.currency(top.amount, currencyCode: defaultCurrencyCode)) · \(Int(top.percentage))%"
                     )
                 }
 
@@ -464,7 +464,7 @@ struct InsightsTabView: View {
                         icon: "tag.fill",
                         label: L10n.Insights.topSubcategory,
                         value: topSub.subcategoryName,
-                        secondary: YalaFormatter.currency(value: topSub.amount, currencyCode: defaultCurrencyCode)
+                        secondary: appPreferences.currency(topSub.amount, currencyCode: defaultCurrencyCode)
                     )
                 }
 
@@ -472,7 +472,7 @@ struct InsightsTabView: View {
                     QuickStatCell(
                         icon: "arrow.up.circle.fill",
                         label: L10n.Insights.highestExpense,
-                        value: YalaFormatter.currency(value: highest.amount, currencyCode: defaultCurrencyCode),
+                        value: appPreferences.currency(highest.amount, currencyCode: defaultCurrencyCode),
                         secondary: highest.note
                     )
                 }
@@ -482,7 +482,7 @@ struct InsightsTabView: View {
                         icon: "calendar.circle.fill",
                         label: L10n.Insights.highestAvgWeekday,
                         value: bestDay.weekdayName.capitalized,
-                        secondary: YalaFormatter.currency(value: bestDay.average, currencyCode: defaultCurrencyCode)
+                        secondary: appPreferences.currency(bestDay.average, currencyCode: defaultCurrencyCode)
                     )
                 }
 
@@ -490,7 +490,7 @@ struct InsightsTabView: View {
                     QuickStatCell(
                         icon: "repeat.circle.fill",
                         label: L10n.Insights.subscriptions,
-                        value: YalaFormatter.currency(value: stats.subscriptionsTotal, currencyCode: defaultCurrencyCode),
+                        value: appPreferences.currency(stats.subscriptionsTotal, currencyCode: defaultCurrencyCode),
                         secondary: L10n.Insights.monthly
                     )
                 }
@@ -513,7 +513,7 @@ struct InsightsTabView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Text(YalaFormatter.currency(value: stats.dailyAverage, currencyCode: defaultCurrencyCode))
+            Text(appPreferences.currency(stats.dailyAverage, currencyCode: defaultCurrencyCode))
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
@@ -561,7 +561,7 @@ struct InsightsTabView: View {
                         icon: "clock",
                         label: L10n.Insights.pendingPayments,
                         value: "\(c.pendingPaymentsCount)",
-                        secondary: YalaFormatter.currency(value: c.pendingPaymentsAmount, currencyCode: defaultCurrencyCode)
+                        secondary: appPreferences.currency(c.pendingPaymentsAmount, currencyCode: defaultCurrencyCode)
                     )
                 }
 
@@ -570,7 +570,7 @@ struct InsightsTabView: View {
                         icon: "repeat",
                         label: L10n.Insights.activeSubscriptions,
                         value: "\(c.activeSubscriptionsCount)",
-                        secondary: "\(YalaFormatter.currency(value: c.activeSubscriptionsMonthly, currencyCode: defaultCurrencyCode)) \(L10n.Insights.monthly)"
+                        secondary: "\(appPreferences.currency(c.activeSubscriptionsMonthly, currencyCode: defaultCurrencyCode)) \(L10n.Insights.monthly)"
                     )
                 }
 

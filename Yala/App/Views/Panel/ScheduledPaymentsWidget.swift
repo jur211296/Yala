@@ -93,7 +93,7 @@ struct ScheduledPaymentsWidget: View {
 
     private var smallKPIBlock: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(YalaFormatter.currency(value: smallToPayAmount, currencyCode: currencyCode))
+            Text(appPreferences.currency(smallToPayAmount, currencyCode: currencyCode))
                 .font(.system(.title3, design: .rounded).weight(.bold))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
@@ -127,7 +127,7 @@ struct ScheduledPaymentsWidget: View {
         VStack(alignment: .leading, spacing: 1) {
             Text(String(
                 format: L10n.Scheduled.Widget.smallPaidAmount,
-                YalaFormatter.currency(value: data.paidAmount, currencyCode: currencyCode)
+                appPreferences.currency(data.paidAmount, currencyCode: currencyCode)
             ))
             .font(DS.Typography.captionSmall)
             .foregroundStyle(.secondary)
@@ -296,7 +296,7 @@ struct ScheduledPaymentsWidget: View {
     private var summaryContent: some View {
         VStack(spacing: DS.Spacing.md) {
             // Amount
-            Text(YalaFormatter.currency(value: data.monthlyTotal, currencyCode: currencyCode))
+            Text(appPreferences.currency(data.monthlyTotal, currencyCode: currencyCode))
                 .font(DS.Typography.amountLarge)
                 .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 .foregroundStyle(.primary)
@@ -365,7 +365,7 @@ struct ScheduledPaymentsWidget: View {
             // Amount + status badge
             HStack(spacing: DS.Spacing.xs) {
                 let prefix = item.isIncome ? "+" : "-"
-                Text(prefix + YalaFormatter.currency(value: item.amount, currencyCode: item.currencyCode, forceFullPrecision: true, isEstimate: item.isVariableAmount))
+                Text(prefix + appPreferences.currency(item.amount, currencyCode: item.currencyCode, forceFullPrecision: true, isEstimate: item.isVariableAmount))
                     .font(DS.Typography.headline)
                     .foregroundStyle(item.isIncome ? Color.priorityNeed : Color.hotPink)
                     .opacity(item.isPaid || item.isSkipped ? 0.6 : 1.0)

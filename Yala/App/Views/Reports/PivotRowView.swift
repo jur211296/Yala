@@ -41,13 +41,13 @@ struct PivotRowView: View {
 
             // Amounts
             VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                Text(YalaFormatter.currency(value: node.amount, currencyCode: displayCurrency))
+                Text(appPreferences.currency(node.amount, currencyCode: displayCurrency))
                     .font(level == 0 ? DS.Typography.label : DS.Typography.labelSmall)
                     .fontWeight(level == 0 ? .semibold : .medium)
                     .foregroundStyle(node.isIncome ? Color.electricIndigo : .primary)
 
                 if let previousAmount = node.previousAmount {
-                    Text(YalaFormatter.currency(value: previousAmount, currencyCode: displayCurrency))
+                    Text(appPreferences.currency(previousAmount, currencyCode: displayCurrency))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }

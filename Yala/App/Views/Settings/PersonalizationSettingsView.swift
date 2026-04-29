@@ -12,6 +12,7 @@ struct PersonalizationSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
@@ -24,8 +25,8 @@ struct PersonalizationSettingsView: View {
     @AppStorage("showWidgetHints") private var showWidgetHints: Bool = true
     @AppStorage("showVariations") private var showVariations: Bool = true
     @AppStorage("averageLineMode") private var averageLineMode: Int = 1
-    @AppStorage("decimalPlaces") private var decimalPlaces: Int = 0
-    @AppStorage("currencyDisplayFormat") private var currencyDisplayFormat: String = "code"  // "code" or "symbol"
+    private var decimalPlaces: Int { appPreferences.decimalPlaces }
+    private var currencyDisplayFormat: String { appPreferences.currencyDisplayFormat.rawValue }
     @AppStorage("autoFocusField") private var autoFocusField: String = "none"
     @State private var showingPeriodPicker = false
     @State private var showingAutoFocusPicker = false
@@ -720,10 +721,7 @@ struct PersonalizationSettingsView: View {
             DecimalsPickerSheet(
                 selectedDecimals: decimalPlaces,
                 onSelect: { decimals in
-                    decimalPlaces = decimals
-                    PreferenceSyncService.shared.set(int: decimals, forKey: "decimalPlaces")
-                    // Trigger UI refresh for all views showing formatted amounts
-                    sessionState.formattingVersion += 1
+                    appPreferences.decimalPlaces = decimals
                     showingDecimalsPicker = false
                 }
             )
@@ -733,10 +731,7 @@ struct PersonalizationSettingsView: View {
             CurrencyFormatPickerSheet(
                 selectedFormat: currencyDisplayFormat,
                 onSelect: { format in
-                    currencyDisplayFormat = format
-                    PreferenceSyncService.shared.set(string: format, forKey: "currencyDisplayFormat")
-                    // Trigger UI refresh for all views showing formatted amounts
-                    sessionState.formattingVersion += 1
+                    appPreferences.currencyDisplayFormat = CurrencyDisplayFormat(rawValue: format) ?? .code
                     showingCurrencyFormatPicker = false
                 }
             )

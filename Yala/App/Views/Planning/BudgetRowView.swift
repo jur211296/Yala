@@ -13,6 +13,7 @@ struct BudgetRowView: View {
     let currencyCode: String
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
         NavigationLink(value: BudgetNavigationID(id: summary.budget.persistentModelID)) {
@@ -132,10 +133,10 @@ struct BudgetRowView: View {
     // MARK: - Formatters
 
     private var formattedSpent: String {
-        YalaFormatter.currency(value: summary.spent, currencyCode: currencyCode)
+        appPreferences.currency(summary.spent, currencyCode: currencyCode)
     }
 
     private var formattedLimit: String {
-        YalaFormatter.currency(value: summary.budget.limitAmount, currencyCode: currencyCode)
+        appPreferences.currency(summary.budget.limitAmount, currencyCode: currencyCode)
     }
 }

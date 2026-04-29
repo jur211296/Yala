@@ -16,6 +16,7 @@ struct CashFlowLineConfigSheet: View {
     var transactions: [TransactionItem] = []
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var selectedMethod: EstimationMethod
     @State private var manualAmount: String
@@ -299,7 +300,7 @@ struct CashFlowLineConfigSheet: View {
                             Text(formatMonthKey(override.monthKey))
                                 .font(DS.Typography.body)
                             Spacer()
-                            Text(YalaFormatter.currency(value: override.amount, currencyCode: currencyCode))
+                            Text(appPreferences.currency(override.amount, currencyCode: currencyCode))
                                 .font(DS.Typography.amountSmall)
                                 .monospacedDigit()
                             if !override.note.isEmpty {

@@ -17,6 +17,8 @@ struct PanelSmallBarRow: View {
     let color: Color
     let currencyCode: String
 
+    @Environment(AppPreferences.self) private var appPreferences
+
     /// When true, the row is rendered at 40% opacity. Callers drive this with
     /// their selection/filter state.
     var dimmed: Bool = false
@@ -32,7 +34,7 @@ struct PanelSmallBarRow: View {
                     .foregroundStyle(.thSecondaryText)
                     .lineLimit(1)
                 Spacer(minLength: DS.Spacing.xs)
-                Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode))
+                Text(appPreferences.currency(amount, currencyCode: currencyCode))
                     .font(DS.Typography.amount)
                     .foregroundStyle(.thPrimaryText)
                     .lineLimit(1)

@@ -52,6 +52,7 @@ struct TransactionSuccessView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
     @State private var showHero = false
     @State private var showCheckmark = false
     @State private var showAmount = false
@@ -447,7 +448,7 @@ struct TransactionSuccessView: View {
                             destCurrency != data.currencyCode
                         {
                             Text(
-                                "(\(YalaFormatter.currency(value: Double(truncating: destAmount as NSDecimalNumber), currencyCode: destCurrency, forceFullPrecision: true)))"
+                                "(\(appPreferences.currency(Double(truncating: destAmount as NSDecimalNumber), currencyCode: destCurrency, forceFullPrecision: true)))"
                             )
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)

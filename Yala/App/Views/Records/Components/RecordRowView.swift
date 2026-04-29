@@ -20,6 +20,7 @@ struct RecordRowView: View {
     let onToggleSelection: () -> Void
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -124,7 +125,7 @@ struct RecordRowView: View {
 
     private var accessibilityDescription: String {
         let note = record.note ?? ""
-        let amount = YalaFormatter.currency(value: abs(record.amount), currencyCode: currencyCode)
+        let amount = appPreferences.currency(abs(record.amount), currencyCode: currencyCode)
         let category = record.subcategory?.name ?? record.category?.name ?? ""
         let account = record.account?.name ?? ""
         return "\(note), \(amount), \(category), \(account)"
@@ -236,7 +237,7 @@ struct RecordRowView: View {
 
     private var formattedAmount: String {
         // Individual records always show full precision (2 decimals) regardless of user preference
-        YalaFormatter.currency(value: record.amount, currencyCode: record.currencyCode, forceFullPrecision: true)
+        appPreferences.currency(record.amount, currencyCode: record.currencyCode, forceFullPrecision: true)
     }
 
     private var amountColor: Color {

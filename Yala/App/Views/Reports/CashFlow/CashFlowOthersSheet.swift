@@ -14,6 +14,7 @@ struct CashFlowOthersSheet: View {
     var isIncome: Bool = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     private var otherResult: CashFlowOtherResult? {
         if isIncome {
@@ -76,7 +77,7 @@ struct CashFlowOthersSheet: View {
 
                     Spacer()
 
-                    Text(YalaFormatter.currency(value: item.amount, currencyCode: currencyCode))
+                    Text(appPreferences.currency(item.amount, currencyCode: currencyCode))
                         .font(DS.Typography.amountSmall)
                         .monospacedDigit()
 

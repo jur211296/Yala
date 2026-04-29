@@ -16,6 +16,7 @@ private let needPercentFormatter: NumberFormatter = {
 }()
 
 struct NeedTrendWidget: View {
+    @Environment(AppPreferences.self) private var appPreferences
     let trendPoints: [NeedTrendPoint]
     let selectedNeed: SubcategoryNeed?
     let currencyCode: String
@@ -175,7 +176,7 @@ struct NeedTrendWidget: View {
 
         return VStack(alignment: .leading, spacing: DS.Spacing.md) {
             HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
-                Text(YalaFormatter.currency(value: total, currencyCode: currencyCode))
+                Text(appPreferences.currency(total, currencyCode: currencyCode))
                     .font(DS.Typography.headline)
                     .foregroundStyle(.thPrimaryText)
                     .lineLimit(1)
@@ -254,7 +255,7 @@ struct NeedTrendWidget: View {
 
                             // Show previous period value for comparison
                             if let prevAmount = previousTotalAmount {
-                                Text("vs \(YalaFormatter.number(value: prevAmount))")
+                                Text("vs \(appPreferences.number(prevAmount))")
                                     .font(DS.Typography.caption)
                                     .foregroundStyle(.thSecondaryText)
                                     .lineLimit(1)
@@ -810,6 +811,7 @@ struct NeedTrendChartView: View {
     }
 
     struct TooltipRow: View {
+        @Environment(AppPreferences.self) private var appPreferences
         let need: SubcategoryNeed
         let amount: Double
         let currencyCode: String
@@ -822,7 +824,7 @@ struct NeedTrendChartView: View {
                     .foregroundStyle(Color.primary)
                 Spacer()
                 // Simple formatting for tooltip
-                Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode))
+                Text(appPreferences.currency(amount, currencyCode: currencyCode))
                     .font(DS.Typography.labelTiny)
                     .foregroundStyle(Color.primary)
             }
@@ -1075,6 +1077,8 @@ struct NeedCompactBar: View {
     var variation: Double? = nil
     var showNAWhenNil: Bool = false
 
+    @Environment(AppPreferences.self) private var appPreferences
+
     @State private var barWidth: CGFloat = 0
 
     var body: some View {
@@ -1086,7 +1090,7 @@ struct NeedCompactBar: View {
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(isSelected ? Color.primary : Color.secondary)
                     Spacer()
-                    Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode))
+                    Text(appPreferences.currency(amount, currencyCode: currencyCode))
                         .font(DS.Typography.amountSmall)
                         .foregroundStyle(isSelected ? Color.primary : Color.secondary)
 

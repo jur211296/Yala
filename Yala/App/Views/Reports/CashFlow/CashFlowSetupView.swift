@@ -264,7 +264,7 @@ struct CashFlowSetupView: View {
 
             Spacer()
 
-            Text(YalaFormatter.currency(value: line.suggestedAmount, currencyCode: currencyCode))
+            Text(appPreferences.currency(line.suggestedAmount, currencyCode: currencyCode))
                 .font(DS.Typography.body)
                 .foregroundStyle(line.isIncome ? Color.electricIndigo : .primary)
                 .monospacedDigit()
@@ -309,7 +309,7 @@ struct CashFlowSetupView: View {
             Text(label)
                 .font(isBold ? DS.Typography.headline : DS.Typography.body)
             Spacer()
-            Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode))
+            Text(appPreferences.currency(amount, currencyCode: currencyCode))
                 .font(isBold ? DS.Typography.headline : DS.Typography.body)
                 .foregroundStyle(color)
                 .monospacedDigit()
@@ -365,6 +365,7 @@ struct CashFlowMethodPickerSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     init(line: SuggestedLine, currencyCode: String, viewModel: CashFlowPlanViewModel) {
         self.line = line
@@ -389,7 +390,7 @@ struct CashFlowMethodPickerSheet: View {
                             Text(line.name)
                                 .font(DS.Typography.subheadline)
                                 .foregroundStyle(.secondary)
-                            Text(YalaFormatter.currency(value: previewAmount, currencyCode: currencyCode))
+                            Text(appPreferences.currency(previewAmount, currencyCode: currencyCode))
                                 .font(DS.Typography.title)
                                 .fontWeight(.bold)
                                 .monospacedDigit()

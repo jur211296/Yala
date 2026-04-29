@@ -68,7 +68,7 @@ struct PieChartVariationHeader: View {
 
                     // Show previous period value for comparison (only when showVariations is ON)
                     if appPreferences.showVariations, let prevAmount = previousAmount {
-                        Text("vs \(YalaFormatter.number(value: prevAmount))")
+                        Text("vs \(appPreferences.number(prevAmount))")
                             .font(DS.Typography.caption)
                             .foregroundStyle(.thSecondaryText)
                             .lineLimit(1)
@@ -108,7 +108,7 @@ struct PieChartVariationHeader: View {
     // MARK: - Helpers
 
     private func formattedCurrency(_ value: Double) -> String {
-        YalaFormatter.currency(value: value, currencyCode: currencyCode)
+        appPreferences.currency(value, currencyCode: currencyCode)
     }
 }
 

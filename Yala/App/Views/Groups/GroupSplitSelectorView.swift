@@ -13,9 +13,10 @@ struct GroupSplitSelectorView: View {
     @FocusState private var focusedMember: String?
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     private var currencySymbol: String {
-        YalaFormatter.currencyIdentifier(for: viewModel.currencyCode)
+        appPreferences.currencyIdentifier(for: viewModel.currencyCode)
     }
 
     var body: some View {
@@ -91,7 +92,7 @@ struct GroupSplitSelectorView: View {
             Text(currencySymbol)
                 .font(DS.Typography.title2)
                 .foregroundStyle(.tertiary)
-            Text(YalaFormatter.number(value: share, forceFullPrecision: true))
+            Text(appPreferences.number(share, forceFullPrecision: true))
                 .font(DS.Typography.title2)
                 .foregroundStyle(.secondary)
         }
@@ -197,7 +198,7 @@ struct GroupSplitSelectorView: View {
             } else {
                 HStack(spacing: DS.Spacing.xs) {
                     Image(systemName: "exclamationmark.circle.fill")
-                    Text(L10n.Groups.Expense.remainingAmount(YalaFormatter.currency(value: abs(viewModel.remainingToAllocate), currencyCode: viewModel.currencyCode)))
+                    Text(L10n.Groups.Expense.remainingAmount(appPreferences.currency(abs(viewModel.remainingToAllocate), currencyCode: viewModel.currencyCode)))
                 }
                 .font(DS.Typography.headline)
                 .foregroundStyle(Color.hotPink)
@@ -205,7 +206,7 @@ struct GroupSplitSelectorView: View {
 
             Spacer()
 
-            Text(YalaFormatter.currency(value: viewModel.sharesTotal, currencyCode: viewModel.currencyCode))
+            Text(appPreferences.currency(viewModel.sharesTotal, currencyCode: viewModel.currencyCode))
                 .font(DS.Typography.title2)
                 .foregroundStyle(resultAccentColor)
         }

@@ -20,6 +20,7 @@ struct GroupRecordsView: View {
     var onInvite: (() -> Void)?
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
     @State private var expenseToDelete: SplitExpense?
 
     var body: some View {
@@ -115,7 +116,7 @@ struct GroupRecordsView: View {
             Spacer()
 
             // Amount
-            Text(YalaFormatter.currency(value: expense.amount, currencyCode: expense.currencyCode))
+            Text(appPreferences.currency(expense.amount, currencyCode: expense.currencyCode))
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
         }

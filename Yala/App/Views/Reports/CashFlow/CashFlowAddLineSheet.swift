@@ -16,6 +16,7 @@ struct CashFlowAddLineSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var isIncome: Bool = false
 
@@ -193,6 +194,7 @@ struct CashFlowAddFromExpensesView: View {
     let categories: [Category]
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var selectedCategory: Category?
     @State private var selectedSubcategory: Subcategory?
@@ -417,7 +419,7 @@ struct CashFlowAddFromExpensesView: View {
                 .font(DS.Typography.body)
                 .foregroundStyle(.secondary)
             Spacer()
-            Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode))
+            Text(appPreferences.currency(amount, currencyCode: currencyCode))
                 .font(DS.Typography.headline)
                 .fontWeight(.semibold)
                 .monospacedDigit()
@@ -479,6 +481,7 @@ struct CashFlowAddFromScheduledView: View {
     let payments: [ScheduledPayment]
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var selectedPayment: ScheduledPayment?
     @State private var name: String = ""
@@ -554,7 +557,7 @@ struct CashFlowAddFromScheduledView: View {
 
                         Spacer()
 
-                        Text(YalaFormatter.currency(value: abs(payment.amount), currencyCode: currencyCode, isEstimate: payment.isVariableAmount))
+                        Text(appPreferences.currency(abs(payment.amount), currencyCode: currencyCode, isEstimate: payment.isVariableAmount))
                             .font(DS.Typography.amountSmall)
                             .monospacedDigit()
                             .foregroundStyle(.secondary)
@@ -598,7 +601,7 @@ struct CashFlowAddFromScheduledView: View {
                 .font(DS.Typography.body)
                 .foregroundStyle(.secondary)
             Spacer()
-            Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode))
+            Text(appPreferences.currency(amount, currencyCode: currencyCode))
                 .font(DS.Typography.headline)
                 .fontWeight(.semibold)
                 .monospacedDigit()

@@ -11,6 +11,7 @@ import SwiftUI
 
 struct TagsPieWidget: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppPreferences.self) private var appPreferences
     let tags: [TagSpendingSummary]
     let currencyCode: String
 
@@ -534,7 +535,7 @@ struct TagsPieWidget: View {
     // MARK: - Helpers
 
     private func formattedCurrency(_ value: Double) -> String {
-        YalaFormatter.currency(value: value, currencyCode: currencyCode)
+        appPreferences.currency(value, currencyCode: currencyCode)
     }
 
     private static let percentFormatter: NumberFormatter = {

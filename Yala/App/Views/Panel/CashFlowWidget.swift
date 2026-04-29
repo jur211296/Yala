@@ -421,7 +421,7 @@ struct CashFlowWidget: View {
 
                             // Show previous period value for comparison
                             if let prevAmount = previousAmount {
-                                Text("vs \(YalaFormatter.number(value: prevAmount))")
+                                Text("vs \(appPreferences.number(prevAmount))")
                                     .font(DS.Typography.caption)
                                     .foregroundStyle(.thSecondaryText)
                                     .lineLimit(1)
@@ -651,7 +651,7 @@ struct CashFlowWidget: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(L10n.Accessibility.cashFlowChart)
                 .accessibilityValue(activeChartData.isEmpty ? L10n.Accessibility.noData :
-                    L10n.Accessibility.cashFlowSummary(income: YalaFormatter.currency(value: summary.totalIncome, currencyCode: summary.currencyCode), expense: YalaFormatter.currency(value: summary.totalExpense, currencyCode: summary.currencyCode)))
+                    L10n.Accessibility.cashFlowSummary(income: appPreferences.currency(summary.totalIncome, currencyCode: summary.currencyCode), expense: appPreferences.currency(summary.totalExpense, currencyCode: summary.currencyCode)))
                 .chartXScale(domain: dataXDomain)
                 .chartYScale(domain: dataYDomain)
                 .chartXAxis {

@@ -44,9 +44,6 @@ struct TrendsCarouselWidget: View {
     // MARK: - Body
 
     var body: some View {
-        let _ = appPreferences.decimalPlaces
-        let _ = appPreferences.currencyDisplayFormat
-
         if size == .small {
             smallBody
         } else {
@@ -140,7 +137,7 @@ struct TrendsCarouselWidget: View {
 
                         // "vs <previous total>" label — mirrors the CashFlow header pattern.
                         if let prevTotal = previousKPIValue {
-                            Text("vs \(YalaFormatter.number(value: prevTotal))")
+                            Text("vs \(appPreferences.number(prevTotal))")
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.thSecondaryText)
                                 .lineLimit(1)
@@ -273,9 +270,9 @@ struct TrendsCarouselWidget: View {
            let point = viewModel.rawTrendPoints.first(where: {
                Calendar.current.isDate($0.date, inSameDayAs: focusedDate)
            }) {
-            return YalaFormatter.currency(value: point.value, currencyCode: currencyCode)
+            return appPreferences.currency(point.value, currencyCode: currencyCode)
         }
-        return YalaFormatter.currency(value: trendTotalForCurrentMetric, currencyCode: currencyCode)
+        return appPreferences.currency(trendTotalForCurrentMetric, currencyCode: currencyCode)
     }
 
     private var trendTotalForCurrentMetric: Double {

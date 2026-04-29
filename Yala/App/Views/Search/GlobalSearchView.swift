@@ -337,6 +337,7 @@ struct SearchResultRow: View {
     let onTap: () -> Void
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
         Button {
@@ -410,7 +411,7 @@ struct SearchResultRow: View {
     }
 
     private var formattedAmount: String {
-        YalaFormatter.currency(value: record.amount, currencyCode: record.currencyCode, forceFullPrecision: true)
+        appPreferences.currency(record.amount, currencyCode: record.currencyCode, forceFullPrecision: true)
     }
 
     private var amountColor: Color {

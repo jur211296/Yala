@@ -18,6 +18,7 @@ struct CashFlowDetailLineRow: View {
     let onDeleteLine: (() -> Void)?
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
         Button {
@@ -96,7 +97,7 @@ struct CashFlowDetailLineRow: View {
     private var amountColumn: some View {
         VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
             // Display amount
-            Text(YalaFormatter.currency(value: displayAmount, currencyCode: currencyCode))
+            Text(appPreferences.currency(displayAmount, currencyCode: currencyCode))
                 .font(DS.Typography.amountSmall)
                 .fontWeight(.semibold)
                 .foregroundStyle(amountColor)

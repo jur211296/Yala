@@ -17,6 +17,7 @@ struct CashFlowCellMiniChart: View {
     let currencyCode: String
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
     @State private var selectedDay: Int?
 
     private func chartYDomain(for data: [CumulativePoint]) -> ClosedRange<Double> {
@@ -85,7 +86,7 @@ struct CashFlowCellMiniChart: View {
                         alignment: tooltipAlignment(for: point.day, in: data)
                     ) {
                         VStack(spacing: DS.Spacing.xxs) {
-                            Text(YalaFormatter.currency(value: point.cumulative, currencyCode: currencyCode))
+                            Text(appPreferences.currency(point.cumulative, currencyCode: currencyCode))
                                 .font(DS.Typography.label)
                                 .fontWeight(.semibold)
                                 .monospacedDigit()

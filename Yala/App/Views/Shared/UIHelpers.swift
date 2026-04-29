@@ -316,6 +316,7 @@ struct YalaFormatter {
     }
 
     /// Returns the currency identifier (code or symbol) based on user preference
+    @available(*, deprecated, message: "Use appPreferences.currencyIdentifier(for:) so views invalidate when prefs change")
     static func currencyIdentifier(for code: String) -> String {
         if currencyDisplayFormat == "symbol" {
             return CurrencyUtils.symbol(for: code)
@@ -330,6 +331,7 @@ struct YalaFormatter {
     ///   - forceSign: If true, adds '+' for positive values (only for tooltips like CashFlow)
     ///   - forceFullPrecision: If true, always shows 2 decimals (use for individual records)
     /// - Returns: Formatted string like "PEN 20,000.00" or "S/ -20,000.00"
+    @available(*, deprecated, message: "Use appPreferences.currency(_:currencyCode:...) so views invalidate when prefs change")
     static func currency(
         value: Double, currencyCode: String, forceSign: Bool = false, forceFullPrecision: Bool = false,
         isEstimate: Bool = false
@@ -364,6 +366,7 @@ struct YalaFormatter {
     }
 
     /// Compact currency for table cells: uses abbreviation (1.2k) for large values
+    @available(*, deprecated, message: "Use appPreferences.currencyCompact(_:currencyCode:) so views invalidate when prefs change")
     static func currencyCompact(value: Double, currencyCode: String) -> String {
         if abs(value) >= 10000 {
             return String(format: "%.1fk", value / 1000)
@@ -393,6 +396,7 @@ struct YalaFormatter {
     }
 
     /// Cash flow table cell: currency prefix (respects user preference) + compact. "S/ 9,999" / "PEN 10.5k"
+    @available(*, deprecated, message: "Use appPreferences.amountCashFlowCell(_:currencyCode:) so views invalidate when prefs change")
     static func amountCashFlowCell(value: Double, currencyCode: String) -> String {
         let sym = currencyIdentifier(for: currencyCode)
         let sign = value < 0 ? "-" : ""
@@ -416,6 +420,7 @@ struct YalaFormatter {
     ///   - value: The numeric value to format
     ///   - forceFullPrecision: If true, always shows 2 decimals (use for individual records)
     /// - Returns: Formatted string like "20,000.00" or "-20,000.00"
+    @available(*, deprecated, message: "Use appPreferences.number(_:forceFullPrecision:) so views invalidate when prefs change")
     static func number(value: Double, forceFullPrecision: Bool = false) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal

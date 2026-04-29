@@ -15,6 +15,7 @@ struct CashFlowMonthCapsule: View {
     let showAccumulatedBalance: Bool
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
         VStack(spacing: DS.Spacing.xs) {
@@ -80,13 +81,13 @@ struct CashFlowMonthCapsule: View {
             let amount = YalaFormatter.amountCompactTable(value: balance)
             return "\(L10n.CashFlowPlan.accumulatedShort): \(amount)"
         }
-        return YalaFormatter.amountCashFlowCell(value: balance, currencyCode: currencyCode)
+        return appPreferences.amountCashFlowCell(balance, currencyCode: currencyCode)
     }
 
     private var netFlowInfo: (text: String, color: Color) {
         let isPositive = month.netFlow >= 0
         let sign = isPositive ? "+" : ""
-        let text = sign + YalaFormatter.amountCashFlowCell(value: month.netFlow, currencyCode: currencyCode)
+        let text = sign + appPreferences.amountCashFlowCell(month.netFlow, currencyCode: currencyCode)
         let color: Color = isPositive ? .electricIndigo : .hotPink
         return (text, color)
     }

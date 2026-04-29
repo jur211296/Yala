@@ -12,6 +12,7 @@ struct SaveAsFavoriteSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var viewModel = SaveAsFavoriteViewModel()
 
@@ -299,7 +300,7 @@ struct SaveAsFavoriteSheet: View {
             Spacer()
 
             if includeAmount && amount > 0 {
-                Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode, forceFullPrecision: true))
+                Text(appPreferences.currency(amount, currencyCode: currencyCode, forceFullPrecision: true))
                     .foregroundStyle(.secondary)
 
                 Button { includeAmount = false } label: {

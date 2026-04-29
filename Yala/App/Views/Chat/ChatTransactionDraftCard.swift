@@ -26,6 +26,7 @@ struct ChatTransactionDraftCard: View {
     var onTapSavedTransaction: ((PersistentIdentifier) -> Void)? = nil
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
@@ -486,7 +487,7 @@ struct ChatTransactionDraftCard: View {
     private var savedFormattedAmount: String {
         guard let amount = draft.amount else { return "–" }
         let dbl = NSDecimalNumber(decimal: amount).doubleValue
-        return YalaFormatter.currency(value: dbl, currencyCode: draft.currencyCode, forceFullPrecision: true)
+        return appPreferences.currency(dbl, currencyCode: draft.currencyCode, forceFullPrecision: true)
     }
 
     private var savedAmountColor: Color {

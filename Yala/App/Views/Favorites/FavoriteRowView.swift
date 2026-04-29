@@ -16,6 +16,7 @@ struct FavoriteRowView: View {
     let onTap: () -> Void
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
         Button(action: onTap) {
@@ -158,7 +159,7 @@ struct FavoriteRowView: View {
     private var formattedAmount: String {
         guard let amount = favorite.amount else { return "" }
         let code = favorite.currencyCode ?? CurrencyDefaults.defaultCode
-        return YalaFormatter.currency(value: amount, currencyCode: code, forceFullPrecision: true)
+        return appPreferences.currency(amount, currencyCode: code, forceFullPrecision: true)
     }
 
     private var amountColor: Color {

@@ -99,8 +99,8 @@ struct BudgetDetailView: View {
     // MARK: - Summary Card
 
     private func summaryCard(_ summary: BudgetSummary) -> some View {
-        let spentText = YalaFormatter.currency(value: summary.spent, currencyCode: budget.currencyCode)
-        let limitText = YalaFormatter.currency(value: budget.limitAmount, currencyCode: budget.currencyCode)
+        let spentText = appPreferences.currency(summary.spent, currencyCode: budget.currencyCode)
+        let limitText = appPreferences.currency(budget.limitAmount, currencyCode: budget.currencyCode)
 
         return VStack(spacing: DS.Spacing.lg) {
             // Icon

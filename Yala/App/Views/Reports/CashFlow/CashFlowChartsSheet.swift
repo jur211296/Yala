@@ -265,7 +265,7 @@ struct CashFlowChartsSheet: View {
         chartCard(
             title: L10n.CashFlowPlan.chartProjection,
             subtitle: L10n.CashFlowPlan.chartProjectionSubtitle,
-            kpiValue: YalaFormatter.currency(value: projection.months.last(where: { $0.accumulatedBalance != nil })?.accumulatedBalance ?? 0, currencyCode: currencyCode)
+            kpiValue: appPreferences.currency(projection.months.last(where: { $0.accumulatedBalance != nil })?.accumulatedBalance ?? 0, currencyCode: currencyCode)
         ) {
             let today = Calendar.current.startOfDay(for: Date.now)
             let data = projection.months.filter { $0.accumulatedBalance != nil }
@@ -407,11 +407,11 @@ struct CashFlowChartsSheet: View {
                             Text(selectedMonth.date.formatted(.dateTime.month(.abbreviated).year()))
                                 .font(DS.Typography.captionSmall)
                                 .foregroundStyle(.thSecondaryText)
-                            Text(YalaFormatter.currency(value: selectedBalance, currencyCode: currencyCode))
+                            Text(appPreferences.currency(selectedBalance, currencyCode: currencyCode))
                                 .font(DS.Typography.labelSmall)
                                 .foregroundStyle(.thPrimaryText)
                             Divider()
-                            Text(YalaFormatter.currency(value: selectedMonth.netFlow, currencyCode: currencyCode, forceSign: true))
+                            Text(appPreferences.currency(selectedMonth.netFlow, currencyCode: currencyCode, forceSign: true))
                                 .font(DS.Typography.labelTiny)
                                 .foregroundStyle(.thSecondaryText)
                         }
@@ -597,7 +597,7 @@ struct CashFlowChartsSheet: View {
                                 .frame(height: DS.Icon.badgeSmall)
                             }
 
-                            Text(item.name + " · Plan: " + YalaFormatter.currency(value: item.plannedAmount, currencyCode: currencyCode))
+                            Text(item.name + " · Plan: " + appPreferences.currency(item.plannedAmount, currencyCode: currencyCode))
                                 .font(DS.Typography.captionSmall)
                                 .foregroundStyle(.thSecondaryText)
                                 .padding(.leading, DS.Icon.badgeSmall + DS.Spacing.sm)
@@ -627,7 +627,7 @@ struct CashFlowChartsSheet: View {
             title: L10n.CashFlowPlan.chartSavings,
             subtitle: L10n.CashFlowPlan.chartSavingsSubtitle,
             kpiValue: pastSavings.count >= 2
-                ? YalaFormatter.currency(value: avgSavings, currencyCode: currencyCode)
+                ? appPreferences.currency(avgSavings, currencyCode: currencyCode)
                 : nil
         ) {
             if cachedSavings.count < 2 {

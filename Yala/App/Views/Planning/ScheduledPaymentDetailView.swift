@@ -13,6 +13,7 @@ struct ScheduledPaymentDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
     @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
 
     let payment: ScheduledPayment
@@ -544,7 +545,7 @@ struct ScheduledPaymentDetailView: View {
     }
 
     private func formatAmount(_ amount: Double, isEstimate: Bool = false) -> String {
-        YalaFormatter.currency(value: amount, currencyCode: payment.currencyCode, forceFullPrecision: true, isEstimate: isEstimate)
+        appPreferences.currency(amount, currencyCode: payment.currencyCode, forceFullPrecision: true, isEstimate: isEstimate)
     }
 
     private static let mediumDateFormatter: DateFormatter = {

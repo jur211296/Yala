@@ -24,6 +24,8 @@ struct SankeyChartView: View {
     let onTapCategory: (PersistentIdentifier) -> Void
     let onTapSubcategory: (PersistentIdentifier) -> Void
 
+    @Environment(AppPreferences.self) private var appPreferences
+
     // MARK: - Layout constants
 
     private let columnWidth: CGFloat = 140
@@ -247,7 +249,7 @@ struct SankeyChartView: View {
     private func formattedValue(for node: SankeyNode) -> String {
         switch labelMode {
         case .amount:
-            return YalaFormatter.currency(value: node.amount, currencyCode: currencyCode)
+            return appPreferences.currency(node.amount, currencyCode: currencyCode)
         case .percentage:
             let base = max(data.totalExpense, data.totalIncome)
             guard base > 0 else { return "—" }

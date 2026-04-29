@@ -77,7 +77,7 @@ struct WeekdayBarPanelWidget: View {
             )
             if hasData {
                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
-                    Text(YalaFormatter.currency(value: weeklyAverage, currencyCode: currencyCode))
+                    Text(appPreferences.currency(weeklyAverage, currencyCode: currencyCode))
                         .font(DS.Typography.headline)
                         .foregroundStyle(.thPrimaryText)
                         .lineLimit(1)
@@ -115,7 +115,7 @@ struct WeekdayBarPanelWidget: View {
         var parts: [String] = [L10n.WidgetType.weekdayBar]
         for day in WeekdayBarChart.weekdayOrder(firstWeekday: appPreferences.firstWeekday) {
             guard let entry = data.first(where: { $0.weekday == day }), entry.average > 0 else { continue }
-            let amount = YalaFormatter.currency(value: entry.average, currencyCode: currencyCode)
+            let amount = appPreferences.currency(entry.average, currencyCode: currencyCode)
             parts.append("\(entry.shortName): \(amount)")
         }
         return parts.joined(separator: ". ")

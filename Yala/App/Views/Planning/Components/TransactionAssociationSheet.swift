@@ -11,6 +11,7 @@ import SwiftUI
 struct TransactionAssociationSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppPreferences.self) private var appPreferences
 
     let payment: ScheduledPayment
     let selectedMonth: Date
@@ -116,7 +117,7 @@ struct TransactionAssociationSheet: View {
                 Text(payment.name)
                     .font(DS.Typography.label)
                     .foregroundStyle(.primary)
-                Text(YalaFormatter.currency(value: payment.amount, currencyCode: payment.currencyCode, forceFullPrecision: true, isEstimate: payment.isVariableAmount))
+                Text(appPreferences.currency(payment.amount, currencyCode: payment.currencyCode, forceFullPrecision: true, isEstimate: payment.isVariableAmount))
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
@@ -201,7 +202,7 @@ struct TransactionAssociationSheet: View {
                         )
                 }
 
-                Text(YalaFormatter.currency(value: transaction.amount, currencyCode: transaction.currencyCode, forceFullPrecision: true))
+                Text(appPreferences.currency(transaction.amount, currencyCode: transaction.currencyCode, forceFullPrecision: true))
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
             }
