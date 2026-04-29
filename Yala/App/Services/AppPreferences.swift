@@ -475,6 +475,16 @@ final class AppPreferences {
         }
     }
 
+    /// User-defined order for the global Panel section list (excluding anchored
+    /// sections `accounts` and `health`, which always render first). Empty
+    /// array → fall back to `PanelSectionKind.reorderableSections` default.
+    var panelSectionsOrder: [String] = [] {
+        didSet {
+            guard oldValue != panelSectionsOrder else { return }
+            persistString(panelSectionsOrder.joined(separator: ","), forKey: Keys.panelSectionsOrder, synced: true)
+        }
+    }
+
     /// One-shot migration sentinel. Per-device (NOT synced via iCloud KV).
     var panelPrefsMigratedV2: Bool = false {
         didSet {
@@ -572,6 +582,43 @@ final class AppPreferences {
         case .planificacion: panelPlanificacionHidden = value
         default:             break
         }
+    }
+
+    // MARK: - Panel sections order (global reorder)
+
+    /// Resolved reorderable section list: stored order if present, else
+    /// `PanelSectionKind.reorderableSections` default. Always includes every
+    /// reorderable kind exactly once (missing kinds appended) so future
+    /// `PanelSectionKind` cases added in app updates land at the bottom
+    /// instead of disappearing.
+    private var resolvedReorderableSections: [PanelSectionKind] {
+        let storedKinds = panelSectionsOrder.compactMap { PanelSectionKind(rawValue: $0) }
+        let defaults = PanelSectionKind.reorderableSections
+        let base = storedKinds.isEmpty ? defaults : storedKinds
+        let present = Set(base)
+        let missing = defaults.filter { !present.contains($0) }
+        return base + missing
+    }
+
+    func movePanelSection(from source: IndexSet, to destination: Int) {
+        var updated = resolvedReorderableSections.map(\.rawValue)
+        let original = updated
+        updated.move(fromOffsets: source, toOffset: destination)
+        guard updated != original else { return }
+        panelSectionsOrder = updated
+    }
+
+    func resetPanelSectionsOrder() {
+        panelSectionsOrder = []
+    }
+
+    /// Full ordered section list (anchors first, then reorderables per user
+    /// preference, with missing kinds appended). Does NOT filter by visibility
+    /// or `canBeHidden` — callers apply their own filter (e.g. config sheet
+    /// uses `\.canBeHidden`, Panel render uses visibility + active widgets).
+    func orderedSectionKinds() -> [PanelSectionKind] {
+        let anchored: [PanelSectionKind] = [.accounts, .health]
+        return anchored + resolvedReorderableSections.filter { !anchored.contains($0) }
     }
 
     /// True when a multi-widget section has every widget hidden individually.
@@ -856,6 +903,9 @@ final class AppPreferences {
         if let value = parseList(defaults.string(forKey: Keys.panelSectionsHidden)) {
             panelSectionsHidden = value
         }
+        if let value = parseList(defaults.string(forKey: Keys.panelSectionsOrder)) {
+            panelSectionsOrder = value
+        }
         panelPrefsMigratedV2 = defaults.bool(forKey: Keys.panelPrefsMigratedV2)
         panelAccountsCollapsed = defaults.bool(forKey: Keys.panelAccountsCollapsed)
 
@@ -984,6 +1034,7 @@ final class AppPreferences {
         static let panelPlanificacionOrder = "panelPlanificacionOrder"
         static let panelPlanificacionHidden = "panelPlanificacionHidden"
         static let panelSectionsHidden = "panelSectionsHidden"
+        static let panelSectionsOrder = "panelSectionsOrder"
         static let panelPrefsMigratedV2 = "panelPrefsMigratedV2"
         static let appEntityShortcutIDsMigratedV1 = "appEntityShortcutIDsMigratedV1"
         static let panelAccountsCollapsed = "panelAccountsCollapsed"

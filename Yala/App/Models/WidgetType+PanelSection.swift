@@ -62,6 +62,12 @@ enum PanelSectionKind: String, CaseIterable, Hashable {
     static var toggleableSections: [PanelSectionKind] {
         Self.allCases.filter(\.canBeHidden)
     }
+
+    /// Sections that participate in the global Panel reorder. Excludes anchored
+    /// sections (`accounts`, `health`) which always render first in the Panorama.
+    static var reorderableSections: [PanelSectionKind] {
+        Self.allCases.filter { $0 != .accounts && $0 != .health }
+    }
 }
 
 // MARK: - Identifiable

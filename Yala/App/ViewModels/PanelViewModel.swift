@@ -684,6 +684,19 @@ final class PanelViewModel {
         buildOrderedRawWidgets(for: section).compactMap { WidgetType(rawValue: $0) }
     }
 
+    /// Orders Panel sections per user preference: anchored sections first
+    /// (`accounts`, `health`), then reorderables in `panelSectionsOrder` order
+    /// (fallback: default `reorderableSections` order). Sections visible but
+    /// not present in the stored order are appended at the end (defensive:
+    /// future `PanelSectionKind` cases added in app updates land at the bottom).
+    func orderedPanelSections(_ visibleSections: [PanelSectionKind]) -> [PanelSectionKind] {
+        let visibleSet = Set(visibleSections)
+        guard let prefs = appPreferences else {
+            return visibleSections
+        }
+        return prefs.orderedSectionKinds().filter { visibleSet.contains($0) }
+    }
+
     /// Self-healing resolution of the per-section widget order:
     /// 1. Pull stored order (draft-or-persisted); empty on fresh install.
     /// 2. Drop raw values foreign to this section (corruption guard).

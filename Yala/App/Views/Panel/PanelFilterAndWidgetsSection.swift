@@ -23,11 +23,12 @@ struct PanelFilterAndWidgetsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            let visibleSections = PanelSectionKind.allCases.filter { kind in
+            let allVisibleSections = PanelSectionKind.allCases.filter { kind in
                 viewModel.isSectionVisible(kind) && viewModel.hasAnyVisibleWidget(in: kind)
             }
-            let accountsVisible = visibleSections.contains(.accounts)
-            let healthVisible = visibleSections.contains(.health)
+            let orderedVisibleSections = viewModel.orderedPanelSections(allVisibleSections)
+            let accountsVisible = orderedVisibleSections.contains(.accounts)
+            let healthVisible = orderedVisibleSections.contains(.health)
 
             if accountsVisible || healthVisible {
                 PanelPanoramaSection(
@@ -49,7 +50,7 @@ struct PanelFilterAndWidgetsSection: View {
                 showCustomPeriodPicker: $showCustomPeriodPicker
             )
 
-            let thematicSections = visibleSections.filter {
+            let thematicSections = orderedVisibleSections.filter {
                 $0 != .accounts && $0 != .health
             }
             ForEach(thematicSections, id: \.self) { kind in

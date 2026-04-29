@@ -222,6 +222,88 @@ struct PanelViewModelTests {
         }
     }
 
+    // MARK: - Section reorder (panel-sections-reorder)
+
+    /// Anchors (`accounts`, `health`) always render first regardless of the
+    /// stored order. Empty preference falls back to `reorderableSections`
+    /// declaration order for the rest.
+    @MainActor @Test func orderedPanelSections_anchorsFirst_defaultOrder() {
+        let vm = PanelViewModel()
+        let prefs = AppPreferences(defaults: UserDefaults(suiteName: "sectionOrder.default.\(UUID().uuidString)")!)
+        vm.setAppPreferences(prefs)
+
+        let visible: [PanelSectionKind] = [.tendencias, .accounts, .distribucion, .health, .tools]
+        let ordered = vm.orderedPanelSections(visible)
+
+        #expect(ordered[0] == .accounts)
+        #expect(ordered[1] == .health)
+        #expect(ordered.dropFirst(2).allSatisfy { $0 != .accounts && $0 != .health })
+    }
+
+    /// User-defined order overrides the default for reorderable sections;
+    /// anchors stay pinned to the front.
+    @MainActor @Test func orderedPanelSections_respectsCustomOrder() {
+        let vm = PanelViewModel()
+        let prefs = AppPreferences(defaults: UserDefaults(suiteName: "sectionOrder.custom.\(UUID().uuidString)")!)
+        prefs.panelSectionsOrder = [
+            PanelSectionKind.tools.rawValue,
+            PanelSectionKind.tendencias.rawValue,
+            PanelSectionKind.distribucion.rawValue,
+        ]
+        vm.setAppPreferences(prefs)
+
+        let ordered = vm.orderedPanelSections(PanelSectionKind.allCases)
+
+        #expect(ordered[0] == .accounts)
+        #expect(ordered[1] == .health)
+        #expect(ordered[2] == .tools)
+        #expect(ordered[3] == .tendencias)
+        #expect(ordered[4] == .distribucion)
+    }
+
+    /// Defensive: if the stored order is partial (e.g. user upgraded an app
+    /// version that introduced a new section), missing reorderables are
+    /// appended at the end so nothing disappears from the Panel.
+    @MainActor @Test func orderedPanelSections_appendsMissingKinds() {
+        let vm = PanelViewModel()
+        let prefs = AppPreferences(defaults: UserDefaults(suiteName: "sectionOrder.partial.\(UUID().uuidString)")!)
+        prefs.panelSectionsOrder = [PanelSectionKind.tendencias.rawValue]
+        vm.setAppPreferences(prefs)
+
+        let ordered = vm.orderedPanelSections(PanelSectionKind.allCases)
+        let reorderableInResult = ordered.filter { $0 != .accounts && $0 != .health }
+
+        #expect(reorderableInResult.first == .tendencias)
+        #expect(reorderableInResult.contains(.distribucion))
+        #expect(reorderableInResult.contains(.planificacion))
+        #expect(reorderableInResult.contains(.latestRecords))
+        #expect(reorderableInResult.contains(.tools))
+    }
+
+    /// `movePanelSection` from empty pref seeds the default order, applies
+    /// the move, and persists the result.
+    @MainActor @Test func movePanelSection_persistsToPreferences() {
+        let prefs = AppPreferences(defaults: UserDefaults(suiteName: "sectionOrder.move.\(UUID().uuidString)")!)
+        let defaults = PanelSectionKind.reorderableSections
+        let firstKind = defaults.first!
+
+        // From empty pref the move seeds the default; sending index 0 to the
+        // tail moves the first reorderable section to the bottom.
+        prefs.movePanelSection(from: IndexSet(integer: 0), to: defaults.count)
+
+        #expect(prefs.panelSectionsOrder.first != firstKind.rawValue)
+        #expect(prefs.panelSectionsOrder.last == firstKind.rawValue)
+    }
+
+    /// `resetPanelSectionsOrder` empties the preference; subsequent reads
+    /// fall back to the default `reorderableSections` order.
+    @MainActor @Test func resetPanelSectionsOrder_clearsPreference() {
+        let prefs = AppPreferences(defaults: UserDefaults(suiteName: "sectionOrder.reset.\(UUID().uuidString)")!)
+        prefs.panelSectionsOrder = [PanelSectionKind.tools.rawValue]
+        prefs.resetPanelSectionsOrder()
+        #expect(prefs.panelSectionsOrder.isEmpty)
+    }
+
     // MARK: - Hero IA (P20-05)
     //
     // Acotados a invariantes sin network: Free/no-consent reset del estado y

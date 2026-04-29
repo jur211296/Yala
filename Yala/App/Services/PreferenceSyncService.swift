@@ -63,6 +63,7 @@ final class PreferenceSyncService {
         case panelPlanificacionOrder
         case panelPlanificacionHidden
         case panelSectionsHidden
+        case panelSectionsOrder
         // P20-11 — Cuentas collapse state (synced so state follows across devices)
         case panelAccountsCollapsed
         // M2 (localización) — override de idioma elegido por el usuario, sincronizado cross-device
@@ -188,7 +189,7 @@ final class PreferenceSyncService {
             case .panelTendenciasOrder, .panelTendenciasHidden,
                  .panelDistribucionOrder, .panelDistribucionHidden,
                  .panelPlanificacionOrder, .panelPlanificacionHidden,
-                 .panelSectionsHidden:
+                 .panelSectionsHidden, .panelSectionsOrder:
                 // Empty strings are a valid state (user hid every widget in a section).
                 if iKV.object(forKey: k) != nil {
                     let remote = iKV.string(forKey: k) ?? ""
