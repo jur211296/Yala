@@ -78,7 +78,7 @@ Detalles completos en `$VAULT/planning/TESTING-STRATEGY.md`. Reglas mínimas:
 - NUNCA `Date()` / `Calendar.current` en lógica testeada — inyectar vía param opcional `now: Date = .now` (patrón canónico, ya en `FinancialScoreCalculator`/`BudgetAlertService`).
 - NUNCA `@Test(.disabled(...))` sin entrada en Lista Negra (TESTING-STRATEGY.md) con owner + deadline.
 - NUNCA declarar fix completo si un test falla. "Preexistente" no es excusa: arreglar o registrar en Lista Negra con plan.
-- Ejecutar SIEMPRE con `-parallel-testing-enabled NO` (iOS 26 simulator clones crashean).
+- Ejecutar con `-parallel-testing-enabled YES` (recomendado, -30% tiempo). `NO` solo como fallback si aparece race en singleton no cubierto.
 
 ### Audit markers
 - `// A11Y-DT:` justifica font size hardcodeado (Dynamic Type).
