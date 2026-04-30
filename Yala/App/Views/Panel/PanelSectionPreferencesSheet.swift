@@ -28,9 +28,13 @@ struct PanelSectionPreferencesSheet: View {
     @Bindable var viewModel: PanelViewModel
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(SessionState.self) private var sessionState
+    @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var selectedDetent: PresentationDetent = .medium
     @State private var showingReorderSheet = false
+    @State private var infoSheetWidget: WidgetType?
 
     private var isLargeDetent: Bool { selectedDetent == .large }
 
@@ -75,6 +79,21 @@ struct PanelSectionPreferencesSheet: View {
         .presentationDragIndicator(.visible)
         .sheet(isPresented: $showingReorderSheet) {
             reorderSheet
+        }
+        .sheet(item: $infoSheetWidget) { type in
+            if let kind = type.infoKind {
+                WidgetInfoSheet(kind: kind, viewModel: viewModel) { previewSize in
+                    WidgetInfoPreviewFactory.preview(
+                        for: type,
+                        viewModel: viewModel,
+                        sessionState: sessionState,
+                        currencyCode: viewModel.defaultCurrencyCode,
+                        showVariations: appPreferences.showVariations,
+                        reduceMotion: reduceMotion,
+                        size: previewSize
+                    )
+                }
+            }
         }
         .onDisappear {
             viewModel.flushPendingSectionWrites()
@@ -161,28 +180,42 @@ struct PanelSectionPreferencesSheet: View {
     @ViewBuilder
     private func widgetRow(for type: WidgetType) -> some View {
         let isHidden = viewModel.isWidgetHidden(type)
+        let visibilityBinding = Binding(
+            get: { !isHidden },
+            set: { viewModel.setWidgetHidden(type, hidden: !$0) }
+        )
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Toggle(
-                isOn: Binding(
-                    get: { !isHidden },
-                    set: { viewModel.setWidgetHidden(type, hidden: !$0) }
-                )
-            ) {
-                HStack(spacing: DS.Spacing.md) {
-                    Image(systemName: type.iconName)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.tint)
-                        .frame(width: 28)
-                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: type.iconName)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.tint)
+                    .frame(width: 28)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    HStack(spacing: DS.Spacing.xs) {
                         Text(type.displayName)
                             .font(DS.Typography.body)
-                        if isHidden {
-                            Text(L10n.Common.hidden)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
+                        if let infoKind = type.infoKind {
+                            Button {
+                                infoSheetWidget = type
+                            } label: {
+                                Image(systemName: "info.circle")
+                                    .font(DS.Typography.labelSmall)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(infoKind.title)
                         }
                     }
+                    if isHidden {
+                        Text(L10n.Common.hidden)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                Spacer(minLength: 0)
+                Toggle("", isOn: visibilityBinding)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
             }
 
             if type.supportsSize {

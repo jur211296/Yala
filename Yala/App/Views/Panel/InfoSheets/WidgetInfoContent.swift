@@ -25,6 +25,26 @@ enum WidgetInfoKind: String, CaseIterable {
     case weekdayBar
 }
 
+extension WidgetType {
+    var infoKind: WidgetInfoKind? {
+        switch self {
+        case .trend:             return .trend
+        case .cashFlow:          return .cashFlow
+        case .categoriesPie:     return .categoriesPie
+        case .subcategoriesPie:  return .subcategoriesPie
+        case .tagsPie:           return .tagsPie
+        case .topSpending:       return .topCategories
+        case .topSubcategories:  return .topSubcategories
+        case .budgets:           return .budgets
+        case .scheduledPayments: return .scheduledPayments
+        case .latestRecords:     return .recentRecords
+        case .exchangeRate:      return .exchangeRate
+        case .expensesByNeed:    return .expensesByNeed
+        case .weekdayBar:        return .weekdayBar
+        }
+    }
+}
+
 extension WidgetInfoKind {
     /// Mapping inverso a `WidgetType` para resolver size + visibility prefs.
     var widgetType: WidgetType {
