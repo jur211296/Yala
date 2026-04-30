@@ -3657,3 +3657,160 @@
 
 /* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
 "panel.widgetInfo.cashFlow.chip4" = "可交互";
+
+
+/* Panel Polish #2 — Title sheet pedagógico CategoriesPie */
+"panel.widgetInfo.categoriesPie.title" = "按类别分布";
+
+/* Panel Polish #2 — Chip 1 CategoriesPie (entidad) */
+"panel.widgetInfo.categoriesPie.chip1" = "类别";
+
+/* Panel Polish #2 — Chip 2 CategoriesPie (período) */
+"panel.widgetInfo.categoriesPie.chip2" = "当前周期";
+
+/* Panel Polish #2 — Chip 3 CategoriesPie (Interactiva) */
+"panel.widgetInfo.categoriesPie.chip3" = "可互动";
+
+/* Panel Polish #2 — CategoriesPie S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.categoriesPie.smallWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — CategoriesPie S: respuesta */
+"panel.widgetInfo.categoriesPie.smallWhatA" = "你在当前周期的支出按类别的分布情况。气泡标出占比最高的类别。";
+
+/* Panel Polish #2 — CategoriesPie S: pregunta '¿Cómo interactúo?' */
+"panel.widgetInfo.categoriesPie.smallHowQ" = "如何操作?";
+
+/* Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.categoriesPie.smallHowA" = "点击气泡可按该类别筛选面板其余内容。长按气泡可查看完整名称。";
+
+/* Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.categoriesPie.largeWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — CategoriesPie L: respuesta */
+"panel.widgetInfo.categoriesPie.largeWhatA" = "环形图显示当前周期内各类别的支出占比。右侧图例按从高到低列出每个类别及其百分比。";
+
+/* Panel Polish #2 — CategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.categoriesPie.largeHowQ" = "如何与图表互动?";
+
+/* Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.categoriesPie.largeHowA" = "点击环形图的某一段、气泡或图例中的一行,可按该类别筛选面板其余内容。长按气泡可查看完整名称。";
+
+/* Panel Polish #2 — Title sheet pedagógico SubcategoriesPie */
+"panel.widgetInfo.subcategoriesPie.title" = "按子类别分布";
+
+/* Panel Polish #2 — Chip 1 SubcategoriesPie (entidad) */
+"panel.widgetInfo.subcategoriesPie.chip1" = "子类别";
+
+/* Panel Polish #2 — Chip 2 SubcategoriesPie (período) */
+"panel.widgetInfo.subcategoriesPie.chip2" = "当前周期";
+
+/* Panel Polish #2 — Chip 3 SubcategoriesPie (Interactiva) */
+"panel.widgetInfo.subcategoriesPie.chip3" = "可互动";
+
+/* Panel Polish #2 — SubcategoriesPie S: pregunta */
+"panel.widgetInfo.subcategoriesPie.smallWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — SubcategoriesPie S: respuesta */
+"panel.widgetInfo.subcategoriesPie.smallWhatA" = "你在当前周期的支出按子类别的分布情况。如果上方已筛选某个类别,只会显示该类别下的子类别。";
+
+/* Panel Polish #2 — SubcategoriesPie S: pregunta */
+"panel.widgetInfo.subcategoriesPie.smallHowQ" = "如何操作?";
+
+/* Panel Polish #2 — SubcategoriesPie S: respuesta */
+"panel.widgetInfo.subcategoriesPie.smallHowA" = "点击气泡可按该子类别筛选面板其余内容。长按气泡可查看完整名称。";
+
+/* Panel Polish #2 — SubcategoriesPie L: pregunta */
+"panel.widgetInfo.subcategoriesPie.largeWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — SubcategoriesPie L: respuesta */
+"panel.widgetInfo.subcategoriesPie.largeWhatA" = "环形图显示当前周期内各子类别的支出占比,最多显示九个;若超过则合并为「其余」一组。右侧图例列出每一项及其百分比。";
+
+/* Panel Polish #2 — SubcategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.subcategoriesPie.largeHowQ" = "如何与图表互动?";
+
+/* Panel Polish #2 — SubcategoriesPie L: respuesta */
+"panel.widgetInfo.subcategoriesPie.largeHowA" = "点击环形图的某一段、气泡或图例中的一行,可按该子类别筛选面板其余内容。长按气泡可查看完整名称。";
+
+/* Panel Polish #2 — Title sheet pedagógico TagsPie */
+"panel.widgetInfo.tagsPie.title" = "按标签分布";
+
+/* Panel Polish #2 — Chip 1 TagsPie (entidad) */
+"panel.widgetInfo.tagsPie.chip1" = "标签";
+
+/* Panel Polish #2 — Chip 2 TagsPie (período) */
+"panel.widgetInfo.tagsPie.chip2" = "当前周期";
+
+/* Panel Polish #2 — Chip 3 TagsPie (Interactiva) */
+"panel.widgetInfo.tagsPie.chip3" = "可互动";
+
+/* Panel Polish #2 — TagsPie S: pregunta */
+"panel.widgetInfo.tagsPie.smallWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — TagsPie S: respuesta */
+"panel.widgetInfo.tagsPie.smallWhatA" = "你在当前周期的支出按标签的分布情况。气泡标出占比最高的标签。";
+
+/* Panel Polish #2 — TagsPie S: pregunta */
+"panel.widgetInfo.tagsPie.smallHowQ" = "如何操作?";
+
+/* Panel Polish #2 — TagsPie S: respuesta */
+"panel.widgetInfo.tagsPie.smallHowA" = "点击气泡可按该标签筛选面板其余内容。长按气泡可查看完整名称。";
+
+/* Panel Polish #2 — TagsPie L: pregunta */
+"panel.widgetInfo.tagsPie.largeWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — TagsPie L: respuesta */
+"panel.widgetInfo.tagsPie.largeWhatA" = "环形图显示当前周期内各标签的支出占比。右侧图例按从高到低列出每个标签及其百分比。";
+
+/* Panel Polish #2 — TagsPie L: pregunta */
+"panel.widgetInfo.tagsPie.largeHowQ" = "如何与图表互动?";
+
+/* Panel Polish #2 — TagsPie L: respuesta */
+"panel.widgetInfo.tagsPie.largeHowA" = "点击环形图的某一段、气泡或图例中的一行,可按该标签筛选面板其余内容。长按气泡可查看完整名称。";
+
+/* Panel Polish #2 — Title sheet pedagógico ExpensesByNeed */
+"panel.widgetInfo.expensesByNeed.title" = "按需求分布";
+
+/* Panel Polish #2 — Chip 1 ExpensesByNeed (entidad) */
+"panel.widgetInfo.expensesByNeed.chip1" = "需求";
+
+/* Panel Polish #2 — Chip 2 ExpensesByNeed (período) */
+"panel.widgetInfo.expensesByNeed.chip2" = "当前周期";
+
+/* Panel Polish #2 — Chip 3 ExpensesByNeed (Interactiva) */
+"panel.widgetInfo.expensesByNeed.chip3" = "可互动";
+
+/* Panel Polish #2 — ExpensesByNeed S: pregunta */
+"panel.widgetInfo.expensesByNeed.smallWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — ExpensesByNeed S: respuesta */
+"panel.widgetInfo.expensesByNeed.smallWhatA" = "当前周期内的支出按需求类型分布:必要(不可或缺)、优先(重要)、可选(可舍弃)。仅当你有未归类支出时,才会出现「未分类」。";
+
+/* Panel Polish #2 — ExpensesByNeed S: pregunta */
+"panel.widgetInfo.expensesByNeed.smallHowQ" = "如何操作?";
+
+/* Panel Polish #2 — ExpensesByNeed S: respuesta */
+"panel.widgetInfo.expensesByNeed.smallHowA" = "点击某一行可按该需求类型筛选面板其余内容。再次点击可取消筛选。";
+
+/* Panel Polish #2 — ExpensesByNeed M: pregunta */
+"panel.widgetInfo.expensesByNeed.mediumWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — ExpensesByNeed M: respuesta */
+"panel.widgetInfo.expensesByNeed.mediumWhatA" = "每种需求类型对应一条柱。柱的长度展示其相对于当前周期最大支出的权重,便于一眼看出哪一种最大。";
+
+/* Panel Polish #2 — ExpensesByNeed M: pregunta */
+"panel.widgetInfo.expensesByNeed.mediumHowQ" = "如何操作?";
+
+/* Panel Polish #2 — ExpensesByNeed M: respuesta */
+"panel.widgetInfo.expensesByNeed.mediumHowA" = "点击某一条柱可按该需求类型筛选面板其余内容。再次点击可取消筛选。";
+
+/* Panel Polish #2 — ExpensesByNeed L: pregunta */
+"panel.widgetInfo.expensesByNeed.largeWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — ExpensesByNeed L: respuesta */
+"panel.widgetInfo.expensesByNeed.largeWhatA" = "当前周期的支出按需求类型堆叠显示:必要、优先、可选、未分类。横轴上的每根柱代表一天、一周或一个月(取决于分组),下方图例展示每种类型的整体占比。";
+
+/* Panel Polish #2 — ExpensesByNeed L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.expensesByNeed.largeHowQ" = "如何与图表互动?";
+
+/* Panel Polish #2 — ExpensesByNeed L: respuesta */
+"panel.widgetInfo.expensesByNeed.largeHowA" = "在柱上滑动手指可查看某一时间点的分项——必要、优先等各占多少及合计。点击图例中的某个胶囊,可仅显示该需求类型并据此筛选面板。";

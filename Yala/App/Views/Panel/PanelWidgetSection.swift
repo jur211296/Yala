@@ -191,9 +191,33 @@ private struct PanelCategoriesPieSection: View {
             onShowDetail: { viewModel.navigateToStatistics(.categories) },
             isExcludeMode: viewModel.isExcludeMode,
             size: size,
+            headerInfoButton: categoriesPieInfoButton,
             period: viewModel.selectedPeriod,
             previousTotalAmount: viewModel.previousCategoriesTotalAmount,
             showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
+        )
+    }
+
+    /// Botón info pedagógico inyectado en el header. El preview reusa el VM real
+    /// (categorías @Model) — si está vacío, el widget muestra su empty state.
+    /// `.allowsHitTesting(false)` aísla los gestos del preview del Panel.
+    private var categoriesPieInfoButton: AnyView? {
+        AnyView(
+            WidgetInfoButton(kind: .categoriesPie, viewModel: viewModel) { previewSize in
+                CategoriesPieWidget(
+                    categories: viewModel.topSpendingCategories,
+                    currencyCode: currencyCode,
+                    selectedCategoryIDs: [],
+                    onSelectCategory: nil,
+                    onShowDetail: nil,
+                    isExcludeMode: false,
+                    size: previewSize,
+                    period: viewModel.selectedPeriod,
+                    previousTotalAmount: nil,
+                    showVariationHeader: false
+                )
+                .allowsHitTesting(false)
+            }
         )
     }
 }
@@ -221,9 +245,33 @@ private struct PanelSubcategoriesPieSection: View {
             onShowDetail: { viewModel.navigateToStatistics(.categories) },
             isExcludeMode: viewModel.isExcludeMode,
             size: size,
+            headerInfoButton: subcategoriesPieInfoButton,
             period: viewModel.selectedPeriod,
             previousTotalAmount: viewModel.previousSubcategoriesTotalAmount,
             showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
+        )
+    }
+
+    /// Botón info pedagógico inyectado en el header. El preview reusa el VM real
+    /// (subcategorías @Model) — respeta el filtro de categoría global existente.
+    private var subcategoriesPieInfoButton: AnyView? {
+        AnyView(
+            WidgetInfoButton(kind: .subcategoriesPie, viewModel: viewModel) { previewSize in
+                SubcategoriesPieWidget(
+                    subcategories: viewModel.topSubcategories,
+                    currencyCode: currencyCode,
+                    selectedCategoryID: viewModel.selectedCategoryID,
+                    selectedSubcategoryIDs: [],
+                    onSelectSubcategory: nil,
+                    onShowDetail: nil,
+                    isExcludeMode: false,
+                    size: previewSize,
+                    period: viewModel.selectedPeriod,
+                    previousTotalAmount: nil,
+                    showVariationHeader: false
+                )
+                .allowsHitTesting(false)
+            }
         )
     }
 }
@@ -251,10 +299,34 @@ private struct PanelTagsPieSection: View {
             onShowDetail: { viewModel.navigateToStatistics(.categories) },
             isExcludeMode: viewModel.isExcludeMode,
             size: size,
+            headerInfoButton: tagsPieInfoButton,
             period: viewModel.selectedPeriod,
             customRange: sessionState.customDateRange,
             previousTotalAmount: viewModel.previousTagsTotalAmount,
             showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
+        )
+    }
+
+    /// Botón info pedagógico inyectado en el header. El preview reusa los tags
+    /// reales del VM (@Model) — empty state visual si el user no tiene tags.
+    private var tagsPieInfoButton: AnyView? {
+        AnyView(
+            WidgetInfoButton(kind: .tagsPie, viewModel: viewModel) { previewSize in
+                TagsPieWidget(
+                    tags: viewModel.topTags,
+                    currencyCode: currencyCode,
+                    selectedTagIDs: [],
+                    onSelectTag: nil,
+                    onShowDetail: nil,
+                    isExcludeMode: false,
+                    size: previewSize,
+                    period: viewModel.selectedPeriod,
+                    customRange: sessionState.customDateRange,
+                    previousTotalAmount: nil,
+                    showVariationHeader: false
+                )
+                .allowsHitTesting(false)
+            }
         )
     }
 }
@@ -339,6 +411,10 @@ private struct PanelNeedTrendSection: View {
     let showVariations: Bool
     let reduceMotion: Bool
 
+    private var isIncomeMode: Bool {
+        viewModel.selectedTransactionNatures == [.income]
+    }
+
     var body: some View {
         NeedTrendWidget(
             trendPoints: viewModel.needTrendPoints,
@@ -357,7 +433,37 @@ private struct PanelNeedTrendSection: View {
             previousTotalAmount: viewModel.previousNeedTotalAmount,
             previousAmountByNeed: viewModel.previousNeedAmounts,
             showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime,
-            isIncomeMode: viewModel.selectedTransactionNatures == [.income]
+            isIncomeMode: isIncomeMode,
+            headerInfoButton: needTrendInfoButton
+        )
+    }
+
+    /// Botón info pedagógico inyectado en el header. Si el VM no tiene puntos
+    /// reales, el preview cae a `[NeedTrendPoint].previewSample` (struct simple,
+    /// no @Model). Propaga `isIncomeMode` real para no divergir del estado actual.
+    private var needTrendInfoButton: AnyView? {
+        AnyView(
+            WidgetInfoButton(kind: .expensesByNeed, viewModel: viewModel) { previewSize in
+                let previewPoints = viewModel.needTrendPoints.isEmpty
+                    ? [NeedTrendPoint].previewSample
+                    : viewModel.needTrendPoints
+                NeedTrendWidget(
+                    trendPoints: previewPoints,
+                    selectedNeed: nil,
+                    currencyCode: currencyCode,
+                    size: mapWidgetSize(previewSize),
+                    grouping: viewModel.needGrouping,
+                    interval: viewModel.currentInterval,
+                    onSelectNeed: { _ in },
+                    onShowDetail: nil,
+                    period: viewModel.selectedPeriod,
+                    previousTotalAmount: nil,
+                    previousAmountByNeed: [:],
+                    showVariationHeader: false,
+                    isIncomeMode: isIncomeMode
+                )
+                .allowsHitTesting(false)
+            }
         )
     }
 }

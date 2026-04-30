@@ -3657,3 +3657,160 @@
 
 /* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
 "panel.widgetInfo.cashFlow.chip4" = "インタラクティブ";
+
+
+/* Panel Polish #2 — Title sheet pedagógico CategoriesPie */
+"panel.widgetInfo.categoriesPie.title" = "カテゴリー別の内訳";
+
+/* Panel Polish #2 — Chip 1 CategoriesPie (entidad) */
+"panel.widgetInfo.categoriesPie.chip1" = "カテゴリー";
+
+/* Panel Polish #2 — Chip 2 CategoriesPie (período) */
+"panel.widgetInfo.categoriesPie.chip2" = "現在の期間";
+
+/* Panel Polish #2 — Chip 3 CategoriesPie (Interactiva) */
+"panel.widgetInfo.categoriesPie.chip3" = "インタラクティブ";
+
+/* Panel Polish #2 — CategoriesPie S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.categoriesPie.smallWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — CategoriesPie S: respuesta */
+"panel.widgetInfo.categoriesPie.smallWhatA" = "現在の期間における支出のカテゴリー別の内訳です。バブルは支出の大きいカテゴリーを示しています。";
+
+/* Panel Polish #2 — CategoriesPie S: pregunta '¿Cómo interactúo?' */
+"panel.widgetInfo.categoriesPie.smallHowQ" = "どう操作しますか?";
+
+/* Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.categoriesPie.smallHowA" = "バブルをタップすると、そのカテゴリーでパネル全体をフィルタリングできます。バブルを長押しすると正式名称が表示されます。";
+
+/* Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.categoriesPie.largeWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — CategoriesPie L: respuesta */
+"panel.widgetInfo.categoriesPie.largeWhatA" = "ドーナツは現在の期間におけるカテゴリー別の支出構成を示します。右側の凡例には各カテゴリーがパーセンテージとともに、大きい順に並んでいます。";
+
+/* Panel Polish #2 — CategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.categoriesPie.largeHowQ" = "グラフはどう操作しますか?";
+
+/* Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.categoriesPie.largeHowA" = "ドーナツのスライス、バブル、または凡例の行をタップすると、そのカテゴリーでパネル全体をフィルタリングできます。バブルを長押しすると正式名称が表示されます。";
+
+/* Panel Polish #2 — Title sheet pedagógico SubcategoriesPie */
+"panel.widgetInfo.subcategoriesPie.title" = "サブカテゴリー別の内訳";
+
+/* Panel Polish #2 — Chip 1 SubcategoriesPie (entidad) */
+"panel.widgetInfo.subcategoriesPie.chip1" = "サブカテゴリー";
+
+/* Panel Polish #2 — Chip 2 SubcategoriesPie (período) */
+"panel.widgetInfo.subcategoriesPie.chip2" = "現在の期間";
+
+/* Panel Polish #2 — Chip 3 SubcategoriesPie (Interactiva) */
+"panel.widgetInfo.subcategoriesPie.chip3" = "インタラクティブ";
+
+/* Panel Polish #2 — SubcategoriesPie S: pregunta */
+"panel.widgetInfo.subcategoriesPie.smallWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — SubcategoriesPie S: respuesta */
+"panel.widgetInfo.subcategoriesPie.smallWhatA" = "現在の期間における支出のサブカテゴリー別の内訳です。上でカテゴリーをフィルターしている場合は、そのカテゴリーのサブカテゴリーだけが表示されます。";
+
+/* Panel Polish #2 — SubcategoriesPie S: pregunta */
+"panel.widgetInfo.subcategoriesPie.smallHowQ" = "どう操作しますか?";
+
+/* Panel Polish #2 — SubcategoriesPie S: respuesta */
+"panel.widgetInfo.subcategoriesPie.smallHowA" = "バブルをタップすると、そのサブカテゴリーでパネル全体をフィルタリングできます。バブルを長押しすると正式名称が表示されます。";
+
+/* Panel Polish #2 — SubcategoriesPie L: pregunta */
+"panel.widgetInfo.subcategoriesPie.largeWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — SubcategoriesPie L: respuesta */
+"panel.widgetInfo.subcategoriesPie.largeWhatA" = "ドーナツは現在の期間におけるサブカテゴリー別の支出構成を示します。最大9件と、それ以上ある場合は「その他」グループが表示されます。右側の凡例には各サブカテゴリーがパーセンテージとともに並びます。";
+
+/* Panel Polish #2 — SubcategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.subcategoriesPie.largeHowQ" = "グラフはどう操作しますか?";
+
+/* Panel Polish #2 — SubcategoriesPie L: respuesta */
+"panel.widgetInfo.subcategoriesPie.largeHowA" = "ドーナツのスライス、バブル、または凡例の行をタップすると、そのサブカテゴリーでパネル全体をフィルタリングできます。バブルを長押しすると正式名称が表示されます。";
+
+/* Panel Polish #2 — Title sheet pedagógico TagsPie */
+"panel.widgetInfo.tagsPie.title" = "タグ別の内訳";
+
+/* Panel Polish #2 — Chip 1 TagsPie (entidad) */
+"panel.widgetInfo.tagsPie.chip1" = "タグ";
+
+/* Panel Polish #2 — Chip 2 TagsPie (período) */
+"panel.widgetInfo.tagsPie.chip2" = "現在の期間";
+
+/* Panel Polish #2 — Chip 3 TagsPie (Interactiva) */
+"panel.widgetInfo.tagsPie.chip3" = "インタラクティブ";
+
+/* Panel Polish #2 — TagsPie S: pregunta */
+"panel.widgetInfo.tagsPie.smallWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — TagsPie S: respuesta */
+"panel.widgetInfo.tagsPie.smallWhatA" = "現在の期間における支出のタグ別の内訳です。バブルは支出の大きいタグを示しています。";
+
+/* Panel Polish #2 — TagsPie S: pregunta */
+"panel.widgetInfo.tagsPie.smallHowQ" = "どう操作しますか?";
+
+/* Panel Polish #2 — TagsPie S: respuesta */
+"panel.widgetInfo.tagsPie.smallHowA" = "バブルをタップすると、そのタグでパネル全体をフィルタリングできます。バブルを長押しすると正式名称が表示されます。";
+
+/* Panel Polish #2 — TagsPie L: pregunta */
+"panel.widgetInfo.tagsPie.largeWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — TagsPie L: respuesta */
+"panel.widgetInfo.tagsPie.largeWhatA" = "ドーナツは現在の期間におけるタグ別の支出構成を示します。右側の凡例には各タグがパーセンテージとともに、大きい順に並んでいます。";
+
+/* Panel Polish #2 — TagsPie L: pregunta */
+"panel.widgetInfo.tagsPie.largeHowQ" = "グラフはどう操作しますか?";
+
+/* Panel Polish #2 — TagsPie L: respuesta */
+"panel.widgetInfo.tagsPie.largeHowA" = "ドーナツのスライス、バブル、または凡例の行をタップすると、そのタグでパネル全体をフィルタリングできます。バブルを長押しすると正式名称が表示されます。";
+
+/* Panel Polish #2 — Title sheet pedagógico ExpensesByNeed */
+"panel.widgetInfo.expensesByNeed.title" = "ニーズ別の内訳";
+
+/* Panel Polish #2 — Chip 1 ExpensesByNeed (entidad) */
+"panel.widgetInfo.expensesByNeed.chip1" = "ニーズ";
+
+/* Panel Polish #2 — Chip 2 ExpensesByNeed (período) */
+"panel.widgetInfo.expensesByNeed.chip2" = "現在の期間";
+
+/* Panel Polish #2 — Chip 3 ExpensesByNeed (Interactiva) */
+"panel.widgetInfo.expensesByNeed.chip3" = "インタラクティブ";
+
+/* Panel Polish #2 — ExpensesByNeed S: pregunta */
+"panel.widgetInfo.expensesByNeed.smallWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — ExpensesByNeed S: respuesta */
+"panel.widgetInfo.expensesByNeed.smallWhatA" = "現在の期間における支出をニーズの種類で分類した内訳です: 必須 (なくてはならないもの)、優先 (重要なもの)、任意 (ぜいたくなもの)。「未分類」は分類されていない支出がある場合にのみ表示されます。";
+
+/* Panel Polish #2 — ExpensesByNeed S: pregunta */
+"panel.widgetInfo.expensesByNeed.smallHowQ" = "どう操作しますか?";
+
+/* Panel Polish #2 — ExpensesByNeed S: respuesta */
+"panel.widgetInfo.expensesByNeed.smallHowA" = "行をタップすると、そのニーズタイプでパネル全体をフィルタリングできます。もう一度タップするとフィルターが解除されます。";
+
+/* Panel Polish #2 — ExpensesByNeed M: pregunta */
+"panel.widgetInfo.expensesByNeed.mediumWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — ExpensesByNeed M: respuesta */
+"panel.widgetInfo.expensesByNeed.mediumWhatA" = "ニーズタイプごとに1本のバーがあります。バーの長さは現在の期間における最大支出に対する相対比率を示し、どれが最も大きいかを一目で確認できます。";
+
+/* Panel Polish #2 — ExpensesByNeed M: pregunta */
+"panel.widgetInfo.expensesByNeed.mediumHowQ" = "どう操作しますか?";
+
+/* Panel Polish #2 — ExpensesByNeed M: respuesta */
+"panel.widgetInfo.expensesByNeed.mediumHowA" = "バーをタップすると、そのニーズタイプでパネル全体をフィルタリングできます。もう一度タップするとフィルターが解除されます。";
+
+/* Panel Polish #2 — ExpensesByNeed L: pregunta */
+"panel.widgetInfo.expensesByNeed.largeWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — ExpensesByNeed L: respuesta */
+"panel.widgetInfo.expensesByNeed.largeWhatA" = "現在の期間の支出をニーズタイプ別に積み上げて表示します: 必須、優先、任意、未分類。横軸の各バーはグループ化に応じて1日、1週間、または1か月を表し、下の凡例は各タイプの全体的な比重を示します。";
+
+/* Panel Polish #2 — ExpensesByNeed L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.expensesByNeed.largeHowQ" = "グラフはどう操作しますか?";
+
+/* Panel Polish #2 — ExpensesByNeed L: respuesta */
+"panel.widgetInfo.expensesByNeed.largeHowA" = "バーの上で指をスライドさせると、特定の時点での内訳 (必須、優先などの金額と合計) が表示されます。凡例のチップをタップすると、そのニーズタイプだけを表示してパネルをフィルターできます。";

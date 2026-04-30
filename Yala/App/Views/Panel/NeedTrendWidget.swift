@@ -37,6 +37,9 @@ struct NeedTrendWidget: View {
     /// When true, shows a message that need classification doesn't apply to income
     var isIncomeMode: Bool = false
 
+    /// Slot pedagógico opcional inyectado en el header (Panel Polish #2).
+    var headerInfoButton: AnyView? = nil
+
     private var totalAmount: Double {
         guard let need = selectedNeed else {
             return trendPoints.reduce(0) { $0 + $1.total }
@@ -106,7 +109,8 @@ struct NeedTrendWidget: View {
         previousAmountByNeed: [SubcategoryNeed: Double] = [:],
         showVariationHeader: Bool = false,
         comparisonMode: ComparisonMode = .month,
-        isIncomeMode: Bool = false
+        isIncomeMode: Bool = false,
+        headerInfoButton: AnyView? = nil
     ) {
         self.trendPoints = trendPoints
         self.selectedNeed = selectedNeed
@@ -122,6 +126,7 @@ struct NeedTrendWidget: View {
         self.showVariationHeader = showVariationHeader
         self.comparisonMode = comparisonMode
         self.isIncomeMode = isIncomeMode
+        self.headerInfoButton = headerInfoButton
     }
 
     var body: some View {
@@ -139,7 +144,8 @@ struct NeedTrendWidget: View {
             PanelSmallWidgetHeader(
                 title: L10n.Widget.distributionByNeed,
                 accessibilityLabel: L10n.Widget.distributionByNeed,
-                action: onShowDetail
+                action: onShowDetail,
+                headerInfoButton: headerInfoButton
             )
 
             if isIncomeMode {
@@ -237,9 +243,20 @@ struct NeedTrendWidget: View {
             HStack(alignment: .top) {
                 // Left: Title and total amount (hide KPI in income mode or when no data)
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Text(L10n.Widget.distributionByNeed)
-                        .font(DS.Typography.subheadlineEmphasized)
-                        .foregroundStyle(.thPrimaryText)
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text(L10n.Widget.distributionByNeed)
+                            .font(DS.Typography.subheadlineEmphasized)
+                            .foregroundStyle(.thPrimaryText)
+
+                        if let headerInfoButton {
+                            headerInfoButton
+                        } else {
+                            InfoHintButton(
+                                title: L10n.WidgetType.expensesByNeed,
+                                message: L10n.Widget.Hint.needTrend
+                            )
+                        }
+                    }
 
                     // Total amount with "vs previous" comparison - only show when NOT in income mode AND has data
                     if !isIncomeMode && !trendPoints.isEmpty {
@@ -263,11 +280,6 @@ struct NeedTrendWidget: View {
                         }
                     }
                 }
-
-                InfoHintButton(
-                    title: L10n.WidgetType.expensesByNeed,
-                    message: L10n.Widget.Hint.needTrend
-                )
 
                 Spacer()
 

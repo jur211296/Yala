@@ -3655,3 +3655,160 @@
 
 /* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
 "panel.widgetInfo.cashFlow.chip4" = "Interactive";
+
+
+/* Panel Polish #2 — Title sheet pedagógico CategoriesPie */
+"panel.widgetInfo.categoriesPie.title" = "Répartition par catégorie";
+
+/* Panel Polish #2 — Chip 1 CategoriesPie (entidad) */
+"panel.widgetInfo.categoriesPie.chip1" = "Catégories";
+
+/* Panel Polish #2 — Chip 2 CategoriesPie (período) */
+"panel.widgetInfo.categoriesPie.chip2" = "Période actuelle";
+
+/* Panel Polish #2 — Chip 3 CategoriesPie (Interactiva) */
+"panel.widgetInfo.categoriesPie.chip3" = "Interactive";
+
+/* Panel Polish #2 — CategoriesPie S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.categoriesPie.smallWhatQ" = "Qu'est-ce que tu vois ?";
+
+/* Panel Polish #2 — CategoriesPie S: respuesta */
+"panel.widgetInfo.categoriesPie.smallWhatA" = "Comment tes dépenses se répartissent entre les catégories sur la période active. Les bulles mettent en avant les catégories au plus gros poids.";
+
+/* Panel Polish #2 — CategoriesPie S: pregunta '¿Cómo interactúo?' */
+"panel.widgetInfo.categoriesPie.smallHowQ" = "Comment interagir ?";
+
+/* Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.categoriesPie.smallHowA" = "Touche une bulle pour filtrer le reste du Panneau par cette catégorie. Appuie longuement sur une bulle pour voir son nom complet.";
+
+/* Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.categoriesPie.largeWhatQ" = "Qu'est-ce que tu vois ?";
+
+/* Panel Polish #2 — CategoriesPie L: respuesta */
+"panel.widgetInfo.categoriesPie.largeWhatA" = "Le donut affiche la répartition des dépenses par catégorie sur la période active. La légende à droite liste chaque catégorie et son pourcentage, du plus grand au plus petit.";
+
+/* Panel Polish #2 — CategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.categoriesPie.largeHowQ" = "Comment interagir avec le graphique ?";
+
+/* Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.categoriesPie.largeHowA" = "Touche une portion du donut, une bulle ou une ligne de la légende pour filtrer le reste du Panneau par cette catégorie. Appuie longuement sur une bulle pour voir son nom complet.";
+
+/* Panel Polish #2 — Title sheet pedagógico SubcategoriesPie */
+"panel.widgetInfo.subcategoriesPie.title" = "Répartition par sous-catégorie";
+
+/* Panel Polish #2 — Chip 1 SubcategoriesPie (entidad) */
+"panel.widgetInfo.subcategoriesPie.chip1" = "Sous-catégories";
+
+/* Panel Polish #2 — Chip 2 SubcategoriesPie (período) */
+"panel.widgetInfo.subcategoriesPie.chip2" = "Période actuelle";
+
+/* Panel Polish #2 — Chip 3 SubcategoriesPie (Interactiva) */
+"panel.widgetInfo.subcategoriesPie.chip3" = "Interactive";
+
+/* Panel Polish #2 — SubcategoriesPie S: pregunta */
+"panel.widgetInfo.subcategoriesPie.smallWhatQ" = "Qu'est-ce que tu vois ?";
+
+/* Panel Polish #2 — SubcategoriesPie S: respuesta */
+"panel.widgetInfo.subcategoriesPie.smallWhatA" = "Comment tes dépenses se répartissent entre les sous-catégories sur la période active. Si une catégorie est filtrée au-dessus, tu ne vois que ses sous-catégories.";
+
+/* Panel Polish #2 — SubcategoriesPie S: pregunta */
+"panel.widgetInfo.subcategoriesPie.smallHowQ" = "Comment interagir ?";
+
+/* Panel Polish #2 — SubcategoriesPie S: respuesta */
+"panel.widgetInfo.subcategoriesPie.smallHowA" = "Touche une bulle pour filtrer le reste du Panneau par cette sous-catégorie. Appuie longuement sur une bulle pour voir son nom complet.";
+
+/* Panel Polish #2 — SubcategoriesPie L: pregunta */
+"panel.widgetInfo.subcategoriesPie.largeWhatQ" = "Qu'est-ce que tu vois ?";
+
+/* Panel Polish #2 — SubcategoriesPie L: respuesta */
+"panel.widgetInfo.subcategoriesPie.largeWhatA" = "Le donut affiche la répartition des dépenses par sous-catégorie sur la période active, jusqu'à neuf plus un groupe « Restant » s'il y en a plus. La légende à droite liste chacune avec son pourcentage.";
+
+/* Panel Polish #2 — SubcategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.subcategoriesPie.largeHowQ" = "Comment interagir avec le graphique ?";
+
+/* Panel Polish #2 — SubcategoriesPie L: respuesta */
+"panel.widgetInfo.subcategoriesPie.largeHowA" = "Touche une portion du donut, une bulle ou une ligne de la légende pour filtrer le reste du Panneau par cette sous-catégorie. Appuie longuement sur une bulle pour voir son nom complet.";
+
+/* Panel Polish #2 — Title sheet pedagógico TagsPie */
+"panel.widgetInfo.tagsPie.title" = "Répartition par étiquette";
+
+/* Panel Polish #2 — Chip 1 TagsPie (entidad) */
+"panel.widgetInfo.tagsPie.chip1" = "Étiquettes";
+
+/* Panel Polish #2 — Chip 2 TagsPie (período) */
+"panel.widgetInfo.tagsPie.chip2" = "Période actuelle";
+
+/* Panel Polish #2 — Chip 3 TagsPie (Interactiva) */
+"panel.widgetInfo.tagsPie.chip3" = "Interactive";
+
+/* Panel Polish #2 — TagsPie S: pregunta */
+"panel.widgetInfo.tagsPie.smallWhatQ" = "Qu'est-ce que tu vois ?";
+
+/* Panel Polish #2 — TagsPie S: respuesta */
+"panel.widgetInfo.tagsPie.smallWhatA" = "Comment tes dépenses se répartissent entre les étiquettes sur la période active. Les bulles mettent en avant les étiquettes au plus gros poids.";
+
+/* Panel Polish #2 — TagsPie S: pregunta */
+"panel.widgetInfo.tagsPie.smallHowQ" = "Comment interagir ?";
+
+/* Panel Polish #2 — TagsPie S: respuesta */
+"panel.widgetInfo.tagsPie.smallHowA" = "Touche une bulle pour filtrer le reste du Panneau par cette étiquette. Appuie longuement sur une bulle pour voir son nom complet.";
+
+/* Panel Polish #2 — TagsPie L: pregunta */
+"panel.widgetInfo.tagsPie.largeWhatQ" = "Qu'est-ce que tu vois ?";
+
+/* Panel Polish #2 — TagsPie L: respuesta */
+"panel.widgetInfo.tagsPie.largeWhatA" = "Le donut affiche la répartition des dépenses par étiquette sur la période active. La légende à droite liste chaque étiquette et son pourcentage, du plus grand au plus petit.";
+
+/* Panel Polish #2 — TagsPie L: pregunta */
+"panel.widgetInfo.tagsPie.largeHowQ" = "Comment interagir avec le graphique ?";
+
+/* Panel Polish #2 — TagsPie L: respuesta */
+"panel.widgetInfo.tagsPie.largeHowA" = "Touche une portion du donut, une bulle ou une ligne de la légende pour filtrer le reste du Panneau par cette étiquette. Appuie longuement sur une bulle pour voir son nom complet.";
+
+/* Panel Polish #2 — Title sheet pedagógico ExpensesByNeed */
+"panel.widgetInfo.expensesByNeed.title" = "Répartition par besoin";
+
+/* Panel Polish #2 — Chip 1 ExpensesByNeed (entidad) */
+"panel.widgetInfo.expensesByNeed.chip1" = "Besoins";
+
+/* Panel Polish #2 — Chip 2 ExpensesByNeed (período) */
+"panel.widgetInfo.expensesByNeed.chip2" = "Période actuelle";
+
+/* Panel Polish #2 — Chip 3 ExpensesByNeed (Interactiva) */
+"panel.widgetInfo.expensesByNeed.chip3" = "Interactive";
+
+/* Panel Polish #2 — ExpensesByNeed S: pregunta */
+"panel.widgetInfo.expensesByNeed.smallWhatQ" = "Qu'est-ce que tu vois ?";
+
+/* Panel Polish #2 — ExpensesByNeed S: respuesta */
+"panel.widgetInfo.expensesByNeed.smallWhatA" = "La répartition de tes dépenses de la période active selon le type de besoin : essentiel (l'indispensable), prioritaire (l'important) et optionnel (le superflu). « Non classé » n'apparaît que si tu as des dépenses non catégorisées.";
+
+/* Panel Polish #2 — ExpensesByNeed S: pregunta */
+"panel.widgetInfo.expensesByNeed.smallHowQ" = "Comment interagir ?";
+
+/* Panel Polish #2 — ExpensesByNeed S: respuesta */
+"panel.widgetInfo.expensesByNeed.smallHowA" = "Touche une ligne pour filtrer le reste du Panneau par ce type de besoin. Touche-la à nouveau pour retirer le filtre.";
+
+/* Panel Polish #2 — ExpensesByNeed M: pregunta */
+"panel.widgetInfo.expensesByNeed.mediumWhatQ" = "Qu'est-ce que tu vois ?";
+
+/* Panel Polish #2 — ExpensesByNeed M: respuesta */
+"panel.widgetInfo.expensesByNeed.mediumWhatA" = "Une barre par type de besoin. La longueur indique son poids par rapport à la dépense la plus élevée de la période active, pour voir d'un coup d'œil ce qui pèse le plus.";
+
+/* Panel Polish #2 — ExpensesByNeed M: pregunta */
+"panel.widgetInfo.expensesByNeed.mediumHowQ" = "Comment interagir ?";
+
+/* Panel Polish #2 — ExpensesByNeed M: respuesta */
+"panel.widgetInfo.expensesByNeed.mediumHowA" = "Touche une barre pour filtrer le reste du Panneau par ce type de besoin. Touche-la à nouveau pour retirer le filtre.";
+
+/* Panel Polish #2 — ExpensesByNeed L: pregunta */
+"panel.widgetInfo.expensesByNeed.largeWhatQ" = "Qu'est-ce que tu vois ?";
+
+/* Panel Polish #2 — ExpensesByNeed L: respuesta */
+"panel.widgetInfo.expensesByNeed.largeWhatA" = "Les dépenses de la période active empilées par type de besoin : essentiel, prioritaire, optionnel et non classé. Chaque barre de l'axe horizontal correspond à un jour, une semaine ou un mois selon le regroupement, et la légende en bas montre le poids global de chaque type.";
+
+/* Panel Polish #2 — ExpensesByNeed L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.expensesByNeed.largeHowQ" = "Comment interagir avec le graphique ?";
+
+/* Panel Polish #2 — ExpensesByNeed L: respuesta */
+"panel.widgetInfo.expensesByNeed.largeHowA" = "Fais glisser ton doigt sur les barres pour voir la répartition d'un instant donné — combien d'essentiel, de prioritaire, etc., avec le total. Touche un chip de la légende pour n'afficher que ce type de besoin et filtrer le Panneau.";

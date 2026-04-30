@@ -349,6 +349,72 @@ enum L10n {
                     ls("panel.widgetInfo.trend.largeHowA", comment: "Panel Polish #2 — Trend L: respuesta a '¿Cómo interactúo con la gráfica?'")
                 }
             }
+
+            // MARK: - Bloque 1 (Pies + Need)
+
+            enum CategoriesPie {
+                static var title: String { ls("panel.widgetInfo.categoriesPie.title", comment: "Panel Polish #2 — Title sheet pedagógico CategoriesPie") }
+                static var chip1: String { ls("panel.widgetInfo.categoriesPie.chip1", comment: "Panel Polish #2 — Chip 1 CategoriesPie (entidad)") }
+                static var chip2: String { ls("panel.widgetInfo.categoriesPie.chip2", comment: "Panel Polish #2 — Chip 2 CategoriesPie (período)") }
+                static var chip3: String { ls("panel.widgetInfo.categoriesPie.chip3", comment: "Panel Polish #2 — Chip 3 CategoriesPie (Interactiva)") }
+                static var smallWhatQ: String { ls("panel.widgetInfo.categoriesPie.smallWhatQ", comment: "Panel Polish #2 — CategoriesPie S: pregunta '¿Qué estás viendo?'") }
+                static var smallWhatA: String { ls("panel.widgetInfo.categoriesPie.smallWhatA", comment: "Panel Polish #2 — CategoriesPie S: respuesta") }
+                static var smallHowQ: String { ls("panel.widgetInfo.categoriesPie.smallHowQ", comment: "Panel Polish #2 — CategoriesPie S: pregunta '¿Cómo interactúo?'") }
+                static var smallHowA: String { ls("panel.widgetInfo.categoriesPie.smallHowA", comment: "Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo'") }
+                static var largeWhatQ: String { ls("panel.widgetInfo.categoriesPie.largeWhatQ", comment: "Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?'") }
+                static var largeWhatA: String { ls("panel.widgetInfo.categoriesPie.largeWhatA", comment: "Panel Polish #2 — CategoriesPie L: respuesta") }
+                static var largeHowQ: String { ls("panel.widgetInfo.categoriesPie.largeHowQ", comment: "Panel Polish #2 — CategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?'") }
+                static var largeHowA: String { ls("panel.widgetInfo.categoriesPie.largeHowA", comment: "Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo'") }
+            }
+
+            enum SubcategoriesPie {
+                static var title: String { ls("panel.widgetInfo.subcategoriesPie.title", comment: "Panel Polish #2 — Title sheet pedagógico SubcategoriesPie") }
+                static var chip1: String { ls("panel.widgetInfo.subcategoriesPie.chip1", comment: "Panel Polish #2 — Chip 1 SubcategoriesPie (entidad)") }
+                static var chip2: String { ls("panel.widgetInfo.subcategoriesPie.chip2", comment: "Panel Polish #2 — Chip 2 SubcategoriesPie (período)") }
+                static var chip3: String { ls("panel.widgetInfo.subcategoriesPie.chip3", comment: "Panel Polish #2 — Chip 3 SubcategoriesPie (Interactiva)") }
+                static var smallWhatQ: String { ls("panel.widgetInfo.subcategoriesPie.smallWhatQ", comment: "Panel Polish #2 — SubcategoriesPie S: pregunta") }
+                static var smallWhatA: String { ls("panel.widgetInfo.subcategoriesPie.smallWhatA", comment: "Panel Polish #2 — SubcategoriesPie S: respuesta") }
+                static var smallHowQ: String { ls("panel.widgetInfo.subcategoriesPie.smallHowQ", comment: "Panel Polish #2 — SubcategoriesPie S: pregunta") }
+                static var smallHowA: String { ls("panel.widgetInfo.subcategoriesPie.smallHowA", comment: "Panel Polish #2 — SubcategoriesPie S: respuesta") }
+                static var largeWhatQ: String { ls("panel.widgetInfo.subcategoriesPie.largeWhatQ", comment: "Panel Polish #2 — SubcategoriesPie L: pregunta") }
+                static var largeWhatA: String { ls("panel.widgetInfo.subcategoriesPie.largeWhatA", comment: "Panel Polish #2 — SubcategoriesPie L: respuesta") }
+                static var largeHowQ: String { ls("panel.widgetInfo.subcategoriesPie.largeHowQ", comment: "Panel Polish #2 — SubcategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?'") }
+                static var largeHowA: String { ls("panel.widgetInfo.subcategoriesPie.largeHowA", comment: "Panel Polish #2 — SubcategoriesPie L: respuesta") }
+            }
+
+            enum TagsPie {
+                static var title: String { ls("panel.widgetInfo.tagsPie.title", comment: "Panel Polish #2 — Title sheet pedagógico TagsPie") }
+                static var chip1: String { ls("panel.widgetInfo.tagsPie.chip1", comment: "Panel Polish #2 — Chip 1 TagsPie (entidad)") }
+                static var chip2: String { ls("panel.widgetInfo.tagsPie.chip2", comment: "Panel Polish #2 — Chip 2 TagsPie (período)") }
+                static var chip3: String { ls("panel.widgetInfo.tagsPie.chip3", comment: "Panel Polish #2 — Chip 3 TagsPie (Interactiva)") }
+                static var smallWhatQ: String { ls("panel.widgetInfo.tagsPie.smallWhatQ", comment: "Panel Polish #2 — TagsPie S: pregunta") }
+                static var smallWhatA: String { ls("panel.widgetInfo.tagsPie.smallWhatA", comment: "Panel Polish #2 — TagsPie S: respuesta") }
+                static var smallHowQ: String { ls("panel.widgetInfo.tagsPie.smallHowQ", comment: "Panel Polish #2 — TagsPie S: pregunta") }
+                static var smallHowA: String { ls("panel.widgetInfo.tagsPie.smallHowA", comment: "Panel Polish #2 — TagsPie S: respuesta") }
+                static var largeWhatQ: String { ls("panel.widgetInfo.tagsPie.largeWhatQ", comment: "Panel Polish #2 — TagsPie L: pregunta") }
+                static var largeWhatA: String { ls("panel.widgetInfo.tagsPie.largeWhatA", comment: "Panel Polish #2 — TagsPie L: respuesta") }
+                static var largeHowQ: String { ls("panel.widgetInfo.tagsPie.largeHowQ", comment: "Panel Polish #2 — TagsPie L: pregunta") }
+                static var largeHowA: String { ls("panel.widgetInfo.tagsPie.largeHowA", comment: "Panel Polish #2 — TagsPie L: respuesta") }
+            }
+
+            enum ExpensesByNeed {
+                static var title: String { ls("panel.widgetInfo.expensesByNeed.title", comment: "Panel Polish #2 — Title sheet pedagógico ExpensesByNeed") }
+                static var chip1: String { ls("panel.widgetInfo.expensesByNeed.chip1", comment: "Panel Polish #2 — Chip 1 ExpensesByNeed (entidad)") }
+                static var chip2: String { ls("panel.widgetInfo.expensesByNeed.chip2", comment: "Panel Polish #2 — Chip 2 ExpensesByNeed (período)") }
+                static var chip3: String { ls("panel.widgetInfo.expensesByNeed.chip3", comment: "Panel Polish #2 — Chip 3 ExpensesByNeed (Interactiva)") }
+                static var smallWhatQ: String { ls("panel.widgetInfo.expensesByNeed.smallWhatQ", comment: "Panel Polish #2 — ExpensesByNeed S: pregunta") }
+                static var smallWhatA: String { ls("panel.widgetInfo.expensesByNeed.smallWhatA", comment: "Panel Polish #2 — ExpensesByNeed S: respuesta") }
+                static var smallHowQ: String { ls("panel.widgetInfo.expensesByNeed.smallHowQ", comment: "Panel Polish #2 — ExpensesByNeed S: pregunta") }
+                static var smallHowA: String { ls("panel.widgetInfo.expensesByNeed.smallHowA", comment: "Panel Polish #2 — ExpensesByNeed S: respuesta") }
+                static var mediumWhatQ: String { ls("panel.widgetInfo.expensesByNeed.mediumWhatQ", comment: "Panel Polish #2 — ExpensesByNeed M: pregunta") }
+                static var mediumWhatA: String { ls("panel.widgetInfo.expensesByNeed.mediumWhatA", comment: "Panel Polish #2 — ExpensesByNeed M: respuesta") }
+                static var mediumHowQ: String { ls("panel.widgetInfo.expensesByNeed.mediumHowQ", comment: "Panel Polish #2 — ExpensesByNeed M: pregunta") }
+                static var mediumHowA: String { ls("panel.widgetInfo.expensesByNeed.mediumHowA", comment: "Panel Polish #2 — ExpensesByNeed M: respuesta") }
+                static var largeWhatQ: String { ls("panel.widgetInfo.expensesByNeed.largeWhatQ", comment: "Panel Polish #2 — ExpensesByNeed L: pregunta") }
+                static var largeWhatA: String { ls("panel.widgetInfo.expensesByNeed.largeWhatA", comment: "Panel Polish #2 — ExpensesByNeed L: respuesta") }
+                static var largeHowQ: String { ls("panel.widgetInfo.expensesByNeed.largeHowQ", comment: "Panel Polish #2 — ExpensesByNeed L: pregunta '¿Cómo interactúo con la gráfica?'") }
+                static var largeHowA: String { ls("panel.widgetInfo.expensesByNeed.largeHowA", comment: "Panel Polish #2 — ExpensesByNeed L: respuesta") }
+            }
         }
 
         // MARK: - Panorama group (Cuentas + Salud financiera)

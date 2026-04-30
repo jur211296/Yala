@@ -3657,3 +3657,160 @@
 
 /* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
 "panel.widgetInfo.cashFlow.chip4" = "Interaktywna";
+
+
+/* Panel Polish #2 — Title sheet pedagógico CategoriesPie */
+"panel.widgetInfo.categoriesPie.title" = "Rozkład według kategorii";
+
+/* Panel Polish #2 — Chip 1 CategoriesPie (entidad) */
+"panel.widgetInfo.categoriesPie.chip1" = "Kategorie";
+
+/* Panel Polish #2 — Chip 2 CategoriesPie (período) */
+"panel.widgetInfo.categoriesPie.chip2" = "Bieżący okres";
+
+/* Panel Polish #2 — Chip 3 CategoriesPie (Interactiva) */
+"panel.widgetInfo.categoriesPie.chip3" = "Interaktywny";
+
+/* Panel Polish #2 — CategoriesPie S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.categoriesPie.smallWhatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — CategoriesPie S: respuesta */
+"panel.widgetInfo.categoriesPie.smallWhatA" = "Jak Twoje wydatki rozkładają się na kategorie w bieżącym okresie. Bąble wyróżniają kategorie o największym udziale.";
+
+/* Panel Polish #2 — CategoriesPie S: pregunta '¿Cómo interactúo?' */
+"panel.widgetInfo.categoriesPie.smallHowQ" = "Jak z tym pracować?";
+
+/* Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.categoriesPie.smallHowA" = "Stuknij w bąbel, aby przefiltrować resztę Panelu według tej kategorii. Przytrzymaj bąbel, aby zobaczyć pełną nazwę.";
+
+/* Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.categoriesPie.largeWhatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — CategoriesPie L: respuesta */
+"panel.widgetInfo.categoriesPie.largeWhatA" = "Pączek pokazuje rozkład wydatków według kategorii w bieżącym okresie. Legenda po prawej wymienia każdą kategorię z jej udziałem, od największej do najmniejszej.";
+
+/* Panel Polish #2 — CategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.categoriesPie.largeHowQ" = "Jak działa wykres?";
+
+/* Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.categoriesPie.largeHowA" = "Stuknij w fragment pączka, bąbel lub wiersz legendy, aby przefiltrować resztę Panelu według tej kategorii. Przytrzymaj bąbel, aby zobaczyć pełną nazwę.";
+
+/* Panel Polish #2 — Title sheet pedagógico SubcategoriesPie */
+"panel.widgetInfo.subcategoriesPie.title" = "Rozkład według podkategorii";
+
+/* Panel Polish #2 — Chip 1 SubcategoriesPie (entidad) */
+"panel.widgetInfo.subcategoriesPie.chip1" = "Podkategorie";
+
+/* Panel Polish #2 — Chip 2 SubcategoriesPie (período) */
+"panel.widgetInfo.subcategoriesPie.chip2" = "Bieżący okres";
+
+/* Panel Polish #2 — Chip 3 SubcategoriesPie (Interactiva) */
+"panel.widgetInfo.subcategoriesPie.chip3" = "Interaktywny";
+
+/* Panel Polish #2 — SubcategoriesPie S: pregunta */
+"panel.widgetInfo.subcategoriesPie.smallWhatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — SubcategoriesPie S: respuesta */
+"panel.widgetInfo.subcategoriesPie.smallWhatA" = "Jak Twoje wydatki rozkładają się na podkategorie w bieżącym okresie. Jeśli powyżej masz odfiltrowaną kategorię, zobaczysz tylko jej podkategorie.";
+
+/* Panel Polish #2 — SubcategoriesPie S: pregunta */
+"panel.widgetInfo.subcategoriesPie.smallHowQ" = "Jak z tym pracować?";
+
+/* Panel Polish #2 — SubcategoriesPie S: respuesta */
+"panel.widgetInfo.subcategoriesPie.smallHowA" = "Stuknij w bąbel, aby przefiltrować resztę Panelu według tej podkategorii. Przytrzymaj bąbel, aby zobaczyć pełną nazwę.";
+
+/* Panel Polish #2 — SubcategoriesPie L: pregunta */
+"panel.widgetInfo.subcategoriesPie.largeWhatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — SubcategoriesPie L: respuesta */
+"panel.widgetInfo.subcategoriesPie.largeWhatA" = "Pączek pokazuje rozkład wydatków według podkategorii w bieżącym okresie — do dziewięciu plus grupa „Pozostałe\", jeśli jest więcej. Legenda po prawej wymienia każdą z udziałem.";
+
+/* Panel Polish #2 — SubcategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.subcategoriesPie.largeHowQ" = "Jak działa wykres?";
+
+/* Panel Polish #2 — SubcategoriesPie L: respuesta */
+"panel.widgetInfo.subcategoriesPie.largeHowA" = "Stuknij w fragment pączka, bąbel lub wiersz legendy, aby przefiltrować resztę Panelu według tej podkategorii. Przytrzymaj bąbel, aby zobaczyć pełną nazwę.";
+
+/* Panel Polish #2 — Title sheet pedagógico TagsPie */
+"panel.widgetInfo.tagsPie.title" = "Rozkład według tagów";
+
+/* Panel Polish #2 — Chip 1 TagsPie (entidad) */
+"panel.widgetInfo.tagsPie.chip1" = "Tagi";
+
+/* Panel Polish #2 — Chip 2 TagsPie (período) */
+"panel.widgetInfo.tagsPie.chip2" = "Bieżący okres";
+
+/* Panel Polish #2 — Chip 3 TagsPie (Interactiva) */
+"panel.widgetInfo.tagsPie.chip3" = "Interaktywny";
+
+/* Panel Polish #2 — TagsPie S: pregunta */
+"panel.widgetInfo.tagsPie.smallWhatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — TagsPie S: respuesta */
+"panel.widgetInfo.tagsPie.smallWhatA" = "Jak Twoje wydatki rozkładają się na tagi w bieżącym okresie. Bąble wyróżniają tagi o największym udziale.";
+
+/* Panel Polish #2 — TagsPie S: pregunta */
+"panel.widgetInfo.tagsPie.smallHowQ" = "Jak z tym pracować?";
+
+/* Panel Polish #2 — TagsPie S: respuesta */
+"panel.widgetInfo.tagsPie.smallHowA" = "Stuknij w bąbel, aby przefiltrować resztę Panelu według tego tagu. Przytrzymaj bąbel, aby zobaczyć pełną nazwę.";
+
+/* Panel Polish #2 — TagsPie L: pregunta */
+"panel.widgetInfo.tagsPie.largeWhatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — TagsPie L: respuesta */
+"panel.widgetInfo.tagsPie.largeWhatA" = "Pączek pokazuje rozkład wydatków według tagów w bieżącym okresie. Legenda po prawej wymienia każdy tag z jego udziałem, od największego do najmniejszego.";
+
+/* Panel Polish #2 — TagsPie L: pregunta */
+"panel.widgetInfo.tagsPie.largeHowQ" = "Jak działa wykres?";
+
+/* Panel Polish #2 — TagsPie L: respuesta */
+"panel.widgetInfo.tagsPie.largeHowA" = "Stuknij w fragment pączka, bąbel lub wiersz legendy, aby przefiltrować resztę Panelu według tego tagu. Przytrzymaj bąbel, aby zobaczyć pełną nazwę.";
+
+/* Panel Polish #2 — Title sheet pedagógico ExpensesByNeed */
+"panel.widgetInfo.expensesByNeed.title" = "Rozkład według potrzeb";
+
+/* Panel Polish #2 — Chip 1 ExpensesByNeed (entidad) */
+"panel.widgetInfo.expensesByNeed.chip1" = "Potrzeby";
+
+/* Panel Polish #2 — Chip 2 ExpensesByNeed (período) */
+"panel.widgetInfo.expensesByNeed.chip2" = "Bieżący okres";
+
+/* Panel Polish #2 — Chip 3 ExpensesByNeed (Interactiva) */
+"panel.widgetInfo.expensesByNeed.chip3" = "Interaktywny";
+
+/* Panel Polish #2 — ExpensesByNeed S: pregunta */
+"panel.widgetInfo.expensesByNeed.smallWhatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — ExpensesByNeed S: respuesta */
+"panel.widgetInfo.expensesByNeed.smallWhatA" = "Rozkład wydatków w bieżącym okresie według typu potrzeby: niezbędne, priorytetowe i opcjonalne. „Niesklasyfikowane\" pojawia się tylko, gdy masz wydatki bez kategorii.";
+
+/* Panel Polish #2 — ExpensesByNeed S: pregunta */
+"panel.widgetInfo.expensesByNeed.smallHowQ" = "Jak z tym pracować?";
+
+/* Panel Polish #2 — ExpensesByNeed S: respuesta */
+"panel.widgetInfo.expensesByNeed.smallHowA" = "Stuknij w wiersz, aby przefiltrować resztę Panelu według tego typu potrzeby. Stuknij ponownie, aby usunąć filtr.";
+
+/* Panel Polish #2 — ExpensesByNeed M: pregunta */
+"panel.widgetInfo.expensesByNeed.mediumWhatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — ExpensesByNeed M: respuesta */
+"panel.widgetInfo.expensesByNeed.mediumWhatA" = "Jeden pasek na każdy typ potrzeby. Długość pokazuje wagę względem największego wydatku w bieżącym okresie, więc od razu widzisz, który typ waży więcej.";
+
+/* Panel Polish #2 — ExpensesByNeed M: pregunta */
+"panel.widgetInfo.expensesByNeed.mediumHowQ" = "Jak z tym pracować?";
+
+/* Panel Polish #2 — ExpensesByNeed M: respuesta */
+"panel.widgetInfo.expensesByNeed.mediumHowA" = "Stuknij w pasek, aby przefiltrować resztę Panelu według tego typu potrzeby. Stuknij ponownie, aby usunąć filtr.";
+
+/* Panel Polish #2 — ExpensesByNeed L: pregunta */
+"panel.widgetInfo.expensesByNeed.largeWhatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — ExpensesByNeed L: respuesta */
+"panel.widgetInfo.expensesByNeed.largeWhatA" = "Wydatki w bieżącym okresie zestawione według typu potrzeby: niezbędne, priorytetowe, opcjonalne i niesklasyfikowane. Każdy słupek na osi poziomej oznacza dzień, tydzień lub miesiąc — zależnie od grupowania, a legenda na dole pokazuje łączny udział każdego typu.";
+
+/* Panel Polish #2 — ExpensesByNeed L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.expensesByNeed.largeHowQ" = "Jak działa wykres?";
+
+/* Panel Polish #2 — ExpensesByNeed L: respuesta */
+"panel.widgetInfo.expensesByNeed.largeHowA" = "Przesuń palcem po słupkach, aby zobaczyć rozkład w danym momencie — ile było niezbędne, priorytetowe itd., wraz z sumą. Stuknij chip w legendzie, aby pokazać tylko ten typ potrzeby i przefiltrować Panel.";

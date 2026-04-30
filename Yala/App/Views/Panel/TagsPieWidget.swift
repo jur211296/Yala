@@ -23,6 +23,9 @@ struct TagsPieWidget: View {
 
     var size: WidgetSize = .medium
 
+    /// Slot pedagógico opcional inyectado en el header (Panel Polish #2).
+    var headerInfoButton: AnyView? = nil
+
     // Period Comparison (optional - for use in CategoriesTabView)
     var period: DetailPeriod = .thisMonth
     var customRange: DateInterval? = nil
@@ -90,16 +93,20 @@ struct TagsPieWidget: View {
 
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.none) {
-            HStack {
+            HStack(spacing: DS.Spacing.xs) {
                 Text(L10n.Widget.distributionByTag)
                     .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
-                InfoHintButton(
-                    title: L10n.WidgetType.expensesByTag,
-                    message: L10n.Widget.Hint.tagsPie
-                )
+                if let headerInfoButton {
+                    headerInfoButton
+                } else {
+                    InfoHintButton(
+                        title: L10n.WidgetType.expensesByTag,
+                        message: L10n.Widget.Hint.tagsPie
+                    )
+                }
 
                 Spacer()
             }
@@ -164,7 +171,8 @@ struct TagsPieWidget: View {
             PanelSmallWidgetHeader(
                 title: L10n.Settings.tags,
                 accessibilityLabel: L10n.Panel.seeMoreInDistribution,
-                action: onShowDetail
+                action: onShowDetail,
+                headerInfoButton: headerInfoButton
             )
 
             GeometryReader { geo in
@@ -459,20 +467,35 @@ struct TagsPieWidget: View {
                         onShowDetail: onShowDetail
                     )
 
-                    InfoHintButton(
-                        title: L10n.WidgetType.expensesByTag,
-                        message: L10n.Widget.Hint.tagsPie
-                    )
+                    if let headerInfoButton {
+                        headerInfoButton
+                    } else {
+                        InfoHintButton(
+                            title: L10n.WidgetType.expensesByTag,
+                            message: L10n.Widget.Hint.tagsPie
+                        )
+                    }
                 }
             } else {
                 // Original header without comparison
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                        Text(L10n.Widget.distributionByTag)
-                            .font(DS.Typography.subheadlineEmphasized)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .padding(.bottom, DS.Spacing.xxs)
+                        HStack(spacing: DS.Spacing.xs) {
+                            Text(L10n.Widget.distributionByTag)
+                                .font(DS.Typography.subheadlineEmphasized)
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+
+                            if let headerInfoButton {
+                                headerInfoButton
+                            } else {
+                                InfoHintButton(
+                                    title: L10n.WidgetType.expensesByTag,
+                                    message: L10n.Widget.Hint.tagsPie
+                                )
+                            }
+                        }
+                        .padding(.bottom, DS.Spacing.xxs)
 
                         Text(formattedCurrency(filteredTotalExpense))
                             .font(DS.Typography.headline)
@@ -480,11 +503,6 @@ struct TagsPieWidget: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                     }
-
-                    InfoHintButton(
-                        title: L10n.WidgetType.expensesByTag,
-                        message: L10n.Widget.Hint.tagsPie
-                    )
 
                     Spacer()
                 }

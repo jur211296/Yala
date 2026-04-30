@@ -117,3 +117,41 @@ extension PanelViewModel {
         return vm
     }
 }
+
+extension Array where Element == NeedTrendPoint {
+    /// 14 puntos sintéticos con composición esencial/prioritario/opcional/sin-clasificar.
+    /// Pensado para el preview de `expensesByNeed` cuando el VM no tiene datos.
+    static var previewSample: [NeedTrendPoint] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        // Curvas suaves para que el stacked chart tenga forma orgánica.
+        let pattern: [(essential: Double, priority: Double, optional: Double, unclassified: Double)] = [
+            (45, 22, 18, 0),
+            (52, 28, 12, 0),
+            (38, 30, 25, 5),
+            (60, 25, 20, 0),
+            (48, 35, 15, 0),
+            (55, 20, 30, 0),
+            (62, 32, 22, 8),
+            (50, 28, 18, 0),
+            (44, 26, 24, 0),
+            (58, 30, 16, 0),
+            (52, 24, 28, 4),
+            (66, 36, 14, 0),
+            (40, 22, 32, 0),
+            (54, 28, 20, 0),
+        ]
+
+        return pattern.enumerated().map { offset, p in
+            let date = calendar.date(byAdding: .day, value: offset - 13, to: today) ?? today
+            return NeedTrendPoint(
+                date: date,
+                essential: p.essential,
+                priority: p.priority,
+                optional: p.optional,
+                unclassified: p.unclassified
+            )
+        }
+    }
+}

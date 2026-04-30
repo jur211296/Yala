@@ -23,6 +23,10 @@ struct CategoriesPieWidget: View {
 
     var size: WidgetSize = .medium
 
+    /// Slot pedagógico opcional inyectado en el header (Panel Polish #2). Si está
+    /// presente, reemplaza al `InfoHintButton` legacy.
+    var headerInfoButton: AnyView? = nil
+
     // Period Comparison (optional - for use in CategoriesTabView)
     var period: DetailPeriod = .thisMonth
     var customRange: DateInterval? = nil
@@ -99,16 +103,20 @@ struct CategoriesPieWidget: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.none) {
             // Header (same as content)
-            HStack {
+            HStack(spacing: DS.Spacing.xs) {
                 Text(L10n.Widget.categories)
                     .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
-                InfoHintButton(
-                    title: L10n.WidgetType.categoriesPie,
-                    message: L10n.Widget.Hint.categoriesPie
-                )
+                if let headerInfoButton {
+                    headerInfoButton
+                } else {
+                    InfoHintButton(
+                        title: L10n.WidgetType.categoriesPie,
+                        message: L10n.Widget.Hint.categoriesPie
+                    )
+                }
 
                 Spacer()
             }
@@ -145,7 +153,8 @@ struct CategoriesPieWidget: View {
             PanelSmallWidgetHeader(
                 title: L10n.Widget.categories,
                 accessibilityLabel: L10n.Panel.seeMoreInDistribution,
-                action: onShowDetail
+                action: onShowDetail,
+                headerInfoButton: headerInfoButton
             )
 
             GeometryReader { geo in
@@ -505,16 +514,20 @@ struct CategoriesPieWidget: View {
                 // Original header without comparison
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                        HStack(spacing: DS.Spacing.xxs) {
+                        HStack(spacing: DS.Spacing.xs) {
                             Text(L10n.Widget.distributionByCategory)
                                 .font(DS.Typography.subheadlineEmphasized)
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
 
-                            InfoHintButton(
-                                title: L10n.WidgetType.categoriesPie,
-                                message: L10n.Widget.Hint.categoriesPie
-                            )
+                            if let headerInfoButton {
+                                headerInfoButton
+                            } else {
+                                InfoHintButton(
+                                    title: L10n.WidgetType.categoriesPie,
+                                    message: L10n.Widget.Hint.categoriesPie
+                                )
+                            }
                         }
                         .padding(.bottom, DS.Spacing.xxs)
 

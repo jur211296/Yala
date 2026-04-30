@@ -3654,3 +3654,160 @@
 
 /* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
 "panel.widgetInfo.cashFlow.chip4" = "Interaktiv";
+
+
+/* Panel Polish #2 — Title sheet pedagógico CategoriesPie */
+"panel.widgetInfo.categoriesPie.title" = "Verteilung nach Kategorie";
+
+/* Panel Polish #2 — Chip 1 CategoriesPie (entidad) */
+"panel.widgetInfo.categoriesPie.chip1" = "Kategorien";
+
+/* Panel Polish #2 — Chip 2 CategoriesPie (período) */
+"panel.widgetInfo.categoriesPie.chip2" = "Aktueller Zeitraum";
+
+/* Panel Polish #2 — Chip 3 CategoriesPie (Interactiva) */
+"panel.widgetInfo.categoriesPie.chip3" = "Interaktiv";
+
+/* Panel Polish #2 — CategoriesPie S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.categoriesPie.smallWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — CategoriesPie S: respuesta */
+"panel.widgetInfo.categoriesPie.smallWhatA" = "Wie sich deine Ausgaben im aktuellen Zeitraum auf die Kategorien verteilen. Die Blasen markieren die Kategorien mit dem größten Anteil.";
+
+/* Panel Polish #2 — CategoriesPie S: pregunta '¿Cómo interactúo?' */
+"panel.widgetInfo.categoriesPie.smallHowQ" = "Wie interagiere ich?";
+
+/* Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.categoriesPie.smallHowA" = "Tippe auf eine Blase, um den Rest des Panels nach dieser Kategorie zu filtern. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
+
+/* Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.categoriesPie.largeWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — CategoriesPie L: respuesta */
+"panel.widgetInfo.categoriesPie.largeWhatA" = "Der Donut zeigt die Ausgabenverteilung nach Kategorie im aktuellen Zeitraum. Die Legende rechts listet jede Kategorie mit ihrem Anteil, vom größten zum kleinsten.";
+
+/* Panel Polish #2 — CategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.categoriesPie.largeHowQ" = "Wie interagiere ich mit dem Diagramm?";
+
+/* Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.categoriesPie.largeHowA" = "Tippe auf einen Donut-Abschnitt, eine Blase oder eine Zeile der Legende, um den Rest des Panels nach dieser Kategorie zu filtern. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
+
+/* Panel Polish #2 — Title sheet pedagógico SubcategoriesPie */
+"panel.widgetInfo.subcategoriesPie.title" = "Verteilung nach Unterkategorie";
+
+/* Panel Polish #2 — Chip 1 SubcategoriesPie (entidad) */
+"panel.widgetInfo.subcategoriesPie.chip1" = "Unterkategorien";
+
+/* Panel Polish #2 — Chip 2 SubcategoriesPie (período) */
+"panel.widgetInfo.subcategoriesPie.chip2" = "Aktueller Zeitraum";
+
+/* Panel Polish #2 — Chip 3 SubcategoriesPie (Interactiva) */
+"panel.widgetInfo.subcategoriesPie.chip3" = "Interaktiv";
+
+/* Panel Polish #2 — SubcategoriesPie S: pregunta */
+"panel.widgetInfo.subcategoriesPie.smallWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — SubcategoriesPie S: respuesta */
+"panel.widgetInfo.subcategoriesPie.smallWhatA" = "Wie sich deine Ausgaben im aktuellen Zeitraum auf die Unterkategorien verteilen. Wenn oben eine Kategorie gefiltert ist, siehst du nur ihre Unterkategorien.";
+
+/* Panel Polish #2 — SubcategoriesPie S: pregunta */
+"panel.widgetInfo.subcategoriesPie.smallHowQ" = "Wie interagiere ich?";
+
+/* Panel Polish #2 — SubcategoriesPie S: respuesta */
+"panel.widgetInfo.subcategoriesPie.smallHowA" = "Tippe auf eine Blase, um den Rest des Panels nach dieser Unterkategorie zu filtern. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
+
+/* Panel Polish #2 — SubcategoriesPie L: pregunta */
+"panel.widgetInfo.subcategoriesPie.largeWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — SubcategoriesPie L: respuesta */
+"panel.widgetInfo.subcategoriesPie.largeWhatA" = "Der Donut zeigt die Ausgabenverteilung nach Unterkategorie im aktuellen Zeitraum, bis zu neun plus eine Gruppe „Rest“, wenn es mehr gibt. Die Legende rechts listet jede mit ihrem Anteil.";
+
+/* Panel Polish #2 — SubcategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.subcategoriesPie.largeHowQ" = "Wie interagiere ich mit dem Diagramm?";
+
+/* Panel Polish #2 — SubcategoriesPie L: respuesta */
+"panel.widgetInfo.subcategoriesPie.largeHowA" = "Tippe auf einen Donut-Abschnitt, eine Blase oder eine Zeile der Legende, um den Rest des Panels nach dieser Unterkategorie zu filtern. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
+
+/* Panel Polish #2 — Title sheet pedagógico TagsPie */
+"panel.widgetInfo.tagsPie.title" = "Verteilung nach Tag";
+
+/* Panel Polish #2 — Chip 1 TagsPie (entidad) */
+"panel.widgetInfo.tagsPie.chip1" = "Tags";
+
+/* Panel Polish #2 — Chip 2 TagsPie (período) */
+"panel.widgetInfo.tagsPie.chip2" = "Aktueller Zeitraum";
+
+/* Panel Polish #2 — Chip 3 TagsPie (Interactiva) */
+"panel.widgetInfo.tagsPie.chip3" = "Interaktiv";
+
+/* Panel Polish #2 — TagsPie S: pregunta */
+"panel.widgetInfo.tagsPie.smallWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — TagsPie S: respuesta */
+"panel.widgetInfo.tagsPie.smallWhatA" = "Wie sich deine Ausgaben im aktuellen Zeitraum auf die Tags verteilen. Die Blasen markieren die Tags mit dem größten Anteil.";
+
+/* Panel Polish #2 — TagsPie S: pregunta */
+"panel.widgetInfo.tagsPie.smallHowQ" = "Wie interagiere ich?";
+
+/* Panel Polish #2 — TagsPie S: respuesta */
+"panel.widgetInfo.tagsPie.smallHowA" = "Tippe auf eine Blase, um den Rest des Panels nach diesem Tag zu filtern. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
+
+/* Panel Polish #2 — TagsPie L: pregunta */
+"panel.widgetInfo.tagsPie.largeWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — TagsPie L: respuesta */
+"panel.widgetInfo.tagsPie.largeWhatA" = "Der Donut zeigt die Ausgabenverteilung nach Tag im aktuellen Zeitraum. Die Legende rechts listet jeden Tag mit seinem Anteil, vom größten zum kleinsten.";
+
+/* Panel Polish #2 — TagsPie L: pregunta */
+"panel.widgetInfo.tagsPie.largeHowQ" = "Wie interagiere ich mit dem Diagramm?";
+
+/* Panel Polish #2 — TagsPie L: respuesta */
+"panel.widgetInfo.tagsPie.largeHowA" = "Tippe auf einen Donut-Abschnitt, eine Blase oder eine Zeile der Legende, um den Rest des Panels nach diesem Tag zu filtern. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
+
+/* Panel Polish #2 — Title sheet pedagógico ExpensesByNeed */
+"panel.widgetInfo.expensesByNeed.title" = "Verteilung nach Bedarf";
+
+/* Panel Polish #2 — Chip 1 ExpensesByNeed (entidad) */
+"panel.widgetInfo.expensesByNeed.chip1" = "Bedarfe";
+
+/* Panel Polish #2 — Chip 2 ExpensesByNeed (período) */
+"panel.widgetInfo.expensesByNeed.chip2" = "Aktueller Zeitraum";
+
+/* Panel Polish #2 — Chip 3 ExpensesByNeed (Interactiva) */
+"panel.widgetInfo.expensesByNeed.chip3" = "Interaktiv";
+
+/* Panel Polish #2 — ExpensesByNeed S: pregunta */
+"panel.widgetInfo.expensesByNeed.smallWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — ExpensesByNeed S: respuesta */
+"panel.widgetInfo.expensesByNeed.smallWhatA" = "Die Aufteilung deiner Ausgaben im aktuellen Zeitraum nach Bedarfsart: essenziell (das Unverzichtbare), prioritär (das Wichtige) und optional (das Überflüssige). „Nicht klassifiziert\" erscheint nur, wenn du nicht kategorisierte Ausgaben hast.";
+
+/* Panel Polish #2 — ExpensesByNeed S: pregunta */
+"panel.widgetInfo.expensesByNeed.smallHowQ" = "Wie interagiere ich?";
+
+/* Panel Polish #2 — ExpensesByNeed S: respuesta */
+"panel.widgetInfo.expensesByNeed.smallHowA" = "Tippe auf eine Zeile, um den Rest des Panels nach dieser Bedarfsart zu filtern. Tippe erneut, um den Filter zu entfernen.";
+
+/* Panel Polish #2 — ExpensesByNeed M: pregunta */
+"panel.widgetInfo.expensesByNeed.mediumWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — ExpensesByNeed M: respuesta */
+"panel.widgetInfo.expensesByNeed.mediumWhatA" = "Ein Balken pro Bedarfsart. Die Länge zeigt das relative Gewicht im Vergleich zur höchsten Ausgabe im aktuellen Zeitraum, sodass du auf einen Blick siehst, welche Art überwiegt.";
+
+/* Panel Polish #2 — ExpensesByNeed M: pregunta */
+"panel.widgetInfo.expensesByNeed.mediumHowQ" = "Wie interagiere ich?";
+
+/* Panel Polish #2 — ExpensesByNeed M: respuesta */
+"panel.widgetInfo.expensesByNeed.mediumHowA" = "Tippe auf einen Balken, um den Rest des Panels nach dieser Bedarfsart zu filtern. Tippe erneut, um den Filter zu entfernen.";
+
+/* Panel Polish #2 — ExpensesByNeed L: pregunta */
+"panel.widgetInfo.expensesByNeed.largeWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — ExpensesByNeed L: respuesta */
+"panel.widgetInfo.expensesByNeed.largeWhatA" = "Die Ausgaben des aktuellen Zeitraums gestapelt nach Bedarfsart: essenziell, prioritär, optional und nicht klassifiziert. Jeder Balken auf der horizontalen Achse steht für einen Tag, eine Woche oder einen Monat (je nach Gruppierung), und die Legende unten zeigt das Gesamtgewicht jedes Typs.";
+
+/* Panel Polish #2 — ExpensesByNeed L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.expensesByNeed.largeHowQ" = "Wie interagiere ich mit dem Diagramm?";
+
+/* Panel Polish #2 — ExpensesByNeed L: respuesta */
+"panel.widgetInfo.expensesByNeed.largeHowA" = "Wische mit dem Finger über die Balken, um die Aufschlüsselung eines Zeitpunkts zu sehen — wie viel essenziell, prioritär usw., zusammen mit dem Gesamtbetrag. Tippe auf einen Chip in der Legende, um nur diese Bedarfsart anzuzeigen und das Panel zu filtern.";

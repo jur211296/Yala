@@ -194,10 +194,148 @@ struct WidgetInfoContent {
                 }
             )
 
-        case .categoriesPie, .subcategoriesPie, .tagsPie,
-             .topCategories, .topSubcategories,
+        case .categoriesPie:
+            let entityChip = InfoChip(label: L10n.Panel.WidgetInfo.CategoriesPie.chip1,
+                                      tintKey: .neutral,
+                                      systemImage: "folder.fill")
+            let periodChip = InfoChip(label: L10n.Panel.WidgetInfo.CategoriesPie.chip2,
+                                      tintKey: .neutral,
+                                      systemImage: "calendar")
+            let interactiveChip = InfoChip(label: L10n.Panel.WidgetInfo.CategoriesPie.chip3,
+                                           tintKey: .accent,
+                                           systemImage: "hand.tap")
+            return WidgetInfoContent(
+                title: L10n.Panel.WidgetInfo.CategoriesPie.title,
+                chips: { _ in [entityChip, periodChip, interactiveChip] },
+                sections: { size in
+                    switch size {
+                    case .small:
+                        return [
+                            InfoSection(question: L10n.Panel.WidgetInfo.CategoriesPie.smallWhatQ,
+                                        answer: L10n.Panel.WidgetInfo.CategoriesPie.smallWhatA),
+                            InfoSection(question: L10n.Panel.WidgetInfo.CategoriesPie.smallHowQ,
+                                        answer: L10n.Panel.WidgetInfo.CategoriesPie.smallHowA),
+                        ]
+                    case .medium, .large:
+                        return [
+                            InfoSection(question: L10n.Panel.WidgetInfo.CategoriesPie.largeWhatQ,
+                                        answer: L10n.Panel.WidgetInfo.CategoriesPie.largeWhatA),
+                            InfoSection(question: L10n.Panel.WidgetInfo.CategoriesPie.largeHowQ,
+                                        answer: L10n.Panel.WidgetInfo.CategoriesPie.largeHowA),
+                        ]
+                    }
+                }
+            )
+
+        case .subcategoriesPie:
+            let entityChip = InfoChip(label: L10n.Panel.WidgetInfo.SubcategoriesPie.chip1,
+                                      tintKey: .neutral,
+                                      systemImage: "list.bullet.indent")
+            let periodChip = InfoChip(label: L10n.Panel.WidgetInfo.SubcategoriesPie.chip2,
+                                      tintKey: .neutral,
+                                      systemImage: "calendar")
+            let interactiveChip = InfoChip(label: L10n.Panel.WidgetInfo.SubcategoriesPie.chip3,
+                                           tintKey: .accent,
+                                           systemImage: "hand.tap")
+            return WidgetInfoContent(
+                title: L10n.Panel.WidgetInfo.SubcategoriesPie.title,
+                chips: { _ in [entityChip, periodChip, interactiveChip] },
+                sections: { size in
+                    switch size {
+                    case .small:
+                        return [
+                            InfoSection(question: L10n.Panel.WidgetInfo.SubcategoriesPie.smallWhatQ,
+                                        answer: L10n.Panel.WidgetInfo.SubcategoriesPie.smallWhatA),
+                            InfoSection(question: L10n.Panel.WidgetInfo.SubcategoriesPie.smallHowQ,
+                                        answer: L10n.Panel.WidgetInfo.SubcategoriesPie.smallHowA),
+                        ]
+                    case .medium, .large:
+                        return [
+                            InfoSection(question: L10n.Panel.WidgetInfo.SubcategoriesPie.largeWhatQ,
+                                        answer: L10n.Panel.WidgetInfo.SubcategoriesPie.largeWhatA),
+                            InfoSection(question: L10n.Panel.WidgetInfo.SubcategoriesPie.largeHowQ,
+                                        answer: L10n.Panel.WidgetInfo.SubcategoriesPie.largeHowA),
+                        ]
+                    }
+                }
+            )
+
+        case .tagsPie:
+            let entityChip = InfoChip(label: L10n.Panel.WidgetInfo.TagsPie.chip1,
+                                      tintKey: .neutral,
+                                      systemImage: "tag.fill")
+            let periodChip = InfoChip(label: L10n.Panel.WidgetInfo.TagsPie.chip2,
+                                      tintKey: .neutral,
+                                      systemImage: "calendar")
+            let interactiveChip = InfoChip(label: L10n.Panel.WidgetInfo.TagsPie.chip3,
+                                           tintKey: .accent,
+                                           systemImage: "hand.tap")
+            return WidgetInfoContent(
+                title: L10n.Panel.WidgetInfo.TagsPie.title,
+                chips: { _ in [entityChip, periodChip, interactiveChip] },
+                sections: { size in
+                    switch size {
+                    case .small:
+                        return [
+                            InfoSection(question: L10n.Panel.WidgetInfo.TagsPie.smallWhatQ,
+                                        answer: L10n.Panel.WidgetInfo.TagsPie.smallWhatA),
+                            InfoSection(question: L10n.Panel.WidgetInfo.TagsPie.smallHowQ,
+                                        answer: L10n.Panel.WidgetInfo.TagsPie.smallHowA),
+                        ]
+                    case .medium, .large:
+                        return [
+                            InfoSection(question: L10n.Panel.WidgetInfo.TagsPie.largeWhatQ,
+                                        answer: L10n.Panel.WidgetInfo.TagsPie.largeWhatA),
+                            InfoSection(question: L10n.Panel.WidgetInfo.TagsPie.largeHowQ,
+                                        answer: L10n.Panel.WidgetInfo.TagsPie.largeHowA),
+                        ]
+                    }
+                }
+            )
+
+        case .expensesByNeed:
+            let entityChip = InfoChip(label: L10n.Panel.WidgetInfo.ExpensesByNeed.chip1,
+                                      tintKey: .neutral,
+                                      systemImage: "chart.bar.xaxis")
+            let periodChip = InfoChip(label: L10n.Panel.WidgetInfo.ExpensesByNeed.chip2,
+                                      tintKey: .neutral,
+                                      systemImage: "calendar")
+            let interactiveChip = InfoChip(label: L10n.Panel.WidgetInfo.ExpensesByNeed.chip3,
+                                           tintKey: .accent,
+                                           systemImage: "hand.tap")
+            return WidgetInfoContent(
+                title: L10n.Panel.WidgetInfo.ExpensesByNeed.title,
+                chips: { _ in [entityChip, periodChip, interactiveChip] },
+                sections: { size in
+                    switch size {
+                    case .small:
+                        return [
+                            InfoSection(question: L10n.Panel.WidgetInfo.ExpensesByNeed.smallWhatQ,
+                                        answer: L10n.Panel.WidgetInfo.ExpensesByNeed.smallWhatA),
+                            InfoSection(question: L10n.Panel.WidgetInfo.ExpensesByNeed.smallHowQ,
+                                        answer: L10n.Panel.WidgetInfo.ExpensesByNeed.smallHowA),
+                        ]
+                    case .medium:
+                        return [
+                            InfoSection(question: L10n.Panel.WidgetInfo.ExpensesByNeed.mediumWhatQ,
+                                        answer: L10n.Panel.WidgetInfo.ExpensesByNeed.mediumWhatA),
+                            InfoSection(question: L10n.Panel.WidgetInfo.ExpensesByNeed.mediumHowQ,
+                                        answer: L10n.Panel.WidgetInfo.ExpensesByNeed.mediumHowA),
+                        ]
+                    case .large:
+                        return [
+                            InfoSection(question: L10n.Panel.WidgetInfo.ExpensesByNeed.largeWhatQ,
+                                        answer: L10n.Panel.WidgetInfo.ExpensesByNeed.largeWhatA),
+                            InfoSection(question: L10n.Panel.WidgetInfo.ExpensesByNeed.largeHowQ,
+                                        answer: L10n.Panel.WidgetInfo.ExpensesByNeed.largeHowA),
+                        ]
+                    }
+                }
+            )
+
+        case .topCategories, .topSubcategories,
              .budgets, .scheduledPayments, .recentRecords,
-             .exchangeRate, .expensesByNeed, .weekdayBar:
+             .exchangeRate, .weekdayBar:
             fatalError("WidgetInfoKind.\(kind) no migrado todavía — ver ticket de roll-out panel-polish-2_widget-info-rollout")
         }
     }
