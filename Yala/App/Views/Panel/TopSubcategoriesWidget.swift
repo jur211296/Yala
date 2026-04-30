@@ -5,6 +5,7 @@
 //  Created by Yala Refactoring.
 //
 
+import OSLog
 import SwiftData
 import SwiftUI
 
@@ -14,6 +15,16 @@ private let sharedPercentFormatter: NumberFormatter = {
     formatter.maximumFractionDigits = 1
     return formatter
 }()
+
+#if DEBUG
+/// Logger temporal para diagnosticar congelamiento al abrir la sheet pedagógica
+/// de topSubcategories (watchdog 0x8BADF00D, layout loop). Filtrar en Xcode
+/// console: `subsystem:com.jurgenschmidt.yala category:TopSubcategoriesWidget`.
+private let topSubcatLog = Logger(
+    subsystem: "com.jurgenschmidt.yala",
+    category: "TopSubcategoriesWidget"
+)
+#endif
 
 struct TopSubcategoriesWidget: View {
     @Environment(\.modelContext) private var modelContext
@@ -80,7 +91,13 @@ struct TopSubcategoriesWidget: View {
     }
 
     var body: some View {
-        Group {
+        #if DEBUG
+        let _ = Self._printChanges()
+        let _ = topSubcatLog.debug(
+            "body eval: isPreview=\(isWidgetPreviewMode, privacy: .public) size=\(String(describing: size), privacy: .public) subcats=\(subcategories.count, privacy: .public) globalFilter=\(String(describing: globalCategoryFilterID), privacy: .public) localFilter=\(String(describing: localCategoryFilterID), privacy: .public) selected=\(selectedSubcategoryIDs.count, privacy: .public) allCats=\(viewModel.allCategories.count, privacy: .public)"
+        )
+        #endif
+        return Group {
             if size == .small {
                 smallCardContent
             } else {
@@ -110,8 +127,16 @@ struct TopSubcategoriesWidget: View {
         // (watchdog 0x8BADF00D — crash log 2026-04-30).
         .id(isWidgetPreviewMode ? "preview" : (subcategories.isEmpty ? "empty" : "content-\(subcategories.count)"))
         .onAppear {
+            #if DEBUG
+            topSubcatLog.debug("onAppear isPreview=\(isWidgetPreviewMode, privacy: .public)")
+            #endif
             guard !isWidgetPreviewMode else { return }
             viewModel.setContext(modelContext)
+        }
+        .onDisappear {
+            #if DEBUG
+            topSubcatLog.debug("onDisappear isPreview=\(isWidgetPreviewMode, privacy: .public)")
+            #endif
         }
     }
 
@@ -292,7 +317,10 @@ struct TopSubcategoriesWidget: View {
     // MARK: - Lists
 
     private func subcategoriesList(limit: Int) -> some View {
-        VStack(spacing: DS.Spacing.lg) {
+        #if DEBUG
+        topSubcatLog.debug("subcategoriesList eval: limit=\(limit, privacy: .public) count=\(subcategories.count, privacy: .public)")
+        #endif
+        return VStack(spacing: DS.Spacing.lg) {
             // Filter subcategories by local category filter first
             let filteredSubcategories: [SubcategorySpendingSummary] = {
                 if let localFilterID = localCategoryFilterID {
@@ -504,7 +532,10 @@ private struct SubcategoryRow: View {
     @State private var barWidth: CGFloat = 0
 
     var body: some View {
-        HStack(spacing: DS.Spacing.md) {
+        #if DEBUG
+        let _ = Self._printChanges()
+        #endif
+        return HStack(spacing: DS.Spacing.md) {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 // Name + Amount
                 HStack(spacing: DS.Spacing.md) {
@@ -571,6 +602,15 @@ private struct SubcategoryRow: View {
                                 .frame(width: width, height: 6)
                         }
                         .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
+                            #if DEBUG
+                            // Loguear solo cambios significativos (drop ruido de microajustes)
+                            if abs(newWidth - barWidth) > 0.5 {
+                                Logger(
+                                    subsystem: "com.jurgenschmidt.yala",
+                                    category: "SubcategoryRow"
+                                ).debug("onGeometryChange \(summary.subcategoryName, privacy: .public): \(barWidth, format: .fixed(precision: 1)) -> \(newWidth, format: .fixed(precision: 1))")
+                            }
+                            #endif
                             barWidth = newWidth
                         }
                     }
