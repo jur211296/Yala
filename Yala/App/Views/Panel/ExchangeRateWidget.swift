@@ -15,16 +15,21 @@ struct ExchangeRateWidget: View {
     @Binding var selectedCurrencies: [CurrencyCode]
     let grouping: TrendGrouping
 
+    /// Slot pedagógico opcional inyectado en el header (Panel Polish #2).
+    var headerInfoButton: AnyView? = nil
+
     init(
         data: ExchangeRateWidgetData?,
         preferredCurrency: String,
         selectedCurrencies: Binding<[CurrencyCode]>,
-        grouping: TrendGrouping
+        grouping: TrendGrouping,
+        headerInfoButton: AnyView? = nil
     ) {
         self.data = data
         self.preferredCurrency = preferredCurrency
         self._selectedCurrencies = selectedCurrencies
         self.grouping = grouping
+        self.headerInfoButton = headerInfoButton
     }
 
     @Environment(\.colorScheme) var colorScheme
@@ -33,8 +38,8 @@ struct ExchangeRateWidget: View {
     @State private var selectedDate: Date?
     @State private var filteredCurrency: CurrencyCode?
 
-    // Colors for currency lines (indexed by position)
-    private static let currencyColors: [Color] = [.electricIndigo, .hotPink, .teal, .orange]
+    // Colors for currency lines (max 2 secondary currencies — see PanelViewModel.selectedComparisonCurrencies).
+    private static let currencyColors: [Color] = [.electricIndigo, .hotPink]
 
     private func colorForIndex(_ index: Int) -> Color {
         Self.currencyColors[index % Self.currencyColors.count]
@@ -58,10 +63,21 @@ struct ExchangeRateWidget: View {
     private var headerView: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(L10n.ExchangeRate.title)
-                    .font(DS.Typography.subheadlineEmphasized)
-                    .foregroundStyle(.primary)
-                    .padding(.bottom, DS.Spacing.xxs)
+                HStack(spacing: DS.Spacing.xs) {
+                    Text(L10n.ExchangeRate.title)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.primary)
+
+                    if let headerInfoButton {
+                        headerInfoButton
+                    } else {
+                        InfoHintButton(
+                            title: L10n.WidgetType.exchangeRate,
+                            message: L10n.Widget.Hint.exchangeRate
+                        )
+                    }
+                }
+                .padding(.bottom, DS.Spacing.xxs)
 
                 // Subtitle: "Hoy, HH:mm" or "d MMM, HH:mm"
                 if let data = data, !data.hasError {
@@ -74,11 +90,6 @@ struct ExchangeRateWidget: View {
                         .foregroundStyle(.secondary)
                 }
             }
-
-            InfoHintButton(
-                title: L10n.WidgetType.exchangeRate,
-                message: L10n.Widget.Hint.exchangeRate
-            )
 
             Spacer()
 

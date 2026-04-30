@@ -11,6 +11,9 @@ struct WeekdayBarPanelWidget: View {
     var size: WidgetSize = .large
     var onShowMore: (() -> Void)? = nil
 
+    /// Slot pedagógico opcional inyectado en el header (Panel Polish #2).
+    var headerInfoButton: AnyView? = nil
+
     @Environment(AppPreferences.self) private var appPreferences
 
     private var hasData: Bool {
@@ -57,10 +60,17 @@ struct WeekdayBarPanelWidget: View {
     }
 
     private var largeHeader: some View {
-        Text(L10n.Panel.WeekdayBar.largeTitle)
-            .font(DS.Typography.subheadlineEmphasized)
-            .foregroundStyle(.thPrimaryText)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+            Text(L10n.Panel.WeekdayBar.largeTitle)
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(.thPrimaryText)
+
+            if let headerInfoButton {
+                headerInfoButton
+            }
+
+            Spacer(minLength: 0)
+        }
     }
 
     // MARK: - Small (PP2-06c)
@@ -73,7 +83,8 @@ struct WeekdayBarPanelWidget: View {
             PanelSmallWidgetHeader(
                 title: L10n.Panel.WeekdayBar.smallTitle,
                 accessibilityLabel: L10n.Panel.WeekdayBar.smallTitle,
-                action: onShowMore
+                action: onShowMore,
+                headerInfoButton: headerInfoButton
             )
             if hasData {
                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {

@@ -3,8 +3,8 @@
 //  Yala
 //
 //  Modelo del payload pedagógico de las sheets de widgets del Panel.
-//  Solo los pilotos `cashFlow` y `trend` están implementados (Fase B); el
-//  resto lanza `fatalError` hasta el ticket de roll-out.
+//  Cubre los 13 widgets del grid (pilotos + roll-out PP2 cerrado el
+//  2026-04-30 — ticket panel-polish-2_widget-info-rollout).
 //
 
 import SwiftUI
@@ -483,8 +483,49 @@ struct WidgetInfoContent {
                 }
             )
 
-        case .exchangeRate, .weekdayBar:
-            fatalError("WidgetInfoKind.\(kind) no migrado todavía — ver ticket de roll-out panel-polish-2_widget-info-rollout")
+        case .exchangeRate:
+            let multiChip = InfoChip(label: L10n.Panel.WidgetInfo.ExchangeRate.chip1,
+                                     tintKey: .neutral,
+                                     systemImage: "arrow.left.arrow.right")
+            let ratesChip = InfoChip(label: L10n.Panel.WidgetInfo.ExchangeRate.chip2,
+                                     tintKey: .neutral,
+                                     systemImage: "clock.arrow.circlepath")
+            let interactiveChip = InfoChip(label: L10n.Panel.WidgetInfo.ExchangeRate.chip3,
+                                           tintKey: .accent,
+                                           systemImage: "hand.tap")
+            return WidgetInfoContent(
+                title: L10n.Panel.WidgetInfo.ExchangeRate.title,
+                chips: { _ in [multiChip, ratesChip, interactiveChip] },
+                sections: { _ in
+                    [
+                        InfoSection(question: L10n.Panel.WidgetInfo.ExchangeRate.whatQ,
+                                    answer: L10n.Panel.WidgetInfo.ExchangeRate.whatA),
+                        InfoSection(question: L10n.Panel.WidgetInfo.ExchangeRate.howQ,
+                                    answer: L10n.Panel.WidgetInfo.ExchangeRate.howA),
+                    ]
+                }
+            )
+
+        case .weekdayBar:
+            let entityChip = InfoChip(label: L10n.Panel.WidgetInfo.WeekdayBar.chip1,
+                                      tintKey: .neutral,
+                                      systemImage: "calendar.day.timeline.left")
+            let periodChip = InfoChip(label: L10n.Panel.WidgetInfo.WeekdayBar.chip2,
+                                      tintKey: .neutral,
+                                      systemImage: "calendar")
+            return WidgetInfoContent(
+                title: L10n.Panel.WidgetInfo.WeekdayBar.title,
+                chips: { _ in [entityChip, periodChip] },
+                sections: { size in
+                    let whatQ = L10n.Panel.WidgetInfo.WeekdayBar.whatQ
+                    switch size {
+                    case .small:
+                        return [InfoSection(question: whatQ, answer: L10n.Panel.WidgetInfo.WeekdayBar.smallWhatA)]
+                    case .medium, .large:
+                        return [InfoSection(question: whatQ, answer: L10n.Panel.WidgetInfo.WeekdayBar.largeWhatA)]
+                    }
+                }
+            )
         }
     }
 }

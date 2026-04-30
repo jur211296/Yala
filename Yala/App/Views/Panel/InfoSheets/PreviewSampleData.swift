@@ -118,6 +118,55 @@ extension PanelViewModel {
     }
 }
 
+extension Array where Element == WeekdaySpending {
+    /// Promedios sintéticos por día de la semana — preview para `weekdayBar`
+    /// cuando el VM no tiene datos.
+    static var previewSample: [WeekdaySpending] {
+        // weekday: 1=Sun, 2=Mon, ..., 7=Sat (Calendar component .weekday)
+        // Patrón: lunes y viernes más altos, domingo más bajo.
+        let pattern: [(weekday: Int, total: Double, count: Int)] = [
+            (1, 320, 4),
+            (2, 720, 8),
+            (3, 480, 6),
+            (4, 540, 7),
+            (5, 600, 6),
+            (6, 780, 9),
+            (7, 410, 5),
+        ]
+        return pattern.map { p in
+            WeekdaySpending(weekday: p.weekday, total: p.total, count: p.count, dayOccurrences: 4)
+        }
+    }
+}
+
+extension ExchangeRateWidgetData {
+    /// Datos sintéticos con 2 monedas secundarias para preview de `exchangeRate`
+    /// cuando el VM no tiene datos. 14 puntos diarios con curvas suaves.
+    static var previewSample: ExchangeRateWidgetData {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        var points: [ExchangeRateChartPoint] = []
+        for offset in 0..<14 {
+            let date = calendar.date(byAdding: .day, value: offset - 13, to: today) ?? today
+            let phase = Double(offset) * 0.4
+            let usd = 1.05 + 0.04 * sin(phase)
+            let eur = 1.18 + 0.05 * sin(phase + 0.6)
+            points.append(ExchangeRateChartPoint(date: date, rates: ["USD": usd, "EUR": eur]))
+        }
+
+        let lastUSD = points.last?.rates["USD"] ?? 1.05
+        let lastEUR = points.last?.rates["EUR"] ?? 1.18
+
+        return ExchangeRateWidgetData(
+            preferredCurrency: "PEN",
+            currentRates: ["USD": lastUSD, "EUR": lastEUR],
+            currentRatesDate: today,
+            chartPoints: points
+        )
+    }
+}
+
 extension Array where Element == NeedTrendPoint {
     /// 14 puntos sintéticos con composición esencial/prioritario/opcional/sin-clasificar.
     /// Pensado para el preview de `expensesByNeed` cuando el VM no tiene datos.

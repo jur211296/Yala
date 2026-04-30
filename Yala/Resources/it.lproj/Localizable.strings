@@ -3953,3 +3953,46 @@
 
 /* Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L) */
 "panel.widgetInfo.budgets.howA" = "Tocca un budget per filtrare il resto del Pannello per le transazioni della sua categoria o etichetta. Toccalo di nuovo per rimuovere il filtro.";
+
+
+/* Panel Polish #2 — Title sheet pedagógico ExchangeRate */
+"panel.widgetInfo.exchangeRate.title" = "Tasso di cambio";
+
+/* Panel Polish #2 — Chip 1 ExchangeRate (multi-divisa) */
+"panel.widgetInfo.exchangeRate.chip1" = "Multi-valuta";
+
+/* Panel Polish #2 — Chip 2 ExchangeRate (tasas actuales) */
+"panel.widgetInfo.exchangeRate.chip2" = "Tassi attuali";
+
+/* Panel Polish #2 — Chip 3 ExchangeRate (Interactiva) */
+"panel.widgetInfo.exchangeRate.chip3" = "Interattiva";
+
+/* Panel Polish #2 — ExchangeRate: pregunta */
+"panel.widgetInfo.exchangeRate.whatQ" = "Cosa stai vedendo?";
+
+/* Panel Polish #2 — ExchangeRate: respuesta */
+"panel.widgetInfo.exchangeRate.whatA" = "L'evoluzione del tasso di cambio tra la tua valuta preferita e fino a due valute secondarie che hai scelto per il confronto. Ogni linea rappresenta una valuta e, sotto il titolo, vedi l'ultimo tasso di ciascuna insieme al momento dell'aggiornamento.";
+
+/* Panel Polish #2 — ExchangeRate: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.exchangeRate.howQ" = "Come interagisco con il grafico?";
+
+/* Panel Polish #2 — ExchangeRate: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.exchangeRate.howA" = "Fai scorrere il dito sulle linee per vedere i tassi esatti in una data specifica, con un tooltip per valuta. Tocca un chip della legenda in basso per isolare una singola valuta; toccalo di nuovo per rivederle tutte.";
+
+/* Panel Polish #2 — Title sheet pedagógico WeekdayBar */
+"panel.widgetInfo.weekdayBar.title" = "Spese per giorno della settimana";
+
+/* Panel Polish #2 — Chip 1 WeekdayBar (entidad) */
+"panel.widgetInfo.weekdayBar.chip1" = "Giorni della settimana";
+
+/* Panel Polish #2 — Chip 2 WeekdayBar (período) */
+"panel.widgetInfo.weekdayBar.chip2" = "Periodo attuale";
+
+/* Panel Polish #2 — WeekdayBar: pregunta '¿Qué estás viendo?' (compartida S/L) */
+"panel.widgetInfo.weekdayBar.whatQ" = "Cosa stai vedendo?";
+
+/* Panel Polish #2 — WeekdayBar S: respuesta */
+"panel.widgetInfo.weekdayBar.smallWhatA" = "Quanto spendi in media a settimana nel periodo attivo, insieme a un mini grafico a barre — una per giorno della settimana — dove le due barre più alte mostrano l'importo sopra.";
+
+/* Panel Polish #2 — WeekdayBar L: respuesta */
+"panel.widgetInfo.weekdayBar.largeWhatA" = "Quanto spendi in media ogni giorno della settimana nel periodo attivo. Sopra ogni barra con spesa è visibile l'importo esatto.";

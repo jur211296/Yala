@@ -462,6 +462,28 @@ enum L10n {
                 static var howA: String { ls("panel.widgetInfo.budgets.howA", comment: "Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L)") }
             }
 
+            // MARK: - Bloque 4 (Misc)
+
+            enum ExchangeRate {
+                static var title: String { ls("panel.widgetInfo.exchangeRate.title", comment: "Panel Polish #2 — Title sheet pedagógico ExchangeRate") }
+                static var chip1: String { ls("panel.widgetInfo.exchangeRate.chip1", comment: "Panel Polish #2 — Chip 1 ExchangeRate (multi-divisa)") }
+                static var chip2: String { ls("panel.widgetInfo.exchangeRate.chip2", comment: "Panel Polish #2 — Chip 2 ExchangeRate (tasas actuales)") }
+                static var chip3: String { ls("panel.widgetInfo.exchangeRate.chip3", comment: "Panel Polish #2 — Chip 3 ExchangeRate (Interactiva)") }
+                static var whatQ: String { ls("panel.widgetInfo.exchangeRate.whatQ", comment: "Panel Polish #2 — ExchangeRate: pregunta") }
+                static var whatA: String { ls("panel.widgetInfo.exchangeRate.whatA", comment: "Panel Polish #2 — ExchangeRate: respuesta") }
+                static var howQ: String { ls("panel.widgetInfo.exchangeRate.howQ", comment: "Panel Polish #2 — ExchangeRate: pregunta '¿Cómo interactúo con la gráfica?'") }
+                static var howA: String { ls("panel.widgetInfo.exchangeRate.howA", comment: "Panel Polish #2 — ExchangeRate: respuesta a 'cómo interactúo'") }
+            }
+
+            enum WeekdayBar {
+                static var title: String { ls("panel.widgetInfo.weekdayBar.title", comment: "Panel Polish #2 — Title sheet pedagógico WeekdayBar") }
+                static var chip1: String { ls("panel.widgetInfo.weekdayBar.chip1", comment: "Panel Polish #2 — Chip 1 WeekdayBar (entidad)") }
+                static var chip2: String { ls("panel.widgetInfo.weekdayBar.chip2", comment: "Panel Polish #2 — Chip 2 WeekdayBar (período)") }
+                static var whatQ: String { ls("panel.widgetInfo.weekdayBar.whatQ", comment: "Panel Polish #2 — WeekdayBar: pregunta '¿Qué estás viendo?' (compartida S/L)") }
+                static var smallWhatA: String { ls("panel.widgetInfo.weekdayBar.smallWhatA", comment: "Panel Polish #2 — WeekdayBar S: respuesta") }
+                static var largeWhatA: String { ls("panel.widgetInfo.weekdayBar.largeWhatA", comment: "Panel Polish #2 — WeekdayBar L: respuesta") }
+            }
+
             enum ExpensesByNeed {
                 static var title: String { ls("panel.widgetInfo.expensesByNeed.title", comment: "Panel Polish #2 — Title sheet pedagógico ExpensesByNeed") }
                 static var chip1: String { ls("panel.widgetInfo.expensesByNeed.chip1", comment: "Panel Polish #2 — Chip 1 ExpensesByNeed (entidad)") }

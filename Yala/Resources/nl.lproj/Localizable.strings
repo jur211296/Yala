@@ -3954,3 +3954,46 @@
 
 /* Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L) */
 "panel.widgetInfo.budgets.howA" = "Tik op een budget om de rest van het Paneel te filteren op de transacties van zijn categorie of tag. Tik er nogmaals op om het filter op te heffen.";
+
+
+/* Panel Polish #2 — Title sheet pedagógico ExchangeRate */
+"panel.widgetInfo.exchangeRate.title" = "Wisselkoers";
+
+/* Panel Polish #2 — Chip 1 ExchangeRate (multi-divisa) */
+"panel.widgetInfo.exchangeRate.chip1" = "Meerdere valuta's";
+
+/* Panel Polish #2 — Chip 2 ExchangeRate (tasas actuales) */
+"panel.widgetInfo.exchangeRate.chip2" = "Actuele koersen";
+
+/* Panel Polish #2 — Chip 3 ExchangeRate (Interactiva) */
+"panel.widgetInfo.exchangeRate.chip3" = "Interactief";
+
+/* Panel Polish #2 — ExchangeRate: pregunta */
+"panel.widgetInfo.exchangeRate.whatQ" = "Wat zie je?";
+
+/* Panel Polish #2 — ExchangeRate: respuesta */
+"panel.widgetInfo.exchangeRate.whatA" = "De ontwikkeling van de wisselkoers tussen je voorkeurvaluta en maximaal twee secundaire valuta's die je hebt gekozen om te vergelijken. Elke lijn is een valuta, en onder de titel zie je de laatste koers van elke valuta samen met het moment van de update.";
+
+/* Panel Polish #2 — ExchangeRate: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.exchangeRate.howQ" = "Hoe gebruik ik de grafiek?";
+
+/* Panel Polish #2 — ExchangeRate: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.exchangeRate.howA" = "Veeg met je vinger over de lijnen om de exacte koersen op een bepaalde datum te zien, met een tooltip per valuta. Tik op een chip in de onderste legenda om één valuta te isoleren; tik er nogmaals op om ze weer allemaal te zien.";
+
+/* Panel Polish #2 — Title sheet pedagógico WeekdayBar */
+"panel.widgetInfo.weekdayBar.title" = "Uitgaven per dag van de week";
+
+/* Panel Polish #2 — Chip 1 WeekdayBar (entidad) */
+"panel.widgetInfo.weekdayBar.chip1" = "Dagen van de week";
+
+/* Panel Polish #2 — Chip 2 WeekdayBar (período) */
+"panel.widgetInfo.weekdayBar.chip2" = "Huidige periode";
+
+/* Panel Polish #2 — WeekdayBar: pregunta '¿Qué estás viendo?' (compartida S/L) */
+"panel.widgetInfo.weekdayBar.whatQ" = "Wat zie je?";
+
+/* Panel Polish #2 — WeekdayBar S: respuesta */
+"panel.widgetInfo.weekdayBar.smallWhatA" = "Hoeveel je in de actieve periode gemiddeld per week uitgeeft, samen met een mini-staafdiagram — één staaf per dag van de week — waarbij de twee hoogste staven het bedrag bovenaan tonen.";
+
+/* Panel Polish #2 — WeekdayBar L: respuesta */
+"panel.widgetInfo.weekdayBar.largeWhatA" = "Hoeveel je gemiddeld per dag van de week uitgeeft in de actieve periode. Boven elke balk met uitgaven zie je het exacte bedrag.";

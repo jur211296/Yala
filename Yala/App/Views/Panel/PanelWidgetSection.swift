@@ -48,12 +48,7 @@ struct PanelWidgetRouter: View {
         case .scheduledPayments:
             PanelScheduledPaymentsSection(viewModel: viewModel, sessionState: sessionState, currencyCode: currencyCode, size: config.size)
         case .weekdayBar:
-            WeekdayBarPanelWidget(
-                data: viewModel.weekdayWidget.weekdaySpending,
-                currencyCode: currencyCode,
-                size: config.size,
-                onShowMore: { viewModel.navigateToStatistics(.insights) }
-            )
+            PanelWeekdayBarSection(viewModel: viewModel, currencyCode: currencyCode, size: config.size)
         case .tagsPie:
             PanelTagsPieSection(
                 viewModel: viewModel,
@@ -543,7 +538,33 @@ private struct PanelExchangeRateSection: View {
             data: viewModel.exchangeRateWidgetData,
             preferredCurrency: currencyCode,
             selectedCurrencies: $viewModel.selectedComparisonCurrencies,
-            grouping: viewModel.exchangeRateGrouping
+            grouping: viewModel.exchangeRateGrouping,
+            headerInfoButton: exchangeRateInfoButton
+        )
+    }
+
+    /// Botón info pedagógico inyectado en el header. Si el VM no tiene puntos
+    /// reales (o no hay monedas secundarias seleccionadas), el preview cae a
+    /// `ExchangeRateWidgetData.previewSample` con 2 monedas demo. `selectedCurrencies`
+    /// real propagado para reflejar la elección actual del usuario.
+    private var exchangeRateInfoButton: AnyView? {
+        AnyView(
+            WidgetInfoButton(kind: .exchangeRate, viewModel: viewModel) { _ in
+                let realData = viewModel.exchangeRateWidgetData
+                let hasRealData = realData?.chartPoints.isEmpty == false
+                    && !viewModel.selectedComparisonCurrencies.filter { $0.rawValue != currencyCode }.isEmpty
+                let previewData = hasRealData ? realData : .previewSample
+                let previewCurrencies: [CurrencyCode] = hasRealData
+                    ? viewModel.selectedComparisonCurrencies
+                    : [.usd, .eur]
+                ExchangeRateWidget(
+                    data: previewData,
+                    preferredCurrency: currencyCode,
+                    selectedCurrencies: .constant(previewCurrencies),
+                    grouping: viewModel.exchangeRateGrouping
+                )
+                .allowsHitTesting(false)
+            }
         )
     }
 }
@@ -631,6 +652,42 @@ private struct PanelScheduledPaymentsSection: View {
                     currencyCode: currencyCode,
                     size: previewSize,
                     filter: .constant(viewModel.scheduledPaymentsWidgetFilter),
+                    onShowMore: nil
+                )
+                .allowsHitTesting(false)
+            }
+        )
+    }
+}
+
+// MARK: - Weekday Bar
+
+private struct PanelWeekdayBarSection: View {
+    let viewModel: PanelViewModel
+    let currencyCode: String
+    let size: WidgetSize
+
+    var body: some View {
+        WeekdayBarPanelWidget(
+            data: viewModel.weekdayWidget.weekdaySpending,
+            currencyCode: currencyCode,
+            size: size,
+            onShowMore: { viewModel.navigateToStatistics(.insights) },
+            headerInfoButton: weekdayBarInfoButton
+        )
+    }
+
+    /// Botón info pedagógico inyectado en el header. Si el VM no tiene datos,
+    /// el preview cae a `[WeekdaySpending].previewSample` (struct simple).
+    private var weekdayBarInfoButton: AnyView? {
+        AnyView(
+            WidgetInfoButton(kind: .weekdayBar, viewModel: viewModel) { previewSize in
+                let real = viewModel.weekdayWidget.weekdaySpending
+                let previewData = real.contains { $0.average > 0 } ? real : [WeekdaySpending].previewSample
+                WeekdayBarPanelWidget(
+                    data: previewData,
+                    currencyCode: currencyCode,
+                    size: previewSize,
                     onShowMore: nil
                 )
                 .allowsHitTesting(false)

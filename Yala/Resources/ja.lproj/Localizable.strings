@@ -3954,3 +3954,46 @@
 
 /* Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L) */
 "panel.widgetInfo.budgets.howA" = "予算をタップすると、その予算のカテゴリーまたはタグに対応する取引でパネル全体をフィルタリングできます。もう一度タップするとフィルターが解除されます。";
+
+
+/* Panel Polish #2 — Title sheet pedagógico ExchangeRate */
+"panel.widgetInfo.exchangeRate.title" = "為替レート";
+
+/* Panel Polish #2 — Chip 1 ExchangeRate (multi-divisa) */
+"panel.widgetInfo.exchangeRate.chip1" = "複数通貨";
+
+/* Panel Polish #2 — Chip 2 ExchangeRate (tasas actuales) */
+"panel.widgetInfo.exchangeRate.chip2" = "現在のレート";
+
+/* Panel Polish #2 — Chip 3 ExchangeRate (Interactiva) */
+"panel.widgetInfo.exchangeRate.chip3" = "インタラクティブ";
+
+/* Panel Polish #2 — ExchangeRate: pregunta */
+"panel.widgetInfo.exchangeRate.whatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — ExchangeRate: respuesta */
+"panel.widgetInfo.exchangeRate.whatA" = "優先通貨と、比較のために選択した最大2つの副通貨との為替レートの推移です。各ラインが1つの通貨を表し、タイトルの下には各通貨の最新レートと更新時刻が表示されます。";
+
+/* Panel Polish #2 — ExchangeRate: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.exchangeRate.howQ" = "グラフはどう操作しますか?";
+
+/* Panel Polish #2 — ExchangeRate: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.exchangeRate.howA" = "ラインの上で指をスライドさせると、特定の日付の正確なレートが各通貨ごとのツールチップで表示されます。下の凡例のチップをタップすると1つの通貨だけを表示でき、もう一度タップするとすべての通貨に戻ります。";
+
+/* Panel Polish #2 — Title sheet pedagógico WeekdayBar */
+"panel.widgetInfo.weekdayBar.title" = "曜日別の支出";
+
+/* Panel Polish #2 — Chip 1 WeekdayBar (entidad) */
+"panel.widgetInfo.weekdayBar.chip1" = "曜日";
+
+/* Panel Polish #2 — Chip 2 WeekdayBar (período) */
+"panel.widgetInfo.weekdayBar.chip2" = "現在の期間";
+
+/* Panel Polish #2 — WeekdayBar: pregunta '¿Qué estás viendo?' (compartida S/L) */
+"panel.widgetInfo.weekdayBar.whatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — WeekdayBar S: respuesta */
+"panel.widgetInfo.weekdayBar.smallWhatA" = "現在の期間における週ごとの平均支出額と、曜日ごとに1本ずつ並ぶミニ棒グラフです。最も高い2本の棒の上に金額が表示されます。";
+
+/* Panel Polish #2 — WeekdayBar L: respuesta */
+"panel.widgetInfo.weekdayBar.largeWhatA" = "現在の期間における曜日ごとの平均支出額です。支出のある各バーの上に正確な金額が表示されます。";

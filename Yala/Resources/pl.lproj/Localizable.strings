@@ -3954,3 +3954,46 @@
 
 /* Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L) */
 "panel.widgetInfo.budgets.howA" = "Stuknij w budżet, aby przefiltrować resztę Panelu według transakcji jego kategorii lub tagu. Stuknij ponownie, aby usunąć filtr.";
+
+
+/* Panel Polish #2 — Title sheet pedagógico ExchangeRate */
+"panel.widgetInfo.exchangeRate.title" = "Kurs walutowy";
+
+/* Panel Polish #2 — Chip 1 ExchangeRate (multi-divisa) */
+"panel.widgetInfo.exchangeRate.chip1" = "Wiele walut";
+
+/* Panel Polish #2 — Chip 2 ExchangeRate (tasas actuales) */
+"panel.widgetInfo.exchangeRate.chip2" = "Bieżące kursy";
+
+/* Panel Polish #2 — Chip 3 ExchangeRate (Interactiva) */
+"panel.widgetInfo.exchangeRate.chip3" = "Interaktywny";
+
+/* Panel Polish #2 — ExchangeRate: pregunta */
+"panel.widgetInfo.exchangeRate.whatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — ExchangeRate: respuesta */
+"panel.widgetInfo.exchangeRate.whatA" = "Ewolucja kursu walutowego między Twoją preferowaną walutą a maksymalnie dwiema dodatkowymi walutami wybranymi do porównania. Każda linia to jedna waluta, a pod tytułem widzisz najnowszy kurs każdej wraz z momentem aktualizacji.";
+
+/* Panel Polish #2 — ExchangeRate: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.exchangeRate.howQ" = "Jak działa wykres?";
+
+/* Panel Polish #2 — ExchangeRate: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.exchangeRate.howA" = "Przesuń palcem po liniach, aby zobaczyć dokładne kursy na konkretną datę, z tooltipem dla każdej waluty. Stuknij chip w dolnej legendzie, aby pokazać tylko jedną walutę; stuknij ponownie, aby ponownie zobaczyć wszystkie.";
+
+/* Panel Polish #2 — Title sheet pedagógico WeekdayBar */
+"panel.widgetInfo.weekdayBar.title" = "Wydatki według dnia tygodnia";
+
+/* Panel Polish #2 — Chip 1 WeekdayBar (entidad) */
+"panel.widgetInfo.weekdayBar.chip1" = "Dni tygodnia";
+
+/* Panel Polish #2 — Chip 2 WeekdayBar (período) */
+"panel.widgetInfo.weekdayBar.chip2" = "Bieżący okres";
+
+/* Panel Polish #2 — WeekdayBar: pregunta '¿Qué estás viendo?' (compartida S/L) */
+"panel.widgetInfo.weekdayBar.whatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — WeekdayBar S: respuesta */
+"panel.widgetInfo.weekdayBar.smallWhatA" = "Ile średnio wydajesz tygodniowo w bieżącym okresie, wraz z mini wykresem słupkowym — po jednym słupku na każdy dzień tygodnia — gdzie dwa najwyższe słupki pokazują kwotę u góry.";
+
+/* Panel Polish #2 — WeekdayBar L: respuesta */
+"panel.widgetInfo.weekdayBar.largeWhatA" = "Ile średnio wydajesz każdego dnia tygodnia w bieżącym okresie. Nad każdym słupkiem z wydatkami widać dokładną kwotę.";
