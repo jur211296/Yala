@@ -98,7 +98,6 @@ private struct PanelTrendSection: View {
                     size: previewSize,
                     onShowMore: nil
                 )
-                .allowsHitTesting(false)
             }
         )
     }
@@ -150,7 +149,6 @@ private struct PanelCategoriesSection: View {
                     previousTotalAmount: nil,
                     showVariationHeader: false
                 )
-                .allowsHitTesting(false)
             }
         )
     }
@@ -206,7 +204,6 @@ private struct PanelSubcategoriesSection: View {
                     previousTotalAmount: nil,
                     showVariationHeader: false
                 )
-                .allowsHitTesting(false)
             }
         )
     }
@@ -243,7 +240,6 @@ private struct PanelCategoriesPieSection: View {
 
     /// Botón info pedagógico inyectado en el header. El preview reusa el VM real
     /// (categorías @Model) — si está vacío, el widget muestra su empty state.
-    /// `.allowsHitTesting(false)` aísla los gestos del preview del Panel.
     private var categoriesPieInfoButton: AnyView? {
         AnyView(
             WidgetInfoButton(kind: .categoriesPie, viewModel: viewModel) { previewSize in
@@ -259,7 +255,6 @@ private struct PanelCategoriesPieSection: View {
                     previousTotalAmount: nil,
                     showVariationHeader: false
                 )
-                .allowsHitTesting(false)
             }
         )
     }
@@ -313,7 +308,6 @@ private struct PanelSubcategoriesPieSection: View {
                     previousTotalAmount: nil,
                     showVariationHeader: false
                 )
-                .allowsHitTesting(false)
             }
         )
     }
@@ -368,7 +362,6 @@ private struct PanelTagsPieSection: View {
                     previousTotalAmount: nil,
                     showVariationHeader: false
                 )
-                .allowsHitTesting(false)
             }
         )
     }
@@ -424,7 +417,6 @@ private struct PanelCashFlowSection: View {
                     showInfoHint: false,
                     isExpensesOnlyMode: false
                 )
-                .allowsHitTesting(false)
             }
         )
     }
@@ -455,7 +447,6 @@ private struct PanelRecentRecordsSection: View {
                     currencyCode: currencyCode,
                     onShowMore: nil
                 )
-                .allowsHitTesting(false)
             }
         )
     }
@@ -521,7 +512,6 @@ private struct PanelNeedTrendSection: View {
                     showVariationHeader: false,
                     isIncomeMode: isIncomeMode
                 )
-                .allowsHitTesting(false)
             }
         )
     }
@@ -550,22 +540,23 @@ private struct PanelExchangeRateSection: View {
     private var exchangeRateInfoButton: AnyView? {
         AnyView(
             WidgetInfoButton(kind: .exchangeRate, viewModel: viewModel) { _ in
-                let realData = viewModel.exchangeRateWidgetData
-                let hasRealData = realData?.chartPoints.isEmpty == false
-                    && !viewModel.selectedComparisonCurrencies.filter { $0.rawValue != currencyCode }.isEmpty
-                let previewData = hasRealData ? realData : .previewSample
-                let previewCurrencies: [CurrencyCode] = hasRealData
-                    ? viewModel.selectedComparisonCurrencies
-                    : [.usd, .eur]
+                let usesRealData = exchangeRatePreviewUsesRealData
                 ExchangeRateWidget(
-                    data: previewData,
+                    data: usesRealData ? viewModel.exchangeRateWidgetData : .previewSample,
                     preferredCurrency: currencyCode,
-                    selectedCurrencies: .constant(previewCurrencies),
+                    selectedCurrencies: .constant(usesRealData
+                        ? viewModel.selectedComparisonCurrencies
+                        : [.usd, .eur]),
                     grouping: viewModel.exchangeRateGrouping
                 )
-                .allowsHitTesting(false)
             }
         )
+    }
+
+    private var exchangeRatePreviewUsesRealData: Bool {
+        guard let realData = viewModel.exchangeRateWidgetData,
+              !realData.chartPoints.isEmpty else { return false }
+        return viewModel.selectedComparisonCurrencies.contains { $0.rawValue != currencyCode }
     }
 }
 
@@ -616,7 +607,6 @@ private struct PanelBudgetsSection: View {
                     onEditFavorites: nil,
                     size: mapBudgetsWidgetSize(previewSize)
                 )
-                .allowsHitTesting(false)
             }
         )
     }
@@ -654,7 +644,6 @@ private struct PanelScheduledPaymentsSection: View {
                     filter: .constant(viewModel.scheduledPaymentsWidgetFilter),
                     onShowMore: nil
                 )
-                .allowsHitTesting(false)
             }
         )
     }
@@ -690,7 +679,6 @@ private struct PanelWeekdayBarSection: View {
                     size: previewSize,
                     onShowMore: nil
                 )
-                .allowsHitTesting(false)
             }
         )
     }

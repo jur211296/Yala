@@ -76,14 +76,11 @@ struct BudgetsWidget: View {
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 
-            if let headerInfoButton {
-                headerInfoButton
-            } else {
-                InfoHintButton(
-                    title: L10n.WidgetType.budgets,
-                    message: L10n.Widget.Hint.budgets
-                )
-            }
+            WidgetHeaderInfoSlot(
+                injected: headerInfoButton,
+                legacyTitle: L10n.WidgetType.budgets,
+                legacyMessage: L10n.Widget.Hint.budgets
+            )
 
             Spacer()
 

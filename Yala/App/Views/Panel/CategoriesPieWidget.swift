@@ -109,14 +109,11 @@ struct CategoriesPieWidget: View {
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
-                if let headerInfoButton {
-                    headerInfoButton
-                } else {
-                    InfoHintButton(
-                        title: L10n.WidgetType.categoriesPie,
-                        message: L10n.Widget.Hint.categoriesPie
-                    )
-                }
+                WidgetHeaderInfoSlot(
+                    injected: headerInfoButton,
+                    legacyTitle: L10n.WidgetType.categoriesPie,
+                    legacyMessage: L10n.Widget.Hint.categoriesPie
+                )
 
                 Spacer()
             }
@@ -520,14 +517,11 @@ struct CategoriesPieWidget: View {
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
 
-                            if let headerInfoButton {
-                                headerInfoButton
-                            } else {
-                                InfoHintButton(
-                                    title: L10n.WidgetType.categoriesPie,
-                                    message: L10n.Widget.Hint.categoriesPie
-                                )
-                            }
+                            WidgetHeaderInfoSlot(
+                                injected: headerInfoButton,
+                                legacyTitle: L10n.WidgetType.categoriesPie,
+                                legacyMessage: L10n.Widget.Hint.categoriesPie
+                            )
                         }
                         .padding(.bottom, DS.Spacing.xxs)
 

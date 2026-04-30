@@ -248,14 +248,11 @@ struct NeedTrendWidget: View {
                             .font(DS.Typography.subheadlineEmphasized)
                             .foregroundStyle(.thPrimaryText)
 
-                        if let headerInfoButton {
-                            headerInfoButton
-                        } else {
-                            InfoHintButton(
-                                title: L10n.WidgetType.expensesByNeed,
-                                message: L10n.Widget.Hint.needTrend
-                            )
-                        }
+                        WidgetHeaderInfoSlot(
+                            injected: headerInfoButton,
+                            legacyTitle: L10n.WidgetType.expensesByNeed,
+                            legacyMessage: L10n.Widget.Hint.needTrend
+                        )
                     }
 
                     // Total amount with "vs previous" comparison - only show when NOT in income mode AND has data

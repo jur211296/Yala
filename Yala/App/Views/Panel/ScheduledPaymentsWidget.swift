@@ -223,14 +223,11 @@ struct ScheduledPaymentsWidget: View {
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
-                    if let headerInfoButton {
-                        headerInfoButton
-                    } else {
-                        InfoHintButton(
-                            title: largeDynamicTitle,
-                            message: L10n.Widget.Hint.scheduledPayments
-                        )
-                    }
+                    WidgetHeaderInfoSlot(
+                        injected: headerInfoButton,
+                        legacyTitle: largeDynamicTitle,
+                        legacyMessage: L10n.Widget.Hint.scheduledPayments
+                    )
                 }
 
                 // Period label

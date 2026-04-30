@@ -122,14 +122,11 @@ struct TopSubcategoriesWidget: View {
                             .lineLimit(1)
 
                         if size != .small {
-                            if let headerInfoButton {
-                                headerInfoButton
-                            } else {
-                                InfoHintButton(
-                                    title: L10n.WidgetType.topSubcategories,
-                                    message: L10n.Widget.Hint.topSubcategories
-                                )
-                            }
+                            WidgetHeaderInfoSlot(
+                                injected: headerInfoButton,
+                                legacyTitle: L10n.WidgetType.topSubcategories,
+                                legacyMessage: L10n.Widget.Hint.topSubcategories
+                            )
                         }
                     }
 

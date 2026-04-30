@@ -31,7 +31,7 @@ struct WidgetInfoButton<Preview: View>: View {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(WidgetInfoContent.content(for: kind).title)
+            .accessibilityLabel(kind.title)
             .sheet(isPresented: $showSheet) {
                 WidgetInfoSheet(
                     kind: kind,

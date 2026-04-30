@@ -62,14 +62,11 @@ struct RecentRecordsWidget: View {
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 
-            if let headerInfoButton {
-                headerInfoButton
-            } else {
-                InfoHintButton(
-                    title: L10n.WidgetType.latestRecords,
-                    message: L10n.Widget.Hint.recentRecords
-                )
-            }
+            WidgetHeaderInfoSlot(
+                injected: headerInfoButton,
+                legacyTitle: L10n.WidgetType.latestRecords,
+                legacyMessage: L10n.Widget.Hint.recentRecords
+            )
 
             Spacer()
         }

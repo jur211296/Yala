@@ -44,6 +44,27 @@ extension WidgetInfoKind {
         case .weekdayBar:        return .weekdayBar
         }
     }
+
+    /// Title localizado del sheet pedagógico — atajo liviano que evita construir
+    /// el payload completo de `WidgetInfoContent.content(for:)` (chips + sections)
+    /// cuando el call-site solo necesita el título (ej. `accessibilityLabel`).
+    var title: String {
+        switch self {
+        case .trend:             return L10n.Panel.WidgetInfo.Trend.title
+        case .cashFlow:          return L10n.Panel.WidgetInfo.CashFlow.title
+        case .categoriesPie:     return L10n.Panel.WidgetInfo.CategoriesPie.title
+        case .subcategoriesPie:  return L10n.Panel.WidgetInfo.SubcategoriesPie.title
+        case .tagsPie:           return L10n.Panel.WidgetInfo.TagsPie.title
+        case .topCategories:     return L10n.Panel.WidgetInfo.TopCategories.title
+        case .topSubcategories:  return L10n.Panel.WidgetInfo.TopSubcategories.title
+        case .budgets:           return L10n.Panel.WidgetInfo.Budgets.title
+        case .scheduledPayments: return L10n.Panel.WidgetInfo.ScheduledPayments.title
+        case .recentRecords:     return L10n.Panel.WidgetInfo.RecentRecords.title
+        case .exchangeRate:      return L10n.Panel.WidgetInfo.ExchangeRate.title
+        case .expensesByNeed:    return L10n.Panel.WidgetInfo.ExpensesByNeed.title
+        case .weekdayBar:        return L10n.Panel.WidgetInfo.WeekdayBar.title
+        }
+    }
 }
 
 /// Tag colorido en el header de la sheet pedagógica. La tinta se resuelve

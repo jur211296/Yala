@@ -94,6 +94,10 @@ struct WidgetInfoSheet<Preview: View>: View {
     /// Small se renderiza al ~50% del ancho disponible para emular la
     /// apariencia half-pair del grid del Panel; medium/large ocupan ancho
     /// completo.
+    /// `.allowsHitTesting(false)` aplicado aquí centraliza el invariante
+    /// "preview no acepta gestos" — sin esto, taps en burbujas/filas/segmentos
+    /// del preview filtrarían el Panel real por debajo. Los call-sites en
+    /// `PanelWidgetSection` no necesitan repetirlo.
     @ViewBuilder
     private var previewBox: some View {
         let isSmall = draftSize == .small
@@ -103,6 +107,7 @@ struct WidgetInfoSheet<Preview: View>: View {
                 .environment(\.isWidgetPreviewMode, true)
                 .environment(appPreferences)
                 .frame(width: isSmall && smallWidth > 0 ? smallWidth : nil)
+                .allowsHitTesting(false)
         }
         .frame(maxWidth: .infinity)
         .frame(height: previewBoxHeight)

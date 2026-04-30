@@ -68,14 +68,11 @@ struct ExchangeRateWidget: View {
                         .font(DS.Typography.subheadlineEmphasized)
                         .foregroundStyle(.primary)
 
-                    if let headerInfoButton {
-                        headerInfoButton
-                    } else {
-                        InfoHintButton(
-                            title: L10n.WidgetType.exchangeRate,
-                            message: L10n.Widget.Hint.exchangeRate
-                        )
-                    }
+                    WidgetHeaderInfoSlot(
+                        injected: headerInfoButton,
+                        legacyTitle: L10n.WidgetType.exchangeRate,
+                        legacyMessage: L10n.Widget.Hint.exchangeRate
+                    )
                 }
                 .padding(.bottom, DS.Spacing.xxs)
 

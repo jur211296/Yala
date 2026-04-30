@@ -415,14 +415,11 @@ struct CashFlowWidget: View {
                             .foregroundStyle(.primary)
 
                         if showInfoHint {
-                            if let headerInfoButton {
-                                headerInfoButton
-                            } else {
-                                InfoHintButton(
-                                    title: L10n.WidgetType.cashFlow,
-                                    message: L10n.Widget.Hint.cashFlow
-                                )
-                            }
+                            WidgetHeaderInfoSlot(
+                                injected: headerInfoButton,
+                                legacyTitle: L10n.WidgetType.cashFlow,
+                                legacyMessage: L10n.Widget.Hint.cashFlow
+                            )
                         }
                     }
                     .padding(.bottom, DS.Spacing.xxs)

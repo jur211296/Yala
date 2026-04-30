@@ -99,14 +99,11 @@ struct TagsPieWidget: View {
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
-                if let headerInfoButton {
-                    headerInfoButton
-                } else {
-                    InfoHintButton(
-                        title: L10n.WidgetType.expensesByTag,
-                        message: L10n.Widget.Hint.tagsPie
-                    )
-                }
+                WidgetHeaderInfoSlot(
+                    injected: headerInfoButton,
+                    legacyTitle: L10n.WidgetType.expensesByTag,
+                    legacyMessage: L10n.Widget.Hint.tagsPie
+                )
 
                 Spacer()
             }
@@ -467,14 +464,11 @@ struct TagsPieWidget: View {
                         onShowDetail: onShowDetail
                     )
 
-                    if let headerInfoButton {
-                        headerInfoButton
-                    } else {
-                        InfoHintButton(
-                            title: L10n.WidgetType.expensesByTag,
-                            message: L10n.Widget.Hint.tagsPie
-                        )
-                    }
+                    WidgetHeaderInfoSlot(
+                        injected: headerInfoButton,
+                        legacyTitle: L10n.WidgetType.expensesByTag,
+                        legacyMessage: L10n.Widget.Hint.tagsPie
+                    )
                 }
             } else {
                 // Original header without comparison
@@ -486,14 +480,11 @@ struct TagsPieWidget: View {
                                 .foregroundStyle(.primary)
                                 .lineLimit(1)
 
-                            if let headerInfoButton {
-                                headerInfoButton
-                            } else {
-                                InfoHintButton(
-                                    title: L10n.WidgetType.expensesByTag,
-                                    message: L10n.Widget.Hint.tagsPie
-                                )
-                            }
+                            WidgetHeaderInfoSlot(
+                                injected: headerInfoButton,
+                                legacyTitle: L10n.WidgetType.expensesByTag,
+                                legacyMessage: L10n.Widget.Hint.tagsPie
+                            )
                         }
                         .padding(.bottom, DS.Spacing.xxs)
 
