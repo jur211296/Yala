@@ -452,24 +452,23 @@ struct TagsPieWidget: View {
     private var headerView: some View {
         Group {
             if showComparison {
-                HStack(alignment: .top) {
-                    PieChartVariationHeader(
-                        title: L10n.Widget.distributionByTag,
-                        totalAmount: filteredTotalExpense,
-                        previousAmount: previousTotalAmount,
-                        currencyCode: currencyCode,
-                        period: period,
-                        customRange: customRange,
-                        comparisonMode: comparisonMode,
-                        onShowDetail: onShowDetail
+                PieChartVariationHeader(
+                    title: L10n.Widget.distributionByTag,
+                    totalAmount: filteredTotalExpense,
+                    previousAmount: previousTotalAmount,
+                    currencyCode: currencyCode,
+                    period: period,
+                    customRange: customRange,
+                    comparisonMode: comparisonMode,
+                    onShowDetail: onShowDetail,
+                    titleAccessory: AnyView(
+                        WidgetHeaderInfoSlot(
+                            injected: headerInfoButton,
+                            legacyTitle: L10n.WidgetType.expensesByTag,
+                            legacyMessage: L10n.Widget.Hint.tagsPie
+                        )
                     )
-
-                    WidgetHeaderInfoSlot(
-                        injected: headerInfoButton,
-                        legacyTitle: L10n.WidgetType.expensesByTag,
-                        legacyMessage: L10n.Widget.Hint.tagsPie
-                    )
-                }
+                )
             } else {
                 // Original header without comparison
                 HStack(alignment: .top) {

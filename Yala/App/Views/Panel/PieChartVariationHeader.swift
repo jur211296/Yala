@@ -29,6 +29,11 @@ struct PieChartVariationHeader: View {
 
     var onShowDetail: (() -> Void)?
 
+    /// Slot opcional renderizado inline a la derecha del `Text(title)`.
+    /// Permite inyectar el botón pedagógico (`WidgetHeaderInfoSlot`) al lado
+    /// del título sin envolver el componente entero en otro HStack.
+    var titleAccessory: AnyView? = nil
+
     // MARK: - Computed Properties
 
     private var previousInterval: DateInterval {
@@ -53,10 +58,15 @@ struct PieChartVariationHeader: View {
         HStack(alignment: .top) {
             // Left: Title and Amount
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(title)
-                    .font(DS.Typography.subheadlineEmphasized)
-                    .foregroundStyle(.primary)
-                    .padding(.bottom, DS.Spacing.xxs)
+                HStack(spacing: DS.Spacing.xs) {
+                    Text(title)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.primary)
+                    if let titleAccessory {
+                        titleAccessory
+                    }
+                }
+                .padding(.bottom, DS.Spacing.xxs)
 
                 // KPI with "vs previous amount"
                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {

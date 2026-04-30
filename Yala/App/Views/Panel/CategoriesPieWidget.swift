@@ -497,24 +497,23 @@ struct CategoriesPieWidget: View {
     private var headerView: some View {
         Group {
             if showComparison {
-                HStack(alignment: .top) {
-                    PieChartVariationHeader(
-                        title: L10n.Widget.distributionByCategory,
-                        totalAmount: totalExpense,  // Use total (not filtered) for consistent comparison
-                        previousAmount: previousTotalAmount,
-                        currencyCode: currencyCode,
-                        period: period,
-                        customRange: customRange,
-                        comparisonMode: comparisonMode,
-                        onShowDetail: onShowDetail
+                PieChartVariationHeader(
+                    title: L10n.Widget.distributionByCategory,
+                    totalAmount: totalExpense,  // Use total (not filtered) for consistent comparison
+                    previousAmount: previousTotalAmount,
+                    currencyCode: currencyCode,
+                    period: period,
+                    customRange: customRange,
+                    comparisonMode: comparisonMode,
+                    onShowDetail: onShowDetail,
+                    titleAccessory: AnyView(
+                        WidgetHeaderInfoSlot(
+                            injected: headerInfoButton,
+                            legacyTitle: L10n.WidgetType.categoriesPie,
+                            legacyMessage: L10n.Widget.Hint.categoriesPie
+                        )
                     )
-
-                    WidgetHeaderInfoSlot(
-                        injected: headerInfoButton,
-                        legacyTitle: L10n.WidgetType.categoriesPie,
-                        legacyMessage: L10n.Widget.Hint.categoriesPie
-                    )
-                }
+                )
             } else {
                 // Original header without comparison
                 HStack(alignment: .top) {

@@ -53,14 +53,13 @@ struct WidgetInfoSheet<Preview: View>: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(
-                        systemName: "checkmark",
-                        label: L10n.Action.done
-                    ) {
-                        persistDraftToViewModel()
-                        dismiss()
-                    }
-                    .disabled(draftSize == initialSize)
+                    YalaSaveButton(
+                        action: {
+                            persistDraftToViewModel()
+                            dismiss()
+                        },
+                        isDisabled: draftSize == initialSize
+                    )
                 }
             }
         }

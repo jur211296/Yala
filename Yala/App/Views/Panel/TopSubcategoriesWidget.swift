@@ -102,8 +102,15 @@ struct TopSubcategoriesWidget: View {
         )
         .solidCard(padding: DS.Card.paddingCompact)
         .frame(height: size == .small ? WidgetSize.smallHeight : nil)
-        .id(subcategories.isEmpty ? "empty" : "content-\(subcategories.count)")
+        // En preview, identity estable y sin carga del VM interno: el ID dinámico
+        // por count + setContext que muta `viewModel.allCategories` provocan
+        // re-mounts del subtree dentro del previewBox del sheet, lo que en
+        // combinación con `onGeometryChange` de cada `SubcategoryRow` y la
+        // altura limitada del previewBox dispara un layout loop infinito
+        // (watchdog 0x8BADF00D — crash log 2026-04-30).
+        .id(isWidgetPreviewMode ? "preview" : (subcategories.isEmpty ? "empty" : "content-\(subcategories.count)"))
         .onAppear {
+            guard !isWidgetPreviewMode else { return }
             viewModel.setContext(modelContext)
         }
     }
