@@ -270,15 +270,6 @@ enum L10n {
                 static var title: String {
                     ls("panel.widgetInfo.cashFlow.title", comment: "Panel Polish #2 — Title sheet pedagógico CashFlow")
                 }
-                static var explanationSmall: String {
-                    ls("panel.widgetInfo.cashFlow.explanationSmall", comment: "Panel Polish #2 — Explanation sheet CashFlow tamaño S (KPI compacto)")
-                }
-                static var explanationMedium: String {
-                    ls("panel.widgetInfo.cashFlow.explanationMedium", comment: "Panel Polish #2 — Explanation sheet CashFlow tamaño M (gráfica con barras)")
-                }
-                static var explanationLarge: String {
-                    ls("panel.widgetInfo.cashFlow.explanationLarge", comment: "Panel Polish #2 — Explanation sheet CashFlow tamaño L (gráfica completa interactiva)")
-                }
                 static var chip1: String {
                     ls("panel.widgetInfo.cashFlow.chip1", comment: "Panel Polish #2 — Chip 1 CashFlow")
                 }
@@ -288,23 +279,74 @@ enum L10n {
                 static var chip3: String {
                     ls("panel.widgetInfo.cashFlow.chip3", comment: "Panel Polish #2 — Chip 3 CashFlow")
                 }
+                static var chip4: String {
+                    ls("panel.widgetInfo.cashFlow.chip4", comment: "Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large)")
+                }
+                // Q&A — small (sin interacción)
+                static var smallWhatQ: String {
+                    ls("panel.widgetInfo.cashFlow.smallWhatQ", comment: "Panel Polish #2 — CashFlow S: pregunta '¿Qué estás viendo?'")
+                }
+                static var smallWhatA: String {
+                    ls("panel.widgetInfo.cashFlow.smallWhatA", comment: "Panel Polish #2 — CashFlow S: respuesta a '¿Qué estás viendo?'")
+                }
+                // Q&A — medium (sin interacción, mismo contenido más espacioso)
+                static var mediumWhatQ: String {
+                    ls("panel.widgetInfo.cashFlow.mediumWhatQ", comment: "Panel Polish #2 — CashFlow M: pregunta '¿Qué estás viendo?'")
+                }
+                static var mediumWhatA: String {
+                    ls("panel.widgetInfo.cashFlow.mediumWhatA", comment: "Panel Polish #2 — CashFlow M: respuesta a '¿Qué estás viendo?'")
+                }
+                // Q&A — large (chart con scrubbing)
+                static var largeWhatQ: String {
+                    ls("panel.widgetInfo.cashFlow.largeWhatQ", comment: "Panel Polish #2 — CashFlow L: pregunta '¿Qué estás viendo?'")
+                }
+                static var largeWhatA: String {
+                    ls("panel.widgetInfo.cashFlow.largeWhatA", comment: "Panel Polish #2 — CashFlow L: respuesta a '¿Qué estás viendo?'")
+                }
+                static var largeHowQ: String {
+                    ls("panel.widgetInfo.cashFlow.largeHowQ", comment: "Panel Polish #2 — CashFlow L: pregunta '¿Cómo interactúo con la gráfica?'")
+                }
+                static var largeHowA: String {
+                    ls("panel.widgetInfo.cashFlow.largeHowA", comment: "Panel Polish #2 — CashFlow L: respuesta a '¿Cómo interactúo con la gráfica?'")
+                }
+                // Q&A — común a las 3 sizes
+                static var balanceQ: String {
+                    ls("panel.widgetInfo.cashFlow.balanceQ", comment: "Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L)")
+                }
+                static var balanceA: String {
+                    ls("panel.widgetInfo.cashFlow.balanceA", comment: "Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?'")
+                }
             }
 
             enum Trend {
                 static var title: String {
                     ls("panel.widgetInfo.trend.title", comment: "Panel Polish #2 — Title sheet pedagógico Trend")
                 }
-                static var explanationSmall: String {
-                    ls("panel.widgetInfo.trend.explanationSmall", comment: "Panel Polish #2 — Explanation sheet Trend tamaño S (KPI compacto)")
-                }
-                static var explanationLarge: String {
-                    ls("panel.widgetInfo.trend.explanationLarge", comment: "Panel Polish #2 — Explanation sheet Trend tamaño L (gráfica con scrubbing)")
-                }
                 static var chip1: String {
                     ls("panel.widgetInfo.trend.chip1", comment: "Panel Polish #2 — Chip 1 Trend")
                 }
                 static var chip2: String {
                     ls("panel.widgetInfo.trend.chip2", comment: "Panel Polish #2 — Chip 2 Trend")
+                }
+                // Q&A — small (sin interacción)
+                static var smallWhatQ: String {
+                    ls("panel.widgetInfo.trend.smallWhatQ", comment: "Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?'")
+                }
+                static var smallWhatA: String {
+                    ls("panel.widgetInfo.trend.smallWhatA", comment: "Panel Polish #2 — Trend S: respuesta a '¿Qué estás viendo?'")
+                }
+                // Q&A — large (chart con scrubbing + selector métrica)
+                static var largeWhatQ: String {
+                    ls("panel.widgetInfo.trend.largeWhatQ", comment: "Panel Polish #2 — Trend L: pregunta '¿Qué estás viendo?'")
+                }
+                static var largeWhatA: String {
+                    ls("panel.widgetInfo.trend.largeWhatA", comment: "Panel Polish #2 — Trend L: respuesta a '¿Qué estás viendo?'")
+                }
+                static var largeHowQ: String {
+                    ls("panel.widgetInfo.trend.largeHowQ", comment: "Panel Polish #2 — Trend L: pregunta '¿Cómo interactúo con la gráfica?'")
+                }
+                static var largeHowA: String {
+                    ls("panel.widgetInfo.trend.largeHowA", comment: "Panel Polish #2 — Trend L: respuesta a '¿Cómo interactúo con la gráfica?'")
                 }
             }
         }

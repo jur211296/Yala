@@ -3604,17 +3604,56 @@
 /* Panel Polish #2 — Chip 2 Trend */
 "panel.widgetInfo.trend.chip2" = "By period";
 
-/* Panel Polish #2 — Explanation sheet CashFlow tamaño S (KPI compacto) */
-"panel.widgetInfo.cashFlow.explanationSmall" = "See at a glance how much came in and went out during the period. You'll see income, expense and net flow totals.\n\nIf you want to explore day by day, try the Medium or Large size.";
 
-/* Panel Polish #2 — Explanation sheet CashFlow tamaño M (gráfica con barras) */
-"panel.widgetInfo.cashFlow.explanationMedium" = "Compare your income and expenses day by day. Green bars are income, red bars are expenses.\n\nUseful for spotting weeks when you spent more than came in.";
+// MARK: Panel Polish #2 — Widget Info Sheets Q&A (cashFlow + trend pilots)
 
-/* Panel Polish #2 — Explanation sheet CashFlow tamaño L (gráfica completa interactiva) */
-"panel.widgetInfo.cashFlow.explanationLarge" = "Explore how money comes in and goes out over the period. Tap a bar to see the day's detail.\n\nGreen bars are income, red bars are expenses. Compare with the previous period to see whether you're improving.";
+/* Panel Polish #2 — CashFlow S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.smallWhatQ" = "What are you seeing?";
 
-/* Panel Polish #2 — Explanation sheet Trend tamaño S (KPI compacto) */
-"panel.widgetInfo.trend.explanationSmall" = "See your total balance for the period and how it compares to the previous one.\n\nTo explore day by day, try the Large size.";
+/* Panel Polish #2 — CashFlow S: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.smallWhatA" = "Your balance for the period: the difference between what you earned and what you spent, with two bars comparing both totals.";
 
-/* Panel Polish #2 — Explanation sheet Trend tamaño L (gráfica con scrubbing) */
-"panel.widgetInfo.trend.explanationLarge" = "See how your balance evolves over time. Each point represents a day, and the curve shows the balance between your income and expenses.\n\nDrag your finger along the line to see your balance on any day. The average line helps you see whether your balance is rising or falling.";
+/* Panel Polish #2 — CashFlow M: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.mediumWhatQ" = "What are you seeing?";
+
+/* Panel Polish #2 — CashFlow M: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.mediumWhatA" = "The same as the compact size (income, expenses, and balance), with more room to see the amounts in detail.";
+
+/* Panel Polish #2 — CashFlow L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.largeWhatQ" = "What are you seeing?";
+
+/* Panel Polish #2 — CashFlow L: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.largeWhatA" = "How your income and expenses evolve throughout the period, grouped by day, week, or month based on the selected interval.";
+
+/* Panel Polish #2 — CashFlow L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.cashFlow.largeHowQ" = "How do I interact with the chart?";
+
+/* Panel Polish #2 — CashFlow L: respuesta a '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.cashFlow.largeHowA" = "Press and hold a bar to see the exact details of a specific point.";
+
+/* Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L) */
+"panel.widgetInfo.cashFlow.balanceQ" = "What is the balance?";
+
+/* Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?' */
+"panel.widgetInfo.cashFlow.balanceA" = "The difference between income and expenses. Positive = you saved; negative = you spent more than you earned.";
+
+/* Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.smallWhatQ" = "What are you seeing?";
+
+/* Panel Polish #2 — Trend S: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.smallWhatA" = "Your balance, income, or expenses for the period based on the active filter, with a mini evolution chart.";
+
+/* Panel Polish #2 — Trend L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.largeWhatQ" = "What are you seeing?";
+
+/* Panel Polish #2 — Trend L: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.largeWhatA" = "The day-by-day evolution of your balance, income, or expenses throughout the period.";
+
+/* Panel Polish #2 — Trend L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.trend.largeHowQ" = "How do I interact with the chart?";
+
+/* Panel Polish #2 — Trend L: respuesta a '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.trend.largeHowA" = "Press and hold the chart to see the value at each point. Switch between balance, income, and expenses using the header buttons.";
+
+/* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
+"panel.widgetInfo.cashFlow.chip4" = "Interactive";

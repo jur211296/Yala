@@ -3604,17 +3604,56 @@
 /* Panel Polish #2 — Chip 2 Trend */
 "panel.widgetInfo.trend.chip2" = "Według okresu";
 
-/* Panel Polish #2 — Explanation sheet CashFlow tamaño S (KPI compacto) */
-"panel.widgetInfo.cashFlow.explanationSmall" = "Zobacz na pierwszy rzut oka, ile wpłynęło i wypłynęło w wybranym okresie. Zobaczysz łączne wpływy, wydatki i saldo netto.\n\nJeśli chcesz przeanalizować dzień po dniu, spróbuj rozmiaru Średni lub Duży.";
 
-/* Panel Polish #2 — Explanation sheet CashFlow tamaño M (gráfica con barras) */
-"panel.widgetInfo.cashFlow.explanationMedium" = "Porównaj wpływy i wydatki dzień po dniu. Zielone słupki to wpływy, czerwone to wydatki.\n\nPrzydatne do wyłapywania tygodni, w których wydałeś więcej, niż wpłynęło.";
+// MARK: Panel Polish #2 — Widget Info Sheets Q&A (cashFlow + trend pilots)
 
-/* Panel Polish #2 — Explanation sheet CashFlow tamaño L (gráfica completa interactiva) */
-"panel.widgetInfo.cashFlow.explanationLarge" = "Zobacz, jak pieniądze wpływają i wypływają w wybranym okresie. Dotknij słupka, aby zobaczyć szczegóły dnia.\n\nZielone słupki to wpływy, czerwone to wydatki. Porównaj z poprzednim okresem, aby sprawdzić, czy idziesz do przodu.";
+/* Panel Polish #2 — CashFlow S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.smallWhatQ" = "Co widzisz?";
 
-/* Panel Polish #2 — Explanation sheet Trend tamaño S (KPI compacto) */
-"panel.widgetInfo.trend.explanationSmall" = "Zobacz łączne saldo okresu i jak wypada w porównaniu do poprzedniego.\n\nAby przeanalizować dzień po dniu, spróbuj rozmiaru Duży.";
+/* Panel Polish #2 — CashFlow S: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.smallWhatA" = "Twój bilans w danym okresie: różnica między tym, co wpłynęło, a tym, co wydałeś, z dwoma paskami porównującymi obie sumy.";
 
-/* Panel Polish #2 — Explanation sheet Trend tamaño L (gráfica con scrubbing) */
-"panel.widgetInfo.trend.explanationLarge" = "Zobacz, jak Twoje saldo zmienia się w czasie. Każdy punkt to jeden dzień, a krzywa pokazuje równowagę między wpływami a wydatkami.\n\nPrzeciągnij palcem po linii, aby zobaczyć saldo dowolnego dnia. Linia średniej pomaga sprawdzić, czy saldo rośnie czy spada.";
+/* Panel Polish #2 — CashFlow M: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.mediumWhatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — CashFlow M: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.mediumWhatA" = "To samo co rozmiar kompaktowy (przychody, wydatki i bilans), z większą ilością miejsca, aby zobaczyć kwoty szczegółowo.";
+
+/* Panel Polish #2 — CashFlow L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.largeWhatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — CashFlow L: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.largeWhatA" = "Ewolucja Twoich przychodów i wydatków w danym okresie, pogrupowana według dnia, tygodnia lub miesiąca zgodnie z wybranym interwałem.";
+
+/* Panel Polish #2 — CashFlow L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.cashFlow.largeHowQ" = "Jak korzystam z wykresu?";
+
+/* Panel Polish #2 — CashFlow L: respuesta a '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.cashFlow.largeHowA" = "Przytrzymaj palec na pasku, aby zobaczyć dokładne szczegóły konkretnego punktu.";
+
+/* Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L) */
+"panel.widgetInfo.cashFlow.balanceQ" = "Czym jest bilans?";
+
+/* Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?' */
+"panel.widgetInfo.cashFlow.balanceA" = "Różnica między przychodami a wydatkami. Dodatnia = oszczędziłeś; ujemna = wydałeś więcej, niż zarobiłeś.";
+
+/* Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.smallWhatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — Trend S: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.smallWhatA" = "Twój bilans, przychody lub wydatki w okresie zgodnie z aktywnym filtrem, z mini-wykresem ewolucji.";
+
+/* Panel Polish #2 — Trend L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.largeWhatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — Trend L: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.largeWhatA" = "Codzienna ewolucja Twojego bilansu, przychodów lub wydatków w danym okresie.";
+
+/* Panel Polish #2 — Trend L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.trend.largeHowQ" = "Jak korzystam z wykresu?";
+
+/* Panel Polish #2 — Trend L: respuesta a '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.trend.largeHowA" = "Przytrzymaj palec na wykresie, aby zobaczyć wartość w każdym punkcie. Przełączaj między bilansem, przychodami a wydatkami za pomocą przycisków w nagłówku.";
+
+/* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
+"panel.widgetInfo.cashFlow.chip4" = "Interaktywna";

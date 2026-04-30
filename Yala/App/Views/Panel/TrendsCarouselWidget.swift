@@ -144,6 +144,8 @@ struct TrendsCarouselWidget: View {
                         Text(currentKPIValue)
                             .font(DS.Typography.title)
                             .foregroundStyle(.thPrimaryText)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
 
                         // "vs <previous total>" label — mirrors the CashFlow header pattern.
                         if let prevTotal = previousKPIValue {

@@ -331,7 +331,8 @@ struct CashFlowWidget: View {
             PanelSmallWidgetHeader(
                 title: L10n.CashFlow.title,
                 accessibilityLabel: L10n.CashFlow.title,
-                action: onShowDetail
+                action: onShowDetail,
+                headerInfoButton: headerInfoButton
             )
 
             if hasNoData {
@@ -408,10 +409,23 @@ struct CashFlowWidget: View {
             // Header with title, subtitle and value
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(kpiLabel)
-                        .font(DS.Typography.subheadlineEmphasized)
-                        .foregroundStyle(.primary)
-                        .padding(.bottom, DS.Spacing.xxs)
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text(kpiLabel)
+                            .font(DS.Typography.subheadlineEmphasized)
+                            .foregroundStyle(.primary)
+
+                        if showInfoHint {
+                            if let headerInfoButton {
+                                headerInfoButton
+                            } else {
+                                InfoHintButton(
+                                    title: L10n.WidgetType.cashFlow,
+                                    message: L10n.Widget.Hint.cashFlow
+                                )
+                            }
+                        }
+                    }
+                    .padding(.bottom, DS.Spacing.xxs)
 
                     // KPI with "vs previous amount" - only show when we have data
                     if !hasNoData {
@@ -434,17 +448,6 @@ struct CashFlowWidget: View {
                                     .minimumScaleFactor(0.7)
                             }
                         }
-                    }
-                }
-
-                if showInfoHint {
-                    if let headerInfoButton {
-                        headerInfoButton
-                    } else {
-                        InfoHintButton(
-                            title: L10n.WidgetType.cashFlow,
-                            message: L10n.Widget.Hint.cashFlow
-                        )
                     }
                 }
 

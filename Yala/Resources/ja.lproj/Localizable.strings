@@ -3604,17 +3604,56 @@
 /* Panel Polish #2 — Chip 2 Trend */
 "panel.widgetInfo.trend.chip2" = "期間別";
 
-/* Panel Polish #2 — Explanation sheet CashFlow tamaño S (KPI compacto) */
-"panel.widgetInfo.cashFlow.explanationSmall" = "選んだ期間にどれだけお金が入って出たかをひと目で確認できます。収入、支出、ネットフローの合計が表示されます。\n\n日ごとの詳細を確認したい場合は、中サイズか大サイズをお試しください。";
 
-/* Panel Polish #2 — Explanation sheet CashFlow tamaño M (gráfica con barras) */
-"panel.widgetInfo.cashFlow.explanationMedium" = "収入と支出を日ごとに比較できます。緑のバーは収入、赤のバーは支出です。\n\n収入よりも支出が多かった週を見つけるのに役立ちます。";
+// MARK: Panel Polish #2 — Widget Info Sheets Q&A (cashFlow + trend pilots)
 
-/* Panel Polish #2 — Explanation sheet CashFlow tamaño L (gráfica completa interactiva) */
-"panel.widgetInfo.cashFlow.explanationLarge" = "期間中のお金の出入りを詳しく確認できます。バーをタップするとその日の詳細を確認できます。\n\n緑のバーは収入、赤のバーは支出です。前の期間と比較して上向きかを確認できます。";
+/* Panel Polish #2 — CashFlow S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.smallWhatQ" = "何が表示されていますか？";
 
-/* Panel Polish #2 — Explanation sheet Trend tamaño S (KPI compacto) */
-"panel.widgetInfo.trend.explanationSmall" = "選んだ期間の合計残高と、前の期間との比較を確認できます。\n\n日ごとに詳しく確認したい場合は、大サイズをお試しください。";
+/* Panel Polish #2 — CashFlow S: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.smallWhatA" = "期間中の収支です。収入と支出の差を、両方の合計を比較する2本のバーで表示しています。";
 
-/* Panel Polish #2 — Explanation sheet Trend tamaño L (gráfica con scrubbing) */
-"panel.widgetInfo.trend.explanationLarge" = "残高が時間とともにどう変化するかを確認できます。各点は1日を表し、曲線は収入と支出のバランスを示します。\n\n線の上を指でなぞると、任意の日の残高を確認できます。平均線で残高が上昇しているか下降しているかを判断できます。";
+/* Panel Polish #2 — CashFlow M: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.mediumWhatQ" = "何が表示されていますか？";
+
+/* Panel Polish #2 — CashFlow M: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.mediumWhatA" = "コンパクトサイズと同じ内容（収入、支出、収支）を、金額を詳しく見られる広いスペースで表示しています。";
+
+/* Panel Polish #2 — CashFlow L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.largeWhatQ" = "何が表示されていますか？";
+
+/* Panel Polish #2 — CashFlow L: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.largeWhatA" = "選択された間隔に応じて、日・週・月単位でグループ化された期間中の収入と支出の推移です。";
+
+/* Panel Polish #2 — CashFlow L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.cashFlow.largeHowQ" = "グラフはどう操作しますか？";
+
+/* Panel Polish #2 — CashFlow L: respuesta a '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.cashFlow.largeHowA" = "バーを長押しすると、特定のポイントの正確な詳細が表示されます。";
+
+/* Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L) */
+"panel.widgetInfo.cashFlow.balanceQ" = "収支とは何ですか？";
+
+/* Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?' */
+"panel.widgetInfo.cashFlow.balanceA" = "収入と支出の差です。プラス = 貯金できた、マイナス = 収入より多く使った状態を示します。";
+
+/* Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.smallWhatQ" = "何が表示されていますか？";
+
+/* Panel Polish #2 — Trend S: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.smallWhatA" = "アクティブなフィルターに応じた期間中の収支、収入、または支出を、ミニ推移グラフで表示しています。";
+
+/* Panel Polish #2 — Trend L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.largeWhatQ" = "何が表示されていますか？";
+
+/* Panel Polish #2 — Trend L: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.largeWhatA" = "期間中の収支、収入、または支出の日々の推移です。";
+
+/* Panel Polish #2 — Trend L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.trend.largeHowQ" = "グラフはどう操作しますか？";
+
+/* Panel Polish #2 — Trend L: respuesta a '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.trend.largeHowA" = "グラフを長押しすると、各ポイントの値が表示されます。ヘッダーのボタンで収支・収入・支出を切り替えられます。";
+
+/* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
+"panel.widgetInfo.cashFlow.chip4" = "インタラクティブ";

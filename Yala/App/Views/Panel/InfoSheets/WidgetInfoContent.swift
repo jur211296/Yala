@@ -2,18 +2,9 @@
 //  WidgetInfoContent.swift
 //  Yala
 //
-//  Modelo del payload pedagógico para las sheets informativas de widgets del
-//  Panel. Cada `WidgetInfoKind` mapea a su `WidgetType` (para size/visibility
-//  prefs) y a su contenido (title + chips + explanation por tamaño) vía
-//  `WidgetInfoContent.content(for:)`.
-//
-//  La explicación varía según el tamaño porque cada layout de widget muestra
-//  cosas distintas (small = KPI compacto sin interacción; medium/large =
-//  chart completo con scrubbing).
-//
-//  Sub-épica: solo los pilotos `cashFlow` y `trend` están implementados en
-//  Fase B. El resto de los cases lanzan `fatalError` y se resuelven en el
-//  ticket de roll-out.
+//  Modelo del payload pedagógico de las sheets de widgets del Panel.
+//  Solo los pilotos `cashFlow` y `trend` están implementados (Fase B); el
+//  resto lanza `fatalError` hasta el ticket de roll-out.
 //
 
 import SwiftUI
@@ -59,10 +50,13 @@ extension WidgetInfoKind {
 /// contra `YalaTheme` en el chip view (no se almacena `Color` directo aquí
 /// porque depende del modo claro/oscuro y del tema activo).
 struct InfoChip: Identifiable {
-    let id = UUID()
     let label: String
     let tintKey: ChipTint
     let systemImage: String?
+
+    /// Identidad estable derivada del label — evita que `ForEach` recree
+    /// la vista del chip en cada render del padre.
+    var id: String { label }
 
     enum ChipTint {
         case income
@@ -72,55 +66,130 @@ struct InfoChip: Identifiable {
     }
 }
 
+struct InfoSection: Identifiable {
+    let question: String
+    let answer: String
+
+    /// Identidad estable derivada de la pregunta — evita que `ForEach`
+    /// recree la fila en cada render del padre.
+    var id: String { question }
+}
+
 struct WidgetInfoContent {
     let title: String
-    let chips: [InfoChip]
-    /// Resuelve la explicación pedagógica para un `WidgetSize`. Cada widget
-    /// puede tener copy distinto según el layout que se muestra (small es
-    /// más compacto que medium/large).
-    let explanation: (WidgetSize) -> String
+    /// Resuelve los chips descriptores para un `WidgetSize`. El chip
+    /// "Interactiva" solo se muestra cuando el size soporta scrubbing u
+    /// otros gestos en la gráfica.
+    let chips: (WidgetSize) -> [InfoChip]
+    /// Resuelve las secciones Q&A para un `WidgetSize`. Cada widget puede
+    /// tener un set distinto según la interactividad real del layout (small
+    /// suele ser solo descriptivo; large suele incluir explicación de
+    /// interacción).
+    let sections: (WidgetSize) -> [InfoSection]
 
     static func content(for kind: WidgetInfoKind) -> WidgetInfoContent {
         switch kind {
         case .trend:
+            let interactiveChip = InfoChip(label: L10n.Panel.WidgetInfo.Trend.chip1,
+                                           tintKey: .accent,
+                                           systemImage: "hand.tap")
+            let periodChip = InfoChip(label: L10n.Panel.WidgetInfo.Trend.chip2,
+                                      tintKey: .neutral,
+                                      systemImage: "calendar")
             return WidgetInfoContent(
                 title: L10n.Panel.WidgetInfo.Trend.title,
-                chips: [
-                    InfoChip(label: L10n.Panel.WidgetInfo.Trend.chip1,
-                             tintKey: .accent,
-                             systemImage: "hand.tap"),
-                    InfoChip(label: L10n.Panel.WidgetInfo.Trend.chip2,
-                             tintKey: .neutral,
-                             systemImage: "calendar"),
-                ],
-                explanation: { size in
+                chips: { size in
                     switch size {
-                    case .small:  return L10n.Panel.WidgetInfo.Trend.explanationSmall
-                    case .medium: return L10n.Panel.WidgetInfo.Trend.explanationLarge
-                    case .large:  return L10n.Panel.WidgetInfo.Trend.explanationLarge
+                    case .small:           return [periodChip]
+                    case .medium, .large:  return [interactiveChip, periodChip]
+                    }
+                },
+                sections: { size in
+                    switch size {
+                    case .small:
+                        return [
+                            InfoSection(
+                                question: L10n.Panel.WidgetInfo.Trend.smallWhatQ,
+                                answer: L10n.Panel.WidgetInfo.Trend.smallWhatA
+                            ),
+                        ]
+                    case .medium, .large:
+                        return [
+                            InfoSection(
+                                question: L10n.Panel.WidgetInfo.Trend.largeWhatQ,
+                                answer: L10n.Panel.WidgetInfo.Trend.largeWhatA
+                            ),
+                            InfoSection(
+                                question: L10n.Panel.WidgetInfo.Trend.largeHowQ,
+                                answer: L10n.Panel.WidgetInfo.Trend.largeHowA
+                            ),
+                        ]
                     }
                 }
             )
 
         case .cashFlow:
+            let incomeChip = InfoChip(label: L10n.Panel.WidgetInfo.CashFlow.chip1,
+                                      tintKey: .income,
+                                      systemImage: "arrow.up")
+            let expenseChip = InfoChip(label: L10n.Panel.WidgetInfo.CashFlow.chip2,
+                                       tintKey: .expense,
+                                       systemImage: "arrow.down")
+            let periodChip = InfoChip(label: L10n.Panel.WidgetInfo.CashFlow.chip3,
+                                      tintKey: .neutral,
+                                      systemImage: "calendar")
+            let interactiveChip = InfoChip(label: L10n.Panel.WidgetInfo.CashFlow.chip4,
+                                           tintKey: .accent,
+                                           systemImage: "hand.tap")
             return WidgetInfoContent(
                 title: L10n.Panel.WidgetInfo.CashFlow.title,
-                chips: [
-                    InfoChip(label: L10n.Panel.WidgetInfo.CashFlow.chip1,
-                             tintKey: .income,
-                             systemImage: "arrow.up"),
-                    InfoChip(label: L10n.Panel.WidgetInfo.CashFlow.chip2,
-                             tintKey: .expense,
-                             systemImage: "arrow.down"),
-                    InfoChip(label: L10n.Panel.WidgetInfo.CashFlow.chip3,
-                             tintKey: .neutral,
-                             systemImage: "calendar"),
-                ],
-                explanation: { size in
+                chips: { size in
                     switch size {
-                    case .small:  return L10n.Panel.WidgetInfo.CashFlow.explanationSmall
-                    case .medium: return L10n.Panel.WidgetInfo.CashFlow.explanationMedium
-                    case .large:  return L10n.Panel.WidgetInfo.CashFlow.explanationLarge
+                    case .small, .medium:
+                        return [incomeChip, expenseChip, periodChip]
+                    case .large:
+                        return [incomeChip, expenseChip, periodChip, interactiveChip]
+                    }
+                },
+                sections: { size in
+                    switch size {
+                    case .small:
+                        return [
+                            InfoSection(
+                                question: L10n.Panel.WidgetInfo.CashFlow.smallWhatQ,
+                                answer: L10n.Panel.WidgetInfo.CashFlow.smallWhatA
+                            ),
+                            InfoSection(
+                                question: L10n.Panel.WidgetInfo.CashFlow.balanceQ,
+                                answer: L10n.Panel.WidgetInfo.CashFlow.balanceA
+                            ),
+                        ]
+                    case .medium:
+                        return [
+                            InfoSection(
+                                question: L10n.Panel.WidgetInfo.CashFlow.mediumWhatQ,
+                                answer: L10n.Panel.WidgetInfo.CashFlow.mediumWhatA
+                            ),
+                            InfoSection(
+                                question: L10n.Panel.WidgetInfo.CashFlow.balanceQ,
+                                answer: L10n.Panel.WidgetInfo.CashFlow.balanceA
+                            ),
+                        ]
+                    case .large:
+                        return [
+                            InfoSection(
+                                question: L10n.Panel.WidgetInfo.CashFlow.largeWhatQ,
+                                answer: L10n.Panel.WidgetInfo.CashFlow.largeWhatA
+                            ),
+                            InfoSection(
+                                question: L10n.Panel.WidgetInfo.CashFlow.largeHowQ,
+                                answer: L10n.Panel.WidgetInfo.CashFlow.largeHowA
+                            ),
+                            InfoSection(
+                                question: L10n.Panel.WidgetInfo.CashFlow.balanceQ,
+                                answer: L10n.Panel.WidgetInfo.CashFlow.balanceA
+                            ),
+                        ]
                     }
                 }
             )

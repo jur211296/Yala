@@ -3604,17 +3604,56 @@
 /* Panel Polish #2 — Chip 2 Trend */
 "panel.widgetInfo.trend.chip2" = "Per periode";
 
-/* Panel Polish #2 — Explanation sheet CashFlow tamaño S (KPI compacto) */
-"panel.widgetInfo.cashFlow.explanationSmall" = "Zie in één oogopslag hoeveel er in de periode binnenkwam en uitging. Je ziet de totalen voor inkomsten, uitgaven en de netto stroom.\n\nWil je dag voor dag verkennen? Probeer dan formaat Middel of Groot.";
 
-/* Panel Polish #2 — Explanation sheet CashFlow tamaño M (gráfica con barras) */
-"panel.widgetInfo.cashFlow.explanationMedium" = "Vergelijk je inkomsten en uitgaven dag voor dag. Groene balken zijn inkomsten, rode balken zijn uitgaven.\n\nHandig om weken te ontdekken waarin je meer hebt uitgegeven dan binnenkwam.";
+// MARK: Panel Polish #2 — Widget Info Sheets Q&A (cashFlow + trend pilots)
 
-/* Panel Polish #2 — Explanation sheet CashFlow tamaño L (gráfica completa interactiva) */
-"panel.widgetInfo.cashFlow.explanationLarge" = "Bekijk hoe je geld in de periode binnenkomt en uitgaat. Tik op een balk om het detail van de dag te zien.\n\nGroene balken zijn inkomsten, rode balken zijn uitgaven. Vergelijk met de vorige periode om te zien of je vooruitgaat.";
+/* Panel Polish #2 — CashFlow S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.smallWhatQ" = "Wat zie je?";
 
-/* Panel Polish #2 — Explanation sheet Trend tamaño S (KPI compacto) */
-"panel.widgetInfo.trend.explanationSmall" = "Zie je totale saldo voor de periode en hoe het zich verhoudt tot de vorige.\n\nOm dag voor dag te verkennen, probeer formaat Groot.";
+/* Panel Polish #2 — CashFlow S: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.smallWhatA" = "Je saldo voor de periode: het verschil tussen wat je hebt verdiend en uitgegeven, met twee balken die beide totalen vergelijken.";
 
-/* Panel Polish #2 — Explanation sheet Trend tamaño L (gráfica con scrubbing) */
-"panel.widgetInfo.trend.explanationLarge" = "Zie hoe je saldo zich in de tijd ontwikkelt. Elk punt is een dag en de curve toont het evenwicht tussen je inkomsten en uitgaven.\n\nVeeg met je vinger over de lijn om het saldo van een willekeurige dag te zien. De gemiddeldelijn helpt je te zien of je saldo stijgt of daalt.";
+/* Panel Polish #2 — CashFlow M: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.mediumWhatQ" = "Wat zie je?";
+
+/* Panel Polish #2 — CashFlow M: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.mediumWhatA" = "Hetzelfde als het compacte formaat (inkomsten, uitgaven en saldo), met meer ruimte om de bedragen in detail te zien.";
+
+/* Panel Polish #2 — CashFlow L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.largeWhatQ" = "Wat zie je?";
+
+/* Panel Polish #2 — CashFlow L: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.largeWhatA" = "De ontwikkeling van je inkomsten en uitgaven gedurende de periode, gegroepeerd per dag, week of maand op basis van het geselecteerde interval.";
+
+/* Panel Polish #2 — CashFlow L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.cashFlow.largeHowQ" = "Hoe gebruik ik de grafiek?";
+
+/* Panel Polish #2 — CashFlow L: respuesta a '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.cashFlow.largeHowA" = "Houd je vinger op een balk om het exacte detail van een specifiek punt te zien.";
+
+/* Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L) */
+"panel.widgetInfo.cashFlow.balanceQ" = "Wat is het saldo?";
+
+/* Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?' */
+"panel.widgetInfo.cashFlow.balanceA" = "Het verschil tussen inkomsten en uitgaven. Positief = je hebt gespaard; negatief = je hebt meer uitgegeven dan verdiend.";
+
+/* Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.smallWhatQ" = "Wat zie je?";
+
+/* Panel Polish #2 — Trend S: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.smallWhatA" = "Je saldo, inkomsten of uitgaven van de periode op basis van het actieve filter, met een mini-evolutiegrafiek.";
+
+/* Panel Polish #2 — Trend L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.largeWhatQ" = "Wat zie je?";
+
+/* Panel Polish #2 — Trend L: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.largeWhatA" = "De dagelijkse ontwikkeling van je saldo, inkomsten of uitgaven in de periode.";
+
+/* Panel Polish #2 — Trend L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.trend.largeHowQ" = "Hoe gebruik ik de grafiek?";
+
+/* Panel Polish #2 — Trend L: respuesta a '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.trend.largeHowA" = "Houd je vinger op de grafiek om de waarde op elk punt te zien. Wissel tussen saldo, inkomsten en uitgaven met de knoppen in de koptekst.";
+
+/* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
+"panel.widgetInfo.cashFlow.chip4" = "Interactief";

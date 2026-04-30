@@ -2,16 +2,16 @@
 //  WidgetInfoSheet.swift
 //  Yala
 //
-//  Sheet pedagógica interactiva para widgets del Panel. Muestra una preview
-//  reactiva de la gráfica (con sample data o real), chips descriptores,
-//  segmented S/M/L (que muta `@State` local y aplica al VM al cerrar) y
-//  explicación brand-voice que varía según el tamaño seleccionado.
-//
-//  Patrón derivado de `FinancialScoreDetailSheet`: NavigationStack + xmark
-//  toolbar + large detent + ScrollView con secciones apiladas.
+//  Sheet pedagógica para widgets del Panel. El draft de tamaño se persiste
+//  al ViewModel al cerrar (botón xmark o gesto de dismiss).
 //
 
 import SwiftUI
+
+/// Alto fijo del previewBox — calibrado al alto del widget más alto del kind.
+/// Las 3 sizes ocupan el mismo espacio para evitar salto visual al cambiar
+/// el segmented; small queda centrado verticalmente dentro del frame.
+private let previewBoxHeight: CGFloat = 280
 
 struct WidgetInfoSheet<Preview: View>: View {
     let kind: WidgetInfoKind
@@ -22,6 +22,7 @@ struct WidgetInfoSheet<Preview: View>: View {
     @Environment(AppPreferences.self) private var appPreferences
     @State private var draftSize: WidgetSize = .small
     @State private var didLoadInitialSize = false
+    @State private var contentWidth: CGFloat = 0
 
     private var content: WidgetInfoContent { .content(for: kind) }
     private var widgetType: WidgetType { kind.widgetType }
@@ -29,16 +30,20 @@ struct WidgetInfoSheet<Preview: View>: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+                VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                    sizeSegmented
                     previewBox
                     chipsRow
-                    sizeSegmented
-                    explanationBlock
+                    sectionsBlock
                 }
                 .padding(.horizontal, DS.Spacing.xl)
                 .padding(.vertical, DS.Spacing.lg)
+                .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { width in
+                    contentWidth = width
+                }
             }
             .scrollBounceBehavior(.basedOnSize)
+            .background(.thBackground)
             .navigationTitle(content.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -72,32 +77,6 @@ struct WidgetInfoSheet<Preview: View>: View {
     }
 
     @ViewBuilder
-    private var previewBox: some View {
-        previewContent(draftSize)
-            .environment(\.isWidgetPreviewMode, true)
-            .environment(appPreferences)
-            .frame(maxWidth: .infinity)
-    }
-
-    @ViewBuilder
-    private var chipsRow: some View {
-        FlowLayout(spacing: DS.Spacing.sm) {
-            ForEach(content.chips) { chip in
-                WidgetInfoChipView(chip: chip)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var explanationBlock: some View {
-        Text(explanationFor(draftSize))
-            .font(DS.Typography.subheadline)
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    @ViewBuilder
     private var sizeSegmented: some View {
         let supported = widgetType.supportedSizes
         if supported.count > 1 {
@@ -112,19 +91,57 @@ struct WidgetInfoSheet<Preview: View>: View {
         }
     }
 
+    /// Small se renderiza al ~50% del ancho disponible para emular la
+    /// apariencia half-pair del grid del Panel; medium/large ocupan ancho
+    /// completo.
+    @ViewBuilder
+    private var previewBox: some View {
+        let isSmall = draftSize == .small
+        let smallWidth = max(0, contentWidth * 0.5)
+        ZStack {
+            previewContent(draftSize)
+                .environment(\.isWidgetPreviewMode, true)
+                .environment(appPreferences)
+                .frame(width: isSmall && smallWidth > 0 ? smallWidth : nil)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: previewBoxHeight)
+    }
+
+    @ViewBuilder
+    private var chipsRow: some View {
+        FlowLayout(spacing: DS.Spacing.sm) {
+            ForEach(content.chips(draftSize)) { chip in
+                WidgetInfoChipView(chip: chip)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var sectionsBlock: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+            ForEach(content.sections(draftSize)) { section in
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    Text(section.question)
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(section.answer)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
     private func sizeLabel(_ size: WidgetSize) -> String {
         switch size {
         case .small:  return L10n.Panel.WidgetSize.small
         case .medium: return L10n.Panel.WidgetSize.medium
         case .large:  return L10n.Panel.WidgetSize.large
         }
-    }
-
-    /// Resuelve la explicación pedagógica para el tamaño actual. Cada tamaño
-    /// tiene un layout distinto (small = compacto KPI; medium/large = chart
-    /// completo con interacciones), por eso la copy varía.
-    private func explanationFor(_ size: WidgetSize) -> String {
-        content.explanation(size)
     }
 
     private func applyDraftAndDismiss() {
