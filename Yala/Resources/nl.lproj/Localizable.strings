@@ -3814,3 +3814,67 @@
 
 /* Panel Polish #2 — ExpensesByNeed L: respuesta */
 "panel.widgetInfo.expensesByNeed.largeHowA" = "Veeg met je vinger over de balken om de uitsplitsing van een moment te zien — hoeveel essentieel, prioritair, enz., met het totaal. Tik op een chip in de legenda om alleen dat type behoefte te tonen en het Paneel te filteren.";
+
+
+/* Panel Polish #2 — Title sheet pedagógico TopCategories */
+"panel.widgetInfo.topCategories.title" = "Belangrijkste categorieën";
+
+/* Panel Polish #2 — Chip 1 TopCategories (entidad) */
+"panel.widgetInfo.topCategories.chip1" = "Categorieën";
+
+/* Panel Polish #2 — Chip 2 TopCategories (período) */
+"panel.widgetInfo.topCategories.chip2" = "Huidige periode";
+
+/* Panel Polish #2 — Chip 3 TopCategories (Interactiva) */
+"panel.widgetInfo.topCategories.chip3" = "Interactief";
+
+/* Panel Polish #2 — TopCategories S: pregunta */
+"panel.widgetInfo.topCategories.smallWhatQ" = "Wat zie je?";
+
+/* Panel Polish #2 — TopCategories S: respuesta */
+"panel.widgetInfo.topCategories.smallWhatA" = "De twee categorieën waar je in de actieve periode het meeste hebt uitgegeven. De balk toont het gewicht van elke ten opzichte van de eerste.";
+
+/* Panel Polish #2 — TopCategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatQ" = "Wat zie je?";
+
+/* Panel Polish #2 — TopCategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatA" = "Je categorieën met de hoogste uitgaven in de actieve periode, gesorteerd van hoog naar laag. Elke rij toont het bedrag, het percentage van het totaal en een balk die haar vergelijkt met de hoogste categorie.";
+
+/* Panel Polish #2 — TopCategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howQ" = "Hoe gebruik ik dit?";
+
+/* Panel Polish #2 — TopCategories: respuesta a 'cómo interactúo' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howA" = "Tik op een rij om de rest van het Paneel te filteren op die categorie. Tik er nogmaals op om het filter op te heffen.";
+
+/* Panel Polish #2 — Title sheet pedagógico TopSubcategories */
+"panel.widgetInfo.topSubcategories.title" = "Belangrijkste subcategorieën";
+
+/* Panel Polish #2 — Chip 1 TopSubcategories (entidad) */
+"panel.widgetInfo.topSubcategories.chip1" = "Subcategorieën";
+
+/* Panel Polish #2 — Chip 2 TopSubcategories (período) */
+"panel.widgetInfo.topSubcategories.chip2" = "Huidige periode";
+
+/* Panel Polish #2 — Chip 3 TopSubcategories (Interactiva) */
+"panel.widgetInfo.topSubcategories.chip3" = "Interactief";
+
+/* Panel Polish #2 — TopSubcategories S: pregunta */
+"panel.widgetInfo.topSubcategories.smallWhatQ" = "Wat zie je?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta */
+"panel.widgetInfo.topSubcategories.smallWhatA" = "De twee subcategorieën waar je in de actieve periode het meeste hebt uitgegeven. Als er in een ander widget een categorie is gefilterd, zie je alleen haar subcategorieën.";
+
+/* Panel Polish #2 — TopSubcategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatQ" = "Wat zie je?";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatA" = "Je subcategorieën met de hoogste uitgaven in de actieve periode, gesorteerd van hoog naar laag. Elke rij toont het bedrag, het percentage binnen haar categorie en van het totaal, en een balk die haar vergelijkt met de eerste.";
+
+/* Panel Polish #2 — TopSubcategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topSubcategories.howQ" = "Hoe gebruik ik dit?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta a 'cómo interactúo' (sin selector) */
+"panel.widgetInfo.topSubcategories.smallHowA" = "Tik op een rij om de rest van het Paneel te filteren op die subcategorie.";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
+"panel.widgetInfo.topSubcategories.regularHowA" = "Tik op een rij om de rest van het Paneel te filteren op die subcategorie. Gebruik de chips boven om de lijst te beperken tot één categorie — of, als er al een categorie is gefilterd in een ander widget, blijft de selector vergrendeld op die categorie.";

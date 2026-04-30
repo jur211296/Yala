@@ -45,6 +45,9 @@ struct TopSubcategoriesWidget: View {
     // Size config
     var size: TopCategoriesWidget.CardSize = .large
 
+    /// Slot pedagógico opcional inyectado en el header (Panel Polish #2).
+    var headerInfoButton: AnyView? = nil
+
     // MARK: - Period Comparison
 
     var period: DetailPeriod = .thisMonth
@@ -112,43 +115,42 @@ struct TopSubcategoriesWidget: View {
             HStack(alignment: .top) {
                 // Left: Title and total amount
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    if size == .small {
-                        Text(L10n.Widget.subcategories)
-                            .font(DS.Typography.subheadlineEmphasized)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                    } else {
-                        Text(L10n.Widget.topSubcategories)
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text(size == .small ? L10n.Widget.subcategories : L10n.Widget.topSubcategories)
                             .font(DS.Typography.subheadlineEmphasized)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
 
-                        // Total amount with vs comparison (only with variation header)
-                        if showVariationHeader && !subcategories.isEmpty {
-                            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                                Text(appPreferences.currency(totalAmount, currencyCode: currencyCode))
-                                    .font(DS.Typography.headline)
-                                    .foregroundStyle(.primary)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.7)
-
-                                if let prevAmount = previousTotalAmount {
-                                    Text("vs \(appPreferences.number(prevAmount))")
-                                        .font(DS.Typography.caption)
-                                        .foregroundStyle(.thSecondaryText)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.7)
-                                }
+                        if size != .small {
+                            if let headerInfoButton {
+                                headerInfoButton
+                            } else {
+                                InfoHintButton(
+                                    title: L10n.WidgetType.topSubcategories,
+                                    message: L10n.Widget.Hint.topSubcategories
+                                )
                             }
                         }
                     }
-                }
 
-                if size != .small {
-                    InfoHintButton(
-                        title: L10n.WidgetType.topSubcategories,
-                        message: L10n.Widget.Hint.topSubcategories
-                    )
+                    // Total amount with vs comparison (only with variation header, regular sizes)
+                    if size != .small && showVariationHeader && !subcategories.isEmpty {
+                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                            Text(appPreferences.currency(totalAmount, currencyCode: currencyCode))
+                                .font(DS.Typography.headline)
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+
+                            if let prevAmount = previousTotalAmount {
+                                Text("vs \(appPreferences.number(prevAmount))")
+                                    .font(DS.Typography.caption)
+                                    .foregroundStyle(.thSecondaryText)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.7)
+                            }
+                        }
+                    }
                 }
 
                 Spacer()
@@ -336,7 +338,8 @@ struct TopSubcategoriesWidget: View {
                     PanelSmallWidgetHeader(
                         title: L10n.Widget.topSubcategories,
                         accessibilityLabel: L10n.Panel.seeMoreInDistribution,
-                        action: onShowMore
+                        action: onShowMore,
+                        headerInfoButton: headerInfoButton
                     )
 
                     VStack(alignment: .leading, spacing: DS.Spacing.md) {

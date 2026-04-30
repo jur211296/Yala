@@ -3811,3 +3811,67 @@
 
 /* Panel Polish #2 — ExpensesByNeed L: respuesta */
 "panel.widgetInfo.expensesByNeed.largeHowA" = "Wische mit dem Finger über die Balken, um die Aufschlüsselung eines Zeitpunkts zu sehen — wie viel essenziell, prioritär usw., zusammen mit dem Gesamtbetrag. Tippe auf einen Chip in der Legende, um nur diese Bedarfsart anzuzeigen und das Panel zu filtern.";
+
+
+/* Panel Polish #2 — Title sheet pedagógico TopCategories */
+"panel.widgetInfo.topCategories.title" = "Wichtigste Kategorien";
+
+/* Panel Polish #2 — Chip 1 TopCategories (entidad) */
+"panel.widgetInfo.topCategories.chip1" = "Kategorien";
+
+/* Panel Polish #2 — Chip 2 TopCategories (período) */
+"panel.widgetInfo.topCategories.chip2" = "Aktueller Zeitraum";
+
+/* Panel Polish #2 — Chip 3 TopCategories (Interactiva) */
+"panel.widgetInfo.topCategories.chip3" = "Interaktiv";
+
+/* Panel Polish #2 — TopCategories S: pregunta */
+"panel.widgetInfo.topCategories.smallWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — TopCategories S: respuesta */
+"panel.widgetInfo.topCategories.smallWhatA" = "Die beiden Kategorien, in denen du im aktuellen Zeitraum am meisten ausgegeben hast. Der Balken zeigt das Gewicht jeder Kategorie im Vergleich zur ersten.";
+
+/* Panel Polish #2 — TopCategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — TopCategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatA" = "Deine Kategorien mit den höchsten Ausgaben im aktuellen Zeitraum, vom größten zum kleinsten geordnet. Jede Zeile zeigt den Betrag, den Anteil am Gesamten und einen Balken, der sie mit der Top-Kategorie vergleicht.";
+
+/* Panel Polish #2 — TopCategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howQ" = "Wie interagiere ich?";
+
+/* Panel Polish #2 — TopCategories: respuesta a 'cómo interactúo' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howA" = "Tippe auf eine Zeile, um den Rest des Panels nach dieser Kategorie zu filtern. Tippe erneut, um den Filter zu entfernen.";
+
+/* Panel Polish #2 — Title sheet pedagógico TopSubcategories */
+"panel.widgetInfo.topSubcategories.title" = "Wichtigste Unterkategorien";
+
+/* Panel Polish #2 — Chip 1 TopSubcategories (entidad) */
+"panel.widgetInfo.topSubcategories.chip1" = "Unterkategorien";
+
+/* Panel Polish #2 — Chip 2 TopSubcategories (período) */
+"panel.widgetInfo.topSubcategories.chip2" = "Aktueller Zeitraum";
+
+/* Panel Polish #2 — Chip 3 TopSubcategories (Interactiva) */
+"panel.widgetInfo.topSubcategories.chip3" = "Interaktiv";
+
+/* Panel Polish #2 — TopSubcategories S: pregunta */
+"panel.widgetInfo.topSubcategories.smallWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta */
+"panel.widgetInfo.topSubcategories.smallWhatA" = "Die beiden Unterkategorien, in denen du im aktuellen Zeitraum am meisten ausgegeben hast. Wenn in einem anderen Widget eine Kategorie gefiltert ist, siehst du nur ihre Unterkategorien.";
+
+/* Panel Polish #2 — TopSubcategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatA" = "Deine Unterkategorien mit den höchsten Ausgaben im aktuellen Zeitraum, vom größten zum kleinsten geordnet. Jede Zeile zeigt den Betrag, den Anteil an ihrer Kategorie und am Gesamten sowie einen Balken, der sie mit der ersten vergleicht.";
+
+/* Panel Polish #2 — TopSubcategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topSubcategories.howQ" = "Wie interagiere ich?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta a 'cómo interactúo' (sin selector) */
+"panel.widgetInfo.topSubcategories.smallHowA" = "Tippe auf eine Zeile, um den Rest des Panels nach dieser Unterkategorie zu filtern.";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
+"panel.widgetInfo.topSubcategories.regularHowA" = "Tippe auf eine Zeile, um den Rest des Panels nach dieser Unterkategorie zu filtern. Verwende die Chips oben, um die Liste auf eine Kategorie einzugrenzen — oder, wenn in einem anderen Widget bereits eine Kategorie gefiltert ist, bleibt der Selektor auf dieser fixiert.";

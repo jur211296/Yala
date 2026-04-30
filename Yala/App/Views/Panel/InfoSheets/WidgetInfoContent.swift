@@ -333,8 +333,73 @@ struct WidgetInfoContent {
                 }
             )
 
-        case .topCategories, .topSubcategories,
-             .budgets, .scheduledPayments, .recentRecords,
+        case .topCategories:
+            let entityChip = InfoChip(label: L10n.Panel.WidgetInfo.TopCategories.chip1,
+                                      tintKey: .neutral,
+                                      systemImage: "folder.fill")
+            let periodChip = InfoChip(label: L10n.Panel.WidgetInfo.TopCategories.chip2,
+                                      tintKey: .neutral,
+                                      systemImage: "calendar")
+            let interactiveChip = InfoChip(label: L10n.Panel.WidgetInfo.TopCategories.chip3,
+                                           tintKey: .accent,
+                                           systemImage: "hand.tap")
+            return WidgetInfoContent(
+                title: L10n.Panel.WidgetInfo.TopCategories.title,
+                chips: { _ in [entityChip, periodChip, interactiveChip] },
+                sections: { size in
+                    let howSection = InfoSection(question: L10n.Panel.WidgetInfo.TopCategories.howQ,
+                                                  answer: L10n.Panel.WidgetInfo.TopCategories.howA)
+                    switch size {
+                    case .small:
+                        return [
+                            InfoSection(question: L10n.Panel.WidgetInfo.TopCategories.smallWhatQ,
+                                        answer: L10n.Panel.WidgetInfo.TopCategories.smallWhatA),
+                            howSection,
+                        ]
+                    case .medium, .large:
+                        return [
+                            InfoSection(question: L10n.Panel.WidgetInfo.TopCategories.regularWhatQ,
+                                        answer: L10n.Panel.WidgetInfo.TopCategories.regularWhatA),
+                            howSection,
+                        ]
+                    }
+                }
+            )
+
+        case .topSubcategories:
+            let entityChip = InfoChip(label: L10n.Panel.WidgetInfo.TopSubcategories.chip1,
+                                      tintKey: .neutral,
+                                      systemImage: "list.bullet.indent")
+            let periodChip = InfoChip(label: L10n.Panel.WidgetInfo.TopSubcategories.chip2,
+                                      tintKey: .neutral,
+                                      systemImage: "calendar")
+            let interactiveChip = InfoChip(label: L10n.Panel.WidgetInfo.TopSubcategories.chip3,
+                                           tintKey: .accent,
+                                           systemImage: "hand.tap")
+            return WidgetInfoContent(
+                title: L10n.Panel.WidgetInfo.TopSubcategories.title,
+                chips: { _ in [entityChip, periodChip, interactiveChip] },
+                sections: { size in
+                    switch size {
+                    case .small:
+                        return [
+                            InfoSection(question: L10n.Panel.WidgetInfo.TopSubcategories.smallWhatQ,
+                                        answer: L10n.Panel.WidgetInfo.TopSubcategories.smallWhatA),
+                            InfoSection(question: L10n.Panel.WidgetInfo.TopSubcategories.howQ,
+                                        answer: L10n.Panel.WidgetInfo.TopSubcategories.smallHowA),
+                        ]
+                    case .medium, .large:
+                        return [
+                            InfoSection(question: L10n.Panel.WidgetInfo.TopSubcategories.regularWhatQ,
+                                        answer: L10n.Panel.WidgetInfo.TopSubcategories.regularWhatA),
+                            InfoSection(question: L10n.Panel.WidgetInfo.TopSubcategories.howQ,
+                                        answer: L10n.Panel.WidgetInfo.TopSubcategories.regularHowA),
+                        ]
+                    }
+                }
+            )
+
+        case .budgets, .scheduledPayments, .recentRecords,
              .exchangeRate, .weekdayBar:
             fatalError("WidgetInfoKind.\(kind) no migrado todavía — ver ticket de roll-out panel-polish-2_widget-info-rollout")
         }

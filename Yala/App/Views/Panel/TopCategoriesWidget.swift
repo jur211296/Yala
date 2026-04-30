@@ -32,6 +32,9 @@ struct TopCategoriesWidget: View {
     var size: CardSize = .large
     var limit: Int? = nil  // nil = show all
 
+    /// Slot pedagógico opcional inyectado en el header (Panel Polish #2).
+    var headerInfoButton: AnyView? = nil
+
     // MARK: - Static Formatters (avoid recreation on each render)
 
     fileprivate static let percentFormatter: NumberFormatter = {
@@ -116,10 +119,23 @@ struct TopCategoriesWidget: View {
         HStack(alignment: .top) {
             // Left: Title and total amount
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(size == .small ? L10n.Widget.main : L10n.Widget.topCategories)
-                    .font(DS.Typography.subheadlineEmphasized)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
+                HStack(spacing: DS.Spacing.xs) {
+                    Text(size == .small ? L10n.Widget.main : L10n.Widget.topCategories)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+
+                    if size != .small {
+                        if let headerInfoButton {
+                            headerInfoButton
+                        } else {
+                            InfoHintButton(
+                                title: L10n.WidgetType.topSpending,
+                                message: L10n.Widget.Hint.topCategories
+                            )
+                        }
+                    }
+                }
 
                 // Total amount with vs comparison (only for medium/large with variation header)
                 if showVariationHeader && size != .small && !categories.isEmpty {
@@ -139,13 +155,6 @@ struct TopCategoriesWidget: View {
                         }
                     }
                 }
-            }
-
-            if size != .small {
-                InfoHintButton(
-                    title: L10n.WidgetType.topSpending,
-                    message: L10n.Widget.Hint.topCategories
-                )
             }
 
             Spacer()
@@ -234,7 +243,8 @@ struct TopCategoriesWidget: View {
                     PanelSmallWidgetHeader(
                         title: L10n.Widget.topCategories,
                         accessibilityLabel: L10n.Panel.seeMoreInDistribution,
-                        action: onShowMore
+                        action: onShowMore,
+                        headerInfoButton: headerInfoButton
                     )
 
                     VStack(alignment: .leading, spacing: DS.Spacing.md) {

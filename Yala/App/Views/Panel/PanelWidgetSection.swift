@@ -131,9 +131,32 @@ private struct PanelCategoriesSection: View {
             },
             onShowMore: { viewModel.navigateToStatistics(.categories) },
             size: mapWidgetSize(size),
+            headerInfoButton: topCategoriesInfoButton,
             period: viewModel.selectedPeriod,
             previousTotalAmount: viewModel.previousCategoriesTotalAmount,
             showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
+        )
+    }
+
+    /// Botón info pedagógico inyectado en el header. Reusa las categorías reales
+    /// del VM (@Model) — empty state visual si el user no tiene categorías.
+    private var topCategoriesInfoButton: AnyView? {
+        AnyView(
+            WidgetInfoButton(kind: .topCategories, viewModel: viewModel) { previewSize in
+                TopCategoriesWidget(
+                    categories: viewModel.topSpendingCategories,
+                    currencyCode: currencyCode,
+                    selectedCategoryID: nil,
+                    isExcludeMode: false,
+                    onSelectCategory: nil,
+                    onShowMore: nil,
+                    size: mapWidgetSize(previewSize),
+                    period: viewModel.selectedPeriod,
+                    previousTotalAmount: nil,
+                    showVariationHeader: false
+                )
+                .allowsHitTesting(false)
+            }
         )
     }
 }
@@ -162,9 +185,34 @@ private struct PanelSubcategoriesSection: View {
             isExcludeMode: viewModel.isExcludeMode,
             onShowMore: { viewModel.navigateToStatistics(.categories) },
             size: mapWidgetSize(size),
+            headerInfoButton: topSubcategoriesInfoButton,
             period: viewModel.selectedPeriod,
             previousTotalAmount: viewModel.previousSubcategoriesTotalAmount,
             showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
+        )
+    }
+
+    /// Botón info pedagógico inyectado en el header. Reusa el VM real
+    /// (subcategorías @Model) — respeta el filtro global y local existentes.
+    private var topSubcategoriesInfoButton: AnyView? {
+        AnyView(
+            WidgetInfoButton(kind: .topSubcategories, viewModel: viewModel) { previewSize in
+                TopSubcategoriesWidget(
+                    subcategories: viewModel.topSubcategories,
+                    currencyCode: currencyCode,
+                    globalCategoryFilterID: viewModel.selectedCategoryID,
+                    localCategoryFilterID: .constant(viewModel.subcategoriesWidgetFilter),
+                    onSelectSubcategory: nil,
+                    selectedSubcategoryIDs: [],
+                    isExcludeMode: false,
+                    onShowMore: nil,
+                    size: mapWidgetSize(previewSize),
+                    period: viewModel.selectedPeriod,
+                    previousTotalAmount: nil,
+                    showVariationHeader: false
+                )
+                .allowsHitTesting(false)
+            }
         )
     }
 }

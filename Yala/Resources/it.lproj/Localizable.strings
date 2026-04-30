@@ -3813,3 +3813,67 @@
 
 /* Panel Polish #2 — ExpensesByNeed L: respuesta */
 "panel.widgetInfo.expensesByNeed.largeHowA" = "Fai scorrere il dito sulle barre per vedere il dettaglio di un punto nel tempo — quanto è stato essenziale, prioritario, ecc., con il totale. Tocca un chip della legenda per mostrare solo quel tipo di necessità e filtrare il Pannello.";
+
+
+/* Panel Polish #2 — Title sheet pedagógico TopCategories */
+"panel.widgetInfo.topCategories.title" = "Categorie principali";
+
+/* Panel Polish #2 — Chip 1 TopCategories (entidad) */
+"panel.widgetInfo.topCategories.chip1" = "Categorie";
+
+/* Panel Polish #2 — Chip 2 TopCategories (período) */
+"panel.widgetInfo.topCategories.chip2" = "Periodo attuale";
+
+/* Panel Polish #2 — Chip 3 TopCategories (Interactiva) */
+"panel.widgetInfo.topCategories.chip3" = "Interattiva";
+
+/* Panel Polish #2 — TopCategories S: pregunta */
+"panel.widgetInfo.topCategories.smallWhatQ" = "Cosa stai vedendo?";
+
+/* Panel Polish #2 — TopCategories S: respuesta */
+"panel.widgetInfo.topCategories.smallWhatA" = "Le due categorie in cui hai speso di più nel periodo attivo. La barra mostra il peso di ciascuna rispetto alla prima.";
+
+/* Panel Polish #2 — TopCategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatQ" = "Cosa stai vedendo?";
+
+/* Panel Polish #2 — TopCategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatA" = "Le tue categorie con più spesa nel periodo attivo, ordinate dalla maggiore alla minore. Ogni riga mostra l'importo, la percentuale sul totale e una barra che la confronta con la categoria principale.";
+
+/* Panel Polish #2 — TopCategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howQ" = "Come interagisco?";
+
+/* Panel Polish #2 — TopCategories: respuesta a 'cómo interactúo' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howA" = "Tocca una riga per filtrare il resto del Pannello per quella categoria. Toccala di nuovo per rimuovere il filtro.";
+
+/* Panel Polish #2 — Title sheet pedagógico TopSubcategories */
+"panel.widgetInfo.topSubcategories.title" = "Sottocategorie principali";
+
+/* Panel Polish #2 — Chip 1 TopSubcategories (entidad) */
+"panel.widgetInfo.topSubcategories.chip1" = "Sottocategorie";
+
+/* Panel Polish #2 — Chip 2 TopSubcategories (período) */
+"panel.widgetInfo.topSubcategories.chip2" = "Periodo attuale";
+
+/* Panel Polish #2 — Chip 3 TopSubcategories (Interactiva) */
+"panel.widgetInfo.topSubcategories.chip3" = "Interattiva";
+
+/* Panel Polish #2 — TopSubcategories S: pregunta */
+"panel.widgetInfo.topSubcategories.smallWhatQ" = "Cosa stai vedendo?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta */
+"panel.widgetInfo.topSubcategories.smallWhatA" = "Le due sottocategorie in cui hai speso di più nel periodo attivo. Se in un altro widget hai filtrato una categoria, vedrai solo le sue.";
+
+/* Panel Polish #2 — TopSubcategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatQ" = "Cosa stai vedendo?";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatA" = "Le tue sottocategorie con più spesa nel periodo attivo, ordinate dalla maggiore alla minore. Ogni riga mostra l'importo, la percentuale sulla categoria e sul totale, e una barra che la confronta con la prima.";
+
+/* Panel Polish #2 — TopSubcategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topSubcategories.howQ" = "Come interagisco?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta a 'cómo interactúo' (sin selector) */
+"panel.widgetInfo.topSubcategories.smallHowA" = "Tocca una riga per filtrare il resto del Pannello per quella sottocategoria.";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
+"panel.widgetInfo.topSubcategories.regularHowA" = "Tocca una riga per filtrare il resto del Pannello per quella sottocategoria. Usa i chip in alto per restringere l'elenco a una categoria — oppure, se in un altro widget hai già filtrato una categoria, il selettore resta bloccato su quella.";

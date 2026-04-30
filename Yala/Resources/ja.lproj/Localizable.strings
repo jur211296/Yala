@@ -3814,3 +3814,67 @@
 
 /* Panel Polish #2 — ExpensesByNeed L: respuesta */
 "panel.widgetInfo.expensesByNeed.largeHowA" = "バーの上で指をスライドさせると、特定の時点での内訳 (必須、優先などの金額と合計) が表示されます。凡例のチップをタップすると、そのニーズタイプだけを表示してパネルをフィルターできます。";
+
+
+/* Panel Polish #2 — Title sheet pedagógico TopCategories */
+"panel.widgetInfo.topCategories.title" = "主要なカテゴリー";
+
+/* Panel Polish #2 — Chip 1 TopCategories (entidad) */
+"panel.widgetInfo.topCategories.chip1" = "カテゴリー";
+
+/* Panel Polish #2 — Chip 2 TopCategories (período) */
+"panel.widgetInfo.topCategories.chip2" = "現在の期間";
+
+/* Panel Polish #2 — Chip 3 TopCategories (Interactiva) */
+"panel.widgetInfo.topCategories.chip3" = "インタラクティブ";
+
+/* Panel Polish #2 — TopCategories S: pregunta */
+"panel.widgetInfo.topCategories.smallWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — TopCategories S: respuesta */
+"panel.widgetInfo.topCategories.smallWhatA" = "現在の期間で最も支出が多かった2つのカテゴリーです。バーは1位のカテゴリーに対する各カテゴリーの相対比率を示します。";
+
+/* Panel Polish #2 — TopCategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — TopCategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatA" = "現在の期間で支出が大きいカテゴリーを、多い順に並べたものです。各行には金額、合計に対する割合、そしてトップカテゴリーと比較するバーが表示されます。";
+
+/* Panel Polish #2 — TopCategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howQ" = "どう操作しますか?";
+
+/* Panel Polish #2 — TopCategories: respuesta a 'cómo interactúo' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howA" = "行をタップすると、そのカテゴリーでパネル全体をフィルタリングできます。もう一度タップするとフィルターが解除されます。";
+
+/* Panel Polish #2 — Title sheet pedagógico TopSubcategories */
+"panel.widgetInfo.topSubcategories.title" = "主要なサブカテゴリー";
+
+/* Panel Polish #2 — Chip 1 TopSubcategories (entidad) */
+"panel.widgetInfo.topSubcategories.chip1" = "サブカテゴリー";
+
+/* Panel Polish #2 — Chip 2 TopSubcategories (período) */
+"panel.widgetInfo.topSubcategories.chip2" = "現在の期間";
+
+/* Panel Polish #2 — Chip 3 TopSubcategories (Interactiva) */
+"panel.widgetInfo.topSubcategories.chip3" = "インタラクティブ";
+
+/* Panel Polish #2 — TopSubcategories S: pregunta */
+"panel.widgetInfo.topSubcategories.smallWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta */
+"panel.widgetInfo.topSubcategories.smallWhatA" = "現在の期間で最も支出が多かった2つのサブカテゴリーです。他のウィジェットでカテゴリーをフィルターしている場合は、そのカテゴリーのサブカテゴリーだけが表示されます。";
+
+/* Panel Polish #2 — TopSubcategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatA" = "現在の期間で支出が大きいサブカテゴリーを、多い順に並べたものです。各行には金額、所属カテゴリー内および全体に対する割合、そして1位と比較するバーが表示されます。";
+
+/* Panel Polish #2 — TopSubcategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topSubcategories.howQ" = "どう操作しますか?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta a 'cómo interactúo' (sin selector) */
+"panel.widgetInfo.topSubcategories.smallHowA" = "行をタップすると、そのサブカテゴリーでパネル全体をフィルタリングできます。";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
+"panel.widgetInfo.topSubcategories.regularHowA" = "行をタップすると、そのサブカテゴリーでパネル全体をフィルタリングできます。上のチップで一覧を1つのカテゴリーに絞り込めます。他のウィジェットですでにカテゴリーをフィルターしている場合は、セレクターはそのカテゴリーにロックされます。";

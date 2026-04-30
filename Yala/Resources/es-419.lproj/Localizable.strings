@@ -3817,3 +3817,67 @@
 
 /* Panel Polish #2 — ExpensesByNeed L: respuesta */
 "panel.widgetInfo.expensesByNeed.largeHowA" = "Desliza el dedo sobre las barras para ver el desglose de un punto en el tiempo —cuánto fue esencial, prioritario, etc., con el total. Toca un chip de la leyenda para mostrar solo ese tipo de necesidad y filtrar el Panel.";
+
+
+/* Panel Polish #2 — Title sheet pedagógico TopCategories */
+"panel.widgetInfo.topCategories.title" = "Categorías principales";
+
+/* Panel Polish #2 — Chip 1 TopCategories (entidad) */
+"panel.widgetInfo.topCategories.chip1" = "Categorías";
+
+/* Panel Polish #2 — Chip 2 TopCategories (período) */
+"panel.widgetInfo.topCategories.chip2" = "Período actual";
+
+/* Panel Polish #2 — Chip 3 TopCategories (Interactiva) */
+"panel.widgetInfo.topCategories.chip3" = "Interactiva";
+
+/* Panel Polish #2 — TopCategories S: pregunta */
+"panel.widgetInfo.topCategories.smallWhatQ" = "¿Qué estás viendo?";
+
+/* Panel Polish #2 — TopCategories S: respuesta */
+"panel.widgetInfo.topCategories.smallWhatA" = "Las dos categorías donde más gastaste en el período activo. La barra muestra el peso de cada una respecto a la primera.";
+
+/* Panel Polish #2 — TopCategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatQ" = "¿Qué estás viendo?";
+
+/* Panel Polish #2 — TopCategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatA" = "Tus categorías con más gasto en el período activo, ordenadas de mayor a menor. Cada fila muestra el monto, el porcentaje del total y una barra que la compara con la categoría que más gastó.";
+
+/* Panel Polish #2 — TopCategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howQ" = "¿Cómo interactúo?";
+
+/* Panel Polish #2 — TopCategories: respuesta a 'cómo interactúo' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howA" = "Toca una fila para filtrar el resto del Panel por esa categoría. Vuelve a tocarla para quitar el filtro.";
+
+/* Panel Polish #2 — Title sheet pedagógico TopSubcategories */
+"panel.widgetInfo.topSubcategories.title" = "Subcategorías principales";
+
+/* Panel Polish #2 — Chip 1 TopSubcategories (entidad) */
+"panel.widgetInfo.topSubcategories.chip1" = "Subcategorías";
+
+/* Panel Polish #2 — Chip 2 TopSubcategories (período) */
+"panel.widgetInfo.topSubcategories.chip2" = "Período actual";
+
+/* Panel Polish #2 — Chip 3 TopSubcategories (Interactiva) */
+"panel.widgetInfo.topSubcategories.chip3" = "Interactiva";
+
+/* Panel Polish #2 — TopSubcategories S: pregunta */
+"panel.widgetInfo.topSubcategories.smallWhatQ" = "¿Qué estás viendo?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta */
+"panel.widgetInfo.topSubcategories.smallWhatA" = "Las dos subcategorías donde más gastaste en el período activo. Si tienes una categoría filtrada en otro widget, solo verás las suyas.";
+
+/* Panel Polish #2 — TopSubcategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatQ" = "¿Qué estás viendo?";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatA" = "Tus subcategorías con más gasto en el período activo, ordenadas de mayor a menor. Cada fila muestra el monto, el porcentaje sobre su categoría y sobre el total, y una barra que la compara con la primera.";
+
+/* Panel Polish #2 — TopSubcategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topSubcategories.howQ" = "¿Cómo interactúo?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta a 'cómo interactúo' (sin selector) */
+"panel.widgetInfo.topSubcategories.smallHowA" = "Toca una fila para filtrar el resto del Panel por esa subcategoría.";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
+"panel.widgetInfo.topSubcategories.regularHowA" = "Toca una fila para filtrar el resto del Panel por esa subcategoría. Usa los chips de arriba para acotar la lista a una categoría — o, si ya tienes una categoría filtrada en otro widget, el selector queda bloqueado en esa.";

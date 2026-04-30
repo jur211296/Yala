@@ -3814,3 +3814,67 @@
 
 /* Panel Polish #2 — ExpensesByNeed L: respuesta */
 "panel.widgetInfo.expensesByNeed.largeHowA" = "Przesuń palcem po słupkach, aby zobaczyć rozkład w danym momencie — ile było niezbędne, priorytetowe itd., wraz z sumą. Stuknij chip w legendzie, aby pokazać tylko ten typ potrzeby i przefiltrować Panel.";
+
+
+/* Panel Polish #2 — Title sheet pedagógico TopCategories */
+"panel.widgetInfo.topCategories.title" = "Główne kategorie";
+
+/* Panel Polish #2 — Chip 1 TopCategories (entidad) */
+"panel.widgetInfo.topCategories.chip1" = "Kategorie";
+
+/* Panel Polish #2 — Chip 2 TopCategories (período) */
+"panel.widgetInfo.topCategories.chip2" = "Bieżący okres";
+
+/* Panel Polish #2 — Chip 3 TopCategories (Interactiva) */
+"panel.widgetInfo.topCategories.chip3" = "Interaktywny";
+
+/* Panel Polish #2 — TopCategories S: pregunta */
+"panel.widgetInfo.topCategories.smallWhatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — TopCategories S: respuesta */
+"panel.widgetInfo.topCategories.smallWhatA" = "Dwie kategorie, na które wydałeś/aś najwięcej w bieżącym okresie. Pasek pokazuje wagę każdej względem pierwszej.";
+
+/* Panel Polish #2 — TopCategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — TopCategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatA" = "Twoje kategorie z największymi wydatkami w bieżącym okresie, posortowane od największych do najmniejszych. Każdy wiersz pokazuje kwotę, udział w sumie oraz pasek porównujący ją do kategorii lidera.";
+
+/* Panel Polish #2 — TopCategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howQ" = "Jak z tym pracować?";
+
+/* Panel Polish #2 — TopCategories: respuesta a 'cómo interactúo' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howA" = "Stuknij w wiersz, aby przefiltrować resztę Panelu według tej kategorii. Stuknij ponownie, aby usunąć filtr.";
+
+/* Panel Polish #2 — Title sheet pedagógico TopSubcategories */
+"panel.widgetInfo.topSubcategories.title" = "Główne podkategorie";
+
+/* Panel Polish #2 — Chip 1 TopSubcategories (entidad) */
+"panel.widgetInfo.topSubcategories.chip1" = "Podkategorie";
+
+/* Panel Polish #2 — Chip 2 TopSubcategories (período) */
+"panel.widgetInfo.topSubcategories.chip2" = "Bieżący okres";
+
+/* Panel Polish #2 — Chip 3 TopSubcategories (Interactiva) */
+"panel.widgetInfo.topSubcategories.chip3" = "Interaktywny";
+
+/* Panel Polish #2 — TopSubcategories S: pregunta */
+"panel.widgetInfo.topSubcategories.smallWhatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta */
+"panel.widgetInfo.topSubcategories.smallWhatA" = "Dwie podkategorie, na które wydałeś/aś najwięcej w bieżącym okresie. Jeśli w innym widżecie jest odfiltrowana kategoria, zobaczysz tylko jej podkategorie.";
+
+/* Panel Polish #2 — TopSubcategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatA" = "Twoje podkategorie z największymi wydatkami w bieżącym okresie, posortowane od największych do najmniejszych. Każdy wiersz pokazuje kwotę, udział w jej kategorii i w sumie oraz pasek porównujący ją z pierwszą.";
+
+/* Panel Polish #2 — TopSubcategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topSubcategories.howQ" = "Jak z tym pracować?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta a 'cómo interactúo' (sin selector) */
+"panel.widgetInfo.topSubcategories.smallHowA" = "Stuknij w wiersz, aby przefiltrować resztę Panelu według tej podkategorii.";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
+"panel.widgetInfo.topSubcategories.regularHowA" = "Stuknij w wiersz, aby przefiltrować resztę Panelu według tej podkategorii. Użyj chipów u góry, aby zawęzić listę do jednej kategorii — lub, jeśli kategoria jest już odfiltrowana w innym widżecie, selektor pozostaje zablokowany na niej.";

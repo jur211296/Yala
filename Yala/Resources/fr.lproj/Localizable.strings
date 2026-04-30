@@ -3812,3 +3812,67 @@
 
 /* Panel Polish #2 — ExpensesByNeed L: respuesta */
 "panel.widgetInfo.expensesByNeed.largeHowA" = "Fais glisser ton doigt sur les barres pour voir la répartition d'un instant donné — combien d'essentiel, de prioritaire, etc., avec le total. Touche un chip de la légende pour n'afficher que ce type de besoin et filtrer le Panneau.";
+
+
+/* Panel Polish #2 — Title sheet pedagógico TopCategories */
+"panel.widgetInfo.topCategories.title" = "Catégories principales";
+
+/* Panel Polish #2 — Chip 1 TopCategories (entidad) */
+"panel.widgetInfo.topCategories.chip1" = "Catégories";
+
+/* Panel Polish #2 — Chip 2 TopCategories (período) */
+"panel.widgetInfo.topCategories.chip2" = "Période actuelle";
+
+/* Panel Polish #2 — Chip 3 TopCategories (Interactiva) */
+"panel.widgetInfo.topCategories.chip3" = "Interactive";
+
+/* Panel Polish #2 — TopCategories S: pregunta */
+"panel.widgetInfo.topCategories.smallWhatQ" = "Qu'est-ce que tu vois ?";
+
+/* Panel Polish #2 — TopCategories S: respuesta */
+"panel.widgetInfo.topCategories.smallWhatA" = "Les deux catégories dans lesquelles tu as le plus dépensé sur la période active. La barre montre le poids de chacune par rapport à la première.";
+
+/* Panel Polish #2 — TopCategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatQ" = "Qu'est-ce que tu vois ?";
+
+/* Panel Polish #2 — TopCategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatA" = "Tes catégories aux plus grosses dépenses sur la période active, triées du plus grand au plus petit. Chaque ligne affiche le montant, le pourcentage du total et une barre la comparant à la catégorie en tête.";
+
+/* Panel Polish #2 — TopCategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howQ" = "Comment interagir ?";
+
+/* Panel Polish #2 — TopCategories: respuesta a 'cómo interactúo' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howA" = "Touche une ligne pour filtrer le reste du Panneau par cette catégorie. Touche-la à nouveau pour retirer le filtre.";
+
+/* Panel Polish #2 — Title sheet pedagógico TopSubcategories */
+"panel.widgetInfo.topSubcategories.title" = "Sous-catégories principales";
+
+/* Panel Polish #2 — Chip 1 TopSubcategories (entidad) */
+"panel.widgetInfo.topSubcategories.chip1" = "Sous-catégories";
+
+/* Panel Polish #2 — Chip 2 TopSubcategories (período) */
+"panel.widgetInfo.topSubcategories.chip2" = "Période actuelle";
+
+/* Panel Polish #2 — Chip 3 TopSubcategories (Interactiva) */
+"panel.widgetInfo.topSubcategories.chip3" = "Interactive";
+
+/* Panel Polish #2 — TopSubcategories S: pregunta */
+"panel.widgetInfo.topSubcategories.smallWhatQ" = "Qu'est-ce que tu vois ?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta */
+"panel.widgetInfo.topSubcategories.smallWhatA" = "Les deux sous-catégories dans lesquelles tu as le plus dépensé sur la période active. Si une catégorie est filtrée dans un autre widget, tu ne vois que ses sous-catégories.";
+
+/* Panel Polish #2 — TopSubcategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatQ" = "Qu'est-ce que tu vois ?";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatA" = "Tes sous-catégories aux plus grosses dépenses sur la période active, triées du plus grand au plus petit. Chaque ligne affiche le montant, le pourcentage dans sa catégorie et sur le total, et une barre la comparant à la première.";
+
+/* Panel Polish #2 — TopSubcategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topSubcategories.howQ" = "Comment interagir ?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta a 'cómo interactúo' (sin selector) */
+"panel.widgetInfo.topSubcategories.smallHowA" = "Touche une ligne pour filtrer le reste du Panneau par cette sous-catégorie.";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
+"panel.widgetInfo.topSubcategories.regularHowA" = "Touche une ligne pour filtrer le reste du Panneau par cette sous-catégorie. Utilise les chips en haut pour restreindre la liste à une catégorie — ou, si une catégorie est déjà filtrée dans un autre widget, le sélecteur reste verrouillé sur celle-ci.";
