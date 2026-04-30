@@ -8,6 +8,11 @@
 import SwiftData
 import SwiftUI
 
+/// Umbral para descartar invocaciones de `onGeometryChange` con micro-cambios
+/// sub-pt — evita layout loop al asignar `@State` en cada pass.
+/// Patrón aplicado también en `TopSubcategoriesWidget`. Ver crash 2026-04-30.
+private let geometryChangeThreshold: CGFloat = 0.5
+
 struct TopCategoriesWidget: View {
     @Environment(AppPreferences.self) private var appPreferences
     let categories: [CategorySpendingSummary]
@@ -430,8 +435,7 @@ private struct CategoryRow: View {
                             .frame(width: width, height: 6)
                     }
                     .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
-                        // Guard de igualdad — ver `SubcategoryRow.onGeometryChange`.
-                        guard abs(newWidth - barWidth) > 0.5 else { return }
+                        guard abs(newWidth - barWidth) > geometryChangeThreshold else { return }
                         barWidth = newWidth
                     }
                 }

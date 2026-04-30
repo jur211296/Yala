@@ -65,16 +65,14 @@ struct WidgetInfoSheet<Preview: View>: View {
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
-        .task {
-            // Capturar el tamaño actual del VM en el primer mount; los cambios
-            // subsecuentes del segmented mutan `draftSize` localmente y solo se
-            // persisten al VM si el usuario confirma con el botón check.
-            if !didLoadInitialSize {
-                let current = viewModel.widgetSize(widgetType)
-                draftSize = current
-                initialSize = current
-                didLoadInitialSize = true
-            }
+        .task(id: kind) {
+            // Capturar el tamaño actual del VM al montar (o si el sheet se reusa
+            // con otro kind). Los cambios del segmented mutan `draftSize`
+            // localmente y solo se persisten si el usuario confirma con el check.
+            let current = viewModel.widgetSize(widgetType)
+            draftSize = current
+            initialSize = current
+            didLoadInitialSize = true
         }
     }
 
@@ -95,13 +93,8 @@ struct WidgetInfoSheet<Preview: View>: View {
 
     /// Small se renderiza al ~50% del ancho disponible para emular la
     /// apariencia half-pair del grid del Panel; medium/large ocupan ancho
-    /// completo.
-    /// `.allowsHitTesting(false)` aplicado aquí centraliza el invariante
-    /// "preview no acepta gestos" — sin esto, taps en burbujas/filas/segmentos
-    /// del preview filtrarían el Panel real por debajo. Los call-sites en
-    /// `PanelWidgetSection` no necesitan repetirlo.
-    /// El alto se calibra por kind via `WidgetInfoKind.previewBoxHeight` para
-    /// que pies/tops large no se aprieten dentro del frame.
+    /// completo. `.allowsHitTesting(false)` centraliza el invariante "preview
+    /// no acepta gestos" — sin esto, taps filtrarían el Panel real por debajo.
     @ViewBuilder
     private var previewBox: some View {
         let isSmall = draftSize == .small

@@ -15,11 +15,15 @@ private let sharedPercentFormatter: NumberFormatter = {
     return formatter
 }()
 
+/// Umbral para descartar invocaciones de `onGeometryChange` con micro-cambios
+/// sub-pt. Sin este guard, asignar `@State` en cada layout pass dispara un
+/// loop infinito (watchdog 0x8BADF00D, 2026-04-30).
+private let geometryChangeThreshold: CGFloat = 0.5
+
 struct TopSubcategoriesWidget: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
-    @Environment(\.isWidgetPreviewMode) private var isWidgetPreviewMode
 
     @State private var viewModel = TopSubcategoriesWidgetViewModel()
 
@@ -102,12 +106,8 @@ struct TopSubcategoriesWidget: View {
         )
         .solidCard(padding: DS.Card.paddingCompact)
         .frame(height: size == .small ? WidgetSize.smallHeight : nil)
-        // En preview: identity estable y skip carga del VM interno. El ID dinámico
-        // por count + `setContext` que muta `viewModel.allCategories` causaban
-        // re-mounts del subtree dentro del previewBox del sheet.
-        .id(isWidgetPreviewMode ? "preview" : (subcategories.isEmpty ? "empty" : "content-\(subcategories.count)"))
+        .id(subcategories.isEmpty ? "empty" : "content-\(subcategories.count)")
         .onAppear {
-            guard !isWidgetPreviewMode else { return }
             viewModel.setContext(modelContext)
         }
     }
@@ -174,14 +174,8 @@ struct TopSubcategoriesWidget: View {
 
             }
 
-            // Row 2: Selector (Only Medium/Large, no en preview pedagógico).
-            // El selector con `ScrollView(.horizontal)` + chips dinámicos sobre
-            // `viewModel.allCategories` cargados en `onAppear` provoca un layout
-            // loop infinito cuando el widget se renderiza dentro del previewBox
-            // del `WidgetInfoSheet` (watchdog 0x8BADF00D — ver crash log
-            // 2026-04-30). El sheet pedagógico solo necesita mostrar la lista
-            // de subcategorías, no el selector interactivo.
-            if size != .small && !isWidgetPreviewMode {
+            // Row 2: Selector (Only Medium/Large)
+            if size != .small {
                 categorySelector
             }
         }
@@ -568,13 +562,7 @@ private struct SubcategoryRow: View {
                                 .frame(width: width, height: 6)
                         }
                         .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
-                            // Guard de igualdad: SwiftUI puede invocar el callback en cada
-                            // layout pass con micro-cambios floating-point (sub-pt). Asignar
-                            // `barWidth = newWidth` sin guard fuerza re-render aunque el
-                            // valor sea efectivamente igual → loop infinito (watchdog
-                            // 0x8BADF00D — confirmado en logs 2026-04-30 con SubcategoryRow
-                            // dentro del previewBox del WidgetInfoSheet).
-                            guard abs(newWidth - barWidth) > 0.5 else { return }
+                            guard abs(newWidth - barWidth) > geometryChangeThreshold else { return }
                             barWidth = newWidth
                         }
                     }
