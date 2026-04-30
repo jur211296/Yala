@@ -47,7 +47,7 @@ struct PanelSectionPreferencesSheet: View {
                     mediumLayout
                 }
             }
-            .navigationTitle(L10n.Panel.SectionPrefs.title)
+            .navigationTitle(kind.localizedTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
