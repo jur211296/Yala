@@ -65,6 +65,21 @@ extension WidgetInfoKind {
         case .weekdayBar:        return L10n.Panel.WidgetInfo.WeekdayBar.title
         }
     }
+
+    /// Alto del previewBox del sheet pedagógico, calibrado al contenido más alto
+    /// del kind. Evita que el preview se apriete (pies large + leyenda lateral,
+    /// tops large con 5 filas + barras) o sobre todo en widgets con stacked chart.
+    var previewBoxHeight: CGFloat {
+        switch self {
+        case .categoriesPie, .subcategoriesPie, .tagsPie,
+             .topCategories, .topSubcategories:
+            return 380
+        case .expensesByNeed, .scheduledPayments, .exchangeRate:
+            return 320
+        case .trend, .cashFlow, .budgets, .recentRecords, .weekdayBar:
+            return 280
+        }
+    }
 }
 
 /// Tag colorido en el header de la sheet pedagógica. La tinta se resuelve

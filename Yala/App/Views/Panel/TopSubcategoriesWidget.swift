@@ -19,6 +19,7 @@ struct TopSubcategoriesWidget: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.isWidgetPreviewMode) private var isWidgetPreviewMode
 
     @State private var viewModel = TopSubcategoriesWidgetViewModel()
 
@@ -169,8 +170,14 @@ struct TopSubcategoriesWidget: View {
 
             }
 
-            // Row 2: Selector (Only Medium/Large)
-            if size != .small {
+            // Row 2: Selector (Only Medium/Large, no en preview pedagógico).
+            // El selector con `ScrollView(.horizontal)` + chips dinámicos sobre
+            // `viewModel.allCategories` cargados en `onAppear` provoca un layout
+            // loop infinito cuando el widget se renderiza dentro del previewBox
+            // del `WidgetInfoSheet` (watchdog 0x8BADF00D — ver crash log
+            // 2026-04-30). El sheet pedagógico solo necesita mostrar la lista
+            // de subcategorías, no el selector interactivo.
+            if size != .small && !isWidgetPreviewMode {
                 categorySelector
             }
         }

@@ -2,16 +2,12 @@
 //  WidgetInfoSheet.swift
 //  Yala
 //
-//  Sheet pedagógica para widgets del Panel. El draft de tamaño se persiste
-//  al ViewModel al cerrar (botón xmark o gesto de dismiss).
+//  Sheet pedagógica para widgets del Panel. El draft de tamaño se aplica al
+//  ViewModel SOLO si el usuario confirma con el check del toolbar; cerrar
+//  con X o gesto descarta el draft sin persistir.
 //
 
 import SwiftUI
-
-/// Alto fijo del previewBox — calibrado al alto del widget más alto del kind.
-/// Las 3 sizes ocupan el mismo espacio para evitar salto visual al cambiar
-/// el segmented; small queda centrado verticalmente dentro del frame.
-private let previewBoxHeight: CGFloat = 280
 
 struct WidgetInfoSheet<Preview: View>: View {
     let kind: WidgetInfoKind
@@ -21,6 +17,7 @@ struct WidgetInfoSheet<Preview: View>: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppPreferences.self) private var appPreferences
     @State private var draftSize: WidgetSize = .small
+    @State private var initialSize: WidgetSize = .small
     @State private var didLoadInitialSize = false
     @State private var contentWidth: CGFloat = 0
 
@@ -44,7 +41,7 @@ struct WidgetInfoSheet<Preview: View>: View {
             }
             .scrollBounceBehavior(.basedOnSize)
             .background(.thBackground)
-            .navigationTitle(content.title)
+            .navigationTitle(kind.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -52,27 +49,33 @@ struct WidgetInfoSheet<Preview: View>: View {
                         systemName: "xmark",
                         label: L10n.Accessibility.close
                     ) {
-                        applyDraftAndDismiss()
+                        dismiss()
                     }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    YalaToolbarButton(
+                        systemName: "checkmark",
+                        label: L10n.Action.done
+                    ) {
+                        persistDraftToViewModel()
+                        dismiss()
+                    }
+                    .disabled(draftSize == initialSize)
                 }
             }
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .task {
-            // Solo capturar el tamaño actual del VM en el primer mount; los
-            // cambios subsecuentes del segmented mutan `draftSize` localmente
-            // y se persisten en el VM al cerrar la sheet.
+            // Capturar el tamaño actual del VM en el primer mount; los cambios
+            // subsecuentes del segmented mutan `draftSize` localmente y solo se
+            // persisten al VM si el usuario confirma con el botón check.
             if !didLoadInitialSize {
-                draftSize = viewModel.widgetSize(widgetType)
+                let current = viewModel.widgetSize(widgetType)
+                draftSize = current
+                initialSize = current
                 didLoadInitialSize = true
             }
-        }
-        .onDisappear {
-            // Safety net: si la sheet se dismissa por gesto/swipe (no botón),
-            // igual aplicamos el draft al VM real. Idempotente — si ya se aplicó
-            // vía `applyDraftAndDismiss`, el guard de `setWidgetSize` lo no-opa.
-            persistDraftToViewModel()
         }
     }
 
@@ -98,6 +101,8 @@ struct WidgetInfoSheet<Preview: View>: View {
     /// "preview no acepta gestos" — sin esto, taps en burbujas/filas/segmentos
     /// del preview filtrarían el Panel real por debajo. Los call-sites en
     /// `PanelWidgetSection` no necesitan repetirlo.
+    /// El alto se calibra por kind via `WidgetInfoKind.previewBoxHeight` para
+    /// que pies/tops large no se aprieten dentro del frame.
     @ViewBuilder
     private var previewBox: some View {
         let isSmall = draftSize == .small
@@ -110,7 +115,7 @@ struct WidgetInfoSheet<Preview: View>: View {
                 .allowsHitTesting(false)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: previewBoxHeight)
+        .frame(height: kind.previewBoxHeight)
     }
 
     @ViewBuilder
@@ -147,11 +152,6 @@ struct WidgetInfoSheet<Preview: View>: View {
         case .medium: return L10n.Panel.WidgetSize.medium
         case .large:  return L10n.Panel.WidgetSize.large
         }
-    }
-
-    private func applyDraftAndDismiss() {
-        persistDraftToViewModel()
-        dismiss()
     }
 
     private func persistDraftToViewModel() {

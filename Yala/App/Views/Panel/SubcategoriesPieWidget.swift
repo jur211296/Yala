@@ -493,16 +493,24 @@ struct SubcategoriesPieWidget: View {
     private var headerView: some View {
         Group {
             if showComparison {
-                PieChartVariationHeader(
-                    title: L10n.Widget.distributionBySubcategory,
-                    totalAmount: totalExpense,  // Use total (not filtered) for consistent comparison
-                    previousAmount: previousTotalAmount,
-                    currencyCode: currencyCode,
-                    period: period,
-                    customRange: customRange,
-                    comparisonMode: comparisonMode,
-                    onShowDetail: onShowDetail
-                )
+                HStack(alignment: .top) {
+                    PieChartVariationHeader(
+                        title: L10n.Widget.distributionBySubcategory,
+                        totalAmount: totalExpense,  // Use total (not filtered) for consistent comparison
+                        previousAmount: previousTotalAmount,
+                        currencyCode: currencyCode,
+                        period: period,
+                        customRange: customRange,
+                        comparisonMode: comparisonMode,
+                        onShowDetail: onShowDetail
+                    )
+
+                    WidgetHeaderInfoSlot(
+                        injected: headerInfoButton,
+                        legacyTitle: L10n.WidgetType.subcategoriesPie,
+                        legacyMessage: L10n.Widget.Hint.subcategoriesPie
+                    )
+                }
             } else {
                 // Original header without comparison
                 HStack(alignment: .top) {
