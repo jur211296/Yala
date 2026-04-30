@@ -2,7 +2,9 @@
 //  ScheduledPaymentsWidget.swift
 //  Yala
 //
-//  Widget displaying scheduled payments summary, list, or calendar in PanelView.
+//  Widget displaying upcoming scheduled payments in PanelView.
+//  - small: KPI block + ring (% paid) + filter selector.
+//  - medium: list of upcoming payments + filter selector in header.
 //  Reads from PanelScheduledPaymentsData (pre-computed in PanelViewModel) —
 //  zero iteration over @Observable models in body.
 //
@@ -12,12 +14,12 @@ import SwiftUI
 struct ScheduledPaymentsWidget: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppPreferences.self) private var appPreferences
 
     let data: PanelScheduledPaymentsData
     let currencyCode: String
-    let mode: ScheduledPaymentsWidgetMode
 
-    /// PP2-06b: tamaño del card. `.small` fuerza summary compacto y oculta el filter selector.
+    /// PP2-06b: tamaño del card. `.small` muestra KPI + ring; `.medium` lista de próximos pagos.
     var size: WidgetSize = .medium
 
     /// Filter state (all/recurring/subscriptions)
@@ -35,23 +37,7 @@ struct ScheduledPaymentsWidget: View {
             } else {
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
                     headerSection
-
-                    switch mode {
-                    case .summary:
-                        if data.activeCount == 0 {
-                            emptyListState
-                        } else {
-                            summaryContent
-                        }
-                    case .list:
-                        listContent
-                    case .calendar:
-                        if data.activeCount == 0 {
-                            emptyListState
-                        } else {
-                            calendarContent
-                        }
-                    }
+                    listContent
                 }
             }
         }
@@ -291,25 +277,6 @@ struct ScheduledPaymentsWidget: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    // MARK: - Summary Content
-
-    private var summaryContent: some View {
-        VStack(spacing: DS.Spacing.md) {
-            // Amount
-            Text(appPreferences.currency(data.monthlyTotal, currencyCode: currencyCode))
-                .font(DS.Typography.amountLarge)
-                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                .foregroundStyle(.primary)
-
-            // Payment count
-            Text(String(format: L10n.Scheduled.Widget.count, data.activeCount))
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, DS.Spacing.lg)
-    }
-
     // MARK: - List Content
 
     private var listContent: some View {
@@ -385,132 +352,4 @@ struct ScheduledPaymentsWidget: View {
         }
     }
 
-    // MARK: - Calendar Content
-
-    /// First day of week from app settings (1 = Sunday, 2 = Monday, etc.)
-    @Environment(AppPreferences.self) private var appPreferences
-
-    private var calendarContent: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            weekdayHeaders
-            calendarGrid
-        }
-    }
-
-    private var weekdayHeaders: some View {
-        let symbols = Calendar.current.veryShortWeekdaySymbols
-        let startIndex = appPreferences.firstWeekday - 1
-        let reorderedSymbols = Array(symbols[startIndex...]) + Array(symbols[..<startIndex])
-
-        return HStack(spacing: DS.Spacing.xxs) {
-            ForEach(Array(reorderedSymbols.enumerated()), id: \.offset) { _, symbol in
-                Text(symbol)
-                    .font(DS.Typography.labelTiny)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
-            }
-        }
-    }
-
-    private var calendarGrid: some View {
-        let calendar = Calendar.current
-        let displayMonth = data.displayMonth
-        let daysInMonth = calendar.range(of: .day, in: .month, for: displayMonth)?.count ?? 30
-
-        let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: displayMonth)) ?? displayMonth
-        let firstDayWeekday = calendar.component(.weekday, from: firstDayOfMonth)
-        let emptyCellsCount = (firstDayWeekday - appPreferences.firstWeekday + 7) % 7
-
-        // Build cell data array
-        var cellData: [Int?] = []
-        for _ in 0..<emptyCellsCount {
-            cellData.append(nil)
-        }
-        for day in 1...daysInMonth {
-            cellData.append(day)
-        }
-
-        return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Spacing.xxs), count: 7), spacing: DS.Spacing.xxs) {
-            ForEach(Array(cellData.enumerated()), id: \.offset) { _, dayOrNil in
-                if let day = dayOrNil {
-                    calendarDayCell(day: day, entries: data.paymentsByDay[day] ?? [])
-                } else {
-                    Color.clear
-                        .frame(minHeight: 56)
-                }
-            }
-        }
-    }
-
-    private func calendarDayCell(day: Int, entries: [ScheduledPaymentCalendarEntry]) -> some View {
-        let isToday = isCurrentDay(day)
-        let hasPayments = !entries.isEmpty
-
-        return VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-            // Day number
-            Text("\(day)")
-                .font(DS.Typography.captionSmall.weight(isToday ? .bold : .medium))
-                .foregroundStyle(isToday ? theme.accent : .secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            // Payment names (show up to 2 with truncation)
-            if hasPayments {
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    ForEach(Array(entries.prefix(2).enumerated()), id: \.offset) { _, entry in
-                        HStack(spacing: DS.Spacing.xxs) {
-                            if entry.isSkipped {
-                                Image(systemName: "arrow.uturn.forward")
-                                    .font(.system(size: 6, weight: .bold)) // A11Y-DT: fixed size — calendar micro-badge
-                                    .foregroundStyle(.secondary)
-                                    .accessibilityHidden(true)
-                            } else if entry.isPaid {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 6, weight: .bold)) // A11Y-DT: fixed size — calendar micro-badge
-                                    .foregroundStyle(theme.accent)
-                                    .accessibilityHidden(true)
-                            }
-                            Text(entry.name)
-                                .font(DS.Typography.captionSmall).fontWeight(.medium)
-                                .foregroundStyle(entry.isSkipped ? .secondary : (entry.isPaid ? theme.accent : .primary))
-                                .lineLimit(1)
-                                .truncationMode(.tail)
-                        }
-                    }
-                    if entries.count > 2 {
-                        Text("+\(entries.count - 2)")
-                            .font(DS.Typography.captionSmall).fontWeight(.medium)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(DS.Spacing.xs)
-        .frame(minHeight: 56)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous)
-                .fill(backgroundColor(isToday: isToday, hasPayments: hasPayments))
-        )
-    }
-
-    private func backgroundColor(isToday: Bool, hasPayments: Bool) -> Color {
-        if isToday {
-            return theme.accent.opacity(0.12)
-        } else if hasPayments {
-            return DS.Semantic.neutralBackground
-        } else {
-            return DS.Semantic.neutralBackground
-        }
-    }
-
-    private func isCurrentDay(_ day: Int) -> Bool {
-        let calendar = Calendar.current
-        let today = Date.now
-
-        return calendar.component(.day, from: today) == day &&
-               calendar.component(.month, from: today) == calendar.component(.month, from: data.displayMonth) &&
-               calendar.component(.year, from: today) == calendar.component(.year, from: data.displayMonth)
-    }
 }

@@ -279,8 +279,8 @@ final class PanelViewModel {
     // Widget Configuration Manager (delegated)
     let widgetConfig = WidgetConfigManager()
 
-    // Computed property exposing the legacy JSON's widget configs (for `size` and
-    // `scheduledPaymentsMode` only — order and visibility are SSOT'd in AppPreferences).
+    // Computed property exposing the legacy JSON's widget configs (for `size`
+    // only — order and visibility are SSOT'd in AppPreferences).
     var widgetConfigs: [WidgetConfig] {
         get { widgetConfig.configs }
         set { widgetConfig.configs = newValue }
@@ -652,7 +652,7 @@ final class PanelViewModel {
     ///    future versions appear at the tail automatically)
     ///  - excludes entries listed in `panel<Section>Hidden`
     /// Then maps each `WidgetType` to its `WidgetConfig` in `widgetConfigs` (preserving
-    /// legacy `size` and `scheduledPaymentsMode`) or synthesizes a default one if missing.
+    /// legacy `size`) or synthesizes a default one if missing.
     ///
     /// Bootstrap fallback: when `appPreferences` is still nil (e.g. first frame before
     /// `setAppPreferences` is called), returns the legacy filter so render is never

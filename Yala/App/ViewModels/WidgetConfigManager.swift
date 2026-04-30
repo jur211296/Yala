@@ -2,8 +2,8 @@
 //  WidgetConfigManager.swift
 //  Yala
 //
-//  Legacy store for widget `size` + `scheduledPaymentsMode` (per-widget config
-//  that P20-03 does not expose in its per-section preferences sheet).
+//  Legacy store for widget `size` (per-widget config that P20-03 does not
+//  expose in its per-section preferences sheet).
 //
 //  Since P20-03, order + visibility live in `AppPreferences.panel<Section>Order/Hidden`.
 //  This manager is the silent persistence layer for the remaining fields, read

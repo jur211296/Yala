@@ -46,7 +46,7 @@ struct PanelWidgetRouter: View {
         case .budgets:
             PanelBudgetsSection(viewModel: viewModel, sessionState: sessionState, currencyCode: currencyCode, size: config.size, showBudgetFavoritesSettings: $showBudgetFavoritesSettings)
         case .scheduledPayments:
-            PanelScheduledPaymentsSection(viewModel: viewModel, sessionState: sessionState, currencyCode: currencyCode, mode: config.scheduledPaymentsMode, size: config.size)
+            PanelScheduledPaymentsSection(viewModel: viewModel, sessionState: sessionState, currencyCode: currencyCode, size: config.size)
         case .weekdayBar:
             WeekdayBarPanelWidget(
                 data: viewModel.weekdayWidget.weekdaySpending,
@@ -415,14 +415,12 @@ private struct PanelScheduledPaymentsSection: View {
     @Bindable var viewModel: PanelViewModel
     let sessionState: SessionState
     let currencyCode: String
-    let mode: ScheduledPaymentsWidgetMode
     let size: WidgetSize
 
     var body: some View {
         ScheduledPaymentsWidget(
             data: viewModel.scheduledPaymentsWidget,
             currencyCode: currencyCode,
-            mode: mode,
             size: size,
             filter: $viewModel.scheduledPaymentsWidgetFilter,
             onShowMore: { sessionState.navigateToScheduledPayments() }

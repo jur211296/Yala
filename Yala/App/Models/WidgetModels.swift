@@ -103,9 +103,6 @@ struct WidgetConfig: Identifiable, Codable, Equatable {
 
     var isLocked: Bool = false
 
-    /// Mode for scheduled payments widget (only used when type == .scheduledPayments)
-    var scheduledPaymentsMode: ScheduledPaymentsWidgetMode = .summary
-
     static func defaultConfigs() -> [WidgetConfig] {
         // Visibility real vive en `AppPreferences.panel<Section>Hidden`
         // (P20-03 SSOT); los `isVisible` aquí son solo fallback silencioso
@@ -120,14 +117,7 @@ struct WidgetConfig: Identifiable, Codable, Equatable {
             WidgetConfig(id: UUID(), type: .expensesByNeed, isVisible: true, size: .medium),
             WidgetConfig(id: UUID(), type: .latestRecords, isVisible: true, size: .medium),
             WidgetConfig(id: UUID(), type: .budgets, isVisible: true, size: .small),
-            WidgetConfig(
-                id: UUID(),
-                type: .scheduledPayments,
-                isVisible: true,
-                size: .small,
-                isLocked: false,
-                scheduledPaymentsMode: .list
-            ),
+            WidgetConfig(id: UUID(), type: .scheduledPayments, isVisible: true, size: .small),
             WidgetConfig(id: UUID(), type: .exchangeRate, isVisible: false, size: .medium),
             WidgetConfig(id: UUID(), type: .weekdayBar, isVisible: true, size: .small),
             WidgetConfig(id: UUID(), type: .tagsPie, isVisible: false, size: .small),
@@ -136,31 +126,6 @@ struct WidgetConfig: Identifiable, Codable, Equatable {
 }
 
 // MARK: - Scheduled Payments Widget Enums
-
-/// View mode for scheduled payments widget (selected in preferences)
-enum ScheduledPaymentsWidgetMode: String, Codable, CaseIterable, Identifiable {
-    case summary
-    case list
-    case calendar
-
-    var id: String { rawValue }
-
-    var iconName: String {
-        switch self {
-        case .summary: return "square.text.square"
-        case .list: return "list.bullet"
-        case .calendar: return "calendar"
-        }
-    }
-
-    var displayName: String {
-        switch self {
-        case .summary: return L10n.Widget.summary
-        case .list: return L10n.Widget.list
-        case .calendar: return L10n.Widget.calendar
-        }
-    }
-}
 
 /// Filter for scheduled payments widget
 enum ScheduledPaymentsWidgetFilter: String, CaseIterable, Identifiable {
