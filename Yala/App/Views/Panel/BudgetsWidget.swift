@@ -36,6 +36,9 @@ struct BudgetsWidget: View {
 
     var size: CardSize = .medium
 
+    /// Slot pedagógico opcional inyectado en el header (Panel Polish #2).
+    var headerInfoButton: AnyView? = nil
+
     private var limit: Int {
         switch size {
         case .small: return 2
@@ -67,16 +70,20 @@ struct BudgetsWidget: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        HStack(alignment: .top) {
+        HStack(alignment: .top, spacing: DS.Spacing.xs) {
             Text(L10n.WidgetType.budgets)
                 .font(DS.Typography.subheadlineEmphasized)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 
-            InfoHintButton(
-                title: L10n.WidgetType.budgets,
-                message: L10n.Widget.Hint.budgets
-            )
+            if let headerInfoButton {
+                headerInfoButton
+            } else {
+                InfoHintButton(
+                    title: L10n.WidgetType.budgets,
+                    message: L10n.Widget.Hint.budgets
+                )
+            }
 
             Spacer()
 
@@ -163,7 +170,8 @@ struct BudgetsWidget: View {
                     PanelSmallWidgetHeader(
                         title: L10n.WidgetType.budgets,
                         accessibilityLabel: L10n.Panel.seeMoreHintBudgets,
-                        action: onShowMore
+                        action: onShowMore,
+                        headerInfoButton: headerInfoButton
                     )
                     VStack(alignment: .leading, spacing: DS.Spacing.md) {
                         ForEach(Array(visibleBudgets.prefix(2))) { summary in

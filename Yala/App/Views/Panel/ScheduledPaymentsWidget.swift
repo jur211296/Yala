@@ -28,6 +28,9 @@ struct ScheduledPaymentsWidget: View {
     /// Callback when user taps to show more
     var onShowMore: (() -> Void)?
 
+    /// Slot pedagógico opcional inyectado en el header (Panel Polish #2).
+    var headerInfoButton: AnyView? = nil
+
     @Namespace private var filterNamespace
 
     var body: some View {
@@ -53,7 +56,8 @@ struct ScheduledPaymentsWidget: View {
             PanelSmallWidgetHeader(
                 title: smallDynamicTitle,
                 accessibilityLabel: L10n.Panel.seeMoreHintScheduled,
-                action: onShowMore
+                action: onShowMore,
+                headerInfoButton: headerInfoButton
             )
 
             if data.activeCount == 0 || data.monthlyTotal == 0 {
@@ -213,16 +217,20 @@ struct ScheduledPaymentsWidget: View {
     private var headerSection: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                HStack(spacing: DS.Spacing.xxs) {
+                HStack(spacing: DS.Spacing.xs) {
                     Text(largeDynamicTitle)
                         .font(DS.Typography.subheadlineEmphasized)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
-                    InfoHintButton(
-                        title: largeDynamicTitle,
-                        message: L10n.Widget.Hint.scheduledPayments
-                    )
+                    if let headerInfoButton {
+                        headerInfoButton
+                    } else {
+                        InfoHintButton(
+                            title: largeDynamicTitle,
+                            message: L10n.Widget.Hint.scheduledPayments
+                        )
+                    }
                 }
 
                 // Period label

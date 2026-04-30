@@ -445,7 +445,23 @@ private struct PanelRecentRecordsSection: View {
         RecentRecordsWidget(
             records: viewModel.latestRecords,
             currencyCode: currencyCode,
-            onShowMore: { viewModel.navigateToStatistics(.records) }
+            onShowMore: { viewModel.navigateToStatistics(.records) },
+            headerInfoButton: recentRecordsInfoButton
+        )
+    }
+
+    /// Botón info pedagógico inyectado en el header. Reusa el VM real
+    /// (TransactionItem @Model) — empty state visual si el VM no tiene datos.
+    private var recentRecordsInfoButton: AnyView? {
+        AnyView(
+            WidgetInfoButton(kind: .recentRecords, viewModel: viewModel) { _ in
+                RecentRecordsWidget(
+                    records: viewModel.latestRecords,
+                    currencyCode: currencyCode,
+                    onShowMore: nil
+                )
+                .allowsHitTesting(false)
+            }
         )
     }
 }
@@ -558,7 +574,29 @@ private struct PanelBudgetsSection: View {
             },
             onShowMore: { sessionState.navigateToBudgets() },
             onEditFavorites: { showBudgetFavoritesSettings = true },
-            size: mapBudgetsWidgetSize(size)
+            size: mapBudgetsWidgetSize(size),
+            headerInfoButton: budgetsInfoButton(displayCurrency: displayCurrency)
+        )
+    }
+
+    /// Botón info pedagógico inyectado en el header. Propaga `hasBudgetsButNoFavorites`
+    /// real para no divergir del estado actual del usuario en el preview.
+    private func budgetsInfoButton(displayCurrency: String) -> AnyView? {
+        AnyView(
+            WidgetInfoButton(kind: .budgets, viewModel: viewModel) { previewSize in
+                BudgetsWidget(
+                    budgets: viewModel.topBudgetSummaries,
+                    currencyCode: displayCurrency,
+                    hasBudgetsButNoFavorites: viewModel.hasBudgetsButNoFavorites,
+                    selectedBudgetID: nil,
+                    isExcludeMode: false,
+                    onSelectBudget: nil,
+                    onShowMore: nil,
+                    onEditFavorites: nil,
+                    size: mapBudgetsWidgetSize(previewSize)
+                )
+                .allowsHitTesting(false)
+            }
         )
     }
 }
@@ -577,7 +615,26 @@ private struct PanelScheduledPaymentsSection: View {
             currencyCode: currencyCode,
             size: size,
             filter: $viewModel.scheduledPaymentsWidgetFilter,
-            onShowMore: { sessionState.navigateToScheduledPayments() }
+            onShowMore: { sessionState.navigateToScheduledPayments() },
+            headerInfoButton: scheduledPaymentsInfoButton
+        )
+    }
+
+    /// Botón info pedagógico inyectado en el header. Reusa el VM real con
+    /// `filter` actual del binding (sin scrubbing) — `.constant` para el preview
+    /// porque no debe mutar el filter del Panel.
+    private var scheduledPaymentsInfoButton: AnyView? {
+        AnyView(
+            WidgetInfoButton(kind: .scheduledPayments, viewModel: viewModel) { previewSize in
+                ScheduledPaymentsWidget(
+                    data: viewModel.scheduledPaymentsWidget,
+                    currencyCode: currencyCode,
+                    size: previewSize,
+                    filter: .constant(viewModel.scheduledPaymentsWidgetFilter),
+                    onShowMore: nil
+                )
+                .allowsHitTesting(false)
+            }
         )
     }
 }

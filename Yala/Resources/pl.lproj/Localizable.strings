@@ -3878,3 +3878,79 @@
 
 /* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
 "panel.widgetInfo.topSubcategories.regularHowA" = "Stuknij w wiersz, aby przefiltrować resztę Panelu według tej podkategorii. Użyj chipów u góry, aby zawęzić listę do jednej kategorii — lub, jeśli kategoria jest już odfiltrowana w innym widżecie, selektor pozostaje zablokowany na niej.";
+
+
+/* Panel Polish #2 — Title sheet pedagógico RecentRecords */
+"panel.widgetInfo.recentRecords.title" = "Ostatnie wpisy";
+
+/* Panel Polish #2 — Chip 1 RecentRecords (entidad) */
+"panel.widgetInfo.recentRecords.chip1" = "Operacje";
+
+/* Panel Polish #2 — Chip 2 RecentRecords (período) */
+"panel.widgetInfo.recentRecords.chip2" = "Bieżący okres";
+
+/* Panel Polish #2 — RecentRecords: pregunta */
+"panel.widgetInfo.recentRecords.whatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — RecentRecords: respuesta */
+"panel.widgetInfo.recentRecords.whatA" = "Pięć najnowszych operacji z bieżącego okresu: przychody, wydatki lub przelewy. Każdy wiersz pokazuje kwotę (przychody i wydatki w różnych kolorach), powiązaną kategorię lub podkategorię oraz — jeśli dotyczy — typ potrzeby (niezbędny, priorytetowy lub opcjonalny).";
+
+/* Panel Polish #2 — Title sheet pedagógico ScheduledPayments */
+"panel.widgetInfo.scheduledPayments.title" = "Zaplanowane płatności";
+
+/* Panel Polish #2 — Chip 1 ScheduledPayments (entidad) */
+"panel.widgetInfo.scheduledPayments.chip1" = "Nadchodzące płatności";
+
+/* Panel Polish #2 — Chip 2 ScheduledPayments (mes en curso) */
+"panel.widgetInfo.scheduledPayments.chip2" = "Bieżący miesiąc";
+
+/* Panel Polish #2 — Chip 3 ScheduledPayments (Interactiva) */
+"panel.widgetInfo.scheduledPayments.chip3" = "Interaktywny";
+
+/* Panel Polish #2 — ScheduledPayments: pregunta '¿Qué estás viendo?' (compartida S/M) */
+"panel.widgetInfo.scheduledPayments.whatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — ScheduledPayments S: respuesta */
+"panel.widgetInfo.scheduledPayments.smallWhatA" = "Ile zostało Ci do zapłacenia w tym miesiącu w zaplanowanych płatnościach, wraz z pierścieniem postępu pokazującym już zapłacony procent oraz liczbą aktywnych i oczekujących płatności. Filtr na dole przełącza między wszystkimi, cyklicznymi i subskrypcjami.";
+
+/* Panel Polish #2 — ScheduledPayments M: respuesta */
+"panel.widgetInfo.scheduledPayments.mediumWhatA" = "Lista nadchodzących płatności w tym miesiącu — każda z datą, kwotą i statusem: oczekująca, opłacona lub pominięta. Filtr po prawej od tytułu zawęża widok do wszystkich, cyklicznych lub subskrypcji.";
+
+/* Panel Polish #2 — ScheduledPayments: pregunta '¿Cómo interactúo?' (compartida S/M) */
+"panel.widgetInfo.scheduledPayments.howQ" = "Jak z tym pracować?";
+
+/* Panel Polish #2 — ScheduledPayments S: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.scheduledPayments.smallHowA" = "Stuknij w jedną z ikon dolnego filtra, aby zawęzić widok do wszystkich płatności, tylko cyklicznych lub tylko subskrypcji.";
+
+/* Panel Polish #2 — ScheduledPayments M: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.scheduledPayments.mediumHowA" = "Stuknij w jedną z ikon filtra nad widżetem, aby przełączyć między wszystkimi, cyklicznymi lub subskrypcjami.";
+
+/* Panel Polish #2 — Title sheet pedagógico Budgets */
+"panel.widgetInfo.budgets.title" = "Ulubione budżety";
+
+/* Panel Polish #2 — Chip 1 Budgets (Favoritos) */
+"panel.widgetInfo.budgets.chip1" = "Ulubione";
+
+/* Panel Polish #2 — Chip 2 Budgets (período) */
+"panel.widgetInfo.budgets.chip2" = "Bieżący okres";
+
+/* Panel Polish #2 — Chip 3 Budgets (Interactiva) */
+"panel.widgetInfo.budgets.chip3" = "Interaktywny";
+
+/* Panel Polish #2 — Budgets S: pregunta */
+"panel.widgetInfo.budgets.smallWhatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — Budgets S: respuesta */
+"panel.widgetInfo.budgets.smallWhatA" = "Twoje dwa ulubione budżety z wydatkami w okresie i procentem względem limitu.";
+
+/* Panel Polish #2 — Budgets M/L: pregunta (compartida) */
+"panel.widgetInfo.budgets.regularWhatQ" = "Co widzisz?";
+
+/* Panel Polish #2 — Budgets M/L: respuesta (compartida) */
+"panel.widgetInfo.budgets.regularWhatA" = "Twoje ulubione budżety z postępem w okresie: ile już wydałeś/aś, ile zostało z limitu oraz status (w normie, napięty lub przekroczony). Gwiazdka w nagłówku otwiera ekran, gdzie wybierasz, które oznaczyć jako ulubione.";
+
+/* Panel Polish #2 — Budgets: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.budgets.howQ" = "Jak z tym pracować?";
+
+/* Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L) */
+"panel.widgetInfo.budgets.howA" = "Stuknij w budżet, aby przefiltrować resztę Panelu według transakcji jego kategorii lub tagu. Stuknij ponownie, aby usunąć filtr.";

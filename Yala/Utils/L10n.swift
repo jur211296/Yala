@@ -426,6 +426,42 @@ enum L10n {
                 static var regularHowA: String { ls("panel.widgetInfo.topSubcategories.regularHowA", comment: "Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector)") }
             }
 
+            // MARK: - Bloque 3 (Listas)
+
+            enum RecentRecords {
+                static var title: String { ls("panel.widgetInfo.recentRecords.title", comment: "Panel Polish #2 — Title sheet pedagógico RecentRecords") }
+                static var chip1: String { ls("panel.widgetInfo.recentRecords.chip1", comment: "Panel Polish #2 — Chip 1 RecentRecords (entidad)") }
+                static var chip2: String { ls("panel.widgetInfo.recentRecords.chip2", comment: "Panel Polish #2 — Chip 2 RecentRecords (período)") }
+                static var whatQ: String { ls("panel.widgetInfo.recentRecords.whatQ", comment: "Panel Polish #2 — RecentRecords: pregunta") }
+                static var whatA: String { ls("panel.widgetInfo.recentRecords.whatA", comment: "Panel Polish #2 — RecentRecords: respuesta") }
+            }
+
+            enum ScheduledPayments {
+                static var title: String { ls("panel.widgetInfo.scheduledPayments.title", comment: "Panel Polish #2 — Title sheet pedagógico ScheduledPayments") }
+                static var chip1: String { ls("panel.widgetInfo.scheduledPayments.chip1", comment: "Panel Polish #2 — Chip 1 ScheduledPayments (entidad)") }
+                static var chip2: String { ls("panel.widgetInfo.scheduledPayments.chip2", comment: "Panel Polish #2 — Chip 2 ScheduledPayments (mes en curso)") }
+                static var chip3: String { ls("panel.widgetInfo.scheduledPayments.chip3", comment: "Panel Polish #2 — Chip 3 ScheduledPayments (Interactiva)") }
+                static var whatQ: String { ls("panel.widgetInfo.scheduledPayments.whatQ", comment: "Panel Polish #2 — ScheduledPayments: pregunta '¿Qué estás viendo?' (compartida S/M)") }
+                static var smallWhatA: String { ls("panel.widgetInfo.scheduledPayments.smallWhatA", comment: "Panel Polish #2 — ScheduledPayments S: respuesta") }
+                static var mediumWhatA: String { ls("panel.widgetInfo.scheduledPayments.mediumWhatA", comment: "Panel Polish #2 — ScheduledPayments M: respuesta") }
+                static var howQ: String { ls("panel.widgetInfo.scheduledPayments.howQ", comment: "Panel Polish #2 — ScheduledPayments: pregunta '¿Cómo interactúo?' (compartida S/M)") }
+                static var smallHowA: String { ls("panel.widgetInfo.scheduledPayments.smallHowA", comment: "Panel Polish #2 — ScheduledPayments S: respuesta a 'cómo interactúo'") }
+                static var mediumHowA: String { ls("panel.widgetInfo.scheduledPayments.mediumHowA", comment: "Panel Polish #2 — ScheduledPayments M: respuesta a 'cómo interactúo'") }
+            }
+
+            enum Budgets {
+                static var title: String { ls("panel.widgetInfo.budgets.title", comment: "Panel Polish #2 — Title sheet pedagógico Budgets") }
+                static var chip1: String { ls("panel.widgetInfo.budgets.chip1", comment: "Panel Polish #2 — Chip 1 Budgets (Favoritos)") }
+                static var chip2: String { ls("panel.widgetInfo.budgets.chip2", comment: "Panel Polish #2 — Chip 2 Budgets (período)") }
+                static var chip3: String { ls("panel.widgetInfo.budgets.chip3", comment: "Panel Polish #2 — Chip 3 Budgets (Interactiva)") }
+                static var smallWhatQ: String { ls("panel.widgetInfo.budgets.smallWhatQ", comment: "Panel Polish #2 — Budgets S: pregunta") }
+                static var smallWhatA: String { ls("panel.widgetInfo.budgets.smallWhatA", comment: "Panel Polish #2 — Budgets S: respuesta") }
+                static var regularWhatQ: String { ls("panel.widgetInfo.budgets.regularWhatQ", comment: "Panel Polish #2 — Budgets M/L: pregunta (compartida)") }
+                static var regularWhatA: String { ls("panel.widgetInfo.budgets.regularWhatA", comment: "Panel Polish #2 — Budgets M/L: respuesta (compartida)") }
+                static var howQ: String { ls("panel.widgetInfo.budgets.howQ", comment: "Panel Polish #2 — Budgets: pregunta '¿Cómo interactúo?' (compartida S/M/L)") }
+                static var howA: String { ls("panel.widgetInfo.budgets.howA", comment: "Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L)") }
+            }
+
             enum ExpensesByNeed {
                 static var title: String { ls("panel.widgetInfo.expensesByNeed.title", comment: "Panel Polish #2 — Title sheet pedagógico ExpensesByNeed") }
                 static var chip1: String { ls("panel.widgetInfo.expensesByNeed.chip1", comment: "Panel Polish #2 — Chip 1 ExpensesByNeed (entidad)") }

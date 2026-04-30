@@ -3878,3 +3878,79 @@
 
 /* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
 "panel.widgetInfo.topSubcategories.regularHowA" = "Tik op een rij om de rest van het Paneel te filteren op die subcategorie. Gebruik de chips boven om de lijst te beperken tot één categorie — of, als er al een categorie is gefilterd in een ander widget, blijft de selector vergrendeld op die categorie.";
+
+
+/* Panel Polish #2 — Title sheet pedagógico RecentRecords */
+"panel.widgetInfo.recentRecords.title" = "Recente boekingen";
+
+/* Panel Polish #2 — Chip 1 RecentRecords (entidad) */
+"panel.widgetInfo.recentRecords.chip1" = "Boekingen";
+
+/* Panel Polish #2 — Chip 2 RecentRecords (período) */
+"panel.widgetInfo.recentRecords.chip2" = "Huidige periode";
+
+/* Panel Polish #2 — RecentRecords: pregunta */
+"panel.widgetInfo.recentRecords.whatQ" = "Wat zie je?";
+
+/* Panel Polish #2 — RecentRecords: respuesta */
+"panel.widgetInfo.recentRecords.whatA" = "De vijf meest recente boekingen in de actieve periode: inkomsten, uitgaven of overschrijvingen. Elke rij toont het bedrag (inkomsten en uitgaven in verschillende kleuren), de gekoppelde categorie of subcategorie en, indien van toepassing, het type behoefte (essentieel, prioritair of optioneel).";
+
+/* Panel Polish #2 — Title sheet pedagógico ScheduledPayments */
+"panel.widgetInfo.scheduledPayments.title" = "Geplande betalingen";
+
+/* Panel Polish #2 — Chip 1 ScheduledPayments (entidad) */
+"panel.widgetInfo.scheduledPayments.chip1" = "Komende betalingen";
+
+/* Panel Polish #2 — Chip 2 ScheduledPayments (mes en curso) */
+"panel.widgetInfo.scheduledPayments.chip2" = "Huidige maand";
+
+/* Panel Polish #2 — Chip 3 ScheduledPayments (Interactiva) */
+"panel.widgetInfo.scheduledPayments.chip3" = "Interactief";
+
+/* Panel Polish #2 — ScheduledPayments: pregunta '¿Qué estás viendo?' (compartida S/M) */
+"panel.widgetInfo.scheduledPayments.whatQ" = "Wat zie je?";
+
+/* Panel Polish #2 — ScheduledPayments S: respuesta */
+"panel.widgetInfo.scheduledPayments.smallWhatA" = "Wat je deze maand nog moet betalen aan geplande betalingen, met een voortgangsring van het reeds betaalde percentage en het aantal actieve en openstaande betalingen. Het filter onderaan wisselt tussen alle, terugkerend en abonnementen.";
+
+/* Panel Polish #2 — ScheduledPayments M: respuesta */
+"panel.widgetInfo.scheduledPayments.mediumWhatA" = "De lijst met je komende betalingen van de maand, elk met datum, bedrag en status: openstaand, betaald of overgeslagen. Het filter rechts van de titel beperkt tot alle, terugkerend of abonnementen.";
+
+/* Panel Polish #2 — ScheduledPayments: pregunta '¿Cómo interactúo?' (compartida S/M) */
+"panel.widgetInfo.scheduledPayments.howQ" = "Hoe gebruik ik dit?";
+
+/* Panel Polish #2 — ScheduledPayments S: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.scheduledPayments.smallHowA" = "Tik op een van de iconen in het onderste filter om te beperken tot alle betalingen, alleen terugkerend of alleen abonnementen.";
+
+/* Panel Polish #2 — ScheduledPayments M: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.scheduledPayments.mediumHowA" = "Tik op een van de iconen in het filter boven het widget om te wisselen tussen alle, terugkerend of abonnementen.";
+
+/* Panel Polish #2 — Title sheet pedagógico Budgets */
+"panel.widgetInfo.budgets.title" = "Favoriete budgetten";
+
+/* Panel Polish #2 — Chip 1 Budgets (Favoritos) */
+"panel.widgetInfo.budgets.chip1" = "Favorieten";
+
+/* Panel Polish #2 — Chip 2 Budgets (período) */
+"panel.widgetInfo.budgets.chip2" = "Huidige periode";
+
+/* Panel Polish #2 — Chip 3 Budgets (Interactiva) */
+"panel.widgetInfo.budgets.chip3" = "Interactief";
+
+/* Panel Polish #2 — Budgets S: pregunta */
+"panel.widgetInfo.budgets.smallWhatQ" = "Wat zie je?";
+
+/* Panel Polish #2 — Budgets S: respuesta */
+"panel.widgetInfo.budgets.smallWhatA" = "Je twee favoriete budgetten met het bedrag dat in de periode is uitgegeven en het percentage van de limiet.";
+
+/* Panel Polish #2 — Budgets M/L: pregunta (compartida) */
+"panel.widgetInfo.budgets.regularWhatQ" = "Wat zie je?";
+
+/* Panel Polish #2 — Budgets M/L: respuesta (compartida) */
+"panel.widgetInfo.budgets.regularWhatA" = "Je favoriete budgetten met de voortgang van de periode: hoeveel je hebt uitgegeven, hoeveel er over is van de limiet en de status (op schema, krap of overschreden). De ster in de header opent het scherm waar je kiest welke je als favoriet markeert.";
+
+/* Panel Polish #2 — Budgets: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.budgets.howQ" = "Hoe gebruik ik dit?";
+
+/* Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L) */
+"panel.widgetInfo.budgets.howA" = "Tik op een budget om de rest van het Paneel te filteren op de transacties van zijn categorie of tag. Tik er nogmaals op om het filter op te heffen.";

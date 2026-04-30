@@ -399,8 +399,91 @@ struct WidgetInfoContent {
                 }
             )
 
-        case .budgets, .scheduledPayments, .recentRecords,
-             .exchangeRate, .weekdayBar:
+        case .recentRecords:
+            let entityChip = InfoChip(label: L10n.Panel.WidgetInfo.RecentRecords.chip1,
+                                      tintKey: .neutral,
+                                      systemImage: "list.bullet.rectangle")
+            let periodChip = InfoChip(label: L10n.Panel.WidgetInfo.RecentRecords.chip2,
+                                      tintKey: .neutral,
+                                      systemImage: "calendar")
+            return WidgetInfoContent(
+                title: L10n.Panel.WidgetInfo.RecentRecords.title,
+                chips: { _ in [entityChip, periodChip] },
+                sections: { _ in
+                    [InfoSection(question: L10n.Panel.WidgetInfo.RecentRecords.whatQ,
+                                 answer: L10n.Panel.WidgetInfo.RecentRecords.whatA)]
+                }
+            )
+
+        case .scheduledPayments:
+            let entityChip = InfoChip(label: L10n.Panel.WidgetInfo.ScheduledPayments.chip1,
+                                      tintKey: .neutral,
+                                      systemImage: "calendar.badge.clock")
+            let periodChip = InfoChip(label: L10n.Panel.WidgetInfo.ScheduledPayments.chip2,
+                                      tintKey: .neutral,
+                                      systemImage: "calendar")
+            let interactiveChip = InfoChip(label: L10n.Panel.WidgetInfo.ScheduledPayments.chip3,
+                                           tintKey: .accent,
+                                           systemImage: "hand.tap")
+            return WidgetInfoContent(
+                title: L10n.Panel.WidgetInfo.ScheduledPayments.title,
+                chips: { _ in [entityChip, periodChip, interactiveChip] },
+                sections: { size in
+                    let whatQ = L10n.Panel.WidgetInfo.ScheduledPayments.whatQ
+                    let howQ = L10n.Panel.WidgetInfo.ScheduledPayments.howQ
+                    switch size {
+                    case .small:
+                        return [
+                            InfoSection(question: whatQ,
+                                        answer: L10n.Panel.WidgetInfo.ScheduledPayments.smallWhatA),
+                            InfoSection(question: howQ,
+                                        answer: L10n.Panel.WidgetInfo.ScheduledPayments.smallHowA),
+                        ]
+                    case .medium, .large:
+                        return [
+                            InfoSection(question: whatQ,
+                                        answer: L10n.Panel.WidgetInfo.ScheduledPayments.mediumWhatA),
+                            InfoSection(question: howQ,
+                                        answer: L10n.Panel.WidgetInfo.ScheduledPayments.mediumHowA),
+                        ]
+                    }
+                }
+            )
+
+        case .budgets:
+            let favsChip = InfoChip(label: L10n.Panel.WidgetInfo.Budgets.chip1,
+                                    tintKey: .neutral,
+                                    systemImage: "star.fill")
+            let periodChip = InfoChip(label: L10n.Panel.WidgetInfo.Budgets.chip2,
+                                      tintKey: .neutral,
+                                      systemImage: "calendar")
+            let interactiveChip = InfoChip(label: L10n.Panel.WidgetInfo.Budgets.chip3,
+                                           tintKey: .accent,
+                                           systemImage: "hand.tap")
+            return WidgetInfoContent(
+                title: L10n.Panel.WidgetInfo.Budgets.title,
+                chips: { _ in [favsChip, periodChip, interactiveChip] },
+                sections: { size in
+                    let howSection = InfoSection(question: L10n.Panel.WidgetInfo.Budgets.howQ,
+                                                  answer: L10n.Panel.WidgetInfo.Budgets.howA)
+                    switch size {
+                    case .small:
+                        return [
+                            InfoSection(question: L10n.Panel.WidgetInfo.Budgets.smallWhatQ,
+                                        answer: L10n.Panel.WidgetInfo.Budgets.smallWhatA),
+                            howSection,
+                        ]
+                    case .medium, .large:
+                        return [
+                            InfoSection(question: L10n.Panel.WidgetInfo.Budgets.regularWhatQ,
+                                        answer: L10n.Panel.WidgetInfo.Budgets.regularWhatA),
+                            howSection,
+                        ]
+                    }
+                }
+            )
+
+        case .exchangeRate, .weekdayBar:
             fatalError("WidgetInfoKind.\(kind) no migrado todavía — ver ticket de roll-out panel-polish-2_widget-info-rollout")
         }
     }

@@ -20,6 +20,9 @@ struct RecentRecordsWidget: View {
 
     var onShowMore: (() -> Void)? = nil
 
+    /// Slot pedagógico opcional inyectado en el header (Panel Polish #2).
+    var headerInfoButton: AnyView? = nil
+
     // MARK: - Static Formatters (avoid recreation on each render)
 
     private static let shortDateFormatter: DateFormatter = {
@@ -53,16 +56,20 @@ struct RecentRecordsWidget: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        HStack(alignment: .top) {
+        HStack(alignment: .top, spacing: DS.Spacing.xs) {
             Text(L10n.Records.latest)
                 .font(DS.Typography.subheadlineEmphasized)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 
-            InfoHintButton(
-                title: L10n.WidgetType.latestRecords,
-                message: L10n.Widget.Hint.recentRecords
-            )
+            if let headerInfoButton {
+                headerInfoButton
+            } else {
+                InfoHintButton(
+                    title: L10n.WidgetType.latestRecords,
+                    message: L10n.Widget.Hint.recentRecords
+                )
+            }
 
             Spacer()
         }

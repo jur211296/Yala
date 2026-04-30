@@ -3878,3 +3878,79 @@
 
 /* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
 "panel.widgetInfo.topSubcategories.regularHowA" = "行をタップすると、そのサブカテゴリーでパネル全体をフィルタリングできます。上のチップで一覧を1つのカテゴリーに絞り込めます。他のウィジェットですでにカテゴリーをフィルターしている場合は、セレクターはそのカテゴリーにロックされます。";
+
+
+/* Panel Polish #2 — Title sheet pedagógico RecentRecords */
+"panel.widgetInfo.recentRecords.title" = "最近の記録";
+
+/* Panel Polish #2 — Chip 1 RecentRecords (entidad) */
+"panel.widgetInfo.recentRecords.chip1" = "取引";
+
+/* Panel Polish #2 — Chip 2 RecentRecords (período) */
+"panel.widgetInfo.recentRecords.chip2" = "現在の期間";
+
+/* Panel Polish #2 — RecentRecords: pregunta */
+"panel.widgetInfo.recentRecords.whatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — RecentRecords: respuesta */
+"panel.widgetInfo.recentRecords.whatA" = "現在の期間における最新5件の取引です: 収入、支出、振替のいずれか。各行には金額 (収入と支出は異なる色で表示)、関連付けられたカテゴリーまたはサブカテゴリー、該当する場合はニーズタグ (必須、優先、任意) が表示されます。";
+
+/* Panel Polish #2 — Title sheet pedagógico ScheduledPayments */
+"panel.widgetInfo.scheduledPayments.title" = "予定された支払い";
+
+/* Panel Polish #2 — Chip 1 ScheduledPayments (entidad) */
+"panel.widgetInfo.scheduledPayments.chip1" = "今後の支払い";
+
+/* Panel Polish #2 — Chip 2 ScheduledPayments (mes en curso) */
+"panel.widgetInfo.scheduledPayments.chip2" = "今月";
+
+/* Panel Polish #2 — Chip 3 ScheduledPayments (Interactiva) */
+"panel.widgetInfo.scheduledPayments.chip3" = "インタラクティブ";
+
+/* Panel Polish #2 — ScheduledPayments: pregunta '¿Qué estás viendo?' (compartida S/M) */
+"panel.widgetInfo.scheduledPayments.whatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — ScheduledPayments S: respuesta */
+"panel.widgetInfo.scheduledPayments.smallWhatA" = "今月予定されている支払いのうち未払いの金額です。すでに支払った割合を示す進捗リングと、アクティブな支払いおよび保留中の支払いの件数も表示されます。下のフィルターで「すべて」「定期」「サブスクリプション」を切り替えられます。";
+
+/* Panel Polish #2 — ScheduledPayments M: respuesta */
+"panel.widgetInfo.scheduledPayments.mediumWhatA" = "今月の今後の支払い一覧です。各支払いには日付、金額、ステータス (保留中、支払い済み、スキップ) が表示されます。タイトル右側のフィルターで「すべて」「定期」「サブスクリプション」に絞り込めます。";
+
+/* Panel Polish #2 — ScheduledPayments: pregunta '¿Cómo interactúo?' (compartida S/M) */
+"panel.widgetInfo.scheduledPayments.howQ" = "どう操作しますか?";
+
+/* Panel Polish #2 — ScheduledPayments S: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.scheduledPayments.smallHowA" = "下のフィルターのアイコンをタップして、すべての支払い、定期のみ、またはサブスクリプションのみに絞り込めます。";
+
+/* Panel Polish #2 — ScheduledPayments M: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.scheduledPayments.mediumHowA" = "ウィジェット上部のフィルターアイコンをタップして、すべて、定期、サブスクリプションを切り替えられます。";
+
+/* Panel Polish #2 — Title sheet pedagógico Budgets */
+"panel.widgetInfo.budgets.title" = "お気に入りの予算";
+
+/* Panel Polish #2 — Chip 1 Budgets (Favoritos) */
+"panel.widgetInfo.budgets.chip1" = "お気に入り";
+
+/* Panel Polish #2 — Chip 2 Budgets (período) */
+"panel.widgetInfo.budgets.chip2" = "現在の期間";
+
+/* Panel Polish #2 — Chip 3 Budgets (Interactiva) */
+"panel.widgetInfo.budgets.chip3" = "インタラクティブ";
+
+/* Panel Polish #2 — Budgets S: pregunta */
+"panel.widgetInfo.budgets.smallWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — Budgets S: respuesta */
+"panel.widgetInfo.budgets.smallWhatA" = "お気に入りの予算2件と、期間中の支出額および上限に対する割合です。";
+
+/* Panel Polish #2 — Budgets M/L: pregunta (compartida) */
+"panel.widgetInfo.budgets.regularWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — Budgets M/L: respuesta (compartida) */
+"panel.widgetInfo.budgets.regularWhatA" = "お気に入りの予算と現在の期間の進捗を表示します: 使用した金額、上限の残額、ステータス (順調、ギリギリ、超過)。ヘッダーの星をタップすると、お気に入りに登録する予算を選ぶ画面が開きます。";
+
+/* Panel Polish #2 — Budgets: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.budgets.howQ" = "どう操作しますか?";
+
+/* Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L) */
+"panel.widgetInfo.budgets.howA" = "予算をタップすると、その予算のカテゴリーまたはタグに対応する取引でパネル全体をフィルタリングできます。もう一度タップするとフィルターが解除されます。";
