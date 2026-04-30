@@ -430,6 +430,8 @@ private struct CategoryRow: View {
                             .frame(width: width, height: 6)
                     }
                     .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
+                        // Guard de igualdad — ver `SubcategoryRow.onGeometryChange`.
+                        guard abs(newWidth - barWidth) > 0.5 else { return }
                         barWidth = newWidth
                     }
                 }

@@ -5,7 +5,6 @@
 //  Created by Yala Refactoring.
 //
 
-import OSLog
 import SwiftData
 import SwiftUI
 
@@ -15,16 +14,6 @@ private let sharedPercentFormatter: NumberFormatter = {
     formatter.maximumFractionDigits = 1
     return formatter
 }()
-
-#if DEBUG
-/// Logger temporal para diagnosticar congelamiento al abrir la sheet pedagógica
-/// de topSubcategories (watchdog 0x8BADF00D, layout loop). Filtrar en Xcode
-/// console: `subsystem:com.jurgenschmidt.yala category:TopSubcategoriesWidget`.
-private let topSubcatLog = Logger(
-    subsystem: "com.jurgenschmidt.yala",
-    category: "TopSubcategoriesWidget"
-)
-#endif
 
 struct TopSubcategoriesWidget: View {
     @Environment(\.modelContext) private var modelContext
@@ -91,13 +80,7 @@ struct TopSubcategoriesWidget: View {
     }
 
     var body: some View {
-        #if DEBUG
-        let _ = Self._printChanges()
-        let _ = topSubcatLog.debug(
-            "body eval: isPreview=\(isWidgetPreviewMode, privacy: .public) size=\(String(describing: size), privacy: .public) subcats=\(subcategories.count, privacy: .public) globalFilter=\(String(describing: globalCategoryFilterID), privacy: .public) localFilter=\(String(describing: localCategoryFilterID), privacy: .public) selected=\(selectedSubcategoryIDs.count, privacy: .public) allCats=\(viewModel.allCategories.count, privacy: .public)"
-        )
-        #endif
-        return Group {
+        Group {
             if size == .small {
                 smallCardContent
             } else {
@@ -119,24 +102,13 @@ struct TopSubcategoriesWidget: View {
         )
         .solidCard(padding: DS.Card.paddingCompact)
         .frame(height: size == .small ? WidgetSize.smallHeight : nil)
-        // En preview, identity estable y sin carga del VM interno: el ID dinámico
-        // por count + setContext que muta `viewModel.allCategories` provocan
-        // re-mounts del subtree dentro del previewBox del sheet, lo que en
-        // combinación con `onGeometryChange` de cada `SubcategoryRow` y la
-        // altura limitada del previewBox dispara un layout loop infinito
-        // (watchdog 0x8BADF00D — crash log 2026-04-30).
+        // En preview: identity estable y skip carga del VM interno. El ID dinámico
+        // por count + `setContext` que muta `viewModel.allCategories` causaban
+        // re-mounts del subtree dentro del previewBox del sheet.
         .id(isWidgetPreviewMode ? "preview" : (subcategories.isEmpty ? "empty" : "content-\(subcategories.count)"))
         .onAppear {
-            #if DEBUG
-            topSubcatLog.debug("onAppear isPreview=\(isWidgetPreviewMode, privacy: .public)")
-            #endif
             guard !isWidgetPreviewMode else { return }
             viewModel.setContext(modelContext)
-        }
-        .onDisappear {
-            #if DEBUG
-            topSubcatLog.debug("onDisappear isPreview=\(isWidgetPreviewMode, privacy: .public)")
-            #endif
         }
     }
 
@@ -317,10 +289,7 @@ struct TopSubcategoriesWidget: View {
     // MARK: - Lists
 
     private func subcategoriesList(limit: Int) -> some View {
-        #if DEBUG
-        topSubcatLog.debug("subcategoriesList eval: limit=\(limit, privacy: .public) count=\(subcategories.count, privacy: .public)")
-        #endif
-        return VStack(spacing: DS.Spacing.lg) {
+        VStack(spacing: DS.Spacing.lg) {
             // Filter subcategories by local category filter first
             let filteredSubcategories: [SubcategorySpendingSummary] = {
                 if let localFilterID = localCategoryFilterID {
@@ -532,10 +501,7 @@ private struct SubcategoryRow: View {
     @State private var barWidth: CGFloat = 0
 
     var body: some View {
-        #if DEBUG
-        let _ = Self._printChanges()
-        #endif
-        return HStack(spacing: DS.Spacing.md) {
+        HStack(spacing: DS.Spacing.md) {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 // Name + Amount
                 HStack(spacing: DS.Spacing.md) {
@@ -602,15 +568,13 @@ private struct SubcategoryRow: View {
                                 .frame(width: width, height: 6)
                         }
                         .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
-                            #if DEBUG
-                            // Loguear solo cambios significativos (drop ruido de microajustes)
-                            if abs(newWidth - barWidth) > 0.5 {
-                                Logger(
-                                    subsystem: "com.jurgenschmidt.yala",
-                                    category: "SubcategoryRow"
-                                ).debug("onGeometryChange \(summary.subcategoryName, privacy: .public): \(barWidth, format: .fixed(precision: 1)) -> \(newWidth, format: .fixed(precision: 1))")
-                            }
-                            #endif
+                            // Guard de igualdad: SwiftUI puede invocar el callback en cada
+                            // layout pass con micro-cambios floating-point (sub-pt). Asignar
+                            // `barWidth = newWidth` sin guard fuerza re-render aunque el
+                            // valor sea efectivamente igual → loop infinito (watchdog
+                            // 0x8BADF00D — confirmado en logs 2026-04-30 con SubcategoryRow
+                            // dentro del previewBox del WidgetInfoSheet).
+                            guard abs(newWidth - barWidth) > 0.5 else { return }
                             barWidth = newWidth
                         }
                     }

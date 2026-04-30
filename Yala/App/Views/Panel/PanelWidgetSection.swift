@@ -7,9 +7,6 @@
 //  Parent-to-child navigation uses viewModel methods, not closure parameters.
 //
 
-#if DEBUG
-import OSLog
-#endif
 import SwiftData
 import SwiftUI
 
@@ -191,11 +188,7 @@ private struct PanelSubcategoriesSection: View {
     /// Botón info pedagógico inyectado en el header. Reusa el VM real
     /// (subcategorías @Model) — respeta el filtro global y local existentes.
     private var topSubcategoriesInfoButton: AnyView? {
-        #if DEBUG
-        Logger(subsystem: "com.jurgenschmidt.yala", category: "PanelSubcategoriesSection")
-            .debug("topSubcategoriesInfoButton getter: subcats=\(viewModel.topSubcategories.count, privacy: .public) globalFilter=\(String(describing: viewModel.selectedCategoryID), privacy: .public) localFilter=\(String(describing: viewModel.subcategoriesWidgetFilter), privacy: .public)")
-        #endif
-        return AnyView(
+        AnyView(
             WidgetInfoButton(kind: .topSubcategories, viewModel: viewModel) { previewSize in
                 TopSubcategoriesWidget(
                     subcategories: viewModel.topSubcategories,
