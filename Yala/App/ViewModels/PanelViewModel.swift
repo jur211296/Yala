@@ -2405,7 +2405,12 @@ final class PanelViewModel {
         // hidden (see epic out-of-scope). Cheap O(n) pass over `transactions`;
         // the equality guard in `calculateHeroWidget()` suppresses no-op
         // @Observable notifications when the data hasn't changed.
-        calculateHeroWidget(monthInterval: currentMonthInterval, periodInterval: panelDateInterval)
+        let (_, heroEligibleAccountIDs) = computeEligibleAccounts(from: accounts)
+        calculateHeroWidget(
+            eligibleAccountIDs: heroEligibleAccountIDs,
+            monthInterval: currentMonthInterval,
+            periodInterval: panelDateInterval
+        )
     }
 
     private func calculateWeekdayWidget(context: PanelCalculationContext) {
@@ -2578,42 +2583,33 @@ final class PanelViewModel {
     /// Only budgets with `periodType == "monthly"` feed the total; mixing
     /// weekly/yearly would distort the ratio. Pro-rating other periodicities
     /// is a future refinement tracked in the epic.
-    private func calculateHeroWidget(monthInterval: DateInterval?, periodInterval: DateInterval) {
+    private func calculateHeroWidget(
+        eligibleAccountIDs: Set<PersistentIdentifier>,
+        monthInterval: DateInterval?,
+        periodInterval: DateInterval
+    ) {
         guard let monthInterval else { return }
 
         // Mes anterior natural — independiente del selectedPeriod del Panel,
         // el Hero siempre compara contra el mes calendario anterior.
         let prevStart = Calendar.current.date(byAdding: .month, value: -1, to: monthInterval.start) ?? monthInterval.start
         let prevInterval = DateInterval(start: prevStart, end: monthInterval.start)
-        let monthEqualsPeriod = monthInterval == periodInterval
 
-        var monthIncome: Double = 0
-        var monthExpense: Double = 0
-        var prevExpense: Double = 0
-        var prevHasAnyTx = false
-        var periodIncome: Double = 0
-        var periodExpense: Double = 0
-        for tx in transactions where tx.balanceAdjustmentType == nil {
-            let amount = abs(tx.amountInPreferredCurrency)
-            let isIncome = tx.category?.isIncome == true
-            if monthInterval.contains(tx.date) {
-                if isIncome { monthIncome += amount } else { monthExpense += amount }
-            } else if prevInterval.contains(tx.date) {
-                prevHasAnyTx = true
-                if !isIncome { prevExpense += amount }
-            }
-            // Period bucket — independiente del mes para que el Hero card
-            // refleje el filtro de período del usuario. Skip cuando coincide
-            // con el mes (los buckets mensuales sirven directo).
-            if !monthEqualsPeriod, periodInterval.contains(tx.date) {
-                if isIncome { periodIncome += amount } else { periodExpense += amount }
-            }
-        }
-        if monthEqualsPeriod {
-            periodIncome = monthIncome
-            periodExpense = monthExpense
-        }
-        let newPeriod = PanelHeroPeriodData(income: periodIncome, expense: periodExpense)
+        // Todos los montos numéricos del Hero (pills del mes, trend "vs mes
+        // anterior", card "Disponible · Período") respetan `eligibleAccountIDs`,
+        // que engloba cuenta seleccionada + `excludeFromStatistics`. Filtros
+        // finos (categoría, subcategoría, need, focused date) NO aplican al
+        // Hero por decisión de producto. El estado del calculator y la IA
+        // reaccionan naturalmente a estos inputs — su lógica no se modifica.
+        let buckets = HeroBucketsCalculator.calculate(
+            transactions: transactions,
+            monthInterval: monthInterval,
+            prevInterval: prevInterval,
+            periodInterval: periodInterval,
+            eligibleAccountIDs: eligibleAccountIDs
+        )
+
+        let newPeriod = PanelHeroPeriodData(income: buckets.periodIncome, expense: buckets.periodExpense)
         if newPeriod != heroPeriodWidget { heroPeriodWidget = newPeriod }
 
         let totalMonthlyBudget = budgets
@@ -2621,8 +2617,8 @@ final class PanelViewModel {
             .reduce(0.0) { $0 + $1.limitAmount }
 
         let newData = HeroMonthCalculator.calculate(
-            monthIncome: monthIncome,
-            monthExpense: monthExpense,
+            monthIncome: buckets.monthIncome,
+            monthExpense: buckets.monthExpense,
             totalMonthlyBudget: totalMonthlyBudget
         )
         let wrapped = PanelHeroData(data: newData)
@@ -2630,8 +2626,8 @@ final class PanelViewModel {
         if dataChanged { heroWidget = wrapped }
 
         lastHeroTrendContext = TrendContext(
-            prevExpense: prevExpense,
-            prevHasAnyTx: prevHasAnyTx,
+            prevExpense: buckets.prevExpense,
+            prevHasAnyTx: buckets.prevHasAnyTx,
             totalMonthlyBudget: totalMonthlyBudget,
             monthInterval: monthInterval
         )

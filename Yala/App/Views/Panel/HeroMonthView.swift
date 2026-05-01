@@ -245,11 +245,9 @@ struct HeroMonthView: View {
     // MARK: - Copy
 
     private var chipText: String {
-        let userName = appPreferences.userName
-        if data.state == .monthStart {
-            return L10n.Panel.Hero.chipMonthStart(userName: userName, month: monthLabel)
-        }
-        return L10n.Panel.Hero.chipDefault(userName: userName)
+        // Saludo único para todos los estados — el icon `sparkles` cyan ya
+        // transmite "empezamos" sin ocupar espacio horizontal en el chip.
+        L10n.Panel.Hero.chipDefault(userName: appPreferences.userName)
     }
 
     /// SSOT del KPI: LLM cuando disponible, fallback rule-based con cifras
@@ -277,19 +275,6 @@ struct HeroMonthView: View {
         case .overBudget:
             return L10n.Panel.Hero.kpiOverBudget(spent: spent, income: income)
         }
-    }
-
-    /// Locale-aware full month name, capitalised per locale. Cached so we
-    /// don't re-instantiate `DateFormatter` on every render of the Panel.
-    private static let monthFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = AppLocale.current
-        f.dateFormat = "MMMM"
-        return f
-    }()
-
-    private var monthLabel: String {
-        Self.monthFormatter.string(from: .now).localizedCapitalized
     }
 
     // MARK: - Formatting
