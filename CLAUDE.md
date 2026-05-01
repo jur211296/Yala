@@ -138,10 +138,11 @@ Para preferencias nuevas (`UserDefaults`): ver checklist en SWIFT-STYLE.md secci
 ## Control de Ejecución
 
 Después de implementar código:
-1. Mostrar resumen de cambios.
-2. Sugerir siguiente paso.
-3. DETENERSE y esperar instrucción del usuario.
-4. NO ejecutar verificaciones o commits automáticamente.
+1. Mostrar resumen de cambios **en lenguaje de usuario** (qué cambia para él / qué problema resuelve), no descripción técnica de archivos editados.
+2. Ejecutar `/verify-ios` SIEMPRE para confirmar que el build pasa.
+3. Sugerir siguiente paso.
+4. DETENERSE y esperar instrucción del usuario.
+5. NO ejecutar tests, device-qa o commits automáticamente — solo el build.
 
 **Git:** ejecutar cada comando de lectura UNA SOLA VEZ, secuencialmente, nunca en paralelo. No matar shells con git en curso.
 
