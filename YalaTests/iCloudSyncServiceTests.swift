@@ -13,6 +13,7 @@ import Testing
 
 @testable import Yala
 
+@Suite(.serialized)
 struct iCloudSyncServiceTests {
 
     // MARK: - Helpers

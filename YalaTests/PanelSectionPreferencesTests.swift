@@ -187,10 +187,17 @@ struct PanelSectionPreferencesTests {
 
         // Second move within the debounce window. Only the final order persists.
         vm.moveWidgetInSection(.tendencias, from: IndexSet(integer: 2), to: 0)
-        try await Task.sleep(for: .milliseconds(350))
-        #expect(prefs.panelTendenciasOrder == [
-            "gasto_por_dia", "flujo_efectivo", "tendencia_saldo",
-        ])
+        // Poll up to 10s para que el debounce de 200ms dispare. Bajo la carga
+        // de la suite completa (1900+ tests en clones del simulador) el
+        // scheduler puede tardar varios segundos en re-pumping el RunLoop —
+        // el polling con deadline mantiene el test determinista sin bloquear
+        // el progreso cuando el debounce ya completó.
+        let expected = ["gasto_por_dia", "flujo_efectivo", "tendencia_saldo"]
+        let deadline = Date.now.addingTimeInterval(10)
+        while prefs.panelTendenciasOrder != expected && Date.now < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(prefs.panelTendenciasOrder == expected)
     }
 
     // MARK: - 9. flushPendingSectionWrites commits synchronously

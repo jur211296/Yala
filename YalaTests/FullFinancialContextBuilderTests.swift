@@ -99,7 +99,13 @@ struct FullFinancialContextBuilderTests {
     private func currentMonthDate(offset: Int = 1) -> Date {
         let cal = Calendar.current
         let monthStart = cal.dateInterval(of: .month, for: Date.now)?.start ?? Date.now
-        return cal.date(byAdding: .day, value: offset, to: monthStart) ?? Date.now
+        let candidate = cal.date(byAdding: .day, value: offset, to: monthStart) ?? Date.now
+        // El builder filtra `tx.date > now` (drafts en futuro). Cuando el día actual
+        // es <= offset (p. ej. correr el test el día 3 con offset 3), la fecha cae
+        // en mañana y la tx queda fuera de aggregates. Clampar a `now - 1h` mantiene
+        // ordenamiento estable por amount sin perder transacciones.
+        let safeMax = Date.now.addingTimeInterval(-3600)
+        return min(candidate, safeMax)
     }
 
     private func lastMonthDate(offset: Int = 1) -> Date {
