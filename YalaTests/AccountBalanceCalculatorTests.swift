@@ -61,4 +61,17 @@ struct AccountBalanceCalculatorTests {
         let result = AccountBalanceCalculator.batchCalculateBalances(accounts: [acc1], transactions: [txn])
         #expect(result[acc1.persistentModelID] == 0)
     }
+
+    @Test func currentBalance_forAccount_filtersByPersistentID_notModelEquality() {
+        // Two different accounts with identical field values should NEVER share balances.
+        // This guards against any Equatable/Hashable semantics that could compare by fields.
+        let acc1 = Account(name: "Duplicada", currencyCode: "PEN", colorHex: "#000", iconName: "creditcard", type: "bank")
+        let acc2 = Account(name: "Duplicada", currencyCode: "PEN", colorHex: "#000", iconName: "creditcard", type: "bank")
+
+        let txn = makePlainTransaction(amount: 70, account: acc1)
+        let all = [txn]
+
+        #expect(AccountBalanceCalculator.currentBalance(for: acc1, allTransactions: all) == 70)
+        #expect(AccountBalanceCalculator.currentBalance(for: acc2, allTransactions: all) == 0)
+    }
 }
