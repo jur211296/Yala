@@ -20,6 +20,7 @@ struct SankeyFlowCalculator {
     private static let plannedColor = "#A78BFA"         // violet (between hotPink and indigo)
     private static let plannedRecurringColor = "#A78BFA"
     private static let plannedSubscriptionColor = "#C084FC"  // lighter purple
+    private static let deficitColor = "#9CA3AF"         // neutral gray for "Otros fondos"
 
     private static var expensesLabel: String { L10n.Statistics.Sankey.expenses }
     private static var availableLabel: String { L10n.Statistics.Sankey.available }
@@ -27,6 +28,7 @@ struct SankeyFlowCalculator {
     private static var plannedLabel: String { L10n.Statistics.Sankey.planned }
     private static var plannedRecurringLabel: String { L10n.Statistics.Sankey.plannedRecurring }
     private static var plannedSubscriptionLabel: String { L10n.Statistics.Sankey.plannedSubscription }
+    private static var otherFundsLabel: String { L10n.Statistics.Sankey.otherFunds }
 
     // MARK: - Public API
 
@@ -94,23 +96,26 @@ struct SankeyFlowCalculator {
         let totalIncome = incomeBySubcat.values.reduce(0, +)
             + incomeOrphanByCat.values.reduce(0, +)
         let totalExpense = expenseByCat.values.reduce(0, +)
-        let pool = min(totalIncome, totalExpense)
-        let rawSurplus = max(0, totalIncome - totalExpense)
 
         guard totalIncome > 0 || totalExpense > 0 else { return .empty }
 
-        // Caps planned to current surplus; excess collapses Disponible to 0 silently
-        // to preserve flow balance without introducing a "negative" node.
         var plannedTotal = 0.0
         var recurringSum = 0.0
         for occ in plannedPending {
             plannedTotal += occ.amount
             if occ.kind == .recurring { recurringSum += occ.amount }
         }
-        let plannedShown = min(plannedTotal, rawSurplus)
-        let surplus = max(0, rawSurplus - plannedTotal)
-        let recurringShown = plannedTotal > 0 ? plannedShown * (recurringSum / plannedTotal) : 0
-        let subscriptionShown = plannedShown - recurringShown
+
+        // No cap: pool reflects real expense, planned reflects real planned.
+        // When outflow exceeds income, a virtual "Otros fondos" node in col .income
+        // covers the deficit so the Sankey balance stays honest.
+        let pool = totalExpense
+        let plannedShown = plannedTotal
+        let recurringShown = recurringSum
+        let subscriptionShown = plannedTotal - recurringSum
+        let totalOutflow = totalExpense + plannedTotal
+        let surplus = max(0, totalIncome - totalOutflow)
+        let deficit = max(0, totalOutflow - totalIncome)
 
         // Build columns.
         let incomeNodes = buildIncomeColumn(
@@ -121,10 +126,27 @@ struct SankeyFlowCalculator {
             maxPerColumn: maxPerColumn
         )
 
+        // Append a virtual "Otros fondos" income-column node when outflow exceeds
+        // income — represents savings, prior balance or new debt covering the gap.
+        var allIncomeNodes = incomeNodes
+        if deficit > 0 {
+            allIncomeNodes.append(SankeyNode(
+                id: SankeyNodeID.incomeDeficit,
+                column: .income,
+                name: otherFundsLabel,
+                amount: deficit,
+                colorHex: deficitColor,
+                persistentID: nil,
+                parentCategoryID: nil,
+                isOtros: false,
+                isTappable: false
+            ))
+        }
+
         var poolNodes: [SankeyNode] = []
         if pool > 0 {
             poolNodes.append(SankeyNode(
-                id: "pool_expenses",
+                id: SankeyNodeID.poolExpenses,
                 column: .pool,
                 name: expensesLabel,
                 amount: pool,
@@ -137,14 +159,14 @@ struct SankeyFlowCalculator {
         }
         switch plannedSplit {
         case .unified:
-            appendPlannedNode(&poolNodes, id: "pool_planned", name: plannedLabel, amount: plannedShown, colorHex: plannedColor)
+            appendPlannedNode(&poolNodes, id: SankeyNodeID.poolPlanned, name: plannedLabel, amount: plannedShown, colorHex: plannedColor)
         case .byKind:
-            appendPlannedNode(&poolNodes, id: "pool_planned_recurring", name: plannedRecurringLabel, amount: recurringShown, colorHex: plannedRecurringColor)
-            appendPlannedNode(&poolNodes, id: "pool_planned_subscription", name: plannedSubscriptionLabel, amount: subscriptionShown, colorHex: plannedSubscriptionColor)
+            appendPlannedNode(&poolNodes, id: SankeyNodeID.poolPlannedRecurring, name: plannedRecurringLabel, amount: recurringShown, colorHex: plannedRecurringColor)
+            appendPlannedNode(&poolNodes, id: SankeyNodeID.poolPlannedSubscription, name: plannedSubscriptionLabel, amount: subscriptionShown, colorHex: plannedSubscriptionColor)
         }
         if surplus > 0 {
             poolNodes.append(SankeyNode(
-                id: "pool_available",
+                id: SankeyNodeID.poolAvailable,
                 column: .pool,
                 name: availableLabel,
                 amount: surplus,
@@ -175,33 +197,40 @@ struct SankeyFlowCalculator {
         // Build links.
         var links: [SankeyLink] = []
 
-        // col 0 → col 1: each income node splits proportionally between
-        // "Gastos", "Planificados" (when present) and "Disponible".
-        if totalIncome > 0 {
-            let toExpensesRatio = pool / totalIncome
-            let toAvailableRatio = surplus / totalIncome
-            let toPlannedUnifiedRatio = plannedShown / totalIncome
-            let toPlannedRecurringRatio = recurringShown / totalIncome
-            let toPlannedSubscriptionRatio = subscriptionShown / totalIncome
+        // col 0 → col 1: every source node (real income + virtual deficit)
+        // splits proportionally between "Gastos", "Planificados" and "Disponible".
+        // Ratios use totalSourceFlow (= totalIncome + deficit) so the loop also
+        // handles the case where totalIncome == 0 but deficit > 0.
+        let totalSourceFlow = totalIncome + deficit
+        if totalSourceFlow > 0 {
+            let toExpensesRatio = pool / totalSourceFlow
+            let toAvailableRatio = surplus / totalSourceFlow
+            let toPlannedUnifiedRatio = plannedShown / totalSourceFlow
+            let toPlannedRecurringRatio = recurringShown / totalSourceFlow
+            let toPlannedSubscriptionRatio = subscriptionShown / totalSourceFlow
 
-            let expensesNode = poolNodes.first { $0.id == "pool_expenses" }
-            let availableNode = poolNodes.first { $0.id == "pool_available" }
-            let plannedNode = poolNodes.first { $0.id == "pool_planned" }
-            let plannedRecurringNode = poolNodes.first { $0.id == "pool_planned_recurring" }
-            let plannedSubscriptionNode = poolNodes.first { $0.id == "pool_planned_subscription" }
+            let expensesNode = poolNodes.first { $0.id == SankeyNodeID.poolExpenses }
+            let availableNode = poolNodes.first { $0.id == SankeyNodeID.poolAvailable }
+            let plannedNode = poolNodes.first { $0.id == SankeyNodeID.poolPlanned }
+            let plannedRecurringNode = poolNodes.first { $0.id == SankeyNodeID.poolPlannedRecurring }
+            let plannedSubscriptionNode = poolNodes.first { $0.id == SankeyNodeID.poolPlannedSubscription }
 
-            for inc in incomeNodes {
+            for inc in allIncomeNodes {
                 appendIncomeLink(&links, from: inc, to: expensesNode, ratio: toExpensesRatio)
                 appendIncomeLink(&links, from: inc, to: plannedNode, ratio: toPlannedUnifiedRatio)
                 appendIncomeLink(&links, from: inc, to: plannedRecurringNode, ratio: toPlannedRecurringRatio)
                 appendIncomeLink(&links, from: inc, to: plannedSubscriptionNode, ratio: toPlannedSubscriptionRatio)
-                appendIncomeLink(&links, from: inc, to: availableNode, ratio: toAvailableRatio)
+                // The virtual deficit node never feeds Disponible — by definition
+                // it represents missing funds, not surplus.
+                if inc.id != SankeyNodeID.incomeDeficit {
+                    appendIncomeLink(&links, from: inc, to: availableNode, ratio: toAvailableRatio)
+                }
             }
         }
 
         // Categories without expense in the period are NOT promoted from the planned branch:
         // an SP pointing to such a category sees its rama terminate at column 1 (no ghost cat nodes).
-        if propagatePlannedToCategories, plannedShown > 0, plannedTotal > 0 {
+        if propagatePlannedToCategories, plannedTotal > 0 {
             var perCatRecurring: [PersistentIdentifier: Double] = [:]
             var perCatSubscription: [PersistentIdentifier: Double] = [:]
             for occ in plannedPending {
@@ -212,15 +241,14 @@ struct SankeyFlowCalculator {
                     perCatSubscription[catID, default: 0] += occ.amount
                 }
             }
-            let scale = plannedShown / plannedTotal
-            let unifiedNode = poolNodes.first { $0.id == "pool_planned" }
-            let recurringNode = poolNodes.first { $0.id == "pool_planned_recurring" }
-            let subscriptionNode = poolNodes.first { $0.id == "pool_planned_subscription" }
+            let unifiedNode = poolNodes.first { $0.id == SankeyNodeID.poolPlanned }
+            let recurringNode = poolNodes.first { $0.id == SankeyNodeID.poolPlannedRecurring }
+            let subscriptionNode = poolNodes.first { $0.id == SankeyNodeID.poolPlannedSubscription }
 
             for cat in expenseCategoryNodes where !cat.isOtros {
                 guard let catID = cat.persistentID else { continue }
-                let recurringWeight = (perCatRecurring[catID] ?? 0) * scale
-                let subscriptionWeight = (perCatSubscription[catID] ?? 0) * scale
+                let recurringWeight = perCatRecurring[catID] ?? 0
+                let subscriptionWeight = perCatSubscription[catID] ?? 0
                 switch plannedSplit {
                 case .unified:
                     appendPlannedCatLink(&links, from: unifiedNode, to: cat, amount: recurringWeight + subscriptionWeight)
@@ -231,18 +259,16 @@ struct SankeyFlowCalculator {
             }
         }
 
-        // col 1 → col 2: "Gastos" distributes proportionally to expense categories.
-        if let expensesNode = poolNodes.first(where: { $0.id == "pool_expenses" }),
-           totalExpense > 0 {
-            let scale = pool / totalExpense
+        // col 1 → col 2: "Gastos" distributes to expense categories at real amounts.
+        // No scaling needed: pool == totalExpense always.
+        if let expensesNode = poolNodes.first(where: { $0.id == SankeyNodeID.poolExpenses }) {
             for exp in expenseCategoryNodes {
-                let weight = exp.amount * scale
-                guard weight > 0 else { continue }
+                guard exp.amount > 0 else { continue }
                 links.append(SankeyLink(
                     id: "\(expensesNode.id)__\(exp.id)",
                     sourceID: expensesNode.id,
                     targetID: exp.id,
-                    amount: weight,
+                    amount: exp.amount,
                     sourceColorHex: expensesNode.colorHex
                 ))
             }
@@ -264,7 +290,7 @@ struct SankeyFlowCalculator {
             ))
         }
 
-        let allNodes = incomeNodes + poolNodes + expenseCategoryNodes + expenseSubcategoryNodes
+        let allNodes = allIncomeNodes + poolNodes + expenseCategoryNodes + expenseSubcategoryNodes
 
         return SankeyData(
             nodes: allNodes,

@@ -3573,6 +3573,8 @@
 "statistics.sankey.planned" = "Planowane";
 "statistics.sankey.plannedRecurring" = "Cykliczne";
 "statistics.sankey.plannedSubscription" = "Subskrypcje";
+"statistics.sankey.otherFunds" = "Inne środki";
+"statistics.sankey.plannedHint" = "Uwzględniane są tylko płatności cykliczne i subskrypcje z bieżącego miesiąca.";
 "statistics.sankey.toggleAmount" = "Pokaż kwoty";
 "statistics.sankey.togglePercentage" = "Pokaż procenty";
 

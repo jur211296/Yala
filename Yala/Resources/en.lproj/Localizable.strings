@@ -3573,6 +3573,8 @@
 "statistics.sankey.planned" = "Planned";
 "statistics.sankey.plannedRecurring" = "Recurring";
 "statistics.sankey.plannedSubscription" = "Subscriptions";
+"statistics.sankey.otherFunds" = "Other funds";
+"statistics.sankey.plannedHint" = "Only recurring payments and subscriptions through the end of the current month are included.";
 "statistics.sankey.toggleAmount" = "Show amounts";
 "statistics.sankey.togglePercentage" = "Show percentages";
 

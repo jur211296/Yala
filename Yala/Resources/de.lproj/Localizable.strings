@@ -3570,6 +3570,8 @@
 "statistics.sankey.planned" = "Geplant"; // TODO l10n review
 "statistics.sankey.plannedRecurring" = "Wiederkehrend"; // TODO l10n review
 "statistics.sankey.plannedSubscription" = "Abos"; // TODO l10n review
+"statistics.sankey.otherFunds" = "Andere Mittel"; // TODO l10n review
+"statistics.sankey.plannedHint" = "Es werden nur wiederkehrende Zahlungen und Abonnements bis zum Ende des aktuellen Monats berücksichtigt."; // TODO l10n review
 "statistics.sankey.toggleAmount" = "Beträge anzeigen";
 "statistics.sankey.togglePercentage" = "Prozentsätze anzeigen";
 

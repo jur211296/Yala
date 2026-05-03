@@ -3572,6 +3572,8 @@
 "statistics.sankey.planned" = "Pianificati";
 "statistics.sankey.plannedRecurring" = "Ricorrenti";
 "statistics.sankey.plannedSubscription" = "Abbonamenti";
+"statistics.sankey.otherFunds" = "Altri fondi";
+"statistics.sankey.plannedHint" = "Sono inclusi solo i pagamenti ricorrenti e gli abbonamenti del mese in corso.";
 "statistics.sankey.toggleAmount" = "Mostra importi";
 "statistics.sankey.togglePercentage" = "Mostra percentuali";
 

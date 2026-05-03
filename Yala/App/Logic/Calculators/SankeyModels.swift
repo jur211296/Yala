@@ -86,10 +86,18 @@ struct SankeyData: Equatable {
     let links: [SankeyLink]
     let totalIncome: Double
     let totalExpense: Double
-    /// Pool size = min(totalIncome, totalExpense). Zero when either side is empty.
+    /// Total expense flowing through the "Gastos" pool node. Equals `totalExpense`.
+    /// When `totalExpense + plannedTotal > totalIncome`, the gap is covered by the
+    /// virtual "Otros fondos" income-column node so the Sankey balance stays honest.
     let pool: Double
 
     var hasFlow: Bool { totalIncome > 0 || totalExpense > 0 }
+
+    /// True when the Sankey contains any "Planificados" pool node (recurring or
+    /// subscription, unified or split). Used to gate the hint below the chart.
+    var hasPlannedBranch: Bool {
+        nodes(in: .pool).contains { $0.id.hasPrefix(SankeyNodeID.poolPlannedPrefix) }
+    }
 
     func nodes(in column: SankeyColumn) -> [SankeyNode] {
         nodes.filter { $0.column == column }
@@ -102,4 +110,20 @@ struct SankeyData: Equatable {
         totalExpense: 0,
         pool: 0
     )
+}
+
+// MARK: - Node IDs
+
+/// Stable identifiers for virtual Sankey nodes (income deficit and pool roles).
+/// Defined here so calculator emission and view/test consumption agree on a
+/// single source of truth instead of duplicating raw strings.
+enum SankeyNodeID {
+    static let incomeDeficit = "inc_deficit"
+    static let poolExpenses = "pool_expenses"
+    static let poolAvailable = "pool_available"
+    static let poolPlanned = "pool_planned"
+    static let poolPlannedRecurring = "pool_planned_recurring"
+    static let poolPlannedSubscription = "pool_planned_subscription"
+    /// Common prefix for all planned pool node IDs (unified + split variants).
+    static let poolPlannedPrefix = "pool_planned"
 }

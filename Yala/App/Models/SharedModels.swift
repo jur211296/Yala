@@ -246,6 +246,58 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
             return .day  // Use day for data, but smooth visually
         }
     }
+
+    /// Interval used to project pending scheduled payments in the Sankey "Planificados" branch.
+    /// Returns nil for closed/retrospective periods (no planned branch shown).
+    /// For active periods, extends from the period start to min(period_end, end_of_current_month).
+    /// `now` is injectable for deterministic tests.
+    func plannedInterval(
+        customRange: DateInterval? = nil,
+        calendar: Calendar = userConfiguredCalendar(),
+        now: Date = .now
+    ) -> DateInterval? {
+        let endOfMonth = calendar.endOfMonth(for: now)
+
+        switch self {
+        case .thisWeek:
+            let startOfWeek = calendar.startOfWeek(for: now)
+            let endOfWeek = calendar.date(byAdding: .weekOfYear, value: 1, to: startOfWeek) ?? endOfMonth
+            return DateInterval(start: startOfWeek, end: min(endOfWeek, endOfMonth))
+
+        case .thisMonth:
+            return DateInterval(start: calendar.startOfMonth(for: now), end: endOfMonth)
+
+        case .thisYear:
+            return DateInterval(start: calendar.startOfYear(for: now), end: endOfMonth)
+
+        case .custom:
+            let startOfToday = calendar.startOfDay(for: now)
+            guard let range = customRange, range.end > startOfToday else { return nil }
+            return DateInterval(start: range.start, end: min(range.end, endOfMonth))
+
+        case .last7Days, .last30Days, .lastMonth, .lastYear, .allTime:
+            return nil
+        }
+    }
+
+    /// True when the planned interval is truncated to end-of-current-month
+    /// (i.e. the period extends beyond the current month). Drives the hint shown
+    /// below the Sankey to clarify why we don't project further.
+    func shouldShowPlannedHint(
+        customRange: DateInterval? = nil,
+        calendar: Calendar = userConfiguredCalendar(),
+        now: Date = .now
+    ) -> Bool {
+        switch self {
+        case .thisYear:
+            return true
+        case .custom:
+            guard let range = customRange else { return false }
+            return range.end > calendar.endOfMonth(for: now)
+        default:
+            return false
+        }
+    }
 }
 
 /// Navigation tabs for detail views

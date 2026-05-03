@@ -285,6 +285,11 @@ final class StatisticsViewModel: Filterable {
     /// the flow structure, only the dimming overlay in the view.
     struct SankeyInputKey: Equatable {
         let interval: DateInterval
+        /// Planned-occurrences interval (independent of `interval`). Differs from
+        /// `interval` because planned extends to end-of-current-month, while transactions
+        /// stay truncated to today. Including it here triggers a recompute when
+        /// crossing month boundaries with `.thisYear` active.
+        let plannedInterval: DateInterval?
         let accounts: Set<PersistentIdentifier>
         let tags: Set<PersistentIdentifier>
         let currencies: Set<CurrencyCode>
@@ -297,6 +302,7 @@ final class StatisticsViewModel: Filterable {
     var sankeyInputKey: SankeyInputKey {
         SankeyInputKey(
             interval: panelDateInterval,
+            plannedInterval: detailPeriod.plannedInterval(customRange: customDateRange),
             accounts: selectedAccounts,
             tags: selectedTags,
             currencies: selectedCurrencies,
@@ -305,6 +311,12 @@ final class StatisticsViewModel: Filterable {
             searchText: searchText,
             isExcludeMode: isExcludeMode
         )
+    }
+
+    /// True when the Sankey shows planificados truncated to end-of-current-month.
+    /// Drives the hint shown below the chart.
+    var shouldShowPlannedHint: Bool {
+        detailPeriod.shouldShowPlannedHint(customRange: customDateRange)
     }
 
     // MARK: - Data Calculation
@@ -398,14 +410,22 @@ final class StatisticsViewModel: Filterable {
             accounts: accounts,
             criteria: criteria
         )
-        let plannedPending = PlannedOccurrenceBuilder.build(
-            scheduledPayments: scheduledPayments,
-            filteredTransactions: filtered,
-            interval: interval,
-            selectedAccounts: selectedAccounts,
-            defaultCurrencyCode: defaultCurrencyCode,
-            converter: CurrencyConverter.shared
-        )
+        // Use the dedicated planned interval (extends to end-of-current-month for
+        // active periods, nil for retrospective ones). Distinct from `interval`
+        // which truncates to today for transactions.
+        let plannedPending: [PlannedOccurrence]
+        if let plannedInterval = detailPeriod.plannedInterval(customRange: customDateRange) {
+            plannedPending = PlannedOccurrenceBuilder.build(
+                scheduledPayments: scheduledPayments,
+                filteredTransactions: filtered,
+                interval: plannedInterval,
+                selectedAccounts: selectedAccounts,
+                defaultCurrencyCode: defaultCurrencyCode,
+                converter: CurrencyConverter.shared
+            )
+        } else {
+            plannedPending = []
+        }
         let newData = SankeyFlowCalculator.compute(
             transactions: filtered,
             interval: interval,

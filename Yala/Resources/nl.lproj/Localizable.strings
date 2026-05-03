@@ -3573,6 +3573,8 @@
 "statistics.sankey.planned" = "Gepland";
 "statistics.sankey.plannedRecurring" = "Terugkerend";
 "statistics.sankey.plannedSubscription" = "Abonnementen";
+"statistics.sankey.otherFunds" = "Andere middelen";
+"statistics.sankey.plannedHint" = "Alleen terugkerende betalingen en abonnementen van de huidige maand worden opgenomen.";
 "statistics.sankey.toggleAmount" = "Bedragen tonen";
 "statistics.sankey.togglePercentage" = "Percentages tonen";
 

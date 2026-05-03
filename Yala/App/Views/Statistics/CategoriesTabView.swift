@@ -557,6 +557,12 @@ struct CategoriesTabView: View {
                         }
                     }
                 )
+                if viewModel.shouldShowPlannedHint && viewModel.sankeyData.hasPlannedBranch {
+                    Text(L10n.Statistics.Sankey.plannedHint)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
             .solidCard(padding: DS.Card.paddingCompact, radius: DS.Radius.lg)
         }

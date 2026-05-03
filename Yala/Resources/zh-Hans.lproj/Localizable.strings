@@ -3573,6 +3573,8 @@
 "statistics.sankey.planned" = "已计划";
 "statistics.sankey.plannedRecurring" = "周期";
 "statistics.sankey.plannedSubscription" = "订阅";
+"statistics.sankey.otherFunds" = "其他资金";
+"statistics.sankey.plannedHint" = "仅包含本月的定期付款和订阅。";
 "statistics.sankey.toggleAmount" = "显示金额";
 "statistics.sankey.togglePercentage" = "显示百分比";
 

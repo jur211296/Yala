@@ -3573,6 +3573,8 @@
 "statistics.sankey.planned" = "計画済み";
 "statistics.sankey.plannedRecurring" = "定期";
 "statistics.sankey.plannedSubscription" = "サブスクリプション";
+"statistics.sankey.otherFunds" = "その他の資金";
+"statistics.sankey.plannedHint" = "今月分の定期支払いとサブスクリプションのみが含まれます。";
 "statistics.sankey.toggleAmount" = "金額を表示";
 "statistics.sankey.togglePercentage" = "割合を表示";
 

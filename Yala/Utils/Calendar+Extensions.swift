@@ -18,6 +18,16 @@ extension Calendar {
         return self.date(from: components) ?? date
     }
 
+    func endOfMonth(for date: Date) -> Date {
+        dateInterval(of: .month, for: date)?.end
+            ?? self.date(byAdding: .day, value: 1, to: startOfDay(for: date)) ?? date
+    }
+
+    func startOfYear(for date: Date) -> Date {
+        let components = dateComponents([.year], from: date)
+        return self.date(from: components) ?? date
+    }
+
     /// Returns weekday numbers (1=Sun..7=Sat) starting from `firstWeekday`.
     /// e.g. firstWeekday=2 (Monday) → [2,3,4,5,6,7,1].
     static func orderedWeekdays(firstWeekday: Int) -> [Int] {

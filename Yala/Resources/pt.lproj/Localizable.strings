@@ -3570,6 +3570,8 @@
 "statistics.sankey.planned" = "Planejados"; // TODO l10n review
 "statistics.sankey.plannedRecurring" = "Recorrentes"; // TODO l10n review
 "statistics.sankey.plannedSubscription" = "Assinaturas"; // TODO l10n review
+"statistics.sankey.otherFunds" = "Outros fundos"; // TODO l10n review
+"statistics.sankey.plannedHint" = "Somente pagamentos recorrentes e assinaturas do mês atual são incluídos."; // TODO l10n review
 "statistics.sankey.toggleAmount" = "Mostrar valores";
 "statistics.sankey.togglePercentage" = "Mostrar percentagens";
 

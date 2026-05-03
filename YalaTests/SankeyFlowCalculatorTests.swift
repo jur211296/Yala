@@ -122,7 +122,9 @@ struct SankeyFlowCalculatorTests {
         #expect(result.links.count == 2)
     }
 
-    @Test func compute_onlyExpense_fillsCol2AndCol3() {
+    @Test func compute_onlyExpense_emitsDeficitAndCovers() {
+        // Without income, expense flows from a virtual "Otros fondos" deficit node
+        // in col .income → pool "Gastos" → categories → subcategories.
         let food = makeCategory(name: "Food")
         let restaurants = makeSubcategory(name: "Restaurants", category: food)
         let txs = [
@@ -134,14 +136,21 @@ struct SankeyFlowCalculatorTests {
         )
         #expect(result.totalIncome == 0)
         #expect(result.totalExpense == 100)
-        #expect(result.pool == 0)
-        // No income, no pool nodes (pool == 0 and surplus == 0).
-        #expect(result.nodes(in: .income).isEmpty)
-        #expect(result.nodes(in: .pool).isEmpty)
+        #expect(result.pool == 100)  // pool == totalExpense, no longer capped to income
+        // Income column contains the virtual "Otros fondos" node covering the gap.
+        let incomeNodes = result.nodes(in: .income)
+        #expect(incomeNodes.count == 1)
+        #expect(incomeNodes.first?.id == "inc_deficit")
+        #expect(incomeNodes.first?.amount == 100)
+        // Pool has a "Gastos" node (no Disponible since surplus == 0).
+        let poolNodes = result.nodes(in: .pool)
+        #expect(poolNodes.count == 1)
+        #expect(poolNodes.first?.id == "pool_expenses")
+        #expect(poolNodes.first?.amount == 100)
         #expect(result.nodes(in: .expenseCategory).count == 1)
         #expect(result.nodes(in: .expenseSubcategory).count == 1)
-        // Only cat→subcat link.
-        #expect(result.links.count == 1)
+        // Links: deficit→expenses, expenses→category, category→subcategory.
+        #expect(result.links.count == 3)
     }
 
     // MARK: - Income column — subcategories + orphans
@@ -221,7 +230,7 @@ struct SankeyFlowCalculatorTests {
         #expect(pool.first { $0.name == L10n.Statistics.Sankey.available }?.amount == 700)
     }
 
-    @Test func compute_expenseGreaterThanIncome_noAvailableNode() {
+    @Test func compute_expenseGreaterThanIncome_emitsDeficitNotCap() {
         let salary = makeCategory(name: "Salary", isIncome: true)
         let food = makeCategory(name: "Food")
         let txs = [
@@ -235,9 +244,13 @@ struct SankeyFlowCalculatorTests {
         let pool = result.nodes(in: .pool)
         #expect(pool.count == 1)
         #expect(pool.first?.name == L10n.Statistics.Sankey.expenses)
-        #expect(pool.first?.amount == 500) // capped at income
+        #expect(pool.first?.amount == 800) // pool == totalExpense (no cap)
         #expect(result.totalIncome == 500)
         #expect(result.totalExpense == 800)
+        // Income col now contains real income (salary) + virtual deficit covering the gap.
+        let income = result.nodes(in: .income)
+        let deficit = income.first { $0.id == "inc_deficit" }
+        #expect(deficit?.amount == 300) // 800 - 500
     }
 
     // MARK: - Guards
@@ -317,18 +330,29 @@ struct SankeyFlowCalculatorTests {
 
     // MARK: - Pool semantics (totals)
 
-    @Test func compute_poolEqualsMinIncomeExpense() {
+    @Test func compute_pool_equalsTotalExpense_alwaysReflectsRealOutflow() {
         let salary = makeCategory(name: "Salary", isIncome: true)
         let food = makeCategory(name: "Food")
-        let txs = [
+        // Surplus case: income > expense → pool == totalExpense.
+        let surplusTxs = [
             makeTransaction(amount: 1000, category: salary),
             makeTransaction(amount: -300, category: food)
         ]
-        let result = SankeyFlowCalculator.compute(
-            transactions: txs,
+        let surplusResult = SankeyFlowCalculator.compute(
+            transactions: surplusTxs,
             interval: defaultInterval
         )
-        #expect(result.pool == 300)
+        #expect(surplusResult.pool == 300)
+        // Deficit case: expense > income → pool still == totalExpense (no cap).
+        let deficitTxs = [
+            makeTransaction(amount: 200, category: salary),
+            makeTransaction(amount: -500, category: food)
+        ]
+        let deficitResult = SankeyFlowCalculator.compute(
+            transactions: deficitTxs,
+            interval: defaultInterval
+        )
+        #expect(deficitResult.pool == 500)
     }
 
     // MARK: - Sorting & colors
@@ -382,9 +406,13 @@ struct SankeyFlowCalculatorTests {
             transactions: [tx],
             interval: defaultInterval
         )
-        // Without income there's no pool → only cat→subcat link.
-        #expect(result.links.count == 1)
-        #expect(result.links.first?.amount == 75)
+        // Without income, the deficit node funds the pool, so links are:
+        // deficit→expenses + expenses→food + food→restaurants. Validate the
+        // cat→subcat link carries the real subcategory amount.
+        let catToSub = result.links.first {
+            $0.targetID.hasPrefix("c\(SankeyColumn.expenseSubcategory.rawValue)_")
+        }
+        #expect(catToSub?.amount == 75)
     }
 
     @Test func compute_incomeLinks_splitBetweenGastosAndAvailable() {
@@ -545,7 +573,7 @@ struct SankeyFlowCalculatorTests {
         #expect(availableNode?.amount == 500)
     }
 
-    @Test func compute_plannedExceedsSurplus_caps_disponibleZero() {
+    @Test func compute_plannedExceedsSurplus_emitsDeficit() {
         let salary = makeCategory(name: "Salary", isIncome: true)
         let food = makeCategory(name: "Food")
         let txs = [
@@ -561,10 +589,13 @@ struct SankeyFlowCalculatorTests {
         let pool = result.nodes(in: .pool)
         let plannedNode = pool.first { $0.id == "pool_planned" }
         let availableNode = pool.first { $0.id == "pool_available" }
-        // Cap at surplus = 700
-        #expect(plannedNode?.amount == 700)
-        // Disponible = 0 → no node emitted (amount-zero nodes are filtered)
+        // Planned shown at full real amount (no cap).
+        #expect(plannedNode?.amount == 1500)
+        // Disponible = 0 → no node.
         #expect(availableNode == nil)
+        // Deficit = (300 + 1500) - 1000 = 800.
+        let deficit = result.nodes(in: .income).first { $0.id == "inc_deficit" }
+        #expect(deficit?.amount == 800)
     }
 
     @Test func compute_plannedEqualsSurplus_disponibleNotEmitted() {
@@ -585,19 +616,29 @@ struct SankeyFlowCalculatorTests {
         #expect(pool.first { $0.id == "pool_available" } == nil)
     }
 
-    @Test func compute_planned_noIncome_producesNoLinks() {
+    @Test func compute_planned_zeroIncome_emitsDeficitAndLinks() {
+        // No income, expense=100, planned=50. Deficit = 150 covers both flows.
         let food = makeCategory(name: "Food")
         let txs = [makeTransaction(amount: -100, category: food)]
         let planned = [PlannedOccurrence(amount: 50, kind: .recurring, categoryID: nil)]
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
             interval: defaultInterval,
-            plannedPending: planned
+            plannedPending: planned,
+            plannedSplit: .unified
         )
-        // No income → surplus=0 → plannedShown=0 → no planned node, no income→planned links
-        #expect(result.nodes(in: .pool).first { $0.id == "pool_planned" } == nil)
-        let plannedLinks = result.links.filter { $0.targetID == "pool_planned" }
-        #expect(plannedLinks.isEmpty)
+        let plannedNode = result.nodes(in: .pool).first { $0.id == "pool_planned" }
+        #expect(plannedNode?.amount == 50)
+        let deficit = result.nodes(in: .income).first { $0.id == "inc_deficit" }
+        #expect(deficit?.amount == 150)
+        // Both links from deficit must exist (deficit→expenses and deficit→planned).
+        let deficitToExpenses = result.links.first { $0.sourceID == "inc_deficit" && $0.targetID == "pool_expenses" }
+        let deficitToPlanned = result.links.first { $0.sourceID == "inc_deficit" && $0.targetID == "pool_planned" }
+        #expect(deficitToExpenses != nil)
+        #expect(deficitToPlanned != nil)
+        // No Disponible link: deficit never feeds available.
+        let deficitToAvailable = result.links.first { $0.sourceID == "inc_deficit" && $0.targetID == "pool_available" }
+        #expect(deficitToAvailable == nil)
     }
 
     // MARK: - Planificados branch (split by kind)
@@ -645,10 +686,9 @@ struct SankeyFlowCalculatorTests {
         #expect(pool.first { $0.id == "pool_planned_subscription" } == nil)
     }
 
-    @Test func compute_plannedSplitByKind_capPreservesRatio() {
-        // surplus = 100, planned = 200 (recurring 150 + subscription 50)
-        // Expected: cap to 100, preserve ratio recurring:subscription = 3:1
-        // → recurringShown = 75, subscriptionShown = 25
+    @Test func compute_plannedSplitByKind_preservesRealAmounts() {
+        // income=1000, expense=900, planned=200 (recurring 150 + subscription 50).
+        // No cap: each kind reflects its real amount, deficit absorbs the rest.
         let salary = makeCategory(name: "Salary", isIncome: true)
         let food = makeCategory(name: "Food")
         let txs = [
@@ -668,9 +708,11 @@ struct SankeyFlowCalculatorTests {
         let pool = result.nodes(in: .pool)
         let recurring = pool.first { $0.id == "pool_planned_recurring" }?.amount ?? 0
         let subscription = pool.first { $0.id == "pool_planned_subscription" }?.amount ?? 0
-        #expect(abs(recurring - 75) < 0.01)
-        #expect(abs(subscription - 25) < 0.01)
-        #expect(abs((recurring + subscription) - 100) < 0.01)
+        #expect(abs(recurring - 150) < 0.01)
+        #expect(abs(subscription - 50) < 0.01)
+        // Deficit = (900 + 200) - 1000 = 100.
+        let deficit = result.nodes(in: .income).first { $0.id == "inc_deficit" }
+        #expect(abs((deficit?.amount ?? 0) - 100) < 0.01)
     }
 
     // MARK: - Planificados branch (propagation to categories)
@@ -722,5 +764,128 @@ struct SankeyFlowCalculatorTests {
         // Branch terminates at column 1 (no link to expense cats from the planned node).
         let danglingLinks = result.links.filter { $0.sourceID == "pool_planned" }
         #expect(danglingLinks.isEmpty)
+    }
+
+    // MARK: - Deficit branch ("Otros fondos" virtual income node)
+
+    @Test func compute_deficit_emitsDeficitNodeInIncomeColumn() {
+        let salary = makeCategory(name: "Salary", isIncome: true)
+        let food = makeCategory(name: "Food")
+        let txs = [
+            makeTransaction(amount: 100, category: salary),
+            makeTransaction(amount: -250, category: food)
+        ]
+        let result = SankeyFlowCalculator.compute(
+            transactions: txs,
+            interval: defaultInterval
+        )
+        let income = result.nodes(in: .income)
+        let deficit = income.first { $0.id == "inc_deficit" }
+        #expect(deficit != nil)
+        #expect(deficit?.column == .income)
+        #expect(deficit?.amount == 150) // 250 - 100
+        #expect(deficit?.name == L10n.Statistics.Sankey.otherFunds)
+        #expect(deficit?.persistentID == nil)
+        #expect(deficit?.isOtros == false)
+    }
+
+    @Test func compute_deficit_deficitNodeUsesNeutralGrayColor() {
+        let food = makeCategory(name: "Food")
+        let txs = [makeTransaction(amount: -200, category: food)]
+        let result = SankeyFlowCalculator.compute(
+            transactions: txs,
+            interval: defaultInterval
+        )
+        let deficit = result.nodes(in: .income).first { $0.id == "inc_deficit" }
+        #expect(deficit?.colorHex == "#9CA3AF")
+    }
+
+    @Test func compute_deficit_deficitDoesNotLinkToAvailable() {
+        let food = makeCategory(name: "Food")
+        let txs = [makeTransaction(amount: -100, category: food)]
+        let result = SankeyFlowCalculator.compute(
+            transactions: txs,
+            interval: defaultInterval
+        )
+        let deficitToAvailable = result.links.first {
+            $0.sourceID == "inc_deficit" && $0.targetID == "pool_available"
+        }
+        #expect(deficitToAvailable == nil)
+    }
+
+    @Test func compute_deficit_categoriesNotScaledDown() {
+        // In deficit, category amounts must reflect real expense (not scaled to income).
+        let salary = makeCategory(name: "Salary", isIncome: true)
+        let food = makeCategory(name: "Food")
+        let txs = [
+            makeTransaction(amount: 100, category: salary),
+            makeTransaction(amount: -400, category: food)
+        ]
+        let result = SankeyFlowCalculator.compute(
+            transactions: txs,
+            interval: defaultInterval
+        )
+        let foodNode = result.nodes(in: .expenseCategory).first { $0.name == "Food" }
+        #expect(foodNode?.amount == 400)
+        // Link Gastos → Food carries real amount (no scaling).
+        let link = result.links.first {
+            $0.sourceID == "pool_expenses" && $0.targetID == foodNode?.id
+        }
+        #expect(link?.amount == 400)
+    }
+
+    @Test func compute_deficit_withPropagation_doesNotBreakKindWeights() {
+        // Deficit + propagation: planned weights per category preserved at real amounts.
+        let salary = makeCategory(name: "Salary", isIncome: true)
+        let food = makeCategory(name: "Food")
+        let txs = [
+            makeTransaction(amount: 200, category: salary),
+            makeTransaction(amount: -300, category: food)
+        ]
+        let foodID = food.persistentModelID
+        let planned = [
+            PlannedOccurrence(amount: 80, kind: .recurring, categoryID: foodID),
+            PlannedOccurrence(amount: 40, kind: .subscription, categoryID: foodID)
+        ]
+        let result = SankeyFlowCalculator.compute(
+            transactions: txs,
+            interval: defaultInterval,
+            plannedPending: planned,
+            plannedSplit: .byKind,
+            propagatePlannedToCategories: true
+        )
+        let foodNode = result.nodes(in: .expenseCategory).first { $0.persistentID == foodID }
+        let recurringToFood = result.links.first {
+            $0.sourceID == "pool_planned_recurring" && $0.targetID == foodNode?.id
+        }
+        let subscriptionToFood = result.links.first {
+            $0.sourceID == "pool_planned_subscription" && $0.targetID == foodNode?.id
+        }
+        #expect(recurringToFood?.amount == 80)
+        #expect(subscriptionToFood?.amount == 40)
+    }
+
+    @Test func compute_deficit_zeroIncome_emitsLinksFromDeficitOnly() {
+        // No income at all: every flow originates from the deficit node.
+        let food = makeCategory(name: "Food")
+        let txs = [makeTransaction(amount: -200, category: food)]
+        let planned = [PlannedOccurrence(amount: 100, kind: .recurring, categoryID: nil)]
+        let result = SankeyFlowCalculator.compute(
+            transactions: txs,
+            interval: defaultInterval,
+            plannedPending: planned,
+            plannedSplit: .unified
+        )
+        // Income column has only the deficit node.
+        let income = result.nodes(in: .income)
+        #expect(income.count == 1)
+        #expect(income.first?.id == "inc_deficit")
+        #expect(income.first?.amount == 300) // 200 + 100
+        // All col 0 → col 1 links originate from the deficit node.
+        let toPoolLinks = result.links.filter {
+            $0.targetID == "pool_expenses" || $0.targetID == "pool_planned"
+        }
+        #expect(toPoolLinks.count == 2)
+        #expect(toPoolLinks.allSatisfy { $0.sourceID == "inc_deficit" })
     }
 }

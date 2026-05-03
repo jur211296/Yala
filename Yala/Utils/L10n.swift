@@ -1354,6 +1354,8 @@ enum L10n {
             static var planned: String { ls("statistics.sankey.planned", comment: "") }
             static var plannedRecurring: String { ls("statistics.sankey.plannedRecurring", comment: "") }
             static var plannedSubscription: String { ls("statistics.sankey.plannedSubscription", comment: "") }
+            static var otherFunds: String { ls("statistics.sankey.otherFunds", comment: "") }
+            static var plannedHint: String { ls("statistics.sankey.plannedHint", comment: "") }
             static var toggleAmount: String { ls("statistics.sankey.toggleAmount", comment: "") }
             static var togglePercentage: String { ls("statistics.sankey.togglePercentage", comment: "") }
         }
