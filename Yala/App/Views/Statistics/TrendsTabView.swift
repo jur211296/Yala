@@ -88,6 +88,8 @@ struct TrendsTabView: View {
     // Trend charts carousel state
     @State private var trendChartsCarouselPosition: Int = 0
 
+    @State private var weekdaySpending: [WeekdaySpending] = []
+
     // Custom period picker state
     @State private var showCustomPeriodPicker: Bool = false
 
@@ -130,6 +132,7 @@ struct TrendsTabView: View {
                 trendsHeader
                 trendChartsCarousel
                 cashFlowWidget
+                weekdayChartSection
                 recentRecordsSection
             }
             .padding(.top, DS.Spacing.sm)
@@ -141,6 +144,7 @@ struct TrendsTabView: View {
             // rather than empty placeholders. Subsequent updates go through the debounce.
             calculateCashFlowData()
             calculatePeriodComparisonData()
+            calculateWeekdayData()
         }
         .onDisappear { recalcTask?.cancel() }
         .onChange(of: trendsViewModel.detailPeriod)            { scheduleTrendsRecalc() }
@@ -981,6 +985,75 @@ struct TrendsTabView: View {
             guard !Task.isCancelled else { return }
             calculateCashFlowData()
             calculatePeriodComparisonData()
+            calculateWeekdayData()
+        }
+    }
+
+    // MARK: - Weekday Spending Calculation
+
+    /// Calcula el promedio de gasto por día de la semana respetando los filtros activos.
+    /// Reusa el patrón de `calculateCashFlowData` (mismo intervalo + criteria).
+    private func calculateWeekdayData() {
+        guard !allTransactions.isEmpty else {
+            weekdaySpending = []
+            return
+        }
+
+        let baseInterval = trendsViewModel.panelDateInterval
+        let effectiveInterval: DateInterval = {
+            guard trendsViewModel.detailPeriod == .allTime else { return baseInterval }
+            let dates = allTransactions.map(\.date)
+            guard let first = dates.min(), let last = dates.max() else { return baseInterval }
+            let calendar = Calendar.current
+            let start = calendar.startOfDay(for: first)
+            let end = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: last)) ?? last
+            return DateInterval(start: start, end: end)
+        }()
+
+        let criteria = FilterCriteria(
+            selectedAccounts: trendsViewModel.selectedAccounts,
+            selectedCategories: trendsViewModel.selectedCategories,
+            selectedSubcategories: trendsViewModel.selectedSubcategories,
+            selectedTags: trendsViewModel.selectedTags,
+            selectedNeeds: trendsViewModel.selectedNeeds,
+            selectedCurrencies: trendsViewModel.selectedCurrencies,
+            isExcludeMode: trendsViewModel.isExcludeMode,
+            transactionTypeFilter: .all,
+            amountCondition: trendsViewModel.amountCondition,
+            searchText: trendsViewModel.searchText,
+            dateInterval: effectiveInterval
+        )
+
+        let filtered = FilterService.filterForTrends(
+            transactions: allTransactions,
+            accounts: accounts,
+            criteria: criteria
+        )
+
+        let result = WeekdaySpendingCalculator.calculate(
+            transactions: filtered,
+            interval: effectiveInterval,
+            currencyCode: defaultCurrencyCode
+        )
+        if result != weekdaySpending { weekdaySpending = result }
+    }
+
+    // MARK: - Weekday Chart Section
+
+    @ViewBuilder
+    private var weekdayChartSection: some View {
+        if weekdaySpending.contains(where: { $0.average > 0 }) {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                Text(L10n.Insights.weekdayAverage)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.thPrimaryText)
+
+                WeekdayBarChart(
+                    data: weekdaySpending,
+                    currencyCode: defaultCurrencyCode
+                )
+                .solidCard(padding: DS.Spacing.lg)
+            }
         }
     }
 

@@ -103,12 +103,7 @@ struct InsightsTabView: View {
 
                         // Charts and texts only if >= 5 transactions
                         if data.periodSummary.transactionCount >= 5 {
-                            // Section 5: Weekday Spending Chart
-                            if appPreferences.insightsShowWeekday, data.weekdaySpending.contains(where: { $0.average > 0 }) {
-                                weekdayChartSection(data.weekdaySpending)
-                            }
-
-                            // Section 6: Need Distribution
+                            // Section 5: Need Distribution
                             if appPreferences.insightsShowNature, data.needDistribution.total > 0 {
                                 needSection(data.needDistribution)
                             }
@@ -648,18 +643,6 @@ struct InsightsTabView: View {
         }
         .padding(DS.Spacing.md)
         .solidCard(radius: DS.Radius.md)
-    }
-
-    // MARK: - Section 5: Weekday Spending Chart
-
-    @ViewBuilder
-    private func weekdayChartSection(_ data: [WeekdaySpending]) -> some View {
-        VStack(spacing: DS.Spacing.sm) {
-            YalaSectionHeader(L10n.Insights.weekdayAverage)
-
-            WeekdayBarChart(data: data, currencyCode: defaultCurrencyCode)
-                .solidCard(padding: DS.Spacing.lg)
-        }
     }
 
     // MARK: - Section 6: Need Distribution
