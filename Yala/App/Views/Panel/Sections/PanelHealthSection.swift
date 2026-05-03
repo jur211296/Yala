@@ -16,7 +16,6 @@ struct PanelHealthSection: View {
         if let score = viewModel.healthWidget.score {
             FinancialScoreView(
                 score: score,
-                viewModel: viewModel,
                 sessionState: sessionState
             )
         }

@@ -7,8 +7,12 @@ import SwiftUI
 
 struct FinancialScoreView: View {
     let score: FinancialScore
-    let viewModel: PanelViewModel
     let sessionState: SessionState
+    /// Subtítulo opcional bajo el título de la card. Se usa en Resumen para
+    /// dejar claro que el score siempre refleja el mes en curso, aún cuando
+    /// el selector de periodo de la pestaña esté en otro rango. Panel no lo
+    /// necesita porque allí no hay selector encima de la card.
+    var subtitle: String? = nil
 
     // A11Y-DT: ring diameter scales with Dynamic Type.
     @ScaledMetric(relativeTo: .largeTitle) private var mainRingSize: CGFloat = 88
@@ -35,23 +39,31 @@ struct FinancialScoreView: View {
 
     @ViewBuilder
     private var header: some View {
-        HStack(alignment: .center, spacing: DS.Spacing.sm) {
-            Text(L10n.Panel.Health.cardTitle)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
+        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            HStack(alignment: .center, spacing: DS.Spacing.sm) {
+                Text(L10n.Panel.Health.cardTitle)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
 
-            Button {
-                presentedSheet = .total
-            } label: {
-                Image(systemName: "info.circle")
-                    .font(DS.Typography.labelSmall)
+                Button {
+                    presentedSheet = .total
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(DS.Typography.labelSmall)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.Panel.Health.totalSheetTitle)
+
+                Spacer()
+            }
+
+            if let subtitle {
+                Text(subtitle)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.Panel.Health.totalSheetTitle)
-
-            Spacer()
         }
     }
 

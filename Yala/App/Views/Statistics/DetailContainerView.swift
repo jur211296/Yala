@@ -40,6 +40,10 @@ struct DetailContainerView: View {
     @State private var recalculateTask: Task<Void, Never>?
     @State private var pendingReload = false
     @State private var isInBackground = false
+    /// Gate para `calculateFinancialScore`: el score depende solo de
+    /// dataVersion + mes en curso, no de filtros/periodo. Evita los 2 fetches
+    /// de SwiftData (`loadPaidAmounts`) en cada cambio de chip.
+    @State private var lastScoreSignature: Int = 0
     private let isFromSearch: Bool  // Skip session sync when coming from global search
 
     @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
@@ -567,6 +571,30 @@ struct DetailContainerView: View {
             customRange: sessionState.customDateRange,
             comparisonMode: sessionState.comparisonMode
         )
+
+        // Salud Financiera (mes actual). El score solo depende de dataVersion
+        // + mes en curso — ignora filtros/periodo. Gate evita los 2 fetches
+        // SwiftData de `loadPaidAmounts` en cada cambio de chip.
+        let monthStart = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
+        var scoreHasher = Hasher()
+        scoreHasher.combine(sessionState.dataVersion)
+        scoreHasher.combine(monthStart)
+        let scoreSignature = scoreHasher.finalize()
+        if scoreSignature != lastScoreSignature {
+            lastScoreSignature = scoreSignature
+            let activePayments = dataViewModel.scheduledPayments.filter(\.isActive)
+            let paidAmounts = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
+                for: activePayments,
+                month: .now,
+                context: modelContext
+            )
+            insightsViewModel.calculateFinancialScore(
+                transactions: dataViewModel.allTransactions,
+                budgets: dataViewModel.budgets,
+                scheduledPayments: dataViewModel.scheduledPayments,
+                paidAmounts: paidAmounts
+            )
+        }
 
         // Reset AI state on context change (button must be pressed again)
         insightsViewModel.resetAIState()

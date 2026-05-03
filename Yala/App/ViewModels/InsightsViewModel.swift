@@ -18,6 +18,11 @@ final class InsightsViewModel {
 
     private(set) var insightData: InsightData?
 
+    /// Salud Financiera (mes actual). Siempre representa el mes calendario en curso —
+    /// el selector de periodo de Resumen no afecta este score (mismo contrato que el
+    /// widget del Panel). Nil hasta que `calculateFinancialScore` corra al menos una vez.
+    private(set) var financialScore: FinancialScore?
+
     // MARK: - AI State
 
     private(set) var aiInsights: LLMInsightResponse?
@@ -94,6 +99,25 @@ final class InsightsViewModel {
             tone: currentTone,
             focus: currentFocus
         )
+    }
+
+    /// Recalcula el Financial Score del mes actual. Se invoca aparte de
+    /// `calculateInsightsData` porque el score siempre mide el mes calendario
+    /// en curso — independiente del periodo seleccionado en Resumen — y
+    /// requiere `paidAmounts` cargado vía `ScheduledPaymentPaidStatusHelper`.
+    func calculateFinancialScore(
+        transactions: [TransactionItem],
+        budgets: [Budget],
+        scheduledPayments: [ScheduledPayment],
+        paidAmounts: [String: [PaidOccurrenceInfo]]
+    ) {
+        let newScore = FinancialScoreCalculator.calculate(
+            transactions: transactions,
+            budgets: budgets,
+            scheduledPayments: scheduledPayments,
+            paidAmounts: paidAmounts
+        )
+        if newScore != financialScore { financialScore = newScore }
     }
 
     // MARK: - AI Generation Context

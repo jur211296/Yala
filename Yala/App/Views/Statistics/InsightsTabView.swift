@@ -78,6 +78,14 @@ struct InsightsTabView: View {
                 } else {
                     LazyVStack(spacing: DS.Spacing.xl) {
 
+                        if let score = viewModel.financialScore {
+                            FinancialScoreView(
+                                score: score,
+                                sessionState: sessionState,
+                                subtitle: L10n.Period.thisMonth
+                            )
+                        }
+
                         // Section 1: Period Summary (always visible)
                         periodSummarySection(data.periodSummary)
 
