@@ -144,13 +144,12 @@ struct GroupsContainerView: View {
                     showNotificationPrompt = true
                 }
             }
-            .onChange(of: sessionState.pendingGroupID) { _, groupID in
-                guard let groupID else { return }
-                sessionState.pendingGroupID = nil
-                if let uuid = UUID(uuidString: groupID),
-                   let group = viewModel.activeGroups.first(where: { $0.id == uuid }) {
-                    viewModel.openDetail(for: group)
-                }
+            // Deep link: open a specific group detail once the group list is available.
+            .onChange(of: sessionState.pendingGroupID, initial: true) { _, _ in
+                openPendingGroupIfAvailable()
+            }
+            .onChange(of: viewModel.groups.count, initial: true) { _, _ in
+                openPendingGroupIfAvailable()
             }
             .alert(L10n.Groups.Notifications.promptTitle, isPresented: $showNotificationPrompt) {
                 Button(L10n.Groups.Notifications.promptEnable) {
@@ -175,6 +174,16 @@ struct GroupsContainerView: View {
                 showNudgeBanner = true
             }
         }
+    }
+
+    private func openPendingGroupIfAvailable() {
+        guard let groupID = sessionState.pendingGroupID,
+              let uuid = UUID(uuidString: groupID),
+              let group = viewModel.activeGroups.first(where: { $0.id == uuid })
+        else { return }
+
+        sessionState.pendingGroupID = nil
+        viewModel.openDetail(for: group)
     }
 
     private func handleNudgeAction(_ nudge: NudgeType) {

@@ -165,6 +165,12 @@ final class AppBootstrapper {
         GroupExpenseService.shared.setContext(context)
         GroupTransactionBridge.shared.setContext(context)
 
+        // Seed current iCloud user identity for groups and refresh local membership flags.
+        Task { @MainActor in
+            _ = try? await GroupUserIdentityService.shared.currentUserRecordName()
+            await GroupService.shared.refreshCurrentUserFlags()
+        }
+
         // 17. Initialize Group Notification Service (GC-06)
         GroupNotificationService.shared.setContext(context)
 

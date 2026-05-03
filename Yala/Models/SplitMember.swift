@@ -9,6 +9,12 @@
 import Foundation
 import SwiftData
 
+enum SplitMemberStatus: String, CaseIterable, Sendable {
+    case active
+    case left
+    case removed
+}
+
 @Model
 final class SplitMember {
     var id: UUID = UUID()
@@ -16,15 +22,28 @@ final class SplitMember {
     var displayName: String = ""
     var cloudKitUserRecordID: String = ""  // CKRecord.ID del usuario
     var role: String = "member"            // "admin" | "member"
+    var status: String = SplitMemberStatus.active.rawValue
+    var isGroupOwner: Bool = false
     var isCurrentUser: Bool = false
     var joinedAt: Date = Date.now
     var ckSystemFieldsData: Data?            // CKRecord system fields for conflict-free uploads
+
+    var memberStatus: SplitMemberStatus {
+        get { SplitMemberStatus(rawValue: status) ?? .active }
+        set { status = newValue.rawValue }
+    }
+
+    var isActive: Bool {
+        memberStatus == .active
+    }
 
     init(
         groupZoneID: String = "",
         displayName: String = "",
         cloudKitUserRecordID: String = "",
         role: String = "member",
+        status: SplitMemberStatus = .active,
+        isGroupOwner: Bool = false,
         isCurrentUser: Bool = false
     ) {
         self.id = UUID()
@@ -32,6 +51,8 @@ final class SplitMember {
         self.displayName = displayName
         self.cloudKitUserRecordID = cloudKitUserRecordID
         self.role = role
+        self.status = status.rawValue
+        self.isGroupOwner = isGroupOwner
         self.isCurrentUser = isCurrentUser
         self.joinedAt = Date.now
     }

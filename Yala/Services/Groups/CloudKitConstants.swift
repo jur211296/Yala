@@ -66,6 +66,8 @@ enum CKConstants {
         // Plain
         static let memberID = "memberID"
         static let role = "role"
+        static let status = "status"
+        static let isGroupOwner = "isGroupOwner"
         static let joinedAt = "joinedAt"
         static let isCurrentUser = "isCurrentUser"
     }

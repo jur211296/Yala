@@ -38,13 +38,22 @@ struct GroupSettingsView: View {
     @State private var selectedCurrency: CurrencyCode = .pen
     @State private var showCurrencyPicker: Bool = false
     @State private var defaultSplitType: SplitType = .equal
-    @State private var membersCanInvite: Bool = true
     @State private var showRegenerateLinkConfirm = false
     @State private var isRegeneratingLink = false
     @State private var personalAutoCreate: Bool = true
     @State private var groupCurrencies: [String] = []
     @State private var accountPrefs: [String: String] = [:]   // currencyCode → accountName
     @State private var accountsByCurrency: [String: [Account]] = [:]
+
+    // Leave group
+    @State private var showLeaveGroupConfirm = false
+    @State private var isLeavingGroup = false
+    @State private var showLeaveError = false
+    @State private var leaveErrorMessage: String = ""
+    @State private var showShareError = false
+    @State private var shareErrorMessage: String = ""
+    @State private var showActionError = false
+    @State private var actionErrorMessage: String = ""
     // MARK: - Body
 
     var body: some View {
@@ -62,6 +71,11 @@ struct GroupSettingsView: View {
 
                     // Personal settings section
                     mySettingsSection
+
+                    // Leave group (non-owner)
+                    if !group.isOwner {
+                        leaveGroupSection
+                    }
 
                     // Danger zone (archive)
                     if viewModel.isCurrentUserAdmin {
@@ -118,6 +132,32 @@ struct GroupSettingsView: View {
                 }
             } message: {
                 Text(L10n.Groups.Settings.regenerateLinkConfirm)
+            }
+            .confirmationDialog(
+                L10n.Groups.Settings.leaveGroup,
+                isPresented: $showLeaveGroupConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Groups.Settings.leaveGroup, role: .destructive) {
+                    Task { await leaveGroup() }
+                }
+            } message: {
+                Text(L10n.Groups.Settings.leaveGroupConfirm)
+            }
+            .alert(L10n.Common.error, isPresented: $showLeaveError) {
+                Button(L10n.Common.ok) {}
+            } message: {
+                Text(leaveErrorMessage)
+            }
+            .alert(L10n.Common.error, isPresented: $showShareError) {
+                Button(L10n.Common.ok) {}
+            } message: {
+                Text(shareErrorMessage)
+            }
+            .alert(L10n.Common.error, isPresented: $showActionError) {
+                Button(L10n.Common.ok) {}
+            } message: {
+                Text(actionErrorMessage)
             }
         }
     }
@@ -215,7 +255,7 @@ struct GroupSettingsView: View {
                 }
 
                 // Invite by link
-                if viewModel.isCurrentUserAdmin || group.membersCanInvite {
+                if group.isOwner && viewModel.isCurrentUserAdmin {
                     Divider()
                     Button {
                         Task { await createShareLink() }
@@ -241,6 +281,13 @@ struct GroupSettingsView: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(isCreatingShare)
+
+                    Text(L10n.Groups.Settings.inviteLinkHint)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, DS.FormRow.paddingH)
+                        .padding(.bottom, DS.Spacing.sm)
 
                     // Regenerate link (visible if a share exists in CloudKit)
                     if hasExistingShare {
@@ -268,11 +315,24 @@ struct GroupSettingsView: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .disabled(isRegeneratingLink)
+                        .disabled(isRegeneratingLink || !canRegenerateInviteLink)
+
+                        if !canRegenerateInviteLink {
+                            Text(L10n.Groups.Settings.regenerateLinkDisabledHint)
+                                .font(DS.Typography.captionSmall)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, DS.FormRow.paddingH)
+                                .padding(.bottom, DS.Spacing.sm)
+                        }
                     }
                 }
             }
         }
+    }
+
+    private var canRegenerateInviteLink: Bool {
+        viewModel.activeMembers.count <= 1
     }
 
     // MARK: - Options Section
@@ -374,23 +434,6 @@ struct GroupSettingsView: View {
                         updateGroupOption { $0.defaultSplitType = newValue.rawValue }
                     }
 
-                    Divider()
-                        .padding(.leading, DS.FormRow.paddingH)
-
-                    // Members can invite
-                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                        Toggle(L10n.Groups.Form.membersCanInvite, isOn: $membersCanInvite)
-                            .font(DS.Typography.body)
-
-                        Text(L10n.Groups.Form.membersCanInviteHint)
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.vertical, DS.FormRow.paddingV)
-                    .onChange(of: membersCanInvite) { _, newValue in
-                        updateGroupOption { $0.membersCanInvite = newValue }
-                    }
                 }
             }
         }
@@ -399,7 +442,6 @@ struct GroupSettingsView: View {
             showDebtsInSingleCurrency = group.showDebtsInSingleCurrency
             selectedCurrency = CurrencyCode(rawValue: group.currencyCode) ?? .pen
             defaultSplitType = SplitType(rawValue: group.defaultSplitType) ?? .equal
-            membersCanInvite = group.membersCanInvite
         }
     }
 
@@ -508,6 +550,73 @@ struct GroupSettingsView: View {
         .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(.thCardBorder, lineWidth: 1))
     }
 
+    // MARK: - Leave Group
+
+    private var leaveGroupSection: some View {
+        VStack(spacing: DS.Spacing.xs) {
+            Button {
+                showLeaveGroupConfirm = true
+            } label: {
+                HStack {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                        .foregroundStyle(DS.Semantic.errorForeground)
+                    Text(L10n.Groups.Settings.leaveGroup)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(DS.Semantic.errorForeground)
+                    Spacer()
+                    if isLeavingGroup {
+                        ProgressView()
+                    }
+                }
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(isLeavingGroup || hasOutstandingBalance)
+
+            if hasOutstandingBalance {
+                Text(L10n.Groups.Settings.leaveGroupDisabledHint)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, DS.FormRow.paddingH)
+                    .padding(.bottom, DS.Spacing.sm)
+            }
+        }
+        .background(RoundedRectangle(cornerRadius: DS.Radius.card).fill(.thCard))
+        .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(.thCardBorder, lineWidth: 1))
+    }
+
+    private var hasOutstandingBalance: Bool {
+        let current: SplitMember? = {
+            if let recordName = GroupUserIdentityService.shared.cachedRecordName, !recordName.isEmpty {
+                return viewModel.members.first(where: { $0.cloudKitUserRecordID == recordName })
+            }
+            return viewModel.currentUserMember
+        }()
+        guard let current else { return false }
+        let myBalances = viewModel.balances.filter { $0.memberID == current.id.uuidString }
+        guard !myBalances.isEmpty else { return false }
+        return myBalances.contains { abs($0.netBalance) > 0.01 }
+    }
+
+    private func leaveGroup() async {
+        guard !isLeavingGroup else { return }
+        isLeavingGroup = true
+        defer { isLeavingGroup = false }
+
+        do {
+            try await GroupService.shared.leaveGroup(group)
+            DS.Haptic.success()
+            dismiss()
+        } catch {
+            DS.Haptic.warning()
+            leaveErrorMessage = error.localizedDescription
+            showLeaveError = true
+        }
+    }
+
     // MARK: - Bindings
 
     private func accountBinding(for code: String) -> Binding<String> {
@@ -548,13 +657,13 @@ struct GroupSettingsView: View {
             )
             viewModel.loadData()
         } catch {
-            #if DEBUG
-            print("GroupSettingsView: Error saving identity: \(error)")
-            #endif
+            actionErrorMessage = error.localizedDescription
+            showActionError = true
         }
     }
 
     private func createShareLink() async {
+        guard group.isOwner else { return }
         guard !isCreatingShare else { return }
 
         // Return cached URL if available
@@ -576,14 +685,19 @@ struct GroupSettingsView: View {
             }
         } catch {
             isCreatingShare = false
-            #if DEBUG
-            print("GroupSettingsView: Error creating share: \(error)")
-            #endif
+            shareErrorMessage = error.localizedDescription
+            showShareError = true
         }
     }
 
     private func regenerateShareLink() async {
+        guard group.isOwner else { return }
         guard !isRegeneratingLink else { return }
+        guard canRegenerateInviteLink else {
+            shareErrorMessage = L10n.Groups.Settings.regenerateLinkDisabledHint
+            showShareError = true
+            return
+        }
         isRegeneratingLink = true
         do {
             try await SplitZoneManager(syncManager: .shared).deleteShare(for: group)
@@ -598,9 +712,8 @@ struct GroupSettingsView: View {
             }
         } catch {
             isRegeneratingLink = false
-            #if DEBUG
-            print("GroupSettingsView: Error regenerating share: \(error)")
-            #endif
+            shareErrorMessage = error.localizedDescription
+            showShareError = true
         }
     }
 
@@ -610,7 +723,7 @@ struct GroupSettingsView: View {
         return InviteLinkService.buildInviteURL(
             shareURL: ckURL,
             group: group,
-            members: viewModel.members,
+            members: viewModel.activeMembers,
             inviterName: inviterName
         ) ?? ckURL
     }
@@ -621,9 +734,8 @@ struct GroupSettingsView: View {
             try GroupService.shared.changeRole(member, to: newRole, in: group)
             viewModel.loadData()
         } catch {
-            #if DEBUG
-            print("GroupSettingsView: Error changing role: \(error)")
-            #endif
+            actionErrorMessage = error.localizedDescription
+            showActionError = true
         }
     }
 
@@ -634,9 +746,8 @@ struct GroupSettingsView: View {
             viewModel.loadData()
             DS.Haptic.warning()
         } catch {
-            #if DEBUG
-            print("GroupSettingsView: Error removing member: \(error)")
-            #endif
+            actionErrorMessage = error.localizedDescription
+            showActionError = true
         }
         memberToRemove = nil
     }
@@ -652,9 +763,8 @@ struct GroupSettingsView: View {
                 dismiss()
             }
         } catch {
-            #if DEBUG
-            print("GroupSettingsView: Error toggling archive: \(error)")
-            #endif
+            actionErrorMessage = error.localizedDescription
+            showActionError = true
         }
     }
 
@@ -674,9 +784,8 @@ struct GroupSettingsView: View {
             )
             viewModel.loadData()
         } catch {
-            #if DEBUG
-            print("GroupSettingsView: Error updating group: \(error)")
-            #endif
+            actionErrorMessage = error.localizedDescription
+            showActionError = true
         }
     }
 

@@ -43,6 +43,7 @@ final class GroupExpenseViewModel {
     var exactAmounts: [String: String] = [:]
     var percentages: [String: String] = [:]
     var sharesCounts: [String: String] = [:]
+    private var selectableMemberIDs: Set<String> = []
 
     // MARK: - UI State
 
@@ -56,7 +57,7 @@ final class GroupExpenseViewModel {
     }
 
     var selectedMembers: [SplitMember] {
-        members.filter { selectedMemberIDs.contains($0.id.uuidString) }
+        members.filter { selectedMemberIDs.contains($0.id.uuidString) && selectableMemberIDs.contains($0.id.uuidString) }
     }
 
     var calculatedShares: [(memberID: String, amount: Double)]? {
@@ -101,8 +102,9 @@ final class GroupExpenseViewModel {
         // Defaults
         self.currencyCode = group.currencyCode
         self.splitType = SplitType(rawValue: group.defaultSplitType) ?? .equal
-        self.paidByMemberID = members.first(where: \.isCurrentUser)?.id.uuidString ?? ""
-        self.selectedMemberIDs = Set(members.map { $0.id.uuidString })
+        self.selectableMemberIDs = Set(members.filter(\.isActive).map { $0.id.uuidString })
+        self.paidByMemberID = members.first(where: { $0.isCurrentUser && $0.isActive })?.id.uuidString ?? ""
+        self.selectedMemberIDs = selectableMemberIDs
     }
 
     func setContext(_ ctx: ModelContext) {
@@ -172,6 +174,8 @@ final class GroupExpenseViewModel {
         splitType = SplitType(rawValue: expense.splitType) ?? .equal
 
         selectedMemberIDs = Set(shares.map(\.memberID))
+        selectableMemberIDs.formUnion(selectedMemberIDs)
+        selectableMemberIDs.insert(expense.paidByMemberID)
 
         // Populate per-type fields from existing shares
         for share in shares {
@@ -194,7 +198,7 @@ final class GroupExpenseViewModel {
     // MARK: - Member Selection
 
     func selectAllMembers() {
-        selectedMemberIDs = Set(members.map { $0.id.uuidString })
+        selectedMemberIDs = selectableMemberIDs
     }
 
     func deselectAllMembers() {
@@ -202,6 +206,7 @@ final class GroupExpenseViewModel {
     }
 
     func toggleMember(_ memberID: String) {
+        guard selectableMemberIDs.contains(memberID) else { return }
         if selectedMemberIDs.contains(memberID) {
             selectedMemberIDs.remove(memberID)
         } else {
@@ -228,7 +233,7 @@ final class GroupExpenseViewModel {
     }
 
     private func buildParticipants() -> [GroupSplitCalculator.Participant] {
-        let selected = members.filter { selectedMemberIDs.contains($0.id.uuidString) }
+        let selected = members.filter { selectedMemberIDs.contains($0.id.uuidString) && selectableMemberIDs.contains($0.id.uuidString) }
         return selected.map { member in
             let id = member.id.uuidString
             let value: Double = switch splitType {

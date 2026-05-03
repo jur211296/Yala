@@ -99,7 +99,7 @@ struct GroupDetailView: View {
                 }
 
                 // FAB — new expense (only on records tab)
-                if selectedTab == .records {
+                if selectedTab == .records && viewModel.canCurrentUserParticipate {
                     newExpenseFAB
                 }
             }
@@ -175,7 +175,7 @@ struct GroupDetailView: View {
         case .addExpense:
             GroupExpenseFormView(
                 group: group,
-                members: viewModel.members,
+                members: viewModel.activeMembers,
                 memberNameLookup: viewModel.memberNameLookup,
                 onSave: {}
             )
@@ -183,7 +183,7 @@ struct GroupDetailView: View {
         case .editExpense(let expense):
             GroupExpenseFormView(
                 group: group,
-                members: viewModel.members,
+                members: membersForExpenseForm(expense),
                 memberNameLookup: viewModel.memberNameLookup,
                 expenseToEdit: expense,
                 existingShares: viewModel.sharesForExpense(expense),
@@ -256,9 +256,9 @@ struct GroupDetailView: View {
                 shares: viewModel.shares,
                 memberNameLookup: viewModel.memberNameLookup,
                 currencyCode: group.currencyCode,
-                onTapExpense: { viewModel.activeSheet = .editExpense($0) },
-                onDeleteExpense: { viewModel.deleteExpense($0) },
-                onInvite: {
+                onTapExpense: viewModel.canCurrentUserParticipate ? { viewModel.activeSheet = .editExpense($0) } : nil,
+                onDeleteExpense: viewModel.canCurrentUserParticipate ? { viewModel.deleteExpense($0) } : nil,
+                onInvite: group.isOwner && viewModel.isCurrentUserAdmin ? {
                     guard !viewModel.isCreatingShare else { return }
                     Task {
                         await viewModel.createShareLink()
@@ -266,7 +266,7 @@ struct GroupDetailView: View {
                             showShareSheet = true
                         }
                     }
-                }
+                } : nil
             )
 
         case .balances:
@@ -275,9 +275,9 @@ struct GroupDetailView: View {
                 debts: viewModel.debts,
                 settlements: viewModel.settlements,
                 memberNameLookup: viewModel.memberNameLookup,
-                onSettleDebt: { viewModel.activeSheet = .settlement($0) },
-                onConfirmSettlement: { viewModel.confirmSettlement($0) },
-                onRejectSettlement: { viewModel.rejectSettlement($0) }
+                onSettleDebt: viewModel.canCurrentUserParticipate ? { viewModel.activeSheet = .settlement($0) } : nil,
+                onConfirmSettlement: viewModel.canCurrentUserParticipate ? { viewModel.confirmSettlement($0) } : nil,
+                onRejectSettlement: viewModel.canCurrentUserParticipate ? { viewModel.rejectSettlement($0) } : nil
             )
 
         case .stats:
@@ -329,6 +329,13 @@ struct GroupDetailView: View {
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
+        }
+    }
+
+    private func membersForExpenseForm(_ expense: SplitExpense) -> [SplitMember] {
+        let referencedMemberIDs = Set([expense.paidByMemberID] + viewModel.sharesForExpense(expense).map(\.memberID))
+        return viewModel.members.filter { member in
+            member.isActive || referencedMemberIDs.contains(member.id.uuidString)
         }
     }
 }

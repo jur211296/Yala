@@ -14,6 +14,7 @@ final class SplitGroup {
     // CloudKit: all properties must have defaults, no @Attribute(.unique)
     var id: UUID = UUID()
     var cloudKitZoneID: String = ""       // "SplitGroup-{uuid}"
+    var cloudKitZoneOwnerName: String = ""
     var name: String = ""
     var iconName: String = "person.2.fill"
     var colorHex: String = "#8B5CF6"
@@ -26,7 +27,7 @@ final class SplitGroup {
     var autoCreateTransaction: Bool = true // true = TransactionItem directo, false = Draft
     var showDebtsInSingleCurrency: Bool = false
     var defaultSplitType: String = "equal" // "equal" | "percentage" | "exact" | "shares"
-    var membersCanInvite: Bool = true
+    var membersCanInvite: Bool = false
     var ckSystemFieldsData: Data?            // CKRecord system fields for conflict-free uploads
 
     init(
@@ -40,7 +41,7 @@ final class SplitGroup {
         autoCreateTransaction: Bool = true,
         showDebtsInSingleCurrency: Bool = false,
         defaultSplitType: String = "equal",
-        membersCanInvite: Bool = true
+        membersCanInvite: Bool = false
     ) {
         self.id = UUID()
         self.cloudKitZoneID = "\(CKConstants.zonePrefix)\(self.id.uuidString)"

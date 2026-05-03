@@ -44,16 +44,28 @@ struct GroupServiceTests {
         #expect(error.errorDescription!.contains("owner"))
     }
 
+    @Test func error_adminRequired_hasDescription() {
+        let error = GroupServiceError.adminRequired
+        #expect(error.errorDescription != nil)
+        #expect(error.errorDescription!.contains("admins"))
+    }
+
     @Test func error_ownerCannotLeave_hasDescription() {
         let error = GroupServiceError.ownerCannotLeave
         #expect(error.errorDescription != nil)
-        #expect(error.errorDescription!.contains("delete"))
+        #expect(error.errorDescription!.contains("leave"))
     }
 
     @Test func error_lastAdmin_hasDescription() {
         let error = GroupServiceError.lastAdmin
         #expect(error.errorDescription != nil)
         #expect(error.errorDescription!.contains("last admin"))
+    }
+
+    @Test func error_deleteDisabled_hasDescription() {
+        let error = GroupServiceError.deleteDisabled
+        #expect(error.errorDescription != nil)
+        #expect(error.errorDescription!.contains("archive"))
     }
 
     @Test func error_saveFailed_includesUnderlyingError() {
@@ -88,6 +100,6 @@ struct GroupServiceTests {
         #expect(group.currencyCode == "PEN")
         #expect(group.showDebtsInSingleCurrency == false)
         #expect(group.defaultSplitType == "equal")
-        #expect(group.membersCanInvite == true)
+        #expect(group.membersCanInvite == false)
     }
 }

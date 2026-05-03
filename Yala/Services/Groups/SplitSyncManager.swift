@@ -222,6 +222,21 @@ final class SplitSyncManager {
                 try? await sharedEngine.fetchChanges()
             }
 
+            // Ensure the current iCloud user has a member record in the joined group.
+            let zoneName = metadata.share.recordID.zoneID.zoneName
+            if let group = group(for: zoneName) {
+                do {
+                    _ = try await GroupService.shared.ensureCurrentUserMemberExists(in: group)
+                } catch {
+                    #if DEBUG
+                    logger.error("Failed to ensure current user member after share acceptance: \(error)")
+                    #endif
+                }
+            }
+
+            // Recompute local isCurrentUser flags (device-specific; not synced).
+            await GroupService.shared.refreshCurrentUserFlags()
+
             // Navigate to Groups tab (unless routing is handled by invite/reconnect flow)
             if !skipNavigation {
                 await MainActor.run { AppRouter.shared.enqueue(.navigate(.groups)) }
@@ -240,6 +255,15 @@ final class SplitSyncManager {
             predicate: #Predicate { $0.cloudKitZoneID == zoneID }
         )
         return (try? context.fetch(descriptor))?.first?.name
+    }
+
+    /// Fetch the local SplitGroup for a given zone ID (resolved after sync).
+    func group(for zoneID: String) -> SplitGroup? {
+        guard let context = modelContext else { return nil }
+        let descriptor = FetchDescriptor<SplitGroup>(
+            predicate: #Predicate { $0.cloudKitZoneID == zoneID }
+        )
+        return (try? context.fetch(descriptor))?.first
     }
 
     /// Find the most recently synced group (useful after accepting a share).
@@ -310,15 +334,17 @@ final class SplitSyncManager {
     }
 
     /// Enqueue a save for a group I was invited to (shared engine).
-    func enqueueSharedSave(modelID: UUID, groupZoneID: String) {
-        let zoneID = CKRecordZone.ID(zoneName: groupZoneID)
+    func enqueueSharedSave(modelID: UUID, groupZoneID: String, groupZoneOwnerName: String) {
+        let ownerName = groupZoneOwnerName.isEmpty ? CKCurrentUserDefaultName : groupZoneOwnerName
+        let zoneID = CKRecordZone.ID(zoneName: groupZoneID, ownerName: ownerName)
         let recordID = CKConstants.recordID(for: modelID, in: zoneID)
         markPendingChange(for: recordID, in: sharedEngine)
     }
 
     /// Enqueue a deletion for a group I was invited to (shared engine).
-    func enqueueSharedDeletion(modelID: UUID, groupZoneID: String) {
-        let zoneID = CKRecordZone.ID(zoneName: groupZoneID)
+    func enqueueSharedDeletion(modelID: UUID, groupZoneID: String, groupZoneOwnerName: String) {
+        let ownerName = groupZoneOwnerName.isEmpty ? CKCurrentUserDefaultName : groupZoneOwnerName
+        let zoneID = CKRecordZone.ID(zoneName: groupZoneID, ownerName: ownerName)
         let recordID = CKConstants.recordID(for: modelID, in: zoneID)
         markPendingDeletion(for: recordID, in: sharedEngine)
     }
@@ -328,7 +354,7 @@ final class SplitSyncManager {
         if group.isOwner {
             enqueueSave(modelID: modelID, groupID: group.id)
         } else {
-            enqueueSharedSave(modelID: modelID, groupZoneID: group.cloudKitZoneID)
+            enqueueSharedSave(modelID: modelID, groupZoneID: group.cloudKitZoneID, groupZoneOwnerName: resolvedOwnerName(for: group))
         }
     }
 
@@ -337,8 +363,24 @@ final class SplitSyncManager {
         if group.isOwner {
             enqueueDeletion(modelID: modelID, groupID: group.id)
         } else {
-            enqueueSharedDeletion(modelID: modelID, groupZoneID: group.cloudKitZoneID)
+            enqueueSharedDeletion(modelID: modelID, groupZoneID: group.cloudKitZoneID, groupZoneOwnerName: resolvedOwnerName(for: group))
         }
+    }
+
+    private func resolvedOwnerName(for group: SplitGroup) -> String {
+        if !group.cloudKitZoneOwnerName.isEmpty { return group.cloudKitZoneOwnerName }
+        if let data = group.ckSystemFieldsData,
+           let record = CKRecordTranslator.recordFromSystemFields(data)
+        {
+            return record.recordID.zoneID.ownerName
+        }
+        return CKCurrentUserDefaultName
+    }
+
+    func sendPendingChanges(for group: SplitGroup) async throws {
+        let engine = group.isOwner ? privateEngine : sharedEngine
+        guard let engine else { throw SplitSyncError.engineNotInitialized }
+        try await engine.sendChanges()
     }
 
     // MARK: - Event Processing (called from delegate)
@@ -448,6 +490,7 @@ final class SplitSyncManager {
         case .signOut:
             syncStatus = .noAccount
             clearAllLocalGroupData()
+            GroupUserIdentityService.shared.clearCache()
             #if DEBUG
             logger.info("iCloud account signed out — cleared local group data")
             #endif
@@ -457,6 +500,7 @@ final class SplitSyncManager {
             clearAllLocalGroupData()
             clearState(name: "private")
             clearState(name: "shared")
+            GroupUserIdentityService.shared.clearCache()
             #if DEBUG
             logger.info("iCloud account switched — cleared data + state for re-fetch")
             #endif
@@ -556,7 +600,7 @@ final class SplitSyncManager {
                 }
             }
 
-            applyRemoteRecord(record, context: modelContext)
+            applyRemoteRecord(record, context: modelContext, engineName: engineName)
         }
 
         for deletion in fetched.deletions {
@@ -588,6 +632,9 @@ final class SplitSyncManager {
             try? await Task.sleep(for: .milliseconds(50))
             guard !Task.isCancelled else { return }
             guard let self, let modelContext = self.modelContext else { return }
+
+            // Ensure per-device membership flags are correct before bridging (isCurrentUser is not synced).
+            await GroupService.shared.refreshCurrentUserFlags()
 
             let expenseIDs = self.pendingBridgeExpenseIDs
             let accumulated = self.pendingBridgeChangeSet
@@ -692,7 +739,7 @@ final class SplitSyncManager {
         }
 
         // Accept server version: update local model from server record
-        applyRemoteRecord(serverRecord, context: modelContext)
+        applyRemoteRecord(serverRecord, context: modelContext, engineName: engineName)
         do {
             try modelContext.save()
         } catch {
@@ -844,12 +891,12 @@ final class SplitSyncManager {
 
     // MARK: - Remote Record Application
 
-    private func applyRemoteRecord(_ record: CKRecord, context: ModelContext) {
+    private func applyRemoteRecord(_ record: CKRecord, context: ModelContext, engineName: String) {
         guard let modelID = CKConstants.modelID(from: record.recordID) else { return }
 
         switch record.recordType {
         case CKConstants.RecordType.groupMeta:
-            applyGroupMeta(record, modelID: modelID, context: context)
+            applyGroupMeta(record, modelID: modelID, context: context, engineName: engineName)
         case CKConstants.RecordType.splitExpense:
             applyExpense(record, modelID: modelID, context: context)
         case CKConstants.RecordType.splitMember:
@@ -863,12 +910,14 @@ final class SplitSyncManager {
         }
     }
 
-    private func applyGroupMeta(_ record: CKRecord, modelID: UUID, context: ModelContext) {
+    private func applyGroupMeta(_ record: CKRecord, modelID: UUID, context: ModelContext, engineName: String) {
         do {
             let descriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == modelID })
             if let existing = try context.fetch(descriptor).first {
                 CKRecordTranslator.update(existing, from: record)
+                existing.isOwner = (engineName == "private")
             } else if let newGroup = CKRecordTranslator.group(from: record) {
+                newGroup.isOwner = (engineName == "private")
                 context.insert(newGroup)
             }
         } catch {
@@ -1058,6 +1107,17 @@ extension SplitMember: HasUUID {}
 extension SplitExpense: HasUUID {}
 extension SplitShare: HasUUID {}
 extension SplitSettlement: HasUUID {}
+
+enum SplitSyncError: LocalizedError {
+    case engineNotInitialized
+
+    var errorDescription: String? {
+        switch self {
+        case .engineNotInitialized:
+            return "CKSyncEngine not initialized. Ensure iCloud is available."
+        }
+    }
+}
 
 // MARK: - CKSyncEngine Delegate
 

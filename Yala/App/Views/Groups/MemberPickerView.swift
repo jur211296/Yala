@@ -155,10 +155,16 @@ struct MemberPickerView: View {
         HStack(spacing: DS.Spacing.xs) {
             Text(member.displayName)
                 .font(DS.Typography.body)
-                .foregroundStyle(.primary)
+                .foregroundStyle(member.isActive ? .primary : .secondary)
 
             if member.isCurrentUser {
                 Text(L10n.Groups.Member.you)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+            }
+
+            if !member.isActive {
+                Text(member.memberStatus == .left ? L10n.Groups.Member.left : L10n.Groups.Member.removed)
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)
             }

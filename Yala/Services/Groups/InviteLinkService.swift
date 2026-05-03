@@ -32,6 +32,7 @@ enum InviteLinkService {
         let encoded = base64URLEncode(shareData)
 
         let memberNames = members
+            .filter(\.isActive)
             .prefix(5)
             .map { member -> String in
                 if member.isCurrentUser {

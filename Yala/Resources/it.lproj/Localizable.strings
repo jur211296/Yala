@@ -3116,10 +3116,13 @@
 "groups.settings.addMember" = "Aggiungi membro";
 "groups.settings.addMemberPrompt" = "Nome del membro";
 "groups.settings.invite" = "Invita tramite link";
+"groups.settings.inviteLinkHint" = "Chiunque abbia questo link può unirsi al gruppo finché l'accesso tramite link è attivo. Condividilo solo con persone di cui ti fidi.";
 "groups.settings.regenerateLink" = "Rigenera link";
 "groups.settings.regenerateLinkConfirm" = "Il link attuale smetterà di funzionare. Vuoi generarne uno nuovo?";
+"groups.settings.regenerateLinkDisabledHint" = "Per sicurezza, reimposta il link di invito solo prima che altri membri si siano uniti.";
 "groups.settings.leaveGroup" = "Lascia il gruppo";
 "groups.settings.leaveGroupConfirm" = "Sei sicuro? Le tue spese personali verranno mantenute.";
+"groups.settings.leaveGroupDisabledHint" = "Per lasciare il gruppo, prima azzera il tuo saldo.";
 "groups.settings.deleteGroup" = "Elimina gruppo";
 "groups.settings.deleteGroupConfirm" = "Questa azione è permanente e cancellerà tutti i dati del gruppo.";
 "groups.settings.deleteGroupFinalConfirm" = "Il gruppo e tutti i suoi dati verranno eliminati permanentemente per tutti i membri. Questa azione non può essere annullata.";
@@ -3138,6 +3141,8 @@
 "groups.member.admin" = "Admin";
 "groups.member.member" = "Membro";
 "groups.member.you" = "(Tu)";
+"groups.member.left" = "Uscito";
+"groups.member.removed" = "Rimosso";
 "groups.member.changeRole" = "Cambia ruolo";
 "groups.member.remove" = "Rimuovi membro";
 "groups.member.removeConfirm" = "Rimuovere questo membro dal gruppo?";

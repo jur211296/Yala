@@ -182,6 +182,7 @@ struct MemberTranslatorTests {
             displayName: "Carlos",
             cloudKitUserRecordID: "user-record-123",
             role: "admin",
+            isGroupOwner: true,
             isCurrentUser: true
         )
         let record = CKRecordTranslator.record(from: member, in: zoneID)
@@ -189,7 +190,8 @@ struct MemberTranslatorTests {
         #expect(record.encryptedValues["displayName"] as? String == "Carlos")
         #expect(record["memberID"] as? String == "user-record-123")
         #expect(record["role"] as? String == "admin")
-        #expect(record["isCurrentUser"] as? Int64 == 1)
+        #expect(record["status"] as? String == "active")
+        #expect(record["isGroupOwner"] as? Int64 == 1)
     }
 
     @Test func recordToMember() {
@@ -198,14 +200,15 @@ struct MemberTranslatorTests {
         record.encryptedValues["displayName"] = "Ana" as CKRecordValue
         record["memberID"] = "user-456" as CKRecordValue
         record["role"] = "member" as CKRecordValue
+        record["status"] = "left" as CKRecordValue
         record["joinedAt"] = Date.now as CKRecordValue
-        record["isCurrentUser"] = 0 as CKRecordValue
 
         let member = CKRecordTranslator.member(from: record)
         #expect(member != nil)
         #expect(member?.displayName == "Ana")
         #expect(member?.cloudKitUserRecordID == "user-456")
         #expect(member?.role == "member")
+        #expect(member?.memberStatus == .left)
         #expect(member?.isCurrentUser == false)
     }
 }

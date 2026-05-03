@@ -140,8 +140,11 @@
 "account.secondaryCurrency.message" = "Agregaste una cuenta en %@. ¿Querés ver el tipo de cambio %@ → %@? Podés cambiarlo en Perfil > Divisa.";
 "notificationPrimer.hint" = "Podés activarlas en Perfil > Notificaciones";
 "whatsNew.v11.exclude.description" = "Filtra excluyendo lo que no querés ver en lugar de seleccionar todo.";
+"groups.settings.inviteLinkHint" = "Cualquier persona con este enlace puede unirse al grupo mientras el acceso por enlace esté activo. Compartilo solo con personas de confianza.";
 "groups.settings.regenerateLinkConfirm" = "El enlace actual dejará de funcionar. ¿Querés generar uno nuevo?";
+"groups.settings.regenerateLinkDisabledHint" = "Por seguridad, restablecé el enlace solo antes de que otras personas se hayan unido.";
 "groups.settings.leaveGroupConfirm" = "¿Seguro que querés salir? Tus gastos personales se mantendrán.";
+"groups.settings.leaveGroupDisabledHint" = "Para salir del grupo, primero deja tu saldo en cero.";
 "groups.settings.archiveHint" = "Los gastos y balances se conservan. Podés desarchivar cuando quieras.";
 "milestone.message10" = "Estás creando un gran hábito. Con Yala Pro podés dictar tus gastos con la voz.";
 "milestone.message50" = "¡Impresionante! Con Insights AI podés descubrir patrones ocultos en tus gastos.";

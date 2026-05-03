@@ -80,6 +80,7 @@ enum CKRecordTranslator {
         let group = SplitGroup()
         group.id = id
         group.cloudKitZoneID = record.recordID.zoneID.zoneName
+        group.cloudKitZoneOwnerName = record.recordID.zoneID.ownerName
         group.name = record.encryptedValues[F.name] as? String ?? ""
         group.currencyCode = record[F.currencyCode] as? String ?? "PEN"
         group.createdAt = record[F.createdAt] as? Date ?? Date.now
@@ -88,14 +89,15 @@ enum CKRecordTranslator {
         group.simplifyDebts = readBool(record, key: F.simplifyDebts)
         group.showDebtsInSingleCurrency = readBool(record, key: F.showDebtsInSingleCurrency)
         group.defaultSplitType = record[F.defaultSplitType] as? String ?? "equal"
-        group.membersCanInvite = readBool(record, key: F.membersCanInvite, default: true)
-        group.isOwner = false
+        group.membersCanInvite = readBool(record, key: F.membersCanInvite, default: false)
         group.ckSystemFieldsData = encodeSystemFields(of: record)
         return group
     }
 
     static func update(_ group: SplitGroup, from record: CKRecord) {
         typealias F = CKConstants.GroupMetaField
+        group.cloudKitZoneID = record.recordID.zoneID.zoneName
+        group.cloudKitZoneOwnerName = record.recordID.zoneID.ownerName
         group.name = record.encryptedValues[F.name] as? String ?? group.name
         group.currencyCode = record[F.currencyCode] as? String ?? group.currencyCode
         group.createdAt = record[F.createdAt] as? Date ?? group.createdAt
@@ -198,8 +200,9 @@ enum CKRecordTranslator {
         // Plain
         record[F.memberID] = member.cloudKitUserRecordID as CKRecordValue
         record[F.role] = member.role as CKRecordValue
+        record[F.status] = member.status as CKRecordValue
+        record[F.isGroupOwner] = ckBool(member.isGroupOwner)
         record[F.joinedAt] = member.joinedAt as CKRecordValue
-        record[F.isCurrentUser] = ckBool(member.isCurrentUser)
     }
 
     static func member(from record: CKRecord) -> SplitMember? {
@@ -211,8 +214,13 @@ enum CKRecordTranslator {
         member.displayName = record.encryptedValues[F.displayName] as? String ?? ""
         member.cloudKitUserRecordID = record[F.memberID] as? String ?? ""
         member.role = record[F.role] as? String ?? "member"
+        member.status = record[F.status] as? String ?? SplitMemberStatus.active.rawValue
+        member.isGroupOwner = readBool(record, key: F.isGroupOwner)
+        if !member.cloudKitUserRecordID.isEmpty && record.recordID.zoneID.ownerName == member.cloudKitUserRecordID {
+            member.isGroupOwner = true
+            member.role = "admin"
+        }
         member.joinedAt = record[F.joinedAt] as? Date ?? Date.now
-        member.isCurrentUser = readBool(record, key: F.isCurrentUser)
         member.ckSystemFieldsData = encodeSystemFields(of: record)
         return member
     }
@@ -222,8 +230,13 @@ enum CKRecordTranslator {
         member.displayName = record.encryptedValues[F.displayName] as? String ?? member.displayName
         member.cloudKitUserRecordID = record[F.memberID] as? String ?? member.cloudKitUserRecordID
         member.role = record[F.role] as? String ?? member.role
+        member.status = record[F.status] as? String ?? member.status
+        member.isGroupOwner = readBool(record, key: F.isGroupOwner)
+        if !member.cloudKitUserRecordID.isEmpty && record.recordID.zoneID.ownerName == member.cloudKitUserRecordID {
+            member.isGroupOwner = true
+            member.role = "admin"
+        }
         member.joinedAt = record[F.joinedAt] as? Date ?? member.joinedAt
-        member.isCurrentUser = readBool(record, key: F.isCurrentUser)
         member.ckSystemFieldsData = encodeSystemFields(of: record)
     }
 

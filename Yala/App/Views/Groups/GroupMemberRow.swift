@@ -27,7 +27,7 @@ struct GroupMemberRow: View {
                 HStack(spacing: DS.Spacing.xs) {
                     Text(member.displayName)
                         .font(DS.Typography.body)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(member.isActive ? .primary : .secondary)
 
                     if member.isCurrentUser {
                         Text(L10n.Groups.Member.you)
@@ -39,12 +39,16 @@ struct GroupMemberRow: View {
                 if member.role == "admin" {
                     adminBadge
                 }
+
+                if !member.isActive {
+                    statusBadge
+                }
             }
 
             Spacer()
 
             // Admin actions
-            if isCurrentUserAdmin && !member.isCurrentUser {
+            if isCurrentUserAdmin && !member.isCurrentUser && member.isActive && !member.isGroupOwner {
                 Menu {
                     Button {
                         onChangeRole()
@@ -69,6 +73,7 @@ struct GroupMemberRow: View {
         }
         .padding(.horizontal, DS.FormRow.paddingH)
         .padding(.vertical, DS.FormRow.paddingV)
+        .opacity(member.isActive ? 1 : 0.72)
     }
 
     // MARK: - Components
@@ -93,6 +98,17 @@ struct GroupMemberRow: View {
             .padding(.vertical, DS.Spacing.xxs)
             .background(
                 Capsule().fill(.thAccent.opacity(0.12))
+            )
+    }
+
+    private var statusBadge: some View {
+        Text(member.memberStatus == .left ? L10n.Groups.Member.left : L10n.Groups.Member.removed)
+            .font(DS.Typography.captionSmall)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, DS.Spacing.sm)
+            .padding(.vertical, DS.Spacing.xxs)
+            .background(
+                Capsule().fill(Color.secondary.opacity(0.12))
             )
     }
 

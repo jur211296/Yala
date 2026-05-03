@@ -69,6 +69,12 @@ final class GroupExpenseService {
         guard !shares.isEmpty else { throw GroupExpenseServiceError.noShares }
         guard !paidByMemberID.isEmpty else { throw GroupExpenseServiceError.noPayer }
         try validateSharesSum(shares, amount: amount)
+        try validateCurrentUserCanWrite(in: group)
+        try validateMembersAreSelectable(
+            in: group,
+            memberIDs: Set(shares.map { $0.memberID } + [paidByMemberID]),
+            additionalAllowedMemberIDs: []
+        )
 
         let expense = SplitExpense(
             groupZoneID: group.cloudKitZoneID,
@@ -141,9 +147,15 @@ final class GroupExpenseService {
         guard amount > 0 else { throw GroupExpenseServiceError.invalidAmount }
         guard !shares.isEmpty else { throw GroupExpenseServiceError.noShares }
         try validateSharesSum(shares, amount: amount)
+        try validateCurrentUserCanWrite(in: group)
 
         // Delete old shares
         let oldShares = try fetchShares(for: expense)
+        try validateMembersAreSelectable(
+            in: group,
+            memberIDs: Set(shares.map { $0.memberID } + [paidByMemberID]),
+            additionalAllowedMemberIDs: Set(oldShares.map(\.memberID) + [expense.paidByMemberID])
+        )
         for oldShare in oldShares {
             SplitSyncManager.shared.enqueueDeletion(modelID: oldShare.id, group: group)
             context.delete(oldShare)
@@ -195,6 +207,7 @@ final class GroupExpenseService {
     /// Delete an expense and its shares.
     func deleteExpense(_ expense: SplitExpense, in group: SplitGroup) throws {
         let context = try requireContext()
+        try validateCurrentUserCanWrite(in: group)
 
         // Delete shares first
         let shares = try fetchShares(for: expense)
@@ -243,6 +256,7 @@ final class GroupExpenseService {
 
         guard amount > 0 else { throw GroupExpenseServiceError.invalidAmount }
         guard fromMemberID != toMemberID else { throw GroupExpenseServiceError.selfSettlement }
+        try validateCurrentUserCanWrite(in: group)
 
         let settlement = SplitSettlement(
             groupZoneID: group.cloudKitZoneID,
@@ -270,6 +284,7 @@ final class GroupExpenseService {
     /// Confirm a settlement (mark as paid).
     func confirmSettlement(_ settlement: SplitSettlement, in group: SplitGroup) throws {
         let context = try requireContext()
+        try validateCurrentUserCanWrite(in: group)
         settlement.isConfirmed = true
 
         do {
@@ -285,6 +300,7 @@ final class GroupExpenseService {
     /// Delete a settlement.
     func deleteSettlement(_ settlement: SplitSettlement, in group: SplitGroup) throws {
         let context = try requireContext()
+        try validateCurrentUserCanWrite(in: group)
 
         SplitSyncManager.shared.enqueueDeletion(modelID: settlement.id, group: group)
         context.delete(settlement)
@@ -357,6 +373,28 @@ final class GroupExpenseService {
             throw GroupExpenseServiceError.sharesSumMismatch
         }
     }
+
+    private func validateCurrentUserCanWrite(in group: SplitGroup) throws {
+        let members = try GroupService.shared.fetchMembers(for: group)
+        guard let current = members.first(where: { $0.isCurrentUser }) else {
+            if group.isOwner { return }
+            throw GroupExpenseServiceError.inactiveMember
+        }
+        guard current.isActive else { throw GroupExpenseServiceError.inactiveMember }
+    }
+
+    private func validateMembersAreSelectable(
+        in group: SplitGroup,
+        memberIDs: Set<String>,
+        additionalAllowedMemberIDs: Set<String>
+    ) throws {
+        let members = try GroupService.shared.fetchMembers(for: group)
+        let activeMemberIDs = Set(members.filter(\.isActive).map { $0.id.uuidString })
+        let allowedMemberIDs = activeMemberIDs.union(additionalAllowedMemberIDs)
+        guard memberIDs.isSubset(of: allowedMemberIDs) else {
+            throw GroupExpenseServiceError.inactiveMember
+        }
+    }
 }
 
 // MARK: - Errors
@@ -368,6 +406,7 @@ enum GroupExpenseServiceError: LocalizedError {
     case sharesSumMismatch
     case noPayer
     case selfSettlement
+    case inactiveMember
     case saveFailed(Error)
 
     var errorDescription: String? {
@@ -384,6 +423,8 @@ enum GroupExpenseServiceError: LocalizedError {
             return "GroupExpenseService: Payer member ID is required"
         case .selfSettlement:
             return "GroupExpenseService: Cannot settle with yourself"
+        case .inactiveMember:
+            return "GroupExpenseService: Inactive members cannot create or edit shared expenses"
         case .saveFailed(let error):
             return "GroupExpenseService: Save failed - \(error.localizedDescription)"
         }

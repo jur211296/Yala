@@ -93,7 +93,7 @@ final class GroupsViewModel {
                 allShares.append(contentsOf: shares)
                 allSettlements.append(contentsOf: settlements)
 
-                for member in members where member.isCurrentUser {
+                for member in members where member.isCurrentUser && member.isActive {
                     currentUserMemberIDs.insert(member.id.uuidString)
                 }
             }
@@ -131,7 +131,7 @@ final class GroupsViewModel {
 
     /// Member count for a group.
     func memberCount(for group: SplitGroup) -> Int {
-        membersByGroup[group.cloudKitZoneID]?.count ?? 0
+        membersByGroup[group.cloudKitZoneID]?.filter(\.isActive).count ?? 0
     }
 
     // MARK: - Actions

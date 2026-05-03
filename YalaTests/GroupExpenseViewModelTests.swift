@@ -84,6 +84,16 @@ struct GroupExpenseViewModelTests {
         }
     }
 
+    @Test func inactiveMembersExcludedByDefault() {
+        let group = makeGroup()
+        let members = makeMembers()
+        members[2].memberStatus = .removed
+        let vm = GroupExpenseViewModel(group: group, members: members, memberNameLookup: makeLookup(members))
+
+        #expect(vm.selectedMemberIDs.count == 2)
+        #expect(!vm.selectedMemberIDs.contains(members[2].id.uuidString))
+    }
+
     @Test func isNotEditModeByDefault() {
         let (vm, _) = makeViewModel()
         #expect(vm.isEditMode == false)

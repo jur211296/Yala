@@ -3117,10 +3117,13 @@
 "groups.settings.addMember" = "添加成员";
 "groups.settings.addMemberPrompt" = "成员名称";
 "groups.settings.invite" = "通过链接邀请";
+"groups.settings.inviteLinkHint" = "链接访问开启时，任何拥有此链接的人都可以加入群组。请只分享给你信任的人。";
 "groups.settings.regenerateLink" = "重新生成链接";
 "groups.settings.regenerateLinkConfirm" = "当前链接将失效。要生成新链接吗?";
+"groups.settings.regenerateLinkDisabledHint" = "为安全起见，请只在其他成员加入前重置邀请链接。";
 "groups.settings.leaveGroup" = "离开群组";
 "groups.settings.leaveGroupConfirm" = "你确定吗?你的个人支出将被保留。";
+"groups.settings.leaveGroupDisabledHint" = "要离开群组，请先结清余额。";
 "groups.settings.deleteGroup" = "删除群组";
 "groups.settings.deleteGroupConfirm" = "此操作是永久的,会删除全部群组数据。";
 "groups.settings.deleteGroupFinalConfirm" = "群组及其所有数据将对所有成员永久删除。此操作无法撤销。";
@@ -3139,6 +3142,8 @@
 "groups.member.admin" = "管理员";
 "groups.member.member" = "成员";
 "groups.member.you" = "(你)";
+"groups.member.left" = "已离开";
+"groups.member.removed" = "已移除";
 "groups.member.changeRole" = "更改角色";
 "groups.member.remove" = "移除成员";
 "groups.member.removeConfirm" = "把这个成员从群组移除?";

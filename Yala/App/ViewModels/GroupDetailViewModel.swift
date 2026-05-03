@@ -35,8 +35,16 @@ final class GroupDetailViewModel {
         members.first { $0.isCurrentUser }
     }
 
+    var activeMembers: [SplitMember] {
+        members.filter(\.isActive)
+    }
+
+    var canCurrentUserParticipate: Bool {
+        currentUserMember?.isActive == true
+    }
+
     var isCurrentUserAdmin: Bool {
-        currentUserMember?.role == "admin"
+        currentUserMember?.isActive == true && currentUserMember?.role == "admin"
     }
 
     // MARK: - UI State
@@ -146,6 +154,7 @@ final class GroupDetailViewModel {
 
     func createShareLink() async {
         guard !isCreatingShare else { return }
+        guard group.isOwner, isCurrentUserAdmin else { return }
         if shareURL != nil { return }
         isCreatingShare = true
         do {
@@ -167,7 +176,7 @@ final class GroupDetailViewModel {
         return InviteLinkService.buildInviteURL(
             shareURL: ckURL,
             group: group,
-            members: members,
+            members: activeMembers,
             inviterName: inviterName
         ) ?? ckURL
     }

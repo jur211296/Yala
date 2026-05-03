@@ -28,7 +28,7 @@ struct SplitModelsTests {
         #expect(group.autoCreateTransaction == true)
         #expect(group.showDebtsInSingleCurrency == false)
         #expect(group.defaultSplitType == "equal")
-        #expect(group.membersCanInvite == true)
+        #expect(group.membersCanInvite == false)
         #expect(group.cloudKitZoneID.hasPrefix("SplitGroup-"))
     }
 
@@ -40,6 +40,9 @@ struct SplitModelsTests {
         #expect(member.displayName == "")
         #expect(member.cloudKitUserRecordID == "")
         #expect(member.role == "member")
+        #expect(member.memberStatus == .active)
+        #expect(member.isActive == true)
+        #expect(member.isGroupOwner == false)
         #expect(member.isCurrentUser == false)
     }
 

@@ -3117,10 +3117,13 @@
 "groups.settings.addMember" = "Add member";
 "groups.settings.addMemberPrompt" = "Member name";
 "groups.settings.invite" = "Invite by link";
+"groups.settings.inviteLinkHint" = "Anyone with this link can join this group while link access is enabled. Share it only with people you trust.";
 "groups.settings.regenerateLink" = "Regenerate link";
 "groups.settings.regenerateLinkConfirm" = "The current link will stop working. Generate a new one?";
+"groups.settings.regenerateLinkDisabledHint" = "For safety, reset the invite link only before other members have joined.";
 "groups.settings.leaveGroup" = "Leave group";
 "groups.settings.leaveGroupConfirm" = "Are you sure? Your personal expenses will be kept.";
+"groups.settings.leaveGroupDisabledHint" = "To leave the group, first settle up your balance.";
 "groups.settings.deleteGroup" = "Delete group";
 "groups.settings.deleteGroupConfirm" = "This action is permanent and will delete all group data.";
 "groups.settings.deleteGroupFinalConfirm" = "The group and all its data will be permanently deleted for all members. This action cannot be undone.";
@@ -3139,6 +3142,8 @@
 "groups.member.admin" = "Admin";
 "groups.member.member" = "Member";
 "groups.member.you" = "(You)";
+"groups.member.left" = "Left";
+"groups.member.removed" = "Removed";
 "groups.member.changeRole" = "Change role";
 "groups.member.remove" = "Remove member";
 "groups.member.removeConfirm" = "Remove this member from the group?";

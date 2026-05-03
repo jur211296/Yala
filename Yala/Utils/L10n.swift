@@ -1639,10 +1639,13 @@ enum L10n {
             static var addMember: String { ls("groups.settings.addMember", comment: "") }
             static var addMemberPrompt: String { ls("groups.settings.addMemberPrompt", comment: "") }
             static var invite: String { ls("groups.settings.invite", comment: "") }
+            static var inviteLinkHint: String { ls("groups.settings.inviteLinkHint", comment: "") }
             static var regenerateLink: String { ls("groups.settings.regenerateLink", comment: "") }
             static var regenerateLinkConfirm: String { ls("groups.settings.regenerateLinkConfirm", comment: "") }
+            static var regenerateLinkDisabledHint: String { ls("groups.settings.regenerateLinkDisabledHint", comment: "") }
             static var leaveGroup: String { ls("groups.settings.leaveGroup", comment: "") }
             static var leaveGroupConfirm: String { ls("groups.settings.leaveGroupConfirm", comment: "") }
+            static var leaveGroupDisabledHint: String { ls("groups.settings.leaveGroupDisabledHint", comment: "") }
             static var deleteGroup: String { ls("groups.settings.deleteGroup", comment: "") }
             static var deleteGroupConfirm: String { ls("groups.settings.deleteGroupConfirm", comment: "") }
             static var deleteGroupFinalConfirm: String { ls("groups.settings.deleteGroupFinalConfirm", comment: "") }
@@ -1663,6 +1666,8 @@ enum L10n {
             static var admin: String { ls("groups.member.admin", comment: "") }
             static var member: String { ls("groups.member.member", comment: "") }
             static var you: String { ls("groups.member.you", comment: "") }
+            static var left: String { ls("groups.member.left", comment: "") }
+            static var removed: String { ls("groups.member.removed", comment: "") }
             static var changeRole: String { ls("groups.member.changeRole", comment: "") }
             static var remove: String { ls("groups.member.remove", comment: "") }
             static var removeConfirm: String { ls("groups.member.removeConfirm", comment: "") }

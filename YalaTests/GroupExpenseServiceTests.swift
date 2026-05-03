@@ -44,6 +44,12 @@ struct GroupExpenseServiceTests {
         #expect(error.errorDescription!.contains("yourself"))
     }
 
+    @Test func error_inactiveMember_hasDescription() {
+        let error = GroupExpenseServiceError.inactiveMember
+        #expect(error.errorDescription != nil)
+        #expect(error.errorDescription!.contains("Inactive"))
+    }
+
     @Test func error_saveFailed_includesUnderlyingError() {
         let underlying = NSError(domain: "test", code: 42)
         let error = GroupExpenseServiceError.saveFailed(underlying)

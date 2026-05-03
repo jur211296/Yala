@@ -29,9 +29,9 @@ struct GroupFormView: View {
     @State private var showDebtsInSingleCurrency: Bool = false
     @State private var selectedCurrency: CurrencyCode = .pen
     @State private var defaultSplitType: SplitType = .equal
-    @State private var membersCanInvite: Bool = true
     @State private var showSaveError: Bool = false
     @State private var saveErrorMessage: String = ""
+    @State private var isSaving: Bool = false
 
     // MARK: - Sheet State
 
@@ -72,7 +72,10 @@ struct GroupFormView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaSaveButton(action: save, isDisabled: name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    YalaSaveButton(
+                        action: { Task { await saveAsync() } },
+                        isDisabled: isSaving || name.trimmingCharacters(in: .whitespaces).isEmpty
+                    )
                 }
             }
             .sheet(isPresented: $showIconPicker) {
@@ -230,25 +233,17 @@ struct GroupFormView: View {
 
                 Divider()
                     .padding(.leading, DS.FormRow.paddingH)
-
-                // Members can invite
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Toggle(L10n.Groups.Form.membersCanInvite, isOn: $membersCanInvite)
-                        .font(DS.Typography.body)
-
-                    Text(L10n.Groups.Form.membersCanInviteHint)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
             }
         }
     }
 
     // MARK: - Actions
 
-    private func save() {
+    private func saveAsync() async {
+        guard !isSaving else { return }
+        isSaving = true
+        defer { isSaving = false }
+
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
         guard !trimmedName.isEmpty else { return }
 
@@ -266,11 +261,11 @@ struct GroupFormView: View {
                     simplifyDebts: simplifyDebts,
                     showDebtsInSingleCurrency: showDebtsInSingleCurrency,
                     defaultSplitType: defaultSplitType.rawValue,
-                    membersCanInvite: membersCanInvite
+                    membersCanInvite: false
                 )
             } else {
                 // Create
-                try GroupService.shared.createGroup(
+                try await GroupService.shared.createGroup(
                     name: trimmedName,
                     iconName: iconName,
                     colorHex: colorHex,
@@ -278,7 +273,7 @@ struct GroupFormView: View {
                     simplifyDebts: simplifyDebts,
                     showDebtsInSingleCurrency: showDebtsInSingleCurrency,
                     defaultSplitType: defaultSplitType.rawValue,
-                    membersCanInvite: membersCanInvite
+                    membersCanInvite: false
                 )
             }
             DS.Haptic.success()
@@ -302,7 +297,6 @@ struct GroupFormView: View {
             showDebtsInSingleCurrency = group.showDebtsInSingleCurrency
             selectedCurrency = CurrencyCode(rawValue: group.currencyCode) ?? .pen
             defaultSplitType = SplitType(rawValue: group.defaultSplitType) ?? .equal
-            membersCanInvite = group.membersCanInvite
         } else {
             selectedCurrency = appPreferences.defaultCurrencyCode
         }
