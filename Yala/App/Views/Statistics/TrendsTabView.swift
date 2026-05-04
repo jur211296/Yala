@@ -1288,16 +1288,30 @@ struct TrendsTabView: View {
             criteria: baseCriteria
         )
 
+        // Override del último punto si la métrica es balance y el current
+        // cubre "hoy" — para coincidir con la card de Balance.
+        let trendType = convertMetricToTrendType(trendsViewModel.selectedMetric)
+        let liveBalanceOverride: Double?
+        if trendType == .balance && currentInterval.end >= Date.now {
+            liveBalanceOverride = LiveBalanceCalculator.liveBalance(
+                accounts: eligibleAccounts,
+                transactions: allTransactions,
+                preferredCurrencyCode: defaultCurrencyCode
+            )
+        } else {
+            liveBalanceOverride = nil
+        }
+
         // Calculate current period data
         let currentResult = TrendDataProcessor.processTrendData(
             transactions: filteredTransactions,
             accounts: eligibleAccounts,
-            metric: convertMetricToTrendType(trendsViewModel.selectedMetric),
+            metric: trendType,
             period: trendsViewModel.detailPeriod,
             grouping: .day,
             interval: currentInterval,
             currencyCode: defaultCurrencyCode,
-
+            liveBalanceOverride: liveBalanceOverride
         )
 
         // For previous period with income/expense, we need separate filtering
@@ -1327,16 +1341,15 @@ struct TrendsTabView: View {
             )
         }
 
-        // Calculate previous period data
+        // Calculate previous period data — siempre histórico, sin override.
         let previousResult = TrendDataProcessor.processTrendData(
             transactions: previousFiltered,
             accounts: eligibleAccounts,
-            metric: convertMetricToTrendType(trendsViewModel.selectedMetric),
+            metric: trendType,
             period: trendsViewModel.detailPeriod,
             grouping: .day,
             interval: previousInterval,
-            currencyCode: defaultCurrencyCode,
-
+            currencyCode: defaultCurrencyCode
         )
 
         // Update state with equality guards
