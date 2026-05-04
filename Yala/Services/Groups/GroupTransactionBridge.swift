@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import OSLog
 import SwiftData
 
 @MainActor
@@ -20,6 +21,7 @@ final class GroupTransactionBridge {
     // MARK: - Properties
 
     private var modelContext: ModelContext?
+    private static let logger = Logger(subsystem: "com.yala", category: "GroupBridge")
 
     /// Whether the bridge has been initialized with a context.
     var isReady: Bool { modelContext != nil }
@@ -98,8 +100,8 @@ final class GroupTransactionBridge {
             return
         }
 
-        // Resolve account and subcategory
-        let account = GroupTransactionBridge.resolveAccount(group: group, currencyCode: expense.currencyCode, context: context)
+        // Resolve account (throws .noAccountsAvailable if none) and subcategory.
+        let account = try GroupTransactionBridge.resolveAccount(group: group, currencyCode: expense.currencyCode, context: context)
         let subcategory = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
 
         let shouldAutoCreate = GroupPersonalPreferences.autoCreateTransaction(for: group.cloudKitZoneID) ?? group.autoCreateTransaction
@@ -250,7 +252,8 @@ final class GroupTransactionBridge {
                 guard let myShare = try context.fetch(shareDescriptor).first else { continue }
 
                 if accountCache[expense.currencyCode] == nil {
-                    accountCache[expense.currencyCode] = Self.resolveAccount(group: group, currencyCode: expense.currencyCode, context: context)
+                    // Batch import: a missing account for one currency must NOT block the entire batch.
+                    accountCache[expense.currencyCode] = try? Self.resolveAccount(group: group, currencyCode: expense.currencyCode, context: context)
                 }
                 let account = accountCache[expense.currencyCode] ?? nil
                 let subcategory = Self.matchSubcategoryFromList(name: expense.subcategoryName, allSubcategories: allSubcategories)
@@ -334,7 +337,8 @@ final class GroupTransactionBridge {
     // MARK: - Account Resolution
 
     /// Resolve account: per-currency preference → legacy single preference → first account with matching currency → any first account.
-    static func resolveAccount(group: SplitGroup, currencyCode: String, context: ModelContext) -> Account? {
+    /// - Throws: `GroupTransactionBridgeError.noAccountsAvailable` when there are no usable accounts (empty fetch or fetch error).
+    static func resolveAccount(group: SplitGroup, currencyCode: String, context: ModelContext) throws -> Account {
         let descriptor = FetchDescriptor<Account>(
             predicate: #Predicate { !$0.isArchived },
             sortBy: [SortDescriptor(\.name)]
@@ -343,10 +347,12 @@ final class GroupTransactionBridge {
         do {
             allAccounts = try context.fetch(descriptor)
         } catch {
-            #if DEBUG
-            print("GroupTransactionBridge: Error fetching accounts: \(error)")
-            #endif
-            return nil
+            logger.error("Error fetching accounts: \(error.localizedDescription, privacy: .public)")
+            throw GroupTransactionBridgeError.noAccountsAvailable
+        }
+
+        guard !allAccounts.isEmpty else {
+            throw GroupTransactionBridgeError.noAccountsAvailable
         }
 
         // 1. Per-currency preference
@@ -368,8 +374,9 @@ final class GroupTransactionBridge {
             return match
         }
 
-        // 4. Absolute fallback: any first account
-        return allAccounts.first
+        // 4. Absolute fallback: any first account (guard above ensures non-empty).
+        if let first = allAccounts.first { return first }
+        throw GroupTransactionBridgeError.noAccountsAvailable
     }
 
     // MARK: - Private Helpers
@@ -381,10 +388,13 @@ final class GroupTransactionBridge {
         group: SplitGroup,
         context: ModelContext
     ) {
-        // Re-resolve account only if currency changed
+        // Re-resolve account only if currency changed.
+        // Resilient: if no account exists for the new currency, skip account update —
+        // other fields (note, date, amount) still get updated. NO surface alert here.
         if tx.currencyCode != expense.currencyCode {
-            let newAccount = Self.resolveAccount(group: group, currencyCode: expense.currencyCode, context: context)
-            if let newAccount { tx.account = newAccount }
+            if let newAccount = try? Self.resolveAccount(group: group, currencyCode: expense.currencyCode, context: context) {
+                tx.account = newAccount
+            }
         }
         // Re-resolve subcategory only if name changed
         if tx.subcategory?.name.lowercased() != expense.subcategoryName?.lowercased() {
@@ -408,10 +418,12 @@ final class GroupTransactionBridge {
         group: SplitGroup,
         context: ModelContext
     ) {
-        // Re-resolve account if currency changed (InboxDraft currency comes from account)
+        // Re-resolve account if currency changed (InboxDraft currency comes from account).
+        // Resilient: if no account exists for the new currency, skip account update.
         if draft.account?.currencyCode != expense.currencyCode {
-            let newAccount = Self.resolveAccount(group: group, currencyCode: expense.currencyCode, context: context)
-            if let newAccount { draft.account = newAccount }
+            if let newAccount = try? Self.resolveAccount(group: group, currencyCode: expense.currencyCode, context: context) {
+                draft.account = newAccount
+            }
         }
         // Re-resolve subcategory only if name changed
         if draft.subcategory?.name.lowercased() != expense.subcategoryName?.lowercased() {
@@ -428,11 +440,14 @@ final class GroupTransactionBridge {
 
 enum GroupTransactionBridgeError: LocalizedError {
     case noContext
+    case noAccountsAvailable
 
     var errorDescription: String? {
         switch self {
         case .noContext:
             return "GroupTransactionBridge: No ModelContext available"
+        case .noAccountsAvailable:
+            return "GroupTransactionBridge: No accounts available to bridge expense"
         }
     }
 }

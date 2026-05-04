@@ -3520,6 +3520,7 @@
 "groups.bridge.errorTransaction" = "Twój osobisty wpis zostanie automatycznie ponowiony.";
 "groups.bridge.errorTransactionUpdate" = "Zmiana nie znalazła odzwierciedlenia w Twoim osobistym wpisie. Spróbujemy ponownie.";
 "groups.bridge.errorDelete" = "Nie udało się usunąć osobistego wpisu wydatku.";
+"groups.bridge.errorNoAccounts" = "Nie masz jeszcze skonfigurowanych kont. Utwórz najpierw jedno.";
 "groups.sync.errorAcceptShare" = "Nie udało się dołączyć do grupy. Spróbuj ponownie.";
 "groups.sync.errorMemberSetup" = "Dołączyłeś, ale wystąpił problem z Twoją tożsamością w grupie. Uruchom aplikację ponownie.";
 

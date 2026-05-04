@@ -182,6 +182,13 @@ final class AppBootstrapper {
             await retryPendingBridges(context: context)
         }
 
+        // 16.6. A13: Reconcile current user's displayName across groups.
+        // Covers kill-app between acceptShare and performSilentSetup (SplitMember
+        // would otherwise stay with the "Usuario" default forever). Idempotent.
+        Task { @MainActor in
+            await reconcileCurrentUserDisplayNameIfNeeded()
+        }
+
         // Seed current iCloud user identity for groups and refresh local membership flags.
         Task { @MainActor in
             _ = try? await GroupUserIdentityService.shared.currentUserRecordName()
@@ -370,6 +377,23 @@ final class AppBootstrapper {
             try context.save()
         } catch {
             logger.error("retryPendingBridges fetch failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    /// A13: Reconcile current user's `displayName` across all SplitMembers if a real
+    /// name was already set (UserDefaults `userName`) but a previous onboarding flow
+    /// was interrupted (e.g. kill-app between `acceptShare` and `performSilentSetup`).
+    /// Idempotent — `updateCurrentUserDisplayName` is a no-op when nothing differs.
+    @MainActor
+    func reconcileCurrentUserDisplayNameIfNeeded() async {
+        let realName = (UserDefaults.standard.string(forKey: AppPreferences.Keys.userName) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !realName.isEmpty else { return }
+
+        do {
+            try await GroupService.shared.updateCurrentUserDisplayName(realName)
+        } catch {
+            logger.error("Reconcile displayName failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -626,31 +650,47 @@ final class AppBootstrapper {
         Task { await acceptShareFromURL(shareURL) }
     }
 
-    /// Acepta un CKShare a partir de su URL, reutilizando la lógica de segmentos del AppDelegate.
+    /// A12: Decisión de routing para un share aceptado. Pure function — testeable.
+    /// Replica la lógica simétrica con `YalaAppDelegate.userDidAcceptCloudKitShareWith`.
+    enum InviteRouteDecision: Equatable {
+        /// Invitado nuevo (sin onboarding completo y NO mid-invite): acepta eagerly + muestra invite onboarding.
+        case acceptAndShowInviteOnboarding
+        /// Todos los demás (onboarded o mid-invite): muestra reconnect; el `acceptShare` lo hace `onJoin`.
+        case showReconnect
+    }
+
+    static func inviteRouteDecision(
+        hasCompletedOnboarding: Bool,
+        onboardingMode: OnboardingMode
+    ) -> InviteRouteDecision {
+        if !hasCompletedOnboarding && onboardingMode != .groupInvite {
+            return .acceptAndShowInviteOnboarding
+        }
+        return .showReconnect
+    }
+
+    /// Acepta un CKShare a partir de su URL.
+    /// A12: Comportamiento simétrico con `YalaAppDelegate.userDidAcceptCloudKitShareWith`.
     private func acceptShareFromURL(_ shareURL: URL) async {
         do {
             let metadata = try await InviteLinkService.fetchShareMetadata(for: shareURL)
 
-            let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+            let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+            let invite = InviteMetadata(
+                groupName: nil, groupIcon: nil, groupColor: nil, groupMembers: nil,
+                shareMetadata: metadata
+            )
 
-            if !hasCompletedOnboarding && sessionState.onboardingMode != .groupInvite {
+            switch Self.inviteRouteDecision(
+                hasCompletedOnboarding: hasCompletedOnboarding,
+                onboardingMode: sessionState.onboardingMode
+            ) {
+            case .acceptAndShowInviteOnboarding:
                 await SplitSyncManager.shared.acceptShare(metadata: metadata, skipNavigation: true)
-                let invite = InviteMetadata(
-                    groupName: nil, groupIcon: nil, groupColor: nil, groupMembers: nil,
-                    shareMetadata: metadata
-                )
                 AppRouter.shared.enqueue(.presentGroupInviteOnboarding(invite))
-            } else if hasCompletedOnboarding
-                && UserSegmentService.shared.hasRecalculatedAfterFirstImport
-                && UserSegmentService.shared.currentSegment == .dormant {
-                await SplitSyncManager.shared.acceptShare(metadata: metadata, skipNavigation: true)
-                let invite = InviteMetadata(
-                    groupName: nil, groupIcon: nil, groupColor: nil, groupMembers: nil,
-                    shareMetadata: metadata
-                )
+            case .showReconnect:
+                // NO acceptShare eagerly — `GroupReconnectView.onJoin` lo invoca al confirmar.
                 AppRouter.shared.enqueue(.presentGroupReconnect(invite))
-            } else {
-                await SplitSyncManager.shared.acceptShare(metadata: metadata)
             }
         } catch {
             logger.error("Failed to accept share from URL: \(error.localizedDescription, privacy: .public)")

@@ -408,49 +408,12 @@ final class GroupService {
             return legacy
         }
 
-        // Migration fallback: infer the current user member from legacy records with missing identity.
-        let candidates = members.filter { $0.cloudKitUserRecordID.isEmpty }
-        if !candidates.isEmpty {
-            let localDisplayName = currentUserDisplayName()
-            let nameMatches = candidates.filter { $0.displayName == localDisplayName }
-            if nameMatches.count == 1, let candidate = nameMatches.first {
-                guard reactivateInactive || candidate.isActive else { return candidate }
-                candidate.cloudKitUserRecordID = recordName
-                candidate.isCurrentUser = true
-                if reactivateInactive {
-                    candidate.memberStatus = .active
-                }
-                SplitSyncManager.shared.enqueueSave(modelID: candidate.id, group: group)
-                do {
-                    try context.save()
-                } catch {
-                    throw GroupServiceError.saveFailed(error)
-                }
-                return candidate
-            }
-
-            if group.isOwner {
-                let admins = candidates.filter { $0.role == "admin" }
-                let candidate = (admins.count == 1 ? admins.first : candidates.min(by: { $0.joinedAt < $1.joinedAt }))
-                if let candidate {
-                    guard reactivateInactive || candidate.isActive else { return candidate }
-                    candidate.cloudKitUserRecordID = recordName
-                    candidate.isCurrentUser = true
-                    candidate.isGroupOwner = true
-                    candidate.role = "admin"
-                    if reactivateInactive {
-                        candidate.memberStatus = .active
-                    }
-                    SplitSyncManager.shared.enqueueSave(modelID: candidate.id, group: group)
-                    do {
-                        try context.save()
-                    } catch {
-                        throw GroupServiceError.saveFailed(error)
-                    }
-                    return candidate
-                }
-            }
-        }
+        // A9: NO heuristic fallbacks (nameMatch / admin-único). If the current user
+        // doesn't match any existing SplitMember by `cloudKitUserRecordID` and no
+        // legacy member is flagged with `isCurrentUser=true`, we create a new
+        // SplitMember below. Identity must be authoritative — assuming by name or
+        // role can mis-assign `isCurrentUser` in groups with two members of the
+        // same name or with unrelated admins.
 
         guard reactivateInactive else { throw GroupServiceError.currentUserMemberNotFound }
 
@@ -473,6 +436,42 @@ final class GroupService {
         try context.save()
         SessionState.shared.incrementDataVersion()
         return member
+    }
+
+    /// A13: Updates the current user's `displayName` across all groups they belong to,
+    /// and enqueues sync for each updated SplitMember. Called after the user finishes
+    /// their initial onboarding (e.g. `GroupInviteOnboardingView.performSilentSetup`)
+    /// or as part of boot-time reconciliation if a previous attempt was interrupted.
+    /// - Parameter newName: the user's chosen display name (will be trimmed).
+    /// - Note: Idempotent — when no member needs update, returns without saving.
+    func updateCurrentUserDisplayName(_ newName: String) async throws {
+        let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let context = try requireContext()
+
+        let memberDescriptor = FetchDescriptor<SplitMember>(
+            predicate: #Predicate { $0.isCurrentUser == true }
+        )
+        let myMembers = try context.fetch(memberDescriptor)
+        let pending = myMembers.filter { $0.displayName != trimmed }
+        guard !pending.isEmpty else { return }
+
+        // Cache groups by zoneID — typical user has 1-3 groups, fetch once.
+        let allGroups = try fetchAllGroups()
+        let groupByZoneID = Dictionary(uniqueKeysWithValues: allGroups.map { ($0.cloudKitZoneID, $0) })
+
+        for member in pending {
+            member.displayName = trimmed
+            if let group = groupByZoneID[member.groupZoneID] {
+                SplitSyncManager.shared.enqueueSave(modelID: member.id, group: group)
+            }
+        }
+
+        do {
+            try context.save()
+        } catch {
+            throw GroupServiceError.saveFailed(error)
+        }
     }
 
     /// Recomputes `SplitMember.isCurrentUser` across all groups from `cloudKitUserRecordID`.

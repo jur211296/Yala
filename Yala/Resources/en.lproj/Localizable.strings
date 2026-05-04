@@ -3520,6 +3520,7 @@
 "groups.bridge.errorTransaction" = "Your personal record for this expense will retry automatically.";
 "groups.bridge.errorTransactionUpdate" = "The change didn't reflect in your personal record. We'll retry.";
 "groups.bridge.errorDelete" = "Couldn't delete the personal record for this expense.";
+"groups.bridge.errorNoAccounts" = "You don't have any accounts set up. Create one first.";
 "groups.sync.errorAcceptShare" = "We couldn't complete joining the group. Try again.";
 "groups.sync.errorMemberSetup" = "You joined, but there was an issue with your identity in the group. Reopen the app.";
 

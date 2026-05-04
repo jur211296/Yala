@@ -3520,6 +3520,7 @@
 "groups.bridge.errorTransaction" = "Tu registro personal del gasto se reintentará automáticamente.";
 "groups.bridge.errorTransactionUpdate" = "El cambio no se reflejó en tu registro personal. Lo reintentaremos.";
 "groups.bridge.errorDelete" = "No se pudo borrar el registro personal del gasto.";
+"groups.bridge.errorNoAccounts" = "No tienes cuentas configuradas. Crea una primero.";
 "groups.sync.errorAcceptShare" = "No pudimos completar tu unión al grupo. Inténtalo de nuevo.";
 "groups.sync.errorMemberSetup" = "Te uniste, pero hubo un problema con tu identidad en el grupo. Reabre la app.";
 

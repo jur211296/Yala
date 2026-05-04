@@ -128,12 +128,13 @@ struct GroupInviteOnboardingView: View {
     private func performSilentSetup() {
         let sync = PreferenceSyncService.shared
         let finalName = userName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let effectiveName = finalName.isEmpty ? L10n.Profile.defaultName : finalName
 
         // 1. Set onboarding mode
         sessionState.onboardingMode = .groupInvite
 
         // 2. Save user name
-        sync.set(string: finalName.isEmpty ? L10n.Profile.defaultName : finalName, forKey: "userName")
+        sync.set(string: effectiveName, forKey: AppPreferences.Keys.userName)
 
         // 3. Detect currency (from group if available, else region)
         let currency = detectCurrencyFromGroup() ?? CurrencyDefaults.detectCurrencyFromRegion()
@@ -161,6 +162,19 @@ struct GroupInviteOnboardingView: View {
 
         // 8. Signal other devices
         PreferenceSyncService.shared.signalOnboardingCompleted()
+
+        // 8.5. Propagate the real displayName to the SplitMember already created
+        // during share acceptance (avoids "Usuario" appearing to other members until
+        // some unrelated update triggers sync).
+        Task {
+            do {
+                try await GroupService.shared.updateCurrentUserDisplayName(effectiveName)
+            } catch {
+                #if DEBUG
+                print("GroupInviteOnboardingView: Failed to propagate displayName: \(error)")
+                #endif
+            }
+        }
 
         // 9. Track telemetry
         TelemetryService.track(.onboardingCompleted, parameters: [

@@ -3520,6 +3520,7 @@
 "groups.bridge.errorTransaction" = "Je persoonlijke registratie wordt automatisch opnieuw geprobeerd.";
 "groups.bridge.errorTransactionUpdate" = "De wijziging is niet doorgevoerd in je persoonlijke registratie. We proberen het opnieuw.";
 "groups.bridge.errorDelete" = "Kon de persoonlijke registratie van de uitgave niet verwijderen.";
+"groups.bridge.errorNoAccounts" = "Je hebt nog geen rekeningen ingesteld. Maak er eerst een aan.";
 "groups.sync.errorAcceptShare" = "We konden niet aan de groep deelnemen. Probeer het opnieuw.";
 "groups.sync.errorMemberSetup" = "Je bent toegetreden, maar er was een probleem met je identiteit in de groep. Open de app opnieuw.";
 

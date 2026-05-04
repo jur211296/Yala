@@ -57,4 +57,50 @@ struct AppBootstrapperTests {
         let c = RouterIntent.showGroupSyncError("Y")
         #expect(a.id != c.id)
     }
+
+    // MARK: - A12: Invite routing decision (pure function)
+    //
+    // `acceptShareFromURL` itself depends on CloudKit (`InviteLinkService.fetchShareMetadata`)
+    // and isn't testable end-to-end. The pure decision function `inviteRouteDecision(...)`
+    // captures the routing logic — these tests verify it stays symmetric with the
+    // CKShare native path in YalaAppDelegate.
+
+    @Test func inviteRouteDecision_newUser_acceptsAndShowsInviteOnboarding() {
+        // !hasCompletedOnboarding && onboardingMode != .groupInvite → invite onboarding.
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: false,
+            onboardingMode: .full
+        )
+        #expect(decision == .acceptAndShowInviteOnboarding)
+    }
+
+    @Test func inviteRouteDecision_onboardedActiveUser_showsReconnect() {
+        // hasCompletedOnboarding=true → reconnect (regardless of segment, including .active).
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: true,
+            onboardingMode: .full
+        )
+        #expect(decision == .showReconnect)
+    }
+
+    @Test func inviteRouteDecision_dormantOnboardedUser_showsReconnect() {
+        // Regression: dormant users (segment-based) used to have a special branch.
+        // Now they go via the shared "onboarded → reconnect" path.
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: true,
+            onboardingMode: .full
+        )
+        #expect(decision == .showReconnect)
+    }
+
+    @Test func inviteRouteDecision_midGroupInviteOnboarding_showsReconnect() {
+        // User mid-invite-onboarding receives another link → reconnect (the in-progress
+        // onboarding view IS the confirmation; reconnect on top is acceptable for the rare
+        // edge case of two simultaneous invitations).
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: false,
+            onboardingMode: .groupInvite
+        )
+        #expect(decision == .showReconnect)
+    }
 }

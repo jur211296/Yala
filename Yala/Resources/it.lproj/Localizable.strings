@@ -3519,6 +3519,7 @@
 "groups.bridge.errorTransaction" = "La tua registrazione personale verrà riprovata automaticamente.";
 "groups.bridge.errorTransactionUpdate" = "La modifica non si è riflessa nel tuo registro personale. Riproveremo.";
 "groups.bridge.errorDelete" = "Impossibile eliminare il registro personale della spesa.";
+"groups.bridge.errorNoAccounts" = "Non hai ancora configurato un conto. Creane uno prima.";
 "groups.sync.errorAcceptShare" = "Non siamo riusciti a completare l'adesione al gruppo. Riprova.";
 "groups.sync.errorMemberSetup" = "Sei entrato, ma c'è stato un problema con la tua identità nel gruppo. Riapri l'app.";
 

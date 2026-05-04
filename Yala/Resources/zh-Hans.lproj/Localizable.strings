@@ -3520,6 +3520,7 @@
 "groups.bridge.errorTransaction" = "你的个人记录将自动重试。";
 "groups.bridge.errorTransactionUpdate" = "更改未反映到你的个人记录。我们会重试。";
 "groups.bridge.errorDelete" = "无法删除该支出的个人记录。";
+"groups.bridge.errorNoAccounts" = "你还没有设置账户。请先创建一个。";
 "groups.sync.errorAcceptShare" = "无法完成加入群组。请再试一次。";
 "groups.sync.errorMemberSetup" = "你已加入，但群组中的身份出现问题。请重新打开应用。";
 

@@ -3518,6 +3518,7 @@
 "groups.bridge.errorTransaction" = "Ton enregistrement personnel sera relancé automatiquement.";
 "groups.bridge.errorTransactionUpdate" = "Le changement ne s'est pas répercuté dans ton enregistrement personnel. Nous réessaierons.";
 "groups.bridge.errorDelete" = "Impossible de supprimer l'enregistrement personnel de la dépense.";
+"groups.bridge.errorNoAccounts" = "Tu n'as pas de compte configuré. Crée-en un d'abord.";
 "groups.sync.errorAcceptShare" = "Nous n'avons pas pu rejoindre le groupe. Réessaie.";
 "groups.sync.errorMemberSetup" = "Tu as rejoint le groupe, mais il y a eu un problème avec ton identité. Rouvre l'app.";
 

@@ -48,19 +48,22 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
     ) {
         Task { @MainActor in
             let sessionState = SessionState.shared
-            let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+            let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
 
             let invite = InviteMetadata(
                 groupName: nil, groupIcon: nil, groupColor: nil, groupMembers: nil,
                 shareMetadata: cloudKitShareMetadata
             )
 
-            if !hasCompletedOnboarding && sessionState.onboardingMode != .groupInvite {
-                // New user (or mid-onboarding): accept share eagerly, then show invite onboarding
+            // A12: shared decision logic — keep symmetry with branded link path in AppBootstrapper.
+            switch AppBootstrapper.inviteRouteDecision(
+                hasCompletedOnboarding: hasCompletedOnboarding,
+                onboardingMode: sessionState.onboardingMode
+            ) {
+            case .acceptAndShowInviteOnboarding:
                 await SplitSyncManager.shared.acceptShare(metadata: cloudKitShareMetadata, skipNavigation: true)
                 AppRouter.shared.enqueue(.presentGroupInviteOnboarding(invite))
-            } else {
-                // All existing users: defer acceptance, show confirmation first
+            case .showReconnect:
                 AppRouter.shared.enqueue(.presentGroupReconnect(invite))
             }
         }

@@ -22,6 +22,68 @@ struct GroupTransactionBridgeTests {
         #expect(error.errorDescription!.contains("No ModelContext"))
     }
 
+    @Test func error_noAccountsAvailable_hasDescription() {
+        let error = GroupTransactionBridgeError.noAccountsAvailable
+        #expect(error.errorDescription != nil)
+        #expect(error.errorDescription!.contains("No accounts"))
+    }
+
+    // MARK: - resolveAccount (A10)
+
+    @MainActor @Test func resolveAccount_throwsNoAccountsWhenEmpty() throws {
+        // Given: a model context with no accounts
+        let context = try makeTestContext()
+        let group = SplitGroup(name: "Test Group", currencyCode: "PEN")
+        context.insert(group)
+
+        // When/Then: resolveAccount should throw .noAccountsAvailable
+        #expect(throws: GroupTransactionBridgeError.noAccountsAvailable) {
+            _ = try GroupTransactionBridge.resolveAccount(
+                group: group,
+                currencyCode: "PEN",
+                context: context
+            )
+        }
+    }
+
+    @MainActor @Test func resolveAccount_succeedsWithSingleAccount() throws {
+        // Given: 1 account exists in PEN
+        let context = try makeTestContext()
+        let group = SplitGroup(name: "Test Group", currencyCode: "PEN")
+        context.insert(group)
+        let account = makeTestAccount(context: context, name: "Bank PEN", currencyCode: "PEN")
+
+        // When: resolveAccount runs (no preferences set, fallback to currency match)
+        let resolved = try GroupTransactionBridge.resolveAccount(
+            group: group,
+            currencyCode: "PEN",
+            context: context
+        )
+
+        // Then: returns the only account
+        #expect(resolved === account)
+    }
+
+    @MainActor @Test func resolveAccount_currencyPreferenceWinsOverNonMatching() throws {
+        // Given: 2 accounts with different currencies, no preferences set
+        let context = try makeTestContext()
+        let group = SplitGroup(name: "Test Group", currencyCode: "PEN")
+        context.insert(group)
+        let usdAccount = makeTestAccount(context: context, name: "Bank USD", currencyCode: "USD")
+        let penAccount = makeTestAccount(context: context, name: "Bank PEN", currencyCode: "PEN")
+
+        // When: resolveAccount called for PEN currency
+        let resolved = try GroupTransactionBridge.resolveAccount(
+            group: group,
+            currencyCode: "PEN",
+            context: context
+        )
+
+        // Then: returns the PEN account (currency matches), NOT the USD one
+        #expect(resolved === penAccount)
+        #expect(resolved !== usdAccount)
+    }
+
     // MARK: - Singleton
 
     @Test func singleton_isSameInstance() {

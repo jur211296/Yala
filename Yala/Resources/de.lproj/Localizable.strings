@@ -3517,6 +3517,7 @@
 "groups.bridge.errorTransaction" = "Dein persönlicher Eintrag wird automatisch wiederholt.";
 "groups.bridge.errorTransactionUpdate" = "Die Änderung wurde nicht in deinem persönlichen Eintrag übernommen. Wir versuchen es erneut.";
 "groups.bridge.errorDelete" = "Der persönliche Eintrag der Ausgabe konnte nicht gelöscht werden.";
+"groups.bridge.errorNoAccounts" = "Du hast noch keine Konten eingerichtet. Erstelle zuerst eines.";
 "groups.sync.errorAcceptShare" = "Wir konnten den Beitritt nicht abschließen. Versuche es erneut.";
 "groups.sync.errorMemberSetup" = "Du bist beigetreten, aber es gab ein Problem mit deiner Identität in der Gruppe. Öffne die App neu.";
 

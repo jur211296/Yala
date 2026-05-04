@@ -3520,6 +3520,7 @@
 "groups.bridge.errorTransaction" = "個人の記録は自動的に再試行されます。";
 "groups.bridge.errorTransactionUpdate" = "変更は個人の記録に反映されませんでした。もう一度試みます。";
 "groups.bridge.errorDelete" = "個人の記録を削除できませんでした。";
+"groups.bridge.errorNoAccounts" = "口座が設定されていません。先に1つ作成してください。";
 "groups.sync.errorAcceptShare" = "グループへの参加を完了できませんでした。もう一度お試しください。";
 "groups.sync.errorMemberSetup" = "グループに参加しましたが、識別情報に問題があります。アプリを再起動してください。";
 

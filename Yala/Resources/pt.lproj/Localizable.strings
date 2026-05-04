@@ -3517,6 +3517,7 @@
 "groups.bridge.errorTransaction" = "O teu registo pessoal será automaticamente repetido.";
 "groups.bridge.errorTransactionUpdate" = "A alteração não se refletiu no teu registo pessoal. Tentaremos de novo.";
 "groups.bridge.errorDelete" = "Não foi possível eliminar o registo pessoal do gasto.";
+"groups.bridge.errorNoAccounts" = "Ainda não tens contas configuradas. Cria uma primeiro.";
 "groups.sync.errorAcceptShare" = "Não conseguimos completar a tua entrada no grupo. Tenta de novo.";
 "groups.sync.errorMemberSetup" = "Entraste, mas houve um problema com a tua identidade no grupo. Reabre a app.";
 
