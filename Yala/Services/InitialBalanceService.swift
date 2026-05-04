@@ -95,19 +95,29 @@ import SwiftData
     ) -> TransactionItem {
         let date = calculateInitialBalanceDate(for: account, allTransactions: allTransactions)
 
-        // Delete existing initial balance if present
-        // (deleting + inserting ensures @Query detects the change)
-        if let existing = findInitialBalanceTransaction(for: account, in: context) {
-            context.delete(existing)
+        // Delete ALL existing initial balance transactions for this account.
+        // Defensivo ante eventuales duplicados ("zombies") creados por bugs
+        // anteriores; también garantiza idempotencia en re-ejecuciones.
+        let zombies = allTransactions.filter {
+            $0.account?.persistentModelID == account.persistentModelID
+                && $0.balanceAdjustmentType == typeInitialBalance
+        }
+        for zombie in zombies {
+            context.delete(zombie)
         }
 
-        // Create new initial balance transaction
+        // Create new initial balance transaction.
+        // amountInPreferredCurrency / preferredCurrencyCode son placeholders —
+        // se sobrescriben con valores correctos via recalculatePreferredCurrency
+        // post-insert (necesario en multi-divisa: si la moneda preferida del
+        // usuario != moneda nativa de la cuenta, el snapshot debe estar en
+        // moneda preferida con TC del día).
         let transaction = TransactionItem(
             date: date,
             amount: amount,
             currencyCode: account.currencyCode,
             note: L10n.Account.initialBalanceNote,
-            amountInPreferredCurrency: amount,  // Will be updated by recalculation
+            amountInPreferredCurrency: amount,
             preferredCurrencyCode: account.currencyCode
         )
         transaction.account = account
@@ -115,6 +125,7 @@ import SwiftData
         transaction.balanceAdjustmentType = typeInitialBalance
 
         context.insert(transaction)
+        transaction.recalculatePreferredCurrency(context: context)
         return transaction
     }
 
@@ -136,6 +147,9 @@ import SwiftData
 
         let note = "\(L10n.Account.adjustmentNote) - \(dateString)"
 
+        // amountInPreferredCurrency / preferredCurrencyCode son placeholders —
+        // se sobrescriben via recalculatePreferredCurrency post-insert (mismo
+        // motivo que setInitialBalance).
         let transaction = TransactionItem(
             date: date,
             amount: adjustmentAmount,
@@ -149,6 +163,7 @@ import SwiftData
         transaction.balanceAdjustmentType = typeAdjustment
 
         context.insert(transaction)
+        transaction.recalculatePreferredCurrency(context: context)
         return transaction
     }
 
