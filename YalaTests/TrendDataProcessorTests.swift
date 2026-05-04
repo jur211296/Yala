@@ -445,10 +445,10 @@ struct TrendDataProcessorTests {
         #expect(result.yDomain.lowerBound <= liveBalance)
     }
 
-    @Test func processTrendData_liveAnchor_dateIsApproximatelyToday() {
-        // El liveAnchor.date es Date.now (no last.date + 1 bucket): permite
-        // que paddedXDomain de la View incluya today directamente y posiciona
-        // el dot exactamente en el "hoy" del usuario.
+    @Test func processTrendData_liveAnchor_dateIsStartOfToday() {
+        // El liveAnchor.date es startOfDay(Date.now): estabilizado para que
+        // PanelTrendData Equatable mantenga su cache entre renders (Date.now
+        // a microsegundos invalidaría la struct cada vez).
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let interval = DateInterval(
@@ -467,11 +467,33 @@ struct TrendDataProcessorTests {
             currencyCode: "PEN",
             liveBalanceOverride: 500
         )
-        let anchor = try? #require(result.liveAnchor)
-        if let anchorDate = anchor?.date {
-            let delta = abs(anchorDate.timeIntervalSinceNow)
-            #expect(delta < 5)  // tolerancia por delay del test
-        }
+        let expectedDate = calendar.startOfDay(for: Date.now)
+        #expect(result.liveAnchor?.date == expectedDate)
+    }
+
+    @Test func processTrendData_liveAnchor_dateIsStableAcrossCalls() {
+        // Dos llamadas consecutivas con el mismo input deben producir el mismo
+        // liveAnchor.date — invariante necesaria para que el guard
+        // `if result.liveAnchor != trendLiveAnchor` filtre no-ops.
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let interval = DateInterval(
+            start: today,
+            end: calendar.date(byAdding: .day, value: 1, to: today)!
+        )
+        let tx = makeTransaction(amount: 100, amountInPreferred: 100, date: today)
+
+        let r1 = TrendDataProcessor.processTrendData(
+            transactions: [tx], accounts: [], metric: .balance,
+            period: .thisMonth, grouping: .day, interval: interval,
+            currencyCode: "PEN", liveBalanceOverride: 500
+        )
+        let r2 = TrendDataProcessor.processTrendData(
+            transactions: [tx], accounts: [], metric: .balance,
+            period: .thisMonth, grouping: .day, interval: interval,
+            currencyCode: "PEN", liveBalanceOverride: 500
+        )
+        #expect(r1.liveAnchor == r2.liveAnchor)
     }
 
     @Test func processTrendData_emptyRawPoints_noLiveAnchor() {

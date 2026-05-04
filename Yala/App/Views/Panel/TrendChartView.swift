@@ -134,24 +134,9 @@ struct TrendChartView: View {
             // Marker for "Today" (omitted entirely in compact mode)
             todayMarker(today: today)
 
-            // Dot suelto del saldo vivo (LiveBalanceCalculator). Anillo via
-            // doble PointMark — añade el VALOR al contexto temporal del
-            // todayMarker. En compact se omite para preservar el chart limpio.
-            if let anchor = liveAnchor, !compact, paddedXDomain.contains(anchor.date) {
-                PointMark(
-                    x: .value(L10n.Common.date, anchor.date),
-                    y: .value(L10n.Common.amount, anchor.value)
-                )
-                .symbolSize(160)
-                .foregroundStyle(primaryLineColor)
-
-                PointMark(
-                    x: .value(L10n.Common.date, anchor.date),
-                    y: .value(L10n.Common.amount, anchor.value)
-                )
-                .symbolSize(80)
-                .foregroundStyle(.thCard)
-            }
+            // Dot del saldo vivo en `today` — añade el VALOR al contexto
+            // temporal del todayMarker (que añade el texto "Hoy").
+            liveAnchorMarker(liveAnchor)
 
             // Average line
             averageLineMarks
@@ -301,6 +286,29 @@ struct TrendChartView: View {
     }
 
     // MARK: - Smart Axis Labels
+
+    /// Live anchor — anillo (PointMark exterior + interior color card) en la
+    /// fecha del anchor. Omitido en compact y cuando la fecha cae fuera del
+    /// dominio visible. Sin annotation propia: el `todayMarker` ya marca el
+    /// contexto temporal con texto "Hoy" en card flotante.
+    @ChartContentBuilder
+    private func liveAnchorMarker(_ anchor: PanelViewModel.BarPoint?) -> some ChartContent {
+        if let anchor = anchor, !compact, paddedXDomain.contains(anchor.date) {
+            PointMark(
+                x: .value(L10n.Common.date, anchor.date),
+                y: .value(L10n.Common.amount, anchor.value)
+            )
+            .symbolSize(160)
+            .foregroundStyle(trendType.color)
+
+            PointMark(
+                x: .value(L10n.Common.date, anchor.date),
+                y: .value(L10n.Common.amount, anchor.value)
+            )
+            .symbolSize(80)
+            .foregroundStyle(.thCard)
+        }
+    }
 
     /// Today marker — omitted when `compact` OR when `today` falls outside the
     /// chart's X-axis range (no point rendering a marker the user can't see).

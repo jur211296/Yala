@@ -213,29 +213,28 @@ struct TrendDataProcessor {
             chartPoints = rawPoints
         }
 
-        // 5.5. Construye el liveAnchor (dot suelto "hoy") cuando aplica. La
-        //      curva intermedia conserva sus TCs históricos sin step — el
-        //      dot lo renderiza la View aparte en `Date.now`.
+        // 5.5. Construye el liveAnchor (dot suelto "hoy") cuando aplica.
+        //      `startOfDay` estabiliza el `BarPoint` para que `PanelTrendData`
+        //      Equatable mantenga su cache (sin esto, cada render cambia la
+        //      fecha por microsegundos e invalida toda la struct observable).
         let liveAnchor: PanelViewModel.BarPoint?
         if let liveBalance = liveBalanceOverride, metric == .balance, !rawPoints.isEmpty {
-            liveAnchor = PanelViewModel.BarPoint(date: Date.now, value: liveBalance)
+            let anchorDate = calendar.startOfDay(for: Date.now)
+            liveAnchor = PanelViewModel.BarPoint(date: anchorDate, value: liveBalance)
         } else {
             liveAnchor = nil
         }
 
-        // KPI finalBalance: saldo vivo si hay anchor, sino último punto histórico.
         let finalBalance = liveAnchor?.value ?? rawPoints.last?.value ?? 0
 
-        // 6. Calculate Y domain based on raw points; extiende para incluir el
-        //    liveAnchor si cae fuera del rango histórico (sino quedaría clipped).
+        // 6. yDomain: extiende para incluir el liveAnchor si cae fuera del
+        //    rango histórico (sino quedaría clipped al renderizarse).
         var yDomain = TrendProcessingHelper.calculateYDomain(
             for: rawPoints,
             isExpense: metric == .expense
         )
         if let anchorValue = liveAnchor?.value {
-            let lower = min(yDomain.lowerBound, anchorValue)
-            let upper = max(yDomain.upperBound, anchorValue)
-            yDomain = lower...upper
+            yDomain = expand(yDomain, toInclude: anchorValue)
         }
 
         return TrendProcessingResult(
@@ -250,6 +249,12 @@ struct TrendDataProcessor {
     }
 
     // MARK: - Private Helpers
+
+    private static func expand(
+        _ range: ClosedRange<Double>, toInclude value: Double
+    ) -> ClosedRange<Double> {
+        min(range.lowerBound, value)...max(range.upperBound, value)
+    }
 
     /// Fill balance buckets with running balance calculation
     private static func fillBalanceBuckets(
