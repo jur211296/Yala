@@ -33,12 +33,9 @@ struct SubcategoriesPieWidget: View {
     var customRange: DateInterval? = nil
     var previousTotalAmount: Double? = nil
     var comparisonMode: ComparisonMode = .month
-    var showVariationHeader: Bool = false  // Always show variation header (with N/A if no data)
-
-    // Check if variation header should be shown
-    private var showComparison: Bool {
-        showVariationHeader  // Show header even when previousAmount is nil (displays N/A)
-    }
+    /// Show header even when `previousAmount` is nil (renders N/A).
+    var showVariationHeader: Bool = false
+    var variationDisplay: VariationDisplayConfig = .full
 
     // Computed Properties
     private var totalExpense: Double {
@@ -94,7 +91,7 @@ struct SubcategoriesPieWidget: View {
             maxHeight: .infinity,
             alignment: .topLeading
         )
-        .solidCard(radius: DS.Radius.xl)
+        .solidCard(radius: size == .small ? DS.Panel.smallWidgetRadius : DS.Panel.widgetRadius)
         .frame(height: size == .small ? WidgetSize.smallHeight : nil)
     }
 
@@ -492,7 +489,7 @@ struct SubcategoriesPieWidget: View {
 
     private var headerView: some View {
         Group {
-            if showComparison {
+            if showVariationHeader {
                 PieChartVariationHeader(
                     title: L10n.Widget.distributionBySubcategory,
                     totalAmount: totalExpense,  // Use total (not filtered) for consistent comparison
@@ -501,6 +498,7 @@ struct SubcategoriesPieWidget: View {
                     period: period,
                     customRange: customRange,
                     comparisonMode: comparisonMode,
+                    variationDisplay: variationDisplay,
                     onShowDetail: onShowDetail,
                     titleAccessory: AnyView(
                         WidgetHeaderInfoSlot(

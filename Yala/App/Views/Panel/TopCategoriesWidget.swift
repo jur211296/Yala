@@ -54,6 +54,7 @@ struct TopCategoriesWidget: View {
     var period: DetailPeriod = .thisMonth
     var previousTotalAmount: Double? = nil
     var showVariationHeader: Bool = false
+    var variationDisplay: VariationDisplayConfig = .full
 
     private var totalAmount: Double {
         categories.reduce(0) { $0 + $1.amount }
@@ -100,7 +101,7 @@ struct TopCategoriesWidget: View {
             maxHeight: .infinity,
             alignment: .topLeading
         )
-        .solidCard(padding: DS.Card.paddingCompact)
+        .panelCard(small: size == .small)
         .frame(height: size == .small ? WidgetSize.smallHeight : nil)
     }
 
@@ -139,7 +140,6 @@ struct TopCategoriesWidget: View {
                     }
                 }
 
-                // Total amount with vs comparison (only for medium/large with variation header)
                 if showVariationHeader && size != .small && !categories.isEmpty {
                     HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                         Text(appPreferences.currency(totalAmount, currencyCode: currencyCode))
@@ -148,7 +148,7 @@ struct TopCategoriesWidget: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
 
-                        if let prevAmount = previousTotalAmount {
+                        if variationDisplay.showsPreviousAmountLabel, let prevAmount = previousTotalAmount {
                             Text("vs \(appPreferences.number(prevAmount))")
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.thSecondaryText)
@@ -166,7 +166,7 @@ struct TopCategoriesWidget: View {
                 VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                     VariationChip(variation: variation, size: .medium)
 
-                    if !comparisonText.isEmpty {
+                    if variationDisplay.showsComparisonPeriodLabel && !comparisonText.isEmpty {
                         Text(comparisonText)
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.secondary)
@@ -309,12 +309,7 @@ struct TopCategoriesWidget: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
 
-                Text(formattedPercentage(summary.percentage))
-                    .font(DS.Typography.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(color)
-                    .lineLimit(1)
-                    .frame(width: 40, alignment: .trailing)
+                Spacer(minLength: 0)
             }
         }
         .opacity(shouldDim ? 0.3 : 1.0)

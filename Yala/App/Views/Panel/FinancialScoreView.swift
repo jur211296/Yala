@@ -25,7 +25,7 @@ struct FinancialScoreView: View {
             bodyContent
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .solidCard(padding: DS.Spacing.xl)
+        .solidCard(padding: DS.Spacing.xl, radius: DS.Panel.widgetRadius)
         .sheet(item: $presentedSheet) { kind in
             FinancialScoreDetailSheet(
                 kind: kind,
@@ -49,9 +49,12 @@ struct FinancialScoreView: View {
                 Button {
                     presentedSheet = .total
                 } label: {
-                    Image(systemName: "info.circle")
-                        .font(DS.Typography.labelSmall)
-                        .foregroundStyle(.secondary)
+                    Image(systemName: "questionmark")
+                        .font(DS.Typography.captionSmall)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.primary)
+                        .frame(width: DS.Panel.widgetAccessorySize, height: DS.Panel.widgetAccessorySize)
+                        .glassEffect(.regular.interactive(), in: Circle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(L10n.Panel.Health.totalSheetTitle)

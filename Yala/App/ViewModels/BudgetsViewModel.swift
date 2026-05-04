@@ -569,15 +569,17 @@ final class BudgetsViewModel {
     /// (heurística useBudgetCurrency basada en número de cuentas + fallback
     /// a `amountInPreferredCurrency`) era incorrecto cuando la moneda
     /// preferida del usuario != moneda del budget.
+    @MainActor
     static func budgetAmount(
         of tx: TransactionItem,
         in budgetCurrencyCode: String,
-        converter: CurrencyConverting = CurrencyConverter.shared
+        converter: CurrencyConverting? = nil
     ) -> Double {
         if tx.currencyCode == budgetCurrencyCode {
             return tx.amount
         }
-        let converted = converter.convertWithLatestRate(
+        let resolvedConverter = converter ?? CurrencyConverter.shared
+        let converted = resolvedConverter.convertWithLatestRate(
             Decimal(tx.amount),
             from: tx.currencyCode,
             to: budgetCurrencyCode

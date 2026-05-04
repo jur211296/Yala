@@ -119,6 +119,7 @@ private struct PanelCategoriesSection: View {
             selectedCategoryID: viewModel.selectedCategoryID,
             isExcludeMode: viewModel.isExcludeMode,
             onSelectCategory: { id in
+                DS.Haptic.selection()
                 dsWithAnimation(reduceMotion) {
                     viewModel.toggleCategoryFilter(id)
                 }
@@ -128,7 +129,8 @@ private struct PanelCategoriesSection: View {
             headerInfoButton: topCategoriesInfoButton,
             period: viewModel.selectedPeriod,
             previousTotalAmount: viewModel.previousCategoriesTotalAmount,
-            showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
+            showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime,
+            variationDisplay: .panelCompact
         )
     }
 
@@ -170,6 +172,7 @@ private struct PanelSubcategoriesSection: View {
             globalCategoryFilterID: viewModel.selectedCategoryID,
             localCategoryFilterID: $viewModel.subcategoriesWidgetFilter,
             onSelectSubcategory: { subcategoryID in
+                DS.Haptic.selection()
                 dsWithAnimation(reduceMotion) {
                     viewModel.toggleSubcategoryFilterFromPanel(subcategoryID)
                 }
@@ -181,7 +184,8 @@ private struct PanelSubcategoriesSection: View {
             headerInfoButton: topSubcategoriesInfoButton,
             period: viewModel.selectedPeriod,
             previousTotalAmount: viewModel.previousSubcategoriesTotalAmount,
-            showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
+            showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime,
+            variationDisplay: .panelCompact
         )
     }
 
@@ -224,6 +228,7 @@ private struct PanelCategoriesPieSection: View {
             currencyCode: currencyCode,
             selectedCategoryIDs: viewModel.selectedCategoryID.map { Set([$0]) } ?? [],
             onSelectCategory: { id in
+                DS.Haptic.selection()
                 dsWithAnimation(reduceMotion) {
                     viewModel.toggleCategoryFilter(id)
                 }
@@ -234,7 +239,8 @@ private struct PanelCategoriesPieSection: View {
             headerInfoButton: categoriesPieInfoButton,
             period: viewModel.selectedPeriod,
             previousTotalAmount: viewModel.previousCategoriesTotalAmount,
-            showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
+            showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime,
+            variationDisplay: .panelCompact
         )
     }
 
@@ -276,6 +282,7 @@ private struct PanelSubcategoriesPieSection: View {
             selectedCategoryID: viewModel.selectedCategoryID,
             selectedSubcategoryIDs: viewModel.selectedSubcategoryIDs,
             onSelectSubcategory: { subcategoryID in
+                DS.Haptic.selection()
                 dsWithAnimation(reduceMotion) {
                     viewModel.toggleSubcategoryFilterFromPanel(subcategoryID)
                 }
@@ -286,7 +293,8 @@ private struct PanelSubcategoriesPieSection: View {
             headerInfoButton: subcategoriesPieInfoButton,
             period: viewModel.selectedPeriod,
             previousTotalAmount: viewModel.previousSubcategoriesTotalAmount,
-            showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
+            showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime,
+            variationDisplay: .panelCompact
         )
     }
 
@@ -329,6 +337,7 @@ private struct PanelTagsPieSection: View {
             currencyCode: currencyCode,
             selectedTagIDs: viewModel.selectedTags,
             onSelectTag: { id in
+                DS.Haptic.selection()
                 dsWithAnimation(reduceMotion) {
                     viewModel.toggleTagFilter(id)
                 }
@@ -340,7 +349,8 @@ private struct PanelTagsPieSection: View {
             period: viewModel.selectedPeriod,
             customRange: sessionState.customDateRange,
             previousTotalAmount: viewModel.previousTagsTotalAmount,
-            showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime
+            showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime,
+            variationDisplay: .panelCompact
         )
     }
 
@@ -385,6 +395,7 @@ private struct PanelCashFlowSection: View {
                 onShowDetail: { viewModel.navigateToStatistics(.trends) },
                 displayMode: viewModel.trendType,
                 previousAmount: viewModel.cashFlowPreviousNet,
+                variationDisplay: .panelCompact,
                 selectedTransactionNatures: viewModel.selectedTransactionNatures,
                 isExpensesOnlyMode: sessionState.isExpensesOnlyMode,
                 headerInfoButton: cashFlowInfoButton(realSummary: summary)
@@ -474,6 +485,7 @@ private struct PanelNeedTrendSection: View {
             grouping: viewModel.needGrouping,
             interval: viewModel.currentInterval,
             onSelectNeed: { need in
+                DS.Haptic.selection()
                 dsWithAnimation(reduceMotion) {
                     viewModel.toggleNeedFilter(need)
                 }
@@ -483,6 +495,7 @@ private struct PanelNeedTrendSection: View {
             previousTotalAmount: viewModel.previousNeedTotalAmount,
             previousAmountByNeed: viewModel.previousNeedAmounts,
             showVariationHeader: showVariations && viewModel.selectedPeriod != .allTime,
+            variationDisplay: .panelCompact,
             isIncomeMode: isIncomeMode,
             headerInfoButton: needTrendInfoButton
         )

@@ -5,9 +5,8 @@
 //  Gating wrapper: renders `HeroMonthView` only once `PanelViewModel` has
 //  computed the hero payload (otherwise the skeleton flashes an empty card).
 //  Propaga el binding del period picker para que `PanelFilterControlBar`
-//  pueda quedarse en chips-only. Decide el destino del upsellCTA según
-//  el estado del user: Free → sheet de upgrade; Pro sin consent → alert
-//  que activa el consent IA (auto-toggle ON) y dispara la regeneración.
+//  pueda quedarse en chips-only. La frase motivacional y el upsellCTA viven
+//  en `PanelPanoramaSection` (subtítulo de "Tus finanzas" colapsado).
 //
 //  Intentionally NOT a `PanelSectionKind` — the hero is a permanent header
 //  of the Panel, not a thematic section the user can hide.
@@ -19,24 +18,9 @@ struct PanelHeroSection: View {
     @Bindable var viewModel: PanelViewModel
     let sessionState: SessionState
     @Binding var showCustomPeriodPicker: Bool
-    @Environment(AppPreferences.self) private var appPreferences
-
-    /// Single source of truth para el destino del upsellCTA — elimina la
-    /// combinación imposible "ambos true" de dos booleanos separados.
-    private enum UpsellDestination: Identifiable {
-        case upgrade
-        case consent
-        var id: String { String(describing: self) }
-    }
-
-    @State private var upsellDestination: UpsellDestination?
 
     var body: some View {
         if let data = viewModel.heroWidget.data {
-            let isPro = FeatureGateService.shared.isProUser
-            let hasConsent = appPreferences.aiInsightsConsentAccepted
-            let showUpsellCTA = viewModel.heroAISubtitle == nil && (!isPro || !hasConsent)
-
             HeroMonthView(
                 data: data,
                 currencyCode: viewModel.defaultCurrencyCode,
@@ -44,43 +28,11 @@ struct PanelHeroSection: View {
                 customDateRange: sessionState.customDateRange,
                 onSelectPeriod: { sessionState.selectedPeriod = $0 },
                 onCustomPeriodTapped: { showCustomPeriodPicker = true },
-                periodSummary: viewModel.heroPeriodWidget,
-                aiSubtitle: viewModel.heroAISubtitle,
-                showProBadge: viewModel.heroAISubtitle != nil,
-                showUpsellCTA: showUpsellCTA,
-                onUpsellTap: {
-                    TelemetryService.track(.panelHeroCTATap)
-                    upsellDestination = isPro ? .consent : .upgrade
-                }
+                periodSummary: viewModel.heroPeriodWidget
             )
             .contentShape(Rectangle())
             .onTapGesture {
                 sessionState.navigateToDetail(.insights)
-            }
-            .sheet(isPresented: Binding(
-                get: { upsellDestination == .upgrade },
-                set: { if !$0 { upsellDestination = nil } }
-            )) {
-                UpgradePromptSheet(
-                    feature: .smartInsightsAI,
-                    context: .proFeature,
-                    source: "panelHero"
-                )
-            }
-            .alert(
-                L10n.AIConsent.insightsTitle,
-                isPresented: Binding(
-                    get: { upsellDestination == .consent },
-                    set: { if !$0 { upsellDestination = nil } }
-                )
-            ) {
-                Button(L10n.AIConsent.accept) {
-                    appPreferences.acceptAIInsightsConsent()
-                    viewModel.retriggerHeroAI()
-                }
-                Button(L10n.Action.cancel, role: .cancel) {}
-            } message: {
-                Text(L10n.AIConsent.insightsMessage)
             }
         }
     }

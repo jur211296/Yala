@@ -45,7 +45,7 @@ struct ScheduledPaymentsWidget: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .solidCard(padding: DS.Card.paddingCompact)
+        .panelCard(small: size == .small)
         .frame(height: size == .small ? WidgetSize.smallHeight : nil)
     }
 
@@ -69,13 +69,6 @@ struct ScheduledPaymentsWidget: View {
                     smallRing
                         .accessibilityLabel(ringAccessibilityLabel)
                 }
-
-                smallInfoText
-
-                Spacer(minLength: 0)
-
-                filterSelector
-                    .frame(maxWidth: .infinity, alignment: .center)
             }
         }
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
@@ -103,11 +96,6 @@ struct ScheduledPaymentsWidget: View {
                 lineWidth: 7,
                 foreground: smallRingColor
             )
-            Text("\(smallPercentPaid)%")
-                .font(DS.Typography.captionSmall.bold())
-                .foregroundStyle(.primary)
-                .minimumScaleFactor(0.7)
-                .lineLimit(1)
         }
         .frame(width: 56, height: 56)
     }

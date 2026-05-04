@@ -494,9 +494,9 @@ final class AppPreferences {
     }
 
     /// P20-11: whether the Cuentas section is currently collapsed. Default
-    /// is `false` (expanded on first open). Synced via iCloud KV so the
+    /// is `true` (collapsed on first open). Synced via iCloud KV so the
     /// collapse state follows the user across devices.
-    var panelAccountsCollapsed: Bool = false {
+    var panelAccountsCollapsed: Bool = true {
         didSet {
             guard oldValue != panelAccountsCollapsed else { return }
             persistBool(panelAccountsCollapsed, forKey: Keys.panelAccountsCollapsed, synced: true)
@@ -907,7 +907,7 @@ final class AppPreferences {
             panelSectionsOrder = value
         }
         panelPrefsMigratedV2 = defaults.bool(forKey: Keys.panelPrefsMigratedV2)
-        panelAccountsCollapsed = defaults.bool(forKey: Keys.panelAccountsCollapsed)
+        panelAccountsCollapsed = loadBool(Keys.panelAccountsCollapsed, defaultIfMissing: true)
 
         if let stored = defaults.string(forKey: Keys.sankeyLabelMode),
            let mode = SankeyLabelMode(rawValue: stored) {
@@ -930,6 +930,15 @@ final class AppPreferences {
     private func parseList(_ stored: String?) -> [String]? {
         guard let stored else { return nil }
         return stored.isEmpty ? [] : stored.split(separator: ",").map { String($0) }
+    }
+
+    /// Lee un Bool del defaults distinguiendo "no escrito" de "false explícito".
+    /// Necesario cuando el default deseado no es `false` (UserDefaults.bool
+    /// devuelve `false` para keys ausentes).
+    private func loadBool(_ key: String, defaultIfMissing: Bool) -> Bool {
+        defaults.object(forKey: key) != nil
+            ? defaults.bool(forKey: key)
+            : defaultIfMissing
     }
 
     // MARK: - Persistence Helpers

@@ -128,8 +128,7 @@
 "panel.hero.kpi.tight %@ %@ %d" = "本月有点紧但可控,一步一步来。";
 "panel.hero.kpi.overBudget %@ %@" = "明天重新开始,一切井然有序。";
 
-"panel.hero.proBadge" = "Pro";
-"panel.hero.upsellCTA" = "用 AI 让它属于你";
+"panel.hero.upsellCTA" = "用 AI 个性化你的消息";
 "panel.hero.availableLabel" = "可用";
 
 // MARK: - Trend Widget

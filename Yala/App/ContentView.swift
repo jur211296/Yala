@@ -790,6 +790,7 @@ struct MainTabView: View {
                 }
             }
             .tint(theme.accent)
+            .tabBarMinimizeBehavior(.onScrollDown)
             .transaction { $0.animation = nil }
             .sheet(isPresented: $showDowngradeResolution) {
                 DowngradeResolutionSheet(

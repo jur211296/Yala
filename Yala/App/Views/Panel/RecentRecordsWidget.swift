@@ -50,7 +50,7 @@ struct RecentRecordsWidget: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .solidCard(padding: DS.Card.paddingCompact)
+        .panelCard()
     }
 
     // MARK: - Header

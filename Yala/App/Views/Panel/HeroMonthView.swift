@@ -3,12 +3,11 @@
 //  Yala
 //
 //  Hero del Panel (PP2-01). Sin card y edge-to-edge — aprovecha todo el
-//  ancho del Panel. Tres secciones verticales: fila superior con el
-//  saludo a tamaño `title`, el Pro badge y el `TrendsPeriodMenu`
-//  alineados a la misma altura (mismo padding/font que el selector);
-//  KPI protagonista (aiSubtitle LLM cuando está disponible, fallback
-//  rule-based con cifras concretas en markdown bold) en `subheadline`;
-//  upsellCTA opcional para usuarios Free o Pro sin consent IA.
+//  ancho del Panel. Fila superior con saludo + `TrendsPeriodMenu`, y resumen
+//  "Disponible · Período". La frase motivacional (aiSubtitle / fallback
+//  rule-based) y el upsellCTA "Personaliza tu mensaje con IA" viven en el
+//  subtítulo de "Tus finanzas" — la lógica del KPI se expone vía
+//  `HeroMonthView.kpiText(...)` para que el callsite ahí pueda reusarla.
 //
 //  Amounts use `appPreferences.currency(...)`, which is reactive: any change
 //  to decimalPlaces or currencyDisplayFormat invalidates the view immediately.
@@ -24,17 +23,10 @@ struct HeroMonthView: View {
     let onSelectPeriod: (DetailPeriod) -> Void
     let onCustomPeriodTapped: () -> Void
 
-    /// Income/expense del período actual del Panel — alimentan el card
-    /// "Disponible · Período". Independiente de `data.income/expense` (que
+    /// Income/expense del período actual del Panel — alimentan el resumen
+    /// flotante "Disponible · Período". Independiente de `data.income/expense` (que
     /// siempre son del mes calendario para anclar la frase motivacional).
     var periodSummary: PanelHeroPeriodData = .init()
-
-    /// Mensaje IA ya resuelto (cache hit o API success). Nil ⇒ fallback
-    /// rule-based inmediato, sin spinner ni flash-blank.
-    var aiSubtitle: String? = nil
-    var showProBadge: Bool = false
-    var showUpsellCTA: Bool = false
-    var onUpsellTap: () -> Void = {}
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(SessionState.self) private var sessionState
@@ -43,23 +35,20 @@ struct HeroMonthView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             topRow
-            kpi
             summaryRow
-            if showUpsellCTA { upsellCTA }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)
-        .accessibilityLabel(voiceoverLabel)
+        .accessibilityLabel(chipText)
     }
 
-    // MARK: - Top row (chip + pro badge + period selector inline)
+    // MARK: - Top row (saludo + period selector inline)
 
     private var topRow: some View {
         HStack(spacing: DS.Spacing.xs) {
             chip
             Spacer(minLength: DS.Spacing.sm)
-            if showProBadge { proBadge }
             TrendsPeriodMenu(
                 selectedPeriod: selectedPeriod,
                 customDateRange: customDateRange,
@@ -81,46 +70,11 @@ struct HeroMonthView: View {
         }
     }
 
-    /// Mismo font (`labelSmall`), mismo padding (`md` horizontal / `sm`
-    /// vertical) y mismo `glassEffect + Capsule` que `PeriodSelectorLabel`,
-    /// así el badge queda a la misma altura y pegado al selector.
-    private var proBadge: some View {
-        HStack(spacing: DS.Spacing.xxs) {
-            Image(systemName: "sparkles")
-                .font(DS.Typography.labelSmall)
-            Text(L10n.Panel.Hero.proBadge)
-                .font(DS.Typography.labelSmall)
-        }
-        .foregroundStyle(.primary)
-        .padding(.horizontal, DS.Spacing.md)
-        .padding(.vertical, DS.Spacing.sm)
-        .glassEffect(.regular, in: Capsule())
-        .accessibilityLabel(L10n.Panel.Hero.proBadge)
-    }
-
-    // MARK: - KPI (frase motivacional)
-
-    /// Frase motivacional alineada a la izquierda, debajo del saludo. Funciona
-    /// como acento conversacional antes del bloque numérico. Si hay
-    /// `aiSubtitle` (Pro + consent), gana sobre el rule-based.
-    private var kpi: some View {
-        Text(kpiAttributedText)
-            .font(DS.Typography.body)
-            .foregroundStyle(.primary)
-            .minimumScaleFactor(0.85)
-            .lineLimit(3)
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, DS.Spacing.sm)
-            .padding(.bottom, DS.Spacing.xs)
-            .animation(.easeInOut(duration: 0.3), value: aiSubtitle)
-    }
-
-    // MARK: - Summary row (card "Disponible · Período" + monto + chips)
+    // MARK: - Summary row ("Disponible · Período" + monto + chips)
     //
-    // Card con título centrado arriba que desambigua el monto + monto
-    // protagonista + chips ingresos/gastos tap-to-filter (escriben a
-    // `sessionState.selectedTransactionNatures`, propagan al resto del Panel
-    // via SSOT). Opacity 0.3 cuando el otro filtro está activo.
+    // Los chips income/expense escriben a `sessionState.selectedTransactionNatures`
+    // — el filtro propaga al resto del Panel via SSOT. Opacity 0.3 cuando el
+    // otro filtro está activo.
 
     private var summaryRow: some View {
         @Bindable var sessionState = sessionState
@@ -130,12 +84,10 @@ struct HeroMonthView: View {
         let hasNatureFilter = isIncomeFiltered || isExpenseFiltered
 
         return VStack(alignment: .center, spacing: DS.Spacing.sm) {
-            // Título de card: "Disponible · Este mes" (primary).
             Text("\(L10n.Panel.Hero.availableLabel) · \(selectedPeriod.displayName)")
                 .font(DS.Typography.subheadline)
-                .foregroundStyle(.primary)
+                .foregroundStyle(.secondary)
 
-            // Disponible del período — protagonista.
             Text(appPreferences.currency(periodSummary.available, currencyCode: currencyCode))
                 .font(DS.Typography.largeTitle)
                 .foregroundStyle(.primary)
@@ -144,6 +96,7 @@ struct HeroMonthView: View {
                 // Income — oculto en expenses-only mode (mismo gating que RecordsTabView).
                 if !sessionState.isExpensesOnlyMode {
                     Button {
+                        DS.Haptic.selection()
                         dsWithAnimation(reduceMotion) {
                             if isIncomeFiltered {
                                 sessionState.selectedTransactionNatures.removeAll()
@@ -168,6 +121,7 @@ struct HeroMonthView: View {
 
                 // Expense — siempre visible.
                 Button {
+                    DS.Haptic.selection()
                     dsWithAnimation(reduceMotion) {
                         if isExpenseFiltered {
                             // En expenses-only mode no se permite quitar el filtro.
@@ -194,53 +148,9 @@ struct HeroMonthView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .solidCard(padding: DS.Card.paddingCompact)
+        .padding(.vertical, DS.Spacing.sm)
+        .contentShape(Rectangle())
     }
-
-    /// Parsea markdown (`**bold**`) si aplica; cae al string plano cuando
-    /// el parser no puede (aiSubtitle ya viene sin markdown en producción).
-    private var kpiAttributedText: AttributedString {
-        let raw = kpiText
-        if let parsed = try? AttributedString(markdown: raw) {
-            return parsed
-        }
-        return AttributedString(raw)
-    }
-
-    // MARK: - Upsell CTA
-
-    /// Visible cuando no hay aiSubtitle y el user aún puede "desbloquearlo"
-    /// (Free → upgrade sheet; Pro sin consent → alert que activa el consent).
-    /// La decisión de destino vive en `PanelHeroSection`.
-    private var upsellCTA: some View {
-        Button(action: onUpsellTap) {
-            HStack(spacing: DS.Spacing.xs) {
-                Image(systemName: "sparkle")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: DS.Gradients.proBadge,
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                Text(L10n.Panel.Hero.upsellCTA)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.primary)
-            }
-            .padding(.horizontal, DS.Spacing.md)
-            .padding(.vertical, DS.Spacing.sm)
-            .glassEffect(.regular.interactive(), in: Capsule())
-            .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .onAppear {
-            TelemetryService.trackOnce(.panelHeroCTAImpression, key: Self.telemetryKey)
-        }
-    }
-
-    private static let telemetryKey = "panelHero"
 
     // MARK: - Copy
 
@@ -250,13 +160,20 @@ struct HeroMonthView: View {
         L10n.Panel.Hero.chipDefault(userName: appPreferences.userName)
     }
 
-    /// SSOT del KPI: LLM cuando disponible, fallback rule-based con cifras
-    /// concretas (income, spent, available, days) y montos en bold markdown.
-    private var kpiText: String {
+    /// SSOT del KPI motivacional: LLM cuando disponible, fallback rule-based
+    /// con cifras concretas (income, spent, available, days). Static para
+    /// poder reusarse desde otras secciones del Panel (subtítulo de "Tus
+    /// finanzas") sin duplicar la lógica.
+    static func kpiText(
+        data: HeroMonthData,
+        aiSubtitle: String?,
+        currencyCode: String,
+        appPreferences: AppPreferences
+    ) -> String {
         if let aiSubtitle, !aiSubtitle.isEmpty { return aiSubtitle }
-        let income = formattedAmount(data.income)
-        let spent = formattedAmount(data.expense)
-        let available = formattedAmount(data.available)
+        let income = appPreferences.currency(data.income, currencyCode: currencyCode)
+        let spent = appPreferences.currency(data.expense, currencyCode: currencyCode)
+        let available = appPreferences.currency(data.available, currencyCode: currencyCode)
         switch data.state {
         case .monthStart:
             return L10n.Panel.Hero.kpiMonthStart(income: income, daysRemaining: data.daysRemaining)
@@ -277,21 +194,6 @@ struct HeroMonthView: View {
         }
     }
 
-    // MARK: - Formatting
-
-    private func formattedAmount(_ value: Double) -> String {
-        appPreferences.currency(value, currencyCode: currencyCode)
-    }
-
-    private var voiceoverLabel: String {
-        var parts: [String] = []
-        if showProBadge { parts.append(L10n.Panel.Hero.proBadge) }
-        parts.append(chipText)
-        // Removemos el markdown para VoiceOver
-        parts.append(kpiText.replacing("**", with: ""))
-        if showUpsellCTA { parts.append(L10n.Panel.Hero.upsellCTA) }
-        return parts.joined(separator: ". ")
-    }
 }
 
 // MARK: - Preview
@@ -320,7 +222,8 @@ struct HeroMonthView: View {
             onSelectPeriod: { _ in },
             onCustomPeriodTapped: {}
         )
-        // Pro + cache hit → aiSubtitle es el KPI protagonista
+        // Estado neutro — la frase motivacional y el upsellCTA viven en
+        // `PanelPanoramaSection`, no en este view.
         HeroMonthView(
             data: HeroMonthData(
                 state: .neutral, income: 4500, expense: 1500,
@@ -330,22 +233,7 @@ struct HeroMonthView: View {
             selectedPeriod: .thisMonth,
             customDateRange: nil,
             onSelectPeriod: { _ in },
-            onCustomPeriodTapped: {},
-            aiSubtitle: "Abril te está yendo bien, Jur. Llevas un ritmo tranquilo — sigue así.",
-            showProBadge: true
-        )
-        // Free — upsellCTA visible
-        HeroMonthView(
-            data: HeroMonthData(
-                state: .neutral, income: 4500, expense: 1500,
-                daysRemaining: 20, daysElapsed: 10
-            ),
-            currencyCode: "PEN",
-            selectedPeriod: .thisMonth,
-            customDateRange: nil,
-            onSelectPeriod: { _ in },
-            onCustomPeriodTapped: {},
-            showUpsellCTA: true
+            onCustomPeriodTapped: {}
         )
     }
     .padding(.vertical)

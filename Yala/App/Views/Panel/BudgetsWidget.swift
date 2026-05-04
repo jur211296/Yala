@@ -63,7 +63,7 @@ struct BudgetsWidget: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .solidCard(padding: DS.Card.paddingCompact)
+        .panelCard(small: size == .small)
         .frame(height: size == .small ? WidgetSize.smallHeight : nil)
     }
 
@@ -110,6 +110,7 @@ struct BudgetsWidget: View {
                 let shouldDim = isAnySelected && (isExcludeMode ? isSelected : !isSelected)
 
                 Button {
+                    DS.Haptic.selection()
                     dsWithAnimation(reduceMotion, .easeInOut(duration: 0.2)) {
                         onSelectBudget?(summary.budget)
                     }
@@ -231,17 +232,12 @@ struct BudgetsWidget: View {
                     .minimumScaleFactor(0.85)
 
                 Spacer(minLength: 0)
-
-                Text(String(format: "%.0f%%", clampedPercentage))
-                    .font(DS.Typography.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(color)
-                    .lineLimit(1)
             }
         }
         .opacity(shouldDim ? 0.3 : 1.0)
         .contentShape(Rectangle())
         .onTapGesture {
+            DS.Haptic.selection()
             onSelectBudget?(summary.budget)
         }
     }

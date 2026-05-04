@@ -26,6 +26,7 @@ struct PieChartVariationHeader: View {
     let period: DetailPeriod
     let customRange: DateInterval?
     let comparisonMode: ComparisonMode
+    var variationDisplay: VariationDisplayConfig = .full
 
     var onShowDetail: (() -> Void)?
 
@@ -68,7 +69,6 @@ struct PieChartVariationHeader: View {
                 }
                 .padding(.bottom, DS.Spacing.xxs)
 
-                // KPI with "vs previous amount"
                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                     Text(formattedCurrency(totalAmount))
                         .font(DS.Typography.headline)
@@ -77,7 +77,9 @@ struct PieChartVariationHeader: View {
                         .minimumScaleFactor(0.7)
 
                     // Show previous period value for comparison (only when showVariations is ON)
-                    if appPreferences.showVariations, let prevAmount = previousAmount {
+                    if variationDisplay.showsPreviousAmountLabel,
+                       appPreferences.showVariations,
+                       let prevAmount = previousAmount {
                         Text("vs \(appPreferences.number(prevAmount))")
                             .font(DS.Typography.caption)
                             .foregroundStyle(.thSecondaryText)
@@ -102,7 +104,7 @@ struct PieChartVariationHeader: View {
                     )
 
                     // Comparison period text
-                    if !comparisonText.isEmpty {
+                    if variationDisplay.showsComparisonPeriodLabel && !comparisonText.isEmpty {
                         Text(comparisonText)
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.secondary)

@@ -33,6 +33,7 @@ struct NeedTrendWidget: View {
     var previousAmountByNeed: [SubcategoryNeed: Double] = [:]
     var showVariationHeader: Bool = false
     var comparisonMode: ComparisonMode = .month
+    var variationDisplay: VariationDisplayConfig = .full
 
     /// When true, shows a message that need classification doesn't apply to income
     var isIncomeMode: Bool = false
@@ -109,6 +110,7 @@ struct NeedTrendWidget: View {
         previousAmountByNeed: [SubcategoryNeed: Double] = [:],
         showVariationHeader: Bool = false,
         comparisonMode: ComparisonMode = .month,
+        variationDisplay: VariationDisplayConfig = .full,
         isIncomeMode: Bool = false,
         headerInfoButton: AnyView? = nil
     ) {
@@ -125,6 +127,7 @@ struct NeedTrendWidget: View {
         self.previousAmountByNeed = previousAmountByNeed
         self.showVariationHeader = showVariationHeader
         self.comparisonMode = comparisonMode
+        self.variationDisplay = variationDisplay
         self.isIncomeMode = isIncomeMode
         self.headerInfoButton = headerInfoButton
     }
@@ -161,7 +164,7 @@ struct NeedTrendWidget: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .solidCard(padding: DS.Card.paddingCompact, radius: DS.Radius.lg)
+        .panelCard(small: true)
         .frame(height: WidgetSize.smallHeight)
     }
 
@@ -188,7 +191,7 @@ struct NeedTrendWidget: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
 
-                if showVariationHeader, let variation {
+                if variationDisplay.showsSmallVariation, showVariationHeader, let variation {
                     VariationChip(
                         variation: variation,
                         size: .small,
@@ -255,7 +258,6 @@ struct NeedTrendWidget: View {
                         )
                     }
 
-                    // Total amount with "vs previous" comparison - only show when NOT in income mode AND has data
                     if !isIncomeMode && !trendPoints.isEmpty {
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                             Text(
@@ -266,8 +268,7 @@ struct NeedTrendWidget: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
 
-                            // Show previous period value for comparison
-                            if let prevAmount = previousTotalAmount {
+                            if variationDisplay.showsPreviousAmountLabel, let prevAmount = previousTotalAmount {
                                 Text("vs \(appPreferences.number(prevAmount))")
                                     .font(DS.Typography.caption)
                                     .foregroundStyle(.thSecondaryText)
@@ -285,7 +286,7 @@ struct NeedTrendWidget: View {
                     VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                         VariationChip(variation: variation, size: .medium)
 
-                        if !comparisonText.isEmpty {
+                        if variationDisplay.showsComparisonPeriodLabel && !comparisonText.isEmpty {
                             Text(comparisonText)
                                 .font(DS.Typography.captionSmall)
                                 .foregroundStyle(.secondary)
@@ -320,7 +321,7 @@ struct NeedTrendWidget: View {
                 chartView
             }
         }
-        .solidCard(padding: DS.Card.paddingCompact, radius: DS.Radius.lg)
+        .panelCard()
     }
 
     @ViewBuilder

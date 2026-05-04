@@ -2,6 +2,26 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>panel.panorama.collapsedSummary</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Masz %1$@ na 1 koncie</string>
+			<key>few</key>
+			<string>Masz %1$@ na %2$d kontach</string>
+			<key>many</key>
+			<string>Masz %1$@ na %2$d kontach</string>
+			<key>other</key>
+			<string>Masz %1$@ na %2$d kontach</string>
+		</dict>
+	</dict>
 	<key>records.deleteConfirmTitle</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

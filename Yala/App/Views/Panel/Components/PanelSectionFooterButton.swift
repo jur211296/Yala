@@ -20,26 +20,32 @@ struct PanelSectionFooterButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(DS.Typography.label)
-                .foregroundStyle(theme.accent)
-                .frame(maxWidth: .infinity)
-                .frame(minHeight: 50)
-                .background(backgroundFill)
-                .clipShape(Capsule())
-                .contentShape(Capsule())
+        Button {
+            DS.Haptic.light()
+            action()
+        } label: {
+            HStack(spacing: DS.Spacing.xs) {
+                Text(title)
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.captionSmall)
+                    .accessibilityHidden(true)
+            }
+            .font(DS.Typography.labelSmall)
+            .foregroundStyle(foregroundStyle)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .frame(minHeight: 36)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityHint(hint)
     }
 
-    private var backgroundFill: some View {
+    private var foregroundStyle: Color {
         switch style {
         case .prominent:
-            Capsule().fill(theme.accent.opacity(0.12))
+            theme.accent
         case .subtle:
-            Capsule().fill(Color.clear)
+            Color.secondary
         }
     }
 }

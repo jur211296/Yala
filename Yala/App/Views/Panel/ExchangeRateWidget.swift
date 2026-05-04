@@ -55,7 +55,7 @@ struct ExchangeRateWidget: View {
             // Content
             contentView
         }
-        .solidCard(radius: DS.Radius.xl)
+        .solidCard(radius: DS.Panel.widgetRadius)
     }
 
     // MARK: - Header
@@ -555,4 +555,3 @@ struct ExchangeRateWidget: View {
         return SmartAxisHelper.formatAxisLabel(for: date, startDate: firstDate, endDate: lastDate)
     }
 }
-

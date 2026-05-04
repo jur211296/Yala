@@ -57,7 +57,7 @@ struct TrendsCarouselWidget: View {
                 trendPage
                     .frame(height: 170)
             }
-            .solidCard(padding: DS.Card.paddingCompact)
+            .panelCard()
         }
     }
 
@@ -83,26 +83,16 @@ struct TrendsCarouselWidget: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                    Text(
-                        appPreferences.currency(trendTotalForCurrentMetric,
-                            currencyCode: currencyCode,
-                            forceSign: viewModel.trendType == .balance
-                        )
+                Text(
+                    appPreferences.currency(trendTotalForCurrentMetric,
+                        currencyCode: currencyCode,
+                        forceSign: viewModel.trendType == .balance
                     )
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.thPrimaryText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-
-                    if let delta = viewModel.periodComparisonWidget.deltaPercent {
-                        VariationChip(
-                            variation: delta,
-                            size: .small,
-                            isExpenseContext: viewModel.trendType == .expense
-                        )
-                    }
-                }
+                )
+                .font(DS.Typography.headline)
+                .foregroundStyle(.thPrimaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
 
                 TrendChartView(
                     trendPoints: viewModel.processedTrendPoints,
@@ -121,7 +111,7 @@ struct TrendsCarouselWidget: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .solidCard(padding: DS.Card.paddingCompact)
+        .panelCard(small: true)
         .frame(height: WidgetSize.smallHeight)
     }
 
@@ -147,15 +137,6 @@ struct TrendsCarouselWidget: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
 
-                        // "vs <previous total>" label — mirrors the CashFlow header pattern.
-                        if let prevTotal = previousKPIValue {
-                            Text("vs \(appPreferences.number(prevTotal))")
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.thSecondaryText)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
-                        }
-
                         // Variation chip right of the "vs" label.
                         variationChip
                     }
@@ -171,15 +152,7 @@ struct TrendsCarouselWidget: View {
         }
     }
 
-    /// Previous-period total for the currently selected metric, used to render the
-    /// "vs …" label next to the KPI. Nil when comparison is unsupported (e.g. `.allTime`).
-    private var previousKPIValue: Double? {
-        let data = viewModel.periodComparisonWidget
-        guard data.supportsComparison else { return nil }
-        return data.previousTotal
-    }
-
-    /// Delta % chip rendered inline to the right of the "vs …" label.
+    /// Delta % chip rendered inline next to the KPI in regular layouts.
     @ViewBuilder
     private var variationChip: some View {
         let data = viewModel.periodComparisonWidget

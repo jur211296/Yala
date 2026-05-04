@@ -32,9 +32,45 @@ struct PanelThematicSection: View {
             PanelSection(
                 title: kind.localizedTitle,
                 onPreferences: onPreferences,
+                onSeeMore: seeMoreAction,
+                seeMoreAccessibilityLabel: seeMoreAccessibilityLabel,
+                seeMoreAccessibilityHint: seeMoreAccessibilityHint,
                 content: { contentView(widgets: widgets) },
                 footer: { footerView() }
             )
+        }
+    }
+
+    // MARK: - "Ver más" inline (chevron)
+
+    private var seeMoreAction: (() -> Void)? {
+        switch kind {
+        case .tendencias:
+            return { viewModel.navigateToStatistics(.trends) }
+        case .distribucion:
+            return { viewModel.navigateToStatistics(.categories) }
+        case .latestRecords:
+            return { sessionState.navigateToRecordsStandalone() }
+        case .planificacion, .tools, .health, .accounts:
+            return nil
+        }
+    }
+
+    private var seeMoreAccessibilityLabel: String? {
+        switch kind {
+        case .tendencias: return L10n.Panel.seeMoreInTrends
+        case .distribucion: return L10n.Panel.seeMoreInDistribution
+        case .latestRecords: return L10n.Panel.seeAllRecords
+        case .planificacion, .tools, .health, .accounts: return nil
+        }
+    }
+
+    private var seeMoreAccessibilityHint: String? {
+        switch kind {
+        case .tendencias: return L10n.Panel.seeMoreHintTrends
+        case .distribucion: return L10n.Panel.seeMoreHintDistribution
+        case .latestRecords: return L10n.Panel.seeMoreHintRecords
+        case .planificacion, .tools, .health, .accounts: return nil
         }
     }
 
@@ -122,31 +158,11 @@ struct PanelThematicSection: View {
         }
     }
 
-    // MARK: - Section-level footer (Tendencias / Distribución / Últimos registros)
-
+    /// Footer vacío a nivel sección — el CTA "ver más" ahora vive como
+    /// chevron inline en el header (`onSeeMore`). Planificación mantiene
+    /// su propio footer por widget vía `planificacionFooter(for:)`.
     @ViewBuilder
     private func footerView() -> some View {
-        switch kind {
-        case .tendencias:
-            PanelSectionFooterButton(
-                title: L10n.Panel.seeMoreInTrends,
-                hint: L10n.Panel.seeMoreHintTrends,
-                action: { viewModel.navigateToStatistics(.trends) }
-            )
-        case .distribucion:
-            PanelSectionFooterButton(
-                title: L10n.Panel.seeMoreInDistribution,
-                hint: L10n.Panel.seeMoreHintDistribution,
-                action: { viewModel.navigateToStatistics(.categories) }
-            )
-        case .latestRecords:
-            PanelSectionFooterButton(
-                title: L10n.Panel.seeAllRecords,
-                hint: L10n.Panel.seeMoreHintRecords,
-                action: { sessionState.navigateToRecordsStandalone() }
-            )
-        case .planificacion, .tools, .health, .accounts:
-            EmptyView()
-        }
+        EmptyView()
     }
 }

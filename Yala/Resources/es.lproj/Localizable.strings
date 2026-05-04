@@ -128,8 +128,7 @@
 "panel.hero.kpi.tight %@ %@ %d" = "Mes ajustado pero manejable, paso a paso.";
 "panel.hero.kpi.overBudget %@ %@" = "Mañana arrancamos fresco, todo en orden.";
 
-"panel.hero.proBadge" = "Pro";
-"panel.hero.upsellCTA" = "Personalízalo con IA";
+"panel.hero.upsellCTA" = "Personaliza tu mensaje con IA";
 "panel.hero.availableLabel" = "Disponible";
 
 // MARK: - Trend Widget

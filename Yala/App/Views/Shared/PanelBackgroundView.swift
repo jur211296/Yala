@@ -69,9 +69,9 @@ struct AnimatedMeshBackground: View {
     }
 
     private static let liquidGlassColors: [Color] = [
-        Color(hex: "050510"), Color(hex: "0E0A24"), Color(hex: "050510"),
-        Color(hex: "0A0818"), Color(hex: "14102E"), Color(hex: "0C0A1C"),
-        Color(hex: "050510"), Color(hex: "0B0918"), Color(hex: "050510"),
+        Color(hex: "05050E"), Color(hex: "0A091A"), Color(hex: "05050E"),
+        Color(hex: "070713"), Color(hex: "100D24"), Color(hex: "080715"),
+        Color(hex: "05050E"), Color(hex: "080714"), Color(hex: "05050E"),
     ]
     private static let indigoColors: [Color] = [
         Color(hex: "0A0A1A"), Color(hex: "1A1040"), Color(hex: "0A0A1A"),
@@ -99,8 +99,8 @@ struct AnimatedMeshBackground: View {
     }
 
     private func meshGradient(time: Double) -> MeshGradient {
-        let speed = 0.04  // ~25s full cycle
-        let amp: Float = 0.08
+        let speed = 0.03
+        let amp: Float = 0.06
         let t = time * speed * .pi * 2
 
         let cx = Float(0.5) + amp * Float(sin(t))

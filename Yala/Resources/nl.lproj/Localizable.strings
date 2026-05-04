@@ -128,8 +128,7 @@
 "panel.hero.kpi.tight %@ %@ %d" = "Krappe maand maar haalbaar, stap voor stap.";
 "panel.hero.kpi.overBudget %@ %@" = "Morgen beginnen we opnieuw, alles komt goed.";
 
-"panel.hero.proBadge" = "Pro";
-"panel.hero.upsellCTA" = "Maak het van jou met AI";
+"panel.hero.upsellCTA" = "Personaliseer je bericht met AI";
 "panel.hero.availableLabel" = "Beschikbaar";
 
 // MARK: - Trend Widget

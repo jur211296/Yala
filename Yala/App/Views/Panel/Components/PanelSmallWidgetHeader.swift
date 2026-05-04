@@ -33,7 +33,10 @@ struct PanelSmallWidgetHeader: View {
             Spacer(minLength: 0)
 
             if let action {
-                Button(action: action) {
+                Button {
+                    DS.Haptic.light()
+                    action()
+                } label: {
                     Image(systemName: "chevron.right")
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)

@@ -531,6 +531,15 @@ enum L10n {
         static var panoramaExpandedValue: String {
             ls("panel.panorama.expandedValue", comment: "Accessibility value when Tu panorama is expanded")
         }
+        /// Resumen mostrado bajo el título de Tus finanzas cuando la sección
+        /// está colapsada. Pluraliza por número de cuentas activas.
+        static func panoramaCollapsedSummary(_ totalBalance: String, accounts: Int) -> String {
+            String.localizedStringWithFormat(
+                ls("panel.panorama.collapsedSummary", comment: "Subtitle under panorama title when collapsed: balance + active account count"),
+                totalBalance,
+                accounts
+            )
+        }
 
         static var weekdaySubtitle: String {
             ls("panel.weekdaySubtitle", comment: "Panel weekday widget subtitle — follows selected period")
@@ -764,9 +773,6 @@ enum L10n {
             }
 
             // MARK: AI Hero
-            static var proBadge: String {
-                ls("panel.hero.proBadge", comment: "Hero Pro badge — shown when subtitle is AI-generated")
-            }
             /// CTA inline visible cuando no hay aiSubtitle disponible y el user
             /// aún puede "desbloquearlo" (Free → upgrade; Pro sin consent →
             /// activar el toggle de Insights IA en Perfil).

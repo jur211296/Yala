@@ -24,13 +24,13 @@ struct WidgetInfoButton<Preview: View>: View {
     var body: some View {
         if showWidgetHints && !isPreviewMode {
             Button {
+                DS.Haptic.light()
                 showSheet = true
             } label: {
-                Image(systemName: "info.circle")
-                    .font(DS.Typography.labelSmall)
-                    .foregroundStyle(.secondary)
+                WidgetHelpCircleLabel()
             }
             .buttonStyle(.plain)
+            .widgetHelpCircleAlignment()
             .accessibilityLabel(kind.title)
             .sheet(isPresented: $showSheet) {
                 WidgetInfoSheet(

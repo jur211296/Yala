@@ -23,6 +23,7 @@ struct CashFlowWidget: View {
     // Period Comparison (optional)
     let previousAmount: Double?
     let comparisonPeriodText: String?
+    let variationDisplay: VariationDisplayConfig
 
     // Filter state for dimming non-selected bars
     let selectedTransactionNatures: Set<TransactionNature>
@@ -58,6 +59,7 @@ struct CashFlowWidget: View {
         displayMode: TrendType? = nil,
         previousAmount: Double? = nil,
         comparisonPeriodText: String? = nil,
+        variationDisplay: VariationDisplayConfig = .full,
         selectedTransactionNatures: Set<TransactionNature> = [],
         showInfoHint: Bool = true,
         isExpensesOnlyMode: Bool = false,
@@ -73,6 +75,7 @@ struct CashFlowWidget: View {
         self.displayMode = displayMode
         self.previousAmount = previousAmount
         self.comparisonPeriodText = comparisonPeriodText
+        self.variationDisplay = variationDisplay
         self.selectedTransactionNatures = selectedTransactionNatures
         self.showInfoHint = showInfoHint
         self.isExpensesOnlyMode = isExpensesOnlyMode
@@ -355,7 +358,7 @@ struct CashFlowWidget: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
 
-                    if previousAmount != nil {
+                    if variationDisplay.showsSmallVariation && previousAmount != nil {
                         VariationChip(
                             currentAmount: summary.netFlow,
                             previousAmount: previousAmount,
@@ -370,7 +373,7 @@ struct CashFlowWidget: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .solidCard(padding: DS.Card.paddingCompact, radius: DS.Radius.lg)
+        .panelCard(small: true)
         .frame(height: WidgetSize.smallHeight)
     }
 
@@ -424,7 +427,6 @@ struct CashFlowWidget: View {
                     }
                     .padding(.bottom, DS.Spacing.xxs)
 
-                    // KPI with "vs previous amount" - only show when we have data
                     if !hasNoData {
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                             Text(
@@ -436,8 +438,7 @@ struct CashFlowWidget: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
 
-                            // Show previous period value for comparison
-                            if let prevAmount = previousAmount {
+                            if variationDisplay.showsPreviousAmountLabel, let prevAmount = previousAmount {
                                 Text("vs \(appPreferences.number(prevAmount))")
                                     .font(DS.Typography.caption)
                                     .foregroundStyle(.thSecondaryText)
@@ -461,7 +462,9 @@ struct CashFlowWidget: View {
                             isExpenseContext: displayMode == .expense
                         )
 
-                        if let periodText = comparisonPeriodText, !periodText.isEmpty {
+                        if variationDisplay.showsComparisonPeriodLabel,
+                           let periodText = comparisonPeriodText,
+                           !periodText.isEmpty {
                             Text(periodText)
                                 .font(DS.Typography.captionSmall)
                                 .foregroundStyle(.thSecondaryText)
@@ -479,7 +482,7 @@ struct CashFlowWidget: View {
                 contentView
             }
         }
-        .solidCard(radius: DS.Radius.xl)
+        .solidCard(radius: DS.Panel.widgetRadius)
     }
 
     @State private var selectedDate: Date?

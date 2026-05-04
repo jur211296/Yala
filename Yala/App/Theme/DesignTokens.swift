@@ -316,6 +316,25 @@ enum DS {
         static let borderOpacity: Double = 0.1
     }
 
+    // MARK: - Panel
+
+    /// Panel-specific visual tokens. These keep the home screen calmer than
+    /// larger detail/report surfaces without changing the global card system.
+    /// El padding "regular" reusa `DS.Card.paddingCompact` vía el helper
+    /// `View.panelCard(small:)`.
+    enum Panel {
+        static let smallWidgetPadding: CGFloat = 14
+        static let widgetRadius: CGFloat = 20
+        static let smallWidgetRadius: CGFloat = 18
+        /// Botón circular glass al lado de los títulos de sección
+        /// (chevron, prefs, toggle de panorama).
+        static let headerAccessorySize: CGFloat = 24
+        /// Botón circular glass al lado de los títulos de widget
+        /// (info/help). Más pequeño que `headerAccessorySize` para no
+        /// competir con los títulos de sección.
+        static let widgetAccessorySize: CGFloat = 22
+    }
+
     // MARK: - Button Dimensions
 
     /// Standard button size tokens
@@ -551,5 +570,4 @@ func dsWithAnimation(_ reduceMotion: Bool, _ animation: Animation? = .easeInOut(
 
 /// Allows using `Typography.title` instead of `DS.Typography.title`
 typealias Typography = DS.Typography
-
 

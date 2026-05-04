@@ -56,7 +56,7 @@ struct WeekdayBarPanelWidget: View {
                 )
             }
         }
-        .solidCard(padding: DS.Card.paddingCompact)
+        .panelCard()
     }
 
     private var largeHeader: some View {
@@ -118,7 +118,7 @@ struct WeekdayBarPanelWidget: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .solidCard(padding: DS.Card.paddingCompact)
+        .panelCard(small: true)
         .frame(height: WidgetSize.smallHeight)
     }
 

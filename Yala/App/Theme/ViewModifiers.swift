@@ -94,6 +94,15 @@ extension View {
     func solidCard(padding: CGFloat = 0, radius: CGFloat = DS.Card.radius) -> some View {
         modifier(SolidCardModifier(padding: padding, radius: radius))
     }
+
+    /// Aplica el estilo canónico de widget del Panel (padding+radius reducidos
+    /// respecto a `solidCard` para mantener el home más calmo).
+    func panelCard(small: Bool = false) -> some View {
+        solidCard(
+            padding: small ? DS.Panel.smallWidgetPadding : DS.Card.paddingCompact,
+            radius: small ? DS.Panel.smallWidgetRadius : DS.Panel.widgetRadius
+        )
+    }
 }
 
 // MARK: - Solid Card Modifier (matches PanelView widget styling)

@@ -128,8 +128,7 @@
 "panel.hero.kpi.tight %@ %@ %d" = "やりくりは大変ですが、一歩ずつ進めましょう。";
 "panel.hero.kpi.overBudget %@ %@" = "明日からまた仕切り直し、大丈夫です。";
 
-"panel.hero.proBadge" = "Pro";
-"panel.hero.upsellCTA" = "AIで自分仕様に";
+"panel.hero.upsellCTA" = "AIでメッセージをカスタマイズ";
 "panel.hero.availableLabel" = "利用可能";
 
 // MARK: - Trend Widget

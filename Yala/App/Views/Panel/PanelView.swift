@@ -37,6 +37,18 @@ struct PanelView: View {
     @State private var showProFabTour = false
     @State private var proFabTourIndex = 0
 
+    /// Controla si el título del navigation bar es visible. Solo aparece tras
+    /// hacer scroll lo suficiente para que el saludo del hero desaparezca,
+    /// evitando duplicar identidad ("Panel de X" arriba + "Hola, X" en hero).
+    @State private var showInlineTitle = false
+
+    /// Umbrales con histéresis para el título en el toolbar. El título
+    /// aparece apenas el usuario scrollea por encima del `show`, y solo
+    /// desaparece al volver al borde superior — evita oscilación con
+    /// scroll inertial cerca del límite.
+    private static let inlineTitleShowAt: CGFloat = 8
+    private static let inlineTitleHideAt: CGFloat = 0
+
     /// Check if voice input is locked (Pro feature)
     private var isVoiceLocked: Bool {
         !FeatureGateService.shared.canAccess(.voiceInput)
@@ -131,9 +143,10 @@ struct PanelView: View {
 
     private var sectionsConfigButton: some View {
         Button {
+            DS.Haptic.light()
             sheets.showSectionsConfig = true
         } label: {
-            Image(systemName: "slider.horizontal.2.square")
+            Image(systemName: "square.grid.2x2")
                 .font(DS.Typography.body).fontWeight(.medium)
                 .foregroundStyle(.thToolbarIcon)
         }
@@ -173,9 +186,9 @@ struct PanelView: View {
         NavigationStack {
             mainContent
                 .yalaSkeleton(!viewModel.isReady)
-                // Inline title keeps identity visible once the hero scrolls
-                // off and covers the gap the `.large` mode used to fill.
-                .navigationTitle(L10n.Panel.title(appPreferences.userName))
+                // Title aparece solo tras scrollear (ver `showInlineTitle`),
+                // evitando duplicación con el saludo del hero al inicio.
+                .navigationTitle(showInlineTitle ? L10n.Panel.title(appPreferences.userName) : "")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
@@ -407,6 +420,17 @@ struct PanelView: View {
                     .padding(.bottom, DS.Spacing.xxxl)
                 }
                 .scrollViewGlassEdges(horizontalMargin: DS.Adaptive.horizontalPadding(sizeClass))
+                .onScrollGeometryChange(for: CGFloat.self) { geom in
+                    geom.contentOffset.y
+                } action: { _, offsetY in
+                    let shouldShow = showInlineTitle
+                        ? offsetY > Self.inlineTitleHideAt
+                        : offsetY >= Self.inlineTitleShowAt
+                    guard showInlineTitle != shouldShow else { return }
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showInlineTitle = shouldShow
+                    }
+                }
                 .refreshable {
                     await refreshData()
                 }

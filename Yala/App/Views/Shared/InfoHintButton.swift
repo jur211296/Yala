@@ -24,13 +24,13 @@ struct InfoHintButton: View {
     var body: some View {
         if showWidgetHints && !isPreviewMode {
             Button {
+                DS.Haptic.light()
                 showTooltip.toggle()
             } label: {
-                Image(systemName: "info.circle")
-                    .font(DS.Typography.labelSmall)
-                    .foregroundStyle(.secondary)
+                WidgetHelpCircleLabel()
             }
             .buttonStyle(.plain)
+            .widgetHelpCircleAlignment()
             .accessibilityLabel(title)
             .popover(isPresented: $showTooltip, arrowEdge: .top) {
                 HintPopoverContent(
