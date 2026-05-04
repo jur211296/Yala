@@ -99,10 +99,12 @@ final class AppBootstrapper {
         // 2. Load exchange rates (required for currency display)
         await loadExchangeRates(context: context)
 
-        // 2.5. One-shot migration: recalcula amountInPreferredCurrency de todas
-        //      las transacciones existentes para que sean consistentes tras
-        //      el fix multi-divisa (épico Live Balance). Idempotente vía flag.
-        await migrateToLiveBalanceIfNeeded(context: context)
+        // 2.5. Migración Live Balance multi-divisa diferida — bulk recalc
+        //      puede ser O(N) sobre miles de tx. Lanzamos en background tras
+        //      bootstrap para no bloquear UI en cold launch.
+        Task { @MainActor in
+            await migrateToLiveBalanceIfNeeded(context: context)
+        }
 
         // 3. Load subscription status
         await loadSubscriptionStatus()
@@ -677,14 +679,16 @@ final class AppBootstrapper {
         await TransactionUpdateService.updateProvisionalTransactions(context: context)
     }
 
+    /// Clave UserDefaults del flag idempotente de la migración Live Balance.
+    private static let liveBalanceMigrationKey = "hasMigratedToLiveBalance"
+
     /// Migración v2.0 (épico Live Balance multi-divisa): recalcula
     /// `amountInPreferredCurrency` para TODAS las transacciones existentes
     /// para limpiar snapshots inconsistentes (en particular saldos iniciales
     /// pre-fix B1). El flag `hasMigratedToLiveBalance` solo se setea tras
     /// éxito — si falla por offline o error, próxima apertura reintenta.
     private func migrateToLiveBalanceIfNeeded(context: ModelContext) async {
-        let migrationKey = "hasMigratedToLiveBalance"
-        guard !UserDefaults.standard.bool(forKey: migrationKey) else { return }
+        guard !UserDefaults.standard.bool(forKey: Self.liveBalanceMigrationKey) else { return }
 
         do {
             try await CurrencyChangeService.shared.updateAllTransactions(
@@ -698,7 +702,7 @@ final class AppBootstrapper {
                     #endif
                 }
             )
-            UserDefaults.standard.set(true, forKey: migrationKey)
+            UserDefaults.standard.set(true, forKey: Self.liveBalanceMigrationKey)
             #if DEBUG
             print("[LiveBalance] migration completed successfully")
             #endif

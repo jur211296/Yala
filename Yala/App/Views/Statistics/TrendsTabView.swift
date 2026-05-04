@@ -1288,19 +1288,15 @@ struct TrendsTabView: View {
             criteria: baseCriteria
         )
 
-        // Override del último punto si la métrica es balance y el current
-        // cubre "hoy" — para coincidir con la card de Balance.
+        // Override solo en current; previous siempre histórico.
         let trendType = convertMetricToTrendType(trendsViewModel.selectedMetric)
-        let liveBalanceOverride: Double?
-        if trendType == .balance && currentInterval.end >= Date.now {
-            liveBalanceOverride = LiveBalanceCalculator.liveBalance(
-                accounts: eligibleAccounts,
-                transactions: allTransactions,
-                preferredCurrencyCode: defaultCurrencyCode
-            )
-        } else {
-            liveBalanceOverride = nil
-        }
+        let liveBalanceOverride = LiveBalanceCalculator.liveBalanceOverride(
+            for: trendType,
+            interval: currentInterval,
+            accounts: eligibleAccounts,
+            transactions: allTransactions,
+            preferredCurrencyCode: defaultCurrencyCode
+        )
 
         // Calculate current period data
         let currentResult = TrendDataProcessor.processTrendData(

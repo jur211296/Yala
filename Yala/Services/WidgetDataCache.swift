@@ -282,7 +282,7 @@ enum WidgetDataCache {
         }
 
         // Get preferred currency from user settings (single source of truth)
-        let preferredCurrency = UserDefaults.standard.string(forKey: "defaultCurrencyCode") ?? "USD"
+        let preferredCurrency = UserDefaults.standard.string(forKey: CurrencyDefaults.preferredCurrencyKey) ?? "USD"
 
         // Total balance: TC actual sobre saldo nativo (LiveBalanceCalculator).
         // El widget consume este Double ya convertido — el calculator NO se
@@ -362,17 +362,18 @@ enum WidgetDataCache {
         let trendData = buildTrendData(transactions: eligibleTransactions, totalBalance: totalBalance)
 
         // Build account balances for widgets (only non-archived accounts shown as cards).
-        // Cada card muestra el saldo en moneda NATIVA de la cuenta, no convertido.
-        // Usa AccountBalanceCalculator (suma tx.amount nativo) — antes sumaba
-        // amountInPreferredCurrency, lo cual era incorrecto multi-divisa.
-        let widgetAccountBalances = accounts.filter { !$0.isArchived }.map { account in
-            let accountBalance = AccountBalanceCalculator.currentBalance(
-                for: account, allTransactions: allTransactions
-            )
+        // Cada card muestra el saldo en moneda NATIVA de la cuenta. Una sola
+        // pasada O(N+M) sobre transactions vía batchCalculateBalances.
+        let visibleAccounts = accounts.filter { !$0.isArchived }
+        let nativeBalancesByAccount = AccountBalanceCalculator.batchCalculateBalances(
+            accounts: visibleAccounts, transactions: allTransactions
+        )
+        let widgetAccountBalances = visibleAccounts.map { account in
+            let nativeBalance = nativeBalancesByAccount[account.persistentModelID] ?? 0
             return WidgetAccountBalance(
                 id: account.persistentModelID.hashValue.description,
                 name: account.name,
-                balance: NSDecimalNumber(decimal: accountBalance).doubleValue,
+                balance: NSDecimalNumber(decimal: nativeBalance).doubleValue,
                 currencyCode: account.currencyCode,
                 isExcludedFromStats: account.excludeFromStatistics
             )

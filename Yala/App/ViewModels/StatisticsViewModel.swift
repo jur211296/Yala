@@ -359,18 +359,13 @@ final class StatisticsViewModel: Filterable {
         // Calculate trend points based on metric using unified TrendDataProcessor
         if isAggregatedView {
             let trendType = mapMetricToTrendType(selectedMetric)
-            // Override del último punto al saldo vivo si métrica es balance e
-            // intervalo cubre "hoy" — coincide con la card de Balance.
-            let liveBalanceOverride: Double?
-            if trendType == .balance && interval.end >= Date.now {
-                liveBalanceOverride = LiveBalanceCalculator.liveBalance(
-                    accounts: eligibleAccounts,
-                    transactions: transactions,
-                    preferredCurrencyCode: defaultCurrencyCode
-                )
-            } else {
-                liveBalanceOverride = nil
-            }
+            let liveBalanceOverride = LiveBalanceCalculator.liveBalanceOverride(
+                for: trendType,
+                interval: interval,
+                accounts: eligibleAccounts,
+                transactions: transactions,
+                preferredCurrencyCode: defaultCurrencyCode
+            )
             let result = TrendDataProcessor.processTrendData(
                 transactions: filtered,
                 accounts: eligibleAccounts,

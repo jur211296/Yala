@@ -1130,20 +1130,13 @@ final class PanelViewModel {
             let transactionsForTrend = trendType == .balance
                 ? calcContext.balanceTransactions
                 : calcContext.filteredTransactions
-            // Anclaje del último punto al saldo vivo: solo si la métrica es
-            // .balance y el intervalo cubre "hoy" — así la curva intermedia
-            // mantiene los TCs históricos pero el último punto coincide con
-            // la card de Balance Total (LiveBalanceCalculator).
-            let liveBalanceOverride: Double?
-            if trendType == .balance && calcContext.effectiveInterval.end >= Date.now {
-                liveBalanceOverride = LiveBalanceCalculator.liveBalance(
-                    accounts: calcContext.eligibleAccounts,
-                    transactions: calcContext.balanceTransactions,
-                    preferredCurrencyCode: calcContext.defaultCurrencyCode
-                )
-            } else {
-                liveBalanceOverride = nil
-            }
+            let liveBalanceOverride = LiveBalanceCalculator.liveBalanceOverride(
+                for: trendType,
+                interval: calcContext.effectiveInterval,
+                accounts: calcContext.eligibleAccounts,
+                transactions: calcContext.balanceTransactions,
+                preferredCurrencyCode: calcContext.defaultCurrencyCode
+            )
             let result = TrendDataProcessor.processTrendData(
                 transactions: transactionsForTrend,
                 accounts: calcContext.eligibleAccounts,
@@ -2485,18 +2478,14 @@ final class PanelViewModel {
             }
         }
 
-        // Override del último punto solo si métrica es balance y el current
-        // cubre "hoy". El previous siempre es histórico.
-        let liveBalanceOverride: Double?
-        if isBalance && context.effectiveInterval.end >= Date.now {
-            liveBalanceOverride = LiveBalanceCalculator.liveBalance(
-                accounts: context.eligibleAccounts,
-                transactions: context.balanceTransactions,
-                preferredCurrencyCode: context.defaultCurrencyCode
-            )
-        } else {
-            liveBalanceOverride = nil
-        }
+        // Override solo en current; previous siempre histórico.
+        let liveBalanceOverride = LiveBalanceCalculator.liveBalanceOverride(
+            for: trendType,
+            interval: context.effectiveInterval,
+            accounts: context.eligibleAccounts,
+            transactions: context.balanceTransactions,
+            preferredCurrencyCode: context.defaultCurrencyCode
+        )
 
         let currentResult = TrendDataProcessor.processTrendData(
             transactions: currentTxs,

@@ -25,16 +25,9 @@ struct LiveBalanceCalculator {
         let preferredCurrencyCode: String
     }
 
-    /// Saldo total "hoy" en moneda preferida.
-    ///
-    /// Algoritmo:
-    /// 1. Determinar cuentas elegibles (excluyendo `excludeFromStatistics`).
-    /// 2. Agrupar transacciones por `currencyCode` nativo, sumando `tx.amount`.
-    /// 3. Convertir cada bucket con `convertWithLatestRate` (TC actual).
-    /// 4. Sumar.
-    ///
-    /// Si `selectedAccountID` apunta a una cuenta excluida, hace fallback al
-    /// total agregado (replica behavior de `BalanceHelper.displayedBalance`).
+    /// Saldo total "hoy" en moneda preferida. Si `selectedAccountID` apunta a
+    /// una cuenta excluida, hace fallback al total agregado (replica behavior
+    /// del antiguo `BalanceHelper.displayedBalance`).
     static func liveBalance(
         accounts: [Account],
         transactions: [TransactionItem],
@@ -61,9 +54,6 @@ struct LiveBalanceCalculator {
         selectedAccountID: PersistentIdentifier? = nil,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> Breakdown {
-        // 1. Determinar cuentas elegibles.
-        //    Si la cuenta seleccionada está excluida, fallback a total agregado
-        //    (replica el behavior de BalanceHelper.displayedBalance).
         let eligibleAccountIDs: Set<PersistentIdentifier>
         if let selectedID = selectedAccountID,
             let acc = accounts.first(where: { $0.persistentModelID == selectedID }),
@@ -77,7 +67,6 @@ struct LiveBalanceCalculator {
             )
         }
 
-        // 2. Agrupar transacciones por moneda nativa.
         var nativeBalances: [String: Decimal] = [:]
         for tx in transactions {
             guard let acc = tx.account,
@@ -86,7 +75,6 @@ struct LiveBalanceCalculator {
             nativeBalances[tx.currencyCode, default: 0] += Decimal(tx.amount)
         }
 
-        // 3. Convertir cada bucket al TC actual y sumar.
         var convertedTotal: Decimal = 0
         for (code, amount) in nativeBalances {
             if code == preferredCurrencyCode {
@@ -102,6 +90,27 @@ struct LiveBalanceCalculator {
             nativeBalances: nativeBalances,
             convertedTotal: convertedTotal,
             preferredCurrencyCode: preferredCurrencyCode
+        )
+    }
+
+    /// Override del último punto del trend chart. Solo retorna no-nil cuando
+    /// la métrica es `.balance` y el intervalo cubre "hoy" — en otros casos
+    /// el último punto del trend mantiene su valor histórico.
+    /// Centraliza el patrón usado por callers de `TrendDataProcessor`.
+    static func liveBalanceOverride(
+        for metric: TrendType,
+        interval: DateInterval,
+        accounts: [Account],
+        transactions: [TransactionItem],
+        preferredCurrencyCode: String,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> Double? {
+        guard metric == .balance, interval.end >= Date.now else { return nil }
+        return liveBalance(
+            accounts: accounts,
+            transactions: transactions,
+            preferredCurrencyCode: preferredCurrencyCode,
+            converter: converter
         )
     }
 }

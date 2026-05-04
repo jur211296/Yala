@@ -48,9 +48,17 @@ final class CurrencyConverter: CurrencyConverting {
 
     /// Thread-safe cache of latest exchange rates (TC actual). Read on every
     /// `convertWithLatestRate` to avoid hitting SwiftData per call. Invalidated
-    /// when `ExchangeRateService` persists fresh rates (via `.yalaExchangeRatesUpdated`).
+    /// cuando `ExchangeRateService` persiste rates frescos (via
+    /// `.yalaExchangeRatesUpdated`) y al cambiar de día (sin esa invalidación
+    /// implícita, una sesión que cruza medianoche seguiría usando los rates
+    /// del día anterior aunque `Date.now` ya apunte a uno nuevo).
     @ObservationIgnored
-    private let latestRatesCache = OSAllocatedUnfairLock<[String: Double]?>(initialState: nil)
+    private let latestRatesCache = OSAllocatedUnfairLock<CachedRates?>(initialState: nil)
+
+    private struct CachedRates {
+        let rates: [String: Double]
+        let dayKey: String  // dateKey (yyyy-MM-dd UTC) usado para la lectura
+    }
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -162,7 +170,7 @@ final class CurrencyConverter: CurrencyConverting {
     /// Test-only accessor for cache state. Avoids flaky NotificationCenter
     /// integration tests by allowing direct inspection.
     var _testCacheState: [String: Double]? {
-        latestRatesCache.withLock { $0 }
+        latestRatesCache.withLock { $0?.rates }
     }
     #endif
 
@@ -251,11 +259,13 @@ final class CurrencyConverter: CurrencyConverting {
     /// Lock-protected for thread-safety (CurrencyConverter is a singleton
     /// reachable from any actor; cache must be safe for concurrent reads).
     private func cachedLatestRates(context: ModelContext) -> [String: Double] {
-        if let cached = latestRatesCache.withLock({ $0 }) {
-            return cached
+        let now = Date.now
+        let todayKey = dateFormatter.string(from: now)
+        if let cached = latestRatesCache.withLock({ $0 }), cached.dayKey == todayKey {
+            return cached.rates
         }
-        let rates = getRatesForDate(Date.now, context: context)
-        latestRatesCache.withLock { $0 = rates }
+        let rates = getRatesForDate(now, context: context)
+        latestRatesCache.withLock { $0 = CachedRates(rates: rates, dayKey: todayKey) }
         return rates
     }
 
