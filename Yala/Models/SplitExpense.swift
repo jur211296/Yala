@@ -25,6 +25,11 @@ final class SplitExpense {
     var createdAt: Date = Date.now
     var ckSystemFieldsData: Data?            // CKRecord system fields for conflict-free uploads
 
+    // bridgePending / bridgeAttempts: device-local retry state for the personal-TX/Draft bridge.
+    // Must stay out of CKRecordTranslator.applyExpenseFields so CloudKit never sees them.
+    var bridgePending: Bool = false
+    var bridgeAttempts: Int = 0
+
     init(
         groupZoneID: String = "",
         amount: Double = 0,

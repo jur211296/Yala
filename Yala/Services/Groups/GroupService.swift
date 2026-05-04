@@ -377,7 +377,11 @@ final class GroupService {
             }
             if changed {
                 SplitSyncManager.shared.enqueueSave(modelID: existing.id, group: group)
-                try? context.save()
+                do {
+                    try context.save()
+                } catch {
+                    throw GroupServiceError.saveFailed(error)
+                }
             }
             return existing
         }
@@ -395,7 +399,11 @@ final class GroupService {
                     legacy.role = "admin"
                 }
                 SplitSyncManager.shared.enqueueSave(modelID: legacy.id, group: group)
-                try? context.save()
+                do {
+                    try context.save()
+                } catch {
+                    throw GroupServiceError.saveFailed(error)
+                }
             }
             return legacy
         }
@@ -413,7 +421,11 @@ final class GroupService {
                     candidate.memberStatus = .active
                 }
                 SplitSyncManager.shared.enqueueSave(modelID: candidate.id, group: group)
-                try? context.save()
+                do {
+                    try context.save()
+                } catch {
+                    throw GroupServiceError.saveFailed(error)
+                }
                 return candidate
             }
 
@@ -430,7 +442,11 @@ final class GroupService {
                         candidate.memberStatus = .active
                     }
                     SplitSyncManager.shared.enqueueSave(modelID: candidate.id, group: group)
-                    try? context.save()
+                    do {
+                        try context.save()
+                    } catch {
+                        throw GroupServiceError.saveFailed(error)
+                    }
                     return candidate
                 }
             }

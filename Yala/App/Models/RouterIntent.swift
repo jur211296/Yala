@@ -59,6 +59,7 @@ enum RouterIntent: Identifiable, Equatable {
     case presentGroupInviteOnboarding(InviteMetadata)
     case presentGroupReconnect(InviteMetadata)
     case showInviteError(String)
+    case showGroupSyncError(String)
     case presentFullModeActivation
 
     // D) Tab navigation
@@ -89,6 +90,7 @@ extension RouterIntent {
         switch self {
         case .showInboxAlert, .presentTrialOffer, .presentWhatsNew,
              .presentGroupInviteOnboarding, .presentGroupReconnect, .showInviteError,
+             .showGroupSyncError,
              .iCloudMismatch, .remoteWipe, .presentFullModeActivation:
             return .contentView
 
@@ -118,7 +120,7 @@ extension RouterIntent {
         case .iCloudMismatch, .remoteWipe, .showInviteError:
             return .critical
         case .showInboxAlert, .presentSharedImage, .presentDowngradeResolution,
-             .presentTrialExpired, .requestAIConsent:
+             .presentTrialExpired, .requestAIConsent, .showGroupSyncError:
             return .high
         case .presentInboxSheet, .presentNewTransaction, .presentNewTransactionFromChatDraft,
              .presentVoiceEntry, .presentImageEntry, .presentUpgradeSheet,
@@ -171,6 +173,8 @@ extension RouterIntent {
             return "groupReconnect"
         case .showInviteError(let detail):
             return "inviteError:\(detail.hashValue)"
+        case .showGroupSyncError(let detail):
+            return "groupSyncError:\(detail.hashValue)"
         case .presentFullModeActivation:
             return "fullMode"
         case .navigate(let dest):

@@ -44,6 +44,8 @@ struct ContentView: View {
     @State private var pendingReconnectMetadata: CKShare.Metadata?
     /// Invite error detail, carried by .showInviteError intent.
     @State private var activeInviteError: String?
+    /// Group bridge/sync error message, carried by .showGroupSyncError intent (P0-1).
+    @State private var activeGroupSyncError: String?
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ThemeManager.self) private var themeManager
@@ -213,7 +215,8 @@ struct ContentView: View {
             showGroupReconnect: $showGroupReconnect,
             hasCompletedOnboarding: $hasCompletedOnboarding,
             pendingReconnectMetadata: $pendingReconnectMetadata,
-            activeInviteError: $activeInviteError
+            activeInviteError: $activeInviteError,
+            activeGroupSyncError: $activeGroupSyncError
         ))
         .onChange(of: showOnboarding) { oldValue, newValue in
             // Replaces unreliable fullScreenCover onDismiss for post-onboarding flow.
@@ -378,6 +381,8 @@ struct ContentView: View {
             showGroupReconnect = true
         case .showInviteError(let detail):
             activeInviteError = detail
+        case .showGroupSyncError(let message):
+            activeGroupSyncError = message
         case .iCloudMismatch:
             showICloudRestartAlert = true
         case .remoteWipe(let skipOnboarding):
@@ -661,21 +666,33 @@ private struct GroupInviteModifier: ViewModifier {
     @Binding var hasCompletedOnboarding: Bool
     @Binding var pendingReconnectMetadata: CKShare.Metadata?
     @Binding var activeInviteError: String?
+    @Binding var activeGroupSyncError: String?
 
     func body(content: Content) -> some View {
         content
             .alert(
-                "Enlace no válido",
+                String(localized: "groups.invite.linkInvalidTitle"),
                 isPresented: Binding(
                     get: { activeInviteError != nil },
                     set: { if !$0 { activeInviteError = nil } }
                 )
             ) {
-                Button("OK", role: .cancel) {}
+                Button(String(localized: "common.ok"), role: .cancel) {}
             } message: {
                 Text((activeInviteError?.isEmpty ?? true)
-                     ? "El enlace de invitación ya no es válido o ha expirado."
+                     ? String(localized: "groups.invite.linkInvalidDetail")
                      : (activeInviteError ?? ""))
+            }
+            .alert(
+                String(localized: "groups.bridge.alertTitle"),
+                isPresented: Binding(
+                    get: { activeGroupSyncError != nil },
+                    set: { if !$0 { activeGroupSyncError = nil } }
+                )
+            ) {
+                Button(String(localized: "common.ok"), role: .cancel) {}
+            } message: {
+                Text(activeGroupSyncError ?? "")
             }
             .fullScreenCover(isPresented: $showGroupInviteOnboarding) {
                 GroupInviteOnboardingView {

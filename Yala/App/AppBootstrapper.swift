@@ -8,6 +8,7 @@
 
 import CloudKit
 import CoreData
+import OSLog
 import SwiftData
 import SwiftUI
 import UserNotifications
@@ -53,6 +54,7 @@ final class AppBootstrapper {
     private var remoteChangeLeadingFired = false
     private var lastNotificationCheckDate = Date.distantPast
     private var lastProcessDuePaymentsDate = Date.distantPast
+    private let logger = Logger(subsystem: "com.yala", category: "Bootstrap")
 
     // MARK: - Initialization
 
@@ -164,6 +166,11 @@ final class AppBootstrapper {
         GroupService.shared.setContext(context)
         GroupExpenseService.shared.setContext(context)
         GroupTransactionBridge.shared.setContext(context)
+
+        // 16.5. Retry bridge operations that failed in a previous launch
+        Task { @MainActor in
+            await retryPendingBridges(context: context)
+        }
 
         // Seed current iCloud user identity for groups and refresh local membership flags.
         Task { @MainActor in
@@ -289,6 +296,55 @@ final class AppBootstrapper {
             #if DEBUG
             print("AppBootstrapper: SplitShare migration failed: \(error) — will retry next launch")
             #endif
+        }
+    }
+
+    /// Retries pending bridge operations from previous launches.
+    /// Bound by `maxAttempts` per expense and `maxPerLaunch` total to keep cold-launch latency capped.
+    /// Silent on retry-fail (the user already saw an alert at the original failure);
+    /// flag stays true for the next launch until `maxAttempts` is exhausted.
+    @MainActor
+    func retryPendingBridges(context: ModelContext) async {
+        let descriptor = FetchDescriptor<SplitExpense>(
+            predicate: #Predicate { $0.bridgePending == true }
+        )
+        do {
+            let pending = try context.fetch(descriptor)
+            guard !pending.isEmpty else { return }
+            let maxAttempts = 3
+            let maxPerLaunch = 20
+            let batch = Array(pending.prefix(maxPerLaunch))
+            logger.info("Retrying bridge for \(batch.count, privacy: .public) of \(pending.count, privacy: .public) pending expenses")
+
+            for expense in batch {
+                guard expense.bridgeAttempts < maxAttempts else {
+                    logger.error("Bridge retry exhausted for expense \(expense.id, privacy: .public) after \(expense.bridgeAttempts, privacy: .public) attempts")
+                    continue
+                }
+
+                let zoneID = expense.groupZoneID
+                let groupDescriptor = FetchDescriptor<SplitGroup>(
+                    predicate: #Predicate { $0.cloudKitZoneID == zoneID }
+                )
+                guard let group = try context.fetch(groupDescriptor).first else {
+                    logger.error("Bridge retry: group not found for expense \(expense.id, privacy: .public)")
+                    continue
+                }
+
+                expense.bridgeAttempts += 1
+                do {
+                    // shouldSave:false — save once at the end of the loop instead of
+                    // per-expense to avoid N widget rebuilds + N budget checks on launch.
+                    try GroupTransactionBridge.shared.bridgeExpense(expense, in: group, shouldSave: false)
+                    expense.bridgePending = false
+                    expense.bridgeAttempts = 0
+                } catch {
+                    logger.error("Bridge retry failed for \(expense.id, privacy: .public) (attempt \(expense.bridgeAttempts, privacy: .public)): \(error.localizedDescription, privacy: .public)")
+                }
+            }
+            try context.save()
+        } catch {
+            logger.error("retryPendingBridges fetch failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -523,9 +579,10 @@ final class AppBootstrapper {
     /// Acceso internal para que YalaAppDelegate pueda llamarlo.
     func handleInviteLink(_ url: URL) {
         guard let shareURL = InviteLinkService.extractShareURL(from: url) else {
-            #if DEBUG
-            print("AppBootstrapper: Invalid invite link: \(url.absoluteString)")
-            #endif
+            logger.error("Invalid invite link: \(url.absoluteString, privacy: .public)")
+            AppRouter.shared.enqueue(.showInviteError(
+                String(localized: "groups.invite.linkInvalidDetail")
+            ))
             return
         }
 
@@ -571,10 +628,10 @@ final class AppBootstrapper {
                 await SplitSyncManager.shared.acceptShare(metadata: metadata)
             }
         } catch {
-            #if DEBUG
-            print("AppBootstrapper: Failed to accept share from URL: \(error)")
-            #endif
-            AppRouter.shared.enqueue(.showInviteError("\(error)"))
+            logger.error("Failed to accept share from URL: \(error.localizedDescription, privacy: .public)")
+            AppRouter.shared.enqueue(.showInviteError(
+                String(localized: "groups.invite.linkInvalidDetail")
+            ))
         }
     }
 

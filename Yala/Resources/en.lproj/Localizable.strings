@@ -3513,6 +3513,16 @@
 "groups.invite.joinButton" = "Join group";
 "groups.invite.ready" = "All set!";
 "groups.invite.goToGroup" = "Go to group";
+"groups.invite.linkInvalidTitle" = "Invalid link";
+"groups.invite.linkInvalidDetail" = "This link is no longer valid or has expired. Ask the admin to generate a new one.";
+
+// Groups — Bridge / Sync errors
+"groups.bridge.alertTitle" = "Group sync issue";
+"groups.bridge.errorTransaction" = "Your personal record for this expense will retry automatically.";
+"groups.bridge.errorTransactionUpdate" = "The change didn't reflect in your personal record. We'll retry.";
+"groups.bridge.errorDelete" = "Couldn't delete the personal record for this expense.";
+"groups.sync.errorAcceptShare" = "We couldn't complete joining the group. Try again.";
+"groups.sync.errorMemberSetup" = "You joined, but there was an issue with your identity in the group. Reopen the app.";
 
 // Groups — Reconnect (GC-08)
 "groups.reconnect.title" = "Join group";

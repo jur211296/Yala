@@ -6,10 +6,12 @@
 //
 
 import Foundation
+import SwiftData
 import Testing
 
 @testable import Yala
 
+@Suite(.serialized)
 struct GroupTransactionBridgeTests {
 
     // MARK: - Error Types
@@ -195,5 +197,28 @@ struct GroupTransactionBridgeTests {
 
         let draft = GroupTransactionBridge.makeBridgedDraft(from: expense, share: share, account: nil, subcategory: nil)
         #expect(draft.needsUserInput.contains("subcategory"))
+    }
+
+    // MARK: - SplitExpense bridgePending Fields
+    //
+    // Note: end-to-end tests of `bridgeExpense` persistence and the retry flow crash
+    // the Swift Testing runner — the bridge calls globals (`WidgetDataCache.updateCache`,
+    // `BudgetAlertService`) that assume a fully-configured app environment. Those
+    // side effects are exercised manually via the smoke checklist; covering them in
+    // unit tests would require dependency-injection refactors beyond this scope.
+    // The model-level tests below validate the contract that supports the retry flow.
+
+    @Test func splitExpense_bridgePendingDefaultsFalse() {
+        let expense = SplitExpense()
+        #expect(expense.bridgePending == false)
+        #expect(expense.bridgeAttempts == 0)
+    }
+
+    @Test func splitExpense_bridgePendingMutable() {
+        let expense = SplitExpense()
+        expense.bridgePending = true
+        expense.bridgeAttempts = 2
+        #expect(expense.bridgePending == true)
+        #expect(expense.bridgeAttempts == 2)
     }
 }

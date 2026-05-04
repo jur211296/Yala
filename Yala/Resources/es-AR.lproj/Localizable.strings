@@ -171,3 +171,8 @@
 "groups.nudge.invitedSpendingInsight.message" = "Llevas %@ en gastos compartidos. ¿Querés ver en qué más gastas?";
 "groups.nudge.invitedPostSettlement.message" = "Acabas de liquidar una deuda. ¿Querés registrar de dónde salió?";
 "groups.nudge.dormantGroupsAsMain.message" = "Tenés gastos compartidos pendientes. Revisa cómo van.";
+
+// === Imperativos voseo (override de es) ===
+"groups.invite.linkInvalidDetail" = "Este enlace ya no es válido o expiró. Pedile al admin que regenere uno.";
+"groups.sync.errorAcceptShare" = "No pudimos completar tu unión al grupo. Intentá de nuevo.";
+"groups.sync.errorMemberSetup" = "Te uniste, pero hubo un problema con tu identidad en el grupo. Reabrí la app.";

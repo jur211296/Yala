@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import OSLog
 import SwiftData
 
 @MainActor
@@ -20,6 +21,7 @@ final class GroupExpenseService {
     // MARK: - Properties
 
     private var modelContext: ModelContext?
+    private let logger = Logger(subsystem: "com.yala", category: "GroupExpense")
 
     // MARK: - Init
 
@@ -117,11 +119,9 @@ final class GroupExpenseService {
         // Bridge to personal transaction/draft (guard: bridge may not be initialized yet)
         if GroupTransactionBridge.shared.isReady {
             do {
-                try GroupTransactionBridge.shared.bridgeExpense(expense, in: group, shouldSave: false)
+                try GroupTransactionBridge.shared.bridgeExpense(expense, in: group)
             } catch {
-                #if DEBUG
-                print("GroupExpenseService: Bridge failed for new expense \(expense.id): \(error)")
-                #endif
+                surfaceBridgeError(error, expense: expense, context: context, messageKey: "groups.bridge.errorTransaction")
             }
         }
 
@@ -195,11 +195,9 @@ final class GroupExpenseService {
         // Update bridged record
         if GroupTransactionBridge.shared.isReady {
             do {
-                try GroupTransactionBridge.shared.bridgeExpense(expense, in: group, shouldSave: false)
+                try GroupTransactionBridge.shared.bridgeExpense(expense, in: group)
             } catch {
-                #if DEBUG
-                print("GroupExpenseService: Bridge failed for updated expense \(expense.id): \(error)")
-                #endif
+                surfaceBridgeError(error, expense: expense, context: context, messageKey: "groups.bridge.errorTransactionUpdate")
             }
         }
     }
@@ -221,9 +219,8 @@ final class GroupExpenseService {
             do {
                 try GroupTransactionBridge.shared.unbridgeExpense(expenseID: expense.id.uuidString)
             } catch {
-                #if DEBUG
-                print("GroupExpenseService: Unbridge failed for expense \(expense.id): \(error)")
-                #endif
+                // expense=nil: the row is being deleted, no point flagging it for retry
+                surfaceBridgeError(error, expense: nil, context: context, messageKey: "groups.bridge.errorDelete")
             }
         }
 
@@ -394,6 +391,26 @@ final class GroupExpenseService {
         guard memberIDs.isSubset(of: allowedMemberIDs) else {
             throw GroupExpenseServiceError.inactiveMember
         }
+    }
+
+    /// Logs a bridge failure, optionally marks the expense for retry on next launch,
+    /// and surfaces a user-visible alert.
+    private func surfaceBridgeError(
+        _ error: Error,
+        expense: SplitExpense?,
+        context: ModelContext,
+        messageKey: String.LocalizationValue
+    ) {
+        logger.error("Bridge failed: \(error.localizedDescription, privacy: .public)")
+        if let expense {
+            expense.bridgePending = true
+            do {
+                try context.save()
+            } catch {
+                logger.error("Persisting bridgePending failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+        AppRouter.shared.enqueue(.showGroupSyncError(String(localized: messageKey)))
     }
 }
 

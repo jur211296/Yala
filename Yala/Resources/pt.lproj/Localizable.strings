@@ -3510,6 +3510,16 @@
 "groups.invite.joinButton" = "Entrar no grupo";
 "groups.invite.ready" = "Tudo pronto!";
 "groups.invite.goToGroup" = "Ir para o grupo";
+"groups.invite.linkInvalidTitle" = "Ligação inválida";
+"groups.invite.linkInvalidDetail" = "Esta ligação já não é válida ou expirou. Pede ao admin que gere uma nova.";
+
+// Groups — Bridge / Sync errors
+"groups.bridge.alertTitle" = "Problema com o grupo";
+"groups.bridge.errorTransaction" = "O teu registo pessoal será automaticamente repetido.";
+"groups.bridge.errorTransactionUpdate" = "A alteração não se refletiu no teu registo pessoal. Tentaremos de novo.";
+"groups.bridge.errorDelete" = "Não foi possível eliminar o registo pessoal do gasto.";
+"groups.sync.errorAcceptShare" = "Não conseguimos completar a tua entrada no grupo. Tenta de novo.";
+"groups.sync.errorMemberSetup" = "Entraste, mas houve um problema com a tua identidade no grupo. Reabre a app.";
 
 // Groups — Reconnect (GC-08)
 "groups.reconnect.title" = "Entrar no grupo";

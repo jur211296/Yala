@@ -3513,6 +3513,16 @@
 "groups.invite.joinButton" = "グループに参加";
 "groups.invite.ready" = "準備完了！";
 "groups.invite.goToGroup" = "グループへ";
+"groups.invite.linkInvalidTitle" = "無効なリンク";
+"groups.invite.linkInvalidDetail" = "このリンクは無効または期限切れです。管理者に新しいリンクを発行してもらってください。";
+
+// Groups — Bridge / Sync errors
+"groups.bridge.alertTitle" = "グループに問題が発生しました";
+"groups.bridge.errorTransaction" = "個人の記録は自動的に再試行されます。";
+"groups.bridge.errorTransactionUpdate" = "変更は個人の記録に反映されませんでした。もう一度試みます。";
+"groups.bridge.errorDelete" = "個人の記録を削除できませんでした。";
+"groups.sync.errorAcceptShare" = "グループへの参加を完了できませんでした。もう一度お試しください。";
+"groups.sync.errorMemberSetup" = "グループに参加しましたが、識別情報に問題があります。アプリを再起動してください。";
 
 // Groups — Reconnect (GC-08)
 "groups.reconnect.title" = "グループに参加";

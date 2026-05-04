@@ -3511,6 +3511,16 @@
 "groups.invite.joinButton" = "Rejoindre le groupe";
 "groups.invite.ready" = "Tout est prêt !";
 "groups.invite.goToGroup" = "Aller au groupe";
+"groups.invite.linkInvalidTitle" = "Lien invalide";
+"groups.invite.linkInvalidDetail" = "Ce lien n'est plus valide ou a expiré. Demande à l'admin d'en générer un nouveau.";
+
+// Groups — Bridge / Sync errors
+"groups.bridge.alertTitle" = "Problème avec le groupe";
+"groups.bridge.errorTransaction" = "Ton enregistrement personnel sera relancé automatiquement.";
+"groups.bridge.errorTransactionUpdate" = "Le changement ne s'est pas répercuté dans ton enregistrement personnel. Nous réessaierons.";
+"groups.bridge.errorDelete" = "Impossible de supprimer l'enregistrement personnel de la dépense.";
+"groups.sync.errorAcceptShare" = "Nous n'avons pas pu rejoindre le groupe. Réessaie.";
+"groups.sync.errorMemberSetup" = "Tu as rejoint le groupe, mais il y a eu un problème avec ton identité. Rouvre l'app.";
 
 // Groups — Reconnect (GC-08)
 "groups.reconnect.title" = "Rejoindre le groupe";

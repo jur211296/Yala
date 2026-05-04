@@ -3513,6 +3513,16 @@
 "groups.invite.joinButton" = "Aansluiten bij groep";
 "groups.invite.ready" = "Helemaal klaar!";
 "groups.invite.goToGroup" = "Naar groep";
+"groups.invite.linkInvalidTitle" = "Ongeldige link";
+"groups.invite.linkInvalidDetail" = "Deze link is niet meer geldig of is verlopen. Vraag de admin een nieuwe te genereren.";
+
+// Groups — Bridge / Sync errors
+"groups.bridge.alertTitle" = "Probleem met de groep";
+"groups.bridge.errorTransaction" = "Je persoonlijke registratie wordt automatisch opnieuw geprobeerd.";
+"groups.bridge.errorTransactionUpdate" = "De wijziging is niet doorgevoerd in je persoonlijke registratie. We proberen het opnieuw.";
+"groups.bridge.errorDelete" = "Kon de persoonlijke registratie van de uitgave niet verwijderen.";
+"groups.sync.errorAcceptShare" = "We konden niet aan de groep deelnemen. Probeer het opnieuw.";
+"groups.sync.errorMemberSetup" = "Je bent toegetreden, maar er was een probleem met je identiteit in de groep. Open de app opnieuw.";
 
 // Groups — Reconnect (GC-08)
 "groups.reconnect.title" = "Aansluiten bij groep";

@@ -3510,6 +3510,16 @@
 "groups.invite.joinButton" = "Gruppe beitreten";
 "groups.invite.ready" = "Alles bereit!";
 "groups.invite.goToGroup" = "Zur Gruppe";
+"groups.invite.linkInvalidTitle" = "Ungültiger Link";
+"groups.invite.linkInvalidDetail" = "Dieser Link ist nicht mehr gültig oder abgelaufen. Bitte den Admin, einen neuen zu erstellen.";
+
+// Groups — Bridge / Sync errors
+"groups.bridge.alertTitle" = "Problem mit der Gruppe";
+"groups.bridge.errorTransaction" = "Dein persönlicher Eintrag wird automatisch wiederholt.";
+"groups.bridge.errorTransactionUpdate" = "Die Änderung wurde nicht in deinem persönlichen Eintrag übernommen. Wir versuchen es erneut.";
+"groups.bridge.errorDelete" = "Der persönliche Eintrag der Ausgabe konnte nicht gelöscht werden.";
+"groups.sync.errorAcceptShare" = "Wir konnten den Beitritt nicht abschließen. Versuche es erneut.";
+"groups.sync.errorMemberSetup" = "Du bist beigetreten, aber es gab ein Problem mit deiner Identität in der Gruppe. Öffne die App neu.";
 
 // Groups — Reconnect (GC-08)
 "groups.reconnect.title" = "Gruppe beitreten";
