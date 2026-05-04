@@ -9,6 +9,15 @@
 import Foundation
 import Observation
 import SwiftData
+import os.lock
+
+// MARK: - Notification
+
+extension Notification.Name {
+    /// Posted by ExchangeRateService after persisting fresh today's exchange rates.
+    /// Subscribers should invalidate any cached "latest rate" data and reload UI.
+    static let yalaExchangeRatesUpdated = Notification.Name("yalaExchangeRatesUpdated")
+}
 
 // MARK: - Currency Converting Protocol
 
@@ -36,6 +45,12 @@ final class CurrencyConverter: CurrencyConverting {
 
     @ObservationIgnored private var modelContext: ModelContext?
     private let baseCurrency = "USD"
+
+    /// Thread-safe cache of latest exchange rates (TC actual). Read on every
+    /// `convertWithLatestRate` to avoid hitting SwiftData per call. Invalidated
+    /// when `ExchangeRateService` persists fresh rates (via `.yalaExchangeRatesUpdated`).
+    @ObservationIgnored
+    private let latestRatesCache = OSAllocatedUnfairLock<[String: Double]?>(initialState: nil)
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -111,6 +126,9 @@ final class CurrencyConverter: CurrencyConverting {
     }
 
     /// Converts using the most recent available rate (for "today" calculations).
+    /// Uses an in-memory cache invalidated by `.yalaExchangeRatesUpdated` to
+    /// avoid SwiftData fetches on every call (LiveBalanceCalculator does
+    /// M conversions per render).
     /// - Parameters:
     ///   - amount: The amount to convert
     ///   - from: Source currency code
@@ -123,8 +141,30 @@ final class CurrencyConverter: CurrencyConverting {
         to: String,
         context: ModelContext
     ) -> Decimal {
-        return convert(amount, from: from, to: to, on: Date.now, context: context)
+        let fromCode = normalizeCurrencyCode(from)
+        let toCode = normalizeCurrencyCode(to)
+
+        if fromCode == toCode {
+            return amount
+        }
+
+        let rates = cachedLatestRates(context: context)
+        return performConversion(amount: amount, from: fromCode, to: toCode, rates: rates)
     }
+
+    /// Invalidates the latest-rates cache. Call after `ExchangeRateService`
+    /// persists fresh rates so subsequent conversions read updated data.
+    func invalidateLatestRatesCache() {
+        latestRatesCache.withLock { $0 = nil }
+    }
+
+    #if DEBUG
+    /// Test-only accessor for cache state. Avoids flaky NotificationCenter
+    /// integration tests by allowing direct inspection.
+    var _testCacheState: [String: Double]? {
+        latestRatesCache.withLock { $0 }
+    }
+    #endif
 
     /// Synchronous conversion using fallback rates (no database access).
     /// Use this only when ModelContext is not available (e.g., in static calculators).
@@ -205,6 +245,18 @@ final class CurrencyConverter: CurrencyConverting {
 
         // Last resort: use static fallback rates
         return fallbackRates
+    }
+
+    /// Returns latest rates from cache or fetches and caches them on miss.
+    /// Lock-protected for thread-safety (CurrencyConverter is a singleton
+    /// reachable from any actor; cache must be safe for concurrent reads).
+    private func cachedLatestRates(context: ModelContext) -> [String: Double] {
+        if let cached = latestRatesCache.withLock({ $0 }) {
+            return cached
+        }
+        let rates = getRatesForDate(Date.now, context: context)
+        latestRatesCache.withLock { $0 = rates }
+        return rates
     }
 
     private func performConversion(

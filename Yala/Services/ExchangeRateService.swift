@@ -139,6 +139,7 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
                 dateKey: todayKey, rates: result.rates, timestamp: result.timestamp,
                 context: context)
             UserDefaults.standard.set(Date.now, forKey: lastTodayUpdateKey)
+            NotificationCenter.default.post(name: .yalaExchangeRatesUpdated, object: nil)
         } catch {
             #if DEBUG
             print("ExchangeRateService: Error updating today's rate: \(error.localizedDescription)")
@@ -160,6 +161,7 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
                 dateKey: todayKey, rates: result.rates, timestamp: result.timestamp,
                 context: context)
             UserDefaults.standard.set(Date.now, forKey: lastTodayUpdateKey)
+            NotificationCenter.default.post(name: .yalaExchangeRatesUpdated, object: nil)
             #if DEBUG
             print("ExchangeRateService: Force updated today's rate with all \(supportedSymbols.count) currencies")
             #endif

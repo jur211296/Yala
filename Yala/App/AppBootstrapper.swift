@@ -152,6 +152,9 @@ final class AppBootstrapper {
         // 12. Check if any report notifications should be sent now (app launch case)
         await ReportNotificationService.shared.sendDueReports(context: context)
 
+        // 12.5. Observe exchange rate updates to invalidate the latest-rates cache
+        observeExchangeRateUpdates()
+
         // 13. Observe CloudKit remote changes to auto-refresh UI
         observeRemoteStoreChanges()
 
@@ -197,6 +200,21 @@ final class AppBootstrapper {
         if let pendingShareURL = deferredInviteShareURL {
             deferredInviteShareURL = nil
             Task { await acceptShareFromURL(pendingShareURL) }
+        }
+    }
+
+    // MARK: - Exchange Rate Cache Invalidation
+
+    /// Subscribes to `.yalaExchangeRatesUpdated` posted by `ExchangeRateService`
+    /// after persisting fresh rates. Invalidates the in-memory cache so
+    /// subsequent `convertWithLatestRate` calls read updated data.
+    private func observeExchangeRateUpdates() {
+        NotificationCenter.default.addObserver(
+            forName: .yalaExchangeRatesUpdated,
+            object: nil,
+            queue: .main
+        ) { _ in
+            CurrencyConverter.shared.invalidateLatestRatesCache()
         }
     }
 
