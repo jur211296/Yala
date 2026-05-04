@@ -415,13 +415,11 @@ final class BudgetsViewModel {
         let filtered = Self.filterTransactions(allTransactions, forBudget: budget, in: interval)
         guard !filtered.isEmpty else { return [] }
 
-        let useBudgetCurrency = (budget.accounts?.count ?? 0) == 1
-
         // Group by day
         var dailyAmounts: [Date: Double] = [:]
         for tx in filtered {
             let day = calendar.startOfDay(for: tx.date)
-            let amount = useBudgetCurrency ? tx.amount : tx.amountInPreferredCurrency
+            let amount = Self.budgetAmount(of: tx, in: budget.currencyCode)
             dailyAmounts[day, default: 0] += abs(amount)
         }
 
@@ -457,14 +455,12 @@ final class BudgetsViewModel {
         let filtered = Self.filterTransactions(allTransactions, forBudget: budget, in: interval)
         guard !filtered.isEmpty else { return ([], []) }
 
-        let useBudgetCurrency = (budget.accounts?.count ?? 0) == 1
-
         var subBreakdown: [PersistentIdentifier: (name: String, icon: String, color: String, amount: Double, parentCategoryName: String)] = [:]
         var parentBreakdown: [PersistentIdentifier: (name: String, icon: String, color: String, amount: Double)] = [:]
 
         for tx in filtered {
             guard let sub = tx.subcategory else { continue }
-            let absAmount = abs(useBudgetCurrency ? tx.amount : tx.amountInPreferredCurrency)
+            let absAmount = abs(Self.budgetAmount(of: tx, in: budget.currencyCode))
             let cat = sub.safeCategory
 
             // Subcategory grouping
@@ -552,7 +548,8 @@ final class BudgetsViewModel {
     }
 
     /// Shared spending calculation used by both BudgetsViewModel and BudgetAlertService.
-    /// Filters transactions by budget criteria and sums expense amounts.
+    /// Filters transactions by budget criteria and sums expense amounts en la
+    /// moneda del budget (multi-divisa: convierte con TC actual).
     static func calculateSpending(
         budget: Budget,
         transactions: [TransactionItem],
@@ -560,15 +557,32 @@ final class BudgetsViewModel {
     ) -> Double {
         let filtered = filterTransactions(transactions, forBudget: budget, in: interval)
 
-        // Sum amounts based on budget account configuration:
-        // - If exactly 1 account: use transaction.amount (same currency as budget)
-        // - If 0 or multiple accounts: use amountInPreferredCurrency (normalized)
-        let useBudgetCurrency = (budget.accounts?.count ?? 0) == 1
-
         return filtered.reduce(0.0) { sum, tx in
-            let amount = useBudgetCurrency ? tx.amount : tx.amountInPreferredCurrency
-            return sum + abs(amount)
+            sum + abs(budgetAmount(of: tx, in: budget.currencyCode))
         }
+    }
+
+    /// Devuelve el monto de la transacción expresado en la moneda del budget.
+    /// Si las monedas coinciden, usa `tx.amount` directo. En multi-divisa,
+    /// convierte con TC actual (`convertWithLatestRate`) — coherente con la
+    /// semántica "presupuesto consumido HOY". El comportamiento previo
+    /// (heurística useBudgetCurrency basada en número de cuentas + fallback
+    /// a `amountInPreferredCurrency`) era incorrecto cuando la moneda
+    /// preferida del usuario != moneda del budget.
+    static func budgetAmount(
+        of tx: TransactionItem,
+        in budgetCurrencyCode: String,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> Double {
+        if tx.currencyCode == budgetCurrencyCode {
+            return tx.amount
+        }
+        let converted = converter.convertWithLatestRate(
+            Decimal(tx.amount),
+            from: tx.currencyCode,
+            to: budgetCurrencyCode
+        )
+        return NSDecimalNumber(decimal: converted).doubleValue
     }
 
     // MARK: - Budget Status Determination

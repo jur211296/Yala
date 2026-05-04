@@ -1067,23 +1067,6 @@ final class PanelViewModel {
         return newOrder
     }
 
-    private func convertToPreferredCurrency(
-        amount: Decimal,
-        from source: CurrencyCode,
-        to target: CurrencyCode
-    ) -> Decimal {
-        if source == target {
-            return amount
-        }
-
-        // Use CurrencyConverter with API rates for consistency with chart calculations
-        return currencyConverter.convertWithLatestRate(
-            amount,
-            from: source.rawValue,
-            to: target.rawValue
-        )
-    }
-
     // MARK: - Trend Logic (Year Only - Tight Range)
 
     // MARK: - Trend Logic (Dynamic Period)
@@ -2150,29 +2133,11 @@ final class PanelViewModel {
         // Only count expenses (not income)
         filtered = filtered.filter { $0.category?.isIncome == false }
 
-        // Sum amounts in budget's currency
+        // Sum amounts in budget's currency. Delega al helper único de
+        // BudgetsViewModel para consistencia: TC actual cuando difiere la
+        // moneda, sin la heurística de "ramas mezcladas" anterior.
         let spent = filtered.reduce(0.0) { sum, transaction in
-            let amount: Double
-            if transaction.currencyCode == budget.currencyCode {
-                // Same currency as budget — use original amount
-                amount = transaction.amount
-            } else if transaction.preferredCurrencyCode == budget.currencyCode {
-                // Preferred currency matches budget — use pre-converted amount
-                amount = transaction.amountInPreferredCurrency
-            } else if let _ = modelContext,
-                      let fromCode = CurrencyCode(rawValue: transaction.currencyCode),
-                      let toCode = CurrencyCode(rawValue: budget.currencyCode) {
-                // Different currency — convert using latest rates
-                let converted = convertToPreferredCurrency(
-                    amount: Decimal(transaction.amount),
-                    from: fromCode,
-                    to: toCode
-                )
-                amount = NSDecimalNumber(decimal: converted).doubleValue
-            } else {
-                amount = transaction.amount
-            }
-            return sum + abs(amount)
+            sum + abs(BudgetsViewModel.budgetAmount(of: transaction, in: budget.currencyCode))
         }
 
         let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
