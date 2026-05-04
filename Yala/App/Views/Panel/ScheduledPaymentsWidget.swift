@@ -205,7 +205,7 @@ struct ScheduledPaymentsWidget: View {
     private var headerSection: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                HStack(spacing: DS.Spacing.xs) {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                     Text(largeDynamicTitle)
                         .font(DS.Typography.subheadlineEmphasized)
                         .foregroundStyle(.primary)

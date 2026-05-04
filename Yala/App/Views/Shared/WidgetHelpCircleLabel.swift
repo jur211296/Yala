@@ -22,13 +22,13 @@ struct WidgetHelpCircleLabel: View {
 }
 
 extension View {
-    /// Sube el círculo ~4pt para que su centro óptico coincida con la línea
-    /// del texto del título del widget (`subheadlineEmphasized`). Sin esto,
-    /// en HStacks con `alignment: .top` el círculo cuelga muy por debajo;
-    /// con un offset al `.center` completo queda demasiado arriba — 4pt es
-    /// el equilibrio para un círculo de 22pt sobre un cap-height ≈ 14pt.
+    /// Alinea ópticamente el círculo con el texto del título del widget
+    /// dentro de un HStack alineado a `.firstTextBaseline`. La baseline del
+    /// texto está debajo del cap, así que mappear directo al `.center` deja
+    /// el círculo colgado por debajo del centro óptico del texto. Sumamos
+    /// ~6pt (≈ cap-height/2 de `subheadlineEmphasized`) para que el centro
+    /// del círculo quede a la altura de la x-height del texto.
     func widgetHelpCircleAlignment() -> some View {
-        alignmentGuide(.top) { d in d[.top] + 4 }
-            .alignmentGuide(.firstTextBaseline) { d in d[VerticalAlignment.center] }
+        alignmentGuide(.firstTextBaseline) { d in d[VerticalAlignment.center] + 6 }
     }
 }

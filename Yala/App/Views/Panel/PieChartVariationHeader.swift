@@ -59,7 +59,7 @@ struct PieChartVariationHeader: View {
         HStack(alignment: .top) {
             // Left: Title and Amount
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                HStack(spacing: DS.Spacing.xs) {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                     Text(title)
                         .font(DS.Typography.subheadlineEmphasized)
                         .foregroundStyle(.primary)

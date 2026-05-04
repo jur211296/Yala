@@ -327,8 +327,12 @@ enum DS {
         static let widgetRadius: CGFloat = 20
         static let smallWidgetRadius: CGFloat = 18
         /// Botón circular glass al lado de los títulos de sección
-        /// (chevron, prefs, toggle de panorama).
-        static let headerAccessorySize: CGFloat = 24
+        /// (prefs, toggle de panorama).
+        static let headerAccessorySize: CGFloat = 30
+        /// Chevron `›` inline pegado al título de sección — más pequeño
+        /// que `headerAccessorySize` para que se sienta como acento del
+        /// título, no como acción protagónica.
+        static let headerChevronSize: CGFloat = 24
         /// Botón circular glass al lado de los títulos de widget
         /// (info/help). Más pequeño que `headerAccessorySize` para no
         /// competir con los títulos de sección.

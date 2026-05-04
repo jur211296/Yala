@@ -246,7 +246,7 @@ struct NeedTrendWidget: View {
             HStack(alignment: .top) {
                 // Left: Title and total amount (hide KPI in income mode or when no data)
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    HStack(spacing: DS.Spacing.xs) {
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                         Text(L10n.Widget.distributionByNeed)
                             .font(DS.Typography.subheadlineEmphasized)
                             .foregroundStyle(.thPrimaryText)

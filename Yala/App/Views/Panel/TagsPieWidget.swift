@@ -90,7 +90,7 @@ struct TagsPieWidget: View {
 
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.none) {
-            HStack(spacing: DS.Spacing.xs) {
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                 Text(L10n.Widget.distributionByTag)
                     .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)

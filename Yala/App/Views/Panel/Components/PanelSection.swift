@@ -78,7 +78,7 @@ struct PanelSection<Content: View, Footer: View>: View {
                 .font(DS.Typography.label)
                 .fontWeight(.semibold)
                 .foregroundStyle(Color.primary)
-                .frame(width: DS.Panel.headerAccessorySize, height: DS.Panel.headerAccessorySize)
+                .frame(width: DS.Panel.headerChevronSize, height: DS.Panel.headerChevronSize)
                 .glassEffect(.regular.interactive(), in: Circle())
         }
         .accessibilityLabel(seeMoreAccessibilityLabel ?? "")

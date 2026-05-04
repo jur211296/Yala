@@ -100,7 +100,7 @@ struct SubcategoriesPieWidget: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.none) {
             // Header (same as content)
-            HStack(spacing: DS.Spacing.xs) {
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                 Text(L10n.Widget.subcategories)
                     .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)

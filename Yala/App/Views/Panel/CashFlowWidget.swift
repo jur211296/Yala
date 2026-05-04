@@ -412,7 +412,7 @@ struct CashFlowWidget: View {
             // Header with title, subtitle and value
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    HStack(spacing: DS.Spacing.xs) {
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                         Text(kpiLabel)
                             .font(DS.Typography.subheadlineEmphasized)
                             .foregroundStyle(.primary)

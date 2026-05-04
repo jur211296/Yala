@@ -56,7 +56,7 @@ struct RecentRecordsWidget: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        HStack(alignment: .top, spacing: DS.Spacing.xs) {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
             Text(L10n.Records.latest)
                 .font(DS.Typography.subheadlineEmphasized)
                 .foregroundStyle(.primary)

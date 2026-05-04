@@ -125,7 +125,7 @@ struct TopCategoriesWidget: View {
         HStack(alignment: .top) {
             // Left: Title and total amount
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                HStack(spacing: DS.Spacing.xs) {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                     Text(size == .small ? L10n.Widget.main : L10n.Widget.topCategories)
                         .font(DS.Typography.subheadlineEmphasized)
                         .foregroundStyle(.primary)
