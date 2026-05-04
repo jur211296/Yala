@@ -333,7 +333,10 @@ final class FullFinancialContextBuilder {
                 currency: account.currencyCode
             )
         }
-        let total = BalanceHelper.totalBalance(
+        // Balance enviado al LLM: TC actual sobre saldo nativo (LiveBalanceCalculator)
+        // en vez de suma de snapshots históricos — el LLM debe ver el saldo
+        // disponible HOY, no la acumulación con TCs de distintos momentos.
+        let total = LiveBalanceCalculator.liveBalance(
             accounts: accounts,
             transactions: allRawTx,
             preferredCurrencyCode: preferredCurrency,

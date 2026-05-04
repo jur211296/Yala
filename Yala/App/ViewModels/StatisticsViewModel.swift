@@ -352,7 +352,8 @@ final class StatisticsViewModel: Filterable {
         calculateTotals(
             filtered: filtered,
             eligibleAccounts: eligibleAccounts,
-            allTransactions: transactions
+            allTransactions: transactions,
+            defaultCurrencyCode: defaultCurrencyCode
         )
 
         // Calculate trend points based on metric using unified TrendDataProcessor
@@ -507,7 +508,8 @@ final class StatisticsViewModel: Filterable {
     private func calculateTotals(
         filtered: [TransactionItem],
         eligibleAccounts: [Account],
-        allTransactions: [TransactionItem]
+        allTransactions: [TransactionItem],
+        defaultCurrencyCode: String
     ) {
         let newIncome =
             filtered
@@ -521,13 +523,14 @@ final class StatisticsViewModel: Filterable {
             .reduce(0) { $0 + abs($1.amountInPreferredCurrency) }
         if newExpense != totalExpense { totalExpense = newExpense }
 
-        let newBalance = eligibleAccounts.reduce(0.0) { total, account in
-            let transactionSum =
-                allTransactions
-                .filter { $0.account?.persistentModelID == account.persistentModelID }
-                .reduce(0.0) { $0 + $1.amountInPreferredCurrency }
-            return total + transactionSum
-        }
+        // KPI Saldo Actual: usa LiveBalanceCalculator (TC actual sobre saldo
+        // nativo) en vez de sumar snapshots históricos — coherente con la
+        // card de Balance Total del Panel.
+        let newBalance = LiveBalanceCalculator.liveBalance(
+            accounts: eligibleAccounts,
+            transactions: allTransactions,
+            preferredCurrencyCode: defaultCurrencyCode
+        )
         if newBalance != currentBalance { currentBalance = newBalance }
     }
 

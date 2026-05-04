@@ -136,8 +136,9 @@ final class ReportNotificationService {
         let accounts = fetchAccounts(context: context)
         let currencyCode = CurrencyDefaults.currentPreferred
 
-        // Calculate balance using BalanceHelper
-        let balance = BalanceHelper.totalBalance(
+        // Balance del reporte: TC actual sobre saldo nativo (LiveBalanceCalculator)
+        // en vez de suma de snapshots históricos.
+        let balance = LiveBalanceCalculator.liveBalance(
             accounts: accounts,
             transactions: transactions,
             preferredCurrencyCode: currencyCode
