@@ -569,16 +569,18 @@ struct AppPreferencesTests {
         let defaults = Self.makeSuite()
         let prefs = AppPreferences(defaults: defaults)
 
-        // Default false (expanded on first open)
-        #expect(prefs.panelAccountsCollapsed == false)
+        // Default true (collapsed on first open) tras Panel 2.0
+        #expect(prefs.panelAccountsCollapsed == true)
 
-        // Toggle on: persists immediately to UserDefaults
-        prefs.panelAccountsCollapsed = true
-        #expect(defaults.bool(forKey: AppPreferences.Keys.panelAccountsCollapsed) == true)
+        // Toggle off: persists immediately to UserDefaults. Usamos object(forKey:)
+        // porque defaults.bool(forKey:) devuelve false tanto para "key ausente" como
+        // para "key explícitamente false" — no permite verificar persistencia de false.
+        prefs.panelAccountsCollapsed = false
+        #expect(defaults.object(forKey: AppPreferences.Keys.panelAccountsCollapsed) as? Bool == false)
 
         // Round-trip through a fresh AppPreferences instance
         let reloaded = AppPreferences(defaults: defaults)
-        #expect(reloaded.panelAccountsCollapsed == true)
+        #expect(reloaded.panelAccountsCollapsed == false)
     }
 
     // MARK: - PP2-05 WidgetSize.small Codable

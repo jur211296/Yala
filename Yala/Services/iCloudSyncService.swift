@@ -156,6 +156,14 @@ final class iCloudSyncService {
     // MARK: - Event Handling
 
     private func handleContainerNotification(_ note: Notification) {
+        #if DEBUG
+        // Bajo paralelismo, otras suites de test inicializan ModelContainer con
+        // CloudKit y disparan eventos `setup` que contaminan el singleton — los
+        // tests de iCloudSyncServiceTests llaman `apply()` directamente. Cuando
+        // `_testReset()` activa este flag, ignoramos eventos externos para
+        // evitar transiciones espurias a `.syncing(.setup)` durante el assert.
+        if _testIgnoreExternalEvents { return }
+        #endif
         guard let event = note.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey]
             as? NSPersistentCloudKitContainer.Event else {
             #if DEBUG
@@ -363,6 +371,12 @@ final class iCloudSyncService {
     // MARK: - Testing Hooks
 
     #if DEBUG
+    /// Cuando `true`, `handleContainerNotification` ignora eventos externos
+    /// del NSPersistentCloudKitContainer. Activado por `_testReset()` para que
+    /// los tests aíslen el singleton de la concurrencia con otras suites
+    /// paralelas que inicializan CloudKit. Producción nunca toca este flag.
+    var _testIgnoreExternalEvents: Bool = false
+
     /// Reset state between tests. Not exposed in release.
     func _testReset() {
         pendingFailedTransition?.cancel()
@@ -374,6 +388,7 @@ final class iCloudSyncService {
         lastImportError = nil
         consecutiveExportFailures = 0
         hasCompletedFirstImport = false
+        _testIgnoreExternalEvents = true
     }
 
     /// Await the pending failed-transition Task so tests can assert post-debounce
