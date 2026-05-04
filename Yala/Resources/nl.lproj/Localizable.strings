@@ -3649,11 +3649,9 @@
 "panel.widgetInfo.cashFlow.largeHowA" = "Houd je vinger op een balk om het exacte detail van een specifiek punt te zien.";
 
 /* Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L) */
-"panel.widgetInfo.cashFlow.balanceQ" = "Wat is het saldo?";
-
+"panel.widgetInfo.cashFlow.balanceQ" = "Waarom komt de totale stroom niet overeen met mijn saldo?";
 /* Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?' */
-"panel.widgetInfo.cashFlow.balanceA" = "Het verschil tussen inkomsten en uitgaven. Positief = je hebt gespaard; negatief = je hebt meer uitgegeven dan verdiend.";
-
+"panel.widgetInfo.cashFlow.balanceA" = "Elke beweging in de stroom wordt geboekt tegen de wisselkoers van de dag waarop die plaatsvond. Je saldo weerspiegelt wat je vandaag hebt tegen de huidige koers. Als je rekeningen in verschillende valuta's hebt, is het verschil een latent wisselkoerswinst of -verlies.";
 /* Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.trend.smallWhatQ" = "Wat zie je?";
 
@@ -4014,3 +4012,7 @@
 
 /* Panel Polish #2 — WeekdayBar L: respuesta */
 "panel.widgetInfo.weekdayBar.largeWhatA" = "Hoeveel je gemiddeld per dag van de week uitgeeft in de actieve periode. Boven elke balk met uitgaven zie je het exacte bedrag.";
+"panel.widgetInfo.trend.fxMatchQ" = "Waarom komt het laatste punt soms niet overeen met mijn totale saldo?";
+"panel.widgetInfo.trend.fxMatchA" = "Het laatste punt weerspiegelt je saldo tegen de huidige wisselkoers. De vorige punten gebruiken de koers van de dag van elke beweging. Het verschil is wisselkoerswinst of -verlies — alleen zichtbaar als je rekeningen in verschillende valuta's hebt.";
+"panel.widgetInfo.exchangeRate.balanceImpactQ" = "Hoe beïnvloedt de wisselkoers mijn saldo?";
+"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala berekent je saldo in je voorkeursvaluta met de huidige wisselkoers op het saldo van elke rekening. Dus als de koers verandert en je doet geen bewegingen, kan je saldo toch stijgen of dalen.";

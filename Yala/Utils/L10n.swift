@@ -348,6 +348,13 @@ enum L10n {
                 static var largeHowA: String {
                     ls("panel.widgetInfo.trend.largeHowA", comment: "Panel Polish #2 — Trend L: respuesta a '¿Cómo interactúo con la gráfica?'")
                 }
+                // Q&A — FX coherence (live balance multi-currency fix)
+                static var fxMatchQ: String {
+                    ls("panel.widgetInfo.trend.fxMatchQ", comment: "Live Balance — Trend M/L: pregunta sobre por qué el último punto puede no coincidir con el saldo total")
+                }
+                static var fxMatchA: String {
+                    ls("panel.widgetInfo.trend.fxMatchA", comment: "Live Balance — Trend M/L: respuesta sobre fluctuación cambiaria")
+                }
             }
 
             // MARK: - Bloque 1 (Pies + Need)
@@ -473,6 +480,9 @@ enum L10n {
                 static var whatA: String { ls("panel.widgetInfo.exchangeRate.whatA", comment: "Panel Polish #2 — ExchangeRate: respuesta") }
                 static var howQ: String { ls("panel.widgetInfo.exchangeRate.howQ", comment: "Panel Polish #2 — ExchangeRate: pregunta '¿Cómo interactúo con la gráfica?'") }
                 static var howA: String { ls("panel.widgetInfo.exchangeRate.howA", comment: "Panel Polish #2 — ExchangeRate: respuesta a 'cómo interactúo'") }
+                // Q&A — balance impact (live balance multi-currency fix)
+                static var balanceImpactQ: String { ls("panel.widgetInfo.exchangeRate.balanceImpactQ", comment: "Live Balance — ExchangeRate: pregunta sobre cómo el TC afecta al balance") }
+                static var balanceImpactA: String { ls("panel.widgetInfo.exchangeRate.balanceImpactA", comment: "Live Balance — ExchangeRate: respuesta sobre cómo el TC afecta al balance") }
             }
 
             enum WeekdayBar {

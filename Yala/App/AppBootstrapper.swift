@@ -99,6 +99,11 @@ final class AppBootstrapper {
         // 2. Load exchange rates (required for currency display)
         await loadExchangeRates(context: context)
 
+        // 2.5. One-shot migration: recalcula amountInPreferredCurrency de todas
+        //      las transacciones existentes para que sean consistentes tras
+        //      el fix multi-divisa (épico Live Balance). Idempotente vía flag.
+        await migrateToLiveBalanceIfNeeded(context: context)
+
         // 3. Load subscription status
         await loadSubscriptionStatus()
 
@@ -670,6 +675,39 @@ final class AppBootstrapper {
 
         // Update transactions with provisional exchange rates
         await TransactionUpdateService.updateProvisionalTransactions(context: context)
+    }
+
+    /// Migración v2.0 (épico Live Balance multi-divisa): recalcula
+    /// `amountInPreferredCurrency` para TODAS las transacciones existentes
+    /// para limpiar snapshots inconsistentes (en particular saldos iniciales
+    /// pre-fix B1). El flag `hasMigratedToLiveBalance` solo se setea tras
+    /// éxito — si falla por offline o error, próxima apertura reintenta.
+    private func migrateToLiveBalanceIfNeeded(context: ModelContext) async {
+        let migrationKey = "hasMigratedToLiveBalance"
+        guard !UserDefaults.standard.bool(forKey: migrationKey) else { return }
+
+        do {
+            try await CurrencyChangeService.shared.updateAllTransactions(
+                to: CurrencyDefaults.currentPreferred,
+                context: context,
+                onProgress: { progress in
+                    #if DEBUG
+                    if Int(progress * 100) % 25 == 0 {
+                        print("[LiveBalance] migration: \(Int(progress * 100))%")
+                    }
+                    #endif
+                }
+            )
+            UserDefaults.standard.set(true, forKey: migrationKey)
+            #if DEBUG
+            print("[LiveBalance] migration completed successfully")
+            #endif
+        } catch {
+            #if DEBUG
+            print("[LiveBalance] migration failed: \(error). Will retry next launch.")
+            #endif
+            // NO setear flag → próxima apertura reintentará
+        }
     }
 
     private func loadSubscriptionStatus() async {

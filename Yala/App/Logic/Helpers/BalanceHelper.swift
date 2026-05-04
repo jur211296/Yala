@@ -13,44 +13,12 @@ import SwiftData
 /// Contains no state - all methods are static.
 struct BalanceHelper {
 
-    /// Calcula el balance total de cuentas elegibles en la moneda preferida.
-    /// Delega a `LiveBalanceCalculator.liveBalance` que agrupa por moneda nativa
-    /// y aplica el TC actual — refleja el saldo "hoy", no la suma de snapshots
-    /// históricos.
-    @available(*, deprecated, message: "Use LiveBalanceCalculator.liveBalance directly")
-    static func totalBalance(
-        accounts: [Account],
-        transactions: [TransactionItem],
-        preferredCurrencyCode: String,
-        converter: CurrencyConverting = CurrencyConverter.shared
-    ) -> Double {
-        return LiveBalanceCalculator.liveBalance(
-            accounts: accounts,
-            transactions: transactions,
-            preferredCurrencyCode: preferredCurrencyCode,
-            selectedAccountID: nil,
-            converter: converter
-        )
-    }
-
-    /// Calcula el balance mostrado (total o de cuenta seleccionada).
-    /// Si la cuenta seleccionada está excluida, hace fallback al total.
-    @available(*, deprecated, message: "Use LiveBalanceCalculator.liveBalance directly")
-    static func displayedBalance(
-        accounts: [Account],
-        transactions: [TransactionItem],
-        selectedAccountID: PersistentIdentifier?,
-        preferredCurrencyCode: String,
-        converter: CurrencyConverting = CurrencyConverter.shared
-    ) -> Double {
-        return LiveBalanceCalculator.liveBalance(
-            accounts: accounts,
-            transactions: transactions,
-            preferredCurrencyCode: preferredCurrencyCode,
-            selectedAccountID: selectedAccountID,
-            converter: converter
-        )
-    }
+    // NOTA: `totalBalance` y `displayedBalance` se eliminaron en el épico
+    // Live Balance multi-divisa (rvw_live-balance-multi-currency-fix). Los
+    // callers usan ahora `LiveBalanceCalculator.liveBalance` directo.
+    // `initialBalanceForTrend` se mantiene — su semántica histórica (sumar
+    // snapshots al TC del día previos a una fecha) sigue siendo correcta
+    // para la curva intermedia del trend chart.
 
     /// Calculates the initial balance for trend calculation up to a specific date.
     /// Computes all transactions that occurred strictly before the `before` date.

@@ -179,6 +179,10 @@ struct WidgetInfoContent {
                                 question: L10n.Panel.WidgetInfo.Trend.largeHowQ,
                                 answer: L10n.Panel.WidgetInfo.Trend.largeHowA
                             ),
+                            InfoSection(
+                                question: L10n.Panel.WidgetInfo.Trend.fxMatchQ,
+                                answer: L10n.Panel.WidgetInfo.Trend.fxMatchA
+                            ),
                         ]
                     }
                 }
@@ -558,6 +562,8 @@ struct WidgetInfoContent {
                                     answer: L10n.Panel.WidgetInfo.ExchangeRate.whatA),
                         InfoSection(question: L10n.Panel.WidgetInfo.ExchangeRate.howQ,
                                     answer: L10n.Panel.WidgetInfo.ExchangeRate.howA),
+                        InfoSection(question: L10n.Panel.WidgetInfo.ExchangeRate.balanceImpactQ,
+                                    answer: L10n.Panel.WidgetInfo.ExchangeRate.balanceImpactA),
                     ]
                 }
             )

@@ -3647,11 +3647,9 @@
 "panel.widgetInfo.cashFlow.largeHowA" = "Maintiens le doigt sur une barre pour voir le détail exact d'un point précis.";
 
 /* Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L) */
-"panel.widgetInfo.cashFlow.balanceQ" = "Qu'est-ce que le solde ?";
-
+"panel.widgetInfo.cashFlow.balanceQ" = "Pourquoi le flux total ne correspond-il pas à mon solde ?";
 /* Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?' */
-"panel.widgetInfo.cashFlow.balanceA" = "La différence entre revenus et dépenses. Positif = tu as économisé ; négatif = tu as dépensé plus que tu n'as gagné.";
-
+"panel.widgetInfo.cashFlow.balanceA" = "Chaque mouvement du flux est comptabilisé au taux de change du jour où il s'est produit. Ton solde reflète ce que tu as aujourd'hui au taux actuel. Si tu as des comptes dans différentes devises, la différence est un gain ou une perte de change latente.";
 /* Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.trend.smallWhatQ" = "Que vois-tu ?";
 
@@ -4012,3 +4010,7 @@
 
 /* Panel Polish #2 — WeekdayBar L: respuesta */
 "panel.widgetInfo.weekdayBar.largeWhatA" = "Combien tu dépenses en moyenne chaque jour de la semaine sur la période active. Le montant exact est affiché au-dessus de chaque barre qui contient des dépenses.";
+"panel.widgetInfo.trend.fxMatchQ" = "Pourquoi le dernier point peut ne pas correspondre à mon solde total ?";
+"panel.widgetInfo.trend.fxMatchA" = "Le dernier point reflète ton solde au taux de change actuel. Les points précédents utilisent le taux du jour de chaque mouvement. La différence est un gain ou une perte de change — visible uniquement si tu as des comptes dans différentes devises.";
+"panel.widgetInfo.exchangeRate.balanceImpactQ" = "Comment le taux de change affecte-t-il mon solde ?";
+"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala calcule ton solde dans ta devise préférée en utilisant le taux de change actuel sur le solde de chaque compte. Ainsi, si le taux change et que tu ne fais aucun mouvement, ton solde peut quand même monter ou descendre.";

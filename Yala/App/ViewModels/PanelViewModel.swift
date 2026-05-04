@@ -950,32 +950,31 @@ final class PanelViewModel {
         }
     }
 
-    /// Calculates the total balance in the default currency.
-    /// Uses pre-calculated amountInPreferredCurrency for optimal performance.
+    /// Calcula el balance total "vivo" en la moneda preferida (TC actual sobre
+    /// saldo nativo).
     func totalBalanceInDefaultCurrency(
         accounts: [Account],
         transactions: [TransactionItem],
         defaultCurrencyCode: String
     ) -> Double {
-        return BalanceHelper.totalBalance(
+        return LiveBalanceCalculator.liveBalance(
             accounts: accounts,
             transactions: transactions,
             preferredCurrencyCode: defaultCurrencyCode
         )
     }
 
-    /// Calculates the displayed balance (either total or selected account).
-    /// Uses date-specific exchange rates for each transaction for accuracy.
+    /// Calcula el balance mostrado: total o de cuenta seleccionada (vivo).
     func displayedBalanceInDefaultCurrency(
         accounts: [Account],
         transactions: [TransactionItem],
         defaultCurrencyCode: String
     ) -> Double {
-        return BalanceHelper.displayedBalance(
+        return LiveBalanceCalculator.liveBalance(
             accounts: accounts,
             transactions: transactions,
-            selectedAccountID: self.selectedAccountID,
-            preferredCurrencyCode: defaultCurrencyCode
+            preferredCurrencyCode: defaultCurrencyCode,
+            selectedAccountID: self.selectedAccountID
         )
     }
 

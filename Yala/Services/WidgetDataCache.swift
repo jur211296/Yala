@@ -281,11 +281,17 @@ enum WidgetDataCache {
             return !excludedAccountIDs.contains(account.persistentModelID)
         }
 
-        // Calculate total balance using eligible transactions (not excluded from statistics)
-        let totalBalance = calculateTotalBalance(accounts: accounts, transactions: eligibleTransactions)
-
         // Get preferred currency from user settings (single source of truth)
         let preferredCurrency = UserDefaults.standard.string(forKey: "defaultCurrencyCode") ?? "USD"
+
+        // Total balance: TC actual sobre saldo nativo (LiveBalanceCalculator).
+        // El widget consume este Double ya convertido — el calculator NO se
+        // expone al target widget extension.
+        let totalBalance = LiveBalanceCalculator.liveBalance(
+            accounts: accounts,
+            transactions: eligibleTransactions,
+            preferredCurrencyCode: preferredCurrency
+        )
 
         // Build widget transactions (last 10 for display, from recent 90 days)
         let widgetTransactions = Array(recentTransactions.prefix(10)).map { tx in
@@ -355,18 +361,18 @@ enum WidgetDataCache {
         // Build trend data with multiple granularities (uses eligible transactions)
         let trendData = buildTrendData(transactions: eligibleTransactions, totalBalance: totalBalance)
 
-        // Build account balances for widgets (only non-archived accounts shown as cards)
+        // Build account balances for widgets (only non-archived accounts shown as cards).
+        // Cada card muestra el saldo en moneda NATIVA de la cuenta, no convertido.
+        // Usa AccountBalanceCalculator (suma tx.amount nativo) — antes sumaba
+        // amountInPreferredCurrency, lo cual era incorrecto multi-divisa.
         let widgetAccountBalances = accounts.filter { !$0.isArchived }.map { account in
-            // Calculate account balance from its transactions
-            let accountTransactions = allTransactions.filter { $0.account?.persistentModelID == account.persistentModelID }
-            let accountBalance = accountTransactions.reduce(0.0) { sum, tx in
-                sum + (tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount)
-            }
-
+            let accountBalance = AccountBalanceCalculator.currentBalance(
+                for: account, allTransactions: allTransactions
+            )
             return WidgetAccountBalance(
                 id: account.persistentModelID.hashValue.description,
                 name: account.name,
-                balance: accountBalance,
+                balance: NSDecimalNumber(decimal: accountBalance).doubleValue,
                 currencyCode: account.currencyCode,
                 isExcludedFromStats: account.excludeFromStatistics
             )
@@ -430,27 +436,6 @@ enum WidgetDataCache {
             allTimeSummary: allTimeSummary,
             periodSummaries: periodSummaries
         )
-    }
-
-    private static func calculateTotalBalance(accounts: [Account], transactions: [TransactionItem]) -> Double {
-        // Filter to only eligible accounts (not excluded from statistics; archived still count)
-        let eligibleAccountIDs = Set(
-            accounts.filter { !$0.excludeFromStatistics }
-                .map { $0.persistentModelID }
-        )
-
-        // Sum all transactions in preferred currency
-        // NOTE: amount already has the correct sign (positive = income, negative = expense)
-        // This aligns with BalanceHelper.totalBalance() which is the source of truth
-        var total: Double = 0
-        for tx in transactions {
-            guard let account = tx.account,
-                  eligibleAccountIDs.contains(account.persistentModelID) else { continue }
-
-            // amount is already signed correctly, just sum it
-            total += tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
-        }
-        return total
     }
 
     private static func calculateBudgetSpent(budget: Budget, transactions: [TransactionItem]) -> Double {

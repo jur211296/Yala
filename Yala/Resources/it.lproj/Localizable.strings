@@ -3648,11 +3648,9 @@
 "panel.widgetInfo.cashFlow.largeHowA" = "Tieni premuto su una barra per vedere i dettagli esatti di un punto specifico.";
 
 /* Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L) */
-"panel.widgetInfo.cashFlow.balanceQ" = "Cos'è il saldo?";
-
+"panel.widgetInfo.cashFlow.balanceQ" = "Perché il flusso totale non coincide con il mio saldo?";
 /* Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?' */
-"panel.widgetInfo.cashFlow.balanceA" = "La differenza tra entrate e uscite. Positivo = hai risparmiato; negativo = hai speso più di quanto hai guadagnato.";
-
+"panel.widgetInfo.cashFlow.balanceA" = "Ogni movimento del flusso viene contabilizzato al tasso di cambio del giorno in cui è avvenuto. Il tuo saldo riflette quello che hai oggi al tasso attuale. Se hai conti in valute diverse, la differenza è un guadagno o una perdita di cambio latente.";
 /* Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.trend.smallWhatQ" = "Cosa stai vedendo?";
 
@@ -4013,3 +4011,7 @@
 
 /* Panel Polish #2 — WeekdayBar L: respuesta */
 "panel.widgetInfo.weekdayBar.largeWhatA" = "Quanto spendi in media ogni giorno della settimana nel periodo attivo. Sopra ogni barra con spesa è visibile l'importo esatto.";
+"panel.widgetInfo.trend.fxMatchQ" = "Perché l'ultimo punto potrebbe non coincidere con il mio saldo totale?";
+"panel.widgetInfo.trend.fxMatchA" = "L'ultimo punto riflette il tuo saldo al tasso di cambio attuale. I punti precedenti usano il tasso del giorno di ogni movimento. La differenza è un guadagno o perdita per fluttuazione cambiaria — visibile solo se hai conti in valute diverse.";
+"panel.widgetInfo.exchangeRate.balanceImpactQ" = "Come influisce il tasso di cambio sul mio saldo?";
+"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala calcola il tuo saldo nella valuta preferita usando il tasso di cambio attuale sul saldo di ogni conto. Quindi, se il tasso cambia e non fai movimenti, il tuo saldo può comunque salire o scendere.";

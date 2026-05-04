@@ -3649,11 +3649,9 @@
 "panel.widgetInfo.cashFlow.largeHowA" = "バーを長押しすると、特定のポイントの正確な詳細が表示されます。";
 
 /* Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L) */
-"panel.widgetInfo.cashFlow.balanceQ" = "収支とは何ですか？";
-
+"panel.widgetInfo.cashFlow.balanceQ" = "なぜ合計フローが残高と一致しないのですか？";
 /* Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?' */
-"panel.widgetInfo.cashFlow.balanceA" = "収入と支出の差です。プラス = 貯金できた、マイナス = 収入より多く使った状態を示します。";
-
+"panel.widgetInfo.cashFlow.balanceA" = "フローの各動きは、発生した日の為替レートで記録されます。残高は、現在のレートで今日持っている金額を反映します。異なる通貨の口座をお持ちの場合、その差額は未実現の為替差益または差損です。";
 /* Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.trend.smallWhatQ" = "何が表示されていますか？";
 
@@ -4014,3 +4012,7 @@
 
 /* Panel Polish #2 — WeekdayBar L: respuesta */
 "panel.widgetInfo.weekdayBar.largeWhatA" = "現在の期間における曜日ごとの平均支出額です。支出のある各バーの上に正確な金額が表示されます。";
+"panel.widgetInfo.trend.fxMatchQ" = "なぜ最後のポイントが合計残高と一致しないことがあるのですか？";
+"panel.widgetInfo.trend.fxMatchA" = "最後のポイントは、現在の為替レートでの残高を反映します。それより前のポイントは、各取引日のレートを使用します。差額は為替変動による利益または損失で、異なる通貨の口座をお持ちの場合にのみ表示されます。";
+"panel.widgetInfo.exchangeRate.balanceImpactQ" = "為替レートは残高にどのように影響しますか？";
+"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yalaは、各口座の残高に現在の為替レートを適用して、優先通貨での残高を計算します。そのため、レートが変動して取引をしなくても、残高は上下することがあります。";

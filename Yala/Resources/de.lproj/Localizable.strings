@@ -3646,11 +3646,9 @@
 "panel.widgetInfo.cashFlow.largeHowA" = "Halte den Finger auf einem Balken, um den genauen Wert an einem bestimmten Punkt zu sehen.";
 
 /* Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L) */
-"panel.widgetInfo.cashFlow.balanceQ" = "Was ist der Saldo?";
-
+"panel.widgetInfo.cashFlow.balanceQ" = "Warum stimmt der Gesamtfluss nicht mit meinem Kontostand überein?";
 /* Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?' */
-"panel.widgetInfo.cashFlow.balanceA" = "Die Differenz zwischen Einnahmen und Ausgaben. Positiv = du hast gespart; negativ = du hast mehr ausgegeben als eingenommen.";
-
+"panel.widgetInfo.cashFlow.balanceA" = "Jede Bewegung im Cashflow wird zum Wechselkurs des Tages erfasst, an dem sie erfolgte. Dein Kontostand zeigt, was du heute zum aktuellen Kurs hast. Wenn du Konten in verschiedenen Währungen hast, ist die Differenz ein nicht realisierter Wechselkursgewinn oder -verlust.";
 /* Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.trend.smallWhatQ" = "Was siehst du?";
 
@@ -4011,3 +4009,7 @@
 
 /* Panel Polish #2 — WeekdayBar L: respuesta */
 "panel.widgetInfo.weekdayBar.largeWhatA" = "Wie viel du im aktuellen Zeitraum an jedem Wochentag durchschnittlich ausgibst. Über jedem Balken mit Ausgaben siehst du den genauen Betrag.";
+"panel.widgetInfo.trend.fxMatchQ" = "Warum stimmt der letzte Punkt eventuell nicht mit meinem Gesamtkontostand überein?";
+"panel.widgetInfo.trend.fxMatchA" = "Der letzte Punkt spiegelt deinen Kontostand zum aktuellen Wechselkurs wider. Vorhergehende Punkte verwenden den Kurs vom jeweiligen Tag der Bewegung. Die Differenz ist ein Wechselkursgewinn oder -verlust — nur sichtbar bei Konten in verschiedenen Währungen.";
+"panel.widgetInfo.exchangeRate.balanceImpactQ" = "Wie wirkt sich der Wechselkurs auf meinen Kontostand aus?";
+"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala berechnet deinen Kontostand in der bevorzugten Währung mit dem aktuellen Wechselkurs auf den Saldo jedes Kontos. Wenn sich der Kurs ändert und du keine Bewegungen machst, kann dein Kontostand trotzdem steigen oder fallen.";

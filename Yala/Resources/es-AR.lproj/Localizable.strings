@@ -176,3 +176,9 @@
 "groups.invite.linkInvalidDetail" = "Este enlace ya no es válido o expiró. Pedile al admin que regenere uno.";
 "groups.sync.errorAcceptShare" = "No pudimos completar tu unión al grupo. Intentá de nuevo.";
 "groups.sync.errorMemberSetup" = "Te uniste, pero hubo un problema con tu identidad en el grupo. Reabrí la app.";
+"panel.widgetInfo.cashFlow.balanceQ" = "¿Por qué el flujo total no coincide con tu balance?";
+"panel.widgetInfo.cashFlow.balanceA" = "Cada movimiento del flujo se contabiliza al tipo de cambio del día en que ocurrió. Tu balance refleja lo que tenés hoy al tipo de cambio vigente. Si tenés cuentas en distintas monedas, la diferencia es ganancia o pérdida cambiaria latente.";
+"panel.widgetInfo.trend.fxMatchQ" = "¿Por qué el último punto puede no coincidir con tu saldo total?";
+"panel.widgetInfo.trend.fxMatchA" = "El último punto refleja tu saldo al tipo de cambio actual. Los puntos previos usan el tipo de cambio del día de cada movimiento. La diferencia es ganancia o pérdida por fluctuación cambiaria — solo aparece si tenés cuentas en distintas monedas.";
+"panel.widgetInfo.exchangeRate.balanceImpactQ" = "¿Cómo afecta el tipo de cambio a tu balance?";
+"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala calcula tu balance en la moneda preferida usando el tipo de cambio actual sobre el saldo de cada cuenta. Por eso, si el tipo de cambio cambia y no hacés movimientos, tu balance puede subir o bajar.";

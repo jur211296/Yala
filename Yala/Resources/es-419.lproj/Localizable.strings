@@ -3652,11 +3652,9 @@
 "panel.widgetInfo.cashFlow.largeHowA" = "Mantén el dedo sobre las barras para ver el detalle exacto de un punto concreto.";
 
 /* Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L) */
-"panel.widgetInfo.cashFlow.balanceQ" = "¿Qué es el balance?";
-
+"panel.widgetInfo.cashFlow.balanceQ" = "¿Por qué el flujo total no coincide con mi balance?";
 /* Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?' */
-"panel.widgetInfo.cashFlow.balanceA" = "La diferencia entre ingresos y gastos. Positivo = ahorraste; negativo = gastaste más de lo que entró.";
-
+"panel.widgetInfo.cashFlow.balanceA" = "Cada movimiento del flujo se contabiliza al tipo de cambio del día en que ocurrió. Tu balance refleja lo que tienes hoy al tipo de cambio vigente. Si tienes cuentas en distintas monedas, la diferencia es ganancia o pérdida cambiaria latente.";
 /* Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.trend.smallWhatQ" = "¿Qué estás viendo?";
 
@@ -4017,3 +4015,7 @@
 
 /* Panel Polish #2 — WeekdayBar L: respuesta */
 "panel.widgetInfo.weekdayBar.largeWhatA" = "Cuánto gastas en promedio cada día de la semana en el período activo. Sobre cada barra con gasto se ve el monto exacto.";
+"panel.widgetInfo.trend.fxMatchQ" = "¿Por qué el último punto puede no coincidir con mi saldo total?";
+"panel.widgetInfo.trend.fxMatchA" = "El último punto refleja tu saldo al tipo de cambio actual. Los puntos previos usan el tipo de cambio del día de cada movimiento. La diferencia es ganancia o pérdida por fluctuación cambiaria — solo aparece si tienes cuentas en distintas monedas.";
+"panel.widgetInfo.exchangeRate.balanceImpactQ" = "¿Cómo afecta el tipo de cambio a mi balance?";
+"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala calcula tu balance en la moneda preferida usando el tipo de cambio actual sobre el saldo de cada cuenta. Por eso, si el tipo de cambio cambia y no haces movimientos, tu balance puede subir o bajar.";

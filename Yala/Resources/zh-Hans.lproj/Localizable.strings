@@ -3649,11 +3649,9 @@
 "panel.widgetInfo.cashFlow.largeHowA" = "长按某条柱状图以查看特定点的准确详情。";
 
 /* Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L) */
-"panel.widgetInfo.cashFlow.balanceQ" = "什么是余额？";
-
+"panel.widgetInfo.cashFlow.balanceQ" = "为什么总流量与我的余额不符？";
 /* Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?' */
-"panel.widgetInfo.cashFlow.balanceA" = "收入与支出的差额。正数 = 你有结余；负数 = 你支出超过收入。";
-
+"panel.widgetInfo.cashFlow.balanceA" = "流量中的每一笔变动都按发生当日的汇率记账。你的余额反映的是今天按当前汇率持有的金额。如果你有不同币种的账户,差额就是未实现的汇兑损益。";
 /* Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.trend.smallWhatQ" = "你看到的是什么？";
 
@@ -4014,3 +4012,7 @@
 
 /* Panel Polish #2 — WeekdayBar L: respuesta */
 "panel.widgetInfo.weekdayBar.largeWhatA" = "你在当前周期内每周中各天的平均支出。每根有支出的柱顶部会显示精确金额。";
+"panel.widgetInfo.trend.fxMatchQ" = "为什么最后一个点可能与我的总余额不符?";
+"panel.widgetInfo.trend.fxMatchA" = "最后一个点反映的是按当前汇率计算的余额。前面的点使用每笔交易日期的汇率。差额是汇率波动产生的损益,只有当你有不同币种的账户时才会出现。";
+"panel.widgetInfo.exchangeRate.balanceImpactQ" = "汇率如何影响我的余额?";
+"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala 使用当前汇率对每个账户的余额计算你的首选币种总余额。所以,即使你不进行任何交易,只要汇率变动,你的余额也可能上升或下降。";

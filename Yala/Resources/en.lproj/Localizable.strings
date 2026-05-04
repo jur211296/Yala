@@ -3649,11 +3649,9 @@
 "panel.widgetInfo.cashFlow.largeHowA" = "Press and hold a bar to see the exact details of a specific point.";
 
 /* Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L) */
-"panel.widgetInfo.cashFlow.balanceQ" = "What is the balance?";
-
+"panel.widgetInfo.cashFlow.balanceQ" = "Why doesn't total flow match my balance?";
 /* Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?' */
-"panel.widgetInfo.cashFlow.balanceA" = "The difference between income and expenses. Positive = you saved; negative = you spent more than you earned.";
-
+"panel.widgetInfo.cashFlow.balanceA" = "Each flow entry is recorded at the exchange rate on the day it happened. Your balance reflects what you have today at the current rate. If you have accounts in different currencies, the difference is unrealized FX gain or loss.";
 /* Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.trend.smallWhatQ" = "What are you seeing?";
 
@@ -4014,3 +4012,7 @@
 
 /* Panel Polish #2 — WeekdayBar L: respuesta */
 "panel.widgetInfo.weekdayBar.largeWhatA" = "How much you spend on average each day of the week in the active period. The exact amount appears above each bar that has spending.";
+"panel.widgetInfo.trend.fxMatchQ" = "Why might the last point not match my total balance?";
+"panel.widgetInfo.trend.fxMatchA" = "The last point reflects your balance at the current exchange rate. Previous points use the rate from each transaction's date. The gap is FX gain or loss — only visible if you have accounts in different currencies.";
+"panel.widgetInfo.exchangeRate.balanceImpactQ" = "How does the exchange rate affect my balance?";
+"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala calculates your balance in your preferred currency using the current exchange rate on each account's balance. So if the rate changes and you make no transactions, your balance can still go up or down.";

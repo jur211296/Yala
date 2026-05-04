@@ -3649,11 +3649,9 @@
 "panel.widgetInfo.cashFlow.largeHowA" = "Przytrzymaj palec na pasku, aby zobaczyć dokładne szczegóły konkretnego punktu.";
 
 /* Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L) */
-"panel.widgetInfo.cashFlow.balanceQ" = "Czym jest bilans?";
-
+"panel.widgetInfo.cashFlow.balanceQ" = "Dlaczego suma przepływu nie zgadza się z moim saldem?";
 /* Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?' */
-"panel.widgetInfo.cashFlow.balanceA" = "Różnica między przychodami a wydatkami. Dodatnia = oszczędziłeś; ujemna = wydałeś więcej, niż zarobiłeś.";
-
+"panel.widgetInfo.cashFlow.balanceA" = "Każda operacja w przepływie jest księgowana po kursie wymiany z dnia, w którym wystąpiła. Twoje saldo odzwierciedla to, co masz dziś po bieżącym kursie. Jeśli masz konta w różnych walutach, różnica to niezrealizowany zysk lub strata kursowa.";
 /* Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.trend.smallWhatQ" = "Co widzisz?";
 
@@ -4014,3 +4012,7 @@
 
 /* Panel Polish #2 — WeekdayBar L: respuesta */
 "panel.widgetInfo.weekdayBar.largeWhatA" = "Ile średnio wydajesz każdego dnia tygodnia w bieżącym okresie. Nad każdym słupkiem z wydatkami widać dokładną kwotę.";
+"panel.widgetInfo.trend.fxMatchQ" = "Dlaczego ostatni punkt może nie zgadzać się z moim saldem całkowitym?";
+"panel.widgetInfo.trend.fxMatchA" = "Ostatni punkt odzwierciedla saldo po bieżącym kursie wymiany. Poprzednie punkty używają kursu z dnia każdej operacji. Różnica to zysk lub strata kursowa — widoczna tylko gdy masz konta w różnych walutach.";
+"panel.widgetInfo.exchangeRate.balanceImpactQ" = "Jak kurs wymiany wpływa na moje saldo?";
+"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala oblicza saldo w preferowanej walucie używając bieżącego kursu wymiany na saldzie każdego konta. Dlatego, jeśli kurs się zmienia i nie wykonujesz operacji, saldo i tak może wzrosnąć lub spaść.";
