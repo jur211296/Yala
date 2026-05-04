@@ -19,6 +19,11 @@ struct TrendChartView: View {
     /// PP2-06c: compact mode for `.small` widget — hides Y-axis, the "today" marker
     /// and caps the X-axis to at most 2 labels (first + last data point).
     var compact: Bool = false
+    /// Dot suelto en `Date.now` con saldo vivo (LiveBalanceCalculator). No-nil
+    /// solo en métricas de balance cuando el período cubre hoy. Se renderiza
+    /// como un PointMark con anillo, sin annotation propia (el `todayMarker`
+    /// ya marca el contexto temporal con texto "Hoy"). En compact se omite.
+    var liveAnchor: PanelViewModel.BarPoint? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -128,6 +133,25 @@ struct TrendChartView: View {
 
             // Marker for "Today" (omitted entirely in compact mode)
             todayMarker(today: today)
+
+            // Dot suelto del saldo vivo (LiveBalanceCalculator). Anillo via
+            // doble PointMark — añade el VALOR al contexto temporal del
+            // todayMarker. En compact se omite para preservar el chart limpio.
+            if let anchor = liveAnchor, !compact, paddedXDomain.contains(anchor.date) {
+                PointMark(
+                    x: .value(L10n.Common.date, anchor.date),
+                    y: .value(L10n.Common.amount, anchor.value)
+                )
+                .symbolSize(160)
+                .foregroundStyle(primaryLineColor)
+
+                PointMark(
+                    x: .value(L10n.Common.date, anchor.date),
+                    y: .value(L10n.Common.amount, anchor.value)
+                )
+                .symbolSize(80)
+                .foregroundStyle(.thCard)
+            }
 
             // Average line
             averageLineMarks
@@ -267,9 +291,13 @@ struct TrendChartView: View {
                 -padding)...interval.end.addingTimeInterval(padding)
         }
 
-        let span = lastDate.timeIntervalSince(firstDate)
+        // Extender hasta liveAnchor.date si cae fuera del rango de datos (caso
+        // típico: última tx hace varios días pero el período cubre hoy). Esto
+        // beneficia también al `todayMarker` que verifica `paddedXDomain.contains(today)`.
+        let effectiveLastDate = max(lastDate, liveAnchor?.date ?? lastDate)
+        let span = effectiveLastDate.timeIntervalSince(firstDate)
         let padding = max(span * 0.05, 86400)  // At least 1 day padding
-        return firstDate.addingTimeInterval(-padding)...lastDate.addingTimeInterval(padding)
+        return firstDate.addingTimeInterval(-padding)...effectiveLastDate.addingTimeInterval(padding)
     }
 
     // MARK: - Smart Axis Labels

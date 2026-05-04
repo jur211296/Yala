@@ -187,7 +187,8 @@ struct TrendsCarouselWidget: View {
                 trendType: viewModel.dataTrendType,
                 focusedDate: $viewModel.focusedDate,
                 period: viewModel.currentPeriod,
-                chartHeight: 170
+                chartHeight: 170,
+                liveAnchor: viewModel.trendLiveAnchor
             )
         }
     }

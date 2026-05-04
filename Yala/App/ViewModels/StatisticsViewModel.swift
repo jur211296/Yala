@@ -165,6 +165,11 @@ final class StatisticsViewModel: Filterable {
     /// Y-axis domain for the chart
     var yDomain: ClosedRange<Double> = 0...100
 
+    /// Dot suelto "hoy" con saldo vivo. La View lo renderiza separado de la
+    /// curva (PointMark con anillo) cuando la métrica es .balance y el
+    /// período cubre hoy. Nil en otros casos.
+    var trendLiveAnchor: PanelViewModel.BarPoint? = nil
+
     /// Trend grouping based on period
     var trendGrouping: TrendGrouping = .month
 
@@ -381,6 +386,7 @@ final class StatisticsViewModel: Filterable {
             yDomain = result.yDomain
             if result.totalIncome != totalIncome { totalIncome = result.totalIncome }
             if result.totalExpense != totalExpense { totalExpense = result.totalExpense }
+            if result.liveAnchor != trendLiveAnchor { trendLiveAnchor = result.liveAnchor }
             dataMetric = selectedMetric
         } else {
             calculatePerAccountTrend(

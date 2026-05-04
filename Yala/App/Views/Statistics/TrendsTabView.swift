@@ -341,7 +341,8 @@ struct TrendsTabView: View {
                     trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
                     focusedDate: $trendsViewModel.focusedDate,
                     period: trendsViewModel.detailPeriod,
-                    chartHeight: 220
+                    chartHeight: 220,
+                    liveAnchor: trendsViewModel.trendLiveAnchor
                 )
                 .padding(.top, DS.Spacing.sm)
             } else {
