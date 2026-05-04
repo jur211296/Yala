@@ -13,56 +13,29 @@ import SwiftData
 /// Contains no state - all methods are static.
 struct BalanceHelper {
 
-    /// Calculates the total balance of all eligible accounts in the default currency.
-    /// Uses pre-calculated amountInPreferredCurrency for optimal performance.
-    /// Initial balance is now a transaction, so we start from 0.
+    /// Calcula el balance total de cuentas elegibles en la moneda preferida.
+    /// Delega a `LiveBalanceCalculator.liveBalance` que agrupa por moneda nativa
+    /// y aplica el TC actual — refleja el saldo "hoy", no la suma de snapshots
+    /// históricos.
+    @available(*, deprecated, message: "Use LiveBalanceCalculator.liveBalance directly")
     static func totalBalance(
         accounts: [Account],
         transactions: [TransactionItem],
         preferredCurrencyCode: String,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> Double {
-        let preferredCurrency = CurrencyCode(rawValue: preferredCurrencyCode) ?? .pen
-
-        let eligibleAccounts = accounts.filter { account in
-            !account.excludeFromStatistics
-        }
-
-        let eligibleAccountIDs = Set(eligibleAccounts.map { $0.persistentModelID })
-
-        var totalDecimal: Decimal = 0
-
-        // Initial balance is now a transaction, so we only sum transactions
-        for tx in transactions {
-            guard let account = tx.account,
-                eligibleAccountIDs.contains(account.persistentModelID)
-            else { continue }
-
-            // Use pre-calculated amount if currency matches
-            if tx.preferredCurrencyCode == preferredCurrency.rawValue {
-                totalDecimal += Decimal(tx.amountInPreferredCurrency)
-            } else {
-                // Fallback: convert if preferred currency changed
-                let sourceCurrency =
-                    CurrencyCode(rawValue: normalizeCurrencyCode(tx.currencyCode))
-                    ?? preferredCurrency
-
-                let converted = converter.convert(
-                    Decimal(tx.amount),
-                    from: sourceCurrency.rawValue,
-                    to: preferredCurrency.rawValue,
-                    on: tx.date
-                )
-                totalDecimal += converted
-            }
-        }
-
-        return (totalDecimal as NSDecimalNumber).doubleValue
+        return LiveBalanceCalculator.liveBalance(
+            accounts: accounts,
+            transactions: transactions,
+            preferredCurrencyCode: preferredCurrencyCode,
+            selectedAccountID: nil,
+            converter: converter
+        )
     }
 
-    /// Calculates the displayed balance (either total or selected account).
-    /// Uses date-specific exchange rates for each transaction for accuracy.
-    /// Initial balance is now a transaction.
+    /// Calcula el balance mostrado (total o de cuenta seleccionada).
+    /// Si la cuenta seleccionada está excluida, hace fallback al total.
+    @available(*, deprecated, message: "Use LiveBalanceCalculator.liveBalance directly")
     static func displayedBalance(
         accounts: [Account],
         transactions: [TransactionItem],
@@ -70,45 +43,11 @@ struct BalanceHelper {
         preferredCurrencyCode: String,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> Double {
-        let preferredCurrency = CurrencyCode(rawValue: preferredCurrencyCode) ?? .pen
-
-        if let selectedID = selectedAccountID,
-            let account = accounts.first(where: { $0.persistentModelID == selectedID }),
-            !account.excludeFromStatistics
-        {
-            // Sum transactions for single account
-            var totalDecimal: Decimal = 0
-
-            let accountTransactions = transactions.filter {
-                $0.account?.persistentModelID == selectedID
-            }
-            for tx in accountTransactions {
-                // Use pre-calculated amount if currency matches
-                if tx.preferredCurrencyCode == preferredCurrency.rawValue {
-                    totalDecimal += Decimal(tx.amountInPreferredCurrency)
-                } else {
-                    // Fallback: convert if preferred currency changed
-                    let txSourceCurrency =
-                        CurrencyCode(rawValue: normalizeCurrencyCode(tx.currencyCode))
-                        ?? preferredCurrency
-
-                    let converted = converter.convert(
-                        Decimal(tx.amount),
-                        from: txSourceCurrency.rawValue,
-                        to: preferredCurrency.rawValue,
-                        on: tx.date
-                    )
-                    totalDecimal += converted
-                }
-            }
-
-            return (totalDecimal as NSDecimalNumber).doubleValue
-        }
-
-        return totalBalance(
+        return LiveBalanceCalculator.liveBalance(
             accounts: accounts,
             transactions: transactions,
             preferredCurrencyCode: preferredCurrencyCode,
+            selectedAccountID: selectedAccountID,
             converter: converter
         )
     }
