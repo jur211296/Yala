@@ -175,10 +175,11 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
     var iconName: String { "calendar" }
 
     /// Get the date interval for this period
-    /// - Parameter customRange: Optional custom date range for .custom period
-    func dateInterval(customRange: DateInterval? = nil) -> DateInterval {
+    /// - Parameters:
+    ///   - customRange: Optional custom date range for .custom period
+    ///   - now: Fecha de referencia (por defecto `.now`); inyectable para tests.
+    func dateInterval(customRange: DateInterval? = nil, now: Date = .now) -> DateInterval {
         let calendar = userConfiguredCalendar()
-        let now = Date.now
         let startOfToday = calendar.startOfDay(for: now)
 
         // End of today (start of tomorrow) to include all transactions from today

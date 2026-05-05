@@ -66,12 +66,11 @@
 "panel.health.cardTitle" = "Sua saúde financeira";
 "panel.health.emptyBadge" = "—";
 "panel.health.subScore.budget" = "Orçamentos";
-"panel.health.subScore.activity" = "Atividade";
-"panel.health.subScore.bills" = "Pagamentos";
-
+"panel.health.subScore.activity" = "Ritmo";
+"panel.health.subScore.bills" = "Compromissos";
 // Detail sheet — Total
 "panel.health.total.sheet.title" = "Sua saúde financeira";
-"panel.health.total.sheet.explanation" = "É a média das suas três métricas: orçamento (40%), atividade (30%) e pagamentos (30%). Se falta alguma, calculamos com as outras.";
+"panel.health.total.sheet.explanation" = "Combina três coisas: seus orçamentos, seu ritmo de registro e seus compromissos do período. Cada uma pesa de forma diferente e se reequilibra quando alguma não se aplica.";
 "panel.health.total.headline.high" = "Você está arrasando!";
 "panel.health.total.headline.mid" = "Ótimo ritmo";
 "panel.health.total.headline.low" = "Pequenos passos, grandes mudanças";
@@ -88,22 +87,22 @@
 "panel.health.budget.cta.create" = "Criar meu primeiro orçamento";
 
 // Detail sheet — Atividade
-"panel.health.activity.sheet.title" = "Sua atividade";
-"panel.health.activity.sheet.explanation" = "Contamos em quantos dos últimos 7 dias você anotou um gasto. Quanto mais constante, mais se conhece — e mais cresce este número.";
-"panel.health.activity.headline.high" = "Que constância!";
-"panel.health.activity.headline.mid" = "Ótimo ritmo";
-"panel.health.activity.headline.low" = "Uns minutinhos por dia fazem mágica";
-"panel.health.activity.headline.empty" = "Comece registrando seu primeiro gasto";
+"panel.health.activity.sheet.title" = "Seu ritmo";
+"panel.health.activity.sheet.explanation" = "Mede a maior sequência de dias sem registrar gastos neste período. Até 2 dias sem registrar é normal — além disso, seu ritmo se nota.";
+"panel.health.activity.headline.high" = "Você está num ótimo ritmo! 🎉";
+"panel.health.activity.headline.mid" = "Seu ritmo está bom";
+"panel.health.activity.headline.low" = "Seu ritmo caiu um pouco";
+"panel.health.activity.headline.empty" = "Ainda não registrou nada — começamos quando você quiser";
 "panel.health.activity.cta.view" = "Ver meus registros";
 "panel.health.activity.cta.create" = "Registrar meu primeiro gasto";
 
 // Detail sheet — Pagamentos
-"panel.health.bills.sheet.title" = "Seus pagamentos";
-"panel.health.bills.sheet.explanation" = "Conferimos seus pagamentos planejados do mês. Se algum venceu há pouco sem marcar, ou está logo ali, te damos um alô.";
-"panel.health.bills.headline.high" = "Tudo em dia com seus pagamentos!";
-"panel.health.bills.headline.mid" = "Pagamentos sob controle";
-"panel.health.bills.headline.low" = "Uma olhada e já se acerta";
-"panel.health.bills.headline.empty" = "Pagamentos planejados liberam sua cabeça";
+"panel.health.bills.sheet.title" = "Seus compromissos";
+"panel.health.bills.sheet.explanation" = "Combina duas coisas: se seu saldo cobre os pagamentos pendentes do período, e qual porcentagem da sua renda vai para assinaturas e pagamentos recorrentes.";
+"panel.health.bills.headline.high" = "Seus compromissos estão sob controle 💪";
+"panel.health.bills.headline.mid" = "Seus compromissos estão gerenciáveis";
+"panel.health.bills.headline.low" = "Seus compromissos pesam no seu fluxo";
+"panel.health.bills.headline.empty" = "Você ainda não tem pagamentos agendados";
 "panel.health.bills.cta.view" = "Ver meus pagamentos";
 "panel.health.bills.cta.create" = "Criar meu primeiro pagamento";
 

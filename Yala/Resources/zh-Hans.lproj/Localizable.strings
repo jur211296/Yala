@@ -66,12 +66,11 @@
 "panel.health.cardTitle" = "你的财务健康";
 "panel.health.emptyBadge" = "—";
 "panel.health.subScore.budget" = "预算";
-"panel.health.subScore.activity" = "活跃度";
-"panel.health.subScore.bills" = "账单";
-
+"panel.health.subScore.activity" = "节奏";
+"panel.health.subScore.bills" = "承诺";
 // Detail sheet — Total
 "panel.health.total.sheet.title" = "你的财务健康";
-"panel.health.total.sheet.explanation" = "这是你三个指标的平均值:预算 (40%)、活跃度 (30%) 和账单 (30%)。如果缺少其中一项,得分将根据其他指标计算。";
+"panel.health.total.sheet.explanation" = "结合三个方面:你的预算、你的记录节奏以及你这个期间的承诺。每一项的权重不同,当某一项不适用时会重新平衡。";
 "panel.health.total.headline.high" = "你做得太棒了!";
 "panel.health.total.headline.mid" = "节奏不错";
 "panel.health.total.headline.low" = "小步前进,大有改变";
@@ -88,22 +87,22 @@
 "panel.health.budget.cta.create" = "创建我的第一个预算";
 
 // Detail sheet — Activity
-"panel.health.activity.sheet.title" = "你的活跃度";
-"panel.health.activity.sheet.explanation" = "我们统计你在过去 7 天中有几天记录了支出。越坚持,越了解自己 — 这个分数也会越高。";
-"panel.health.activity.headline.high" = "如此坚持!";
-"panel.health.activity.headline.mid" = "节奏不错";
-"panel.health.activity.headline.low" = "每天几分钟,效果显著";
-"panel.health.activity.headline.empty" = "从记录第一笔支出开始吧";
+"panel.health.activity.sheet.title" = "你的节奏";
+"panel.health.activity.sheet.explanation" = "测量在这个期间内没有记录支出的最长连续天数。最多 2 天不记录是正常的 — 超过这个范围,你的节奏就会受到影响。";
+"panel.health.activity.headline.high" = "你的节奏很棒！🎉";
+"panel.health.activity.headline.mid" = "你的节奏不错";
+"panel.health.activity.headline.low" = "你的节奏有所下降";
+"panel.health.activity.headline.empty" = "还没有记录任何内容 — 你想开始时随时开始";
 "panel.health.activity.cta.view" = "查看我的记录";
 "panel.health.activity.cta.create" = "记录我的第一笔支出";
 
 // Detail sheet — Bills
-"panel.health.bills.sheet.title" = "你的账单";
-"panel.health.bills.sheet.explanation" = "我们看看你本月的计划付款。如果有最近逾期未标记的,或是即将到期的,我们会提醒你。";
-"panel.health.bills.headline.high" = "你的账单一切顺利!";
-"panel.health.bills.headline.mid" = "账单尽在掌控";
-"panel.health.bills.headline.low" = "看一眼就跟上了";
-"panel.health.bills.headline.empty" = "计划付款让你更安心";
+"panel.health.bills.sheet.title" = "你的承诺";
+"panel.health.bills.sheet.explanation" = "结合两点:你的余额是否能覆盖这个期间内的待付款项,以及你的收入中有多少比例用于订阅和经常性付款。";
+"panel.health.bills.headline.high" = "你的承诺尽在掌控 💪";
+"panel.health.bills.headline.mid" = "你的承诺还可以管理";
+"panel.health.bills.headline.low" = "你的承诺给现金流带来压力";
+"panel.health.bills.headline.empty" = "你还没有预定的付款";
 "panel.health.bills.cta.view" = "查看我的账单";
 "panel.health.bills.cta.create" = "创建我的第一个计划付款";
 

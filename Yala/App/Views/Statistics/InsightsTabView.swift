@@ -82,7 +82,7 @@ struct InsightsTabView: View {
                             FinancialScoreView(
                                 score: score,
                                 sessionState: sessionState,
-                                subtitle: L10n.Period.thisMonth
+                                subtitle: trendsViewModel.detailPeriod.displayName
                             )
                         }
 

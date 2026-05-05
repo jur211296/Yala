@@ -66,12 +66,11 @@
 "panel.health.cardTitle" = "金融の健全性";
 "panel.health.emptyBadge" = "—";
 "panel.health.subScore.budget" = "予算";
-"panel.health.subScore.activity" = "活動";
-"panel.health.subScore.bills" = "支払い";
-
+"panel.health.subScore.activity" = "リズム";
+"panel.health.subScore.bills" = "コミットメント";
 // Detail sheet — Total
 "panel.health.total.sheet.title" = "金融の健全性";
-"panel.health.total.sheet.explanation" = "3つの指標の平均で算出されます: 予算(40%)、活動(30%)、支払い(30%)。データが不足している指標がある場合は、それ以外で計算されます。";
+"panel.health.total.sheet.explanation" = "3つの要素を組み合わせています：予算、記録のリズム、期間内のコミットメント。それぞれの重みは異なり、適用されないものがあると再調整されます。";
 "panel.health.total.headline.high" = "絶好調です！";
 "panel.health.total.headline.mid" = "いいリズムですね";
 "panel.health.total.headline.low" = "小さな一歩から始めましょう";
@@ -88,22 +87,22 @@
 "panel.health.budget.cta.create" = "最初の予算を作る";
 
 // Detail sheet — Activity
-"panel.health.activity.sheet.title" = "活動状況";
-"panel.health.activity.sheet.explanation" = "過去7日間のうち、何日支出を記録したかを数えます。続けるほど自分の傾向が見えてきて、スコアも上がります。";
-"panel.health.activity.headline.high" = "継続できていますね！";
-"panel.health.activity.headline.mid" = "いいリズムですね";
-"panel.health.activity.headline.low" = "1日数分でも、大きな変化が生まれます";
-"panel.health.activity.headline.empty" = "最初の支出から記録してみましょう";
+"panel.health.activity.sheet.title" = "あなたのリズム";
+"panel.health.activity.sheet.explanation" = "この期間中に支出を記録していない日が連続した最長期間を測定します。2日までは普通ですが、それを超えるとリズムに影響が出ます。";
+"panel.health.activity.headline.high" = "良いリズムです！🎉";
+"panel.health.activity.headline.mid" = "リズムは順調です";
+"panel.health.activity.headline.low" = "リズムが少し落ちています";
+"panel.health.activity.headline.empty" = "まだ何も記録していません — いつでも始められます";
 "panel.health.activity.cta.view" = "記録を見る";
 "panel.health.activity.cta.create" = "最初の支出を記録";
 
 // Detail sheet — Bills
-"panel.health.bills.sheet.title" = "支払い状況";
-"panel.health.bills.sheet.explanation" = "今月の予定支払いを確認します。マークがないまま期限が過ぎていたり、もうすぐ期限のものはお知らせします。";
-"panel.health.bills.headline.high" = "支払いはすべて順調です！";
-"panel.health.bills.headline.mid" = "支払いは把握できています";
-"panel.health.bills.headline.low" = "ひと目で追いつけますよ";
-"panel.health.bills.headline.empty" = "予定支払いで気がラクになります";
+"panel.health.bills.sheet.title" = "あなたのコミットメント";
+"panel.health.bills.sheet.explanation" = "2つの要素を組み合わせています：残高が期間内の保留中の支払いをカバーするか、収入のうちサブスクリプションや定期支払いに使われる割合。";
+"panel.health.bills.headline.high" = "コミットメントはコントロール下にあります 💪";
+"panel.health.bills.headline.mid" = "コミットメントは管理可能です";
+"panel.health.bills.headline.low" = "コミットメントが流れに重くのしかかっています";
+"panel.health.bills.headline.empty" = "まだ予定された支払いはありません";
 "panel.health.bills.cta.view" = "支払いを見る";
 "panel.health.bills.cta.create" = "最初の予定支払いを作る";
 

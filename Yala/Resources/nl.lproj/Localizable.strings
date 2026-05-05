@@ -66,12 +66,11 @@
 "panel.health.cardTitle" = "Je financiële gezondheid";
 "panel.health.emptyBadge" = "—";
 "panel.health.subScore.budget" = "Budgetten";
-"panel.health.subScore.activity" = "Activiteit";
-"panel.health.subScore.bills" = "Rekeningen";
-
+"panel.health.subScore.activity" = "Ritme";
+"panel.health.subScore.bills" = "Verplichtingen";
 // Detail sheet — Total
 "panel.health.total.sheet.title" = "Je financiële gezondheid";
-"panel.health.total.sheet.explanation" = "Het is het gemiddelde van je drie metingen: budget (40%), activiteit (30%) en rekeningen (30%). Als er een ontbreekt, wordt de score met de andere berekend.";
+"panel.health.total.sheet.explanation" = "Combineert drie dingen: je budgetten, je registratieritme en je verplichtingen voor de periode. Elk weegt anders en herbalanceert wanneer er één niet van toepassing is.";
 "panel.health.total.headline.high" = "Je doet het geweldig!";
 "panel.health.total.headline.mid" = "Lekker bezig";
 "panel.health.total.headline.low" = "Kleine stappen, grote verandering";
@@ -88,22 +87,22 @@
 "panel.health.budget.cta.create" = "Maak mijn eerste budget";
 
 // Detail sheet — Activity
-"panel.health.activity.sheet.title" = "Je activiteit";
-"panel.health.activity.sheet.explanation" = "We tellen hoeveel van de laatste 7 dagen je een uitgave hebt geboekt. Hoe consistenter je bent, hoe beter je jezelf leert kennen — en hoe hoger dit groeit.";
-"panel.health.activity.headline.high" = "Wat een consistentie!";
-"panel.health.activity.headline.mid" = "Lekker bezig";
-"panel.health.activity.headline.low" = "Een paar minuten per dag doen wonderen";
-"panel.health.activity.headline.empty" = "Begin met je eerste uitgave te boeken";
+"panel.health.activity.sheet.title" = "Je ritme";
+"panel.health.activity.sheet.explanation" = "Meet de langste reeks dagen zonder uitgaven te registreren in deze periode. Tot 2 dagen zonder registratie is normaal — daarna voel je je ritme.";
+"panel.health.activity.headline.high" = "Je hebt een geweldig ritme! 🎉";
+"panel.health.activity.headline.mid" = "Je ritme is prima";
+"panel.health.activity.headline.low" = "Je ritme is wat gezakt";
+"panel.health.activity.headline.empty" = "Nog niets geregistreerd — we beginnen wanneer jij wilt";
 "panel.health.activity.cta.view" = "Bekijk mijn boekingen";
 "panel.health.activity.cta.create" = "Boek mijn eerste uitgave";
 
 // Detail sheet — Bills
-"panel.health.bills.sheet.title" = "Je rekeningen";
-"panel.health.bills.sheet.explanation" = "We checken je geplande betalingen voor deze maand. Als er eentje recent te laat is zonder vinkje, of er net aankomt, geven we je een seintje.";
-"panel.health.bills.headline.high" = "Alles in orde met je rekeningen!";
-"panel.health.bills.headline.mid" = "Rekeningen onder controle";
-"panel.health.bills.headline.low" = "Even kijken en je bent bij";
-"panel.health.bills.headline.empty" = "Geplande betalingen geven rust";
+"panel.health.bills.sheet.title" = "Je verplichtingen";
+"panel.health.bills.sheet.explanation" = "Combineert twee dingen: of je saldo de openstaande betalingen voor deze periode dekt, en welk percentage van je inkomen naar abonnementen en terugkerende betalingen gaat.";
+"panel.health.bills.headline.high" = "Je verplichtingen zijn onder controle 💪";
+"panel.health.bills.headline.mid" = "Je verplichtingen zijn beheersbaar";
+"panel.health.bills.headline.low" = "Je verplichtingen wegen op je stroom";
+"panel.health.bills.headline.empty" = "Je hebt nog geen geplande betalingen";
 "panel.health.bills.cta.view" = "Bekijk mijn rekeningen";
 "panel.health.bills.cta.create" = "Maak mijn eerste geplande betaling";
 

@@ -66,12 +66,11 @@
 "panel.health.cardTitle" = "Deine finanzielle Gesundheit";
 "panel.health.emptyBadge" = "—";
 "panel.health.subScore.budget" = "Budgets";
-"panel.health.subScore.activity" = "Aktivität";
-"panel.health.subScore.bills" = "Zahlungen";
-
+"panel.health.subScore.activity" = "Rhythmus";
+"panel.health.subScore.bills" = "Verpflichtungen";
 // Detail sheet — Gesamt
 "panel.health.total.sheet.title" = "Deine finanzielle Gesundheit";
-"panel.health.total.sheet.explanation" = "Es ist der Durchschnitt deiner drei Werte: Budget (40 %), Aktivität (30 %) und Zahlungen (30 %). Fehlt einer, rechnen wir mit den übrigen.";
+"panel.health.total.sheet.explanation" = "Kombiniert drei Dinge: deine Budgets, deinen Erfassungsrhythmus und deine Verpflichtungen im Zeitraum. Jeder gewichtet anders und gleicht sich aus, wenn einer nicht zutrifft.";
 "panel.health.total.headline.high" = "Du machst das super!";
 "panel.health.total.headline.mid" = "Guter Rhythmus";
 "panel.health.total.headline.low" = "Kleine Schritte, große Wirkung";
@@ -88,22 +87,22 @@
 "panel.health.budget.cta.create" = "Mein erstes Budget anlegen";
 
 // Detail sheet — Aktivität
-"panel.health.activity.sheet.title" = "Deine Aktivität";
-"panel.health.activity.sheet.explanation" = "Wir zählen, an wie vielen der letzten 7 Tage du eine Ausgabe erfasst hast. Je regelmäßiger, desto besser kennst du dich — und desto höher steigt dieser Wert.";
-"panel.health.activity.headline.high" = "Was für eine Konstanz!";
-"panel.health.activity.headline.mid" = "Guter Rhythmus";
-"panel.health.activity.headline.low" = "Ein paar Minuten am Tag wirken Wunder";
-"panel.health.activity.headline.empty" = "Starte mit deiner ersten Ausgabe";
+"panel.health.activity.sheet.title" = "Dein Rhythmus";
+"panel.health.activity.sheet.explanation" = "Misst die längste Serie von Tagen ohne erfasste Ausgaben in diesem Zeitraum. Bis zu 2 Tage ohne Eintrag sind normal — darüber hinaus spürt man deinen Rhythmus.";
+"panel.health.activity.headline.high" = "Du bist in tollem Rhythmus! 🎉";
+"panel.health.activity.headline.mid" = "Dein Rhythmus passt";
+"panel.health.activity.headline.low" = "Dein Rhythmus ist etwas gesunken";
+"panel.health.activity.headline.empty" = "Noch nichts erfasst — wir starten, wann du willst";
 "panel.health.activity.cta.view" = "Meine Einträge ansehen";
 "panel.health.activity.cta.create" = "Erste Ausgabe erfassen";
 
 // Detail sheet — Zahlungen
-"panel.health.bills.sheet.title" = "Deine Zahlungen";
-"panel.health.bills.sheet.explanation" = "Wir prüfen deine geplanten Zahlungen des Monats. Liegt eine unmarkiert zurück oder steht kurz bevor, geben wir Bescheid.";
-"panel.health.bills.headline.high" = "Alles im Lot bei den Zahlungen!";
-"panel.health.bills.headline.mid" = "Zahlungen im Griff";
-"panel.health.bills.headline.low" = "Ein Blick und alles ist aktuell";
-"panel.health.bills.headline.empty" = "Geplante Zahlungen befreien den Kopf";
+"panel.health.bills.sheet.title" = "Deine Verpflichtungen";
+"panel.health.bills.sheet.explanation" = "Kombiniert zwei Dinge: ob dein Kontostand die ausstehenden Zahlungen des Zeitraums deckt, und welcher Anteil deines Einkommens in Abos und wiederkehrende Zahlungen fließt.";
+"panel.health.bills.headline.high" = "Deine Verpflichtungen sind im Griff 💪";
+"panel.health.bills.headline.mid" = "Deine Verpflichtungen sind machbar";
+"panel.health.bills.headline.low" = "Deine Verpflichtungen belasten deinen Fluss";
+"panel.health.bills.headline.empty" = "Du hast noch keine geplanten Zahlungen";
 "panel.health.bills.cta.view" = "Meine Zahlungen ansehen";
 "panel.health.bills.cta.create" = "Erste Zahlung anlegen";
 

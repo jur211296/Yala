@@ -572,27 +572,36 @@ struct DetailContainerView: View {
             comparisonMode: sessionState.comparisonMode
         )
 
-        // Salud Financiera (mes actual). El score solo depende de dataVersion
-        // + mes en curso — ignora filtros/periodo. Gate evita los 2 fetches
-        // SwiftData de `loadPaidAmounts` en cada cambio de chip.
-        let monthStart = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
+        // Salud Financiera period-aware. El score depende de dataVersion +
+        // período seleccionado (interval). Cambios de filtros (cuenta/categoría/
+        // etiqueta) NO afectan al score — solo el dataset y el interval lo hacen.
+        // El gate evita re-fetches SwiftData de `loadPaidAmounts` en cada cambio
+        // de chip de filtro.
+        let scoreInterval = trendsViewModel.detailPeriod.dateInterval(
+            customRange: trendsViewModel.customDateRange
+        )
         var scoreHasher = Hasher()
         scoreHasher.combine(sessionState.dataVersion)
-        scoreHasher.combine(monthStart)
+        scoreHasher.combine(scoreInterval.start)
+        scoreHasher.combine(scoreInterval.end)
         let scoreSignature = scoreHasher.finalize()
         if scoreSignature != lastScoreSignature {
             lastScoreSignature = scoreSignature
             let activePayments = dataViewModel.scheduledPayments.filter(\.isActive)
             let paidAmounts = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
                 for: activePayments,
-                month: .now,
+                interval: scoreInterval,
                 context: modelContext
             )
             insightsViewModel.calculateFinancialScore(
                 transactions: dataViewModel.allTransactions,
                 budgets: dataViewModel.budgets,
                 scheduledPayments: dataViewModel.scheduledPayments,
-                paidAmounts: paidAmounts
+                accounts: dataViewModel.accounts,
+                paidAmounts: paidAmounts,
+                period: trendsViewModel.detailPeriod,
+                customRange: trendsViewModel.customDateRange,
+                preferredCurrencyCode: defaultCurrencyCode
             )
         }
 

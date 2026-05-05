@@ -20,7 +20,7 @@
  */
 
 "panel.sectionsConfig.footer" = "Oculta las secciones que no necesites ver. Podés volver a activarlas cuando quieras.";
-"panel.health.bills.sheet.explanation" = "Revisamos tus pagos planificados del mes. Si tenés alguno vencido hace poco sin marcar, o uno a la vuelta de la esquina, te lo hacemos ver.";
+"panel.health.bills.sheet.explanation" = "Combina dos cosas: si tu saldo cubre los pagos pendientes del período, y qué porcentaje de tus ingresos se va en suscripciones y pagos recurrentes.";
 "exchangeRate.noSecondaryCurrenciesHint" = "Podés seleccionar divisas secundarias en";
 "empty.noFavorites" = "Aún no tenés favoritos";
 "empty.noTags" = "Aún no tenés etiquetas";
@@ -183,3 +183,17 @@
 "panel.widgetInfo.trend.fxMatchA" = "El último punto refleja tu saldo al tipo de cambio actual. Los puntos previos usan el tipo de cambio del día de cada movimiento. La diferencia es ganancia o pérdida por fluctuación cambiaria — solo aparece si tenés cuentas en distintas monedas.";
 "panel.widgetInfo.exchangeRate.balanceImpactQ" = "¿Cómo afecta el tipo de cambio a tu balance?";
 "panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala calcula tu balance en la moneda preferida usando el tipo de cambio actual sobre el saldo de cada cuenta. Por eso, si el tipo de cambio cambia y no hacés movimientos, tu balance puede subir o bajar.";
+"panel.health.subScore.activity" = "Ritmo";
+"panel.health.subScore.bills" = "Compromisos";
+"panel.health.activity.sheet.title" = "Tu ritmo";
+"panel.health.activity.sheet.explanation" = "Mide la racha más larga de días sin registrar gastos en este período. Hasta 2 días sin registrar es normal — más allá, tu ritmo se siente.";
+"panel.health.activity.headline.high" = "¡Vas a buen ritmo! 🎉";
+"panel.health.activity.headline.mid" = "Tu ritmo está bien";
+"panel.health.activity.headline.low" = "Tu ritmo bajó un poco";
+"panel.health.activity.headline.empty" = "Todavía no registraste nada — arrancamos cuando vos quieras";
+"panel.health.bills.sheet.title" = "Tus compromisos";
+"panel.health.bills.headline.high" = "Tus compromisos están bajo control 💪";
+"panel.health.bills.headline.mid" = "Tus compromisos están manejables";
+"panel.health.bills.headline.low" = "Tus compromisos pesan en tu flujo";
+"panel.health.bills.headline.empty" = "Todavía no tenés pagos programados";
+"panel.health.total.sheet.explanation" = "Combina tres cosas: tus presupuestos, tu ritmo de registro y tus compromisos del período. Cada una pesa distinto y se reajusta cuando alguna no aplica.";

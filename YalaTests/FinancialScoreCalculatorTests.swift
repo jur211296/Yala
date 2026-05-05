@@ -50,12 +50,17 @@ struct FinancialScoreCalculatorTests {
         name: String = "B",
         periodType: String = "monthly"
     ) -> Budget {
-        Budget(
+        let budget = Budget(
             currencyCode: "USD",
             limitAmount: limit,
             name: name,
             periodType: periodType
         )
+        // Pin createdAt to before March 2026 fixtures so bucketIsValid passes.
+        // Sin esto, `bucket.start (marzo 2026) < createdAt (.now real)` y el
+        // bucket queda skipped → score = nil.
+        budget.createdAt = calendar.date(from: DateComponents(year: 2026, month: 1, day: 1))!
+        return budget
     }
 
     private func makeTx(
@@ -109,10 +114,41 @@ struct FinancialScoreCalculatorTests {
         return [payment.id.uuidString: infos]
     }
 
+    /// Wrapper sobre la nueva firma del calculator con defaults para los tests
+    /// existentes (period: .thisMonth replica la semántica monthly anterior;
+    /// `accounts: []` y `preferredCurrencyCode: "USD"` son inertes para tests
+    /// que no tocan Compromisos.Cobertura/Carga).
+    private func calculate(
+        transactions: [TransactionItem] = [],
+        budgets: [Budget] = [],
+        scheduledPayments: [ScheduledPayment] = [],
+        accounts: [Account] = [],
+        paidAmounts: [String: [PaidOccurrenceInfo]] = [:],
+        period: DetailPeriod = .thisMonth,
+        customRange: DateInterval? = nil,
+        preferredCurrencyCode: String = "USD",
+        now: Date,
+        calendar: Calendar = .current
+    ) -> FinancialScore {
+        FinancialScoreCalculator.calculate(
+            transactions: transactions,
+            budgets: budgets,
+            scheduledPayments: scheduledPayments,
+            accounts: accounts,
+            paidAmounts: paidAmounts,
+            period: period,
+            customRange: customRange,
+            preferredCurrencyCode: preferredCurrencyCode,
+            converter: MockCurrencyConverter(),
+            now: now,
+            calendar: calendar
+        )
+    }
+
     // MARK: - Budget sub-score
 
     @Test func budget_noBudgets_returnsNil() {
-        let score = FinancialScoreCalculator.calculate(
+        let score = calculate(
             transactions: [],
             budgets: [],
             scheduledPayments: [],
@@ -126,7 +162,7 @@ struct FinancialScoreCalculatorTests {
     @Test func budget_oneExceeded_softPenalty8_returns92() {
         let budget = makeBudget(limit: 1000)
         let txs = [makeTx(amount: 1100, date: date(2026, 3, 10))]
-        let score = FinancialScoreCalculator.calculate(
+        let score = calculate(
             transactions: txs,
             budgets: [budget],
             scheduledPayments: [],
@@ -137,43 +173,40 @@ struct FinancialScoreCalculatorTests {
         #expect(score.budget == 92)
     }
 
-    @Test func budget_twoExceeded_softPenalty_returns84() {
+    @Test func budget_twoExceeded_perBucketAverage_returns92() {
+        // Nueva semántica: cada bucket se evalúa independiente (penalty 8 → 92).
+        // Promedio de [92, 92] = 92 (antes era acumulado global = 84).
         let b1 = makeBudget(limit: 1000, name: "B1")
         let b2 = makeBudget(limit: 500, name: "B2")
         let txs = [
             makeTx(amount: 1100, date: date(2026, 3, 10)),
             makeTx(amount: 600, date: date(2026, 3, 12))
         ]
-        let score = FinancialScoreCalculator.calculate(
+        let score = calculate(
             transactions: txs,
             budgets: [b1, b2],
-            scheduledPayments: [],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
+            now: now
         )
-        #expect(score.budget == 84)
+        #expect(score.budget == 92)
     }
 
-    @Test func budget_threeExceeded_softPenalty_returns76() {
+    @Test func budget_threeExceeded_perBucketAverage_returns92() {
+        // Idem 3 budgets cada uno exceeded → cada bucket 92 → promedio 92.
         let budgets = (1...3).map { makeBudget(limit: 100, name: "B\($0)") }
         let txs = (1...3).map { _ in makeTx(amount: 150, date: date(2026, 3, 10)) }
-        let score = FinancialScoreCalculator.calculate(
+        let score = calculate(
             transactions: txs,
             budgets: budgets,
-            scheduledPayments: [],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
+            now: now
         )
-        #expect(score.budget == 76)
+        #expect(score.budget == 92)
     }
 
     @Test func budget_over90pct_lateMonth_softPenalty3_returns97() {
         // At day 29 of 31 (≈10% remaining, <30%), with ratio ≥ 90% but < 100%.
         let budget = makeBudget(limit: 1000)
         let txs = [makeTx(amount: 950, date: date(2026, 3, 20))]
-        let score = FinancialScoreCalculator.calculate(
+        let score = calculate(
             transactions: txs,
             budgets: [budget],
             scheduledPayments: [],
@@ -193,7 +226,7 @@ struct FinancialScoreCalculatorTests {
             makeTx(amount: 300, date: date(2026, 3, 5)),
             makeTx(amount: 300, date: date(2026, 3, 6))
         ]
-        let score = FinancialScoreCalculator.calculate(
+        let score = calculate(
             transactions: txs,
             budgets: [b1, b2],
             scheduledPayments: [],
@@ -208,7 +241,7 @@ struct FinancialScoreCalculatorTests {
         // 6 budgets under 75% → bonus would be +12 but cap is +10 → 110 clamp 100.
         let budgets = (1...6).map { makeBudget(limit: 1000, name: "B\($0)") }
         let txs = [makeTx(amount: 100, date: date(2026, 3, 5))]
-        let score = FinancialScoreCalculator.calculate(
+        let score = calculate(
             transactions: txs,
             budgets: budgets,
             scheduledPayments: [],
@@ -219,319 +252,271 @@ struct FinancialScoreCalculatorTests {
         #expect(score.budget == 100)
     }
 
-    // MARK: - Activity sub-score
+    // MARK: - Rhythm sub-score (antes "Activity")
+    // Curva: score = max(0, 100 − max(0, gap − 2) × 12).
+    // Gap = mayor racha de días consecutivos sin registrar.
+    // 0-2 días → 100, 3 → 88, 4 → 76, 5 → 64, 6 → 52, 7 → 40, 10+ → 0.
 
-    @Test func activity_noTransactions_returnsNil() {
-        let score = FinancialScoreCalculator.calculate(
+    @Test func rhythm_noTransactions_returnsNil() {
+        let score = calculate(
             transactions: [],
-            budgets: [],
-            scheduledPayments: [],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
+            now: now
         )
         #expect(score.activity == nil)
     }
 
-    @Test func activity_onlyBalanceAdjustments_returnsNil() {
-        // User has tx history but only balance adjustments → still counts as
-        // "no real activity" for the activity metric.
+    @Test func rhythm_onlyBalanceAdjustments_returnsNil() {
         let txs = [
             makeTx(amount: 10, date: date(2026, 3, 15), balanceAdjustmentType: "manual"),
             makeTx(amount: 10, date: date(2026, 3, 16), balanceAdjustmentType: "manual")
         ]
-        let score = FinancialScoreCalculator.calculate(
-            transactions: txs,
-            budgets: [],
-            scheduledPayments: [],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
-        )
+        let score = calculate(transactions: txs, now: now)
         #expect(score.activity == nil)
     }
 
-    @Test func activity_sevenDistinctDays_returns100() {
-        let txs = (11...17).map { day in makeTx(amount: 10, date: date(2026, 3, day)) }
-        let score = FinancialScoreCalculator.calculate(
-            transactions: txs,
-            budgets: [],
-            scheduledPayments: [],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
-        )
-        #expect(score.activity == 100)
-    }
-
-    @Test func activity_threeDistinctDays_returns43() {
-        // 3/7 × 100 = 42.857 → 43.
+    @Test func rhythm_consecutiveDays_zeroGap_returns100() {
+        // Tx en días 15, 16, 17 → gap = 0. Score = 100.
         let txs = [
             makeTx(amount: 10, date: date(2026, 3, 15)),
             makeTx(amount: 10, date: date(2026, 3, 16)),
             makeTx(amount: 10, date: date(2026, 3, 17))
         ]
-        let score = FinancialScoreCalculator.calculate(
-            transactions: txs,
-            budgets: [],
-            scheduledPayments: [],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
-        )
-        #expect(score.activity == 43)
+        let score = calculate(transactions: txs, now: now)
+        #expect(score.activity == 100)
     }
 
-    @Test func activity_multipleTxSameDay_countAsOne() {
-        let day = date(2026, 3, 17)
-        let txs = (0..<3).map { _ in makeTx(amount: 10, date: day) }
-        let score = FinancialScoreCalculator.calculate(
-            transactions: txs,
-            budgets: [],
-            scheduledPayments: [],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
-        )
-        #expect(score.activity == 14) // 1/7 × 100 = 14.28 → 14
+    @Test func rhythm_twoDaysGap_stillReturns100() {
+        // Tx en días 14 y 17 → gap = 2 (días 15-16 vacíos). Tolerancia incluye 2.
+        let txs = [
+            makeTx(amount: 10, date: date(2026, 3, 14)),
+            makeTx(amount: 10, date: date(2026, 3, 17))
+        ]
+        let score = calculate(transactions: txs, now: now)
+        #expect(score.activity == 100)
     }
 
-    @Test func activity_hasTxButNoneInLast7Days_returns0NotNil() {
-        // Distinguish "no data ever" (nil) from "no data in the last week" (0).
-        let txs = [makeTx(amount: 10, date: date(2026, 2, 1))]
-        let score = FinancialScoreCalculator.calculate(
-            transactions: txs,
-            budgets: [],
-            scheduledPayments: [],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
-        )
+    @Test func rhythm_threeDaysGap_returns88() {
+        // Tx 13 y 17 → gap = 3. Score = 100 - (3-2)*12 = 88.
+        let txs = [
+            makeTx(amount: 10, date: date(2026, 3, 13)),
+            makeTx(amount: 10, date: date(2026, 3, 17))
+        ]
+        let score = calculate(transactions: txs, now: now)
+        #expect(score.activity == 88)
+    }
+
+    @Test func rhythm_sevenDaysGap_returns40() {
+        // Tx 9 y 17 → gap = 7. Score = 100 - (7-2)*12 = 40.
+        let txs = [
+            makeTx(amount: 10, date: date(2026, 3, 9)),
+            makeTx(amount: 10, date: date(2026, 3, 17))
+        ]
+        let score = calculate(transactions: txs, now: now)
+        #expect(score.activity == 40)
+    }
+
+    @Test func rhythm_tenPlusDaysGap_returns0() {
+        // Tx 1 y 12 → gap = 10. Score = 100 - 8*12 = 4. Pero gap 11 → 0.
+        let txs = [
+            makeTx(amount: 10, date: date(2026, 3, 1)),
+            makeTx(amount: 10, date: date(2026, 3, 13))
+        ]
+        let score = calculate(transactions: txs, now: now)
         #expect(score.activity == 0)
     }
 
-    // MARK: - Bills sub-score
-
-    @Test func bills_noActivePayments_returnsNil() {
-        let score = FinancialScoreCalculator.calculate(
-            transactions: [],
-            budgets: [],
-            scheduledPayments: [],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
+    @Test func rhythm_thisYear_usesMonthlyAverage() {
+        // Multi-mes ⇒ promedio de gaps mensuales. Mes 1: tx solo el día 5 (gap 0).
+        // Mes 2: tx 5 y 6 (gap 0). Promedio = 0 → score 100.
+        let txs = [
+            makeTx(amount: 10, date: date(2026, 1, 5)),
+            makeTx(amount: 10, date: date(2026, 2, 5)),
+            makeTx(amount: 10, date: date(2026, 2, 6))
+        ]
+        let score = calculate(
+            transactions: txs, period: .thisYear, now: now
         )
+        #expect(score.activity == 100)
+    }
+
+    @Test func rhythm_thisYear_oneOldGap_doesNotDestroyAverage() {
+        // Mes 1 gap=10 (1 y 12), Mes 2 gap=0 (5,6,7). Promedio = 5 → score = 64.
+        let txs = [
+            makeTx(amount: 10, date: date(2026, 1, 1)),
+            makeTx(amount: 10, date: date(2026, 1, 12)),
+            makeTx(amount: 10, date: date(2026, 2, 5)),
+            makeTx(amount: 10, date: date(2026, 2, 6)),
+            makeTx(amount: 10, date: date(2026, 2, 7))
+        ]
+        let score = calculate(
+            transactions: txs, period: .thisYear, now: now
+        )
+        // Avg gap = 5 → 100 - (5-2)*12 = 64.
+        #expect(score.activity == 64)
+    }
+
+    // MARK: - Commitments sub-score (antes "Bills")
+    // Composición Cobertura (50%) + Carga (50%).
+    // Cobertura: liveBalance vs pendientes. Carga: % de ingresos.
+
+    @Test func commitments_noActivePayments_returnsNil() {
+        let score = calculate(scheduledPayments: [], now: now)
         #expect(score.bills == nil)
     }
 
-    @Test func bills_allInactivePayments_returnsNil() {
+    @Test func commitments_allInactivePayments_returnsNil() {
         let payment = makeScheduledPayment(nextDueDate: date(2026, 3, 14), isActive: false)
-        let score = FinancialScoreCalculator.calculate(
-            transactions: [],
-            budgets: [],
-            scheduledPayments: [payment],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
+        let score = calculate(scheduledPayments: [payment], now: now)
+        #expect(score.bills == nil)
+    }
+
+    @Test func commitments_shortPeriodLast7Days_returnsNil() {
+        let payment = makeScheduledPayment(nextDueDate: date(2026, 3, 14))
+        let score = calculate(
+            scheduledPayments: [payment], period: .last7Days, now: now
         )
         #expect(score.bills == nil)
     }
 
-    @Test func bills_oneOverdueInWindow_softPenalty5_returns95() {
+    @Test func commitments_thisWeek_returnsNil() {
         let payment = makeScheduledPayment(nextDueDate: date(2026, 3, 14))
-        let score = FinancialScoreCalculator.calculate(
-            transactions: [],
-            budgets: [],
-            scheduledPayments: [payment],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
+        let score = calculate(
+            scheduledPayments: [payment], period: .thisWeek, now: now
         )
-        #expect(score.bills == 95)
+        #expect(score.bills == nil)
     }
 
-    @Test func bills_overduePaid_returns100() {
+    @Test func commitments_noIncome_neutralLoad_butCoverageStillCounts() {
+        // Sin ingresos → load = 50 (neutral). Sin saldo (accounts vacío) +
+        // 1 pendiente $500 → projected = -500, ratio = -1, coverage = 0.
+        // Composite = (0 + 50) / 2 = 25.
+        let payment = makeScheduledPayment(nextDueDate: date(2026, 3, 25))
+        let score = calculate(
+            scheduledPayments: [payment], now: now
+        )
+        #expect(score.bills == 25)
+    }
+
+    @Test func commitments_pendingPaid_excludedFromTotal() {
+        // El pago marcado como pagado no cuenta como pendiente.
         let payment = makeScheduledPayment(nextDueDate: date(2026, 3, 14))
         let paidAmounts = makePaidInfo(payment: payment, count: 1, date: date(2026, 3, 14))
-        let score = FinancialScoreCalculator.calculate(
-            transactions: [],
-            budgets: [],
-            scheduledPayments: [payment],
-            paidAmounts: paidAmounts,
-            now: now,
-            calendar: calendar
+        let score = calculate(
+            scheduledPayments: [payment], paidAmounts: paidAmounts, now: now
         )
-        #expect(score.bills == 100)
+        // pendingTotal = 0 → coverage = 100, load = 50 (no income) → composite = 75.
+        #expect(score.bills == 75)
     }
 
-    @Test func bills_overdueSkipped_returns100() {
+    @Test func commitments_pendingSkipped_excludedFromTotal() {
         let payment = makeScheduledPayment(nextDueDate: date(2026, 3, 14))
         payment.skipDate(date(2026, 3, 14))
-        let score = FinancialScoreCalculator.calculate(
-            transactions: [],
-            budgets: [],
-            scheduledPayments: [payment],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
+        let score = calculate(
+            scheduledPayments: [payment], now: now
         )
-        #expect(score.bills == 100)
+        // skipped → pendingTotal 0 → coverage 100, load 50 → composite 75.
+        #expect(score.bills == 75)
     }
 
-    @Test func bills_twoUpcoming_softPenalty3_returns94() {
-        let p1 = makeScheduledPayment(name: "A", nextDueDate: date(2026, 3, 18))
-        let p2 = makeScheduledPayment(name: "B", nextDueDate: date(2026, 3, 19))
-        let score = FinancialScoreCalculator.calculate(
-            transactions: [],
-            budgets: [],
-            scheduledPayments: [p1, p2],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
+    @Test func commitments_incomeScheduled_excluded() {
+        // Pagos con transactionType=income NO entran en pendientes ni carga.
+        let income = makeScheduledPayment(nextDueDate: date(2026, 3, 25))
+        income.transactionType = "income"
+        let score = calculate(
+            scheduledPayments: [income], now: now
         )
-        #expect(score.bills == 94)
+        // active.isEmpty tras filtro → nil.
+        #expect(score.bills == nil)
     }
 
-    @Test func bills_mixOverdueAndUpcoming_softPenalty_returns92() {
-        let overduePayment = makeScheduledPayment(name: "Overdue", nextDueDate: date(2026, 3, 14))
-        let upcomingPayment = makeScheduledPayment(name: "Upcoming", nextDueDate: date(2026, 3, 19))
-        let score = FinancialScoreCalculator.calculate(
-            transactions: [],
-            budgets: [],
-            scheduledPayments: [overduePayment, upcomingPayment],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
-        )
-        #expect(score.bills == 92)
-    }
-
-    @Test func bills_overdueOutsideWindow_noPenalty() {
-        // Payment due March 5 (12 days ago) + an extra active payment far away
-        // so the `active.isEmpty` guard does not kick in and return nil.
-        let overdueOld = makeScheduledPayment(name: "Old", nextDueDate: date(2026, 3, 5))
-        let farAway = makeScheduledPayment(name: "Far", nextDueDate: date(2026, 3, 28))
-        let score = FinancialScoreCalculator.calculate(
-            transactions: [],
-            budgets: [],
-            scheduledPayments: [overdueOld, farAway],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
-        )
-        #expect(score.bills == 100)
-    }
-
-    // MARK: - Total score — reweighting + soft floor
+    // MARK: - Total — pesos 40/25/35 + soft floor
 
     @Test func total_allNil_returnsNil() {
-        let score = FinancialScoreCalculator.calculate(
-            transactions: [],
-            budgets: [],
-            scheduledPayments: [],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
-        )
+        let score = calculate(now: now)
         #expect(score.total == nil)
     }
 
-    @Test func total_onlyActivityPresent_equalsActivity() {
-        // 3 distinct days → activity 43. Budget/bills nil → reweight to 100%.
-        // Floor 50 kicks in: 43 → 50.
+    @Test func total_onlyRhythmPresent_appliesSoftFloor() {
+        // 3 días consecutivos → rhythm 100. Budget/Commitments nil → reweight 100%.
+        // Total = 100 → no aplica floor.
         let txs = [
             makeTx(amount: 10, date: date(2026, 3, 15)),
             makeTx(amount: 10, date: date(2026, 3, 16)),
             makeTx(amount: 10, date: date(2026, 3, 17))
         ]
-        let score = FinancialScoreCalculator.calculate(
-            transactions: txs,
-            budgets: [],
-            scheduledPayments: [],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
-        )
-        #expect(score.activity == 43)
-        #expect(score.total == 50) // floor
-    }
-
-    @Test func total_budgetMissing_reweightsActivityAndBillsEvenly() {
-        // No budgets → weights 0.5 / 0.5. activity=100, bills=100 → total=100.
-        let txs = (11...17).map { day in makeTx(amount: 10, date: date(2026, 3, day)) }
-        let farAway = makeScheduledPayment(nextDueDate: date(2026, 3, 28))
-        let score = FinancialScoreCalculator.calculate(
-            transactions: txs,
-            budgets: [],
-            scheduledPayments: [farAway],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
-        )
-        #expect(score.budget == nil)
+        let score = calculate(transactions: txs, now: now)
         #expect(score.activity == 100)
-        #expect(score.bills == 100)
         #expect(score.total == 100)
     }
 
-    @Test func total_weightedFormula_40_30_30() {
-        // Construct budget=100 (second half + under 75% caps to 100), activity=86
-        // (6/7 days), bills=100 (far-away payment). Total = 100*0.4 + 86*0.3 + 100*0.3 = 95.8 → 96.
-        let budget = makeBudget(limit: 10000) // huge limit so 100 spent ≪ 75%
-        let txs = (12...17).map { day in makeTx(amount: 10, date: date(2026, 3, day)) }
-        let farAway = makeScheduledPayment(nextDueDate: date(2026, 3, 28))
-        let score = FinancialScoreCalculator.calculate(
+    @Test func total_weights_40_25_35() {
+        // Budget=100 (under 75% en segunda mitad), Rhythm=100 (3 días seguidos),
+        // Commitments=75 (no pendientes, no income → cov 100 + load 50 / 2).
+        // Total = 100*0.4 + 100*0.25 + 75*0.35 = 40 + 25 + 26.25 = 91.25 → 91.
+        let budget = makeBudget(limit: 10000)
+        let txs = [
+            makeTx(amount: 10, date: date(2026, 3, 15)),
+            makeTx(amount: 10, date: date(2026, 3, 16)),
+            makeTx(amount: 10, date: date(2026, 3, 17))
+        ]
+        let payment = makeScheduledPayment(nextDueDate: date(2026, 3, 28))
+        let paidAmounts = makePaidInfo(payment: payment, count: 1, date: date(2026, 3, 28))
+        let score = calculate(
             transactions: txs,
             budgets: [budget],
-            scheduledPayments: [farAway],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
+            scheduledPayments: [payment],
+            paidAmounts: paidAmounts,
+            now: now
         )
         #expect(score.budget == 100)
-        #expect(score.activity == 86)
-        #expect(score.bills == 100)
-        #expect(score.total == 96)
+        #expect(score.activity == 100)
+        #expect(score.bills == 75)
+        #expect(score.total == 91)
     }
 
     @Test func total_softFloor50_appliesInExtremeScenarios() {
-        // Three budgets exceeded (−24 → 76), 0 activity (tx outside last 7
-        // days), many overdue bills → bills floored at 0 internally.
-        // Raw = 76*0.4 + 0*0.3 + 0*0.3 = 30.4 → floor to 50.
-        let budgets = (1...3).map { makeBudget(limit: 100, name: "B\($0)") }
-        let exceedingTxs = (1...3).map { _ in makeTx(amount: 150, date: date(2026, 3, 10)) }
-        let activityTx = [makeTx(amount: 10, date: date(2026, 2, 1))]
-        let overduePayments = (1...25).map { i in
-            makeScheduledPayment(name: "O\(i)", nextDueDate: date(2026, 3, 14))
-        }
-        let score = FinancialScoreCalculator.calculate(
-            transactions: exceedingTxs + activityTx,
-            budgets: budgets,
-            scheduledPayments: overduePayments,
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
+        // Forzar piso 50: budget bajo + commitments bajo + rhythm bajo.
+        // - Budget: 1 budget exceeded → 92.
+        // - Rhythm: tx separadas por gap grande (>10 días) → 0.
+        // - Commitments: pendiente sin saldo → cov=0, load=50 → 25.
+        // Total = 92*0.4 + 0*0.25 + 25*0.35 = 36.8 + 0 + 8.75 = 45.55 → floor 50.
+        let budget = makeBudget(limit: 100, name: "B")
+        let txs = [
+            makeTx(amount: 150, date: date(2026, 3, 1)),  // exceed budget
+            makeTx(amount: 5, date: date(2026, 3, 17))    // gap = 15 días → rhythm 0
+        ]
+        let payment = makeScheduledPayment(nextDueDate: date(2026, 3, 25))
+        let score = calculate(
+            transactions: txs,
+            budgets: [budget],
+            scheduledPayments: [payment],
+            now: now
         )
-        #expect(score.budget == 76)
+        #expect(score.budget == 92)
         #expect(score.activity == 0)
-        #expect(score.bills == 0)
-        #expect(score.total == 50) // soft floor
+        #expect(score.bills == 25)
+        #expect(score.total == 50)  // soft floor — raw 45.55 < 50.
     }
 
-    @Test func total_clampsTo100_inEmptyPositiveCase() {
-        // budget missing, activity 100, bills missing → total 100.
-        let txs = (11...17).map { day in makeTx(amount: 10, date: date(2026, 3, day)) }
-        let score = FinancialScoreCalculator.calculate(
+    @Test func total_budgetMissing_reweightsRhythmAndCommitments() {
+        // No budgets → pesos rhythm 0.25 + commitments 0.35 = 0.60.
+        // Rhythm 100, Commitments 75 → (100*0.25 + 75*0.35) / 0.60 = 85.41 → 85.
+        let txs = [
+            makeTx(amount: 10, date: date(2026, 3, 15)),
+            makeTx(amount: 10, date: date(2026, 3, 16)),
+            makeTx(amount: 10, date: date(2026, 3, 17))
+        ]
+        let payment = makeScheduledPayment(nextDueDate: date(2026, 3, 28))
+        let paidAmounts = makePaidInfo(payment: payment, count: 1, date: date(2026, 3, 28))
+        let score = calculate(
             transactions: txs,
-            budgets: [],
-            scheduledPayments: [],
-            paidAmounts: [:],
-            now: now,
-            calendar: calendar
+            scheduledPayments: [payment],
+            paidAmounts: paidAmounts,
+            now: now
         )
         #expect(score.budget == nil)
         #expect(score.activity == 100)
-        #expect(score.bills == nil)
-        #expect(score.total == 100)
+        #expect(score.bills == 75)
+        #expect(score.total == 85)
     }
 }

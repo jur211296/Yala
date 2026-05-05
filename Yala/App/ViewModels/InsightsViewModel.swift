@@ -101,21 +101,29 @@ final class InsightsViewModel {
         )
     }
 
-    /// Recalcula el Financial Score del mes actual. Se invoca aparte de
-    /// `calculateInsightsData` porque el score siempre mide el mes calendario
-    /// en curso — independiente del periodo seleccionado en Resumen — y
-    /// requiere `paidAmounts` cargado vía `ScheduledPaymentPaidStatusHelper`.
+    /// Recalcula el Financial Score para el período seleccionado. Se invoca aparte
+    /// de `calculateInsightsData` porque tiene su propio gate de re-cálculo en
+    /// `DetailContainerView` (depende de `dataVersion + interval`, no de filtros).
+    /// `paidAmounts` se carga vía `ScheduledPaymentPaidStatusHelper` para el rango.
     func calculateFinancialScore(
         transactions: [TransactionItem],
         budgets: [Budget],
         scheduledPayments: [ScheduledPayment],
-        paidAmounts: [String: [PaidOccurrenceInfo]]
+        accounts: [Account],
+        paidAmounts: [String: [PaidOccurrenceInfo]],
+        period: DetailPeriod,
+        customRange: DateInterval?,
+        preferredCurrencyCode: String
     ) {
         let newScore = FinancialScoreCalculator.calculate(
             transactions: transactions,
             budgets: budgets,
             scheduledPayments: scheduledPayments,
-            paidAmounts: paidAmounts
+            accounts: accounts,
+            paidAmounts: paidAmounts,
+            period: period,
+            customRange: customRange,
+            preferredCurrencyCode: preferredCurrencyCode
         )
         if newScore != financialScore { financialScore = newScore }
     }

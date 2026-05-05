@@ -66,12 +66,11 @@
 "panel.health.cardTitle" = "Your financial health";
 "panel.health.emptyBadge" = "—";
 "panel.health.subScore.budget" = "Budgets";
-"panel.health.subScore.activity" = "Activity";
-"panel.health.subScore.bills" = "Bills";
-
+"panel.health.subScore.activity" = "Rhythm";
+"panel.health.subScore.bills" = "Commitments";
 // Detail sheet — Total
 "panel.health.total.sheet.title" = "Your financial health";
-"panel.health.total.sheet.explanation" = "It's the average of your three metrics: budget (40%), activity (30%) and bills (30%). If any is missing, the score is calculated with the others.";
+"panel.health.total.sheet.explanation" = "Combines three things: your budgets, your logging rhythm, and your commitments for the period. Each weighs differently and re-balances when any one doesn't apply.";
 "panel.health.total.headline.high" = "You're crushing it!";
 "panel.health.total.headline.mid" = "Great rhythm going";
 "panel.health.total.headline.low" = "Small steps, big changes";
@@ -88,22 +87,22 @@
 "panel.health.budget.cta.create" = "Create my first budget";
 
 // Detail sheet — Activity
-"panel.health.activity.sheet.title" = "Your activity";
-"panel.health.activity.sheet.explanation" = "We count how many of the last 7 days you logged an expense. The more consistent you are, the better you know yourself — and the higher this grows.";
-"panel.health.activity.headline.high" = "Such consistency!";
-"panel.health.activity.headline.mid" = "Great rhythm going";
-"panel.health.activity.headline.low" = "A few minutes a day works wonders";
-"panel.health.activity.headline.empty" = "Start by logging your first expense";
+"panel.health.activity.sheet.title" = "Your rhythm";
+"panel.health.activity.sheet.explanation" = "Measures the longest streak of days without recording any expense in this period. Up to 2 days off is fine — beyond that, your rhythm starts to slip.";
+"panel.health.activity.headline.high" = "You're in a great rhythm! 🎉";
+"panel.health.activity.headline.mid" = "Your rhythm is looking good";
+"panel.health.activity.headline.low" = "Your rhythm dropped a bit";
+"panel.health.activity.headline.empty" = "Nothing logged yet — we'll start whenever you're ready";
 "panel.health.activity.cta.view" = "See my records";
 "panel.health.activity.cta.create" = "Log my first expense";
 
 // Detail sheet — Bills
-"panel.health.bills.sheet.title" = "Your bills";
-"panel.health.bills.sheet.explanation" = "We check your scheduled payments for the month. If one's overdue recently with no mark, or just around the corner, we give you a heads-up.";
-"panel.health.bills.headline.high" = "All good with your bills!";
-"panel.health.bills.headline.mid" = "Bills under control";
-"panel.health.bills.headline.low" = "A glance and you're caught up";
-"panel.health.bills.headline.empty" = "Scheduled payments free your mind";
+"panel.health.bills.sheet.title" = "Your commitments";
+"panel.health.bills.sheet.explanation" = "Combines two things: whether your balance covers the pending payments for this period, and what share of your income goes to subscriptions and recurring bills.";
+"panel.health.bills.headline.high" = "Your commitments are under control 💪";
+"panel.health.bills.headline.mid" = "Your commitments are manageable";
+"panel.health.bills.headline.low" = "Your commitments weigh on your flow";
+"panel.health.bills.headline.empty" = "No scheduled payments yet";
 "panel.health.bills.cta.view" = "See my bills";
 "panel.health.bills.cta.create" = "Create my first scheduled payment";
 

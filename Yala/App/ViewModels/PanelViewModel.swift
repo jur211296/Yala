@@ -2367,15 +2367,20 @@ final class PanelViewModel {
         }
 
         if healthVisible {
+            // El score Salud Financiera ahora reacciona a `selectedPeriod`. Para el
+            // rango del período cargamos `paidAmounts` con el overload `interval:`.
+            // Reusamos `sharedPaidAmounts` solo si el período es el mes en curso
+            // (caso común — evita un fetch redundante).
+            let scoreInterval = selectedPeriod.dateInterval(customRange: customDateRange)
             let paidForHealth: [String: [PaidOccurrenceInfo]]
-            if let shared = sharedPaidAmounts {
+            if let shared = sharedPaidAmounts,
+               let monthInterval = currentMonthInterval,
+               scoreInterval == monthInterval {
                 paidForHealth = shared
-            } else if let monthStart = currentMonthStart {
-                paidForHealth = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
-                    for: activePayments, month: monthStart, context: context
-                )
             } else {
-                paidForHealth = [:]
+                paidForHealth = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
+                    for: activePayments, interval: scoreInterval, context: context
+                )
             }
             calculateHealthWidget(paidAmounts: paidForHealth)
         }
@@ -2549,12 +2554,17 @@ final class PanelViewModel {
 
     /// Pre-computes the Financial Score for the Panel 2.0 "Salud Financiera" section.
     /// Called from `performCalculation()` only when `.health` section is visible.
+    /// El score reacciona a `selectedPeriod` — cada cambio de período recalcula.
     private func calculateHealthWidget(paidAmounts: [String: [PaidOccurrenceInfo]]) {
         let newScore = FinancialScoreCalculator.calculate(
             transactions: transactions,
             budgets: budgets,
             scheduledPayments: scheduledPayments,
-            paidAmounts: paidAmounts
+            accounts: accounts,
+            paidAmounts: paidAmounts,
+            period: selectedPeriod,
+            customRange: customDateRange,
+            preferredCurrencyCode: defaultCurrencyCode
         )
         let newData = PanelHealthData(score: newScore)
         if newData != healthWidget { healthWidget = newData }
