@@ -2350,6 +2350,16 @@ enum L10n {
             static var inFavor: String { ls("account.sign.inFavor", comment: "") }
             static var consumed: String { ls("account.sign.consumed", comment: "") }
         }
+
+        // MARK: - System Account (A0-Bridge)
+
+        enum System {
+            /// "Grupos %@" — nombre de cuenta virtual sistema con currency code (ej: "Grupos PEN").
+            /// Format string para String(format:_:).
+            static var groups: String { ls("account.system.groups", comment: "") }
+            /// "Sistema" — badge/etiqueta para distinguir cuentas sistema.
+            static var badge: String { ls("account.system.badge", comment: "") }
+        }
         static var selected: String { ls("account.selected", comment: "") }
         static var selectAccount: String { ls("account.selectAccount", comment: "") }
         static var archived: String { ls("account.archived", comment: "") }

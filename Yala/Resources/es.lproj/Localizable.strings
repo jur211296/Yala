@@ -2846,6 +2846,8 @@
 "subcategory.accountTransferOther" = "Transferencia entre cuentas";
 
 // MARK: - A0-Bridge System Categories & Subcategories (Grupos)
+"account.system.groups" = "Grupos %@";
+"account.system.badge" = "Sistema";
 "category.system.groups" = "Grupos";
 "category.system.groupCollections" = "Cobros de grupos";
 "subcategory.system.loanToGroups" = "Préstamo a grupos";
