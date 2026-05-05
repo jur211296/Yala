@@ -91,6 +91,31 @@ final class DraftService {
     ) throws -> TransactionItem {
         let context = try requireContext()
 
+        // A0-Bridge: drafts groupExpense apuntan a una TX existente con subcat=nil.
+        // En lugar de crear TX nueva, UPDATE la subcategory de la TX target y borrar el draft.
+        if draft.sourceType == .groupExpense, let targetIDStr = draft.targetTransactionID,
+           let subcategory = draft.subcategory {
+            // Encontrar TX por splitExpenseID (más robusto que parsear targetIDStr).
+            let splitID = draft.splitExpenseID ?? ""
+            let descriptor = FetchDescriptor<TransactionItem>(
+                predicate: #Predicate { $0.splitExpenseID == splitID && $0.subcategory == nil }
+            )
+            if let targetTx = try context.fetch(descriptor).first {
+                targetTx.subcategory = subcategory
+                targetTx.category = subcategory.safeCategory
+                cacheDisplayValues(draft)
+                context.delete(draft)
+                try context.save()
+                SessionState.shared.incrementDataVersion()
+                TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
+                return targetTx
+            }
+            // Fallback: TX target no encontrada (sync race?) → tratar como draft normal.
+            #if DEBUG
+            print("DraftService: groupExpense draft target TX not found for splitExpenseID=\(splitID), targetIDStr=\(targetIDStr). Falling back to standard approve.")
+            #endif
+        }
+
         // Validate: block future dates
         guard draft.effectiveDate <= Date.now else {
             throw DraftServiceError.futureDateNotAllowed
@@ -293,6 +318,12 @@ final class DraftService {
     // MARK: - Reject Operations
 
     func rejectDraft(_ draft: InboxDraft) throws {
+        // A0-Bridge: drafts de grupos no se rechazan desde Inbox.
+        // Solo se eliminan desde el grupo (delete del expense/settlement origen).
+        if draft.isFromGroup {
+            throw DraftServiceError.cannotRejectGroupDraft
+        }
+
         let context = try requireContext()
 
         // Cache values for display in archived list
@@ -310,6 +341,8 @@ final class DraftService {
         let context = try requireContext()
 
         for draft in drafts {
+            // A0-Bridge: skip drafts de grupos (silent skip en bulk).
+            if draft.isFromGroup { continue }
             cacheDisplayValues(draft)
             draft.status = .rejected
             draft.updatedAt = Date.now
@@ -321,6 +354,11 @@ final class DraftService {
     // MARK: - Delete Operations
 
     func deleteDraft(_ draft: InboxDraft) throws {
+        // A0-Bridge: drafts de grupos no se eliminan desde Inbox.
+        // Solo se eliminan al borrar el expense/settlement origen en el grupo.
+        if draft.isFromGroup {
+            throw DraftServiceError.cannotDeleteGroupDraft
+        }
         let context = try requireContext()
         context.delete(draft)
         try context.save()
@@ -329,6 +367,8 @@ final class DraftService {
     func bulkDelete(_ drafts: [InboxDraft]) throws {
         let context = try requireContext()
         for draft in drafts {
+            // A0-Bridge: skip drafts de grupos (silent skip en bulk).
+            if draft.isFromGroup { continue }
             context.delete(draft)
         }
         try context.save()
@@ -405,6 +445,10 @@ enum DraftServiceError: LocalizedError {
     case missingSubcategory
     case futureDateNotAllowed
     case saveFailed(Error)
+    /// A0-Bridge: drafts de grupos (groupExpense/groupSettlement) no permiten eliminar/rechazar.
+    /// Solo se borran al eliminar el expense/settlement origen en el grupo.
+    case cannotDeleteGroupDraft
+    case cannotRejectGroupDraft
 
     var errorDescription: String? {
         switch self {
@@ -420,6 +464,8 @@ enum DraftServiceError: LocalizedError {
             return L10n.Inbox.errorFutureDate
         case .saveFailed(let error):
             return "DraftService: Save failed - \(error.localizedDescription)"
+        case .cannotDeleteGroupDraft, .cannotRejectGroupDraft:
+            return L10n.Inbox.groupDraftCannotDelete
         }
     }
 }

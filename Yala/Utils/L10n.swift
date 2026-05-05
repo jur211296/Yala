@@ -4343,6 +4343,10 @@ enum L10n {
         static var sourceGroupSettlement: String {
             ls("inbox.sourceGroupSettlement", comment: "")
         }
+        /// "Esta transacción se elimina solo desde el grupo origen."
+        static var groupDraftCannotDelete: String {
+            ls("inbox.groupDraftCannotDelete", comment: "")
+        }
         static var errorNoAccount: String {
             ls("inbox.errorNoAccount", comment: "")
         }
