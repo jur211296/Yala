@@ -2519,6 +2519,15 @@ enum L10n {
         static var vehicle: String { ls("category.vehicle", comment: "") }
         static var incomeCategory: String { ls("category.income", comment: "") }
         static var other: String { ls("category.other", comment: "") }
+
+        // MARK: - System Categories (A0-Bridge)
+
+        enum System {
+            /// "Grupos" — categoría sistema expense para subcategorías sistema del bridge.
+            static var groups: String { ls("category.system.groups", comment: "") }
+            /// "Cobros de grupos" — categoría sistema income para subcategorías sistema del bridge.
+            static var groupCollections: String { ls("category.system.groupCollections", comment: "") }
+        }
     }
 
     // MARK: - Subcategory
@@ -2675,6 +2684,21 @@ enum L10n {
         // Seed names - Otros
         static var balanceAdjustment: String { ls("subcategory.balanceAdjustment", comment: "") }
         static var accountTransferOther: String { ls("subcategory.accountTransferOther", comment: "") }
+
+        // MARK: - System Subcategories (A0-Bridge)
+
+        enum System {
+            /// "Préstamo a grupos" — Caso A TX2 (income, virtual): pagué un gasto del grupo, me deben el total.
+            static var loanToGroups: String { ls("subcategory.system.loanToGroups", comment: "") }
+            /// "Cobro de préstamo" — Caso D TX1 (expense, virtual): mi crédito virtual se redujo (alguien me liquidó).
+            static var loanCollection: String { ls("subcategory.system.loanCollection", comment: "") }
+            /// "Pago de liquidación" — Caso C TX1 (income, virtual): pagué a otro, mi deuda virtual se canceló.
+            static var settlementPayment: String { ls("subcategory.system.settlementPayment", comment: "") }
+            /// "Liquidación enviada" — Caso C TX2 (expense, cuenta real): salida a cuenta real para liquidar.
+            static var settlementSent: String { ls("subcategory.system.settlementSent", comment: "") }
+            /// "Liquidación recibida" — Caso D TX2 (income, cuenta real): entrada a cuenta real desde otro miembro.
+            static var settlementReceived: String { ls("subcategory.system.settlementReceived", comment: "") }
+        }
     }
 
     // MARK: - Tag

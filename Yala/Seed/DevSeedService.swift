@@ -37,6 +37,7 @@ final class DevSeedService {
         // Step 1: Ensure categories exist, then build subcategory lookup
         updateStep(L10n.DevSeed.stepCategories, progress: 0.02)
         seedCategoriesIfNeeded(in: context)
+        seedSystemGroupCategoriesIfNeeded(in: context)
         let subcategoryLookup = buildSubcategoryLookup(in: context)
 
         guard !subcategoryLookup.isEmpty else {

@@ -2845,6 +2845,17 @@
 "subcategory.balanceAdjustment" = "Ajustes de saldo";
 "subcategory.accountTransferOther" = "Transferencia entre cuentas";
 
+// MARK: - A0-Bridge System Categories & Subcategories (Grupos)
+"category.system.groups" = "Grupos";
+"category.system.groupCollections" = "Cobros de grupos";
+"subcategory.system.loanToGroups" = "Préstamo a grupos";
+"subcategory.system.loanCollection" = "Cobro de préstamo";
+"subcategory.system.settlementPayment" = "Pago de liquidación";
+"subcategory.system.settlementSent" = "Liquidación enviada";
+"subcategory.system.settlementReceived" = "Liquidación recibida";
+"inbox.sourceGroupExpense" = "Gasto compartido";
+"inbox.sourceGroupSettlement" = "Liquidación";
+
 // MARK: - Scheduled Payments UX (M1-M7)
 "scheduled.period.selector.title" = "Seleccionar mes";
 "scheduled.summary.paid" = "Pagado";

@@ -144,6 +144,7 @@ struct GroupInviteOnboardingView: View {
 
         // 4. Seed categories (idempotent — safe even if iCloud data arrives)
         seedCategoriesIfNeeded(in: modelContext)
+        seedSystemGroupCategoriesIfNeeded(in: modelContext)
 
         // 5. Create "General" account if none exists
         createGeneralAccountIfNeeded(currency: currency)

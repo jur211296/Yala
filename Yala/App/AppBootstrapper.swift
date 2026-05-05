@@ -118,6 +118,11 @@ final class AppBootstrapper {
         // 6. Seed default notifications for existing users
         seedDefaultNotifications(context: context)
 
+        // 6.0 A0-Bridge: backfill de Categories/Subcategorías sistema para grupos.
+        // Idempotente: chequea flag `seedSystemGroupCategoriesExecuted` + existencia por nombre.
+        // Safe para users con seed previo y para users `.groupInvite`.
+        seedSystemGroupCategoriesIfNeeded(in: context)
+
         // 6.1. Deduplicate notifications (R9: handles CloudKit race during onboarding)
         NotificationService.shared.deduplicateNotifications(context: context)
 

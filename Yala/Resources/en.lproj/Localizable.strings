@@ -2659,6 +2659,17 @@
 "subcategory.balanceAdjustment" = "Balance adjustment";
 "subcategory.accountTransferOther" = "Account transfer";
 
+// MARK: - A0-Bridge System Categories & Subcategories (Groups)
+"category.system.groups" = "Groups";
+"category.system.groupCollections" = "Group collections";
+"subcategory.system.loanToGroups" = "Loan to groups";
+"subcategory.system.loanCollection" = "Loan collection";
+"subcategory.system.settlementPayment" = "Settlement payment";
+"subcategory.system.settlementSent" = "Settlement sent";
+"subcategory.system.settlementReceived" = "Settlement received";
+"inbox.sourceGroupExpense" = "Shared expense";
+"inbox.sourceGroupSettlement" = "Settlement";
+
 // MARK: - Tips & Tricks
 // MARK: - Tutorials
 "tutorials.subtitle" = "Learn how to get the most out of Yala";

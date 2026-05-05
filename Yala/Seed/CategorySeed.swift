@@ -413,3 +413,186 @@ func seedCategoriesIfNeeded(in modelContext: ModelContext) {
         #endif
     }
 }
+
+// -------------------------------------------------------------------------
+// MARK: - A0-Bridge: Categorías y Subcategorías Sistema para Grupos
+// -------------------------------------------------------------------------
+//
+// Estas categorías y subcategorías son creadas por separado de la semilla
+// principal porque deben aplicarse también a usuarios existentes que ya
+// tienen `seedCategoriesExecuted = true`. Usan flag separado
+// `seedSystemGroupCategoriesExecuted` y son idempotentes por nombre.
+//
+// **Propósito**: representar contablemente operaciones de grupos en la
+// cuenta virtual `Grupos [moneda]` con subcategorías que respetan la
+// dicotomía income/expense de Yala.
+
+private struct SystemSubcategoryDefinition {
+    let name: String
+    let role: String  // identificador estable independiente del nombre L10n
+}
+
+private struct SystemCategoryDefinition {
+    let name: String
+    let colorHex: String
+    let isIncome: Bool
+    let iconName: String
+    let role: String
+    let subcategories: [SystemSubcategoryDefinition]
+}
+
+/// Roles estables (independientes de localización) para identificar entidades sistema.
+/// Usados por `GroupBridgeSystemEntities.systemSubcategory(role:)` (F3).
+enum GroupBridgeSystemRole {
+    static let categoryGroups = "groups"
+    static let categoryGroupCollections = "groupCollections"
+    static let subcategoryLoanToGroups = "loanToGroups"
+    static let subcategoryLoanCollection = "loanCollection"
+    static let subcategorySettlementPayment = "settlementPayment"
+    static let subcategorySettlementSent = "settlementSent"
+    static let subcategorySettlementReceived = "settlementReceived"
+}
+
+private func systemGroupCategoryDefinitions() -> [SystemCategoryDefinition] {
+    [
+        // Categoría sistema EXPENSE
+        SystemCategoryDefinition(
+            name: L10n.Category.System.groups,
+            colorHex: "#7C3AED",
+            isIncome: false,
+            iconName: "person.2.fill",
+            role: GroupBridgeSystemRole.categoryGroups,
+            subcategories: [
+                SystemSubcategoryDefinition(
+                    name: L10n.Subcategory.System.loanCollection,
+                    role: GroupBridgeSystemRole.subcategoryLoanCollection
+                ),
+                SystemSubcategoryDefinition(
+                    name: L10n.Subcategory.System.settlementSent,
+                    role: GroupBridgeSystemRole.subcategorySettlementSent
+                ),
+            ]
+        ),
+        // Categoría sistema INCOME
+        SystemCategoryDefinition(
+            name: L10n.Category.System.groupCollections,
+            colorHex: "#10B981",
+            isIncome: true,
+            iconName: "person.2.crop.circle.fill.badge.plus",
+            role: GroupBridgeSystemRole.categoryGroupCollections,
+            subcategories: [
+                SystemSubcategoryDefinition(
+                    name: L10n.Subcategory.System.loanToGroups,
+                    role: GroupBridgeSystemRole.subcategoryLoanToGroups
+                ),
+                SystemSubcategoryDefinition(
+                    name: L10n.Subcategory.System.settlementPayment,
+                    role: GroupBridgeSystemRole.subcategorySettlementPayment
+                ),
+                SystemSubcategoryDefinition(
+                    name: L10n.Subcategory.System.settlementReceived,
+                    role: GroupBridgeSystemRole.subcategorySettlementReceived
+                ),
+            ]
+        ),
+    ]
+}
+
+/// Crea las 2 Categories sistema + 5 Subcategorías sistema del bridge A0
+/// si todavía no existen. Idempotente: chequea por `isSystem == true` antes de crear.
+///
+/// Llamada en `AppBootstrapper.bootstrap()` después de `seedCategoriesIfNeeded`.
+/// Backfill seguro para users con seed previo.
+///
+/// `defaults` parameter permite inyectar UserDefaults isolado para tests.
+/// En producción se usa `.standard`.
+func seedSystemGroupCategoriesIfNeeded(
+    in modelContext: ModelContext,
+    defaults: UserDefaults = .standard
+) {
+    let flagKey = "seedSystemGroupCategoriesExecuted"
+
+    // Flag guard contra TOCTOU race con CloudKit sync
+    if defaults.bool(forKey: flagKey) {
+        // Defensa secundaria: verificar que las categorías sistema realmente existen.
+        // Si flag=true pero entidades faltan (edge case borrado manual), permitir re-seed.
+        let existingCount = (try? modelContext.fetchCount(
+            FetchDescriptor<Category>(predicate: #Predicate { $0.isSystem == true })
+        )) ?? 0
+        if existingCount > 0 {
+            #if DEBUG
+            print("CategorySeed: System groups categorías ya existen (flag + count=\(existingCount)).")
+            #endif
+            return
+        }
+        // Flag inconsistente con DB → continuar y reseed.
+    }
+
+    let definitions = systemGroupCategoryDefinitions()
+
+    do {
+        // Primary defense: chequear si ya hay alguna categoría sistema (cualquiera de las 2)
+        // por nombre (idempotencia por nombre).
+        let allCategories = try modelContext.fetch(FetchDescriptor<Category>())
+        let existingNames = Set(allCategories.map(\.name))
+
+        for definition in definitions {
+            let categoryExists = existingNames.contains(definition.name)
+            let category: Category
+            if categoryExists, let existing = allCategories.first(where: { $0.name == definition.name }) {
+                category = existing
+                // Asegurar flag isSystem aunque ya exista (recuperación de inconsistencias)
+                if !category.isSystem {
+                    category.isSystem = true
+                }
+            } else {
+                category = Category(
+                    name: definition.name,
+                    colorHex: definition.colorHex,
+                    isIncome: definition.isIncome,
+                    isDefaultSeed: true,
+                    isVisible: true,
+                    sortOrder: 100, // sortOrder alto para que vayan al final
+                    iconName: definition.iconName,
+                    isSystem: true
+                )
+                modelContext.insert(category)
+            }
+
+            // Crear subcategorías faltantes
+            let existingSubNames = Set((category.subcategories ?? []).map(\.name))
+            for (subIndex, subDef) in definition.subcategories.enumerated() {
+                if existingSubNames.contains(subDef.name) {
+                    // Asegurar isSystem en subcat existente
+                    if let existing = category.subcategories?.first(where: { $0.name == subDef.name }), !existing.isSystem {
+                        existing.isSystem = true
+                    }
+                    continue
+                }
+                let subcategory = Subcategory(
+                    name: subDef.name,
+                    colorHex: nil,
+                    isDefaultSeed: true,
+                    isVisible: true,
+                    sortOrder: subIndex,
+                    natureRawValue: "sin_clasificacion",
+                    iconName: nil,
+                    isSystem: true,
+                    category: category
+                )
+                modelContext.insert(subcategory)
+            }
+        }
+
+        try modelContext.save()
+        defaults.set(true, forKey: flagKey)
+
+        #if DEBUG
+        print("CategorySeed: Semilla system groups creada correctamente.")
+        #endif
+    } catch {
+        #if DEBUG
+        print("CategorySeed: Error al guardar semilla system groups: \(error)")
+        #endif
+    }
+}

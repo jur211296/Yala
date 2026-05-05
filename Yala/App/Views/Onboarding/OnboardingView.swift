@@ -1293,6 +1293,9 @@ struct OnboardingView: View {
             seedCategoriesIfNeeded(in: modelContext)
         }
 
+        // A0-Bridge: idempotente, seguro de invocar siempre (chequea por isSystem flag).
+        seedSystemGroupCategoriesIfNeeded(in: modelContext)
+
         if !loadSeedCategories && !expensesOnlyMode {
             InitialBalanceService.ensureBalanceAdjustmentSubcategoryExists(context: modelContext)
         }
