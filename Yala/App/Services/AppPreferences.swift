@@ -307,6 +307,37 @@ final class AppPreferences {
         }
     }
 
+    // MARK: - A0-Bridge: Group Visibility Toggles
+
+    /// Si OFF: el feed de Records oculta TX bridgeadas (`splitExpenseID/splitSettlementID != nil`).
+    /// Default: ON. Persistencia synced (CloudKit cross-device).
+    var includeGroupTransactionsInFeed: Bool = true {
+        didSet {
+            guard oldValue != includeGroupTransactionsInFeed else { return }
+            persistBool(includeGroupTransactionsInFeed, forKey: Keys.includeGroupTransactionsInFeed, synced: true)
+        }
+    }
+
+    /// Si OFF: el "Total" agregado del Panel suma solo `Account where !isSystemAccount`.
+    /// Las cuentas sistema siguen apareciendo en el carrusel pero no se cuentan en el total.
+    /// Default: ON. Persistencia synced.
+    var includeGroupsInPanelTotal: Bool = true {
+        didSet {
+            guard oldValue != includeGroupsInPanelTotal else { return }
+            persistBool(includeGroupsInPanelTotal, forKey: Keys.includeGroupsInPanelTotal, synced: true)
+        }
+    }
+
+    /// Si OFF: estadísticas (Insights, Cash Flow, etc.) excluyen TX bridgeadas.
+    /// Subcategorías sistema (`isAnySystem`) siempre excluidas de Top categorías/subcategorías
+    /// independientemente de este toggle. Default: ON. Persistencia synced.
+    var includeGroupTransactionsInStats: Bool = true {
+        didSet {
+            guard oldValue != includeGroupTransactionsInStats else { return }
+            persistBool(includeGroupTransactionsInStats, forKey: Keys.includeGroupTransactionsInStats, synced: true)
+        }
+    }
+
     // MARK: - UI Feature Flags
 
     var showSiriTip: Bool = true {
@@ -844,6 +875,17 @@ final class AppPreferences {
         budgetsHideInactive = defaults.bool(forKey: Keys.budgetsHideInactive)
         budgetAlertsEnabled = defaults.bool(forKey: Keys.budgetAlertsEnabled)
 
+        // A0-Bridge: Group Visibility Toggles (default = true cuando key ausente)
+        if defaults.object(forKey: Keys.includeGroupTransactionsInFeed) != nil {
+            includeGroupTransactionsInFeed = defaults.bool(forKey: Keys.includeGroupTransactionsInFeed)
+        }
+        if defaults.object(forKey: Keys.includeGroupsInPanelTotal) != nil {
+            includeGroupsInPanelTotal = defaults.bool(forKey: Keys.includeGroupsInPanelTotal)
+        }
+        if defaults.object(forKey: Keys.includeGroupTransactionsInStats) != nil {
+            includeGroupTransactionsInStats = defaults.bool(forKey: Keys.includeGroupTransactionsInStats)
+        }
+
         // UI Feature Flags
         if defaults.object(forKey: Keys.showSiriTip) != nil {
             showSiriTip = defaults.bool(forKey: Keys.showSiriTip)
@@ -1013,6 +1055,12 @@ final class AppPreferences {
         // Budgets / Alerts
         static let budgetsHideInactive = "budgets.hideInactive"
         static let budgetAlertsEnabled = "budgetAlertsEnabled"
+
+        // A0-Bridge: Group Visibility Toggles
+        // Las 3 keys son nonisolated para que widgets/extensions las lean directamente vía AppGroup.
+        nonisolated static let includeGroupTransactionsInFeed = "includeGroupTransactionsInFeed"
+        nonisolated static let includeGroupsInPanelTotal = "includeGroupsInPanelTotal"
+        nonisolated static let includeGroupTransactionsInStats = "includeGroupTransactionsInStats"
 
         // UI Feature Flags
         static let showSiriTip = "showSiriTip"
