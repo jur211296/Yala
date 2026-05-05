@@ -155,7 +155,8 @@ final class GroupTransactionBridge {
         context.insert(tx1)
         tx1.recalculatePreferredCurrency(context: context)
 
-        // Si auto-match falló: crear InboxDraft groupExpense con targetTransactionID = tx1.id.
+        // Si auto-match falló: draft groupExpense que apunta a TX1 por splitExpenseID.
+        // Al finalizar, DraftService refetcha la TX por splitExpenseID + subcategory == nil.
         if realSubcat == nil {
             let draft = InboxDraft(
                 note: expense.expenseDescription,
@@ -172,11 +173,8 @@ final class GroupTransactionBridge {
                 splitExpenseID: expenseIDStr,
                 splitGroupZoneID: expense.groupZoneID,
                 splitSettlementID: nil,
-                targetTransactionID: tx1.persistentModelID.hashValue.description
+                targetTransactionID: nil
             )
-            // Note: targetTransactionID usa hashValue del persistentModelID porque
-            // el persistentModelID en sí no es String. La finalize sheet (F11)
-            // refetchará por splitExpenseID → match TX1 sin subcat.
             context.insert(draft)
         }
 

@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import OSLog
 import SwiftData
 import WidgetKit
 
@@ -91,12 +92,10 @@ final class DraftService {
     ) throws -> TransactionItem {
         let context = try requireContext()
 
-        // A0-Bridge: drafts groupExpense apuntan a una TX existente con subcat=nil.
-        // En lugar de crear TX nueva, UPDATE la subcategory de la TX target y borrar el draft.
-        if draft.sourceType == .groupExpense, let targetIDStr = draft.targetTransactionID,
-           let subcategory = draft.subcategory {
-            // Encontrar TX por splitExpenseID (más robusto que parsear targetIDStr).
-            let splitID = draft.splitExpenseID ?? ""
+        // Drafts groupExpense apuntan a una TX virtual con subcategory=nil creada por
+        // GroupTransactionBridge. Aprobar = asignar subcat a la TX existente, no crear una nueva.
+        if draft.sourceType == .groupExpense, let subcategory = draft.subcategory,
+           let splitID = draft.splitExpenseID {
             let descriptor = FetchDescriptor<TransactionItem>(
                 predicate: #Predicate { $0.splitExpenseID == splitID && $0.subcategory == nil }
             )
@@ -110,10 +109,11 @@ final class DraftService {
                 TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
                 return targetTx
             }
-            // Fallback: TX target no encontrada (sync race?) → tratar como draft normal.
-            #if DEBUG
-            print("DraftService: groupExpense draft target TX not found for splitExpenseID=\(splitID), targetIDStr=\(targetIDStr). Falling back to standard approve.")
-            #endif
+            // TX target ausente: sync race con remote delete del expense, o flow inválido.
+            // Logger.error en lugar de print(DEBUG) para que se capture en producción.
+            Logger(subsystem: "com.yala", category: "GroupBridge").error(
+                "groupExpense draft target TX not found for splitExpenseID=\(splitID, privacy: .public). Falling back."
+            )
         }
 
         // Validate: block future dates

@@ -99,9 +99,11 @@ enum GroupBridgeSystemEntities {
 
         // 2. Dedup defensivo cross-device si fetch retorna >1.
         if existing.count > 1 {
-            // Criterio determinístico: ordenar por hash del persistentModelID.
+            // Criterio determinístico cross-launch: name lexicográfico, luego shortcutID.
+            // (`persistentModelID.hashValue` no es estable entre launches en SwiftData.)
             let sorted = existing.sorted { lhs, rhs in
-                lhs.persistentModelID.hashValue < rhs.persistentModelID.hashValue
+                if lhs.name != rhs.name { return lhs.name < rhs.name }
+                return lhs.shortcutID.uuidString < rhs.shortcutID.uuidString
             }
             let canonical = sorted[0]
             // Archivar duplicados (preservar historial de TX, no eliminar)
