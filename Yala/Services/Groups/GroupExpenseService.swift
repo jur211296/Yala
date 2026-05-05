@@ -215,6 +215,23 @@ final class GroupExpenseService {
         let context = try requireContext()
         try validateCurrentUserCanWrite(in: group)
 
+        // A0-Bridge F8: bloquea delete si hay settlements confirmed posteriores al expense.
+        // Conservador (puede bloquear deletes válidos cuando settlement no involucra members
+        // del expense), pero seguro y auditable. Mensaje claro al user.
+        let groupZoneID = group.cloudKitZoneID
+        let cutoffDate = expense.date
+        let settlementsAfterDescriptor = FetchDescriptor<SplitSettlement>(
+            predicate: #Predicate {
+                $0.groupZoneID == groupZoneID
+                    && $0.isConfirmed == true
+                    && $0.date >= cutoffDate
+            }
+        )
+        let settlementsAfter = try context.fetch(settlementsAfterDescriptor)
+        guard settlementsAfter.isEmpty else {
+            throw GroupExpenseServiceError.expenseHasAssociatedSettlements
+        }
+
         // Delete shares first
         let shares = try fetchShares(for: expense)
         for share in shares {
@@ -478,6 +495,9 @@ enum GroupExpenseServiceError: LocalizedError {
     case noPayer
     case selfSettlement
     case inactiveMember
+    /// A0-Bridge F8: el expense no se puede borrar porque hay settlements confirmed
+    /// posteriores en el mismo grupo. El user debe regularizar o eliminar settlements primero.
+    case expenseHasAssociatedSettlements
     case saveFailed(Error)
 
     var errorDescription: String? {
@@ -496,6 +516,8 @@ enum GroupExpenseServiceError: LocalizedError {
             return "GroupExpenseService: Cannot settle with yourself"
         case .inactiveMember:
             return "GroupExpenseService: Inactive members cannot create or edit shared expenses"
+        case .expenseHasAssociatedSettlements:
+            return L10n.Groups.Bridge.deleteExpenseBlocked
         case .saveFailed(let error):
             return "GroupExpenseService: Save failed - \(error.localizedDescription)"
         }

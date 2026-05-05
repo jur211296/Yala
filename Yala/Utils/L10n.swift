@@ -1631,6 +1631,33 @@ enum L10n {
             static var allTime: String { ls("groups.stats.allTime", comment: "") }
         }
 
+        // MARK: - Bridge (A0-Bridge)
+
+        enum Bridge {
+            // Delete guards
+            static var deleteExpenseBlocked: String { ls("groups.bridge.deleteExpenseBlocked", comment: "") }
+            // Read-only TX edit
+            static var editFromGroup: String { ls("groups.bridge.editFromGroup", comment: "") }
+            static var assignFromInbox: String { ls("groups.bridge.assignFromInbox", comment: "") }
+            static var editSettlementInGroup: String { ls("groups.bridge.editSettlementInGroup", comment: "") }
+            // Activation/deactivation modals (F12)
+            static var activateTitle: String { ls("groups.bridge.activateTitle", comment: "") }
+            static var activateBody: String { ls("groups.bridge.activateBody", comment: "") }
+            static var activateOptionFromNow: String { ls("groups.bridge.activateOptionFromNow", comment: "") }
+            static var activateOptionFromNowHint: String { ls("groups.bridge.activateOptionFromNowHint", comment: "") }
+            static var activateOptionImportAll: String { ls("groups.bridge.activateOptionImportAll", comment: "") }
+            static var activateOptionImportAllHint: String { ls("groups.bridge.activateOptionImportAllHint", comment: "") }
+            static var activateImportRegenerationNote: String { ls("groups.bridge.activateImportRegenerationNote", comment: "") }
+            static var deactivateTitle: String { ls("groups.bridge.deactivateTitle", comment: "") }
+            static var deactivateBody: String { ls("groups.bridge.deactivateBody", comment: "") }
+            static var deactivateOptionDelete: String { ls("groups.bridge.deactivateOptionDelete", comment: "") }
+            static var deactivateOptionKeep: String { ls("groups.bridge.deactivateOptionKeep", comment: "") }
+            static var importing: String { ls("groups.bridge.importing", comment: "") }
+            static var importError: String { ls("groups.bridge.importError", comment: "") }
+            // Upsell para .groupInvite users
+            static var upsellGroupInviteSettlement: String { ls("groups.bridge.upsellGroupInviteSettlement", comment: "") }
+        }
+
         enum Form {
             static var name: String { ls("groups.form.name", comment: "") }
             static var namePlaceholder: String { ls("groups.form.namePlaceholder", comment: "") }
