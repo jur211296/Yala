@@ -2845,6 +2845,15 @@
 "subcategory.balanceAdjustment" = "Ajustes de saldo";
 "subcategory.accountTransferOther" = "Transferencia entre cuentas";
 
+// MARK: - A0-Bridge Settings & Filters
+"settings.sectionGroups" = "Grupos";
+"settings.sectionGroupsHint" = "Configura cómo Yala mezcla tus cuentas y transacciones de grupos con tus datos personales.";
+"settings.includeGroupsInPanelTotal" = "Incluir grupos en saldo total";
+"settings.includeGroupTransactionsInStats" = "Incluir transacciones de grupos en estadísticas";
+"filters.sectionShared" = "Compartidos";
+"filters.includeGroupTransactions" = "Incluir transacciones de grupos";
+"filters.includeGroupTransactionsHint" = "Cuando está activo, los movimientos generados por gastos compartidos aparecen en tu lista.";
+
 // MARK: - A0-Bridge Bridge messages
 "groups.bridge.deleteExpenseBlocked" = "Este gasto tiene liquidaciones asociadas posteriores. Primero elimina o regulariza las liquidaciones para poder borrar el gasto.";
 "groups.bridge.editFromGroup" = "Esta transacción se sincroniza con un grupo. Edítala desde el gasto compartido.";

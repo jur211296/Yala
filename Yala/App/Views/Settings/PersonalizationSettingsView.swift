@@ -151,6 +151,47 @@ struct PersonalizationSettingsView: View {
                         }
                     }
 
+                    // MARK: - Grupos Section (A0-Bridge)
+                    VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                        YalaSectionHeader(L10n.Settings.sectionGroups)
+
+                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                            @Bindable var prefs = appPreferences
+                            Toggle(isOn: $prefs.includeGroupsInPanelTotal) {
+                                Text(L10n.Settings.includeGroupsInPanelTotal)
+                                    .font(DS.Typography.body)
+                                    .foregroundStyle(.thPrimaryText)
+                            }
+                            .padding(.horizontal, DS.FormRow.paddingH)
+                            .padding(.vertical, DS.Spacing.sm)
+                            .background(.thCard)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                            )
+
+                            Toggle(isOn: $prefs.includeGroupTransactionsInStats) {
+                                Text(L10n.Settings.includeGroupTransactionsInStats)
+                                    .font(DS.Typography.body)
+                                    .foregroundStyle(.thPrimaryText)
+                            }
+                            .padding(.horizontal, DS.FormRow.paddingH)
+                            .padding(.vertical, DS.Spacing.sm)
+                            .background(.thCard)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                            )
+
+                            Text(L10n.Settings.sectionGroupsHint)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, DS.Spacing.xxs)
+                        }
+                    }
+
                     // MARK: - Interfaz Section
                     VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                         YalaSectionHeader(L10n.Settings.sectionInterface)

@@ -3453,6 +3453,11 @@ enum L10n {
         // Expenses Only Mode
         static var sectionUsageMode: String { ls("settings.sectionUsageMode", comment: "") }
         static var expensesOnlyMode: String { ls("settings.expensesOnlyMode", comment: "") }
+        // A0-Bridge: Group visibility settings
+        static var sectionGroups: String { ls("settings.sectionGroups", comment: "") }
+        static var sectionGroupsHint: String { ls("settings.sectionGroupsHint", comment: "") }
+        static var includeGroupsInPanelTotal: String { ls("settings.includeGroupsInPanelTotal", comment: "") }
+        static var includeGroupTransactionsInStats: String { ls("settings.includeGroupTransactionsInStats", comment: "") }
         static var expensesOnlyModeDescription: String { ls("settings.expensesOnlyModeDescription", comment: "") }
         static var expensesOnlyActivateTitle: String { ls("settings.expensesOnlyActivateTitle", comment: "") }
         static var expensesOnlyActivateMessage: String { ls("settings.expensesOnlyActivateMessage", comment: "") }
