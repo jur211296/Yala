@@ -85,14 +85,16 @@ struct BridgeActivationSheet: View {
             .foregroundStyle(.primary)
 
         VStack(spacing: DS.Spacing.none) {
-            radioRow(
-                option: .fromNow,
+            BridgeRadioOption(
+                tag: Option.fromNow,
+                selection: $selectedOption,
                 title: L10n.Groups.Bridge.activateOptionFromNow,
                 hint: L10n.Groups.Bridge.activateOptionFromNowHint
             )
             Divider().padding(.leading, DS.FormRow.paddingH)
-            radioRow(
-                option: .importAll,
+            BridgeRadioOption(
+                tag: Option.importAll,
+                selection: $selectedOption,
                 title: String(format: L10n.Groups.Bridge.activateOptionImportAll, expensesCount),
                 hint: String(format: L10n.Groups.Bridge.activateOptionImportAllHint, expensesCount)
             )
@@ -119,46 +121,6 @@ struct BridgeActivationSheet: View {
             statusText: String(format: L10n.Groups.Bridge.importing, progressTotal)
         )
         .padding(.vertical, DS.Spacing.xl)
-    }
-
-    // MARK: - Radio row
-
-    private func radioRow(option: Option, title: String, hint: String) -> some View {
-        Button {
-            selectedOption = option
-        } label: {
-            HStack(alignment: .top, spacing: DS.Spacing.md) {
-                radioIndicator(isSelected: selectedOption == option)
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(title)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.primary)
-                        .multilineTextAlignment(.leading)
-                    Text(hint)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.leading)
-                }
-                Spacer(minLength: 0)
-            }
-            .contentShape(Rectangle())
-            .padding(.horizontal, DS.FormRow.paddingH)
-            .padding(.vertical, DS.FormRow.paddingV)
-        }
-        .buttonStyle(.plain)
-    }
-
-    @ViewBuilder
-    private func radioIndicator(isSelected: Bool) -> some View {
-        if isSelected {
-            Image(systemName: "largecircle.fill.circle")
-                .font(DS.Typography.body)
-                .foregroundStyle(.thAccent)
-        } else {
-            Image(systemName: "circle")
-                .font(DS.Typography.body)
-                .foregroundStyle(.secondary)
-        }
     }
 
     // MARK: - Actions

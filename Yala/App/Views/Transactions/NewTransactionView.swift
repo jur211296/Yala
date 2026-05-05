@@ -41,6 +41,9 @@ struct NewTransactionView: View {
     // Split calculator state
     @State private var splitFieldState = SplitCalculatorFieldState()
 
+    // A0-Bridge V2.0: cached fetch del draft pendiente (evita re-fetch en hot path).
+    @State private var cachedPendingGroupDraft: InboxDraft?
+
     // Quick action states
     @State private var showSavedToast = false
     @State private var savedToastMessage = ""
@@ -80,19 +83,21 @@ struct NewTransactionView: View {
         return tx.splitExpenseID != nil || tx.splitSettlementID != nil
     }
 
-    /// Fetch del InboxDraft groupExpense pendiente (subcategory == nil) que apunta a esta TX.
-    private func pendingGroupDraft(forTx tx: TransactionItem) -> InboxDraft? {
-        guard let splitID = tx.splitExpenseID else { return nil }
+    /// Hidrata `cachedPendingGroupDraft` una vez al aparecer (evita fetch en hot path del body).
+    private func loadPendingGroupDraftIfNeeded() {
+        guard isBridgedReadOnly,
+              let splitID = transactionToEdit?.splitExpenseID,
+              cachedPendingGroupDraft == nil else { return }
         let descriptor = FetchDescriptor<InboxDraft>(
             predicate: #Predicate { $0.splitExpenseID == splitID && $0.subcategory == nil }
         )
-        return try? modelContext.fetch(descriptor).first
+        cachedPendingGroupDraft = try? modelContext.fetch(descriptor).first
     }
 
     @ViewBuilder
     private var bridgedTxReadOnlyBanner: some View {
         if let tx = transactionToEdit, isBridgedReadOnly {
-            let pendingDraft = pendingGroupDraft(forTx: tx)
+            let pendingDraft = cachedPendingGroupDraft
             let message: String = {
                 if pendingDraft != nil {
                     return L10n.Groups.Bridge.assignFromInbox
@@ -438,6 +443,7 @@ struct NewTransactionView: View {
         .onAppear {
             viewModel.setContext(modelContext)
             prefillFromContext()
+            loadPendingGroupDraftIfNeeded()
             // Force expense type in expenses-only mode
             if sessionState.isExpensesOnlyMode {
                 viewModel.transactionType = .expense

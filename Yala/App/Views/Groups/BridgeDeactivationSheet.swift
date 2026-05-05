@@ -40,13 +40,15 @@ struct BridgeDeactivationSheet: View {
                         .foregroundStyle(.primary)
 
                     VStack(spacing: DS.Spacing.none) {
-                        radioRow(
-                            option: .delete,
+                        BridgeRadioOption(
+                            tag: Option.delete,
+                            selection: $selectedOption,
                             title: String(format: L10n.Groups.Bridge.deactivateOptionDelete, bridgedCount)
                         )
                         Divider().padding(.leading, DS.FormRow.paddingH)
-                        radioRow(
-                            option: .keep,
+                        BridgeRadioOption(
+                            tag: Option.keep,
+                            selection: $selectedOption,
                             title: L10n.Groups.Bridge.deactivateOptionKeep
                         )
                     }
@@ -78,37 +80,4 @@ struct BridgeDeactivationSheet: View {
         .presentationDetents([.medium])
     }
 
-    // MARK: - Radio row
-
-    private func radioRow(option: Option, title: String) -> some View {
-        Button {
-            selectedOption = option
-        } label: {
-            HStack(alignment: .top, spacing: DS.Spacing.md) {
-                radioIndicator(isSelected: selectedOption == option)
-                Text(title)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.leading)
-                Spacer(minLength: 0)
-            }
-            .contentShape(Rectangle())
-            .padding(.horizontal, DS.FormRow.paddingH)
-            .padding(.vertical, DS.FormRow.paddingV)
-        }
-        .buttonStyle(.plain)
-    }
-
-    @ViewBuilder
-    private func radioIndicator(isSelected: Bool) -> some View {
-        if isSelected {
-            Image(systemName: "largecircle.fill.circle")
-                .font(DS.Typography.body)
-                .foregroundStyle(.thAccent)
-        } else {
-            Image(systemName: "circle")
-                .font(DS.Typography.body)
-                .foregroundStyle(.secondary)
-        }
-    }
 }

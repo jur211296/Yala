@@ -39,7 +39,14 @@ struct GroupSettlementDraftFinalizationSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.lg) {
-                    readOnlyHeader
+                    GroupDraftReadOnlyHeader(
+                        groupName: groupName,
+                        note: draft.note,
+                        amount: draft.amount,
+                        currencyCode: resolvedCurrency,
+                        date: draft.effectiveDate,
+                        iconName: "arrow.left.arrow.right.circle.fill"
+                    )
 
                     // Selector de cuenta
                     Button {
@@ -110,45 +117,6 @@ struct GroupSettlementDraftFinalizationSheet: View {
             }
             .onAppear { loadMetadata(); resolvePreselectedAccount() }
         }
-    }
-
-    // MARK: - Read-only header
-
-    @ViewBuilder
-    private var readOnlyHeader: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            HStack(spacing: DS.Spacing.xs) {
-                Image(systemName: "arrow.left.arrow.right.circle.fill")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.thAccent)
-                Text(String(format: L10n.Inbox.GroupDraft.fromGroup, groupName))
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-            }
-
-            Text(draft.note.isEmpty ? "—" : draft.note)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
-
-            HStack {
-                if let amount = draft.amount {
-                    Text(YalaFormatterStatic.currency(
-                        value: abs(amount),
-                        currencyCode: resolvedCurrency
-                    ))
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.primary)
-                }
-                Spacer()
-                Text(draft.effectiveDate, format: .dateTime.day().month().year())
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(DS.Spacing.lg)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: DS.Radius.card).fill(.thCard))
-        .padding(.horizontal, DS.Spacing.lg)
     }
 
     // MARK: - Actions
