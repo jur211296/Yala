@@ -4059,3 +4059,16 @@
 "inbox.sourceGroupExpense" = "共享支出";
 "inbox.sourceGroupSettlement" = "结算";
 "inbox.groupDraftCannotDelete" = "此交易只能从源群组中删除。";
+
+/* A0-Bridge V2.0 — P0+P1 表单 + 只读横幅 */
+"groups.settlement.fromAccount" = "从哪个账户支付？";
+"groups.settlement.fromAccountNone" = "无 — 稍后完成";
+"inbox.openInbox" = "打开收件箱";
+"groups.detail.openGroup" = "打开群组";
+"inbox.groupExpenseDraft.title" = "分配子类别";
+"inbox.groupExpenseDraft.assignSubcategory" = "子类别";
+"inbox.groupSettlementDraft.title" = "分配账户";
+"inbox.groupSettlementDraft.assignAccount" = "目标账户";
+"inbox.groupDraft.finalize" = "完成";
+"inbox.groupDraft.fromGroup" = "群组：%@";
+"action.continue" = "继续";

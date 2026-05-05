@@ -150,3 +150,16 @@
 "inbox.sourceGroupExpense" = "Shared expense";
 "inbox.sourceGroupSettlement" = "Settlement";
 "inbox.groupDraftCannotDelete" = "This transaction can only be removed from the source group.";
+
+/* A0-Bridge V2.0 — P0+P1 sheets + read-only banner */
+"groups.settlement.fromAccount" = "From which account?";
+"groups.settlement.fromAccountNone" = "None — finish later";
+"inbox.openInbox" = "Open Inbox";
+"groups.detail.openGroup" = "Open group";
+"inbox.groupExpenseDraft.title" = "Assign subcategory";
+"inbox.groupExpenseDraft.assignSubcategory" = "Subcategory";
+"inbox.groupSettlementDraft.title" = "Assign account";
+"inbox.groupSettlementDraft.assignAccount" = "Destination account";
+"inbox.groupDraft.finalize" = "Finalise";
+"inbox.groupDraft.fromGroup" = "Group: %@";
+"action.continue" = "Continue";

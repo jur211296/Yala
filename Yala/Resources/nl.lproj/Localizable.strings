@@ -4059,3 +4059,16 @@
 "inbox.sourceGroupExpense" = "Gedeelde uitgave";
 "inbox.sourceGroupSettlement" = "Afrekening";
 "inbox.groupDraftCannotDelete" = "Deze transactie kan alleen worden verwijderd uit de bron groep.";
+
+/* A0-Bridge V2.0 — P0+P1 sheets + read-only banner */
+"groups.settlement.fromAccount" = "Van welke rekening?";
+"groups.settlement.fromAccountNone" = "Geen — later afronden";
+"inbox.openInbox" = "Inbox openen";
+"groups.detail.openGroup" = "Groep openen";
+"inbox.groupExpenseDraft.title" = "Subcategorie toewijzen";
+"inbox.groupExpenseDraft.assignSubcategory" = "Subcategorie";
+"inbox.groupSettlementDraft.title" = "Rekening toewijzen";
+"inbox.groupSettlementDraft.assignAccount" = "Doelrekening";
+"inbox.groupDraft.finalize" = "Afronden";
+"inbox.groupDraft.fromGroup" = "Groep: %@";
+"action.continue" = "Doorgaan";

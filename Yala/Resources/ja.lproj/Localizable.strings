@@ -4059,3 +4059,16 @@
 "inbox.sourceGroupExpense" = "共有支出";
 "inbox.sourceGroupSettlement" = "精算";
 "inbox.groupDraftCannotDelete" = "この取引はソースグループからのみ削除できます。";
+
+/* A0-Bridge V2.0 — P0+P1 シート + 読み取り専用バナー */
+"groups.settlement.fromAccount" = "どの口座から？";
+"groups.settlement.fromAccountNone" = "なし — 後で完了します";
+"inbox.openInbox" = "受信箱を開く";
+"groups.detail.openGroup" = "グループを開く";
+"inbox.groupExpenseDraft.title" = "サブカテゴリを割り当てる";
+"inbox.groupExpenseDraft.assignSubcategory" = "サブカテゴリ";
+"inbox.groupSettlementDraft.title" = "口座を割り当てる";
+"inbox.groupSettlementDraft.assignAccount" = "送金先の口座";
+"inbox.groupDraft.finalize" = "完了する";
+"inbox.groupDraft.fromGroup" = "グループ：%@";
+"action.continue" = "続ける";

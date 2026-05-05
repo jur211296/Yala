@@ -4058,3 +4058,16 @@
 "inbox.sourceGroupExpense" = "Spesa condivisa";
 "inbox.sourceGroupSettlement" = "Liquidazione";
 "inbox.groupDraftCannotDelete" = "Questa transazione può essere rimossa solo dal gruppo di origine.";
+
+/* A0-Bridge V2.0 — P0+P1 sheets + banner read-only */
+"groups.settlement.fromAccount" = "Da quale conto?";
+"groups.settlement.fromAccountNone" = "Nessuno — finalizza dopo";
+"inbox.openInbox" = "Apri Inbox";
+"groups.detail.openGroup" = "Apri gruppo";
+"inbox.groupExpenseDraft.title" = "Assegna sottocategoria";
+"inbox.groupExpenseDraft.assignSubcategory" = "Sottocategoria";
+"inbox.groupSettlementDraft.title" = "Assegna conto";
+"inbox.groupSettlementDraft.assignAccount" = "Conto di destinazione";
+"inbox.groupDraft.finalize" = "Finalizza";
+"inbox.groupDraft.fromGroup" = "Gruppo: %@";
+"action.continue" = "Continua";

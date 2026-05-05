@@ -4062,3 +4062,16 @@
 "panel.widgetInfo.trend.fxMatchA" = "El último punto refleja tu saldo al tipo de cambio actual. Los puntos previos usan el tipo de cambio del día de cada movimiento. La diferencia es ganancia o pérdida por fluctuación cambiaria — solo aparece si tienes cuentas en distintas monedas.";
 "panel.widgetInfo.exchangeRate.balanceImpactQ" = "¿Cómo afecta el tipo de cambio a mi balance?";
 "panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala calcula tu balance en la moneda preferida usando el tipo de cambio actual sobre el saldo de cada cuenta. Por eso, si el tipo de cambio cambia y no haces movimientos, tu balance puede subir o bajar.";
+
+/* A0-Bridge V2.0 — P0+P1 sheets + read-only banner */
+"groups.settlement.fromAccount" = "¿De qué cuenta sale?";
+"groups.settlement.fromAccountNone" = "Ninguna — finalizar después";
+"inbox.openInbox" = "Abrir Inbox";
+"groups.detail.openGroup" = "Abrir grupo";
+"inbox.groupExpenseDraft.title" = "Asigna subcategoría";
+"inbox.groupExpenseDraft.assignSubcategory" = "Subcategoría";
+"inbox.groupSettlementDraft.title" = "Asigna cuenta";
+"inbox.groupSettlementDraft.assignAccount" = "Cuenta de destino";
+"inbox.groupDraft.finalize" = "Finalizar";
+"inbox.groupDraft.fromGroup" = "Grupo: %@";
+"action.continue" = "Continuar";

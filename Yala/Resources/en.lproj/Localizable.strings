@@ -4059,3 +4059,16 @@
 "panel.widgetInfo.trend.fxMatchA" = "The last point reflects your balance at the current exchange rate. Previous points use the rate from each transaction's date. The gap is FX gain or loss — only visible if you have accounts in different currencies.";
 "panel.widgetInfo.exchangeRate.balanceImpactQ" = "How does the exchange rate affect my balance?";
 "panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala calculates your balance in your preferred currency using the current exchange rate on each account's balance. So if the rate changes and you make no transactions, your balance can still go up or down.";
+
+/* A0-Bridge V2.0 — P0+P1 sheets + read-only banner */
+"groups.settlement.fromAccount" = "From which account?";
+"groups.settlement.fromAccountNone" = "None — finish later";
+"inbox.openInbox" = "Open Inbox";
+"groups.detail.openGroup" = "Open group";
+"inbox.groupExpenseDraft.title" = "Assign subcategory";
+"inbox.groupExpenseDraft.assignSubcategory" = "Subcategory";
+"inbox.groupSettlementDraft.title" = "Assign account";
+"inbox.groupSettlementDraft.assignAccount" = "Destination account";
+"inbox.groupDraft.finalize" = "Finalize";
+"inbox.groupDraft.fromGroup" = "Group: %@";
+"action.continue" = "Continue";
