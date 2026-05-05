@@ -45,6 +45,13 @@ struct GroupSettingsView: View {
     @State private var accountPrefs: [String: String] = [:]   // currencyCode → accountName
     @State private var accountsByCurrency: [String: [Account]] = [:]
 
+    // A0-Bridge V2.0: sheets activación/desactivación tardía
+    @State private var showBridgeActivationSheet: Bool = false
+    @State private var showBridgeDeactivationSheet: Bool = false
+    @State private var pendingActivationExpensesCount: Int = 0
+    @State private var pendingDeactivationBridgedCount: Int = 0
+    @State private var isInternalToggleRevert: Bool = false  // D8: guard contra recursión onChange
+
     // Leave group
     @State private var showLeaveGroupConfirm = false
     @State private var isLeavingGroup = false
@@ -167,7 +174,101 @@ struct GroupSettingsView: View {
             } message: {
                 Text(actionErrorMessage)
             }
+            .sheet(isPresented: $showBridgeActivationSheet) {
+                BridgeActivationSheet(
+                    group: group,
+                    expensesCount: pendingActivationExpensesCount,
+                    onConfirm: { importHistory in
+                        GroupPersonalPreferences.setAutoCreateTransaction(true, for: group.cloudKitZoneID)
+                        isInternalToggleRevert = true
+                        personalAutoCreate = true
+                        isInternalToggleRevert = false
+                        if importHistory {
+                            Task { @MainActor in
+                                try? await GroupTransactionBridge.shared.importGroupHistory(for: group) { _, _ in
+                                    // Progress se maneja internamente en la sheet.
+                                }
+                            }
+                        }
+                    },
+                    onCancel: { /* No-op: el toggle ya quedó revertido. */ }
+                )
+            }
+            .sheet(isPresented: $showBridgeDeactivationSheet) {
+                BridgeDeactivationSheet(
+                    group: group,
+                    bridgedCount: pendingDeactivationBridgedCount,
+                    onConfirm: { deleteAll in
+                        GroupPersonalPreferences.setAutoCreateTransaction(false, for: group.cloudKitZoneID)
+                        isInternalToggleRevert = true
+                        personalAutoCreate = false
+                        isInternalToggleRevert = false
+                        if deleteAll {
+                            try? GroupTransactionBridge.shared.unbridgeAllForGroup(group)
+                        }
+                    },
+                    onCancel: { /* No-op: el toggle ya quedó revertido. */ }
+                )
+            }
         }
+    }
+
+    // MARK: - A0-Bridge Toggle Handler (D8 anti-loop guard)
+
+    private func handleAutoCreateToggleChange(oldValue: Bool, newValue: Bool) {
+        guard !isInternalToggleRevert else { return }
+        guard oldValue != newValue else { return }
+
+        let zoneID = group.cloudKitZoneID
+
+        if newValue == true && oldValue == false {
+            // OFF → ON: si hay expenses pre-existentes, ofrecer import.
+            let count = a0BridgeExpensesCount(zoneID: zoneID)
+            if count > 0 {
+                pendingActivationExpensesCount = count
+                showBridgeActivationSheet = true
+                isInternalToggleRevert = true
+                personalAutoCreate = false
+                isInternalToggleRevert = false
+                return
+            }
+        } else if newValue == false && oldValue == true {
+            // ON → OFF: si hay TX/drafts bridgeadas, ofrecer delete.
+            let txCount = a0BridgeTxsCount(zoneID: zoneID)
+            let draftCount = a0BridgeDraftsCount(zoneID: zoneID)
+            let total = txCount + draftCount
+            if total > 0 {
+                pendingDeactivationBridgedCount = total
+                showBridgeDeactivationSheet = true
+                isInternalToggleRevert = true
+                personalAutoCreate = true
+                isInternalToggleRevert = false
+                return
+            }
+        }
+        // Caso simple (sin TX previas): aplicar directo.
+        GroupPersonalPreferences.setAutoCreateTransaction(newValue, for: zoneID)
+    }
+
+    @MainActor
+    private func a0BridgeExpensesCount(zoneID: String) -> Int {
+        (try? modelContext.fetchCount(FetchDescriptor<SplitExpense>(
+            predicate: #Predicate { $0.groupZoneID == zoneID }
+        ))) ?? 0
+    }
+
+    @MainActor
+    private func a0BridgeTxsCount(zoneID: String) -> Int {
+        (try? modelContext.fetchCount(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitGroupZoneID == zoneID }
+        ))) ?? 0
+    }
+
+    @MainActor
+    private func a0BridgeDraftsCount(zoneID: String) -> Int {
+        (try? modelContext.fetchCount(FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.splitGroupZoneID == zoneID }
+        ))) ?? 0
     }
 
     // MARK: - Info Section
@@ -469,8 +570,8 @@ struct GroupSettingsView: View {
                 }
                 .padding(.horizontal, DS.FormRow.paddingH)
                 .padding(.vertical, DS.FormRow.paddingV)
-                .onChange(of: personalAutoCreate) { _, newValue in
-                    GroupPersonalPreferences.setAutoCreateTransaction(newValue, for: group.cloudKitZoneID)
+                .onChange(of: personalAutoCreate) { oldValue, newValue in
+                    handleAutoCreateToggleChange(oldValue: oldValue, newValue: newValue)
                 }
 
                 if personalAutoCreate {

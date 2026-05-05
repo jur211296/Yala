@@ -1556,6 +1556,8 @@ enum L10n {
         static var reorder: String { ls("action.reorder", comment: "") }
         static var clearAll: String { ls("action.clearAll", comment: "") }
         static var calculate: String { ls("action.calculate", comment: "") }
+        // Naming `continueAction` para evitar choque con keyword `continue` de Swift.
+        static var continueAction: String { ls("action.continue", comment: "") }
     }
 
     // MARK: - Split Calculator
