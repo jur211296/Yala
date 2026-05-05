@@ -45,7 +45,25 @@ final class GroupTransactionBridge {
 
     // MARK: - Bridge Operations
 
-    /// Create or update a personal TransactionItem/InboxDraft for a shared expense.
+    /// A0-Bridge: Create or replace personal TransactionItems for a shared expense (modelo M5).
+    ///
+    /// Estrategia: idempotency vía delete+recreate. Si ya existen TX/Drafts vinculadas,
+    /// se eliminan y se recrean según las reglas A/B actuales (más simple que update
+    /// in-place y evita estado inconsistente al cambiar payer/monto/splits).
+    ///
+    /// **Reglas (TX siempre en cuenta virtual `Grupos [moneda]`):**
+    /// - **Caso A** (yo pago): TX1 virtual `-myShare` (subcat manual o nil) +
+    ///   TX2 virtual `+totalAmount` con sistema "Préstamo a grupos" (income).
+    ///   Skip TX2 si `lentAmount == 0` (yo solo en split).
+    /// - **Caso B** (paga otro): TX1 virtual `-myShare` (subcat manual o nil).
+    ///
+    /// Si `subcategory` queda nil (auto-match falló) Y `autoCreate=true`: TX1 se crea
+    /// con `subcategory=nil` + `InboxDraft` source=`.groupExpense` con `targetTransactionID`
+    /// apuntando a TX1. Saldo virtual cuadra desde t=0; user finaliza draft → UPDATE subcat.
+    ///
+    /// Si `autoCreate=false`: comportamiento legacy (1 InboxDraft con monto -myShare),
+    /// el user revisa y aprueba manualmente. Sin TX-puntero.
+    ///
     /// - Parameters:
     ///   - expense: The shared expense to bridge.
     ///   - group: The group containing the expense.
@@ -53,8 +71,9 @@ final class GroupTransactionBridge {
     func bridgeExpense(_ expense: SplitExpense, in group: SplitGroup, shouldSave: Bool = true) throws {
         let context = try requireContext()
 
-        // GC-08: groupInvite users have no personal finance context — skip bridge
-        guard !SessionState.shared.isGroupInviteMode else { return }
+        // GC-08: groupInvite users have no personal finance context for legacy drafts —
+        // pero SÍ procesan TX virtuales (saldo virtual del grupo es relevante).
+        // Se evalúa caso por caso abajo.
 
         // Find current user's member in this group
         let zoneID = group.cloudKitZoneID
@@ -72,76 +91,120 @@ final class GroupTransactionBridge {
         )
         guard let myShare = try context.fetch(shareDescriptor).first else { return }
 
-        // Idempotency: @MainActor + sync function garantiza atomicidad de fetch+insert.
-        // Si llega un segundo call para la misma expense, este fetch encuentra la TX/Draft
-        // creada por el primero y aplica updates en lugar de duplicar. Si en el futuro se
-        // introduce un await en este método, considerar NSLock/actor para preservar la garantía.
+        // Idempotency: @MainActor + sync función garantiza atomicidad fetch+insert.
+        // Strategy: delete + recreate (más simple que update in-place y evita estado
+        // inconsistente al cambiar payer/monto/splits). Si futuro await: NSLock/actor.
         let expenseIDStr = expense.id.uuidString
-        let txDescriptor = FetchDescriptor<TransactionItem>(
+        let existingTxs = try context.fetch(FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.splitExpenseID == expenseIDStr }
-        )
-        if let existingTx = try context.fetch(txDescriptor).first {
-            // Update existing transaction
-            updateTransaction(existingTx, from: expense, share: myShare, group: group, context: context)
-            if shouldSave {
-                try context.save()
-                SessionState.shared.incrementDataVersion()
-            }
-            return
-        }
+        ))
+        for tx in existingTxs { context.delete(tx) }
 
-        let draftDescriptor = FetchDescriptor<InboxDraft>(
+        let existingDrafts = try context.fetch(FetchDescriptor<InboxDraft>(
             predicate: #Predicate { $0.splitExpenseID == expenseIDStr }
-        )
-        if let existingDraft = try context.fetch(draftDescriptor).first {
-            // Update existing draft
-            updateDraft(existingDraft, from: expense, share: myShare, group: group, context: context)
-            if shouldSave {
-                try context.save()
-                SessionState.shared.incrementDataVersion()
-            }
-            return
-        }
-
-        // Resolve account (throws .noAccountsAvailable if none) and subcategory.
-        let account = try GroupTransactionBridge.resolveAccount(group: group, currencyCode: expense.currencyCode, context: context)
-        let subcategory = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
+        ))
+        for draft in existingDrafts { context.delete(draft) }
 
         let shouldAutoCreate = GroupPersonalPreferences.autoCreateTransaction(for: group.cloudKitZoneID) ?? group.autoCreateTransaction
-        if shouldAutoCreate {
-            let transaction = TransactionItem(
-                date: expense.date,
-                amount: -myShare.amount,
-                currencyCode: expense.currencyCode,
-                note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
-                subcategory: subcategory,
-                account: account
-            )
-            transaction.category = subcategory?.safeCategory
-            transaction.splitExpenseID = expense.id.uuidString
-            transaction.splitGroupZoneID = expense.groupZoneID
-            transaction.splitTotalAmount = expense.amount
-            transaction.splitType = expense.splitType
 
-            context.insert(transaction)
-            transaction.recalculatePreferredCurrency(context: context)
-
-            if shouldSave {
-                try context.save()
-                SessionState.shared.incrementDataVersion()
-                WidgetDataCache.updateCache(context: context)
-                Task {
-                    await BudgetAlertService.shared.checkBudgetsAndNotify()
-                }
-            }
-        } else {
+        // Legacy path: autoCreate=false → 1 InboxDraft (no especializado) con cuenta resuelta
+        // del flujo previo. User revisa manualmente.
+        if !shouldAutoCreate {
+            // Skip para .groupInvite users sin contexto personal completo.
+            guard !SessionState.shared.isGroupInviteMode else { return }
+            let account = try GroupTransactionBridge.resolveAccount(group: group, currencyCode: expense.currencyCode, context: context)
+            let subcategory = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
             let draft = Self.makeBridgedDraft(from: expense, share: myShare, account: account, subcategory: subcategory)
             context.insert(draft)
-
             if shouldSave {
                 try context.save()
                 SessionState.shared.incrementDataVersion()
             }
+            return
+        }
+
+        // Modelo M5 (autoCreate=true): TX siempre en cuenta virtual.
+        let virtualAccount = try GroupBridgeSystemEntities.ensureSystemAccount(
+            currencyCode: expense.currencyCode,
+            colorHint: group.colorHex,
+            context: context
+        )
+        let matchedSubcat = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
+        // Filter: si match es subcat sistema, ignorar (no tiene sentido para mi parte real)
+        let realSubcat: Subcategory? = (matchedSubcat?.isAnySystem == true) ? nil : matchedSubcat
+
+        let isCaseA = expense.paidByMemberID == currentMemberID
+        let totalAmount = expense.amount
+        let mySharedAmount = myShare.amount
+        let lentAmount = totalAmount - mySharedAmount  // Solo relevante en Caso A
+
+        // TX1 (común a Caso A y B): -myShare en virtual con subcat real (manual) o nil.
+        let tx1 = TransactionItem(
+            date: expense.date,
+            amount: -mySharedAmount,
+            currencyCode: expense.currencyCode,
+            note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
+            category: realSubcat?.safeCategory,
+            subcategory: realSubcat,
+            account: virtualAccount
+        )
+        tx1.splitExpenseID = expenseIDStr
+        tx1.splitGroupZoneID = expense.groupZoneID
+        tx1.splitTotalAmount = totalAmount
+        tx1.splitType = expense.splitType
+        context.insert(tx1)
+        tx1.recalculatePreferredCurrency(context: context)
+
+        // Si auto-match falló: crear InboxDraft groupExpense con targetTransactionID = tx1.id.
+        if realSubcat == nil {
+            let draft = InboxDraft(
+                note: expense.expenseDescription,
+                amount: -mySharedAmount,
+                date: expense.date,
+                account: virtualAccount,
+                subcategory: nil,
+                sourceType: .groupExpense,
+                confidenceAmount: 1.0,
+                confidenceDate: 1.0,
+                confidenceMerchant: 1.0,
+                confidenceSubcategory: nil,
+                needsUserInput: ["subcategory"],
+                splitExpenseID: expenseIDStr,
+                splitGroupZoneID: expense.groupZoneID,
+                splitSettlementID: nil,
+                targetTransactionID: tx1.persistentModelID.hashValue.description
+            )
+            // Note: targetTransactionID usa hashValue del persistentModelID porque
+            // el persistentModelID en sí no es String. La finalize sheet (F11)
+            // refetchará por splitExpenseID → match TX1 sin subcat.
+            context.insert(draft)
+        }
+
+        // Caso A: TX2 sistema income "Préstamo a grupos" (+totalAmount). Skip si lent=0.
+        if isCaseA && lentAmount > 0 {
+            let loanSubcat = try GroupBridgeSystemEntities.systemSubcategory(role: .loanToGroups, context: context)
+            let tx2 = TransactionItem(
+                date: expense.date,
+                amount: totalAmount,  // positivo: yo presté al grupo
+                currencyCode: expense.currencyCode,
+                note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
+                category: loanSubcat.safeCategory,
+                subcategory: loanSubcat,
+                account: virtualAccount
+            )
+            tx2.splitExpenseID = expenseIDStr
+            tx2.splitGroupZoneID = expense.groupZoneID
+            tx2.splitTotalAmount = totalAmount
+            tx2.splitType = expense.splitType
+            context.insert(tx2)
+            tx2.recalculatePreferredCurrency(context: context)
+        }
+
+        if shouldSave {
+            try context.save()
+            SessionState.shared.incrementDataVersion()
+            WidgetDataCache.updateCache(context: context)
+            Task { await BudgetAlertService.shared.checkBudgetsAndNotify() }
         }
     }
 
@@ -170,23 +233,21 @@ final class GroupTransactionBridge {
         // UI refresh handled by SplitSyncManager's deferred markRemoteChangePending()
     }
 
-    /// Remove the bridged TransactionItem or InboxDraft for a deleted expense.
+    /// Remove all bridged TransactionItems and InboxDrafts vinculadas a un expense.
+    /// A0-Bridge: el modelo M5 puede crear 1-2 TX por expense + un draft groupExpense
+    /// con targetTransactionID. Esta función borra TODAS las entidades con `splitExpenseID == X`.
     func unbridgeExpense(expenseID: String) throws {
         let context = try requireContext()
 
-        let txDescriptor = FetchDescriptor<TransactionItem>(
+        let txs = try context.fetch(FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.splitExpenseID == expenseID }
-        )
-        if let tx = try context.fetch(txDescriptor).first {
-            context.delete(tx)
-        }
+        ))
+        for tx in txs { context.delete(tx) }
 
-        let draftDescriptor = FetchDescriptor<InboxDraft>(
+        let drafts = try context.fetch(FetchDescriptor<InboxDraft>(
             predicate: #Predicate { $0.splitExpenseID == expenseID }
-        )
-        if let draft = try context.fetch(draftDescriptor).first {
-            context.delete(draft)
-        }
+        ))
+        for draft in drafts { context.delete(draft) }
 
         try context.save()
         SessionState.shared.incrementDataVersion()
