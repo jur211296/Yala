@@ -248,6 +248,9 @@ final class GroupExpenseService {
 
     /// Create a settlement (payment from one member to another).
     @discardableResult
+    /// Crea un settlement. A0-Bridge: si `accountForCurrentUser` proveído (Caso C proactivo
+    /// con cuenta seleccionada en form) Y settlement nace con `isConfirmed=true`,
+    /// el bridge se invoca al instante. Sino, el bridge se dispara en `confirmSettlement`.
     func createSettlement(
         in group: SplitGroup,
         fromMemberID: String,
@@ -255,7 +258,8 @@ final class GroupExpenseService {
         amount: Double,
         currencyCode: String,
         note: String?,
-        date: Date
+        date: Date,
+        accountForCurrentUser: Account? = nil
     ) throws -> SplitSettlement {
         let context = try requireContext()
 
@@ -283,11 +287,32 @@ final class GroupExpenseService {
         SessionState.shared.incrementDataVersion()
         SplitSyncManager.shared.enqueueSave(modelID: settlement.id, group: group)
 
+        // A0-Bridge: si settlement nace confirmed Y bridge ready, dispara TX.
+        // Settlement nace con isConfirmed=false por default — caller debe confirmar.
+        if settlement.isConfirmed && GroupTransactionBridge.shared.isReady {
+            do {
+                try GroupTransactionBridge.shared.bridgeSettlement(
+                    settlement,
+                    in: group,
+                    accountForCurrentUser: accountForCurrentUser
+                )
+            } catch {
+                #if DEBUG
+                print("GroupExpenseService: bridgeSettlement failed: \(error)")
+                #endif
+            }
+        }
+
         return settlement
     }
 
-    /// Confirm a settlement (mark as paid).
-    func confirmSettlement(_ settlement: SplitSettlement, in group: SplitGroup) throws {
+    /// Confirm a settlement (mark as paid). A0-Bridge: dispara `bridgeSettlement` tras confirmar.
+    /// `accountForCurrentUser` permite al caller elegir cuenta (caso C proactivo).
+    func confirmSettlement(
+        _ settlement: SplitSettlement,
+        in group: SplitGroup,
+        accountForCurrentUser: Account? = nil
+    ) throws {
         let context = try requireContext()
         try validateCurrentUserCanWrite(in: group)
         settlement.isConfirmed = true
@@ -300,12 +325,33 @@ final class GroupExpenseService {
 
         SessionState.shared.incrementDataVersion()
         SplitSyncManager.shared.enqueueSave(modelID: settlement.id, group: group)
+
+        // A0-Bridge: dispara TX bridgeadas (Caso C/D según from/to).
+        if GroupTransactionBridge.shared.isReady {
+            do {
+                try GroupTransactionBridge.shared.bridgeSettlement(
+                    settlement,
+                    in: group,
+                    accountForCurrentUser: accountForCurrentUser
+                )
+            } catch {
+                #if DEBUG
+                print("GroupExpenseService: bridgeSettlement failed: \(error)")
+                #endif
+            }
+        }
     }
 
-    /// Delete a settlement.
+    /// Delete a settlement. A0-Bridge: invoca `unbridgeSettlement` para limpiar TX/Drafts.
     func deleteSettlement(_ settlement: SplitSettlement, in group: SplitGroup) throws {
         let context = try requireContext()
         try validateCurrentUserCanWrite(in: group)
+
+        // A0-Bridge: unbridge antes de borrar para que el contexto siga siendo válido.
+        let settlementIDStr = settlement.id.uuidString
+        if GroupTransactionBridge.shared.isReady {
+            try? GroupTransactionBridge.shared.unbridgeSettlement(settlementID: settlementIDStr)
+        }
 
         SplitSyncManager.shared.enqueueDeletion(modelID: settlement.id, group: group)
         context.delete(settlement)

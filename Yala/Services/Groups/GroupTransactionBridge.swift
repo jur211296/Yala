@@ -233,6 +233,228 @@ final class GroupTransactionBridge {
         // UI refresh handled by SplitSyncManager's deferred markRemoteChangePending()
     }
 
+    // MARK: - Settlement Bridge (A0-Bridge: Caso C + D)
+
+    /// A0-Bridge: bridge para settlements. Solo procesa si `settlement.isConfirmed == true`.
+    ///
+    /// **Caso C** (yo `from`): TX1 virtual `+amount` con sistema "Pago de liquidación" (income).
+    /// Si `userType ∈ .full|.completed` Y `accountForCurrentUser != nil`:
+    ///   TX2 cuenta real `-amount` con sistema "Liquidación enviada" (expense).
+    ///   + persiste defaultSettlementAccount preference.
+    /// Si cuenta proveída es nil (form skipped): InboxDraft `groupSettlement` con
+    ///   subcategory="Liquidación enviada", account=nil, splitSettlementID.
+    /// Si `userType == .groupInvite`: solo TX1 virtual; NO draft. UI muestra toast upsell.
+    ///
+    /// **Caso D** (yo `to`, reactivo): TX1 virtual `-amount` con sistema "Cobro de préstamo" (expense).
+    /// Si `.full|.completed`: InboxDraft `groupSettlement` con subcategory="Liquidación recibida",
+    ///   amount=+amount, splitSettlementID. User finaliza desde Inbox para crear TX cuenta real.
+    /// Si `.groupInvite`: solo TX1 virtual; NO draft.
+    ///
+    /// Idempotency: delete + recreate (mismo patrón que bridgeExpense).
+    func bridgeSettlement(
+        _ settlement: SplitSettlement,
+        in group: SplitGroup,
+        accountForCurrentUser: Account? = nil,
+        shouldSave: Bool = true
+    ) throws {
+        let context = try requireContext()
+
+        // Solo bridge si confirmed.
+        guard settlement.isConfirmed else { return }
+
+        // Find current user.
+        let zoneID = group.cloudKitZoneID
+        let memberDescriptor = FetchDescriptor<SplitMember>(
+            predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true }
+        )
+        guard let currentMember = try context.fetch(memberDescriptor).first else { return }
+        let currentMemberID = currentMember.id.uuidString
+
+        // Determinar caso C/D. Skip si user no es from ni to (settlement entre otros).
+        let isCaseC = settlement.fromMemberID == currentMemberID
+        let isCaseD = settlement.toMemberID == currentMemberID
+        guard isCaseC || isCaseD else { return }
+
+        // Idempotency: delete previous TX/Drafts.
+        let settlementIDStr = settlement.id.uuidString
+        let existingTxs = try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitSettlementID == settlementIDStr }
+        ))
+        for tx in existingTxs { context.delete(tx) }
+
+        let existingDrafts = try context.fetch(FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.splitSettlementID == settlementIDStr }
+        ))
+        for draft in existingDrafts { context.delete(draft) }
+
+        let amount = settlement.amount
+        let currencyCode = settlement.currencyCode
+        let userType = SessionState.shared.onboardingMode
+
+        // Cuenta virtual SIEMPRE se crea (representa saldo del grupo).
+        let virtualAccount = try GroupBridgeSystemEntities.ensureSystemAccount(
+            currencyCode: currencyCode,
+            colorHint: group.colorHex,
+            context: context
+        )
+
+        if isCaseC {
+            // TX1 virtual: +amount sistema "Pago de liquidación" (income).
+            let payoffSubcat = try GroupBridgeSystemEntities.systemSubcategory(role: .settlementPayment, context: context)
+            let tx1 = TransactionItem(
+                date: settlement.date,
+                amount: amount,
+                currencyCode: currencyCode,
+                note: settlement.note,
+                category: payoffSubcat.safeCategory,
+                subcategory: payoffSubcat,
+                account: virtualAccount
+            )
+            tx1.splitSettlementID = settlementIDStr
+            tx1.splitGroupZoneID = zoneID
+            context.insert(tx1)
+            tx1.recalculatePreferredCurrency(context: context)
+
+            // TX2 cuenta real solo para .full/.completed.
+            if userType != .groupInvite {
+                if let account = accountForCurrentUser {
+                    let sentSubcat = try GroupBridgeSystemEntities.systemSubcategory(role: .settlementSent, context: context)
+                    let tx2 = TransactionItem(
+                        date: settlement.date,
+                        amount: -amount,
+                        currencyCode: currencyCode,
+                        note: settlement.note,
+                        category: sentSubcat.safeCategory,
+                        subcategory: sentSubcat,
+                        account: account
+                    )
+                    tx2.splitSettlementID = settlementIDStr
+                    tx2.splitGroupZoneID = zoneID
+                    context.insert(tx2)
+                    tx2.recalculatePreferredCurrency(context: context)
+                    // Persistir default account preference para futuros settlements.
+                    GroupPersonalPreferences.setDefaultSettlementAccount(account.name, for: zoneID, currencyCode: currencyCode)
+                } else {
+                    // Sin cuenta proveída: draft pendiente.
+                    let draft = InboxDraft(
+                        note: settlement.note ?? "",
+                        amount: -amount,
+                        date: settlement.date,
+                        account: nil,
+                        subcategory: try? GroupBridgeSystemEntities.systemSubcategory(role: .settlementSent, context: context),
+                        sourceType: .groupSettlement,
+                        confidenceAmount: 1.0,
+                        confidenceDate: 1.0,
+                        confidenceMerchant: 1.0,
+                        confidenceSubcategory: 1.0,
+                        needsUserInput: ["account"],
+                        splitExpenseID: nil,
+                        splitGroupZoneID: zoneID,
+                        splitSettlementID: settlementIDStr,
+                        targetTransactionID: nil
+                    )
+                    context.insert(draft)
+                }
+            }
+        } else if isCaseD {
+            // TX1 virtual: -amount sistema "Cobro de préstamo" (expense).
+            let collectSubcat = try GroupBridgeSystemEntities.systemSubcategory(role: .loanCollection, context: context)
+            let tx1 = TransactionItem(
+                date: settlement.date,
+                amount: -amount,
+                currencyCode: currencyCode,
+                note: settlement.note,
+                category: collectSubcat.safeCategory,
+                subcategory: collectSubcat,
+                account: virtualAccount
+            )
+            tx1.splitSettlementID = settlementIDStr
+            tx1.splitGroupZoneID = zoneID
+            context.insert(tx1)
+            tx1.recalculatePreferredCurrency(context: context)
+
+            // Para .full/.completed: draft groupSettlement para asignar cuenta real.
+            if userType != .groupInvite {
+                let receivedSubcat = try? GroupBridgeSystemEntities.systemSubcategory(role: .settlementReceived, context: context)
+                let preselectAccount: Account? = {
+                    guard let preferredName = GroupPersonalPreferences.defaultSettlementAccount(for: zoneID, currencyCode: currencyCode),
+                          !preferredName.isEmpty else { return nil }
+                    let descriptor = FetchDescriptor<Account>(
+                        predicate: #Predicate { $0.name == preferredName && !$0.isArchived }
+                    )
+                    return try? context.fetch(descriptor).first
+                }()
+                let draft = InboxDraft(
+                    note: settlement.note ?? "",
+                    amount: amount,
+                    date: settlement.date,
+                    account: preselectAccount,
+                    subcategory: receivedSubcat,
+                    sourceType: .groupSettlement,
+                    confidenceAmount: 1.0,
+                    confidenceDate: 1.0,
+                    confidenceMerchant: 1.0,
+                    confidenceSubcategory: 1.0,
+                    needsUserInput: preselectAccount == nil ? ["account"] : [],
+                    splitExpenseID: nil,
+                    splitGroupZoneID: zoneID,
+                    splitSettlementID: settlementIDStr,
+                    targetTransactionID: nil
+                )
+                context.insert(draft)
+            }
+        }
+
+        if shouldSave {
+            try context.save()
+            SessionState.shared.incrementDataVersion()
+            WidgetDataCache.updateCache(context: context)
+        }
+    }
+
+    /// Bridge remote settlements received via sync. Llamado desde SplitSyncManager.
+    /// Solo procesa settlements confirmed (skipea unconfirmed).
+    func bridgeRemoteSettlements(_ settlements: [SplitSettlement]) throws {
+        let context = try requireContext()
+
+        for settlement in settlements {
+            let zoneID = settlement.groupZoneID
+            let groupDescriptor = FetchDescriptor<SplitGroup>(
+                predicate: #Predicate { $0.cloudKitZoneID == zoneID }
+            )
+            guard let group = try context.fetch(groupDescriptor).first else { continue }
+
+            do {
+                try bridgeSettlement(settlement, in: group, accountForCurrentUser: nil, shouldSave: false)
+            } catch {
+                #if DEBUG
+                print("GroupTransactionBridge: Failed to bridge settlement \(settlement.id): \(error)")
+                #endif
+            }
+        }
+
+        try context.save()
+    }
+
+    /// Remove all bridged TransactionItems and InboxDrafts vinculadas a un settlement.
+    func unbridgeSettlement(settlementID: String) throws {
+        let context = try requireContext()
+
+        let txs = try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitSettlementID == settlementID }
+        ))
+        for tx in txs { context.delete(tx) }
+
+        let drafts = try context.fetch(FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.splitSettlementID == settlementID }
+        ))
+        for draft in drafts { context.delete(draft) }
+
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+    }
+
     /// Remove all bridged TransactionItems and InboxDrafts vinculadas a un expense.
     /// A0-Bridge: el modelo M5 puede crear 1-2 TX por expense + un draft groupExpense
     /// con targetTransactionID. Esta función borra TODAS las entidades con `splitExpenseID == X`.

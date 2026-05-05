@@ -659,6 +659,22 @@ final class SplitSyncManager {
                 }
             }
 
+            // A0-Bridge: bridge remote settlements (Caso C/D del lado contraparte).
+            let settlementIDs = Set(accumulated.newSettlements.map(\.id))
+            if !settlementIDs.isEmpty, GroupTransactionBridge.shared.isReady {
+                do {
+                    let allSettlements = try modelContext.fetch(FetchDescriptor<SplitSettlement>())
+                    let matchedSettlements = allSettlements.filter { settlementIDs.contains($0.id) }
+                    if !matchedSettlements.isEmpty {
+                        try GroupTransactionBridge.shared.bridgeRemoteSettlements(matchedSettlements)
+                    }
+                } catch {
+                    #if DEBUG
+                    self.logger.error("Failed to bridge remote settlements: \(error)")
+                    #endif
+                }
+            }
+
             // GC-06: Notify user about remote group changes
             if !accumulated.isEmpty {
                 GroupNotificationService.shared.processRemoteChanges(accumulated)

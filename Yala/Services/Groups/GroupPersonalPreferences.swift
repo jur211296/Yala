@@ -80,6 +80,27 @@ enum GroupPersonalPreferences {
         }
     }
 
+    // MARK: - Default Settlement Account (A0-Bridge, per currency)
+
+    /// Devuelve la cuenta default para liquidaciones (caso C/D) en este grupo + moneda.
+    /// Persistida tras la primera liquidación con cuenta seleccionada (form proactivo).
+    /// Próxima liquidación en mismo grupo+moneda: preselect en form/draft.
+    static func defaultSettlementAccount(for zoneID: String, currencyCode: String) -> String? {
+        let key = "\(prefix)\(zoneID)_settlementAccount_\(currencyCode)"
+        return defaults.string(forKey: key)
+    }
+
+    /// Persiste la cuenta usada en una liquidación para preselect en futuros casos.
+    static func setDefaultSettlementAccount(_ value: String?, for zoneID: String, currencyCode: String) {
+        let key = "\(prefix)\(zoneID)_settlementAccount_\(currencyCode)"
+        if let value, !value.isEmpty {
+            defaults.set(value, forKey: key)
+            trackCurrency(currencyCode, for: zoneID)
+        } else {
+            defaults.removeObject(forKey: key)
+        }
+    }
+
     // MARK: - Currency Tracking
 
     /// Track which currencies have been configured for cleanup.
@@ -104,10 +125,11 @@ enum GroupPersonalPreferences {
         defaults.removeObject(forKey: "\(prefix)\(zoneID)_autoCreate")
         defaults.removeObject(forKey: "\(prefix)\(zoneID)_accountName")
 
-        // Clean per-currency keys
+        // Clean per-currency keys (account + settlement default)
         let currencies = trackedCurrencies(for: zoneID)
         for code in currencies {
             defaults.removeObject(forKey: "\(prefix)\(zoneID)_account_\(code)")
+            defaults.removeObject(forKey: "\(prefix)\(zoneID)_settlementAccount_\(code)")
         }
         defaults.removeObject(forKey: "\(prefix)\(zoneID)_currencies")
     }
