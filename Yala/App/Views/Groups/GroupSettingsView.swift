@@ -120,7 +120,11 @@ struct GroupSettingsView: View {
                     removeMember()
                 }
             } message: {
-                Text(L10n.Groups.Member.removeConfirm)
+                if memberToRemoveHasDebt {
+                    Text(L10n.Groups.Member.removeWithDebtWarning)
+                } else {
+                    Text(L10n.Groups.Member.removeConfirm)
+                }
             }
             .confirmationDialog(
                 L10n.Groups.Settings.regenerateLink,
@@ -142,7 +146,11 @@ struct GroupSettingsView: View {
                     Task { await leaveGroup() }
                 }
             } message: {
-                Text(L10n.Groups.Settings.leaveGroupConfirm)
+                if hasOutstandingBalance {
+                    Text(L10n.Groups.Settings.leaveGroupWithDebtWarning)
+                } else {
+                    Text(L10n.Groups.Settings.leaveGroupConfirm)
+                }
             }
             .alert(L10n.Common.error, isPresented: $showLeaveError) {
                 Button(L10n.Common.ok) {}
@@ -573,19 +581,21 @@ struct GroupSettingsView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(isLeavingGroup || hasOutstandingBalance)
-
-            if hasOutstandingBalance {
-                Text(L10n.Groups.Settings.leaveGroupDisabledHint)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.bottom, DS.Spacing.sm)
-            }
+            .disabled(isLeavingGroup)
         }
         .background(RoundedRectangle(cornerRadius: DS.Radius.card).fill(.thCard))
         .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(.thCardBorder, lineWidth: 1))
+    }
+
+    private func hasNonZeroBalance(for memberID: String) -> Bool {
+        viewModel.balances
+            .filter { $0.memberID == memberID }
+            .contains { abs($0.netBalance) > 0.01 }
+    }
+
+    private var memberToRemoveHasDebt: Bool {
+        guard let member = memberToRemove else { return false }
+        return hasNonZeroBalance(for: member.id.uuidString)
     }
 
     private var hasOutstandingBalance: Bool {
@@ -596,9 +606,7 @@ struct GroupSettingsView: View {
             return viewModel.currentUserMember
         }()
         guard let current else { return false }
-        let myBalances = viewModel.balances.filter { $0.memberID == current.id.uuidString }
-        guard !myBalances.isEmpty else { return false }
-        return myBalances.contains { abs($0.netBalance) > 0.01 }
+        return hasNonZeroBalance(for: current.id.uuidString)
     }
 
     private func leaveGroup() async {

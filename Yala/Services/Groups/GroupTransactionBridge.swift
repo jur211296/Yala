@@ -72,7 +72,10 @@ final class GroupTransactionBridge {
         )
         guard let myShare = try context.fetch(shareDescriptor).first else { return }
 
-        // Idempotency: check if already bridged
+        // Idempotency: @MainActor + sync function garantiza atomicidad de fetch+insert.
+        // Si llega un segundo call para la misma expense, este fetch encuentra la TX/Draft
+        // creada por el primero y aplica updates en lugar de duplicar. Si en el futuro se
+        // introduce un await en este método, considerar NSLock/actor para preservar la garantía.
         let expenseIDStr = expense.id.uuidString
         let txDescriptor = FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.splitExpenseID == expenseIDStr }

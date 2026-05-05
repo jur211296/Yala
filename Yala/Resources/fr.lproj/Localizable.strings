@@ -3119,7 +3119,7 @@
 "groups.settings.regenerateLinkDisabledHint" = "Par sécurité, réinitialisez le lien d'invitation uniquement avant que d'autres membres aient rejoint le groupe.";
 "groups.settings.leaveGroup" = "Quitter le groupe";
 "groups.settings.leaveGroupConfirm" = "Êtes-vous sûr ? Vos dépenses personnelles seront conservées.";
-"groups.settings.leaveGroupDisabledHint" = "Pour quitter le groupe, commencez par régler votre solde.";
+"groups.settings.leaveGroupWithDebtWarning" = "Vous quittez le groupe avec un solde ouvert. L'autre partie continuera à voir cette dette comme en attente. Continuer ?";
 "groups.settings.deleteGroup" = "Supprimer le groupe";
 "groups.settings.deleteGroupConfirm" = "Cette action est permanente et supprimera toutes les données du groupe.";
 "groups.settings.deleteGroupFinalConfirm" = "Le groupe et toutes ses données seront définitivement supprimés pour tous les membres. Cette action est irréversible.";
@@ -3143,6 +3143,7 @@
 "groups.member.changeRole" = "Changer le rôle";
 "groups.member.remove" = "Supprimer le membre";
 "groups.member.removeConfirm" = "Supprimer ce membre du groupe ?";
+"groups.member.removeWithDebtWarning" = "Cette personne a un solde ouvert dans le groupe. Si vous la supprimez, la dette reste ouverte. Continuer ?";
 "groups.member.actions" = "Actions du membre";
 "groups.member.people %d" = "%d personnes";
 "groups.balance.title" = "Soldes";

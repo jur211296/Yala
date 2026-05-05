@@ -3121,7 +3121,7 @@
 "groups.settings.regenerateLinkDisabledHint" = "Dla bezpieczeństwa resetuj link zaproszenia tylko zanim dołączą inni członkowie.";
 "groups.settings.leaveGroup" = "Opuść grupę";
 "groups.settings.leaveGroupConfirm" = "Na pewno? Twoje osobiste wydatki zostaną zachowane.";
-"groups.settings.leaveGroupDisabledHint" = "Aby opuścić grupę, najpierw wyzeruj saldo.";
+"groups.settings.leaveGroupWithDebtWarning" = "Opuszczasz grupę z otwartym saldem. Druga strona nadal będzie widzieć ten dług jako oczekujący. Kontynuować?";
 "groups.settings.deleteGroup" = "Usuń grupę";
 "groups.settings.deleteGroupConfirm" = "Tej operacji nie można cofnąć — wszystkie dane grupy zostaną usunięte.";
 "groups.settings.deleteGroupFinalConfirm" = "Grupa i wszystkie jej dane zostaną trwale usunięte u wszystkich członków. Tej operacji nie można cofnąć.";
@@ -3145,6 +3145,7 @@
 "groups.member.changeRole" = "Zmień rolę";
 "groups.member.remove" = "Usuń członka";
 "groups.member.removeConfirm" = "Usunąć tego członka z grupy?";
+"groups.member.removeWithDebtWarning" = "Ta osoba ma otwarte saldo w grupie. Jeśli ją usuniesz, dług pozostanie otwarty. Kontynuować?";
 "groups.member.actions" = "Akcje członka";
 "groups.member.people %d" = "Osób: %d";
 "groups.balance.title" = "Salda";

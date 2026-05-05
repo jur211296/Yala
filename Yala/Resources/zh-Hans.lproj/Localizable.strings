@@ -3121,7 +3121,7 @@
 "groups.settings.regenerateLinkDisabledHint" = "为安全起见，请只在其他成员加入前重置邀请链接。";
 "groups.settings.leaveGroup" = "离开群组";
 "groups.settings.leaveGroupConfirm" = "你确定吗?你的个人支出将被保留。";
-"groups.settings.leaveGroupDisabledHint" = "要离开群组，请先结清余额。";
+"groups.settings.leaveGroupWithDebtWarning" = "你将带着未结清的余额离开群组。对方仍会看到这笔欠款处于未结清状态。要继续吗？";
 "groups.settings.deleteGroup" = "删除群组";
 "groups.settings.deleteGroupConfirm" = "此操作是永久的,会删除全部群组数据。";
 "groups.settings.deleteGroupFinalConfirm" = "群组及其所有数据将对所有成员永久删除。此操作无法撤销。";
@@ -3145,6 +3145,7 @@
 "groups.member.changeRole" = "更改角色";
 "groups.member.remove" = "移除成员";
 "groups.member.removeConfirm" = "把这个成员从群组移除?";
+"groups.member.removeWithDebtWarning" = "这位成员在群组中有未结清的余额。如果你将其删除，欠款仍会保留。要继续吗？";
 "groups.member.actions" = "成员操作";
 "groups.member.people %d" = "%d 人";
 "groups.balance.title" = "余额";

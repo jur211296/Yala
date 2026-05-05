@@ -3121,7 +3121,7 @@
 "groups.settings.regenerateLinkDisabledHint" = "Reset de uitnodigingslink voor de veiligheid alleen voordat andere leden zijn toegetreden.";
 "groups.settings.leaveGroup" = "Groep verlaten";
 "groups.settings.leaveGroupConfirm" = "Weet je het zeker? Je persoonlijke uitgaven blijven behouden.";
-"groups.settings.leaveGroupDisabledHint" = "Om de groep te verlaten, maak eerst je saldo nul.";
+"groups.settings.leaveGroupWithDebtWarning" = "Je verlaat de groep met een openstaand saldo. De andere partij blijft die schuld als openstaand zien. Doorgaan?";
 "groups.settings.deleteGroup" = "Groep verwijderen";
 "groups.settings.deleteGroupConfirm" = "Deze actie is permanent en verwijdert alle gegevens van de groep.";
 "groups.settings.deleteGroupFinalConfirm" = "De groep en alle gegevens worden voor alle leden permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.";
@@ -3145,6 +3145,7 @@
 "groups.member.changeRole" = "Rol wijzigen";
 "groups.member.remove" = "Lid verwijderen";
 "groups.member.removeConfirm" = "Dit lid uit de groep verwijderen?";
+"groups.member.removeWithDebtWarning" = "Deze persoon heeft een openstaand saldo in de groep. Als je deze verwijdert, blijft de schuld open. Doorgaan?";
 "groups.member.actions" = "Acties voor lid";
 "groups.member.people %d" = "%d personen";
 "groups.balance.title" = "Saldi";

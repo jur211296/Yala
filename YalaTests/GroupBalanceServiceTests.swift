@@ -612,4 +612,107 @@ struct GroupBalanceServiceTests {
         #expect(result[0].amount == 80)
         #expect(result[0].currencyCode == "PEN")
     }
+
+    // MARK: - Dedup (A7)
+
+    @Test func calculateBalances_deduplicatesExpensesByID() {
+        let aID = UUID(), bID = UUID()
+        let members = [makeMember(id: aID, displayName: "A"), makeMember(id: bID, displayName: "B")]
+        let expenseID = UUID()
+
+        // Mismo expense entregado dos veces (race CloudKit re-envía)
+        let expense1 = makeExpense(id: expenseID, amount: 100, paidByMemberID: aID.uuidString)
+        let expense2 = makeExpense(id: expenseID, amount: 100, paidByMemberID: aID.uuidString)
+        let shares = [
+            makeShare(expenseID: expenseID, memberID: aID.uuidString, amount: 50),
+            makeShare(expenseID: expenseID, memberID: bID.uuidString, amount: 50),
+        ]
+
+        let result = GroupBalanceService.calculateBalances(
+            expenses: [expense1, expense2],
+            shares: shares,
+            members: members,
+            settlements: []
+        )
+
+        let balA = result.first { $0.memberID == aID.uuidString }
+        // Sin dedup: paid=200; con dedup: paid=100
+        #expect(balA?.totalPaid == 100)
+        #expect(balA?.netBalance == 50)
+    }
+
+    @Test func calculateDebts_deduplicatesExpensesByID() {
+        let aID = UUID(), bID = UUID()
+        let expenseID = UUID()
+
+        let expense1 = makeExpense(id: expenseID, amount: 100, paidByMemberID: aID.uuidString)
+        let expense2 = makeExpense(id: expenseID, amount: 100, paidByMemberID: aID.uuidString)
+        let shares = [
+            makeShare(expenseID: expenseID, memberID: aID.uuidString, amount: 50),
+            makeShare(expenseID: expenseID, memberID: bID.uuidString, amount: 50),
+        ]
+
+        let debts = GroupBalanceService.calculateDebts(
+            expenses: [expense1, expense2],
+            shares: shares,
+            settlements: [],
+            simplifyDebts: false
+        )
+
+        // B debe a A 50 (no 100 — dedup aplicó)
+        #expect(debts.count == 1)
+        #expect(debts[0].fromMemberID == bID.uuidString)
+        #expect(debts[0].toMemberID == aID.uuidString)
+        #expect(debts[0].amount == 50)
+    }
+
+    @Test func globalSummary_deduplicatesExpensesByID() {
+        let aID = UUID(), bID = UUID()
+        let expenseID = UUID()
+
+        let expense1 = makeExpense(id: expenseID, amount: 100, paidByMemberID: aID.uuidString)
+        let expense2 = makeExpense(id: expenseID, amount: 100, paidByMemberID: aID.uuidString)
+        let shares = [
+            makeShare(expenseID: expenseID, memberID: aID.uuidString, amount: 50),
+            makeShare(expenseID: expenseID, memberID: bID.uuidString, amount: 50),
+        ]
+
+        let summary = GroupBalanceService.globalSummary(
+            allExpenses: [expense1, expense2],
+            allShares: shares,
+            allSettlements: [],
+            currentUserMemberIDs: [aID.uuidString]
+        )
+
+        // A es el current user; B le debe 50, no 100
+        #expect(summary.totalOwedToMe["PEN"] == 50)
+        #expect(summary.totalIOwe["PEN"] == nil)
+    }
+
+    @Test func calculateBalances_distinctIDsNotDeduplicated() {
+        // Regresión: 2 expenses con IDs distintos suman ambos
+        let aID = UUID(), bID = UUID()
+        let members = [makeMember(id: aID, displayName: "A"), makeMember(id: bID, displayName: "B")]
+
+        let e1ID = UUID(), e2ID = UUID()
+        let e1 = makeExpense(id: e1ID, amount: 100, paidByMemberID: aID.uuidString)
+        let e2 = makeExpense(id: e2ID, amount: 100, paidByMemberID: aID.uuidString)
+        let shares = [
+            makeShare(expenseID: e1ID, memberID: aID.uuidString, amount: 50),
+            makeShare(expenseID: e1ID, memberID: bID.uuidString, amount: 50),
+            makeShare(expenseID: e2ID, memberID: aID.uuidString, amount: 50),
+            makeShare(expenseID: e2ID, memberID: bID.uuidString, amount: 50),
+        ]
+
+        let result = GroupBalanceService.calculateBalances(
+            expenses: [e1, e2],
+            shares: shares,
+            members: members,
+            settlements: []
+        )
+
+        let balA = result.first { $0.memberID == aID.uuidString }
+        #expect(balA?.totalPaid == 200)
+        #expect(balA?.netBalance == 100)
+    }
 }

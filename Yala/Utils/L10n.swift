@@ -1663,7 +1663,7 @@ enum L10n {
             static var regenerateLinkDisabledHint: String { ls("groups.settings.regenerateLinkDisabledHint", comment: "") }
             static var leaveGroup: String { ls("groups.settings.leaveGroup", comment: "") }
             static var leaveGroupConfirm: String { ls("groups.settings.leaveGroupConfirm", comment: "") }
-            static var leaveGroupDisabledHint: String { ls("groups.settings.leaveGroupDisabledHint", comment: "") }
+            static var leaveGroupWithDebtWarning: String { ls("groups.settings.leaveGroupWithDebtWarning", comment: "") }
             static var deleteGroup: String { ls("groups.settings.deleteGroup", comment: "") }
             static var deleteGroupConfirm: String { ls("groups.settings.deleteGroupConfirm", comment: "") }
             static var deleteGroupFinalConfirm: String { ls("groups.settings.deleteGroupFinalConfirm", comment: "") }
@@ -1689,6 +1689,7 @@ enum L10n {
             static var changeRole: String { ls("groups.member.changeRole", comment: "") }
             static var remove: String { ls("groups.member.remove", comment: "") }
             static var removeConfirm: String { ls("groups.member.removeConfirm", comment: "") }
+            static var removeWithDebtWarning: String { ls("groups.member.removeWithDebtWarning", comment: "") }
             static var actions: String { ls("groups.member.actions", comment: "") }
             static func people(_ count: Int) -> String { String(format: ls("groups.member.people %d", comment: ""), count) }
         }

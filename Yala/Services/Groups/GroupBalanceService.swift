@@ -39,7 +39,9 @@ enum GroupBalanceService {
         members: [SplitMember],
         settlements: [SplitSettlement]
     ) -> [MemberBalance] {
-        let activeExpenses = expenses.filter { !$0.isSettled }
+        // Defensa contra duplicados de CloudKit (race en merge resolution): dedup por id.
+        let uniqueExpenses = Dictionary(grouping: expenses, by: \.id).values.compactMap(\.first)
+        let activeExpenses = uniqueExpenses.filter { !$0.isSettled }
         let confirmedSettlements = settlements.filter { $0.isConfirmed }
 
         // Build member lookup: memberID → displayName
@@ -126,7 +128,9 @@ enum GroupBalanceService {
         shares: [SplitShare],
         settlements: [SplitSettlement]
     ) -> [Debt] {
-        let activeExpenses = expenses.filter { !$0.isSettled }
+        // Defensa contra duplicados de CloudKit (race en merge resolution): dedup por id.
+        let uniqueExpenses = Dictionary(grouping: expenses, by: \.id).values.compactMap(\.first)
+        let activeExpenses = uniqueExpenses.filter { !$0.isSettled }
         let sharesByExpense = Dictionary(grouping: shares, by: \.expenseID)
 
         var debts: [Debt] = []

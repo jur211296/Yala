@@ -3121,7 +3121,7 @@
 "groups.settings.regenerateLinkDisabledHint" = "For safety, reset the invite link only before other members have joined.";
 "groups.settings.leaveGroup" = "Leave group";
 "groups.settings.leaveGroupConfirm" = "Are you sure? Your personal expenses will be kept.";
-"groups.settings.leaveGroupDisabledHint" = "To leave the group, first settle up your balance.";
+"groups.settings.leaveGroupWithDebtWarning" = "You're leaving the group with an open balance. The other party will keep seeing that debt as pending. Continue?";
 "groups.settings.deleteGroup" = "Delete group";
 "groups.settings.deleteGroupConfirm" = "This action is permanent and will delete all group data.";
 "groups.settings.deleteGroupFinalConfirm" = "The group and all its data will be permanently deleted for all members. This action cannot be undone.";
@@ -3145,6 +3145,7 @@
 "groups.member.changeRole" = "Change role";
 "groups.member.remove" = "Remove member";
 "groups.member.removeConfirm" = "Remove this member from the group?";
+"groups.member.removeWithDebtWarning" = "This person has an open balance in the group. If you remove them, the debt stays open. Continue?";
 "groups.member.actions" = "Member actions";
 "groups.member.people %d" = "%d people";
 "groups.balance.title" = "Balances";

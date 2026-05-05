@@ -3121,7 +3121,7 @@
 "groups.settings.regenerateLinkDisabledHint" = "安全のため、招待リンクのリセットは他のメンバーが参加する前だけにしてください。";
 "groups.settings.leaveGroup" = "グループを退出";
 "groups.settings.leaveGroupConfirm" = "本当に退出しますか？個人の支出は残ります。";
-"groups.settings.leaveGroupDisabledHint" = "退出するには、まず残高を0にしてください。";
+"groups.settings.leaveGroupWithDebtWarning" = "未精算の残高があるまま、グループから退出します。相手側にはこの債務が引き続き未精算として表示されます。続けますか？";
 "groups.settings.deleteGroup" = "グループを削除";
 "groups.settings.deleteGroupConfirm" = "この操作は永久的で、グループのすべてのデータが削除されます。";
 "groups.settings.deleteGroupFinalConfirm" = "グループとそのすべてのデータが、すべてのメンバーから完全に削除されます。この操作は取り消せません。";
@@ -3145,6 +3145,7 @@
 "groups.member.changeRole" = "役割を変更";
 "groups.member.remove" = "メンバーを削除";
 "groups.member.removeConfirm" = "このメンバーをグループから削除しますか？";
+"groups.member.removeWithDebtWarning" = "このメンバーにはグループ内で未精算の残高があります。削除しても債務は引き続き残ります。続けますか？";
 "groups.member.actions" = "メンバーのアクション";
 "groups.member.people %d" = "%d人";
 "groups.balance.title" = "残高";

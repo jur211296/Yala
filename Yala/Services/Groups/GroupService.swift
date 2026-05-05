@@ -249,10 +249,6 @@ final class GroupService {
         guard !member.isGroupOwner else { throw GroupServiceError.ownerMemberImmutable }
         guard member.isActive else { return }
 
-        if try memberHasOutstandingBalance(member, in: group) {
-            throw GroupServiceError.outstandingBalance
-        }
-
         // Cannot remove the last admin
         if member.role == "admin" {
             let adminCount = try activeAdminCount(in: group, context: context)
@@ -306,12 +302,9 @@ final class GroupService {
 
         guard !group.isOwner else { throw GroupServiceError.ownerCannotLeave }
 
-        // Splitwise-like rule: only allow leaving once the user's balance is 0 in the group.
+        // El usuario puede salir aunque tenga saldo pendiente. La UI muestra warning
+        // explícito en el confirmation dialog antes de invocar este método.
         let currentMember = try await ensureCurrentUserMemberExists(in: group, reactivateInactive: false)
-        let balances = try memberBalances(in: group, memberID: currentMember.id.uuidString)
-        if balances.contains(where: { abs($0.netBalance) > 0.01 }) {
-            throw GroupServiceError.outstandingBalance
-        }
 
         if currentMember.isActive {
             currentMember.memberStatus = .left
@@ -562,27 +555,6 @@ final class GroupService {
         }
     }
 
-    private func memberBalances(in group: SplitGroup, memberID: String) throws -> [MemberBalance] {
-        let expenses = try GroupExpenseService.shared.fetchExpenses(for: group)
-        let shares = try GroupExpenseService.shared.fetchAllShares(for: group)
-        let settlements = try GroupExpenseService.shared.fetchSettlements(for: group)
-        let members = try fetchMembers(for: group)
-
-        let balances = GroupBalanceService.calculateBalances(
-            expenses: expenses,
-            shares: shares,
-            members: members,
-            settlements: settlements
-        )
-
-        return balances.filter { $0.memberID == memberID }
-    }
-
-    private func memberHasOutstandingBalance(_ member: SplitMember, in group: SplitGroup) throws -> Bool {
-        let balances = try memberBalances(in: group, memberID: member.id.uuidString)
-        return balances.contains { abs($0.netBalance) > 0.01 }
-    }
-
     private func requireCurrentUserAdmin(in group: SplitGroup, context: ModelContext) throws {
         let members = try fetchMembers(for: group)
         if let current = members.first(where: { $0.isCurrentUser }) {
@@ -684,7 +656,6 @@ enum GroupServiceError: LocalizedError {
     case adminRequired
     case ownerCannotLeave
     case lastAdmin
-    case outstandingBalance
     case inactiveMember
     case memberNotInGroup
     case cannotRemoveSelf
@@ -711,8 +682,6 @@ enum GroupServiceError: LocalizedError {
             return "GroupService: Owner cannot leave their own group"
         case .lastAdmin:
             return "GroupService: Cannot remove or demote the last admin"
-        case .outstandingBalance:
-            return "GroupService: Cannot leave or remove a member with a non-zero balance"
         case .inactiveMember:
             return "GroupService: Inactive members cannot perform this action"
         case .memberNotInGroup:
