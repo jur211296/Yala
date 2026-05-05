@@ -106,8 +106,14 @@ final class CashFlowPlanViewModel {
         let components = calendar.dateComponents([.year, .month], from: now)
         guard let currentMonthStart = calendar.date(from: components) else { return }
 
-        // Build and cache TransactionIndex for method recalculation
-        let validTransactions = transactions.filter { $0.category != nil && $0.balanceAdjustmentType == nil }
+        // Build and cache TransactionIndex for method recalculation.
+        // A0-Bridge: excluye TX con subcat sistema (Préstamo a grupos, Liquidación, etc.)
+        // del análisis de Cash Flow — son artefactos contables que distorsionan proyecciones.
+        let validTransactions = transactions.filter {
+            $0.category != nil
+                && $0.balanceAdjustmentType == nil
+                && $0.subcategory?.isAnySystem != true
+        }
         let resolvedCurrency = currencyCode.isEmpty ? "USD" : currencyCode
         let index = TransactionIndex(
             transactions: validTransactions, currencyCode: resolvedCurrency,

@@ -957,13 +957,21 @@ final class PanelViewModel {
 
     /// Calcula el balance total "vivo" en la moneda preferida (TC actual sobre
     /// saldo nativo).
+    /// A0-Bridge: respeta toggle `includeGroupsInPanelTotal` — si OFF, excluye
+    /// cuentas sistema (`isSystemAccount`) del total. Lista carrusel intacta.
     func totalBalanceInDefaultCurrency(
         accounts: [Account],
         transactions: [TransactionItem],
         defaultCurrencyCode: String
     ) -> Double {
+        let includeGroups = UserDefaults.standard.object(
+            forKey: AppPreferences.Keys.includeGroupsInPanelTotal
+        ) as? Bool ?? true
+        let effectiveAccounts = includeGroups
+            ? accounts
+            : accounts.filter { !$0.isSystemAccount }
         return LiveBalanceCalculator.liveBalance(
-            accounts: accounts,
+            accounts: effectiveAccounts,
             transactions: transactions,
             preferredCurrencyCode: defaultCurrencyCode
         )

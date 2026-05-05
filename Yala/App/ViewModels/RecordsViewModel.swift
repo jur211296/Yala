@@ -201,10 +201,21 @@ final class RecordsViewModel: Filterable {
             dateInterval: effectiveDateInterval()
         )
 
+        // A0-Bridge: respeta toggle global "incluir transacciones de grupos en feed".
+        // Si OFF, oculta TX bridgeadas (splitExpenseID/splitSettlementID != nil).
+        // Default true; user lo desactiva en RecordsFiltersView (F10).
+        let includeGroupTxs = UserDefaults.standard.object(
+            forKey: AppPreferences.Keys.includeGroupTransactionsInFeed
+        ) as? Bool ?? true
+
         // Pre-filter: hide transactions from accounts excluded from statistics
         let eligibleTransactions = transactions.filter { tx in
             guard let account = tx.account else { return true }
-            return !account.excludeFromStatistics
+            if account.excludeFromStatistics { return false }
+            if !includeGroupTxs && (tx.splitExpenseID != nil || tx.splitSettlementID != nil) {
+                return false
+            }
+            return true
         }
 
         // Use FilterService for filtering and grouping
