@@ -1616,6 +1616,8 @@ enum L10n {
             static var balances: String { ls("groups.detail.balances", comment: "") }
             static var stats: String { ls("groups.detail.stats", comment: "") }
             static var comingSoon: String { ls("groups.detail.comingSoon", comment: "") }
+            // A0-Bridge V2.0 (P1-3): CTA desde TX bridgeada read-only
+            static var openGroup: String { ls("groups.detail.openGroup", comment: "") }
         }
 
         enum Stats {
@@ -4258,6 +4260,8 @@ enum L10n {
         static var title: String {
             ls("inbox.title", comment: "")
         }
+        // A0-Bridge V2.0 (P1-3): CTA desde TX bridgeada read-only con draft pendiente
+        static var openInbox: String { ls("inbox.openInbox", comment: "") }
         static var pending: String {
             ls("inbox.pending", comment: "")
         }

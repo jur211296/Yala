@@ -72,6 +72,81 @@ struct NewTransactionView: View {
         self.transactionToEdit = transactionToEdit
     }
 
+    // MARK: - A0-Bridge V2.0 Read-Only Mode (P1-3)
+
+    /// True si la TX en edición viene del bridge de grupos (no editable manualmente).
+    private var isBridgedReadOnly: Bool {
+        guard let tx = transactionToEdit else { return false }
+        return tx.splitExpenseID != nil || tx.splitSettlementID != nil
+    }
+
+    /// Fetch del InboxDraft groupExpense pendiente (subcategory == nil) que apunta a esta TX.
+    private func pendingGroupDraft(forTx tx: TransactionItem) -> InboxDraft? {
+        guard let splitID = tx.splitExpenseID else { return nil }
+        let descriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.splitExpenseID == splitID && $0.subcategory == nil }
+        )
+        return try? modelContext.fetch(descriptor).first
+    }
+
+    @ViewBuilder
+    private var bridgedTxReadOnlyBanner: some View {
+        if let tx = transactionToEdit, isBridgedReadOnly {
+            let pendingDraft = pendingGroupDraft(forTx: tx)
+            let message: String = {
+                if pendingDraft != nil {
+                    return L10n.Groups.Bridge.assignFromInbox
+                } else if tx.splitSettlementID != nil {
+                    return L10n.Groups.Bridge.editSettlementInGroup
+                } else {
+                    return L10n.Groups.Bridge.editFromGroup
+                }
+            }()
+            let ctaLabel: String = pendingDraft != nil
+                ? L10n.Inbox.openInbox
+                : L10n.Groups.Detail.openGroup
+
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                HStack(alignment: .top, spacing: DS.Spacing.sm) {
+                    Image(systemName: "info.circle.fill")
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.thAccent)
+                    Text(message)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                }
+                Button {
+                    handleBridgedCTA(hasPendingDraft: pendingDraft != nil)
+                } label: {
+                    Text(ctaLabel)
+                        .font(DS.Typography.body)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.thAccent)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(DS.Spacing.lg)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(.thCard))
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.top, DS.Spacing.sm)
+        }
+    }
+
+    private func handleBridgedCTA(hasPendingDraft: Bool) {
+        dismiss()
+        if hasPendingDraft {
+            AppRouter.shared.enqueue(.navigate(.inbox))
+        } else if let zoneID = transactionToEdit?.splitGroupZoneID {
+            // Si tenemos zoneID, intentar deeplink directo al grupo.
+            AppRouter.shared.enqueue(.navigate(.groupDetail(groupID: zoneID)))
+        } else {
+            // Fallback: lista genérica de grupos.
+            AppRouter.shared.enqueue(.navigate(.groups))
+        }
+    }
+
     var body: some View {
         if showSuccessScreen, let data = successData {
             TransactionSuccessView(
@@ -131,32 +206,42 @@ struct NewTransactionView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: DS.Spacing.none) {
-                    // Transaction type selector
-                    transactionTypeSelector
-                        .padding(.top, DS.Spacing.sm)
+                    // P1-3: oculto en read-only (no se cambia el tipo de TX bridgeada).
+                    if !isBridgedReadOnly {
+                        transactionTypeSelector
+                            .padding(.top, DS.Spacing.sm)
+                    }
 
-                    // Contextual guide for new users
-                    ContextualGuideBanner.transaction()
-                        .padding(.horizontal, DS.Spacing.md)
-                        .padding(.top, DS.Spacing.xs)
+                    // P1-3: banner CTA contextual cuando la TX es bridgeada.
+                    bridgedTxReadOnlyBanner
 
-                    Spacer()
+                    // Contextual guide for new users (oculto en read-only).
+                    if !isBridgedReadOnly {
+                        ContextualGuideBanner.transaction()
+                            .padding(.horizontal, DS.Spacing.md)
+                            .padding(.top, DS.Spacing.xs)
+                    }
 
-                    // Central content area
-                    centralContent
+                    // Resto del form: disabled + opacity reducida en read-only.
+                    Group {
+                        Spacer()
 
-                    Spacer()
+                        // Central content area
+                        centralContent
 
-                    // Bottom selection chips
-                    bottomChips
-                        .padding(.bottom, DS.Spacing.lg)
+                        Spacer()
 
-                    // Exchange rate section removed - integrated into centralContent
+                        // Bottom selection chips
+                        bottomChips
+                            .padding(.bottom, DS.Spacing.lg)
 
-                    // Register button
-                    registerButton
-                        .padding(.horizontal, DS.Spacing.xl)
-                        .padding(.bottom, DS.Spacing.xxl)
+                        // Register button
+                        registerButton
+                            .padding(.horizontal, DS.Spacing.xl)
+                            .padding(.bottom, DS.Spacing.xxl)
+                    }
+                    .disabled(isBridgedReadOnly)
+                    .opacity(isBridgedReadOnly ? 0.5 : 1.0)
                 }
                 .scaleEffect(duplicateAnimationVisible ? 1.0 : 0.92)
                 .opacity(duplicateAnimationVisible ? 1.0 : 0.0)
@@ -174,17 +259,19 @@ struct NewTransactionView: View {
                     }
                 }
 
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        viewModel.showFavoritesSheet = true
-                    } label: {
-                        Image(systemName: "star.fill")
-                            .font(DS.Typography.body)
-                            .foregroundStyle(Color.primary)
+                if !isBridgedReadOnly {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            viewModel.showFavoritesSheet = true
+                        } label: {
+                            Image(systemName: "star.fill")
+                                .font(DS.Typography.body)
+                                .foregroundStyle(Color.primary)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.Accessibility.favoriteTemplates)
+                        .tint(Color.primary)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(L10n.Accessibility.favoriteTemplates)
-                    .tint(Color.primary)
                 }
             }
             .sheet(isPresented: $viewModel.showAccountSelector) {
