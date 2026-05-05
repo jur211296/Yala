@@ -4,23 +4,12 @@
 //
 //  Financial Score period-aware (Panel 2.0 + Statistics → Insights).
 //
-//  Invariants:
-//  - Sub-scores are `Int?`. `nil` means "N/A" and does NOT dilute the total;
-//    the remaining sub-scores are re-weighted proportionally. If every sub-score
-//    is `nil`, the total is also `nil`.
-//  - Rhythm es `nil` solo cuando no hay transacciones en el intervalo.
-//  - Commitments es `nil` para períodos cortos (`thisWeek`, `last7Days`) porque
-//    los pagos son típicamente mensuales y la métrica resulta ruidosa.
-//  - Brand-voice guardrail: el composite total se clampea a un piso suave de 50.
-//    Sub-scores no se aplastan — su sheet detalla el valor real.
-//
-//  Period-awareness:
-//  - El score reacciona al `period` seleccionado (Panel y Statistics independientes).
-//  - Budget pondera buckets aplicables del intervalo según `budget.periodType`.
-//  - Rhythm en multi-mes (`thisYear`/`lastYear`/`allTime`/`custom>2m`) usa el
-//    promedio de maxGaps mensuales para evitar que un gap antiguo aplaste el score.
-//  - Commitments combina Cobertura (saldo proyectado vs pendientes del período)
-//    + Carga (% de ingresos comprometido en pagos recurrentes/suscripciones).
+//  Invariantes:
+//  - Sub-scores `Int?`. `nil` no diluye el total; el resto re-pondera. Todos
+//    `nil` → total `nil`.
+//  - Composite con piso suave de 50 (brand-voice). Sub-scores sin piso.
+//  - Compromisos opera sobre el ciclo natural completo del período (no truncado
+//    a hoy) para incluir pendientes del resto del mes/año.
 //
 
 import Foundation
@@ -41,7 +30,6 @@ struct FinancialScore: Equatable {
     let bills: Int?
 }
 
-@MainActor
 enum FinancialScoreCalculator {
 
     // MARK: - Tuning
@@ -190,12 +178,12 @@ enum FinancialScoreCalculator {
         return clamp(avg)
     }
 
-    /// Para `unique` budgets, el bucket = rango del propio budget (`startDate..<endDate`).
-    /// Para los demás (`monthly`/`weekly`/`yearly`), exige `bucket.start >= startOfDay(createdAt)`.
+    /// Para `unique`, el bucket = rango del propio budget. Para los demás,
+    /// exige `bucket.start >= startOfDay(createdAt)`.
     private static func bucketIsValid(
         _ bucket: DateInterval, for budget: Budget, calendar: Calendar
     ) -> Bool {
-        if budget.periodType == "unique" {
+        if budget.periodType == BudgetPeriodType.unique.rawValue {
             return true
         }
         let createdDay = calendar.startOfDay(for: budget.createdAt)
@@ -203,24 +191,21 @@ enum FinancialScoreCalculator {
     }
 
     /// Buckets aplicables al período según `budget.periodType`.
-    /// - `monthly`/`weekly`/`yearly`: todos los ciclos calendario que intersectan `interval`.
-    /// - `unique`: un único bucket = `[startDate, endDate]` si intersecta.
     private static func generateBuckets(
         for budget: Budget, withinInterval interval: DateInterval, calendar: Calendar
     ) -> [DateInterval] {
-        switch budget.periodType {
-        case "monthly":
+        guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else { return [] }
+        switch periodType {
+        case .monthly:
             return enumerateBuckets(component: .month, interval: interval, calendar: calendar)
-        case "weekly":
+        case .weekly:
             return enumerateBuckets(component: .weekOfYear, interval: interval, calendar: calendar)
-        case "yearly":
+        case .yearly:
             return enumerateBuckets(component: .year, interval: interval, calendar: calendar)
-        case "unique":
+        case .unique:
             guard let start = budget.startDate, let end = budget.endDate, start < end else { return [] }
             let bucket = DateInterval(start: start, end: end)
             return interval.intersects(bucket) ? [bucket] : []
-        default:
-            return []
         }
     }
 
@@ -361,7 +346,7 @@ enum FinancialScoreCalculator {
         if isShortPeriod(period) { return nil }
 
         let active = scheduledPayments.filter {
-            $0.isActive && $0.transactionType != "income"
+            $0.isActive && $0.transactionType != TransactionType.income.rawValue
         }
         guard !active.isEmpty else { return nil }
 
